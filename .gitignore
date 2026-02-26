@@ -1,0 +1,13 @@
+# Środowisko wirtualne
+venv/
+env/
+
+# Cache Pythona
+__pycache__/
+*.pyc
+
+# Baza danych (na start SQLite, potem podmienisz na PostgreSQL)
+db.sqlite3
+
+# Zmienne środowiskowe (hasła, sekrety)
+.env
