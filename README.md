@@ -44,9 +44,10 @@ It elegantly combines a high-end, cinematic public landing page with a secure, r
 
 **Screens:**
 
-![Login_Panel](image.png)
-![Media_Panel](<Zrzut ekranu 2026-03-02 210850.png>)
-![Project_Details](image-1.png)
+<img width="475" height="638" alt="login_panel" src="https://github.com/user-attachments/assets/14ee42a0-81f9-46dd-9644-a594fee825de" />
+<img width="939" height="1291" alt="media_panel" src="https://github.com/user-attachments/assets/2c74c1d9-0007-4acc-a6c0-9bb18a66e470" />
+<img width="946" height="722" alt="project_details" src="https://github.com/user-attachments/assets/201ce1d3-3bb0-4feb-9826-8c1fd00a6b49" />
+
 ---
 
 ## 🚀 Local Setup & Installation
