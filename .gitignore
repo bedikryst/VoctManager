@@ -2,6 +2,9 @@
 venv/
 env/
 
+# Media
+media/
+
 # Cache Pythona
 __pycache__/
 *.pyc
@@ -11,3 +14,7 @@ db.sqlite3
 
 # Zmienne środowiskowe (hasła, sekrety)
 .env
+
+__pycache__/
+*.sqlite3
+node_modules/
