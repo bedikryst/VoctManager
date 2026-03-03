@@ -51,8 +51,9 @@ MIDDLEWARE = [
     # CorsMiddleware MUST be placed as high as possible, especially before any 
     # middleware that can generate responses (like CommonMiddleware).
     'corsheaders.middleware.CorsMiddleware',
-    
+
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -100,6 +101,7 @@ USE_TZ = True
 
 # --- STATIC & MEDIA FILES ---
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Directory for user-uploaded files (e.g., PDF scores, audio tracks)
 MEDIA_URL = '/media/'

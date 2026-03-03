@@ -1,6 +1,6 @@
 # VoctManager Enterprise 🎵
 
-**🚀 Live Demo:** [voctensemble.com/test](https://voctensemble.com/test) *(Staging Environment)*
+**🚀 Live Demo:** [test.voctensemble.com](https://voctensemble.com/test) *(Staging Environment)*
 
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)
@@ -42,11 +42,26 @@ It elegantly combines a high-end, cinematic public landing page with a secure, r
 **DevOps:**
 * Docker & Docker Compose (Containerization)
 
-**Screens:**
+## 📸 Screens
 
-<img width="475" height="638" alt="login_panel" src="https://github.com/user-attachments/assets/14ee42a0-81f9-46dd-9644-a594fee825de" />
-<img width="939" height="1291" alt="media_panel" src="https://github.com/user-attachments/assets/2c74c1d9-0007-4acc-a6c0-9bb18a66e470" />
-<img width="946" height="722" alt="project_details" src="https://github.com/user-attachments/assets/201ce1d3-3bb0-4feb-9826-8c1fd00a6b49" />
+<details>
+  <summary><b>Kliknij tutaj, aby rozwinąć galerię zrzutów ekranu ze środowiska testowego</b></summary>
+  <br>
+
+  **Login Panel (RBAC)**
+  <img width="475" alt="login_panel" src="https://github.com/user-attachments/assets/14ee42a0-81f9-46dd-9644-a594fee825de" />
+  
+  <hr>
+
+  **Media Panel (Digital Archive)**
+  <img width="939" alt="media_panel" src="https://github.com/user-attachments/assets/2c74c1d9-0007-4acc-a6c0-9bb18a66e470" />
+
+  <hr>
+
+  **Project Details (Casting & Sheet Music)**
+  <img width="946" alt="project_details" src="https://github.com/user-attachments/assets/201ce1d3-3bb0-4feb-9826-8c1fd00a6b49" />
+
+</details>
 
 ---
 
