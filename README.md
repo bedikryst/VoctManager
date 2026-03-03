@@ -45,7 +45,7 @@ It elegantly combines a high-end, cinematic public landing page with a secure, r
 ## 📸 Screens
 
 <details>
-  <summary><b>Kliknij tutaj, aby rozwinąć galerię zrzutów ekranu ze środowiska testowego</b></summary>
+  <summary><b>Click here to see!</b></summary>
   <br>
 
   **Login Panel (RBAC)**
