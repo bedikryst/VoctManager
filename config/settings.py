@@ -133,3 +133,5 @@ SIMPLE_JWT = {
 # Dynamically load allowed origins from .env to easily switch between dev and production
 cors_env = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')
 CORS_ALLOWED_ORIGINS = cors_env.split(',')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
