@@ -67,6 +67,16 @@ It elegantly combines a high-end, cinematic public landing page with a secure, r
 
 ## 🚀 Local Setup & Installation
 
+## ⚠️ Note on Media Assets & Intellectual Property
+
+Please note that the original photography, video materials, and audio recordings featured on the production website (`voctensemble.com`) are the exclusive intellectual property of the VoctEnsemble. 
+
+To respect copyright and privacy regulations, these binary media files (`*.jpg`, `*.mp4`) have been explicitly excluded from this public repository via `.gitignore` to prevent unauthorized distribution and repository bloat.
+
+**If you are running this project locally for review:**
+The application will run perfectly, but image placeholders will return a `404 Not Found` in the console. To experience the full visual layout locally, simply drop any placeholder images into the `frontend/public/` directory and rename them to match the asset paths defined in the React components (e.g., `flor.jpg`, `portret.jpg`).
+
+
 To run this project locally using Docker, follow these steps:
 
 ### 1. Clone the repository

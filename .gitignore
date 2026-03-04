@@ -18,3 +18,12 @@ db.sqlite3
 __pycache__/
 *.sqlite3
 node_modules/
+
+# Ignore media files in frontend/public
+frontend/public/*.jpg
+frontend/public/*.jpeg
+frontend/public/*.png
+frontend/public/*.webp
+frontend/public/*.mp4
+frontend/public/*.mov
+frontend/public/*.webm
