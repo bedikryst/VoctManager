@@ -89,16 +89,27 @@ const TeamMemberCard = ({ member, scrollTransform, gyroX, gyroY }) => {
           }}
           className="absolute inset-[-10%] w-[120%] h-[120%] flex items-center justify-center transition-transform duration-[700ms] group-hover:scale-105"
         >
-          <img 
-            src={member.img} 
-            alt={member.name} 
-            className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 bg-stone-800"
-            loading="lazy"
-            onError={(e) => {
-              e.target.onerror = null; 
-              e.target.src = `https://placehold.co/600x800/292524/a8a29e?text=${encodeURIComponent(member.name)}`;
-            }}
-          />
+          {member.video ? (
+            <video
+              src={member.video}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 z-10"
+            />
+          ) : (
+            <img 
+              src={member.img} 
+              alt={member.name} 
+              className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 bg-stone-800"
+              loading="lazy"
+              onError={(e) => {
+                e.target.onerror = null; 
+                e.target.src = `https://placehold.co/600x800/292524/a8a29e?text=${encodeURIComponent(member.name)}`;
+              }}
+            />
+          )}
         </motion.div>
         
         {/* Optical Overlays */}
