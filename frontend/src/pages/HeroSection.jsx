@@ -101,10 +101,10 @@ export default function HeroSection() {
             
             <div className="pt-8 mt-8 border-t border-[#002395]/10 flex flex-col items-center">
               {/* ZMIENIONA KOLEJNOŚĆ TEKSTU */}
-              <p className="text-stone-500 text-xl md:text-2xl italic tracking-wide leading-snug bg-[#fdfbf7] px-6 mb-2">
+              <p className="text-stone-500 text-xl md:text-2xl italic tracking-wide leading-snug bg-[#fdfbf7] px-6 pb-2">
                 z tęsknoty za absolutną jednością brzmienia i ducha
               </p>
-              <p className="text-stone-800 text-2xl md:text-4xl italic tracking-wide leading-snug bg-[#fdfbf7] px-6">
+              <p className="text-stone-800 text-2xl md:text-4xl italic tracking-wide leading-snug bg-[#fdfbf7] px-6 pt-2">
                 powstał <span className="text-[#002395] font-semibold not-italic">VoctEnsemble</span>
               </p>
             </div>

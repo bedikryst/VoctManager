@@ -31,17 +31,6 @@ export default function WhatWeSingSection() {
   return (
     <section ref={containerRef} className="relative py-32 md:py-48 lg:py-64 bg-stone-50 overflow-hidden z-10">
       
-      {/* Background: Animated Ambient Glows */}
-      <motion.div 
-        animate={{ scale: [1, 1.2, 1], x: [0, 50, 0], y: [0, 30, 0] }} 
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} 
-        className="absolute top-1/4 -left-32 w-[40rem] h-[40rem] bg-amber-700/10 rounded-full blur-[120px] pointer-events-none -z-10" 
-      />
-      <motion.div 
-        animate={{ scale: [1, 1.3, 1], x: [0, -60, 0], y: [0, -40, 0] }} 
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }} 
-        className="absolute bottom-1/4 -right-20 w-[50rem] h-[50rem] bg-amber-600/5 rounded-full blur-[150px] pointer-events-none -z-10" 
-      />
 
       {/* Background: Outline Typography Parallax */}
       <div className="absolute inset-0 -left-25 pointer-events-none flex flex-col justify-between z-0 opacity-[0.15] overflow-hidden">

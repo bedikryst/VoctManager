@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
+import { ReactLenis } from 'lenis/react';
 
 import HeroSection from './HeroSection'; 
 import WhatWeDoSection from './WhatWeDoSection';
@@ -51,93 +52,98 @@ export default function Home() {
   const navPaddingY = useTransform(scrollY, [start, end], ["32px", "14px"]);
   const navRadius = useTransform(scrollY, [start, end], ["0px", "16px"]);
   
-  // Tło menu po scrollu to teraz nieco mocniejsze, jasne szkło
   const navBg = useTransform(scrollY, [start, end], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.5)"]);
   const navBlur = useTransform(scrollY, [start, end], ["blur(0px)", "blur(24px)"]);
   const navBorder = useTransform(scrollY, [start, end], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.6)"]);
   const navShadow = useTransform(scrollY, [start, end], ["0px 0px 0px rgba(0,0,0,0)", "0px 8px 30px rgba(0,0,0,0.08)"]);
   
-  // Tekst i linie menu są TERAZ ZAWSZE CIEMNE na jasnym tle
   const textColor = useTransform(scrollY, [start, end], ["#1c1917", "#1c1917"]); 
   
   const line1Width = useTransform(scrollY, [start, end], ["28px", "20px"]);
   const line2Width = useTransform(scrollY, [start, end], ["36px", "28px"]);
 
-  // Kolor ikony artysty
   const lockColor = useTransform(scrollY, [start, end], ["#1c1917", "#a8a29e"]);
   const lockSize = useTransform(scrollY, [start, end], ["20px", "16px"]); 
   
-  const logoFontSizeMobile = useTransform(scrollY, [start, end], ["1.25rem", "0.875rem"]); 
+  const logoFontSizeMobile = useTransform(scrollY, [start, end], ["1rem", "0.875rem"]); 
   const logoFontSizeDesktop = useTransform(scrollY, [start, end], ["1.5rem", "1rem"]); 
   const logoTextMaxWidth = useTransform(scrollY, [start, end], ["80px", "0px"]); 
   const logoTextOpacity = useTransform(scrollY, [start, end], [1, 0]);
 
-  // Przycisk "Wesprzyj" - transformacja z obrysu w wypełniony
-  const btnWidthMobile = useTransform(scrollY, [start, end], ["90px", "44px"]);
+  const btnWidthMobile = useTransform(scrollY, [start, end], ["80px", "44px"]);
   const btnBgBase = useTransform(scrollY, [start, end], ["rgba(28,25,23,0)", "rgba(28,25,23,1)"]);
   const btnBorderBase = useTransform(scrollY, [start, end], ["rgba(28,25,23,0.3)", "rgba(28,25,23,0)"]);
-  const btnTextColor = useTransform(scrollY, [start, end], ["#1c1917", "#f5f5f4"]); // Od ciemnego do jasnego tekstu
+  const btnTextColor = useTransform(scrollY, [start, end], ["#1c1917", "#f5f5f4"]);
   const btnTextOpacity = useTransform(scrollY, [start, end], [1, 0]);
   const btnIconOpacity = useTransform(scrollY, [start, end], [0, 1]);
 
+  const lenisOptions = {
+    lerp: 0.08,
+    smoothWheel: true,
+    smoothTouch: false,
+    syncTouch: true,
+  };
+
   return (
-    <div className="bg-[#fdfbf7] text-stone-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-      
-      <div className="fixed top-0 left-0 w-full z-50 flex justify-center pointer-events-none">
-        <motion.nav 
-          style={{
-            width: navWidth, maxWidth: navMaxWidth, marginTop: navTop,
-            paddingLeft: navPaddingX, paddingRight: navPaddingX,
-            paddingTop: navPaddingY, paddingBottom: navPaddingY,
-            borderRadius: navRadius, backgroundColor: navBg,
-            borderColor: navBorder, boxShadow: navShadow,
-            backdropFilter: navBlur, WebkitBackdropFilter: navBlur,
-          }}
-          className="pointer-events-auto flex items-center justify-between border shadow-none"
-        >
-          {/* Menu Toggle */}
-          <div className="flex-1 flex justify-start">
-            <button onClick={() => setMenuOpen(true)} className="group flex flex-col space-y-1.5 p-3 hover:opacity-50 active:scale-95 transition-opacity" aria-label="Toggle navigation menu">
-              <motion.span style={{ backgroundColor: textColor, width: line1Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-7' : 'group-hover:!w-9'}`} />
-              <motion.span style={{ backgroundColor: textColor, width: line2Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-5' : 'group-hover:!w-7'}`} />
-            </button>
-          </div>
+    <ReactLenis root options={lenisOptions}>
+      <div className="bg-[#fdfbf7] text-stone-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+        
+        <div className="fixed top-0 left-0 w-full z-50 flex justify-center pointer-events-none">
+          <motion.nav 
+            style={{
+              width: navWidth, maxWidth: navMaxWidth, marginTop: navTop,
+              paddingLeft: navPaddingX, paddingRight: navPaddingX,
+              paddingTop: navPaddingY, paddingBottom: navPaddingY,
+              borderRadius: navRadius, backgroundColor: navBg,
+              borderColor: navBorder, boxShadow: navShadow,
+              backdropFilter: navBlur, WebkitBackdropFilter: navBlur,
+            }}
+            className="pointer-events-auto flex items-center justify-between border shadow-none"
+          >
+            {/* Menu Toggle */}
+            <div className="flex-1 flex justify-start">
+              <button onClick={() => setMenuOpen(true)} className="group flex flex-col space-y-1.5 p-3 hover:opacity-50 active:scale-95 transition-opacity" aria-label="Toggle navigation menu">
+                <motion.span style={{ backgroundColor: textColor, width: line1Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-7' : 'group-hover:!w-9'}`} />
+                <motion.span style={{ backgroundColor: textColor, width: line2Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-5' : 'group-hover:!w-7'}`} />
+              </button>
+            </div>
 
-          {/* Brand Logotype */}
-          <div className="flex-1 flex justify-center pointer-events-none origin-center">
-            <motion.div style={{ color: textColor, fontSize: windowData.isMobile ? logoFontSizeMobile : logoFontSizeDesktop, fontFamily: "'Cormorant', serif" }} className="flex items-center italic tracking-widest font-medium">
-              <span>V</span>
-              <motion.span style={{ maxWidth: windowData.isMobile ? logoTextMaxWidth : '100px', opacity: windowData.isMobile ? logoTextOpacity : 1 }} className="overflow-hidden flex items-center whitespace-nowrap">oct</motion.span>
-              <span>E</span>
-              <motion.span style={{ maxWidth: windowData.isMobile ? logoTextMaxWidth : '100px', opacity: windowData.isMobile ? logoTextOpacity : 1 }} className="overflow-hidden flex items-center whitespace-nowrap">nsemble</motion.span>
-            </motion.div>
-          </div>
-
-          {/* Action Links */}
-          <div className="flex-1 flex justify-end items-center space-x-3 md:space-x-8">
-            <Link to="/panel" className="group active:scale-90" title="Strefa Artysty">
-              <motion.svg style={{ color: lockColor, width: lockSize, height: lockSize }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`flex-shrink-0 transition-colors duration-300 ${isScrolled ? 'group-hover:!text-stone-900' : 'group-hover:!text-stone-500'}`}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-              </motion.svg>
-            </Link>
-
-            <Link to="/fundacja" className="group active:scale-95 transition-transform flex">
-              <motion.div style={{ width: windowData.isMobile ? btnWidthMobile : 'auto', backgroundColor: btnBgBase, borderColor: btnBorderBase, color: btnTextColor }} className={`relative flex items-center justify-center border h-9 md:h-10 px-4 md:px-5 rounded-lg md:rounded-xl overflow-hidden transition-all duration-300 ${isScrolled ? 'group-hover:!bg-amber-700 group-hover:shadow-lg group-hover:-translate-y-0.5' : 'group-hover:!bg-stone-900 group-hover:!text-stone-100 group-hover:!border-transparent'}`}>
-                {!windowData.isMobile && ( <span className="text-[10px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-colors duration-300">Wesprzyj</span> )}
-                {windowData.isMobile && ( <motion.span style={{ opacity: btnTextOpacity }} className="absolute text-[9px] uppercase font-bold tracking-[0.1em] whitespace-nowrap">Wesprzyj</motion.span> )}
-                {windowData.isMobile && ( <motion.svg style={{ opacity: btnIconOpacity }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="absolute w-4 h-4 flex-shrink-0"> <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" /> </motion.svg> )}
+            {/* Brand Logotype */}
+            <div className="flex-1 flex justify-center pointer-events-none origin-center mr-5 md:mr-0">
+              <motion.div style={{ color: textColor, fontSize: windowData.isMobile ? logoFontSizeMobile : logoFontSizeDesktop, fontFamily: "'Cormorant', serif" }} className="flex items-center italic tracking-widest font-medium">
+                <span>V</span>
+                <motion.span style={{ maxWidth: windowData.isMobile ? logoTextMaxWidth : '100px', opacity: windowData.isMobile ? logoTextOpacity : 1 }} className="overflow-hidden flex items-center whitespace-nowrap">oct</motion.span>
+                <span>E</span>
+                <motion.span style={{ maxWidth: windowData.isMobile ? logoTextMaxWidth : '100px', opacity: windowData.isMobile ? logoTextOpacity : 1 }} className="overflow-hidden flex items-center whitespace-nowrap">nsemble</motion.span>
               </motion.div>
-            </Link>
-          </div>
-        </motion.nav>
-      </div>
+            </div>
 
-      <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
-      <HeroSection />
-      <WhatWeDoSection />
-      <WhatWeSingSection />
-      <TeamSection />
-      <FooterSection />
-    </div>
+            {/* Action Links */}
+            <div className="flex-1 flex justify-end items-center space-x-3 md:space-x-8">
+              <Link to="/panel" className="group active:scale-90" title="Strefa Artysty">
+                <motion.svg style={{ color: lockColor, width: lockSize, height: lockSize }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`flex-shrink-0 transition-colors duration-300 ${isScrolled ? 'group-hover:!text-stone-900' : 'group-hover:!text-stone-500'}`}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </motion.svg>
+              </Link>
+
+              <Link to="/fundacja" className="group active:scale-95 transition-transform flex">
+                <motion.div style={{ width: windowData.isMobile ? btnWidthMobile : 'auto', backgroundColor: btnBgBase, borderColor: btnBorderBase, color: btnTextColor }} className={`relative flex items-center justify-center border h-9 md:h-10 px-4 md:px-5 rounded-lg md:rounded-xl overflow-hidden transition-all duration-300 ${isScrolled ? 'group-hover:!bg-amber-700 group-hover:shadow-lg group-hover:-translate-y-0.5' : 'group-hover:!bg-stone-900 group-hover:!text-stone-100 group-hover:!border-transparent'}`}>
+                  {!windowData.isMobile && ( <span className="text-[10px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-colors duration-300">Wesprzyj</span> )}
+                  {windowData.isMobile && ( <motion.span style={{ opacity: btnTextOpacity }} className="absolute text-[9px] uppercase font-bold tracking-[0.1em] whitespace-nowrap">Wesprzyj</motion.span> )}
+                  {windowData.isMobile && ( <motion.svg style={{ opacity: btnIconOpacity }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="absolute w-4 h-4 flex-shrink-0"> <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" /> </motion.svg> )}
+                </motion.div>
+              </Link>
+            </div>
+          </motion.nav>
+        </div>
+
+        <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
+        <HeroSection />
+        <WhatWeDoSection />
+        <WhatWeSingSection />
+        <TeamSection />
+        <FooterSection />
+      </div>
+    </ReactLenis>
   );
 }
