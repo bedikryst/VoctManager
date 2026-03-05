@@ -33,7 +33,7 @@ services:
       - "443:443"  
     volumes:
       - ./frontend/dist:/usr/share/nginx/html/app:ro
-      
+      - ./maintenance:/usr/share/nginx/html/maintenance:ro
       - ./static:/app/static:ro
       - ./media:/app/media:ro
       
