@@ -1,6 +1,7 @@
 /**
  * @file Home.jsx
  * @description Main landing page orchestrating the scrollytelling experience.
+ * Features a dynamic, scroll-responsive navigation bar and smooth scrolling via Lenis.
  * @author Krystian Bugalski
  */
 
@@ -17,14 +18,15 @@ import FooterSection from './FooterSection';
 import OverlayMenu from './OverlayMenu';
 
 export default function Home() {
+  // --- STATE MANAGEMENT ---
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
   const [windowData, setWindowData] = useState({ 
     vh: window.innerHeight, 
     isMobile: window.innerWidth < 768 
   });
 
+  // --- RESIZE LISTENER ---
   useEffect(() => {
     const handleResize = () => {
       setWindowData({ vh: window.innerHeight, isMobile: window.innerWidth < 768 });
@@ -33,6 +35,7 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // --- SCROLL TRACKING ---
   const { scrollY } = useScroll();
   const start = windowData.vh * 2.8; 
   const end = windowData.vh * 3.7;
@@ -41,35 +44,39 @@ export default function Home() {
     setIsScrolled(latest > start);
   });
 
-  // --- POPRAWIONE KOLORY DLA JASNEGO TŁA ---
+  // ==========================================
+  // NAVIGATION SCROLL ANIMATIONS (Framer Motion)
+  // ==========================================
+  
+  // 1. Dimensions & Spacing
   const navWidth = useTransform(scrollY, [start, end], ["100%", "92%"]);
   const navMaxWidth = useTransform(scrollY, [start, end], ["4000px", "896px"]); 
-  
   const padXStart = windowData.isMobile ? "32px" : "48px";
   const navPaddingX = useTransform(scrollY, [start, end], [padXStart, "24px"]);
-  
   const navTop = useTransform(scrollY, [start, end], ["0px", "24px"]);
   const navPaddingY = useTransform(scrollY, [start, end], ["32px", "14px"]);
   const navRadius = useTransform(scrollY, [start, end], ["0px", "16px"]);
   
+  // 2. Visuals (Background, Blur, Borders)
   const navBg = useTransform(scrollY, [start, end], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.5)"]);
   const navBlur = useTransform(scrollY, [start, end], ["blur(0px)", "blur(24px)"]);
   const navBorder = useTransform(scrollY, [start, end], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.6)"]);
   const navShadow = useTransform(scrollY, [start, end], ["0px 0px 0px rgba(0,0,0,0)", "0px 8px 30px rgba(0,0,0,0.08)"]);
   
+  // 3. Brand Logotype & Typography
   const textColor = useTransform(scrollY, [start, end], ["#1c1917", "#1c1917"]); 
-  
-  const line1Width = useTransform(scrollY, [start, end], ["28px", "20px"]);
-  const line2Width = useTransform(scrollY, [start, end], ["36px", "28px"]);
-
-  const lockColor = useTransform(scrollY, [start, end], ["#1c1917", "#a8a29e"]);
-  const lockSize = useTransform(scrollY, [start, end], ["20px", "16px"]); 
-  
   const logoFontSizeMobile = useTransform(scrollY, [start, end], ["1rem", "0.875rem"]); 
   const logoFontSizeDesktop = useTransform(scrollY, [start, end], ["1.5rem", "1rem"]); 
   const logoTextMaxWidth = useTransform(scrollY, [start, end], ["80px", "0px"]); 
   const logoTextOpacity = useTransform(scrollY, [start, end], [1, 0]);
 
+  // 4. Burger Menu Icon
+  const line1Width = useTransform(scrollY, [start, end], ["28px", "20px"]);
+  const line2Width = useTransform(scrollY, [start, end], ["36px", "28px"]);
+
+  // 5. Action Links & Buttons
+  const lockColor = useTransform(scrollY, [start, end], ["#1c1917", "#a8a29e"]);
+  const lockSize = useTransform(scrollY, [start, end], ["20px", "16px"]); 
   const btnWidthMobile = useTransform(scrollY, [start, end], ["80px", "44px"]);
   const btnBgBase = useTransform(scrollY, [start, end], ["rgba(28,25,23,0)", "rgba(28,25,23,1)"]);
   const btnBorderBase = useTransform(scrollY, [start, end], ["rgba(28,25,23,0.3)", "rgba(28,25,23,0)"]);
@@ -77,6 +84,7 @@ export default function Home() {
   const btnTextOpacity = useTransform(scrollY, [start, end], [1, 0]);
   const btnIconOpacity = useTransform(scrollY, [start, end], [0, 1]);
 
+  // --- LENIS SMOOTH SCROLL CONFIG ---
   const lenisOptions = {
     lerp: 0.08,
     smoothWheel: true,
@@ -88,6 +96,7 @@ export default function Home() {
     <ReactLenis root options={lenisOptions}>
       <div className="bg-[#fdfbf7] text-stone-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
         
+        {/* --- GLOBAL NAVIGATION --- */}
         <div className="fixed top-0 left-0 w-full z-50 flex justify-center pointer-events-none">
           <motion.nav 
             style={{
@@ -100,7 +109,7 @@ export default function Home() {
             }}
             className="pointer-events-auto flex items-center justify-between border shadow-none"
           >
-            {/* Menu Toggle */}
+            {/* 1. Menu Toggle Button */}
             <div className="flex-1 flex justify-start">
               <button onClick={() => setMenuOpen(true)} className="group flex flex-col space-y-1.5 p-3 hover:opacity-50 active:scale-95 transition-opacity" aria-label="Toggle navigation menu">
                 <motion.span style={{ backgroundColor: textColor, width: line1Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-7' : 'group-hover:!w-9'}`} />
@@ -108,7 +117,7 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Brand Logotype */}
+            {/* 2. Brand Logotype */}
             <div className="flex-1 flex justify-center pointer-events-none origin-center mr-5 md:mr-0">
               <motion.div style={{ color: textColor, fontSize: windowData.isMobile ? logoFontSizeMobile : logoFontSizeDesktop, fontFamily: "'Cormorant', serif" }} className="flex items-center italic tracking-widest font-medium">
                 <span>V</span>
@@ -118,7 +127,7 @@ export default function Home() {
               </motion.div>
             </div>
 
-            {/* Action Links */}
+            {/* 3. Call to Actions (Login & Support) */}
             <div className="flex-1 flex justify-end items-center space-x-3 md:space-x-8">
               <Link to="/panel" className="group active:scale-90" title="Strefa Artysty">
                 <motion.svg style={{ color: lockColor, width: lockSize, height: lockSize }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`flex-shrink-0 transition-colors duration-300 ${isScrolled ? 'group-hover:!text-stone-900' : 'group-hover:!text-stone-500'}`}>
@@ -137,12 +146,14 @@ export default function Home() {
           </motion.nav>
         </div>
 
+        {/* --- PAGE SECTIONS --- */}
         <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
         <HeroSection />
         <WhatWeDoSection />
         <WhatWeSingSection />
         <TeamSection />
         <FooterSection />
+        
       </div>
     </ReactLenis>
   );

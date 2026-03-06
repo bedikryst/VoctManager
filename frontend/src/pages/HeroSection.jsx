@@ -1,110 +1,137 @@
 /**
  * @file HeroSection.jsx
  * @description Immersive typographic scrollytelling based on "Architecture of Silence".
- * Absolute minimalism: pure ivory background, a central acoustic string, and flawless 60FPS performance.
+ * Orchestrates a cinematic opening sequence with scroll-linked opacity, blur filters,
+ * and an editorial lateral typographic frame. Minimalist SOTD approach.
  * @author Krystian Bugalski
  */
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useMouseAndGyro } from '../hooks/useMouseAndGyro';
+import { useScrollyAudio } from '../hooks/useScrollyAudio';
 
 export default function HeroSection() {
+  // --- REFS & STATE ---
   const scrollContainerRef = useRef(null);
-  
+  const [isSoundOn, setIsSoundOn] = useState(false);
   const { x: gyroX, y: gyroY } = useMouseAndGyro();
 
+  // --- SCROLL TRACKING ---
   const { scrollYProgress } = useScroll({
     target: scrollContainerRef,
     offset: ["start start", "end end"]
   });
 
-  // --- REŻYSERIA SCEN (Scrollytelling) ---
+  // Init cinematic scroll-responsive audio
+  useScrollyAudio(isSoundOn);
+
+  // --- SCENE 1 CHOREOGRAPHY (Intro) ---
   const scene1Opacity = useTransform(scrollYProgress, [0, 0.15, 0.25], [1, 1, 0]);
-  const scene1Y = useTransform(scrollYProgress, [0, 0.25], [0, -40]);
+  const scene1Y = useTransform(scrollYProgress, [0, 0.25], [0, -60]);
+  const scene1Blur = useTransform(scrollYProgress, [0.15, 0.25], ["blur(0px)", "blur(10px)"]);
 
-  const scene2Opacity = useTransform(scrollYProgress, [0.25, 0.35, 0.55, 0.65], [0, 1, 1, 0]);
-  const scene2Scale = useTransform(scrollYProgress, [0.25, 0.65], [0.95, 1.05]);
+  // --- SCENE 2 CHOREOGRAPHY (Core Message) ---
+  const scene2Opacity = useTransform(scrollYProgress, [0.22, 0.35, 0.55, 0.65], [0, 1, 1, 0]);
+  const scene2Scale = useTransform(scrollYProgress, [0.22, 0.65], [0.92, 1.05]);
+  const scene2Blur = useTransform(scrollYProgress, [0.22, 0.35, 0.55, 0.65], ["blur(20px)", "blur(0px)", "blur(0px)", "blur(20px)"]);
+  const silenceSpacing = useTransform(scrollYProgress, [0.25, 0.4], ["0.5em", "0.1em"]);
 
-  const scene3Opacity = useTransform(scrollYProgress, [0.65, 0.75, 0.9, 1], [0, 1, 1, 0]);
-  const scene3Y = useTransform(scrollYProgress, [0.65, 1], [30, -30]);
+  // --- SCENE 3 CHOREOGRAPHY (Resolution) ---
+  const scene3Opacity = useTransform(scrollYProgress, [0.62, 0.75, 0.9, 1], [0, 1, 1, 0]);
+  const scene3Y = useTransform(scrollYProgress, [0.62, 1], [40, -40]);
+  const scene3Blur = useTransform(scrollYProgress, [0.62, 0.75], ["blur(15px)", "blur(0px)"]);
 
+  // --- UI ELEMENTS ---
   const indicatorOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
+  const editorialY = useTransform(scrollYProgress, [0, 1], [150, -150]);
 
   return (
     <div ref={scrollContainerRef} className="h-[400vh] relative bg-[#fdfbf7]">
       
+      {/* Sound Design Toggle */}
+      <button 
+        onClick={() => setIsSoundOn(!isSoundOn)}
+        className="fixed bottom-8 right-8 z-50 flex items-center gap-3 mix-blend-difference text-stone-100 opacity-60 hover:opacity-100 transition-opacity"
+        aria-label="Toggle ambient sound"
+      >
+        <span className="text-[9px] uppercase tracking-[0.3em] font-medium">
+          Sound [{isSoundOn ? 'On' : 'Off'}]
+        </span>
+        <div className="w-8 h-px bg-current opacity-50" aria-hidden="true"></div>
+      </button>
+
+      {/* Sticky Cinematic Viewport */}
       <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
         
-        {/* --- CENTRALNA STRUNA (Acoustic String) --- */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-stone-200 z-0">
+        {/* Central Timeline Axis */}
+        <div className="absolute top-[10vh] bottom-0 left-1/2 -translate-x-1/2 w-px bg-stone-200/50 z-0 mask-image-linear-bottom pointer-events-none">
           <motion.div 
             style={{ scaleY: scrollYProgress }} 
-            className="w-full h-full bg-[#002395]/40 origin-top"
+            className="w-full h-full bg-[#002395] origin-top opacity-80"
           />
         </div>
 
-        {/* Tło Paralaksy: Concerts Spirituels */}
-        <motion.div 
-          style={{ 
-            x: useTransform(gyroX, [-1, 1], [-20, 20]), 
-            y: useTransform(gyroY, [-1, 1], [-20, 20]),
-            fontFamily: "'Cormorant', serif",
-            WebkitTextStroke: "1px rgba(0, 35, 149, 0.05)", 
-            color: "transparent",
-            willChange: "transform"
-          }} 
-          className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none select-none text-[15vw] leading-none whitespace-nowrap opacity-60 italic"
-          aria-hidden="true"
-        >
-          Concerts Spirituels
-        </motion.div>
+        {/* Editorial Frame (Lateral Typography) */}
+        <div className="absolute left-2 md:-left-58 top-0 h-full flex items-center justify-center z-40 pointer-events-none select-none opacity-40">
+          <motion.div style={{ y: editorialY }}>
+            <div 
+              className="-rotate-90 hidden md:block whitespace-nowrap text-stone-500 text-[20px] uppercase tracking-[0.6em] font-medium"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
+            >
+              Listen &bull; FEEL &bull; Support
+            </div>
+          </motion.div>
+        </div>
 
-        {/* --- SCENA 1 --- */}
+        {/* --- SCENE 1 --- */}
         <motion.div 
-          style={{ opacity: scene1Opacity, y: scene1Y }} 
-          className="absolute z-10 text-center px-6 w-full max-w-2xl bg-[#fdfbf7]/80 backdrop-blur-sm py-8 md:backdrop-blur-none md:bg-transparent"
+          style={{ opacity: scene1Opacity, y: scene1Y, filter: scene1Blur }} 
+          className="absolute z-10 text-center w-full max-w-2xl py-12 md:py-16 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
-          <p className="text-stone-500 font-medium text-xl md:text-3xl italic tracking-wide inline-block bg-[#fdfbf7] px-4" style={{ fontFamily: "'Cormorant', serif" }}>
+          <p className="font-medium text-stone-500 text-xl md:text-3xl italic tracking-wide" style={{ fontFamily: "'Cormorant', serif" }}>
             z tęsknoty, natchnienia i marzenia.
           </p>
-          <p className="mt-6 md:mt-8 text-stone-400 text-sm md:text-base leading-relaxed inline-block bg-[#fdfbf7] px-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          <p className="mt-6 md:mt-8 text-sm md:text-base text-stone-400 leading-relaxed font-light" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Jak anachoreci, w odosobnieniu, z daleka od zgiełku<br className="hidden md:block"/> i muzyki, zatęskniono za muzyką.
           </p>
         </motion.div>
 
-        {/* --- SCENA 2 --- */}
+        {/* --- SCENE 2 --- */}
         <motion.div 
-          style={{ opacity: scene2Opacity, scale: scene2Scale }} 
-          className="absolute z-20 text-center w-full px-4 bg-[#fdfbf7]/80 backdrop-blur-sm py-12 md:backdrop-blur-none md:bg-transparent"
+          style={{ 
+            opacity: scene2Opacity, 
+            scale: scene2Scale, 
+            filter: scene2Blur,
+            background: "radial-gradient(circle, rgba(253,251,247,1) 30%, rgba(253,251,247,0) 70%)"
+          }} 
+          className="absolute z-20 text-center w-[120vw] h-[60vh] md:w-full py-16 md:py-20 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
-          <h2 
-            className="flex flex-col items-center gap-4 md:gap-6 text-4xl md:text-6xl lg:text-8xl font-medium tracking-[0.2em] uppercase text-stone-900"
-            style={{ fontFamily: "'Cormorant', serif" }}
-          >
-            <span className="opacity-80 inline-block bg-[#fdfbf7] px-4">Music</span>
-            <span className="text-[#002395] italic tracking-widest lowercase text-3xl md:text-5xl lg:text-7xl relative">
-              <span className="bg-[#fdfbf7] px-4 md:px-8">— silence —</span>
-            </span>
-            <span className="opacity-80 inline-block bg-[#fdfbf7] px-4">Contemplation</span>
+          <h2 className="flex flex-col items-center gap-4 md:gap-6 text-4xl md:text-6xl lg:text-8xl font-medium uppercase text-stone-900" style={{ fontFamily: "'Cormorant', serif" }}>
+            <span className="opacity-60 inline-block tracking-[0.2em]">Music</span>
+            <motion.span style={{ letterSpacing: silenceSpacing }} className="text-[#002395] italic lowercase text-3xl md:text-5xl lg:text-7xl flex items-center gap-4">
+              <span className="opacity-40 font-light">—</span>silence<span className="opacity-40 font-light">—</span>
+            </motion.span>
+            <span className="opacity-60 inline-block tracking-[0.2em]">Contemplation</span>
           </h2>
         </motion.div>
 
-        {/* --- SCENA 3 --- */}
+        {/* --- SCENE 3 --- */}
         <motion.div 
-          style={{ opacity: scene3Opacity, y: scene3Y }} 
-          className="absolute z-30 text-center px-6 w-full max-w-3xl bg-[#fdfbf7]/80 backdrop-blur-sm py-12 md:backdrop-blur-none md:bg-transparent"
+          style={{ 
+            opacity: scene3Opacity, 
+            filter: scene3Blur,
+            background: "radial-gradient(circle, rgba(253,251,247,1) 30%, rgba(253,251,247,0) 70%)"
+          }} 
+          className="absolute z-20 text-center w-[120vw] h-[60vh] md:w-full py-16 md:py-20 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
-          <div className="space-y-6 text-stone-600 font-medium text-xl md:text-3xl leading-relaxed" style={{ fontFamily: "'Cormorant', serif" }}>
-            <p className="bg-[#fdfbf7] inline-block px-4">Głos jest lustrem duszy.</p><br/>
-            <p className="bg-[#fdfbf7] inline-block px-4 mt-2">Muzyka – przestrzenią spotkania.</p>
-            
-            <div className="pt-8 mt-8 border-t border-[#002395]/10 flex flex-col items-center">
-              {/* ZMIENIONA KOLEJNOŚĆ TEKSTU */}
-              <p className="text-stone-500 text-xl md:text-2xl italic tracking-wide leading-snug bg-[#fdfbf7] px-6 pb-2">
-                z tęsknoty za absolutną jednością brzmienia i ducha
-              </p>
-              <p className="text-stone-800 text-2xl md:text-4xl italic tracking-wide leading-snug bg-[#fdfbf7] px-6 pt-2">
+          <div className="space-y-6 font-medium text-xl md:text-3xl leading-relaxed flex flex-col items-center text-stone-600" style={{ fontFamily: "'Cormorant', serif" }}>
+            <p>Głos jest lustrem duszy.</p>
+            <p>Muzyka – przestrzenią spotkania.</p>
+            <div className="pt-8 mt-8 flex flex-col items-center relative w-full">
+              <div className="absolute top-0 w-32 h-[1px] bg-gradient-to-r from-transparent via-[#002395]/30 to-transparent" aria-hidden="true" />
+              <p className="text-stone-500 text-xl md:text-2xl italic tracking-wide leading-snug">z tęsknoty za absolutną jednością brzmienia i ducha</p>
+              <p className="text-stone-800 text-2xl md:text-4xl italic tracking-wide leading-snug mt-4">
                 powstał <span className="text-[#002395] font-semibold not-italic">VoctEnsemble</span>
               </p>
             </div>
@@ -112,11 +139,8 @@ export default function HeroSection() {
         </motion.div>
 
         {/* Scroll Indicator Guide */}
-        <motion.div 
-          style={{ opacity: indicatorOpacity }} 
-          className="absolute bottom-8 text-[10px] uppercase tracking-[0.4em] font-bold text-[#002395]/60 flex flex-col items-center gap-4 z-40 pointer-events-none"
-        >
-          <span className="bg-[#fdfbf7] px-4">Odkryj sacrum</span>
+        <motion.div style={{ opacity: indicatorOpacity }} className="absolute bottom-8 text-[9px] uppercase tracking-[0.4em] font-medium text-stone-400 flex flex-col items-center gap-4 z-40 pointer-events-none">
+          <span className="px-6 py-1">Odkryj sacrum</span>
         </motion.div>
 
       </div>
