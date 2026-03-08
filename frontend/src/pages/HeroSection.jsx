@@ -2,7 +2,7 @@
  * @file HeroSection.jsx
  * @description Immersive typographic scrollytelling based on "Architecture of Silence".
  * Orchestrates a cinematic opening sequence with scroll-linked opacity, blur filters,
- * and an editorial lateral typographic frame. Minimalist SOTD approach.
+ * and an editorial lateral typographic frame. 
  * @author Krystian Bugalski
  */
 
@@ -10,6 +10,10 @@ import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useMouseAndGyro } from '../hooks/useMouseAndGyro';
 import { useScrollyAudio } from '../hooks/useScrollyAudio';
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 
 export default function HeroSection() {
   // --- REFS & STATE ---
@@ -23,21 +27,25 @@ export default function HeroSection() {
     offset: ["start start", "end end"]
   });
 
-  // Init cinematic scroll-responsive audio
+  // --- AUDIO INIT ---
   useScrollyAudio(isSoundOn);
 
-  // --- SCENE 1 CHOREOGRAPHY (Intro) ---
+  // ==========================================
+  // SCENE CHOREOGRAPHY
+  // ==========================================
+
+  // --- SCENE 1 (Intro) ---
   const scene1Opacity = useTransform(scrollYProgress, [0, 0.15, 0.25], [1, 1, 0]);
   const scene1Y = useTransform(scrollYProgress, [0, 0.25], [0, -60]);
   const scene1Blur = useTransform(scrollYProgress, [0.15, 0.25], ["blur(0px)", "blur(10px)"]);
 
-  // --- SCENE 2 CHOREOGRAPHY (Core Message) ---
+  // --- SCENE 2 (Core Message) ---
   const scene2Opacity = useTransform(scrollYProgress, [0.22, 0.35, 0.55, 0.65], [0, 1, 1, 0]);
   const scene2Scale = useTransform(scrollYProgress, [0.22, 0.65], [0.92, 1.05]);
   const scene2Blur = useTransform(scrollYProgress, [0.22, 0.35, 0.55, 0.65], ["blur(20px)", "blur(0px)", "blur(0px)", "blur(20px)"]);
   const silenceSpacing = useTransform(scrollYProgress, [0.25, 0.4], ["0.5em", "0.1em"]);
 
-  // --- SCENE 3 CHOREOGRAPHY (Resolution) ---
+  // --- SCENE 3 (Resolution) ---
   const scene3Opacity = useTransform(scrollYProgress, [0.62, 0.75, 0.9, 1], [0, 1, 1, 0]);
   const scene3Y = useTransform(scrollYProgress, [0.62, 1], [40, -40]);
   const scene3Blur = useTransform(scrollYProgress, [0.62, 0.75], ["blur(15px)", "blur(0px)"]);
@@ -49,22 +57,22 @@ export default function HeroSection() {
   return (
     <div ref={scrollContainerRef} className="h-[400vh] relative bg-[#fdfbf7]">
       
-      {/* Sound Design Toggle */}
+      {/* --- SOUND DESIGN TOGGLE --- */}
       <button 
         onClick={() => setIsSoundOn(!isSoundOn)}
-        className="fixed bottom-8 right-8 z-50 flex items-center gap-3 mix-blend-difference text-stone-100 opacity-60 hover:opacity-100 transition-opacity"
+        className="hidden md:flex fixed bottom-8 right-8 z-50 items-center gap-3 mix-blend-difference text-stone-100 opacity-60 hover:opacity-100 transition-opacity"
         aria-label="Toggle ambient sound"
       >
         <span className="text-[9px] uppercase tracking-[0.3em] font-medium">
           Sound [{isSoundOn ? 'On' : 'Off'}]
         </span>
-        <div className="w-8 h-px bg-current opacity-50" aria-hidden="true"></div>
+        <div className="w-8 h-px bg-current opacity-50" aria-hidden="true" />
       </button>
 
-      {/* Sticky Cinematic Viewport */}
+      {/* --- STICKY CINEMATIC VIEWPORT --- */}
       <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
-        
-        {/* Central Timeline Axis */}
+
+        {/* --- CENTRAL TIMELINE AXIS --- */}
         <div className="absolute top-[10vh] bottom-0 left-1/2 -translate-x-1/2 w-px bg-stone-200/50 z-0 mask-image-linear-bottom pointer-events-none">
           <motion.div 
             style={{ scaleY: scrollYProgress }} 
@@ -72,7 +80,7 @@ export default function HeroSection() {
           />
         </div>
 
-        {/* Editorial Frame (Lateral Typography) */}
+        {/* --- EDITORIAL FRAME (Lateral Typography) --- */}
         <div className="absolute left-2 md:-left-58 top-0 h-full flex items-center justify-center z-40 pointer-events-none select-none opacity-40">
           <motion.div style={{ y: editorialY }}>
             <div 
@@ -84,6 +92,10 @@ export default function HeroSection() {
           </motion.div>
         </div>
 
+        {/* ========================================== */}
+        {/* SCENES RENDERING */}
+        {/* ========================================== */}
+
         {/* --- SCENE 1 --- */}
         <motion.div 
           style={{ opacity: scene1Opacity, y: scene1Y, filter: scene1Blur }} 
@@ -93,7 +105,7 @@ export default function HeroSection() {
             z tęsknoty, natchnienia i marzenia.
           </p>
           <p className="mt-6 md:mt-8 text-sm md:text-base text-stone-400 leading-relaxed font-light" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Jak anachoreci, w odosobnieniu, z daleka od zgiełku<br className="hidden md:block"/> i muzyki, zatęskniono za muzyką.
+            Jak anachoreci, w odosobnieniu, z daleka od zgiełku<br/> i muzyki, zatęskniono za muzyką.
           </p>
         </motion.div>
 
@@ -123,14 +135,14 @@ export default function HeroSection() {
             filter: scene3Blur,
             background: "radial-gradient(circle, rgba(253,251,247,1) 30%, rgba(253,251,247,0) 70%)"
           }} 
-          className="absolute z-20 text-center w-[120vw] h-[60vh] md:w-full py-16 md:py-20 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
+          className="absolute z-20 text-center w-[120vw] h-[90vh] md:h-[45vh] md:w-full py-16 md:py-20 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
           <div className="space-y-6 font-medium text-xl md:text-3xl leading-relaxed flex flex-col items-center text-stone-600" style={{ fontFamily: "'Cormorant', serif" }}>
             <p>Głos jest lustrem duszy.</p>
             <p>Muzyka – przestrzenią spotkania.</p>
             <div className="pt-8 mt-8 flex flex-col items-center relative w-full">
-              <div className="absolute top-0 w-32 h-[1px] bg-gradient-to-r from-transparent via-[#002395]/30 to-transparent" aria-hidden="true" />
-              <p className="text-stone-500 text-xl md:text-2xl italic tracking-wide leading-snug">z tęsknoty za absolutną jednością brzmienia i ducha</p>
+              <div className="absolute top-0 md:-top-3 w-32 h-[1px] bg-gradient-to-r from-transparent via-[#002395]/30 to-transparent" aria-hidden="true" />
+              <p className="text-stone-500 text-[17px] md:text-2xl italic tracking-wide leading-snug">z tęsknoty za absolutną jednością brzmienia i ducha</p>
               <p className="text-stone-800 text-2xl md:text-4xl italic tracking-wide leading-snug mt-4">
                 powstał <span className="text-[#002395] font-semibold not-italic">VoctEnsemble</span>
               </p>
@@ -138,7 +150,7 @@ export default function HeroSection() {
           </div>
         </motion.div>
 
-        {/* Scroll Indicator Guide */}
+        {/* --- SCROLL INDICATOR GUIDE --- */}
         <motion.div style={{ opacity: indicatorOpacity }} className="absolute bottom-8 text-[9px] uppercase tracking-[0.4em] font-medium text-stone-400 flex flex-col items-center gap-4 z-40 pointer-events-none">
           <span className="px-6 py-1">Odkryj sacrum</span>
         </motion.div>

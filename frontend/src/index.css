@@ -19,3 +19,7 @@ html.lenis, html.lenis body {
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
 }
+
+html {
+  scrollbar-gutter: stable;
+}
