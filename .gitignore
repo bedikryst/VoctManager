@@ -27,3 +27,5 @@ frontend/public/*.webp
 frontend/public/*.mp4
 frontend/public/*.mov
 frontend/public/*.webm
+
+gunicorn.ctl

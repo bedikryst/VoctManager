@@ -23,3 +23,15 @@ html.lenis, html.lenis body {
 html {
   scrollbar-gutter: stable;
 }
+
+body {
+  cursor: none;
+}
+a, button, input, textarea, select {
+  cursor: none;
+}
+
+.force-no-cursor,
+.force-no-cursor * {
+  cursor: none !important;
+}

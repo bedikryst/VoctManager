@@ -8,7 +8,7 @@
 
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useMouseAndGyro } from '../hooks/useMouseAndGyro';
+import { useMouseAndGyro } from '../../hooks/useMouseAndGyro';
 
 // Data model for the board members
 const board = [

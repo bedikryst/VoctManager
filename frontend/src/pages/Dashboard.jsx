@@ -7,11 +7,11 @@
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Login from '../components/Login';
-import ProjectList from '../components/ProjectList';
-import ProjectDetails from '../components/ProjectDetails';
-import ArchiveList from '../components/ArchiveList';
-import AdminPanel from '../components/AdminPanel';
+import Login from './Login';
+import ProjectList from '../components/dashboard/ProjectList';
+import ProjectDetails from '../components/dashboard/ProjectDetails';
+import ArchiveList from '../components/dashboard/ArchiveList';
+import AdminPanel from '../components/dashboard/AdminPanel';
 
 // Securely fetch the API URL from environment variables to support Prod/Dev deployments
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';

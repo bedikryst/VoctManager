@@ -8,6 +8,8 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useMotionValue } from 'framer-motion';
+import { useCursor } from '../../context/CursorContext';
+import ElegantHeading from '../ui/ElegantHeading';
 
 // ==========================================
 // ANIMATION VARIANTS
@@ -63,7 +65,12 @@ const collaborators = [
  * Wrapper for soft, blurred reveal animations.
  */
 const FadeBlurIn = ({ children, delay = 0, className = "" }) => (
-  <motion.div variants={blurVariants} custom={delay} className={className}>
+  <motion.div 
+    variants={blurVariants} 
+    custom={delay} 
+    className={className}
+    style={{ willChange: "transform, opacity, filter" }}
+  >
     {children}
   </motion.div>
 );
@@ -113,7 +120,9 @@ const CollabItem = ({ role, name, description }) => (
 
 export default function WhatWeDoSection() {
   const sectionRef = useRef(null);
-  
+
+  const { enterDrag, leaveDrag, enterPointer, leavePointer } = useCursor();
+
   // --- SCROLL & PARALLAX KINEMATICS ---
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
   const yParallaxFast = useTransform(scrollYProgress, [0, 1], [60, -60]); 
@@ -179,16 +188,22 @@ export default function WhatWeDoSection() {
                 <FadeBlurIn>
                   <p className="text-[#002395] text-[10px] font-bold uppercase tracking-[0.3em] mb-4">I. Działalność</p>
                 </FadeBlurIn>
-                <MaskReveal delay={0.1}>
-                  <h2 className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95]" style={{ fontFamily: "'Cormorant', serif" }}>
-                    Concerts<br/>Spirituels
-                  </h2>
+                <MaskReveal delay={0.1} className="flex flex-col">
+                  {/* Używamy ElegantHeading i pozwalamy mu naturalnie się złamać z klasą w-min lub dwiema instancjami */}
+                  <ElegantHeading 
+                    text="Concerts" 
+                    className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95] inline-block" 
+                  />
+                  <ElegantHeading 
+                    text="Spirituels" 
+                    className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95] inline-block" 
+                  />
                 </MaskReveal>
               </div>
             </div>
           </div>
           
-          <motion.div style={{ y: yParallaxFast }} className="md:w-7/12 flex flex-col justify-center relative z-0 md:pl-16 lg:pl-28 md:py-50 mt-6 md:mt-0">
+          <motion.div style={{ y: yParallaxFast, willChange: "transform" }} className="md:w-7/12 flex flex-col justify-center relative z-0 md:pl-16 lg:pl-28 md:py-50 mt-6 md:mt-0">
             <FadeBlurIn delay={0.2}>
               <p className="text-2xl md:text-4xl text-stone-800 leading-snug mb-8" style={{ fontFamily: "'Cormorant', serif" }}>
                 Przywracamy tradycję dawnych <span className="text-[#002395] italic">Concerts Spirituels</span>. 
@@ -222,15 +237,20 @@ export default function WhatWeDoSection() {
                   <p className="text-[#002395] text-[10px] font-bold uppercase tracking-[0.3em] mb-4">II. Interdyscyplinarność</p>
                 </FadeBlurIn>
                 <MaskReveal delay={0.1}>
-                  <h2 className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95]" style={{ fontFamily: "'Cormorant', serif" }}>
-                    Synergie<br/><span className="italic">&</span>Wirtuozeria
-                  </h2>
+                  <ElegantHeading 
+                    text="Synergie" 
+                    className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95] inline-block" 
+                  /><br/><span className="italic text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95] -ml-2" style={{ fontFamily: "'Cormorant', serif" }}>&</span>
+                  <ElegantHeading 
+                    text="Wirtuozeria" 
+                    className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95] inline-block" 
+                  />
                 </MaskReveal>
               </div>
             </div>
           </div>
           
-          <motion.div style={{ y: yParallaxSlow }} className="md:w-7/12 flex flex-col justify-center relative z-0 md:pl-16 lg:pl-28 md:py-24 mt-6 md:mt-0">
+          <motion.div style={{ y: yParallaxSlow, willChange: "transform" }} className="md:w-7/12 flex flex-col justify-center relative z-0 md:pl-16 lg:pl-28 md:py-24 mt-6 md:mt-0">
             <FadeBlurIn delay={0.2}>
               <p className="text-2xl md:text-4xl text-stone-800 leading-snug mb-12" style={{ fontFamily: "'Cormorant', serif" }}>
                 Nasze koncerty to nowoczesne misteria. Aby dźwięk mógł w pełni rezonować z przestrzenią, zapraszamy do współpracy wybitnych mistrzów formy, światła i instrumentu.
@@ -238,14 +258,17 @@ export default function WhatWeDoSection() {
             </FadeBlurIn>
 
             {/* DRAG SLIDER ENGINE */}
-            <div className="w-full relative">
+            <div className="w-full relative cursor-none" onMouseEnter={enterDrag} onMouseLeave={leaveDrag}>
               <FadeBlurIn delay={0.3}>
-                <div ref={sliderRef} className="overflow-hidden cursor-grab active:cursor-grabbing pb-2 -mx-6 px-6 md:mx-0 md:px-0">
+                <div 
+                  ref={sliderRef} 
+                  className="overflow-hidden pb-2 -mx-6 px-6 md:mx-0 md:px-0"
+                >
                   <motion.div 
                     drag="x" 
                     dragConstraints={{ right: 0, left: -sliderWidth }} 
                     style={{ x }} 
-                    className="flex gap-6 md:gap-12"
+                    className="flex gap-6 md:gap-12 force-no-cursor"
                   >
                     {collaborators.map((item, idx) => (
                       <CollabItem key={idx} role={item.role} name={item.name} description={item.desc} />
@@ -281,15 +304,21 @@ export default function WhatWeDoSection() {
                   <p className="text-[#002395] text-[10px] font-bold uppercase tracking-[0.3em] mb-4">III. Wydarzenia</p>
                 </FadeBlurIn>
                 <MaskReveal delay={0.1}>
-                  <h2 className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95]" style={{ fontFamily: "'Cormorant', serif" }}>
-                    Przestrzenie<br/>Sacrum
-                  </h2>
+                  <ElegantHeading 
+                    text="Przestrzenie" 
+                    className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95] inline-block" 
+                  />
+                <br/>
+                <ElegantHeading 
+                    text="Sacrum" 
+                    className="text-5xl md:text-6xl lg:text-8xl font-medium tracking-tight leading-[0.95] inline-block" 
+                  />
                 </MaskReveal>
               </div>
             </div>
           </div>
           
-          <motion.div style={{ y: yParallaxFast }} className="md:w-7/12 flex flex-col justify-center gap-12 relative z-0 md:pl-16 lg:pl-28 md:py-24 mt-6 md:mt-0">
+          <motion.div style={{ y: yParallaxFast, willChange: "transform" }} className="md:w-7/12 flex flex-col justify-center gap-12 relative z-0 md:pl-16 lg:pl-28 md:py-24 mt-6 md:mt-0">
             <FadeBlurIn delay={0.2}>
               <div className="relative pl-8 md:pl-0 py-4">
                 <motion.div 

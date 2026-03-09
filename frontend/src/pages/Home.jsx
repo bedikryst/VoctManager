@@ -5,21 +5,21 @@
  * @author Krystian Bugalski
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
 import { ReactLenis } from 'lenis/react';
 import { useAppStore } from '../store/useAppStore';
 
 // --- COMPONENTS ---
-import HeroSection from './HeroSection'; 
-import WhatWeDoSection from './WhatWeDoSection';
-import WhatWeSingSection from './WhatWeSingSection';
-import TeamSection from './TeamSection';
-import FooterSection from './FooterSection';
-import OverlayMenu from './OverlayMenu';
-import Preloader from '../components/Preloader';
-import NoiseOverlay from '../components/NoiseOverlay';
+import HeroSection from '../components/home/HeroSection'; 
+import WhatWeDoSection from '../components/home/WhatWeDoSection';
+import WhatWeSingSection from '../components/home/WhatWeSingSection';
+import TeamSection from '../components/home/TeamSection';
+import FooterSection from '../components/layout/FooterSection';
+import OverlayMenu from '../components/layout/OverlayMenu';
+import Preloader from '../components/ui/Preloader';
+import NoiseOverlay from '../components/ui/NoiseOverlay';
 
 // ==========================================
 // MAIN COMPONENT
@@ -35,62 +35,70 @@ export default function Home() {
   });
   const isLoaded = useAppStore((state) => state.isLoaded);
 
+  const heroRef = useRef(null);
+  
   // --- WINDOW RESIZE LISTENER ---
   useEffect(() => {
-    const handleResize = () => setWindowData({ vh: window.innerHeight, isMobile: window.innerWidth < 768 });
+    let timeoutId;
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setWindowData({ vh: window.innerHeight, isMobile: window.innerWidth < 768 });
+      }, 200); 
+    };
+    
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
-  // --- SCROLL KINEMATICS ---
-  const { scrollY } = useScroll();
-  const start = windowData.vh * 2.8; 
-  const end = windowData.vh * 3.7;
+// --- SCROLL KINEMATICS (BASED ON HERO SECTION) ---
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["end 99%", "end 20%"] 
+  });
 
-  useMotionValueEvent(scrollY, "change", (latest) => setIsScrolled(latest > start));
+  useMotionValueEvent(heroProgress, "change", (latest) => setIsScrolled(latest > 0));
 
   // ==========================================
   // NAVIGATION SCROLL ANIMATIONS
   // ==========================================
   
-  // 1. Dimensions & Spacing
-  const navWidth = useTransform(scrollY, [start, end], ["100%", "92%"]);
-  const navMaxWidth = useTransform(scrollY, [start, end], ["4000px", "896px"]); 
+  const navWidth = useTransform(heroProgress, [0, 1], ["100%", "92%"]);
+  const navMaxWidth = useTransform(heroProgress, [0, 1], ["4000px", "896px"]); 
   const padXStart = windowData.isMobile ? "32px" : "48px";
-  const navPaddingX = useTransform(scrollY, [start, end], [padXStart, "24px"]);
-  const navTop = useTransform(scrollY, [start, end], ["0px", "24px"]);
-  const navPaddingY = useTransform(scrollY, [start, end], ["32px", "14px"]);
-  const navRadius = useTransform(scrollY, [start, end], ["0px", "16px"]);
+  const navPaddingX = useTransform(heroProgress, [0, 1], [padXStart, "24px"]);
+  const navTop = useTransform(heroProgress, [0, 1], ["0px", "24px"]);
+  const navPaddingY = useTransform(heroProgress, [0, 1], ["32px", "14px"]);
+  const navRadius = useTransform(heroProgress, [0, 1], ["0px", "16px"]);
   
-  // 2. Visuals (Background, Blur, Borders, Shadow)
-  const navBg = useTransform(scrollY, [start, end], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.5)"]);
-  const navBlur = useTransform(scrollY, [start, end], ["blur(0px)", "blur(24px)"]);
-  const navBorder = useTransform(scrollY, [start, end], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.6)"]);
-  const navShadow = useTransform(scrollY, [start, end], ["0px 0px 0px rgba(0,0,0,0)", "0px 8px 30px rgba(0,0,0,0.08)"]);
+  const navBg = useTransform(heroProgress, [0, 1], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.5)"]);
+  const navBlur = useTransform(heroProgress, [0, 1], ["blur(0px)", "blur(24px)"]);
+  const navBorder = useTransform(heroProgress, [0, 1], ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.6)"]);
+  const navShadow = useTransform(heroProgress, [0, 1], ["0px 0px 0px rgba(0,0,0,0)", "0px 8px 30px rgba(0,0,0,0.08)"]);
   
-  // 3. Brand Logotype & Typography
-  const textColor = useTransform(scrollY, [start, end], ["#1c1917", "#1c1917"]); 
-  const logoFontSizeMobile = useTransform(scrollY, [start, end], ["1rem", "0.875rem"]); 
-  const logoFontSizeDesktop = useTransform(scrollY, [start, end], ["1.5rem", "1rem"]); 
-  const logoTextMaxWidth = useTransform(scrollY, [start, end], ["80px", "0px"]); 
-  const logoTextOpacity = useTransform(scrollY, [start, end], [1, 0]);
+  const textColor = useTransform(heroProgress, [0, 1], ["#1c1917", "#1c1917"]); 
+  const logoFontSizeMobile = useTransform(heroProgress, [0, 1], ["1rem", "0.875rem"]); 
+  const logoFontSizeDesktop = useTransform(heroProgress, [0, 1], ["1.5rem", "1rem"]); 
+  const logoTextMaxWidth = useTransform(heroProgress, [0, 1], ["80px", "0px"]); 
+  const logoTextOpacity = useTransform(heroProgress, [0, 1], [1, 0]);
   
-  // 4. Burger Menu Icon
-  const line1Width = useTransform(scrollY, [start, end], ["28px", "20px"]);
-  const line2Width = useTransform(scrollY, [start, end], ["36px", "28px"]);
+  const line1Width = useTransform(heroProgress, [0, 1], ["28px", "20px"]);
+  const line2Width = useTransform(heroProgress, [0, 1], ["36px", "28px"]);
   
-  // 5. Action Links & Buttons
-  const lockColor = useTransform(scrollY, [start, end], ["#1c1917", "#a8a29e"]);
-  const lockSize = useTransform(scrollY, [start, end], ["20px", "16px"]); 
-  const btnWidthMobile = useTransform(scrollY, [start, end], ["80px", "44px"]);
-  const btnBgBase = useTransform(scrollY, [start, end], ["rgba(28,25,23,0)", "rgba(28,25,23,1)"]);
-  const btnBorderBase = useTransform(scrollY, [start, end], ["rgba(28,25,23,0.3)", "rgba(28,25,23,0)"]);
-  const btnTextColor = useTransform(scrollY, [start, end], ["#1c1917", "#f5f5f4"]);
-  const btnTextOpacity = useTransform(scrollY, [start, end], [1, 0]);
-  const btnIconOpacity = useTransform(scrollY, [start, end], [0, 1]);
+  const lockColor = useTransform(heroProgress, [0, 1], ["#1c1917", "#a8a29e"]);
+  const lockSize = useTransform(heroProgress, [0, 1], ["20px", "16px"]); 
+  const btnWidthMobile = useTransform(heroProgress, [0, 1], ["80px", "44px"]);
+  const btnBgBase = useTransform(heroProgress, [0, 1], ["rgba(28,25,23,0)", "rgba(28,25,23,1)"]);
+  const btnBorderBase = useTransform(heroProgress, [0, 1], ["rgba(28,25,23,0.3)", "rgba(28,25,23,0)"]);
+  const btnTextColor = useTransform(heroProgress, [0, 1], ["#1c1917", "#f5f5f4"]);
+  const btnTextOpacity = useTransform(heroProgress, [0, 1], [1, 0]);
+  const btnIconOpacity = useTransform(heroProgress, [0, 1], [0, 1]);
 
   return (
-    <ReactLenis root options={{ lerp: 0.08, smoothWheel: true, smoothTouch: false, syncTouch: true }} isStopped={!isLoaded}>
+    <ReactLenis root options={{ lerp: 0.10, smoothWheel: true, smoothTouch: false, syncTouch: true }} isStopped={!isLoaded}>
       
       {/* --- GLOBAL OVERLAYS --- */}
       <Preloader />
@@ -120,9 +128,9 @@ export default function Home() {
           {/* 2. Brand Logotype (Synchronized with Preloader) */}
           <div className="flex-1 flex justify-center pointer-events-none origin-center mr-5 md:mr-0">
             <motion.div 
-              initial={{ y: -80, opacity: 0 }}
+              initial={{ y: -60, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 2.2, delay: 2, ease: [0.76, 0, 0.24, 1] }} 
+              transition={{ duration: 2.2, delay: 1.8, ease: [0.5, 1, 0.89, 1] }} 
               style={{ color: textColor, fontSize: windowData.isMobile ? logoFontSizeMobile : logoFontSizeDesktop, fontFamily: "'Cormorant', serif" }} 
               className="flex items-center italic tracking-widest font-medium"
             >
@@ -154,7 +162,9 @@ export default function Home() {
       {/* --- PAGE LAYOUT --- */}
       <div className={`bg-[#fdfbf7] text-stone-900 ${!isLoaded ? 'overflow-hidden h-screen' : ''}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
         <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
-        <HeroSection />
+        <div ref={heroRef}>
+          <HeroSection />
+        </div>
         <WhatWeDoSection />
         <WhatWeSingSection />
         <TeamSection />

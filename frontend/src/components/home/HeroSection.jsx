@@ -8,8 +8,8 @@
 
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useMouseAndGyro } from '../hooks/useMouseAndGyro';
-import { useScrollyAudio } from '../hooks/useScrollyAudio';
+import { useMouseAndGyro } from '../../hooks/useMouseAndGyro';
+import { useScrollyAudio } from '../../hooks/useScrollyAudio';
 
 // ==========================================
 // MAIN COMPONENT
@@ -81,10 +81,10 @@ export default function HeroSection() {
         </div>
 
         {/* --- EDITORIAL FRAME (Lateral Typography) --- */}
-        <div className="absolute left-2 md:-left-58 top-0 h-full flex items-center justify-center z-40 pointer-events-none select-none opacity-40">
+        <div className="absolute -left-43 top-0 h-full flex items-center justify-center z-40 pointer-events-none select-none opacity-40">
           <motion.div style={{ y: editorialY }}>
             <div 
-              className="-rotate-90 hidden md:block whitespace-nowrap text-stone-500 text-[20px] uppercase tracking-[0.6em] font-medium"
+              className="-rotate-90 hidden md:block whitespace-nowrap text-stone-500 text-[15px] uppercase tracking-[0.6em] font-medium"
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
               Listen &bull; FEEL &bull; Support
@@ -98,14 +98,19 @@ export default function HeroSection() {
 
         {/* --- SCENE 1 --- */}
         <motion.div 
-          style={{ opacity: scene1Opacity, y: scene1Y, filter: scene1Blur }} 
+          style={{ 
+            opacity: scene1Opacity, 
+            y: scene1Y, 
+            filter: scene1Blur,
+            willChange: "transform, opacity, filter" 
+          }} 
           className="absolute z-10 text-center w-full max-w-2xl py-12 md:py-16 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
           <p className="font-medium text-stone-500 text-xl md:text-3xl italic tracking-wide" style={{ fontFamily: "'Cormorant', serif" }}>
             z tęsknoty, natchnienia i marzenia.
           </p>
-          <p className="mt-6 md:mt-8 text-sm md:text-base text-stone-400 leading-relaxed font-light" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Jak anachoreci, w odosobnieniu, z daleka od zgiełku<br/> i muzyki, zatęskniono za muzyką.
+          <p className="mt-6 md:mt-8 px-4 text-sm md:text-base text-stone-400 leading-relaxed font-light" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            Jak anachoreci, w odosobnieniu, z daleka od zgiełku i muzyki, zatęskniono za muzyką.
           </p>
         </motion.div>
 
@@ -115,11 +120,12 @@ export default function HeroSection() {
             opacity: scene2Opacity, 
             scale: scene2Scale, 
             filter: scene2Blur,
-            background: "radial-gradient(circle, rgba(253,251,247,1) 30%, rgba(253,251,247,0) 70%)"
+            willChange: "transform, opacity, filter",
+            background: "linear-gradient(to bottom, rgba(253,251,247,0) 0%, rgba(253,251,247,1) 25%, rgba(253,251,247,1) 75%, rgba(253,251,247,0) 100%)"
           }} 
-          className="absolute z-20 text-center w-[120vw] h-[60vh] md:w-full py-16 md:py-20 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
+          className="absolute z-20 text-center w-[120vw] h-[55vh] md:h-[70vh] md:w-full py-16 md:py-20 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
-          <h2 className="flex flex-col items-center gap-4 md:gap-6 text-4xl md:text-6xl lg:text-8xl font-medium uppercase text-stone-900" style={{ fontFamily: "'Cormorant', serif" }}>
+          <h2 className="flex flex-col items-center gap-4 md:gap-6 text-3xl md:text-6xl lg:text-8xl font-medium uppercase text-stone-900" style={{ fontFamily: "'Cormorant', serif" }}>
             <span className="opacity-60 inline-block tracking-[0.2em]">Music</span>
             <motion.span style={{ letterSpacing: silenceSpacing }} className="text-[#002395] italic lowercase text-3xl md:text-5xl lg:text-7xl flex items-center gap-4">
               <span className="opacity-40 font-light">—</span>silence<span className="opacity-40 font-light">—</span>
@@ -133,17 +139,19 @@ export default function HeroSection() {
           style={{ 
             opacity: scene3Opacity, 
             filter: scene3Blur,
-            background: "radial-gradient(circle, rgba(253,251,247,1) 30%, rgba(253,251,247,0) 70%)"
+            y: scene3Y,
+            willChange: "transform, opacity, filter", 
+            background: "linear-gradient(to bottom, rgba(253,251,247,0) 0%, rgba(253,251,247,1) 20%, rgba(253,251,247,1) 80%, rgba(253,251,247,0) 100%)"
           }} 
-          className="absolute z-20 text-center w-[120vw] h-[90vh] md:h-[45vh] md:w-full py-16 md:py-20 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
+          className="absolute z-20 text-center w-[120vw] h-[60vh] md:w-full py-16 md:py-20 px-6 md:px-0 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
-          <div className="space-y-6 font-medium text-xl md:text-3xl leading-relaxed flex flex-col items-center text-stone-600" style={{ fontFamily: "'Cormorant', serif" }}>
+          <div className="space-y-4 md:space-y-6 font-medium text-lg md:text-3xl leading-relaxed flex flex-col items-center text-stone-600 max-w-3xl w-full" style={{ fontFamily: "'Cormorant', serif" }}>
             <p>Głos jest lustrem duszy.</p>
             <p>Muzyka – przestrzenią spotkania.</p>
-            <div className="pt-8 mt-8 flex flex-col items-center relative w-full">
-              <div className="absolute top-0 md:-top-3 w-32 h-[1px] bg-gradient-to-r from-transparent via-[#002395]/30 to-transparent" aria-hidden="true" />
-              <p className="text-stone-500 text-[17px] md:text-2xl italic tracking-wide leading-snug">z tęsknoty za absolutną jednością brzmienia i ducha</p>
-              <p className="text-stone-800 text-2xl md:text-4xl italic tracking-wide leading-snug mt-4">
+            <div className="pt-6 mt-6 md:pt-8 md:mt-8 flex flex-col items-center relative w-full">
+              <div className="absolute top-0 md:-top-3 w-24 md:w-32 h-[1px] bg-gradient-to-r from-transparent via-[#002395]/30 to-transparent" aria-hidden="true" />
+              <p className="text-stone-500 text-[15px] md:text-2xl italic tracking-wide leading-snug">z tęsknoty za absolutną jednością brzmienia i ducha</p>
+              <p className="text-stone-800 text-xl md:text-4xl italic tracking-wide leading-snug mt-3 md:mt-4">
                 powstał <span className="text-[#002395] font-semibold not-italic">VoctEnsemble</span>
               </p>
             </div>
