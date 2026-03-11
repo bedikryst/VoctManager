@@ -1,8 +1,9 @@
 /**
  * @file HeroSection.jsx
- * @description Immersive typographic scrollytelling based on "Architecture of Silence".
- * Orchestrates a cinematic opening sequence with scroll-linked opacity, blur filters,
- * and an editorial lateral typographic frame. 
+ * @description Immersive typographic scrollytelling entry point.
+ * Orchestrates a cinematic opening sequence utilizing scroll-linked opacity,
+ * complex blur filters, and an editorial lateral typographic frame.
+ * Acts as the visual and thematic anchor for the "Architecture of Silence" concept.
  * @author Krystian Bugalski
  */
 
@@ -11,57 +12,65 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useMouseAndGyro } from '../../hooks/useMouseAndGyro';
 import { useScrollyAudio } from '../../hooks/useScrollyAudio';
 
-// ==========================================
-// MAIN COMPONENT
-// ==========================================
-
 export default function HeroSection() {
-  // --- REFS & STATE ---
+  // ==========================================
+  // STATE & REFERENCES
+  // ==========================================
+  
   const scrollContainerRef = useRef(null);
   const [isSoundOn, setIsSoundOn] = useState(false);
+  
+  // Custom hooks for interactive audio-visual feedback
   const { x: gyroX, y: gyroY } = useMouseAndGyro();
+  useScrollyAudio(isSoundOn);
 
-  // --- SCROLL TRACKING ---
+  // ==========================================
+  // SCROLL KINEMATICS
+  // ==========================================
+  
   const { scrollYProgress } = useScroll({
     target: scrollContainerRef,
     offset: ["start start", "end end"]
   });
 
-  // --- AUDIO INIT ---
-  useScrollyAudio(isSoundOn);
-
-  // ==========================================
-  // SCENE CHOREOGRAPHY
-  // ==========================================
-
-  // --- SCENE 1 (Intro) ---
+  // --- SCENE 1: The Intro (0% - 25%) ---
+  // Fades out and blurs the initial poetic text as the user starts scrolling
   const scene1Opacity = useTransform(scrollYProgress, [0, 0.15, 0.25], [1, 1, 0]);
   const scene1Y = useTransform(scrollYProgress, [0, 0.25], [0, -60]);
   const scene1Blur = useTransform(scrollYProgress, [0.15, 0.25], ["blur(0px)", "blur(10px)"]);
 
-  // --- SCENE 2 (Core Message) ---
+  // --- SCENE 2: Core Message (22% - 65%) ---
+  // A sharp, monumental typographic reveal that scales up and refocuses
   const scene2Opacity = useTransform(scrollYProgress, [0.22, 0.35, 0.55, 0.65], [0, 1, 1, 0]);
   const scene2Scale = useTransform(scrollYProgress, [0.22, 0.65], [0.92, 1.05]);
   const scene2Blur = useTransform(scrollYProgress, [0.22, 0.35, 0.55, 0.65], ["blur(20px)", "blur(0px)", "blur(0px)", "blur(20px)"]);
   const silenceSpacing = useTransform(scrollYProgress, [0.25, 0.4], ["0.5em", "0.1em"]);
 
-  // --- SCENE 3 (Resolution) ---
-  const scene3Opacity = useTransform(scrollYProgress, [0.62, 0.75, 0.9, 1], [0, 1, 1, 0]);
-  const scene3Y = useTransform(scrollYProgress, [0.62, 1], [40, -40]);
+  // --- SCENE 3: Resolution (62% - 100%) ---
+  // The final manifesto statement that leads into the next section
+  const scene3Opacity = useTransform(scrollYProgress, [0.62, 0.72, 0.85, 0.95], [0, 1, 1, 0]);
+  const scene3Y = useTransform(scrollYProgress, [0.62, 1], [40, -80]);
   const scene3Blur = useTransform(scrollYProgress, [0.62, 0.75], ["blur(15px)", "blur(0px)"]);
 
-  // --- UI ELEMENTS ---
+  // --- GLOBAL UI ELEMENTS ---
   const indicatorOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
   const editorialY = useTransform(scrollYProgress, [0, 1], [150, -150]);
 
+  // ==========================================
+  // RENDER
+  // ==========================================
+
   return (
-    <div ref={scrollContainerRef} className="h-[400vh] relative bg-[#fdfbf7]">
+    <motion.div 
+      ref={scrollContainerRef} 
+      className="h-[250vh] md:h-[400vh] relative"
+    >
       
       {/* --- SOUND DESIGN TOGGLE --- */}
       <button 
         onClick={() => setIsSoundOn(!isSoundOn)}
         className="hidden md:flex fixed bottom-8 right-8 z-50 items-center gap-3 mix-blend-difference text-stone-100 opacity-60 hover:opacity-100 transition-opacity"
-        aria-label="Toggle ambient sound"
+        aria-label={isSoundOn ? "Disable ambient sound" : "Enable ambient sound"}
       >
         <span className="text-[9px] uppercase tracking-[0.3em] font-medium">
           Sound [{isSoundOn ? 'On' : 'Off'}]
@@ -73,11 +82,13 @@ export default function HeroSection() {
       <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
 
         {/* --- CENTRAL TIMELINE AXIS --- */}
-        <div className="absolute top-[10vh] bottom-0 left-1/2 -translate-x-1/2 w-px bg-stone-200/50 z-0 mask-image-linear-bottom pointer-events-none">
+        <div className="absolute top-[10vh] bottom-0 left-1/2 -translate-x-1/2 w-px bg-stone-200/50 z-0 pointer-events-none">
           <motion.div 
             style={{ scaleY: scrollYProgress }} 
-            className="w-full h-full bg-[#002395] origin-top opacity-80"
+            className="w-full h-full bg-[#002395] origin-top opacity-100"
           />
+          {/* Gradient fade-out at the very bottom of the axis */}
+          <div className="absolute top-[400vh] left-[-10px] w-5 h-48 bg-gradient-to-t from-[#fdfbf7] to-transparent z-10" />
         </div>
 
         {/* --- EDITORIAL FRAME (Lateral Typography) --- */}
@@ -110,7 +121,7 @@ export default function HeroSection() {
             z tęsknoty, natchnienia i marzenia.
           </p>
           <p className="mt-6 md:mt-8 px-4 text-sm md:text-base text-stone-400 leading-relaxed font-light" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Jak anachoreci, w odosobnieniu, z daleka od zgiełku i muzyki, zatęskniono za muzyką.
+            Jak anachoreci, w odosobnieniu, z daleka od zgiełku<br className="hidden md:block" />i muzyki, zatęskniono za muzyką.
           </p>
         </motion.div>
 
@@ -164,6 +175,12 @@ export default function HeroSection() {
         </motion.div>
 
       </div>
-    </div>
+      
+      {/* Invisible spacer connecting the axis to the next section */}
+      <div
+        className="absolute top-[330vh] left-1/2 -translate-x-1/2 w-20 h-48 bg-gradient-to-t from-[#fdfbf7] to-transparent z-50 pointer-events-none" 
+        aria-hidden="true"
+      />
+    </motion.div>
   );
 }

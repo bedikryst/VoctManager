@@ -60,7 +60,16 @@ export default function CustomCursor() {
       border: "1px solid rgba(168, 162, 158, 0.4)",
       x: "-50%",
       y: "-50%",
-    }
+    },
+    pointer: {
+      width: 0,
+      height: 0,
+      backgroundColor: "rgba(168, 162, 158, 0.6)",
+      x: "-50%",
+      y: "-50%",
+      backdropFilter: "blur(0px)",
+      border: "0px solid rgba(168, 162, 158, 0)",
+    },
   };
 
   // ==========================================
@@ -69,7 +78,7 @@ export default function CustomCursor() {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 z-[9999] pointer-events-none flex items-center justify-center rounded-full overflow-hidden"
+      className="hidden md:block fixed top-0 left-0 z-[9999] pointer-events-none flex items-center justify-center rounded-full overflow-hidden"
       style={{ x: cursorX, y: cursorY }}
       variants={variants}
       animate={cursorType}

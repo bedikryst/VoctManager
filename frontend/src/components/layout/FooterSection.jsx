@@ -1,127 +1,219 @@
 /**
  * @file FooterSection.jsx
- * @description A high-impact editorial footer component featuring a custom magnetic 
- * interaction wrapper for primary CTA elements and foundation details.
+ * @description The Cinematic Epilogue (Awwwards Style Footer).
+ * Features high-contrast dark mode, a live status indicator with local time,
+ * an architectural "Back to Top" thread, and a massive interactive typographic monolith.
  * @author Krystian Bugalski
  */
 
-import { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useRef, useEffect, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import ElegantHeading from '../ui/ElegantHeading';
 
-/**
- * Magnetic Wrapper Component
- * Creates a subtle "pull" effect towards the cursor using Framer Motion springs.
- * @param {React.ReactNode} props.children - The DOM element to be magnetized.
- */
-const Magnetic = ({ children }) => {
-  const ref = useRef(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+// ==========================================
+// ANIMATION VARIANTS
+// ==========================================
 
-  const handleMouse = (e) => {
-    const { clientX, clientY } = e;
-    const { height, width, left, top } = ref.current.getBoundingClientRect();
-    
-    // Calculate the distance from the cursor to the center of the element
-    const middleX = clientX - (left + width / 2);
-    const middleY = clientY - (top + height / 2);
-    
-    // Apply a fractional multiplier (0.2) to create a restrained magnetic pull
-    setPosition({ x: middleX * 0.2, y: middleY * 0.2 });
-  };
-
-  const reset = () => {
-    setPosition({ x: 0, y: 0 });
-  };
-
-  const { x, y } = position;
-  
-  return (
-    <motion.div
-      style={{ position: "relative", display: "inline-block" }}
-      ref={ref}
-      onMouseMove={handleMouse}
-      onMouseLeave={reset}
-      animate={{ x, y }}
-      transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
-    >
-      {children}
-    </motion.div>
-  );
+const fadeUpVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (delay) => ({
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 1.2, delay: delay, ease: [0.16, 1, 0.3, 1] }
+  })
 };
 
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
+
 export default function FooterSection() {
+  // ==========================================
+  // STATE & REFERENCES
+  // ==========================================
+  
+  const footerRef = useRef(null);
+  const [currentTime, setCurrentTime] = useState('');
+
+  // --- Live Clock Initialization ---
+  // Calculates and formats local time to create a "Live" app feel
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString('pl-PL', { 
+        timeZone: 'Europe/Warsaw', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }));
+    };
+    
+    updateTime();
+    // Update every minute to save performance
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ==========================================
+  // SCROLL KINEMATICS
+  // ==========================================
+  
+  const { scrollYProgress } = useScroll({ 
+    target: footerRef, 
+    offset: ["start end", "end end"] 
+  });
+  
+  // Parallax mapping for the giant monolithic text at the bottom
+  const massiveTextY = useTransform(scrollYProgress, [0, 1], [100, 0]);
+  
+  // Incoming vertical grid line progress
+  const lineProgress = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
+
+  // ==========================================
+  // HANDLERS
+  // ==========================================
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ==========================================
+  // RENDER
+  // ==========================================
+
   return (
-    <footer id="kontakt" className="bg-stone-100 py-32 md:py-40 px-6 md:px-12 lg:px-24 border-t border-stone-200 relative z-30">
-      <div className="max-w-screen-2xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-20">
-        
-        {/* Left Column: Heading and Magnetic CTA */}
-        <div className="lg:col-span-7 flex flex-col justify-start">
-          <h2 
-            className="text-5xl md:text-7xl lg:text-[7rem] leading-[0.9] tracking-tighter text-stone-900 mb-16" 
-            style={{ fontFamily: "'Cormorant', serif" }}
-          >
-            Stwórzmy to <br/>
-            <span className="italic text-amber-700">razem.</span>
-          </h2>
+    <footer ref={footerRef} className="relative bg-stone-950 text-[#fdfbf7] pt-32 md:pt-48 pb-6 overflow-hidden selection:bg-[#fdfbf7] selection:text-stone-950">
+      <div className="max-w-7xl mx-auto px-6 md:px-0 relative z-10">
+
+        {/* ========================================== */}
+        {/* THE FINAL THREAD (Architectural Grid Conclusion) */}
+        {/* ========================================== */}
+        <div className="absolute top-0 bottom-[40%] left-[58.333333%] w-[1px] hidden md:block z-0" aria-hidden="true">
+          {/* Thread descends from the previous section and terminates mid-footer */}
+          <motion.div style={{ scaleY: lineProgress }} className="w-full h-full bg-stone-800 origin-top" />
           
-          <div>
-            <Magnetic>
-              <a 
-                href="mailto:kontakt@voctensemble.pl" 
-                className="inline-block text-2xl md:text-4xl lg:text-5xl tracking-tight text-stone-500 hover:text-stone-900 transition-colors border-b-2 border-transparent hover:border-stone-900 pb-2" 
-                style={{ fontFamily: "'Cormorant', serif" }}
-              >
-                kontakt@voctensemble.pl
-              </a>
-            </Magnetic>
-          </div>
+          {/* Magnetic Back-To-Top Button anchored to the grid line */}
+          <motion.button 
+            onClick={scrollToTop}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 1 }}
+            transition={{ delay: 0.5, duration: 1 }}
+            aria-label="Scroll to top"
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-16 h-16 rounded-full border border-stone-800 bg-stone-950 flex items-center justify-center group hover:border-[#fdfbf7] transition-colors duration-500"
+          >
+            <div className="w-1 h-1 bg-stone-500 rounded-full group-hover:bg-[#fdfbf7] group-hover:-translate-y-2 transition-all duration-300" />
+          </motion.button>
         </div>
 
-        {/* Right Column: Foundation Info and Bank Details */}
-        <div className="lg:col-span-5 flex flex-col justify-end space-y-16 lg:pl-12">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-400 mb-6">
-              Wsparcie Fundacji
-            </p>
-            <p className="text-base font-medium text-stone-600 mb-8 max-w-md leading-relaxed">
-              Niezależność artystyczna wymaga mecenatu. Wesprzyj nasze projekty darowizną na cele statutowe i stań się częścią naszej polifonii.
-            </p>
-            
-            <div className="border border-stone-300 p-8 bg-white shadow-sm max-w-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group cursor-pointer">
-              <p className="text-[9px] uppercase tracking-[0.3em] text-stone-400 mb-4 font-bold">
-                Konto Bankowe Fundacji
-              </p>
-              <p className="text-lg md:text-xl font-medium text-stone-800 tracking-widest group-hover:text-amber-700 transition-colors">
-                PL 00 0000 0000 0000 0000 0000
-              </p>
+        {/* --- TOP ROW: Live Status Indicator --- */}
+        <motion.div 
+          initial="hidden" 
+          whileInView="visible" 
+          viewport={{ once: true, amount: 0.2 }}
+          className="flex justify-between items-center border-b border-stone-800/50 pb-8 mb-20 md:mb-32"
+        >
+          <motion.div variants={fadeUpVariants} custom={0.1} className="flex items-center gap-3">
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
             </div>
-            
-            <Link to="/fundacja" className="inline-flex items-center gap-4 mt-8 text-[10px] uppercase tracking-[0.3em] font-bold text-amber-700 hover:text-stone-900 transition-colors group">
-              <span>Więcej o Fundacji</span>
-              <span className="transform group-hover:translate-x-2 transition-transform duration-300">→</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+            <p className="text-[9px] uppercase tracking-[0.3em] text-stone-400 font-bold">Fundacja Nieaktywna</p>
+          </motion.div>
+          
+          <motion.div variants={fadeUpVariants} custom={0.2} className="text-[9px] uppercase tracking-[0.3em] text-stone-500 text-right">
+            <p>Kraków, PL — {currentTime} CET</p>
+          </motion.div>
+        </motion.div>
 
-      {/* Bottom Area: Logos and Legal Info */}
-      <div className="max-w-screen-2xl mx-auto border-t border-stone-300 pt-16 mt-32 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-12">
-        
-        <div className="flex flex-wrap gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-          <div className="w-32 h-16 border border-stone-400 border-dashed flex items-center justify-center">
-            <span className="text-[7px] uppercase tracking-widest text-stone-500 text-center">Fundacja Logo</span>
-          </div>
-          <div className="w-20 h-16 border border-stone-400 border-dashed flex items-center justify-center">
-            <span className="text-[7px] uppercase tracking-widest text-stone-500 text-center">Miasto</span>
+        {/* --- BLOCK 1: Content & Navigation --- */}
+        <div className="flex flex-col md:flex-row justify-between relative z-10 mb-32 md:mb-40">
+          
+          {/* Left Column: Patronage & Foundation CTA */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="md:w-5/12 mb-20 md:mb-0">
+            <motion.p variants={fadeUpVariants} custom={0.1} className="text-[#002395] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6">
+              VII. Mecenat
+            </motion.p>
+            
+            <div className="mb-8">
+              <ElegantHeading text="Stań się" className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-[#fdfbf7]" />
+              <ElegantHeading text=" częścią" className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-[#fdfbf7]" />
+              <ElegantHeading text="harmonii." className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-stone-500 italic" />
+            </div>
+
+            <motion.p variants={fadeUpVariants} custom={0.3} className="text-stone-400 font-light text-sm max-w-sm mb-12 leading-relaxed">
+              Tworzymy pomost między sztuką a odbiorcą. Wesprzyj działania naszej fundacji i pomóż nam przywracać muzyce jej pierwotną siłę dotykania serc.
+            </motion.p>
+
+            <motion.div variants={fadeUpVariants} custom={0.4} className="flex flex-col sm:flex-row gap-8 items-start sm:items-center">
+              {/* Primary Donate Button (Interactive Fill) */}
+              <Link to="/donate" className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#fdfbf7] text-stone-950 overflow-hidden rounded-full transition-transform active:scale-95 w-max">
+                <div className="absolute inset-0 w-full h-full bg-[#002395] rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 ease-[0.16,1,0.3,1] origin-center" />
+                <span className="relative z-10 text-[10px] uppercase tracking-[0.2em] font-bold group-hover:text-white transition-colors duration-500">
+                  Wesprzyj Fundację
+                </span>
+              </Link>
+            </motion.div>
+          </motion.div>
+
+          {/* Right Column: Newsletter & Links */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="md:w-5/12 flex flex-col justify-between">
+            
+            {/* Minimalist Newsletter Form */}
+            <div>
+              <motion.p variants={fadeUpVariants} custom={0.2} className="text-stone-500 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6">
+                Biuletyn Artystyczny
+              </motion.p>
+              <motion.form variants={fadeUpVariants} custom={0.3} className="relative w-full group">
+                <input 
+                  type="email" 
+                  placeholder="Zostaw swój email" 
+                  className="w-full bg-transparent border-b border-stone-800 py-4 text-sm text-[#fdfbf7] placeholder-stone-600 focus:outline-none focus:border-[#002395] transition-colors peer"
+                />
+                <button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-stone-600 peer-focus:text-[#002395] group-hover:text-[#fdfbf7] transition-colors">
+                  <span className="text-[9px] uppercase tracking-[0.2em] font-bold">Wyślij</span>
+                </button>
+              </motion.form>
+            </div>
+
+            {/* Sub-Navigation & Socials */}
+            <motion.div variants={fadeUpVariants} custom={0.4} className="mt-20 md:mt-0 grid grid-cols-2 gap-8 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500">
+              <div className="flex flex-col gap-5">
+                <span className="text-stone-700 mb-2">Fundacja</span>
+                <Link to="/fundacja" className="hover:text-[#fdfbf7] transition-colors w-max">O nas</Link>
+                <a href="mailto:kontakt@voctensemble.pl" className="hover:text-[#fdfbf7] transition-colors w-max">Kontakt</a>
+              </div>
+              <div className="flex flex-col gap-5">
+                <span className="text-stone-700 mb-2">Społeczność</span>
+                <a href="https://instagram.com/voctensemble" target="_blank" rel="noreferrer" className="hover:text-[#fdfbf7] transition-colors w-max">Instagram</a>
+                <a href="https://facebook.com/voctensemble" target="_blank" rel="noreferrer" className="hover:text-[#fdfbf7] transition-colors w-max">Facebook</a>
+              </div>
+            </motion.div>
+          </motion.div>
+
+        </div>
+
+        {/* --- BLOCK 2: The Interactive Typographic Monolith --- */}
+        <div className="w-full relative flex flex-col items-center justify-end h-[20vh] md:h-[35vh]">
+          
+          {/* Outline-to-Fill Text Effect */}
+          {/* Text remains transparent with a 1px stroke until hovered, creating a fluid color fill */}
+          <motion.div style={{ y: massiveTextY }} className="absolute bottom-[-5%] w-full flex justify-center overflow-hidden">
+            <h1 
+              className="text-[16vw] font-bold leading-none tracking-tighter text-transparent select-none transition-all duration-700 hover:text-[#fdfbf7] cursor-default"
+              style={{ WebkitTextStroke: "1px rgba(253,251,247,0.15)" }}
+            >
+              VOCTENSEMBLE
+            </h1>
+          </motion.div>
+          
+          {/* Sub-footer (Copyright & Credits) */}
+          <div className="w-full flex flex-col sm:flex-row justify-between items-center text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-stone-600 relative z-10 pb-2 border-t border-stone-800/50 pt-6 mt-12 bg-stone-950/80 backdrop-blur-sm">
+            <p>© {new Date().getFullYear()} VoctEnsemble.</p>
+            <p className="mt-2 sm:mt-0">Code & Design by <a href="https://github.com/bedikryst" className="text-stone-400 hover:text-[#fdfbf7] transition-colors">K. Bugalski</a></p>
           </div>
         </div>
-        
-        <div className="text-left lg:text-right text-[10px] uppercase tracking-[0.3em] font-bold text-stone-400 leading-loose">
-          <p>© {new Date().getFullYear()} VoctEnsemble.</p>
-          <p>Designed & Developed by <span className="text-stone-600 hover:text-amber-700 transition-colors cursor-pointer">Krystian Bugalski</span></p>
-        </div>
-        
+
       </div>
     </footer>
   );

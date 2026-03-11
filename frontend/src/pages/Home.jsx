@@ -1,7 +1,8 @@
 /**
  * @file Home.jsx
  * @description Main landing page orchestrating the scrollytelling experience.
- * Features a dynamic, scroll-responsive navigation bar and smooth scrolling via Lenis.
+ * Features a dynamic, scroll-responsive navigation bar, Lenis smooth scrolling integration,
+ * and robust scroll-locking mechanisms for the overlay menu.
  * @author Krystian Bugalski
  */
 
@@ -13,6 +14,7 @@ import { useAppStore } from '../store/useAppStore';
 
 // --- COMPONENTS ---
 import HeroSection from '../components/home/HeroSection'; 
+import ExperienceSection from '../components/home/ExperienceSection';
 import WhatWeDoSection from '../components/home/WhatWeDoSection';
 import WhatWeSingSection from '../components/home/WhatWeSingSection';
 import TeamSection from '../components/home/TeamSection';
@@ -21,23 +23,27 @@ import OverlayMenu from '../components/layout/OverlayMenu';
 import Preloader from '../components/ui/Preloader';
 import NoiseOverlay from '../components/ui/NoiseOverlay';
 
-// ==========================================
-// MAIN COMPONENT
-// ==========================================
-
 export default function Home() {
-  // --- STATE MANAGEMENT ---
+  // ==========================================
+  // STATE & REFERENCES
+  // ==========================================
+  
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [windowData, setWindowData] = useState({ 
     vh: window.innerHeight, 
     isMobile: window.innerWidth < 768 
   });
-  const isLoaded = useAppStore((state) => state.isLoaded);
-
-  const heroRef = useRef(null);
   
-  // --- WINDOW RESIZE LISTENER ---
+  const isLoaded = useAppStore((state) => state.isLoaded);
+  const heroRef = useRef(null);
+  const lenisRef = useRef(null);
+
+  // ==========================================
+  // LIFECYCLE & EVENT LISTENERS
+  // ==========================================
+
+  // Debounced window resize listener for responsive layout adjustments
   useEffect(() => {
     let timeoutId;
     const handleResize = () => {
@@ -54,7 +60,42 @@ export default function Home() {
     };
   }, []);
 
-// --- SCROLL KINEMATICS (BASED ON HERO SECTION) ---
+  // Overlay Menu Scroll Lock (Handles both DOM and virtual scroll engines)
+  useEffect(() => {
+    if (menuOpen) {
+      // Lock native body scroll for touch devices
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none'; 
+      
+      // Pause Lenis virtual scroll engine for desktop
+      if (lenisRef.current?.lenis) {
+        lenisRef.current.lenis.stop();
+      }
+    } else {
+      // Restore default scroll behavior
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      
+      if (lenisRef.current?.lenis) {
+        lenisRef.current.lenis.start();
+      }
+    }
+
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      if (lenisRef.current?.lenis) lenisRef.current.lenis.start();
+    };
+  }, [menuOpen]);
+
+  // ==========================================
+  // SCROLL KINEMATICS & ANIMATIONS
+  // ==========================================
+
+  // Track scroll progress strictly within the Hero Section viewport
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
     offset: ["end 99%", "end 20%"] 
@@ -62,10 +103,8 @@ export default function Home() {
 
   useMotionValueEvent(heroProgress, "change", (latest) => setIsScrolled(latest > 0));
 
-  // ==========================================
-  // NAVIGATION SCROLL ANIMATIONS
-  // ==========================================
-  
+  // --- Navigation Bar Interpolations ---
+  // Transforms properties based on scroll position to create a shrinking/blurring header effect
   const navWidth = useTransform(heroProgress, [0, 1], ["100%", "92%"]);
   const navMaxWidth = useTransform(heroProgress, [0, 1], ["4000px", "896px"]); 
   const padXStart = windowData.isMobile ? "32px" : "48px";
@@ -97,15 +136,26 @@ export default function Home() {
   const btnTextOpacity = useTransform(heroProgress, [0, 1], [1, 0]);
   const btnIconOpacity = useTransform(heroProgress, [0, 1], [0, 1]);
 
+  // ==========================================
+  // RENDER
+  // ==========================================
+
   return (
-    <ReactLenis root options={{ lerp: 0.10, smoothWheel: true, smoothTouch: false, syncTouch: true }} isStopped={!isLoaded}>
-      
-      {/* --- GLOBAL OVERLAYS --- */}
+    <ReactLenis 
+      ref={lenisRef}
+      root 
+      options={{ 
+        lerp: 0.05, 
+        smoothWheel: true, 
+        smoothTouch: false,
+        syncTouch: false,
+      }} 
+    > 
       <Preloader />
       <NoiseOverlay />
 
       {/* --- GLOBAL NAVIGATION --- */}
-      <div className="fixed top-0 left-0 w-full z-[105] flex justify-center pointer-events-none">
+      <div className={`fixed top-0 left-0 w-full z-[105] flex justify-center pointer-events-none transition-opacity duration-700 ${menuOpen ? 'opacity-0' : 'opacity-100'}`}>
         <motion.nav 
           style={{ 
             width: navWidth, maxWidth: navMaxWidth, marginTop: navTop, 
@@ -117,15 +167,15 @@ export default function Home() {
           }}
           className="pointer-events-auto flex items-center justify-between border shadow-none"
         >
-          {/* 1. Menu Toggle (Hamburger) */}
+          {/* Menu Toggle */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: isLoaded ? 1 : 0 }} transition={{ duration: 1 }} className="flex-1 flex justify-start">
-            <button onClick={() => setMenuOpen(true)} className="group flex flex-col space-y-1.5 p-3 hover:opacity-50 active:scale-95 transition-opacity">
+            <button onClick={() => setMenuOpen(true)} className="group flex flex-col space-y-1.5 p-3 hover:opacity-50 active:scale-95 transition-opacity" aria-label="Open Menu">
               <motion.span style={{ backgroundColor: textColor, width: line1Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-7' : 'group-hover:!w-9'}`} />
               <motion.span style={{ backgroundColor: textColor, width: line2Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-5' : 'group-hover:!w-7'}`} />
             </button>
           </motion.div>
 
-          {/* 2. Brand Logotype (Synchronized with Preloader) */}
+          {/* Brand Logotype */}
           <div className="flex-1 flex justify-center pointer-events-none origin-center mr-5 md:mr-0">
             <motion.div 
               initial={{ y: -60, opacity: 0 }}
@@ -141,9 +191,9 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* 3. Action Links (Login & Support) */}
+          {/* Action Links */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: isLoaded ? 1 : 0 }} transition={{ duration: 1 }} className="flex-1 flex justify-end items-center space-x-3 md:space-x-8">
-            <Link to="/panel" className="group active:scale-90">
+            <Link to="/panel" className="group active:scale-90" aria-label="Client Panel">
               <motion.svg style={{ color: lockColor, width: lockSize, height: lockSize }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`flex-shrink-0 transition-colors duration-300 ${isScrolled ? 'group-hover:!text-stone-900' : 'group-hover:!text-stone-500'}`}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </motion.svg>
@@ -159,11 +209,15 @@ export default function Home() {
         </motion.nav>
       </div>
 
-      {/* --- PAGE LAYOUT --- */}
+      {/* --- PAGE LAYOUT (SCROLLYTELLING SECTIONS) --- */}
       <div className={`bg-[#fdfbf7] text-stone-900 ${!isLoaded ? 'overflow-hidden h-screen' : ''}`} style={{ fontFamily: "'Poppins', sans-serif" }}>
         <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
-        <div ref={heroRef}>
+        
+        <div ref={heroRef} className="relative z-0">
           <HeroSection />
+        </div>
+        <div className="relative z-10 -mt-[50vh]">
+          <ExperienceSection />
         </div>
         <WhatWeDoSection />
         <WhatWeSingSection />

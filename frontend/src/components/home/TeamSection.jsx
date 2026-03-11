@@ -1,201 +1,214 @@
 /**
  * @file TeamSection.jsx
- * @description Board of Directors section featuring a brutalist editorial grid, 
- * staggered scroll-linked parallax for individual cards, multi-directional 
- * hover physics, and an infinite CSS/Framer marquee.
+ * @description The Voices / Team Section - The Conductor & The Vision.
+ * Features a complex "Focus Frame" effect utilizing a PINNED SCROLL on Desktop,
+ * alongside a fluid, natural flow with automated viewport animations on Mobile.
  * @author Krystian Bugalski
  */
 
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useMouseAndGyro } from '../../hooks/useMouseAndGyro';
+import ElegantHeading from '../ui/ElegantHeading';
 
-// Data model for the board members
-const board = [
-  {
-    name: "Florent de Bazelaire",
-    role: "Dyrygent",
-    vision: "Muzyka • Artyzm",
-    description: "Inicjator i dyrektor artystyczny. Odpowiada za jedność brzmienia i duchowy wymiar repertuaru.",
-    img: "/flordraw.jpeg", 
-    video: "/florvideo.mp4"
-  },
-  {
-    name: "Anna Marcisz",
-    role: "Manager Zespołu",
-    vision: "Organizacja • Wizerunek",
-    description: "Architektka relacji i wizerunku. Dba o to, by wizja artystyczna spotkała się z perfekcyjną realizacją.",
-    img: "/aniadraw.jpeg",
-    video: "/aniavideo.mp4"
-  },
-  {
-    name: "Krystian Bugalski",
-    role: "Digital Manager",
-    vision: "Technologia • Stabilność",
-    description: "Twórca ekosystemu VoctManager. Odpowiada za innowacje cyfrowe i technologiczną niezależność zespołu.",
-    img: "/krystdraw.jpeg", 
-    video: "/krystvideo.mp4"
-  }
-];
+// ==========================================
+// ANIMATION VARIANTS
+// ==========================================
 
-// Reusable SVG Noise texture
-const noiseOverlay = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
-
-/**
- * Infinite horizontal scrolling text component.
- * @param {string} props.text - The typographic string to repeat.
- * @param {boolean} [props.reverse=false] - Sets the scroll direction (true = left-to-right).
- */
-const Marquee = ({ text, reverse = false }) => {
-  return (
-    <div className="flex overflow-hidden whitespace-nowrap border-y border-stone-200 bg-stone-50 py-4 md:py-8 mt-16 md:mt-32">
-      <motion.div 
-        animate={{ x: reverse ? ["-100%", "0%"] : ["0%", "-100%"] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-        className="flex items-center"
-      >
-        {/* Render multiple instances to ensure a seamless infinite loop */}
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="flex items-center">
-            <span 
-              className="text-4xl md:text-6xl lg:text-8xl font-medium tracking-tighter text-stone-300 uppercase px-8 md:px-12"
-              style={{ fontFamily: "'Cormorant', serif" }}
-            >
-              {text}
-            </span>
-            {/* Decorative separator dot */}
-            <div className="w-3 h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 bg-stone-300 rounded-full" />
-          </div>
-        ))}
-      </motion.div>
-    </div>
-  );
+const blurVariants = {
+  hidden: { opacity: 0, y: 30, filter: "blur(8px)" },
+  visible: (delay) => ({
+    opacity: 1, 
+    y: 0, 
+    filter: "blur(0px)",
+    transition: { duration: 1.2, delay: delay, ease: [0.16, 1, 0.3, 1] }
+  })
 };
 
-/**
- * Individual Card Component for Board Members
- * Handles image rendering, internal hover parallax, and external scroll offsets.
- */
-const TeamMemberCard = ({ member, scrollTransform, gyroX, gyroY }) => {
-  return (
-    <motion.div style={{ y: scrollTransform }} className="flex flex-col group relative z-10">
-      <div className="relative aspect-[3/4] overflow-hidden bg-white mb-8 border border-stone-200">
-        
-        {/* Inner Parallax Image Wrapper */}
-        <motion.div 
-          style={{ 
-            x: useTransform(gyroX, [-1, 1], [-20, 20]),
-            y: useTransform(gyroY, [-1, 1], [-20, 20]),
-          }}
-          className="absolute inset-[-10%] w-[120%] h-[120%] flex items-center justify-center transition-transform duration-[700ms] group-hover:scale-105"
-        >
-          {member.video ? (
-            <video
-              src={member.video}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 z-10"
-            />
-          ) : (
-            <img 
-              src={member.img} 
-              alt={member.name} 
-              className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 bg-stone-800"
-              loading="lazy"
-              onError={(e) => {
-                e.target.onerror = null; 
-                e.target.src = `https://placehold.co/600x800/292524/a8a29e?text=${encodeURIComponent(member.name)}`;
-              }}
-            />
-          )}
-        </motion.div>
-        
-        {/* Optical Overlays */}
-        <div className="absolute inset-0 opacity-[0.08] pointer-events-none mix-blend-multiply" style={{ backgroundImage: noiseOverlay }} />
-        
-        {/* Vision Tag */}
-        <div className="absolute bottom-4 left-4 bg-stone-900 text-stone-100 px-3 py-1 text-[9px] uppercase tracking-widest font-bold z-20">
-          {member.vision}
-        </div>
-      </div>
+const maskVariants = {
+  hidden: { y: "100%", rotate: 7, opacity: 0 },
+  visible: (delay) => ({
+    y: "0%", 
+    rotate: 0, 
+    opacity: 1,
+    transition: { duration: 1.2, delay: delay, ease: [0.16, 1, 0.3, 1] }
+  })
+};
 
-      {/* Typography & Copy */}
-      <h3 className="text-3xl md:text-4xl mb-2 tracking-tighter text-stone-900" style={{ fontFamily: "'Cormorant', serif" }}>
-        {member.name}
-      </h3>
-      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-700 mb-6">{member.role}</p>
-      <p className="text-stone-500 text-sm leading-loose">{member.description}</p>
+// ==========================================
+// HELPER COMPONENTS
+// ==========================================
+
+const FadeBlurIn = ({ children, delay = 0, className = "" }) => (
+  <motion.div variants={blurVariants} custom={delay} className={className} style={{ willChange: "transform, opacity, filter" }}>
+    {children}
+  </motion.div>
+);
+
+const MaskReveal = ({ children, delay = 0, className = "" }) => (
+  <div className={`overflow-hidden pt-10 pb-12 -mt-10 -mb-12 px-4 -mx-4 ${className}`}>
+    <motion.div variants={maskVariants} custom={delay}>
+      {children}
     </motion.div>
-  );
-};
+  </div>
+);
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 
 export default function TeamSection() {
-  const containerRef = useRef(null);
+  // ==========================================
+  // STATE & REFERENCES
+  // ==========================================
   
-  // Track device orientation or mouse coordinates for internal card parallax
-  const { x: gyroX, y: gyroY } = useMouseAndGyro();
+  const sectionRef = useRef(null);
 
-  // Reference for scroll-linked animations
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
-  });
+  // ==========================================
+  // SCROLL KINEMATICS (Desktop Only)
+  // ==========================================
+  
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end end"] });
+  
+  // Content Parallax mappings
+  const contentY = useTransform(scrollYProgress, [0, 1], [80, -20]); 
+  const smallContentY = useTransform(scrollYProgress, [0, 1], [20, -20]);
+  const imageInternalY = useTransform(scrollYProgress, [0, 1], ["-5%", "5%"]);
 
-  // Staggered vertical scroll transforms for the grid items
-  const scrollTransforms = [
-    useTransform(scrollYProgress, [0.1, 0.4], [300, 0]),
-    useTransform(scrollYProgress, [0.15, 0.45], [300, 0]),
-    useTransform(scrollYProgress, [0.2, 0.5], [300, 0])
-  ];
+  // --- Desktop Scroll Timing for The Focus Frame ---
+  const topVerticalProgress = useTransform(scrollYProgress, [0.5, 0.7], [0, 1]);
+  const horizontalProgress = useTransform(scrollYProgress, [0.37, 0.5], [0, 1]);
+  const frameProgress = useTransform(scrollYProgress, [0.62, 0.99], [0, 1]);
 
-  // Animation variants for the cinematic text reveal
-  const titleRevealVariants = {
-    hidden: { y: "100%" },
-    visible: { 
-      y: 0, 
-      transition: { duration: 1, ease: [0.76, 0, 0.24, 1] } 
-    }
-  };
+  // ==========================================
+  // RENDER
+  // ==========================================
 
   return (
-    <section id="zespol" ref={containerRef} className="bg-stone-50 pt-40 md:pt-64 z-20 relative overflow-hidden pb-16 md:pb-24">
-      <div className="max-w-screen-2xl mx-auto px-6 md:px-12 relative">
+    // Note: Height is dynamic on mobile to prevent scroll trapping, pinned to 150vh on desktop
+    <section ref={sectionRef} className="relative bg-[#fdfbf7] text-stone-900 h-auto py-12 md:py-0 md:h-[150vh] selection:bg-[#002395] selection:text-white">
+      
+      {/* Sticky viewport enabled exclusively on desktop screens */}
+      <div className="relative md:sticky md:top-0 md:-mt-30 md:h-screen w-full flex flex-col justify-center overflow-hidden">
         
-        {/* Section Header with Typographic Mask */}
-        <div className="mb-24 md:mb-40">
-          <p className="mb-6 text-[10px] font-bold uppercase tracking-[0.4em] text-amber-700">Struktura</p>
-          
-          <div className="overflow-hidden pb-4">
-            <motion.h2 
-              variants={titleRevealVariants} 
-              initial="hidden" 
-              whileInView="visible" 
-              viewport={{ once: true, margin: "-100px 0px 0px 0px" }} 
-              className="text-5xl md:text-7xl lg:text-[7rem] leading-none tracking-tighter text-stone-900"
-              style={{ fontFamily: "'Cormorant', serif" }}
-            >
-              Zarząd Zespołu
-            </motion.h2>
+        {/* ========================================== */}
+        {/* ARCHITECTURAL GRID LAYER (Desktop Only)    */}
+        {/* ========================================== */}
+        <div className="absolute inset-0 max-w-7xl mx-auto px-6 md:px-0 w-full hidden md:block z-0 pointer-events-none" aria-hidden="true">
+          {/* Vertical Drop Connector */}
+          <div className="absolute top-30 left-[70.75%] w-[2px] h-[15vh] bg-stone-200/30">
+            <motion.div style={{ scaleY: topVerticalProgress }} className="w-full h-full bg-[#002395] origin-top opacity-50" />
+          </div>
+          {/* Horizontal Bridge */}
+          <div className="absolute top-30 left-[58.333333%] w-[12.4%] h-[2px] bg-stone-200/30">
+            <motion.div style={{ scaleX: horizontalProgress }} className="w-full h-full bg-[#002395] origin-left opacity-50" />
+          </div>
+          {/* Incoming Sticky Compensator */}
+          <div className="absolute -top-[10vh] left-[58.33333%] w-[2px] bottom-[86.7%] bg-stone-200/0">
+            <motion.div style={{ scaleY: horizontalProgress }} className="w-full h-full bg-[#002395] origin-bottom opacity-50" />
           </div>
         </div>
 
-        {/* Brutalist Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-24 items-start relative">
-          {board.map((member, index) => (
-            <TeamMemberCard 
-              key={member.name}
-              member={member}
-              scrollTransform={scrollTransforms[index]}
-              gyroX={gyroX}
-              gyroY={gyroY}
-            />
-          ))}
-        </div>
-      </div>
+        {/* ========================================== */}
+        {/* FOREGROUND CONTENT                         */}
+        {/* ========================================== */}
+        <div className="max-w-7xl mx-auto px-6 md:px-0 relative z-20 w-full">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} className="flex flex-col md:flex-row relative items-center">
+            
+            {/* --- Left Column: Typographic Vision --- */}
+            <motion.div style={{ y: contentY, willChange: "transform" }} className="md:w-5/12 relative md:pr-16 lg:pr-20 z-10 w-full mb-20 md:mb-0">
+              <div className="w-full text-left">
+                <FadeBlurIn>
+                  <p className="text-[#002395] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] mb-4">VI. Idea</p>
+                </FadeBlurIn>
+                
+                <MaskReveal delay={0.1} className="w-full md:w-max md:max-w-none mb-0 md:mb-12">
+                  <motion.div initial="initial" whileHover="hover" className="flex flex-col w-max">
+                    <ElegantHeading text="Wspólnota" className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[0.95] inline-block" />
+                    <ElegantHeading text="Artystyczna" className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[0.95] inline-block" />
+                  </motion.div>
+                </MaskReveal>
 
-      <Marquee text="Music Silence Contemplation" reverse={true} />
+                <FadeBlurIn delay={0.3}>
+                  <p className="text-xl md:text-2xl text-stone-800 leading-snug mb-8 italic" style={{ fontFamily: "'Cormorant', serif" }}>
+                    "VoctEnsemble to nie tylko głosy – to żywy organizm, którego tożsamość opiera się na jedności artystycznej i ludzkiej harmonii."
+                  </p>
+                  <p className="text-sm text-stone-500 font-light leading-relaxed">
+                    Pod kierownictwem Florent’a de Bazelaire wnosimy na polską scenę muzyczną nową jakość estetyczną i duchową. Naszą misją jest zgłębianie człowieczeństwa za pomocą muzyki sakralnej.
+                  </p>
+                </FadeBlurIn>
+              </div>
+            </motion.div>
+            
+            {/* --- Right Column: Cinematic Portrait & Frame --- */}
+            <div className="md:w-7/12 flex flex-col items-center justify-center relative z-20 w-full md:pt-12 pb-20 md:pb-0">
+              
+              <FadeBlurIn delay={0.4} className="w-full relative flex justify-center">
+                
+                {/* Mobile Specific: Horizontal entry line piercing the image center */}
+                <div className="absolute top-1/2 left-[-1.5rem] right-1/2 h-[2px] z-10 -translate-y-1/2 md:hidden pointer-events-none">
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={{ once: true, amount: 0.8 }}
+                    transition={{ delay: 0.6, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full h-full bg-[#002395] origin-left opacity-50"
+                  />
+                </div>
+
+                <div className="relative w-full max-w-sm aspect-[3/4] mx-auto z-20">
+                  
+                  {/* Desktop Focus Frame (Scroll-Bound) */}
+                  <div className="absolute -inset-4 md:-inset-6 z-30 pointer-events-none hidden md:block">
+                    <motion.div style={{ scaleX: frameProgress }} className="absolute top-0 left-0 right-0 h-px bg-[#002395]/40 origin-center" />
+                    <motion.div style={{ scaleX: frameProgress }} className="absolute bottom-0 left-0 right-0 h-px bg-[#002395]/40 origin-center" />
+                    <motion.div style={{ scaleY: frameProgress }} className="absolute top-0 bottom-0 left-0 w-px bg-[#002395]/40 origin-center" />
+                    <motion.div style={{ scaleY: frameProgress }} className="absolute top-0 bottom-0 right-0 w-px bg-[#002395]/40 origin-center" />
+                  </div>
+
+                  {/* Mobile Focus Frame (Time-Bound, triggers after the horizontal line) */}
+                  <div className="absolute -inset-4 z-30 pointer-events-none md:hidden">
+                    <motion.div initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true, amount: 0.8 }} transition={{ duration: 0.8, delay: 1.6, ease: "easeOut" }} className="absolute top-0 left-0 right-0 h-px bg-[#002395]/40 origin-center" />
+                    <motion.div initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true, amount: 0.8 }} transition={{ duration: 0.8, delay: 1.6, ease: "easeOut" }} className="absolute bottom-0 left-0 right-0 h-px bg-[#002395]/40 origin-center" />
+                    <motion.div initial={{ scaleY: 0 }} whileInView={{ scaleY: 1 }} viewport={{ once: true, amount: 0.8 }} transition={{ duration: 0.8, delay: 1.6, ease: "easeOut" }} className="absolute top-0 bottom-0 left-0 w-px bg-[#002395]/40 origin-center" />
+                    <motion.div initial={{ scaleY: 0 }} whileInView={{ scaleY: 1 }} viewport={{ once: true, amount: 0.8 }} transition={{ duration: 0.8, delay: 1.6, ease: "easeOut" }} className="absolute top-0 bottom-0 right-0 w-px bg-[#002395]/40 origin-center" />
+                  </div>
+
+                  {/* Portrait Container */}
+                  <div className="absolute inset-0 overflow-hidden bg-stone-200 shadow-2xl">
+                    <motion.div 
+                      className="absolute inset-[-10%] w-[120%] h-[120%]"
+                      style={{ y: imageInternalY, willChange: "transform" }}
+                    >
+                      <img 
+                        src="/florentyn.jpg" 
+                        alt="Florent de Bazelaire dyrygujący chórem" 
+                        loading="lazy" // Performance optimization
+                        className="w-full h-full object-cover object-[50%_30%] grayscale hover:grayscale-0 transition-all duration-2000"
+                      />
+                    </motion.div>
+                    
+                    {/* Vignette and Dark Overlays */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-80 pointer-events-none" />
+                    <div className="absolute inset-0 border border-stone-900/10 mix-blend-multiply pointer-events-none" />
+
+                    {/* Image Label */}
+                    <div className="absolute bottom-6 left-6 right-6 flex flex-col items-start text-left text-white pointer-events-none">
+                      <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-white/60 mb-2">Dyrygent & Założyciel</p>
+                      <h4 className="text-2xl font-medium tracking-wide" style={{ fontFamily: "'Cormorant', serif" }}>
+                        Florent de Bazelaire
+                      </h4>
+                    </div>
+                  </div>
+
+                </div>
+              </FadeBlurIn>
+
+            </div>
+            
+          </motion.div>
+        </div>
+
+      </div>
     </section>
   );
 }
