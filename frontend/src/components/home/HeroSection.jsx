@@ -33,24 +33,24 @@ export default function HeroSection() {
     offset: ["start start", "end end"]
   });
 
-  // --- SCENE 1: The Intro (0% - 25%) ---
+  // --- SCENE 1: The Intro (0% - 20%) ---
   // Fades out and blurs the initial poetic text as the user starts scrolling
-  const scene1Opacity = useTransform(scrollYProgress, [0, 0.15, 0.25], [1, 1, 0]);
-  const scene1Y = useTransform(scrollYProgress, [0, 0.25], [0, -60]);
-  const scene1Blur = useTransform(scrollYProgress, [0.15, 0.25], ["blur(0px)", "blur(10px)"]);
+  const scene1Opacity = useTransform(scrollYProgress, [0, 0.1, 0.2], [1, 1, 0]);
+  const scene1Y = useTransform(scrollYProgress, [0, 0.2], [0, -60]);
+  const scene1Blur = useTransform(scrollYProgress, [0.1, 0.2], ["blur(0px)", "blur(10px)"]);
 
-  // --- SCENE 2: Core Message (22% - 65%) ---
+  // --- SCENE 2: Core Message (18% - 55%) ---
   // A sharp, monumental typographic reveal that scales up and refocuses
-  const scene2Opacity = useTransform(scrollYProgress, [0.22, 0.35, 0.55, 0.65], [0, 1, 1, 0]);
-  const scene2Scale = useTransform(scrollYProgress, [0.22, 0.65], [0.92, 1.05]);
-  const scene2Blur = useTransform(scrollYProgress, [0.22, 0.35, 0.55, 0.65], ["blur(20px)", "blur(0px)", "blur(0px)", "blur(20px)"]);
-  const silenceSpacing = useTransform(scrollYProgress, [0.25, 0.4], ["0.5em", "0.1em"]);
+  const scene2Opacity = useTransform(scrollYProgress, [0.18, 0.28, 0.45, 0.55], [0, 1, 1, 0]);
+  const scene2Scale = useTransform(scrollYProgress, [0.18, 0.55], [0.92, 1.05]);
+  const scene2Blur = useTransform(scrollYProgress, [0.18, 0.28, 0.45, 0.55], ["blur(20px)", "blur(0px)", "blur(0px)", "blur(20px)"]);
+  const silenceSpacing = useTransform(scrollYProgress, [0.2, 0.35], ["0.5em", "0.1em"]);
 
-  // --- SCENE 3: Resolution (62% - 100%) ---
-  // The final manifesto statement that leads into the next section
-  const scene3Opacity = useTransform(scrollYProgress, [0.62, 0.72, 0.85, 0.95], [0, 1, 1, 0]);
-  const scene3Y = useTransform(scrollYProgress, [0.62, 1], [40, -80]);
-  const scene3Blur = useTransform(scrollYProgress, [0.62, 0.75], ["blur(15px)", "blur(0px)"]);
+  // --- SCENE 3: Resolution (52% - 85%) ---
+  // The final manifesto statement. Leaves a 15% buffer at the end for a clean transition.
+  const scene3Opacity = useTransform(scrollYProgress, [0.52, 0.62, 0.75, 0.85], [0, 1, 1, 0]);
+  const scene3Y = useTransform(scrollYProgress, [0.52, 0.85], [40, -80]);
+  const scene3Blur = useTransform(scrollYProgress, [0.52, 0.65], ["blur(15px)", "blur(0px)"]);
 
   // --- GLOBAL UI ELEMENTS ---
   const indicatorOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
@@ -63,7 +63,7 @@ export default function HeroSection() {
   return (
     <motion.div 
       ref={scrollContainerRef} 
-      className="h-[250vh] md:h-[400vh] relative"
+      className="h-[500vh] relative"
     >
       
       {/* --- SOUND DESIGN TOGGLE --- */}
@@ -77,7 +77,9 @@ export default function HeroSection() {
         </span>
         <div className="w-8 h-px bg-current opacity-50" aria-hidden="true" />
       </button>
-
+      
+      {/* Fade-out mask for the bottom of the axis line */}
+      <div className="absolute bottom-113 left-1/2 -translate-x-1/2 w-20 h-48 bg-gradient-to-t from-[#fdfbf7] to-transparent z-10" aria-hidden="true" />
       {/* --- STICKY CINEMATIC VIEWPORT --- */}
       <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
 
@@ -87,8 +89,6 @@ export default function HeroSection() {
             style={{ scaleY: scrollYProgress }} 
             className="w-full h-full bg-[#002395] origin-top opacity-100"
           />
-          {/* Gradient fade-out at the very bottom of the axis */}
-          <div className="absolute top-[400vh] left-[-10px] w-5 h-48 bg-gradient-to-t from-[#fdfbf7] to-transparent z-10" />
         </div>
 
         {/* --- EDITORIAL FRAME (Lateral Typography) --- */}
@@ -109,12 +109,7 @@ export default function HeroSection() {
 
         {/* --- SCENE 1 --- */}
         <motion.div 
-          style={{ 
-            opacity: scene1Opacity, 
-            y: scene1Y, 
-            filter: scene1Blur,
-            willChange: "transform, opacity, filter" 
-          }} 
+          style={{ opacity: scene1Opacity, y: scene1Y, filter: scene1Blur, willChange: "transform, opacity, filter" }} 
           className="absolute z-10 text-center w-full max-w-2xl py-12 md:py-16 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
           <p className="font-medium text-stone-500 text-xl md:text-3xl italic tracking-wide" style={{ fontFamily: "'Cormorant', serif" }}>
@@ -127,13 +122,7 @@ export default function HeroSection() {
 
         {/* --- SCENE 2 --- */}
         <motion.div 
-          style={{ 
-            opacity: scene2Opacity, 
-            scale: scene2Scale, 
-            filter: scene2Blur,
-            willChange: "transform, opacity, filter",
-            background: "linear-gradient(to bottom, rgba(253,251,247,0) 0%, rgba(253,251,247,1) 25%, rgba(253,251,247,1) 75%, rgba(253,251,247,0) 100%)"
-          }} 
+          style={{ opacity: scene2Opacity, scale: scene2Scale, filter: scene2Blur, willChange: "transform, opacity, filter", background: "linear-gradient(to bottom, rgba(253,251,247,0) 0%, rgba(253,251,247,1) 25%, rgba(253,251,247,1) 75%, rgba(253,251,247,0) 100%)" }} 
           className="absolute z-20 text-center w-[120vw] h-[55vh] md:h-[70vh] md:w-full py-16 md:py-20 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
           <h2 className="flex flex-col items-center gap-4 md:gap-6 text-3xl md:text-6xl lg:text-8xl font-medium uppercase text-stone-900" style={{ fontFamily: "'Cormorant', serif" }}>
@@ -147,13 +136,7 @@ export default function HeroSection() {
 
         {/* --- SCENE 3 --- */}
         <motion.div 
-          style={{ 
-            opacity: scene3Opacity, 
-            filter: scene3Blur,
-            y: scene3Y,
-            willChange: "transform, opacity, filter", 
-            background: "linear-gradient(to bottom, rgba(253,251,247,0) 0%, rgba(253,251,247,1) 20%, rgba(253,251,247,1) 80%, rgba(253,251,247,0) 100%)"
-          }} 
+          style={{ opacity: scene3Opacity, filter: scene3Blur, y: scene3Y, willChange: "transform, opacity, filter", background: "linear-gradient(to bottom, rgba(253,251,247,0) 0%, rgba(253,251,247,1) 20%, rgba(253,251,247,1) 80%, rgba(253,251,247,0) 100%)" }} 
           className="absolute z-20 text-center w-[120vw] h-[60vh] md:w-full py-16 md:py-20 px-6 md:px-0 pointer-events-none text-stone-900 flex flex-col items-center justify-center"
         >
           <div className="space-y-4 md:space-y-6 font-medium text-lg md:text-3xl leading-relaxed flex flex-col items-center text-stone-600 max-w-3xl w-full" style={{ fontFamily: "'Cormorant', serif" }}>
@@ -175,12 +158,6 @@ export default function HeroSection() {
         </motion.div>
 
       </div>
-      
-      {/* Invisible spacer connecting the axis to the next section */}
-      <div
-        className="absolute top-[330vh] left-1/2 -translate-x-1/2 w-20 h-48 bg-gradient-to-t from-[#fdfbf7] to-transparent z-50 pointer-events-none" 
-        aria-hidden="true"
-      />
     </motion.div>
   );
 }

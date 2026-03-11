@@ -169,7 +169,7 @@ export default function Home() {
         >
           {/* Menu Toggle */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: isLoaded ? 1 : 0 }} transition={{ duration: 1 }} className="flex-1 flex justify-start">
-            <button onClick={() => setMenuOpen(true)} className="group flex flex-col space-y-1.5 p-3 hover:opacity-50 active:scale-95 transition-opacity" aria-label="Open Menu">
+            <button onClick={() => setMenuOpen(true)} className="group flex flex-col space-y-1.5 p-3 pl-0 hover:opacity-50 active:scale-95 transition-opacity" aria-label="Open Menu">
               <motion.span style={{ backgroundColor: textColor, width: line1Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-7' : 'group-hover:!w-9'}`} />
               <motion.span style={{ backgroundColor: textColor, width: line2Width }} className={`h-px ease-out transition-all duration-300 ${isScrolled ? 'group-hover:!w-5' : 'group-hover:!w-7'}`} />
             </button>

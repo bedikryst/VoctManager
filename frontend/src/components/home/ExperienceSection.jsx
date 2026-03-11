@@ -48,7 +48,7 @@ export default function ExperienceSection() {
   return (
     <section 
       ref={sectionRef} 
-      className="relative h-[150vh] md:h-[200vh] bg-stone-950 text-stone-100 selection:bg-stone-100 selection:text-stone-900"
+      className="relative h-[250vh] bg-stone-950 text-stone-100 selection:bg-stone-100 selection:text-stone-900"
     >
       
       {/* --- STICKY VIEWPORT --- */}
