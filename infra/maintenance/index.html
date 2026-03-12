@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoctEnsemble | W przygotowaniu</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;1,400&family=Poppins:wght@100;300;400;500&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['Cormorant', 'serif'],
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        stone: { 50: '#fafaf9', 200: '#e7e5e4', 300: '#d6d3d1', 500: '#78716c', 600: '#57534e', 900: '#1c1917' },
+                        amber: { 700: '#b45309' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .fade-in-up {
+            animation: fadeInUp 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-900 font-sans min-h-screen flex flex-col items-center justify-center overflow-hidden selection:bg-stone-900 selection:text-stone-50 p-6">
+
+    <div class="absolute inset-0 opacity-[0.04] pointer-events-none mix-blend-multiply" style="background-image: url(&quot;data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;);"></div>
+
+    <div class="relative z-10 text-center max-w-3xl mx-auto flex flex-col items-center">
+        
+        <p class="fade-in-up font-bold uppercase tracking-[0.4em] text-amber-700 text-[10px] mb-8">
+            Wkrótce otwarcie
+        </p>
+        
+        <h1 class="fade-in-up delay-1 font-serif text-5xl md:text-7xl lg:text-[7rem] leading-none tracking-tighter mb-6 italic">
+            VoctEnsemble
+        </h1>
+        
+        <p class="fade-in-up delay-2 font-sans font-thin tracking-[0.2em] md:tracking-[0.3em] text-stone-500 text-sm md:text-base uppercase mb-12">
+            Music &bull; Silence &bull; Contemplation
+        </p>
+        
+        <div class="fade-in-up delay-3 w-px h-16 bg-stone-300 mx-auto mb-12"></div>
+        
+        <p class="fade-in-up delay-3 font-sans text-stone-600 text-sm md:text-base leading-relaxed max-w-md font-light">
+            Nowoczesna formacja wokalna.<br>
+            Trwają prace nad nową odsłoną naszej przestrzeni internetowej. 
+        </p>
+
+        <a href="mailto:voctensemble@gmail.com" class="fade-in-up delay-3 mt-12 inline-block text-[10px] font-bold uppercase tracking-[0.2em] px-6 py-3 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900 transition-all duration-500">
+            Napisz do nas
+        </a>
+    </div>
+
+</body>
+</html>

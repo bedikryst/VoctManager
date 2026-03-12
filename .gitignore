@@ -1,31 +1,60 @@
-# Środowisko wirtualne
-venv/
-env/
+# =========================
+# SYSTEM & IDE (Globalne)
+# =========================
+.DS_Store
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
-# Media
-media/
-
-# Cache Pythona
-__pycache__/
-*.pyc
-
-# Baza danych (na start SQLite, potem podmienisz na PostgreSQL)
-db.sqlite3
-
-# Zmienne środowiskowe (hasła, sekrety)
+# =========================
+# ZMIENNE ŚRODOWISKOWE
+# =========================
 .env
+backend/.env
+frontend/.env
+*.local
 
-__pycache__/
+# =========================
+# BACKEND (Django & Python)
+# =========================
+backend/venv/
+backend/env/
+backend/__pycache__/
+backend/**/*.pyc
+backend/db.sqlite3
 *.sqlite3
-node_modules/
-
-# Ignore media files in frontend/public
-frontend/public/*.jpg
-frontend/public/*.jpeg
-frontend/public/*.png
-frontend/public/*.webp
-frontend/public/*.mp4
-frontend/public/*.mov
-frontend/public/*.webm
-
+backend/media/
+!backend/media/.gitkeep
+backend/static/
 gunicorn.ctl
+
+# =========================
+# FRONTEND (React & Vite)
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+*.log
+
+# --- Frontend Media Assets ---
+frontend/public/**/*.jpg
+frontend/public/**/*.jpeg
+frontend/public/**/*.png
+frontend/public/**/*.webp
+frontend/public/**/*.mp4
+frontend/public/**/*.mov
+frontend/public/**/*.webm
+frontend/public/**/*.mp3
