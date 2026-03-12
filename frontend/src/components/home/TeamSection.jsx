@@ -46,19 +46,17 @@ export default function TeamSection() {
   return (
     <section ref={sectionRef} className="relative bg-[#fdfbf7] text-stone-900 h-auto py-12 md:py-0 md:h-[150vh] selection:bg-[#002395] selection:text-white">
       
-      <div className="relative md:sticky md:top-0 md:-mt-30 md:h-screen w-full flex flex-col justify-center overflow-hidden">
+      <div className="relative md:sticky md:top-0 md:h-screen w-full flex flex-col justify-center overflow-hidden">
         
         {/* --- ARCHITECTURAL GRID LAYER --- */}
         <div className="absolute inset-0 max-w-7xl mx-auto px-6 md:px-0 w-full hidden md:block z-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute top-30 left-[70.75%] w-[2px] h-[15vh] bg-stone-200/30">
+          <div className="absolute top-[13.2%] left-[70.75%] w-[2px] h-[15%] bg-stone-200/30">
             <motion.div style={{ scaleY: topVerticalProgress }} className="w-full h-full bg-[#002395] origin-top opacity-50" />
           </div>
-          <div className="absolute top-30 left-[58.333333%] w-[12.4%] h-[2px] bg-stone-200/30">
+          <div className="absolute top-[13.2%] left-[58.333333%] w-[12.4%] h-[2px] bg-stone-200/30">
             <motion.div style={{ scaleX: horizontalProgress }} className="w-full h-full bg-[#002395] origin-left opacity-50" />
           </div>
-          <div className="absolute -top-[10vh] left-[58.33333%] w-[2px] bottom-[86.7%] bg-stone-200/0">
-            <motion.div style={{ scaleY: horizontalProgress }} className="w-full h-full bg-[#002395] origin-bottom opacity-50" />
-          </div>
+          
         </div>
 
         {/* --- FOREGROUND CONTENT --- */}

@@ -14,7 +14,7 @@ import ArchiveList from '../components/dashboard/ArchiveList';
 import AdminPanel from '../components/dashboard/AdminPanel';
 
 // Securely fetch the API URL from environment variables to support Prod/Dev deployments
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export default function Dashboard() {
   // Authentication States

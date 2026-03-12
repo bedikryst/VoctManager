@@ -251,7 +251,7 @@ export default function WhatWeDoSection() {
         
         <div className="absolute -top-[2%] md:top-0 left-[50%] w-[2px] h-[3%] md:h-[5%] bg-stone-200/50">
           <motion.div style={{ scaleY: lineProgress }} className="w-full h-full bg-[#002395] origin-top opacity-50" />
-          <div className="absolute top-0 -left-30 w-35 h-20 md:h-48 bg-gradient-to-b from-[#fdfbf7] to-transparent z-10" />
+         {/* <div className="absolute top-0 -left-30 w-35 h-20 md:h-48 bg-gradient-to-b from-[#fdfbf7] to-transparent z-10" />*/}
         </div>
         
         <div className="absolute top-[5%] bottom-0 left-[41.666667%] w-[2px] bg-stone-200/50 hidden md:block z-0" aria-hidden="true">
@@ -289,9 +289,9 @@ export default function WhatWeDoSection() {
               Przywracamy tradycję dawnych <span className="text-[#002395] italic">Concerts Spirituels</span>. 
               Tworzymy pomost między historyczną świadomością a potrzebami współczesnego słuchacza.
             </p>
-            <p className="text-base text-stone-500 font-light leading-relaxed max-w-lg">
+           {/* <p className="text-base text-stone-500 font-light leading-relaxed max-w-lg">
               Nasza działalność obejmuje nie tylko autorskie Koncerty Duchowe, ale również starannie przygotowane oprawy liturgiczne, msze ślubne oraz uświetnianie najważniejszych uroczystości kościelnych. Jesteśmy tam, gdzie muzyka musi stać się modlitwą.
-            </p>
+            </p>*/}
             <div className="mt-10 flex flex-col sm:flex-row gap-6 sm:gap-12">
               <Link to="/kontakt" className="group flex items-center gap-4 text-[10px] md:text-xs uppercase tracking-[0.2em] font-medium text-[#002395] md:text-stone-500 md:hover:text-[#002395] transition-colors">
                 <span className="relative overflow-hidden pb-1">

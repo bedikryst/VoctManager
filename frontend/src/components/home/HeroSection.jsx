@@ -63,7 +63,7 @@ export default function HeroSection() {
   return (
     <motion.div 
       ref={scrollContainerRef} 
-      className="h-[500vh] relative"
+      className="h-[300vh] md:h-[500vh] relative"
     >
       
       {/* --- SOUND DESIGN TOGGLE --- */}
@@ -79,12 +79,12 @@ export default function HeroSection() {
       </button>
       
       {/* Fade-out mask for the bottom of the axis line */}
-      <div className="absolute bottom-113 left-1/2 -translate-x-1/2 w-20 h-48 bg-gradient-to-t from-[#fdfbf7] to-transparent z-10" aria-hidden="true" />
+     {/* <div className="absolute bottom-[113] left-1/2 -translate-x-1/2 w-20 h-48 bg-gradient-to-t from-[#fdfbf7] to-transparent z-10" aria-hidden="true" />*/}
       {/* --- STICKY CINEMATIC VIEWPORT --- */}
       <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
 
         {/* --- CENTRAL TIMELINE AXIS --- */}
-        <div className="absolute top-[10vh] bottom-0 left-1/2 -translate-x-1/2 w-px bg-stone-200/50 z-0 pointer-events-none">
+        <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-stone-200/50 z-0 pointer-events-none">
           <motion.div 
             style={{ scaleY: scrollYProgress }} 
             className="w-full h-full bg-[#002395] origin-top opacity-100"

@@ -30,7 +30,7 @@ export default function Preloader() {
       {!isLoaded && (
         <motion.div 
           exit={{ opacity: 0, filter: "blur(12px)", transition: { duration: 1.2, ease: "easeInOut" } }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#fdfbf7] pointer-events-none overflow-hidden"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#fdfbf7] pointer-events-none overflow-hidden"
         >
           {/* --- LAYER 1: AMBIENT GLOW --- */}
           {/* Subtle, moving radial gradients simulating stained glass light */}

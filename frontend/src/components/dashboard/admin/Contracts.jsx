@@ -6,11 +6,11 @@
  * binary downloads (individual PDFs and batch ZIP files) from the Django API.
  */
 import { useState, useEffect, useCallback } from 'react';
+import api from '../../utils/api'; 
+import { ExportContractButton } from '../../ui/ExportContractButton';
 
-// Environment-aware API URL for seamless switching between Localhost and Production
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-export default function Contracts({ token }) {
+// UWAGA: Usunęliśmy { token } z propsów! Komponent jest czysty.
+export default function Contracts() {
   const [projects, setProjects] = useState([]);
   const [participations, setParticipations] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
@@ -19,58 +19,53 @@ export default function Contracts({ token }) {
   const [globalFee, setGlobalFee] = useState('');
   const [isApplyingGlobal, setIsApplyingGlobal] = useState(false);
 
-  // useCallback prevents infinite re-renders when this function is passed to useEffect
-  const fetchParticipations = useCallback(() => {
-    fetch(`${API_URL}/api/participations/`, { 
-      headers: { 'Authorization': `Bearer ${token}` } 
-    })
-    .then(res => res.json())
-    .then(data => setParticipations(data))
-    .catch(err => console.error("Error fetching participations:", err));
-  }, [token]);
+  const fetchParticipations = useCallback(async () => {
+    try {
+      // Magia! Zero nagłówków, zero .json(). Axios robi to sam.
+      const response = await api.get('/api/participations/');
+      setParticipations(response.data);
+    } catch (err) {
+      console.error("Error fetching participations:", err);
+    }
+  }, []);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/projects/`, { 
-      headers: { 'Authorization': `Bearer ${token}` } 
-    })
-    .then(res => res.json())
-    .then(data => setProjects(data))
-    .catch(err => console.error("Error fetching projects:", err));
+    const fetchProjects = async () => {
+      try {
+        const response = await api.get('/api/projects/');
+        setProjects(response.data);
+      } catch (err) {
+        console.error("Error fetching projects:", err);
+      }
+    };
 
+    fetchProjects();
     fetchParticipations();
-  }, [token, fetchParticipations]);
+  }, [fetchParticipations]);
 
-  // Derived state: Filter the cast list based on the currently selected dropdown value
   const currentCast = participations.filter(p => p.project === parseInt(selectedProjectId));
 
-  // --- BATCH OPERATIONS ---
   const handleApplyGlobalFee = async () => {
     if (!globalFee) return;
     setIsApplyingGlobal(true);
-    setStatus({ type: 'info', message: 'Trwa nadpisywanie stawek dla wszystkich...' });
+    setStatus({ type: 'info', message: 'Trwa nadpisywanie stawek...' });
     
     let successCount = 0;
     
-    // Process patches sequentially to avoid overwhelming the server with simultaneous requests
     for (const p of currentCast) {
       try {
-        const res = await fetch(`${API_URL}/api/participations/${p.id}/`, {
-          method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${token}` 
-          },
-          body: JSON.stringify({ fee: parseFloat(globalFee) })
+        // Czysty PATCH przez naszą instancję
+        await api.patch(`/api/participations/${p.id}/`, { 
+            fee: parseFloat(globalFee) 
         });
-        if (res.ok) successCount++;
+        successCount++;
       } catch (e) { 
         console.error("Failed to patch participation ID:", p.id, e); 
       }
     }
     
-    // Refresh the table UI with new data from the backend
     fetchParticipations();
-    setStatus({ type: 'success', message: `Zapisano domyślną stawkę (${globalFee} PLN) dla ${successCount} osób.` });
+    setStatus({ type: 'success', message: `Zapisano dla ${successCount} osób.` });
     setIsApplyingGlobal(false);
   };
 
@@ -117,16 +112,6 @@ export default function Contracts({ token }) {
     try {
       await downloadFile(`${API_URL}/api/participations/${participationId}/contract/`, `Umowa_${artistName}.pdf`);
       setStatus({ type: 'success', message: `Umowa dla ${artistName} pobrana pomyślnie.` });
-    } catch (err) { 
-      setStatus({ type: 'error', message: err.message }); 
-    }
-  };
-
-  const handleDownloadZip = async () => {
-    setStatus({ type: 'info', message: 'Trwa pakowanie wszystkich umów do pliku ZIP...' });
-    try {
-      await downloadFile(`${API_URL}/api/participations/project_zip/?project_id=${selectedProjectId}`, 'Umowy.zip');
-      setStatus({ type: 'success', message: 'Paczka ZIP została pobrana pomyślnie.' });
     } catch (err) { 
       setStatus({ type: 'error', message: err.message }); 
     }
@@ -185,12 +170,10 @@ export default function Contracts({ token }) {
               </div>
 
               {currentCast.length > 0 && (
-                <button 
-                  onClick={handleDownloadZip} 
-                  className="bg-white border border-stone-300 hover:border-stone-500 text-stone-800 font-bold text-xs uppercase tracking-widest py-2 px-6 rounded-sm transition-all shadow-sm flex items-center"
-                >
-                  Drukuj Wszystkie (ZIP)
-                </button>
+                <ExportContractButton 
+                  projectId={selectedProjectId} 
+                  token={token} 
+                />
               )}
             </div>
             
