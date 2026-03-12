@@ -3,6 +3,7 @@
 **🚀 Live Demo:** [test.voctensemble.com](https://voctensemble.com/test) *(Staging Environment)*
 
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
@@ -14,15 +15,17 @@ It elegantly combines a high-end, cinematic public landing page with a secure, r
 
 ## ✨ Key Features
 
+### 🌍 Public Facing UI (Frontend)
+* **Cinematic Page Transitions:** Zero-refresh routing with soft crossfades and blur effects utilizing `framer-motion`'s `AnimatePresence`.
+* **Immersive Scrollytelling:** Complex scroll-linked kinematics, dynamic hardware-accelerated video parallax, and staggered typographic reveals using custom Bezier easing.
+* **Architectural Grid & Editorial UI:** A pixel-perfect, visible layout grid using fluid flexbox relationships, advanced CSS blending (`mix-blend-difference`), and a choreographed "Immersive Mode" floating navigation pill.
+* **Performance-First Micro-Interactions:** A custom physics-based cursor utilizing `useMotionValue` to bypass React's render cycle, ensuring strict 60fps fluidity, alongside integrated local scrolly-audio elements.
+
 ### 🏢 Internal System (Admin & Artists Dashboard)
 * **Role-Based Access Control (RBAC):** JWT-based authentication separating Superusers (Board) from standard Artists.
 * **Automated Payroll & Contracting:** Dynamic generation of PDF contracts using `WeasyPrint`. The system generates binary files entirely in-memory (`io.BytesIO`) and allows batch-downloading via dynamically constructed `.zip` archives.
 * **Repertoire Archive:** A digital library supporting `.pdf` sheet music and isolated `.mp3`/`.mid` voice-part tracks, integrated with Django's `FileField`.
 * **Cast Management:** Complex Many-To-Many relationships handling concert casting, global fee assignments, and attendance statuses.
-
-### 🌍 Public Facing UI
-* **Scrollytelling & Parallax:** Implements advanced `framer-motion` hooks (`useScroll`, `useTransform`) for a deeply immersive, editorial design.
-* **Glassmorphism & Brutalism:** High-contrast typography paired with modern glass UI elements (Floating Pill Navbar).
 
 ## 🛠️ Technology Stack
 
@@ -30,7 +33,8 @@ It elegantly combines a high-end, cinematic public landing page with a secure, r
 * React (Vite)
 * Tailwind CSS (Utility-first styling)
 * Framer Motion (Advanced physics-based animations)
-* React Router DOM
+* React Router DOM (Global routing & portal management)
+* Zustand (Global state management)
 
 **Backend:**
 * Python / Django 6.x
@@ -83,7 +87,6 @@ To run this project locally using Docker, follow these steps:
 ```bash
 git clone https://github.com/bedikryst/voctmanager.git
 cd voctmanager
-```
 
 ### 2. Environment Variables
 Create a `.env` file in the root backend directory (use the template below):
