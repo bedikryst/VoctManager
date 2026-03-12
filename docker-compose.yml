@@ -24,7 +24,7 @@ services:
       - db
       - redis
     env_file:
-      - ./backend/.env  
+      - .env  
     environment:
       - DB_HOST=db
 
@@ -35,7 +35,7 @@ services:
     volumes:
       - ./backend:/app  
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -50,7 +50,6 @@ services:
       - "80:80"
       - "443:443"  
     volumes:
-      - ./frontend/dist:/usr/share/nginx/html/app:ro
       - ./infra/maintenance:/usr/share/nginx/html/maintenance:ro  
       - ./backend/static:/app/static:ro
       - ./backend/media:/app/media:ro
