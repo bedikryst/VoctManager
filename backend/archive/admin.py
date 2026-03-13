@@ -13,13 +13,16 @@ __author__ = "Krystian Bugalski"
 
 @admin.register(Composer)
 class ComposerAdmin(admin.ModelAdmin):
+    """Admin view for managing composers."""
     list_display = ('first_name', 'last_name', 'birth_year', 'death_year')
     search_fields = ('first_name', 'last_name')
     ordering = ('last_name', 'first_name')
 
 class TrackInline(admin.TabularInline):
     """
-    Allows adding multiple audio tracks directly from the Piece admin page.
+    Inline admin interface for Tracks.
+    Allows adding multiple audio tracks directly from the Piece admin page,
+    streamlining the data entry process for the management team.
     """
     model = Track
     extra = 1  # Number of empty rows displayed by default for uploading new files
@@ -27,9 +30,8 @@ class TrackInline(admin.TabularInline):
 
 @admin.register(Piece)
 class PieceAdmin(admin.ModelAdmin):
-    list_display = ('title', 'composer', 'voicing')
-    list_filter = ('voicing', 'composer')
-    search_fields = ('title', 'composer__last_name')
-    
-    # Attach the Track form inside the Piece form
+    """Admin view for managing musical pieces, sheet music, and metadata."""
+    list_display = ('title', 'composer', 'arranger', 'language', 'voicing')
+    list_filter = ('language', 'voicing', 'composer')
+    search_fields = ('title', 'composer__last_name', 'arranger')
     inlines = [TrackInline]

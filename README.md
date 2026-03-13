@@ -1,128 +1,59 @@
-# VoctManager Enterprise 🎵
+# VoctManager 🎼
 
-**🚀 Live Demo:** [test.voctensemble.com](https://voctensemble.com/test) *(Staging Environment)*
+Enterprise-grade management system designed specifically for a cappella vocal ensembles and professional choirs. 
+It streamlines HR logistics, contract generation, repertoire archiving, and rehearsal planning.
 
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
-![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+## 🚀 Project Overview
 
-VoctManager is a comprehensive, full-stack ERP (Enterprise Resource Planning) designed specifically for the professional vocal ensemble **VoctEnsemble**. 
+Managing a professional vocal octet requires handling complex logistics, from tracking individual artist contracts to managing precise voice divisions (divisi) per musical piece. **VoctManager** replaces spreadsheets with a scalable, automated system.
 
-It elegantly combines a high-end, cinematic public landing page with a secure, role-based administrative dashboard for HR, payroll, and digital repertoire management.
+### Key Features
+* **Role-Based Data Isolation:** Secure JWT authentication. Board members see financial data; artists only see their own contracts and assigned repertoire.
+* **Automated PDF Generation:** Uses `WeasyPrint` and `Celery` to asynchronously generate and zip dozens of personalized legal contracts in seconds without blocking the server thread.
+* **Advanced Repertoire Archive:** Tracks composers, arrangers, specific vocal castings (e.g., Soprano 1, Vocal Percussion), and provides reference audio tracks.
+* **Smart Conductor Dashboard:** Dynamic setlist building, rehearsal attendance tracking with absentee notes, and vocal profile management.
 
-## ✨ Key Features
+## 🛠️ Tech Stack
 
-### 🌍 Public Facing UI (Frontend)
-* **Cinematic Page Transitions:** Zero-refresh routing with soft crossfades and blur effects utilizing `framer-motion`'s `AnimatePresence`.
-* **Immersive Scrollytelling:** Complex scroll-linked kinematics, dynamic hardware-accelerated video parallax, and staggered typographic reveals using custom Bezier easing.
-* **Architectural Grid & Editorial UI:** A pixel-perfect, visible layout grid using fluid flexbox relationships, advanced CSS blending (`mix-blend-difference`), and a choreographed "Immersive Mode" floating navigation pill.
-* **Performance-First Micro-Interactions:** A custom physics-based cursor utilizing `useMotionValue` to bypass React's render cycle, ensuring strict 60fps fluidity, alongside integrated local scrolly-audio elements.
+**Backend (API-First Architecture):**
+* Python 3.12 / Django 6.x
+* Django Rest Framework (DRF) + SimpleJWT
+* PostgreSQL (Database)
+* Redis & Celery (Asynchronous Task Queue)
+* WeasyPrint (Headless PDF Rendering)
 
-### 🏢 Internal System (Admin & Artists Dashboard)
-* **Role-Based Access Control (RBAC):** JWT-based authentication separating Superusers (Board) from standard Artists.
-* **Automated Payroll & Contracting:** Dynamic generation of PDF contracts using `WeasyPrint`. The system generates binary files entirely in-memory (`io.BytesIO`) and allows batch-downloading via dynamically constructed `.zip` archives.
-* **Repertoire Archive:** A digital library supporting `.pdf` sheet music and isolated `.mp3`/`.mid` voice-part tracks, integrated with Django's `FileField`.
-* **Cast Management:** Complex Many-To-Many relationships handling concert casting, global fee assignments, and attendance statuses.
+**Frontend (SPA):**
+* React 18 / Vite
+* Tailwind CSS (Styling)
+* Framer Motion (Animations)
+* Axios (API Client)
 
-## 🛠️ Technology Stack
-
-**Frontend:**
-* React (Vite)
-* Tailwind CSS (Utility-first styling)
-* Framer Motion (Advanced physics-based animations)
-* React Router DOM (Global routing & portal management)
-* Zustand (Global state management)
-
-**Backend:**
-* Python / Django 6.x
-* Django REST Framework (DRF)
-* SimpleJWT (Authentication)
-* PostgreSQL (Relational Database)
-* WeasyPrint (HTML to PDF rendering)
-
-**DevOps:**
+**Infrastructure:**
 * Docker & Docker Compose (Containerization)
+* Nginx (Reverse Proxy & Static File Serving)
 
-## 📸 Screens
+## ⚙️ Local Development Setup
 
-<details>
-  <summary><b>Click here to see!</b></summary>
-  <br>
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/your-username/voctmanager.git](https://github.com/your-username/voctmanager.git)
+   cd voctmanager
 
-  **Login Panel (RBAC)**
-  <img width="475" alt="login_panel" src="https://github.com/user-attachments/assets/14ee42a0-81f9-46dd-9644-a594fee825de" />
-  
-  <hr>
+### 2. Set up environment variables:
+   Create .env files in both the backend/ and frontend/ directories based on the provided .env.example files.
 
-  **Media Panel (Digital Archive)**
-  <img width="939" alt="media_panel" src="https://github.com/user-attachments/assets/2c74c1d9-0007-4acc-a6c0-9bb18a66e470" />
+### 3. Spin up the Docker containers:
+   ```bash
+   docker-compose up --build -d
+   ```
 
-  <hr>
-
-  **Project Details (Casting & Sheet Music)**
-  <img width="946" alt="project_details" src="https://github.com/user-attachments/assets/201ce1d3-3bb0-4feb-9826-8c1fd00a6b49" />
-
-</details>
-
----
-
-## 🚀 Local Setup & Installation
-
-## ⚠️ Note on Media Assets & Intellectual Property
-
-Please note that the original photography, video materials, and audio recordings featured on the production website (`voctensemble.com`) are the exclusive intellectual property of the VoctEnsemble. 
-
-To respect copyright and privacy regulations, these binary media files (`*.jpg`, `*.mp4`) have been explicitly excluded from this public repository via `.gitignore` to prevent unauthorized distribution and repository bloat.
-
-**If you are running this project locally for review:**
-The application will run perfectly, but image placeholders will return a `404 Not Found` in the console. To experience the full visual layout locally, simply drop any placeholder images into the `frontend/public/` directory and rename them to match the asset paths defined in the React components (e.g., `flor.jpg`, `portret.jpg`).
-
-
-To run this project locally using Docker, follow these steps:
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/bedikryst/voctmanager.git
-cd voctmanager
-
-### 2. Environment Variables
-Create a `.env` file in the root backend directory (use the template below):
-```env
-SECRET_KEY=your_secret_key_here
-DEBUG=True
-DB_NAME=voct_db
-DB_USER=voct_user
-DB_PASSWORD=your_password
-DEFAULT_ARTIST_PASSWORD=default_pass
-CORS_ALLOWED_ORIGINS=http://localhost:5173
-```
-
-Create a `.env` file in the frontend directory:
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-### 3. Run with Docker Compose
-Spin up the PostgreSQL database and Django backend:
-```bash
-docker-compose up --build -d
-```
-
-### 4. Run database migrations & create Superuser
-```bash
-docker-compose exec web python manage.py migrate
-docker-compose exec web python manage.py createsuperuser
-```
-
-### 5. Start the React Frontend
-Open a new terminal, navigate to your frontend folder (e.g., `cd frontend`), and run:
-```bash
-npm install
-npm run dev
-```
+### 4. Initialize the Database:
+   ```bash
+   docker compose exec web python manage.py makemigrations
+   docker compose exec web python manage.py migrate
+   docker compose exec web python manage.py createsuperuser
+   ```
+   The API will be available at http://localhost:8000/api/ and the React frontend at http://localhost:5173.
 
 ## 👨‍💻 Author
 

@@ -2,34 +2,31 @@
 REST API Views (Controllers) for the Roster application.
 Author: Krystian Bugalski
 
-Handles CRUD operations for HR management, role-based data isolation (QuerySet filtering),
-and advanced binary file generation (PDF rendering and ZIP archiving in memory).
+Handles CRUD operations, role-based data isolation (QuerySet filtering),
+and asynchronous task orchestration for binary file generation via Celery.
 """
 
 import io
-import zipfile
 import weasyprint
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from celery.result import AsyncResult
+
 from .models import Artist, Project, Participation
 from .serializers import ArtistSerializer, ProjectSerializer, ParticipationSerializer
-from celery.result import AsyncResult
 from .tasks import generate_project_zip_task
-from rest_framework import status
-
 
 __author__ = "Krystian Bugalski"
-
 
 class IsAdminOrReadOnly(permissions.BasePermission):
     """
     Custom permission class:
-    Allows read-only access to regular authenticated users,
-    but restricts write/edit operations to superusers.
+    Allows read-only access to regular authenticated artists.
+    Restricts data mutation (POST, PUT, DELETE) to administrative staff.
     """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
@@ -44,7 +41,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Role-based Data Isolation:
-        Admins can see the entire roster. Regular artists can only fetch their own profile.
+        Admins access the full roster. Artists can only access their own profile.
         """
         user = self.request.user
         if user.is_superuser:
@@ -53,10 +50,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def me(self, request):
-        """
-        Custom API Endpoint: Returns only the profile of the currently authenticated user.
-        Solves the issue where admins fetching /api/artists/ received the full array.
-        """
+        """Custom endpoint returning the profile of the currently authenticated user."""
         artist = get_object_or_404(Artist, user=request.user)
         serializer = self.get_serializer(artist)
         return Response(serializer.data)
@@ -69,7 +63,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Role-based Data Isolation:
-        Artists only see projects (concerts) they are explicitly cast in.
+        Artists can only fetch projects they are explicitly cast in.
         """
         user = self.request.user
         if user.is_superuser:
@@ -82,87 +76,71 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
-        """
-        Role-based Data Isolation:
-        Artists can only see their own contract details and assigned fees.
-        """
+        """Applies database optimizations (select_related) to prevent N+1 queries."""
         user = self.request.user
+        base_queryset = Participation.objects.select_related('artist', 'project')
         if user.is_superuser:
-            return Participation.objects.all()
-        return Participation.objects.filter(artist__user=user)
+            return base_queryset.all()
+        return base_queryset.filter(artist__user=user)
     
     @action(detail=True, methods=['get'])
     def contract(self, request, pk=None):
         """
-        Custom API Endpoint: Generates a dynamic PDF contract for a single participant.
-        Uses WeasyPrint to render HTML to PDF and serves it directly from RAM using io.BytesIO.
+        Generates a dynamic PDF contract for a single participant on-the-fly.
+        Rendered securely in RAM to avoid disk I/O bottlenecks.
         """
         participation = self.get_object()
-        
-        # Render HTML template with context data
         html_string = render_to_string('roster/contract_pdf.html', {'participation': participation})
         pdf_bytes = weasyprint.HTML(string=html_string).write_pdf()
         
-        # Load binary data into memory buffer
         buffer = io.BytesIO(pdf_bytes)
         buffer.seek(0)
         
-        # Sanitize filename
         safe_last_name = participation.artist.last_name.replace(' ', '_')
         filename = f"HR-{participation.project.id}-UOG-SUB-{safe_last_name}.pdf"
         
         response = FileResponse(buffer, as_attachment=True, filename=filename, content_type='application/pdf')
-        
-        # Expose Content-Disposition header so the React frontend can read the exact filename
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
-
         return response
 
     @action(detail=False, methods=['post'])
     def request_project_zip(self, request):
         """
-        Krok 1: Inicjuje asynchroniczne generowanie paczki ZIP.
-        Zwraca task_id dla frontendu.
+        Triggers an asynchronous Celery task to generate bulk PDF contracts.
+        Returns HTTP 202 Accepted with a task identifier for client polling.
         """
-        project_id = request.data.get('project_id') # Używamy POST dla akcji zlecających
+        project_id = request.data.get('project_id')
         if not project_id:
-            return Response({"error": "Brak parametru project_id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Brak project_id"}, status=400)
 
-        # Wrzuć zadanie do kolejki Celery (metoda .delay() to robi)
         task = generate_project_zip_task.delay(project_id)
-        
-        return Response({
-            "task_id": task.id,
-            "status": "processing",
-            "message": "Generowanie umów rozpoczęte w tle."
-        }, status=status.HTTP_202_ACCEPTED)
+        return Response({"task_id": task.id, "status": "processing"}, status=202)
 
     @action(detail=False, methods=['get'])
     def check_zip_status(self, request):
         """
-        Krok 2: Endpoint dla Reacta do odpytywania o status zadania.
+        Polling endpoint for the frontend to check the status of a Celery task.
+        Returns the file download URL upon successful task completion.
         """
         task_id = request.query_params.get('task_id')
         if not task_id:
-            return Response({"error": "Brak parametru task_id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Brak task_id"}, status=400)
 
-        task_result = AsyncResult(task_id)
+        result = AsyncResult(task_id)
         
-        if task_result.state == 'PENDING' or task_result.state == 'STARTED':
-            return Response({"state": task_result.state, "status": "W trakcie przygotowywania..."})
-        
-        elif task_result.state == 'SUCCESS':
-            # Zadanie skończone, wyciągamy URL zwrócony przez task w tasks.py
-            result_data = task_result.result
-            if "error" in result_data:
-                return Response({"state": "FAILED", "error": result_data["error"]}, status=status.HTTP_400_BAD_REQUEST)
+        if result.state == 'SUCCESS':
+            task_data = result.result
+            if "error" in task_data:
+                return Response({"state": "FAILED", "error": task_data["error"]})
                 
             return Response({
-                "state": "SUCCESS",
-                "download_url": result_data.get("download_url")
+                "state": "SUCCESS", 
+                "file_url": task_data.get("download_url"),
+                "message": task_data.get("message")
             })
+                
+        elif result.state == 'FAILURE':
+            return Response({"state": "FAILED", "error": str(result.info)})
             
-        elif task_result.state == 'FAILURE':
-            return Response({"state": "FAILURE", "error": str(task_result.info)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-        return Response({"state": task_result.state})
+        else:
+            return Response({"state": result.state})

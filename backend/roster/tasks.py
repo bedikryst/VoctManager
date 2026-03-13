@@ -1,3 +1,11 @@
+"""
+Asynchronous background tasks for the Roster application.
+Author: Krystian Bugalski
+
+Utilizes Celery and Redis to handle resource-intensive operations
+(like bulk PDF generation) outside the main request-response cycle.
+"""
+
 import io
 import zipfile
 import weasyprint
@@ -7,12 +15,16 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from .models import Participation
 
+__author__ = "Krystian Bugalski"
+
 @shared_task(bind=True)
 def generate_project_zip_task(self, project_id):
     """
-    Zadanie asynchroniczne Celery. Generuje pliki PDF, pakuje do ZIP 
-    i zapisuje w domyślnym storage'u (np. folder media).
+    Generates PDF contracts for all participants in a given project,
+    packages them into an in-memory ZIP archive, and saves the file 
+    to the default storage. Returns the download URL upon completion.
     """
+    # Optimized query to prevent N+1 issues during template rendering
     participations = Participation.objects.filter(project_id=project_id).select_related('artist', 'project')
     
     if not participations.exists():
@@ -22,28 +34,24 @@ def generate_project_zip_task(self, project_id):
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for p in participations:
-            # Generowanie PDF
             html_string = render_to_string('roster/contract_pdf.html', {'participation': p})
             pdf_bytes = weasyprint.HTML(string=html_string).write_pdf()
             
             safe_last_name = p.artist.last_name.replace(' ', '_')
             filename = f"HR-{p.project.id}-UOG-SUB-{safe_last_name}.pdf"
             
-            # Wpisanie do paczki ZIP w pamięci
             zip_file.writestr(filename, pdf_bytes)
             
     zip_buffer.seek(0)
     
-    # Zapisanie pliku ZIP do katalogu media/exports/
     file_path = f"exports/Umowy_Koncert_{project_id}.zip"
     
-    # Jeśli plik już istnieje (z poprzedniego generowania), usuwamy go, żeby zrobić miejsce na nowy
+    # Cleanup previous generation if it exists to save storage space
     if default_storage.exists(file_path):
         default_storage.delete(file_path)
         
     saved_path = default_storage.save(file_path, ContentFile(zip_buffer.read()))
     
-    # Zwracamy URL, pod którym plik będzie dostępny do pobrania
     return {
         "download_url": default_storage.url(saved_path),
         "message": "Archiwum zostało wygenerowane pomyślnie."

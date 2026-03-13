@@ -1,17 +1,33 @@
+/**
+ * ExportContractButton Component
+ * Author: Krystian Bugalski
+ * * A highly interactive UI component for triggering and polling asynchronous 
+ * background tasks (Celery). It provides real-time visual feedback to the user 
+ * during the PDF/ZIP generation process using Framer Motion animations.
+ */
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useExportProject } from '../../hooks/useExportProject';
 
-// Opcjonalne ikony (możesz użyć heroicons, lucide-react lub po prostu tekstu)
+// Animated SVG Spinner for the processing state
 const SpinnerIcon = () => (
-    <motion.svg animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+    <motion.svg 
+        animate={{ rotate: 360 }} 
+        transition={{ repeat: Infinity, duration: 1, ease: "linear" }} 
+        className="w-5 h-5 text-white" 
+        fill="none" 
+        viewBox="0 0 24 24"
+    >
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </motion.svg>
 );
 
 export const ExportContractButton = ({ projectId, token }) => {
+    // Custom hook managing the Celery polling logic and API calls
     const { startExport, status, downloadUrl, error, reset } = useExportProject(token);
+
     const handleExport = () => {
         startExport(projectId);
     };

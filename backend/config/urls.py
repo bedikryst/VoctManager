@@ -17,6 +17,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from roster.views import ArtistViewSet, ProjectViewSet, ParticipationViewSet
 from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet
 
+__author__ = "Krystian Bugalski"
+
 # Initialize the REST Framework Router
 router = DefaultRouter()
 
@@ -44,6 +46,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
-# Serve user-uploaded media files (PDFs, Audio) during local development
+# Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.
+# In production, this should be handled by Nginx or a cloud storage provider (e.g., AWS S3).
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

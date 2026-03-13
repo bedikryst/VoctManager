@@ -137,13 +137,17 @@ CORS_ALLOWED_ORIGINS = cors_env.split(',')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # --- CELERY & REDIS CONFIGURATION ---
-# Adres serwera Redis, który będzie pełnił rolę "Brokera" (kolejki zadań)
+# Redis server address acting as the message broker (task queue)
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
 
-# Gdzie Celery ma zapisywać statusy zadań (PENDING, SUCCESS, FAILED)
+# Database to store task results and statuses (PENDING, SUCCESS, FAILED)
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
 
-# Format serializacji danych między Django a Celery
+# Serialization formats for data passed between Django and Celery
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# --- BUSINESS LOGIC DEFAULTS ---
+# Default password for automatically provisioned artist accounts
+DEFAULT_ARTIST_PASSWORD = os.environ.get('DEFAULT_ARTIST_PASSWORD', 'secure_password123')

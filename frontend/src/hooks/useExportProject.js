@@ -1,22 +1,30 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import api from '../components/utils/api';
+/**
+ * Custom React Hook: useExportProject
+ * Author: Krystian Bugalski
+ * * Manages the polling logic for asynchronous Celery tasks (ZIP generation).
+ * Automatically handles timeouts, state transitions, and memory cleanup.
+ * Integrates directly with the global Axios instance.
+ */
 
-export const useExportProject = () => { // Zauważ: nie przyjmuje już tokena
+import { useState, useRef, useCallback, useEffect } from 'react';
+import api from '../utils/api'; // Make sure this path points to your new api.js location
+
+export const useExportProject = () => { 
     const [status, setStatus] = useState('idle'); 
     const [downloadUrl, setDownloadUrl] = useState(null);
     const [error, setError] = useState(null);
     const timeoutRef = useRef(null);
 
-    // Czyszczenie timeoutu w przypadku odmontowania komponentu (żeby zapobiec memory leaks)
+    // Cleanup timeout on component unmount to prevent memory leaks
     useEffect(() => {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, []);
 
-const checkStatus = useCallback(async (taskId) => {
+    const checkStatus = useCallback(async (taskId) => {
         try {
-            // Używamy naszego api.get - token dodaje się sam pod maską!
+            // JWT token is automatically injected by the Axios interceptor
             const response = await api.get(`/api/participations/check_zip_status/?task_id=${taskId}`);
             const data = response.data;
 
@@ -28,13 +36,15 @@ const checkStatus = useCallback(async (taskId) => {
                 setDownloadUrl(fullUrl);
             } else if (data.state === 'FAILURE' || data.state === 'FAILED') {
                 setStatus('error');
-                setError(data.error || 'Błąd na serwerze.');
+                // Polish error messages retained for the end-user UI
+                setError(data.error || 'Wystąpił błąd na serwerze podczas generowania paczki.');
             } else {
+                // Task is still processing, poll again in 2 seconds
                 timeoutRef.current = setTimeout(() => checkStatus(taskId), 2000);
             }
         } catch (err) {
             setStatus('error');
-            setError('Błąd połączenia z serwerem.');
+            setError('Błąd połączenia z serwerem. Spróbuj ponownie.');
         }
     }, []);
 
@@ -43,12 +53,13 @@ const checkStatus = useCallback(async (taskId) => {
         setError(null);
         setDownloadUrl(null);
 
-try {
+        try {
             const response = await api.post('/api/participations/request_project_zip/', { 
                 project_id: projectId 
             });
 
             if (response.data.task_id) {
+                // Start polling 1.5 seconds after the initial request
                 timeoutRef.current = setTimeout(() => checkStatus(response.data.task_id), 1500);
             }
         } catch (err) {
