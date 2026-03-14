@@ -1,12 +1,12 @@
 /**
- * Dashboard Layout Component
- * Author: Krystian Bugalski
- * * Główny szkielet aplikacji (Sidebar + Content Area).
- * Obsługuje nawigację opartą na rolach (Admin vs Artysta) i automatycznie 
- * naprawia zachowanie systemowego kursora.
+ * @file DashboardLayout.jsx
+ * @description Main architectural wrapper for the authenticated zone.
+ * Handles Role-Based Access Control (RBAC) navigation (Admin vs Artist) 
+ * and responsive sidebar/topbar rendering.
+ * @author Krystian Bugalski
  */
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -18,7 +18,6 @@ import {
     LogOut, 
     Menu, 
     X, 
-    FileText,
     ListOrdered
 } from 'lucide-react';
 
@@ -26,10 +25,10 @@ export default function DashboardLayout() {
     const { user, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Sprawdzamy rolę użytkownika (zabezpieczenie)
+    // Verify user role to render appropriate navigation
     const isAdmin = user?.is_admin;
 
-    // --- KONFIGURACJA NAWIGACJI ---
+    // --- NAVIGATION CONFIGURATION ---
     const adminLinks = [
         { to: '/panel', icon: <LayoutDashboard size={20} />, label: 'Pulpit Zarządu' },
         { to: '/panel/projects', icon: <Briefcase size={20} />, label: 'Projekty i Koncerty' },
@@ -37,22 +36,32 @@ export default function DashboardLayout() {
         { to: '/panel/repertoire', icon: <Music size={20} />, label: 'Archiwum Nuty' },
         { to: '/panel/rehearsals', icon: <CalendarCheck size={20} />, label: 'Obecności na Próbach' },
         { to: '/panel/program', icon: <ListOrdered size={20} />, label: 'Kreator Programu' },
+        { to: '/panel/artists', icon: <Users size={20} />, label: 'Zespół' },
+        { to: '/panel/schedule', icon: <CalendarCheck size={20} />, label: 'Harmonogram' },
+        { to: '/panel/materials', icon: <Music size={20} />, label: 'Materiały do prób' },
+        { to: '/panel/project-management', icon: <Briefcase size={20} />, label: 'Zarządzanie' },
+        { to: '/panel/archive-management', icon: <Music size={20} />, label: 'Archiwum' },
     ];
 
     const artistLinks = [
         { to: '/panel', icon: <LayoutDashboard size={20} />, label: 'Mój Pulpit' },
-       // { to: '/panel/my-contracts', icon: <FileText size={20} />, label: 'Moje Umowy' },
         { to: '/panel/materials', icon: <Music size={20} />, label: 'Materiały do prób' },
         { to: '/panel/schedule', icon: <CalendarCheck size={20} />, label: 'Harmonogram' },
     ];
 
     const navLinks = isAdmin ? adminLinks : artistLinks;
 
-    // Komponent pojedynczego linku (żeby nie powtarzać kodu)
+    useEffect(() => {
+        document.body.classList.add('admin-mode');
+        return () => document.body.classList.remove('admin-mode');
+    }, []);
+
+
+    // Reusable navigation item component
     const NavItem = ({ to, icon, label }) => (
         <NavLink
             to={to}
-            end={to === '/panel'} // żeby '/panel' nie świecił się zawsze jako aktywny
+            end={to === '/panel'} // Prevents '/panel' from always matching as active
             onClick={() => setIsMobileMenuOpen(false)}
             className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-md transition-all font-medium text-sm ${
@@ -70,7 +79,7 @@ export default function DashboardLayout() {
     return (
         <div className="min-h-screen bg-[#fdfbf7] flex cursor-default" style={{ fontFamily: "'Poppins', sans-serif" }}>
             
-            {/* --- SIDEBAR (Desktop) --- */}
+            {/* --- DESKTOP SIDEBAR --- */}
             <aside className="hidden md:flex flex-col w-64 bg-white border-r border-stone-200 fixed h-full z-10 shadow-sm">
                 <div className="p-6 border-b border-stone-100">
                     <h2 className="text-2xl font-medium text-stone-900" style={{ fontFamily: "'Cormorant', serif" }}>
@@ -102,7 +111,7 @@ export default function DashboardLayout() {
                 </div>
             </aside>
 
-            {/* --- TOPBAR (Mobile) --- */}
+            {/* --- MOBILE TOPBAR --- */}
             <header className="md:hidden fixed top-0 w-full bg-white border-b border-stone-200 z-20 px-4 py-4 flex justify-between items-center shadow-sm">
                 <h2 className="text-xl font-medium text-stone-900" style={{ fontFamily: "'Cormorant', serif" }}>
                     Voct<span className="italic text-[#002395]">Manager</span>
@@ -127,10 +136,10 @@ export default function DashboardLayout() {
             )}
 
             {/* --- MAIN CONTENT AREA --- */}
-            {/* Dodajemy margines po lewej stronie (ml-64) na komputerach, żeby zrobić miejsce dla Sidebara */}
+            {/* Added left margin (md:ml-64) to accommodate the fixed desktop sidebar */}
             <main className="flex-1 md:ml-64 pt-20 md:pt-0 p-6 md:p-10 transition-all">
                 <div className="max-w-6xl mx-auto">
-                    {/* Tutaj React Router automatycznie "wstrzyknie" odpowiednią stronę (np. Contracts.jsx) */}
+                    {/* React Router dynamically injects the matched child route here */}
                     <Outlet />
                 </div>
             </main>

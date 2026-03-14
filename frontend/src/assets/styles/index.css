@@ -24,14 +24,61 @@ html {
   scrollbar-gutter: stable;
 }
 
-body {
-  cursor: none;
-}
-a, button, input, textarea, select {
-  cursor: none;
+/* ========================================== */
+/* PUBLIC ZONE: Custom Cursor Enforcement     */
+/* ========================================== */
+body:not(.admin-mode),
+body:not(.admin-mode) a, 
+body:not(.admin-mode) button, 
+body:not(.admin-mode) input, 
+body:not(.admin-mode) textarea, 
+body:not(.admin-mode) select {
+  cursor: none !important;
 }
 
 .force-no-cursor,
 .force-no-cursor * {
   cursor: none !important;
 }
+
+/* ========================================== */
+/* ADMIN ZONE: System Cursor Normalization    */
+/* ========================================== */
+body.admin-mode {
+  cursor: default; /* Global default arrow */
+}
+
+/* Disable the text-selection (I-beam) cursor on standard typography */
+body.admin-mode h1, 
+body.admin-mode h2, 
+body.admin-mode h3, 
+body.admin-mode h4, 
+body.admin-mode h5, 
+body.admin-mode h6, 
+body.admin-mode p, 
+body.admin-mode span, 
+body.admin-mode div,
+body.admin-mode label {
+  cursor: default;
+}
+
+/* Re-enable text cursor ONLY on actual inputs */
+body.admin-mode input[type="text"],
+body.admin-mode input[type="email"],
+body.admin-mode input[type="password"],
+body.admin-mode input[type="number"],
+body.admin-mode textarea {
+  cursor: text !important;
+}
+
+/* Ensure interactive elements feel clickable */
+body.admin-mode a, 
+body.admin-mode button, 
+body.admin-mode [role="button"] {
+  cursor: pointer;
+}
+
+/* Protect Tailwind Utility Classes (e.g., cursor-grab in the Program Builder) */
+body.admin-mode .cursor-grab { cursor: grab !important; }
+body.admin-mode .cursor-grabbing { cursor: grabbing !important; }
+body.admin-mode .cursor-not-allowed { cursor: not-allowed !important; }

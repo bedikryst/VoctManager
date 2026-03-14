@@ -1,15 +1,17 @@
+# archive/admin.py
+# ==========================================
+# Archive Admin Configuration
+# ==========================================
 """
 Django Admin interface configuration for the Archive application.
 Author: Krystian Bugalski
 
-This module customizes how Composer, Piece, and Track models are displayed 
-and managed within the built-in Django administrative panel.
+Customizes the administrative panel to provide a seamless data entry 
+experience for the management team.
 """
 
 from django.contrib import admin
 from .models import Composer, Piece, Track
-
-__author__ = "Krystian Bugalski"
 
 @admin.register(Composer)
 class ComposerAdmin(admin.ModelAdmin):
@@ -18,15 +20,17 @@ class ComposerAdmin(admin.ModelAdmin):
     search_fields = ('first_name', 'last_name')
     ordering = ('last_name', 'first_name')
 
+
 class TrackInline(admin.TabularInline):
     """
     Inline admin interface for Tracks.
     Allows adding multiple audio tracks directly from the Piece admin page,
-    streamlining the data entry process for the management team.
+    streamlining the data entry process.
     """
     model = Track
-    extra = 1  # Number of empty rows displayed by default for uploading new files
+    extra = 1  
     fields = ('voice_part', 'audio_file')
+
 
 @admin.register(Piece)
 class PieceAdmin(admin.ModelAdmin):

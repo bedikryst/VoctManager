@@ -1,9 +1,9 @@
 /**
- * Projects & Concerts Module
- * Author: Krystian Bugalski
- * * Wyświetla listę nadchodzących i minionych projektów.
- * Wykorzystuje zagnieżdżone dane z API (obsada, program) do zaprezentowania
- * pełnego kontekstu logistycznego i artystycznego na jednej karcie.
+ * @file Projects.jsx
+ * @description Projects & Concerts Module.
+ * Displays a list of upcoming and past projects. Parses nested API data 
+ * (cast lists, setlists) to present full logistical and artistic context on unified cards.
+ * @author Krystian Bugalski
  */
 
 import { useState, useEffect } from 'react';
@@ -20,9 +20,9 @@ export default function Projects() {
     const fetchProjects = async () => {
       try {
         const response = await api.get('/api/projects/');
-        setProjects(response.data);
+        setProjects(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
-        console.error("Błąd podczas pobierania projektów:", err);
+        console.error("Failed to fetch projects data:", err);
       } finally {
         setIsLoading(false);
       }
@@ -36,11 +36,16 @@ export default function Projects() {
   };
 
   if (isLoading) {
-    return <div className="animate-pulse flex space-x-4 p-8">Ładowanie projektów...</div>;
+    return (
+        <div className="animate-pulse flex flex-col space-y-4 pt-4">
+            {[1, 2].map(i => <div key={i} className="h-32 bg-stone-100 rounded-xl w-full"></div>)}
+        </div>
+    );
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* HEADER */}
       <div className="flex justify-between items-end border-b border-stone-200 pb-2 mb-6">
         <h2 className="text-xl font-serif font-bold text-stone-800">Projekty i Koncerty</h2>
         <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
@@ -48,6 +53,7 @@ export default function Projects() {
         </span>
       </div>
 
+      {/* PROJECT LIST */}
       <div className="grid grid-cols-1 gap-6">
         {projects.length > 0 ? projects.map((project) => (
           <motion.div 
@@ -56,7 +62,7 @@ export default function Projects() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden"
           >
-            {/* Nagłówek Karty */}
+            {/* CARD HEADER (Main Info) */}
             <div className="p-6 border-b border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h3 className="text-2xl font-medium text-stone-900 mb-2" style={{ fontFamily: "'Cormorant', serif" }}>
@@ -71,7 +77,7 @@ export default function Projects() {
               
               <button 
                 onClick={() => toggleExpand(project.id)}
-                className="flex items-center gap-2 px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-md text-[10px] uppercase tracking-widest font-bold text-stone-600 transition-colors w-max"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-md text-[10px] uppercase tracking-widest font-bold text-stone-600 transition-colors w-full md:w-max"
               >
                 {expandedProjectId === project.id ? (
                   <>Zwiń szczegóły <ChevronUp size={14} /></>
@@ -81,7 +87,7 @@ export default function Projects() {
               </button>
             </div>
 
-            {/* Rozwijane Szczegóły (Program i Obsada) */}
+            {/* EXPANDABLE DETAILS (Program & Cast) */}
             {expandedProjectId === project.id && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
@@ -89,12 +95,12 @@ export default function Projects() {
                 className="p-6 bg-stone-50 grid grid-cols-1 md:grid-cols-2 gap-8"
               >
                 
-                {/* SETLISTA (Program) */}
+                {/* 1. SETLIST (Program) */}
                 <div>
                   <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-800 mb-4 pb-2 border-b border-stone-200">
                     <Music size={16} className="text-[#002395]" /> Program Koncertu
                   </h4>
-                  {project.program && project.program.length > 0 ? (
+                  {Array.isArray(project.program) && project.program.length > 0 ? (
                     <ul className="space-y-2">
                       {project.program.sort((a,b) => a.order - b.order).map(item => (
                         <li key={item.piece_id} className="text-sm text-stone-700 flex items-start gap-3">
@@ -110,12 +116,12 @@ export default function Projects() {
                   )}
                 </div>
 
-                {/* OBSADA (Cast) */}
+                {/* 2. CAST (Obsada) */}
                 <div>
                   <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-800 mb-4 pb-2 border-b border-stone-200">
                     <Users size={16} className="text-[#002395]" /> Obsada
                   </h4>
-                  {project.cast && project.cast.length > 0 ? (
+                  {Array.isArray(project.cast) && project.cast.length > 0 ? (
                     <div className="grid grid-cols-2 gap-2">
                       {project.cast.map(artist => (
                         <div key={artist.id} className="text-sm text-stone-700 flex items-center justify-between bg-white px-3 py-1.5 rounded-sm border border-stone-200 shadow-sm">
@@ -129,7 +135,7 @@ export default function Projects() {
                   )}
                 </div>
 
-                {/* DRESS CODE & OPIS */}
+                {/* 3. DRESS CODE & DESCRIPTION */}
                 {(project.dress_code || project.description) && (
                   <div className="col-span-1 md:col-span-2 mt-4 pt-4 border-t border-stone-200">
                     {project.dress_code && (
@@ -151,7 +157,7 @@ export default function Projects() {
           </motion.div>
         )) : (
           <div className="p-8 text-center text-stone-500 border border-dashed border-stone-300 rounded-xl bg-stone-50">
-            Brak projektów do wyświetlenia. Dodaj je w panelu Django.
+            Brak projektów do wyświetlenia. Dodaj je w panelu administracyjnym.
           </div>
         )}
       </div>

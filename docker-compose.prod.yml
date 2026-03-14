@@ -1,6 +1,5 @@
 # docker-compose.prod.yml
 # Production overrides focusing on performance and security (HTTPS)
-version: '3.8'
 
 services:
   web:

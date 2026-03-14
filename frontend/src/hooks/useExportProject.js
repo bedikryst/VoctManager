@@ -1,9 +1,9 @@
 /**
- * Custom React Hook: useExportProject
- * Author: Krystian Bugalski
- * * Manages the polling logic for asynchronous Celery tasks (ZIP generation).
- * Automatically handles timeouts, state transitions, and memory cleanup.
- * Integrates directly with the global Axios instance.
+ * @file useExportProject.js
+ * @description Custom React Hook for managing asynchronous ZIP export tasks.
+ * Implements polling logic to check Celery task status, automatically handling 
+ * timeouts, state transitions, and memory cleanup.
+ * @author Krystian Bugalski
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -36,7 +36,6 @@ export const useExportProject = () => {
                 setDownloadUrl(fullUrl);
             } else if (data.state === 'FAILURE' || data.state === 'FAILED') {
                 setStatus('error');
-                // Polish error messages retained for the end-user UI
                 setError(data.error || 'Wystąpił błąd na serwerze podczas generowania paczki.');
             } else {
                 // Task is still processing, poll again in 2 seconds

@@ -23,12 +23,6 @@ import DashboardLayout from './components/layout/DashboardLayout';
 // --- PAGES ---
 import Home from './pages/Home';
 import Login from './pages/Login';
-// import Experience from './pages/Experience';
-// import Ensemble from './pages/Ensemble';
-// import Foundation from './pages/Foundation';
-// import Donate from './pages/Donate';
-// import Collaborations from './pages/Collaborations';
-// import Contact from './pages/Contact';
 
 // --- PANEL COMPONENTS ---
 import Contracts from './components/panel/Contracts';
@@ -39,77 +33,70 @@ import Rehearsals from './components/panel/Rehearsals';
 import ProgramBuilder from './components/panel/ProgramBuilder';
 import Materials from './components/panel/Materials';
 import Schedule from './components/panel/Schedule';
+import ArtistManagement from './components/panel/ArtistManagement';
+import ProjectManagement from './components/panel/ProjectManagement';
+import ArchiveManagement from './components/panel/ArchiveManagement';
 
 export default function App() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // ==========================================
-  // LOGIKA WIDOCZNOŚCI GLOBALNYCH KOMPONENTÓW
+  // GLOBAL COMPONENTS VISIBILITY LOGIC
   // ==========================================
   
-  // Zamiast tablicy, sprawdzamy czy ścieżka zaczyna się od /panel lub jest logowaniem
+  // Determine if the current route is within the protected dashboard or login screen
   const isPanelRoute = location.pathname.startsWith('/panel');
   const isLoginRoute = location.pathname === '/login';
   
-  // Ukrywamy elementy globalne dla panelu i logowania
+  // Hide global aesthetic components (like custom cursors and public nav) inside the operational panel
   const shouldShowGlobalComponents = !isPanelRoute && !isLoginRoute;
 
   return (
     <>
-      {/* 1. GLOBALNY PRELOADER I NAVBAR (Tylko w strefie publicznej) */}
+      {/* 1. GLOBAL PRELOADER & NAVBAR (Public Zone Only) */}
       {shouldShowGlobalComponents && <Preloader />}
       {shouldShowGlobalComponents && <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />}
 
-      {/* 2. SILNIK PRZEJŚĆ KINOWYCH */}
+      {/* 2. CINEMATIC PAGE TRANSITION ENGINE */}
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           
-          {/* ========================================== */}
-          {/* STREFA PUBLICZNA */}
-          {/* ========================================== */}
+          {/* --- PUBLIC ZONE --- */}
           <Route path="/" element={<PageTransition><Home /></PageTransition>} />
           <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
 
-          {/* ========================================== */}
-          {/* STREFA PRYWATNA (CHRONIONA) */}
-          {/* ========================================== */}
+          {/* --- PROTECTED ZONE (DASHBOARD) --- */}
           <Route element={<ProtectedRoute />}>
-            
-            {/* NAPRAWIONE: DashboardLayout JEST TERAZ RODZICEM DLA PODSTRON */}
             <Route path="/panel" element={<DashboardLayout />}>
               
-              {/* Ścieżka bazowa: /panel */}
+              {/* Dashboard Index */}
               <Route index element={<DashboardHome />} />
 
-              {/* Ścieżki podrzędne (Zwróć uwagę: nie piszemy tu /panel/contracts, tylko samo contracts) */}
+              {/* Administrative Sub-routes */}
               <Route path="contracts" element={<Contracts />} />
               <Route path="projects" element={<Projects />} />
               <Route path="repertoire" element={<Repertoire />} />
               <Route path="rehearsals" element={<Rehearsals />} />
               <Route path="program" element={<ProgramBuilder />} />
+              <Route path="artists" element={<ArtistManagement />} />
+              <Route path="project-management" element={<ProjectManagement />} />
+              <Route path="archive-management" element={<ArchiveManagement />} />
 
+              {/* Artist Sub-routes */}
               <Route path="materials" element={<Materials />} />
               <Route path="schedule" element={<Schedule />} />
               
-              {/* Kolejne podstrony dodasz tutaj w ten sam sposób: */}
-              {/* <Route path="repertoire" element={<Repertoire />} /> */}
-              
             </Route>
-
           </Route>
-
-          {/* MIEJSCE NA NOWE PODSTRONY PUBLICZNE */}
-          {/* <Route path="/doswiadczenie" element={<PageTransition><Experience /></PageTransition>} /> */}
-          {/* <Route path="/kontakt" element={<PageTransition><Contact /></PageTransition>} /> */}
 
         </Routes>
       </AnimatePresence>
 
-      {/* 3. STOPKA (Tylko w strefie publicznej) */}
+      {/* 3. FOOTER (Public Zone Only) */}
       {shouldShowGlobalComponents && <FooterSection />}
 
-      {/* 4. GLOBALNE NAKŁADKI UI */}
+      {/* 4. GLOBAL UI OVERLAYS */}
       {shouldShowGlobalComponents && <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />}
       <NoiseOverlay />
       {shouldShowGlobalComponents && <CustomCursor />}

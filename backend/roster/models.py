@@ -1,3 +1,7 @@
+# roster/models.py
+# ==========================================
+# Roster & Logistics Database Models
+# ==========================================
 """
 Database models for the Roster application.
 Author: Krystian Bugalski
@@ -12,28 +16,48 @@ from django.contrib.auth.models import User
 from django.conf import settings
 
 from core.models import EnterpriseBaseModel
-from core.constants import VOICE_LINES
+from core.constants import VoiceLine
 
-__author__ = "Krystian Bugalski"
 
-VOICE_TYPES = [
-    ('SOP', 'Sopran'), ('MEZ', 'Mezzosopran'), ('ALT', 'Alt'),
-    ('CT', 'Kontratenor'), ('TEN', 'Tenor'), ('BAR', 'Baryton'), ('BAS', 'Bas'),
-    ('DIR', 'Dyrygent/Kierownik')
-]
+class VoiceType(models.TextChoices):
+    """Enumeration for general vocal classifications."""
+    SOPRANO = 'SOP', 'Sopran'
+    MEZZO = 'MEZ', 'Mezzosopran'
+    ALTO = 'ALT', 'Alt'
+    COUNTERTENOR = 'CT', 'Kontratenor'
+    TENOR = 'TEN', 'Tenor'
+    BARITONE = 'BAR', 'Baryton'
+    BASS = 'BAS', 'Bas'
+    CONDUCTOR = 'DIR', 'Dyrygent/Kierownik'
+
 
 class Artist(EnterpriseBaseModel):
-    """Represents a vocal ensemble member and their specific musical capabilities."""
-    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='artist_profile', verbose_name="Konto")
+    """
+    Represents a vocal ensemble member and their specific musical capabilities.
+    Linked to a Django User model for authentication and platform access.
+    """
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='artist_profile', 
+        verbose_name="Konto"
+    )
     first_name = models.CharField(max_length=50, verbose_name="Imię")
     last_name = models.CharField(max_length=50, verbose_name="Nazwisko")
     email = models.EmailField(unique=True, verbose_name="E-mail")
     phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name="Telefon")
-    voice_type = models.CharField(max_length=5, choices=VOICE_TYPES, verbose_name="Rodzaj głosu")
+    voice_type = models.CharField(max_length=5, choices=VoiceType.choices, verbose_name="Rodzaj głosu")
     is_active = models.BooleanField(default=True, verbose_name="Aktywny")
 
     # Vocal Profile Data
-    sight_reading_skill = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)], blank=True, null=True, verbose_name="Czytanie a vista (1-5)")
+    sight_reading_skill = models.IntegerField(
+        choices=[(i, str(i)) for i in range(1, 6)], 
+        blank=True, 
+        null=True, 
+        verbose_name="Czytanie a vista (1-5)"
+    )
     vocal_range_bottom = models.CharField(max_length=5, blank=True, null=True, help_text="np. G2", verbose_name="Skala (dół)")
     vocal_range_top = models.CharField(max_length=5, blank=True, null=True, help_text="np. C5", verbose_name="Skala (góra)")
 
@@ -46,23 +70,31 @@ class Artist(EnterpriseBaseModel):
 
     def save(self, *args, **kwargs):
         """
-        Intercepts the save process to automatically provision a Django User account
-        for new artists, allowing them immediate access to the frontend application.
+        Intercepts the save process to automatically provision a Django User account.
+        Uses a sequential counter for collision resolution (e.g., kbugalski, kbugalski2).
         """
         if self.first_name and self.last_name and not self.user:
-            username = f"{self.first_name[0].lower()}{self.last_name.lower()}"
-            user, created = User.objects.get_or_create(username=username)
-            if created:
-                user.email = self.email
-                default_password = getattr(settings, 'DEFAULT_ARTIST_PASSWORD', 'fallback_secure_password123')  
-                user.set_password(default_password) 
-                user.save()
+            base_username = f"{self.first_name[0].lower()}{self.last_name.lower()}"
+            username = base_username
+            counter = 2
+            
+            # Sequential collision resolution
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+                
+            user = User.objects.create(username=username, email=self.email)
+            default_password = getattr(settings, 'DEFAULT_ARTIST_PASSWORD', 'fallback_secure_password123')  
+            user.set_password(default_password) 
+            user.save()
+            
             self.user = user
-        super().save(*args, **kwargs)   
+            
+        super().save(*args, **kwargs)
 
 
 class Project(EnterpriseBaseModel):
-    """Represents a specific event, concert, or recording session."""
+    """Represents a specific event, concert series, or recording session."""
     title = models.CharField(max_length=200, verbose_name="Nazwa Projektu")
     start_date = models.DateField(verbose_name="Data Rozpoczęcia")
     end_date = models.DateField(verbose_name="Data Zakończenia")
@@ -81,8 +113,9 @@ class Project(EnterpriseBaseModel):
 
 class ProgramItem(EnterpriseBaseModel):
     """Maps musical pieces to a project to create an ordered concert setlist."""
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='program_items')
-    piece = models.ForeignKey('archive.Piece', on_delete=models.CASCADE, verbose_name="Utwór")
+    # CRITICAL: Using RESTRICT to prevent hard-delete bypass of the Soft Delete architecture
+    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='program_items')
+    piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, verbose_name="Utwór")
     order = models.PositiveIntegerField(verbose_name="Kolejność w programie (1, 2, 3...)")
     is_encore = models.BooleanField(default=False, verbose_name="Czy to BIS?")
 
@@ -97,14 +130,14 @@ class ProgramItem(EnterpriseBaseModel):
 
 
 class Participation(EnterpriseBaseModel):
-    """Junction table linking artists to projects, storing contract status and fees."""
+    """Junction table linking artists to projects, storing contract status and financial fees."""
     class Status(models.TextChoices):
         INVITED = 'INV', 'Zaproszony'
         CONFIRMED = 'CON', 'Potwierdzony'
         DECLINED = 'DEC', 'Odrzucił'
 
-    artist = models.ForeignKey(Artist, on_delete=models.CASCADE, related_name='participations', verbose_name="Artysta")
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='participations', verbose_name="Projekt")
+    artist = models.ForeignKey(Artist, on_delete=models.RESTRICT, related_name='participations', verbose_name="Artysta")
+    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='participations', verbose_name="Projekt")
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name="Status")
     fee = models.DecimalField(max_digits=8, decimal_places=0, blank=True, null=True, verbose_name="Wynagrodzenie")
 
@@ -118,15 +151,15 @@ class Participation(EnterpriseBaseModel):
 
 
 class ProjectPieceCasting(EnterpriseBaseModel):
-    """Micro-casting: Assigns a specific vocal line to an artist for a single piece."""
+    """Micro-casting: Assigns a specific vocal line (divisi) to an artist for a single piece."""
     class Role(models.TextChoices):
         TUTTI = 'TUTTI', 'Tutti'
         SOLO = 'SOLO', 'Partia Solowa'
         BACKGROUND = 'BACK', 'Chórek'
 
-    participation = models.ForeignKey(Participation, on_delete=models.CASCADE, related_name='castings', verbose_name="Uczestnik")
-    piece = models.ForeignKey('archive.Piece', on_delete=models.CASCADE, related_name='castings', verbose_name="Utwór")
-    voice_line = models.CharField(max_length=5, choices=VOICE_LINES, verbose_name="Linia melodyczna (Divisi)")
+    participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='castings', verbose_name="Uczestnik")
+    piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, related_name='castings', verbose_name="Utwór")
+    voice_line = models.CharField(max_length=5, choices=VoiceLine.choices, verbose_name="Linia melodyczna (Divisi)")
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.TUTTI, verbose_name="Rola")
     gives_pitch = models.BooleanField(default=False, verbose_name="Daje dźwięk (Kamerton)")
     notes = models.CharField(max_length=200, blank=True, null=True, verbose_name="Notatki")
@@ -139,7 +172,7 @@ class ProjectPieceCasting(EnterpriseBaseModel):
 
 class Rehearsal(EnterpriseBaseModel):
     """Represents a scheduled rehearsal session for a specific project."""
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='rehearsals', verbose_name="Projekt")
+    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='rehearsals', verbose_name="Projekt")
     date_time = models.DateTimeField(verbose_name="Data i godzina")
     location = models.CharField(max_length=200, verbose_name="Sala prób")
     focus = models.CharField(max_length=200, blank=True, null=True, verbose_name="Cel próby")
@@ -155,15 +188,15 @@ class Rehearsal(EnterpriseBaseModel):
 
 
 class Attendance(EnterpriseBaseModel):
-    """Tracks attendance and absence justifications for rehearsals."""
+    """Tracks individual attendance and absence justifications for rehearsals."""
     class Status(models.TextChoices):
         PRESENT = 'PRESENT', 'Obecny'
         LATE = 'LATE', 'Spóźniony'
         ABSENT = 'ABSENT', 'Nieobecny'
         EXCUSED = 'EXCUSED', 'Usprawiedliwiony'
 
-    rehearsal = models.ForeignKey(Rehearsal, on_delete=models.CASCADE, related_name='attendances', verbose_name="Próba")
-    participation = models.ForeignKey(Participation, on_delete=models.CASCADE, related_name='attendances', verbose_name="Uczestnik")
+    rehearsal = models.ForeignKey(Rehearsal, on_delete=models.RESTRICT, related_name='attendances', verbose_name="Próba")
+    participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='attendances', verbose_name="Uczestnik")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PRESENT, verbose_name="Status")
     minutes_late = models.PositiveIntegerField(blank=True, null=True, verbose_name="Minuty spóźnienia")
     excuse_note = models.CharField(max_length=255, blank=True, null=True, verbose_name="Powód nieobecności (Notatka chórzysty)")
@@ -175,7 +208,7 @@ class Attendance(EnterpriseBaseModel):
 
 
 class Collaborator(EnterpriseBaseModel):
-    """External production staff (e.g., sound engineers, lighting designers)."""
+    """External production staff (e.g., sound engineers, lighting designers, instrumentalists)."""
     class Specialty(models.TextChoices):
         SOUND = 'SOUND', 'Reżyseria Dźwięku'
         LIGHT = 'LIGHT', 'Reżyseria Świateł'
@@ -200,13 +233,13 @@ class Collaborator(EnterpriseBaseModel):
 
 
 class CrewAssignment(EnterpriseBaseModel):
-    """Assigns external collaborators to a project with specific duties and fees."""
+    """Assigns external collaborators to a project with specific duties and contractual fees."""
     class Status(models.TextChoices):
         INVITED = 'INV', 'Wstępnie umówiony'
         CONFIRMED = 'CON', 'Potwierdzony'
 
-    collaborator = models.ForeignKey(Collaborator, on_delete=models.CASCADE, related_name='assignments', verbose_name="Współtwórca")
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='crew_assignments', verbose_name="Projekt")
+    collaborator = models.ForeignKey(Collaborator, on_delete=models.RESTRICT, related_name='assignments', verbose_name="Współtwórca")
+    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='crew_assignments', verbose_name="Projekt")
     role_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Zakres obowiązków")
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name="Status")
     fee = models.DecimalField(max_digits=8, decimal_places=0, blank=True, null=True, verbose_name="Wynagrodzenie")
@@ -215,5 +248,3 @@ class CrewAssignment(EnterpriseBaseModel):
         verbose_name = "Przydział Współtwórcy"
         verbose_name_plural = "Przydziały Współtwórców"
         constraints = [models.UniqueConstraint(fields=['collaborator', 'project'], name='unique_crew_assignment')]
-
-

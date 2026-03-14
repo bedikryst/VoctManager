@@ -1,3 +1,7 @@
+# config/celery.py
+# ==========================================
+# Asynchronous Task Queue Configuration
+# ==========================================
 """
 Celery configuration for asynchronous task processing.
 Author: Krystian Bugalski
@@ -9,8 +13,6 @@ to run independently from the main web server threads.
 
 import os
 from celery import Celery
-
-__author__ = "Krystian Bugalski"
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')

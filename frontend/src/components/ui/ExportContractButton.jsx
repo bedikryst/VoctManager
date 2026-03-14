@@ -1,70 +1,61 @@
 /**
- * ExportContractButton Component
- * Author: Krystian Bugalski
- * * A highly interactive UI component for triggering and polling asynchronous 
+ * @file ExportContractButton.jsx
+ * @description Export Contract Button Component.
+ * A highly interactive UI component for triggering and polling asynchronous 
  * background tasks (Celery). It provides real-time visual feedback to the user 
  * during the PDF/ZIP generation process using Framer Motion animations.
+ * @author Krystian Bugalski
  */
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useExportProject } from '../../hooks/useExportProject';
+import { Loader2, Download, AlertCircle } from 'lucide-react';
 
-// Animated SVG Spinner for the processing state
-const SpinnerIcon = () => (
-    <motion.svg 
-        animate={{ rotate: 360 }} 
-        transition={{ repeat: Infinity, duration: 1, ease: "linear" }} 
-        className="w-5 h-5 text-white" 
-        fill="none" 
-        viewBox="0 0 24 24"
-    >
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </motion.svg>
-);
-
-export const ExportContractButton = ({ projectId, token }) => {
-    // Custom hook managing the Celery polling logic and API calls
-    const { startExport, status, downloadUrl, error, reset } = useExportProject(token);
+export const ExportContractButton = ({ projectId }) => {
+    // Usunięto 'token' - Axios interceptor zajmuje się tym globalnie!
+    const { startExport, status, downloadUrl, error, reset } = useExportProject();
 
     const handleExport = () => {
         startExport(projectId);
     };
 
     return (
-        <div className="relative flex items-center justify-center min-h-[60px]">
+        <div className="relative flex items-center justify-center min-h-[40px]">
             <AnimatePresence mode="wait">
+                {/* 1. STAN SPOCZYNKU */}
                 {status === 'idle' && (
                     <motion.button
                         key="idle"
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
+                        exit={{ opacity: 0, y: -5 }}
                         onClick={handleExport}
-                        className="px-6 py-2 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-lg"
+                        className="bg-stone-900 hover:bg-[#002395] text-white text-[10px] uppercase tracking-widest font-bold py-2.5 px-5 rounded-sm transition-colors shadow-sm"
                     >
-                        Generuj paczkę ZIP z umowami
+                        Generuj paczkę ZIP
                     </motion.button>
                 )}
 
+                {/* 2. STAN PRZETWARZANIA W CELERY */}
                 {status === 'processing' && (
                     <motion.div
                         key="processing"
-                        initial={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="flex items-center space-x-3 px-6 py-2 bg-blue-600 text-white font-medium rounded-full shadow-lg"
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="flex items-center space-x-2 px-5 py-2.5 bg-stone-100 border border-stone-200 text-[#002395] font-bold text-[10px] uppercase tracking-widest rounded-sm"
                     >
-                        <SpinnerIcon />
-                        <span>Trwa generowanie w tle...</span>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Przetwarzanie w tle...</span>
                     </motion.div>
                 )}
 
+                {/* 3. SUKCES (Pobieranie) */}
                 {status === 'success' && (
                     <motion.div
                         key="success"
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="flex items-center space-x-4"
                     >
@@ -72,30 +63,33 @@ export const ExportContractButton = ({ projectId, token }) => {
                             href={downloadUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-500 transition-colors shadow-lg"
+                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] uppercase tracking-widest font-bold py-2.5 px-5 rounded-sm transition-colors shadow-sm"
                         >
-                            Pobierz gotowy plik ZIP
+                            <Download size={14} /> Pobierz ZIP
                         </a>
                         <button 
                             onClick={reset} 
-                            className="text-sm text-slate-500 hover:text-slate-700 underline"
+                            className="text-[10px] uppercase tracking-widest font-bold text-stone-400 hover:text-stone-800 transition-colors"
                         >
                             Zamknij
                         </button>
                     </motion.div>
                 )}
 
+                {/* 4. BŁĄD */}
                 {status === 'error' && (
                     <motion.div
                         key="error"
-                        initial={{ opacity: 0, x: -10 }}
+                        initial={{ opacity: 0, x: -5 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center space-x-3 text-red-600"
+                        className="flex items-center space-x-3"
                     >
-                        <span className="font-medium">{error}</span>
+                        <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-red-600">
+                            <AlertCircle size={14} /> {error}
+                        </span>
                         <button 
                             onClick={reset} 
-                            className="px-4 py-1 border border-red-600 rounded hover:bg-red-50 transition-colors"
+                            className="px-4 py-2 border border-red-200 text-red-600 rounded-sm text-[10px] uppercase tracking-widest font-bold hover:bg-red-50 transition-colors"
                         >
                             Spróbuj ponownie
                         </button>

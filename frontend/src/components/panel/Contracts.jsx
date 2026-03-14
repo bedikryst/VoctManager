@@ -1,10 +1,10 @@
 /**
- * Contracts Module (HR & Payroll Dashboard)
- * Author: Krystian Bugalski
- * * Provides a dense, Excel-like interface for managing concert fees.
- * Features inline data editing, global fee assignment, and handles complex 
- * binary downloads (individual PDFs and batch ZIP files) directly from the Django API.
- * Leverages the global Axios instance for automated JWT authentication.
+ * @file Contracts.jsx
+ * @description Contracts Module (HR & Payroll Dashboard).
+ * Provides a dense, data-grid interface for managing concert fees.
+ * Features inline editing, bulk fee updates, and complex binary downloads (PDFs/ZIPs).
+ * Integrates global Axios interceptors to automatically handle JWT authentication.
+ * @author Krystian Bugalski
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -25,7 +25,7 @@ export default function Contracts() {
   const fetchParticipations = useCallback(async () => {
     try {
       const response = await api.get('/api/participations/');
-      setParticipations(response.data);
+      setParticipations(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Error fetching participations:", err);
     }
@@ -35,7 +35,7 @@ export default function Contracts() {
     const fetchProjects = async () => {
       try {
         const response = await api.get('/api/projects/');
-        setProjects(response.data);
+        setProjects(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         console.error("Error fetching projects:", err);
       }
@@ -48,21 +48,22 @@ export default function Contracts() {
   // Filter the cast based on the currently selected project
   const currentCast = participations.filter(p => p.project === parseInt(selectedProjectId));
 
-const handleApplyGlobalFee = async () => {
+  const handleApplyGlobalFee = async () => {
     if (!globalFee) return;
     setIsApplyingGlobal(true);
     setStatus({ type: 'info', message: 'Trwa nadpisywanie stawek...' });
     
     try {
-      // JEDNO zapytanie do naszego nowego endpointu w Django
+      // Single optimized SQL UPDATE query via Django API
       const res = await api.patch('/api/participations/bulk-fee/', { 
         project_id: selectedProjectId,
         fee: parseFloat(globalFee) 
       });
       
-      // Odświeżamy dane w tabeli
+      // Refresh local state to reflect the database changes
       await fetchParticipations();
       setStatus({ type: 'success', message: `Zapisano dla ${res.data.updated_count} osób.` });
+      setGlobalFee(''); // Clear the input after successful apply
     } catch (e) { 
       console.error("Failed to update fees in bulk", e);
       setStatus({ type: 'error', message: 'Wystąpił błąd podczas masowego zapisu.' });
@@ -71,7 +72,6 @@ const handleApplyGlobalFee = async () => {
     }
   };
 
-  // UŻYCIE GLOBALNEGO UTILA DO POBIERANIA
   const handleDownloadSingle = async (participationId, artistName) => {
     setStatus({ type: 'info', message: `Generowanie umowy dla: ${artistName}...` });
     try {
@@ -84,10 +84,12 @@ const handleApplyGlobalFee = async () => {
   
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* HEADER SECTION */}
       <div className="flex justify-between items-end border-b border-stone-200 pb-2 mb-6">
         <h2 className="text-xl font-serif font-bold text-stone-800">Moduł Kadrowo-Płacowy</h2>
       </div>
 
+      {/* GLOBAL STATUS NOTIFICATIONS */}
       {status.message && (
         <div className={`p-4 rounded-sm text-sm font-medium mb-6 border whitespace-pre-line leading-relaxed ${status.type === 'success' ? 'bg-stone-50 text-stone-800 border-stone-300' : status.type === 'info' ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-red-50 text-red-800 border-red-200'}`}>
           {status.message}
@@ -134,11 +136,9 @@ const handleApplyGlobalFee = async () => {
                 </div>
               </div>
 
+              {/* ASYNC CELERY EXPORT TRIGGER */}
               {currentCast.length > 0 && (
-                <ExportContractButton 
-                  projectId={selectedProjectId} 
-                  // The token is no longer passed here because Axios handles it globally!
-                />
+                <ExportContractButton projectId={selectedProjectId} />
               )}
             </div>
             
@@ -147,7 +147,7 @@ const handleApplyGlobalFee = async () => {
               <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Rekordów: {currentCast.length}</span>
             </div>
             
-            {/* DATA TABLE (Dense layout for quick data entry) */}
+            {/* DATA TABLE */}
             {currentCast.length > 0 ? (
               <div className="overflow-x-auto border border-stone-200 rounded-sm">
                 <table className="w-full text-left text-sm text-stone-600">
@@ -163,7 +163,7 @@ const handleApplyGlobalFee = async () => {
                   <tbody className="divide-y divide-stone-100 bg-white">
                     {currentCast.map(participation => (
                       <ContractRow 
-                        key={`${participation.id}-${participation.fee}`} 
+                        key={participation.id} 
                         participation={participation} 
                         onDownload={handleDownloadSingle} 
                       />
@@ -182,17 +182,23 @@ const handleApplyGlobalFee = async () => {
 }
 
 /**
- * Sub-component representing a single row in the Contracts Data Table.
- * Encapsulates its own local state for inline editing and saving.
+ * @component ContractRow
+ * @description Sub-component representing a single row in the Contracts Data Table.
+ * Encapsulates its own local state for inline editing, while remaining synchronized 
+ * with the parent's data state via the useEffect hook.
  */
 function ContractRow({ participation, onDownload }) {
   const [fee, setFee] = useState(participation.fee || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // CRITICAL FIX: Synchronize local component state with parent props.
+  // Without this, the 'fee' input would remain stale after a bulk update.
+  useEffect(() => {
+    setFee(participation.fee || '');
+  }, [participation.fee]);
+
   const artistName = participation.artist_name || `Artysta ID: ${participation.artist}`;
-  
-  // Zaktualizowano na podstawie backendu: voice_type_display
   const voiceDisplay = participation.artist_voice_type_display || '-'; 
 
   const handleSaveFee = async () => {
@@ -200,7 +206,6 @@ function ContractRow({ participation, onDownload }) {
     setSaveSuccess(false);
     
     try {
-      // Utilizing the global Axios instance (api)
       const res = await api.patch(`/api/participations/${participation.id}/`, {
         fee: fee === '' ? null : parseFloat(fee)
       });
@@ -212,9 +217,9 @@ function ContractRow({ participation, onDownload }) {
       }
     } catch (err) { 
       console.error("Save error:", err); 
+    } finally {
+      setIsSaving(false);
     }
-    
-    setIsSaving(false);
   };
 
   return (
@@ -234,8 +239,11 @@ function ContractRow({ participation, onDownload }) {
           />
           <button 
             onClick={handleSaveFee} 
-            disabled={isSaving} 
-            className={`px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded-sm transition-colors border ${saveSuccess ? 'bg-stone-100 text-stone-800 border-stone-300' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400 hover:text-stone-900'}`}
+            disabled={isSaving || parseFloat(fee) === parseFloat(participation.fee)} 
+            className={`px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded-sm transition-colors border 
+                ${saveSuccess ? 'bg-stone-100 text-stone-800 border-stone-300' : 
+                  (parseFloat(fee) !== parseFloat(participation.fee) && fee !== '') ? 'bg-[#002395] text-white border-[#002395]' : 
+                  'bg-white text-stone-600 border-stone-200 disabled:opacity-50'}`}
           >
             {saveSuccess ? 'Zapisano' : 'Zapisz'}
           </button>

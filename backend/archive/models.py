@@ -1,3 +1,7 @@
+# archive/models.py
+# ==========================================
+# Archive Database Models
+# ==========================================
 """
 Database models for the Archive application.
 Author: Krystian Bugalski
@@ -10,12 +14,14 @@ import uuid
 from django.db import models
 
 from core.models import EnterpriseBaseModel
-from core.constants import VOICE_LINES
-
-__author__ = "Krystian Bugalski"
+from core.constants import VoiceLine
 
 
 class Composer(EnterpriseBaseModel):
+    """
+    Represents a musical composer or arranger.
+    Handles traditional/anonymous works gracefully via its string representation.
+    """
     first_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Imię")
     last_name = models.CharField(max_length=100, verbose_name="Nazwisko")
     birth_year = models.CharField(max_length=50, null=True, blank=True, help_text="np. 1885", verbose_name="Rok urodzenia")
@@ -27,15 +33,19 @@ class Composer(EnterpriseBaseModel):
         ordering = ['last_name']
 
     def __str__(self):
-        # Gracefully handle anonymous composers or traditional melodies
         if self.first_name:
             return f"{self.first_name} {self.last_name}"
         return self.last_name 
 
 
 class Piece(EnterpriseBaseModel):
+    """
+    Represents a single musical work in the ensemble's repertoire.
+    Stores metadata, sheet music files, and resources for the conductor's workspace.
+    """
     title = models.CharField(max_length=200, verbose_name="Tytuł utworu")
     
+    # Safe nullification instead of cascading deletion
     composer = models.ForeignKey(
         Composer, on_delete=models.SET_NULL, null=True, blank=True, 
         related_name='pieces', verbose_name="Kompozytor"
@@ -69,8 +79,14 @@ class Piece(EnterpriseBaseModel):
 
 
 class Track(EnterpriseBaseModel):
-    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='tracks', verbose_name="Utwór")
-    voice_part = models.CharField(max_length=10, choices=VOICE_LINES, verbose_name="Linia melodyczna")
+    """
+    Represents isolated audio tracks (e.g., individual vocal lines) used for rehearsal preparation.
+    """
+    # CRITICAL: Replaced CASCADE with RESTRICT to prevent bypassing Soft Delete logic
+    piece = models.ForeignKey(Piece, on_delete=models.RESTRICT, related_name='tracks', verbose_name="Utwór")
+    
+    # Uses the modernized TextChoices from core.constants
+    voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name="Linia melodyczna")
     audio_file = models.FileField(upload_to='audio_tracks/', verbose_name="Plik Audio (MIDI/MP3)")
 
     class Meta:

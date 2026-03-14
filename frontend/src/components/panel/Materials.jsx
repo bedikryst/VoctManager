@@ -1,14 +1,14 @@
 /**
- * Artist Materials Module
- * Author: Krystian Bugalski
- * * Mobile-first widok materiałów do ćwiczeń.
- * Wyświetla tylko te utwory, które są aktualnie w repertuarze
- * przypisanych artyście projektów.
+ * @file Materials.jsx
+ * @description Artist Rehearsal Materials Module.
+ * Mobile-first view displaying assigned sheet music and isolated audio tracks.
+ * Implements an exclusive audio playback mechanism (pauses other tracks when one starts).
+ * @author Krystian Bugalski
  */
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Music, FileText, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Music, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../../utils/api';
 
 export default function Materials() {
@@ -17,16 +17,14 @@ export default function Materials() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedPieceId, setExpandedPieceId] = useState(null);
 
-  // W prawdziwej implementacji ten endpoint (/api/pieces/my-materials/) 
-  // powinien zwracać tylko utwory z projektów artysty. 
-  // Na razie używamy standardowego endpointu pieces.
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
         const response = await api.get('/api/pieces/');
-        setPieces(response.data);
+        // Guard clause: ensure data is always an array to prevent .filter() crashes
+        setPieces(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
-        console.error("Błąd pobierania materiałów:", err);
+        console.error("Failed to fetch rehearsal materials:", err);
       } finally {
         setIsLoading(false);
       }
@@ -38,13 +36,18 @@ export default function Materials() {
     setExpandedPieceId(prev => prev === id ? null : id);
   };
 
-  const filteredPieces = pieces.filter(piece => 
-    piece.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (typeof piece.composer === 'object' ? piece.composer?.last_name?.toLowerCase() : piece.composer?.toLowerCase())?.includes(searchQuery.toLowerCase())
-  );
+  // Client-side search filtering across titles and composer names
+  const filteredPieces = pieces.filter(piece => {
+    const titleMatch = piece.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const composerName = typeof piece.composer === 'object' ? piece.composer?.last_name : piece.composer;
+    const composerMatch = composerName?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return titleMatch || composerMatch;
+  });
 
   return (
     <div className="space-y-6 animate-fade-in pb-20 md:pb-6 cursor-default">
+      {/* HEADER & SEARCH BARS */}
       <div className="flex flex-col md:flex-row justify-between md:items-end border-b border-stone-200 pb-4 mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-serif font-bold text-stone-800">Materiały do prób</h2>
@@ -65,6 +68,7 @@ export default function Materials() {
         </div>
       </div>
 
+      {/* CONTENT AREA */}
       {isLoading ? (
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map(i => <div key={i} className="h-16 bg-stone-100 rounded-xl w-full"></div>)}
@@ -79,7 +83,7 @@ export default function Materials() {
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
                 className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden"
               >
-                {/* Mobile-friendly Touch Target */}
+                {/* ACCORDION HEADER (Mobile-friendly Touch Target) */}
                 <div 
                   className="p-4 flex items-center justify-between gap-3 cursor-pointer active:bg-stone-50 transition-colors"
                   onClick={() => toggleExpand(piece.id)}
@@ -100,12 +104,13 @@ export default function Materials() {
                   </div>
                 </div>
 
+                {/* ACCORDION CONTENT */}
                 {expandedPieceId === piece.id && (
                   <motion.div 
                     initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
                     className="px-4 pb-4 pt-1 bg-stone-50 border-t border-stone-100"
                   >
-                    {/* Nuty */}
+                    {/* Sheet Music Section */}
                     <div className="mt-3">
                       {piece.sheet_music ? (
                         <a 
@@ -119,14 +124,15 @@ export default function Materials() {
                       )}
                     </div>
 
-                    {/* Ścieżki Audio */}
+                    {/* Rehearsal Audio Tracks Section */}
                     {piece.tracks && piece.tracks.length > 0 && (
                       <div className="mt-4 space-y-2">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 ml-1">Ścieżki Audio:</p>
                         {piece.tracks.map(track => (
                           <div key={track.id} className="bg-white p-3 rounded-lg border border-stone-200 shadow-sm">
-                            <span className="block text-xs font-bold text-stone-700 mb-2">{track.title || track.voice_line_display}</span>
-                            {/* Stylizacja audio pod mobile */}
+                            <span className="block text-xs font-bold text-stone-700 mb-2">{track.title || track.voice_part_display}</span>
+                            
+                            {/* Exclusive Audio Playback logic via DOM manipulation */}
                             <audio 
                               controls 
                               controlsList="nodownload" 
@@ -149,7 +155,7 @@ export default function Materials() {
               </motion.div>
             )) : (
               <div className="text-center p-8 border border-dashed border-stone-300 rounded-xl bg-stone-50 text-stone-500 text-sm">
-                Brak materiałów.
+                Brak materiałów. Zmień kryteria wyszukiwania.
               </div>
             )}
           </AnimatePresence>

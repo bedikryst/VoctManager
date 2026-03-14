@@ -1,3 +1,7 @@
+# archive/views.py
+# ==========================================
+# Archive API ViewSets (Controllers)
+# ==========================================
 """
 REST API Views (Controllers) for the Archive application.
 Author: Krystian Bugalski
@@ -10,8 +14,6 @@ while regular artists have read-only access.
 from rest_framework import viewsets, permissions
 from .models import Composer, Piece, Track
 from .serializers import ComposerSerializer, PieceSerializer, TrackSerializer
-
-__author__ = "Krystian Bugalski"
 
 class IsAdminOrReadOnly(permissions.BasePermission):
     """
@@ -34,6 +36,8 @@ class ComposerViewSet(viewsets.ModelViewSet):
 class PieceViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing musical pieces.
+    Implements query optimizations (select_related, prefetch_related) 
+    to handle nested composer and track data efficiently.
     """
     queryset = Piece.objects.select_related('composer').prefetch_related('tracks').all()
     serializer_class = PieceSerializer

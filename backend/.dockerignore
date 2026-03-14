@@ -1,13 +1,24 @@
-# .dockerignore
+# ==========================================
+# Backend Docker Ignore Configuration
+# ==========================================
+
+# 1. Virtual Environments & Cache
 venv/
+env/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-env/
+
+# 2. Environment Variables & Secrets
+# CRITICAL: Prevent local secrets from leaking into the Docker image.
 .env
+
+# 3. Git & Version Control
 .git/
 .gitignore
+
+# 4. Database & Media (Mounted via Volumes in Compose)
 db.sqlite3
 media/

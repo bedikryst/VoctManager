@@ -1,62 +1,57 @@
 /**
- * Authentication Context Provider
- * Author: Krystian Bugalski
- * * Manages the global authentication state, JWT token storage, and user profile data.
- * Exposes a custom hook (useAuth) to easily protect routes and conditionally render UI
- * based on the user's role (Admin vs. Regular Artist).
+ * @file AuthContext.jsx
+ * @description Authentication Context Provider.
+ * Manages global authentication state, JWT lifecycle, and user profile data.
+ * Exposes a custom hook (useAuth) to protect routes and conditionally render UI.
+ * @author Krystian Bugalski
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../utils/api';
 
-// 1. Utworzenie pustego kontekstu
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    // Stan przechowujący dane artysty (np. { first_name: "Jan", is_admin: false, voice_type: "TEN" })
     const [user, setUser] = useState(null);
-    
-    // Stan ładowania (aby nie wyrzucić usera na stronę logowania, zanim sprawdzimy jego token)
     const [isLoading, setIsLoading] = useState(true);
 
-    // --- SPRAWDZANIE SESJI (Przy każdym odświeżeniu strony) ---
+    // --- SESSION VALIDATION (On initial load) ---
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('access_token');
             if (token) {
                 try {
-                    // Axios sam doklei token (dzięki api.js), więc od razu pytamy o profil
+                    // Axios interceptors automatically attach the token and handle potential refreshes
                     const response = await api.get('/api/artists/me/');
                     setUser(response.data);
                 } catch (error) {
-                    console.error('Sesja wygasła lub błąd weryfikacji.', error);
+                    console.error('Session expired or validation failed.', error);
                     localStorage.removeItem('access_token');
                     localStorage.removeItem('refresh_token');
                 }
             }
-            setIsLoading(false); // Kończymy ładowanie niezależnie od wyniku
+            setIsLoading(false); // Conclude the loading state regardless of the outcome
         };
 
         checkAuth();
     }, []);
 
-    // --- FUNKCJA LOGOWANIA ---
+    // --- LOGIN FUNCTION ---
     const login = async (username, password) => {
         try {
-            // 1. Uderzamy do endpointu SimpleJWT po tokeny
+            // 1. Request JWT tokens from the Django backend
             const response = await api.post('/api/token/', { username, password });
             
-            // 2. Zapisujemy tokeny do pamięci przeglądarki
+            // 2. Persist tokens in local storage
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
 
-            // 3. Natychmiast pobieramy profil zalogowanego użytkownika
+            // 3. Immediately fetch and store the authenticated user's profile
             const userResponse = await api.get('/api/artists/me/');
             setUser(userResponse.data);
             
             return { success: true };
         } catch (error) {
-            // Wyłapywanie błędów z Django (np. błędne hasło)
             return { 
                 success: false, 
                 error: error.response?.data?.detail || 'Błąd logowania. Sprawdź dane wejściowe.' 
@@ -64,18 +59,17 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // --- FUNKCJA WYLOGOWANIA ---
+    // --- LOGOUT FUNCTION ---
     const logout = () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         setUser(null);
-        window.location.href = '/login'; // Twarde przekierowanie, aby wyczyścić stan aplikacji
+        window.location.href = '/login'; // Hard redirect to clear application state
     };
 
-    // --- DOSTARCZANIE DANYCH DO APLIKACJI ---
     const value = {
         user,
-        isAuthenticated: !!user, // Zamienia obiekt usera na true/false
+        isAuthenticated: !!user,
         isLoading,
         login,
         logout
@@ -88,7 +82,7 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-// 2. Custom Hook (Żeby nie pisać wszędzie useContext(AuthContext))
+// Custom Hook shortcut
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

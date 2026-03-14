@@ -1,3 +1,7 @@
+# roster/admin.py
+# ==========================================
+# Roster Admin Configuration
+# ==========================================
 """
 Django Admin interface configuration for the Roster application.
 Author: Krystian Bugalski
@@ -14,8 +18,6 @@ from .models import (
     Rehearsal, Attendance, ProjectPieceCasting, 
     Collaborator, CrewAssignment
 )
-
-__author__ = "Krystian Bugalski"
 
 @admin.register(Artist)
 class ArtistAdmin(admin.ModelAdmin):

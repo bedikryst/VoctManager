@@ -1,3 +1,7 @@
+# roster/views.py
+# ==========================================
+# Roster API ViewSets (Controllers)
+# ==========================================
 """
 REST API Views (Controllers) for the Roster application.
 Author: Krystian Bugalski
@@ -8,6 +12,7 @@ and asynchronous task orchestration for binary file generation via Celery.
 
 import io
 import weasyprint
+from django.utils import timezone
 from django.http import FileResponse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
@@ -16,11 +21,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from celery.result import AsyncResult
 
-from .models import Artist, Project, Participation, ProgramItem, Rehearsal, Attendance, ProgramItem
-from .serializers import ArtistSerializer, ProgramItemSerializer, ProjectSerializer, ParticipationSerializer, RehearsalSerializer, AttendanceSerializer
+from .models import Artist, Project, Participation, ProgramItem, Rehearsal, Attendance
+from .serializers import (
+    ArtistSerializer, ProgramItemSerializer, ProjectSerializer, 
+    ParticipationSerializer, RehearsalSerializer, AttendanceSerializer
+)
 from .tasks import generate_project_zip_task
-
-__author__ = "Krystian Bugalski"
 
 class IsAdminOrReadOnly(permissions.BasePermission):
     """
@@ -61,6 +67,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
+        """
+        Optimizes database queries with prefetch_related to avoid N+1 issues
+        when serializing nested casts and setlists.
+        """
         user = self.request.user
         base_qs = Project.objects.prefetch_related(
             'participations__artist', 
@@ -88,7 +98,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     def contract(self, request, pk=None):
         """
         Generates a dynamic PDF contract for a single participant on-the-fly.
-        Rendered securely in RAM to avoid disk I/O bottlenecks.
+        Rendered securely in RAM (BytesIO) to avoid disk I/O bottlenecks.
         """
         participation = self.get_object()
         html_string = render_to_string('roster/contract_pdf.html', {'participation': participation})
@@ -112,10 +122,10 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         """
         project_id = request.data.get('project_id')
         if not project_id:
-            return Response({"error": "Brak project_id"}, status=400)
+            return Response({"error": "Missing project_id"}, status=status.HTTP_400_BAD_REQUEST)
 
         task = generate_project_zip_task.delay(project_id)
-        return Response({"task_id": task.id, "status": "processing"}, status=202)
+        return Response({"task_id": task.id, "status": "processing"}, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=False, methods=['get'])
     def check_zip_status(self, request):
@@ -125,7 +135,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         """
         task_id = request.query_params.get('task_id')
         if not task_id:
-            return Response({"error": "Brak task_id"}, status=400)
+            return Response({"error": "Missing task_id"}, status=status.HTTP_400_BAD_REQUEST)
 
         result = AsyncResult(task_id)
         
@@ -149,23 +159,26 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['patch'], url_path='bulk-fee')
     def bulk_fee(self, request):
         """
-        Aktualizuje stawkę dla wszystkich uczestników danego projektu 
-        jednym zoptymalizowanym zapytaniem do bazy danych.
+        Updates the contractual fee for all participants of a specific project 
+        using a single, highly-optimized SQL UPDATE query.
         """
         project_id = request.data.get('project_id')
         fee = request.data.get('fee')
 
         if not project_id or fee is None:
             return Response(
-                {"detail": "Brakuje project_id lub fee."}, 
+                {"detail": "Missing project_id or fee."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # TO JEST MAGIA: Jedno zapytanie SQL UPDATE do całej obsady naraz!
-        updated_count = Participation.objects.filter(project_id=project_id).update(fee=fee)
+        # Explicitly updating 'updated_at' since .update() bypasses the model's save() method
+        updated_count = Participation.objects.filter(project_id=project_id).update(
+            fee=fee,
+            updated_at=timezone.now()
+        )
 
         return Response({
-            "detail": f"Zaktualizowano {updated_count} rekordów.",
+            "detail": f"Successfully updated {updated_count} records.",
             "updated_count": updated_count
         }, status=status.HTTP_200_OK)
 

@@ -1,16 +1,18 @@
+# roster/serializers.py
+# ==========================================
+# Roster API Serializers
+# ==========================================
 """
 REST API Serializers for the Roster application.
 Author: Krystian Bugalski
 
 Handles data transformation for the HR and logistics entities.
-Leverages custom MethodFields to provide nested, read-only data 
-(e.g., cast lists, setlists) to minimize frontend API calls.
+Implements dynamic field masking to prevent financial data leakage,
+and leverages custom MethodFields to provide nested, read-only data.
 """
 
 from rest_framework import serializers
-from .models import Artist, Project, Participation, ProgramItem, Rehearsal, Attendance, ProgramItem
-
-__author__ = "Krystian Bugalski"
+from .models import Artist, Project, Participation, ProgramItem, Rehearsal, Attendance
 
 class ArtistSerializer(serializers.ModelSerializer):
     is_admin = serializers.BooleanField(source='user.is_superuser', read_only=True)
@@ -30,7 +32,11 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_cast(self, obj):
-        """Serializes a lightweight list of artists participating in the project."""
+        """
+        Serializes a lightweight list of artists participating in the project.
+        Explicitly constructs the dictionary to ensure no sensitive data 
+        (like individual contracts or fees) is accidentally exposed.
+        """
         participations = obj.participations.all()
         return [
             {
@@ -58,7 +64,10 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class ParticipationSerializer(serializers.ModelSerializer):
-    # Flatten related object properties for easier frontend consumption
+    """
+    Serializes contract and participation data.
+    Includes security logic to strip financial data from non-admin users.
+    """
     artist_name = serializers.CharField(source='artist.__str__', read_only=True)
     project_name = serializers.CharField(source='project.title', read_only=True)
     artist_voice_type_display = serializers.CharField(source='artist.get_voice_type_display', read_only=True)
@@ -67,15 +76,29 @@ class ParticipationSerializer(serializers.ModelSerializer):
         model = Participation
         fields = '__all__'
 
+    def to_representation(self, instance):
+        """
+        Dynamic Data Masking: Removes the 'fee' field from the API response 
+        if the requesting user is not a superuser (conductor/manager).
+        """
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and not request.user.is_superuser:
+            data.pop('fee', None)
+        return data
+
+
 class RehearsalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rehearsal
         fields = '__all__'
 
+
 class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
         fields = '__all__'
+
 
 class ProgramItemSerializer(serializers.ModelSerializer):
     piece_title = serializers.CharField(source='piece.title', read_only=True)

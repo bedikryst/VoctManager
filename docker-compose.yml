@@ -1,6 +1,5 @@
 # docker-compose.yml
 # Base configuration mapping shared infrastructure components
-version: '3.8'
 
 services:
   db:

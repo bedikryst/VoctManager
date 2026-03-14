@@ -1,6 +1,5 @@
 # docker-compose.override.yml
 # Local development overrides for hot-reloading and direct host mapping
-version: '3.8'
 
 services:
   web:
