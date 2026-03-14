@@ -148,7 +148,7 @@ SPECTACULAR_SETTINGS = {
 
 # --- JWT (JSON Web Token) SETTINGS ---
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
@@ -180,6 +180,19 @@ sentry_dsn = os.environ.get('SENTRY_DSN')
 if sentry_dsn:
     sentry_sdk.init(
         dsn=sentry_dsn,
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
+        traces_sample_rate=0.2,
+        profiles_sample_rate=0.2,
     )
+
+if not DEBUG:
+    # Ciasteczka sesyjne i CSRF będą wysyłane tylko przez HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Przeglądarka ma traktować aplikację jako dostępną TYLKO przez HTTPS (HSTS)
+    SECURE_HSTS_SECONDS = 31536000 # 1 rok
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Wymuś przekierowanie z HTTP na HTTPS
+    SECURE_SSL_REDIRECT = True

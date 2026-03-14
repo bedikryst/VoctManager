@@ -1,0 +1,50 @@
+# ==========================================
+# Frontend Docker Ignore Configuration
+# ==========================================
+
+# 1. Dependencies
+# CRITICAL: Never copy local node_modules. The container must install its own 
+# architecture-specific dependencies using 'npm ci' to ensure consistency.
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
+
+# 2. Local Build Outputs
+# The container will generate its own production build.
+dist/
+build/
+out/
+
+# 3. Environment Variables & Secrets
+# CRITICAL: Prevent local secrets from leaking into the Docker image.
+# Production variables should be injected via Docker Compose or CI/CD pipelines.
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# 4. Git & Version Control
+.git/
+.gitignore
+
+# 5. Editor & IDE Settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# 6. Docker Configuration
+# The image doesn't need its own recipe inside it.
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# 7. Documentation (Optional, saves space)
+README.md
+CHANGELOG.md
