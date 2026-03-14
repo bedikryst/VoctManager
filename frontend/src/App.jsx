@@ -17,10 +17,12 @@ import PageTransition from './components/layout/PageTransition';
 import CustomCursor from './components/ui/CustomCursor';
 import NoiseOverlay from './components/ui/NoiseOverlay';
 import Preloader from './components/ui/Preloader';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import DashboardLayout from './components/layout/DashboardLayout';
 
 // --- PAGES ---
 import Home from './pages/Home';
-import Panel from './pages/Dashboard';
+import Login from './pages/Login';
 // import Experience from './pages/Experience';
 // import Ensemble from './pages/Ensemble';
 // import Foundation from './pages/Foundation';
@@ -28,62 +30,84 @@ import Panel from './pages/Dashboard';
 // import Collaborations from './pages/Collaborations';
 // import Contact from './pages/Contact';
 
+// --- PANEL COMPONENTS ---
+import Contracts from './components/panel/Contracts';
+import DashboardHome from './components/panel/DashboardHome';
+import Projects from './components/panel/Projects';
+import Repertoire from './components/panel/Repertoire';
+import Rehearsals from './components/panel/Rehearsals';
+import ProgramBuilder from './components/panel/ProgramBuilder';
+
 export default function App() {
   const location = useLocation();
-  
-  // Stan menu wyciągnięty na najwyższy poziom, aby sterować nawigacją globalnie
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const hideFooterRoutes = ['/panel'];
-  const shouldShowFooter = !hideFooterRoutes.includes(location.pathname);
+  // ==========================================
+  // LOGIKA WIDOCZNOŚCI GLOBALNYCH KOMPONENTÓW
+  // ==========================================
+  
+  // Zamiast tablicy, sprawdzamy czy ścieżka zaczyna się od /panel lub jest logowaniem
+  const isPanelRoute = location.pathname.startsWith('/panel');
+  const isLoginRoute = location.pathname === '/login';
+  
+  // Ukrywamy elementy globalne dla panelu i logowania
+  const shouldShowGlobalComponents = !isPanelRoute && !isLoginRoute;
 
   return (
     <>
-      <Preloader />
-      {/* 1. GLOBALNY PASEK NAWIGACJI (Zawsze widoczny na górze) */}
-      <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+      {/* 1. GLOBALNY PRELOADER I NAVBAR (Tylko w strefie publicznej) */}
+      {shouldShowGlobalComponents && <Preloader />}
+      {shouldShowGlobalComponents && <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />}
 
-      {/* 2. SILNIK PRZEJŚĆ KINOWYCH (Framer Motion) */}
+      {/* 2. SILNIK PRZEJŚĆ KINOWYCH */}
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           
-          {/* --- STRONA GŁÓWNA --- */}
-          <Route 
-            path="/" 
-            element={
-              <PageTransition>
-                <Home />
-              </PageTransition>
-            } 
-          />
-          {/* --- PANEL ADMINA --- */}
-          <Route 
-            path="/panel"
-            element={
-              <PageTransition>
-                <Panel />
-              </PageTransition>
-            }
-          />
+          {/* ========================================== */}
+          {/* STREFA PUBLICZNA */}
+          {/* ========================================== */}
+          <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+          <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
 
-          {/* --- MIEJSCE NA NOWE PODSTRONY (Odkomentuj po stworzeniu plików w pages/) --- */}
+          {/* ========================================== */}
+          {/* STREFA PRYWATNA (CHRONIONA) */}
+          {/* ========================================== */}
+          <Route element={<ProtectedRoute />}>
+            
+            {/* NAPRAWIONE: DashboardLayout JEST TERAZ RODZICEM DLA PODSTRON */}
+            <Route path="/panel" element={<DashboardLayout />}>
+              
+              {/* Ścieżka bazowa: /panel */}
+              <Route index element={<DashboardHome />} />
+
+              {/* Ścieżki podrzędne (Zwróć uwagę: nie piszemy tu /panel/contracts, tylko samo contracts) */}
+              <Route path="contracts" element={<Contracts />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="repertoire" element={<Repertoire />} />
+              <Route path="rehearsals" element={<Rehearsals />} />
+              <Route path="program" element={<ProgramBuilder />} />
+              
+              {/* Kolejne podstrony dodasz tutaj w ten sam sposób: */}
+              {/* <Route path="repertoire" element={<Repertoire />} /> */}
+              
+            </Route>
+
+          </Route>
+
+          {/* MIEJSCE NA NOWE PODSTRONY PUBLICZNE */}
           {/* <Route path="/doswiadczenie" element={<PageTransition><Experience /></PageTransition>} /> */}
-          {/* <Route path="/ensemble" element={<PageTransition><Ensemble /></PageTransition>} /> */}
-          {/* <Route path="/mecenat" element={<PageTransition><Foundation /></PageTransition>} /> */}
-          {/* <Route path="/wesprzyj" element={<PageTransition><Donate /></PageTransition>} /> */}
-          {/* <Route path="/kolaboracje" element={<PageTransition><Collaborations /></PageTransition>} /> */}
           {/* <Route path="/kontakt" element={<PageTransition><Contact /></PageTransition>} /> */}
 
         </Routes>
       </AnimatePresence>
 
-      {/* 3. STOPKA (Ładuje się pod contentem każdej strony, nie znika podczas animacji przejść) */}
-      {shouldShowFooter && <FooterSection />}
+      {/* 3. STOPKA (Tylko w strefie publicznej) */}
+      {shouldShowGlobalComponents && <FooterSection />}
 
-      {/* 4. GLOBALNE NAKŁADKI UI (Zawsze na samym wierzchu, omijają rozmycie stron) */}
-      <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
+      {/* 4. GLOBALNE NAKŁADKI UI */}
+      {shouldShowGlobalComponents && <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />}
       <NoiseOverlay />
-      <CustomCursor />
+      {shouldShowGlobalComponents && <CustomCursor />}
     </>
   );
 }

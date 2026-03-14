@@ -27,6 +27,14 @@ VOICE_LINES = [
     ('SOLO', 'Solo'), ('VP', 'Vocal Percussion / Beatbox')
 ]
 
+class ActiveManager(models.Manager):
+    """
+    Domyślny menedżer, który automatycznie odfiltrowuje rekordy 
+    z flagą is_deleted=True we wszystkich zapytaniach.
+    """
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
 class EnterpriseBaseModel(models.Model):
     """
     Abstract base model providing UUID primary keys and automated audit timestamps.
@@ -37,9 +45,19 @@ class EnterpriseBaseModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Zaktualizowano")
     is_deleted = models.BooleanField(default=False, db_index=True, verbose_name="Usunięty (Soft Delete)")
 
+    objects = ActiveManager()
+    all_objects = models.Manager()
+
     class Meta:
         abstract = True
 
+    def delete(self, using=None, keep_parents=False):
+        """
+        Zamiast usuwać z bazy (twardy delete), po prostu zapalamy flagę.
+        """
+        self.is_deleted = True
+        self.save(update_fields=['is_deleted'])
+        
 
 class Artist(EnterpriseBaseModel):
     """Represents a vocal ensemble member and their specific musical capabilities."""
@@ -234,3 +252,5 @@ class CrewAssignment(EnterpriseBaseModel):
         verbose_name = "Przydział Współtwórcy"
         verbose_name_plural = "Przydziały Współtwórców"
         constraints = [models.UniqueConstraint(fields=['collaborator', 'project'], name='unique_crew_assignment')]
+
+

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Umowa o Dzieło - {{ artist_name }}</title>
+    <style>
+        /* Konfiguracja strony A4 i marginesów dla generatora PDF */
+        @page {
+            size: A4;
+            margin: 2.5cm 2cm 2.5cm 2cm;
+            @bottom-right {
+                content: "Strona " counter(page) " z " counter(pages);
+                font-family: 'Georgia', serif;
+                font-size: 8pt;
+                color: #666;
+            }
+        }
+        
+        body {
+            font-family: 'Georgia', serif;
+            font-size: 10.5pt;
+            line-height: 1.6;
+            color: #1a1a1a;
+            text-align: justify;
+        }
+
+        /* Piękna, artystyczna typografia nagłówków */
+        .brand {
+            text-align: center;
+            font-size: 24pt;
+            font-weight: normal;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+        .brand span {
+            font-style: italic;
+            color: #333;
+        }
+        
+        .header-date {
+            text-align: right;
+            font-size: 10pt;
+            margin-bottom: 40px;
+            color: #444;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 11pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        .parties-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #fdfdfd;
+            border: 1px solid #eaeaea;
+        }
+
+        p { margin-bottom: 10px; }
+        
+        ul { margin-top: 5px; margin-bottom: 15px; padding-left: 20px; }
+        li { margin-bottom: 5px; }
+
+        /* Tabela z podpisami na końcu */
+        .signature-table {
+            width: 100%;
+            margin-top: 60px;
+            page-break-inside: avoid;
+        }
+        .signature-table td {
+            width: 50%;
+            text-align: center;
+            vertical-align: bottom;
+        }
+        .sign-line {
+            width: 70%;
+            border-bottom: 1px solid #000;
+            margin: 0 auto 10px auto;
+            height: 50px;
+        }
+        .sign-label {
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-date">
+        Kraków, dnia {{ generation_date|date:"d.m.Y" }} r.
+    </div>
+
+    <div class="brand">
+        Voct<span>Foundation</span>
+    </div>
+
+    <h1>Umowa o Dzieło i Przeniesienie Praw Autorskich</h1>
+
+    <div class="parties-section">
+        <p>Zawarta w dniu <strong>{{ generation_date|date:"d.m.Y" }} r.</strong> pomiędzy:</p>
+        <p>
+            <strong>VoctFoundation</strong> z siedzibą w [Miasto], ul. [Ulica/Nr], [Kod pocztowy],<br>
+            wpisaną do Rejestru Stowarzyszeń i Fundacji KRS pod numerem: [Numer KRS], NIP: [Numer NIP],<br>
+            reprezentowaną przez: Zarząd Fundacji,<br>
+            zwaną w dalszej części umowy <strong>"Zamawiającym"</strong>,
+        </p>
+        <p style="text-align: center; font-style: italic;">a</p>
+        <p>
+            Panem/Panią: <strong>{{ artist_name }}</strong><br>
+            zamieszkałym/ą: {{ artist_address|default:"..........................................................................." }},<br>
+            PESEL: {{ artist_pesel|default:"...................................." }},<br>
+            zwanym/ą w dalszej części umowy <strong>"Wykonawcą"</strong>.
+        </p>
+    </div>
+
+    <h2>§ 1. Przedmiot umowy</h2>
+    <p>1. Zamawiający powierza, a Wykonawca zobowiązuje się do wykonania dzieła polegającego na artystycznym przygotowaniu i wykonaniu partii wokalnej (Głos: <strong>{{ voice_type }}</strong>) podczas koncertu / projektu muzycznego pod nazwą:</p>
+    <p style="text-align: center; font-weight: bold; font-size: 12pt; margin: 15px 0;">„{{ project_title }}”</p>
+    <p>2. Koncert odbędzie się w dniu <strong>{{ project_date|date:"d.m.Y" }} r.</strong> w lokalizacji: {{ project_location }}.</p>
+    <p>3. Wykonawca oświadcza, że posiada niezbędne kwalifikacje, umiejętności oraz przygotowanie artystyczne do należytego wykonania przedmiotu umowy.</p>
+
+    <h2>§ 2. Prawa Autorskie (Prawa Pokrewne)</h2>
+    <p>1. Wykonawca oświadcza, że w ramach wynagrodzenia określonego w § 3, przenosi na Zamawiającego autorskie prawa majątkowe oraz prawa pokrewne do artystycznego wykonania utworu, na wszelkich polach eksploatacji, a w szczególności:</p>
+    <ul>
+        <li>utrwalania i zwielokrotniania wykonania dowolną techniką (audio/video),</li>
+        <li>wprowadzania do obrotu, użyczania lub najmu egzemplarzy, na których wykonanie utrwalono,</li>
+        <li>rozpowszechniania w Internecie, w tym w serwisach streamingowych i mediach społecznościowych Fundacji.</li>
+    </ul>
+    <p>2. Wykonawca wyraża nieodwołalną i bezpłatną zgodę na utrwalanie i rozpowszechnianie swojego wizerunku zarejestrowanego podczas wykonywania dzieła w celach promocyjnych Zamawiającego.</p>
+
+    <h2>§ 3. Wynagrodzenie</h2>
+    <p>1. Za wykonanie dzieła określonego w § 1 oraz przeniesienie praw, o których mowa w § 2, Zamawiający zapłaci Wykonawcy wynagrodzenie brutto w wysokości:</p>
+    <p style="text-align: center; font-weight: bold; font-size: 12pt;">{{ fee }} PLN</p>
+    <p>(słownie: {{ fee_in_words|default:".........................................................." }} złotych).</p>
+    <p>2. Wynagrodzenie zostanie wypłacone przelewem na rachunek bankowy Wykonawcy w terminie 14 dni od daty wystawienia rachunku i stwierdzenia przez Zamawiającego poprawnego wykonania dzieła.</p>
+    <p>3. Z kwoty określonej w ust. 1 potrącona zostanie zaliczka na podatek dochodowy od osób fizycznych, z uwzględnieniem 50% kosztów uzyskania przychodu z tytułu przeniesienia praw autorskich.</p>
+
+    <h2>§ 4. Postanowienia końcowe</h2>
+    <p>1. Wszelkie zmiany niniejszej umowy wymagają formy pisemnej pod rygorem nieważności.</p>
+    <p>2. W sprawach nieuregulowanych niniejszą umową zastosowanie mają przepisy Kodeksu Cywilnego oraz Ustawy o prawie autorskim i prawach pokrewnych.</p>
+    <p>3. Umowę sporządzono w dwóch jednobrzmiących egzemplarzach, po jednym dla każdej ze stron.</p>
+
+    <table class="signature-table">
+        <tr>
+            <td>
+                <div class="sign-line"></div>
+                <div class="sign-label">Zamawiający (VoctFoundation)</div>
+            </td>
+            <td>
+                <div class="sign-line"></div>
+                <div class="sign-label">Wykonawca</div>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

@@ -66,7 +66,7 @@ class Piece(EnterpriseBaseModel):
     arranger = models.CharField(max_length=150, blank=True, null=True, verbose_name="Aranżer")
     composition_year = models.CharField(max_length=100, blank=True, null=True, help_text="np. 1638 lub XVI w.", verbose_name="Czas powstania")
     language = models.CharField(max_length=50, blank=True, null=True, help_text="np. Łacina, Angielski", verbose_name="Język")
-    estimated_duration = models.DurationField(blank=True, null=True, help_text="Format: HH:MM:SS", verbose_name="Szacowany czas trwania")
+    estimated_duration = models.PositiveIntegerField(blank=True, null=True, help_text="Czas trwania w sekundach", verbose_name="Szacowany czas trwania")
     
     voicing = models.CharField(max_length=50, blank=True, help_text="np. SSAATTBB", verbose_name="Obsada wokalna")
     description = models.TextField(blank=True, verbose_name="Uwagi / Opis")

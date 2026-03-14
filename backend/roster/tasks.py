@@ -34,7 +34,7 @@ def generate_project_zip_task(self, project_id):
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for p in participations:
-            html_string = render_to_string('roster/contract_pdf.html', {'participation': p})
+            html_string = render_to_string('templates/contracts/contract_pdf.html', {'participation': p})
             pdf_bytes = weasyprint.HTML(string=html_string).write_pdf()
             
             safe_last_name = p.artist.last_name.replace(' ', '_')

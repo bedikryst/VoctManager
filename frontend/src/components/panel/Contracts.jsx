@@ -8,8 +8,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import api from '../../../utils/api'; 
-import { ExportContractButton } from '../../ui/ExportContractButton';
+import api from '../../utils/api'; 
+import { ExportContractButton } from '../ui/ExportContractButton';
 
 export default function Contracts() {
   const [projects, setProjects] = useState([]);
@@ -230,7 +230,7 @@ function ContractRow({ participation, onDownload }) {
 
   const artistName = participation.artist_name || `Artysta ID: ${participation.artist}`;
   
-  // FIX: Updated to match the new Django backend serialization property (voice_type)
+  // Zaktualizowano na podstawie backendu: voice_type_display
   const voiceDisplay = participation.artist_voice_type_display || '-'; 
 
   const handleSaveFee = async () => {

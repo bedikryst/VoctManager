@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+import sentry_sdk
 
 # Load environment variables from .env file
 load_dotenv()
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     
     # Internal apps
     'roster',
@@ -119,7 +121,28 @@ REST_FRAMEWORK = {
     # Secure API by default: Require authentication for all endpoints
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/minute',
+        'user': '100/minute'
+    }
+}
+
+# --- SWAGGER / OPENAPI SETTINGS ---
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'VoctManager API',
+    'DESCRIPTION': 'Enterprise API for VoctEnsemble a cappella octet.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SECURITY': [{'jwtAuth': []}],
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 # --- JWT (JSON Web Token) SETTINGS ---
@@ -151,3 +174,11 @@ CELERY_RESULT_SERIALIZER = 'json'
 # --- BUSINESS LOGIC DEFAULTS ---
 # Default password for automatically provisioned artist accounts
 DEFAULT_ARTIST_PASSWORD = os.environ.get('DEFAULT_ARTIST_PASSWORD', 'secure_password123')
+
+sentry_dsn = os.environ.get('SENTRY_DSN')
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )

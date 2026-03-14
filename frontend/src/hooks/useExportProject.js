@@ -7,7 +7,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import api from '../utils/api'; // Make sure this path points to your new api.js location
+import api from '../utils/api';
 
 export const useExportProject = () => { 
     const [status, setStatus] = useState('idle'); 

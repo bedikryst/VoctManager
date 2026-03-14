@@ -29,7 +29,7 @@ class PieceSerializer(serializers.ModelSerializer):
     
     # Flattening related composer fields to avoid extra frontend logic
     composer_name = serializers.CharField(source='composer.last_name', read_only=True)
-    composer_full_name = serializers.CharField(source='composer.__str__', read_only=True) 
+    composer_full_name = serializers.StringRelatedField(source='composer', read_only=True)
 
     class Meta:
         model = Piece

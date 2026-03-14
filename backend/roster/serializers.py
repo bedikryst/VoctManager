@@ -8,7 +8,7 @@ Leverages custom MethodFields to provide nested, read-only data
 """
 
 from rest_framework import serializers
-from .models import Artist, Project, Participation, ProgramItem
+from .models import Artist, Project, Participation, ProgramItem, Rehearsal, Attendance, ProgramItem
 
 __author__ = "Krystian Bugalski"
 
@@ -31,7 +31,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def get_cast(self, obj):
         """Serializes a lightweight list of artists participating in the project."""
-        participations = obj.participations.select_related('artist').all()
+        participations = obj.participations.all()
         return [
             {
                 'id': p.artist.id,
@@ -65,4 +65,21 @@ class ParticipationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Participation
+        fields = '__all__'
+
+class RehearsalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rehearsal
+        fields = '__all__'
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = '__all__'
+
+class ProgramItemSerializer(serializers.ModelSerializer):
+    piece_title = serializers.CharField(source='piece.title', read_only=True)
+
+    class Meta:
+        model = ProgramItem
         fields = '__all__'

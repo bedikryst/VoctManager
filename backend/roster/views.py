@@ -16,8 +16,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from celery.result import AsyncResult
 
-from .models import Artist, Project, Participation
-from .serializers import ArtistSerializer, ProjectSerializer, ParticipationSerializer
+from .models import Artist, Project, Participation, ProgramItem, Rehearsal, Attendance, ProgramItem
+from .serializers import ArtistSerializer, ProgramItemSerializer, ProjectSerializer, ParticipationSerializer, RehearsalSerializer, AttendanceSerializer
 from .tasks import generate_project_zip_task
 
 __author__ = "Krystian Bugalski"
@@ -61,14 +61,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
-        """
-        Role-based Data Isolation:
-        Artists can only fetch projects they are explicitly cast in.
-        """
         user = self.request.user
+        base_qs = Project.objects.prefetch_related(
+            'participations__artist', 
+            'program_items__piece'
+        )
+        
         if user.is_superuser:
-            return Project.objects.all()
-        return Project.objects.filter(participations__artist__user=user).distinct()
+            return base_qs.all()
+        return base_qs.filter(participations__artist__user=user).distinct()
 
 
 class ParticipationViewSet(viewsets.ModelViewSet):
@@ -144,3 +145,27 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             
         else:
             return Response({"state": result.state})
+
+
+class RehearsalViewSet(viewsets.ModelViewSet):
+    serializer_class = RehearsalSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    def get_queryset(self):
+        return Rehearsal.objects.all()
+
+class AttendanceViewSet(viewsets.ModelViewSet):
+    serializer_class = AttendanceSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    def get_queryset(self):
+        return Attendance.objects.all()
+    
+class ProgramItemViewSet(viewsets.ModelViewSet):
+    serializer_class = ProgramItemSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    
+    def get_queryset(self):
+        qs = ProgramItem.objects.select_related('piece').all().order_by('order')
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+        return qs

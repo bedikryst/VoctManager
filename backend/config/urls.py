@@ -14,7 +14,9 @@ from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from roster.views import ArtistViewSet, ProjectViewSet, ParticipationViewSet
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+
+from roster.views import ArtistViewSet, ProgramItemViewSet, ProjectViewSet, ParticipationViewSet, RehearsalViewSet, AttendanceViewSet
 from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet
 
 __author__ = "Krystian Bugalski"
@@ -26,6 +28,9 @@ router = DefaultRouter()
 router.register(r'artists', ArtistViewSet, basename='artist')
 router.register(r'projects', ProjectViewSet, basename='project')
 router.register(r'participations', ParticipationViewSet, basename='participation')
+router.register(r'rehearsals', RehearsalViewSet, basename='rehearsal')
+router.register(r'attendances', AttendanceViewSet, basename='attendance')
+router.register(r'program-items', ProgramItemViewSet, basename='program-item')
 
 # --- Repertoire Archive Endpoints ---
 router.register(r'composers', ComposerViewSet, basename='composer')
@@ -44,6 +49,11 @@ urlpatterns = [
     # Used by the React frontend to obtain and refresh access tokens
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # --- API Documentation Endpoints (Swagger & ReDoc) ---
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.
