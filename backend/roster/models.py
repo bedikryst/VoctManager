@@ -11,6 +11,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 
+from core.models import EnterpriseBaseModel
+from core.constants import VOICE_LINES
+
 __author__ = "Krystian Bugalski"
 
 VOICE_TYPES = [
@@ -18,46 +21,6 @@ VOICE_TYPES = [
     ('CT', 'Kontratenor'), ('TEN', 'Tenor'), ('BAR', 'Baryton'), ('BAS', 'Bas'),
     ('DIR', 'Dyrygent/Kierownik')
 ]
-
-VOICE_LINES = [
-    ('S1', 'Sopran 1'), ('S2', 'Sopran 2'),
-    ('A1', 'Alt 1'), ('A2', 'Alt 2'),
-    ('T1', 'Tenor 1'), ('T2', 'Tenor 2'),
-    ('B1', 'Bas 1'), ('B2', 'Bas 2'),
-    ('SOLO', 'Solo'), ('VP', 'Vocal Percussion / Beatbox')
-]
-
-class ActiveManager(models.Manager):
-    """
-    Domyślny menedżer, który automatycznie odfiltrowuje rekordy 
-    z flagą is_deleted=True we wszystkich zapytaniach.
-    """
-    def get_queryset(self):
-        return super().get_queryset().filter(is_deleted=False)
-
-class EnterpriseBaseModel(models.Model):
-    """
-    Abstract base model providing UUID primary keys and automated audit timestamps.
-    Implements a soft-delete flag to preserve historical data integrity.
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="Utworzono")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Zaktualizowano")
-    is_deleted = models.BooleanField(default=False, db_index=True, verbose_name="Usunięty (Soft Delete)")
-
-    objects = ActiveManager()
-    all_objects = models.Manager()
-
-    class Meta:
-        abstract = True
-
-    def delete(self, using=None, keep_parents=False):
-        """
-        Zamiast usuwać z bazy (twardy delete), po prostu zapalamy flagę.
-        """
-        self.is_deleted = True
-        self.save(update_fields=['is_deleted'])
-        
 
 class Artist(EnterpriseBaseModel):
     """Represents a vocal ensemble member and their specific musical capabilities."""

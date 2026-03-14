@@ -9,31 +9,10 @@ composers, musical pieces (sheet music, lyrics), and isolated audio tracks.
 import uuid
 from django.db import models
 
+from core.models import EnterpriseBaseModel
+from core.constants import VOICE_LINES
+
 __author__ = "Krystian Bugalski"
-
-# Unified vocal lines for the Octet (synchronized with the Roster application)
-VOICE_LINES = [
-    ('S1', 'Sopran 1'), ('S2', 'Sopran 2'),
-    ('A1', 'Alt 1'), ('A2', 'Alt 2'),
-    ('T1', 'Tenor 1'), ('T2', 'Tenor 2'),
-    ('B1', 'Bas 1'), ('B2', 'Bas 2'),
-    ('SOLO', 'Solo'), ('VP', 'Vocal Percussion / Beatbox'),
-    ('TUTTI', 'Tutti (Wszyscy)'), 
-    ('ACC', 'Akompaniament'),
-    ('PRON', 'Wymowa (Dykcja/Język)')  # Crucial for foreign language pronunciation guides
-]
-
-class EnterpriseBaseModel(models.Model):
-    """
-    Abstract base model providing UUID primary keys and automated audit timestamps.
-    Inherited by all models in the system to ensure database integrity and security.
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
 
 
 class Composer(EnterpriseBaseModel):

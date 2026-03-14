@@ -38,6 +38,7 @@ Managing a professional vocal octet requires handling complex logistics, from tr
    ```bash
    git clone [https://github.com/your-username/voctmanager.git](https://github.com/your-username/voctmanager.git)
    cd voctmanager
+   ```
 
 ### 2. Set up environment variables:
    Create .env files in both the backend/ and frontend/ directories based on the provided .env.example files.
@@ -54,6 +55,12 @@ Managing a professional vocal octet requires handling complex logistics, from tr
    docker compose exec web python manage.py createsuperuser
    ```
    The API will be available at http://localhost:8000/api/ and the React frontend at http://localhost:5173.
+
+### 5. 📖 API Documentation
+
+The backend provides a fully interactive OpenAPI (Swagger) documentation, automatically generated via `drf_spectacular`. 
+Once the Docker containers are up and running, you can access the documentation at:
+👉 **[http://localhost:8000/api/docs](http://localhost:8000/api/docs)**
 
 ## 👨‍💻 Author
 

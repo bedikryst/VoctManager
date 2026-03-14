@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     
     # Internal apps
+    'core',
     'roster',
     'archive',
 ]

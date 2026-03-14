@@ -26,24 +26,6 @@ export default function DashboardLayout() {
     const { user, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // FIX KURSORA: Wymuszamy domyślny kursor na całym body, gdy jesteśmy w panelu
-    useEffect(() => {
-        document.body.style.cursor = 'auto';
-        document.documentElement.style.cursor = 'auto';
-        
-        // Zabezpieczenie dla elementów potomnych
-        const style = document.createElement('style');
-        style.innerHTML = `* { cursor: auto !important; } button, a, input, select { cursor: pointer !important; }`;
-        document.head.appendChild(style);
-
-        return () => {
-            // Sprzątamy po wyjściu z panelu (żeby na Landing Page kursor znów był customowy)
-            document.body.style.cursor = '';
-            document.documentElement.style.cursor = '';
-            document.head.removeChild(style);
-        };
-    }, []);
-
     // Sprawdzamy rolę użytkownika (zabezpieczenie)
     const isAdmin = user?.is_admin;
 
@@ -59,7 +41,7 @@ export default function DashboardLayout() {
 
     const artistLinks = [
         { to: '/panel', icon: <LayoutDashboard size={20} />, label: 'Mój Pulpit' },
-        { to: '/panel/my-contracts', icon: <FileText size={20} />, label: 'Moje Umowy' },
+       // { to: '/panel/my-contracts', icon: <FileText size={20} />, label: 'Moje Umowy' },
         { to: '/panel/materials', icon: <Music size={20} />, label: 'Materiały do prób' },
         { to: '/panel/schedule', icon: <CalendarCheck size={20} />, label: 'Harmonogram' },
     ];
@@ -86,7 +68,7 @@ export default function DashboardLayout() {
     );
 
     return (
-        <div className="min-h-screen bg-[#fdfbf7] flex" style={{ fontFamily: "'Poppins', sans-serif" }}>
+        <div className="min-h-screen bg-[#fdfbf7] flex cursor-default" style={{ fontFamily: "'Poppins', sans-serif" }}>
             
             {/* --- SIDEBAR (Desktop) --- */}
             <aside className="hidden md:flex flex-col w-64 bg-white border-r border-stone-200 fixed h-full z-10 shadow-sm">

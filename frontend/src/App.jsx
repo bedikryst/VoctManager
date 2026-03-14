@@ -37,6 +37,8 @@ import Projects from './components/panel/Projects';
 import Repertoire from './components/panel/Repertoire';
 import Rehearsals from './components/panel/Rehearsals';
 import ProgramBuilder from './components/panel/ProgramBuilder';
+import Materials from './components/panel/Materials';
+import Schedule from './components/panel/Schedule';
 
 export default function App() {
   const location = useLocation();
@@ -86,6 +88,9 @@ export default function App() {
               <Route path="repertoire" element={<Repertoire />} />
               <Route path="rehearsals" element={<Rehearsals />} />
               <Route path="program" element={<ProgramBuilder />} />
+
+              <Route path="materials" element={<Materials />} />
+              <Route path="schedule" element={<Schedule />} />
               
               {/* Kolejne podstrony dodasz tutaj w ten sam sposób: */}
               {/* <Route path="repertoire" element={<Repertoire />} /> */}

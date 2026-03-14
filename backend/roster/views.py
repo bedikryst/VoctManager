@@ -11,7 +11,7 @@ import weasyprint
 from django.http import FileResponse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from celery.result import AsyncResult
@@ -145,6 +145,29 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             
         else:
             return Response({"state": result.state})
+        
+    @action(detail=False, methods=['patch'], url_path='bulk-fee')
+    def bulk_fee(self, request):
+        """
+        Aktualizuje stawkę dla wszystkich uczestników danego projektu 
+        jednym zoptymalizowanym zapytaniem do bazy danych.
+        """
+        project_id = request.data.get('project_id')
+        fee = request.data.get('fee')
+
+        if not project_id or fee is None:
+            return Response(
+                {"detail": "Brakuje project_id lub fee."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # TO JEST MAGIA: Jedno zapytanie SQL UPDATE do całej obsady naraz!
+        updated_count = Participation.objects.filter(project_id=project_id).update(fee=fee)
+
+        return Response({
+            "detail": f"Zaktualizowano {updated_count} rekordów.",
+            "updated_count": updated_count
+        }, status=status.HTTP_200_OK)
 
 
 class RehearsalViewSet(viewsets.ModelViewSet):

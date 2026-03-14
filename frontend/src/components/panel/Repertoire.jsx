@@ -134,9 +134,9 @@ export default function Repertoire() {
                     <h4 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-3">
                       <FileText size={14} /> Partytura
                     </h4>
-                    {piece.sheet_music_file ? (
+                    {piece.sheet_music ? (
                       <a 
-                        href={piece.sheet_music_file.startsWith('http') ? piece.sheet_music_file : `${api.defaults.baseURL}${piece.sheet_music_file}`}
+                        href={piece.sheet_music}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-stone-300 rounded-md text-sm font-medium text-stone-700 hover:bg-stone-100 hover:text-[#002395] transition-colors shadow-sm"
@@ -164,9 +164,17 @@ export default function Repertoire() {
                               controlsList="nodownload" 
                               className="w-full h-8 outline-none"
                               preload="none"
+                              onPlay={(e) => {
+                                // Zatrzymuje wszystkie inne odtwarzacze na stronie
+                                document.querySelectorAll('audio').forEach(audioEl => {
+                                  if (audioEl !== e.target) {
+                                    audioEl.pause();
+                                  }
+                                });
+                              }}
                             >
                               <source 
-                                src={track.audio_file.startsWith('http') ? track.audio_file : `${api.defaults.baseURL}${track.audio_file}`} 
+                                src={track.audio_file} 
                                 type="audio/mpeg" 
                               />
                               Twoja przeglądarka nie obsługuje elementu audio.

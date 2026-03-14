@@ -24,7 +24,7 @@ export default function DashboardHome() {
     ];
 
     const artistCards = [
-        { title: "Moje Umowy", desc: "Pobierz swoje podpisane kontrakty.", icon: <FileText className="w-6 h-6 text-[#002395]" />, link: "/panel/my-contracts" },
+        //{ title: "Moje Umowy", desc: "Pobierz swoje podpisane kontrakty.", icon: <FileText className="w-6 h-6 text-[#002395]" />, link: "/panel/my-contracts" },
         { title: "Materiały do Prób", desc: "Pobierz nuty i nagrania (midi/audio).", icon: <Music className="w-6 h-6 text-[#002395]" />, link: "/panel/materials" },
         { title: "Harmonogram", desc: "Sprawdź daty najbliższych prób i koncertów.", icon: <Calendar className="w-6 h-6 text-[#002395]" />, link: "/panel/schedule" },
     ];
