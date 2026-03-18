@@ -6,7 +6,7 @@
 set -e
 
 echo ">>> Weryfikacja i naprawa uprawnień wolumenów Dockera..."
-chown -R voctuser:voctuser /app/media /app/static
+chown -R voctuser:voctgroup /app/media /app/static
 # Check if the container is starting the web server (gunicorn or runserver)
 if [[ "$*" == *"gunicorn"* ]] || [[ "$*" == *"runserver"* ]]; then
     echo ">>> Zbieranie plików statycznych (jako voctuser)..."
