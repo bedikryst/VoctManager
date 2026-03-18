@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Call Sheet - {{ project.title }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant:wght@700&family=Inter:wght@400;600;800&display=swap');
+        
+        @page {
+            size: A4 portrait;
+            margin: 15mm;
+            @bottom-right { content: "Strona " counter(page) " z " counter(pages); font-family: 'Inter', sans-serif; font-size: 9px; color: #a8a29e; }
+            @bottom-left { content: "VoctManager Enterprise (Wygenerowano: {{ generation_date|date:'d.m.Y H:i' }})"; font-family: 'Inter', sans-serif; font-size: 9px; color: #a8a29e; }
+        }
+
+        body { font-family: 'Inter', sans-serif; font-size: 11px; color: #1c1917; line-height: 1.4; }
+        
+        /* HEADER */
+        .header { border-bottom: 2px solid #002395; padding-bottom: 10px; margin-bottom: 20px; }
+        .header h1 { font-family: 'Cormorant', serif; font-size: 28px; color: #002395; margin: 0; }
+        .header p.subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #78716c; margin: 5px 0 0 0; }
+
+        /* GRID (META DATA) */
+        .meta-grid { display: table; width: 100%; margin-bottom: 25px; }
+        .meta-col { display: table-cell; width: 50%; vertical-align: top; }
+        .meta-item { margin-bottom: 12px; }
+        .meta-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #a8a29e; font-weight: 800; display: block; margin-bottom: 2px;}
+        .meta-value { font-size: 13px; font-weight: 800; }
+        .meta-value.highlight { color: #ea580c; font-size: 16px; }
+
+        /* NOTES */
+        .notes-box { background-color: #fafaf9; border-left: 3px solid #ea580c; padding: 10px 15px; margin-bottom: 25px; }
+        
+        /* TABLES */
+        h2.section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #44403c; border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; margin-top: 0; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        th { text-align: left; font-size: 9px; text-transform: uppercase; color: #a8a29e; border-bottom: 1px solid #d6d3d1; padding: 6px 4px; }
+        td { padding: 6px 4px; border-bottom: 1px solid #f5f5f4; vertical-align: top; }
+        
+        /* COLUMNS FOR ROSTER */
+        .roster-grid { display: table; width: 100%; page-break-inside: avoid; }
+        .roster-col { display: table-cell; width: 50%; vertical-align: top; }
+        ul.roster-list { list-style-type: none; padding: 0; margin: 0; }
+        ul.roster-list li { padding: 4px 0; border-bottom: 1px dashed #f5f5f4; font-size: 10px; }
+        .voice-badge { color: #a8a29e; font-size: 9px; margin-left: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>{{ project.title }}</h1>
+        <p class="subtitle">Karta Produkcyjna Wydarzenia (Call Sheet)</p>
+    </div>
+
+    <div class="meta-grid">
+        <div class="meta-col">
+            <div class="meta-item">
+                <span class="meta-label">Data Wydarzenia</span>
+                <span class="meta-value">{{ project.date_time|date:"l, j F Y" }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Start Koncertu</span>
+                <span class="meta-value">{{ project.date_time|date:"H:i" }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Zbiórka (Call Time)</span>
+                <span class="meta-value highlight">{% if project.call_time %}{{ project.call_time|date:"H:i" }}{% else %}DO USTALENIA{% endif %}</span>
+            </div>
+        </div>
+        <div class="meta-col">
+            <div class="meta-item">
+                <span class="meta-label">Lokalizacja</span>
+                <span class="meta-value">{{ project.location|default:"Nie podano" }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Ubiór (Dress Code)</span>
+                <span class="meta-value">{{ project.dress_code|default:"Standardowy koncertowy" }}</span>
+            </div>
+        </div>
+    </div>
+
+    {% if project.description %}
+    <div class="notes-box">
+        <span class="meta-label">Notatki / Wytyczne:</span>
+        {{ project.description|linebreaksbr }}
+    </div>
+    {% endif %}
+
+    {% if project.run_sheet %}
+    <h2 class="section-title">Harmonogram Dnia (Run-sheet)</h2>
+    <table>
+        {% for item in project.run_sheet %}
+        <tr>
+            <td style="width: 50px; font-weight: 800; color: #002395;">{{ item.time }}</td>
+            <td><strong>{{ item.title }}</strong><br><span style="color: #78716c; font-size: 9px;">{{ item.description }}</span></td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <h2 class="section-title">Program Koncertu (Setlista)</h2>
+    <table>
+        {% for item in program %}
+        <tr>
+            <td style="width: 20px; color: #a8a29e;">{{ forloop.counter }}.</td>
+            <td>
+                <strong>{% if item.title %}{{ item.title }}{% else %}{{ item.piece.title }}{% endif %}</strong>
+                {% if item.is_encore %}<span style="color: #ea580c; font-weight: bold; font-size: 9px; margin-left: 5px;">(BIS)</span>{% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td>Brak zatwierdzonego programu.</td></tr>
+        {% endfor %}
+    </table>
+
+    <div class="roster-grid">
+        <div class="roster-col" style="padding-right: 20px;">
+            <h2 class="section-title">Obsada Wokalna ({{ participations|length }})</h2>
+            <ul class="roster-list">
+                {% for p in participations %}
+                <li>{{ p.artist.first_name }} {{ p.artist.last_name }} <span class="voice-badge">({{ p.artist.get_voice_type_display }})</span></li>
+                {% empty %}
+                <li>Brak przypisanych artystów.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="roster-col">
+            <h2 class="section-title">Ekipa Techniczna ({{ crew|length }})</h2>
+            <ul class="roster-list">
+                {% for c in crew %}
+                <li>{{ c.collaborator.first_name }} {{ c.collaborator.last_name }} <span class="voice-badge">({% if c.role_description %}{{ c.role_description }}{% else %}{{ c.collaborator.get_specialty_display }}{% endif %})</span></li>
+                {% empty %}
+                <li>Brak ekipy technicznej.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>

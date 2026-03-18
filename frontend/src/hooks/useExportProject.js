@@ -2,7 +2,7 @@
  * @file useExportProject.js
  * @description Custom React Hook for managing asynchronous ZIP export tasks.
  * Implements polling logic to check Celery task status, automatically handling 
- * timeouts, state transitions, and memory cleanup.
+ * timeouts, state transitions, memory cleanup, and payload mapping.
  * @author Krystian Bugalski
  */
 
@@ -30,10 +30,19 @@ export const useExportProject = () => {
 
             if (data.state === 'SUCCESS') {
                 setStatus('success');
-                const fullUrl = data.download_url.startsWith('http') 
-                    ? data.download_url 
-                    : `${api.defaults.baseURL}${data.download_url}`;
-                setDownloadUrl(fullUrl);
+                
+                // FIX: Zmiana z data.download_url na data.file_url (zgodnie z views.py)
+                const finalUrl = data.file_url;
+                
+                if (finalUrl) {
+                    const fullUrl = finalUrl.startsWith('http') 
+                        ? finalUrl 
+                        : `${api.defaults.baseURL || ''}${finalUrl}`;
+                    setDownloadUrl(fullUrl);
+                } else {
+                    setStatus('error');
+                    setError('Zadanie zakończone, ale serwer nie zwrócił linku do pliku.');
+                }
             } else if (data.state === 'FAILURE' || data.state === 'FAILED') {
                 setStatus('error');
                 setError(data.error || 'Wystąpił błąd na serwerze podczas generowania paczki.');
@@ -43,7 +52,7 @@ export const useExportProject = () => {
             }
         } catch (err) {
             setStatus('error');
-            setError('Błąd połączenia z serwerem. Spróbuj ponownie.');
+            setError('Błąd podczas odpytywania serwera o status zadania.');
         }
     }, []);
 
@@ -60,10 +69,14 @@ export const useExportProject = () => {
             if (response.data.task_id) {
                 // Start polling 1.5 seconds after the initial request
                 timeoutRef.current = setTimeout(() => checkStatus(response.data.task_id), 1500);
+            } else {
+                setStatus('error');
+                setError('Serwer nie przydzielił numeru zadania (Task ID).');
             }
         } catch (err) {
             setStatus('error');
-            setError(err.response?.data?.error || 'Nie udało się rozpocząć zadania.');
+            // Obsługa błędów sieciowych (np. gdy serwer odrzuci połączenie)
+            setError(err.response?.data?.error || 'Nie udało się rozpocząć zadania. Serwer nie odpowiada.');
         }
     };
 

@@ -16,8 +16,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
-from roster.views import ArtistViewSet, ProgramItemViewSet, ProjectViewSet, ParticipationViewSet, RehearsalViewSet, AttendanceViewSet
-from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet
+from roster.views import ArtistViewSet, CollaboratorViewSet, CrewAssignmentViewSet, ProgramItemViewSet, ProjectViewSet, ParticipationViewSet, RehearsalViewSet, AttendanceViewSet, ProjectPieceCastingViewSet, get_voice_lines, get_voice_types
+from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet, PieceVoiceRequirementViewSet
 
 __author__ = "Krystian Bugalski"
 
@@ -31,12 +31,15 @@ router.register(r'participations', ParticipationViewSet, basename='participation
 router.register(r'rehearsals', RehearsalViewSet, basename='rehearsal')
 router.register(r'attendances', AttendanceViewSet, basename='attendance')
 router.register(r'program-items', ProgramItemViewSet, basename='program-item')
+router.register(r'piece-castings', ProjectPieceCastingViewSet, basename='piece-casting')
+router.register(r'collaborators', CollaboratorViewSet, basename='collaborator')
+router.register(r'crew-assignments', CrewAssignmentViewSet, basename='crew-assignment')
 
 # --- Repertoire Archive Endpoints ---
 router.register(r'composers', ComposerViewSet, basename='composer')
 router.register(r'pieces', PieceViewSet, basename='piece')
 router.register(r'tracks', TrackViewSet, basename='track')
-
+router.register(r'piece-voice-requirements', PieceVoiceRequirementViewSet, basename='piece-voice-requirement')
 
 urlpatterns = [
     # Django Admin Panel
@@ -54,6 +57,10 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
+    # --- Custom Endpoints for Frontend Options ---
+    path('api/options/voice-lines/', get_voice_lines, name='options-voice-lines'),
+    path('api/options/voice-types/', get_voice_types, name='options-voice-types'),
 ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.

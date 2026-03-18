@@ -4,81 +4,116 @@
     <meta charset="UTF-8">
     <title>Umowa o Dzieło - {{ artist_name }}</title>
     <style>
-        /* Konfiguracja strony A4 i marginesów dla generatora PDF */
+        /* Import nowoczesnych fontów z Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+
         @page {
             size: A4;
-            margin: 2.5cm 2cm 2.5cm 2cm;
+            margin: 2.5cm 2cm 3cm 2cm;
             @bottom-right {
                 content: "Strona " counter(page) " z " counter(pages);
-                font-family: 'Georgia', serif;
+                font-family: 'Inter', sans-serif;
                 font-size: 8pt;
-                color: #666;
+                color: #9ca3af;
             }
         }
         
         body {
-            font-family: 'Georgia', serif;
-            font-size: 10.5pt;
+            font-family: 'Inter', sans-serif;
+            font-size: 10pt;
             line-height: 1.6;
-            color: #1a1a1a;
-            text-align: justify;
+            color: #1f2937;
+            text-align: left; /* Zmiana z justify dla lepszej czytelności */
         }
 
-        /* Piękna, artystyczna typografia nagłówków */
-        .brand {
-            text-align: center;
-            font-size: 24pt;
-            font-weight: normal;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
+        /* Nowoczesny Letterhead Fundacji */
+        .brand-header {
+            border-bottom: 2px solid #002395;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
         }
-        .brand span {
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 22pt;
+            color: #002395;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .brand-name span {
             font-style: italic;
-            color: #333;
+            font-weight: normal;
+            color: #4b5563;
         }
-        
-        .header-date {
+
+        .header-meta {
+            font-size: 9pt;
+            color: #6b7280;
             text-align: right;
-            font-size: 10pt;
-            margin-bottom: 40px;
-            color: #444;
         }
 
         h1 {
+            font-family: 'Playfair Display', serif;
             text-align: center;
-            font-size: 14pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
+            font-size: 16pt;
+            color: #111827;
             margin-bottom: 30px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 10px;
         }
 
         h2 {
-            font-size: 11pt;
-            font-weight: bold;
-            text-align: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 10pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #002395;
             margin-top: 25px;
             margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
         }
 
-        .parties-section {
+        .parties-grid {
+            display: table;
+            width: 100%;
             margin-bottom: 30px;
-            padding: 15px;
-            background-color: #fdfdfd;
-            border: 1px solid #eaeaea;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
         }
 
-        p { margin-bottom: 10px; }
-        
-        ul { margin-top: 5px; margin-bottom: 15px; padding-left: 20px; }
-        li { margin-bottom: 5px; }
+        .party-box {
+            display: table-cell;
+            width: 50%;
+            padding: 15px 20px;
+            vertical-align: top;
+        }
 
-        /* Tabela z podpisami na końcu */
+        .party-box.left { border-right: 1px solid #e5e7eb; }
+        .party-label { font-size: 8pt; text-transform: uppercase; color: #6b7280; font-weight: 700; margin-bottom: 5px;}
+        .party-name { font-weight: 700; font-size: 11pt; color: #111827; margin-bottom: 5px;}
+
+        p { margin: 0 0 10px 0; }
+        
+        ul { margin: 5px 0 15px 0; padding-left: 20px; }
+        li { margin-bottom: 3px; }
+
+        .highlight-box {
+            text-align: center;
+            padding: 10px;
+            margin: 15px 0;
+            background-color: #eff6ff;
+            border-left: 3px solid #002395;
+            font-weight: 600;
+        }
+
         .signature-table {
             width: 100%;
-            margin-top: 60px;
+            margin-top: 50px;
             page-break-inside: avoid;
         }
         .signature-table td {
@@ -87,74 +122,100 @@
             vertical-align: bottom;
         }
         .sign-line {
-            width: 70%;
-            border-bottom: 1px solid #000;
-            margin: 0 auto 10px auto;
-            height: 50px;
+            width: 60%;
+            border-bottom: 1px solid #111827;
+            margin: 0 auto 5px auto;
+            height: 40px;
         }
         .sign-label {
-            font-size: 9pt;
+            font-size: 8pt;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #555;
+            letter-spacing: 0.5px;
+            color: #6b7280;
+        }
+        
+        .legal-smallprint {
+            font-size: 7.5pt;
+            color: #6b7280;
+            margin-top: 15px;
+            text-align: justify;
         }
     </style>
 </head>
 <body>
 
-    <div class="header-date">
-        Kraków, dnia {{ generation_date|date:"d.m.Y" }} r.
-    </div>
-
-    <div class="brand">
-        Voct<span>Foundation</span>
+    <div class="brand-header">
+        <div class="brand-name">Voct<span>Foundation</span></div>
+        <div class="header-meta">
+            Zawarta w dniu: <strong>{{ generation_date|date:"d.m.Y" }} r.</strong><br>
+            Miejsce: <strong>Kraków</strong>
+        </div>
     </div>
 
     <h1>Umowa o Dzieło i Przeniesienie Praw Autorskich</h1>
 
-    <div class="parties-section">
-        <p>Zawarta w dniu <strong>{{ generation_date|date:"d.m.Y" }} r.</strong> pomiędzy:</p>
-        <p>
-            <strong>VoctFoundation</strong> z siedzibą w [Miasto], ul. [Ulica/Nr], [Kod pocztowy],<br>
-            wpisaną do Rejestru Stowarzyszeń i Fundacji KRS pod numerem: [Numer KRS], NIP: [Numer NIP],<br>
-            reprezentowaną przez: Zarząd Fundacji,<br>
-            zwaną w dalszej części umowy <strong>"Zamawiającym"</strong>,
-        </p>
-        <p style="text-align: center; font-style: italic;">a</p>
-        <p>
-            Panem/Panią: <strong>{{ artist_name }}</strong><br>
-            zamieszkałym/ą: {{ artist_address|default:"..........................................................................." }},<br>
-            PESEL: {{ artist_pesel|default:"...................................." }},<br>
-            zwanym/ą w dalszej części umowy <strong>"Wykonawcą"</strong>.
-        </p>
+    <div class="parties-grid">
+        <div class="party-box left">
+            <div class="party-label">Zamawiający</div>
+            <div class="party-name">VoctFoundation</div>
+            <p style="font-size: 9pt;">
+                ul. Przykładowa 12/3<br>
+                00-000 Kraków<br>
+                KRS: 0000000000<br>
+                NIP: 000-000-00-00<br>
+                Reprezentowana przez: Zarząd
+            </p>
+        </div>
+        <div class="party-box">
+            <div class="party-label">Wykonawca</div>
+            <div class="party-name">{{ artist_name }}</div>
+            <p style="font-size: 9pt;">
+                Pesel: {{ artist_pesel|default:"........................................" }}<br>
+                Adres: {{ artist_address|default:".................................................................." }}
+            </p>
+        </div>
     </div>
 
     <h2>§ 1. Przedmiot umowy</h2>
-    <p>1. Zamawiający powierza, a Wykonawca zobowiązuje się do wykonania dzieła polegającego na artystycznym przygotowaniu i wykonaniu partii wokalnej (Głos: <strong>{{ voice_type }}</strong>) podczas koncertu / projektu muzycznego pod nazwą:</p>
-    <p style="text-align: center; font-weight: bold; font-size: 12pt; margin: 15px 0;">„{{ project_title }}”</p>
-    <p>2. Koncert odbędzie się w dniu <strong>{{ project_date|date:"d.m.Y" }} r.</strong> w lokalizacji: {{ project_location }}.</p>
-    <p>3. Wykonawca oświadcza, że posiada niezbędne kwalifikacje, umiejętności oraz przygotowanie artystyczne do należytego wykonania przedmiotu umowy.</p>
+    {% if voice_type %}
+        <p>1. Zamawiający powierza, a Wykonawca zobowiązuje się do wykonania dzieła polegającego na artystycznym przygotowaniu i wykonaniu partii wokalnej (Głos: <strong>{{ voice_type }}</strong>) podczas projektu muzycznego:</p>
+    {% else %}
+        <p>1. Zamawiający powierza, a Wykonawca zobowiązuje się do wykonania dzieła polegającego na realizacji usług specjalistycznych w roli: <strong>{{ role_description }}</strong> podczas projektu muzycznego:</p>
+    {% endif %}
+    
+    <div class="highlight-box">
+        „{{ project_title }}”
+    </div>
+    
+    <p>2. Dzieło zostanie wykonane w dniu <strong>{{ project_date|date:"d.m.Y" }} r.</strong> w lokalizacji: {{ project_location }}.</p>
+    <p>3. Wykonawca oświadcza, że posiada niezbędne kwalifikacje i umiejętności do należytego wykonania przedmiotu umowy, a dzieło wykona osobiście.</p>
 
-    <h2>§ 2. Prawa Autorskie (Prawa Pokrewne)</h2>
-    <p>1. Wykonawca oświadcza, że w ramach wynagrodzenia określonego w § 3, przenosi na Zamawiającego autorskie prawa majątkowe oraz prawa pokrewne do artystycznego wykonania utworu, na wszelkich polach eksploatacji, a w szczególności:</p>
+    <h2>§ 2. Prawa Autorskie i Wizerunek</h2>
+    <p>1. Wykonawca oświadcza, że w ramach wynagrodzenia określonego w § 3, przenosi na Zamawiającego autorskie prawa majątkowe oraz prawa pokrewne do artystycznego wykonania utworu, wyłącznie na następujących polach eksploatacji:</p>
     <ul>
-        <li>utrwalania i zwielokrotniania wykonania dowolną techniką (audio/video),</li>
-        <li>wprowadzania do obrotu, użyczania lub najmu egzemplarzy, na których wykonanie utrwalono,</li>
-        <li>rozpowszechniania w Internecie, w tym w serwisach streamingowych i mediach społecznościowych Fundacji.</li>
+        <li>utrwalanie i zwielokrotnianie wykonania dowolną techniką (w tym cyfrową, audio i video),</li>
+        <li>wprowadzanie do obrotu, użyczanie lub najem egzemplarzy, na których wykonanie utrwalono,</li>
+        <li>publiczne udostępnianie wykonania w taki sposób, aby każdy mógł mieć do niego dostęp w miejscu i w czasie przez siebie wybranym (w szczególności w sieci Internet, w serwisach streamingowych oraz mediach społecznościowych).</li>
     </ul>
-    <p>2. Wykonawca wyraża nieodwołalną i bezpłatną zgodę na utrwalanie i rozpowszechnianie swojego wizerunku zarejestrowanego podczas wykonywania dzieła w celach promocyjnych Zamawiającego.</p>
+    <p>2. Wykonawca wyraża nieodwołalną i bezpłatną zgodę na utrwalanie i rozpowszechnianie swojego wizerunku, głosu oraz imienia i nazwiska w materiałach promocyjnych i archiwalnych Zamawiającego.</p>
 
-    <h2>§ 3. Wynagrodzenie</h2>
-    <p>1. Za wykonanie dzieła określonego w § 1 oraz przeniesienie praw, o których mowa w § 2, Zamawiający zapłaci Wykonawcy wynagrodzenie brutto w wysokości:</p>
-    <p style="text-align: center; font-weight: bold; font-size: 12pt;">{{ fee }} PLN</p>
-    <p>(słownie: {{ fee_in_words|default:".........................................................." }} złotych).</p>
-    <p>2. Wynagrodzenie zostanie wypłacone przelewem na rachunek bankowy Wykonawcy w terminie 14 dni od daty wystawienia rachunku i stwierdzenia przez Zamawiającego poprawnego wykonania dzieła.</p>
-    <p>3. Z kwoty określonej w ust. 1 potrącona zostanie zaliczka na podatek dochodowy od osób fizycznych, z uwzględnieniem 50% kosztów uzyskania przychodu z tytułu przeniesienia praw autorskich.</p>
+    <h2>§ 3. Wynagrodzenie (KUP 50%)</h2>
+    <p>1. Z tytułu osobistego wykonania dzieła (§1) oraz przeniesienia praw majątkowych i pokrewnych (§2), Zamawiający zapłaci Wykonawcy łączne wynagrodzenie brutto w wysokości:</p>
+    
+    <div class="highlight-box" style="font-size: 14pt;">
+        {{ fee }} PLN
+    </div>
+    
+    <p>2. Strony zgodnie postanawiają, że wynagrodzenie określone w ust. 1 obejmuje honorarium za stworzenie utworu będącego przedmiotem prawa autorskiego, wobec czego Zamawiający przy poborze zaliczki na podatek dochodowy zastosuje <strong>50% koszty uzyskania przychodu</strong>.</p>
+    <p>3. Wynagrodzenie zostanie wypłacone przelewem na rachunek bankowy Wykonawcy w terminie 14 dni od daty akceptacji dzieła przez Zamawiającego i podpisania rachunku do niniejszej umowy.</p>
 
     <h2>§ 4. Postanowienia końcowe</h2>
     <p>1. Wszelkie zmiany niniejszej umowy wymagają formy pisemnej pod rygorem nieważności.</p>
-    <p>2. W sprawach nieuregulowanych niniejszą umową zastosowanie mają przepisy Kodeksu Cywilnego oraz Ustawy o prawie autorskim i prawach pokrewnych.</p>
-    <p>3. Umowę sporządzono w dwóch jednobrzmiących egzemplarzach, po jednym dla każdej ze stron.</p>
+    <p>2. W sprawach nieuregulowanych zastosowanie mają przepisy Kodeksu Cywilnego oraz Ustawy o prawie autorskim i prawach pokrewnych.</p>
+    
+    <div class="legal-smallprint">
+        <strong>Klauzula RODO:</strong> Wykonawca oświadcza, że zapoznał się z klauzulą informacyjną dotyczącą przetwarzania danych osobowych przez Zamawiającego, zgodnie z art. 13 ust. 1 i 2 Rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 (RODO). Dane będą przetwarzane wyłącznie w celu realizacji niniejszej umowy oraz obowiązków prawno-podatkowych.
+    </div>
 
     <table class="signature-table">
         <tr>

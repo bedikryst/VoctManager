@@ -4,13 +4,13 @@
 # ==========================================
 """
 Database models for the Roster application.
-Author: Krystian Bugalski
+@author Krystian Bugalski
 
 Manages the core HR and logistical entities for the vocal ensemble, including 
 artists, projects, participation contracts, casting, and rehearsal scheduling.
 """
 
-import uuid
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -34,7 +34,7 @@ class VoiceType(models.TextChoices):
 class Artist(EnterpriseBaseModel):
     """
     Represents a vocal ensemble member and their specific musical capabilities.
-    Linked to a Django User model for authentication and platform access.
+    Automatically provisions and links a Django User model for platform access.
     """
     user = models.OneToOneField(
         User, 
@@ -51,7 +51,7 @@ class Artist(EnterpriseBaseModel):
     voice_type = models.CharField(max_length=5, choices=VoiceType.choices, verbose_name="Rodzaj głosu")
     is_active = models.BooleanField(default=True, verbose_name="Aktywny")
 
-    # Vocal Profile Data
+    # --- VOCAL PROFILE DATA ---
     sight_reading_skill = models.IntegerField(
         choices=[(i, str(i)) for i in range(1, 6)], 
         blank=True, 
@@ -70,15 +70,14 @@ class Artist(EnterpriseBaseModel):
 
     def save(self, *args, **kwargs):
         """
-        Intercepts the save process to automatically provision a Django User account.
-        Uses a sequential counter for collision resolution (e.g., kbugalski, kbugalski2).
+        Intercepts the save transaction to automatically provision a Django User account.
+        Implements sequential collision resolution for usernames (e.g., jsmith, jsmith2).
         """
         if self.first_name and self.last_name and not self.user:
             base_username = f"{self.first_name[0].lower()}{self.last_name.lower()}"
-            username = base_username
+            username = base_username.replace(' ', '')
             counter = 2
             
-            # Sequential collision resolution
             while User.objects.filter(username=username).exists():
                 username = f"{base_username}{counter}"
                 counter += 1
@@ -94,26 +93,35 @@ class Artist(EnterpriseBaseModel):
 
 
 class Project(EnterpriseBaseModel):
-    """Represents a specific event, concert series, or recording session."""
+    """
+    Represents a specific production lifecycle (e.g., event, concert series, recording session).
+    Acts as the central entity for logistics, casting, and rehearsal associations.
+    """
+    class Status(models.TextChoices):
+        DRAFT = 'DRAFT', 'Szkic / Planowany'
+        ACTIVE = 'ACTIVE', 'W przygotowaniu'
+        COMPLETED = 'DONE', 'Zrealizowany'
+        CANCELLED = 'CANC', 'Anulowany'
+
     title = models.CharField(max_length=200, verbose_name="Nazwa Projektu")
-    start_date = models.DateField(verbose_name="Data Rozpoczęcia")
-    end_date = models.DateField(verbose_name="Data Zakończenia")
+    date_time = models.DateTimeField(verbose_name="Data i godzina wydarzenia", default=timezone.now)
     call_time = models.DateTimeField(blank=True, null=True, help_text="Godzina zbiórki", verbose_name="Call Time")
     dress_code = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dress Code")
     location = models.CharField(max_length=200, blank=True, null=True, verbose_name="Lokalizacja")
     description = models.TextField(blank=True, null=True, verbose_name="Opis")
-
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name="Status")
+    run_sheet = models.JSONField(default=list, blank=True, verbose_name="Harmonogram Dnia (Run-sheet)")
+    
     class Meta:
         verbose_name = "Projekt"
         verbose_name_plural = "Projekty"
 
     def __str__(self):
-        return f"{self.title} ({self.start_date.year})"
+        return f"[{self.get_status_display()}] {self.title}"
 
 
 class ProgramItem(EnterpriseBaseModel):
-    """Maps musical pieces to a project to create an ordered concert setlist."""
-    # CRITICAL: Using RESTRICT to prevent hard-delete bypass of the Soft Delete architecture
+    """Junction table mapping musical pieces to a project to form an ordered concert setlist."""
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='program_items')
     piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, verbose_name="Utwór")
     order = models.PositiveIntegerField(verbose_name="Kolejność w programie (1, 2, 3...)")
@@ -130,7 +138,10 @@ class ProgramItem(EnterpriseBaseModel):
 
 
 class Participation(EnterpriseBaseModel):
-    """Junction table linking artists to projects, storing contract status and financial fees."""
+    """
+    Junction table representing an artist's contractual involvement in a specific project.
+    Stores negotiation status and financial remuneration (fees).
+    """
     class Status(models.TextChoices):
         INVITED = 'INV', 'Zaproszony'
         CONFIRMED = 'CON', 'Potwierdzony'
@@ -151,7 +162,10 @@ class Participation(EnterpriseBaseModel):
 
 
 class ProjectPieceCasting(EnterpriseBaseModel):
-    """Micro-casting: Assigns a specific vocal line (divisi) to an artist for a single piece."""
+    """
+    Micro-casting resolution table. 
+    Assigns a specific vocal line (divisi) and role to an artist for an individual piece within a project.
+    """
     class Role(models.TextChoices):
         TUTTI = 'TUTTI', 'Tutti'
         SOLO = 'SOLO', 'Partia Solowa'
@@ -167,17 +181,24 @@ class ProjectPieceCasting(EnterpriseBaseModel):
     class Meta:
         verbose_name = "Obsada Utworu"
         verbose_name_plural = "Obsady Utworów"
-        constraints = [models.UniqueConstraint(fields=['participation', 'piece'], name='unique_piece_casting')]
+        # Unique constraint is intentionally omitted to support edge cases where an artist splits divisi mid-piece.
 
 
 class Rehearsal(EnterpriseBaseModel):
-    """Represents a scheduled rehearsal session for a specific project."""
+    """Represents a scheduled rehearsal session contextualized to a specific project."""
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='rehearsals', verbose_name="Projekt")
     date_time = models.DateTimeField(verbose_name="Data i godzina")
     location = models.CharField(max_length=200, verbose_name="Sala prób")
     focus = models.CharField(max_length=200, blank=True, null=True, verbose_name="Cel próby")
     is_mandatory = models.BooleanField(default=True, verbose_name="Obowiązkowa")
 
+    invited_participations = models.ManyToManyField(
+        'Participation', 
+        blank=True, 
+        related_name='invited_rehearsals',
+        verbose_name="Wezwani chórzyści"
+    )
+    
     class Meta:
         verbose_name = "Próba"
         verbose_name_plural = "Próby"
@@ -188,7 +209,7 @@ class Rehearsal(EnterpriseBaseModel):
 
 
 class Attendance(EnterpriseBaseModel):
-    """Tracks individual attendance and absence justifications for rehearsals."""
+    """Tracks individual attendance and absence justifications for rehearsal sessions."""
     class Status(models.TextChoices):
         PRESENT = 'PRESENT', 'Obecny'
         LATE = 'LATE', 'Spóźniony'
@@ -208,7 +229,7 @@ class Attendance(EnterpriseBaseModel):
 
 
 class Collaborator(EnterpriseBaseModel):
-    """External production staff (e.g., sound engineers, lighting designers, instrumentalists)."""
+    """Defines external production staff (e.g., sound engineers, lighting designers, instrumentalists)."""
     class Specialty(models.TextChoices):
         SOUND = 'SOUND', 'Reżyseria Dźwięku'
         LIGHT = 'LIGHT', 'Reżyseria Świateł'
@@ -233,7 +254,7 @@ class Collaborator(EnterpriseBaseModel):
 
 
 class CrewAssignment(EnterpriseBaseModel):
-    """Assigns external collaborators to a project with specific duties and contractual fees."""
+    """Junction table assigning external collaborators to a project with specific duties and contractual fees."""
     class Status(models.TextChoices):
         INVITED = 'INV', 'Wstępnie umówiony'
         CONFIRMED = 'CON', 'Potwierdzony'

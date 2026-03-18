@@ -4,11 +4,11 @@
 # ==========================================
 """
 Django Admin interface configuration for the Roster application.
-Author: Krystian Bugalski
+@author Krystian Bugalski
 
 Customizes the administrative dashboard for managing artists, projects, 
-rehearsals, and cast assignments. Focuses on providing an intuitive 
-interface for the ensemble's management and artistic director.
+rehearsals, and cast assignments. Upgraded to Enterprise standards 
+with comprehensive list displays, dynamic buttons, and relational filtering.
 """
 
 from django.contrib import admin
@@ -39,22 +39,22 @@ class ProgramItemInline(admin.TabularInline):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    """Admin view for managing concert logistics and programs."""
-    list_display = ('title', 'start_date', 'end_date', 'location')
-    list_filter = ('start_date',)
+    """Admin view for managing production lifecycles and global event logistics."""
+    list_display = ('title', 'date_time', 'location', 'status')
+    list_filter = ('status', 'date_time')
     search_fields = ('title', 'location')
     inlines = [ProgramItemInline]
 
 
 @admin.register(Participation)
 class ParticipationAdmin(admin.ModelAdmin):
-    """Admin view for managing artist contracts and project assignments."""
+    """Admin view for managing artist contracts and specific project assignments."""
     list_display = ('artist', 'project', 'status', 'fee', 'download_pdf_button')
     list_filter = ('status', 'project')
     search_fields = ('artist__first_name', 'artist__last_name', 'project__title')
     
     def download_pdf_button(self, obj):
-        """Generates a direct download button for the artist's PDF contract."""
+        """Generates a direct download button for the artist's PDF legal contract."""
         return format_html(
             '<a href="/api/participations/{}/contract/" target="_blank" '
             'style="background-color: #417690; color: white; padding: 5px 10px; '
@@ -65,9 +65,41 @@ class ParticipationAdmin(admin.ModelAdmin):
     download_pdf_button.short_description = "Dokumenty"
 
 
-# Registering secondary models for standard CRUD operations
-admin.site.register(ProjectPieceCasting)
-admin.site.register(Rehearsal)
-admin.site.register(Attendance)
-admin.site.register(Collaborator)
-admin.site.register(CrewAssignment)
+@admin.register(ProjectPieceCasting)
+class ProjectPieceCastingAdmin(admin.ModelAdmin):
+    """Admin view for granular micro-casting (divisi) adjustments."""
+    list_display = ('participation', 'piece', 'voice_line', 'role')
+    list_filter = ('role', 'piece', 'participation__project')
+    search_fields = ('participation__artist__last_name', 'piece__title')
+
+
+@admin.register(Rehearsal)
+class RehearsalAdmin(admin.ModelAdmin):
+    """Admin view for physical rehearsal scheduling."""
+    list_display = ('date_time', 'project', 'location', 'is_mandatory')
+    list_filter = ('project', 'is_mandatory', 'date_time')
+    search_fields = ('location', 'focus', 'project__title')
+
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    """Admin view for analyzing ensemble attendance compliance."""
+    list_display = ('participation', 'rehearsal', 'status', 'minutes_late')
+    list_filter = ('status', 'rehearsal__project')
+    search_fields = ('participation__artist__last_name', 'excuse_note')
+
+
+@admin.register(Collaborator)
+class CollaboratorAdmin(admin.ModelAdmin):
+    """Admin view for managing the database of external production vendors/staff."""
+    list_display = ('first_name', 'last_name', 'specialty', 'company_name', 'phone_number')
+    list_filter = ('specialty',)
+    search_fields = ('first_name', 'last_name', 'company_name')
+
+
+@admin.register(CrewAssignment)
+class CrewAssignmentAdmin(admin.ModelAdmin):
+    """Admin view for tracking external staff event assignments and fees."""
+    list_display = ('collaborator', 'project', 'role_description', 'status', 'fee')
+    list_filter = ('status', 'project')
+    search_fields = ('collaborator__last_name', 'project__title', 'role_description')

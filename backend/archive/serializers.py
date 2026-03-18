@@ -11,7 +11,7 @@ into JSON representations, optimizing nested queries for the frontend.
 """
 
 from rest_framework import serializers
-from .models import Composer, Piece, Track
+from .models import Composer, Piece, Track, PieceVoiceRequirement
 
 class ComposerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,6 +32,13 @@ class TrackSerializer(serializers.ModelSerializer):
         fields = ['id', 'piece', 'voice_part', 'voice_part_display', 'audio_file']
 
 
+class PieceVoiceRequirementSerializer(serializers.ModelSerializer):
+    voice_line_display = serializers.CharField(source='get_voice_line_display', read_only=True)
+
+    class Meta:
+        model = PieceVoiceRequirement
+        fields = ['id', 'piece', 'voice_line', 'voice_line_display', 'quantity']
+
 class PieceSerializer(serializers.ModelSerializer):
     """
     Main serializer for musical pieces.
@@ -42,8 +49,9 @@ class PieceSerializer(serializers.ModelSerializer):
     # Flattening related composer fields to avoid extra frontend logic
     composer_name = serializers.CharField(source='composer.last_name', read_only=True)
     composer_full_name = serializers.StringRelatedField(source='composer', read_only=True)
-
+    voice_requirements = PieceVoiceRequirementSerializer(many=True, read_only=True)
     sheet_music = serializers.FileField(use_url=True, required=False, allow_null=True)
+    epoch_display = serializers.CharField(source='get_epoch_display', read_only=True)
     
     class Meta:
         model = Piece

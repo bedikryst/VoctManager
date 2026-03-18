@@ -45,7 +45,7 @@ body:not(.admin-mode) select {
 /* ADMIN ZONE: System Cursor Normalization    */
 /* ========================================== */
 body.admin-mode {
-  cursor: default; /* Global default arrow */
+  cursor: default; 
 }
 
 /* Disable the text-selection (I-beam) cursor on standard typography */
@@ -56,17 +56,12 @@ body.admin-mode h4,
 body.admin-mode h5, 
 body.admin-mode h6, 
 body.admin-mode p, 
-body.admin-mode span, 
-body.admin-mode div,
 body.admin-mode label {
   cursor: default;
 }
 
 /* Re-enable text cursor ONLY on actual inputs */
-body.admin-mode input[type="text"],
-body.admin-mode input[type="email"],
-body.admin-mode input[type="password"],
-body.admin-mode input[type="number"],
+body.admin-mode input,
 body.admin-mode textarea {
   cursor: text !important;
 }

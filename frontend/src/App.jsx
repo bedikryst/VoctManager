@@ -27,15 +27,14 @@ import Login from './pages/Login';
 // --- PANEL COMPONENTS ---
 import Contracts from './components/panel/Contracts';
 import DashboardHome from './components/panel/DashboardHome';
-import Projects from './components/panel/Projects';
-import Repertoire from './components/panel/Repertoire';
 import Rehearsals from './components/panel/Rehearsals';
-import ProgramBuilder from './components/panel/ProgramBuilder';
 import Materials from './components/panel/Materials';
 import Schedule from './components/panel/Schedule';
 import ArtistManagement from './components/panel/ArtistManagement';
-import ProjectManagement from './components/panel/ProjectManagement';
-import ArchiveManagement from './components/panel/ArchiveManagement';
+import ProjectManagement from './components/panel/projects/ProjectDashboard';
+import ArchiveManagement from './components/panel/archive/ArchiveManagement';
+import Resources from './components/panel/Resources';
+import CrewManagement from './components/panel/CrewManagement';
 
 export default function App() {
   const location = useLocation();
@@ -75,15 +74,14 @@ export default function App() {
 
               {/* Administrative Sub-routes */}
               <Route path="contracts" element={<Contracts />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="repertoire" element={<Repertoire />} />
               <Route path="rehearsals" element={<Rehearsals />} />
-              <Route path="program" element={<ProgramBuilder />} />
               <Route path="artists" element={<ArtistManagement />} />
               <Route path="project-management" element={<ProjectManagement />} />
               <Route path="archive-management" element={<ArchiveManagement />} />
+              <Route path="crew" element={<CrewManagement />} />
 
               {/* Artist Sub-routes */}
+              <Route path="resources" element={<Resources/>} />
               <Route path="materials" element={<Materials />} />
               <Route path="schedule" element={<Schedule />} />
               

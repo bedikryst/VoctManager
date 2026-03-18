@@ -4,10 +4,12 @@
 # ==========================================
 """
 Database models for the Archive application.
-Author: Krystian Bugalski
+@author Krystian Bugalski
 
 Defines the structure for storing musical repertoire, including 
 composers, musical pieces (sheet music, lyrics), and isolated audio tracks.
+ENTERPRISE UPGRADE: Consolidated duplicated fields and transitioned to 
+strict English documentation standards.
 """
 
 import uuid
@@ -37,6 +39,18 @@ class Composer(EnterpriseBaseModel):
             return f"{self.first_name} {self.last_name}"
         return self.last_name 
 
+class EpochChoices(models.TextChoices):
+    """Enumeration for standard musical epochs to enable precise repertoire filtering."""
+    MEDIEVAL = 'MED', 'Średniowiecze'
+    RENAISSANCE = 'REN', 'Renesans'
+    BAROQUE = 'BAR', 'Barok'
+    CLASSICAL = 'CLA', 'Klasycyzm'
+    ROMANTIC = 'ROM', 'Romantyzm'
+    MODERN_20 = 'M20', 'XX wiek'
+    CONTEMPORARY = 'CON', 'Muzyka Współczesna'
+    POP = 'POP', 'Muzyka Rozrywkowa'
+    FOLK = 'FOLK', 'Folk / Ludowa'
+    OTHER = 'OTH', 'Inne'
 
 class Piece(EnterpriseBaseModel):
     """
@@ -53,7 +67,6 @@ class Piece(EnterpriseBaseModel):
     
     # --- VOCAL ENSEMBLE SPECIFIC METADATA ---
     arranger = models.CharField(max_length=150, blank=True, null=True, verbose_name="Aranżer")
-    composition_year = models.CharField(max_length=100, blank=True, null=True, help_text="np. 1638 lub XVI w.", verbose_name="Czas powstania")
     language = models.CharField(max_length=50, blank=True, null=True, help_text="np. Łacina, Angielski", verbose_name="Język")
     estimated_duration = models.PositiveIntegerField(blank=True, null=True, help_text="Czas trwania w sekundach", verbose_name="Szacowany czas trwania")
     
@@ -65,6 +78,10 @@ class Piece(EnterpriseBaseModel):
     lyrics_original = models.TextField(blank=True, null=True, help_text="Tekst w języku oryginału", verbose_name="Tekst utworu")
     lyrics_translation = models.TextField(blank=True, null=True, help_text="Polskie tłumaczenie", verbose_name="Tłumaczenie")
     reference_recording = models.URLField(blank=True, null=True, help_text="Link do YouTube/Spotify", verbose_name="Nagranie referencyjne")
+    
+    # --- HISTORICAL CONTEXT ---
+    composition_year = models.IntegerField(blank=True, null=True, verbose_name="Rok powstania")
+    epoch = models.CharField(max_length=4, choices=EpochChoices.choices, blank=True, null=True, verbose_name="Epoka")
 
     class Meta:
         verbose_name = "Utwór"
@@ -73,10 +90,28 @@ class Piece(EnterpriseBaseModel):
 
     def __str__(self):
         suffix = f" (arr. {self.arranger})" if self.arranger else ""
+        year_str = f" ({self.composition_year})" if self.composition_year else ""
         if self.composer:
-            return f"{self.composer.last_name}: {self.title}{suffix}"
-        return f"{self.title}{suffix}"
+            return f"{self.composer.last_name}: {self.title}{year_str}{suffix}"
+        return f"{self.title}{year_str}{suffix}"
 
+class PieceVoiceRequirement(EnterpriseBaseModel):
+    """
+    Defines the exact vocal line requirements for a specific piece.
+    Crucial for automated casting deficit detection and divis matrix generation.
+    """
+    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='voice_requirements', verbose_name="Utwór")
+    voice_line = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name="Głos / Linia")
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Wymagana ilość śpiewaków")
+
+    class Meta:
+        verbose_name = "Wymaganie głosowe"
+        verbose_name_plural = "Wymagania głosowe"
+        # Enforces data integrity: Prevents assigning "Soprano 1" twice to the same piece
+        unique_together = ('piece', 'voice_line')
+
+    def __str__(self):
+        return f"{self.piece.title}: {self.quantity}x {self.get_voice_line_display()}"
 
 class Track(EnterpriseBaseModel):
     """

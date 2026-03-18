@@ -13,7 +13,7 @@ from celery import shared_task
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from .models import Participation
+from .models import Participation, Project
 
 __author__ = "Krystian Bugalski"
 
@@ -26,7 +26,10 @@ def generate_project_zip_task(self, project_id):
     """
     # Optimized query to prevent N+1 issues during template rendering
     participations = Participation.objects.filter(project_id=project_id).select_related('artist', 'project')
-    
+
+    project = Project.objects.get(id=project_id)
+    safe_title = project.title.replace(' ', '_').replace('/', '-')
+
     if not participations.exists():
         return {"error": "Brak artystów w tym projekcie."}
 
@@ -34,17 +37,17 @@ def generate_project_zip_task(self, project_id):
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for p in participations:
-            html_string = render_to_string('templates/contracts/contract_pdf.html', {'participation': p})
+            html_string = render_to_string('contracts/contract_pdf.html', {'participation': p})
             pdf_bytes = weasyprint.HTML(string=html_string).write_pdf()
             
             safe_last_name = p.artist.last_name.replace(' ', '_')
-            filename = f"HR-{p.project.id}-UOG-SUB-{safe_last_name}.pdf"
+            filename = f"HR-{safe_title}-UOG-SUB-{safe_last_name}.pdf"
             
             zip_file.writestr(filename, pdf_bytes)
             
     zip_buffer.seek(0)
     
-    file_path = f"exports/Umowy_Koncert_{project_id}.zip"
+    file_path = f"exports/Umowy_Koncert_{safe_title}.zip"
     
     # Cleanup previous generation if it exists to save storage space
     if default_storage.exists(file_path):
