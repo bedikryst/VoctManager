@@ -12,7 +12,6 @@
 *.ntvs*
 *.njsproj
 *.sln
-docker-compose.override.yml
 
 # =========================
 # ZMIENNE ŚRODOWISKOWE
