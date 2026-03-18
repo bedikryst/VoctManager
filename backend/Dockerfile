@@ -39,14 +39,13 @@ RUN mkdir -p /app/media /app/static && \
     chmod -R 755 /app/media /app/static
 
 # Build global font cache for WeasyPrint as root before switching users
-RUN fc-cache -f -v
+RUN fc-cache -f -v && chmod +x /app/entrypoint.sh
 
 # Redirect application cache to a globally writable temporary directory
 ENV XDG_CACHE_HOME=/tmp/.cache
 
 # Copy the entrypoint script and make it executable
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 
 # Switch to the secure, non-root user
 USER voctuser
