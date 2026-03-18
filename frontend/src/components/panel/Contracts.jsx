@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calculator, Wallet, FileSignature, AlertCircle, FileText, Users, Wrench, Sparkles, Receipt } from 'lucide-react';
+import { Calculator, Wallet, FileSignature, AlertCircle, FileText, Users, Wrench, Sparkles, Receipt, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../utils/api'; 
 import { downloadFile } from '../../utils/downloadFile';
