@@ -46,8 +46,8 @@ RUN fc-cache -f -v
 # Redirect application cache to a globally writable temporary directory
 ENV XDG_CACHE_HOME=/tmp/.cache
 
-# Switch to the secure, non-root user
-USER voctuser
+# Install gosu
+RUN apt-get update && apt-get install -y gosu && rm -rf /var/lib/apt/lists/*
 
 # Set the default command to run the application
 ENTRYPOINT ["/app/entrypoint.sh"]
