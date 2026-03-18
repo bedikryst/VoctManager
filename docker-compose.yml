@@ -56,6 +56,9 @@ services:
       - static_volume:/app/static
 
   frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     image: nginx:alpine
     restart: always
     depends_on:
