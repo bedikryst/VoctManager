@@ -6,7 +6,7 @@
 set -e
 
 # Check if the container is starting the web server (gunicorn or runserver)
-if [ "$1" = "gunicorn" ] || [ "$1" = "python" ]; then
+if [[ "$*" == *"gunicorn"* ]] || [[ "$*" == *"runserver"* ]]; then
     echo ">>> Running web container pre-flight checks..."
     
     echo ">>> Applying database migrations..."

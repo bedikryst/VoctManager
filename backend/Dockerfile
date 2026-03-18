@@ -22,6 +22,8 @@ RUN apt-get update && apt-get install -y \
     libpangoft2-1.0-0 \
     libharfbuzz0b \
     fontconfig \
+    libpq-dev \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies securely without caching
@@ -29,11 +31,12 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
-COPY . /app/
+COPY --chown=voctuser:voctgroup . /app/
 
 # Create directories for media and static files, and assign ownership to the non-root user
 RUN mkdir -p /app/media /app/static && \
-    chown -R voctuser:voctgroup /app/media /app/static
+    chown -R voctuser:voctgroup /app/media /app/static && \
+    chmod -R 755 /app/media /app/static
 
 # Build global font cache for WeasyPrint as root before switching users
 RUN fc-cache -f -v
