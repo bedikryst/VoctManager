@@ -28,7 +28,7 @@ class VoiceType(models.TextChoices):
     TENOR = 'TEN', 'Tenor'
     BARITONE = 'BAR', 'Baryton'
     BASS = 'BAS', 'Bas'
-    CONDUCTOR = 'DIR', 'Dyrygent/Kierownik'
+    CONDUCTOR = 'DIR', 'Dyrygent'
 
 
 class Artist(EnterpriseBaseModel):
