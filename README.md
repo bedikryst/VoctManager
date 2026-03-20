@@ -101,8 +101,6 @@ VoctManager is continuously evolving toward a fully automated, observable infras
 | **Smart Archive (Asset Management)** | **High-Density Attendance Matrix** |
 | <img src="docs/assets/archive.png" width="400" alt="Archive"/> | <img src="docs/assets/matrix.png" width="400" alt="Attendance Matrix"/> |
 
-*(Note: Replace `docs/assets/...` paths with actual screenshots of your application)*
-
 ---
 
 ## 🚀 Quickstart (Local Development)
