@@ -1,5 +1,7 @@
 # 🎼 VoctManager | Enterprise Choral Operating System & Digital Experience
 
+🌍 *Read this in other languages: [English](README.md), [Polski](README.pl.md).*
+
 ![React](https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -11,7 +13,9 @@
 **VoctManager** is a high-performance, dual-architecture platform designed to bridge the gap between immersive digital storytelling and robust enterprise resource planning (ERP). Built as the official digital infrastructure for the professional vocal ensemble **VoctEnsemble**.
 
 🌐 **Live Public Experience (Beta):** [test.voctensemble.com](https://test.voctensemble.com)
-
+🔐 **Enterprise Panel (Beta Demo):** [test.voctensemble.com/panel](https://test.voctensemble.com/panel)
+> **Demo Access:** > Username: `daccess` | Password: `demoaccess` 
+> *(Read-only Artist panel account)*
 ---
 
 ## 🏛️ System Architecture
@@ -95,7 +99,7 @@ VoctManager is continuously evolving toward a fully automated, observable infras
 
 ## 📸 System Interface
 
-| Main Dashboard (Bento OS) | Project Editor (Slide-over Panel) |
+| Main Dashboard (Bento OS) | Project Editor |
 |:---:|:---:|
 | <img src="docs/assets/dashboard.png" width="400" alt="Main Dashboard"/> | <img src="docs/assets/editor.png" width="400" alt="Project Editor"/> |
 | **Smart Archive (Asset Management)** | **High-Density Attendance Matrix** |
@@ -127,15 +131,17 @@ The project relies on Docker, simplifying the bootstrapping process to just a fe
    ```
 
 3. **Spin up the infrastructure:**
+   Using the provided 'Makefile' (Recommended)
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+   make up
    ```
+   (or manually: docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d)
 
 4. **Initialize database & seed data:**
    ```bash
-   docker compose exec web python manage.py migrate
-   docker compose exec web python manage.py seed_db
-   docker compose exec web python manage.py createsuperuser
+   make migrate
+   make seed
+   make superuser
    ```
    * API: `http://localhost:8000/api/`
    * Frontend: `http://localhost:5173`
