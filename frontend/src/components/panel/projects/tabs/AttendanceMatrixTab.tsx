@@ -2,22 +2,21 @@
  * @file AttendanceMatrixTab.tsx
  * @description Advanced Attendance Matrix for Directors and Choir Inspectors.
  * @architecture
- * Implements a High-Density Data Grid with Optimistic UI mutations (One-Click status cycling).
- * Backed by React Query for declarative data fetching and caching.
- * Incorporates Sonner for graceful error handling during mutation rollbacks.
+ * ENTERPRISE UPGRADE 2026: The "Grid of Death" resolved.
+ * 1. O(1) Hash Map lookups instead of O(N) array finds.
+ * 2. React.memo() on individual cells prevents O(N^2) catastrophic re-renders.
+ * 3. useCallback with functional state updates ensures stable references for 60FPS grid interactions.
  * @module project/tabs/AttendanceMatrixTab
  * @author Krystian Bugalski
  */
 
-import React, { useState, useEffect, useMemo, useContext } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Check, X, Clock, ShieldAlert, Users } from 'lucide-react';
 
 import api from '../../../../utils/api';
-import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-
-// Type Definitions
+import { useProjectData } from '../../../../hooks/useProjectData'; 
 import type { Rehearsal, Participation, Artist } from '../../../../types';
 
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | null;
@@ -37,262 +36,296 @@ interface AttendanceMatrixTabProps {
   projectId: string;
 }
 
-interface StatusDefinition {
-  value: AttendanceStatus;
-  color: string;
-  icon: React.ReactNode | null;
-  label: string;
-}
+// --- Static Constants & Dictionaries (Moved OUTSIDE render cycle for memory safety) ---
+const STATUS_CYCLE: AttendanceStatus[] = [null, 'PRESENT', 'ABSENT', 'LATE', 'EXCUSED'];
 
-// --- Static Configurations & Styles ---
+const STATUS_DEF: Record<string, { label: string, color: string, icon: React.ReactNode }> = {
+    'null': { label: 'Brak wpisu', color: 'bg-stone-50 hover:bg-stone-100 text-stone-200 border border-stone-200/60', icon: <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span> },
+    'PRESENT': { label: 'Obecny', color: 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_2px_10px_rgba(16,185,129,0.3)] border border-emerald-600', icon: <Check size={16} strokeWidth={3} /> },
+    'ABSENT': { label: 'Nieobecny', color: 'bg-red-500 hover:bg-red-600 text-white shadow-[0_2px_10px_rgba(239,68,68,0.3)] border border-red-600', icon: <X size={16} strokeWidth={3} /> },
+    'LATE': { label: 'Spóźniony', color: 'bg-orange-400 hover:bg-orange-500 text-white shadow-[0_2px_10px_rgba(249,115,22,0.3)] border border-orange-500', icon: <Clock size={14} strokeWidth={3} /> },
+    'EXCUSED': { label: 'Zwolniony', color: 'bg-purple-500 hover:bg-purple-600 text-white shadow-[0_2px_10px_rgba(168,85,247,0.3)] border border-purple-600', icon: <ShieldAlert size={14} strokeWidth={3} /> }
+};
 
-const STYLE_GLASS_CARD = "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl overflow-hidden";
-
-const STATUS_CYCLE: StatusDefinition[] = [
-    { value: null, color: 'bg-stone-100/50 hover:bg-stone-200/80 border-stone-200/60 text-transparent', icon: null, label: 'Brak' },
-    { value: 'PRESENT', color: 'bg-emerald-500 hover:bg-emerald-600 border-emerald-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]', icon: <Check size={14} aria-hidden="true"/>, label: 'Obecny' },
-    { value: 'ABSENT', color: 'bg-red-500 hover:bg-red-600 border-red-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]', icon: <X size={14} aria-hidden="true"/>, label: 'Nieobecny' },
-    { value: 'LATE', color: 'bg-orange-500 hover:bg-orange-600 border-orange-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]', icon: <Clock size={12} aria-hidden="true"/>, label: 'Spóźniony' },
-    { value: 'EXCUSED', color: 'bg-purple-500 hover:bg-purple-600 border-purple-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]', icon: <ShieldAlert size={12} aria-hidden="true"/>, label: 'Uspraw.' }
+const VOICE_GROUPS = [
+  { filter: 'S', label: 'Soprany' },
+  { filter: 'A', label: 'Alty' },
+  { filter: 'T', label: 'Tenory' },
+  { filter: 'B', label: 'Basy' }
 ];
 
-/**
- * AttendanceMatrixTab Component
- * @param {AttendanceMatrixTabProps} props
- * @returns {React.JSX.Element}
- */
-export default function AttendanceMatrixTab({ projectId }: AttendanceMatrixTabProps): React.JSX.Element {
-  const context = useContext(ProjectDataContext) as IProjectDataContext;
-  const { rehearsals, participations, artists } = context;
+// ==========================================
+// ENTERPRISE UPGRADE: Memoized Matrix Cell
+// ==========================================
+// Ten komponent odświeży się TYLKO, gdy jego konkretny `record` ulegnie zmianie.
+// Reszta macierzy (599 innych komórek) pozostanie "zamrożona", ratując procesor.
+interface MatrixCellProps {
+  rehearsalId: string | number;
+  participationId: string | number;
+  record: AttendanceRecord | undefined;
+  onToggle: (rehearsalId: string | number, participationId: string | number, record: AttendanceRecord | undefined) => void;
+  isMutating: boolean;
+}
 
-  const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
+const MatrixCell = React.memo(({ rehearsalId, participationId, record, onToggle, isMutating }: MatrixCellProps) => {
+    const currentStatus = record?.status || 'null';
+    const currentStatusObj = STATUS_DEF[String(currentStatus)] || STATUS_DEF['null'];
 
-  // --- Derived Data (Memoized) ---
-  const projectRehearsals = useMemo<Rehearsal[]>(() => {
-      return rehearsals
-        .filter((r) => String(r.project) === String(projectId))
-        .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
-  }, [rehearsals, projectId]);
+    return (
+        <td className="p-1 border-b border-stone-200/60 text-center">
+            <button 
+                onClick={() => onToggle(rehearsalId, participationId, record)}
+                disabled={isMutating}
+                className={`w-full h-10 flex items-center justify-center rounded-lg transition-all active:scale-90 ${currentStatusObj.color} ${isMutating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={currentStatusObj.label}
+                aria-label={`Oznacz obecność: ${currentStatusObj.label}`}
+            >
+                {isMutating ? <Loader2 size={12} className="animate-spin opacity-50" /> : currentStatusObj.icon}
+            </button>
+        </td>
+    );
+}, (prevProps, nextProps) => {
+    // Customowy komparator dla maksymalnej wydajności
+    return (
+        prevProps.record?.status === nextProps.record?.status &&
+        prevProps.record?.id === nextProps.record?.id &&
+        prevProps.isMutating === nextProps.isMutating
+    );
+});
 
-  const projectParticipations = useMemo<Participation[]>(() => {
-      return participations.filter((p) => String(p.project) === String(projectId));
-  }, [participations, projectId]);
 
-  // --- Data Fetching (React Query) ---
-  const { data: fetchedAttendances, isLoading: isFetching } = useQuery({
-    queryKey: ['attendances', 'project', projectId],
+export default function AttendanceMatrixTab({ projectId }: AttendanceMatrixTabProps): React.JSX.Element | null {
+  const queryClient = useQueryClient();
+  const { rehearsals, participations, artists } = useProjectData(projectId);
+
+  const projectRehearsals = useMemo(() => 
+    rehearsals.filter(r => r.project === projectId).sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime()),
+  [rehearsals, projectId]);
+
+  const enrichedParticipations = useMemo<EnrichedParticipation[]>(() => {
+    return participations
+      .filter(p => p.project === projectId)
+      .map(p => ({
+        ...p,
+        artistData: artists.find(a => String(a.id) === String(p.artist)) as Artist
+      }))
+      .filter(p => p.artistData)
+      .sort((a, b) => a.artistData.last_name.localeCompare(b.artistData.last_name));
+  }, [participations, artists, projectId]);
+
+  // Fetch obecności z bazy
+  const { data: fetchedAttendances = [], isLoading } = useQuery<AttendanceRecord[]>({
+    queryKey: ['attendances', projectId],
     queryFn: async () => {
-      const attRes = await api.get('/api/attendances/');
-      const rehearsalIds = projectRehearsals.map((r) => String(r.id));
-      
-      return Array.isArray(attRes.data) 
-        ? attRes.data.filter((a: AttendanceRecord) => rehearsalIds.includes(String(a.rehearsal))) 
-        : [];
+      const res = await api.get(`/api/attendances/?project=${projectId}`);
+      return res.data;
     },
-    enabled: projectRehearsals.length > 0 // Only fetch if there are rehearsals to map against
+    staleTime: 1000 * 60 * 5, // 5 minut cache
   });
 
-  // Sync fetched data into local state for immediate Optimistic UI mutations
+  const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
+  // Zabezpieczenie (Mutex) chroniące przed spamowaniem kliknięć na tej samej komórce
+  const [mutatingCells, setMutatingCells] = useState<Set<string>>(new Set());
+
+  // Inicjalizacja stanu lokalnego
   useEffect(() => {
-    if (fetchedAttendances) {
-        setAttendances(fetchedAttendances);
+    if (fetchedAttendances.length > 0) {
+      setAttendances(fetchedAttendances);
     }
   }, [fetchedAttendances]);
 
-  // --- Roster Grouping ---
-  const groupedRoster = useMemo<Record<string, EnrichedParticipation[]>>(() => {
-      const groups: Record<string, EnrichedParticipation[]> = { 'Soprany': [], 'Alty': [], 'Tenory': [], 'Basy': [], 'Inne': [] };
-      
-      projectParticipations.forEach((part) => {
-          const artist = artists.find((a) => String(a.id) === String(part.artist));
-          if (artist) {
-              // Note: Assuming voice_type exists on Artist model based on context, fallback to empty string
-              const vt = (artist as any).voice_type || '';
-              const enrichedPart: EnrichedParticipation = { ...part, artistData: artist };
-              
-              if (vt.startsWith('S')) groups['Soprany'].push(enrichedPart);
-              else if (vt.startsWith('A') || vt === 'MEZ') groups['Alty'].push(enrichedPart);
-              else if (vt.startsWith('T') || vt === 'CT') groups['Tenory'].push(enrichedPart);
-              else if (vt.startsWith('B')) groups['Basy'].push(enrichedPart);
-              else groups['Inne'].push(enrichedPart);
-          }
+  // ==========================================
+  // ENTERPRISE UPGRADE: Hash Map (O(1) Lookup)
+  // ==========================================
+  // Zamiast array.find() w pętli, tworzymy mapę szybkiego dostępu
+  const attendanceMap = useMemo(() => {
+    const map = new Map<string, AttendanceRecord>();
+    attendances.forEach(a => map.set(`${a.rehearsal}-${a.participation}`, a));
+    return map;
+  }, [attendances]);
+
+  // ==========================================
+  // ENTERPRISE UPGRADE: Stable Mutation Handler + Cache Sync
+  // ==========================================
+  // Używamy funkcyjnego update'u stanu `setAttendances(prev => ...)`, 
+  // dzięki czemu referencja do tej funkcji NIGDY się nie zmienia, 
+  // a `React.memo` w komórkach działa z pełną wydajnością.
+  const handleToggleStatus = useCallback(async (
+      rehearsalId: string | number, 
+      participationId: string | number, 
+      currentRecord: AttendanceRecord | undefined
+  ) => {
+      const cellKey = `${rehearsalId}-${participationId}`;
+
+      // Zablokuj komórkę na czas wysyłki, by uniknąć Race Conditions
+      setMutatingCells(prev => {
+          if (prev.has(cellKey)) return prev;
+          const next = new Set(prev);
+          next.add(cellKey);
+          return next;
       });
 
-      Object.keys(groups).forEach((key) => {
-          groups[key].sort((a, b) => a.artistData.last_name.localeCompare(b.artistData.last_name));
+      const currentStatus = currentRecord?.status || null;
+      const currentIndex = STATUS_CYCLE.indexOf(currentStatus);
+      const nextStatus = STATUS_CYCLE[(currentIndex + 1) % STATUS_CYCLE.length];
+
+      // Optimistic UI - Zmieniamy UI natychmiast bez czekania na serwer
+      const tempId = currentRecord?.id || `temp-${Date.now()}`;
+    // Funkcja pomocnicza, która jednocześnie aktualizuje UI i Cache React Query!
+      const updateStateAndCache = (updater: (prev: AttendanceRecord[]) => AttendanceRecord[]) => {
+          setAttendances(prev => {
+              const nextState = updater(prev);
+              // Wpychamy nasz nowy szybki stan prosto do globalnej pamięci React Query
+              queryClient.setQueryData(['attendances', projectId], nextState);
+              return nextState;
+          });
+      };
+
+      // Optimistic UI - używamy nowej funkcji
+      updateStateAndCache(prev => {
+          const filtered = prev.filter(a => !(String(a.rehearsal) === String(rehearsalId) && String(a.participation) === String(participationId)));
+          if (nextStatus === null) return filtered; 
+          return [...filtered, { id: tempId, rehearsal: String(rehearsalId), participation: String(participationId), status: nextStatus }];
       });
 
-      return groups;
-  }, [projectParticipations, artists]);
-
-  // --- Mutation Handlers (Optimistic UI) ---
-  const handleCellClick = async (rehearsalId: string, participationId: string, currentRecord?: AttendanceRecord): Promise<void> => {
-      const currentIndex = STATUS_CYCLE.findIndex((s) => s.value === (currentRecord?.status || null));
-      const nextIndex = (currentIndex + 1) % STATUS_CYCLE.length;
-      const nextStatus = STATUS_CYCLE[nextIndex].value;
-
-      // 1. Snapshot previous state for rollback
-      const previousAttendances = [...attendances];
-      let newAttendances = [...attendances];
-      
-      // 2. Apply Optimistic Update
-      if (nextStatus === null && currentRecord) {
-          newAttendances = newAttendances.filter((a) => String(a.id) !== String(currentRecord.id));
-      } else {
-          if (currentRecord) {
-              newAttendances = newAttendances.map((a) => String(a.id) === String(currentRecord.id) ? { ...a, status: nextStatus } : a);
-          } else {
-              // Generate a temporary ID for immediate rendering
-              newAttendances.push({ 
-                  id: `temp-${Date.now()}`, 
-                  rehearsal: rehearsalId, 
-                  participation: participationId, 
-                  status: nextStatus 
-              });
-          }
-      }
-      setAttendances(newAttendances);
-
-      // 3. Execute Network Request
       try {
-          if (nextStatus === null && currentRecord) {
+          if (nextStatus === null && currentRecord?.id && !String(currentRecord.id).startsWith('temp')) {
               await api.delete(`/api/attendances/${currentRecord.id}/`);
-          } else if (nextStatus !== null && currentRecord) {
+          } else if (currentRecord?.id && !String(currentRecord.id).startsWith('temp')) {
               await api.patch(`/api/attendances/${currentRecord.id}/`, { status: nextStatus });
-          } else if (nextStatus !== null && !currentRecord) {
-              const res = await api.post('/api/attendances/', { rehearsal: rehearsalId, participation: participationId, status: nextStatus });
-              // Replace temporary ID with actual database ID silently
-              setAttendances((prev) => prev.map((a) => 
-                String(a.id).startsWith('temp-') && a.rehearsal === rehearsalId && a.participation === participationId 
-                ? res.data 
-                : a
-              ));
+          } else {
+              const res = await api.post('/api/attendances/', {
+                  rehearsal: rehearsalId,
+                  participation: participationId,
+                  status: nextStatus
+              });
+              // Aktualizujemy tymczasowe ID na prawdziwe ID z bazy również w Cache!
+              updateStateAndCache(prev => prev.map(a => a.id === tempId ? { ...a, id: res.data.id } : a));
           }
-      } catch (err) {
-          console.error("[AttendanceMatrix] Cell mutation failed, executing rollback:", err);
-          setAttendances(previousAttendances); 
-          toast.error("Błąd zapisu", {
-              description: "Nie udało się zaktualizować statusu obecności. Zmiany zostały cofnięte."
+      } catch (error) {
+          toast.error('Nie udało się zapisać zmiany.', { description: 'Sprawdź połączenie i spróbuj ponownie.' });
+          // Rollback w przypadku błędu
+          updateStateAndCache(prev => {
+              const filtered = prev.filter(a => a.id !== tempId);
+              if (currentRecord) return [...filtered, currentRecord];
+              return filtered;
+          });
+      } finally {
+          setMutatingCells(prev => {
+              const next = new Set(prev);
+              next.delete(cellKey);
+              return next;
           });
       }
-  };
+  }, [projectId, queryClient]);
 
-  // --- Render Cycle ---
-
-  if (isFetching && attendances.length === 0) {
-      return (
-          <div className="flex justify-center py-12">
-              <Loader2 className="animate-spin text-stone-400" aria-label="Ładowanie danych..." />
-          </div>
-      );
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 bg-white/40 rounded-2xl border border-stone-200/60">
+        <Loader2 size={32} className="animate-spin text-[#002395] mb-4" />
+        <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">Wczytywanie macierzy...</span>
+      </div>
+    );
   }
 
-  if (projectRehearsals.length === 0 || projectParticipations.length === 0) {
-      return (
-          <div className={`${STYLE_GLASS_CARD} p-12 text-center text-stone-500 flex flex-col items-center justify-center`}>
-            <Users size={32} className="mx-auto mb-4 opacity-50" aria-hidden="true" />
-            <p className="font-bold antialiased uppercase tracking-widest text-[11px] text-stone-500 mb-2">Brakuje danych do macierzy</p>
-            <p className="text-xs text-stone-400 max-w-sm leading-relaxed">Aby wygenerować dziennik, musisz zdefiniować próby oraz przypisać artystów w module Casting.</p>
-          </div>
-      );
+  if (projectRehearsals.length === 0 || enrichedParticipations.length === 0) {
+    return (
+      <div className="text-center py-16 bg-white/40 rounded-2xl border border-dashed border-stone-300/60">
+        <Users size={32} className="mx-auto mb-3 opacity-30 text-stone-400" aria-hidden="true" />
+        <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 block mb-1">Macierz Niedostępna</span>
+        <span className="text-xs text-stone-400 max-w-sm mx-auto block">Aby wyświetlić dziennik obecności, dodaj do projektu przynajmniej jedną próbę oraz przypisz obsadę wokalną.</span>
+      </div>
+    );
   }
 
   return (
-    <div className={STYLE_GLASS_CARD}>
-      {/* Legend */}
-      <div className="bg-stone-50/40 p-5 border-b border-white/60 flex flex-wrap items-center gap-6">
-          <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">Legenda kliknięć:</span>
-          {STATUS_CYCLE.filter((s) => s.value !== null).map((status) => (
-              <div key={status.value || 'null'} className="flex items-center gap-2">
-                  <div className={`w-5 h-5 rounded-lg border flex items-center justify-center shadow-sm ${status.color}`}>
-                      {status.icon}
-                  </div>
-                  <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-600">{status.label}</span>
+    <div className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-2xl overflow-hidden">
+      
+      {/* Legenda */}
+      <div className="bg-stone-50/50 backdrop-blur-sm p-4 border-b border-stone-200/60 flex flex-wrap gap-4 items-center justify-center sm:justify-start">
+          <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mr-2">Legenda:</span>
+          {Object.entries(STATUS_DEF).filter(([k]) => k !== 'null').map(([key, def]) => (
+              <div key={key} className="flex items-center gap-2">
+                  <span className={`w-5 h-5 flex items-center justify-center rounded text-white ${def.color}`}>{def.icon}</span>
+                  <span className="text-xs font-medium text-stone-600">{def.label}</span>
               </div>
           ))}
+          <div className="flex items-center gap-2 ml-auto">
+              <span className="text-xs text-stone-400 italic font-medium">Kliknij w komórkę, aby zmienić status.</span>
+          </div>
       </div>
 
-      {/* Matrix Grid */}
-      <div className="overflow-x-auto scrollbar-hide">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr>
-              <th className="sticky left-0 z-20 bg-white/80 backdrop-blur-md p-4 border-b border-r border-stone-200/60 w-48 min-w-[220px] shadow-[2px_0_10px_rgba(0,0,0,0.02)]">
-                  <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">Chórzysta</span>
+              <th className="p-4 border-b border-stone-200/60 bg-stone-50/80 sticky left-0 z-10 w-48 backdrop-blur-md">
+                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">Artysta</span>
               </th>
-              {projectRehearsals.map((reh) => (
-                <th key={reh.id} className="p-3 border-b border-stone-200/60 min-w-[64px] text-center bg-white/40 group relative">
-                    <div className="flex flex-col items-center justify-center">
-                        <span className="text-[9px] font-bold antialiased text-stone-400 uppercase tracking-widest">
-                            {new Date(reh.date_time).toLocaleDateString('pl-PL', { month: 'short' })}
-                        </span>
-                        <span className="text-sm font-bold text-stone-800 leading-none mt-1 tracking-tight">
-                            {new Date(reh.date_time).getDate()}
+              {projectRehearsals.map((reh, idx) => (
+                  <th key={reh.id} className="p-3 border-b border-stone-200/60 text-center min-w-[60px] max-w-[80px]">
+                    <div className="flex flex-col items-center">
+                        <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-1">P{idx + 1}</span>
+                        <span className="text-xs font-bold text-stone-800">
+                            {new Date(reh.date_time).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}
                         </span>
                     </div>
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-stone-900/90 backdrop-blur-md text-white text-[10px] px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap shadow-xl">
-                        {new Date(reh.date_time).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}<br/>
-                        <span className="opacity-75">{reh.location}</span>
-                    </div>
-                </th>
+                  </th>
               ))}
-              <th className="p-4 border-b border-l border-stone-200/60 text-center bg-white/40 w-28">
-                  <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">Frekwencja</span>
+              <th className="p-4 border-b border-l border-stone-200/60 text-center w-24">
+                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">Frekw.</span>
               </th>
             </tr>
           </thead>
-          <tbody>
-            {Object.entries(groupedRoster).map(([groupName, groupParticipations]) => {
+          <tbody className="bg-white/40">
+            {VOICE_GROUPS.map((group) => {
+                const groupParticipations = enrichedParticipations.filter(p => (p.artistData.voice_type || '').startsWith(group.filter));
                 if (groupParticipations.length === 0) return null;
 
                 return (
-                    <React.Fragment key={groupName}>
-                        {/* Voice Group Header */}
+                    <React.Fragment key={group.filter}>
+                        {/* Wiersz z nagłówkiem sekcji */}
                         <tr>
-                            <td colSpan={projectRehearsals.length + 2} className="bg-stone-50/50 p-3 border-y border-stone-200/60">
-                                <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-[#002395] ml-3 flex items-center gap-2">
-                                    {groupName} <span className="px-1.5 py-0.5 bg-blue-50 rounded-md opacity-70">{groupParticipations.length}</span>
-                                </span>
+                            <td colSpan={projectRehearsals.length + 2} className="bg-stone-50/80 px-4 py-2 border-b border-stone-200/60">
+                                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">{group.label}</span>
                             </td>
                         </tr>
-                        
-                        {/* Participants Rows */}
-                        {groupParticipations.map((part) => {
-                            const artistRecords = attendances.filter((a) => String(a.participation) === String(part.id));
-                            const presents = artistRecords.filter((a) => a.status === 'PRESENT' || a.status === 'LATE').length;
-                            const attendanceRate = projectRehearsals.length > 0 ? Math.round((presents / projectRehearsals.length) * 100) : 0;
+                        {/* Artyści w sekcji */}
+                        {groupParticipations.map(part => {
+                            const totalRehearsals = projectRehearsals.length;
+                            // Szybkie przeliczanie obecności z mapy
+                            const presentCount = projectRehearsals.filter(r => {
+                                const st = attendanceMap.get(`${r.id}-${part.id}`)?.status;
+                                return st === 'PRESENT' || st === 'LATE';
+                            }).length;
+                            const attendanceRate = totalRehearsals > 0 ? Math.round((presentCount / totalRehearsals) * 100) : 0;
 
                             return (
-                                <tr key={part.id} className="hover:bg-white/60 transition-colors group">
-                                    {/* Fixed Artist Name Column */}
-                                    <td className="sticky left-0 z-10 bg-white/80 backdrop-blur-md group-hover:bg-white p-4 border-b border-r border-stone-200/60 shadow-[2px_0_10px_rgba(0,0,0,0.02)] transition-colors">
+                                <tr key={part.id} className="hover:bg-stone-50/50 transition-colors group/row">
+                                    <td className="p-3 border-b border-stone-200/60 sticky left-0 z-10 bg-white/80 backdrop-blur-md group-hover/row:bg-stone-50/80 transition-colors">
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-stone-800 truncate tracking-tight">
-                                                {part.artistData.first_name} {part.artistData.last_name}
-                                            </span>
+                                            <span className="text-sm font-bold text-stone-800 whitespace-nowrap">{part.artistData.first_name} {part.artistData.last_name}</span>
                                         </div>
                                     </td>
                                     
-                                    {/* Rehearsal Interaction Cells */}
-                                    {projectRehearsals.map((reh) => {
-                                        const record = attendances.find((a) => String(a.rehearsal) === String(reh.id) && String(a.participation) === String(part.id));
-                                        const currentStatusObj = STATUS_CYCLE.find((s) => s.value === (record?.status || null)) || STATUS_CYCLE[0];
+                                    {projectRehearsals.map(reh => {
+                                        const cellKey = `${reh.id}-${part.id}`;
+                                        const record = attendanceMap.get(cellKey);
+                                        const isMutating = mutatingCells.has(cellKey);
 
                                         return (
-                                            <td key={`${part.id}-${reh.id}`} className="p-2 border-b border-stone-100/50 text-center">
-                                                <button 
-                                                    onClick={() => handleCellClick(String(reh.id), String(part.id), record)}
-                                                    className={`w-8 h-8 mx-auto rounded-lg border flex items-center justify-center transition-all transform active:scale-90 shadow-sm ${currentStatusObj.color}`}
-                                                    title={currentStatusObj.label}
-                                                    aria-label={`Oznacz obecność: ${currentStatusObj.label}`}
-                                                >
-                                                    {currentStatusObj.icon}
-                                                </button>
-                                            </td>
+                                            <MatrixCell 
+                                                key={cellKey}
+                                                rehearsalId={reh.id}
+                                                participationId={part.id}
+                                                record={record}
+                                                onToggle={handleToggleStatus}
+                                                isMutating={isMutating}
+                                            />
                                         );
                                     })}
 
-                                    {/* Attendance Rate Summary */}
+                                    {/* Podsumowanie frekwencji */}
                                     <td className="p-4 border-b border-l border-stone-200/60 text-center">
                                         <span className={`text-[10px] font-bold antialiased tracking-widest px-2.5 py-1.5 rounded-lg border ${
                                             attendanceRate >= 80 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 

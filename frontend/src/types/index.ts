@@ -2,23 +2,16 @@
  * @file types/index.ts
  * @description Comprehensive Data Dictionary for the production frontend.
  * Directly maps to Django backend models (roster & archive applications).
- * @architecture Enterprise 2026 Standard
+ * @architecture Enterprise 2026 Standards
+ * @module types
  */
 
-// ==========================================
-// 1. BASE CLASSES & UTILITIES
-// ==========================================
-
 export interface BaseModel {
-  id: string; // UUID from Django EnterpriseBaseModel
+  id: string; 
   created_at?: string;
   updated_at?: string;
   is_deleted?: boolean;
 }
-
-// ==========================================
-// 2. ENUMERATIONS (From models.TextChoices)
-// ==========================================
 
 export type VoiceType = 'SOP' | 'MEZ' | 'ALT' | 'CT' | 'TEN' | 'BAR' | 'BAS' | 'DIR';
 export type ProjectStatus = 'DRAFT' | 'ACTIVE' | 'DONE' | 'CANC';
@@ -41,9 +34,7 @@ export interface VoiceLineOption {
   label: string;
 }
 
-// ==========================================
-// 3. ROSTER MODELS (HR & Logistics)
-// ==========================================
+// --- ROSTER MODELS ---
 
 export interface Artist extends BaseModel {
   user?: string | null;
@@ -52,11 +43,9 @@ export interface Artist extends BaseModel {
   email: string;
   phone_number?: string | null;
   voice_type: VoiceType | string;
-  voice_type_display?: string; // Automatically exposed by Django REST Framework
+  voice_type_display?: string; 
   is_active: boolean;
   username?: string | null;
-  
-  // Vocal Profile Data
   sight_reading_skill?: number | null;
   vocal_range_bottom?: string | null;
   vocal_range_top?: string | null;
@@ -67,6 +56,8 @@ export interface RunSheetItem {
   time: string;
   title: string;
   description?: string;
+  activity?: string;
+  details?:string | null;
 }
 
 export interface Project extends BaseModel {
@@ -78,14 +69,14 @@ export interface Project extends BaseModel {
   description?: string | null;
   status: ProjectStatus | string;
   run_sheet?: RunSheetItem[];
-  program?: ProgramItem[]; // Nested relation often exposed by DRF
+  program?: ProgramItem[]; 
 }
 
 export interface Participation extends BaseModel {
   artist: string;
   project: string;
   status: ParticipationStatus | string;
-  fee?: string | number | null; // Decimals usually arrive as strings from DRF
+  fee?: string | number | null; 
 }
 
 export interface Rehearsal extends BaseModel {
@@ -122,9 +113,7 @@ export interface CrewAssignment extends BaseModel {
   fee?: string | number | null;
 }
 
-// ==========================================
-// 4. ARCHIVE MODELS (Repertoire & Casting)
-// ==========================================
+// --- ARCHIVE MODELS ---
 
 export interface Composer extends BaseModel {
   first_name?: string | null;
@@ -137,7 +126,7 @@ export interface VoiceRequirement {
   id?: string;
   piece?: string;
   voice_line: string;
-  voice_line_display?: string; // Often supplemented by DRF
+  voice_line_display?: string; 
   quantity: number;
 }
 
@@ -150,25 +139,20 @@ export interface Piece extends BaseModel {
   voicing?: string | null;
   description?: string;
   sheet_music?: string | null;
-  
-  // Conductor Workspace
   lyrics_original?: string | null;
   lyrics_translation?: string | null;
   reference_recording?: string | null;
-  
-  // Historical Context
   composition_year?: number | null;
   epoch?: Epoch | string | null;
-  
-  // Nested Relations
   voice_requirements?: VoiceRequirement[];
 }
 
 export interface ProgramItem extends BaseModel {
   project: string;
   piece: string;
-  piece_id?: string; // Often supplemented by DRF serializers
-  piece_title?: string; // Often supplemented by DRF serializers
+  piece_id?: string; 
+  piece_title?: string; 
+  title: string;
   order: number;
   is_encore: boolean;
 }

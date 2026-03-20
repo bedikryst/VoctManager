@@ -12,6 +12,7 @@
 import React, { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2, Clock, Plus, Trash2, ListOrdered, Briefcase } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import api from '../../../../utils/api';
 import type { Project, RunSheetItem } from '../../../../types';
@@ -54,6 +55,7 @@ const toLocalISOString = (dateString?: string | null): string => {
  * @returns {React.JSX.Element}
  */
 export default function DetailsTab({ project, onSuccess }: DetailsTabProps): React.JSX.Element {
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   const [formData, setFormData] = useState<ProjectFormData>({
@@ -72,7 +74,12 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
   const handleAddRunSheetItem = useCallback((): void => {
     setRunSheet((prev) => [
       ...prev, 
-      { id: Date.now().toString(), time: '', title: '', description: '' }
+      { 
+        id: crypto.randomUUID(),
+        time: '', 
+        title: '', 
+        description: '' 
+      }
     ]);
   }, []);
 
@@ -94,7 +101,7 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
     setRunSheet((prev) => prev.filter((item) => String(item.id) !== String(id)));
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsSubmitting(true);
     
@@ -113,13 +120,12 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
         toast.success("Utworzono nowy projekt z harmonogramem", { id: toastId });
       }
       
+      // DODANE: Inwalidujemy projekty w React Query
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      
       onSuccess(res.data);
     } catch (err) {
-      console.error("[DetailsTab] Form submission failed:", err);
-      toast.error("Błąd zapisu", { 
-        id: toastId, 
-        description: "Wystąpił problem podczas zapisywania danych. Sprawdź połączenie." 
-      });
+      toast.error("Błąd zapisu", { id: toastId, description: "Wystąpił problem podczas zapisywania danych." });
     } finally {
       setIsSubmitting(false);
     }

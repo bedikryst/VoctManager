@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { 
   GripVertical, AlertCircle, CheckCircle2, 
@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 import api from '../../../../utils/api';
-import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
+import { useProjectData } from '../../../../hooks/useProjectData';
 import type { Participation, Artist, Piece, PieceCasting, VoiceLineOption } from '../../../../types';
 
 interface MicroCastingTabProps {
@@ -44,14 +44,8 @@ const STYLE_SOLID_CARD = "bg-white/95 border border-stone-200 shadow-[0_4px_20px
  * @returns {React.JSX.Element | null}
  */
 export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingTabProps): React.JSX.Element | null {
-  const context = useContext(ProjectDataContext) as IProjectDataContext;
-
-  if (!context) {
-    console.error("[MicroCastingTab] Must be used within a ProjectDataContext.Provider");
-    return null;
-  }
-
-  const { participations, artists, pieces, pieceCastings, fetchGlobal } = context;
+  const queryClient = useQueryClient();
+  const { participations, artists, pieces, pieceCastings } = useProjectData(projectId); // UŻYWAMY HOOKA
 
   // --- Local UI State ---
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
@@ -62,7 +56,7 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
     return participations.filter((p) => String(p.project) === String(projectId));
   }, [participations, projectId]);
 
-  // O(1) Lookup Map for Artist Details
+  // O(1) Lookup Map
   const artistMap = useMemo<Map<string, Artist>>(() => {
     const map = new Map<string, Artist>();
     projectParticipations.forEach((p) => {
@@ -153,7 +147,7 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
           });
         }
       }
-      await fetchGlobal(); 
+      await queryClient.invalidateQueries({ queryKey: ['pieceCastings', projectId] });
     } catch (err) { 
       console.error("[MicroCastingTab] Drag-and-drop sync failed:", err);
       setLocalCastings(prevCastings); 

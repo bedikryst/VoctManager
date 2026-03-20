@@ -1,17 +1,23 @@
 /**
- * @file ElegantHeading.jsx
+ * @file ElegantHeading.tsx
  * @description A sophisticated typographic component.
  * Parses strings into independently animatable spans, allowing for 
  * complex, staggered hover interactions.
- * @author Krystian Bugalski
+ * @module ui/ElegantHeading
  */
 
-import { motion } from 'framer-motion';
+import React from 'react';
+import { motion, Variants } from 'framer-motion';
 
-export default function ElegantHeading({ text, className }) {
+interface ElegantHeadingProps {
+  text: string;
+  className?: string;
+}
+
+export default function ElegantHeading({ text, className = '' }: ElegantHeadingProps): React.JSX.Element {
   const letters = text.split('');
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     initial: {},
     hover: {
       transition: {
@@ -20,7 +26,7 @@ export default function ElegantHeading({ text, className }) {
     }
   };
 
-  const letterVariants = {
+  const letterVariants: Variants = {
     initial: {
       y: 0,
       opacity: 1,
@@ -34,7 +40,7 @@ export default function ElegantHeading({ text, className }) {
       color: "#002395",
       transition: {
         duration: 0.4,
-        ease: [0.16, 1, 0.3, 1]
+        ease: [0.16, 1, 0.3, 1] as const
       }
     }
   };

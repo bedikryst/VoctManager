@@ -9,7 +9,7 @@
  * @author Krystian Bugalski
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -113,10 +113,6 @@ export default function ArtistManagement(): React.JSX.Element {
   }, [artists, searchTerm, voiceFilter]);
 
   // --- Action Handlers ---
-  const refreshGlobal = useCallback(async (): Promise<void> => {
-    await queryClient.invalidateQueries({ queryKey: ['artists'] });
-  }, [queryClient]);
-
   const toggleExpand = (id: string) => setExpandedArtistId(prev => prev === id ? null : id);
 
   const openPanel = (artist: Artist | null = null) => {
@@ -136,7 +132,10 @@ export default function ArtistManagement(): React.JSX.Element {
 
     try {
       await api.patch(`/api/artists/${artistToToggle.id}/`, { is_active: artistToToggle.willBeActive });
-      await refreshGlobal();
+      
+      // ENTERPRISE UPGRADE: Inwalidacja cache w tle zamiast starego fetchGlobal
+      await queryClient.invalidateQueries({ queryKey: ['artists'] });
+      
       toast.success(artistToToggle.willBeActive ? "Konto artysty aktywowane" : "Artysta zarchiwizowany", { id: toastId });
     } catch (err) { 
       console.error("Failed to toggle status:", err);
@@ -333,7 +332,7 @@ export default function ArtistManagement(): React.JSX.Element {
                         <button 
                           onClick={(e) => { 
                             e.stopPropagation(); 
-                            setArtistToToggle({ id: artist.id, willBeActive: !artist.is_active }); 
+                            setArtistToToggle({ id: String(artist.id), willBeActive: !artist.is_active }); 
                           }} 
                           className={`w-full py-3.5 bg-white border text-[10px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 ${artist.is_active ? 'border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300'}`}
                         >
@@ -363,7 +362,6 @@ export default function ArtistManagement(): React.JSX.Element {
         onClose={closePanel}
         artist={editingArtist}
         voiceTypes={voiceTypes}
-        refreshGlobal={refreshGlobal}
       />
 
       <ConfirmModal 

@@ -5,14 +5,17 @@
  * Implements "Dirty State Tracking" to prevent accidental data loss.
  * Encapsulates form mutations and validation, keeping the parent controller clean.
  * Features a Sticky Bottom Action Bar for immediate saving.
+ * Implements React Portal to break out of layout Stacking Contexts.
  * @module admin/CrewEditorPanel
  * @author Krystian Bugalski
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom'; // <--- DODANO
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query'; // <--- DODANO
 
 import api from '../../utils/api';
 import ConfirmModal from '../../components/ui/ConfirmModal';
@@ -31,7 +34,7 @@ interface CrewEditorPanelProps {
   isOpen: boolean;
   onClose: () => void;
   person: Collaborator | null;
-  refreshGlobal: () => Promise<void>;
+  // USUNIĘTO refreshGlobal
 }
 
 interface CrewFormData {
@@ -48,11 +51,15 @@ const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 b
 const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 
 export default function CrewEditorPanel({ 
-  isOpen, onClose, person, refreshGlobal 
-}: CrewEditorPanelProps): React.JSX.Element {
+  isOpen, onClose, person 
+}: CrewEditorPanelProps): React.ReactPortal | null { // <--- ZMIENIONY TYP
   
+  const queryClient = useQueryClient(); // <--- ZAINICJOWANO
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   // --- Form Initialization & Dirty Tracking ---
   const initialFormData = useMemo<CrewFormData>(() => ({
@@ -88,7 +95,7 @@ export default function CrewEditorPanel({
     onClose();
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => { // <--- ZMIANA NA SYNTHETIC EVENT
     e.preventDefault();
     setIsSubmitting(true);
     const toastId = toast.loading(person?.id ? "Aktualizowanie danych..." : "Dodawanie współpracownika...");
@@ -102,7 +109,8 @@ export default function CrewEditorPanel({
         toast.success("Dodano nową osobę do bazy.", { id: toastId });
       }
       
-      await refreshGlobal(); 
+      // ZAMIAST refreshGlobal() UŻYWAMY REACT QUERY
+      await queryClient.invalidateQueries({ queryKey: ['collaborators'] }); 
       setFormData(formData); // Reset dirty state
       onClose(); 
     } catch (err: any) {
@@ -116,21 +124,27 @@ export default function CrewEditorPanel({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <>
+        <React.Fragment key="crew-panel-wrapper">
           <motion.div 
+            key="crew-backdrop"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={handleCloseRequest} 
-            className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm z-40"
+            style={{ zIndex: 9998 }} // <--- TWARDY Z-INDEX
+            className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm"
             aria-hidden="true"
           />
           
           <motion.div 
+            key="crew-panel"
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#f4f2ee] shadow-2xl z-50 flex flex-col border-l border-white/60"
+            style={{ zIndex: 9999 }} // <--- TWARDY Z-INDEX
+            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#f4f2ee] shadow-2xl flex flex-col border-l border-white/60"
             role="dialog"
             aria-modal="true"
           >
@@ -215,8 +229,9 @@ export default function CrewEditorPanel({
             />
 
           </motion.div>
-        </>
+        </React.Fragment>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

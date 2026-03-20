@@ -1,43 +1,33 @@
 /**
- * @file FooterSection.jsx
+ * @file FooterSection.tsx
  * @description The Cinematic Epilogue (Awwwards Style Footer).
  * Features high-contrast dark mode, a live status indicator with local time,
  * an architectural "Back to Top" thread, and a massive interactive typographic monolith.
+ * @architecture Enterprise 2026 Standards (Strict TypeScript & Framer Motion Variants)
  * @author Krystian Bugalski
  */
 
-import { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import React, { useRef, useEffect, useState } from 'react';
+import { motion, useScroll, useTransform, Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import ElegantHeading from '../ui/ElegantHeading';
 
-// ==========================================
-// ANIMATION VARIANTS
-// ==========================================
-
-const fadeUpVariants = {
+// --- Animation Variants ---
+const fadeUpVariants: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: (delay) => ({
+  visible: (delay: number) => ({
     opacity: 1, 
     y: 0, 
-    transition: { duration: 1.2, delay: delay, ease: [0.16, 1, 0.3, 1] }
+    transition: { duration: 1.2, delay: delay, ease: [0.16, 1, 0.3, 1] as const }
   })
 };
 
-// ==========================================
-// MAIN COMPONENT
-// ==========================================
+export default function FooterSection(): React.JSX.Element {
+  // --- State & References ---
+  const footerRef = useRef<HTMLElement>(null);
+  const [currentTime, setCurrentTime] = useState<string>('');
 
-export default function FooterSection() {
-  // ==========================================
-  // STATE & REFERENCES
-  // ==========================================
-  
-  const footerRef = useRef(null);
-  const [currentTime, setCurrentTime] = useState('');
-
-  // --- Live Clock Initialization ---
-  // Calculates and formats local time to create a "Live" app feel
+  // Live clock initialization for the status indicator
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -49,50 +39,32 @@ export default function FooterSection() {
     };
     
     updateTime();
-    // Update every minute to save performance
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // ==========================================
-  // SCROLL KINEMATICS
-  // ==========================================
-  
+  // --- Scroll Kinematics ---
   const { scrollYProgress } = useScroll({ 
     target: footerRef, 
     offset: ["start end", "end end"] 
   });
   
-  // Parallax mapping for the giant monolithic text at the bottom
   const massiveTextY = useTransform(scrollYProgress, [0, 1], [100, 0]);
-  
-  // Incoming vertical grid line progress
   const lineProgress = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
-
-  // ==========================================
-  // HANDLERS
-  // ==========================================
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ==========================================
-  // RENDER
-  // ==========================================
-
+  // --- Render ---
   return (
     <footer ref={footerRef} className="relative bg-stone-950 text-[#fdfbf7] pt-32 md:pt-48 pb-6 overflow-hidden selection:bg-[#fdfbf7] selection:text-stone-950">
       <div className="max-w-7xl mx-auto px-6 md:px-0 relative z-10">
 
-        {/* ========================================== */}
-        {/* THE FINAL THREAD (Architectural Grid Conclusion) */}
-        {/* ========================================== */}
+        {/* The Final Thread (Architectural Grid Line & Return Button) */}
         <div className="absolute top-0 bottom-[40%] left-[58.333333%] w-[1px] hidden md:block z-0" aria-hidden="true">
-          {/* Thread descends from the previous section and terminates mid-footer */}
           <motion.div style={{ scaleY: lineProgress }} className="w-full h-full bg-stone-800 origin-top" />
           
-          {/* Magnetic Back-To-Top Button anchored to the grid line */}
           <motion.button 
             onClick={scrollToTop}
             initial={{ opacity: 0 }}
@@ -106,7 +78,7 @@ export default function FooterSection() {
           </motion.button>
         </div>
 
-        {/* --- TOP ROW: Live Status Indicator --- */}
+        {/* Top Row: Live Status Indicator */}
         <motion.div 
           initial="hidden" 
           whileInView="visible" 
@@ -126,10 +98,9 @@ export default function FooterSection() {
           </motion.div>
         </motion.div>
 
-        {/* --- BLOCK 1: Content & Navigation --- */}
+        {/* Block 1: Content & Navigation Layout */}
         <div className="flex flex-col md:flex-row justify-between relative z-10 mb-32 md:mb-40">
           
-          {/* Left Column: Patronage & Foundation CTA */}
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="md:w-5/12 mb-20 md:mb-0">
             <motion.p variants={fadeUpVariants} custom={0.1} className="text-[#002395] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6">
               VII. Mecenat
@@ -146,8 +117,7 @@ export default function FooterSection() {
             </motion.p>
 
             <motion.div variants={fadeUpVariants} custom={0.4} className="flex flex-col sm:flex-row gap-8 items-start sm:items-center">
-              {/* Primary Donate Button (Interactive Fill) */}
-              <Link to="/donate" className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#fdfbf7] text-stone-950 overflow-hidden rounded-full transition-transform active:scale-95 w-max">
+              <Link to="/wesprzyj" className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#fdfbf7] text-stone-950 overflow-hidden rounded-full transition-transform active:scale-95 w-max">
                 <div className="absolute inset-0 w-full h-full bg-[#002395] rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 ease-[0.16,1,0.3,1] origin-center" />
                 <span className="relative z-10 text-[10px] uppercase tracking-[0.2em] font-bold group-hover:text-white transition-colors duration-500">
                   Wesprzyj Fundację
@@ -156,10 +126,7 @@ export default function FooterSection() {
             </motion.div>
           </motion.div>
 
-          {/* Right Column: Newsletter & Links */}
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="md:w-5/12 flex flex-col justify-between">
-            
-            {/* Minimalist Newsletter Form */}
             <div>
               <motion.p variants={fadeUpVariants} custom={0.2} className="text-stone-500 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6">
                 Biuletyn Artystyczny
@@ -176,7 +143,6 @@ export default function FooterSection() {
               </motion.form>
             </div>
 
-            {/* Sub-Navigation & Socials */}
             <motion.div variants={fadeUpVariants} custom={0.4} className="mt-20 md:mt-0 grid grid-cols-2 gap-8 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500">
               <div className="flex flex-col gap-5">
                 <span className="text-stone-700 mb-2">Fundacja</span>
@@ -193,11 +159,8 @@ export default function FooterSection() {
 
         </div>
 
-        {/* --- BLOCK 2: The Interactive Typographic Monolith --- */}
+        {/* Block 2: Interactive Typographic Monolith */}
         <div className="w-full relative flex flex-col items-center justify-end h-[20vh] md:h-[35vh]">
-          
-          {/* Outline-to-Fill Text Effect */}
-          {/* Text remains transparent with a 1px stroke until hovered, creating a fluid color fill */}
           <motion.div style={{ y: massiveTextY }} className="absolute bottom-[-5%] w-full flex justify-center overflow-hidden">
             <h1 
               className="text-[16vw] font-bold leading-none tracking-tighter text-transparent select-none transition-all duration-700 hover:text-[#fdfbf7] cursor-default"
@@ -207,10 +170,9 @@ export default function FooterSection() {
             </h1>
           </motion.div>
           
-          {/* Sub-footer (Copyright & Credits) */}
           <div className="w-full flex flex-col sm:flex-row justify-between items-center text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-stone-600 relative z-10 pb-2 border-t border-stone-800/50 pt-6 mt-12 bg-stone-950/80 backdrop-blur-sm">
             <p>© {new Date().getFullYear()} VoctEnsemble.</p>
-            <p className="mt-2 sm:mt-0">Code & Design by <a href="https://github.com/bedikryst" className="text-stone-400 hover:text-[#fdfbf7] transition-colors">K. Bugalski</a></p>
+            <p className="mt-2 sm:mt-0">Code & Design by <a href="https://github.com/bedikryst" target="_blank" rel="noreferrer" className="text-stone-400 hover:text-[#fdfbf7] transition-colors">K. Bugalski</a></p>
           </div>
         </div>
 

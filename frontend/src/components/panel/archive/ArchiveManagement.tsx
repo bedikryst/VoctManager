@@ -314,7 +314,6 @@ export default function ArchiveManagement(): React.JSX.Element {
         onTabChange={(tab) => setActiveTab(tab)}
         composers={data.composers}
         voiceLines={data.voiceLines}
-        refreshGlobal={refreshGlobal}
       />
 
       <ConfirmModal 

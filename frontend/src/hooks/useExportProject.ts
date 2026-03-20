@@ -1,37 +1,44 @@
 /**
- * @file useExportProject.js
- * @description Custom React Hook for managing asynchronous ZIP export tasks.
+ * @file useExportProject.ts
+ * @description Custom React hook for managing asynchronous ZIP export tasks.
  * Implements polling logic to check Celery task status, automatically handling 
  * timeouts, state transitions, memory cleanup, and payload mapping.
- * @author Krystian Bugalski
+ * @architecture Enterprise 2026 Standards
+ * @module hooks/useExportProject
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import api from '../utils/api';
 
-export const useExportProject = () => { 
-    const [status, setStatus] = useState('idle'); 
-    const [downloadUrl, setDownloadUrl] = useState(null);
-    const [error, setError] = useState(null);
-    const timeoutRef = useRef(null);
+type ExportStatus = 'idle' | 'processing' | 'success' | 'error';
 
-    // Cleanup timeout on component unmount to prevent memory leaks
+interface UseExportProjectReturn {
+    startExport: (projectId: string | number) => Promise<void>;
+    status: ExportStatus;
+    downloadUrl: string | null;
+    error: string | null;
+    reset: () => void;
+}
+
+export const useExportProject = (): UseExportProjectReturn => { 
+    const [status, setStatus] = useState<ExportStatus>('idle'); 
+    const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     useEffect(() => {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, []);
 
-    const checkStatus = useCallback(async (taskId) => {
+    const checkStatus = useCallback(async (taskId: string) => {
         try {
-            // JWT token is automatically injected by the Axios interceptor
             const response = await api.get(`/api/participations/check_zip_status/?task_id=${taskId}`);
             const data = response.data;
 
             if (data.state === 'SUCCESS') {
                 setStatus('success');
-                
-                // FIX: Zmiana z data.download_url na data.file_url (zgodnie z views.py)
                 const finalUrl = data.file_url;
                 
                 if (finalUrl) {
@@ -47,7 +54,6 @@ export const useExportProject = () => {
                 setStatus('error');
                 setError(data.error || 'Wystąpił błąd na serwerze podczas generowania paczki.');
             } else {
-                // Task is still processing, poll again in 2 seconds
                 timeoutRef.current = setTimeout(() => checkStatus(taskId), 2000);
             }
         } catch (err) {
@@ -56,7 +62,7 @@ export const useExportProject = () => {
         }
     }, []);
 
-    const startExport = async (projectId) => {
+    const startExport = async (projectId: string | number) => {
         setStatus('processing');
         setError(null);
         setDownloadUrl(null);
@@ -67,15 +73,13 @@ export const useExportProject = () => {
             });
 
             if (response.data.task_id) {
-                // Start polling 1.5 seconds after the initial request
                 timeoutRef.current = setTimeout(() => checkStatus(response.data.task_id), 1500);
             } else {
                 setStatus('error');
                 setError('Serwer nie przydzielił numeru zadania (Task ID).');
             }
-        } catch (err) {
+        } catch (err: any) {
             setStatus('error');
-            // Obsługa błędów sieciowych (np. gdy serwer odrzuci połączenie)
             setError(err.response?.data?.error || 'Nie udało się rozpocząć zadania. Serwer nie odpowiada.');
         }
     };

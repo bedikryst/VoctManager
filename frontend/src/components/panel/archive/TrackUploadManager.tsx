@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, UploadCloud, Trash2, AlertCircle, PlayCircle } from 'lucide-react';
 
@@ -21,7 +21,6 @@ import type { Track, VoiceLineOption } from '../../../types';
 
 interface TrackUploadManagerProps {
   pieceId: string | number;
-  fetchGlobal: () => Promise<void>;
   voiceLines: VoiceLineOption[];
 }
 
@@ -34,8 +33,9 @@ const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-w
  * @param {TrackUploadManagerProps} props - Component properties.
  * @returns {React.JSX.Element}
  */
-export default function TrackUploadManager({ pieceId, fetchGlobal, voiceLines }: TrackUploadManagerProps): React.JSX.Element {
-  
+export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadManagerProps): React.JSX.Element {
+  const queryClient = useQueryClient();
+
   // --- Local UI & Form State ---
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [voicePart, setVoicePart] = useState<string>(voiceLines.length > 0 ? String(voiceLines[0].value) : 'S1');
@@ -47,18 +47,16 @@ export default function TrackUploadManager({ pieceId, fetchGlobal, voiceLines }:
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // --- Data Fetching Engine (React Query) ---
-  const { data: tracks = [], isLoading, refetch } = useQuery<Track[]>({
+  const { data: tracks = [], isLoading } = useQuery<Track[]>({
     queryKey: ['tracks', pieceId],
     queryFn: async () => {
-      const res = await api.get(`/api/tracks/`);
-      // Zakładam tu z ostrożności, że filtrowanie po stronie klienta gwarantuje brak błędu w przypadku braku wsparcia query params przez backend
-      return Array.isArray(res.data) ? res.data.filter((t: any) => String(t.piece) === String(pieceId)) : [];
+      const res = await api.get(`/api/tracks/?piece=${pieceId}`);
+      return res.data;
     }
   });
-
   // --- Event Handlers ---
 
-  const handleUpload = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleUpload = async (e: React.SyntheticEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!audioFile) return;
     
@@ -78,8 +76,7 @@ export default function TrackUploadManager({ pieceId, fetchGlobal, voiceLines }:
       if (fileInputRef.current) fileInputRef.current.value = '';
       
       // Sync UI
-      await refetch();
-      await fetchGlobal(); 
+      await queryClient.invalidateQueries({ queryKey: ['tracks', pieceId] });
       
       toast.success("Plik audio został wgrany i podpięty pod utwór", { id: toastId });
     } catch (err) { 
@@ -102,8 +99,8 @@ export default function TrackUploadManager({ pieceId, fetchGlobal, voiceLines }:
     try {
       await api.delete(`/api/tracks/${trackToDelete}/`);
       
-      await refetch();
-      await fetchGlobal(); 
+      await api.delete(`/api/tracks/${trackToDelete}/`);
+      await queryClient.invalidateQueries({ queryKey: ['tracks', pieceId] });
       
       toast.success("Usunięto nagranie", { id: toastId });
     } catch (err) { 

@@ -8,38 +8,30 @@
  * @module project/tabs/BudgetTab
  * @author Krystian Bugalski
  */
-
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Banknote, Users, Wrench, Sparkles } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import api from '../../../../utils/api';
-import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-import type { Artist, Collaborator, Participation, CrewAssignment } from '../../../../types';
+import { useProjectData } from '../../../../hooks/useProjectData';
+import type { Participation, CrewAssignment } from '../../../../types';
 
 interface BudgetTabProps {
   projectId: string;
 }
 
-// --- Static Configurations & Styles ---
 const STYLE_GLASS_CARD = "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl overflow-hidden";
 const STYLE_GLASS_INPUT = "bg-white/50 backdrop-blur-sm border border-stone-200/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] rounded-xl";
 
-/**
- * BudgetTab Component
- * @param {BudgetTabProps} props
- * @returns {React.JSX.Element}
- */
 export default function BudgetTab({ projectId }: BudgetTabProps): React.JSX.Element {
-  const context = useContext(ProjectDataContext) as IProjectDataContext;
-  const { participations, crewAssignments, artists, crew, fetchGlobal } = context;
+  const queryClient = useQueryClient();
+  const { participations, crewAssignments, artists, crew } = useProjectData(projectId);
 
-  // --- Local State (Dirty Tracking) ---
   const [dirtyArtists, setDirtyArtists] = useState<Record<string, number | null>>({}); 
   const [dirtyCrew, setDirtyCrew] = useState<Record<string, number | null>>({});
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // --- Derived Data (Memoized) ---
   const projectParticipations = useMemo<Participation[]>(() => {
     return participations.filter((p) => String(p.project) === String(projectId));
   }, [participations, projectId]);
@@ -64,33 +56,18 @@ export default function BudgetTab({ projectId }: BudgetTabProps): React.JSX.Elem
   
   const grandTotal: number = totalArtists + totalCrew;
 
-  // --- Event Handlers ---
-
-  /**
-   * Captures fee changes into a local 'dirty' state buffer.
-   */
   const handleFeeChange = (id: string | number, value: string, type: 'artist' | 'crew'): void => {
     const numericValue = value ? parseInt(value, 10) : null;
     const stringId = String(id);
-
-    if (type === 'artist') {
-      setDirtyArtists((prev) => ({ ...prev, [stringId]: numericValue }));
-    } else {
-      setDirtyCrew((prev) => ({ ...prev, [stringId]: numericValue }));
-    }
+    if (type === 'artist') setDirtyArtists((prev) => ({ ...prev, [stringId]: numericValue }));
+    else setDirtyCrew((prev) => ({ ...prev, [stringId]: numericValue }));
   };
 
-  /**
-   * Commits the dirty state buffer to the database via batched API requests.
-   */
   const handleSaveBudget = async (): Promise<void> => {
     const modifiedArtistIds = Object.keys(dirtyArtists);
     const modifiedCrewIds = Object.keys(dirtyCrew);
 
-    if (modifiedArtistIds.length === 0 && modifiedCrewIds.length === 0) {
-        toast.info('Brak nowych zmian do zapisania.');
-        return;
-    }
+    if (modifiedArtistIds.length === 0 && modifiedCrewIds.length === 0) return;
 
     setIsSaving(true);
     const toastId = toast.loading("Zapisywanie kosztorysu...");
@@ -98,41 +75,27 @@ export default function BudgetTab({ projectId }: BudgetTabProps): React.JSX.Elem
     try {
       const syncPromises: Promise<any>[] = [];
       
-      modifiedArtistIds.forEach((id) => {
-          syncPromises.push(api.patch(`/api/participations/${id}/`, { fee: dirtyArtists[id] }));
-      });
+      modifiedArtistIds.forEach((id) => syncPromises.push(api.patch(`/api/participations/${id}/`, { fee: dirtyArtists[id] })));
+      modifiedCrewIds.forEach((id) => syncPromises.push(api.patch(`/api/crew-assignments/${id}/`, { fee: dirtyCrew[id] })));
       
-      modifiedCrewIds.forEach((id) => {
-          syncPromises.push(api.patch(`/api/crew-assignments/${id}/`, { fee: dirtyCrew[id] }));
-      });
-      
-      // Await all parallel patches
       await Promise.all(syncPromises);
       
-      // Trigger background refetch via React Query
-      await fetchGlobal();
+      // Inwalidacja obu kluczy
+      await queryClient.invalidateQueries({ queryKey: ['participations', projectId] });
+      await queryClient.invalidateQueries({ queryKey: ['crewAssignments', projectId] });
 
-      // Clear dirty buffers
       setDirtyArtists({});
       setDirtyCrew({});
-      
       toast.success(`Zapisano zmiany dla ${syncPromises.length} osób.`, { id: toastId });
     } catch (err) {
-      console.error("[BudgetTab] Failed to commit budget changes:", err);
-      toast.error("Błąd podczas zapisu", { 
-        id: toastId, 
-        description: "Nie udało się zapisać wszystkich zmian w budżecie. Spróbuj ponownie." 
-      });
+      toast.error("Błąd podczas zapisu", { id: toastId, description: "Nie udało się zapisać wszystkich zmian w budżecie." });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // --- Render ---
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      
-      {/* 1. Global Summaries */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className={`${STYLE_GLASS_CARD} p-6 flex flex-col justify-center items-center relative group hover:-translate-y-0.5 transition-transform`}>
           <div className="absolute -right-4 -bottom-4 text-stone-200 opacity-20 pointer-events-none group-hover:scale-110 transition-transform duration-700">
@@ -157,10 +120,7 @@ export default function BudgetTab({ projectId }: BudgetTabProps): React.JSX.Elem
         </div>
       </div>
 
-      {/* 2. Detailed Editor Grids */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Artists Fee Editor */}
         <div className={`${STYLE_GLASS_CARD} flex flex-col h-[500px]`}>
           <div className="p-5 bg-white/40 border-b border-white/60 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -203,7 +163,6 @@ export default function BudgetTab({ projectId }: BudgetTabProps): React.JSX.Elem
           </div>
         </div>
 
-        {/* Crew Fee Editor */}
         <div className={`${STYLE_GLASS_CARD} flex flex-col h-[500px]`}>
           <div className="p-5 bg-white/40 border-b border-white/60 flex items-center justify-between">
              <div className="flex items-center gap-2.5">
@@ -244,10 +203,8 @@ export default function BudgetTab({ projectId }: BudgetTabProps): React.JSX.Elem
             }) : <p className="text-[11px] text-stone-400 italic p-8 text-center">Brak ekipy technicznej.</p>}
           </div>
         </div>
-
       </div>
 
-      {/* 3. Action Footer */}
       <div className="pt-6 border-t border-stone-200/50">
         <button 
           onClick={handleSaveBudget} 
@@ -258,7 +215,6 @@ export default function BudgetTab({ projectId }: BudgetTabProps): React.JSX.Elem
           {isSaving ? 'Zapisywanie...' : 'Zapisz Kosztorys'}
         </button>
       </div>
-
     </div>
   );
 }

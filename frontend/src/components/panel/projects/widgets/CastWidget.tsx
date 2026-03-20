@@ -2,49 +2,37 @@
  * @file CastWidget.tsx
  * @description Dashboard widget displaying the vocal cast (artists) assigned to a project.
  * @architecture
- * Extracts participation and artist data from the global ProjectDataContext.
- * Limits standard display to 9 artists, utilizing a summary badge for overflow.
+ * Oczyszczony z Global Contextu. Dane agregowane są przez React Query (useProjectData).
  * @module project/widgets/CastWidget
  * @author Krystian Bugalski
  */
 
-import React, { useContext, useMemo } from 'react';
-import { Users } from 'lucide-react';
+import React, { useContext } from 'react';
+import { Users, Loader2 } from 'lucide-react';
 
 import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-import type { Project, Participation, Artist } from '../../../../types';
+import { useProjectData } from '../../../../hooks/useProjectData';
+import type { Project, Artist } from '../../../../types';
 
 interface CastWidgetProps {
   project: Project;
 }
 
-/**
- * CastWidget Component
- * @param {CastWidgetProps} props - Component properties.
- * @returns {React.JSX.Element | null}
- */
 export default function CastWidget({ project }: CastWidgetProps): React.JSX.Element | null {
   const context = useContext(ProjectDataContext) as IProjectDataContext;
+  const { participations: projectParticipations, artists, isLoading } = useProjectData(String(project.id));
 
   if (!context) {
     console.error("[CastWidget] Must be used within a ProjectDataContext.Provider");
     return null;
   }
 
-  const { participations, artists, openPanel } = context;
-
-  // --- Derived Data (Memoized) ---
-  const projectParticipations = useMemo<Participation[]>(() => {
-    return participations?.filter((p) => p.project === project.id) || [];
-  }, [participations, project.id]);
+  const { openPanel } = context;
 
   const displayLimit = 9;
   const visibleParticipations = projectParticipations.slice(0, displayLimit);
   const overflowCount = projectParticipations.length - displayLimit;
 
-  /**
-   * Invokes the parent's panel controller to open the Cast configuration tab.
-   */
   const handleOpenCast = (): void => {
     openPanel(project, 'CAST');
   };
@@ -67,28 +55,32 @@ export default function CastWidget({ project }: CastWidgetProps): React.JSX.Elem
       </div>
 
       <div className="flex-1 flex flex-col justify-center items-center py-2">
-        <div className="flex flex-wrap justify-center gap-2 mb-2">
-            {visibleParticipations.map((part) => {
-                const artist: Artist | undefined = artists.find((a) => String(a.id) === String(part.artist));
-                if (!artist) return null;
+        {isLoading ? (
+            <Loader2 size={24} className="animate-spin text-stone-300" aria-hidden="true" />
+        ) : (
+            <div className="flex flex-wrap justify-center gap-2 mb-2">
+                {visibleParticipations.map((part) => {
+                    const artist: Artist | undefined = artists.find((a) => String(a.id) === String(part.artist));
+                    if (!artist) return null;
+                    
+                    return (
+                        <span key={part.id} className="px-2.5 py-1 bg-stone-50 text-stone-700 text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-stone-200 shadow-sm">
+                            {artist.first_name} {artist.last_name.charAt(0)}.
+                        </span>
+                    );
+                })}
                 
-                return (
-                    <span key={part.id} className="px-2.5 py-1 bg-stone-50 text-stone-700 text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-stone-200 shadow-sm">
-                        {artist.first_name} {artist.last_name.charAt(0)}.
+                {overflowCount > 0 && (
+                    <span className="px-2.5 py-1 bg-blue-50 text-[#002395] text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-blue-200 shadow-sm">
+                        +{overflowCount}
                     </span>
-                );
-            })}
-            
-            {overflowCount > 0 && (
-                <span className="px-2.5 py-1 bg-blue-50 text-[#002395] text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-blue-200 shadow-sm">
-                    +{overflowCount}
-                </span>
-            )}
-            
-            {projectParticipations.length === 0 && (
-                <span className="text-xs text-stone-400 italic">Brak obsady wokalnej.</span>
-            )}
-        </div>
+                )}
+                
+                {projectParticipations.length === 0 && (
+                    <span className="text-xs text-stone-400 italic">Brak obsady wokalnej.</span>
+                )}
+            </div>
+        )}
       </div>
       
       <div className="text-center text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mt-auto border-t border-stone-100 pt-3">

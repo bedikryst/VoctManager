@@ -8,7 +8,8 @@
  * @author Krystian Bugalski
  */
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Briefcase, Calendar1, Grid, Users, 
@@ -62,50 +63,43 @@ interface ProjectEditorPanelProps {
  * @returns {React.JSX.Element}
  */
 export default function ProjectEditorPanel({ 
-  isOpen, 
-  onClose, 
-  project, 
-  activeTab, 
-  onTabChange,
-  voiceLinesData
-}: ProjectEditorPanelProps): React.JSX.Element {
+  isOpen, onClose, project, activeTab, onTabChange, voiceLinesData
+}: ProjectEditorPanelProps): React.JSX.Element | null {
   const context = useContext(ProjectDataContext) as IProjectDataContext;
   const [isMobileTabMenuOpen, setIsMobileTabMenuOpen] = useState<boolean>(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Zabezpieczenie na wypadek braku kontekstu
-  if (!context) return <></>;
+  // Upewniamy się, że portal renderuje się tylko po stronie klienta
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const { fetchGlobal } = context;
+  if (!context || !mounted) return null;
 
   const handleTabSelect = (tabId: string) => {
     onTabChange(tabId);
     setIsMobileTabMenuOpen(false);
   };
 
-  return (
+  // OWINĘLIŚMY CAŁY ZWRACANY KOD W createPortal:
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop Overlay */}
           <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
             onClick={onClose} 
-            className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-40" 
+            className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-[90]" 
             aria-hidden="true"
           />
           
           {/* Slide-out Panel */}
           <motion.div 
-            initial={{ left: '100%' }} 
-            animate={{ left: 0 }} 
-            exit={{ left: '100%' }} 
+            initial={{ left: '100%' }} animate={{ left: 0 }} exit={{ left: '100%' }} 
             transition={{ type: 'spring', damping: 25, stiffness: 200 }} 
-            className="fixed inset-y-0 right-0 w-full bg-[#f4f2ee] shadow-2xl z-50 flex flex-col border-l border-white/60"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="panel-title"
+            className="fixed inset-y-0 right-0 w-full bg-[#f4f2ee] shadow-2xl z-[100] flex flex-col border-l border-white/60"
+            role="dialog" aria-modal="true" aria-labelledby="panel-title"
           >
             {/* 1. Panel Header */}
             <div className="flex justify-between items-center px-6 md:px-10 pt-6 md:pt-10 pb-6 flex-shrink-0 z-20">
@@ -150,7 +144,7 @@ export default function ProjectEditorPanel({
                             {isMobileTabMenuOpen && (
                                 <motion.div 
                                     initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} 
-                                    className="absolute left-0 right-0 top-[calc(100%+0.5rem)] bg-white border border-stone-200 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col"
+                                    className="absolute left-0 right-0 top-[calc(100%+0.5rem)] bg-white border border-stone-200 rounded-2xl shadow-2xl overflow-hidden z-[100] flex flex-col"
                                 >
                                     {PROJECT_TABS.map((tab) => (
                                         <button 
@@ -187,14 +181,13 @@ export default function ProjectEditorPanel({
                 </div>
               </div>
             )}
-
             {/* 3. Panel Content Area (Routing simulation) */}
             <div className="flex-1 overflow-y-auto p-4 md:px-10 md:pb-10 relative">
               <div className="max-w-6xl mx-auto">
                 {activeTab === 'DETAILS' && (
                   <DetailsTab 
                     project={project} 
-                    onSuccess={fetchGlobal} // React Query handles the update automatically!
+                    onSuccess={() => {}} 
                   />
                 )}
                 {activeTab === 'REHEARSALS' && project && <RehearsalsTab projectId={project.id} />}
@@ -210,6 +203,7 @@ export default function ProjectEditorPanel({
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

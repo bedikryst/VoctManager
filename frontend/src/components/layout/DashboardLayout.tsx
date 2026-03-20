@@ -2,12 +2,9 @@
  * @file DashboardLayout.tsx
  * @description Main architectural wrapper for the authenticated zone.
  * @architecture Enterprise 2026 Standards
- * UX UPGRADE: Premium "Floating Island" Sidebar with Deep Glassmorphism.
- * Added Framer Motion for liquid mobile menu transitions.
- * CONTENT UPGRADE: Restored "Strefa Chórzysty" for Admins.
- * BUGFIX: Restored `admin-mode` class to body to prevent index.css from hiding the cursor.
- * LAYOUT FIX: Implemented global layout padding in the <main> wrapper to ensure 
- * breathing room (Negative Space) on the right side across all nested routes.
+ * Premium "Floating Island" Sidebar with Deep Glassmorphism.
+ * Incorporates Framer Motion for liquid mobile menu transitions.
+ * Unified RBAC menu architecture ensuring correct feature access.
  * @module core/DashboardLayout
  * @author Krystian Bugalski
  */
@@ -92,7 +89,7 @@ export default function DashboardLayout(): React.JSX.Element {
 
     const navGroups = isAdmin ? adminNavGroups : artistNavGroups;
 
-    // KRYTYCZNA POPRAWKA: Przywrócenie .admin-mode do body, aby index.css nie ukrywał myszki
+    // Enforce admin-mode class to prevent global CSS cursor overrides from public zone
     useEffect(() => {
         document.body.classList.add('admin-mode');
         document.body.style.backgroundColor = "#f4f2ee";
@@ -103,7 +100,7 @@ export default function DashboardLayout(): React.JSX.Element {
         };
     }, []);
 
-    // Prevent body scroll when mobile menu is open
+    // Prevent body scroll when mobile menu overlay is active
     useEffect(() => {
         if (isMobileMenuOpen) document.body.style.overflow = 'hidden';
         else document.body.style.overflow = '';
@@ -287,9 +284,7 @@ export default function DashboardLayout(): React.JSX.Element {
             {/* ==========================================
                 MAIN CONTENT INJECTION NODE
             ========================================== */}
-            {/* ZMIANY W PADDINGU GLOBALNYM: pl-[320px] i pr-8 lg:pr-12 zapewnia idealny oddech z prawej strony dla wszystkich widoków */}
-            <main className="flex-1 md:pl-[320px] pt-24 md:pt-8 px-4 sm:px-6 md:pr-8 lg:pr-12 pb-12 transition-all min-w-0 relative z-0">
-                {/* Wymuszamy maksymalną szerokość i wyśrodkowanie na wszystkich ładowanych kartach */}
+            <main className="flex-1 md:pl-[320px] pt-24 md:pt-8 px-4 sm:px-6 md:pr-8 lg:pr-12 pb-12 transition-all min-w-0">
                 <div className="w-full h-full max-w-7xl mx-auto">
                     <Outlet />
                 </div>

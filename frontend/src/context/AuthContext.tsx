@@ -1,17 +1,15 @@
 /**
  * @file AuthContext.tsx
  * @description Authentication Context Provider.
- * @architecture
- * Enterprise Standard: Fully typed with TypeScript interfaces.
  * Manages global authentication state, JWT lifecycle, and user profile data.
  * Exposes a custom hook (useAuth) to protect routes and conditionally render UI.
- * @author Krystian Bugalski
+ * @architecture Enterprise 2026 Standards
+ * @module context/AuthContext
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import api from '../utils/api';
 
-// --- ŚCISŁE TYPOWANIE DLA OBIEKTU AUTORYZACJI ---
 export interface AuthUser {
     id: string | number;
     username: string;
@@ -20,10 +18,10 @@ export interface AuthUser {
     last_name?: string;
     is_admin?: boolean;
     artist_profile_id?: string | number;
-    // Możesz tu dopisać inne pola, które zwraca /api/artists/me/
+    voice_type_display?: string;
 }
 
-interface LoginResponse {
+export interface LoginResponse {
     success: boolean;
     error?: string;
 }
@@ -36,45 +34,38 @@ interface AuthContextType {
     logout: () => void;
 }
 
-// Inicjalizacja kontekstu (domyślnie null, dopóki Provider go nie nadpisze)
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }): React.JSX.Element => {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    // --- SESSION VALIDATION (On initial load) ---
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('access_token');
             if (token) {
                 try {
-                    // Axios interceptors automatically attach the token and handle potential refreshes
                     const response = await api.get('/api/artists/me/');
                     setUser(response.data as AuthUser);
                 } catch (error) {
-                    console.error('Session expired or validation failed.', error);
+                    console.error('Session validation failed.', error);
                     localStorage.removeItem('access_token');
                     localStorage.removeItem('refresh_token');
                 }
             }
-            setIsLoading(false); // Conclude the loading state regardless of the outcome
+            setIsLoading(false);
         };
 
         checkAuth();
     }, []);
 
-    // --- LOGIN FUNCTION ---
     const login = async (username: string, password: string): Promise<LoginResponse> => {
         try {
-            // 1. Obtain JWT Tokens
             const response = await api.post('/api/token/', { username, password });
             
-            // 2. Persist tokens in local storage
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
 
-            // 3. Immediately fetch and store the authenticated user's profile
             const userResponse = await api.get('/api/artists/me/');
             setUser(userResponse.data as AuthUser);
             
@@ -87,12 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // --- LOGOUT FUNCTION ---
     const logout = () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         setUser(null);
-        window.location.href = '/login'; // Hard redirect to clear application state
+        window.location.href = '/login';
     };
 
     const value: AuthContextType = {
@@ -110,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
-// Custom Hook shortcut
 export const useAuth = (): AuthContextType => {
     const context = useContext(AuthContext);
     if (!context) {

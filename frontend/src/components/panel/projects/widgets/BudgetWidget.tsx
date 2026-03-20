@@ -9,10 +9,11 @@
  */
 
 import React, { useContext, useMemo } from 'react';
-import { Banknote } from 'lucide-react';
+import { Banknote, Loader2 } from 'lucide-react';
 
 import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-import type { Project, Participation, CrewAssignment } from '../../../../types';
+import { useProjectData } from '../../../../hooks/useProjectData';
+import type { Project } from '../../../../types';
 
 interface BudgetWidgetProps {
   project: Project;
@@ -26,23 +27,22 @@ interface BudgetWidgetProps {
 export default function BudgetWidget({ project }: BudgetWidgetProps): React.JSX.Element | null {
   const context = useContext(ProjectDataContext) as IProjectDataContext;
 
+  const { participations, crewAssignments, isLoading } = useProjectData(String(project.id));
+
   if (!context) {
     console.error("[BudgetWidget] Must be used within a ProjectDataContext.Provider");
     return null;
   }
 
-  const { participations, crewAssignments, openPanel } = context;
+  const { openPanel } = context;
 
-  // --- Derived Data (Memoized) ---
+// --- Derived Data (Memoized) ---
   const totalBudget = useMemo<number>(() => {
-    const projectParticipations: Participation[] = participations?.filter((p) => p.project === project.id) || [];
-    const projectCrew: CrewAssignment[] = crewAssignments?.filter((c) => c.project === project.id) || [];
-
-    const totalArtistsCost: number = projectParticipations.reduce((sum, p) => sum + (Number(p.fee) || 0), 0);
-    const totalCrewCost: number = projectCrew.reduce((sum, c) => sum + (Number(c.fee) || 0), 0);
+    const totalArtistsCost: number = participations.reduce((sum, p) => sum + (Number(p.fee) || 0), 0);
+    const totalCrewCost: number = crewAssignments.reduce((sum, c) => sum + (Number(c.fee) || 0), 0);
     
     return totalArtistsCost + totalCrewCost;
-  }, [participations, crewAssignments, project.id]);
+  }, [participations, crewAssignments]);
 
   /**
    * Invokes the parent's panel controller to open the Budget configuration tab.
@@ -69,12 +69,18 @@ export default function BudgetWidget({ project }: BudgetWidgetProps): React.JSX.
       </div>
       
       <div className="flex-1 flex flex-col justify-center items-center py-4">
-        <div className="text-4xl font-bold text-[#002395] mb-2 tracking-tight">
-          {totalBudget.toLocaleString('pl-PL')} PLN
-        </div>
-        <div className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">
-          Estymowany Koszt
-        </div>
+        {isLoading ? (
+            <Loader2 size={24} className="animate-spin text-stone-300" aria-hidden="true" />
+        ) : (
+            <>
+                <div className="text-4xl font-bold text-[#002395] mb-2 tracking-tight">
+                {totalBudget.toLocaleString('pl-PL')} PLN
+                </div>
+                <div className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">
+                Estymowany Koszt
+                </div>
+            </>
+        )}
       </div>
     </div>
   );

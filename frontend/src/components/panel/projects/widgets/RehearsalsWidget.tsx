@@ -2,73 +2,52 @@
  * @file RehearsalsWidget.tsx
  * @description Dashboard widget displaying upcoming rehearsals and progress for a specific project.
  * @architecture
- * Consumes global state via ProjectDataContext to maintain decoupling from the parent layout.
- * Memoizes derived arrays (past/upcoming rehearsals) to minimize recalculations.
+ * Oczyszczony z Global Contextu. Dane agregowane są przez React Query (useProjectData).
  * @module project/widgets/RehearsalsWidget
  * @author Krystian Bugalski
  */
 
 import React, { useContext, useMemo } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Loader2 } from 'lucide-react';
 
-// Context & Types
 import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-import type { Project, Rehearsal, Participation } from '../../../../types';
+import { useProjectData } from '../../../../hooks/useProjectData';
+import type { Project, Rehearsal } from '../../../../types';
 
-/**
- * @interface RehearsalsWidgetProps
- * @property {Project} project - The parent project object to which these rehearsals belong.
- */
 interface RehearsalsWidgetProps {
   project: Project;
 }
 
-/**
- * RehearsalsWidget Component
- * @param {RehearsalsWidgetProps} props - Component properties.
- * @returns {React.JSX.Element | null} The rendered widget or null if context is missing.
- */
 export default function RehearsalsWidget({ project }: RehearsalsWidgetProps): React.JSX.Element | null {
   const context = useContext(ProjectDataContext) as IProjectDataContext;
+  const { rehearsals: projectRehearsals, participations: projectParticipations, isLoading } = useProjectData(String(project.id));
 
   if (!context) {
     console.error("[RehearsalsWidget] Must be used within a ProjectDataContext.Provider");
     return null;
   }
 
-  const { rehearsals, participations, openPanel } = context;
+  const { openPanel } = context;
 
   // --- Derived Data (Memoized) ---
-  
-  const projectRehearsals = useMemo<Rehearsal[]>(() => {
-    return rehearsals
-      .filter((r) => r.project === project.id)
-      .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
-  }, [rehearsals, project.id]);
+  const sortedRehearsals = useMemo<Rehearsal[]>(() => {
+    return [...projectRehearsals].sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
+  }, [projectRehearsals]);
 
   const pastRehearsals = useMemo<Rehearsal[]>(() => {
     const now = new Date();
-    return projectRehearsals.filter((r) => new Date(r.date_time) < now);
-  }, [projectRehearsals]);
+    return sortedRehearsals.filter((r) => new Date(r.date_time) < now);
+  }, [sortedRehearsals]);
 
   const upcomingRehearsals = useMemo<Rehearsal[]>(() => {
     const now = new Date();
-    return projectRehearsals.filter((r) => new Date(r.date_time) >= now).slice(0, 3);
-  }, [projectRehearsals]);
+    return sortedRehearsals.filter((r) => new Date(r.date_time) >= now).slice(0, 3);
+  }, [sortedRehearsals]);
 
-  const projectParticipations = useMemo<Participation[]>(() => {
-    return participations?.filter((p) => p.project === project.id) || [];
-  }, [participations, project.id]);
-
-  const progressPercentage: number = projectRehearsals.length > 0 
-    ? (pastRehearsals.length / projectRehearsals.length) * 100 
+  const progressPercentage: number = sortedRehearsals.length > 0 
+    ? (pastRehearsals.length / sortedRehearsals.length) * 100 
     : 0;
 
-  // --- Handlers ---
-
-  /**
-   * Invokes the parent's panel controller to open the Rehearsals configuration tab.
-   */
   const handleOpenRehearsals = (): void => {
     openPanel(project, 'REHEARSALS');
   };
@@ -80,7 +59,6 @@ export default function RehearsalsWidget({ project }: RehearsalsWidgetProps): Re
       role="button"
       aria-label="Manage Rehearsals"
     >
-      {/* Widget Header */}
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
         <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
           <Calendar size={16} className="text-[#002395] group-hover:scale-110 transition-transform" aria-hidden="true" /> 
@@ -91,13 +69,16 @@ export default function RehearsalsWidget({ project }: RehearsalsWidgetProps): Re
         </button>
       </div>
       
-      {/* Widget Body */}
-      {projectRehearsals.length > 0 ? (
+      {isLoading ? (
+        <div className="flex-1 flex justify-center items-center py-4">
+            <Loader2 size={24} className="animate-spin text-stone-300" aria-hidden="true" />
+        </div>
+      ) : sortedRehearsals.length > 0 ? (
         <>
-          <div className="mb-4" aria-label={`Progress: ${pastRehearsals.length} out of ${projectRehearsals.length} completed`}>
+          <div className="mb-4" aria-label={`Progress: ${pastRehearsals.length} out of ${sortedRehearsals.length} completed`}>
             <div className="flex justify-between text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-2">
               <span>Postęp</span>
-              <span>{pastRehearsals.length} / {projectRehearsals.length}</span>
+              <span>{pastRehearsals.length} / {sortedRehearsals.length}</span>
             </div>
             <div className="w-full bg-stone-100 rounded-full h-1.5">
               <div 

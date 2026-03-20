@@ -10,13 +10,13 @@
  * @author Krystian Bugalski
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { 
   Plus, Edit2, Trash2, Search, Filter, Wrench, 
-  Mail, Phone, Briefcase, Loader2
+  Mail, Phone, Briefcase
 } from 'lucide-react';
 
 import api from '../../utils/api';
@@ -33,10 +33,6 @@ const getSpecialtyLabel = (val: string): string => {
     return SPECIALTY_CHOICES.find(s => s.value === val)?.label || 'Inne';
 };
 
-/**
- * CrewManagement Component
- * @returns {React.JSX.Element}
- */
 export default function CrewManagement(): React.JSX.Element {
   const queryClient = useQueryClient();
 
@@ -82,10 +78,6 @@ export default function CrewManagement(): React.JSX.Element {
   }, [crew, searchTerm, specialtyFilter]);
 
   // --- Action Handlers ---
-  const refreshGlobal = useCallback(async (): Promise<void> => {
-    await queryClient.invalidateQueries({ queryKey: ['collaborators'] });
-  }, [queryClient]);
-
   const openPanel = (person: Collaborator | null = null) => {
     setEditingPerson(person);
     setIsPanelOpen(true);
@@ -103,7 +95,10 @@ export default function CrewManagement(): React.JSX.Element {
 
     try {
       await api.delete(`/api/collaborators/${personToDelete}/`);
-      await refreshGlobal();
+      
+      // ZAMIAST refreshGlobal() odświeżamy klucz React Query:
+      await queryClient.invalidateQueries({ queryKey: ['collaborators'] });
+      
       toast.success("Osoba została usunięta z bazy.", { id: toastId });
     } catch (err) { 
       console.error("Deletion failed:", err);
@@ -117,11 +112,9 @@ export default function CrewManagement(): React.JSX.Element {
     }
   };
 
-  // --- Render ---
   return (
     <div className="space-y-6 animate-fade-in relative cursor-default pb-12 max-w-6xl mx-auto">
       
-      {/* --- EDITORIAL HEADER --- */}
       <header className="relative pt-2 mb-8">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
@@ -146,7 +139,6 @@ export default function CrewManagement(): React.JSX.Element {
           </motion.div>
       </header>
 
-      {/* --- SEARCH & FILTER BAR --- */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -172,7 +164,6 @@ export default function CrewManagement(): React.JSX.Element {
           </div>
       </div>
 
-      {/* --- GRID VIEWS --- */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
           {[1, 2, 3].map(i => <div key={i} className="h-48 bg-stone-100/50 border border-white/50 rounded-2xl w-full"></div>)}
@@ -186,7 +177,6 @@ export default function CrewManagement(): React.JSX.Element {
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                 className={`${STYLE_GLASS_CARD} p-6 flex flex-col justify-between hover:border-[#002395]/20 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden group`}
               >
-                {/* Opcjonalny znak wodny narzędzia dla klimatu */}
                 <div className="absolute -right-4 -top-4 text-[#002395] opacity-[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-700">
                     <Wrench size={100} strokeWidth={1} aria-hidden="true" />
                 </div>
@@ -247,7 +237,7 @@ export default function CrewManagement(): React.JSX.Element {
         isOpen={isPanelOpen}
         onClose={closePanel}
         person={editingPerson}
-        refreshGlobal={refreshGlobal}
+        // USUNIĘTO refreshGlobal
       />
 
       <ConfirmModal 

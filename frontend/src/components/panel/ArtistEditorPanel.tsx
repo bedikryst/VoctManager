@@ -4,14 +4,17 @@
  * @architecture
  * Implements "Dirty State Tracking" to prevent accidental data loss.
  * Encapsulates form mutations and validation, keeping the parent controller clean.
+ * Uses React Portal to break out of the layout stacking context.
  * @module hr/ArtistEditorPanel
  * @author Krystian Bugalski
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom'; // <--- DODANE
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query'; // <--- DODANE
 
 import api from '../../utils/api';
 import ConfirmModal from '../../components/ui/ConfirmModal';
@@ -27,7 +30,7 @@ interface ArtistEditorPanelProps {
   onClose: () => void;
   artist: Artist | null;
   voiceTypes: VoiceTypeOption[];
-  refreshGlobal: () => Promise<void>;
+  // Usunięto przestarzałe refreshGlobal
 }
 
 interface ArtistFormData {
@@ -47,11 +50,16 @@ const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 b
 const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 
 export default function ArtistEditorPanel({ 
-  isOpen, onClose, artist, voiceTypes, refreshGlobal 
-}: ArtistEditorPanelProps): React.JSX.Element {
+  isOpen, onClose, artist, voiceTypes 
+}: ArtistEditorPanelProps): React.ReactPortal | null { // <--- ZMIANA TYPU
   
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+  
+  // Zabezpieczenie przed błędem hydratacji przy portalach
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // --- Form Initialization & Dirty Tracking ---
   const initialFormData = useMemo<ArtistFormData>(() => ({
@@ -91,7 +99,7 @@ export default function ArtistEditorPanel({
     onClose();
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => { // <--- SYNTHETIC EVENT
     e.preventDefault();
     setIsSubmitting(true);
     const toastId = toast.loading(artist?.id ? "Aktualizowanie profilu..." : "Tworzenie konta artysty...");
@@ -108,7 +116,8 @@ export default function ArtistEditorPanel({
         toast.success("Dodano artystę. Konto wygenerowane!", { id: toastId });
       }
       
-      await refreshGlobal(); 
+      // ZAMIAST refreshGlobal() używamy React Query
+      await queryClient.invalidateQueries({ queryKey: ['artists'] }); 
       setFormData(payload); // Reset dirty state technically
       onClose(); // Auto close on success
     } catch (err: any) {
@@ -123,21 +132,27 @@ export default function ArtistEditorPanel({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <>
+        <React.Fragment key="artist-panel-wrapper">
           <motion.div 
+            key="artist-backdrop"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={handleCloseRequest} 
-            className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm z-40"
+            style={{ zIndex: 9998 }} // <--- TWARDY Z-INDEX
+            className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm"
             aria-hidden="true"
           />
           
           <motion.div 
+            key="artist-panel"
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 w-full max-w-xl bg-[#f4f2ee] shadow-2xl z-50 flex flex-col border-l border-white/60"
+            style={{ zIndex: 9999 }} // <--- TWARDY Z-INDEX
+            className="fixed inset-y-0 right-0 w-full max-w-xl bg-[#f4f2ee] shadow-2xl flex flex-col border-l border-white/60"
             role="dialog"
             aria-modal="true"
           >
@@ -251,8 +266,9 @@ export default function ArtistEditorPanel({
             />
 
           </motion.div>
-        </>
+        </React.Fragment>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

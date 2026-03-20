@@ -10,17 +10,14 @@
  * @author Krystian Bugalski
  */
 
-import React, { useState, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Reorder, AnimatePresence, motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query'; 
 import { toast } from 'sonner';
-import { 
-  ListOrdered, GripVertical, Trash2, Loader2, Save, 
-  AlertCircle, Search, Plus, CheckCircle2, Star, Clock, Music 
-} from 'lucide-react';
+import { ListOrdered, GripVertical, Trash2, Loader2, Save, AlertCircle, Search, Plus, CheckCircle2, Star, Clock, Music } from 'lucide-react';
 
 import api from '../../../../utils/api';
-import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
+import { useProjectData } from '../../../../hooks/useProjectData'; 
 import type { Piece } from '../../../../types';
 
 interface ProgramTabProps {
@@ -62,14 +59,8 @@ const formatPieceDuration = (totalSeconds: number): string | null => {
  * @returns {React.JSX.Element | null}
  */
 export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.Element | null {
-  const context = useContext(ProjectDataContext) as IProjectDataContext;
-
-  if (!context) {
-    console.error("[ProgramTab] Must be used within a ProjectDataContext.Provider");
-    return null;
-  }
-
-  const { pieces, fetchGlobal } = context;
+  const queryClient = useQueryClient();
+  const { pieces } = useProjectData(projectId);
 
   // --- Local UI State ---
   const [programItems, setProgramItems] = useState<ProgramItem[]>([]);
@@ -179,7 +170,7 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
       await Promise.all(syncPromises);
       
       await refetch();
-      await fetchGlobal(); // Sync overarching context if pieceCastings rely on order
+      await queryClient.invalidateQueries({ queryKey: ['pieceCastings', projectId] });
       
       toast.success("Układ zapisany pomyślnie", { id: toastId });
     } catch (err) { 

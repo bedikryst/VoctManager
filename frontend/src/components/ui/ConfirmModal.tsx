@@ -1,6 +1,13 @@
+/**
+ * @file ConfirmModal.tsx
+ * @description A high-priority destructive action confirmation modal.
+ * Uses a glassmorphism backdrop and physical spring animations to focus user attention.
+ * @module ui/ConfirmModal
+ */
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -12,14 +19,21 @@ interface ConfirmModalProps {
 }
 
 export default function ConfirmModal({ 
-  isOpen, title, description, onConfirm, onCancel, isLoading = false 
-}: ConfirmModalProps) {
+  isOpen, 
+  title, 
+  description, 
+  onConfirm, 
+  onCancel, 
+  isLoading = false 
+}: ConfirmModalProps): React.JSX.Element {
   return (
     <AnimatePresence>
       {isOpen && (
         <>
           <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
             className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[100]"
             onClick={!isLoading ? onCancel : undefined}
           />
@@ -32,7 +46,7 @@ export default function ConfirmModal({
             <div className="p-6">
               <div className="flex gap-4 items-start">
                 <div className="p-3 bg-red-50 text-red-600 rounded-full flex-shrink-0">
-                  <AlertTriangle size={24} />
+                  <AlertTriangle size={24} aria-hidden="true" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-stone-900">{title}</h3>

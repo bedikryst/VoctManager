@@ -9,16 +9,14 @@
  * @author Krystian Bugalski
  */
 
-import React, { useState, useContext, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
-import { 
-  MapPin, Trash2, Target, CheckSquare, Clock, 
-  Users, MicVocal, UserCheck, Calendar1, Loader2 
-} from 'lucide-react';
+import { MapPin, Trash2, Target, CheckSquare, Clock, Users, MicVocal, UserCheck, Calendar1, Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query'; 
 
 import api from '../../../../utils/api';
-import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-import ConfirmModal from '../../../../components/ui/ConfirmModal'; // Upewnij się co do ścieżki
+import { useProjectData } from '../../../../hooks/useProjectData'; 
+import ConfirmModal from '../../../../components/ui/ConfirmModal';
 import type { Rehearsal, Participation, Artist } from '../../../../types';
 
 interface RehearsalsTabProps {
@@ -45,14 +43,8 @@ const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-w
  * @returns {React.JSX.Element | null}
  */
 export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.JSX.Element | null {
-  const context = useContext(ProjectDataContext) as IProjectDataContext;
-
-  if (!context) {
-    console.error("[RehearsalsTab] Must be used within a ProjectDataContext.Provider");
-    return null;
-  }
-
-  const { rehearsals, participations, artists, fetchGlobal } = context;
+  const queryClient = useQueryClient();
+  const { rehearsals, participations, artists } = useProjectData(projectId); 
 
   // --- Local UI & Form State ---
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -137,7 +129,7 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
       setSelectedSections([]);
       setCustomParticipants([]);
       
-      await fetchGlobal(); 
+      await queryClient.invalidateQueries({ queryKey: ['rehearsals', projectId] });
       toast.success("Próba zapisana pomyślnie", { id: toastId });
     } catch (err) { 
       console.error("[RehearsalsTab] Failed to save rehearsal:", err);
@@ -168,7 +160,7 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
 
     try { 
       await api.delete(`/api/rehearsals/${rehearsalToDelete}/`); 
-      await fetchGlobal(); 
+      await queryClient.invalidateQueries({ queryKey: ['rehearsals', projectId] });
       toast.success("Próba została usunięta", { id: toastId });
     } catch (err) {
       console.error("[RehearsalsTab] Deletion failed:", err);

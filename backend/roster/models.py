@@ -9,6 +9,7 @@ Database models for the Roster application.
 Manages the core HR and logistical entities for the vocal ensemble, including 
 artists, projects, participation contracts, casting, and rehearsal scheduling.
 """
+import uuid
 
 from django.utils import timezone
 from django.db import models
@@ -120,8 +121,9 @@ class Project(EnterpriseBaseModel):
         return f"[{self.get_status_display()}] {self.title}"
 
 
-class ProgramItem(EnterpriseBaseModel):
+class ProgramItem(models.Model):
     """Junction table mapping musical pieces to a project to form an ordered concert setlist."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='program_items')
     piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, verbose_name="Utwór")
     order = models.PositiveIntegerField(verbose_name="Kolejność w programie (1, 2, 3...)")
@@ -161,7 +163,7 @@ class Participation(EnterpriseBaseModel):
         return f"{self.artist.last_name} -> {self.project.title}"
 
 
-class ProjectPieceCasting(EnterpriseBaseModel):
+class ProjectPieceCasting(models.Model):
     """
     Micro-casting resolution table. 
     Assigns a specific vocal line (divisi) and role to an artist for an individual piece within a project.
@@ -171,6 +173,7 @@ class ProjectPieceCasting(EnterpriseBaseModel):
         SOLO = 'SOLO', 'Partia Solowa'
         BACKGROUND = 'BACK', 'Chórek'
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='castings', verbose_name="Uczestnik")
     piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, related_name='castings', verbose_name="Utwór")
     voice_line = models.CharField(max_length=5, choices=VoiceLine.choices, verbose_name="Linia melodyczna (Divisi)")
@@ -208,7 +211,7 @@ class Rehearsal(EnterpriseBaseModel):
         return f"Próba: {self.date_time.strftime('%d.%m %H:%M')}"
 
 
-class Attendance(EnterpriseBaseModel):
+class Attendance(models.Model):
     """Tracks individual attendance and absence justifications for rehearsal sessions."""
     class Status(models.TextChoices):
         PRESENT = 'PRESENT', 'Obecny'
@@ -216,6 +219,7 @@ class Attendance(EnterpriseBaseModel):
         ABSENT = 'ABSENT', 'Nieobecny'
         EXCUSED = 'EXCUSED', 'Usprawiedliwiony'
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     rehearsal = models.ForeignKey(Rehearsal, on_delete=models.RESTRICT, related_name='attendances', verbose_name="Próba")
     participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='attendances', verbose_name="Uczestnik")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PRESENT, verbose_name="Status")
@@ -253,19 +257,19 @@ class Collaborator(EnterpriseBaseModel):
         return f"{self.first_name} {self.last_name}"
 
 
-class CrewAssignment(EnterpriseBaseModel):
-    """Junction table assigning external collaborators to a project with specific duties and contractual fees."""
+class CrewAssignment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Status(models.TextChoices):
         INVITED = 'INV', 'Wstępnie umówiony'
         CONFIRMED = 'CON', 'Potwierdzony'
 
-    collaborator = models.ForeignKey(Collaborator, on_delete=models.RESTRICT, related_name='assignments', verbose_name="Współtwórca")
-    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='crew_assignments', verbose_name="Projekt")
+    # Zmiana z RESTRICT na CASCADE, by usunięcie projektu usuwało powiązania ekipy
+    collaborator = models.ForeignKey(Collaborator, on_delete=models.CASCADE, related_name='assignments', verbose_name="Współtwórca")
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='crew_assignments', verbose_name="Projekt")
     role_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Zakres obowiązków")
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name="Status")
-    fee = models.DecimalField(max_digits=8, decimal_places=0, blank=True, null=True, verbose_name="Wynagrodzenie")
+    fee = models.DecimalField(max_digits=8, decimal_places=0, blank=True, null=True, verbose_name="Stawka (PLN)")
 
     class Meta:
-        verbose_name = "Przydział Współtwórcy"
-        verbose_name_plural = "Przydziały Współtwórców"
-        constraints = [models.UniqueConstraint(fields=['collaborator', 'project'], name='unique_crew_assignment')]
+        verbose_name = "Przypisanie ekipy"
+        verbose_name_plural = "Przypisania ekipy"

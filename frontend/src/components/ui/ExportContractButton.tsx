@@ -1,10 +1,8 @@
 /**
- * @file ExportContractButton.jsx
- * @description Export Contract Button Component.
- * A highly interactive UI component for triggering and polling asynchronous 
- * background tasks (Celery). It provides real-time visual feedback to the user 
- * during the PDF/ZIP generation process using Framer Motion animations.
- * @author Krystian Bugalski
+ * @file ExportContractButton.tsx
+ * @description Triggers and polls asynchronous background tasks (Celery).
+ * Provides real-time visual feedback during PDF/ZIP generation process.
+ * @module ui/ExportContractButton
  */
 
 import React from 'react';
@@ -12,8 +10,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useExportProject } from '../../hooks/useExportProject';
 import { Loader2, Download, AlertCircle } from 'lucide-react';
 
-export const ExportContractButton = ({ projectId }) => {
-    // Usunięto 'token' - Axios interceptor zajmuje się tym globalnie!
+interface ExportContractButtonProps {
+    projectId: string | number;
+}
+
+export const ExportContractButton = ({ projectId }: ExportContractButtonProps): React.JSX.Element => {
     const { startExport, status, downloadUrl, error, reset } = useExportProject();
 
     const handleExport = () => {
@@ -23,7 +24,6 @@ export const ExportContractButton = ({ projectId }) => {
     return (
         <div className="relative flex items-center justify-center min-h-[40px]">
             <AnimatePresence mode="wait">
-                {/* 1. STAN SPOCZYNKU */}
                 {status === 'idle' && (
                     <motion.button
                         key="idle"
@@ -37,7 +37,6 @@ export const ExportContractButton = ({ projectId }) => {
                     </motion.button>
                 )}
 
-                {/* 2. STAN PRZETWARZANIA W CELERY */}
                 {status === 'processing' && (
                     <motion.div
                         key="processing"
@@ -46,12 +45,11 @@ export const ExportContractButton = ({ projectId }) => {
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="flex items-center space-x-2 px-5 py-2.5 bg-stone-100 border border-stone-200 text-[#002395] font-bold text-[10px] uppercase tracking-widest rounded-sm"
                     >
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                         <span>Przetwarzanie w tle...</span>
                     </motion.div>
                 )}
 
-                {/* 3. SUKCES (Pobieranie) */}
                 {status === 'success' && (
                     <motion.div
                         key="success"
@@ -60,12 +58,12 @@ export const ExportContractButton = ({ projectId }) => {
                         className="flex items-center space-x-4"
                     >
                         <a
-                            href={downloadUrl}
+                            href={downloadUrl || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] uppercase tracking-widest font-bold py-2.5 px-5 rounded-sm transition-colors shadow-sm"
                         >
-                            <Download size={14} /> Pobierz ZIP
+                            <Download size={14} aria-hidden="true" /> Pobierz ZIP
                         </a>
                         <button 
                             onClick={reset} 
@@ -76,7 +74,6 @@ export const ExportContractButton = ({ projectId }) => {
                     </motion.div>
                 )}
 
-                {/* 4. BŁĄD */}
                 {status === 'error' && (
                     <motion.div
                         key="error"
@@ -85,7 +82,7 @@ export const ExportContractButton = ({ projectId }) => {
                         className="flex items-center space-x-3"
                     >
                         <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-red-600">
-                            <AlertCircle size={14} /> {error}
+                            <AlertCircle size={14} aria-hidden="true" /> {error || 'Wystąpił błąd'}
                         </span>
                         <button 
                             onClick={reset} 

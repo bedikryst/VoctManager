@@ -1,7 +1,9 @@
 /**
  * @file App.tsx
  * @description Main application routing, global layout orchestrator, and notification registry.
- * @author Krystian Bugalski
+ * Dynamically resolves rendering trees based on active routes (Public vs. Secure Zones).
+ * @architecture Enterprise 2026 Standards
+ * @module core/App
  */
 
 import React, { useState } from 'react';
@@ -9,7 +11,6 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'sonner';
 
-// --- LAYOUT & UI COMPONENTS ---
 import GlobalNavbar from './components/layout/GlobalNavbar';
 import OverlayMenu from './components/layout/OverlayMenu';
 import FooterSection from './components/layout/FooterSection';
@@ -20,11 +21,9 @@ import Preloader from './components/ui/Preloader';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 
-// --- PAGES ---
 import Home from './pages/Home';
 import Login from './pages/Login';
 
-// --- PANEL COMPONENTS ---
 import Contracts from './components/panel/Contracts';
 import DashboardHome from './components/panel/DashboardHome';
 import Rehearsals from './components/panel/Rehearsals';
@@ -80,7 +79,6 @@ export default function App(): React.JSX.Element {
       <NoiseOverlay />
       {shouldShowGlobalComponents && <CustomCursor />}
       
-      {/* Global Notification System */}
       <Toaster position="top-right" richColors closeButton duration={4000} />
     </>
   );

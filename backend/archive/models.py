@@ -95,32 +95,27 @@ class Piece(EnterpriseBaseModel):
             return f"{self.composer.last_name}: {self.title}{year_str}{suffix}"
         return f"{self.title}{year_str}{suffix}"
 
-class PieceVoiceRequirement(EnterpriseBaseModel):
-    """
-    Defines the exact vocal line requirements for a specific piece.
-    Crucial for automated casting deficit detection and divis matrix generation.
-    """
+# 2. Zmiana: Wymagania dziedziczą po zwykłym models.Model, NIE po EnterpriseBaseModel.
+class PieceVoiceRequirement(models.Model): 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='voice_requirements', verbose_name="Utwór")
-    voice_line = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name="Głos / Linia")
+    voice_line = models.CharField(max_length=12, choices=VoiceLine.choices, verbose_name="Głos / Linia")
     quantity = models.PositiveIntegerField(default=1, verbose_name="Wymagana ilość śpiewaków")
 
     class Meta:
         verbose_name = "Wymaganie głosowe"
         verbose_name_plural = "Wymagania głosowe"
-        # Enforces data integrity: Prevents assigning "Soprano 1" twice to the same piece
         unique_together = ('piece', 'voice_line')
 
     def __str__(self):
         return f"{self.piece.title}: {self.quantity}x {self.get_voice_line_display()}"
 
+
+# 1. Zmiana: Track powraca do CASCADE. Skoro używamy Soft Delete na Piece, 
+# Django i tak nie wywoła tego kaskadowo, ale zapobiegnie to błędom ProtectedError
+# przy próbach twardego czyszczenia bazy przez panel Admina.
 class Track(EnterpriseBaseModel):
-    """
-    Represents isolated audio tracks (e.g., individual vocal lines) used for rehearsal preparation.
-    """
-    # CRITICAL: Replaced CASCADE with RESTRICT to prevent bypassing Soft Delete logic
-    piece = models.ForeignKey(Piece, on_delete=models.RESTRICT, related_name='tracks', verbose_name="Utwór")
-    
-    # Uses the modernized TextChoices from core.constants
+    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='tracks', verbose_name="Utwór")
     voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name="Linia melodyczna")
     audio_file = models.FileField(upload_to='audio_tracks/', verbose_name="Plik Audio (MIDI/MP3)")
 

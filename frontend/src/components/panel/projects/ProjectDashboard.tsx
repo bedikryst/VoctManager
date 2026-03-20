@@ -2,10 +2,9 @@
  * @file ProjectDashboard.tsx
  * @description Master Controller and State Provider for the Event & Production Management module.
  * @architecture
- * Implements React Query (useQueries) for robust, parallel, and isolated data fetching.
- * Provides a unified context payload to deeply nested visualization widgets.
- * Delegates detailed project editing and UI tab management to ProjectEditorPanel.
- * Utilizes a custom ConfirmModal for destructive actions, replacing blocking native alerts.
+ * ENTERPRISE UPGRADE 2026: "God Fetch" Eliminated. 
+ * Global Context now ONLY supplies lightweight dictionaries (Artists, Pieces) with Infinity Cache.
+ * Heavy relational data is deferred strictly to isolated child queries.
  * @module project/ProjectDashboard
  * @author Krystian Bugalski
  */
@@ -21,89 +20,68 @@ import api from '../../../utils/api';
 // Child Components
 import ProjectCard from './ProjectCard';
 import ProjectEditorPanel from './ProjectEditorPanel';
-import ConfirmModal from '../../../components/ui/ConfirmModal'; // Upewnij się, że ścieżka jest poprawna
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 
 // Type Definitions
 import type { 
-  Project, 
-  Rehearsal, 
-  Piece, 
-  Participation, 
-  CrewAssignment, 
-  Artist, 
-  Collaborator, 
-  PieceCasting 
+  Project, Rehearsal, Piece, Participation, 
+  CrewAssignment, Artist, Collaborator, PieceCasting 
 } from '../../../types';
 
 export interface IProjectDataContext {
+  // Puste tablice zostawione celowo dla kompatybilności wstecznej (dla Widgetów)
   rehearsals: Rehearsal[];
   participations: Participation[];
   crewAssignments: CrewAssignment[];
+  pieceCastings: PieceCasting[];
+  
+  // Słowniki (Zawsze dostępne w RAM)
   artists: Artist[];
   crew: Collaborator[];
   pieces: Piece[];
-  pieceCastings: PieceCasting[];
+  
   openPanel: (project?: Project | null, tab?: string) => void;
   handleDelete: (id: string) => void;
-  fetchGlobal: () => Promise<void>;
+  // USUNIĘTO: fetchGlobal (nie jest już potrzebne w architekturze React Query)
 }
 
 export const ProjectDataContext = createContext<IProjectDataContext | null>(null);
-
 const MemoizedProjectCard = React.memo(ProjectCard);
 
 // --- Static Configuration & Styles ---
-
 type FilterStatus = 'ACTIVE' | 'DONE' | 'ALL';
-
-interface FilterOption {
-  id: FilterStatus;
-  label: string;
-}
+interface FilterOption { id: FilterStatus; label: string; }
 
 const STYLE_GLASS_CARD = "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl";
-
 const FILTER_OPTIONS: FilterOption[] = [
   { id: 'ACTIVE', label: 'W przygotowaniu' }, 
   { id: 'DONE', label: 'Archiwum' }, 
   { id: 'ALL', label: 'Wszystkie' }
 ];
 
-/**
- * ProjectDashboard Component
- * @returns {React.JSX.Element}
- */
 export default function ProjectDashboard(): React.JSX.Element {
   const queryClient = useQueryClient();
 
-  // --- UI State ---
   const [listFilter, setListFilter] = useState<FilterStatus>('ACTIVE'); 
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('DETAILS'); 
-  
-  // --- Domain State ---
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-
   const editingProjectRef = useRef<Project | null>(null);
   
-  useEffect(() => { 
-      editingProjectRef.current = editingProject; 
-  }, [editingProject]);
+  useEffect(() => { editingProjectRef.current = editingProject; }, [editingProject]);
 
-  // --- Data Fetching Engine (Enterprise Parallel Fetching) ---
+  // ==========================================
+  // ENTERPRISE UPGRADE: Dictionary-Only Fetching
+  // ==========================================
   const results = useQueries({
     queries: [
       { queryKey: ['projects'], queryFn: async () => (await api.get('/api/projects/')).data },
-      { queryKey: ['rehearsals'], queryFn: async () => (await api.get('/api/rehearsals/')).data },
-      { queryKey: ['pieces'], queryFn: async () => (await api.get('/api/pieces/')).data },
-      { queryKey: ['voiceLines'], queryFn: async () => (await api.get('/api/options/voice-lines/')).data },
-      { queryKey: ['participations'], queryFn: async () => (await api.get('/api/participations/')).data },
-      { queryKey: ['crewAssignments'], queryFn: async () => (await api.get('/api/crew-assignments/')).data },
-      { queryKey: ['artists'], queryFn: async () => (await api.get('/api/artists/')).data },
-      { queryKey: ['collaborators'], queryFn: async () => (await api.get('/api/collaborators/')).data },
-      { queryKey: ['pieceCastings'], queryFn: async () => (await api.get('/api/piece-castings/')).data },
+      { queryKey: ['pieces'], queryFn: async () => (await api.get('/api/pieces/')).data, staleTime: Infinity },
+      { queryKey: ['voiceLines'], queryFn: async () => (await api.get('/api/options/voice-lines/')).data, staleTime: Infinity },
+      { queryKey: ['artists'], queryFn: async () => (await api.get('/api/artists/')).data, staleTime: Infinity },
+      { queryKey: ['collaborators'], queryFn: async () => (await api.get('/api/collaborators/')).data, staleTime: Infinity },
     ]
   });
 
@@ -112,22 +90,15 @@ export default function ProjectDashboard(): React.JSX.Element {
 
   const data = useMemo(() => ({
     projects: Array.isArray(results[0].data) ? results[0].data : [],
-    rehearsals: Array.isArray(results[1].data) ? results[1].data : [],
-    pieces: Array.isArray(results[2].data) ? results[2].data : [],
-    voiceLines: Array.isArray(results[3].data) ? results[3].data : [],
-    participations: Array.isArray(results[4].data) ? results[4].data : [],
-    crewAssignments: Array.isArray(results[5].data) ? results[5].data : [],
-    artists: Array.isArray(results[6].data) ? results[6].data : [],
-    crew: Array.isArray(results[7].data) ? results[7].data : [],
-    pieceCastings: Array.isArray(results[8].data) ? results[8].data : []
+    pieces: Array.isArray(results[1].data) ? results[1].data : [],
+    voiceLines: Array.isArray(results[2].data) ? results[2].data : [],
+    artists: Array.isArray(results[3].data) ? results[3].data : [],
+    crew: Array.isArray(results[4].data) ? results[4].data : [],
   }), [results]);
 
-  // Handle critical fetch failures across any endpoint
   useEffect(() => {
     if (isError) {
-      toast.error("Ostrzeżenie synchronizacji", {
-        description: "Niektóre dane produkcyjne mogły nie zostać pobrane poprawnie."
-      });
+      toast.error("Błąd synchronizacji", { description: "Słowniki nie zostały pobrane poprawnie." });
     }
   }, [isError]);
 
@@ -136,97 +107,58 @@ export default function ProjectDashboard(): React.JSX.Element {
       return () => { document.body.style.overflow = ''; };
   }, [isPanelOpen, projectToDelete]);
 
-  // --- Callbacks & Handlers ---
-
-  /**
-   * Opens the configuration panel for a specific project.
-   * @param {Project | null} project - The project to load, or null to initialize a new one.
-   * @param {string} tab - The initial tab identifier to display.
-   */
   const openPanel = useCallback((project: Project | null = null, tab: string = 'DETAILS'): void => { 
     setEditingProject(project); 
     setActiveTab(tab); 
     setIsPanelOpen(true); 
   }, []);
 
-  /**
-   * Closes the side panel and resets the active editing state.
-   */
   const closePanel = useCallback((): void => { 
     setIsPanelOpen(false); 
     setTimeout(() => setEditingProject(null), 300);
   }, []);
 
-  /**
-   * Forces a manual cache invalidation, triggering a background refetch.
-   */
-  const fetchGlobal = useCallback(async (): Promise<void> => {
-    // Odświeżamy wszystkie zapytania powiązane z Dashboardem
-    await queryClient.invalidateQueries({ 
-      predicate: (query) => [
-        'projects', 'rehearsals', 'pieces', 'voiceLines', 'participations', 
-        'crewAssignments', 'artists', 'collaborators', 'pieceCastings'
-      ].includes(query.queryKey[0] as string)
-    });
-  }, [queryClient]);
-
-  /**
-   * Triggers the deletion confirmation modal.
-   * @param {string} id - The UUID of the project to delete.
-   */
   const handleDelete = useCallback((id: string): void => {
     setProjectToDelete(id);
   }, []);
 
-  /**
-   * Executes the hard deletion of a project after user confirmation.
-   */
   const executeDelete = useCallback(async (): Promise<void> => {
     if (!projectToDelete) return;
-    
     setIsDeleting(true);
     const toastId = toast.loading("Usuwanie projektu...");
-
     try {
       await api.delete(`/api/projects/${projectToDelete}/`);
-      await fetchGlobal();
+      
+      // ZAMIAST fetchGlobal() odświeżamy bezpośrednio przez queryClient:
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
       
       toast.success("Projekt usunięty pomyślnie", { id: toastId });
-      
-      // Close the panel if the user is currently editing the deleted project
-      if (editingProjectRef.current?.id === projectToDelete) {
-        closePanel();
-      }
+      if (editingProjectRef.current?.id === projectToDelete) closePanel();
     } catch (err) { 
-      console.error(`[ProjectDashboard] Project deletion failed for ID ${projectToDelete}:`, err);
-      toast.error("Błąd usuwania", { 
-        id: toastId,
-        description: "Sprawdź powiązania projektu w bazie danych. Rekord może być zablokowany." 
-      });
+      toast.error("Błąd usuwania", { id: toastId, description: "Sprawdź powiązania projektu w bazie danych." });
     } finally {
       setIsDeleting(false);
       setProjectToDelete(null);
     }
-  }, [projectToDelete, fetchGlobal, closePanel]);
+  }, [projectToDelete, queryClient, closePanel]);
 
-  // --- Derived State & Context ---
-
+  // ==========================================
+  // CONTEXT PROVIDER (God Fetch Removed)
+  // ==========================================
   const contextValue = useMemo<IProjectDataContext>(() => ({
-    rehearsals: data.rehearsals, 
-    participations: data.participations, 
-    crewAssignments: data.crewAssignments, 
+    rehearsals: [], 
+    participations: [], 
+    crewAssignments: [], 
+    pieceCastings: [], 
+    pieces: data.pieces, 
     artists: data.artists, 
     crew: data.crew, 
-    pieces: data.pieces, 
-    pieceCastings: data.pieceCastings,
     openPanel, 
-    handleDelete, 
-    fetchGlobal
-  }), [data, openPanel, handleDelete, fetchGlobal]);
+    handleDelete
+  }), [data, openPanel, handleDelete]);
 
   const filteredProjects = useMemo<Project[]>(() => {
     if (!data.projects) return [];
-    
     return data.projects.filter((p: Project) => {
       const status = p.status || 'DRAFT';
       if (listFilter === 'ACTIVE') return status !== 'DONE' && status !== 'CANC';
@@ -238,7 +170,6 @@ export default function ProjectDashboard(): React.JSX.Element {
   return (
     <ProjectDataContext.Provider value={contextValue}>
       <div className="space-y-6 animate-fade-in relative cursor-default">
-        
         {/* Header Section */}
         <header className="relative pt-2 mb-8">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
@@ -286,8 +217,8 @@ export default function ProjectDashboard(): React.JSX.Element {
               {[1, 2].map((i) => <div key={i} className="h-32 bg-stone-100/50 rounded-2xl w-full border border-white/50"></div>)}
             </div>
           ) : filteredProjects.length > 0 ? (
-            filteredProjects.map((project) => (
-              <MemoizedProjectCard key={project.id} project={project} /> 
+            filteredProjects.map((project, idx) => (
+              <MemoizedProjectCard key={project.id} project={project} index={idx} /> 
             ))
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${STYLE_GLASS_CARD} p-16 flex flex-col items-center justify-center text-center`}>
@@ -298,7 +229,6 @@ export default function ProjectDashboard(): React.JSX.Element {
           )}
         </div>
 
-        {/* Dedicated Editor Panel */}
         <ProjectEditorPanel 
           isOpen={isPanelOpen}
           onClose={closePanel}
@@ -308,7 +238,6 @@ export default function ProjectDashboard(): React.JSX.Element {
           voiceLinesData={data.voiceLines}
         />
 
-        {/* Destructive Action Modal */}
         <ConfirmModal 
           isOpen={!!projectToDelete}
           title="Usunąć projekt?"

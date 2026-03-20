@@ -57,16 +57,10 @@ class TrackViewSet(viewsets.ModelViewSet):
 class PieceVoiceRequirementViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing vocal line requirements per piece.
-    ENTERPRISE FIX: Implements Hard Deletion bypass to prevent UniqueConstraint
-    collisions caused by SoftDelete mechanisms when re-assigning deleted voice lines.
     """
     queryset = PieceVoiceRequirement.objects.all()
     serializer_class = PieceVoiceRequirementSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
-
-    def perform_destroy(self, instance):
-        """
-        Executes a raw SQL DELETE, bypassing the EnterpriseBaseModel soft-delete mechanics.
-        Essential for junction/configuration tables to maintain strict data integrity.
-        """
-        instance.__class__._base_manager.filter(pk=instance.pk)._raw_delete(instance._state.db)
+    
+    # USUNIĘTO perform_destroy z _raw_delete. 
+    # Teraz zadziała wbudowane, czyste usuwanie Django!

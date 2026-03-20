@@ -3,7 +3,7 @@
  * @description Form component for creating or updating repertoire metadata.
  * @architecture
  * Implements "Dirty State Tracking" communicating up to the parent panel to prevent data loss.
- * Features a Sticky Bottom Action Bar for immediate saving without scrolling.
+ * ENTERPRISE UPGRADE: Uses "Nested Writes" via JSON stringification to eliminate N+1 query flooding.
  * @module archive/PieceDetailsForm
  * @author Krystian Bugalski
  */
@@ -12,6 +12,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2, Plus, Minus, Trash2, Clock, Music, Youtube, AlignLeft, User } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import api from '../../../utils/api';
 import type { Piece, Composer, VoiceLineOption } from '../../../types';
@@ -30,18 +31,14 @@ interface PieceDetailsFormProps {
   piece: Piece | null;
   composers: Composer[];
   voiceLines: VoiceLineOption[];
-  refreshGlobal: () => Promise<void>;
   onSuccess: (updatedPiece: Piece, actionType: SubmitAction) => void;
-  onDirtyStateChange?: (isDirty: boolean) => void; // NOWY PROP
+  onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
 interface RequirementState {
-  id?: string;
   voice_line: string;
   voice_line_display?: string;
   quantity: number;
-  isNew?: boolean;
-  isModified?: boolean;
 }
 
 interface PieceFormData {
@@ -70,8 +67,10 @@ const STYLE_LABEL = "block text-[10px] font-bold antialiased uppercase tracking-
  * @returns {React.JSX.Element}
  */
 export default function PieceDetailsForm({ 
-  piece, composers, voiceLines, refreshGlobal, onSuccess, onDirtyStateChange 
+  piece, composers, voiceLines, onSuccess, onDirtyStateChange 
 }: PieceDetailsFormProps): React.JSX.Element {
+  
+  const queryClient = useQueryClient();
   
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitAction, setSubmitAction] = useState<SubmitAction>('SAVE_AND_CLOSE'); 
@@ -79,7 +78,6 @@ export default function PieceDetailsForm({
 
   // Composer Engine State
   const [isAddingComposer, setIsAddingComposer] = useState<boolean>(false);
-  const [isSubmittingComposer, setIsSubmittingComposer] = useState<boolean>(false);
   const [newComposerData, setNewComposerData] = useState({ first_name: '', last_name: '', birth_year: '', death_year: '' });
   const [compSearchTerm, setCompSearchTerm] = useState<string>('');
   const [isCompDropdownOpen, setIsCompDropdownOpen] = useState<boolean>(false);
@@ -107,22 +105,24 @@ export default function PieceDetailsForm({
 
   const [formData, setFormData] = useState<PieceFormData>(initialFormData);
   
-  const [requirements, setRequirements] = useState<RequirementState[]>(
-      piece?.voice_requirements?.map(r => ({ ...r })) || []
-  );
+  // Wymagania nie potrzebują już flag 'isNew' ani 'isModified', bo robimy twardy zapis całości
+  const initialRequirements = useMemo(() => 
+    piece?.voice_requirements?.map(r => ({ voice_line: r.voice_line, quantity: r.quantity, voice_line_display: (r as any).voice_line_display })) || [],
+  [piece]);
+
+  const [requirements, setRequirements] = useState<RequirementState[]>(initialRequirements);
   const [selectedVoiceToAdd, setSelectedVoiceToAdd] = useState<string>('');
-  const [deletedReqIds, setDeletedReqIds] = useState<string[]>([]); 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // --- DIRTY STATE TRACKER ---
   const isDirty = useMemo(() => {
     const isFormChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
-    const areReqsChanged = requirements.some(r => r.isNew || r.isModified) || deletedReqIds.length > 0;
+    const areReqsChanged = JSON.stringify(requirements) !== JSON.stringify(initialRequirements);
     const isFileChanged = selectedFile !== null;
     const isComposerAddingActive = isAddingComposer && (newComposerData.first_name !== '' || newComposerData.last_name !== '');
     
     return isFormChanged || areReqsChanged || isFileChanged || isComposerAddingActive;
-  }, [formData, initialFormData, requirements, deletedReqIds, selectedFile, isAddingComposer, newComposerData]);
+  }, [formData, initialFormData, requirements, initialRequirements, selectedFile, isAddingComposer, newComposerData]);
 
   // Report dirty state to parent panel
   useEffect(() => {
@@ -156,24 +156,21 @@ export default function PieceDetailsForm({
     if (requirements.find(r => r.voice_line === selectedVoiceToAdd)) return; 
     
     const voiceLabel = voiceLines.find(vl => String(vl.value) === selectedVoiceToAdd)?.label || selectedVoiceToAdd;
-    setRequirements([...requirements, { voice_line: selectedVoiceToAdd, voice_line_display: voiceLabel, quantity: 1, isNew: true }]);
+    setRequirements([...requirements, { voice_line: selectedVoiceToAdd, voice_line_display: voiceLabel, quantity: 1 }]);
     setSelectedVoiceToAdd('');
   };
 
   const updateRequirementQuantity = (index: number, delta: number) => {
     const newReqs = [...requirements];
     newReqs[index].quantity = Math.max(1, newReqs[index].quantity + delta);
-    newReqs[index].isModified = true;
     setRequirements(newReqs);
   };
 
   const handleRemoveRequirement = (index: number) => {
-    const req = requirements[index];
-    if (req.id) setDeletedReqIds([...deletedReqIds, req.id]);
     setRequirements(requirements.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -207,7 +204,7 @@ export default function PieceDetailsForm({
             };
             const compRes = await api.post('/api/composers/', compPayload);
             finalComposerId = compRes.data.id;
-            await refreshGlobal(); 
+            await queryClient.invalidateQueries({ queryKey: ['composers'] });
             toast.success("Zapisano kompozytora", { id: compToastId });
         } catch (err) {
             toast.error("Błąd tworzenia kompozytora", { id: compToastId });
@@ -236,27 +233,41 @@ export default function PieceDetailsForm({
 
     if (selectedFile) payload.append('sheet_music', selectedFile);
 
+    // ==========================================
+    // ENTERPRISE UPGRADE: Nested Writes (Brak N+1)
+    // ==========================================
+    // Pakujemy wymogi wokalne do stringa JSON i wysyłamy od razu!
+    // Formatujemy payload dokładnie pod to, co przyjmie nasz nowy PieceSerializer
+    const requirementsPayload = requirements.map(req => ({
+        voice_line: req.voice_line,
+        quantity: req.quantity
+    }));
+    payload.append('requirements_data', JSON.stringify(requirementsPayload));
+
     try {
       const res = piece?.id 
         ? await api.patch(`/api/pieces/${piece.id}/`, payload, { headers: { 'Content-Type': 'multipart/form-data' }})
         : await api.post('/api/pieces/', payload, { headers: { 'Content-Type': 'multipart/form-data' }});
-      
-      const pieceId = res.data.id;
-      const syncPromises: Promise<any>[] = [];
-      
-      deletedReqIds.forEach(id => syncPromises.push(api.delete(`/api/piece-voice-requirements/${id}/`)));
-
-      requirements.forEach(req => {
-        if (req.isNew) {
-          syncPromises.push(api.post('/api/piece-voice-requirements/', { piece: pieceId, voice_line: req.voice_line, quantity: req.quantity }));
-        } else if (req.isModified && req.id) {
-          syncPromises.push(api.patch(`/api/piece-voice-requirements/${req.id}/`, { quantity: req.quantity }));
-        }
-      });
-
-      if (syncPromises.length > 0) await Promise.all(syncPromises);
-      
+    
+      await queryClient.invalidateQueries({ queryKey: ['pieces'] });
       toast.success(piece?.id ? 'Zaktualizowano dane utworu.' : 'Utwór dodany do archiwum!', { id: toastId });
+      
+      // Reset dirty status before closing
+      if (onDirtyStateChange) onDirtyStateChange(false);
+
+      if (submitAction === 'SAVE_AND_ADD') {
+          setFormData({
+            title: '', composer: '', arranger: '', language: '', composition_year: '',
+            epoch: '', voicing: '', durationMins: '', durationSecs: '', reference_recording: '',
+            lyrics_original: '', lyrics_translation: '', description: ''
+          });
+          setRequirements([]);
+          setSelectedFile(null);
+          setCompSearchTerm('');
+          setIsAddingComposer(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+
       onSuccess(res.data, submitAction);
       
     } catch (err) {
@@ -383,7 +394,7 @@ export default function PieceDetailsForm({
                       {voiceLines.filter(vl => !requirements.some(r => r.voice_line === String(vl.value))).map(vl => (
                           <button 
                           key={String(vl.value)} type="button" onClick={() => {
-                              setRequirements([...requirements, { voice_line: String(vl.value), voice_line_display: vl.label, quantity: 1, isNew: true }]);
+                              setRequirements([...requirements, { voice_line: String(vl.value), voice_line_display: vl.label, quantity: 1 }]);
                           }}
                           className="px-4 py-2 bg-white border border-stone-200/80 text-stone-600 hover:text-[#002395] hover:border-[#002395]/40 hover:bg-blue-50/50 text-[9px] font-medium antialiased uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
                           disabled={isSubmitting}

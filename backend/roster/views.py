@@ -13,11 +13,13 @@ and asynchronous task orchestration for binary document generation (PDF/CSV/ZIP)
 import io
 import weasyprint
 import csv
+from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.http import FileResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions, status
+from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from celery.result import AsyncResult
@@ -66,7 +68,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    """Centralized controller for lifecycle event management and reporting."""
+    queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
@@ -128,8 +130,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         return response
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
     def export_zaiks(self, request, pk=None):
+        """Tylko administrator może wygenerować raport ZAiKS."""
         """Compiles and streams a UTF-8 BOM formatted CSV payload for ZAiKS copyright reporting."""
         project = self.get_object()
         program = ProgramItem.objects.filter(project=project).select_related('piece').order_by('order')
@@ -158,7 +161,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return response
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
     def export_dtp(self, request, pk=None):
         """Generates a cleanly formatted text artifact tailored for Graphic Design (DTP) integration."""
         project = self.get_object()
@@ -188,31 +191,57 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 class ParticipationViewSet(viewsets.ModelViewSet):
-    """Endpoint for managing operational contracts between artists and projects."""
     serializer_class = ParticipationSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated] 
+
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['project', 'artist', 'status']
 
     def get_queryset(self):
+        """
+        ROW-LEVEL SECURITY (RLS):
+        Zarząd (superuser) widzi wszystkie partycypacje (i stawki całej grupy).
+        Zwykły artysta widzi TYLKO swoje własne partycypacje z bazy.
+        Nawet jeśli artysta wyśle strzał pod /api/participations/, nie dostanie danych kolegów.
+        """
         user = self.request.user
-        base_queryset = Participation.objects.select_related('artist', 'project')
-        if user.is_superuser:
-            return base_queryset.all()
-        return base_queryset.filter(artist__user=user)
-    
-    def perform_destroy(self, instance):
-        """
-        ENTERPRISE FIX: Hard Delete Bypass cascade logic.
-        Force-clears structural M2M relations and purges dependent relational entities 
-        prior to base instance deletion. Required to prevent cascading UniqueConstraint violations.
-        """
-        instance.invited_rehearsals.clear()
-
-        Attendance._base_manager.filter(participation=instance)._raw_delete(instance._state.db)
-        ProjectPieceCasting._base_manager.filter(participation=instance)._raw_delete(instance._state.db)
         
-        instance.__class__._base_manager.filter(pk=instance.pk)._raw_delete(instance._state.db)
+        # Aby optymalizować zapytania, od razu robimy select_related
+        qs = Participation.objects.select_related('artist', 'project').all()
+        
+        if user.is_superuser:
+            return qs
+            
+        # Ochrona: zwracamy tylko powiązane z zalogowanym artystą
+        return qs.filter(artist__user=user)
 
-    @action(detail=True, methods=['get'])
+    def create(self, request, *args, **kwargs):
+        artist_id = request.data.get('artist')
+        project_id = request.data.get('project')
+
+        # 1. Sprawdzamy, czy artysta był już w tym projekcie i został "usunięty"
+        # Używamy all_objects, by przeszukać też te usunięte
+        deleted_participation = Participation.all_objects.filter(
+            artist_id=artist_id, 
+            project_id=project_id, 
+            is_deleted=True
+        ).first()
+
+        if deleted_participation:
+            # 2. Wskrzeszamy stary rekord!
+            deleted_participation.restore()
+            
+            # 3. Aktualizujemy go o nowe dane (np. status 'INV')
+            serializer = self.get_serializer(deleted_participation, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # 4. Jeśli nie był usunięty, tworzymy standardowo nowy wpis
+        return super().create(request, *args, **kwargs)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
     def contract(self, request, pk=None):
         """Compiles a dynamic legal PDF artifact in real-time bypassing static disk storage."""
         participation = self.get_object()
@@ -242,7 +271,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         return response
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def request_project_zip(self, request):
         """
         Delegates bulk document generation processing to a Celery background worker.
@@ -255,7 +284,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         task = generate_project_zip_task.delay(project_id)
         return Response({"task_id": task.id, "status": "processing"}, status=status.HTTP_202_ACCEPTED)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
     def check_zip_status(self, request):
         """Polling interface providing active status feedback from the designated Celery thread."""
         task_id = request.query_params.get('task_id')
@@ -309,46 +338,48 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 class RehearsalViewSet(viewsets.ModelViewSet):
     serializer_class = RehearsalSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['project']
+
     def get_queryset(self):
-        return Rehearsal.objects.all()
+        return Rehearsal.objects.prefetch_related('invited_participations').all()
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     serializer_class = AttendanceSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['rehearsal', 'participation', 'rehearsal__project']
+
     def get_queryset(self):
         return Attendance.objects.all()
     
-    def perform_destroy(self, instance):
-        """Hard delete applied to bypass potential persistence ghost constraints."""
-        instance.__class__._base_manager.filter(pk=instance.pk)._raw_delete(instance._state.db)
     
 class ProgramItemViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramItemSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
     
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['project', 'piece']
+
     def get_queryset(self):
-        qs = ProgramItem.objects.select_related('piece').all().order_by('order')
-        project_id = self.request.query_params.get('project')
-        if project_id:
-            qs = qs.filter(project_id=project_id)
-        return qs
+        return ProgramItem.objects.select_related('piece').all().order_by('order')
     
     def perform_destroy(self, instance):
-        """
-        Hard deletion algorithm executing cascade clearance on structural pivot tables.
-        """
-        ProjectPieceCasting._base_manager.filter(
+        ProjectPieceCasting.objects.filter(
             piece=instance.piece,
             participation__project=instance.project
-        )._raw_delete(instance._state.db)
+        ).delete() # Zwykły delete, który uruchomi sygnały i logikę kaskadową
         
-        instance.__class__._base_manager.filter(pk=instance.pk)._raw_delete(instance._state.db)
+        instance.delete()
     
 
 class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
     queryset = ProjectPieceCasting.objects.all()
     serializer_class = ProjectPieceCastingSerializer
+
+    filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece', 'participation__project', 'participation']
 
     def perform_destroy(self, instance):

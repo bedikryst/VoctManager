@@ -1,23 +1,18 @@
 /**
- * @file CustomCursor.jsx
- * @description A high-performance, physics-based custom cursor.
+ * @file CustomCursor.tsx
+ * @description A high-performance, physics-based custom cursor for the public zone.
  * Utilizes Framer Motion's useMotionValue to bypass React's render cycle 
  * during mouse movement, ensuring a strict 60fps fluid animation.
- * @author Krystian Bugalski
+ * @module ui/CustomCursor
  */
 
-import { useEffect } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { motion, useMotionValue, useSpring, Variants } from 'framer-motion';
 import { useCursor } from '../../context/CursorContext';
 
-// ==========================================
-// MAIN COMPONENT
-// ==========================================
-
-export default function CustomCursor() {
+export default function CustomCursor(): React.JSX.Element {
   const { cursorType } = useCursor();
 
-  // --- KINEMATICS & PHYSICS ---
   // Initialized off-screen to prevent flickering on mount
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
@@ -27,9 +22,8 @@ export default function CustomCursor() {
   const cursorX = useSpring(mouseX, springConfig);
   const cursorY = useSpring(mouseY, springConfig);
 
-  // --- EVENT BINDING ---
   useEffect(() => {
-    const moveCursor = (e) => {
+    const moveCursor = (e: MouseEvent) => {
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
     };
@@ -38,11 +32,7 @@ export default function CustomCursor() {
     return () => window.removeEventListener('mousemove', moveCursor);
   }, [mouseX, mouseY]);
 
-  // ==========================================
-  // STATE DEFINITIONS
-  // ==========================================
-  
-  const variants = {
+  const variants: Variants = {
     default: {
       width: 10,
       height: 10,
@@ -72,10 +62,6 @@ export default function CustomCursor() {
     },
   };
 
-  // ==========================================
-  // RENDER
-  // ==========================================
-
   return (
     <motion.div
       className="hidden md:block fixed top-0 left-0 z-[9999] pointer-events-none flex items-center justify-center rounded-full overflow-hidden"
@@ -84,7 +70,6 @@ export default function CustomCursor() {
       animate={cursorType}
       transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
     >
-      {/* State-dependent UI: Drag indicator */}
       <motion.div
         initial={{ opacity: 0, scale: 0.3 }}
         animate={{ opacity: cursorType === 'drag' ? 1 : 0, scale: cursorType === 'drag' ? 0.8 : 0.3 }}

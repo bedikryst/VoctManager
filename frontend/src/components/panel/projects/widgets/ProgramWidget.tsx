@@ -2,27 +2,22 @@
  * @file ProgramWidget.tsx
  * @description Dashboard widget displaying the concert program and casting fulfillment status.
  * @architecture
- * Evaluates piece requirements against current piece castings to calculate readiness indicators.
- * Provides micro-casting quick access.
+ * Oczyszczony z Global Contextu. Dane agregowane są przez React Query (useProjectData).
  * @module project/widgets/ProgramWidget
  * @author Krystian Bugalski
  */
 
 import React, { useContext, useMemo } from 'react';
-import { ListOrdered, Music } from 'lucide-react';
+import { ListOrdered, Music, Loader2 } from 'lucide-react';
 
 import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-import type { Project, Piece, Participation, VoiceRequirement } from '../../../../types';
+import { useProjectData } from '../../../../hooks/useProjectData';
+import type { Project, Piece, VoiceRequirement } from '../../../../types';
 
 interface ProgramWidgetProps {
   project: Project;
 }
 
-/**
- * Parses duration into a human-readable format.
- * @param {number} totalSeconds - The total duration in seconds.
- * @returns {string | null}
- */
 const formatTotalDuration = (totalSeconds: number): string | null => {
   if (!totalSeconds || totalSeconds === 0) return null;
   const minutes = Math.floor(totalSeconds / 60);
@@ -33,25 +28,16 @@ const formatTotalDuration = (totalSeconds: number): string | null => {
   return `~ ${minutes} min muzyki`;
 };
 
-/**
- * ProgramWidget Component
- * @param {ProgramWidgetProps} props - Component properties.
- * @returns {React.JSX.Element | null}
- */
 export default function ProgramWidget({ project }: ProgramWidgetProps): React.JSX.Element | null {
   const context = useContext(ProjectDataContext) as IProjectDataContext;
+  const { pieces, pieceCastings, participations: projectParticipations, isLoading } = useProjectData(String(project.id));
 
   if (!context) {
     console.error("[ProgramWidget] Must be used within a ProjectDataContext.Provider");
     return null;
   }
 
-  const { pieces, pieceCastings, participations, openPanel } = context;
-
-  // --- Derived Data (Memoized) ---
-  const projectParticipations = useMemo<Participation[]>(() => {
-    return participations?.filter((p) => p.project === project.id) || [];
-  }, [participations, project.id]);
+  const { openPanel } = context;
 
   const totalConcertDurationSeconds = useMemo<number>(() => {
     return project.program?.reduce((sum, item) => {
@@ -61,17 +47,10 @@ export default function ProgramWidget({ project }: ProgramWidgetProps): React.JS
     }, 0) || 0;
   }, [project.program, pieces]);
 
-  /**
-   * Invokes the parent's panel controller to open the Program configuration tab.
-   */
   const handleOpenProgram = (): void => {
     openPanel(project, 'PROGRAM');
   };
 
-  /**
-   * Opens the detailed Micro-Casting (Divisi) panel.
-   * @param {React.MouseEvent<HTMLButtonElement>} e - Click event.
-   */
   const handleOpenMicroCast = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.stopPropagation();
     openPanel(project, 'MICRO_CAST');
@@ -97,7 +76,11 @@ export default function ProgramWidget({ project }: ProgramWidgetProps): React.JS
         </button>
       </div>
       
-      {project.program && project.program.length > 0 ? (
+      {isLoading ? (
+        <div className="flex-1 flex justify-center items-center">
+             <Loader2 size={24} className="animate-spin text-stone-300" aria-hidden="true" />
+        </div>
+      ) : project.program && project.program.length > 0 ? (
         <div className="flex flex-col h-full justify-between">
             <ul className="space-y-2 flex-1 mb-3">
             {[...project.program].sort((a,b) => a.order - b.order).slice(0, 5).map((item, index) => {

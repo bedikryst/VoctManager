@@ -1,35 +1,38 @@
 /**
- * @file Login.jsx
- * @description Authentication screen for VoctManager Dashboard.
- * Interacts with AuthContext to retrieve JWTs and manages smart redirection.
+ * @file Login.tsx
+ * @description Authentication gateway for the VoctManager Dashboard.
+ * Interfaces with AuthContext to retrieve JWTs and manages intelligent post-login redirection.
+ * @architecture Enterprise 2026 Standards
+ * @module pages/Login
  * @author Krystian Bugalski
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 
-export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function Login(): React.JSX.Element {
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Enforce system cursor normalization for accessibility on the auth screen
   useEffect(() => {
       document.body.classList.add('admin-mode');
       return () => document.body.classList.remove('admin-mode');
   }, []);
 
-  // Smart redirect: send user back to the page they initially requested, or default to /panel
-  const from = location.state?.from?.pathname || "/panel";
+  // Smart redirect resolution
+  const from = (location.state as any)?.from?.pathname || "/panel";
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
@@ -37,10 +40,10 @@ export default function Login() {
     const result = await login(username, password);
 
     if (result.success) {
-      // replace: true prevents the login page from staying in the browser history stack
+      // Prevents the login view from lingering in the browser history stack
       navigate(from, { replace: true });
     } else {
-      setError(result.error);
+      setError(result.error || 'Autoryzacja nie powiodła się.');
       setIsSubmitting(false);
     }
   };
@@ -50,7 +53,7 @@ export default function Login() {
       
       <div className="absolute top-8 left-8">
         <Link to="/" className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-[#002395] transition-colors">
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           <span>Powrót na stronę główną</span>
         </Link>
       </div>
@@ -59,7 +62,7 @@ export default function Login() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
           className="text-center"
         >
           <h2 className="text-4xl md:text-5xl font-medium text-stone-900 mb-2" style={{ fontFamily: "'Cormorant', serif" }}>
@@ -74,13 +77,13 @@ export default function Login() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] as const }}
         className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
       >
         <div className="bg-white py-8 px-4 shadow-xl shadow-stone-200/50 sm:rounded-xl border border-stone-100 sm:px-10 relative overflow-hidden">
           
-          {/* Subtle decorative top border */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#002395] to-blue-400" />
+          {/* Aesthetic Gradient Top Border */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#002395] to-blue-400" aria-hidden="true" />
 
           <form className="space-y-6 mt-2" onSubmit={handleSubmit}>
             
@@ -154,7 +157,7 @@ export default function Login() {
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                     Autoryzacja...
                   </span>
                 ) : (

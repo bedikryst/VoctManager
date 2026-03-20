@@ -1,7 +1,8 @@
 /**
  * @file main.tsx
  * @description Application entry point. Bootstraps React, Context Providers, Data Query Client, and routing.
- * @author Krystian Bugalski
+ * @architecture Enterprise 2026 Standards
+ * @module core/main
  */
 
 import React from 'react';
@@ -14,12 +15,11 @@ import { AuthProvider } from './context/AuthContext';
 import App from './App';
 import './assets/styles/index.css';
 
-// Initialize the data fetching client with Enterprise-grade caching defaults
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // Data remains fresh for 5 minutes
+      staleTime: 1000 * 60 * 5,
       retry: 2, 
     },
   },
