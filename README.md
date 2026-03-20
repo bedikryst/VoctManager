@@ -8,10 +8,11 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
 
-**VoctManager** is a dual-architecture project bridging the gap between high-end creative frontend development and robust software engineering. It serves as both an immersive, cinematic landing page (Public Face) and a complex ERP/CRM operating system (Private OS) for professional vocal ensembles and orchestras.
+**VoctManager** is a dual-architecture project bridging the gap between high-end creative frontend development and robust software engineering. Built as the upcoming official digital infrastructure for the professional vocal ensemble **VoctEnsemble**, the system is currently in its Beta testing phase.
 
-> **Note:** This project is a flagship piece of my engineering portfolio. It demonstrates the rare ability to deliver Awwwards-winning creative web experiences alongside scalable, data-heavy enterprise applications within a single Full-Stack monorepo.
+It serves as both an immersive, cinematic landing page (Public Face) and a complex ERP/CRM operating system (Private OS) for musicians and management.
 
+🌐 **Live Public Experience (Beta):** [test.voctensemble.com](https://test.voctensemble.com)
 ---
 
 ## 🎭 Part I: The Public Face (Creative Development)
@@ -80,7 +81,7 @@ The project relies on Docker, simplifying the bootstrapping process to just a fe
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/your-username/voctmanager.git](https://github.com/your-username/voctmanager.git)
+   git clone [https://github.com/bedikryst/voctmanager.git](https://github.com/bedikryst/voctmanager.git)
    cd voctmanager
    ```
 
