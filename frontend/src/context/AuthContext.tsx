@@ -42,18 +42,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }): React.JSX.E
 
     useEffect(() => {
         const checkAuth = async () => {
-            const token = localStorage.getItem('access_token');
-            if (token) {
-                try {
-                    const response = await api.get('/api/artists/me/');
-                    setUser(response.data as AuthUser);
-                } catch (error) {
-                    console.error('Session validation failed.', error);
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                }
+            try {
+                const response = await api.get('/api/artists/me/');
+                setUser(response.data as AuthUser);
+            } catch (error) {
+                // Not authenticated, stay logged out
+                console.log('User not authenticated');
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
 
         checkAuth();
@@ -61,11 +58,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }): React.JSX.E
 
     const login = async (username: string, password: string): Promise<LoginResponse> => {
         try {
-            const response = await api.post('/api/token/', { username, password });
+            await api.post('/api/token/', { username, password });
             
-            localStorage.setItem('access_token', response.data.access);
-            localStorage.setItem('refresh_token', response.data.refresh);
-
+            // Get user data after successful login
             const userResponse = await api.get('/api/artists/me/');
             setUser(userResponse.data as AuthUser);
             
@@ -78,11 +73,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }): React.JSX.E
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        setUser(null);
-        window.location.href = '/login';
+    const logout = async () => {
+        try {
+            await api.post('/api/logout/');
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            setUser(null);
+            window.location.href = '/login';
+        }
     };
 
     const value: AuthContextType = {

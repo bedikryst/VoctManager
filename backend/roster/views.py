@@ -15,7 +15,7 @@ import weasyprint
 import csv
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions, status
@@ -42,6 +42,25 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return request.user and request.user.is_superuser
+    
+def csv_generator(program):
+    """Generator for streaming CSV data."""
+    yield 'Lp.;Tytuł Utworu;Kompozytor;Aranżer;Czas trwania;Uwagi (BIS)\n'
+    
+    for idx, item in enumerate(program, 1):
+        title = item.piece.title if item.piece else 'Nieznany tytuł'
+        
+        composer_name = 'Nieznany'
+        if item.piece and hasattr(item.piece, 'composer') and item.piece.composer:
+            if hasattr(item.piece.composer, 'last_name'):
+                composer_name = f"{getattr(item.piece.composer, 'first_name', '')} {item.piece.composer.last_name}".strip()
+            else:
+                composer_name = str(item.piece.composer)
+                
+        arranger_name = getattr(item.piece, 'arranger', '-') if item.piece else '-'
+        encore = 'BIS' if item.is_encore else ''
+        
+        yield f'{idx};{title};{composer_name};{arranger_name};;{encore}\n'
 
 
 class ArtistViewSet(viewsets.ModelViewSet):
@@ -137,27 +156,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         program = ProgramItem.objects.filter(project=project).select_related('piece').order_by('order')
 
-        response = HttpResponse(content_type='text/csv; charset=utf-8-sig') 
+        response = StreamingHttpResponse(
+            csv_generator(program),
+            content_type='text/csv; charset=utf-8-sig'
+        )
         response['Content-Disposition'] = f'attachment; filename="ZAiKS_{project.title.replace(" ", "_")}.csv"'
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
-
-        writer = csv.writer(response, delimiter=';')
-        writer.writerow(['Lp.', 'Tytuł Utworu', 'Kompozytor', 'Aranżer', 'Czas trwania', 'Uwagi (BIS)'])
-
-        for idx, item in enumerate(program, 1):
-            title = item.piece.title if item.piece else 'Nieznany tytuł'
-            
-            composer_name = 'Nieznany'
-            if item.piece and hasattr(item.piece, 'composer') and item.piece.composer:
-                if hasattr(item.piece.composer, 'last_name'):
-                    composer_name = f"{getattr(item.piece.composer, 'first_name', '')} {item.piece.composer.last_name}".strip()
-                else:
-                    composer_name = str(item.piece.composer)
-                    
-            arranger_name = getattr(item.piece, 'arranger', '-') if item.piece else '-'
-            encore = 'BIS' if item.is_encore else ''
-            
-            writer.writerow([idx, title, composer_name, arranger_name, '', encore])
 
         return response
 
@@ -207,7 +211,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         # Aby optymalizować zapytania, od razu robimy select_related
-        qs = Participation.objects.select_related('artist', 'project').all()
+        qs = Participation.objects.select_related('artist__user', 'artist', 'project').all()
         
         if user.is_superuser:
             return qs

@@ -14,6 +14,14 @@ strict English documentation standards.
 
 import uuid
 from django.db import models
+from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
+
+def validate_file_size(value):
+    """Validate file size to prevent abuse."""
+    max_size = 50 * 1024 * 1024  # 50MB
+    if value.size > max_size:
+        raise ValidationError(f'File size must be under {max_size / (1024*1024)}MB. Current: {value.size / (1024*1024):.2f}MB')
 
 from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
@@ -72,7 +80,7 @@ class Piece(EnterpriseBaseModel):
     
     voicing = models.CharField(max_length=50, blank=True, help_text="np. SSAATTBB", verbose_name="Obsada wokalna")
     description = models.TextField(blank=True, verbose_name="Uwagi / Opis")
-    sheet_music = models.FileField(upload_to='sheet_music/', blank=True, null=True, verbose_name="Nuty (Plik PDF)")
+    sheet_music = models.FileField(upload_to='sheet_music/', blank=True, null=True, validators=[FileExtensionValidator(['pdf']), validate_file_size], verbose_name="Nuty (Plik PDF)")
 
     # --- CONDUCTOR & REHEARSAL WORKSPACE ---
     lyrics_original = models.TextField(blank=True, null=True, help_text="Tekst w języku oryginału", verbose_name="Tekst utworu")
@@ -117,7 +125,7 @@ class PieceVoiceRequirement(models.Model):
 class Track(EnterpriseBaseModel):
     piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='tracks', verbose_name="Utwór")
     voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name="Linia melodyczna")
-    audio_file = models.FileField(upload_to='audio_tracks/', verbose_name="Plik Audio (MIDI/MP3)")
+    audio_file = models.FileField(upload_to='audio_tracks/', validators=[FileExtensionValidator(['mp3', 'wav', 'midi']), validate_file_size], verbose_name="Plik Audio (MIDI/MP3)")
 
     class Meta:
         verbose_name = "Ścieżka dźwiękowa"

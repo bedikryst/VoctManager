@@ -18,6 +18,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true,  // Enable cookies for cross-origin requests
 });
 
 // Zmienne do obsługi kolejki (Mutex)
@@ -37,10 +38,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        const token = localStorage.getItem('access_token');
-        if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+        // Cookies are sent automatically with withCredentials: true
         return config;
     },
     (error: AxiosError) => Promise.reject(error)
@@ -70,40 +68,34 @@ api.interceptors.response.use(
             // Zablokuj kolejkę i rozpocznij odświeżanie
             originalRequest._retry = true;
             isRefreshing = true;
-            const refreshToken = localStorage.getItem('refresh_token');
 
-            if (refreshToken) {
-                try {
-                    const response = await axios.post(`${import.meta.env.VITE_API_URL || ''}/api/token/refresh/`, {
-                        refresh: refreshToken
-                    });
+            try {
+                // Przeglądarka automatycznie wyśle ciastko 'refresh_token' dzięki withCredentials
+                const response = await axios.post(`${import.meta.env.VITE_API_URL || ''}/api/token/refresh/`, {}, {
+                    withCredentials: true
+                });
 
-                    const newAccessToken = response.data.access;
-                    localStorage.setItem('access_token', newAccessToken);
+                // (Opcjonalne) backend może zwrócić nowy access token w JSONie, 
+                // żebyśmy mogli go wstrzyknąć do wstrzymanych zapytań
+                const newAccessToken = response.data.access; 
 
-                    // Odblokuj kolejkę i puść wstrzymane zapytania
-                    isRefreshing = false;
-                    processQueue(null, newAccessToken);
-
-                    if (originalRequest.headers) {
-                        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                    }
-                    
-                    return api(originalRequest);
-                } catch (refreshError) {
-                    console.warn('Session termination: Refresh token expired.');
-                    isRefreshing = false;
-                    processQueue(refreshError, null);
-                    
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    window.location.href = '/login';
-                    return Promise.reject(refreshError);
-                }
-            } else {
                 isRefreshing = false;
-                localStorage.removeItem('access_token');
+                processQueue(null, newAccessToken);
+
+                // Kontynuuj oryginalne zapytanie - przeglądarka i tak użyje nowego ciastka,
+                // ale opcjonalnie możemy dodać nagłówek, jeśli tak został napisany Twój backend
+                if (originalRequest.headers && newAccessToken) {
+                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                }
+                
+                return api(originalRequest);
+            } catch (refreshError) {
+                console.warn('Session termination: Refresh token expired or invalid.');
+                isRefreshing = false;
+                processQueue(refreshError, null);
+                
                 window.location.href = '/login';
+                return Promise.reject(refreshError);
             }
         }
         return Promise.reject(error);

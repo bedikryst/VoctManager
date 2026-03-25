@@ -16,6 +16,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
+from .auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, LogoutView
+
 from roster.views import ArtistViewSet, CollaboratorViewSet, CrewAssignmentViewSet, ProgramItemViewSet, ProjectViewSet, ParticipationViewSet, RehearsalViewSet, AttendanceViewSet, ProjectPieceCastingViewSet, get_voice_lines, get_voice_types
 from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet, PieceVoiceRequirementViewSet
 
@@ -50,8 +52,9 @@ urlpatterns = [
 
     # --- JWT Authentication Endpoints ---
     # Used by the React frontend to obtain and refresh access tokens
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/', CookieTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', CookieTokenRefreshView.as_view(), name='token_refresh'),
+    path('api/logout/', LogoutView.as_view(), name='logout'),
 
     # --- API Documentation Endpoints (Swagger & ReDoc) ---
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

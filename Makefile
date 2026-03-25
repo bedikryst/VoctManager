@@ -2,9 +2,12 @@
 # VoctManager - Developers Tool
 # ------------------------------------------------------------------
 
-.PHONY: up down logs shell migrate seed superuser
+.PHONY: up prod down logs shell migrate seed superuser
 
 up:
+	docker compose up --build -d
+
+prod:
 	docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
 down:

@@ -131,7 +131,6 @@ Projekt opiera się w pełni na Dockerze, redukując proces uruchomienia do zale
 2. **Skonfiguruj zmienne środowiskowe:**
    ```bash
    cp .env.example .env
-   cp backend/.env.example backend/.env
    cp frontend/.env.example frontend/.env
    ```
 
@@ -140,7 +139,7 @@ Projekt opiera się w pełni na Dockerze, redukując proces uruchomienia do zale
    ```bash
    make up
    ```
-   *(Lub ręcznie: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d`)*
+   *(Lub ręcznie: `docker compose --build -d`)*
 
 4. **Zainicjalizuj bazę i wgraj dane testowe:**
    ```bash
@@ -148,6 +147,14 @@ Projekt opiera się w pełni na Dockerze, redukując proces uruchomienia do zale
    make seed
    make superuser
    ```
+
+4. **Uruchom Frontend lokalnie:**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
    * API: `http://localhost:8000/api/`
    * Frontend: `http://localhost:5173`
 

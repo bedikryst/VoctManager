@@ -32,7 +32,9 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
+RUN apt-get update && apt-get install -y dos2unix && rm -rf /var/lib/apt/lists/*
 COPY --chown=voctuser:voctgroup . /app/
+RUN dos2unix /app/entrypoint.sh
 
 # Create directories for media and static files, and assign ownership to the non-root user
 RUN mkdir -p /app/media /app/static && \
