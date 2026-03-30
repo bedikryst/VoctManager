@@ -64,12 +64,14 @@ export interface Project extends BaseModel {
   title: string;
   date_time: string;
   call_time?: string | null;
-  dress_code?: string | null;
+  dress_code_male?: string | null;
+  dress_code_female?: string | null;
   location?: string | null;
   description?: string | null;
   status: ProjectStatus | string;
   run_sheet?: RunSheetItem[];
   program?: ProgramItem[]; 
+  spotify_playlist_url?: string;
 }
 
 export interface Participation extends BaseModel {
@@ -132,7 +134,9 @@ export interface VoiceRequirement {
 
 export interface Piece extends BaseModel {
   title: string;
-  composer?: string | null;
+  composer?: string | Composer | null;
+  composer_name?: string | null;
+  composer_full_name?: string | null;
   arranger?: string | null;
   language?: string | null;
   estimated_duration?: number | null;
@@ -142,9 +146,13 @@ export interface Piece extends BaseModel {
   lyrics_original?: string | null;
   lyrics_translation?: string | null;
   reference_recording?: string | null;
+  reference_recording_youtube?: string | null;
+  reference_recording_spotify?: string | null;
   composition_year?: number | null;
   epoch?: Epoch | string | null;
+  epoch_display?: string | null;
   voice_requirements?: VoiceRequirement[];
+  tracks?: Track[];
 }
 
 export interface ProgramItem extends BaseModel {
@@ -161,7 +169,6 @@ export interface PieceCasting extends BaseModel {
   participation: string;
   piece: string;
   voice_line: string;
-  role: CastingRole | string;
   gives_pitch: boolean;
   notes?: string | null;
 }
@@ -169,5 +176,6 @@ export interface PieceCasting extends BaseModel {
 export interface Track extends BaseModel {
   piece: string;
   voice_part: string;
+  voice_part_display?: string;
   audio_file: string;
 }

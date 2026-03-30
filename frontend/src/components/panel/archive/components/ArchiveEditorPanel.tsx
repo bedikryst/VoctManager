@@ -1,23 +1,22 @@
 /**
  * @file ArchiveEditorPanel.tsx
  * @description Slide-over panel for editing repertoire metadata and managing audio tracks.
- * @architecture
- * Fully encapsulates complex UI states (tabs, slide animations) keeping the parent clean.
- * Implements Dirty State interception to prevent accidental data loss.
- * @module archive/ArchiveEditorPanel
- * @author Krystian Bugalski
+ * @architecture Enterprise 2026
+ * BUGFIX: Properly registers the ESC key listener with robust dependency arrays.
+ * Implements "Dirty State Interception" to prevent accidental data loss.
+ * @module archive/components/ArchiveEditorPanel
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Headphones } from 'lucide-react';
 
 import PieceDetailsForm from './PieceDetailsForm';
 import TrackUploadManager from './TrackUploadManager';
-import ConfirmModal from '../../../components/ui/ConfirmModal';
+import ConfirmModal from '../../../../components/ui/ConfirmModal';
 
-import type { Piece, Composer, VoiceLineOption } from '../../../types';
+import type { Piece, Composer, VoiceLineOption } from '../../../../types';
 
 interface ArchiveEditorPanelProps {
   isOpen: boolean;
@@ -27,10 +26,11 @@ interface ArchiveEditorPanelProps {
   onTabChange: (tabId: 'DETAILS' | 'TRACKS') => void;
   composers: Composer[];
   voiceLines: VoiceLineOption[];
+  initialSearchContext?: string;
 }
 
 export default function ArchiveEditorPanel({ 
-  isOpen, onClose, piece, activeTab, onTabChange, composers, voiceLines 
+  isOpen, onClose, piece, activeTab, onTabChange, composers, voiceLines, initialSearchContext 
 }: ArchiveEditorPanelProps): React.ReactPortal | null {
   
   const [isFormDirty, setIsFormDirty] = useState<boolean>(false);
@@ -38,23 +38,36 @@ export default function ArchiveEditorPanel({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
-  if (!mounted) return null;
 
-  const handleAttemptClose = () => {
+  const handleAttemptClose = useCallback(() => {
     if (isFormDirty) setShowExitConfirm(true);
     else onClose();
-  };
+  }, [isFormDirty, onClose]);
 
-  const forceClose = () => {
+  const forceClose = useCallback(() => {
     setIsFormDirty(false);
     setShowExitConfirm(false);
     onClose();
-  };
+  }, [onClose]);
+
+  // Bezpieczna obsługa klawisza ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        if (showExitConfirm) setShowExitConfirm(false);
+        else handleAttemptClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, showExitConfirm, handleAttemptClose]);
+
+  if (!mounted) return null;
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <>
+        <React.Fragment key="archive-panel-wrapper">
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
             onClick={handleAttemptClose} 
@@ -63,12 +76,11 @@ export default function ArchiveEditorPanel({
           />
           
           <motion.div 
-            initial={{ right: '-100%' }} animate={{ right: 0 }} exit={{ left: '100%' }} 
+            initial={{ right: '-100%' }} animate={{ right: 0 }} exit={{ right: '-100%' }} 
             transition={{ type: 'spring', damping: 25, stiffness: 200 }} 
             className="fixed inset-y-0 right-0 w-full md:w-[600px] lg:w-[800px] xl:w-[900px] bg-[#f4f2ee] shadow-2xl z-[100] flex flex-col border-l border-white/60"
             role="dialog" aria-modal="true"
           >
-            {/* Header */}
             <div className="flex justify-between items-center px-6 md:px-10 pt-6 md:pt-10 pb-6 flex-shrink-0 z-20">
               <h3 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
                 {piece ? piece.title : 'Nowy Utwór'}
@@ -81,7 +93,6 @@ export default function ArchiveEditorPanel({
               </button>
             </div>
 
-            {/* Tabs */}
             {piece && (
               <div className="px-6 md:px-10 pb-6 flex-shrink-0 relative z-30">
                 <div className="inline-flex items-center p-1.5 bg-stone-200/40 backdrop-blur-xl border border-stone-200/60 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
@@ -95,7 +106,6 @@ export default function ArchiveEditorPanel({
               </div>
             )}
 
-            {/* Content Area */}
             <div className="flex-1 overflow-y-auto p-4 md:px-10 md:pb-10 relative">
               <div className="max-w-4xl mx-auto">
                 {activeTab === 'DETAILS' && (
@@ -103,11 +113,11 @@ export default function ArchiveEditorPanel({
                     piece={piece} 
                     composers={composers} 
                     voiceLines={voiceLines} 
+                    initialSearchContext={initialSearchContext}
                     onDirtyStateChange={setIsFormDirty}
-                    onSuccess={(updatedPiece: Piece, actionType: 'SAVE_AND_ADD' | 'SAVE_AND_CLOSE') => { 
+                    onSuccess={(_updatedPiece: Piece, actionType: 'SAVE_AND_ADD' | 'SAVE_AND_CLOSE') => { 
                         setIsFormDirty(false); 
                         if (actionType === 'SAVE_AND_CLOSE') onClose(); 
-                        // PieceDetailsForm SAM wywołuje invalidateQueries(['pieces'])
                     }} 
                   />
                 )}
@@ -129,7 +139,7 @@ export default function ArchiveEditorPanel({
             />
 
           </motion.div>
-        </>
+        </React.Fragment>
       )}
     </AnimatePresence>,
     document.body

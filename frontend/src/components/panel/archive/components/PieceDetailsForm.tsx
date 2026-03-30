@@ -11,11 +11,12 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle2, Plus, Minus, Trash2, Clock, Music, Youtube, AlignLeft, User } from 'lucide-react';
+import { Loader2, CheckCircle2, Plus, Minus, Trash2, Clock, Music, Youtube, AlignLeft } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import api from '../../../utils/api';
-import type { Piece, Composer, VoiceLineOption } from '../../../types';
+import api from '../../../../utils/api';
+import type { Piece, Composer, VoiceLineOption } from '../../../../types';
+import { archiveQueryKeys } from '../queryKeys';
 
 export const EPOCHS: Array<{value: string, label: string}> = [
   { value: 'MED', label: 'Średniowiecze' }, { value: 'REN', label: 'Renesans' },
@@ -33,6 +34,7 @@ interface PieceDetailsFormProps {
   voiceLines: VoiceLineOption[];
   onSuccess: (updatedPiece: Piece, actionType: SubmitAction) => void;
   onDirtyStateChange?: (isDirty: boolean) => void;
+  initialSearchContext?: string;
 }
 
 interface RequirementState {
@@ -51,7 +53,8 @@ interface PieceFormData {
   voicing: string;
   durationMins: string;
   durationSecs: string;
-  reference_recording: string;
+  reference_recording_youtube: string;
+  reference_recording_spotify: string;
   lyrics_original: string;
   lyrics_translation: string;
   description: string;
@@ -67,7 +70,7 @@ const STYLE_LABEL = "block text-[10px] font-bold antialiased uppercase tracking-
  * @returns {React.JSX.Element}
  */
 export default function PieceDetailsForm({ 
-  piece, composers, voiceLines, onSuccess, onDirtyStateChange 
+  piece, composers, voiceLines, onSuccess, onDirtyStateChange, initialSearchContext = '' 
 }: PieceDetailsFormProps): React.JSX.Element {
   
   const queryClient = useQueryClient();
@@ -88,7 +91,7 @@ export default function PieceDetailsForm({
 
   // INITIAL STATE (For deep comparison)
   const initialFormData = useMemo<PieceFormData>(() => ({
-    title: piece?.title || '',
+    title: piece?.title || initialSearchContext || '',
     composer: piece?.composer ? String(typeof piece.composer === 'object' ? (piece.composer as any).id : piece.composer) : '', 
     arranger: piece?.arranger || '',
     language: piece?.language || '',
@@ -97,11 +100,12 @@ export default function PieceDetailsForm({
     voicing: piece?.voicing || '',
     durationMins: initialMinutes,
     durationSecs: initialSeconds,
-    reference_recording: piece?.reference_recording || '',
+    reference_recording_youtube: piece?.reference_recording_youtube || piece?.reference_recording || '',
+    reference_recording_spotify: piece?.reference_recording_spotify || '',
     lyrics_original: piece?.lyrics_original || '',
     lyrics_translation: piece?.lyrics_translation || '',
     description: piece?.description || ''
-  }), [piece, initialMinutes, initialSeconds]);
+  }), [piece, initialMinutes, initialSeconds, initialSearchContext]);
 
   const [formData, setFormData] = useState<PieceFormData>(initialFormData);
   
@@ -111,7 +115,6 @@ export default function PieceDetailsForm({
   [piece]);
 
   const [requirements, setRequirements] = useState<RequirementState[]>(initialRequirements);
-  const [selectedVoiceToAdd, setSelectedVoiceToAdd] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // --- DIRTY STATE TRACKER ---
@@ -151,15 +154,6 @@ export default function PieceDetailsForm({
   }, [composers, compSearchTerm]);
 
   // Utility Handlers
-  const handleAddRequirement = () => {
-    if (!selectedVoiceToAdd) return;
-    if (requirements.find(r => r.voice_line === selectedVoiceToAdd)) return; 
-    
-    const voiceLabel = voiceLines.find(vl => String(vl.value) === selectedVoiceToAdd)?.label || selectedVoiceToAdd;
-    setRequirements([...requirements, { voice_line: selectedVoiceToAdd, voice_line_display: voiceLabel, quantity: 1 }]);
-    setSelectedVoiceToAdd('');
-  };
-
   const updateRequirementQuantity = (index: number, delta: number) => {
     const newReqs = [...requirements];
     newReqs[index].quantity = Math.max(1, newReqs[index].quantity + delta);
@@ -168,6 +162,10 @@ export default function PieceDetailsForm({
 
   const handleRemoveRequirement = (index: number) => {
     setRequirements(requirements.filter((_, i) => i !== index));
+  };
+
+  const appendField = (payload: FormData, key: string, value: string | number | null) => {
+    payload.append(key, value === null ? '' : String(value));
   };
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -204,7 +202,10 @@ export default function PieceDetailsForm({
             };
             const compRes = await api.post('/api/composers/', compPayload);
             finalComposerId = compRes.data.id;
-            await queryClient.invalidateQueries({ queryKey: ['composers'] });
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: archiveQueryKeys.composers }),
+              queryClient.invalidateQueries({ queryKey: archiveQueryKeys.sharedComposers }),
+            ]);
             toast.success("Zapisano kompozytora", { id: compToastId });
         } catch (err) {
             toast.error("Błąd tworzenia kompozytora", { id: compToastId });
@@ -216,20 +217,21 @@ export default function PieceDetailsForm({
     const toastId = toast.loading(piece?.id ? "Aktualizowanie utworu..." : "Zapisywanie nowego utworu...");
 
     const payload = new FormData();
-    payload.append('title', formData.title);
-    if (finalComposerId) payload.append('composer', finalComposerId);
-    if (formData.arranger) payload.append('arranger', formData.arranger);
-    if (formData.language) payload.append('language', formData.language);
-    if (formData.composition_year) payload.append('composition_year', formData.composition_year);
-    if (formData.epoch) payload.append('epoch', formData.epoch);
-    if (formData.voicing) payload.append('voicing', formData.voicing);
-    if (formData.reference_recording) payload.append('reference_recording', formData.reference_recording);
-    if (formData.lyrics_original) payload.append('lyrics_original', formData.lyrics_original);
-    if (formData.lyrics_translation) payload.append('lyrics_translation', formData.lyrics_translation);
-    if (formData.description) payload.append('description', formData.description);
+    appendField(payload, 'title', formData.title.trim());
+    appendField(payload, 'composer', finalComposerId || null);
+    appendField(payload, 'arranger', formData.arranger.trim() || null);
+    appendField(payload, 'language', formData.language.trim() || null);
+    appendField(payload, 'composition_year', formData.composition_year || null);
+    appendField(payload, 'epoch', formData.epoch || null);
+    appendField(payload, 'voicing', formData.voicing.trim());
+    appendField(payload, 'reference_recording_youtube', formData.reference_recording_youtube.trim() || null);
+    appendField(payload, 'reference_recording_spotify', formData.reference_recording_spotify.trim() || null);
+    appendField(payload, 'lyrics_original', formData.lyrics_original.trim() || null);
+    appendField(payload, 'lyrics_translation', formData.lyrics_translation.trim() || null);
+    appendField(payload, 'description', formData.description.trim());
     
     const totalSeconds = (parseInt(formData.durationMins || '0') * 60) + parseInt(formData.durationSecs || '0');
-    if (totalSeconds > 0) payload.append('estimated_duration', String(totalSeconds));
+    appendField(payload, 'estimated_duration', totalSeconds > 0 ? totalSeconds : null);
 
     if (selectedFile) payload.append('sheet_music', selectedFile);
 
@@ -249,7 +251,10 @@ export default function PieceDetailsForm({
         ? await api.patch(`/api/pieces/${piece.id}/`, payload, { headers: { 'Content-Type': 'multipart/form-data' }})
         : await api.post('/api/pieces/', payload, { headers: { 'Content-Type': 'multipart/form-data' }});
     
-      await queryClient.invalidateQueries({ queryKey: ['pieces'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: archiveQueryKeys.pieces }),
+        queryClient.invalidateQueries({ queryKey: archiveQueryKeys.sharedPieces }),
+      ]);
       toast.success(piece?.id ? 'Zaktualizowano dane utworu.' : 'Utwór dodany do archiwum!', { id: toastId });
       
       // Reset dirty status before closing
@@ -258,13 +263,15 @@ export default function PieceDetailsForm({
       if (submitAction === 'SAVE_AND_ADD') {
           setFormData({
             title: '', composer: '', arranger: '', language: '', composition_year: '',
-            epoch: '', voicing: '', durationMins: '', durationSecs: '', reference_recording: '',
+            epoch: '', voicing: '', durationMins: '', durationSecs: '', reference_recording_youtube: '',
+            reference_recording_spotify: '',
             lyrics_original: '', lyrics_translation: '', description: ''
           });
           setRequirements([]);
           setSelectedFile(null);
           setCompSearchTerm('');
           setIsAddingComposer(false);
+          setNewComposerData({ first_name: '', last_name: '', birth_year: '', death_year: '' });
           if (fileInputRef.current) fileInputRef.current.value = '';
       }
 
@@ -440,9 +447,15 @@ export default function PieceDetailsForm({
                 </div>
             </div>
 
-            <div>
-                <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1 flex items-center gap-1.5"><Youtube size={14} className="text-red-600" aria-hidden="true" /> Nagranie Referencyjne (URL)</label>
-                <input type="url" value={formData.reference_recording} onChange={e => setFormData({...formData, reference_recording: e.target.value})} className={STYLE_GLASS_INPUT} placeholder="https://youtube.com/watch?v=..." disabled={isSubmitting} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1 flex items-center gap-1.5"><Youtube size={14} className="text-red-600" aria-hidden="true" /> Referencja YouTube</label>
+                    <input type="url" value={formData.reference_recording_youtube} onChange={e => setFormData({...formData, reference_recording_youtube: e.target.value})} className={STYLE_GLASS_INPUT} placeholder="https://youtube.com/watch?v=..." disabled={isSubmitting} />
+                </div>
+                <div>
+                    <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1 flex items-center gap-1.5"><Music size={14} className="text-emerald-600" aria-hidden="true" /> Referencja Spotify</label>
+                    <input type="url" value={formData.reference_recording_spotify} onChange={e => setFormData({...formData, reference_recording_spotify: e.target.value})} className={STYLE_GLASS_INPUT} placeholder="https://open.spotify.com/track/..." disabled={isSubmitting} />
+                </div>
             </div>
 
             <div className="p-6 border border-stone-200/60 rounded-2xl bg-white/40 shadow-sm mt-4">

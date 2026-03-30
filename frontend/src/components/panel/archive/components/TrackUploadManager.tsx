@@ -10,14 +10,15 @@
  * @author Krystian Bugalski
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, UploadCloud, Trash2, AlertCircle, PlayCircle } from 'lucide-react';
 
-import api from '../../../utils/api';
-import ConfirmModal from '../../../components/ui/ConfirmModal';
-import type { Track, VoiceLineOption } from '../../../types';
+import api from '../../../../utils/api';
+import ConfirmModal from '../../../../components/ui/ConfirmModal';
+import type { Track, VoiceLineOption } from '../../../../types';
+import { archiveQueryKeys } from '../queryKeys';
 
 interface TrackUploadManagerProps {
   pieceId: string | number;
@@ -28,6 +29,14 @@ interface TrackUploadManagerProps {
 const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] font-bold";
 const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 
+const extractData = <T,>(payload: unknown): T[] => {
+  if (Array.isArray(payload)) return payload as T[];
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { results?: unknown[] }).results)) {
+    return (payload as { results: T[] }).results;
+  }
+  return [];
+};
+
 /**
  * TrackUploadManager Component
  * @param {TrackUploadManagerProps} props - Component properties.
@@ -35,6 +44,7 @@ const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-w
  */
 export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadManagerProps): React.JSX.Element {
   const queryClient = useQueryClient();
+  const trackQueryKey = archiveQueryKeys.tracks(pieceId);
 
   // --- Local UI & Form State ---
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -46,12 +56,29 @@ export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadM
   const [trackToDelete, setTrackToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (voiceLines.length === 0) return;
+
+    const hasCurrentVoicePart = voiceLines.some(vl => String(vl.value) === voicePart);
+    if (!hasCurrentVoicePart) {
+      setVoicePart(String(voiceLines[0].value));
+    }
+  }, [voiceLines, voicePart]);
+
+  const invalidateTrackRelatedQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: trackQueryKey }),
+      queryClient.invalidateQueries({ queryKey: archiveQueryKeys.pieces }),
+      queryClient.invalidateQueries({ queryKey: archiveQueryKeys.sharedPieces }),
+    ]);
+  };
+
   // --- Data Fetching Engine (React Query) ---
   const { data: tracks = [], isLoading } = useQuery<Track[]>({
-    queryKey: ['tracks', pieceId],
+    queryKey: trackQueryKey,
     queryFn: async () => {
-      const res = await api.get(`/api/tracks/?piece=${pieceId}`);
-      return res.data;
+      const res = await api.get('/api/tracks/', { params: { piece: pieceId } });
+      return extractData<Track>(res.data);
     }
   });
   // --- Event Handlers ---
@@ -76,7 +103,7 @@ export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadM
       if (fileInputRef.current) fileInputRef.current.value = '';
       
       // Sync UI
-      await queryClient.invalidateQueries({ queryKey: ['tracks', pieceId] });
+      await invalidateTrackRelatedQueries();
       
       toast.success("Plik audio został wgrany i podpięty pod utwór", { id: toastId });
     } catch (err) { 
@@ -98,9 +125,7 @@ export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadM
 
     try {
       await api.delete(`/api/tracks/${trackToDelete}/`);
-      
-      await api.delete(`/api/tracks/${trackToDelete}/`);
-      await queryClient.invalidateQueries({ queryKey: ['tracks', pieceId] });
+      await invalidateTrackRelatedQueries();
       
       toast.success("Usunięto nagranie", { id: toastId });
     } catch (err) { 
@@ -147,7 +172,7 @@ export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadM
           <input 
             type="file" 
             required 
-            accept="audio/*" 
+            accept=".mp3,.wav,.mid,.midi,audio/*" 
             ref={fileInputRef} 
             onChange={e => setAudioFile(e.target.files ? e.target.files[0] : null)}
             disabled={isUploading}
@@ -180,17 +205,15 @@ export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadM
                 <div className="flex items-center gap-4 w-full md:w-auto">
                 <div className="bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-100 text-emerald-700 font-bold antialiased text-[10px] uppercase tracking-widest min-w-[100px] text-center shadow-sm flex items-center justify-center gap-2">
                     <PlayCircle size={14} aria-hidden="true" /> 
-                    {/* Fallback do voice_part jeśli voice_part_display nie jest dostępne */}
-                    {(track as any).voice_part_display || track.voice_part}
+                    {track.voice_part_display || track.voice_part}
                 </div>
                 <audio 
                     controls 
                     controlsList="nodownload" 
+                    src={track.audio_file}
                     className="h-9 w-full sm:w-64 outline-none rounded-lg" 
                     onPlay={handleAudioPlay}
-                >
-                    <source src={track.audio_file} type="audio/mpeg" />
-                </audio>
+                />
                 </div>
                 
                 <button 

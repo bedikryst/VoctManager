@@ -85,7 +85,9 @@ class Piece(EnterpriseBaseModel):
     # --- CONDUCTOR & REHEARSAL WORKSPACE ---
     lyrics_original = models.TextField(blank=True, null=True, help_text="Tekst w języku oryginału", verbose_name="Tekst utworu")
     lyrics_translation = models.TextField(blank=True, null=True, help_text="Polskie tłumaczenie", verbose_name="Tłumaczenie")
-    reference_recording = models.URLField(blank=True, null=True, help_text="Link do YouTube/Spotify", verbose_name="Nagranie referencyjne")
+    reference_recording_youtube = models.URLField(blank=True, null=True, help_text="Link do YouTube", verbose_name="Nagranie (Youtube)")
+    reference_recording_spotify = models.URLField(blank=True, null=True, help_text="Link do Spotify", verbose_name="Nagranie (Spotify)")
+    
     
     # --- HISTORICAL CONTEXT ---
     composition_year = models.IntegerField(blank=True, null=True, verbose_name="Rok powstania")

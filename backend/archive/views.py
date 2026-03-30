@@ -11,6 +11,7 @@ Implements custom permission logic to ensure only administrators can modify the 
 while regular artists have read-only access.
 """
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -42,7 +43,7 @@ class PieceViewSet(viewsets.ModelViewSet):
     Implements query optimizations (select_related, prefetch_related) 
     to handle nested composer and track data efficiently and prevent N+1 issues.
     """
-    queryset = Piece.objects.select_related('composer').prefetch_related('tracks').all()
+    queryset = Piece.objects.select_related('composer').prefetch_related('tracks', 'voice_requirements').all()
     serializer_class = PieceSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
@@ -51,6 +52,8 @@ class TrackViewSet(viewsets.ModelViewSet):
     """ViewSet for managing isolated rehearsal audio tracks."""
     queryset = Track.objects.select_related('piece').all()
     serializer_class = TrackSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['piece', 'voice_part']
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
 
