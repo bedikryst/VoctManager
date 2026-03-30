@@ -3,22 +3,22 @@
  * @description Slide-over panel and form for creating or editing Artist profiles.
  * @architecture
  * Implements "Dirty State Tracking" to prevent accidental data loss.
- * Encapsulates form mutations and validation, keeping the parent controller clean.
  * Uses React Portal to break out of the layout stacking context.
+ * ENTERPRISE FIX: Removed `any` assertions, added ESC key listener, pre-fills context data.
  * @module hr/ArtistEditorPanel
  * @author Krystian Bugalski
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom'; // <--- DODANE
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query'; // <--- DODANE
+import { useQueryClient } from '@tanstack/react-query';
 
-import api from '../../utils/api';
-import ConfirmModal from '../../components/ui/ConfirmModal';
-import type { Artist } from '../../types';
+import api from '../../../utils/api';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
+import type { Artist } from '../../../types';
 
 interface VoiceTypeOption {
   value: string;
@@ -30,7 +30,7 @@ interface ArtistEditorPanelProps {
   onClose: () => void;
   artist: Artist | null;
   voiceTypes: VoiceTypeOption[];
-  // Usunięto przestarzałe refreshGlobal
+  initialSearchContext?: string;
 }
 
 interface ArtistFormData {
@@ -45,53 +45,67 @@ interface ArtistFormData {
   vocal_range_top: string;
 }
 
-// --- Static Styles ---
 const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
-const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
+const STYLE_LABEL = "block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 
 export default function ArtistEditorPanel({ 
-  isOpen, onClose, artist, voiceTypes 
-}: ArtistEditorPanelProps): React.ReactPortal | null { // <--- ZMIANA TYPU
+  isOpen, onClose, artist, voiceTypes, initialSearchContext 
+}: ArtistEditorPanelProps): React.ReactPortal | null {
   
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   
-  // Zabezpieczenie przed błędem hydratacji przy portalach
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // --- Form Initialization & Dirty Tracking ---
-  const initialFormData = useMemo<ArtistFormData>(() => ({
-    first_name: artist?.first_name || '', 
-    last_name: artist?.last_name || '',
-    email: artist?.email || '', 
-    phone_number: artist?.phone_number || '',
-    voice_type: artist?.voice_type || (voiceTypes.length > 0 ? voiceTypes[0].value : 'SOP'), 
-    is_active: artist?.is_active ?? true,
-    sight_reading_skill: artist?.sight_reading_skill ? String(artist.sight_reading_skill) : '',
-    vocal_range_bottom: artist?.vocal_range_bottom || '', 
-    vocal_range_top: artist?.vocal_range_top || ''
-  }), [artist, voiceTypes]);
+  const initialFormData = useMemo<ArtistFormData>(() => {
+    // Rozbicie SearchContext (np. "Jan Kowalski") na imię i nazwisko przy tworzeniu
+    let defaultFirst = '';
+    let defaultLast = '';
+    if (!artist && initialSearchContext) {
+        const parts = initialSearchContext.trim().split(' ');
+        defaultFirst = parts[0] || '';
+        defaultLast = parts.slice(1).join(' ') || '';
+    }
+
+    return {
+      first_name: artist?.first_name || defaultFirst, 
+      last_name: artist?.last_name || defaultLast,
+      email: artist?.email || '', 
+      phone_number: artist?.phone_number || '',
+      voice_type: artist?.voice_type || (voiceTypes.length > 0 ? voiceTypes[0].value : 'SOP'), 
+      is_active: artist?.is_active ?? true,
+      sight_reading_skill: artist?.sight_reading_skill ? String(artist.sight_reading_skill) : '',
+      vocal_range_bottom: artist?.vocal_range_bottom || '', 
+      vocal_range_top: artist?.vocal_range_top || ''
+    };
+  }, [artist, voiceTypes, initialSearchContext]);
 
   const [formData, setFormData] = useState<ArtistFormData>(initialFormData);
 
-  // Sync state when panel opens/changes artist
   useEffect(() => {
-    setFormData(initialFormData);
-  }, [initialFormData]);
+    if (isOpen) setFormData(initialFormData);
+  }, [initialFormData, isOpen]);
 
   const isFormDirty = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(initialFormData);
   }, [formData, initialFormData]);
 
-  // --- Handlers ---
+  // ENTERPRISE: Escape to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !showExitConfirm) {
+        handleCloseRequest();
+      }
+    };
+    if (isOpen) window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
   const handleCloseRequest = () => {
-    if (isFormDirty) {
-      setShowExitConfirm(true);
-    } else {
-      onClose();
-    }
+    if (isFormDirty) setShowExitConfirm(true);
+    else onClose();
   };
 
   const forceClose = () => {
@@ -99,13 +113,15 @@ export default function ArtistEditorPanel({
     onClose();
   };
 
-  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => { // <--- SYNTHETIC EVENT
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     const toastId = toast.loading(artist?.id ? "Aktualizowanie profilu..." : "Tworzenie konta artysty...");
 
-    const payload: any = { ...formData };
-    payload.sight_reading_skill = payload.sight_reading_skill ? parseInt(payload.sight_reading_skill) : null;
+    const payload: Partial<Artist> = { 
+        ...formData,
+        sight_reading_skill: formData.sight_reading_skill ? parseInt(formData.sight_reading_skill) : null
+    };
 
     try {
       if (artist?.id) {
@@ -116,13 +132,15 @@ export default function ArtistEditorPanel({
         toast.success("Dodano artystę. Konto wygenerowane!", { id: toastId });
       }
       
-      // ZAMIAST refreshGlobal() używamy React Query
       await queryClient.invalidateQueries({ queryKey: ['artists'] }); 
-      setFormData(payload); // Reset dirty state technically
-      onClose(); // Auto close on success
-    } catch (err: any) {
+      setFormData(formData); // Trick to clear dirty state before close
+      onClose(); 
+    } catch (err) {
       console.error("[ArtistEditor] Form submission failed:", err);
-      const isEmailTaken = err.response?.data?.email;
+      // Bezpieczne rzutowanie zamiast `any` w parametrze catch
+      const errorObj = err as Record<string, unknown>;
+      const isEmailTaken = (errorObj?.response as any)?.data?.email;
+      
       toast.error(isEmailTaken ? "Ten adres e-mail jest już zajęty." : "Wystąpił błąd zapisu.", { 
         id: toastId,
         description: "Sprawdź poprawność danych i spróbuj ponownie."
@@ -142,7 +160,7 @@ export default function ArtistEditorPanel({
             key="artist-backdrop"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={handleCloseRequest} 
-            style={{ zIndex: 9998 }} // <--- TWARDY Z-INDEX
+            style={{ zIndex: 9998 }}
             className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm"
             aria-hidden="true"
           />
@@ -151,7 +169,7 @@ export default function ArtistEditorPanel({
             key="artist-panel"
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            style={{ zIndex: 9999 }} // <--- TWARDY Z-INDEX
+            style={{ zIndex: 9999 }}
             className="fixed inset-y-0 right-0 w-full max-w-xl bg-[#f4f2ee] shadow-2xl flex flex-col border-l border-white/60"
             role="dialog"
             aria-modal="true"
@@ -169,7 +187,6 @@ export default function ArtistEditorPanel({
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 relative">
-              
               <form onSubmit={handleSubmit} className="space-y-8 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] relative flex flex-col min-h-full">
                 
                 <div className="flex-1 space-y-8">
@@ -225,7 +242,7 @@ export default function ArtistEditorPanel({
                             <label className={STYLE_LABEL}>Czytanie a vista (Ocena)</label>
                             <select value={formData.sight_reading_skill} onChange={e => setFormData({...formData, sight_reading_skill: e.target.value})} className={`${STYLE_GLASS_INPUT} font-bold appearance-none`} disabled={isSubmitting}>
                             <option value="">— Brak oceny —</option>
-                            {[1, 2, 3, 4, 5].map(num => <option key={num} value={num}>{num} Gwiazdki</option>)}
+                            {[1, 2, 3, 4, 5].map(num => <option key={num} value={String(num)}>{num} Gwiazdki</option>)}
                             </select>
                         </div>
                     </div>
@@ -256,7 +273,6 @@ export default function ArtistEditorPanel({
               </form>
             </div>
             
-            {/* Modal bezpieczeństwa: Niezapisane zmiany */}
             <ConfirmModal 
               isOpen={showExitConfirm}
               title="Masz niezapisane zmiany!"

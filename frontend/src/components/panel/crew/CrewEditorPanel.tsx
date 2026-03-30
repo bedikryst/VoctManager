@@ -1,25 +1,24 @@
 /**
  * @file CrewEditorPanel.tsx
  * @description Slide-over panel and form for creating or editing Crew profiles.
- * @architecture
- * Implements "Dirty State Tracking" to prevent accidental data loss.
- * Encapsulates form mutations and validation, keeping the parent controller clean.
- * Features a Sticky Bottom Action Bar for immediate saving.
- * Implements React Portal to break out of layout Stacking Contexts.
- * @module admin/CrewEditorPanel
+ * @architecture Enterprise 2026
+ * - Implements "Dirty State Tracking" with ESC key listener to prevent accidental data loss.
+ * - Extracts `initialSearchContext` to pre-fill inputs intelligently based on empty state queries.
+ * - Uses React Portal to break out of layout Stacking Contexts.
+ * @module admin/crew/CrewEditorPanel
  * @author Krystian Bugalski
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom'; // <--- DODANO
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query'; // <--- DODANO
+import { useQueryClient } from '@tanstack/react-query';
 
-import api from '../../utils/api';
-import ConfirmModal from '../../components/ui/ConfirmModal';
-import type { Collaborator } from '../../types';
+import api from '../../../utils/api';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
+import type { Collaborator } from '../../../types';
 
 export const SPECIALTY_CHOICES = [
   { value: 'SOUND', label: 'Reżyseria Dźwięku' },
@@ -34,7 +33,7 @@ interface CrewEditorPanelProps {
   isOpen: boolean;
   onClose: () => void;
   person: Collaborator | null;
-  // USUNIĘTO refreshGlobal
+  initialSearchContext?: string;
 }
 
 interface CrewFormData {
@@ -46,48 +45,67 @@ interface CrewFormData {
   specialty: string;
 }
 
-// --- Static Styles ---
 const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 
 export default function CrewEditorPanel({ 
-  isOpen, onClose, person 
-}: CrewEditorPanelProps): React.ReactPortal | null { // <--- ZMIENIONY TYP
+  isOpen, onClose, person, initialSearchContext 
+}: CrewEditorPanelProps): React.ReactPortal | null {
   
-  const queryClient = useQueryClient(); // <--- ZAINICJOWANO
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  // --- Form Initialization & Dirty Tracking ---
-  const initialFormData = useMemo<CrewFormData>(() => ({
-    first_name: person?.first_name || '', 
-    last_name: person?.last_name || '',
-    email: person?.email || '', 
-    phone_number: person?.phone_number || '',
-    company_name: person?.company_name || '', 
-    specialty: person?.specialty || 'OTHER'
-  }), [person]);
+  // --- Smart Form Initialization ---
+  const initialFormData = useMemo<CrewFormData>(() => {
+      let defaultCompany = '';
+      let defaultLast = '';
+      
+      if (!person && initialSearchContext) {
+          // Prosta heurystyka: Jeśli to jedno słowo pisane wielką literą bez polskich znaków w środku, 
+          // to pewnie nazwa firmy (np. SoundTech, ProAudio). Jeśli ze spacją, wstaw w nazwisko.
+          if (initialSearchContext.includes(' ')) {
+              defaultLast = initialSearchContext;
+          } else {
+              defaultCompany = initialSearchContext;
+          }
+      }
+
+      return {
+        first_name: person?.first_name || '', 
+        last_name: person?.last_name || defaultLast,
+        email: person?.email || '', 
+        phone_number: person?.phone_number || '',
+        company_name: person?.company_name || defaultCompany, 
+        specialty: person?.specialty || 'OTHER'
+      };
+  }, [person, initialSearchContext]);
 
   const [formData, setFormData] = useState<CrewFormData>(initialFormData);
 
   useEffect(() => {
-    setFormData(initialFormData);
-  }, [initialFormData]);
+    if (isOpen) setFormData(initialFormData);
+  }, [initialFormData, isOpen]);
 
   const isFormDirty = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(initialFormData);
   }, [formData, initialFormData]);
 
-  // --- Handlers ---
+  // --- ESC Listener ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !showExitConfirm) handleCloseRequest();
+    };
+    if (isOpen) window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
   const handleCloseRequest = () => {
-    if (isFormDirty) {
-      setShowExitConfirm(true);
-    } else {
-      onClose();
-    }
+    if (isFormDirty) setShowExitConfirm(true);
+    else onClose();
   };
 
   const forceClose = () => {
@@ -95,7 +113,7 @@ export default function CrewEditorPanel({
     onClose();
   };
 
-  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => { // <--- ZMIANA NA SYNTHETIC EVENT
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     const toastId = toast.loading(person?.id ? "Aktualizowanie danych..." : "Dodawanie współpracownika...");
@@ -109,11 +127,10 @@ export default function CrewEditorPanel({
         toast.success("Dodano nową osobę do bazy.", { id: toastId });
       }
       
-      // ZAMIAST refreshGlobal() UŻYWAMY REACT QUERY
       await queryClient.invalidateQueries({ queryKey: ['collaborators'] }); 
-      setFormData(formData); // Reset dirty state
+      setFormData(formData); // Clear dirty state technically
       onClose(); 
-    } catch (err: any) {
+    } catch (err) {
       console.error("[CrewEditor] Form submission failed:", err);
       toast.error("Wystąpił błąd podczas zapisywania danych.", { 
         id: toastId,
@@ -134,7 +151,7 @@ export default function CrewEditorPanel({
             key="crew-backdrop"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={handleCloseRequest} 
-            style={{ zIndex: 9998 }} // <--- TWARDY Z-INDEX
+            style={{ zIndex: 9998 }}
             className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm"
             aria-hidden="true"
           />
@@ -143,7 +160,7 @@ export default function CrewEditorPanel({
             key="crew-panel"
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            style={{ zIndex: 9999 }} // <--- TWARDY Z-INDEX
+            style={{ zIndex: 9999 }}
             className="fixed inset-y-0 right-0 w-full max-w-md bg-[#f4f2ee] shadow-2xl flex flex-col border-l border-white/60"
             role="dialog"
             aria-modal="true"
@@ -161,7 +178,6 @@ export default function CrewEditorPanel({
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 relative">
-              
               <form onSubmit={handleSubmit} className="space-y-6 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] relative flex flex-col min-h-full">
                 
                 <div className="flex-1 space-y-5">

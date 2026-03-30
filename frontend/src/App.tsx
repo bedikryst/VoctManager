@@ -25,15 +25,15 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 
 import Contracts from './components/panel/Contracts';
-import DashboardHome from './components/panel/DashboardHome';
+import DashboardHome from './components/panel/dashboard/DashboardHome';
 import Rehearsals from './components/panel/Rehearsals';
 import Materials from './components/panel/Materials';
-import Schedule from './components/panel/Schedule';
-import ArtistManagement from './components/panel/ArtistManagement';
+import Schedule from './components/schedule/Schedule';
+import ArtistManagement from './components/panel/artists/ArtistManagement';
 import ProjectManagement from './components/panel/projects/ProjectDashboard';
 import ArchiveManagement from './components/panel/archive/ArchiveManagement';
 import Resources from './components/panel/Resources';
-import CrewManagement from './components/panel/CrewManagement';
+import CrewManagement from './components/panel/crew/CrewManagement';
 
 export default function App(): React.JSX.Element {
   const location = useLocation();
