@@ -170,6 +170,9 @@ cors_env = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173')
 CORS_ALLOWED_ORIGINS = cors_env.split(',')
 CORS_ALLOW_CREDENTIALS = True  # Allow cookies for authentication
 
+# Ensure CSRF protection trusts the same origins that CORS allows.
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # --- CELERY & REDIS CONFIGURATION ---

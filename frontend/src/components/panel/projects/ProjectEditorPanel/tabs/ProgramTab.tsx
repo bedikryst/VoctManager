@@ -1,24 +1,39 @@
 /**
  * @file ProgramTab.tsx
- * @description Setlist Builder with Drag & Drop Reordering.
+ * @description Setlist Builder with Drag & Drop Reordering and Database search.
  * @architecture
- * Leverages framer-motion's <Reorder> components for 60FPS fluid list sorting.
- * Implements Optimistic UI for drag operations and buffers changes until manual commit.
- * Uses Promise.all() for concurrent bulk-updating of sequence orders in the database.
- * Powered by React Query for declarative data fetching.
- * @module project/tabs/ProgramTab
+ * ENTERPRISE 2026: 
+ * - Replaced framer-motion reorder with `@dnd-kit` for strict accessibility (a11y), 
+ * headless DOM control, and robust touch/keyboard sensor architecture.
+ * - Implements unified Dirty State Tracking (FAB) consistent across the application.
+ * - Canceling explicitly purges local mutations and restores the React Query baseline.
+ * @module project/ProjectEditorPanel/tabs/ProgramTab
  * @author Krystian Bugalski
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Reorder, AnimatePresence, motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query'; 
 import { toast } from 'sonner';
-import { ListOrdered, GripVertical, Trash2, Loader2, Save, AlertCircle, Search, Plus, CheckCircle2, Star, Clock, Music } from 'lucide-react';
+import { 
+  ListOrdered, GripVertical, Trash2, Loader2, Save, 
+  Search, Plus, CheckCircle2, Star, Clock, Music 
+} from 'lucide-react';
 
-import api from '../../../../utils/api';
-import { useProjectData } from '../../../../hooks/useProjectData'; 
-import type { Piece } from '../../../../types';
+// Dnd-Kit Imports
+import { 
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, 
+  useSensor, useSensors, DragEndEvent 
+} from '@dnd-kit/core';
+import { 
+  arrayMove, SortableContext, sortableKeyboardCoordinates, 
+  verticalListSortingStrategy, useSortable 
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+import api from '../../../../../utils/api';
+import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
+import type { Piece } from '../../../../../types';
 
 interface ProgramTabProps {
   projectId: string;
@@ -33,7 +48,6 @@ interface ProgramItem {
   is_encore: boolean;
 }
 
-// --- Static Functions & Styles ---
 const STYLE_GLASS_CARD = "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl";
 const STYLE_GLASS_INPUT = "w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 
@@ -54,21 +68,103 @@ const formatPieceDuration = (totalSeconds: number): string | null => {
 };
 
 /**
- * ProgramTab Component
- * @param {ProgramTabProps} props - Component properties.
- * @returns {React.JSX.Element | null}
+ * Sub-component to handle the specific Dnd-Kit sorting logic for individual rows.
  */
+function SortablePieceItem({ 
+  item, index, pieceObj, onToggleEncore, onDelete 
+}: { 
+  item: ProgramItem, index: number, pieceObj?: Piece, 
+  onToggleEncore: (i: ProgramItem) => void, onDelete: (id: string | number) => void 
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style}
+      className={`flex items-center justify-between bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-xl shadow-sm group relative hover:border-[#002395]/40 hover:shadow-md transition-colors overflow-hidden ${isDragging ? 'shadow-lg ring-2 ring-[#002395]/20 scale-[1.02]' : ''}`}
+    >
+      {/* --- STREFA PRZECIĄGANIA (Enterprise 2026 Standard: Content as Handle) --- */}
+      {/* Cały ten obszar (od lewej krawędzi aż do pionowej kreski) pozwala chwycić element */}
+      <div 
+        {...attributes} 
+        {...listeners} 
+        className="flex items-center gap-4 w-full p-4 pr-4 cursor-grab active:cursor-grabbing outline-none"
+        aria-label={`Przeciągnij utwór ${item.piece_title}`}
+      >
+          <GripVertical size={16} className="text-stone-300 group-hover:text-[#002395] transition-colors flex-shrink-0" aria-hidden="true" />
+          
+          <span className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 flex items-center justify-center text-[10px] font-bold antialiased text-[#002395] shadow-sm flex-shrink-0">
+            {index + 1}
+          </span>
+          
+          <div className="flex flex-col min-w-0">
+              <p className={`text-sm font-bold truncate tracking-tight ${item.is_encore ? 'text-[#002395] italic' : 'text-stone-800'}`}>
+                  {item.piece_title}
+              </p>
+              
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                  {pieceObj?.voicing && (
+                      <span className="text-[8px] font-bold antialiased text-stone-500 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded-md border border-stone-200/60">
+                          🎤 {pieceObj.voicing}
+                      </span>
+                  )}
+                  {pieceObj?.estimated_duration && (
+                      <span className="text-[8px] font-bold antialiased text-stone-500 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded-md border border-stone-200/60 flex items-center gap-1.5">
+                          <Clock size={10} aria-hidden="true" /> {formatPieceDuration(pieceObj.estimated_duration)}
+                      </span>
+                  )}
+              </div>
+          </div>
+      </div>
+      
+      {/* --- STREFA AKCJI (Wyłączona z przeciągania) --- */}
+      {/* Element self-stretch zapewnia, że strefa zawsze zajmuje pełną wysokość kafelka */}
+      <div className="flex items-center gap-1.5 flex-shrink-0 border-l border-stone-100/80 pl-4 pr-4 relative z-10 self-stretch bg-white/30 backdrop-blur-sm">
+          <button 
+              onClick={() => onToggleEncore(item)} 
+              title={item.is_encore ? "Usuń jako BIS" : "Oznacz jako BIS"}
+              className={`p-2.5 rounded-lg transition-colors flex items-center gap-1.5 text-[9px] font-bold antialiased uppercase tracking-widest ${item.is_encore ? 'bg-amber-50 text-amber-600 border border-amber-200 shadow-sm' : 'text-stone-400 hover:text-amber-500 hover:bg-stone-50 border border-transparent active:scale-95'}`}
+          >
+              <Star size={14} className={item.is_encore ? "fill-amber-500" : ""} aria-hidden="true" /> {item.is_encore && "BIS"}
+          </button>
+          <button 
+            onClick={() => onDelete(item.id)} 
+            title="Usuń z programu" 
+            className="p-2.5 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100 active:scale-95"
+          >
+              <Trash2 size={16} aria-hidden="true" />
+          </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.Element | null {
   const queryClient = useQueryClient();
-  const { pieces } = useProjectData(projectId);
+  const context = useContext(ProjectDataContext) as IProjectDataContext;
+  
+  if (!context) return null;
+  const { pieces } = context;
+
+  // Dnd-Kit Sensors Setup
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   // --- Local UI State ---
   const [programItems, setProgramItems] = useState<ProgramItem[]>([]);
-  const [hasChanges, setHasChanges] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // --- Data Fetching (React Query) ---
+  // --- Data Fetching ---
   const { data: fetchedProgram, isLoading, refetch } = useQuery<ProgramItem[]>({
     queryKey: ['programItems', projectId],
     queryFn: async () => {
@@ -77,20 +173,25 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
     }
   });
 
-  // Sync server state with local buffered state
+  // Sync baseline
   useEffect(() => {
-    if (fetchedProgram) {
-      setProgramItems(fetchedProgram);
-      setHasChanges(false);
-    }
+    if (fetchedProgram) setProgramItems(fetchedProgram);
   }, [fetchedProgram]);
 
-  // --- Derived Metrics & Computations (Memoized) ---
+  // --- Unified Dirty State Tracking ---
+  const isDirty = useMemo(() => {
+    if (!fetchedProgram) return false;
+    const currentOrderIds = programItems.map(i => i.id).join(',');
+    const originalOrderIds = fetchedProgram.map(i => i.id).join(',');
+    return currentOrderIds !== originalOrderIds;
+  }, [programItems, fetchedProgram]);
+
+  // --- Derived Computations ---
   const totalConcertDurationSeconds = useMemo<number>(() => {
       return programItems.reduce((sum, item) => {
           const pieceId = item.piece_id || item.piece;
           const pieceObj = pieces.find((p) => String(p.id) === String(pieceId));
-          return sum + ((pieceObj as any)?.estimated_duration || 0);
+          return sum + (pieceObj?.estimated_duration || 0);
       }, 0);
   }, [programItems, pieces]);
 
@@ -98,31 +199,23 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
       return programItems.map((item) => String(item.piece_id || item.piece));
   }, [programItems]);
 
-  const filteredPieces = useMemo<Piece[]>(() => {
+const filteredPieces = useMemo<Piece[]>(() => {
       if (!searchQuery) return pieces;
       const term = searchQuery.toLowerCase();
       return pieces.filter((p) => p.title.toLowerCase().includes(term));
   }, [pieces, searchQuery]);
 
   // --- Mutation Handlers ---
-
   const handleAddPiece = async (pieceId: string | number): Promise<void> => {
     if (addedPieceIds.includes(String(pieceId))) return; 
     
     const toastId = toast.loading("Dodawanie utworu...");
     try {
       const safeTimeOrder = Math.floor(Date.now() / 10) % 100000000;
-      await api.post('/api/program-items/', { 
-        project: projectId, 
-        piece: pieceId, 
-        order: safeTimeOrder, 
-        is_encore: false 
-      });
-      
+      await api.post('/api/program-items/', { project: projectId, piece: pieceId, order: safeTimeOrder, is_encore: false });
       await refetch(); 
       toast.success("Dodano do setlisty", { id: toastId });
     } catch (err) { 
-      console.error("[ProgramTab] Failed to add piece:", err);
       toast.error("Błąd zapisu", { id: toastId, description: "Nie powiodło się dodanie utworu." }); 
     }
   };
@@ -133,7 +226,6 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
           await refetch();
           toast.success(`Utwór ${!item.is_encore ? 'oznaczony jako' : 'usunięty z'} BIS`);
       } catch (err) {
-          console.error("[ProgramTab] Failed to toggle encore status:", err);
           toast.error("Błąd połączenia. Nie udało się zmienić statusu BIS.");
       }
   };
@@ -145,73 +237,89 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
       await refetch(); 
       toast.success("Usunięto z programu", { id: toastId });
     } catch (err) { 
-      console.error("[ProgramTab] Failed to delete program item:", err);
       toast.error("Błąd usuwania", { id: toastId, description: "Wystąpił problem z serwerem." });
     }
   };
 
-  // Triggers when dragging ends
-  const handleReorder = (newOrderList: ProgramItem[]): void => {
-    setProgramItems(newOrderList);
-    setHasChanges(true);
+  // --- Dnd-Kit Drag End Handler ---
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setProgramItems((items) => {
+        const oldIndex = items.findIndex(i => i.id === active.id);
+        const newIndex = items.findIndex(i => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  // --- Cancel / Restore Handler ---
+  const handleCancel = () => {
+    // Restore explicitly to the fetched baseline
+    if (fetchedProgram) setProgramItems(fetchedProgram);
   };
 
   const handleSaveChanges = async (): Promise<void> => {
+    if (!isDirty) return;
     setIsSaving(true);
     const toastId = toast.loading("Zapisywanie nowego układu...");
     
     try {
-      // Parallel execution for massive speed boost on large setlists
       const baseSaveOrder = Math.floor(Date.now() / 10) % 100000000;
       const syncPromises = programItems.map((item, index) => 
         api.patch(`/api/program-items/${item.id}/`, { order: baseSaveOrder + index })
       );
       
       await Promise.all(syncPromises);
-      
       await refetch();
       await queryClient.invalidateQueries({ queryKey: ['pieceCastings', projectId] });
       
       toast.success("Układ zapisany pomyślnie", { id: toastId });
     } catch (err) { 
-      console.error("[ProgramTab] Bulk order update failed:", err);
       toast.error("Błąd zapisu", { id: toastId, description: "Serwer odrzucił część zmian. Odświeżam widok." });
-      await refetch(); // Revert to database state
+      await refetch(); 
     } finally {
       setIsSaving(false);
     }
   };
 
   // --- Render ---
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 relative pb-12 max-w-6xl mx-auto">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 relative pb-24 max-w-6xl mx-auto">
       
-      {/* --- FLOATING SAVE & NOTIFICATION BANNER --- */}
+      {/* ENTERPRISE FLOATING ACTION BAR (FAB) - Unified with DetailsTab */}
       <AnimatePresence>
-        {hasChanges && (
+        {isDirty && (
           <motion.div 
-            initial={{ opacity: 0, y: -50 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            exit={{ opacity: 0, y: -50 }} 
-            className="fixed top-24 md:top-8 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[600px] bg-stone-900/95 backdrop-blur-2xl border border-stone-700 shadow-2xl p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 z-[100]"
+            initial={{ y: 100, opacity: 0, x: '-50%' }}
+            animate={{ y: 0, opacity: 1, x: '-50%' }}
+            exit={{ y: 100, opacity: 0, x: '-50%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="fixed bottom-6 md:bottom-10 left-1/2 z-[200] w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_rgb(0,0,0,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-4 flex items-center justify-between"
           >
-            <span className="text-[10px] font-bold antialiased text-white uppercase tracking-widest flex items-center gap-2.5">
-                <AlertCircle size={16} className="text-orange-400" aria-hidden="true" /> Niezapisana kolejność
-            </span>
-            <div className="flex gap-2.5 w-full sm:w-auto">
+            <div className="flex flex-col ml-2">
+              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
+                Niezapisane Zmiany
+              </span>
+              <span className="text-xs text-stone-500">
+                Zmodyfikowałeś kolejność programu.
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0">
                 <button 
-                  onClick={() => refetch()} 
-                  className="flex-1 sm:flex-none px-5 py-2.5 bg-stone-800 text-stone-300 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl border border-stone-700 hover:bg-stone-700 hover:text-white transition-all active:scale-95"
+                  onClick={handleCancel} 
+                  disabled={isSaving}
+                  className="px-4 py-3 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-xl transition-all active:scale-95 disabled:opacity-50"
                 >
                   Anuluj
                 </button>
                 <button 
                   onClick={handleSaveChanges} 
                   disabled={isSaving} 
-                  className="flex-1 sm:flex-none px-6 py-2.5 bg-[#002395] text-white disabled:bg-stone-600 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)] flex items-center justify-center gap-2 transition-all active:scale-95"
+                  className="flex items-center justify-center gap-2 bg-[#002395] hover:bg-[#001766] disabled:bg-stone-300 disabled:text-stone-500 text-white text-[10px] antialiased uppercase tracking-[0.1em] font-bold py-3 px-6 rounded-xl transition-all shadow-[0_4px_14px_rgba(0,35,149,0.2)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.3)] disabled:shadow-none active:scale-95 flex-shrink-0"
                 >
-                    {isSaving ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Save size={14} aria-hidden="true" />} Zapisz Układ
+                    {isSaving ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />} Zapisz
                 </button>
             </div>
           </motion.div>
@@ -239,66 +347,27 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
         {isLoading ? (
           <div className="flex justify-center p-12"><Loader2 className="animate-spin text-stone-400" aria-hidden="true" /></div>
         ) : programItems.length > 0 ? (
-          <Reorder.Group axis="y" values={programItems} onReorder={handleReorder} className="space-y-3">
-            <AnimatePresence>
-              {programItems.map((item, index) => {
-                const pieceObj = pieces.find((p) => String(p.id) === String(item.piece_id || item.piece));
-                
-                return (
-                    <Reorder.Item 
+          
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={programItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-3">
+                {programItems.map((item, index) => {
+                  const pieceObj = pieces.find((p) => String(p.id) === String(item.piece_id || item.piece));
+                  return (
+                    <SortablePieceItem 
                       key={item.id} 
-                      value={item} 
-                      // CAUTION: Do not use generic transition-all here, it distorts GPU rendering during framer-motion drag
-                      whileDrag={{ scale: 1.02, boxShadow: "0px 10px 30px rgba(0,0,0,0.1)", cursor: "grabbing" }}
-                      className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-xl shadow-sm cursor-grab group relative z-0 hover:border-[#002395]/40 hover:shadow-md transition-colors"
-                    >
-                      <div className="flex items-start gap-4 w-full pr-4 overflow-hidden pointer-events-none">
-                          <GripVertical size={16} className="text-stone-300 group-hover:text-[#002395] transition-colors flex-shrink-0 mt-1.5" aria-hidden="true" />
-                          <span className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 flex items-center justify-center text-[10px] font-bold antialiased text-[#002395] shadow-sm flex-shrink-0">
-                            {index + 1}
-                          </span>
-                          
-                          <div className="flex flex-col min-w-0">
-                              <p className={`text-sm font-bold truncate tracking-tight ${item.is_encore ? 'text-[#002395] italic' : 'text-stone-800'}`}>
-                                  {item.piece_title}
-                              </p>
-                              
-                              <div className="flex flex-wrap items-center gap-2 mt-1">
-                                  {(pieceObj as any)?.voicing && (
-                                      <span className="text-[8px] font-bold antialiased text-stone-500 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded-md border border-stone-200/60">
-                                          🎤 {(pieceObj as any).voicing}
-                                      </span>
-                                  )}
-                                  {(pieceObj as any)?.estimated_duration && (
-                                      <span className="text-[8px] font-bold antialiased text-stone-500 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded-md border border-stone-200/60 flex items-center gap-1.5">
-                                          <Clock size={10} aria-hidden="true" /> {formatPieceDuration((pieceObj as any).estimated_duration)}
-                                      </span>
-                                  )}
-                              </div>
-                          </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1.5 flex-shrink-0 border-l border-stone-100/80 pl-4">
-                          <button 
-                              onClick={() => handleToggleEncore(item)} 
-                              title={item.is_encore ? "Usuń jako BIS" : "Oznacz jako BIS"}
-                              className={`p-2.5 rounded-lg transition-colors flex items-center gap-1.5 text-[9px] font-bold antialiased uppercase tracking-widest ${item.is_encore ? 'bg-amber-50 text-amber-600 border border-amber-200 shadow-sm' : 'text-stone-400 hover:text-amber-500 hover:bg-stone-50 border border-transparent active:scale-95'}`}
-                          >
-                              <Star size={14} className={item.is_encore ? "fill-amber-500" : ""} aria-hidden="true" /> {item.is_encore && "BIS"}
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteItem(item.id)} 
-                            title="Usuń z programu" 
-                            className="p-2.5 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100 active:scale-95"
-                          >
-                              <Trash2 size={16} aria-hidden="true" />
-                          </button>
-                      </div>
-                    </Reorder.Item>
-                );
-              })}
-            </AnimatePresence>
-          </Reorder.Group>
+                      item={item} 
+                      index={index} 
+                      pieceObj={pieceObj}
+                      onToggleEncore={handleToggleEncore}
+                      onDelete={handleDeleteItem}
+                    />
+                  );
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
+
         ) : (
           <div className={`${STYLE_GLASS_CARD} p-10 text-center flex flex-col items-center justify-center`}>
             <Music size={32} className="text-stone-300 mb-3 opacity-50" aria-hidden="true" />
@@ -337,10 +406,10 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
                             <span className={`text-sm font-bold truncate tracking-tight ${isAdded ? 'text-stone-500 line-through' : 'text-stone-800'}`}>
                                 {piece.title}
                             </span>
-                            {((piece as any).estimated_duration || (piece as any).voicing) && (
+                            {(piece.estimated_duration || piece.voicing) && (
                                 <span className="text-[8px] font-bold antialiased text-stone-400 uppercase tracking-widest mt-1 truncate">
-                                    {(piece as any).estimated_duration ? `${formatPieceDuration((piece as any).estimated_duration)} ` : ''} 
-                                    {(piece as any).voicing ? `| ${(piece as any).voicing}` : ''}
+                                    {piece.estimated_duration ? `${formatPieceDuration(piece.estimated_duration)} ` : ''} 
+                                    {piece.voicing ? `| ${piece.voicing}` : ''}
                                 </span>
                             )}
                         </div>

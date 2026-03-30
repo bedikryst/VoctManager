@@ -107,12 +107,15 @@ class Project(EnterpriseBaseModel):
     title = models.CharField(max_length=200, verbose_name="Nazwa Projektu")
     date_time = models.DateTimeField(verbose_name="Data i godzina wydarzenia", default=timezone.now)
     call_time = models.DateTimeField(blank=True, null=True, help_text="Godzina zbiórki", verbose_name="Call Time")
-    dress_code = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dress Code")
+    dress_code_male = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dress Code (Mężczyźni)")
+    dress_code_female = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dress Code (Kobiety)")
     location = models.CharField(max_length=200, blank=True, null=True, verbose_name="Lokalizacja")
     description = models.TextField(blank=True, null=True, verbose_name="Opis")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name="Status")
     run_sheet = models.JSONField(default=list, blank=True, verbose_name="Harmonogram Dnia (Run-sheet)")
-    
+    spotify_playlist_url = models.URLField(blank=True, null=True, help_text="Link do playlisty Spotify", verbose_name="Playlista (Spotify)")
+
+
     class Meta:
         verbose_name = "Projekt"
         verbose_name_plural = "Projekty"
@@ -168,16 +171,11 @@ class ProjectPieceCasting(models.Model):
     Micro-casting resolution table. 
     Assigns a specific vocal line (divisi) and role to an artist for an individual piece within a project.
     """
-    class Role(models.TextChoices):
-        TUTTI = 'TUTTI', 'Tutti'
-        SOLO = 'SOLO', 'Partia Solowa'
-        BACKGROUND = 'BACK', 'Chórek'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='castings', verbose_name="Uczestnik")
     piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, related_name='castings', verbose_name="Utwór")
     voice_line = models.CharField(max_length=5, choices=VoiceLine.choices, verbose_name="Linia melodyczna (Divisi)")
-    role = models.CharField(max_length=10, choices=Role.choices, default=Role.TUTTI, verbose_name="Rola")
     gives_pitch = models.BooleanField(default=False, verbose_name="Daje dźwięk (Kamerton)")
     notes = models.CharField(max_length=200, blank=True, null=True, verbose_name="Notatki")
 

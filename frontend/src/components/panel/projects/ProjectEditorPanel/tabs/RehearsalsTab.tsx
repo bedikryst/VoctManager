@@ -2,22 +2,25 @@
  * @file RehearsalsTab.tsx
  * @description Orchestrates rehearsal scheduling and advanced audience targeting (Tutti, Sectional, Custom).
  * @architecture 
- * Employs a stateless-read/stateful-write pattern. Consumes relational data directly from Context (RAM).
- * Replaces native alerts/confirms with Sonner toasts and a custom ConfirmModal.
- * Employs an O(1) Hash Map for rapid artist lookups during heavy render cycles.
- * @module project/tabs/RehearsalsTab
+ * ENTERPRISE 2026: 
+ * - Eliminated `useProjectData` bottleneck. Uses Hybrid JIT Fetching (RAM context + scoped queries).
+ * - Pure TypeScript interfaces (strict typing, no `any` assertions).
+ * - Implemented Framer Motion `<AnimatePresence>` for fluid, zero-jank conditional sub-routing.
+ * - Employs O(1) Hash Maps for rapid artist lookups during high-frequency render cycles.
+ * @module project/ProjectEditorPanel/tabs/RehearsalsTab
  * @author Krystian Bugalski
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useContext } from 'react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Trash2, Target, CheckSquare, Clock, Users, MicVocal, UserCheck, Calendar1, Loader2 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query'; 
+import { useQuery, useQueryClient } from '@tanstack/react-query'; 
 
-import api from '../../../../utils/api';
-import { useProjectData } from '../../../../hooks/useProjectData'; 
-import ConfirmModal from '../../../../components/ui/ConfirmModal';
-import type { Rehearsal, Participation, Artist } from '../../../../types';
+import api from '../../../../../utils/api';
+import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
+import ConfirmModal from '../../../../ui/ConfirmModal';
+import type { Rehearsal, Participation, Artist } from '../../../../../types';
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -37,14 +40,32 @@ const STYLE_GLASS_CARD = "bg-white/70 backdrop-blur-xl border border-white/60 sh
 const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 
-/**
- * RehearsalsTab Component
- * @param {RehearsalsTabProps} props - Component properties.
- * @returns {React.JSX.Element | null}
- */
 export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.JSX.Element | null {
   const queryClient = useQueryClient();
-  const { rehearsals, participations, artists } = useProjectData(projectId); 
+  
+  // 1. Consume Artists from Global RAM
+  const context = useContext(ProjectDataContext) as IProjectDataContext;
+  if (!context) return null;
+  const { artists } = context;
+
+  // 2. JIT Fetching for Relational Entities
+  const { data: rehearsals = [], isLoading: isFetchingRehearsals } = useQuery<Rehearsal[]>({
+    queryKey: ['rehearsals', projectId],
+    queryFn: async () => {
+      const res = await api.get(`/api/rehearsals/?project=${projectId}`);
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    staleTime: 60000
+  });
+
+  const { data: participations = [] } = useQuery<Participation[]>({
+    queryKey: ['participations', projectId],
+    queryFn: async () => {
+      const res = await api.get(`/api/participations/?project=${projectId}`);
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    staleTime: 60000
+  });
 
   // --- Local UI & Form State ---
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -63,9 +84,8 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
   const [customParticipants, setCustomParticipants] = useState<string[]>([]); 
 
   // --- Derived Data (Memoized) ---
-  
   const projectRehearsals = useMemo<Rehearsal[]>(() => {
-    return rehearsals
+    return [...rehearsals]
       .filter((r) => String(r.project) === String(projectId))
       .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
   }, [rehearsals, projectId]);
@@ -82,11 +102,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
   }, [artists]);
 
   // --- Business Logic & Mutation Handlers ---
-  
-  /**
-   * Resolves the final array of Participation IDs based on the selected Audience Target.
-   * @returns {string[]} Array of Participation UUIDs
-   */
   const resolveInvitedParticipants = useCallback((): string[] => {
     if (targetType === 'TUTTI') {
         return projectParticipations.map((p) => String(p.id));
@@ -94,8 +109,8 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
     if (targetType === 'SECTIONAL') {
         return projectParticipations.filter((p) => {
             const artist = artistMap.get(String(p.artist));
-            if (!artist || !(artist as any).voice_type) return false;
-            return selectedSections.some((sec) => (artist as any).voice_type.startsWith(sec));
+            if (!artist || !artist.voice_type) return false;
+            return selectedSections.some((sec) => artist.voice_type.startsWith(sec));
         }).map((p) => String(p.id));
     }
     return customParticipants; 
@@ -123,7 +138,7 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
       
       await api.post('/api/rehearsals/', payload);
       
-      // Reset form
+      // Reset form on success
       setFormData({ date_time: '', location: '', focus: '', is_mandatory: true }); 
       setTargetType('TUTTI');
       setSelectedSections([]);
@@ -142,16 +157,10 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
     }
   };
 
-  /**
-   * Prepares the deletion of a rehearsal by opening the Confirm Modal.
-   */
   const handleDeleteClick = (id: string | number): void => {
     setRehearsalToDelete(String(id));
   };
 
-  /**
-   * Executes the irreversible deletion of a rehearsal.
-   */
   const executeDelete = async (): Promise<void> => {
     if (!rehearsalToDelete) return;
 
@@ -175,7 +184,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
   };
 
   // --- Toggles ---
-
   const toggleSection = (sec: string): void => {
       setSelectedSections((prev) => 
         prev.includes(sec) ? prev.filter((s) => s !== sec) : [...prev, sec]
@@ -189,7 +197,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
   };
 
   // --- Render ---
-
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
       
@@ -241,7 +248,7 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
         </div>
 
         {/* --- AUDIENCE TARGETING ENGINE --- */}
-        <div className="bg-white/60 border border-stone-200/60 rounded-2xl p-5 shadow-sm">
+        <div className="bg-white/60 border border-stone-200/60 rounded-2xl p-5 shadow-sm overflow-hidden">
             <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 mb-4 ml-1">
               Kto jest wezwany na próbę?
             </label>
@@ -263,50 +270,64 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
                 ))}
             </div>
 
-            {/* Sub-routing: Sectional Mode */}
-            {targetType === 'SECTIONAL' && (
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-stone-200/60 animate-fade-in">
-                    {[ 
-                      { id: 'S', label: 'Soprany' }, 
-                      { id: 'A', label: 'Alty' }, 
-                      { id: 'T', label: 'Tenory' }, 
-                      { id: 'B', label: 'Basy' } 
-                    ].map((sec) => (
-                        <button 
-                            key={sec.id} 
-                            type="button" 
-                            onClick={() => toggleSection(sec.id)}
-                            className={`px-5 py-2.5 rounded-xl border text-[10px] antialiased uppercase tracking-widest font-bold transition-all active:scale-95 ${selectedSections.includes(sec.id) ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm' : 'bg-white/60 border-stone-200/80 text-stone-500 hover:border-stone-300 hover:bg-white'}`}
-                        >
-                            {sec.label}
-                        </button>
-                    ))}
-                </div>
-            )}
+            <AnimatePresence mode="wait">
+              {/* Sub-routing: Sectional Mode */}
+              {targetType === 'SECTIONAL' && (
+                  <motion.div 
+                    key="sectional"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="flex flex-wrap gap-2 pt-4 border-t border-stone-200/60 overflow-hidden"
+                  >
+                      {[ 
+                        { id: 'S', label: 'Soprany' }, 
+                        { id: 'A', label: 'Alty' }, 
+                        { id: 'T', label: 'Tenory' }, 
+                        { id: 'B', label: 'Basy' } 
+                      ].map((sec) => (
+                          <button 
+                              key={sec.id} 
+                              type="button" 
+                              onClick={() => toggleSection(sec.id)}
+                              className={`px-5 py-2.5 rounded-xl border text-[10px] antialiased uppercase tracking-widest font-bold transition-all active:scale-95 ${selectedSections.includes(sec.id) ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm' : 'bg-white/60 border-stone-200/80 text-stone-500 hover:border-stone-300 hover:bg-white'}`}
+                          >
+                              {sec.label}
+                          </button>
+                      ))}
+                  </motion.div>
+              )}
 
-            {/* Sub-routing: Custom Roster Mode */}
-            {targetType === 'CUSTOM' && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 pt-4 border-t border-stone-200/60 max-h-[160px] overflow-y-auto scrollbar-hide animate-fade-in">
-                    {projectParticipations.map((p) => {
-                        const artist = artistMap.get(String(p.artist));
-                        if (!artist) return null;
-                        
-                        const isSelected = customParticipants.includes(String(p.id));
-                        return (
-                            <div 
-                                key={p.id} 
-                                onClick={() => toggleCustomParticipant(String(p.id))}
-                                className={`cursor-pointer px-4 py-2.5 rounded-xl border text-xs flex items-center justify-between transition-all active:scale-95 ${isSelected ? 'bg-emerald-50 border-emerald-300 text-emerald-700 font-bold shadow-sm' : 'bg-white/60 border-stone-200/80 text-stone-600 hover:bg-white'}`}
-                            >
-                                <span className="truncate tracking-tight font-bold">{artist.first_name} {artist.last_name}</span>
-                                <span className="text-[8px] antialiased font-bold uppercase tracking-widest opacity-60 ml-2">
-                                  {(artist as any).voice_type || ''}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+              {/* Sub-routing: Custom Roster Mode */}
+              {targetType === 'CUSTOM' && (
+                  <motion.div 
+                    key="custom"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="grid grid-cols-2 md:grid-cols-3 gap-2.5 pt-4 border-t border-stone-200/60 max-h-[160px] overflow-y-auto scrollbar-hide"
+                  >
+                      {projectParticipations.map((p) => {
+                          const artist = artistMap.get(String(p.artist));
+                          if (!artist) return null;
+                          
+                          const isSelected = customParticipants.includes(String(p.id));
+                          return (
+                              <div 
+                                  key={p.id} 
+                                  onClick={() => toggleCustomParticipant(String(p.id))}
+                                  className={`cursor-pointer px-4 py-2.5 rounded-xl border text-xs flex items-center justify-between transition-all active:scale-95 ${isSelected ? 'bg-emerald-50 border-emerald-300 text-emerald-700 font-bold shadow-sm' : 'bg-white/60 border-stone-200/80 text-stone-600 hover:bg-white'}`}
+                              >
+                                  <span className="truncate tracking-tight font-bold">{artist.first_name} {artist.last_name}</span>
+                                  <span className="text-[8px] antialiased font-bold uppercase tracking-widest opacity-60 ml-2">
+                                    {artist.voice_type_display || artist.voice_type || ''}
+                                  </span>
+                              </div>
+                          );
+                      })}
+                  </motion.div>
+              )}
+            </AnimatePresence>
         </div>
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pt-3">
@@ -338,7 +359,11 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
           <CheckSquare size={16} className="text-[#002395]" aria-hidden="true" /> Harmonogram Prób
         </h4>
 
-        {projectRehearsals.length > 0 ? projectRehearsals.map((reh) => {
+        {isFetchingRehearsals ? (
+            <div className="flex justify-center p-8">
+                <Loader2 size={24} className="animate-spin text-stone-400" />
+            </div>
+        ) : projectRehearsals.length > 0 ? projectRehearsals.map((reh) => {
           const isPast = new Date(reh.date_time) < new Date();
           const invitedCount = reh.invited_participations?.length || 0;
           const isTutti = invitedCount === 0 || invitedCount === projectParticipations.length; 

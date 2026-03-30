@@ -2,17 +2,18 @@
  * @file ProgramWidget.tsx
  * @description Dashboard widget displaying the concert program and casting fulfillment status.
  * @architecture
- * Oczyszczony z Global Contextu. Dane agregowane są przez React Query (useProjectData).
- * @module project/widgets/ProgramWidget
+ * Exclusively consumes pre-resolved arrays (program, pieces, pieceCastings) from 
+ * the `ProjectDataContext`. Uses complex nested reduction in `useMemo` to accurately 
+ * calculate unfulfilled vocal requirements without triggering N+1 rendering cycles.
+ * @module project/ProjectCard/widgets/ProgramWidget
  * @author Krystian Bugalski
  */
 
 import React, { useContext, useMemo } from 'react';
-import { ListOrdered, Music, Loader2 } from 'lucide-react';
+import { ListOrdered, Music } from 'lucide-react';
 
-import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-import { useProjectData } from '../../../../hooks/useProjectData';
-import type { Project, Piece, VoiceRequirement } from '../../../../types';
+import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
+import type { Project, Piece, VoiceRequirement } from '../../../../../types';
 
 interface ProgramWidgetProps {
   project: Project;
@@ -30,26 +31,22 @@ const formatTotalDuration = (totalSeconds: number): string | null => {
 
 export default function ProgramWidget({ project }: ProgramWidgetProps): React.JSX.Element | null {
   const context = useContext(ProjectDataContext) as IProjectDataContext;
-  const { pieces, pieceCastings, participations: projectParticipations, isLoading } = useProjectData(String(project.id));
 
   if (!context) {
     console.error("[ProgramWidget] Must be used within a ProjectDataContext.Provider");
     return null;
   }
 
-  const { openPanel } = context;
+  // NOTE: 'pieces' global dictionary must be provided by the parent ProjectDashboard context.
+  const { openPanel, pieces, pieceCastings, participations: projectParticipations } = context;
 
   const totalConcertDurationSeconds = useMemo<number>(() => {
     return project.program?.reduce((sum, item) => {
       const pieceId = item.piece_id || item.piece;
-      const pieceObj = pieces.find((p) => String(p.id) === String(pieceId));
+      const pieceObj = pieces?.find((p) => String(p.id) === String(pieceId));
       return sum + (pieceObj?.estimated_duration || 0);
     }, 0) || 0;
   }, [project.program, pieces]);
-
-  const handleOpenProgram = (): void => {
-    openPanel(project, 'PROGRAM');
-  };
 
   const handleOpenMicroCast = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.stopPropagation();
@@ -58,10 +55,10 @@ export default function ProgramWidget({ project }: ProgramWidgetProps): React.JS
 
   return (
     <div 
-      onClick={handleOpenProgram} 
+      onClick={() => openPanel(project, 'PROGRAM')} 
       className="bg-white border border-stone-200/80 p-5 rounded-2xl shadow-sm flex flex-col justify-between cursor-pointer hover:border-[#002395]/40 hover:shadow-md transition-all group min-h-[220px]"
       role="button"
-      aria-label="Manage Concert Program"
+      aria-label="Zarządzaj Programem Koncertu"
     >
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
         <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
@@ -76,16 +73,12 @@ export default function ProgramWidget({ project }: ProgramWidgetProps): React.JS
         </button>
       </div>
       
-      {isLoading ? (
-        <div className="flex-1 flex justify-center items-center">
-             <Loader2 size={24} className="animate-spin text-stone-300" aria-hidden="true" />
-        </div>
-      ) : project.program && project.program.length > 0 ? (
+      {project.program && project.program.length > 0 ? (
         <div className="flex flex-col h-full justify-between">
             <ul className="space-y-2 flex-1 mb-3">
             {[...project.program].sort((a,b) => a.order - b.order).slice(0, 5).map((item, index) => {
                 const pieceId = item.piece_id || item.piece;
-                const pieceObj: Piece | undefined = pieces.find((p) => String(p.id) === String(pieceId));
+                const pieceObj: Piece | undefined = pieces?.find((p) => String(p.id) === String(pieceId));
                 const requirements: VoiceRequirement[] = pieceObj?.voice_requirements || [];
                 const safeCastings = pieceCastings || [];
                 
@@ -135,7 +128,7 @@ export default function ProgramWidget({ project }: ProgramWidgetProps): React.JS
             )}
             </ul>
             
-            <div className="mt-auto border-t border-stone-100 pt-3 text-center">
+            <div className="mt-auto border-t border-stone-100 pt-3 text-center flex-shrink-0">
                 {totalConcertDurationSeconds > 0 ? (
                     <span className="inline-flex items-center gap-1.5 text-[9px] font-bold antialiased uppercase tracking-widest text-[#002395] bg-blue-50 px-3 py-1.5 rounded-md border border-blue-100">
                         <Music size={12} aria-hidden="true" /> {formatTotalDuration(totalConcertDurationSeconds)}

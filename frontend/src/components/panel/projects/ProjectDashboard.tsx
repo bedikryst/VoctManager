@@ -2,9 +2,10 @@
  * @file ProjectDashboard.tsx
  * @description Master Controller and State Provider for the Event & Production Management module.
  * @architecture
- * ENTERPRISE UPGRADE 2026: "God Fetch" Eliminated. 
- * Global Context now ONLY supplies lightweight dictionaries (Artists, Pieces) with Infinity Cache.
- * Heavy relational data is deferred strictly to isolated child queries.
+ * ENTERPRISE 2026: Implements the "Scoped Context Pattern". 
+ * The global provider supplies heavily memoized, Infinity-cached dictionaries (Artists, Pieces).
+ * Child components (ProjectCards) consume this context and override specific relational arrays 
+ * via local providers. Structural sharing and strict dependency arrays prevent cascading re-renders.
  * @module project/ProjectDashboard
  * @author Krystian Bugalski
  */
@@ -18,8 +19,8 @@ import { Plus, Briefcase, Layers } from 'lucide-react';
 import api from '../../../utils/api';
 
 // Child Components
-import ProjectCard from './ProjectCard';
-import ProjectEditorPanel from './ProjectEditorPanel';
+import ProjectCard from './ProjectCard/ProjectCard';
+import ProjectEditorPanel from './ProjectEditorPanel/ProjectEditorPanel';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 
 // Type Definitions
@@ -29,23 +30,24 @@ import type {
 } from '../../../types';
 
 export interface IProjectDataContext {
-  // Puste tablice zostawione celowo dla kompatybilności wstecznej (dla Widgetów)
+  // Empty arrays maintained for architectural backward compatibility in nested Widgets
   rehearsals: Rehearsal[];
   participations: Participation[];
   crewAssignments: CrewAssignment[];
   pieceCastings: PieceCasting[];
   
-  // Słowniki (Zawsze dostępne w RAM)
+  // High-level global dictionaries (RAM persistent)
   artists: Artist[];
   crew: Collaborator[];
   pieces: Piece[];
   
   openPanel: (project?: Project | null, tab?: string) => void;
   handleDelete: (id: string) => void;
-  // USUNIĘTO: fetchGlobal (nie jest już potrzebne w architekturze React Query)
 }
 
 export const ProjectDataContext = createContext<IProjectDataContext | null>(null);
+
+// Purely memoized component to prevent re-renders unless explicitly instructed
 const MemoizedProjectCard = React.memo(ProjectCard);
 
 // --- Static Configuration & Styles ---
@@ -73,7 +75,7 @@ export default function ProjectDashboard(): React.JSX.Element {
   useEffect(() => { editingProjectRef.current = editingProject; }, [editingProject]);
 
   // ==========================================
-  // ENTERPRISE UPGRADE: Dictionary-Only Fetching
+  // ENTERPRISE: Dictionary-Only Fetching
   // ==========================================
   const results = useQueries({
     queries: [
@@ -88,13 +90,20 @@ export default function ProjectDashboard(): React.JSX.Element {
   const isLoading = results.some((query) => query.isLoading);
   const isError = results.some((query) => query.isError);
 
+  // OPTIMIZATION: Extract data references to prevent useQueries array ref mutation from breaking memoization
+  const projectsData = results[0].data;
+  const piecesData = results[1].data;
+  const voiceLinesData = results[2].data;
+  const artistsData = results[3].data;
+  const crewData = results[4].data;
+
   const data = useMemo(() => ({
-    projects: Array.isArray(results[0].data) ? results[0].data : [],
-    pieces: Array.isArray(results[1].data) ? results[1].data : [],
-    voiceLines: Array.isArray(results[2].data) ? results[2].data : [],
-    artists: Array.isArray(results[3].data) ? results[3].data : [],
-    crew: Array.isArray(results[4].data) ? results[4].data : [],
-  }), [results]);
+    projects: Array.isArray(projectsData) ? projectsData : [],
+    pieces: Array.isArray(piecesData) ? piecesData : [],
+    voiceLines: Array.isArray(voiceLinesData) ? voiceLinesData : [],
+    artists: Array.isArray(artistsData) ? artistsData : [],
+    crew: Array.isArray(crewData) ? crewData : [],
+  }), [projectsData, piecesData, voiceLinesData, artistsData, crewData]);
 
   useEffect(() => {
     if (isError) {
@@ -102,6 +111,7 @@ export default function ProjectDashboard(): React.JSX.Element {
     }
   }, [isError]);
 
+  // UI side-effect logic for modals/panels
   useEffect(() => {
       document.body.style.overflow = isPanelOpen || projectToDelete ? 'hidden' : '';
       return () => { document.body.style.overflow = ''; };
@@ -128,8 +138,6 @@ export default function ProjectDashboard(): React.JSX.Element {
     const toastId = toast.loading("Usuwanie projektu...");
     try {
       await api.delete(`/api/projects/${projectToDelete}/`);
-      
-      // ZAMIAST fetchGlobal() odświeżamy bezpośrednio przez queryClient:
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       
       toast.success("Projekt usunięty pomyślnie", { id: toastId });
@@ -143,7 +151,7 @@ export default function ProjectDashboard(): React.JSX.Element {
   }, [projectToDelete, queryClient, closePanel]);
 
   // ==========================================
-  // CONTEXT PROVIDER (God Fetch Removed)
+  // CONTEXT PROVIDER
   // ==========================================
   const contextValue = useMemo<IProjectDataContext>(() => ({
     rehearsals: [], 
@@ -155,7 +163,7 @@ export default function ProjectDashboard(): React.JSX.Element {
     crew: data.crew, 
     openPanel, 
     handleDelete
-  }), [data, openPanel, handleDelete]);
+  }), [data.pieces, data.artists, data.crew, openPanel, handleDelete]);
 
   const filteredProjects = useMemo<Project[]>(() => {
     if (!data.projects) return [];

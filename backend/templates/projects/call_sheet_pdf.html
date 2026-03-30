@@ -74,7 +74,15 @@
             </div>
             <div class="meta-item">
                 <span class="meta-label">Ubiór (Dress Code)</span>
-                <span class="meta-value">{{ project.dress_code|default:"Standardowy koncertowy" }}</span>
+                <span class="meta-value">
+                    {% if project.dress_code_female or project.dress_code_male %}
+                        {% if project.dress_code_female %}Panie: {{ project.dress_code_female }}{% endif %}
+                        {% if project.dress_code_female and project.dress_code_male %}<br>{% endif %}
+                        {% if project.dress_code_male %}Panowie: {{ project.dress_code_male }}{% endif %}
+                    {% else %}
+                        Standardowy koncertowy
+                    {% endif %}
+                </span>
             </div>
         </div>
     </div>

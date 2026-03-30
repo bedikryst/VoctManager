@@ -68,8 +68,8 @@ class ParticipationAdmin(admin.ModelAdmin):
 @admin.register(ProjectPieceCasting)
 class ProjectPieceCastingAdmin(admin.ModelAdmin):
     """Admin view for granular micro-casting (divisi) adjustments."""
-    list_display = ('participation', 'piece', 'voice_line', 'role')
-    list_filter = ('role', 'piece', 'participation__project')
+    list_display = ('participation', 'piece', 'voice_line')
+    list_filter = ('piece', 'participation__project')
     search_fields = ('participation__artist__last_name', 'piece__title')
 
 
