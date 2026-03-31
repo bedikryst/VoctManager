@@ -5,6 +5,7 @@
  * ENTERPRISE 2026: Implements aggressive input memoization to prevent parent-level 
  * re-renders during keystrokes. Features "Dirty State Tracking" with a Floating 
  * Action Bar (FAB) to defer API syncing only to mutated forms, neutralizing redundant saves.
+ * BUGFIX: Implemented `queryKeys` factory for global cache synchronization.
  * @module project/ProjectEditorPanel/tabs/DetailsTab
  * @author Krystian Bugalski
  */
@@ -12,10 +13,11 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, CheckCircle2, Clock, Plus, Trash2, ListOrdered, Briefcase, PlayCircle, Save } from 'lucide-react';
+import { Loader2, Clock, Plus, Trash2, ListOrdered, Briefcase, PlayCircle, Save } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import api from '../../../../../utils/api';
+import { queryKeys } from '../../../../../utils/queryKeys';
 import type { Project, RunSheetItem } from '../../../../../types';
 
 interface DetailsTabProps {
@@ -49,7 +51,6 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
-  // --- Initialization Baseline (For Dirty State Tracking) ---
   const initialFormData = useMemo<ProjectFormData>(() => ({
     title: project?.title || '', 
     date_time: project?.date_time ? toLocalISOString(project.date_time) : '',
@@ -63,11 +64,9 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
 
   const initialRunSheet = useMemo<RunSheetItem[]>(() => project?.run_sheet || [], [project]);
 
-  // --- Mutable State ---
   const [formData, setFormData] = useState<ProjectFormData>(initialFormData);
   const [runSheet, setRunSheet] = useState<RunSheetItem[]>(initialRunSheet);
 
-  // Reset form when project changes (e.g. switching tabs or clicking a different project)
   useEffect(() => {
     setFormData(initialFormData);
     setRunSheet(initialRunSheet);
@@ -77,14 +76,12 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
     return [...runSheet].sort((a, b) => a.time.localeCompare(b.time));
   }, [runSheet]);
 
-  // --- Dirty State Calculation ---
   const isDirty = useMemo(() => {
     const isFormChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
     const isRunSheetChanged = JSON.stringify(sortedRunSheet) !== JSON.stringify(initialRunSheet);
     return isFormChanged || isRunSheetChanged;
   }, [formData, initialFormData, sortedRunSheet, initialRunSheet]);
 
-  // --- Handlers ---
   const handleAddRunSheetItem = useCallback((): void => {
     setRunSheet((prev) => [
       ...prev, 
@@ -104,7 +101,7 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    if (!isDirty) return; // Safety lock
+    if (!isDirty) return;
 
     setIsSubmitting(true);
     const actionLabel = project?.id ? "Aktualizowanie projektu..." : "Tworzenie projektu...";
@@ -133,9 +130,8 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
         toast.success("Utworzono nowy projekt z harmonogramem", { id: toastId });
       }
       
-      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       
-      // Update baseline after successful save so the bar disappears
       onSuccess(res.data);
     } catch (err: any) {
       const errorMessage = err.response?.data 
@@ -153,7 +149,6 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
     <>
       <form id="details-form" onSubmit={handleSubmit} className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl space-y-8 p-6 md:p-10 max-w-4xl mx-auto mb-24">
         
-        {/* 1. Basic Information Section */}
         <div className="space-y-6">
             <div className="flex items-center gap-2.5 border-b border-stone-200/60 pb-3">
                 <Briefcase size={16} className="text-[#002395]" aria-hidden="true" />
@@ -261,7 +256,6 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
             </div>
         </div>
 
-        {/* 2. Run-sheet Builder Section */}
         <div className="space-y-5 pt-6 border-t border-stone-200/60">
             <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
                 <div className="flex items-center gap-2.5">
@@ -339,8 +333,6 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
         </div>
       </form>
 
-      {/* ENTERPRISE FLOATING ACTION BAR (FAB) */}
-      {/* Appears smoothly only when state is dirty */}
       <AnimatePresence>
         {isDirty && (
           <motion.div 
@@ -359,7 +351,6 @@ export default function DetailsTab({ project, onSuccess }: DetailsTabProps): Rea
               </span>
             </div>
             
-            {/* Must trigger the form submission explicitly via form="details-form" attribute */}
             <button 
               form="details-form"
               type="submit" 

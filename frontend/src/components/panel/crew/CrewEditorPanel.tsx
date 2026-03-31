@@ -5,6 +5,7 @@
  * - Implements "Dirty State Tracking" with ESC key listener to prevent accidental data loss.
  * - Extracts `initialSearchContext` to pre-fill inputs intelligently based on empty state queries.
  * - Uses React Portal to break out of layout Stacking Contexts.
+ * BUGFIX: Implemented `queryKeys` factory for global cache synchronization.
  * @module admin/crew/CrewEditorPanel
  * @author Krystian Bugalski
  */
@@ -17,6 +18,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
 import api from '../../../utils/api';
+import { queryKeys } from '../../../utils/queryKeys';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import type { Collaborator } from '../../../types';
 
@@ -127,7 +129,8 @@ export default function CrewEditorPanel({
         toast.success("Dodano nową osobę do bazy.", { id: toastId });
       }
       
-      await queryClient.invalidateQueries({ queryKey: ['collaborators'] }); 
+      // ENTERPRISE FIX: Używamy nowej fabryki kluczy do synchronizacji cache'u
+      await queryClient.invalidateQueries({ queryKey: queryKeys.collaborators.all }); 
       setFormData(formData); // Clear dirty state technically
       onClose(); 
     } catch (err) {

@@ -2,9 +2,8 @@
  * @file ArtistDashboard.tsx
  * @description Highly personalized Assistant Dashboard for Artists.
  * @architecture Enterprise 2026
- * BUGFIX: Safely extracts data to bypass DRF pagination. Event thresholds set to -2h.
- * UX UPGRADE: "Hyper-Modern" aesthetic featuring OLED-black spotlight cards, 
- * ambient glows, and interactive Bento Grid navigation.
+ * BUGFIX: Restored strict API query parameters (?artist=id) to prevent 
+ * catastrophic over-fetching or data leaks for privileged accounts.
  * @module core/ArtistDashboard
  * @author Krystian Bugalski
  */
@@ -22,6 +21,7 @@ import {
 import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
 import type { Project, Rehearsal, Participation } from '../../../types';
+import { queryKeys } from '../../../utils/queryKeys';
 
 const extractData = (payload: any): any[] => {
     if (!payload) return [];
@@ -43,11 +43,12 @@ export default function ArtistDashboard(): React.JSX.Element {
     const { user } = useAuth();
     const artistId = user?.id;
 
+    // ENTERPRISE FIX: Przywrócono sztywne parametry zapytań ?artist=
     const results = useQueries({
         queries: [
-            { queryKey: ['myParticipations', artistId], queryFn: async () => (await api.get('/api/participations/')).data, enabled: !!artistId },
-            { queryKey: ['myRehearsals', artistId], queryFn: async () => (await api.get('/api/rehearsals/')).data, enabled: !!artistId },
-            { queryKey: ['activeProjects', artistId], queryFn: async () => (await api.get('/api/projects/')).data, enabled: !!artistId }
+            { queryKey: queryKeys.participations.byArtist(artistId!), queryFn: async () => (await api.get(`/api/participations/?artist=${artistId}`)).data, enabled: !!artistId },
+            { queryKey: queryKeys.rehearsals.byArtist(artistId!), queryFn: async () => (await api.get(`/api/rehearsals/?invited_participations__artist=${artistId}`)).data, enabled: !!artistId },
+            { queryKey: queryKeys.projects.active, queryFn: async () => (await api.get('/api/projects/?status=ACTIVE')).data }
         ]
     });
 
@@ -59,12 +60,7 @@ export default function ArtistDashboard(): React.JSX.Element {
     const upNextEvent = useMemo(() => {
         const now = new Date();
         const myProjectIds = participations.map(p => String(p.project));
-        const myProjects = projects.filter(
-            (p) =>
-                myProjectIds.includes(String(p.id)) &&
-                p.status !== 'DONE' &&
-                p.status !== 'CANC'
-        );
+        const myProjects = projects.filter(p => myProjectIds.includes(String(p.id)));
 
         const allEvents = [
             ...rehearsals.map(r => ({ 

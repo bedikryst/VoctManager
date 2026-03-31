@@ -1,9 +1,10 @@
 /**
  * @file ProjectCard.tsx
  * @description Main orchestrator component for the expandable Project Card. 
- * @architecture
+ * @architecture Enterprise 2026
  * Implements the "Container/Presenter" pattern with Enterprise Bento-Box Layout.
  * Strictly divides UX into "Artistic" (Conductor focus) and "Production" (Manager focus) zones.
+ * BUGFIX: Integrated `queryKeys` factory for safe cache invalidation and isolated data fetching.
  * @module project/ProjectCard
  * @author Krystian Bugalski
  */
@@ -15,6 +16,7 @@ import { toast } from 'sonner';
 import { Briefcase, Music, Wrench } from 'lucide-react';
 
 import api from '../../../../utils/api';
+import { queryKeys } from '../../../../utils/queryKeys';
 import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
 import type { Project } from '../../../../types';
 
@@ -46,12 +48,13 @@ export default function ProjectCard({ project, index }: ProjectCardProps): React
   const shouldFetch = isExpanded || index < 3;
   const isDone = project.status === 'DONE';
 
+  // ENTERPRISE FIX: Bezpieczne pobieranie danych sub-komponentów przez fabrykę kluczy
   const results = useQueries({
     queries: [
-      { queryKey: ['rehearsals', project.id], queryFn: async () => (await api.get(`/api/rehearsals/?project=${project.id}`)).data, staleTime: 300000, enabled: shouldFetch },
-      { queryKey: ['participations', project.id], queryFn: async () => (await api.get(`/api/participations/?project=${project.id}`)).data, staleTime: 300000, enabled: shouldFetch },
-      { queryKey: ['crewAssignments', project.id], queryFn: async () => (await api.get(`/api/crew-assignments/?project=${project.id}`)).data, staleTime: 300000, enabled: shouldFetch },
-      { queryKey: ['pieceCastings', project.id], queryFn: async () => (await api.get(`/api/piece-castings/?participation__project=${project.id}`)).data, staleTime: 1800000, enabled: shouldFetch }
+      { queryKey: queryKeys.rehearsals.byProject(project.id), queryFn: async () => (await api.get(`/api/rehearsals/?project=${project.id}`)).data, staleTime: 300000, enabled: shouldFetch },
+      { queryKey: queryKeys.participations.byProject(project.id), queryFn: async () => (await api.get(`/api/participations/?project=${project.id}`)).data, staleTime: 300000, enabled: shouldFetch },
+      { queryKey: queryKeys.crewAssignments.byProject(project.id), queryFn: async () => (await api.get(`/api/crew-assignments/?project=${project.id}`)).data, staleTime: 300000, enabled: shouldFetch },
+      { queryKey: queryKeys.pieceCastings.byProject(project.id), queryFn: async () => (await api.get(`/api/piece-castings/?participation__project=${project.id}`)).data, staleTime: 1800000, enabled: shouldFetch }
     ]
   });
 
@@ -69,7 +72,10 @@ export default function ProjectCard({ project, index }: ProjectCardProps): React
     const toastId = toast.loading("Aktualizowanie statusu...");
     try {
       await api.patch(`/api/projects/${project.id}/`, { status: newStatus });
-      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      
+      // ENTERPRISE FIX: Bezpieczna inwalidacja z fabryki kluczy
+      await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      
       toast.success(`Projekt oznaczony jako ${newStatus === 'DONE' ? 'Zrealizowany' : 'W przygotowaniu'}`, { id: toastId });
     } catch (err) {
       toast.error("Błąd serwera", { id: toastId, description: "Nie udało się zmienić statusu." });

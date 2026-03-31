@@ -6,6 +6,7 @@
  * The global provider supplies heavily memoized, Infinity-cached dictionaries (Artists, Pieces).
  * Child components (ProjectCards) consume this context and override specific relational arrays 
  * via local providers. Structural sharing and strict dependency arrays prevent cascading re-renders.
+ * BUGFIX: Fixed imports and replaced magic strings with unified `queryKeys`.
  * @module project/ProjectDashboard
  * @author Krystian Bugalski
  */
@@ -17,6 +18,7 @@ import { toast } from 'sonner';
 import { Plus, Briefcase, Layers } from 'lucide-react';
 
 import api from '../../../utils/api';
+import { queryKeys } from '../../../utils/queryKeys';
 
 // Child Components
 import ProjectCard from './ProjectCard/ProjectCard';
@@ -26,7 +28,8 @@ import ConfirmModal from '../../../components/ui/ConfirmModal';
 // Type Definitions
 import type { 
   Project, Rehearsal, Piece, Participation, 
-  CrewAssignment, Artist, Collaborator, PieceCasting 
+  CrewAssignment, Artist, Collaborator, PieceCasting,
+  VoiceLineOption, 
 } from '../../../types';
 
 export interface IProjectDataContext {
@@ -40,6 +43,7 @@ export interface IProjectDataContext {
   artists: Artist[];
   crew: Collaborator[];
   pieces: Piece[];
+  voiceLines?: VoiceLineOption[]; 
   
   openPanel: (project?: Project | null, tab?: string) => void;
   handleDelete: (id: string) => void;
@@ -54,7 +58,7 @@ const MemoizedProjectCard = React.memo(ProjectCard);
 type FilterStatus = 'ACTIVE' | 'DONE' | 'ALL';
 interface FilterOption { id: FilterStatus; label: string; }
 
-const STYLE_GLASS_CARD = "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl";
+const STYLE_GLASS_CARD = "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-[2rem]";
 const FILTER_OPTIONS: FilterOption[] = [
   { id: 'ACTIVE', label: 'W przygotowaniu' }, 
   { id: 'DONE', label: 'Archiwum' }, 
@@ -75,22 +79,21 @@ export default function ProjectDashboard(): React.JSX.Element {
   useEffect(() => { editingProjectRef.current = editingProject; }, [editingProject]);
 
   // ==========================================
-  // ENTERPRISE: Dictionary-Only Fetching
+  // ENTERPRISE: Dictionary-Only Fetching (Safely Synced)
   // ==========================================
   const results = useQueries({
     queries: [
-      { queryKey: ['projects'], queryFn: async () => (await api.get('/api/projects/')).data },
-      { queryKey: ['pieces'], queryFn: async () => (await api.get('/api/pieces/')).data, staleTime: Infinity },
-      { queryKey: ['voiceLines'], queryFn: async () => (await api.get('/api/options/voice-lines/')).data, staleTime: Infinity },
-      { queryKey: ['artists'], queryFn: async () => (await api.get('/api/artists/')).data, staleTime: Infinity },
-      { queryKey: ['collaborators'], queryFn: async () => (await api.get('/api/collaborators/')).data, staleTime: Infinity },
+      { queryKey: queryKeys.projects.all, queryFn: async () => (await api.get('/api/projects/')).data },
+      { queryKey: queryKeys.pieces.all, queryFn: async () => (await api.get('/api/pieces/')).data, staleTime: Infinity },
+      { queryKey: queryKeys.options.voiceLines, queryFn: async () => (await api.get('/api/options/voice-lines/')).data, staleTime: Infinity },
+      { queryKey: queryKeys.artists.all, queryFn: async () => (await api.get('/api/artists/')).data, staleTime: Infinity },
+      { queryKey: queryKeys.collaborators.all, queryFn: async () => (await api.get('/api/collaborators/')).data, staleTime: Infinity },
     ]
   });
 
   const isLoading = results.some((query) => query.isLoading);
   const isError = results.some((query) => query.isError);
 
-  // OPTIMIZATION: Extract data references to prevent useQueries array ref mutation from breaking memoization
   const projectsData = results[0].data;
   const piecesData = results[1].data;
   const voiceLinesData = results[2].data;
@@ -98,11 +101,11 @@ export default function ProjectDashboard(): React.JSX.Element {
   const crewData = results[4].data;
 
   const data = useMemo(() => ({
-    projects: Array.isArray(projectsData) ? projectsData : [],
-    pieces: Array.isArray(piecesData) ? piecesData : [],
-    voiceLines: Array.isArray(voiceLinesData) ? voiceLinesData : [],
-    artists: Array.isArray(artistsData) ? artistsData : [],
-    crew: Array.isArray(crewData) ? crewData : [],
+    projects: Array.isArray(projectsData) ? projectsData : (projectsData?.results ? projectsData.results : []),
+    pieces: Array.isArray(piecesData) ? piecesData : (piecesData?.results ? piecesData.results : []),
+    voiceLines: Array.isArray(voiceLinesData) ? voiceLinesData : (voiceLinesData?.results ? voiceLinesData.results : []),
+    artists: Array.isArray(artistsData) ? artistsData : (artistsData?.results ? artistsData.results : []),
+    crew: Array.isArray(crewData) ? crewData : (crewData?.results ? crewData.results : []),
   }), [projectsData, piecesData, voiceLinesData, artistsData, crewData]);
 
   useEffect(() => {
@@ -111,7 +114,6 @@ export default function ProjectDashboard(): React.JSX.Element {
     }
   }, [isError]);
 
-  // UI side-effect logic for modals/panels
   useEffect(() => {
       document.body.style.overflow = isPanelOpen || projectToDelete ? 'hidden' : '';
       return () => { document.body.style.overflow = ''; };
@@ -138,7 +140,7 @@ export default function ProjectDashboard(): React.JSX.Element {
     const toastId = toast.loading("Usuwanie projektu...");
     try {
       await api.delete(`/api/projects/${projectToDelete}/`);
-      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       
       toast.success("Projekt usunięty pomyślnie", { id: toastId });
       if (editingProjectRef.current?.id === projectToDelete) closePanel();
@@ -160,10 +162,11 @@ export default function ProjectDashboard(): React.JSX.Element {
     pieceCastings: [], 
     pieces: data.pieces, 
     artists: data.artists, 
-    crew: data.crew, 
+    crew: data.crew,
+    voiceLines: data.voiceLines,
     openPanel, 
     handleDelete
-  }), [data.pieces, data.artists, data.crew, openPanel, handleDelete]);
+  }), [data.pieces, data.artists, data.crew, data.voiceLines, openPanel, handleDelete]);
 
   const filteredProjects = useMemo<Project[]>(() => {
     if (!data.projects) return [];
@@ -172,14 +175,15 @@ export default function ProjectDashboard(): React.JSX.Element {
       if (listFilter === 'ACTIVE') return status !== 'DONE' && status !== 'CANC';
       if (listFilter === 'DONE') return status === 'DONE' || status === 'CANC';
       return true;
-    }).sort((a: Project, b: Project) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
+    }).sort((a: Project, b: Project) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime());
   }, [data.projects, listFilter]);
 
   return (
     <ProjectDataContext.Provider value={contextValue}>
-      <div className="space-y-6 animate-fade-in relative cursor-default">
+      <div className="space-y-6 animate-fade-in relative cursor-default pb-24 max-w-6xl mx-auto px-4 sm:px-0">
+        
         {/* Header Section */}
-        <header className="relative pt-2 mb-8">
+        <header className="relative pt-6 mb-10">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
                     <div>
@@ -189,13 +193,13 @@ export default function ProjectDashboard(): React.JSX.Element {
                                 Centrum Dowodzenia
                             </p>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-medium text-stone-900 leading-tight tracking-tight" style={{ fontFamily: "'Cormorant', serif" }}>
+                        <h1 className="text-4xl md:text-5xl font-medium text-stone-900 leading-tight tracking-tight" style={{ fontFamily: "'Cormorant', serif" }}>
                             Wydarzenia i <span className="italic text-[#002395]">Produkcja</span>.
                         </h1>
                     </div>
                     <button 
                       onClick={() => openPanel(null)} 
-                      className="flex items-center gap-2 bg-[#002395] hover:bg-[#001766] text-white text-[10px] uppercase tracking-widest font-bold antialiased py-3 px-6 rounded-xl transition-all shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)] hover:-translate-y-0.5 active:scale-95"
+                      className="flex items-center gap-2 bg-[#002395] hover:bg-[#001766] text-white text-[10px] uppercase tracking-widest font-bold antialiased py-3.5 px-8 rounded-xl transition-all shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)] hover:-translate-y-0.5 active:scale-95"
                     >
                         <Plus size={16} aria-hidden="true" /> Nowy Projekt
                     </button>
@@ -204,7 +208,7 @@ export default function ProjectDashboard(): React.JSX.Element {
         </header>
 
         {/* Filters Section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div className="inline-flex items-center p-1.5 bg-white/60 backdrop-blur-xl border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-xl overflow-x-auto max-w-full scrollbar-hide">
               {FILTER_OPTIONS.map((filter) => (
                 <button 
@@ -222,7 +226,7 @@ export default function ProjectDashboard(): React.JSX.Element {
         <div className="grid grid-cols-1 gap-6">
           {isLoading ? (
             <div className="animate-pulse space-y-4">
-              {[1, 2].map((i) => <div key={i} className="h-32 bg-stone-100/50 rounded-2xl w-full border border-white/50"></div>)}
+              {[1, 2].map((i) => <div key={i} className="h-48 bg-stone-100/50 rounded-[2rem] w-full border border-white/50"></div>)}
             </div>
           ) : filteredProjects.length > 0 ? (
             filteredProjects.map((project, idx) => (
@@ -232,11 +236,12 @@ export default function ProjectDashboard(): React.JSX.Element {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${STYLE_GLASS_CARD} p-16 flex flex-col items-center justify-center text-center`}>
               <Layers size={48} className="mb-4 text-stone-300 opacity-50" aria-hidden="true" />
               <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">Brak projektów w tym widoku</span>
-              <span className="text-xs text-stone-400 max-w-sm">Rozpocznij planowanie nowego wydarzenia, klikając przycisk powyżej.</span>
+              <span className="text-xs text-stone-400 max-w-sm">Rozpocznij planowanie nowego wydarzenia, klikając przycisk "Nowy Projekt" powyżej.</span>
             </motion.div>
           )}
         </div>
 
+        {/* EXTERNAL PANELS */}
         <ProjectEditorPanel 
           isOpen={isPanelOpen}
           onClose={closePanel}

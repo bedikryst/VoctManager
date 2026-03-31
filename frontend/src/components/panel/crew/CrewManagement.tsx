@@ -4,6 +4,7 @@
  * @architecture Feature-Sliced Design (Enterprise 2026)
  * DESIGN SYNC: Converted to a `max-w-7xl` 4-column layout to mirror the Artist Management interface.
  * Delegates rendering to memoized `CrewCard` to optimize memory allocation and DOM re-renders.
+ * BUGFIX: Implemented `queryKeys` factory for global cache synchronization.
  * @module admin/crew/CrewManagement
  * @author Krystian Bugalski
  */
@@ -15,6 +16,7 @@ import { toast } from 'sonner';
 import { Plus, Search, Filter, Wrench } from 'lucide-react';
 
 import api from '../../../utils/api';
+import { queryKeys } from '../../../utils/queryKeys';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import CrewEditorPanel, { SPECIALTY_CHOICES } from './CrewEditorPanel';
 import { CrewCard } from './CrewCard';
@@ -42,8 +44,9 @@ export default function CrewManagement(): React.JSX.Element {
   const [personToDelete, setPersonToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  // ENTERPRISE FIX: Safe Synced Query Factory
   const { data: rawCrew, isLoading, isError } = useQuery({
-    queryKey: ['collaborators'],
+    queryKey: queryKeys.collaborators.all,
     queryFn: async () => (await api.get('/api/collaborators/')).data
   });
 
@@ -87,7 +90,10 @@ export default function CrewManagement(): React.JSX.Element {
 
     try {
       await api.delete(`/api/collaborators/${personToDelete}/`);
-      await queryClient.invalidateQueries({ queryKey: ['collaborators'] });
+      
+      // ENTERPRISE FIX: Invalidating with global query key
+      await queryClient.invalidateQueries({ queryKey: queryKeys.collaborators.all });
+      
       toast.success("Osoba została usunięta z bazy.", { id: toastId });
     } catch (err) { 
       toast.error("Nie można usunąć tej osoby", { 

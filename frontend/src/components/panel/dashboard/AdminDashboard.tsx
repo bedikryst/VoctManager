@@ -3,6 +3,7 @@
  * @description Mission Control Dashboard for Choir Managers & Conductors.
  * @architecture Enterprise 2026
  * BUGFIX: Extract data safeties to bypass DRF pagination.
+ * BUGFIX: Replaced magic strings with unified `queryKeys` and `archiveQueryKeys` for global cache sync.
  * NEW FEATURE: Global "Next Rehearsal" alert added to inform the conductor 
  * of immediate logistics and aggregated absence counts.
  * @module core/AdminDashboard
@@ -21,6 +22,7 @@ import {
 
 import api from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
+import { queryKeys } from '../../../utils/queryKeys';
 import type { Project, Artist, Rehearsal, ProgramItem, Piece } from '../../../types';
 
 const extractData = (payload: any): any[] => {
@@ -51,13 +53,14 @@ const itemVariants: Variants = { hidden: { opacity: 0, y: 20 }, show: { opacity:
 export default function AdminDashboard(): React.JSX.Element {
     const { user } = useAuth();
 
+    // ENTERPRISE FIX: Safe Synced Query Factory
     const results = useQueries({
         queries: [
-            { queryKey: ['dash-projects'], queryFn: async () => (await api.get('/api/projects/')).data },
-            { queryKey: ['dash-rehearsals'], queryFn: async () => (await api.get('/api/rehearsals/')).data },
-            { queryKey: ['dash-artists'], queryFn: async () => (await api.get('/api/artists/')).data },
-            { queryKey: ['dash-program'], queryFn: async () => (await api.get('/api/program-items/')).data },
-            { queryKey: ['dash-pieces'], queryFn: async () => (await api.get('/api/pieces/')).data } 
+            { queryKey: queryKeys.projects.all, queryFn: async () => (await api.get('/api/projects/')).data },
+            { queryKey: queryKeys.rehearsals.all, queryFn: async () => (await api.get('/api/rehearsals/')).data },
+            { queryKey: queryKeys.artists.all, queryFn: async () => (await api.get('/api/artists/')).data },
+            { queryKey: queryKeys.program.all, queryFn: async () => (await api.get('/api/program-items/')).data },
+            { queryKey: queryKeys.pieces.all, queryFn: async () => (await api.get('/api/pieces/')).data } 
         ]
     });
 

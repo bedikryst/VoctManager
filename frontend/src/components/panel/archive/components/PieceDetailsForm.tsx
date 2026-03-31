@@ -4,6 +4,7 @@
  * @architecture
  * Implements "Dirty State Tracking" communicating up to the parent panel to prevent data loss.
  * ENTERPRISE UPGRADE: Uses "Nested Writes" via JSON stringification to eliminate N+1 query flooding.
+ * BUGFIX: Fully migrated to the global `queryKeys` factory. Eliminated redundant cross-module invalidations.
  * @module archive/PieceDetailsForm
  * @author Krystian Bugalski
  */
@@ -16,7 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import api from '../../../../utils/api';
 import type { Piece, Composer, VoiceLineOption } from '../../../../types';
-import { archiveQueryKeys } from '../queryKeys';
+import { queryKeys } from '../../../../utils/queryKeys';
 
 export const EPOCHS: Array<{value: string, label: string}> = [
   { value: 'MED', label: 'Średniowiecze' }, { value: 'REN', label: 'Renesans' },
@@ -109,7 +110,6 @@ export default function PieceDetailsForm({
 
   const [formData, setFormData] = useState<PieceFormData>(initialFormData);
   
-  // Wymagania nie potrzebują już flag 'isNew' ani 'isModified', bo robimy twardy zapis całości
   const initialRequirements = useMemo(() => 
     piece?.voice_requirements?.map(r => ({ voice_line: r.voice_line, quantity: r.quantity, voice_line_display: (r as any).voice_line_display })) || [],
   [piece]);
@@ -202,10 +202,10 @@ export default function PieceDetailsForm({
             };
             const compRes = await api.post('/api/composers/', compPayload);
             finalComposerId = compRes.data.id;
-            await Promise.all([
-              queryClient.invalidateQueries({ queryKey: archiveQueryKeys.composers }),
-              queryClient.invalidateQueries({ queryKey: archiveQueryKeys.sharedComposers }),
-            ]);
+            
+            // ENTERPRISE FIX: Unified cache invalidation
+            await queryClient.invalidateQueries({ queryKey: queryKeys.composers.all });
+            
             toast.success("Zapisano kompozytora", { id: compToastId });
         } catch (err) {
             toast.error("Błąd tworzenia kompozytora", { id: compToastId });
@@ -238,8 +238,6 @@ export default function PieceDetailsForm({
     // ==========================================
     // ENTERPRISE UPGRADE: Nested Writes (Brak N+1)
     // ==========================================
-    // Pakujemy wymogi wokalne do stringa JSON i wysyłamy od razu!
-    // Formatujemy payload dokładnie pod to, co przyjmie nasz nowy PieceSerializer
     const requirementsPayload = requirements.map(req => ({
         voice_line: req.voice_line,
         quantity: req.quantity
@@ -251,10 +249,9 @@ export default function PieceDetailsForm({
         ? await api.patch(`/api/pieces/${piece.id}/`, payload, { headers: { 'Content-Type': 'multipart/form-data' }})
         : await api.post('/api/pieces/', payload, { headers: { 'Content-Type': 'multipart/form-data' }});
     
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: archiveQueryKeys.pieces }),
-        queryClient.invalidateQueries({ queryKey: archiveQueryKeys.sharedPieces }),
-      ]);
+      // ENTERPRISE FIX: Unified cache invalidation for the entire application
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all });
+      
       toast.success(piece?.id ? 'Zaktualizowano dane utworu.' : 'Utwór dodany do archiwum!', { id: toastId });
       
       // Reset dirty status before closing

@@ -22,7 +22,7 @@ import ArchiveEditorPanel from './components/ArchiveEditorPanel';
 
 import type { Piece, Composer } from '../../../types';
 import { EPOCHS } from './components/PieceDetailsForm';
-import { archiveQueryKeys } from './queryKeys';
+import { queryKeys } from '../../../utils/queryKeys';
 
 const extractData = (payload: any): any[] => {
     if (!payload) return [];
@@ -58,9 +58,9 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   const results = useQueries({
     queries: [
-      { queryKey: archiveQueryKeys.pieces, queryFn: async () => (await api.get('/api/pieces/')).data },
-      { queryKey: archiveQueryKeys.composers, queryFn: async () => (await api.get('/api/composers/')).data },
-      { queryKey: archiveQueryKeys.voiceLines, queryFn: async () => (await api.get('/api/options/voice-lines/')).data }
+      { queryKey: queryKeys.pieces.all, queryFn: async () => (await api.get('/api/pieces/')).data },
+      { queryKey: queryKeys.composers.all, queryFn: async () => (await api.get('/api/composers/')).data },
+      { queryKey: queryKeys.options.voiceLines, queryFn: async () => (await api.get('/api/options/voice-lines/')).data }
     ]
   });
 
@@ -146,8 +146,7 @@ export default function ArchiveManagement(): React.JSX.Element {
     try {
       await api.delete(`/api/pieces/${pieceToDelete}/`);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: archiveQueryKeys.pieces }),
-        queryClient.invalidateQueries({ queryKey: archiveQueryKeys.sharedPieces }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all }),
       ]);
       if (editingPiece?.id === pieceToDelete) closePanel();
       toast.success("Utwór usunięty z bazy", { id: toastId });

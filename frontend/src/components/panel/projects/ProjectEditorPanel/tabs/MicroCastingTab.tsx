@@ -2,12 +2,10 @@
  * @file MicroCastingTab.tsx
  * @description Advanced Kanban Board for Divisi and Micro-casting orchestration.
  * @architecture
- * ENTERPRISE 2026: 
- * - Includes "Inline Note Editor" for specific divisi instructions (e.g., top/bottom splits).
- * - Isolated Drag Handles (`useDraggable` listeners scoped to Grip Icon) to allow inner-card interactivity.
- * - Pure @dnd-kit/core implementation (No legacy render props).
- * - Optimistic UI state mutations for high-performance drag-and-drop and note saving.
- * - Dynamic Heat-Map tracking on the setlist navigation track.
+ * Implements a @dnd-kit/core drag-and-drop interface with isolated drag handles.
+ * Utilizes optimistic UI mutations for high-performance state transitions and note saving.
+ * Features a dynamic Heat-Map navigation track for setlist overview.
+ * BUGFIX: Implemented "Wide Invalidation" strategy to sync project-level statuses and counters.
  * @module project/ProjectEditorPanel/tabs/MicroCastingTab
  * @author Krystian Bugalski
  */
@@ -26,6 +24,7 @@ import {
 } from 'lucide-react';
 
 import api from '../../../../../utils/api';
+import { queryKeys } from '../../../../../utils/queryKeys';
 import { getPrimaryReferenceRecording } from '../../../../../utils/referenceRecordings';
 import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
 import type { Participation, Artist, PieceCasting, VoiceLineOption, ProgramItem } from '../../../../../types';
@@ -37,7 +36,14 @@ interface MicroCastingTabProps {
 
 const STYLE_SOLID_CARD = "bg-white/95 border border-stone-200 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl";
 
-// --- Dnd-Kit Sub-Components ---
+const extractData = (payload: any): any[] => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (payload.results && Array.isArray(payload.results)) return payload.results;
+    return [];
+};
+
+// --- Draggable & Droppable Components ---
 
 function DraggableArtist({ 
   participationId, artist, isOverlay = false, casting, onUpdateNote 
@@ -150,32 +156,37 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
   if (!context) return null;
   const { artists, pieces } = context;
 
-  const { data: participations = [] } = useQuery<Participation[]>({
-    queryKey: ['participations', projectId],
+  // --- Data Synchronization ---
+  const { data: rawParticipations = [] } = useQuery({
+    queryKey: queryKeys.participations.byProject(projectId),
     queryFn: async () => {
       const res = await api.get(`/api/participations/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
+      return extractData(res.data);
     },
     staleTime: 60000
   });
+  const participations = extractData(rawParticipations) as Participation[];
 
-  const { data: program = [] } = useQuery<ProgramItem[]>({
-    queryKey: ['program', projectId],
+  const { data: rawProgram = [] } = useQuery({
+    queryKey: queryKeys.program.byProject(projectId),
     queryFn: async () => {
       const res = await api.get(`/api/program-items/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data.sort((a, b) => a.order - b.order) : [];
+      const extracted = extractData(res.data);
+      return extracted.sort((a: ProgramItem, b: ProgramItem) => a.order - b.order);
     },
     staleTime: 60000
   });
+  const program = extractData(rawProgram) as ProgramItem[];
 
-  const { data: pieceCastings = [] } = useQuery<PieceCasting[]>({
-    queryKey: ['pieceCastings', projectId],
+  const { data: rawPieceCastings = [] } = useQuery({
+    queryKey: queryKeys.pieceCastings.byProject(projectId),
     queryFn: async () => {
       const res = await api.get(`/api/piece-castings/?participation__project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
+      return extractData(res.data);
     },
     staleTime: 60000
   });
+  const pieceCastings = extractData(rawPieceCastings) as PieceCasting[];
 
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const [localCastings, setLocalCastings] = useState<PieceCasting[]>([]); 
@@ -251,7 +262,7 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
 
     try {
         await api.patch(`/api/piece-castings/${castingId}/`, { notes: newNote });
-        await queryClient.invalidateQueries({ queryKey: ['pieceCastings', projectId] });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.pieceCastings.all });
     } catch (err) {
         setLocalCastings(prevCastings);
         toast.error("Błąd zapisu", { description: "Nie udało się zaktualizować notatki." });
@@ -312,7 +323,14 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
           });
         }
       }
-      await queryClient.invalidateQueries({ queryKey: ['pieceCastings', projectId] });
+      
+      // ENTERPRISE FIX: Wide invalidation to sync Setlist and Project Stats
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.pieceCastings.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.program.all })
+      ]);
+      
     } catch (err) { 
       setLocalCastings(prevCastings);
       toast.error("Błąd synchronizacji", { description: "Nie udało się zaktualizować obsady." });
@@ -401,7 +419,6 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
               </span>
           </div>
 
-          {/* Dnd-Kit Droppable wrapper directly used */}
           <DroppableBucket id={voiceValue} isDeficit={targetQuantity !== null && assignedCount < targetQuantity} targetQuantity={targetQuantity}>
               {artistsInLine.length === 0 && (
                 <div className={`text-[9px] uppercase tracking-widest font-bold antialiased text-center mt-4 pointer-events-none ${targetQuantity !== null && assignedCount < targetQuantity ? 'text-red-400' : 'text-stone-300'}`}>
@@ -434,7 +451,7 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="space-y-6 max-w-6xl mx-auto">
         
-        {/* --- HEAT-MAP SETLIST NAVIGATION TRACK --- */}
+        {/* --- Setlist Navigation Track --- */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-stone-200/60">
           {program.map((item, idx) => {
             const pieceId = String(item.piece);
@@ -464,7 +481,7 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
 
         <div className={`${STYLE_SOLID_CARD} p-6 md:p-8`}>
           
-          {/* Metadata Banner */}
+          {/* --- Metadata Banner --- */}
           {currentPiece && (currentReferenceRecording || (currentPiece as any).voicing) && (
               <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-stone-50 border border-stone-200/80 rounded-xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
                   {(currentPiece as any).voicing && (
@@ -487,7 +504,7 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
 
           {renderHealthCheckBanner()}
 
-          {/* --- THE BENCH (UNASSIGNED ROSTER POOL) --- */}
+          {/* --- Unassigned Roster Pool --- */}
           <div className="mb-10">
             <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3 flex items-center gap-2 ml-1">
               Rezerwa Personalna
@@ -519,7 +536,7 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
             </div>
           </div>
 
-          {/* --- KANBAN BINS ROUTING --- */}
+          {/* --- Kanban Bins Rendering --- */}
           {isFreeMode ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                   {voiceGroups.map((group) => (
@@ -543,7 +560,7 @@ export default function MicroCastingTab({ projectId, voiceLines }: MicroCastingT
         </div>
       </div>
 
-      {/* --- DRAG OVERLAY --- */}
+      {/* --- Drag Overlay --- */}
       <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.18, 0.67, 0.38, 1)' }}>
         {activeDragId && artistMap.has(activeDragId) ? (
           <DraggableArtist 

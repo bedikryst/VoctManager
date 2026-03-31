@@ -28,6 +28,8 @@ import type {
     Participation, Composer, ProgramItem 
 } from '../../types';
 
+import { queryKeys } from '../../utils/queryKeys';
+
 // --- Utils & Extended Interfaces ---
 const extractData = (payload: any): any[] => {
     if (!payload) return [];
@@ -117,19 +119,22 @@ export default function Materials(): React.JSX.Element {
   const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null);
   const [showLyricsFor, setShowLyricsFor] = useState<string | null>(null);
 
-  const results = useQueries({
+const results = useQueries({
     queries: [
-      { queryKey: ['mat-projects'], queryFn: async () => (await api.get('/api/projects/')).data, enabled: !!user?.id },
-      { queryKey: ['mat-participations', user?.id], queryFn: async () => (await api.get(`/api/participations/?artist=${user?.id}`)).data, enabled: !!user?.id },
-      { queryKey: ['mat-programItems'], queryFn: async () => (await api.get('/api/program-items/')).data, enabled: !!user?.id },
-      // Zmieniamy pobieranie castingów, by pobrać cały zespół przypisany do naszych aktywnych projektów
-      { queryKey: ['mat-castings'], queryFn: async () => (await api.get('/api/piece-castings/')).data, enabled: !!user?.id },
-      { queryKey: ['mat-pieces'], queryFn: async () => (await api.get('/api/pieces/')).data, enabled: !!user?.id },
-      { queryKey: ['mat-tracks'], queryFn: async () => (await api.get('/api/tracks/')).data, enabled: !!user?.id },
-      { queryKey: ['mat-composers'], queryFn: async () => (await api.get('/api/composers/')).data, enabled: !!user?.id }
+      // Fabryka główna (queryKeys)
+      { queryKey: queryKeys.projects.all, queryFn: async () => (await api.get('/api/projects/')).data, enabled: !!user?.id },
+      { queryKey: queryKeys.participations.byArtist(user?.id!), queryFn: async () => (await api.get(`/api/participations/?artist=${user?.id}`)).data, enabled: !!user?.id },
+      { queryKey: queryKeys.program.all, queryFn: async () => (await api.get('/api/program-items/')).data, enabled: !!user?.id },
+      { queryKey: queryKeys.pieceCastings.all, queryFn: async () => (await api.get('/api/piece-castings/')).data, enabled: !!user?.id },
+      
+      // Fabryka Archiwum
+      { queryKey: queryKeys.pieces.all, queryFn: async () => (await api.get('/api/pieces/')).data, enabled: !!user?.id },
+      { queryKey: queryKeys.composers.all, queryFn: async () => (await api.get('/api/composers/')).data, enabled: !!user?.id },
+      
+      // Dla pobierania wszystkich ścieżek (bo w Materials potrzebujemy z każdego utworu na raz)
+      { queryKey: ['archiveTracks', 'all'], queryFn: async () => (await api.get('/api/tracks/')).data, enabled: !!user?.id }
     ]
   });
-
   const isLoading = results.some(q => q.isLoading);
   const isError = results.some(q => q.isError);
 

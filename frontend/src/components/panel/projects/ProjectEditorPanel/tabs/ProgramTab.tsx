@@ -7,6 +7,7 @@
  * headless DOM control, and robust touch/keyboard sensor architecture.
  * - Implements unified Dirty State Tracking (FAB) consistent across the application.
  * - Canceling explicitly purges local mutations and restores the React Query baseline.
+ * BUGFIX: Safe extraction of DRF paginated responses and synchronized `queryKeys`.
  * @module project/ProjectEditorPanel/tabs/ProgramTab
  * @author Krystian Bugalski
  */
@@ -32,8 +33,16 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import api from '../../../../../utils/api';
+import { queryKeys } from '../../../../../utils/queryKeys';
 import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
 import type { Piece } from '../../../../../types';
+
+const extractData = (payload: any): any[] => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (payload.results && Array.isArray(payload.results)) return payload.results;
+    return [];
+};
 
 interface ProgramTabProps {
   projectId: string;
@@ -90,8 +99,6 @@ function SortablePieceItem({
       style={style}
       className={`flex items-center justify-between bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-xl shadow-sm group relative hover:border-[#002395]/40 hover:shadow-md transition-colors overflow-hidden ${isDragging ? 'shadow-lg ring-2 ring-[#002395]/20 scale-[1.02]' : ''}`}
     >
-      {/* --- STREFA PRZECIĄGANIA (Enterprise 2026 Standard: Content as Handle) --- */}
-      {/* Cały ten obszar (od lewej krawędzi aż do pionowej kreski) pozwala chwycić element */}
       <div 
         {...attributes} 
         {...listeners} 
@@ -124,8 +131,6 @@ function SortablePieceItem({
           </div>
       </div>
       
-      {/* --- STREFA AKCJI (Wyłączona z przeciągania) --- */}
-      {/* Element self-stretch zapewnia, że strefa zawsze zajmuje pełną wysokość kafelka */}
       <div className="flex items-center gap-1.5 flex-shrink-0 border-l border-stone-100/80 pl-4 pr-4 relative z-10 self-stretch bg-white/30 backdrop-blur-sm">
           <button 
               onClick={() => onToggleEncore(item)} 
@@ -153,32 +158,28 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
   if (!context) return null;
   const { pieces } = context;
 
-  // Dnd-Kit Sensors Setup
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // --- Local UI State ---
   const [programItems, setProgramItems] = useState<ProgramItem[]>([]);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // --- Data Fetching ---
   const { data: fetchedProgram, isLoading, refetch } = useQuery<ProgramItem[]>({
-    queryKey: ['programItems', projectId],
+    queryKey: queryKeys.program.byProject(projectId),
     queryFn: async () => {
       const res = await api.get(`/api/program-items/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data.sort((a, b) => a.order - b.order) : [];
+      const items = extractData(res.data);
+      return items.sort((a: ProgramItem, b: ProgramItem) => a.order - b.order);
     }
   });
 
-  // Sync baseline
   useEffect(() => {
     if (fetchedProgram) setProgramItems(fetchedProgram);
   }, [fetchedProgram]);
 
-  // --- Unified Dirty State Tracking ---
   const isDirty = useMemo(() => {
     if (!fetchedProgram) return false;
     const currentOrderIds = programItems.map(i => i.id).join(',');
@@ -186,7 +187,6 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
     return currentOrderIds !== originalOrderIds;
   }, [programItems, fetchedProgram]);
 
-  // --- Derived Computations ---
   const totalConcertDurationSeconds = useMemo<number>(() => {
       return programItems.reduce((sum, item) => {
           const pieceId = item.piece_id || item.piece;
@@ -199,13 +199,12 @@ export default function ProgramTab({ projectId }: ProgramTabProps): React.JSX.El
       return programItems.map((item) => String(item.piece_id || item.piece));
   }, [programItems]);
 
-const filteredPieces = useMemo<Piece[]>(() => {
+  const filteredPieces = useMemo<Piece[]>(() => {
       if (!searchQuery) return pieces;
       const term = searchQuery.toLowerCase();
       return pieces.filter((p) => p.title.toLowerCase().includes(term));
   }, [pieces, searchQuery]);
 
-  // --- Mutation Handlers ---
   const handleAddPiece = async (pieceId: string | number): Promise<void> => {
     if (addedPieceIds.includes(String(pieceId))) return; 
     
@@ -241,7 +240,6 @@ const filteredPieces = useMemo<Piece[]>(() => {
     }
   };
 
-  // --- Dnd-Kit Drag End Handler ---
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -253,9 +251,7 @@ const filteredPieces = useMemo<Piece[]>(() => {
     }
   };
 
-  // --- Cancel / Restore Handler ---
   const handleCancel = () => {
-    // Restore explicitly to the fetched baseline
     if (fetchedProgram) setProgramItems(fetchedProgram);
   };
 
@@ -272,7 +268,7 @@ const filteredPieces = useMemo<Piece[]>(() => {
       
       await Promise.all(syncPromises);
       await refetch();
-      await queryClient.invalidateQueries({ queryKey: ['pieceCastings', projectId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pieceCastings.all });
       
       toast.success("Układ zapisany pomyślnie", { id: toastId });
     } catch (err) { 
@@ -283,11 +279,10 @@ const filteredPieces = useMemo<Piece[]>(() => {
     }
   };
 
-  // --- Render ---
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 relative pb-24 max-w-6xl mx-auto">
       
-      {/* ENTERPRISE FLOATING ACTION BAR (FAB) - Unified with DetailsTab */}
+      {/* ENTERPRISE FLOATING ACTION BAR (FAB) */}
       <AnimatePresence>
         {isDirty && (
           <motion.div 

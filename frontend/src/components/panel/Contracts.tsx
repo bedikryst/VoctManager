@@ -22,6 +22,7 @@ import {
 import api from '../../utils/api'; 
 import { downloadFile } from '../../utils/downloadFile';
 import { ExportContractButton } from '../ui/ExportContractButton';
+import { queryKeys } from '../../utils/queryKeys';
 
 import type { Project, Participation, CrewAssignment, Collaborator } from '../../types';
 
@@ -58,10 +59,10 @@ export default function Contracts(): React.JSX.Element {
 
   const results = useQueries({
     queries: [
-      { queryKey: ['projects'], queryFn: async () => (await api.get('/api/projects/')).data },
-      { queryKey: ['participations'], queryFn: async () => (await api.get('/api/participations/')).data },
-      { queryKey: ['crewAssignments'], queryFn: async () => (await api.get('/api/crew-assignments/')).data },
-      { queryKey: ['collaborators'], queryFn: async () => (await api.get('/api/collaborators/')).data }
+      { queryKey: queryKeys.projects.all, queryFn: async () => (await api.get('/api/projects/')).data },
+      { queryKey: queryKeys.participations.all, queryFn: async () => (await api.get('/api/participations/')).data },
+      { queryKey: queryKeys.crewAssignments.all, queryFn: async () => (await api.get('/api/crew-assignments/')).data },
+      { queryKey: queryKeys.collaborators.all, queryFn: async () => (await api.get('/api/collaborators/')).data }
     ]
   });
 
@@ -142,7 +143,7 @@ export default function Contracts(): React.JSX.Element {
         fee: parseFloat(globalFee) 
       });
       
-      await queryClient.invalidateQueries({ queryKey: ['participations'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.participations.all });
       toast.success(`Pomyślnie zaktualizowano stawki dla ${res.data.updated_count} chórzystów.`, { id: toastId });
       setGlobalFee(''); 
     } catch (e) { 
@@ -417,7 +418,7 @@ function ContractRow({ record, type, onDownload }: ContractRowProps): React.JSX.
       
       if (res.status === 200 || res.status === 204) {
         setSaveSuccess(true);
-        await queryClient.invalidateQueries({ queryKey: type === 'CAST' ? ['participations'] : ['crewAssignments'] });
+        await queryClient.invalidateQueries({ queryKey: type === 'CAST' ? queryKeys.participations.all : queryKeys.crewAssignments.all });
         setTimeout(() => setSaveSuccess(false), 2000);
       }
     } catch (err) { 

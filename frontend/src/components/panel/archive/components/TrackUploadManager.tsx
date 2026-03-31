@@ -9,7 +9,6 @@
  * @module archive/TrackUploadManager
  * @author Krystian Bugalski
  */
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -18,204 +17,181 @@ import { Loader2, UploadCloud, Trash2, AlertCircle, PlayCircle } from 'lucide-re
 import api from '../../../../utils/api';
 import ConfirmModal from '../../../../components/ui/ConfirmModal';
 import type { Track, VoiceLineOption } from '../../../../types';
-import { archiveQueryKeys } from '../queryKeys';
+import { queryKeys } from '../../../../utils/queryKeys';
+
+// --- Safe Data Extractor ---
+const extractData = (payload: any): any[] => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (payload.results && Array.isArray(payload.results)) return payload.results;
+    return [];
+};
 
 interface TrackUploadManagerProps {
   pieceId: string | number;
   voiceLines: VoiceLineOption[];
 }
 
-// --- Static Styles ---
-const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] font-bold";
-const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
+const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 
-const extractData = <T,>(payload: unknown): T[] => {
-  if (Array.isArray(payload)) return payload as T[];
-  if (payload && typeof payload === 'object' && Array.isArray((payload as { results?: unknown[] }).results)) {
-    return (payload as { results: T[] }).results;
-  }
-  return [];
-};
-
-/**
- * TrackUploadManager Component
- * @param {TrackUploadManagerProps} props - Component properties.
- * @returns {React.JSX.Element}
- */
 export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadManagerProps): React.JSX.Element {
   const queryClient = useQueryClient();
-  const trackQueryKey = archiveQueryKeys.tracks(pieceId);
-
-  // --- Local UI & Form State ---
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [voicePart, setVoicePart] = useState<string>(voiceLines.length > 0 ? String(voiceLines[0].value) : 'S1');
-  const [audioFile, setAudioFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Deletion Modal State
+  const [uploadVoicePart, setUploadVoicePart] = useState<string>('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const [trackToDelete, setTrackToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (voiceLines.length === 0) return;
-
-    const hasCurrentVoicePart = voiceLines.some(vl => String(vl.value) === voicePart);
-    if (!hasCurrentVoicePart) {
-      setVoicePart(String(voiceLines[0].value));
-    }
-  }, [voiceLines, voicePart]);
-
-  const invalidateTrackRelatedQueries = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: trackQueryKey }),
-      queryClient.invalidateQueries({ queryKey: archiveQueryKeys.pieces }),
-      queryClient.invalidateQueries({ queryKey: archiveQueryKeys.sharedPieces }),
-    ]);
-  };
-
-  // --- Data Fetching Engine (React Query) ---
-  const { data: tracks = [], isLoading } = useQuery<Track[]>({
-    queryKey: trackQueryKey,
+  const { data: rawTracks, isLoading } = useQuery({
+    queryKey: queryKeys.tracks.byPiece(pieceId),
     queryFn: async () => {
-      const res = await api.get('/api/tracks/', { params: { piece: pieceId } });
-      return extractData<Track>(res.data);
+      const res = await api.get(`/api/tracks/?piece=${pieceId}`);
+      return extractData(res.data); // <-- NAPRAWIONY BŁĄD PAGINACJI
     }
   });
-  // --- Event Handlers ---
 
-  const handleUpload = async (e: React.SyntheticEvent<HTMLFormElement>): Promise<void> => {
+  const tracks = rawTracks || [];
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!audioFile) return;
-    
-    setIsUploading(true);
-    const toastId = toast.loading("Trwa transfer pliku do bazy...");
+    if (!selectedFile || !uploadVoicePart) return;
 
-    const payload = new FormData();
-    payload.append('piece', String(pieceId));
-    payload.append('voice_part', voicePart);
-    payload.append('audio_file', audioFile);
+    setIsUploading(true);
+    const toastId = toast.loading("Wgrywanie pliku audio...");
+
+    const formData = new FormData();
+    formData.append('piece', String(pieceId));
+    formData.append('voice_part', uploadVoicePart);
+    formData.append('audio_file', selectedFile);
 
     try {
-      await api.post('/api/tracks/', payload, { headers: { 'Content-Type': 'multipart/form-data' }});
-      
-      // Reset form
-      setAudioFile(null);
+      await api.post('/api/tracks/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success("Nagranie zostało dodane pomyślnie.", { id: toastId });
+      setSelectedFile(null);
+      setUploadVoicePart('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       
-      // Sync UI
-      await invalidateTrackRelatedQueries();
-      
-      toast.success("Plik audio został wgrany i podpięty pod utwór", { id: toastId });
-    } catch (err) { 
-      console.error("[TrackUploadManager] Upload failed:", err);
-      toast.error("Błąd podczas wgrywania", { 
-        id: toastId, 
-        description: "Sprawdź, czy format pliku jest obsługiwany (MP3/MIDI) oraz czy nie przekracza limitu wagi." 
-      }); 
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tracks.byPiece(pieceId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all });
+    } catch (err) {
+      toast.error("Błąd wgrywania", { id: toastId, description: "Upewnij się, że plik ma odpowiedni format (MP3/WAV/MIDI)." });
     } finally {
       setIsUploading(false);
     }
   };
 
-  const executeDelete = async (): Promise<void> => {
+  const handleDeleteTrack = async () => {
     if (!trackToDelete) return;
-
     setIsDeleting(true);
-    const toastId = toast.loading("Usuwanie ścieżki audio...");
+    const toastId = toast.loading("Usuwanie pliku...");
 
     try {
       await api.delete(`/api/tracks/${trackToDelete}/`);
-      await invalidateTrackRelatedQueries();
-      
-      toast.success("Usunięto nagranie", { id: toastId });
-    } catch (err) { 
-      console.error("[TrackUploadManager] Deletion failed:", err); 
-      toast.error("Błąd usuwania", { id: toastId, description: "Nie udało się usunąć nagrania z serwera." });
+      toast.success("Plik został usunięty z serwera.", { id: toastId });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tracks.byPiece(pieceId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all });
+    } catch (err) {
+      toast.error("Błąd usuwania", { id: toastId });
     } finally {
       setIsDeleting(false);
       setTrackToDelete(null);
     }
   };
 
-  const handleAudioPlay = (e: React.SyntheticEvent<HTMLAudioElement>): void => {
+  const handleAudioPlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
     const target = e.currentTarget;
-    document.querySelectorAll('audio').forEach(audioEl => { 
-      if (audioEl !== target) audioEl.pause(); 
+    document.querySelectorAll('audio').forEach(audioEl => {
+      if (audioEl !== target) audioEl.pause();
     });
   };
 
-  // --- Render ---
-
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-10">
       
-      {/* --- UPLOAD FORM WIDGET --- */}
-      <form onSubmit={handleUpload} className="bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] flex flex-col md:flex-row gap-5 items-end">
-        <div className="w-full md:w-1/3">
-          <label className={STYLE_LABEL}>Docelowa Partia Głosowa *</label>
-          <select 
-            value={voicePart} 
-            onChange={e => setVoicePart(e.target.value)} 
-            className={STYLE_GLASS_INPUT}
-            disabled={isUploading}
-          >
-            {voiceLines.length > 0 ? (
-                voiceLines.map(vl => <option key={String(vl.value)} value={String(vl.value)}>{vl.label}</option>)
-            ) : (
-                <option value="S1">Ładowanie...</option>
-            )}
-          </select>
-        </div>
-        
-        <div className="flex-1 w-full">
-          <label className={STYLE_LABEL}>Plik Audio (MP3/MIDI) *</label>
-          <input 
-            type="file" 
-            required 
-            accept=".mp3,.wav,.mid,.midi,audio/*" 
-            ref={fileInputRef} 
-            onChange={e => setAudioFile(e.target.files ? e.target.files[0] : null)}
-            disabled={isUploading}
-            className="w-full text-sm text-stone-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-[9px] file:font-bold file:antialiased file:uppercase file:tracking-widest file:bg-white file:text-[#002395] file:shadow-sm hover:file:bg-blue-50 hover:file:text-[#001766] cursor-pointer border border-stone-200/60 rounded-xl bg-white/50 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all"
-          />
-        </div>
-        
-        <button 
-          type="submit" 
-          disabled={isUploading || !audioFile} 
-          className="w-full md:w-auto h-[46px] px-8 bg-[#002395] hover:bg-[#001766] disabled:bg-stone-300 disabled:text-stone-500 text-white text-[10px] uppercase font-bold antialiased tracking-widest rounded-xl transition-all shadow-[0_4px_14px_rgba(0,35,149,0.2)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.3)] disabled:shadow-none flex items-center justify-center gap-2 flex-shrink-0 active:scale-95"
-        >
-          {isUploading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <UploadCloud size={16} aria-hidden="true" />}
-          Wgraj Plik
-        </button>
-      </form>
-
-      {/* --- ACTIVE TRACKS LIST --- */}
-      <div className="space-y-3">
-        <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 flex items-center gap-2 mb-4 ml-1">
-            Wgrane Ścieżki Dźwiękowe
+      {/* Upload Form */}
+      <div className="bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-sm relative">
+        <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] mb-5 flex items-center gap-2 border-b border-stone-200/60 pb-2">
+            <UploadCloud size={14} /> Dodaj materiał ćwiczeniowy
         </h4>
+        <form onSubmit={handleUpload} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">Partia wokalna *</label>
+              <select 
+                required
+                value={uploadVoicePart} 
+                onChange={e => setUploadVoicePart(e.target.value)}
+                className={`${STYLE_GLASS_INPUT} font-bold text-stone-700 appearance-none`}
+                disabled={isUploading}
+              >
+                <option value="">— Wybierz głos —</option>
+                <option value="TUTTI">Cały Zespół (Tutti)</option>
+                {voiceLines.map(vl => <option key={vl.value} value={vl.value}>{vl.label}</option>)}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">Plik Audio (MP3/WAV/MIDI) *</label>
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="audio/*,.mid,.midi"
+                required
+                disabled={isUploading}
+                className="w-full text-sm text-stone-600 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-[#002395] file:text-white hover:file:bg-[#001766] transition-all cursor-pointer bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl"
+              />
+            </div>
+          </div>
 
+          <div className="flex justify-end pt-4 border-t border-stone-100">
+            <button 
+              type="submit" 
+              disabled={isUploading || !selectedFile || !uploadVoicePart}
+              className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-[#002395] hover:bg-[#001766] disabled:bg-stone-300 disabled:text-stone-500 text-white px-8 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-[0.15em] transition-all shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)] disabled:shadow-none active:scale-95"
+            >
+              {isUploading ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
+              Wgraj nagranie
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Track List */}
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-4 border-b border-stone-200/60 pb-2">
+            Wgrane Ścieżki Audio ({tracks.length})
+        </h4>
+        
         {isLoading ? (
-            <Loader2 className="animate-spin text-stone-400 mx-auto my-8" aria-hidden="true" />
+          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-stone-400" size={24} /></div>
         ) : tracks.length > 0 ? (
             tracks.map(track => (
-            <div key={track.id} className="flex flex-col md:flex-row md:items-center justify-between bg-white/80 backdrop-blur-md p-4 rounded-xl border border-stone-200/60 shadow-sm gap-4 hover:bg-white transition-colors">
-                
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                <div className="bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-100 text-emerald-700 font-bold antialiased text-[10px] uppercase tracking-widest min-w-[100px] text-center shadow-sm flex items-center justify-center gap-2">
-                    <PlayCircle size={14} aria-hidden="true" /> 
-                    {track.voice_part_display || track.voice_part}
+            <div key={track.id} className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-[#002395]/30 hover:shadow-md">
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] uppercase tracking-widest font-bold antialiased text-[#002395] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 flex items-center gap-2 w-max">
+                        <PlayCircle size={14} aria-hidden="true" /> {track.voice_part_display || track.voice_part}
+                    </span>
                 </div>
                 <audio 
                     controls 
                     controlsList="nodownload" 
-                    src={track.audio_file}
-                    className="h-9 w-full sm:w-64 outline-none rounded-lg" 
+                    className="w-full md:w-72 h-10 outline-none rounded-lg flex-1" 
+                    preload="none"
                     onPlay={handleAudioPlay}
-                />
-                </div>
-                
+                >
+                    <source src={track.audio_file} type="audio/mpeg" />
+                </audio>
                 <button 
                     onClick={() => setTrackToDelete(String(track.id))} 
                     disabled={isDeleting}
@@ -238,9 +214,9 @@ export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadM
       {/* --- DESTRUCTIVE ACTION MODAL --- */}
       <ConfirmModal 
         isOpen={!!trackToDelete}
-        title="Usunąć tę ścieżkę?"
-        description="Plik audio zostanie bezpowrotnie usunięty z serwera. Tej operacji nie można cofnąć."
-        onConfirm={executeDelete}
+        title="Usunąć nagranie z serwera?"
+        description="Plik audio zostanie bezpowrotnie usunięty z bazy danych, a chórzyści utracą do niego dostęp."
+        onConfirm={handleDeleteTrack}
         onCancel={() => setTrackToDelete(null)}
         isLoading={isDeleting}
       />

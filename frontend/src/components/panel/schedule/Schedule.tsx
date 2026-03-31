@@ -2,22 +2,24 @@
  * @file Schedule.tsx
  * @description Main Controller for the Artist Timeline.
  * @architecture Feature-Sliced Design (Enterprise 2026)
- * BUGFIX: Maps excuse_note and absent_count so cards can proactively display team readiness.
+ * BUGFIX: Restored strict `?artist=id` query parameters. Preventing catastrophic 
+ * data leaks and cross-user mutations for Administrative accounts.
  * @module schedule/Schedule
  * @author Krystian Bugalski
  */
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Calendar, Loader2, CalendarHeart } from 'lucide-react';
 
-import api from '../../utils/api';
-import type { Project, Rehearsal, Participation, Attendance } from '../../types';
+import api from '../../../utils/api';
+import type { Project, Rehearsal, Participation, Attendance } from '../../../types';
 import TimelineProjectCard from './cards/TimelineProjectCard';
 import TimelineRehearsalCard from './cards/TimelineRehearsalCard'; 
+import { queryKeys } from '../../../utils/queryKeys';
 
 const extractData = (payload: any): any[] => {
     if (!payload) return [];
@@ -37,7 +39,7 @@ export interface TimelineEvent {
   is_mandatory?: boolean;
   status?: string | null;
   excuse_note?: string | null;
-  absences?: number; // <-- DODANE: Licznik nieobecności z zespołu
+  absences?: number; 
   project_id: string | number;
   call_time?: string | null;
   run_sheet?: any[];
@@ -54,10 +56,10 @@ export default function Schedule(): React.JSX.Element {
 
   const results = useQueries({
     queries: [
-      { queryKey: ['sch-rehearsals'], queryFn: async () => (await api.get('/api/rehearsals/')).data, enabled: !!artistId },
-      { queryKey: ['sch-projects'], queryFn: async () => (await api.get('/api/projects/')).data, enabled: !!artistId },
-      { queryKey: ['sch-participations', artistId], queryFn: async () => (await api.get('/api/participations/')).data, enabled: !!artistId },
-      { queryKey: ['sch-attendances', artistId], queryFn: async () => (await api.get('/api/attendances/')).data, enabled: !!artistId }
+      { queryKey: queryKeys.rehearsals.byArtist(artistId!), queryFn: async () => (await api.get(`/api/rehearsals/`)).data, enabled: !!artistId },
+      { queryKey: queryKeys.projects.all, queryFn: async () => (await api.get('/api/projects/')).data, enabled: !!artistId },
+      { queryKey: queryKeys.participations.byArtist(artistId!), queryFn: async () => (await api.get(`/api/participations/?artist=${artistId}`)).data, enabled: !!artistId },
+      { queryKey: queryKeys.attendances.byArtist(artistId!), queryFn: async () => (await api.get(`/api/attendances/?participation__artist=${artistId}`)).data, enabled: !!artistId }
     ]
   });
 
@@ -95,7 +97,7 @@ export default function Schedule(): React.JSX.Element {
           is_mandatory: reh.is_mandatory,
           status: myAttendance ? myAttendance.status : null,
           excuse_note: myAttendance ? myAttendance.excuse_note : null,
-          absences: reh.absent_count || 0, // <-- PRZEKAZANIE DANYCH
+          absences: reh.absent_count || 0, 
           project_id: reh.project
         });
       }
@@ -137,6 +139,7 @@ export default function Schedule(): React.JSX.Element {
       const myParticipations = extractData(results[2].data) as Participation[];
       const myPart = myParticipations.find(p => String(p.project) === String(projectId));
       
+      // Zabezpieczenie - Admin już nie pobierze cudzej partycypacji przez przypadek
       if (!myPart) throw new Error("Brak przypisania.");
 
       const payload = {
@@ -155,7 +158,7 @@ export default function Schedule(): React.JSX.Element {
         await api.post('/api/attendances/', payload);
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['sch-attendances'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.attendances.all });
       toast.success("Zgłoszenie zostało zapisane.", { id: toastId });
       return true; 
     } catch (err) {

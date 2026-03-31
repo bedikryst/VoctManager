@@ -1,13 +1,9 @@
 /**
  * @file AttendanceMatrixTab.tsx
  * @description Advanced Attendance Matrix for Directors and Choir Inspectors.
- * @architecture
- * ENTERPRISE 2026: The "Grid of Death" resolved and optimized.
- * 1. Eliminated `useProjectData` in favor of JIT (Just-In-Time) React Query fetching 
- * with strict Django filter arguments (`rehearsal__project`).
- * 2. O(1) Hash Map lookups replace O(N) array scans during render loops.
- * 3. `React.memo` on individual cells prevents O(N^2) catastrophic re-renders.
- * 4. Dual-Axis Sticky Headers (Top & Left) ensure persistent context during massive DOM scrolling.
+ * @architecture Enterprise 2026
+ * BUGFIX: Replaced unsafe `Array.isArray` with robust `extractData` to bypass DRF pagination.
+ * ENHANCEMENT: Replaced magic strings with unified `queryKeys` for perfect cache sync.
  * @module project/ProjectEditorPanel/tabs/AttendanceMatrixTab
  * @author Krystian Bugalski
  */
@@ -20,6 +16,14 @@ import { Loader2, Check, X, Clock, ShieldAlert, Users } from 'lucide-react';
 import api from '../../../../../utils/api';
 import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
 import type { Rehearsal, Participation, Artist } from '../../../../../types';
+import { queryKeys } from '../../../../../utils/queryKeys';
+
+const extractData = (payload: any): any[] => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (payload.results && Array.isArray(payload.results)) return payload.results;
+    return [];
+};
 
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | null;
 
@@ -38,7 +42,7 @@ interface AttendanceMatrixTabProps {
   projectId: string;
 }
 
-// --- Static Constants & Dictionaries (Memory Safe) ---
+// --- Static Constants & Dictionaries ---
 const STATUS_CYCLE: AttendanceStatus[] = [null, 'PRESENT', 'ABSENT', 'LATE', 'EXCUSED'];
 
 const STATUS_DEF: Record<string, { label: string, color: string, icon: React.ReactNode }> = {
@@ -95,36 +99,34 @@ const MatrixCell = React.memo(({ rehearsalId, participationId, record, onToggle,
 export default function AttendanceMatrixTab({ projectId }: AttendanceMatrixTabProps): React.JSX.Element | null {
   const queryClient = useQueryClient();
   
-  // 1. Consume Artists from Global RAM
   const context = useContext(ProjectDataContext) as IProjectDataContext;
   if (!context) return null;
   const { artists } = context;
 
-  // 2. JIT Fetching for Relational Entities
+  // --- Safe Query Fetching ---
   const { data: rehearsals = [], isLoading: isLoadingReh } = useQuery<Rehearsal[]>({
-    queryKey: ['rehearsals', projectId],
+    queryKey: queryKeys.rehearsals.byProject(projectId),
     queryFn: async () => {
       const res = await api.get(`/api/rehearsals/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
+      return extractData(res.data);
     },
     staleTime: 60000
   });
 
   const { data: participations = [], isLoading: isLoadingPart } = useQuery<Participation[]>({
-    queryKey: ['participations', projectId],
+    queryKey: queryKeys.participations.byProject(projectId),
     queryFn: async () => {
       const res = await api.get(`/api/participations/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
+      return extractData(res.data);
     },
     staleTime: 60000
   });
 
-  // ENTERPRISE FIX: Corrected API Filter Argument `rehearsal__project`
   const { data: fetchedAttendances = [], isLoading: isLoadingAtt } = useQuery<AttendanceRecord[]>({
-    queryKey: ['attendances', projectId],
+    queryKey: queryKeys.attendances.byProject(projectId),
     queryFn: async () => {
       const res = await api.get(`/api/attendances/?rehearsal__project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
+      return extractData(res.data);
     },
     staleTime: 60000,
   });
@@ -135,7 +137,6 @@ export default function AttendanceMatrixTab({ projectId }: AttendanceMatrixTabPr
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [mutatingCells, setMutatingCells] = useState<Set<string>>(new Set());
 
-  // Sync Baseline
   useEffect(() => {
     if (fetchedAttendances.length > 0) {
       setAttendances(fetchedAttendances);
@@ -157,14 +158,13 @@ export default function AttendanceMatrixTab({ projectId }: AttendanceMatrixTabPr
       .sort((a, b) => a.artistData.last_name.localeCompare(b.artistData.last_name));
   }, [participations, artists]);
 
-  // Hash Map (O(1) Lookup)
   const attendanceMap = useMemo(() => {
     const map = new Map<string, AttendanceRecord>();
     attendances.forEach(a => map.set(`${a.rehearsal}-${a.participation}`, a));
     return map;
   }, [attendances]);
 
-  // --- Mutation Handler (Stable Reference via Functional Updates) ---
+  // --- Mutation Handler ---
   const handleToggleStatus = useCallback(async (
       rehearsalId: string | number, 
       participationId: string | number, 
@@ -188,7 +188,7 @@ export default function AttendanceMatrixTab({ projectId }: AttendanceMatrixTabPr
       const updateStateAndCache = (updater: (prev: AttendanceRecord[]) => AttendanceRecord[]) => {
           setAttendances(prev => {
               const nextState = updater(prev);
-              queryClient.setQueryData(['attendances', projectId], nextState);
+              queryClient.setQueryData(queryKeys.attendances.all, nextState);
               return nextState;
           });
       };
@@ -214,6 +214,10 @@ export default function AttendanceMatrixTab({ projectId }: AttendanceMatrixTabPr
               });
               updateStateAndCache(prev => prev.map(a => a.id === tempId ? { ...a, id: res.data.id } : a));
           }
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: queryKeys.attendances.all }), // Odświeża macierz i statystyki
+            queryClient.invalidateQueries({ queryKey: queryKeys.rehearsals.all }),  // Odświeża licznik nieobecności na "Next Rehearsal" w Dashboardzie
+          ]);
       } catch (error) {
           toast.error('Nie udało się zapisać zmiany.', { description: 'Sprawdź połączenie i spróbuj ponownie.' });
           // Rollback
@@ -272,7 +276,6 @@ export default function AttendanceMatrixTab({ projectId }: AttendanceMatrixTabPr
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr>
-              {/* ENTERPRISE FIX: Dual-Axis Sticky Headers (Top & Left) with Z-Index 30 for the corner */}
               <th className="p-4 border-b border-stone-200/60 bg-stone-50/90 sticky top-0 left-0 z-30 w-48 backdrop-blur-md shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]">
                 <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">Artysta</span>
               </th>

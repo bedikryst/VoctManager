@@ -418,33 +418,21 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return
 
         if participation.artist.user_id != self.request.user.id:
-            raise PermissionDenied("MoÅ¼esz zapisywaÄ‡ tylko swoje wÅ‚asne zgÅ‚oszenia obecnoÅ›ci.")
+            raise PermissionDenied("Możesz zapisywać tylko swoje własne zgłoszenia obecności.")
 
         invited_ids = set(rehearsal.invited_participations.values_list('id', flat=True))
         if invited_ids and participation.id not in invited_ids:
-            raise PermissionDenied("Nie moÅ¼esz zgÅ‚osiÄ‡ obecnoÅ›ci dla prÃ³by, na ktÃ³rÄ… nie zostaÅ‚eÅ› wezwany.")
+            raise PermissionDenied("Nie możesz zgłosić obecności dla próby, na którą nie zostałeś wezwany.")
 
     def perform_create(self, serializer):
         """Prevents users from creating attendance rows outside their own rehearsal scope."""
         self._validate_attendance_write(serializer)
         serializer.save()
-    
-    def _perform_update_legacy(self, serializer):
-        """Prevents users from editing attendance statuses belonging to other artists."""
-        if not self.request.user.is_superuser:
-            # OPTIMIZATION: Using serializer.instance instead of self.get_object() 
-            # prevents a redundant database query.
-            attendance = serializer.instance
-            if attendance.participation.artist.user != self.request.user:
-                raise PermissionDenied("Możesz edytować tylko swoje zgłoszenia obecności/spóźnienia.")
-        serializer.save()
-    
-    
+        
     def perform_update(self, serializer):
         """Prevents users from editing attendance statuses outside their own rehearsal scope."""
         self._validate_attendance_write(serializer)
         serializer.save()
-
 
 class ProgramItemViewSet(viewsets.ModelViewSet):
     """Manages the ordered setlist (program) of a project."""
@@ -473,9 +461,11 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
     filterset_fields = ['piece', 'participation__project', 'participation']
 
     def perform_destroy(self, instance):
-        """Enforces physical row deletion for micro-casting junction configurations."""
-        instance.__class__._base_manager.filter(pk=instance.pk)._raw_delete(instance._state.db)
-        
+        """
+        Enforces deletion using Django's standard ORM.
+        Avoids _raw_delete to ensure database integrity and triggers are respected.
+        """
+        instance.delete()
 
 class CollaboratorViewSet(viewsets.ModelViewSet):
     """Manages external production staff profiles."""

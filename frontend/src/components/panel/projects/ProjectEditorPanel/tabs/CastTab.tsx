@@ -8,6 +8,7 @@
  * and render-time visual positioning. Items never leave the layout domain; their 
  * visually assigned container is calculated dynamically, preventing popping.
  * - Mobile UX: Segmented Control still JIT-filters, maintaining performance.
+ * BUGFIX: Injected `extractData` for DRF pagination safety and `queryKeys` for Cache Sync.
  * @module project/ProjectEditorPanel/tabs/CastTab
  * @author Krystian Bugalski
  */
@@ -19,12 +20,21 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import api from '../../../../../utils/api';
+import { queryKeys } from '../../../../../utils/queryKeys';
 import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
 import type { Artist, Participation } from '../../../../../types';
 
 interface CastTabProps {
   projectId: string;
 }
+
+// --- ENTERPRISE FIX: Safe Data Extractor ---
+const extractData = (payload: any): any[] => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (payload.results && Array.isArray(payload.results)) return payload.results;
+    return [];
+};
 
 const STYLE_GLASS_INPUT = "w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 
@@ -38,14 +48,14 @@ export default function CastTab({ projectId }: CastTabProps): React.JSX.Element 
   if (!context) return null;
   const { artists } = context;
 
-  const { data: participations = [], isLoading: isFetching } = useQuery<Participation[]>({
-    queryKey: ['participations', projectId],
-    queryFn: async () => {
-      const res = await api.get(`/api/participations/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
-    },
+  // --- ENTERPRISE FIX: Safe Query Fetching ---
+  const { data: rawParticipations = [], isLoading: isFetching } = useQuery({
+    queryKey: queryKeys.participations.byProject(projectId),
+    queryFn: async () => (await api.get(`/api/participations/?project=${projectId}`)).data,
     staleTime: 60000
   });
+
+  const participations = extractData(rawParticipations) as Participation[];
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [processingId, setProcessingId] = useState<string | number | null>(null);
@@ -92,10 +102,17 @@ export default function CastTab({ projectId }: CastTabProps): React.JSX.Element 
         await api.delete(`/api/participations/${participationId}/`);
         toast.success("Usunięto z obsady");
       } else {
-        await api.post('/api/participations/', { artist: artistId, project: projectId, status: 'INV' });
+        // Logika awaryjna: jeśli ktoś usunął go z projektu dając "Decline" (DEC), to odnawiamy
+        const existingDeclined = participations.find(p => String(p.artist) === String(artistId) && p.status === 'DEC');
+        if (existingDeclined) {
+            await api.patch(`/api/participations/${existingDeclined.id}/`, { status: 'CON' });
+        } else {
+            await api.post('/api/participations/', { artist: artistId, project: projectId, status: 'INV' });
+        }
         toast.success("Dodano do obsady");
       }
-      await queryClient.invalidateQueries({ queryKey: ['participations', projectId] }); 
+      // ENTERPRISE FIX: Cache Invalidation
+      await queryClient.invalidateQueries({ queryKey: queryKeys.participations.all }); 
     } catch (err) { 
       toast.error("Błąd zapisu", { description: "Wystąpił problem z połączeniem z bazą danych." });
     } finally {
@@ -115,7 +132,7 @@ export default function CastTab({ projectId }: CastTabProps): React.JSX.Element 
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
         // ENTERPRISE FIX: Use `layout="position"` to tell Framer to animate coordinates relative to a *stable* base domain,
-        // neutralizing pops caused by full geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric geometric re-flow during state updates.
+        // neutralizing pops caused by full geometric re-flow during state updates.
         layout="position"
         className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-stone-200/60 rounded-xl mb-2 shadow-sm gap-4"
       >

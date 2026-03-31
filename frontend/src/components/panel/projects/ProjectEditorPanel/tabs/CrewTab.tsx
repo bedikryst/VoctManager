@@ -6,7 +6,7 @@
  * - Deprecated `useProjectData` in favor of Hybrid JIT Fetching (Context for definitions, React Query for relations).
  * - Employs O(1) Hash Maps and Sets to securely and rapidly resolve available crew members.
  * - Integrates Framer Motion `<AnimatePresence>` for fluid, zero-jank mounting/unmounting of crew roster cards.
- * - Pure TypeScript interfaces without `any` assertions.
+ * BUGFIX: Implemented `queryKeys` factory for global cache synchronization.
  * @module project/ProjectEditorPanel/tabs/CrewTab
  * @author Krystian Bugalski
  */
@@ -18,6 +18,7 @@ import { Plus, Wrench, Trash2, Loader2 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import api from '../../../../../utils/api';
+import { queryKeys } from '../../../../../utils/queryKeys';
 import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
 import type { Collaborator, CrewAssignment } from '../../../../../types';
 
@@ -31,27 +32,24 @@ const STYLE_GLASS_INPUT = "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 b
 export default function CrewTab({ projectId }: CrewTabProps): React.JSX.Element | null {
   const queryClient = useQueryClient();
   
-  // 1. Consume Global Dictionaries (RAM)
   const context = useContext(ProjectDataContext) as IProjectDataContext;
   if (!context) return null;
   const { crew } = context;
 
-  // 2. JIT Fetching for Relational Entities
+  // --- Safe JIT Data Fetching with Query Keys Factory ---
   const { data: crewAssignments = [], isLoading } = useQuery<CrewAssignment[]>({
-    queryKey: ['crewAssignments', projectId],
+    queryKey: queryKeys.crewAssignments.byProject(projectId),
     queryFn: async () => {
       const res = await api.get(`/api/crew-assignments/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
+      return Array.isArray(res.data) ? res.data : (res.data?.results || []);
     },
     staleTime: 60000
   });
 
-  // --- Local UI State ---
   const [selectedCrewId, setSelectedCrewId] = useState<string>('');
   const [roleDesc, setRoleDesc] = useState<string>('');
   const [isMutating, setIsMutating] = useState<boolean>(false);
 
-  // --- Derived Core Data (Memoized & O(1) Optimized) ---
   const projectAssignments = useMemo<CrewAssignment[]>(() => {
     return crewAssignments.filter((a) => String(a.project) === String(projectId));
   }, [crewAssignments, projectId]);
@@ -70,7 +68,6 @@ export default function CrewTab({ projectId }: CrewTabProps): React.JSX.Element 
     return map;
   }, [crew]);
 
-  // --- Handlers ---
   const handleAssign = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!selectedCrewId) return;
@@ -88,7 +85,7 @@ export default function CrewTab({ projectId }: CrewTabProps): React.JSX.Element 
       setSelectedCrewId('');
       setRoleDesc('');
       
-      await queryClient.invalidateQueries({ queryKey: ['crewAssignments', projectId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.crewAssignments.all });
       toast.success("Członek ekipy przypisany pomyślnie", { id: toastId });
     } catch (err) {
       toast.error("Błąd przypisania", { id: toastId, description: "Nie udało się przypisać członka ekipy do projektu." });
@@ -101,18 +98,16 @@ export default function CrewTab({ projectId }: CrewTabProps): React.JSX.Element 
     const toastId = toast.loading("Usuwanie członka ekipy...");
     try { 
         await api.delete(`/api/crew-assignments/${id}/`); 
-        await queryClient.invalidateQueries({ queryKey: ['crewAssignments', projectId] });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.crewAssignments.all });
         toast.success("Usunięto przypisanie z projektu", { id: toastId });
     } catch (err) { 
         toast.error("Błąd usuwania", { id: toastId, description: "Nie udało się odpiąć członka ekipy z projektu." });
     }
   };
 
-  // --- Render ---
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       
-      {/* 1. ASSIGNMENT FORM */}
       <form onSubmit={handleAssign} className={`${STYLE_GLASS_CARD} p-6 flex flex-col md:flex-row gap-5 items-end`}>
         <div className="flex-1 w-full">
           <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">
@@ -156,7 +151,6 @@ export default function CrewTab({ projectId }: CrewTabProps): React.JSX.Element 
         </button>
       </form>
 
-      {/* 2. CREW ROSTER FEED */}
       <div className={STYLE_GLASS_CARD}>
         <div className="p-5 bg-white/40 border-b border-white/60 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-2.5">

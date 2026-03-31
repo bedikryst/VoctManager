@@ -7,6 +7,8 @@
  * - Pure TypeScript interfaces (strict typing, no `any` assertions).
  * - Implemented Framer Motion `<AnimatePresence>` for fluid, zero-jank conditional sub-routing.
  * - Employs O(1) Hash Maps for rapid artist lookups during high-frequency render cycles.
+ * BUGFIX: Added `extractData` to bypass DRF pagination boundaries.
+ * BUGFIX: Replaced magic strings with unified `queryKeys` for perfect cache synchronization.
  * @module project/ProjectEditorPanel/tabs/RehearsalsTab
  * @author Krystian Bugalski
  */
@@ -18,9 +20,17 @@ import { MapPin, Trash2, Target, CheckSquare, Clock, Users, MicVocal, UserCheck,
 import { useQuery, useQueryClient } from '@tanstack/react-query'; 
 
 import api from '../../../../../utils/api';
+import { queryKeys } from '../../../../../utils/queryKeys';
 import { ProjectDataContext, IProjectDataContext } from '../../ProjectDashboard';
 import ConfirmModal from '../../../../ui/ConfirmModal';
 import type { Rehearsal, Participation, Artist } from '../../../../../types';
+
+const extractData = (payload: any): any[] => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (payload.results && Array.isArray(payload.results)) return payload.results;
+    return [];
+};
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -43,29 +53,25 @@ const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-w
 export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.JSX.Element | null {
   const queryClient = useQueryClient();
   
-  // 1. Consume Artists from Global RAM
   const context = useContext(ProjectDataContext) as IProjectDataContext;
   if (!context) return null;
   const { artists } = context;
 
-  // 2. JIT Fetching for Relational Entities
-  const { data: rehearsals = [], isLoading: isFetchingRehearsals } = useQuery<Rehearsal[]>({
-    queryKey: ['rehearsals', projectId],
-    queryFn: async () => {
-      const res = await api.get(`/api/rehearsals/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
-    },
+  // --- Safe JIT Fetching via Query Keys Factory ---
+  const { data: rawRehearsals = [], isLoading: isFetchingRehearsals } = useQuery({
+    queryKey: queryKeys.rehearsals.byProject(projectId),
+    queryFn: async () => (await api.get(`/api/rehearsals/?project=${projectId}`)).data,
     staleTime: 60000
   });
 
-  const { data: participations = [] } = useQuery<Participation[]>({
-    queryKey: ['participations', projectId],
-    queryFn: async () => {
-      const res = await api.get(`/api/participations/?project=${projectId}`);
-      return Array.isArray(res.data) ? res.data : [];
-    },
+  const { data: rawParticipations = [] } = useQuery({
+    queryKey: queryKeys.participations.byProject(projectId),
+    queryFn: async () => (await api.get(`/api/participations/?project=${projectId}`)).data,
     staleTime: 60000
   });
+
+  const rehearsals = extractData(rawRehearsals) as Rehearsal[];
+  const participations = extractData(rawParticipations) as Participation[];
 
   // --- Local UI & Form State ---
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -94,7 +100,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
     return participations.filter((p) => String(p.project) === String(projectId));
   }, [participations, projectId]);
 
-  // O(1) Hash Map for rapid artist resolution
   const artistMap = useMemo<Map<string, Artist>>(() => {
     const map = new Map<string, Artist>();
     artists.forEach((a) => map.set(String(a.id), a));
@@ -138,16 +143,15 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
       
       await api.post('/api/rehearsals/', payload);
       
-      // Reset form on success
       setFormData({ date_time: '', location: '', focus: '', is_mandatory: true }); 
       setTargetType('TUTTI');
       setSelectedSections([]);
       setCustomParticipants([]);
       
-      await queryClient.invalidateQueries({ queryKey: ['rehearsals', projectId] });
+      // Cache sync
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rehearsals.all });
       toast.success("Próba zapisana pomyślnie", { id: toastId });
     } catch (err) { 
-      console.error("[RehearsalsTab] Failed to save rehearsal:", err);
       toast.error("Błąd zapisu", { 
         id: toastId, 
         description: "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie." 
@@ -169,10 +173,11 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
 
     try { 
       await api.delete(`/api/rehearsals/${rehearsalToDelete}/`); 
-      await queryClient.invalidateQueries({ queryKey: ['rehearsals', projectId] });
+      
+      // Cache sync
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rehearsals.all });
       toast.success("Próba została usunięta", { id: toastId });
     } catch (err) {
-      console.error("[RehearsalsTab] Deletion failed:", err);
       toast.error("Błąd usuwania", { 
         id: toastId, 
         description: "Nie udało się usunąć próby. Serwer odrzucił żądanie." 
@@ -183,7 +188,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
     }
   };
 
-  // --- Toggles ---
   const toggleSection = (sec: string): void => {
       setSelectedSections((prev) => 
         prev.includes(sec) ? prev.filter((s) => s !== sec) : [...prev, sec]
@@ -196,7 +200,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
       );
   };
 
-  // --- Render ---
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
       
@@ -271,7 +274,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
             </div>
 
             <AnimatePresence mode="wait">
-              {/* Sub-routing: Sectional Mode */}
               {targetType === 'SECTIONAL' && (
                   <motion.div 
                     key="sectional"
@@ -298,7 +300,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
                   </motion.div>
               )}
 
-              {/* Sub-routing: Custom Roster Mode */}
               {targetType === 'CUSTOM' && (
                   <motion.div 
                     key="custom"
@@ -418,7 +419,6 @@ export default function RehearsalsTab({ projectId }: RehearsalsTabProps): React.
         )}
       </div>
 
-      {/* --- DESTRUCTIVE ACTION MODAL --- */}
       <ConfirmModal 
         isOpen={!!rehearsalToDelete}
         title="Usunąć tę próbę?"
