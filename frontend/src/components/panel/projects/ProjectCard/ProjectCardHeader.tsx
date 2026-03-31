@@ -1,110 +1,193 @@
 /**
  * @file ProjectCardHeader.tsx
  * @description Renders the compact, scannable header for a project card.
- * @module project/ProjectCard/components
+ * Exposes core metadata and primary administrative actions.
+ * Calculates operational KPIs synchronously from React Query cache.
+ * @module panel/projects/ProjectCard/ProjectCardHeader
  */
 
-import React, { useMemo, useContext } from 'react';
-import { MapPin, ChevronDown, ChevronUp, Clock, FileText, CheckCircle2, ArchiveRestore, Download, Loader2, AlignLeft, Edit2, Trash2 } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { MapPin, ChevronDown, ChevronUp, Clock, FileText, CheckCircle2, ArchiveRestore, Download, AlignLeft, Edit2, Trash2, Wrench, Users } from 'lucide-react';
 import type { Project } from '../../../../types';
-import { ProjectDataContext, IProjectDataContext } from '../ProjectDashboard';
-import { useProjectExport } from './hooks/useDirectDownload';
+import { useProjectData } from '../hooks/useProjectData';
+import { useProjectCard } from './hooks/useProjectCard';
+import { Button } from '../../../../components/ui/Button';
 
 interface ProjectCardHeaderProps {
-  project: Project;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onStatusToggle: (e: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
+    project: Project;
+    isExpanded: boolean;
+    onToggle: () => void;
+    onStatusToggle: (e: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
+    onEdit: () => void;
+    onDelete: () => void;
 }
 
 export default function ProjectCardHeader({ 
-  project, isExpanded, onToggle, onStatusToggle 
+    project, isExpanded, onToggle, onStatusToggle, onEdit, onDelete 
 }: ProjectCardHeaderProps): React.JSX.Element {
-  const { openPanel, handleDelete } = useContext(ProjectDataContext) as IProjectDataContext;
-  const { downloadReport, isDownloading } = useProjectExport(project.id);
-  const isDone = project.status === 'DONE';
+    const { downloadReport, isDownloading } = useProjectCard(project.id);
+    const { rehearsals, participations, crewAssignments, isLoading } = useProjectData(String(project.id));
+    
+    const isDone = project.status === 'DONE';
 
-  const projectDate = useMemo(() => new Date(project.date_time), [project.date_time]);
-  const callTimeDate = useMemo(() => project.call_time ? new Date(project.call_time) : null, [project.call_time]);
+    const projectDate = useMemo(() => new Date(project.date_time), [project.date_time]);
+    const callTimeDate = useMemo(() => project.call_time ? new Date(project.call_time) : null, [project.call_time]);
 
-  // ENTERPRISE FIX: Corrected Google Maps API Search Link
-  const googleMapsUrl = useMemo(() => {
-    return project.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.location)}` : null;
-  }, [project.location]);
+    const googleMapsUrl = useMemo(() => {
+        return project.location ? `https://www.google.com/maps/search/?api=1&query=$$${encodeURIComponent(project.location)}` : null;
+    }, [project.location]);
 
-  return (
-    <div 
-      className={`p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5 cursor-pointer relative z-10 transition-colors ${!isDone && 'hover:bg-white/40'}`}
-      onClick={onToggle}
-      role="button"
-      aria-expanded={isExpanded}
-    >
-      <div className="flex items-start gap-4 md:gap-6 w-full md:w-auto">
-        
-        <div className={`w-16 h-16 rounded-2xl border flex flex-col items-center justify-center flex-shrink-0 shadow-sm ${isDone ? 'bg-stone-200/50 border-stone-300/50 text-stone-500' : 'bg-white border-stone-100 text-[#002395]'}`}>
-          <span className="text-[10px] font-bold antialiased uppercase tracking-widest">
-            {projectDate.toLocaleString('pl-PL', { month: 'short' })}
-          </span>
-          <span className="text-2xl font-bold leading-none my-0.5">
-            {projectDate.getDate()}
-          </span>
-          <span className="text-[9px] font-bold antialiased opacity-75">
-            {projectDate.toLocaleString('pl-PL', { hour: '2-digit', minute: '2-digit', hour12: false })}
-          </span>
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <h3 className="text-xl md:text-3xl font-bold text-stone-900 mb-1.5 flex flex-wrap items-center gap-3 tracking-tight leading-none" style={{ fontFamily: "'Cormorant', serif" }}>
-            <span className="truncate">{project.title}</span>
-            {isDone && <span className="px-2 py-0.5 bg-stone-200 text-stone-600 text-[9px] font-sans uppercase tracking-widest font-bold antialiased rounded-md border border-stone-300 whitespace-nowrap">Archiwum</span>}
-          </h3>
-          
-          <div className="flex flex-wrap gap-y-2 gap-x-4 mt-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-            {googleMapsUrl && (
-              <a 
-                href={googleMapsUrl} target="_blank" rel="noopener noreferrer" 
-                className="flex items-center gap-1.5 hover:text-[#002395] transition-colors truncate" 
-                title="Otwórz w Google Maps" onClick={(e) => e.stopPropagation()} 
-              >
-                <MapPin size={14} className="opacity-75 flex-shrink-0"/> 
-                <span className="underline decoration-stone-300 underline-offset-4 truncate">{project.location}</span>
-              </a>
-            )}
-            {callTimeDate && (
-              <span className="flex items-center gap-1.5 text-orange-600 whitespace-nowrap">
-                <Clock size={14} /> Call Time: {callTimeDate.toLocaleString('pl-PL', { hour: '2-digit', minute: '2-digit', hour12: false })}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+    const stats = useMemo(() => {
+        const now = new Date();
+        const upcomingRehearsals = rehearsals.filter(r => r.date_time && new Date(r.date_time) > now).length;
+        return {
+            rehearsalsTotal: rehearsals.length,
+            rehearsalsUpcoming: upcomingRehearsals,
+            castTotal: participations.length,
+            crewTotal: crewAssignments.length
+        };
+    }, [rehearsals, participations, crewAssignments]);
 
-      <div className="flex items-center justify-between md:justify-end gap-5 w-full md:w-auto mt-2 md:mt-0">
-        <div className="hidden xl:flex items-center gap-2.5 mr-2">
-          <button disabled={isDownloading !== null} onClick={(e) => { e.stopPropagation(); downloadReport('export_call_sheet', `CallSheet_${project.title}.pdf`, 'CALL_SHEET'); }} className="px-3.5 py-2 bg-white border border-stone-200/80 text-stone-600 hover:text-[#002395] hover:border-[#002395]/40 disabled:opacity-50 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all shadow-sm active:scale-95">
-            {isDownloading === 'CALL_SHEET' ? <Loader2 size={14} className="animate-spin"/> : <FileText size={14}/>} Call Sheet
-          </button>
-          <button disabled={isDownloading !== null} onClick={(e) => { e.stopPropagation(); downloadReport('export_zaiks', `ZAiKS_${project.title}.csv`, 'ZAIKS'); }} className="px-3.5 py-2 bg-white border border-stone-200/80 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all shadow-sm active:scale-95">
-            {isDownloading === 'ZAIKS' ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>} ZAiKS
-          </button>
-          <button disabled={isDownloading !== null} onClick={(e) => { e.stopPropagation(); downloadReport('export_dtp', `DTP_${project.title}.txt`, 'DTP'); }} className="px-3.5 py-2 bg-white border border-stone-200/80 text-purple-700 hover:bg-purple-50 hover:border-purple-300 disabled:opacity-50 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all shadow-sm active:scale-95">
-            {isDownloading === 'DTP' ? <Loader2 size={14} className="animate-spin"/> : <AlignLeft size={14}/>} DTP
-          </button>
-          <button onClick={onStatusToggle} className={`px-3.5 py-2 border text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all shadow-sm active:scale-95 ${isDone ? 'bg-stone-800 text-white border-stone-900 hover:bg-stone-700' : 'bg-stone-100 text-stone-700 border-stone-300 hover:bg-stone-200'}`}>
-            {isDone ? <><ArchiveRestore size={14}/> Przywróć</> : <><CheckCircle2 size={14}/> Zakończ</>}
-          </button>
+    return (
+        <div className="p-6 md:p-8 flex flex-col lg:flex-row gap-8 justify-between cursor-pointer" onClick={onToggle}>
+            
+            {/* LEWA STRONA: Nagłówek i Metadane */}
+            <div className="flex-1 flex flex-col justify-between">
+                <div>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <span className={`px-3 py-1 rounded-lg text-[9px] font-bold antialiased uppercase tracking-widest border shadow-sm ${isDone ? 'bg-stone-100 text-stone-600 border-stone-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                            {isDone ? 'Zrealizowano' : 'W przygotowaniu'}
+                        </span>
+                    </div>
+                    
+                    <h2 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight mb-4 group-hover:text-[#002395] transition-colors" style={{ fontFamily: "'Cormorant', serif" }}>
+                        {project.title}
+                    </h2>
+                    
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-stone-500 uppercase tracking-widest mb-6">
+                        {project.date_time && (
+                            <span className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60">
+                                <Clock size={14} className="text-[#002395]/60" aria-hidden="true" />
+                                {projectDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </span>
+                        )}
+                        {googleMapsUrl && (
+                            <a 
+                                href={googleMapsUrl} target="_blank" rel="noopener noreferrer" 
+                                className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 hover:bg-stone-100 transition-colors" 
+                                title="Otwórz w Google Maps" onClick={(e) => e.stopPropagation()} 
+                            >
+                                <MapPin size={14} className="text-[#002395]/60 flex-shrink-0" aria-hidden="true" /> 
+                                <span className="underline decoration-stone-300 underline-offset-4 truncate max-w-[200px]">{project.location}</span>
+                            </a>
+                        )}
+                        {callTimeDate && (
+                            <span className="flex items-center gap-1.5 text-orange-600 whitespace-nowrap bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100">
+                                <Clock size={14} aria-hidden="true" /> Call Time: {callTimeDate.toLocaleString('pl-PL', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Przyciski Akcji */}
+                <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-stone-100">
+                    <Button 
+                        variant="outline" 
+                        onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                        leftIcon={<Edit2 size={14} aria-hidden="true" />}
+                    >
+                        Zarządzaj
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                        leftIcon={<Trash2 size={14} aria-hidden="true" />}
+                        className="!border-red-200 !text-red-600 hover:!bg-red-50 hover:!border-red-300"
+                    >
+                        Usuń
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        onClick={onStatusToggle}
+                        className="ml-auto !text-stone-500 hover:!bg-stone-100"
+                    >
+                        {isDone ? 'Oznacz jako Aktywny' : 'Zakończ projekt'}
+                    </Button>
+                </div>
+            </div>
+
+            {/* PRAWA STRONA: Wskaźniki i Telemetria */}
+            <div className="w-full lg:w-72 flex-shrink-0 bg-stone-50/50 rounded-2xl border border-stone-200/50 p-5 flex flex-col justify-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3 pointer-events-none" aria-hidden="true"></div>
+                
+                <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-4 border-b border-stone-200/60 pb-2 flex justify-between items-center">
+                    Status Produkcji
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            variant="outline"
+                            disabled={isDownloading !== null} 
+                            isLoading={isDownloading === 'CALL_SHEET'}
+                            onClick={(e) => { e.stopPropagation(); downloadReport('export_call_sheet', `CallSheet_${project.title}.pdf`, 'CALL_SHEET'); }} 
+                            leftIcon={isDownloading !== 'CALL_SHEET' ? <FileText size={10} aria-hidden="true" /> : undefined}
+                            className="!p-1.5 border-transparent shadow-none"
+                            title="Pobierz Call Sheet"
+                        />
+                        <Button 
+                            variant="outline"
+                            disabled={isDownloading !== null} 
+                            isLoading={isDownloading === 'ZAIKS'}
+                            onClick={(e) => { e.stopPropagation(); downloadReport('export_zaiks', `ZAiKS_${project.title}.csv`, 'ZAIKS'); }} 
+                            leftIcon={isDownloading !== 'ZAIKS' ? <Download size={10} aria-hidden="true" /> : undefined}
+                            className="!p-1.5 border-transparent shadow-none"
+                            title="Pobierz ZAiKS"
+                        />
+                        <Button 
+                            variant="outline"
+                            disabled={isDownloading !== null} 
+                            isLoading={isDownloading === 'DTP'}
+                            onClick={(e) => { e.stopPropagation(); downloadReport('export_dtp', `DTP_${project.title}.txt`, 'DTP'); }} 
+                            leftIcon={isDownloading !== 'DTP' ? <AlignLeft size={10} aria-hidden="true" /> : undefined}
+                            className="!p-1.5 border-transparent shadow-none"
+                            title="Pobierz notkę do DTP"
+                        />
+                    </div>
+                </h4>
+
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between group/stat">
+                        <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-[#002395] transition-colors">
+                            <Clock size={14} className="text-stone-400 group-hover/stat:text-[#002395]" aria-hidden="true" /> Próby
+                        </span>
+                        <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
+                            {isLoading ? '-' : `${stats.rehearsalsTotal - stats.rehearsalsUpcoming} / ${stats.rehearsalsTotal}`}
+                        </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between group/stat">
+                        <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-[#002395] transition-colors">
+                            <Users size={14} className="text-stone-400 group-hover/stat:text-[#002395]" aria-hidden="true" /> Obsada
+                        </span>
+                        <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
+                            {isLoading ? '-' : stats.castTotal} os.
+                        </span>
+                    </div>
+
+                    <div className="flex items-center justify-between group/stat">
+                        <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-[#002395] transition-colors">
+                            <Wrench size={14} className="text-stone-400 group-hover/stat:text-[#002395]" aria-hidden="true" /> Ekipa
+                        </span>
+                        <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
+                            {isLoading ? '-' : stats.crewTotal} os.
+                        </span>
+                    </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-center gap-2 text-[#002395] text-[10px] font-bold antialiased uppercase tracking-[0.15em]">
+                    {isExpanded ? 'Zwiń Panel' : 'Rozwiń Widgety'}
+                    {isExpanded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+                </div>
+            </div>
+
         </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 border-r md:border-l border-stone-200/60 pr-4 md:pr-0 md:pl-5">
-            <button onClick={(e) => { e.stopPropagation(); openPanel(project, 'DETAILS'); }} className="p-2.5 bg-white border border-stone-200/80 text-stone-600 hover:text-[#002395] hover:border-[#002395]/40 rounded-xl transition-colors shadow-sm"><Edit2 size={16} /></button>
-            <button onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }} className="p-2.5 bg-white border border-stone-200/80 text-stone-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-xl transition-colors shadow-sm"><Trash2 size={16} /></button>
-          </div>
-          <div className="text-stone-400 bg-white shadow-sm p-2 rounded-full border border-stone-100 transition-transform duration-300 ml-auto md:ml-0">
-            {isExpanded ? <ChevronUp size={20} className="text-[#002395]" /> : <ChevronDown size={20} />}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

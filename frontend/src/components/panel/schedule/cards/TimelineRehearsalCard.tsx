@@ -1,241 +1,223 @@
 /**
  * @file TimelineRehearsalCard.tsx
  * @description Isolated component for rendering a Rehearsal on the Artist Timeline.
- * @architecture Enterprise 2026
- * UX UPGRADE: Redesigned into a "Horizontal Ticket / Boarding Pass" layout. 
- * This minimizes vertical footprint while matching the horizontal flow of Project Cards.
- * Features a perforated CSS border design separating Date, Context, and Actions.
- * @module schedule/cards/TimelineRehearsalCard
- * @author Krystian Bugalski
+ * Uses a horizontal "Ticket" layout to minimize vertical footprint.
+ * Delegates form and presence mutation logic to useTimelineRehearsalCard hook.
+ * @module panel/schedule/cards/TimelineRehearsalCard
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
-  MapPin, Clock, AlertCircle, CheckCircle2, 
-  XCircle, Send, Loader2, Target, UserMinus, ArrowRight, Check, ChevronDown, ChevronUp, Music, AlignLeft
+    MapPin, Clock, AlertCircle, CheckCircle2, 
+    XCircle, Send, Loader2, UserMinus, ArrowRight, Check, ChevronDown, ChevronUp, Music, AlignLeft
 } from 'lucide-react';
-import type { TimelineEvent } from '../Schedule';
+import type { TimelineEvent } from '../hooks/useScheduleData';
+import { useTimelineRehearsalCard } from '../hooks/useTimelineRehearsalCard';
+import { Input } from '../../../ui/Input';
+import { Button } from '../../../ui/Button';
 
 interface TimelineRehearsalCardProps {
-  event: TimelineEvent;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onSubmitReport: (eventId: string, projectId: string | number, status: string, notes: string) => Promise<boolean>;
-  viewMode: 'UPCOMING' | 'PAST';
+    event: TimelineEvent;
+    isExpanded: boolean;
+    onToggle: () => void;
+    onSubmitReport: (eventId: string, projectId: string | number, status: string, notes: string) => Promise<boolean>;
+    viewMode: 'UPCOMING' | 'PAST';
 }
 
-const STYLE_GLASS_INPUT = "w-full px-3 py-2.5 text-xs text-stone-800 bg-stone-50 border border-stone-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002395]/20 transition-all shadow-inner";
 const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1.5 ml-1";
 
-export default function TimelineRehearsalCard({ event, isExpanded, onToggle, onSubmitReport, viewMode }: TimelineRehearsalCardProps) {
-  const [reportingMode, setReportingMode] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  
-  // STATUS MASKING: Traktujemy EXCUSED jako ABSENT dla chórzysty
-  const currentMaskedStatus = event.status === 'EXCUSED' ? 'ABSENT' : event.status;
-  
-  const [reportForm, setReportForm] = useState({ 
-      status: (currentMaskedStatus === 'ABSENT' || currentMaskedStatus === 'LATE') ? currentMaskedStatus : 'ABSENT', 
-      notes: event.excuse_note || '' 
-  });
+export default function TimelineRehearsalCard({ event, isExpanded, onToggle, onSubmitReport, viewMode }: TimelineRehearsalCardProps): React.JSX.Element {
+    
+    const {
+        reportingMode, setReportingMode, isSubmitting, currentMaskedStatus,
+        reportForm, setReportForm, isExcusedOrLate, handleConfirmPresence, 
+        handleSubmitReport, enableReportingMode
+    } = useTimelineRehearsalCard(event, onSubmitReport, onToggle, isExpanded);
 
-  useEffect(() => {
-      const masked = event.status === 'EXCUSED' ? 'ABSENT' : event.status;
-      setReportForm({
-          status: (masked === 'ABSENT' || masked === 'LATE') ? masked : 'ABSENT',
-          notes: event.excuse_note || ''
-      });
-  }, [event.status, event.excuse_note]);
+    const getStatusBadge = (status: string | null | undefined) => {
+        const masked = status === 'EXCUSED' ? 'ABSENT' : status;
+        switch (masked) {
+            case 'PRESENT': return <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-700 rounded border border-emerald-200 flex items-center gap-1"><CheckCircle2 size={12}/> Potwierdzona</span>;
+            case 'LATE': return <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-orange-50 text-orange-700 rounded border border-orange-200 flex items-center gap-1"><Clock size={12}/> Spóźnienie</span>;
+            case 'ABSENT': return <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-red-50 text-red-700 rounded border border-red-200 flex items-center gap-1"><XCircle size={12}/> Nieobecność</span>;
+            default: return null;
+        }
+    };
 
-  const isExcusedOrLate = currentMaskedStatus === 'ABSENT' || currentMaskedStatus === 'LATE';
+    return (
+        <motion.div 
+            layout 
+            initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
+            className="relative sm:pl-16 transition-all duration-300 group"
+        >
+            <div className={`hidden sm:block absolute left-4 md:left-[27px] top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-[#f4f2ee] z-10 transition-all duration-500 ${isExcusedOrLate ? 'bg-orange-500 border-orange-500' : currentMaskedStatus === 'PRESENT' ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-stone-300 group-hover:border-[#002395]'}`} />
+            
+            <div className={`bg-white/80 backdrop-blur-xl rounded-2xl relative overflow-hidden transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] border hover:border-[#002395]/30 hover:shadow-[0_8px_25px_rgb(0,0,0,0.04)] w-full flex flex-col ${isExpanded ? 'border-[#002395]/30' : 'border-stone-200/80'}`}>
+                
+                <div className="flex flex-col md:flex-row items-stretch">
+                    
+                    {/* Date Cube (Left) */}
+                    <div 
+                        className={`w-full md:w-28 p-4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-dashed border-stone-200/80 transition-colors ${currentMaskedStatus === 'PRESENT' ? 'bg-emerald-50/50' : isExcusedOrLate ? 'bg-stone-50' : 'bg-[#002395]/5 group-hover:bg-[#002395]/10'}`}
+                        onClick={() => { if(!reportingMode) onToggle(); }}
+                    >
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${currentMaskedStatus === 'PRESENT' ? 'text-emerald-600' : isExcusedOrLate ? 'text-stone-400' : 'text-[#002395]/60'}`}>
+                            {event.date_time.toLocaleString('pl-PL', { month: 'short' })}
+                        </span>
+                        <span className={`text-3xl font-black leading-none my-0.5 ${currentMaskedStatus === 'PRESENT' ? 'text-emerald-700' : isExcusedOrLate ? 'text-stone-500' : 'text-[#002395]'}`}>
+                            {event.date_time.getDate()}
+                        </span>
+                        <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
+                            {event.date_time.toLocaleString('pl-PL', { weekday: 'short' })}
+                        </span>
+                    </div>
+                    
+                    {/* Main Info (Middle) */}
+                    <div 
+                        className="flex-1 p-4 md:p-5 flex flex-col justify-center cursor-pointer relative"
+                        onClick={() => { if(!reportingMode) onToggle(); }}
+                    >
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            <span className="px-2 py-0.5 bg-stone-100 text-stone-500 text-[8px] font-bold uppercase tracking-widest rounded border border-stone-200/60 shadow-sm">
+                                Próba
+                            </span>
+                            {!event.is_mandatory && <span className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest bg-orange-50 text-orange-600 rounded border border-orange-200 shadow-sm">Opcjonalna</span>}
+                            {getStatusBadge(event.status)}
+                        </div>
+                        
+                        <h3 className={`text-lg md:text-xl font-bold tracking-tight leading-tight truncate max-w-xl ${isExcusedOrLate ? 'text-stone-500' : 'text-stone-900'}`} style={{ fontFamily: "'Cormorant', serif" }}>
+                            {event.title}
+                        </h3>
+                        
+                        <div className="flex flex-wrap items-center gap-4 mt-2 text-[11px] font-bold text-stone-500 uppercase tracking-widest">
+                            <span className="flex items-center gap-1.5"><Clock size={12} className="text-[#002395]/60"/> {event.date_time.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="flex items-center gap-1.5 truncate max-w-[200px]"><MapPin size={12} className="text-[#002395]/60 flex-shrink-0"/> <span className="truncate">{event.location || 'Brak'}</span></span>
+                        </div>
 
-  const getStatusBadge = (status: string | null | undefined) => {
-    const masked = status === 'EXCUSED' ? 'ABSENT' : status;
-    switch (masked) {
-      case 'PRESENT': return <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-700 rounded border border-emerald-200 flex items-center gap-1"><CheckCircle2 size={12}/> Potwierdzona</span>;
-      case 'LATE': return <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-orange-50 text-orange-700 rounded border border-orange-200 flex items-center gap-1"><Clock size={12}/> Spóźnienie</span>;
-      case 'ABSENT': return <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-red-50 text-red-700 rounded border border-red-200 flex items-center gap-1"><XCircle size={12}/> Nieobecność</span>;
-      default: return null;
-    }
-  };
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 group-hover:text-[#002395] transition-colors">
+                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </div>
+                    </div>
 
-  const handleConfirmPresence = async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsSubmitting(true);
-      await onSubmitReport(event.rawObj.id, event.project_id, 'PRESENT', 'Obecność potwierdzona');
-      setIsSubmitting(false);
-      setReportingMode(false);
-  };
+                    {/* Actions Block (Right) */}
+                    {viewMode === 'UPCOMING' && !reportingMode && (
+                        <div className="w-full md:w-48 p-4 border-t md:border-t-0 md:border-l border-stone-100 bg-stone-50/30 flex flex-row md:flex-col gap-2 justify-center">
+                            {currentMaskedStatus !== 'PRESENT' && (
+                                <Button 
+                                    variant="primary"
+                                    onClick={handleConfirmPresence} 
+                                    disabled={isSubmitting}
+                                    isLoading={isSubmitting}
+                                    leftIcon={!isSubmitting ? <Check size={14} aria-hidden="true" /> : undefined}
+                                    className="!bg-emerald-500 hover:!bg-emerald-600 flex-1 md:flex-none"
+                                >
+                                    <span className="hidden md:inline">Potwierdź</span>
+                                    <span className="md:hidden">Potwierdź Obecność</span>
+                                </Button>
+                            )}
+                            
+                            <Button 
+                                variant="outline"
+                                onClick={enableReportingMode}
+                                className={`flex-1 md:flex-none ${isExcusedOrLate ? 'text-stone-700' : 'text-orange-600 hover:text-orange-700 hover:border-orange-300'}`}
+                                leftIcon={<AlertCircle size={14} aria-hidden="true" />}
+                            >
+                                {currentMaskedStatus ? 'Edytuj' : 'Zgłoś problem'}
+                            </Button>
+                        </div>
+                    )}
+                </div>
 
-  const handleSubmitReport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    const success = await onSubmitReport(event.rawObj.id, event.project_id, reportForm.status, reportForm.notes);
-    setIsSubmitting(false);
-    if (success) {
-        setReportingMode(false);
-    }
-  };
+                <AnimatePresence>
+                    {/* Reporting Form Dropdown */}
+                    {reportingMode && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-stone-200/60 bg-orange-50/30">
+                            <form onSubmit={handleSubmitReport} className="p-5 md:p-6">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-orange-600 mb-4 flex items-center gap-1.5">
+                                    <AlertCircle size={14} /> Formularz nieobecności dla Inspektora
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                                    <div className="sm:col-span-1">
+                                        <label className={STYLE_LABEL}>Status *</label>
+                                        <select 
+                                            value={reportForm.status} 
+                                            onChange={e => setReportForm({...reportForm, status: e.target.value})} 
+                                            className="w-full px-3 py-2.5 text-xs text-stone-800 bg-stone-50 border border-stone-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002395]/20 transition-all shadow-inner font-bold appearance-none" 
+                                            disabled={isSubmitting}
+                                        >
+                                            <option value="ABSENT">Nie będę obecny</option>
+                                            <option value="LATE">Spóźnię się</option>
+                                        </select>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label className={STYLE_LABEL}>Powód / Uwagi *</label>
+                                        <Input 
+                                            required 
+                                            type="text" 
+                                            placeholder="np. Korki, choroba..."
+                                            value={reportForm.notes} 
+                                            onChange={e => setReportForm({...reportForm, notes: e.target.value})} 
+                                            disabled={isSubmitting}
+                                            className="bg-stone-50 border border-stone-200/80 font-medium text-xs py-2.5"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 justify-end pt-2">
+                                    <Button variant="outline" type="button" onClick={() => setReportingMode(false)} disabled={isSubmitting}>Anuluj</Button>
+                                    <Button 
+                                        type="submit" 
+                                        variant="primary" 
+                                        disabled={isSubmitting || !reportForm.notes.trim()}
+                                        isLoading={isSubmitting}
+                                        leftIcon={!isSubmitting ? <Send size={12} aria-hidden="true" /> : undefined}
+                                    >
+                                        Wyślij
+                                    </Button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    )}
 
-  return (
-    <motion.div 
-      layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
-      className="relative sm:pl-16 transition-all duration-300 group"
-    >
-      <div className={`hidden sm:block absolute left-4 md:left-[27px] top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-[#f4f2ee] z-10 transition-all duration-500 ${isExcusedOrLate ? 'bg-orange-500 border-orange-500' : currentMaskedStatus === 'PRESENT' ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-stone-300 group-hover:border-[#002395]'}`} />
-      
-      {/* ENTERPRISE UX: The Horizontal Ticket Design */}
-      <div className={`bg-white/80 backdrop-blur-xl rounded-2xl relative overflow-hidden transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] border hover:border-[#002395]/30 hover:shadow-[0_8px_25px_rgb(0,0,0,0.04)] w-full flex flex-col ${isExpanded ? 'border-[#002395]/30' : 'border-stone-200/80'}`}>
-          
-          {/* TICKET TOP ROW */}
-          <div className="flex flex-col md:flex-row items-stretch">
-              
-              {/* Date Cube (Left) */}
-              <div 
-                className={`w-full md:w-28 p-4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-dashed border-stone-200/80 transition-colors ${currentMaskedStatus === 'PRESENT' ? 'bg-emerald-50/50' : isExcusedOrLate ? 'bg-stone-50' : 'bg-[#002395]/5 group-hover:bg-[#002395]/10'}`}
-                onClick={() => { if(!reportingMode) onToggle(); }}
-              >
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${currentMaskedStatus === 'PRESENT' ? 'text-emerald-600' : isExcusedOrLate ? 'text-stone-400' : 'text-[#002395]/60'}`}>
-                      {event.date_time.toLocaleString('pl-PL', { month: 'short' })}
-                  </span>
-                  <span className={`text-3xl font-black leading-none my-0.5 ${currentMaskedStatus === 'PRESENT' ? 'text-emerald-700' : isExcusedOrLate ? 'text-stone-500' : 'text-[#002395]'}`}>
-                      {event.date_time.getDate()}
-                  </span>
-                  <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
-                      {event.date_time.toLocaleString('pl-PL', { weekday: 'short' })}
-                  </span>
-              </div>
-              
-              {/* Main Info (Middle) */}
-              <div 
-                className="flex-1 p-4 md:p-5 flex flex-col justify-center cursor-pointer relative"
-                onClick={() => { if(!reportingMode) onToggle(); }}
-              >
-                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <span className="px-2 py-0.5 bg-stone-100 text-stone-500 text-[8px] font-bold uppercase tracking-widest rounded border border-stone-200/60 shadow-sm">
-                          Próba
-                      </span>
-                      {!event.is_mandatory && <span className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest bg-orange-50 text-orange-600 rounded border border-orange-200 shadow-sm">Opcjonalna</span>}
-                      {getStatusBadge(event.status)}
-                  </div>
-                  
-                  <h3 className={`text-lg md:text-xl font-bold tracking-tight leading-tight truncate max-w-xl ${isExcusedOrLate ? 'text-stone-500' : 'text-stone-900'}`} style={{ fontFamily: "'Cormorant', serif" }}>
-                      {event.title}
-                  </h3>
-                  
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-[11px] font-bold text-stone-500 uppercase tracking-widest">
-                      <span className="flex items-center gap-1.5"><Clock size={12} className="text-[#002395]/60"/> {event.date_time.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span className="flex items-center gap-1.5 truncate max-w-[200px]"><MapPin size={12} className="text-[#002395]/60 flex-shrink-0"/> <span className="truncate">{event.location || 'Brak'}</span></span>
-                  </div>
+                    {/* Details & Notes Dropdown */}
+                    {isExpanded && !reportingMode && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-stone-200/60 bg-stone-50/40 relative z-0">
+                            <div className="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                
+                                <div className="flex flex-col h-full">
+                                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-3 flex items-center gap-1.5"><AlignLeft size={14} /> Plan Pracy</h4>
+                                    <div className="bg-white/80 p-4 rounded-2xl border border-stone-200/80 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] flex-1">
+                                        {event.focus ? (
+                                            <p className="text-sm text-stone-700 italic leading-relaxed font-serif whitespace-pre-wrap">{event.focus}</p>
+                                        ) : (
+                                            <p className="text-xs text-stone-400 italic">Brak szczegółowego planu dla tej próby.</p>
+                                        )}
+                                    </div>
+                                    
+                                    {(event.absences || 0) > 0 && (
+                                        <div className="mt-3 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold uppercase tracking-widest shadow-sm w-max">
+                                            <UserMinus size={14} /> Zgłoszone nieobecności: {event.absences}
+                                        </div>
+                                    )}
+                                </div>
 
-                  {/* Dropdown Indicator */}
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 group-hover:text-[#002395] transition-colors">
-                      {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </div>
-              </div>
+                                <div className="flex flex-col h-full">
+                                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-3 flex items-center gap-1.5"><Music size={14} /> Twoje Nuty</h4>
+                                    <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-2xl border border-blue-100 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] flex-1 flex flex-col justify-center items-center text-center">
+                                        <p className="text-xs font-bold text-stone-700 mb-1">Przygotuj się do próby</p>
+                                        <p className="text-[10px] text-stone-500 mb-3 px-4">Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.</p>
+                                        <Link to="/panel/materials" className="bg-white border border-blue-200 text-[#002395] hover:bg-[#002395] hover:text-white px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 group/mat">
+                                            Materiały <ArrowRight size={14} className="group-hover/mat:translate-x-1 transition-transform"/>
+                                        </Link>
+                                    </div>
+                                </div>
 
-              {/* Actions Block (Right) */}
-              {viewMode === 'UPCOMING' && !reportingMode && (
-                  <div className="w-full md:w-48 p-4 border-t md:border-t-0 md:border-l border-stone-100 bg-stone-50/30 flex flex-row md:flex-col gap-2 justify-center">
-                      {currentMaskedStatus !== 'PRESENT' && (
-                          <button 
-                              onClick={handleConfirmPresence} disabled={isSubmitting}
-                              className="flex-1 md:flex-none py-2.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] uppercase tracking-widest font-bold rounded-xl transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
-                          >
-                              {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} 
-                              <span className="hidden md:inline">Potwierdź</span>
-                              <span className="md:hidden">Potwierdź Obecność</span>
-                          </button>
-                      )}
-                      
-                      <button 
-                          onClick={(e) => { e.stopPropagation(); setReportingMode(true); if(isExpanded) onToggle(); }}
-                          className={`flex-1 md:flex-none py-2.5 px-3 bg-white border border-stone-200/80 hover:bg-stone-50 text-[9px] uppercase tracking-widest font-bold rounded-xl transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 ${isExcusedOrLate ? 'text-stone-700' : 'text-orange-600 hover:text-orange-700 hover:border-orange-300'}`}
-                      >
-                          <AlertCircle size={14} /> 
-                          {currentMaskedStatus ? 'Edytuj' : 'Zgłoś problem'}
-                      </button>
-                  </div>
-              )}
-          </div>
-
-          {/* --- EXPANDED SECTIONS --- */}
-          <AnimatePresence>
-              
-              {/* Reporting Form Dropdown */}
-              {reportingMode && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-stone-200/60 bg-orange-50/30">
-                      <form onSubmit={handleSubmitReport} className="p-5 md:p-6">
-                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-orange-600 mb-4 flex items-center gap-1.5">
-                              <AlertCircle size={14} /> Formularz nieobecności dla Inspektora
-                          </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                              <div className="sm:col-span-1">
-                                  <label className={STYLE_LABEL}>Status *</label>
-                                  <select value={reportForm.status} onChange={e => setReportForm({...reportForm, status: e.target.value})} className={`${STYLE_GLASS_INPUT} font-bold`} disabled={isSubmitting}>
-                                      <option value="ABSENT">Nie będę obecny</option>
-                                      <option value="LATE">Spóźnię się</option>
-                                  </select>
-                              </div>
-                              <div className="sm:col-span-2">
-                                  <label className={STYLE_LABEL}>Powód / Uwagi *</label>
-                                  <input 
-                                      required type="text" placeholder="np. Korki, choroba..."
-                                      value={reportForm.notes} onChange={e => setReportForm({...reportForm, notes: e.target.value})} 
-                                      className={`${STYLE_GLASS_INPUT} font-medium`} disabled={isSubmitting}
-                                  />
-                              </div>
-                          </div>
-                          <div className="flex gap-2 justify-end pt-2">
-                              <button type="button" onClick={() => setReportingMode(false)} disabled={isSubmitting} className="py-2 px-5 text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-stone-800 bg-white border border-stone-200 rounded-xl transition-all">Anuluj</button>
-                              <button type="submit" disabled={isSubmitting || !reportForm.notes.trim()} className="py-2 px-6 bg-[#002395] text-white text-[10px] font-bold uppercase tracking-widest rounded-xl flex items-center gap-1.5 shadow-sm disabled:opacity-50 active:scale-95 transition-all">
-                                  {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Wyślij
-                              </button>
-                          </div>
-                      </form>
-                  </motion.div>
-              )}
-
-              {/* Details & Notes Dropdown */}
-              {isExpanded && !reportingMode && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-stone-200/60 bg-stone-50/40 relative z-0">
-                      <div className="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                          
-                          <div className="flex flex-col h-full">
-                              <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-3 flex items-center gap-1.5"><AlignLeft size={14} /> Plan Pracy</h4>
-                              <div className="bg-white/80 p-4 rounded-2xl border border-stone-200/80 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] flex-1">
-                                  {event.focus ? (
-                                      <p className="text-sm text-stone-700 italic leading-relaxed font-serif whitespace-pre-wrap">{event.focus}</p>
-                                  ) : (
-                                      <p className="text-xs text-stone-400 italic">Brak szczegółowego planu dla tej próby.</p>
-                                  )}
-                              </div>
-                              
-                              {(event.absences || 0) > 0 && (
-                                  <div className="mt-3 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold uppercase tracking-widest shadow-sm w-max">
-                                      <UserMinus size={14} /> Zgłoszone nieobecności: {event.absences}
-                                  </div>
-                              )}
-                          </div>
-
-                          <div className="flex flex-col h-full">
-                              <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-3 flex items-center gap-1.5"><Music size={14} /> Twoje Nuty</h4>
-                              <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-2xl border border-blue-100 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] flex-1 flex flex-col justify-center items-center text-center">
-                                  <p className="text-xs font-bold text-stone-700 mb-1">Przygotuj się do próby</p>
-                                  <p className="text-[10px] text-stone-500 mb-3 px-4">Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.</p>
-                                  <Link to="/panel/materials" className="bg-white border border-blue-200 text-[#002395] hover:bg-[#002395] hover:text-white px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 group/mat">
-                                      Materiały <ArrowRight size={14} className="group-hover/mat:translate-x-1 transition-transform"/>
-                                  </Link>
-                              </div>
-                          </div>
-
-                      </div>
-                  </motion.div>
-              )}
-          </AnimatePresence>
-      </div>
-    </motion.div>
-  );
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </motion.div>
+    );
 }

@@ -24,10 +24,10 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 
-import Contracts from './components/panel/Contracts';
+import Contracts from './components/panel/contracts/Contracts';
 import DashboardHome from './components/panel/dashboard/DashboardHome';
-import Rehearsals from './components/panel/Rehearsals';
-import Materials from './components/panel/Materials';
+import Rehearsals from './components/panel/rehearsals/Rehearsals';
+import Materials from './components/panel/materials/Materials';
 import Schedule from './components/panel/schedule/Schedule';
 import ArtistManagement from './components/panel/artists/ArtistManagement';
 import ProjectManagement from './components/panel/projects/ProjectDashboard';

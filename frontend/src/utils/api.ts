@@ -1,19 +1,31 @@
 /**
  * @file api.ts
- * @description Core Axios instance and API client configuration.
- * @architecture
- * ENTERPRISE 2026: Fully delegates JWT transmission to HttpOnly cookies to prevent XSS.
- * Implements concurrent request pausing via Promise Queueing during token rotation.
- * Utilizes `withXSRFToken` strict mode for modern Axios Cross-Origin CSRF protection.
+ * @description Core Axios instance and API client configuration for the VoctManager application.
+ * Fully delegates JWT transmission to HttpOnly cookies for strict XSS prevention.
+ * Implements a concurrent request queueing mechanism during token rotation 
+ * and automatically normalizes paginated responses from Django REST Framework.
  * @module utils/api
- * @author Krystian Bugalski
  */
 
-import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { 
+    AxiosError, 
+    InternalAxiosRequestConfig, 
+    AxiosResponse 
+} from 'axios';
 
-// Rozszerzamy konfigurację Axios o flagę zapobiegającą pętlom odświeżania
+/**
+ * Extended Axios request configuration to support retry logic during token rotation.
+ */
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
+}
+
+/**
+ * Queue item definition for paused requests during authentication refresh.
+ */
+interface QueuedPromise {
+    resolve: (value?: unknown) => void;
+    reject: (reason?: AxiosError | Error | unknown) => void;
 }
 
 const api = axios.create({
@@ -22,83 +34,87 @@ const api = axios.create({
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     },
-    // Wymagane dla HttpOnly Cookies (JWT)
-    withCredentials: true, 
-    // ENTERPRISE FIX: Wymagane w nowoczesnym Axiosie dla ochrony CSRF cross-origin!
-    withXSRFToken: true,   
+    withCredentials: true,
+    withXSRFToken: true,
 });
 
-// Konfiguracja nazw dla Django
 api.defaults.xsrfCookieName = 'csrftoken';
 api.defaults.xsrfHeaderName = 'X-CSRFToken';
 
-// --- System kolejkowania zapytań (Token Rotation) ---
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: () => void; reject: (reason?: any) => void }> = [];
+let failedQueue: QueuedPromise[] = [];
 
-const processQueue = (error: any = null) => {
-    failedQueue.forEach(prom => {
+/**
+ * Resolves or rejects all pending requests in the queue.
+ * @param {AxiosError | Error | unknown | null} error - The error to reject with, if the refresh failed.
+ */
+const processQueue = (error: AxiosError | Error | unknown | null = null): void => {
+    failedQueue.forEach((promise) => {
         if (error) {
-            prom.reject(error);
+            promise.reject(error);
         } else {
-            prom.resolve();
+            promise.resolve();
         }
     });
     failedQueue = [];
 };
 
-// Zostawiamy interceptor requestu czysty - przeglądarka sama dodaje ciastka HttpOnly
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => config,
     (error: AxiosError) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
-    (response: AxiosResponse) => response,
+    (response: AxiosResponse) => {
+        // Automatically unwrap Django REST Framework paginated responses
+        if (
+            response.data && 
+            typeof response.data === 'object' && 
+            'results' in response.data && 
+            Array.isArray(response.data.results)
+        ) {
+            response.data = response.data.results;
+        }
+        return response;
+    },
     async (error: AxiosError) => {
         const originalRequest = error.config as CustomAxiosRequestConfig;
 
-        // Jeśli otrzymamy 401 Unauthorized, to znaczy, że Access Token wygasł
-        if (error.response?.status === 401 && originalRequest && !originalRequest._retry && originalRequest.url !== '/api/token/refresh/') {
-            
-            // Jeśli inne zapytanie już odświeża token, to wstrzymujemy (kolejkujemy)
+        if (
+            error.response?.status === 401 && 
+            originalRequest && 
+            !originalRequest._retry && 
+            originalRequest.url !== '/api/token/refresh/'
+        ) {
             if (isRefreshing) {
-                return new Promise<void>((resolve, reject) => {
+                return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
                 })
-                .then(() => {
-                    // Po udanym odświeżeniu powtarzamy zapytanie (ciastko będzie już zaktualizowane)
-                    return api(originalRequest);
-                })
-                .catch(err => Promise.reject(err));
+                .then(() => api(originalRequest))
+                .catch((err) => Promise.reject(err));
             }
 
             originalRequest._retry = true;
             isRefreshing = true;
 
             try {
-                // Wywołujemy endpoint odświeżania. 
-                // Django sprawdzi ciastko Refresh i ustawi NOWE ciastko Access.
-                await axios.post(`${import.meta.env.VITE_API_URL || ''}/api/token/refresh/`, {}, {
-                    withCredentials: true,
-                    withXSRFToken: true // Upewniamy się, że tu też działa CSRF
-                });
+                await axios.post(
+                    `${import.meta.env.VITE_API_URL || ''}/api/token/refresh/`, 
+                    {}, 
+                    {
+                        withCredentials: true,
+                        withXSRFToken: true,
+                    }
+                );
 
                 isRefreshing = false;
-                
-                // Uwalniamy wstrzymane zapytania
                 processQueue(null);
                 
-                // Powtarzamy pierwotne zapytanie z nowym ciastkiem
                 return api(originalRequest);
-
             } catch (refreshError) {
-                // Jeśli odświeżanie zawiedzie (np. Refresh Token wygasł / wylogowano)
-                console.warn('[API] Sesja wygasła. Wymagane ponowne logowanie.');
                 isRefreshing = false;
                 processQueue(refreshError);
                 
-                // Twarde przekierowanie do logowania
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             }

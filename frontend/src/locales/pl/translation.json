@@ -1,0 +1,18 @@
+{
+  "contracts": {
+    "header": {
+      "badge": "Zarządzanie Finansami",
+      "title": "Kadry i Płace.",
+      "description": "Rozliczaj artystów i ekipę, kontroluj całkowity budżet projektu i generuj umowy."
+    },
+    "kpi": {
+      "priced": "Wycenione Umowy",
+      "missing": "Braki w wycenie",
+      "budget": "Budżet Personelu"
+    },
+    "actions": {
+      "massInjectionLabel": "Masowe uzupełnianie stawek (Tylko Chór)",
+      "applyBtn": "Zastosuj Wycenę"
+    }
+  }
+}
