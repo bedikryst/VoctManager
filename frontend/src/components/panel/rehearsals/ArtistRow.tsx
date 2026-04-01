@@ -44,6 +44,7 @@ export const ArtistRow = React.memo(({ part, artist, rehearsalId, existingRecord
                     await Promise.all([
                         queryClient.invalidateQueries({ queryKey: queryKeys.rehearsals.all }),
                         queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+                        queryClient.invalidateQueries({ queryKey: queryKeys.attendances.all }),
                     ]);
                 }
                 setIsSyncing(false);
@@ -67,6 +68,7 @@ export const ArtistRow = React.memo(({ part, artist, rehearsalId, existingRecord
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: queryKeys.rehearsals.all }),
                 queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.attendances.all }),
             ]);
         } catch (e) {
             toast.error(`Błąd zapisu dla: ${artist.last_name}`);

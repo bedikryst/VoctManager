@@ -15,13 +15,14 @@ import TrackUploadManager from './TrackUploadManager';
 import ConfirmModal from '../../../../components/ui/ConfirmModal';
 
 import type { Piece, Composer, VoiceLineOption } from '../../../../types';
+import { ArchiveTabId } from '../constants/archiveDomain';
 
 interface ArchiveEditorPanelProps {
     isOpen: boolean;
     onClose: () => void;
     piece: Piece | null;
-    activeTab: 'DETAILS' | 'TRACKS';
-    onTabChange: (tabId: 'DETAILS' | 'TRACKS') => void;
+    activeTab: ArchiveTabId;
+    onTabChange: (tabId: ArchiveTabId) => void;
     composers: Composer[];
     voiceLines: VoiceLineOption[];
     initialSearchContext?: string;

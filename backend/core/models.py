@@ -6,13 +6,22 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+class SoftDeleteQuerySet(models.QuerySet):
+    """
+    Enterprise safeguard preventing accidental bulk hard-deletions.
+    Intercepts standard .delete() calls on querysets and routes them to soft-delete.
+    """
+    def delete(self):
+        return super().update(is_deleted=True, updated_at=timezone.now())
+
+    def hard_delete(self):
+        """Explicit escape hatch for GDPR compliance or data purging."""
+        return super().delete()
+
 class ActiveManager(models.Manager):
-    """
-    Default manager that filters out 'soft-deleted' objects globally.
-    Ensures that deleted records do not appear in standard queries.
-    """
+    """Global manager filtering out soft-deleted records."""
     def get_queryset(self):
-        return super().get_queryset().filter(is_deleted=False)
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False)
 
 
 class EnterpriseBaseModel(models.Model):
@@ -39,10 +48,7 @@ class EnterpriseBaseModel(models.Model):
         abstract = True
 
     def delete(self, using=None, keep_parents=False):
-        """
-        Soft-deletes the record instead of removing it from the database.
-        Explicitly updates the 'updated_at' timestamp.
-        """
+        """Single-instance soft delete."""
         self.is_deleted = True
         self.updated_at = timezone.now()
         self.save(update_fields=['is_deleted', 'updated_at'])

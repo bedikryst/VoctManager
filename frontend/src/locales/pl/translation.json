@@ -14,5 +14,45 @@
       "massInjectionLabel": "Masowe uzupełnianie stawek (Tylko Chór)",
       "applyBtn": "Zastosuj Wycenę"
     }
+  },
+  "projects": {
+    "dashboard": {
+      "title": "Wydarzenia i Produkcja",
+      "subtitle": "Centrum Dowodzenia",
+      "new_project": "Nowy Projekt",
+      "empty_state": "Brak projektów w tym widoku",
+      "empty_hint": "Rozpocznij planowanie nowego wydarzenia."
+    },
+    "tabs": {
+      "details": "Szczegóły",
+      "rehearsals": "Terminarz Prób",
+      "matrix": "Obecności",
+      "cast": "Casting Główny",
+      "program": "Setlista",
+      "micro_cast": "Mikro-Obsada",
+      "crew": "Logistyka",
+      "budget": "Budżet"
+    }
+  },
+  "auth": {
+    "authorizing": "Autoryzacja..."
+  },
+  "archive": {
+    "dashboard": {
+      "subtitle": "Zasoby Repertuarowe",
+      "title": "Archiwum",
+      "title_highlight": "Nut",
+      "new_piece": "Nowy Utwór",
+      "stats_total": "Pozycje w bazie",
+      "stats_pdf": "Dostępne Partytury (PDF)",
+      "stats_audio": "Ścieżki Audio (MIDI/MP3)",
+      "search_placeholder": "Szukaj utworu po tytule...",
+      "filter_composer": "Wszyscy Kompozytorzy",
+      "filter_epoch": "Wszystkie Epoki",
+      "empty_state": "Brak wyników",
+      "empty_hint": "Zmień parametry filtrowania lub dodaj nową kompozycję do bazy.",
+      "not_found": "Nie znaleźliśmy kompozycji",
+      "add_piece": "Dodaj utwór:"
+    }
   }
 }

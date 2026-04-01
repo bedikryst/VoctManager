@@ -17,6 +17,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Composer, Piece, Track, PieceVoiceRequirement
 from .serializers import ComposerSerializer, PieceSerializer, TrackSerializer, PieceVoiceRequirementSerializer
+from . import services
 
 class IsAdminOrReadOnly(permissions.BasePermission):
     """
@@ -46,6 +47,20 @@ class PieceViewSet(viewsets.ModelViewSet):
     queryset = Piece.objects.select_related('composer').prefetch_related('tracks', 'voice_requirements').all()
     serializer_class = PieceSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+
+    def perform_create(self, serializer):
+        """Delegates atomic piece creation to the Service Layer."""
+        piece = serializer.save()
+        requirements_raw = self.request.data.get('requirements_data')
+        if requirements_raw is not None:
+            services.sync_piece_voice_requirements(piece=piece, requirements_raw=requirements_raw)
+
+    def perform_update(self, serializer):
+        """Delegates atomic piece updates to the Service Layer."""
+        piece = serializer.save()
+        requirements_raw = self.request.data.get('requirements_data')
+        if requirements_raw is not None:
+            services.sync_piece_voice_requirements(piece=piece, requirements_raw=requirements_raw)
 
 
 class TrackViewSet(viewsets.ModelViewSet):

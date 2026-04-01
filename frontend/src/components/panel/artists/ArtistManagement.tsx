@@ -16,9 +16,12 @@ import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { GlassCard } from '../../../components/ui/GlassCard';
+import { VoiceFilterButton} from './components/VoiceFilterButton';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 
 import ArtistEditorPanel from './ArtistEditorPanel';
 import { ArtistCard } from './ArtistCard';
+
 
 export default function ArtistManagement(): React.JSX.Element {
     const {
@@ -34,10 +37,7 @@ export default function ArtistManagement(): React.JSX.Element {
         if (isError) toast.error("Ostrzeżenie", { description: "Nie udało się pobrać danych o artystach." });
     }, [isError]);
 
-    useEffect(() => {
-        document.body.style.overflow = isPanelOpen || artistToToggle ? 'hidden' : '';
-        return () => { document.body.style.overflow = ''; };
-    }, [isPanelOpen, artistToToggle]);
+    useBodyScrollLock(isPanelOpen || artistToToggle !== null);
 
     return (
         <div className="space-y-6 animate-fade-in relative cursor-default pb-12 max-w-7xl mx-auto px-4 sm:px-0">
@@ -65,27 +65,43 @@ export default function ArtistManagement(): React.JSX.Element {
                 </motion.div>
             </header>
 
+            {/* --- FILTER BAR --- */}
             <div className="inline-flex flex-wrap items-center gap-2.5 p-2.5 bg-white/60 backdrop-blur-xl border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-3xl w-full sm:w-auto mb-2">
-                <button onClick={() => setVoiceFilter(voiceFilter === 'S' ? '' : 'S')} className={`px-5 py-2.5 rounded-2xl border flex flex-col items-center min-w-[80px] transition-all active:scale-95 cursor-pointer ${voiceFilter === 'S' ? 'bg-rose-100 border-rose-300 ring-2 ring-rose-500/20' : 'bg-rose-50/50 border-rose-100/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-rose-100/50'}`}>
-                    <span className="text-[9px] font-bold antialiased text-rose-500 uppercase tracking-widest">Soprany</span>
-                    <span className="text-xl font-black text-rose-700 leading-none mt-1.5">{ensembleBalance.S}</span>
-                </button>
-                <button onClick={() => setVoiceFilter(voiceFilter === 'A' ? '' : 'A')} className={`px-5 py-2.5 rounded-2xl border flex flex-col items-center min-w-[80px] transition-all active:scale-95 cursor-pointer ${voiceFilter === 'A' ? 'bg-purple-100 border-purple-300 ring-2 ring-purple-500/20' : 'bg-purple-50/50 border-purple-100/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-purple-100/50'}`}>
-                    <span className="text-[9px] font-bold antialiased text-purple-500 uppercase tracking-widest">Alty</span>
-                    <span className="text-xl font-black text-purple-700 leading-none mt-1.5">{ensembleBalance.A}</span>
-                </button>
-                <button onClick={() => setVoiceFilter(voiceFilter === 'T' ? '' : 'T')} className={`px-5 py-2.5 rounded-2xl border flex flex-col items-center min-w-[80px] transition-all active:scale-95 cursor-pointer ${voiceFilter === 'T' ? 'bg-sky-100 border-sky-300 ring-2 ring-sky-500/20' : 'bg-sky-50/50 border-sky-100/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-sky-100/50'}`}>
-                    <span className="text-[9px] font-bold antialiased text-sky-500 uppercase tracking-widest">Tenory</span>
-                    <span className="text-xl font-black text-sky-700 leading-none mt-1.5">{ensembleBalance.T}</span>
-                </button>
-                <button onClick={() => setVoiceFilter(voiceFilter === 'B' ? '' : 'B')} className={`px-5 py-2.5 rounded-2xl border flex flex-col items-center min-w-[80px] transition-all active:scale-95 cursor-pointer ${voiceFilter === 'B' ? 'bg-emerald-100 border-emerald-300 ring-2 ring-emerald-500/20' : 'bg-emerald-50/50 border-emerald-100/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] hover:bg-emerald-100/50'}`}>
-                    <span className="text-[9px] font-bold antialiased text-emerald-500 uppercase tracking-widest">Basy</span>
-                    <span className="text-xl font-black text-emerald-700 leading-none mt-1.5">{ensembleBalance.B}</span>
-                </button>
-                <button onClick={() => setVoiceFilter('')} className={`px-6 py-2.5 ml-2 border-l border-stone-200/50 flex flex-col items-center justify-center min-w-[80px] transition-all cursor-pointer ${voiceFilter === '' ? 'opacity-100' : 'opacity-50 hover:opacity-100'}`}>
-                    <span className="text-[9px] font-bold antialiased text-stone-400 uppercase tracking-widest">Tutti</span>
-                    <span className="text-xl font-black text-stone-800 leading-none mt-1.5">{ensembleBalance.Total}</span>
-                </button>
+                <VoiceFilterButton 
+                    voiceType="S" 
+                    label="Soprany" 
+                    count={ensembleBalance.S} 
+                    isActive={voiceFilter === 'S'} 
+                    onClick={() => setVoiceFilter(voiceFilter === 'S' ? '' : 'S')} 
+                />
+                <VoiceFilterButton 
+                    voiceType="A" 
+                    label="Alty" 
+                    count={ensembleBalance.A} 
+                    isActive={voiceFilter === 'A'} 
+                    onClick={() => setVoiceFilter(voiceFilter === 'A' ? '' : 'A')} 
+                />
+                <VoiceFilterButton 
+                    voiceType="T" 
+                    label="Tenory" 
+                    count={ensembleBalance.T} 
+                    isActive={voiceFilter === 'T'} 
+                    onClick={() => setVoiceFilter(voiceFilter === 'T' ? '' : 'T')} 
+                />
+                <VoiceFilterButton 
+                    voiceType="B" 
+                    label="Basy" 
+                    count={ensembleBalance.B} 
+                    isActive={voiceFilter === 'B'} 
+                    onClick={() => setVoiceFilter(voiceFilter === 'B' ? '' : 'B')} 
+                />
+                <VoiceFilterButton 
+                    voiceType="ALL" 
+                    label="Tutti" 
+                    count={ensembleBalance.Total} 
+                    isActive={voiceFilter === ''} 
+                    onClick={() => setVoiceFilter('')} 
+                />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-8">

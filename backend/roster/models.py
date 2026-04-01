@@ -69,29 +69,6 @@ class Artist(EnterpriseBaseModel):
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.get_voice_type_display()})"
 
-    def save(self, *args, **kwargs):
-        """
-        Intercepts the save transaction to automatically provision a Django User account.
-        Implements sequential collision resolution for usernames (e.g., jsmith, jsmith2).
-        """
-        if self.first_name and self.last_name and not self.user:
-            base_username = f"{self.first_name[0].lower()}{self.last_name.lower()}"
-            username = base_username.replace(' ', '')
-            counter = 2
-            
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
-                
-            user = User.objects.create(username=username, email=self.email)
-            default_password = getattr(settings, 'DEFAULT_ARTIST_PASSWORD', 'fallback_secure_password123')  
-            user.set_password(default_password) 
-            user.save()
-            
-            self.user = user
-            
-        super().save(*args, **kwargs)
-
 
 class Project(EnterpriseBaseModel):
     """

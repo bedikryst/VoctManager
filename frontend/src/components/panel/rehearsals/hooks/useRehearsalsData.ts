@@ -1,7 +1,7 @@
 /**
  * @file useRehearsalsData.ts
- * @description Encapsulates data fetching, relational mapping, and KPI calculation 
- * for the Attendance and Rehearsal management module.
+ * @description Encapsulates data fetching, relational mapping, and KPI calculation.
+ * Upgraded to support active/archived project tabs.
  * @module hooks/useRehearsalsData
  */
 
@@ -12,9 +12,12 @@ import api from '../../../../utils/api';
 import { queryKeys } from '../../../../utils/queryKeys';
 import type { Project, Rehearsal, Participation, Attendance, Artist } from '../../../../types';
 
+export type ProjectTabType = 'ACTIVE' | 'ARCHIVE';
+
 export const useRehearsalsData = () => {
     const queryClient = useQueryClient();
 
+    const [projectTab, setProjectTab] = useState<ProjectTabType>('ACTIVE');
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
     const [activeRehearsalId, setActiveRehearsalId] = useState<string | null>(null);
     const [isMarkingAll, setIsMarkingAll] = useState<boolean>(false);
@@ -38,23 +41,23 @@ export const useRehearsalsData = () => {
     const attendances = (results[3].data || []) as Attendance[];
     const artists = (results[4].data || []) as Artist[];
 
-    // Smart Context Resolution
-    useEffect(() => {
-        if (!selectedProjectId && projects.length > 0) {
-            const now = new Date();
-            const activeProjects = projects.filter(p => p.status === 'ACTIVE' || p.status === 'DRAFT');
-            const upcoming = activeProjects
-                .filter(p => new Date(p.date_time) >= new Date(now.getTime() - 24 * 60 * 60 * 1000))
-                .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
+    const activeProjects = useMemo(() => projects.filter(p => p.status !== 'DONE' && p.status !== 'CANC'), [projects]);
+    const archivedProjects = useMemo(() => projects.filter(p => p.status === 'DONE' || p.status === 'CANC'), [projects]);
+    const displayProjects = projectTab === 'ACTIVE' ? activeProjects : archivedProjects;
 
-            if (upcoming.length > 0) {
-                setSelectedProjectId(String(upcoming[0].id));
-            } else {
-                const past = [...projects].sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime());
-                if (past.length > 0) setSelectedProjectId(String(past[0].id));
-            }
+    useEffect(() => {
+        if (!selectedProjectId && displayProjects.length > 0) {
+            setSelectedProjectId(String(displayProjects[0].id));
+        } else if (displayProjects.length > 0 && !displayProjects.find(p => String(p.id) === selectedProjectId)) {
+            // Zmiana zakładki - wybierz pierwszy z nowej listy
+            setSelectedProjectId(String(displayProjects[0].id));
         }
-    }, [projects, selectedProjectId]);
+    }, [displayProjects, selectedProjectId, projectTab]);
+
+    // ... (reszta hooka: artistMap, projectRehearsals, projectParticipations, etc. pozostaje absolutnie BEZ ZMIAN)
+    // Zwróć uwagę, żeby na końcu w returnie dorzucić nowe wartości:
+
+    // ... kod pozostaje ten sam ...
 
     const artistMap = useMemo<Map<string, Artist>>(() => {
         const map = new Map<string, Artist>();
@@ -74,7 +77,6 @@ export const useRehearsalsData = () => {
         return participations.filter(p => String(p.project) === String(selectedProjectId) && p.status !== 'DEC');
     }, [participations, selectedProjectId]);
 
-    // Auto-select initial rehearsal context
     useEffect(() => {
         if (projectRehearsals.length > 0 && (!activeRehearsalId || !projectRehearsals.find(r => String(r.id) === activeRehearsalId))) {
             setActiveRehearsalId(String(projectRehearsals[0].id));
@@ -165,7 +167,9 @@ export const useRehearsalsData = () => {
     return {
         isLoading,
         isError,
-        projects,
+        projectTab,            
+        setProjectTab,          
+        displayProjects,         
         selectedProjectId,
         setSelectedProjectId,
         projectRehearsals,

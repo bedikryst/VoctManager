@@ -3,12 +3,13 @@
  * @description Slide-over modal orchestrator for deep project editing and logistics.
  * Implements strict keyboard accessibility (ESC to close) and dynamic viewport constraints.
  * Provides a fluid tab routing system utilizing AnimatePresence for cinematic cross-fades.
- * Note: Child tabs are responsible for fetching their own relational data via useQuery.
+ * Refactored to Enterprise 2026 standards: i18n support and strict domain typing.
  * @module panel/projects/ProjectEditorPanel
  */
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, Briefcase, Calendar1, Grid, Users, 
@@ -26,29 +27,31 @@ import CrewTab from './tabs/CrewTab';
 import BudgetTab from './tabs/BudgetTab';
 import AttendanceMatrixTab from './tabs/AttendanceMatrixTab';
 
+import { PROJECT_TABS, ProjectTabId } from '../constants/projectDomain';
+
 interface TabDefinition {
-    id: string;
+    id: ProjectTabId;
     icon: React.ReactNode;
-    label: string;
+    labelKey: string;
 }
 
-const PROJECT_TABS: TabDefinition[] = [
-    { id: 'DETAILS', icon: <Briefcase size={14} aria-hidden="true" />, label: 'Szczegóły' },
-    { id: 'REHEARSALS', icon: <Calendar1 size={14} aria-hidden="true" />, label: 'Terminarz Prób' },
-    { id: 'MATRIX', icon: <Grid size={14} aria-hidden="true" />, label: 'Obecności' }, 
-    { id: 'CAST', icon: <Users size={14} aria-hidden="true" />, label: 'Casting Główny' },
-    { id: 'PROGRAM', icon: <ListOrdered size={14} aria-hidden="true" />, label: 'Setlista' },
-    { id: 'MICRO_CAST', icon: <MicVocal size={14} aria-hidden="true" />, label: 'Mikro-Obsada' },
-    { id: 'CREW', icon: <Wrench size={14} aria-hidden="true" />, label: 'Logistyka' },
-    { id: 'BUDGET', icon: <Banknote size={14} aria-hidden="true" />, label: 'Budżet' }
+const TAB_CONFIG: TabDefinition[] = [
+    { id: PROJECT_TABS.DETAILS, icon: <Briefcase size={14} aria-hidden="true" />, labelKey: 'projects.tabs.details' },
+    { id: PROJECT_TABS.REHEARSALS, icon: <Calendar1 size={14} aria-hidden="true" />, labelKey: 'projects.tabs.rehearsals' },
+    { id: PROJECT_TABS.MATRIX, icon: <Grid size={14} aria-hidden="true" />, labelKey: 'projects.tabs.matrix' },
+    { id: PROJECT_TABS.CAST, icon: <Users size={14} aria-hidden="true" />, labelKey: 'projects.tabs.cast' },
+    { id: PROJECT_TABS.PROGRAM, icon: <ListOrdered size={14} aria-hidden="true" />, labelKey: 'projects.tabs.program' },
+    { id: PROJECT_TABS.MICRO_CAST, icon: <MicVocal size={14} aria-hidden="true" />, labelKey: 'projects.tabs.micro_cast' },
+    { id: PROJECT_TABS.CREW, icon: <Wrench size={14} aria-hidden="true" />, labelKey: 'projects.tabs.crew' },
+    { id: PROJECT_TABS.BUDGET, icon: <Banknote size={14} aria-hidden="true" />, labelKey: 'projects.tabs.budget' }
 ];
 
 interface ProjectEditorPanelProps {
     isOpen: boolean;
     onClose: () => void;
     project: Project | null;
-    activeTab: string;
-    onTabChange: (tabId: string) => void;
+    activeTab: string; 
+    onTabChange: (tabId: string) => void; 
 }
 
 export default function ProjectEditorPanel({ 
@@ -58,6 +61,7 @@ export default function ProjectEditorPanel({
     activeTab, 
     onTabChange 
 }: ProjectEditorPanelProps): React.ReactPortal | null {
+    const { t } = useTranslation(); 
     const [mounted, setMounted] = useState<boolean>(false);
 
     useEffect(() => { 
@@ -104,7 +108,7 @@ export default function ProjectEditorPanel({
                             <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-4">
                                     <h3 id="panel-title" className="font-serif text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
-                                        {project ? project.title : 'Kreator Nowego Wydarzenia'}
+                                        {project ? project.title : t('projects.dashboard.new_project', 'Kreator Nowego Wydarzenia')}
                                     </h3>
                                     {project?.status === 'DONE' && (
                                         <span className="px-2.5 py-1 bg-stone-200/50 text-stone-600 text-[9px] uppercase tracking-widest font-bold antialiased rounded-md border border-stone-200">
@@ -127,19 +131,22 @@ export default function ProjectEditorPanel({
                                     <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#f8f7f4] to-transparent pointer-events-none z-10" />
                                     
                                     <div className="flex overflow-x-auto scrollbar-hide gap-2 p-1.5 bg-stone-200/40 border border-stone-200/60 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-                                        {PROJECT_TABS.map((tab) => (
-                                            <button 
-                                                key={tab.id} 
-                                                onClick={() => onTabChange(tab.id)} 
-                                                className={`flex items-center gap-2 px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex-shrink-0 ${
-                                                    activeTab === tab.id 
-                                                    ? 'bg-white text-[#002395] shadow-sm border border-white' 
-                                                    : 'text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent'
-                                                }`}
-                                            >
-                                                {tab.icon} {tab.label}
-                                            </button>
-                                        ))}
+                                        {TAB_CONFIG.map((tab) => {
+                                            const isActive = activeTab === tab.id;
+                                            return (
+                                                <button 
+                                                    key={tab.id} 
+                                                    onClick={() => onTabChange(tab.id)} 
+                                                    className={`flex items-center gap-2 px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex-shrink-0 ${
+                                                        isActive 
+                                                        ? 'bg-white text-[#002395] shadow-sm border border-white' 
+                                                        : 'text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent'
+                                                    }`}
+                                                >
+                                                    {tab.icon} {t(tab.labelKey)}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -157,14 +164,14 @@ export default function ProjectEditorPanel({
                                         transition={{ duration: 0.2, ease: "easeInOut" }}
                                         className="w-full"
                                     >
-                                        {activeTab === 'DETAILS' && <DetailsTab project={project} onSuccess={() => {}} />}
-                                        {activeTab === 'REHEARSALS' && project && <RehearsalsTab projectId={project.id} />}
-                                        {activeTab === 'MATRIX' && project && <AttendanceMatrixTab projectId={project.id} />}
-                                        {activeTab === 'CAST' && project && <CastTab projectId={project.id} />}
-                                        {activeTab === 'PROGRAM' && project && <ProgramTab projectId={project.id} />}
-                                        {activeTab === 'MICRO_CAST' && project && <MicroCastingTab projectId={project.id} />}
-                                        {activeTab === 'CREW' && project && <CrewTab projectId={project.id} />}
-                                        {activeTab === 'BUDGET' && project && <BudgetTab projectId={project.id} />}
+                                        {activeTab === PROJECT_TABS.DETAILS && <DetailsTab project={project} onSuccess={() => {}} />}
+                                        {activeTab === PROJECT_TABS.REHEARSALS && project && <RehearsalsTab projectId={project.id} />}
+                                        {activeTab === PROJECT_TABS.MATRIX && project && <AttendanceMatrixTab projectId={project.id} />}
+                                        {activeTab === PROJECT_TABS.CAST && project && <CastTab projectId={project.id} />}
+                                        {activeTab === PROJECT_TABS.PROGRAM && project && <ProgramTab projectId={project.id} />}
+                                        {activeTab === PROJECT_TABS.MICRO_CAST && project && <MicroCastingTab projectId={project.id} />}
+                                        {activeTab === PROJECT_TABS.CREW && project && <CrewTab projectId={project.id} />}
+                                        {activeTab === PROJECT_TABS.BUDGET && project && <BudgetTab projectId={project.id} />}
                                     </motion.div>
                                 </AnimatePresence>
 

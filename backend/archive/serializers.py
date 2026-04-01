@@ -131,54 +131,18 @@ class PieceSerializer(serializers.ModelSerializer):
         if not has_explicit_reference:
             validated_data['reference_recording_youtube'] = legacy_reference
 
-    def _sync_requirements(self, piece: Piece, requirements_raw) -> None:
-        """
-        Internal method for securely parsing and synchronizing vocal requirements.
-        Executes within an atomic transaction to guarantee data integrity.
-        """
-        if requirements_raw is None:
-            return
-            
-        # Parse payload based on transport format (FormData string vs JSON object)
-        if isinstance(requirements_raw, str):
-            try:
-                requirements = json.loads(requirements_raw)
-            except json.JSONDecodeError:
-                requirements = []
-        else:
-            requirements = requirements_raw
 
-        # Atomic block ensures that if creation fails, the deletion is rolled back
-        with transaction.atomic():
-            piece.voice_requirements.all().delete()
-            
-            # Bulk create prevents multiple database hits
-            new_requirements = [
-                PieceVoiceRequirement(
-                    piece=piece,
-                    voice_line=req.get('voice_line'),
-                    quantity=req.get('quantity', 1)
-                )
-                for req in requirements if req.get('voice_line')
-            ]
-            PieceVoiceRequirement.objects.bulk_create(new_requirements)
-
-    def create(self, validated_data) -> Piece:
-        """Overrides creation to extract and process nested requirement data."""
-        requirements_raw = validated_data.pop('requirements_data', None)
-        self._apply_legacy_reference_recording(validated_data)
-        piece = super().create(validated_data)
-        self._sync_requirements(piece, requirements_raw)
-        return piece
-
-    def update(self, instance: Piece, validated_data) -> Piece:
-        """Overrides update to handle conditional nested requirement synchronization."""
-        requirements_raw = validated_data.pop('requirements_data', None)
-        self._apply_legacy_reference_recording(validated_data)
-        piece = super().update(instance, validated_data)
+    def create(self, validated_data):
+        """Sanitizes virtual fields before hitting the database."""
+        validated_data.pop('requirements_data', None)
         
-        # Only mutate requirements if explicitly transmitted from the client
-        if requirements_raw is not None:
-            self._sync_requirements(piece, requirements_raw)
-            
-        return piece
+        self._apply_legacy_reference_recording(validated_data)
+        
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """Sanitizes virtual fields before updating the database."""
+        validated_data.pop('requirements_data', None)
+        self._apply_legacy_reference_recording(validated_data)
+        
+        return super().update(instance, validated_data) 
