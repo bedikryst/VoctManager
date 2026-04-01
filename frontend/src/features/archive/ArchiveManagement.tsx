@@ -21,10 +21,10 @@ import PieceCard from './components/PieceCard';
 import ArchiveEditorPanel from './components/ArchiveEditorPanel';
 import { EPOCHS } from './components/PieceDetailsForm';
 import { useArchiveData } from './hooks/useArchiveData';
-import type { Piece } from '../../../shared/types';
+import type { Piece } from '../../../types';
 
 // Enterprise dependencies
-import { useBodyScrollLock } from '../../../shared/lib/hooks/useBodyScrollLock';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import { ARCHIVE_TABS, ArchiveTabId } from './constants/archiveDomain';
 
 export default function ArchiveManagement(): React.JSX.Element {

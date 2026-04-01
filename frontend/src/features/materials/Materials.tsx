@@ -15,7 +15,7 @@ import {
     AlignLeft, Loader2, Lock, User, Users
 } from 'lucide-react';
 
-import { getReferenceRecordingLinks } from '../../../features/archive/lib/referenceRecordings';
+import { getReferenceRecordingLinks } from '../../../shared/lib/referenceRecordings';
 import { useMaterialsData } from './hooks/useMaterialsData';
 
 import { GlassCard } from '../../../shared/ui/GlassCard';
