@@ -14,10 +14,10 @@ import {
 
 import type { EnrichedPiece } from '../hooks/useArchiveData';
 import { EPOCHS } from './PieceDetailsForm';
-import { getReferenceRecordingLinks } from '../../../../shared/lib/referenceRecordings';
+import { getReferenceRecordingLinks } from '../../../shared/lib/referenceRecordings';
 
-import { GlassCard } from '../../../../shared/ui/GlassCard';
-import { Button } from '../../../../shared/ui/Button';
+import { GlassCard } from '../../../shared/ui/GlassCard';
+import { Button } from '../../../shared/ui/Button';
 
 interface PieceCardProps {
     piece: EnrichedPiece;

@@ -11,9 +11,9 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import api from '../../../../shared/api/api';
-import { queryKeys } from '../../../../shared/lib/queryKeys';
-import type { Project, Piece, Artist, Collaborator, VoiceLineOption } from '../../../../types';
+import api from '../../../shared/api/api';
+import { queryKeys } from '../../../shared/lib/queryKeys';
+import type { Project, Piece, Artist, Collaborator, VoiceLineOption } from '../../../types';
 
 export type FilterStatus = 'ACTIVE' | 'DONE' | 'ALL';
 

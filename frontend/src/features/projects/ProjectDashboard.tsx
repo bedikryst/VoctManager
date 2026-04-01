@@ -12,7 +12,7 @@ import { Plus, Briefcase, Layers } from 'lucide-react';
 
 import { useProjectDashboard } from './hooks/useProjectDashboard';
 import ProjectCard from './ProjectCard/ProjectCard';
-import ProjectEditorPanel from '../panel/projects/ProjectEditorPanel/ProjectEditorPanel';
+import ProjectEditorPanel from './ProjectEditorPanel/ProjectEditorPanel';
 import { DashboardFilterMenu } from './components/DashboardFilterMenu';
 
 import ConfirmModal from '../../shared/ui/ConfirmModal';

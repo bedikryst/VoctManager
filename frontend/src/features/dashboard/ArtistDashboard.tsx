@@ -14,8 +14,8 @@ import {
     UserMinus
 } from 'lucide-react';
 
-import { useAuth } from '../../../context/AuthContext';
-import { GlassCard } from '../../../shared/ui/GlassCard';
+import { useAuth } from '../../context/AuthContext';
+import { GlassCard } from '../../shared/ui/GlassCard';
 import { useArtistDashboardData } from './hooks/useArtistDashboardData';
 
 const containerVariants: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } }};

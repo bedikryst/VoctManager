@@ -10,10 +10,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Plus, Search, Filter, Wrench } from 'lucide-react';
 
-import ConfirmModal from '../../../shared/ui/ConfirmModal';
-import { Button } from '../../../shared/ui/Button';
-import { Input } from '../../../shared/ui/Input';
-import { GlassCard } from '../../../shared/ui/GlassCard';
+import ConfirmModal from '../../shared/ui/ConfirmModal';
+import { Button } from '../../shared/ui/Button';
+import { Input } from '../../shared/ui/Input';
+import { GlassCard } from '../../shared/ui/GlassCard';
 
 import CrewEditorPanel, { SPECIALTY_CHOICES } from './CrewEditorPanel';
 import { CrewCard } from './CrewCard';

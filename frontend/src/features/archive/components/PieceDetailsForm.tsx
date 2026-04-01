@@ -9,9 +9,9 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Plus, Minus, Trash2, Clock, Music, Youtube, AlignLeft } from 'lucide-react';
 
-import type { Piece, Composer, VoiceLineOption } from '../../../../types';
-import { Button } from '../../../../shared/ui/Button';
-import { Input } from '../../../../shared/ui/Input';
+import type { Piece, Composer, VoiceLineOption } from '../../../types';
+import { Button } from '../../../shared/ui/Button';
+import { Input } from '../../../shared/ui/Input';
 import { usePieceForm, SubmitAction } from '../hooks/usePieceForm';
 
 export const EPOCHS = [

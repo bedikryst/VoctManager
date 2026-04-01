@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import api from '../../../../../shared/api/api';
+import api from '../../../../shared/api/api';
 
 export function useProjectCard(projectId: number | string) {
     const [isDownloading, setIsDownloading] = useState<string | null>(null);

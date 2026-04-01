@@ -5,11 +5,11 @@
  * @module panel/artists/hooks/useArtistForm
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '../../../../shared/api/api';
-import type { Artist } from '../../../../types';
+import api from '../../../shared/api/api';
+import type { Artist } from '../../../types';
 
 interface VoiceTypeOption {
     value: string;

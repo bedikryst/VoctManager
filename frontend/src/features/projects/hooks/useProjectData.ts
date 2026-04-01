@@ -7,12 +7,12 @@
  */
 
 import { useQueries, QueryClient } from '@tanstack/react-query';
-import api from '../../../../shared/api/api';
-import { queryKeys } from '../../../../shared/lib/queryKeys';
+import api from '../../../shared/api/api';
+import { queryKeys } from '../../../shared/lib/queryKeys';
 import type { 
     Participation, Rehearsal, CrewAssignment, 
     PieceCasting, Artist, Collaborator, Piece 
-} from '../../../../types';
+} from '../../../types';
 
 export function useProjectData(projectId: string | undefined) {
     const results = useQueries({

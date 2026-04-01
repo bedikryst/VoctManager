@@ -8,10 +8,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Edit2, Trash2, Mail, Phone, Briefcase } from 'lucide-react';
-import type { Collaborator } from '../../../types';
+import type { Collaborator } from '../../types';
 import { SPECIALTY_CHOICES } from './CrewEditorPanel';
-import { GlassCard } from '../../../shared/ui/GlassCard';
-import { Button } from '../../../shared/ui/Button';
+import { GlassCard } from '../../shared/ui/GlassCard';
+import { Button } from '../../shared/ui/Button';
 
 const getSpecialtyLabel = (val: string): string => {
     return SPECIALTY_CHOICES.find(s => s.value === val)?.label || 'Inne';

@@ -10,10 +10,10 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2 } from 'lucide-react';
 
-import ConfirmModal from '../../../shared/ui/ConfirmModal';
-import { Input } from '../../../shared/ui/Input';
-import { Button } from '../../../shared/ui/Button';
-import type { Collaborator } from '../../../types';
+import ConfirmModal from '../../shared/ui/ConfirmModal';
+import { Input } from '../../shared/ui/Input';
+import { Button } from '../../shared/ui/Button';
+import type { Collaborator } from '../../types';
 import { useCrewForm } from './hooks/useCrewForm';
 
 export const SPECIALTY_CHOICES = [

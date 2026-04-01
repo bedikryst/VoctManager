@@ -11,12 +11,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
     MapPin, Clock, AlertCircle, CheckCircle2, 
-    XCircle, Send, Loader2, UserMinus, ArrowRight, Check, ChevronDown, ChevronUp, Music, AlignLeft
+    XCircle, Send, UserMinus, ArrowRight, Check, ChevronDown, ChevronUp, Music, AlignLeft
 } from 'lucide-react';
 import type { TimelineEvent } from '../hooks/useScheduleData';
 import { useTimelineRehearsalCard } from '../hooks/useTimelineRehearsalCard';
-import { Input } from '../../../../shared/ui/Input';
-import { Button } from '../../../../shared/ui/Button';
+import { Input } from '../../../shared/ui/Input';
+import { Button } from '../../../shared/ui/Button';
 
 interface TimelineRehearsalCardProps {
     event: TimelineEvent;

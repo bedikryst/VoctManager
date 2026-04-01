@@ -8,8 +8,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '../../../../shared/api/api';
-import { queryKeys } from '../../../../shared/lib/queryKeys';
+import api from '../../../shared/api/api';
+import { queryKeys } from '../../../shared/lib/queryKeys';
 
 export const useTimelineProjectCard = (projectId: string | number, projectTitle: string, isExpanded: boolean) => {
     const [activeSubTab, setActiveSubTab] = useState<'LOGISTICS' | 'SETLIST'>('LOGISTICS');

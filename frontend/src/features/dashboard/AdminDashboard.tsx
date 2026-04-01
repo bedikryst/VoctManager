@@ -15,8 +15,8 @@ import {
     Plus
 } from 'lucide-react';
 
-import { useAuth } from '../../../context/AuthContext';
-import { GlassCard } from '../../../shared/ui/GlassCard';
+import { useAuth } from '../../context/AuthContext';
+import { GlassCard } from '../../shared/ui/GlassCard';
 import { useAdminDashboardData } from './hooks/useAdminDashboardData';
 
 const ADMIN_MODULES = [

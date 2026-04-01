@@ -9,10 +9,10 @@ import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FileText, CheckCircle2 } from 'lucide-react';
-import api from '../../../shared/api/api';
-import { queryKeys } from '../../../shared/lib/queryKeys';
-import { Input } from '../../../shared/ui/Input';
-import { Button } from '../../../shared/ui/Button';
+import api from '../../shared/api/api';
+import { queryKeys } from '../../shared/lib/queryKeys';
+import { Input } from '../../shared/ui/Input';
+import { Button } from '../../shared/ui/Button';
 
 interface ContractRowProps {
     record: any; 

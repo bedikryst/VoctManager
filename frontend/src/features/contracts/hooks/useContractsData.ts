@@ -7,9 +7,9 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useQueries } from '@tanstack/react-query';
-import api from '../../../../shared/api/api';
-import { queryKeys } from '../../../../shared/lib/queryKeys';
-import type { Project, Participation, CrewAssignment, Collaborator } from '../../../../types';
+import api from '../../../shared/api/api';
+import { queryKeys } from '../../../shared/lib/queryKeys';
+import type { Project, Participation, CrewAssignment, Collaborator } from '../../../types';
 
 export interface EnrichedParticipation extends Participation {
     artist_name?: string;

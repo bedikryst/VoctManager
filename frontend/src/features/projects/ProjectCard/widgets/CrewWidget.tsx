@@ -9,9 +9,9 @@
 import React from 'react';
 import { Wrench } from 'lucide-react';
 
-import type { Project, Collaborator } from '../../../../../types';
+import type { Project, Collaborator } from '../../../../types';
 import { useProjectData } from '../../hooks/useProjectData';
-import { GlassCard } from '../../../../../shared/ui/GlassCard';
+import { GlassCard } from '../../../../shared/ui/GlassCard';
 
 interface CrewWidgetProps {
     project: Project;

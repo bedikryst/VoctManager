@@ -10,9 +10,9 @@
 import React, { useMemo } from 'react';
 import { ListOrdered, Music } from 'lucide-react';
 
-import type { Project, Piece, VoiceRequirement } from '../../../../../types';
+import type { Project, Piece, VoiceRequirement } from '../../../../types';
 import { useProjectData } from '../../hooks/useProjectData';
-import { GlassCard } from '../../../../../shared/ui/GlassCard';
+import { GlassCard } from '../../../../shared/ui/GlassCard';
 
 interface ProgramWidgetProps {
     project: Project;

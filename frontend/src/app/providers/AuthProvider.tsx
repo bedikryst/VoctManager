@@ -8,7 +8,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import api from '../shared/api/api';
+import api from '../../shared/api/api';
 
 export interface AuthUser {
     id: string | number;

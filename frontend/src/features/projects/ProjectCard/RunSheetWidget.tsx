@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ListOrdered, ChevronDown, ChevronUp } from 'lucide-react';
-import type { Project } from '../../../../types';
+import type { Project } from '../../../types';
 
 interface RunSheetWidgetProps {
     project: Project;

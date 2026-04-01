@@ -5,12 +5,12 @@
  * @module panel/crew/hooks/useCrewForm
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '../../../../shared/api/api';
-import { queryKeys } from '../../../../shared/lib/queryKeys';
-import type { Collaborator } from '../../../../types';
+import api from '../../../shared/api/api';
+import { queryKeys } from '../../../shared/lib/queryKeys';
+import type { Collaborator } from '../../../types';
 
 export interface CrewFormData {
     first_name: string;

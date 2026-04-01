@@ -7,9 +7,9 @@
 
 import { useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
-import api from '../../../../shared/api/api';
-import { queryKeys } from '../../../../shared/lib/queryKeys';
-import type { Project, Artist, Rehearsal, ProgramItem, Piece } from '../../../../types';
+import api from '../../../shared/api/api';
+import { queryKeys } from '../../../shared/lib/queryKeys';
+import type { Project, Artist, Rehearsal, ProgramItem, Piece } from '../../../types';
 
 export interface EnrichedRehearsal extends Rehearsal {
     absent_count?: number;

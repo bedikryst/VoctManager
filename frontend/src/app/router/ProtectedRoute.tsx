@@ -9,8 +9,8 @@
 
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
-import Preloader from '../../../shared/ui/Preloader';
+import { useAuth } from '../providers/AuthProvider';
+import Preloader from '../../shared/ui/Preloader';
 
 export default function ProtectedRoute(): React.JSX.Element {
     const { isAuthenticated, isLoading } = useAuth();

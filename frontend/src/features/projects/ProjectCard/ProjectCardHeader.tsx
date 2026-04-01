@@ -7,11 +7,11 @@
  */
 
 import React, { useMemo } from 'react';
-import { MapPin, ChevronDown, ChevronUp, Clock, FileText, CheckCircle2, ArchiveRestore, Download, AlignLeft, Edit2, Trash2, Wrench, Users } from 'lucide-react';
-import type { Project } from '../../../../types';
+import { MapPin, ChevronDown, ChevronUp, Clock, FileText, Download, AlignLeft, Edit2, Trash2, Wrench, Users } from 'lucide-react';
+import type { Project } from '../../../types';
 import { useProjectData } from '../hooks/useProjectData';
 import { useProjectCard } from './hooks/useProjectCard';
-import { Button } from '../../../../shared/ui/Button';
+import { Button } from '../../../shared/ui/Button';
 
 interface ProjectCardHeaderProps {
     project: Project;

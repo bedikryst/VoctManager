@@ -8,8 +8,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '../../../../shared/api/api';
-import type { Artist } from '../../../../types';
+import api from '../../../shared/api/api';
+import type { Artist } from '../../../types';
 
 export interface VoiceTypeOption {
     value: string;

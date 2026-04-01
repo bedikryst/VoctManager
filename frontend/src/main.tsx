@@ -11,9 +11,10 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { CursorProvider } from './app/providers/CursorProvider'; 
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './app/providers/AuthProvider';
+import './shared/config/i18n';
 import App from './app/App';
-import './assets/styles/index.css';
+import './app/styles/index.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

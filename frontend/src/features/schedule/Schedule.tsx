@@ -7,14 +7,13 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
 import { Calendar, Loader2, CalendarHeart } from 'lucide-react';
 
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../app/providers/AuthProvider';
 import { useScheduleData } from './hooks/useScheduleData';
 import TimelineProjectCard from './cards/TimelineProjectCard';
 import TimelineRehearsalCard from './cards/TimelineRehearsalCard'; 
-import { GlassCard } from '../../../shared/ui/GlassCard';
+import { GlassCard } from '../../shared/ui/GlassCard';
 
 export default function Schedule(): React.JSX.Element {
     const { user } = useAuth();

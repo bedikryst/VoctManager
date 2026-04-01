@@ -8,8 +8,7 @@ import React, { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { 
-    Calendar, MapPin, CheckCircle2, AlertCircle, 
-    Loader2, CheckSquare, Clock, SearchX, Briefcase, Archive
+    MapPin, CheckCircle2, Loader2, CheckSquare, Clock, Briefcase, Archive
 } from 'lucide-react';
 
 import { useRehearsalsData } from './hooks/useRehearsalsData';

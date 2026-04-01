@@ -18,7 +18,7 @@ import {
     Calendar, Headphones, FolderOpen, Wrench, Settings
 } from 'lucide-react';
 
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../../app/providers/AuthProvider';
 
 interface AuthUser {
     id?: string | number;

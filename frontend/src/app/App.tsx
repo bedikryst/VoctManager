@@ -18,22 +18,22 @@ import PageTransition from '../shared/ui/PageTransition';
 import CustomCursor from '../shared/ui/CustomCursor';
 import NoiseOverlay from '../shared/ui/NoiseOverlay';
 import Preloader from '../shared/ui/Preloader';
-import ProtectedRoute from './widgets/layout/public/ProtectedRoute';
-import DashboardLayout from './features/layout/DashboardLayout';
+import ProtectedRoute from './router/ProtectedRoute';
+import DashboardLayout from '../widgets/layout/dashboard/DashboardLayout';
 
 import Home from '../pages/public/HomePage';
 import Login from '../pages/public/LoginPage';
 
-import Contracts from './features/panel/contracts/Contracts';
-import DashboardHome from './features/panel/dashboard/DashboardHome';
+import Contracts from '../features/contracts/Contracts';
+import DashboardHome from '../features/dashboard/DashboardHome';
 import Rehearsals from '../features/rehearsals/Rehearsals';
-import Materials from './features/panel/materials/Materials';
-import Schedule from './features/panel/schedule/Schedule';
-import ArtistManagement from './features/panel/artists/ArtistManagement';
+import Materials from '../features/materials/Materials';
+import Schedule from '../features/schedule/Schedule';
+import ArtistManagement from '../features/artists/ArtistManagement';
 import ProjectManagement from '../features/projects/ProjectDashboard';
-import ArchiveManagement from './features/panel/archive/ArchiveManagement';
-import Resources from './features/panel/Resources';
-import CrewManagement from './features/panel/crew/CrewManagement';
+import ArchiveManagement from '../features/archive/ArchiveManagement';
+import Resources from '../features/Resources';
+import CrewManagement from '../features/crew/CrewManagement';
 
 export default function App(): React.JSX.Element {
   const location = useLocation();

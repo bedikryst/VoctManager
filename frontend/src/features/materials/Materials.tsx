@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { 
@@ -15,11 +15,11 @@ import {
     AlignLeft, Loader2, Lock, User, Users
 } from 'lucide-react';
 
-import { getReferenceRecordingLinks } from '../../../shared/lib/referenceRecordings';
+import { getReferenceRecordingLinks } from '../../shared/lib/referenceRecordings';
 import { useMaterialsData } from './hooks/useMaterialsData';
 
-import { GlassCard } from '../../../shared/ui/GlassCard';
-import { Input } from '../../../shared/ui/Input';
+import { GlassCard } from '../../shared/ui/GlassCard';
+import { Input } from '../../shared/ui/Input';
 import { EducationalAudioPlayer } from './EducationalAudioPlayer';
 
 export default function Materials(): React.JSX.Element {

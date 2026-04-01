@@ -14,15 +14,15 @@ import {
     Users, Wrench, Sparkles, Receipt, Loader2, ChevronDown 
 } from 'lucide-react';
 
-import api from '../../../shared/api/api'; 
-import { downloadFile } from '../../../shared/lib/downloadFile';
-import { queryKeys } from '../../../shared/lib/queryKeys';
+import api from '../../shared/api/api'; 
+import { downloadFile } from '../../shared/lib/downloadFile';
+import { queryKeys } from '../../shared/lib/queryKeys';
 import { useContractsData } from './hooks/useContractsData';
 
-import { GlassCard } from '../../../shared/ui/GlassCard';
-import { Input } from '../../../shared/ui/Input';
-import { Button } from '../../../shared/ui/Button';
-import { ExportContractButton } from '../../../shared/ui/ExportContractButton';
+import { GlassCard } from '../../shared/ui/GlassCard';
+import { Input } from '../../shared/ui/Input';
+import { Button } from '../../shared/ui/Button';
+import { ExportContractButton } from '../../shared/ui/ExportContractButton';
 import { ContractRow } from './ContractRow';
 
 export default function Contracts(): React.JSX.Element {

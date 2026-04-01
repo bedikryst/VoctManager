@@ -16,16 +16,16 @@ import {
     ListOrdered, MicVocal, Wrench, Banknote 
 } from 'lucide-react';
 
-import type { Project } from '../../../../types';
+import type { Project } from '../../../shared/types';
 
-import DetailsTab from '../../../projects/ProjectEditorPanel/tabs/DetailsTab';
-import MicroCastingTab from '../../../projects/ProjectEditorPanel/tabs/MicroCastingTab';
-import RehearsalsTab from '../../../projects/ProjectEditorPanel/tabs/RehearsalsTab';
-import CastTab from '../../../projects/ProjectEditorPanel/tabs/CastTab';
-import ProgramTab from '../../../projects/ProjectEditorPanel/tabs/ProgramTab';
-import CrewTab from '../../../projects/ProjectEditorPanel/tabs/CrewTab';
-import BudgetTab from '../../../projects/ProjectEditorPanel/tabs/BudgetTab';
-import AttendanceMatrixTab from '../../../projects/ProjectEditorPanel/tabs/AttendanceMatrixTab';
+import DetailsTab from './tabs/DetailsTab';
+import MicroCastingTab from './tabs/MicroCastingTab';
+import RehearsalsTab from './tabs/RehearsalsTab';
+import CastTab from './tabs/CastTab';
+import ProgramTab from './tabs/ProgramTab';
+import CrewTab from './tabs/CrewTab';
+import BudgetTab from './tabs/BudgetTab';
+import AttendanceMatrixTab from './tabs/AttendanceMatrixTab';
 
 import { PROJECT_TABS, ProjectTabId } from '../constants/projectDomain';
 

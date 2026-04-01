@@ -12,9 +12,9 @@ import { X, FileText, Headphones } from 'lucide-react';
 
 import PieceDetailsForm from './PieceDetailsForm';
 import TrackUploadManager from './TrackUploadManager';
-import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import ConfirmModal from '../../../shared/ui/ConfirmModal';
 
-import type { Piece, Composer, VoiceLineOption } from '../../../../types';
+import type { Piece, Composer, VoiceLineOption } from '../../../types';
 import { ArchiveTabId } from '../constants/archiveDomain';
 
 interface ArchiveEditorPanelProps {

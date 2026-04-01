@@ -17,7 +17,7 @@ import {
   Archive, Info, Plus, Edit2, Trash2 
 } from 'lucide-react';
 
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../app/providers/AuthProvider';
 
 // --- Interfaces for Future CMS Integration ---
 interface ResourceFile {

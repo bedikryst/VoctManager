@@ -13,11 +13,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Briefcase, Music, Wrench } from 'lucide-react';
 
-import api from '../../../../shared/api/api';
-import { queryKeys } from '../../../../shared/lib/queryKeys';
-import type { Project } from '../../../../types';
+import api from '../../../shared/api/api';
+import { queryKeys } from '../../../shared/lib/queryKeys';
+import type { Project } from '../../../types';
 
-import { GlassCard } from '../../../../shared/ui/GlassCard';
+import { GlassCard } from '../../../shared/ui/GlassCard';
 import { useProjectData } from '../hooks/useProjectData';
 
 import ProjectCardHeader from './ProjectCardHeader'; 

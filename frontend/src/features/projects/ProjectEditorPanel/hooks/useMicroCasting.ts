@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import api from '../../../../shared/api/api';
 import { queryKeys } from '../../../../shared/lib/queryKeys';
 import { useProjectData } from '../../hooks/useProjectData';
-import type { Participation, Artist, PieceCasting, VoiceLineOption, ProgramItem } from '../../../../shared/types';
+import type { Artist, PieceCasting, VoiceLineOption, ProgramItem } from '../../../../shared/types';
 
 export const useMicroCasting = (projectId: string) => {
     const queryClient = useQueryClient();

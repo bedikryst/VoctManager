@@ -12,12 +12,12 @@ import { toast } from 'sonner';
 import { UserPlus, Search, Filter, Users, LayoutGrid } from 'lucide-react';
 
 import { useArtistData } from './hooks/useArtistData';
-import ConfirmModal from '../../../shared/ui/ConfirmModal';
-import { Button } from '../../../shared/ui/Button';
-import { Input } from '../../../shared/ui/Input';
-import { GlassCard } from '../../../shared/ui/GlassCard';
+import ConfirmModal from '../../shared/ui/ConfirmModal';
+import { Button } from '../../shared/ui/Button';
+import { Input } from '../../shared/ui/Input';
+import { GlassCard } from '../../shared/ui/GlassCard';
 import { VoiceFilterButton} from './components/VoiceFilterButton';
-import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 import ArtistEditorPanel from './ArtistEditorPanel';
 import { ArtistCard } from './ArtistCard';

@@ -12,19 +12,19 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Plus, FileText, Headphones, Search, Filter, Library, Clock, Layers } from 'lucide-react';
 
-import ConfirmModal from '../../../shared/ui/ConfirmModal';
-import { GlassCard } from '../../../shared/ui/GlassCard';
-import { Input } from '../../../shared/ui/Input';
-import { Button } from '../../../shared/ui/Button';
+import ConfirmModal from '../../shared/ui/ConfirmModal';
+import { GlassCard } from '../../shared/ui/GlassCard';
+import { Input } from '../../shared/ui/Input';
+import { Button } from '../../shared/ui/Button';
 
 import PieceCard from './components/PieceCard';
 import ArchiveEditorPanel from './components/ArchiveEditorPanel';
 import { EPOCHS } from './components/PieceDetailsForm';
 import { useArchiveData } from './hooks/useArchiveData';
-import type { Piece } from '../../../types';
+import type { Piece } from '../../types';
 
 // Enterprise dependencies
-import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ARCHIVE_TABS, ArchiveTabId } from './constants/archiveDomain';
 
 export default function ArchiveManagement(): React.JSX.Element {

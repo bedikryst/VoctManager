@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { AlignLeft, Shirt } from 'lucide-react';
-import type { Project } from '../../../../types';
+import type { Project } from '../../../types';
 
 interface ProjectCardDetailsProps {
     project: Project;

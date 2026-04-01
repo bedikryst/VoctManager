@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 import SpotifyWidget from '../../projects/ProjectCard/SpotifyWidget';
-import { Button } from '../../../../shared/ui/Button';
+import { Button } from '../../../shared/ui/Button';
 import { useTimelineProjectCard } from '../hooks/useTimelineProjectCard';
 import type { TimelineEvent } from '../hooks/useScheduleData';
 
