@@ -9,7 +9,7 @@ import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '../../../shared/api/api';
-import type { Artist } from '../../../types';
+import type { Artist } from '../../../shared/types';
 
 interface VoiceTypeOption {
     value: string;

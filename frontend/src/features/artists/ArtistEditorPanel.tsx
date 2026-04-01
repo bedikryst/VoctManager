@@ -13,7 +13,7 @@ import { X, CheckCircle2 } from 'lucide-react';
 import ConfirmModal from '../../shared/ui/ConfirmModal';
 import { Button } from '../../shared/ui/Button';
 import { Input } from '../../shared/ui/Input';
-import type { Artist } from '../../types';
+import type { Artist } from '../../shared/types';
 import { useArtistForm } from './hooks/useArtistForm';
 
 interface VoiceTypeOption {

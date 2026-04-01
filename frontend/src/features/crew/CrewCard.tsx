@@ -8,7 +8,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Edit2, Trash2, Mail, Phone, Briefcase } from 'lucide-react';
-import type { Collaborator } from '../../types';
+import type { Collaborator } from '../../shared/types';
 import { SPECIALTY_CHOICES } from './CrewEditorPanel';
 import { GlassCard } from '../../shared/ui/GlassCard';
 import { Button } from '../../shared/ui/Button';

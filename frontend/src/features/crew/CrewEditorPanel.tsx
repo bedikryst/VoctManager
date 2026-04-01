@@ -13,7 +13,7 @@ import { X, CheckCircle2 } from 'lucide-react';
 import ConfirmModal from '../../shared/ui/ConfirmModal';
 import { Input } from '../../shared/ui/Input';
 import { Button } from '../../shared/ui/Button';
-import type { Collaborator } from '../../types';
+import type { Collaborator } from '../../shared/types';
 import { useCrewForm } from './hooks/useCrewForm';
 
 export const SPECIALTY_CHOICES = [

@@ -12,7 +12,7 @@ import { queryKeys } from '../../../shared/lib/queryKeys';
 import type { 
     Participation, Rehearsal, CrewAssignment, 
     PieceCasting, Artist, Collaborator, Piece 
-} from '../../../types';
+} from '../../../shared/types';
 
 export function useProjectData(projectId: string | undefined) {
     const results = useQueries({

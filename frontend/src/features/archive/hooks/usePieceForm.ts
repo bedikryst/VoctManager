@@ -10,7 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '../../../shared/api/api';
 import { queryKeys } from '../../../shared/lib/queryKeys';
-import type { Piece, Composer } from '../../../types';
+import type { Piece, Composer } from '../../../shared/types';
 
 export type SubmitAction = 'SAVE_AND_ADD' | 'SAVE_AND_CLOSE';
 

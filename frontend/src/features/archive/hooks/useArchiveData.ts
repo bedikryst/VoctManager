@@ -10,7 +10,7 @@ import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '../../../shared/api/api';
 import { queryKeys } from '../../../shared/lib/queryKeys';
-import type { Piece, Composer, VoiceLineOption } from '../../../types';
+import type { Piece, Composer, VoiceLineOption } from '../../../shared/types';
 
 export interface EnrichedPiece extends Piece {
     composerData: Composer | null;

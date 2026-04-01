@@ -9,7 +9,7 @@
 import React from 'react';
 import { Wrench } from 'lucide-react';
 
-import type { Project, Collaborator } from '../../../../types';
+import type { Project, Collaborator } from '../../../../shared/types';
 import { useProjectData } from '../../hooks/useProjectData';
 import { GlassCard } from '../../../../shared/ui/GlassCard';
 

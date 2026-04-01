@@ -12,7 +12,7 @@ import { queryKeys } from '../../../shared/lib/queryKeys';
 import type { 
     Project, Piece, Track, PieceCasting, 
     Participation, Composer, ProgramItem 
-} from '../../../types';
+} from '../../../shared/types';
 
 export interface EnrichedPiece extends Piece {
     composerData: Composer | null;

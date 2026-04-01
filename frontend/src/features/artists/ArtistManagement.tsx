@@ -17,7 +17,7 @@ import { Button } from '../../shared/ui/Button';
 import { Input } from '../../shared/ui/Input';
 import { GlassCard } from '../../shared/ui/GlassCard';
 import { VoiceFilterButton} from './components/VoiceFilterButton';
-import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useBodyScrollLock } from '../../shared/lib/hooks/useBodyScrollLock';
 
 import ArtistEditorPanel from './ArtistEditorPanel';
 import { ArtistCard } from './ArtistCard';

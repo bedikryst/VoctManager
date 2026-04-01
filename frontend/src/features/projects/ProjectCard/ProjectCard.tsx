@@ -15,7 +15,7 @@ import { Briefcase, Music, Wrench } from 'lucide-react';
 
 import api from '../../../shared/api/api';
 import { queryKeys } from '../../../shared/lib/queryKeys';
-import type { Project } from '../../../types';
+import type { Project } from '../../../shared/types';
 
 import { GlassCard } from '../../../shared/ui/GlassCard';
 import { useProjectData } from '../hooks/useProjectData';

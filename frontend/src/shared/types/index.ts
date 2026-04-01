@@ -7,7 +7,7 @@
  */
 
 export interface BaseModel {
-  id: string; 
+  id: string;
   created_at?: string;
   updated_at?: string;
   is_deleted?: boolean;
@@ -22,19 +22,17 @@ export type CollaboratorSpecialty = 'SOUND' | 'LIGHT' | 'VISUALS' | 'INSTRUMENT'
 export type CrewAssignmentStatus = 'INV' | 'CON';
 export type Epoch = 'MED' | 'REN' | 'BAR' | 'CLA' | 'ROM' | 'M20' | 'CON' | 'POP' | 'FOLK' | 'OTH';
 
-export type VoiceLine = 
-  | 'S1' | 'S2' 
-  | 'A1' | 'A2' 
-  | 'T1' | 'T2' 
-  | 'B1' | 'B2' 
+export type VoiceLine =
+  | 'S1' | 'S2'
+  | 'A1' | 'A2'
+  | 'T1' | 'T2'
+  | 'B1' | 'B2'
   | 'SOLO' | 'VP' | 'TUTTI' | 'ACC' | 'PRON';
 
 export interface VoiceLineOption {
   value: VoiceLine | string;
   label: string;
 }
-
-// --- ROSTER MODELS ---
 
 export interface Artist extends BaseModel {
   user?: string | null;
@@ -43,7 +41,7 @@ export interface Artist extends BaseModel {
   email: string;
   phone_number?: string | null;
   voice_type: VoiceType | string;
-  voice_type_display?: string; 
+  voice_type_display?: string;
   is_active: boolean;
   username?: string | null;
   sight_reading_skill?: number | null;
@@ -57,7 +55,7 @@ export interface RunSheetItem {
   title: string;
   description?: string;
   activity?: string;
-  details?:string | null;
+  details?: string | null;
 }
 
 export interface Project extends BaseModel {
@@ -70,7 +68,7 @@ export interface Project extends BaseModel {
   description?: string | null;
   status: ProjectStatus | string;
   run_sheet?: RunSheetItem[];
-  program?: ProgramItem[]; 
+  program?: ProgramItem[];
   spotify_playlist_url?: string;
 }
 
@@ -78,7 +76,7 @@ export interface Participation extends BaseModel {
   artist: string;
   project: string;
   status: ParticipationStatus | string;
-  fee?: string | number | null; 
+  fee?: string | number | null;
 }
 
 export interface Rehearsal extends BaseModel {
@@ -115,8 +113,6 @@ export interface CrewAssignment extends BaseModel {
   fee?: string | number | null;
 }
 
-// --- ARCHIVE MODELS ---
-
 export interface Composer extends BaseModel {
   first_name?: string | null;
   last_name: string;
@@ -128,7 +124,7 @@ export interface VoiceRequirement {
   id?: string;
   piece?: string;
   voice_line: string;
-  voice_line_display?: string; 
+  voice_line_display?: string;
   quantity: number;
 }
 
@@ -158,8 +154,8 @@ export interface Piece extends BaseModel {
 export interface ProgramItem extends BaseModel {
   project: string;
   piece: string;
-  piece_id?: string; 
-  piece_title?: string; 
+  piece_id?: string;
+  piece_title?: string;
   title: string;
   order: number;
   is_encore: boolean;

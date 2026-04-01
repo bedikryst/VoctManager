@@ -8,7 +8,7 @@
 
 import React, { useMemo } from 'react';
 import { MapPin, ChevronDown, ChevronUp, Clock, FileText, Download, AlignLeft, Edit2, Trash2, Wrench, Users } from 'lucide-react';
-import type { Project } from '../../../types';
+import type { Project } from '../../../shared/types';
 import { useProjectData } from '../hooks/useProjectData';
 import { useProjectCard } from './hooks/useProjectCard';
 import { Button } from '../../../shared/ui/Button';

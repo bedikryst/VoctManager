@@ -9,7 +9,7 @@
 import React, { useMemo } from 'react';
 import { Banknote } from 'lucide-react';
 
-import type { Project } from '../../../../types';
+import type { Project } from '../../../../shared/types';
 import { useProjectData } from '../../hooks/useProjectData';
 import { GlassCard } from '../../../../shared/ui/GlassCard';
 

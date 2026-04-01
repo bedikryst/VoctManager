@@ -14,7 +14,7 @@ import PieceDetailsForm from './PieceDetailsForm';
 import TrackUploadManager from './TrackUploadManager';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
 
-import type { Piece, Composer, VoiceLineOption } from '../../../types';
+import type { Piece, Composer, VoiceLineOption } from '../../../shared/types';
 import { ArchiveTabId } from '../constants/archiveDomain';
 
 interface ArchiveEditorPanelProps {

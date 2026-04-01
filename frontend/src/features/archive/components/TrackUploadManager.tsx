@@ -14,7 +14,7 @@ import { Loader2, UploadCloud, Trash2, AlertCircle, PlayCircle } from 'lucide-re
 import api from '../../../shared/api/api';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
 import { Button } from '../../../shared/ui/Button';
-import type { Track, VoiceLineOption } from '../../../types';
+import type { Track, VoiceLineOption } from '../../../shared/types';
 import { queryKeys } from '../../../shared/lib/queryKeys';
 
 interface TrackUploadManagerProps {

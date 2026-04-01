@@ -10,7 +10,7 @@
 import React, { useMemo } from 'react';
 import { ListOrdered, Music } from 'lucide-react';
 
-import type { Project, Piece, VoiceRequirement } from '../../../../types';
+import type { Project, Piece, VoiceRequirement } from '../../../../shared/types';
 import { useProjectData } from '../../hooks/useProjectData';
 import { GlassCard } from '../../../../shared/ui/GlassCard';
 

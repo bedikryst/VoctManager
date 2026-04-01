@@ -11,7 +11,7 @@ import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '../../../shared/api/api';
 import { queryKeys } from '../../../shared/lib/queryKeys';
-import type { Project, Rehearsal, Participation, Attendance } from '../../../types';
+import type { Project, Rehearsal, Participation, Attendance } from '../../../shared/types';
 
 export interface TimelineEvent {
     id: string;

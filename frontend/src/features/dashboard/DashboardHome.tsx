@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../app/providers/AuthProvider';
 
 import AdminDashboard from './AdminDashboard';
 import ArtistDashboard from './ArtistDashboard';

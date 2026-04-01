@@ -8,7 +8,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, Edit2, Trash2, CheckCircle2, Activity, Star, User } from 'lucide-react';
-import type { Artist } from '../../types';
+import type { Artist } from '../../shared/types';
 import { GlassCard } from '../../shared/ui/GlassCard';
 import { Button } from '../../shared/ui/Button';
 

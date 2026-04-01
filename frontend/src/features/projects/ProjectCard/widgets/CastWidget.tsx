@@ -9,7 +9,7 @@
 import React from 'react';
 import { Users } from 'lucide-react';
 
-import type { Project, Artist } from '../../../../types';
+import type { Project, Artist } from '../../../../shared/types';
 import { useProjectData } from '../../hooks/useProjectData';
 import { GlassCard } from '../../../../shared/ui/GlassCard';
 

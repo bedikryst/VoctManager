@@ -9,7 +9,7 @@
 import React, { useMemo } from 'react';
 import { Calendar, UserMinus } from 'lucide-react';
 
-import type { Project, Rehearsal } from '../../../../types';
+import type { Project, Rehearsal } from '../../../../shared/types';
 import { useProjectData } from '../../hooks/useProjectData';
 import { GlassCard } from '../../../../shared/ui/GlassCard';
 

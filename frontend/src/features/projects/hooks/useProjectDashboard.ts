@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 import api from '../../../shared/api/api';
 import { queryKeys } from '../../../shared/lib/queryKeys';
-import type { Project, Piece, Artist, Collaborator, VoiceLineOption } from '../../../types';
+import type { Project, Piece, Artist, Collaborator, VoiceLineOption } from '../../../shared/types';
 
 export type FilterStatus = 'ACTIVE' | 'DONE' | 'ALL';
 

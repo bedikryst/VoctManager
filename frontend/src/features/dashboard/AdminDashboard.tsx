@@ -15,7 +15,7 @@ import {
     Plus
 } from 'lucide-react';
 
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../app/providers/AuthProvider';
 import { GlassCard } from '../../shared/ui/GlassCard';
 import { useAdminDashboardData } from './hooks/useAdminDashboardData';
 
