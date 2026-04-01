@@ -111,38 +111,10 @@ class PieceSerializer(serializers.ModelSerializer):
         )
         return representation
 
-    def _apply_legacy_reference_recording(self, validated_data) -> None:
-        legacy_reference = validated_data.pop('reference_recording', _LEGACY_REFERENCE_RECORDING)
-
-        if legacy_reference is _LEGACY_REFERENCE_RECORDING:
-            return
-
-        if not legacy_reference:
-            if 'reference_recording_youtube' not in validated_data:
-                validated_data['reference_recording_youtube'] = None
-            if 'reference_recording_spotify' not in validated_data:
-                validated_data['reference_recording_spotify'] = None
-            return
-
-        has_explicit_reference = bool(
-            validated_data.get('reference_recording_youtube')
-            or validated_data.get('reference_recording_spotify')
-        )
-        if not has_explicit_reference:
-            validated_data['reference_recording_youtube'] = legacy_reference
-
-
-    def create(self, validated_data):
-        """Sanitizes virtual fields before hitting the database."""
-        validated_data.pop('requirements_data', None)
-        
-        self._apply_legacy_reference_recording(validated_data)
-        
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        """Sanitizes virtual fields before updating the database."""
-        validated_data.pop('requirements_data', None)
-        self._apply_legacy_reference_recording(validated_data)
-        
-        return super().update(instance, validated_data) 
+    def validate(self, attrs):
+        legacy_reference = attrs.pop('reference_recording', _LEGACY_REFERENCE_RECORDING)
+        if legacy_reference is not _LEGACY_REFERENCE_RECORDING and legacy_reference:
+            has_explicit_reference = bool(attrs.get('reference_recording_youtube') or attrs.get('reference_recording_spotify'))
+            if not has_explicit_reference:
+                attrs['reference_recording_youtube'] = legacy_reference
+        return attrs

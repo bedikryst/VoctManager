@@ -1,38 +1,92 @@
 # archive/services.py
+# ==========================================
+# Archive Business Logic (Service Layer)
+# ==========================================
 """
-Business Logic Layer for the Archive application.
+Domain-driven service layer for the Archive application.
 @architecture Enterprise SaaS 2026
-"""
-import json
-from typing import Any, Dict, List, Optional, Union
-from django.db import transaction
-from .models import Piece, PieceVoiceRequirement
 
-def sync_piece_voice_requirements(*, piece: Piece, requirements_raw: Union[str, List[Dict[str, Any]], None]) -> None:
-    """
-    Securely parses and synchronizes vocal requirements for a piece.
-    Executes within an atomic transaction to guarantee data integrity.
-    """
-    if requirements_raw is None:
-        return
-        
-    if isinstance(requirements_raw, str):
-        try:
-            requirements = json.loads(requirements_raw)
-        except json.JSONDecodeError:
-            requirements = []
-    else:
-        requirements = requirements_raw
+Encapsulates database transactions and core domain rules for the musical repertoire.
+"""
+from typing import List
+from django.db import transaction
+
+from .models import Piece, PieceVoiceRequirement, Composer
+from .dtos import PieceWriteDTO, VoiceRequirementDTO
+from .exceptions import PieceValidationException
+
+def _sync_piece_voice_requirements(piece: Piece, requirements: List[VoiceRequirementDTO]) -> None:
+    """Internal domain logic to replace voice requirements for a piece."""
+    piece.voice_requirements.all().delete()
+    
+    new_requirements = [
+        PieceVoiceRequirement(
+            piece=piece,
+            voice_line=req.voice_line,
+            quantity=req.quantity
+        )
+        for req in requirements
+    ]
+    PieceVoiceRequirement.objects.bulk_create(new_requirements)
+
+def create_piece(dto: PieceWriteDTO, sheet_music_file=None) -> Piece:
+    """Orchestrates the creation of a piece and its related vocal requirements."""
+    try:
+        composer = Composer.objects.get(id=dto.composer_id) if dto.composer_id else None
+    except Composer.DoesNotExist:
+        raise PieceValidationException(f"Composer with ID {dto.composer_id} does not exist.")
 
     with transaction.atomic():
-        piece.voice_requirements.all().delete()
+        piece = Piece.objects.create(
+            title=dto.title,
+            composer=composer,
+            arranger=dto.arranger,
+            language=dto.language,
+            estimated_duration=dto.estimated_duration,
+            voicing=dto.voicing,
+            description=dto.description,
+            lyrics_original=dto.lyrics_original,
+            lyrics_translation=dto.lyrics_translation,
+            reference_recording_youtube=dto.reference_recording_youtube,
+            reference_recording_spotify=dto.reference_recording_spotify,
+            composition_year=dto.composition_year,
+            epoch=dto.epoch,
+            sheet_music=sheet_music_file
+        )
         
-        new_requirements = [
-            PieceVoiceRequirement(
-                piece=piece,
-                voice_line=req.get('voice_line'),
-                quantity=req.get('quantity', 1)
-            )
-            for req in requirements if req.get('voice_line')
-        ]
-        PieceVoiceRequirement.objects.bulk_create(new_requirements)
+        if dto.voice_requirements is not None:
+            _sync_piece_voice_requirements(piece, dto.voice_requirements)
+            
+    return piece
+
+def update_piece(piece: Piece, dto: PieceWriteDTO, sheet_music_file=None, update_sheet_music: bool = False) -> Piece:
+    """Orchestrates the update of a piece and synchronizes its vocal requirements."""
+    try:
+        composer = Composer.objects.get(id=dto.composer_id) if dto.composer_id else None
+    except Composer.DoesNotExist:
+        raise PieceValidationException(f"Composer with ID {dto.composer_id} does not exist.")
+
+    with transaction.atomic():
+        piece.title = dto.title
+        piece.composer = composer
+        piece.arranger = dto.arranger
+        piece.language = dto.language
+        piece.estimated_duration = dto.estimated_duration
+        piece.voicing = dto.voicing
+        piece.description = dto.description
+        piece.lyrics_original = dto.lyrics_original
+        piece.lyrics_translation = dto.lyrics_translation
+        piece.reference_recording_youtube = dto.reference_recording_youtube
+        piece.reference_recording_spotify = dto.reference_recording_spotify
+        piece.composition_year = dto.composition_year
+        piece.epoch = dto.epoch
+        
+        if update_sheet_music:
+            piece.sheet_music = sheet_music_file
+
+        piece.save()
+
+        if dto.voice_requirements is not None:
+            _sync_piece_voice_requirements(piece, dto.voice_requirements)
+
+    return piece
