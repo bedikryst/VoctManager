@@ -5,7 +5,7 @@
  */
 
 import api from '../../../shared/api/api';
-import type { Piece, Composer } from '../../../shared/types';
+import type { Piece, Composer, Track } from '../../../shared/types';
 import type { PieceWriteDTO } from '../types/archive.dto';
 
 const PIECES_URL = '/api/pieces/';
@@ -63,5 +63,26 @@ export const ArchiveService = {
     getComposers: async (): Promise<Composer[]> => {
         const response = await api.get<Composer[]>(COMPOSERS_URL);
         return response.data;
-    }
+    },
+
+    uploadTrack: async (pieceId: string | number, voiceLine: string, file: File): Promise<Track> => {
+        const formData = new FormData();
+        formData.append('piece', String(pieceId));
+        formData.append('voice_part', voiceLine);
+        formData.append('audio_file', file);
+
+        const response = await api.post<Track>('/api/tracks/', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+    deleteTrack: async (trackId: string): Promise<void> => {
+        await api.delete(`/api/tracks/${trackId}/`);
+    },
+
+    getTracksByPiece: async (pieceId: string | number): Promise<Track[]> => {
+        const response = await api.get<Track[]>(`/api/tracks/?piece=${pieceId}`);
+        return response.data;
+    },
 };
+

@@ -9,7 +9,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Plus, Minus, Trash2, Clock, Music, Youtube, AlignLeft } from 'lucide-react';
 
-import type { Piece, Composer, VoiceLineOption } from '../../../shared/types';
+import type { Composer, VoiceLineOption } from '../../../shared/types';
+import type { EnrichedPiece } from '../types/archive.dto';
 import { Button } from '../../../shared/ui/Button';
 import { Input } from '../../../shared/ui/Input';
 import { usePieceForm, SubmitAction } from '../hooks/usePieceForm';
@@ -23,10 +24,10 @@ export const EPOCHS = [
 ];
 
 interface PieceDetailsFormProps {
-    piece: Piece | null;
+    piece: EnrichedPiece | null;
     composers: Composer[];
     voiceLines: VoiceLineOption[];
-    onSuccess: (updatedPiece: Piece, actionType: SubmitAction) => void;
+    onSuccess: (updatedPiece: EnrichedPiece, actionType: SubmitAction) => void;
     onDirtyStateChange?: (isDirty: boolean) => void;
     initialSearchContext?: string;
 }
@@ -121,8 +122,14 @@ export default function PieceDetailsForm({
                         </div>
                         <div>
                             <label className={STYLE_LABEL}>Rok Powstania</label>
-                            <Input type="number" placeholder="np. 1741" value={formData.composition_year} onChange={e => setFormData({...formData, composition_year: e.target.value})} disabled={isSubmitting} />
-                        </div>
+                            <Input 
+                                type="number" 
+                                placeholder="np. 1741" 
+                                value={formData.composition_year || ''} 
+                                onChange={e => setFormData({...formData, composition_year: e.target.value})} 
+                                disabled={isSubmitting} 
+                            />
+                            </div>
                         <div>
                             <label className={STYLE_LABEL}>Język</label>
                             <Input type="text" value={formData.language} onChange={e => setFormData({...formData, language: e.target.value})} placeholder="np. Łacina" disabled={isSubmitting} />
@@ -143,9 +150,19 @@ export default function PieceDetailsForm({
                         <div>
                             <label className="block text-[9px] font-medium antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1 flex items-center gap-1.5"><Clock size={12} aria-hidden="true"/> Szacowany Czas Trwania</label>
                             <div className="flex items-center gap-3">
-                                <Input type="number" min={0} placeholder="Minuty" value={formData.durationMins} onChange={e => setFormData({...formData, durationMins: e.target.value})} rightElement="min" disabled={isSubmitting} />
+                                <Input 
+                                    type="number" min={0} placeholder="Minuty" 
+                                    value={formData.durationMins || ''} 
+                                    onChange={e => setFormData({...formData, durationMins: e.target.value})} 
+                                    rightElement="min" disabled={isSubmitting} 
+                                />
                                 <span className="text-stone-300 font-medium text-lg">:</span>
-                                <Input type="number" min={0} max={59} placeholder="Sekundy" value={formData.durationSecs} onChange={e => setFormData({...formData, durationSecs: e.target.value})} rightElement="sek" disabled={isSubmitting} />
+                                <Input 
+                                    type="number" min={0} max={59} placeholder="Sekundy" 
+                                    value={formData.durationSecs || ''} 
+                                    onChange={e => setFormData({...formData, durationSecs: e.target.value})} 
+                                    rightElement="sek" disabled={isSubmitting} 
+                                />
                             </div>
                         </div>
                     </div>
@@ -160,7 +177,8 @@ export default function PieceDetailsForm({
                                     <button 
                                         key={String(vl.value)} 
                                         type="button" 
-                                        onClick={() => setRequirements([...requirements, { voice_line: String(vl.value), voice_line_display: vl.label, quantity: 1 }])}
+                                        // UWAGA: Usunięto 'voice_line_display' - wysyłamy czyste DTO!
+                                        onClick={() => setRequirements([...requirements, { voice_line: String(vl.value), quantity: 1 }])}
                                         className="px-4 py-2 bg-white border border-stone-200/80 text-stone-600 hover:text-[#002395] hover:border-[#002395]/40 hover:bg-blue-50/50 text-[9px] font-medium antialiased uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
                                         disabled={isSubmitting}
                                     >
@@ -173,7 +191,10 @@ export default function PieceDetailsForm({
                         <div className="p-4 space-y-3">
                             {requirements.length > 0 ? requirements.map((req, idx) => (
                                 <div key={idx} className="flex justify-between items-center bg-white/80 border border-stone-200/60 px-5 py-3 rounded-xl shadow-sm transition-colors">
-                                    <span className="text-[10px] font-medium antialiased text-[#002395] uppercase tracking-widest">{req.voice_line_display || req.voice_line}</span>
+                                    {/* Dynamicznie szukamy etykiety, zamiast trzymać ją w state */}
+                                    <span className="text-[10px] font-medium antialiased text-[#002395] uppercase tracking-widest">
+                                        {voiceLines.find(v => v.value === req.voice_line)?.label || req.voice_line}
+                                    </span>
                                     <div className="flex items-center gap-5">
                                         <div className="flex items-center gap-2 bg-stone-50 border border-stone-200/80 rounded-lg shadow-inner px-1 py-1">
                                             <button type="button" onClick={() => handleRequirementChange(idx, -1)} disabled={req.quantity <= 1 || isSubmitting} className="p-2 text-stone-400 hover:text-stone-800 disabled:opacity-30 transition-colors active:scale-95 bg-white rounded-md shadow-sm"><Minus size={12}/></button>
@@ -240,9 +261,9 @@ export default function PieceDetailsForm({
             <div className="sticky bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-stone-200/60 p-4 md:p-6 -mx-6 md:-mx-8 -mb-8 mt-8 flex flex-col sm:flex-row gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-b-2xl">
                 {!piece?.id && (
                     <Button 
-                        type="button" 
+                        type="submit" 
                         variant="outline"
-                        onClick={() => { setSubmitAction('SAVE_AND_ADD'); handleSubmit(new Event('submit') as any); }} 
+                        onClick={() => setSubmitAction('SAVE_AND_ADD')} // 2. Ustawiamy stan tuż przed odpaleniem natywnego eventu w <form>
                         disabled={isSubmitting} 
                         isLoading={isSubmitting && submitAction === 'SAVE_AND_ADD'}
                         leftIcon={!(isSubmitting && submitAction === 'SAVE_AND_ADD') ? <Plus size={16} /> : undefined}
@@ -252,9 +273,9 @@ export default function PieceDetailsForm({
                     </Button>
                 )}
                 <Button 
-                    type="button" 
+                    type="submit"
                     variant="primary"
-                    onClick={() => { setSubmitAction('SAVE_AND_CLOSE'); handleSubmit(new Event('submit') as any); }} 
+                    onClick={() => setSubmitAction('SAVE_AND_CLOSE')} 
                     disabled={isSubmitting} 
                     isLoading={isSubmitting && submitAction === 'SAVE_AND_CLOSE'}
                     leftIcon={!(isSubmitting && submitAction === 'SAVE_AND_CLOSE') ? <CheckCircle2 size={16} /> : undefined}
@@ -263,7 +284,6 @@ export default function PieceDetailsForm({
                     {piece?.id ? 'Zapisz Zmiany' : 'Zapisz i zamknij'}
                 </Button>
             </div>
-
         </form>
     );
 }

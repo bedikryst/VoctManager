@@ -19,8 +19,8 @@ import { GlassCard } from '../../shared/ui/GlassCard';
 import { VoiceFilterButton} from './components/VoiceFilterButton';
 import { useBodyScrollLock } from '../../shared/lib/hooks/useBodyScrollLock';
 
-import ArtistEditorPanel from './ArtistEditorPanel';
-import { ArtistCard } from './ArtistCard';
+import ArtistEditorPanel from './components/ArtistEditorPanel';
+import { ArtistCard } from './components/ArtistCard';
 
 
 export default function ArtistManagement(): React.JSX.Element {

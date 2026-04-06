@@ -14,7 +14,7 @@ import {
 import { useRehearsalsData } from './hooks/useRehearsalsData';
 import { GlassCard } from '../../shared/ui/GlassCard';
 import { Button } from '../../shared/ui/Button';
-import { ArtistRow } from './ArtistRow';
+import { ArtistRow } from './components/ArtistRow';
 
 export default function Rehearsals(): React.JSX.Element {
     const {

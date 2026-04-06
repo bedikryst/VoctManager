@@ -1,46 +1,32 @@
 /**
  * @file useArtistData.ts
- * @description Encapsulates data fetching, filtering, KPI calculations (ensemble balance), 
- * and modal state management for the HR / Roster module.
+ * @description Manages UI state, client-side filtering, and aggregates.
+ * Reads data exclusively from the React Query cache via custom hooks.
  * @module hooks/useArtistData
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '../../../shared/api/api';
+import { useArtists, useToggleArtistStatus } from '../api/artist.queries';
+import { useVoiceTypes } from '../../../shared/api/options.queries'; // <-- GLOBALNY IMPORT
 import type { Artist } from '../../../shared/types';
 
-export interface VoiceTypeOption {
-    value: string;
-    label: string;
-}
-
 export const useArtistData = () => {
-    const queryClient = useQueryClient();
+    const { data: artists = [], isLoading: isArtistsLoading, isError: isArtistsError } = useArtists();
+    
+    const { data: voiceTypes = [], isLoading: isVoiceTypesLoading } = useVoiceTypes();
+
+    const toggleStatusMutation = useToggleArtistStatus();
+
+    const isLoading = isArtistsLoading || isVoiceTypesLoading;
+    const isError = isArtistsError;
 
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [voiceFilter, setVoiceFilter] = useState<string>('');
-
     const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
     const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
     const [initialSearchContext, setInitialSearchContext] = useState<string>('');
-
     const [artistToToggle, setArtistToToggle] = useState<{ id: string, willBeActive: boolean } | null>(null);
-    const [isTogglingStatus, setIsTogglingStatus] = useState<boolean>(false);
-
-    const results = useQueries({
-        queries: [
-            { queryKey: ['artists'], queryFn: async () => (await api.get<Artist[]>('/api/artists/')).data },
-            { queryKey: ['voiceTypes'], queryFn: async () => (await api.get<VoiceTypeOption[]>('/api/options/voice-types/')).data }
-        ]
-    });
-
-    const isLoading = results.some(query => query.isLoading);
-    const isError = results.some(query => query.isError);
-
-    const artists = results[0].data || [];
-    const voiceTypes = results[1].data || [];
 
     const activeArtists = useMemo(() => artists.filter(a => a.is_active), [artists]);
     
@@ -82,17 +68,17 @@ export const useArtistData = () => {
 
     const executeStatusToggle = async () => {
         if (!artistToToggle) return;
-        setIsTogglingStatus(true);
         const toastId = toast.loading(artistToToggle.willBeActive ? "Aktywowanie konta..." : "Archiwizowanie artysty...");
 
         try {
-            await api.patch(`/api/artists/${artistToToggle.id}/`, { is_active: artistToToggle.willBeActive });
-            await queryClient.invalidateQueries({ queryKey: ['artists'] });
+            await toggleStatusMutation.mutateAsync({ 
+                id: artistToToggle.id, 
+                isActive: artistToToggle.willBeActive 
+            });
             toast.success(artistToToggle.willBeActive ? "Konto artysty aktywowane" : "Artysta zarchiwizowany", { id: toastId });
         } catch (err) { 
             toast.error("Błąd systemu", { id: toastId, description: "Nie udało się zmienić statusu artysty." });
         } finally {
-            setIsTogglingStatus(false);
             setArtistToToggle(null);
         }
     };
@@ -112,7 +98,7 @@ export const useArtistData = () => {
         initialSearchContext,
         artistToToggle,
         setArtistToToggle,
-        isTogglingStatus,
+        isTogglingStatus: toggleStatusMutation.isPending,
         openPanel,
         closePanel,
         handleToggleRequest,

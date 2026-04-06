@@ -13,7 +13,8 @@ import {
     MapPin, Clock, AlertCircle, CheckCircle2, 
     XCircle, Send, UserMinus, ArrowRight, Check, ChevronDown, ChevronUp, Music, AlignLeft
 } from 'lucide-react';
-import type { TimelineEvent } from '../hooks/useScheduleData';
+import type { AttendanceStatus } from '../../../shared/types';
+import type { ScheduleViewMode, TimelineEvent } from '../types/schedule.dto';
 import { useTimelineRehearsalCard } from '../hooks/useTimelineRehearsalCard';
 import { Input } from '../../../shared/ui/Input';
 import { Button } from '../../../shared/ui/Button';
@@ -22,8 +23,8 @@ interface TimelineRehearsalCardProps {
     event: TimelineEvent;
     isExpanded: boolean;
     onToggle: () => void;
-    onSubmitReport: (eventId: string, projectId: string | number, status: string, notes: string) => Promise<boolean>;
-    viewMode: 'UPCOMING' | 'PAST';
+    onSubmitReport: (eventId: string, projectId: string | number, status: AttendanceStatus, notes: string) => Promise<boolean>;
+    viewMode: ScheduleViewMode;
 }
 
 const STYLE_LABEL = "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1.5 ml-1";
@@ -143,7 +144,7 @@ export default function TimelineRehearsalCard({ event, isExpanded, onToggle, onS
                                         <label className={STYLE_LABEL}>Status *</label>
                                         <select 
                                             value={reportForm.status} 
-                                            onChange={e => setReportForm({...reportForm, status: e.target.value})} 
+                                            onChange={e => setReportForm({...reportForm, status: e.target.value as typeof reportForm.status})} 
                                             className="w-full px-3 py-2.5 text-xs text-stone-800 bg-stone-50 border border-stone-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002395]/20 transition-all shadow-inner font-bold appearance-none" 
                                             disabled={isSubmitting}
                                         >
@@ -158,7 +159,7 @@ export default function TimelineRehearsalCard({ event, isExpanded, onToggle, onS
                                             type="text" 
                                             placeholder="np. Korki, choroba..."
                                             value={reportForm.notes} 
-                                            onChange={e => setReportForm({...reportForm, notes: e.target.value})} 
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReportForm({...reportForm, notes: e.target.value})} 
                                             disabled={isSubmitting}
                                             className="bg-stone-50 border border-stone-200/80 font-medium text-xs py-2.5"
                                         />

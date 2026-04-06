@@ -1,21 +1,22 @@
 /**
  * @file TrackUploadManager.tsx
  * @description Component for uploading and managing individual audio rehearsal tracks (MIDI/MP3).
- * Utilizes multipart/form-data for robust binary handling and React Query for localized caching.
+ * Delegates all HTTP requests and cache invalidation to strict React Query hooks.
+ * @architecture Enterprise SaaS 2026
  * @module panel/archive/components/TrackUploadManager
  */
 
 import React, { useState, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Loader2, UploadCloud, Trash2, AlertCircle, PlayCircle } from 'lucide-react';
 
-import api from '../../../shared/api/api';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
 import { Button } from '../../../shared/ui/Button';
-import type { Track, VoiceLineOption } from '../../../shared/types';
-import { queryKeys } from '../../../shared/lib/queryKeys';
+import type { VoiceLineOption } from '../../../shared/types';
+
+// Enterprise Standard: Strictly imported from the Query layer
+import { useTracks, useUploadTrack, useDeleteTrack } from '../api/archive.queries';
 
 interface TrackUploadManagerProps {
     pieceId: string | number;
@@ -23,63 +24,57 @@ interface TrackUploadManagerProps {
 }
 
 export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadManagerProps): React.JSX.Element {
-    const queryClient = useQueryClient();
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Client UI State
     const [uploadVoicePart, setUploadVoicePart] = useState<string>('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [trackToDelete, setTrackToDelete] = useState<string | null>(null);
 
-    // Fetching data
-    const { data: tracks = [], isLoading } = useQuery<Track[]>({
-        queryKey: queryKeys.tracks.byPiece(pieceId),
-        queryFn: async () => (await api.get<Track[]>(`/api/tracks/?piece=${pieceId}`)).data
-    });
+    // Server State & Mutations
+    const { data: tracks = [], isLoading } = useTracks(pieceId);
+    const uploadMutation = useUploadTrack();
+    const deleteMutation = useDeleteTrack();
 
-    // ENTERPRISE STANDARD: useMutation for POST requests
-    const uploadMutation = useMutation({
-        mutationFn: async (formData: FormData) => {
-            return api.post('/api/tracks/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-        },
-        onSuccess: () => {
-            toast.success(t('archive.tracks.upload_success', "Nagranie zostało dodane pomyślnie."));
-            setSelectedFile(null);
-            setUploadVoicePart('');
-            if (fileInputRef.current) fileInputRef.current.value = '';
-            queryClient.invalidateQueries({ queryKey: queryKeys.tracks.byPiece(pieceId) });
-        },
-        onError: () => {
-            toast.error(t('archive.tracks.upload_error', "Błąd wgrywania. Upewnij się, że plik ma odpowiedni format."));
-        }
-    });
-
-    // ENTERPRISE STANDARD: useMutation for DELETE requests
-    const deleteMutation = useMutation({
-        mutationFn: async (id: string) => api.delete(`/api/tracks/${id}/`),
-        onSuccess: () => {
-            toast.success(t('archive.tracks.delete_success', "Plik został usunięty z serwera."));
-            queryClient.invalidateQueries({ queryKey: queryKeys.tracks.byPiece(pieceId) });
-            setTrackToDelete(null);
-        },
-        onError: () => {
-            toast.error(t('archive.tracks.delete_error', "Błąd podczas usuwania nagrania."));
-            setTrackToDelete(null);
-        }
-    });
-
-    const handleUpload = (e: React.FormEvent) => {
+    const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedFile || !uploadVoicePart) return;
 
-        const formData = new FormData();
-        formData.append('piece', String(pieceId));
-        formData.append('voice_part', uploadVoicePart);
-        formData.append('audio_file', selectedFile);
+        const toastId = toast.loading(t('archive.tracks.uploading', 'Wgrywanie nagrania...'));
 
-        uploadMutation.mutate(formData);
+        try {
+            await uploadMutation.mutateAsync({
+                pieceId,
+                voiceLine: uploadVoicePart,
+                file: selectedFile
+            });
+
+            toast.success(t('archive.tracks.upload_success', 'Nagranie zostało dodane pomyślnie.'), { id: toastId });
+            
+            // Clear UI state on success
+            setSelectedFile(null);
+            setUploadVoicePart('');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            
+        } catch (error) {
+            toast.error(t('archive.tracks.upload_error', 'Błąd wgrywania. Upewnij się, że plik ma odpowiedni format.'), { id: toastId });
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!trackToDelete) return;
+        
+        const toastId = toast.loading(t('archive.tracks.deleting', 'Usuwanie nagrania...'));
+
+        try {
+            await deleteMutation.mutateAsync(trackToDelete);
+            toast.success(t('archive.tracks.delete_success', 'Plik został usunięty z serwera.'), { id: toastId });
+        } catch (error) {
+            toast.error(t('archive.tracks.delete_error', 'Błąd podczas usuwania nagrania.'), { id: toastId });
+        } finally {
+            setTrackToDelete(null);
+        }
     };
 
     const handleAudioPlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
@@ -191,7 +186,7 @@ export default function TrackUploadManager({ pieceId, voiceLines }: TrackUploadM
                 isOpen={!!trackToDelete}
                 title={t('archive.tracks.delete_confirm_title', 'Usunąć nagranie z serwera?')}
                 description={t('archive.tracks.delete_confirm_desc', 'Plik audio zostanie bezpowrotnie usunięty z bazy danych.')}
-                onConfirm={() => trackToDelete && deleteMutation.mutate(trackToDelete)}
+                onConfirm={handleDelete}
                 onCancel={() => setTrackToDelete(null)}
                 isLoading={deleteMutation.isPending}
             />

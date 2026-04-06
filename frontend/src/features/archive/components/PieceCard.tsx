@@ -12,7 +12,7 @@ import {
     ChevronDown, ChevronUp, Clock, Youtube
 } from 'lucide-react';
 
-import type { EnrichedPiece } from '../hooks/useArchiveData';
+import type { EnrichedPiece } from '../types/archive.dto';
 import { EPOCHS } from './PieceDetailsForm';
 import { getReferenceRecordingLinks } from '../../../shared/lib/referenceRecordings';
 
@@ -56,7 +56,7 @@ export default function PieceCard({
     piece, isExpanded, onToggleExpand, onOpenPanel, onDelete 
 }: PieceCardProps): React.JSX.Element {
     
-    const comp = piece.composerData;
+    const comp = piece.composer;
     const pieceTracks = piece.tracks || [];
     const referenceLinks = getReferenceRecordingLinks(piece);
 

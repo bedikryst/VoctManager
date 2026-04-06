@@ -8,12 +8,15 @@
 import { useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { usePieces, useComposers, useDeletePiece } from '../api/archive.queries';
+import { useVoiceLines } from '../../../shared/api/options.queries';
 import type { Piece } from '../../../shared/types';
+import { EnrichedPiece } from '../types/archive.dto';
 
 export const useArchiveData = () => {
     // 1. Server State delegation (Zero HTTP logic here)
     const { data: pieces = [], isLoading: isLoadingPieces, isError: isErrorPieces } = usePieces();
     const { data: composers = [], isLoading: isLoadingComposers } = useComposers();
+    const { data: voiceLines = [], isLoading: isLoadingVoiceLines } = useVoiceLines(); 
     const deleteMutation = useDeletePiece();
 
     // 2. Client UI State
@@ -27,20 +30,34 @@ export const useArchiveData = () => {
     const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
     const [pieceToDelete, setPieceToDelete] = useState<{ id: string, title: string } | null>(null);
 
-    // 3. Derived State (Client-side Filtering)
-    const displayPieces = useMemo(() => {
-        return pieces.filter(piece => {
+    // 3. Derived State (Client-side Filtering & Enrichment)
+    const displayPieces: EnrichedPiece[] = useMemo(() => {
+        return pieces
+        .map(piece => ({
+            ...piece,
+            composer: composers.find(c => c.id === piece.composer) || undefined
+        }))
+        .filter(piece => {
             const matchesSearch = piece.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                   (piece.composer_name?.toLowerCase().includes(searchTerm.toLowerCase()));
             const matchesEpoch = epochFilter ? piece.epoch === epochFilter : true;
-            const matchesComposer = composerFilter ? piece.composer === composerFilter : true;
+            const matchesComposer = composerFilter ? piece.composer?.id === composerFilter : true;
             const matchesVoicing = voicingFilter ? piece.voicing === voicingFilter : true;
             
             return matchesSearch && matchesEpoch && matchesComposer && matchesVoicing;
         });
-    }, [pieces, searchTerm, epochFilter, composerFilter, voicingFilter]);
+    }, [pieces, composers, searchTerm, epochFilter, composerFilter, voicingFilter]);
 
-    // 4. UI Actions
+    // 4. Derived State (Library Statistics) - WYMAGANE PRZEZ ARCHIVE MANAGEMENT
+    const libraryStats = useMemo(() => {
+        return {
+            totalPieces: pieces.length,
+            withPdf: pieces.filter(p => !!p.sheet_music).length,
+            totalAudio: pieces.reduce((sum, p) => sum + (p.tracks?.length || 0), 0)
+        };
+    }, [pieces]);
+
+    // 5. UI Actions
     const handleDeleteRequest = useCallback((id: string, title: string) => {
         setPieceToDelete({ id, title });
     }, []);
@@ -62,10 +79,12 @@ export const useArchiveData = () => {
 
     return {
         // State
-        isLoading: isLoadingPieces || isLoadingComposers,
+        isLoading: isLoadingPieces || isLoadingComposers || isLoadingVoiceLines,
         isError: isErrorPieces,
-        pieces: displayPieces,
+        displayPieces,
         composers,
+        voiceLines,    
+        libraryStats,  
         
         // Filters
         searchTerm, setSearchTerm,

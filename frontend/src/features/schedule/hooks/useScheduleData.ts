@@ -1,149 +1,146 @@
 /**
  * @file useScheduleData.ts
- * @description Encapsulates data fetching, timeline event aggregation, 
- * and mutation logic for the Artist Schedule module.
- * Strictly uses ?artist=id query parameters to isolate data access.
- * @module panel/schedule/hooks/useScheduleData
+ * @description Encapsulates timeline aggregation and attendance reporting for the artist schedule.
  */
 
-import { useState, useMemo } from 'react';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import api from '../../../shared/api/api';
-import { queryKeys } from '../../../shared/lib/queryKeys';
-import type { Project, Rehearsal, Participation, Attendance } from '../../../shared/types';
-
-export interface TimelineEvent {
-    id: string;
-    type: 'REHEARSAL' | 'PROJECT';
-    rawObj: any;
-    date_time: Date;
-    title: string;
-    location: string | null | undefined;
-    focus?: string | null;
-    is_mandatory?: boolean;
-    status?: string | null;
-    excuse_note?: string | null;
-    absences?: number; 
-    project_id: string | number;
-    call_time?: string | null;
-    run_sheet?: any[];
-    description?: string | null;
-}
+import type { AttendanceStatus } from '../../../shared/types';
+import { useScheduleContextData, useUpsertScheduleAttendance } from '../api/schedule.queries';
+import type { ScheduleViewMode, TimelineEvent } from '../types/schedule.dto';
 
 export const useScheduleData = (artistId?: string | number) => {
-    const queryClient = useQueryClient();
-
-    const [viewMode, setViewMode] = useState<'UPCOMING' | 'PAST'>('UPCOMING'); 
+    const [viewMode, setViewMode] = useState<ScheduleViewMode>('UPCOMING');
     const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
-    const results = useQueries({
-        queries: [
-            { queryKey: queryKeys.rehearsals.byArtist(artistId!), queryFn: async () => (await api.get<Rehearsal[]>(`/api/rehearsals/`)).data, enabled: !!artistId },
-            { queryKey: queryKeys.projects.all, queryFn: async () => (await api.get<Project[]>('/api/projects/')).data, enabled: !!artistId },
-            { queryKey: queryKeys.participations.byArtist(artistId!), queryFn: async () => (await api.get<Participation[]>(`/api/participations/?artist=${artistId}`)).data, enabled: !!artistId },
-            { queryKey: queryKeys.attendances.byArtist(artistId!), queryFn: async () => (await api.get<Attendance[]>(`/api/attendances/?participation__artist=${artistId}`)).data, enabled: !!artistId }
-        ]
-    });
-
-    const isLoading = results.some(q => q.isLoading);
-
-    const rehearsals = results[0].data || [];
-    const projects = results[1].data || [];
-    const myParticipations = results[2].data || [];
-    const attendances = results[3].data || [];
+    const { rehearsals, projects, participations, attendances, isLoading } = useScheduleContextData(artistId);
+    const attendanceMutation = useUpsertScheduleAttendance();
 
     const timelineEvents = useMemo<TimelineEvent[]>(() => {
-        if (!artistId || isLoading) return [];
+        if (!artistId || isLoading) {
+            return [];
+        }
 
         const events: TimelineEvent[] = [];
-        const activeParticipations = myParticipations.filter(p => p.status !== 'DEC');
+        const activeParticipations = participations.filter((participation) => participation.status !== 'DEC');
 
-        rehearsals.forEach(reh => {
-            const myPart = activeParticipations.find(p => String(p.project) === String(reh.project));
-            if (!myPart) return; 
+        rehearsals.forEach((rehearsal) => {
+            const myParticipation = activeParticipations.find(
+                (participation) => String(participation.project) === String(rehearsal.project),
+            );
 
-            const isInvited = !reh.invited_participations || reh.invited_participations.length === 0 || reh.invited_participations.includes(String(myPart.id));
-            
+            if (!myParticipation) {
+                return;
+            }
+
+            const isInvited = !rehearsal.invited_participations ||
+                rehearsal.invited_participations.length === 0 ||
+                rehearsal.invited_participations.includes(String(myParticipation.id));
+
             if (isInvited) {
-                const project = projects.find(p => String(p.id) === String(reh.project));
-                const myAttendance = attendances.find(a => String(a.rehearsal) === String(reh.id) && String(a.participation) === String(myPart.id));
+                const project = projects.find((candidate) => String(candidate.id) === String(rehearsal.project));
+                const myAttendance = attendances.find(
+                    (attendance) =>
+                        String(attendance.rehearsal) === String(rehearsal.id) &&
+                        String(attendance.participation) === String(myParticipation.id),
+                );
 
                 events.push({
-                    id: `REH-${reh.id}`,
+                    id: `REH-${rehearsal.id}`,
                     type: 'REHEARSAL',
-                    rawObj: reh,
-                    date_time: new Date(reh.date_time),
+                    rawObj: rehearsal,
+                    date_time: new Date(rehearsal.date_time),
                     title: `Próba: ${project?.title || 'Wydarzenie'}`,
-                    location: reh.location,
-                    focus: reh.focus,
-                    is_mandatory: reh.is_mandatory,
-                    status: myAttendance ? myAttendance.status : null,
-                    excuse_note: myAttendance ? myAttendance.excuse_note : null,
-                    absences: (reh as any).absent_count || 0, 
-                    project_id: reh.project
+                    location: rehearsal.location,
+                    focus: rehearsal.focus,
+                    is_mandatory: rehearsal.is_mandatory,
+                    status: myAttendance?.status || null,
+                    excuse_note: myAttendance?.excuse_note || null,
+                    absences: (rehearsal as typeof rehearsal & { absent_count?: number }).absent_count || 0,
+                    project_id: rehearsal.project,
                 });
             }
         });
 
-        projects.forEach(proj => {
-            const isParticipating = activeParticipations.some(p => String(p.project) === String(proj.id));
-            if (isParticipating && proj.status !== 'CANC') {
+        projects.forEach((project) => {
+            const isParticipating = activeParticipations.some(
+                (participation) => String(participation.project) === String(project.id),
+            );
+
+            if (isParticipating && project.status !== 'CANC') {
                 events.push({
-                    id: `PROJ-${proj.id}`,
+                    id: `PROJ-${project.id}`,
                     type: 'PROJECT',
-                    rawObj: proj,
-                    date_time: new Date(proj.date_time),
-                    title: proj.title,
-                    location: proj.location,
-                    call_time: proj.call_time,
-                    run_sheet: proj.run_sheet,
-                    description: proj.description,
+                    rawObj: project,
+                    date_time: new Date(project.date_time),
+                    title: project.title,
+                    location: project.location,
+                    call_time: project.call_time,
+                    run_sheet: project.run_sheet,
+                    description: project.description,
                     status: null,
-                    project_id: proj.id
+                    project_id: project.id,
                 });
             }
         });
 
         return events;
-    }, [artistId, isLoading, rehearsals, projects, myParticipations, attendances]);
+    }, [artistId, isLoading, rehearsals, projects, participations, attendances]);
 
     const filteredEvents = useMemo(() => {
-        const threshold = new Date(new Date().getTime() - 4 * 60 * 60 * 1000); 
+        const threshold = new Date(Date.now() - 4 * 60 * 60 * 1000);
+
         return timelineEvents
-            .filter(e => !isNaN(e.date_time.getTime()))
-            .filter(e => viewMode === 'UPCOMING' ? e.date_time >= threshold : e.date_time < threshold)
-            .sort((a, b) => viewMode === 'UPCOMING' ? a.date_time.getTime() - b.date_time.getTime() : b.date_time.getTime() - a.date_time.getTime());
+            .filter((event) => !isNaN(event.date_time.getTime()))
+            .filter((event) => (viewMode === 'UPCOMING' ? event.date_time >= threshold : event.date_time < threshold))
+            .sort((left, right) =>
+                viewMode === 'UPCOMING'
+                    ? left.date_time.getTime() - right.date_time.getTime()
+                    : right.date_time.getTime() - left.date_time.getTime(),
+            );
     }, [timelineEvents, viewMode]);
 
-    const handleAbsenceSubmit = async (eventId: string, projectId: string | number, status: string, notes: string) => {
+    const handleAbsenceSubmit = async (
+        eventId: string,
+        projectId: string | number,
+        status: AttendanceStatus,
+        notes: string,
+    ) => {
         const toastId = toast.loading("Wysyłanie zgłoszenia...");
+
         try {
-            const myPart = myParticipations.find(p => String(p.project) === String(projectId));
-            
-            if (!myPart) throw new Error("Brak przypisania.");
+            const myParticipation = participations.find(
+                (participation) => String(participation.project) === String(projectId),
+            );
 
-            const payload = {
-                rehearsal: eventId,
-                participation: myPart.id,
-                status: status,
-                excuse_note: notes
-            };
-
-            const existingAtt = attendances.find(a => String(a.rehearsal) === String(payload.rehearsal) && String(a.participation) === String(payload.participation));
-
-            if (existingAtt?.id) {
-                await api.patch(`/api/attendances/${existingAtt.id}/`, payload); 
-            } else {
-                await api.post('/api/attendances/', payload);
+            if (!myParticipation) {
+                throw new Error('Artist participation is missing.');
             }
 
-            await queryClient.invalidateQueries({ queryKey: queryKeys.attendances.all });
+            const existingAttendance = attendances.find(
+                (attendance) =>
+                    String(attendance.rehearsal) === String(eventId) &&
+                    String(attendance.participation) === String(myParticipation.id),
+            );
+
+            await attendanceMutation.mutateAsync({
+                existingAttendanceId: existingAttendance?.id,
+                payload: {
+                    rehearsal: eventId,
+                    participation: myParticipation.id,
+                    status,
+                    excuse_note: notes,
+                },
+            });
+
             toast.success("Zgłoszenie zostało zapisane.", { id: toastId });
-            return true; 
-        } catch (err) {
-            toast.error("Błąd zapisu", { id: toastId, description: "Nie udało się zapisać zgłoszenia." });
-            return false; 
+            return true;
+        } catch (error) {
+            toast.error("Błąd zapisu", {
+                id: toastId,
+                description: "Nie udało się zapisać zgłoszenia.",
+            });
+            return false;
         }
     };
 
@@ -155,6 +152,6 @@ export const useScheduleData = (artistId?: string | number) => {
         setExpandedEventId,
         filteredEvents,
         handleAbsenceSubmit,
-        artistId
+        artistId,
     };
 };

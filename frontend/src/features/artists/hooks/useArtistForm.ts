@@ -1,20 +1,16 @@
 /**
  * @file useArtistForm.ts
- * @description Encapsulates complex form state, dirty tracking, and API payload construction 
- * for the Artist Editor Panel. Prevents accidental data loss during active editing.
- * @module panel/artists/hooks/useArtistForm
+ * @description Encapsulates complex form state, dirty tracking, and API payload construction.
+ * Delegates actual network requests strictly to the Query/Mutation layer.
+ * @module features/artists/hooks/useArtistForm
  */
 
 import { useState, useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '../../../shared/api/api';
-import type { Artist } from '../../../shared/types';
+import type { Artist, VoiceTypeOption } from '../../../shared/types';
+import { useCreateArtist, useUpdateArtist } from '../api/artist.queries';
+import type { ArtistCreateDTO, ArtistUpdateDTO } from '../types/artist.dto';
 
-interface VoiceTypeOption {
-    value: string;
-    label: string;
-}
 
 export interface ArtistFormData {
     first_name: string;
@@ -34,8 +30,8 @@ export const useArtistForm = (
     initialSearchContext: string,
     onClose: () => void
 ) => {
-    const queryClient = useQueryClient();
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const createMutation = useCreateArtist();
+    const updateMutation = useUpdateArtist();
 
     const initialFormData = useMemo<ArtistFormData>(() => {
         let defaultFirst = '';
@@ -51,7 +47,7 @@ export const useArtistForm = (
             first_name: artist?.first_name || defaultFirst, 
             last_name: artist?.last_name || defaultLast,
             email: artist?.email || '', 
-            phone_number: artist?.phone_number || '',
+            phone_number: artist?.phone_number || '', // Gwarantowany string "" zamiast null
             voice_type: artist?.voice_type || (voiceTypes.length > 0 ? voiceTypes[0].value : 'SOP'), 
             is_active: artist?.is_active ?? true,
             sight_reading_skill: artist?.sight_reading_skill ? String(artist.sight_reading_skill) : '',
@@ -68,37 +64,32 @@ export const useArtistForm = (
 
     const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setIsSubmitting(true);
         const toastId = toast.loading(artist?.id ? "Aktualizowanie profilu..." : "Tworzenie konta artysty...");
 
-        const payload: Partial<Artist> = { 
+        const payload = { 
             ...formData,
-            sight_reading_skill: formData.sight_reading_skill ? parseInt(formData.sight_reading_skill, 10) : null
+            sight_reading_skill: formData.sight_reading_skill ? parseInt(formData.sight_reading_skill, 10) : undefined
         };
 
         try {
             if (artist?.id) {
-                await api.patch(`/api/artists/${artist.id}/`, payload);
+                await updateMutation.mutateAsync({ id: artist.id, data: payload as ArtistUpdateDTO });
                 toast.success("Zaktualizowano profil artysty.", { id: toastId });
             } else {
-                await api.post('/api/artists/', payload);
+                await createMutation.mutateAsync(payload as ArtistCreateDTO);
                 toast.success("Dodano artystę. Konto wygenerowane!", { id: toastId });
             }
             
-            await queryClient.invalidateQueries({ queryKey: ['artists'] }); 
             setFormData(formData); 
             onClose(); 
-        } catch (err) {
+        } catch (err: any) {
             console.error("[ArtistEditor] Form submission failed:", err);
-            const errorObj = err as Record<string, unknown>;
-            const isEmailTaken = (errorObj?.response as any)?.data?.email;
+            const isEmailTaken = err?.response?.data?.email;
             
             toast.error(isEmailTaken ? "Ten adres e-mail jest już zajęty." : "Wystąpił błąd zapisu.", { 
                 id: toastId,
                 description: "Sprawdź poprawność danych i spróbuj ponownie."
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -107,7 +98,7 @@ export const useArtistForm = (
         setFormData,
         initialFormData,
         isFormDirty,
-        isSubmitting,
+        isSubmitting: createMutation.isPending || updateMutation.isPending, // Stan z mutacji!
         handleSubmit
     };
 };

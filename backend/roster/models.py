@@ -48,7 +48,7 @@ class Artist(EnterpriseBaseModel):
     first_name = models.CharField(max_length=50, verbose_name="Imię")
     last_name = models.CharField(max_length=50, verbose_name="Nazwisko")
     email = models.EmailField(unique=True, verbose_name="E-mail")
-    phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name="Telefon")
+    phone_number = models.CharField(max_length=15, blank=True, verbose_name="Telefon")
     voice_type = models.CharField(max_length=5, choices=VoiceType.choices, verbose_name="Rodzaj głosu")
     is_active = models.BooleanField(default=True, verbose_name="Aktywny")
 
@@ -59,8 +59,8 @@ class Artist(EnterpriseBaseModel):
         null=True, 
         verbose_name="Czytanie a vista (1-5)"
     )
-    vocal_range_bottom = models.CharField(max_length=5, blank=True, null=True, help_text="np. G2", verbose_name="Skala (dół)")
-    vocal_range_top = models.CharField(max_length=5, blank=True, null=True, help_text="np. C5", verbose_name="Skala (góra)")
+    vocal_range_bottom = models.CharField(max_length=5, blank=True, help_text="np. G2", verbose_name="Skala (dół)")
+    vocal_range_top = models.CharField(max_length=5, blank=True, help_text="np. C5", verbose_name="Skala (góra)")
 
     class Meta:
         verbose_name = "Artysta"
@@ -84,13 +84,13 @@ class Project(EnterpriseBaseModel):
     title = models.CharField(max_length=200, verbose_name="Nazwa Projektu")
     date_time = models.DateTimeField(verbose_name="Data i godzina wydarzenia", default=timezone.now)
     call_time = models.DateTimeField(blank=True, null=True, help_text="Godzina zbiórki", verbose_name="Call Time")
-    dress_code_male = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dress Code (Mężczyźni)")
-    dress_code_female = models.CharField(max_length=100, blank=True, null=True, verbose_name="Dress Code (Kobiety)")
-    location = models.CharField(max_length=200, blank=True, null=True, verbose_name="Lokalizacja")
-    description = models.TextField(blank=True, null=True, verbose_name="Opis")
+    dress_code_male = models.CharField(max_length=100, blank=True, verbose_name="Dress Code (Mężczyźni)")
+    dress_code_female = models.CharField(max_length=100, blank=True, verbose_name="Dress Code (Kobiety)")
+    location = models.CharField(max_length=200, blank=True, verbose_name="Lokalizacja")
+    description = models.TextField(blank=True, verbose_name="Opis")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name="Status")
     run_sheet = models.JSONField(default=list, blank=True, verbose_name="Harmonogram Dnia (Run-sheet)")
-    spotify_playlist_url = models.URLField(blank=True, null=True, help_text="Link do playlisty Spotify", verbose_name="Playlista (Spotify)")
+    spotify_playlist_url = models.URLField(blank=True, help_text="Link do playlisty Spotify", verbose_name="Playlista (Spotify)")
 
 
     class Meta:
@@ -132,7 +132,7 @@ class Participation(EnterpriseBaseModel):
     artist = models.ForeignKey(Artist, on_delete=models.RESTRICT, related_name='participations', verbose_name="Artysta")
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='participations', verbose_name="Projekt")
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name="Status")
-    fee = models.DecimalField(max_digits=8, decimal_places=0, blank=True, null=True, verbose_name="Wynagrodzenie")
+    fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name="Wynagrodzenie")
 
     class Meta:
         verbose_name = "Uczestnictwo"
@@ -154,7 +154,7 @@ class ProjectPieceCasting(models.Model):
     piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, related_name='castings', verbose_name="Utwór")
     voice_line = models.CharField(max_length=5, choices=VoiceLine.choices, verbose_name="Linia melodyczna (Divisi)")
     gives_pitch = models.BooleanField(default=False, verbose_name="Daje dźwięk (Kamerton)")
-    notes = models.CharField(max_length=200, blank=True, null=True, verbose_name="Notatki")
+    notes = models.CharField(max_length=200, blank=True, verbose_name="Notatki")
 
     class Meta:
         verbose_name = "Obsada Utworu"
@@ -167,7 +167,7 @@ class Rehearsal(EnterpriseBaseModel):
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='rehearsals', verbose_name="Projekt")
     date_time = models.DateTimeField(verbose_name="Data i godzina")
     location = models.CharField(max_length=200, verbose_name="Sala prób")
-    focus = models.CharField(max_length=200, blank=True, null=True, verbose_name="Cel próby")
+    focus = models.CharField(max_length=200, blank=True, verbose_name="Cel próby")
     is_mandatory = models.BooleanField(default=True, verbose_name="Obowiązkowa")
 
     invited_participations = models.ManyToManyField(
@@ -199,7 +199,7 @@ class Attendance(models.Model):
     participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='attendances', verbose_name="Uczestnik")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PRESENT, verbose_name="Status")
     minutes_late = models.PositiveIntegerField(blank=True, null=True, verbose_name="Minuty spóźnienia")
-    excuse_note = models.CharField(max_length=255, blank=True, null=True, verbose_name="Powód nieobecności (Notatka chórzysty)")
+    excuse_note = models.CharField(max_length=255, blank=True, verbose_name="Powód nieobecności (Notatka chórzysty)")
 
     class Meta:
         verbose_name = "Obecność"
@@ -220,8 +220,8 @@ class Collaborator(EnterpriseBaseModel):
     first_name = models.CharField(max_length=50, verbose_name="Imię")
     last_name = models.CharField(max_length=50, verbose_name="Nazwisko")
     email = models.EmailField(unique=True, blank=True, null=True, verbose_name="E-mail")
-    phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name="Telefon")
-    company_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Firma / Marka")
+    phone_number = models.CharField(max_length=15, blank=True, verbose_name="Telefon")
+    company_name = models.CharField(max_length=100, blank=True, verbose_name="Firma / Marka")
     specialty = models.CharField(max_length=15, choices=Specialty.choices, default=Specialty.OTHER, verbose_name="Specjalizacja")
 
     class Meta:
@@ -241,9 +241,9 @@ class CrewAssignment(models.Model):
     # Zmiana z RESTRICT na CASCADE, by usunięcie projektu usuwało powiązania ekipy
     collaborator = models.ForeignKey(Collaborator, on_delete=models.CASCADE, related_name='assignments', verbose_name="Współtwórca")
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='crew_assignments', verbose_name="Projekt")
-    role_description = models.CharField(max_length=150, blank=True, null=True, verbose_name="Zakres obowiązków")
+    role_description = models.CharField(max_length=150, blank=True, verbose_name="Zakres obowiązków")
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name="Status")
-    fee = models.DecimalField(max_digits=8, decimal_places=0, blank=True, null=True, verbose_name="Stawka (PLN)")
+    fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name="Stawka (PLN)")
 
     class Meta:
         verbose_name = "Przypisanie ekipy"

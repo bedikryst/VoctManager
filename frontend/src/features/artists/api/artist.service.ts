@@ -5,7 +5,7 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import api from '../../../shared/api/api'; // Upewnij się, że ścieżka się zgadza
+import api from '../../../shared/api/api'; 
 import type { Artist } from '../../../shared/types';
 import type { ArtistCreateDTO, ArtistUpdateDTO } from '../types/artist.dto';
 

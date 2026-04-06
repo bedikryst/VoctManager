@@ -127,18 +127,19 @@ export const useMicroCasting = (projectId: string) => {
         if (!over) return; 
         
         const partId = String(active.id); 
-        const targetVoiceLine = String(over.id); 
+        const targetVoiceLineId = String(over.id); 
         const existingCasting = localCastings.find((c) => String(c.participation) === partId);
 
-        if (targetVoiceLine !== 'UNASSIGNED' && existingCasting?.voice_line === targetVoiceLine) return;
-        if (targetVoiceLine === 'UNASSIGNED' && !existingCasting) return;
+        if (targetVoiceLineId !== 'UNASSIGNED' && existingCasting?.voice_line === targetVoiceLineId) return;
+        if (targetVoiceLineId === 'UNASSIGNED' && !existingCasting) return;
 
         const prevCastings = [...localCastings];
         let newCastings = [...localCastings];
 
-        if (targetVoiceLine === 'UNASSIGNED') {
+        if (targetVoiceLineId === 'UNASSIGNED') {
             newCastings = newCastings.filter((c) => String(c.participation) !== partId);
         } else {
+            const targetVoiceLine = targetVoiceLineId as PieceCasting['voice_line'];
             if (existingCasting) {
                 newCastings = newCastings.map((c) => String(c.participation) === partId ? { ...c, voice_line: targetVoiceLine } : c);
             } else {
@@ -154,9 +155,10 @@ export const useMicroCasting = (projectId: string) => {
         setLocalCastings(newCastings);
 
         try {
-            if (targetVoiceLine === 'UNASSIGNED') {
+            if (targetVoiceLineId === 'UNASSIGNED') {
                 if (existingCasting?.id) await api.delete(`/api/piece-castings/${existingCasting.id}/`);
             } else {
+                const targetVoiceLine = targetVoiceLineId as PieceCasting['voice_line'];
                 if (existingCasting?.id && !String(existingCasting.id).startsWith('temp-')) {
                     await api.patch(`/api/piece-castings/${existingCasting.id}/`, { voice_line: targetVoiceLine });
                 } else {

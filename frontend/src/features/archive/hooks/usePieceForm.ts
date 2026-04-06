@@ -1,118 +1,182 @@
 /**
  * @file usePieceForm.ts
- * @description Manages internal form state for the Archive Editor. 
- * Formats user input into strict DTOs and delegates persistence to mutation hooks.
+ * @description Manages complex internal form state for the Archive Editor. 
+ * Bridges the gap between the advanced UI (composer dropdowns, dynamic requirements) 
+ * and strict API data contracts.
  * @architecture Enterprise SaaS 2026
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { useCreatePiece, useUpdatePiece } from '../api/archive.queries';
-import type { PieceWriteDTO, VoiceRequirementDTO } from '../types/archive.dto';
-import type { Piece } from '../../../shared/types';
+import type { PieceWriteDTO, VoiceRequirementDTO, EnrichedPiece } from '../types/archive.dto';
+import type { Composer } from '../../../shared/types';
+
+export type SubmitAction = 'SAVE_AND_ADD' | 'SAVE_AND_CLOSE';
+
+export interface PieceFormState extends Omit<Partial<PieceWriteDTO>, 'composition_year' | 'estimated_duration'> {
+    composition_year?: string | number | null;
+    durationMins?: string;
+    durationSecs?: string;
+}
 
 export const usePieceForm = (
-    piece: Piece | null,
-    onClose: () => void
+    piece: EnrichedPiece | null,
+    composers: Composer[],
+    initialSearchContext: string,
+    onDirtyStateChange?: (isDirty: boolean) => void,
+    onSuccess?: (updatedPiece: any, actionType: SubmitAction) => void
 ) => {
-    // Server Mutations
+    // 1. Server Mutations
     const createMutation = useCreatePiece();
     const updateMutation = useUpdatePiece();
 
-    // Complex Initial State Hydration
-    const initialFormData = useMemo<Partial<PieceWriteDTO>>(() => {
+    // 2. Core Actions
+    const [submitAction, setSubmitAction] = useState<SubmitAction>('SAVE_AND_CLOSE');
+
+    // 3. Initial Form Hydration
+    const initialFormData = useMemo<PieceFormState>(() => {
+
+        const totalSeconds = piece?.estimated_duration || 0;
+        const mins = totalSeconds > 0 ? Math.floor(totalSeconds / 60).toString() : '';
+        const secs = totalSeconds > 0 ? (totalSeconds % 60).toString() : '';
+        
         return {
-            title: piece?.title || '',
-            composer: piece?.composer || '',
+            title: piece?.title || initialSearchContext || '',
+            composer: piece?.composer?.id || '', 
             arranger: piece?.arranger || '',
             language: piece?.language || '',
-            estimated_duration: piece?.estimated_duration || null,
+            durationMins: mins,
+            durationSecs: secs,
             voicing: piece?.voicing || '',
             description: piece?.description || '',
             lyrics_original: piece?.lyrics_original || '',
             lyrics_translation: piece?.lyrics_translation || '',
             reference_recording_youtube: piece?.reference_recording_youtube || piece?.reference_recording || '',
             reference_recording_spotify: piece?.reference_recording_spotify || '',
-            composition_year: piece?.composition_year || null,
+            composition_year: piece?.composition_year || '',
             epoch: piece?.epoch || '',
         };
-    }, [piece]);
+    }, [piece, initialSearchContext]);
 
-    // Local UI State
-    const [formData, setFormData] = useState<Partial<PieceWriteDTO>>(initialFormData);
-    const [sheetMusicFile, setSheetMusicFile] = useState<File | null>(null);
-    const [voiceRequirements, setVoiceRequirements] = useState<VoiceRequirementDTO[]>(
+    // 4. Local UI State
+    const [formData, setFormData] = useState<PieceFormState>(initialFormData);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    const [requirements, setRequirements] = useState<VoiceRequirementDTO[]>(
         piece?.voice_requirements?.map(req => ({ voice_line: req.voice_line, quantity: req.quantity })) || []
     );
+
+    // 5. Composer Search & Dropdown State
+    const [isAddingComposer, setIsAddingComposer] = useState(false);
+    const [newComposerData, setNewComposerData] = useState({ first_name: '', last_name: '', birth_year: '', death_year: '' });
+    
+    // Auto-fill the search box if we are editing an existing piece
+    const initialCompSearch = piece?.composer ? `${piece.composer.last_name} ${piece.composer.first_name || ''}`.trim() : '';
+    const [compSearchTerm, setCompSearchTerm] = useState(initialCompSearch);
+    const [isCompDropdownOpen, setIsCompDropdownOpen] = useState(false);
+
+    const filteredComposers = useMemo(() => {
+        if (!compSearchTerm) return composers;
+        return composers.filter(c => 
+            `${c.first_name || ''} ${c.last_name}`.toLowerCase().includes(compSearchTerm.toLowerCase())
+        );
+    }, [composers, compSearchTerm]);
+
+    // 6. Dirty State Tracking
     const [isDirty, setIsDirty] = useState(false);
 
-    // Sync form when selected piece changes
+    useEffect(() => {
+        if (onDirtyStateChange) onDirtyStateChange(isDirty);
+    }, [isDirty, onDirtyStateChange]);
+
+    // Reset state when the selected piece changes
     useEffect(() => {
         setFormData(initialFormData);
-        setVoiceRequirements(piece?.voice_requirements?.map(req => ({ voice_line: req.voice_line, quantity: req.quantity })) || []);
-        setSheetMusicFile(null);
+        setRequirements(piece?.voice_requirements?.map(req => ({ voice_line: req.voice_line, quantity: req.quantity })) || []);
+        setSelectedFile(null);
         setIsDirty(false);
+        setIsAddingComposer(false);
+        setCompSearchTerm(piece?.composer ? `${piece.composer.last_name} ${piece.composer.first_name || ''}`.trim() : '');
     }, [initialFormData, piece]);
 
-    // UI Handlers
-    const handleFieldChange = (field: keyof PieceWriteDTO, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+    // 7. Input Handlers
+    const handleRequirementChange = (index: number, delta: number) => {
+        const newReqs = [...requirements];
+        newReqs[index].quantity = Math.max(1, newReqs[index].quantity + delta);
+        setRequirements(newReqs);
         setIsDirty(true);
     };
 
-    const handleFormSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         const isCreate = !piece?.id;
-        const toastId = toast.loading(isCreate ? "Adding piece to archive..." : "Updating piece metadata...");
+        const toastId = toast.loading(isCreate ? "Dodawanie utworu do archiwum..." : "Aktualizowanie metadanych...");
 
-        // Assemble the strict DTO
+        if (isAddingComposer) {
+            toast.error("Ograniczenie systemowe", { id: toastId, description: "Dodawanie kompozytorów w locie wymaga osobnego endpointu. Wybierz kompozytora z listy." });
+            return;
+        }
+        const calculatedDuration = (parseInt(formData.durationMins || '0') * 60) + parseInt(formData.durationSecs || '0');
+        
+        // Assemble strict DTO
         const payload: PieceWriteDTO = {
             title: formData.title as string,
-            composer: formData.composer || null,
-            arranger: formData.arranger || null,
-            language: formData.language || null,
-            estimated_duration: formData.estimated_duration ? Number(formData.estimated_duration) : null,
-            voicing: formData.voicing || '',
-            description: formData.description || '',
-            lyrics_original: formData.lyrics_original || null,
-            lyrics_translation: formData.lyrics_translation || null,
-            reference_recording_youtube: formData.reference_recording_youtube || null,
-            reference_recording_spotify: formData.reference_recording_spotify || null,
+            composer: formData.composer || undefined,
+            arranger: formData.arranger || undefined,
+            language: formData.language || undefined,
+            estimated_duration: calculatedDuration > 0 ? calculatedDuration : undefined,
+            voicing: formData.voicing || undefined,
+            description: formData.description || undefined,
+            lyrics_original: formData.lyrics_original || undefined,
+            lyrics_translation: formData.lyrics_translation || undefined,
+            reference_recording_youtube: formData.reference_recording_youtube || undefined,
+            reference_recording_spotify: formData.reference_recording_spotify || undefined,
             composition_year: formData.composition_year ? Number(formData.composition_year) : null,
-            epoch: formData.epoch || null,
-            voice_requirements: voiceRequirements.length > 0 ? voiceRequirements : undefined,
-            sheet_music: sheetMusicFile
+            epoch: formData.epoch || undefined,
+            voice_requirements: requirements.length > 0 ? requirements : undefined,
+            sheet_music: selectedFile || undefined
         };
 
         try {
             if (isCreate) {
-                await createMutation.mutateAsync(payload);
-                toast.success("New piece added successfully.", { id: toastId });
+                const newPiece = await createMutation.mutateAsync(payload);
+                toast.success("Utwór dodany pomyślnie.", { id: toastId });
+                if (onSuccess) onSuccess(newPiece, submitAction);
             } else {
-                await updateMutation.mutateAsync({ id: piece!.id, data: payload });
-                toast.success("Piece updated successfully.", { id: toastId });
+                const updatedPiece = await updateMutation.mutateAsync({ id: piece!.id, data: payload });
+                toast.success("Zmiany zostały zapisane.", { id: toastId });
+                if (onSuccess) onSuccess(updatedPiece, submitAction);
             }
-            
             setIsDirty(false);
-            onClose(); 
         } catch (err: any) {
-            toast.error("Operation failed.", { 
-                id: toastId,
-                description: err?.response?.data?.detail || "Please verify the form fields and try again."
+            toast.error("Błąd zapisu.", { 
+                id: toastId, 
+                description: err?.response?.data?.detail || "Sprawdź poprawność danych i spróbuj ponownie." 
             });
         }
     };
 
     return {
-        formData,
-        handleFieldChange,
-        sheetMusicFile,
-        setSheetMusicFile,
-        voiceRequirements,
-        setVoiceRequirements,
-        isDirty,
-        handleFormSubmit,
-        isSubmitting: createMutation.isPending || updateMutation.isPending
+        // Form Data & Files
+        formData, setFormData,
+        requirements, setRequirements,
+        selectedFile, setSelectedFile, fileInputRef,
+        
+        // Submission State
+        isSubmitting: createMutation.isPending || updateMutation.isPending,
+        submitAction, setSubmitAction, handleSubmit,
+        
+        // Composer UI State
+        isAddingComposer, setIsAddingComposer,
+        newComposerData, setNewComposerData,
+        compSearchTerm, setCompSearchTerm,
+        isCompDropdownOpen, setIsCompDropdownOpen,
+        filteredComposers,
+        
+        // Helpers
+        handleRequirementChange
     };
 };

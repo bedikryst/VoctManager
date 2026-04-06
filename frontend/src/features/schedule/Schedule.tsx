@@ -11,8 +11,8 @@ import { Calendar, Loader2, CalendarHeart } from 'lucide-react';
 
 import { useAuth } from '../../app/providers/AuthProvider';
 import { useScheduleData } from './hooks/useScheduleData';
-import TimelineProjectCard from './cards/TimelineProjectCard';
-import TimelineRehearsalCard from './cards/TimelineRehearsalCard'; 
+import TimelineProjectCard from './components/TimelineProjectCard';
+import TimelineRehearsalCard from './components/TimelineRehearsalCard';
 import { GlassCard } from '../../shared/ui/GlassCard';
 
 export default function Schedule(): React.JSX.Element {

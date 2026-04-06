@@ -14,13 +14,14 @@ import PieceDetailsForm from './PieceDetailsForm';
 import TrackUploadManager from './TrackUploadManager';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
 
-import type { Piece, Composer, VoiceLineOption } from '../../../shared/types';
+import type { Composer, VoiceLineOption } from '../../../shared/types';
+import type { EnrichedPiece } from '../types/archive.dto'; 
 import { ArchiveTabId } from '../constants/archiveDomain';
 
 interface ArchiveEditorPanelProps {
     isOpen: boolean;
     onClose: () => void;
-    piece: Piece | null;
+    piece: EnrichedPiece | null;
     activeTab: ArchiveTabId;
     onTabChange: (tabId: ArchiveTabId) => void;
     composers: Composer[];
@@ -113,7 +114,7 @@ export default function ArchiveEditorPanel({
                                         voiceLines={voiceLines} 
                                         initialSearchContext={initialSearchContext}
                                         onDirtyStateChange={setIsFormDirty}
-                                        onSuccess={(_updatedPiece: Piece, actionType: 'SAVE_AND_ADD' | 'SAVE_AND_CLOSE') => { 
+                                        onSuccess={(_updatedPiece: EnrichedPiece, actionType: 'SAVE_AND_ADD' | 'SAVE_AND_CLOSE') => { 
                                             setIsFormDirty(false); 
                                             if (actionType === 'SAVE_AND_CLOSE') onClose(); 
                                         }} 

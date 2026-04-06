@@ -29,9 +29,9 @@ import DashboardHome from '../features/dashboard/DashboardHome';
 import Rehearsals from '../features/rehearsals/Rehearsals';
 import Materials from '../features/materials/Materials';
 import Schedule from '../features/schedule/Schedule';
-import ArtistManagement from '../features/artists/ArtistManagement';
+import ArtistManagement from '../pages/app/ArtistsPage';
 import ProjectManagement from '../features/projects/ProjectDashboard';
-import ArchiveManagement from '../features/archive/ArchiveManagement';
+import ArchiveManagement from '../pages/app/ArchivePage';
 import Resources from '../features/Resources';
 import CrewManagement from '../features/crew/CrewManagement';
 

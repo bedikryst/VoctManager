@@ -21,7 +21,7 @@ import PieceCard from './components/PieceCard';
 import ArchiveEditorPanel from './components/ArchiveEditorPanel';
 import { EPOCHS } from './components/PieceDetailsForm';
 import { useArchiveData } from './hooks/useArchiveData';
-import type { Piece } from '../../shared/types';
+import type { EnrichedPiece } from './types/archive.dto';
 
 // Enterprise dependencies
 import { useBodyScrollLock } from '../../shared/lib/hooks/useBodyScrollLock';
@@ -34,7 +34,7 @@ export default function ArchiveManagement(): React.JSX.Element {
         isLoading, isError, composers, voiceLines, libraryStats, displayPieces,
         searchTerm, setSearchTerm, composerFilter, setComposerFilter,
         epochFilter, setEpochFilter, pieceToDelete, setPieceToDelete,
-        isDeleting, executeDelete
+        isDeleting, executeDelete, handleDeleteRequest
     } = useArchiveData();
 
     const closeResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,7 +44,7 @@ export default function ArchiveManagement(): React.JSX.Element {
     
     // Strict typing applied here
     const [activeTab, setActiveTab] = useState<ArchiveTabId>(ARCHIVE_TABS.DETAILS);
-    const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
+    const [editingPiece, setEditingPiece] = useState<EnrichedPiece | null>(null);
     const [initialSearchContext, setInitialSearchContext] = useState<string>('');
 
     // Safe DOM Mutation Pattern via custom hook
@@ -59,7 +59,7 @@ export default function ArchiveManagement(): React.JSX.Element {
         if (closeResetTimeoutRef.current) clearTimeout(closeResetTimeoutRef.current);
     }, []);
 
-    const openPanel = useCallback((piece: Piece | null = null, tab: ArchiveTabId = ARCHIVE_TABS.DETAILS, context: string = '') => { 
+    const openPanel = useCallback((piece: EnrichedPiece | null = null, tab: ArchiveTabId = ARCHIVE_TABS.DETAILS, context: string = '') => { 
         if (closeResetTimeoutRef.current) {
             clearTimeout(closeResetTimeoutRef.current);
             closeResetTimeoutRef.current = null;
@@ -81,10 +81,14 @@ export default function ArchiveManagement(): React.JSX.Element {
         }, 300); 
     }, []);
 
-    const handleDeleteConfirm = () => {
-        executeDelete(() => {
-            if (editingPiece?.id === pieceToDelete) closePanel();
-        });
+    const handleDeleteConfirm = async () => {
+        const deletedId = pieceToDelete?.id; 
+        
+        await executeDelete(); 
+        
+        if (editingPiece?.id && editingPiece.id === deletedId) {
+            closePanel();
+        }
     };
 
     return (
@@ -201,7 +205,7 @@ export default function ArchiveManagement(): React.JSX.Element {
                             isExpanded={expandedPieceId === String(piece.id)}
                             onToggleExpand={() => setExpandedPieceId(expandedPieceId === String(piece.id) ? null : String(piece.id))} 
                             onOpenPanel={openPanel} 
-                            onDelete={() => setPieceToDelete(String(piece.id))} 
+                            onDelete={() => handleDeleteRequest(String(piece.id), piece.title)} 
                         />
                     ))
                 ) : (

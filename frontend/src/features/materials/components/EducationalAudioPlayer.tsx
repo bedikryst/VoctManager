@@ -7,7 +7,7 @@
 
 import React, { useRef, useState } from 'react';
 import { PlayCircle, Lock, FastForward } from 'lucide-react';
-import type { Track } from '../../shared/types';
+import type { Track } from '../../../shared/types';
 
 interface EducationalAudioPlayerProps {
     track: Track;

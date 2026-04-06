@@ -33,9 +33,9 @@ services:
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
     volumes:
-      # Map shared Docker volumes (No host directory binding here)
-      - media_volume:/app/media
-      - static_volume:/app/static
+      # Bind Mounts
+      - ./voct_data/media:/app/media
+      - ./voct_data/static:/app/static  
 
   celery:
     build: ./backend
@@ -52,23 +52,21 @@ services:
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
     volumes:
-      - media_volume:/app/media
-      - static_volume:/app/static
+      # Bind Mounts
+      - ./voct_data/media:/app/media
+      - ./voct_data/static:/app/static  
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: nginx:alpine
     restart: always
     depends_on:
       - web
     volumes:
       # Nginx receives static and media files as read-only (ro)
-      - media_volume:/app/media:ro
-      - static_volume:/app/static:ro
+      - ./voct_data/media:/app/media:ro
+      - ./voct_data/static:/app/static:ro
 
 volumes:
   postgres_data:
-  media_volume:
-  static_volume: # Stores Django collected static files (CSS/JS for Admin)

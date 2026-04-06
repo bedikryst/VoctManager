@@ -20,7 +20,7 @@ import { useMaterialsData } from './hooks/useMaterialsData';
 
 import { GlassCard } from '../../shared/ui/GlassCard';
 import { Input } from '../../shared/ui/Input';
-import { EducationalAudioPlayer } from './EducationalAudioPlayer';
+import { EducationalAudioPlayer } from './components/EducationalAudioPlayer';
 
 export default function Materials(): React.JSX.Element {
     const { user } = useAuth(); 

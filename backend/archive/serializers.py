@@ -60,9 +60,9 @@ class PieceSerializer(serializers.ModelSerializer):
     voice_requirements = PieceVoiceRequirementSerializer(many=True, read_only=True)
     
     # URL generation for static file serving
-    sheet_music = serializers.FileField(use_url=True, required=False, allow_null=True)
+    sheet_music = serializers.FileField(use_url=True, required=False)
     epoch_display = serializers.CharField(source='get_epoch_display', read_only=True)
-    reference_recording = serializers.URLField(write_only=True, required=False, allow_blank=True, allow_null=True)
+    reference_recording = serializers.URLField(write_only=True, required=False, allow_blank=True)
     
     # Write-only field for handling nested requirement mutations
     requirements_data = serializers.JSONField(write_only=True, required=False, allow_null=True)

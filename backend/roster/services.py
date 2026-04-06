@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.contrib.auth.models import User
 from django.conf import settings
+import unicodedata
 
 from .models import Artist, Project, Participation, ProgramItem, ProjectPieceCasting, Rehearsal
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ParticipationRestoreDTO
@@ -15,8 +16,9 @@ from .exceptions import ArtistProvisioningException, AttendanceValidationExcepti
 def provision_artist_with_user_account(dto: ArtistCreateDTO) -> Artist:
     if User.objects.filter(email=dto.email).exists():
         raise ArtistProvisioningException(f"Account with email {dto.email} already exists.")
-
-    base_username = f"{dto.first_name[0].lower()}{dto.last_name.lower()}".replace(' ', '')
+    raw_username = f"{dto.first_name[0].lower()}{dto.last_name.lower()}".replace(' ', '')
+    base_username = unicodedata.normalize('NFKD', raw_username).encode('ASCII', 'ignore').decode('utf-8')
+    
     username = base_username
     counter = 2
     while User.objects.filter(username=username).exists():

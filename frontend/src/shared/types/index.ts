@@ -14,7 +14,7 @@ export interface BaseModel {
 }
 
 // ==========================================
-// STRICT DOMAIN ENUMS (Removed fallback `| string` to force TS validation)
+// STRICT DOMAIN ENUMS 
 // ==========================================
 
 export type VoiceType = 'SOP' | 'MEZ' | 'ALT' | 'CT' | 'TEN' | 'BAR' | 'BAS' | 'DIR';
@@ -38,23 +38,28 @@ export interface VoiceLineOption {
     label: string;
 }
 
+export interface VoiceTypeOption {
+    value: string;
+    label: string;
+}
+
 // ==========================================
 // DOMAIN ENTITIES: ROSTER & PROJECTS
 // ==========================================
 
 export interface Artist extends BaseModel {
-    user?: string | null;
+    user?: string | null; // FK relation, can be null
     first_name: string;
     last_name: string;
     email: string;
-    phone_number?: string | null;
+    phone_number?: string;
     voice_type: VoiceType;
     voice_type_display?: string;
     is_active: boolean;
-    username?: string | null;
-    sight_reading_skill?: number | null;
-    vocal_range_bottom?: string | null;
-    vocal_range_top?: string | null;
+    username?: string;
+    sight_reading_skill?: number | null; // Numeric, can be null
+    vocal_range_bottom?: string;
+    vocal_range_top?: string;
 }
 
 export interface RunSheetItem {
@@ -63,17 +68,17 @@ export interface RunSheetItem {
     title: string;
     description?: string;
     activity?: string;
-    details?: string | null;
+    details?: string;
 }
 
 export interface Project extends BaseModel {
     title: string;
     date_time: string;
-    call_time?: string | null;
-    dress_code_male?: string | null;
-    dress_code_female?: string | null;
-    location?: string | null;
-    description?: string | null;
+    call_time?: string | null; // DateTime, can be null
+    dress_code_male?: string;
+    dress_code_female?: string;
+    location?: string;
+    description?: string;
     status: ProjectStatus;
     run_sheet?: RunSheetItem[];
     program?: ProgramItem[];
@@ -84,14 +89,14 @@ export interface Participation extends BaseModel {
     artist: string; // Foreign Key ID
     project: string; // Foreign Key ID
     status: ParticipationStatus;
-    fee?: string | number | null;
+    fee?: string | number | null; // Decimal, can be null
 }
 
 export interface Rehearsal extends BaseModel {
     project: string; // Foreign Key ID
     date_time: string;
     location: string;
-    focus?: string | null;
+    focus?: string;
     is_mandatory: boolean;
     invited_participations?: string[];
 }
@@ -100,25 +105,25 @@ export interface Attendance extends BaseModel {
     rehearsal: string; // Foreign Key ID
     participation: string; // Foreign Key ID
     status: AttendanceStatus | null;
-    minutes_late?: number | null;
-    excuse_note?: string | null;
+    minutes_late?: number | null; // Numeric, can be null
+    excuse_note?: string;
 }
 
 export interface Collaborator extends BaseModel {
     first_name: string;
     last_name: string;
-    email?: string | null;
-    phone_number?: string | null;
-    company_name?: string | null;
+    email?: string;
+    phone_number?: string;
+    company_name?: string;
     specialty: CollaboratorSpecialty;
 }
 
 export interface CrewAssignment extends BaseModel {
     collaborator: string; // Foreign Key ID
     project: string; // Foreign Key ID
-    role_description?: string | null;
+    role_description?: string;
     status: CrewAssignmentStatus;
-    fee?: string | number | null;
+    fee?: string | number | null; // Decimal, can be null
 }
 
 // ==========================================
@@ -126,10 +131,10 @@ export interface CrewAssignment extends BaseModel {
 // ==========================================
 
 export interface Composer extends BaseModel {
-    first_name?: string | null;
+    first_name?: string;
     last_name: string;
-    birth_year?: string | null;
-    death_year?: string | null;
+    birth_year?: string;
+    death_year?: string;
 }
 
 export interface VoiceRequirement {
@@ -144,32 +149,31 @@ export interface Track extends BaseModel {
     piece: string; // Foreign Key ID
     voice_part: VoiceLine;
     voice_part_display?: string;
-    audio_file: string;
+    audio_file: string; // URL string, no null
 }
 
 export interface Piece extends BaseModel {
     title: string;
-    // Relations strictly typed as IDs or explicitly named read-only expanded fields
-    composer?: string | null; 
-    composer_name?: string | null;
-    composer_full_name?: string | null;
+    composer?: string | null; // FK relation, can be null
+    composer_name?: string;
+    composer_full_name?: string;
     
-    arranger?: string | null;
-    language?: string | null;
-    estimated_duration?: number | null;
-    voicing?: string | null;
+    arranger?: string;
+    language?: string;
+    estimated_duration?: number | null; // Numeric, can be null
+    voicing?: string;
     description?: string;
-    sheet_music?: string | null;
-    lyrics_original?: string | null;
-    lyrics_translation?: string | null;
-    reference_recording?: string | null;
-    reference_recording_youtube?: string | null;
-    reference_recording_spotify?: string | null;
-    composition_year?: number | null;
-    epoch?: Epoch | null;
-    epoch_display?: string | null;
+    sheet_music?: string; // URL string, no null
+    lyrics_original?: string;
+    lyrics_translation?: string;
+    reference_recording?: string;
+    reference_recording_youtube?: string;
+    reference_recording_spotify?: string;
+    composition_year?: number | null; // Numeric, can be null
+    epoch?: Epoch;
+    epoch_display?: string;
     
-    // Nested relations (provided by DRF Serializer)
+    // Nested relations
     voice_requirements?: VoiceRequirement[];
     tracks?: Track[];
 }
@@ -189,5 +193,5 @@ export interface PieceCasting extends BaseModel {
     piece: string; // Foreign Key ID
     voice_line: VoiceLine;
     gives_pitch: boolean;
-    notes?: string | null;
+    notes?: string;
 }

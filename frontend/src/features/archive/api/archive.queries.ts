@@ -59,3 +59,31 @@ export const useDeletePiece = () => {
         },
     });
 };
+
+export const useUploadTrack = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ pieceId, voiceLine, file }: { pieceId: string | number, voiceLine: string, file: File }) => 
+            ArchiveService.uploadTrack(pieceId, voiceLine, file),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ARCHIVE_QUERY_KEYS.pieces }); // Odświeża utwory i ich podpięte tracki
+        },
+    });
+};
+
+export const useDeleteTrack = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (trackId: string) => ArchiveService.deleteTrack(trackId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ARCHIVE_QUERY_KEYS.pieces });
+        },
+    });
+};
+
+export const useTracks = (pieceId: string | number) => {
+    return useQuery({
+        queryKey: [...ARCHIVE_QUERY_KEYS.pieces, 'tracks', pieceId],
+        queryFn: () => ArchiveService.getTracksByPiece(pieceId),
+    });
+};

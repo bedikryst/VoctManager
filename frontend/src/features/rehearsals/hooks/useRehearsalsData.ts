@@ -1,175 +1,207 @@
 /**
  * @file useRehearsalsData.ts
- * @description Encapsulates data fetching, relational mapping, and KPI calculation.
- * Upgraded to support active/archived project tabs.
- * @module hooks/useRehearsalsData
+ * @description Encapsulates relational mapping, navigation state, and KPI calculation for rehearsals.
  */
 
-import { useState, useMemo, useEffect } from 'react';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import api from '../../../shared/api/api';
-import { queryKeys } from '../../../shared/lib/queryKeys';
-import type { Project, Rehearsal, Participation, Attendance, Artist } from '../../../shared/types';
-
-export type ProjectTabType = 'ACTIVE' | 'ARCHIVE';
+import type { Artist, Attendance } from '../../../shared/types';
+import { useMarkMissingAttendancesPresent, useRehearsalsWorkspaceData } from '../api/rehearsals.queries';
+import type { ProjectTabType } from '../types/rehearsals.dto';
 
 export const useRehearsalsData = () => {
-    const queryClient = useQueryClient();
-
     const [projectTab, setProjectTab] = useState<ProjectTabType>('ACTIVE');
-    const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+    const [selectedProjectId, setSelectedProjectId] = useState('');
     const [activeRehearsalId, setActiveRehearsalId] = useState<string | null>(null);
-    const [isMarkingAll, setIsMarkingAll] = useState<boolean>(false);
 
-    const results = useQueries({
-        queries: [
-            { queryKey: queryKeys.projects.all, queryFn: async () => (await api.get<Project[]>('/api/projects/')).data },
-            { queryKey: queryKeys.rehearsals.all, queryFn: async () => (await api.get<Rehearsal[]>('/api/rehearsals/')).data },
-            { queryKey: queryKeys.participations.all, queryFn: async () => (await api.get<Participation[]>('/api/participations/')).data },
-            { queryKey: queryKeys.attendances.all, queryFn: async () => (await api.get<Attendance[]>('/api/attendances/')).data },
-            { queryKey: queryKeys.artists.all, queryFn: async () => (await api.get<Artist[]>('/api/artists/')).data }
-        ]
-    });
+    const {
+        projects,
+        rehearsals,
+        participations,
+        attendances,
+        artists,
+        isLoading,
+        isError,
+    } = useRehearsalsWorkspaceData();
+    const markMissingAttendanceMutation = useMarkMissingAttendancesPresent();
 
-    const isLoading = results.some(q => q.isLoading);
-    const isError = results.some(q => q.isError);
+    const activeProjects = useMemo(() => {
+        return projects.filter((project) => project.status !== 'DONE' && project.status !== 'CANC');
+    }, [projects]);
 
-    const projects = (results[0].data || []) as Project[];
-    const rehearsals = (results[1].data || []) as Rehearsal[];
-    const participations = (results[2].data || []) as Participation[];
-    const attendances = (results[3].data || []) as Attendance[];
-    const artists = (results[4].data || []) as Artist[];
+    const archivedProjects = useMemo(() => {
+        return projects.filter((project) => project.status === 'DONE' || project.status === 'CANC');
+    }, [projects]);
 
-    const activeProjects = useMemo(() => projects.filter(p => p.status !== 'DONE' && p.status !== 'CANC'), [projects]);
-    const archivedProjects = useMemo(() => projects.filter(p => p.status === 'DONE' || p.status === 'CANC'), [projects]);
     const displayProjects = projectTab === 'ACTIVE' ? activeProjects : archivedProjects;
 
     useEffect(() => {
         if (!selectedProjectId && displayProjects.length > 0) {
             setSelectedProjectId(String(displayProjects[0].id));
-        } else if (displayProjects.length > 0 && !displayProjects.find(p => String(p.id) === selectedProjectId)) {
-            // Zmiana zakładki - wybierz pierwszy z nowej listy
+            return;
+        }
+
+        if (displayProjects.length > 0 && !displayProjects.find((project) => String(project.id) === selectedProjectId)) {
             setSelectedProjectId(String(displayProjects[0].id));
         }
-    }, [displayProjects, selectedProjectId, projectTab]);
+    }, [displayProjects, selectedProjectId]);
 
-    // ... (reszta hooka: artistMap, projectRehearsals, projectParticipations, etc. pozostaje absolutnie BEZ ZMIAN)
-    // Zwróć uwagę, żeby na końcu w returnie dorzucić nowe wartości:
-
-    // ... kod pozostaje ten sam ...
-
-    const artistMap = useMemo<Map<string, Artist>>(() => {
+    const artistMap = useMemo(() => {
         const map = new Map<string, Artist>();
-        artists.forEach(a => map.set(String(a.id), a));
+        artists.forEach((artist) => map.set(String(artist.id), artist));
         return map;
     }, [artists]);
 
     const projectRehearsals = useMemo(() => {
-        if (!selectedProjectId) return [];
+        if (!selectedProjectId) {
+            return [];
+        }
+
         return rehearsals
-            .filter(r => String(r.project) === String(selectedProjectId))
-            .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
+            .filter((rehearsal) => String(rehearsal.project) === selectedProjectId)
+            .sort((left, right) => new Date(left.date_time).getTime() - new Date(right.date_time).getTime());
     }, [rehearsals, selectedProjectId]);
 
     const projectParticipations = useMemo(() => {
-        if (!selectedProjectId) return [];
-        return participations.filter(p => String(p.project) === String(selectedProjectId) && p.status !== 'DEC');
+        if (!selectedProjectId) {
+            return [];
+        }
+
+        return participations.filter(
+            (participation) => String(participation.project) === selectedProjectId && participation.status !== 'DEC',
+        );
     }, [participations, selectedProjectId]);
 
     useEffect(() => {
-        if (projectRehearsals.length > 0 && (!activeRehearsalId || !projectRehearsals.find(r => String(r.id) === activeRehearsalId))) {
+        if (
+            projectRehearsals.length > 0 &&
+            (!activeRehearsalId || !projectRehearsals.find((rehearsal) => String(rehearsal.id) === activeRehearsalId))
+        ) {
             setActiveRehearsalId(String(projectRehearsals[0].id));
-        } else if (projectRehearsals.length === 0) {
+            return;
+        }
+
+        if (projectRehearsals.length === 0) {
             setActiveRehearsalId(null);
         }
     }, [projectRehearsals, activeRehearsalId]);
 
     const activeRehearsal = useMemo(() => {
-        return projectRehearsals.find(r => String(r.id) === activeRehearsalId) || null;
+        return projectRehearsals.find((rehearsal) => String(rehearsal.id) === activeRehearsalId) || null;
     }, [projectRehearsals, activeRehearsalId]);
 
     const invitedParticipations = useMemo(() => {
-        if (!activeRehearsal) return [];
+        if (!activeRehearsal) {
+            return [];
+        }
+
         const invitedIds = activeRehearsal.invited_participations || [];
-        const relevantParts = invitedIds.length > 0 
-            ? projectParticipations.filter(p => invitedIds.includes(String(p.id)))
-            : projectParticipations; 
-        
-        return relevantParts.sort((a, b) => {
-            const nameA = artistMap.get(String(a.artist))?.last_name || '';
-            const nameB = artistMap.get(String(b.artist))?.last_name || '';
-            return nameA.localeCompare(nameB);
+        const relevantParticipations = invitedIds.length > 0
+            ? projectParticipations.filter((participation) => invitedIds.includes(String(participation.id)))
+            : projectParticipations;
+
+        return relevantParticipations.sort((left, right) => {
+            const leftName = artistMap.get(String(left.artist))?.last_name || '';
+            const rightName = artistMap.get(String(right.artist))?.last_name || '';
+            return leftName.localeCompare(rightName);
         });
     }, [activeRehearsal, projectParticipations, artistMap]);
 
-    const attendanceMap = useMemo<Map<string, Attendance>>(() => {
+    const attendanceMap = useMemo(() => {
         const map = new Map<string, Attendance>();
+
         if (activeRehearsal) {
             attendances
-                .filter(a => String(a.rehearsal) === String(activeRehearsal.id))
-                .forEach(a => map.set(String(a.participation), a));
+                .filter((attendance) => String(attendance.rehearsal) === String(activeRehearsal.id))
+                .forEach((attendance) => map.set(String(attendance.participation), attendance));
         }
+
         return map;
     }, [attendances, activeRehearsal]);
 
     const stats = useMemo(() => {
-        let present = 0; let late = 0; let absent = 0; let none = 0; let excused = 0;
-        invitedParticipations.forEach(p => {
-            const att = attendanceMap.get(String(p.id));
-            if (!att) none++;
-            else if (att.status === 'PRESENT') present++;
-            else if (att.status === 'LATE') late++;
-            else if (att.status === 'EXCUSED') excused++;
-            else absent++;
+        let present = 0;
+        let late = 0;
+        let absent = 0;
+        let none = 0;
+        let excused = 0;
+
+        invitedParticipations.forEach((participation) => {
+            const attendance = attendanceMap.get(String(participation.id));
+
+            if (!attendance) {
+                none += 1;
+            } else if (attendance.status === 'PRESENT') {
+                present += 1;
+            } else if (attendance.status === 'LATE') {
+                late += 1;
+            } else if (attendance.status === 'EXCUSED') {
+                excused += 1;
+            } else {
+                absent += 1;
+            }
         });
+
         const total = invitedParticipations.length;
         const completionRate = total > 0 ? ((total - none) / total) * 100 : 0;
         const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
-        
+
         return { present, late, absent, excused, none, total, completionRate, rate };
     }, [invitedParticipations, attendanceMap]);
 
     const handleMarkAllPresent = async (): Promise<void> => {
-        if (!activeRehearsalId || invitedParticipations.length === 0) return;
-        
-        setIsMarkingAll(true);
+        if (!activeRehearsalId || invitedParticipations.length === 0) {
+            return;
+        }
+
         const toastId = toast.loading("Zbiorcze zaznaczanie obecności...");
 
         try {
-            const promises = invitedParticipations.map(part => {
-                const existing = attendanceMap.get(String(part.id));
-                if (existing) {
-                    if (existing.status !== 'PRESENT' && existing.status !== 'EXCUSED' && existing.status !== 'LATE') {
-                        return api.patch(`/api/attendances/${existing.id}/`, { status: 'PRESENT', minutes_late: null, excuse_note: null });
+            const entries = invitedParticipations.flatMap((participation) => {
+                const existingAttendance = attendanceMap.get(String(participation.id));
+
+                if (existingAttendance) {
+                    if (
+                        existingAttendance.status !== 'PRESENT' &&
+                        existingAttendance.status !== 'EXCUSED' &&
+                        existingAttendance.status !== 'LATE'
+                    ) {
+                        return [{
+                            attendanceId: existingAttendance.id,
+                            rehearsalId: String(activeRehearsalId),
+                            participationId: String(participation.id),
+                        }];
                     }
-                    return Promise.resolve();
-                } else {
-                    return api.post('/api/attendances/', { rehearsal: activeRehearsalId, participation: part.id, status: 'PRESENT' });
+
+                    return [];
                 }
+
+                return [{
+                    rehearsalId: String(activeRehearsalId),
+                    participationId: String(participation.id),
+                }];
             });
 
-            await Promise.all(promises);
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: queryKeys.attendances.all }),
-                queryClient.invalidateQueries({ queryKey: queryKeys.rehearsals.all }),
-                queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
-            ]);
-            
-            toast.success(`Uzupełniono luki jako "Obecny".`, { id: toastId });
-        } catch (err) {
-            toast.error("Błąd systemu", { id: toastId, description: "Nie udało się zapisać masowej obecności." });
-        } finally {
-            setIsMarkingAll(false);
+            if (entries.length === 0) {
+                return;
+            }
+
+            await markMissingAttendanceMutation.mutateAsync(entries);
+            toast.success('Uzupełniono luki jako "Obecny".', { id: toastId });
+        } catch (error) {
+            toast.error("Błąd systemu", {
+                id: toastId,
+                description: "Nie udało się zapisać masowej obecności.",
+            });
         }
     };
 
     return {
         isLoading,
         isError,
-        projectTab,            
-        setProjectTab,          
-        displayProjects,         
+        projectTab,
+        setProjectTab,
+        displayProjects,
         selectedProjectId,
         setSelectedProjectId,
         projectRehearsals,
@@ -180,7 +212,7 @@ export const useRehearsalsData = () => {
         artistMap,
         attendanceMap,
         stats,
-        isMarkingAll,
-        handleMarkAllPresent
+        isMarkingAll: markMissingAttendanceMutation.isPending,
+        handleMarkAllPresent,
     };
 };

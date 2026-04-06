@@ -2,57 +2,49 @@
  * @file Contracts.tsx
  * @description Master view for the HR & Payroll Module.
  * Integrates contextual state hooks, localized components, and the core UI kit.
- * @module panel/contracts/Contracts
+ * @module features/contracts/Contracts
  */
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
 import { 
     Calculator, Wallet, FileSignature, 
     Users, Wrench, Sparkles, Receipt, Loader2, ChevronDown 
 } from 'lucide-react';
 
-import api from '../../shared/api/api'; 
 import { downloadFile } from '../../shared/lib/downloadFile';
-import { queryKeys } from '../../shared/lib/queryKeys';
 import { useContractsData } from './hooks/useContractsData';
+import { useBulkUpdateFee } from './api/contracts.queries'; 
 
 import { GlassCard } from '../../shared/ui/GlassCard';
 import { Input } from '../../shared/ui/Input';
 import { Button } from '../../shared/ui/Button';
 import { ExportContractButton } from '../../shared/ui/ExportContractButton';
-import { ContractRow } from './ContractRow';
+import { ContractRow } from './components/ContractRow';
 
 export default function Contracts(): React.JSX.Element {
-    const queryClient = useQueryClient();
     const { 
         isLoading, projects, selectedProjectId, setSelectedProjectId, 
         currentCast, currentCrew, globalStats, projectStats 
     } = useContractsData();
 
     const [globalFee, setGlobalFee] = useState<string>('');
-    const [isApplyingGlobal, setIsApplyingGlobal] = useState<boolean>(false);
-
+    const bulkUpdateMutation = useBulkUpdateFee();
+    
     const handleApplyGlobalFee = async (): Promise<void> => {
         if (!globalFee) return;
-        setIsApplyingGlobal(true);
         const toastId = toast.loading('Applying bulk fee overrides...');
         
         try {
-            const res = await api.patch('/api/participations/bulk-fee/', { 
-                project_id: selectedProjectId,
+            const res = await bulkUpdateMutation.mutateAsync({ 
+                projectId: selectedProjectId,
                 fee: parseFloat(globalFee) 
             });
-            
-            await queryClient.invalidateQueries({ queryKey: queryKeys.participations.all });
-            toast.success(`Successfully updated fees for ${res.data.updated_count} members.`, { id: toastId });
+            toast.success(`Successfully updated fees for ${res.updated_count} members.`, { id: toastId });
             setGlobalFee(''); 
         } catch (e) { 
             toast.error('Server error during bulk operation.', { id: toastId });
-        } finally {
-            setIsApplyingGlobal(false);
         }
     };
 
@@ -187,9 +179,9 @@ export default function Contracts(): React.JSX.Element {
                                 <Button 
                                     variant="secondary"
                                     onClick={handleApplyGlobalFee} 
-                                    disabled={isApplyingGlobal || !globalFee}
-                                    isLoading={isApplyingGlobal}
-                                    leftIcon={!isApplyingGlobal ? <Calculator size={14} /> : undefined}
+                                    disabled={bulkUpdateMutation.isPending || !globalFee}
+                                    isLoading={bulkUpdateMutation.isPending}
+                                    leftIcon={!bulkUpdateMutation.isPending ? <Calculator size={14} /> : undefined}
                                     className="w-full sm:w-auto"
                                 >
                                     Apply Valuation

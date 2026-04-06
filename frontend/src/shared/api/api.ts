@@ -4,7 +4,7 @@
  * Fully delegates JWT transmission to HttpOnly cookies for strict XSS prevention.
  * Implements a concurrent request queueing mechanism during token rotation 
  * and automatically normalizes paginated responses from Django REST Framework.
- * @module utils/api
+ * @module shared/api/api
  */
 
 import axios, { 

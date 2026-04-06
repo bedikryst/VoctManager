@@ -32,10 +32,10 @@ class Composer(EnterpriseBaseModel):
     Represents a musical composer or arranger.
     Handles traditional/anonymous works gracefully via its string representation.
     """
-    first_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Imię")
+    first_name = models.CharField(max_length=100, blank=True, verbose_name="Imię")
     last_name = models.CharField(max_length=100, verbose_name="Nazwisko")
-    birth_year = models.CharField(max_length=50, null=True, blank=True, help_text="np. 1885", verbose_name="Rok urodzenia")
-    death_year = models.CharField(max_length=50, null=True, blank=True, verbose_name="Rok śmierci")
+    birth_year = models.CharField(max_length=50, blank=True, help_text="np. 1885", verbose_name="Rok urodzenia")
+    death_year = models.CharField(max_length=50, blank=True, verbose_name="Rok śmierci")
 
     class Meta:
         verbose_name = "Kompozytor"
@@ -74,24 +74,24 @@ class Piece(EnterpriseBaseModel):
     )
     
     # --- VOCAL ENSEMBLE SPECIFIC METADATA ---
-    arranger = models.CharField(max_length=150, blank=True, null=True, verbose_name="Aranżer")
-    language = models.CharField(max_length=50, blank=True, null=True, help_text="np. Łacina, Angielski", verbose_name="Język")
+    arranger = models.CharField(max_length=150, blank=True, verbose_name="Aranżer")
+    language = models.CharField(max_length=50, blank=True, help_text="np. Łacina, Angielski", verbose_name="Język")
     estimated_duration = models.PositiveIntegerField(blank=True, null=True, help_text="Czas trwania w sekundach", verbose_name="Szacowany czas trwania")
     
     voicing = models.CharField(max_length=50, blank=True, help_text="np. SSAATTBB", verbose_name="Obsada wokalna")
     description = models.TextField(blank=True, verbose_name="Uwagi / Opis")
-    sheet_music = models.FileField(upload_to='sheet_music/', blank=True, null=True, validators=[FileExtensionValidator(['pdf']), validate_file_size], verbose_name="Nuty (Plik PDF)")
+    sheet_music = models.FileField(upload_to='sheet_music/', blank=True, validators=[FileExtensionValidator(['pdf']), validate_file_size], verbose_name="Nuty (Plik PDF)")
 
     # --- CONDUCTOR & REHEARSAL WORKSPACE ---
-    lyrics_original = models.TextField(blank=True, null=True, help_text="Tekst w języku oryginału", verbose_name="Tekst utworu")
-    lyrics_translation = models.TextField(blank=True, null=True, help_text="Polskie tłumaczenie", verbose_name="Tłumaczenie")
-    reference_recording_youtube = models.URLField(blank=True, null=True, help_text="Link do YouTube", verbose_name="Nagranie (Youtube)")
-    reference_recording_spotify = models.URLField(blank=True, null=True, help_text="Link do Spotify", verbose_name="Nagranie (Spotify)")
+    lyrics_original = models.TextField(blank=True, help_text="Tekst w języku oryginału", verbose_name="Tekst utworu")
+    lyrics_translation = models.TextField(blank=True, help_text="Polskie tłumaczenie", verbose_name="Tłumaczenie")
+    reference_recording_youtube = models.URLField(blank=True, help_text="Link do YouTube", verbose_name="Nagranie (Youtube)")
+    reference_recording_spotify = models.URLField(blank=True, help_text="Link do Spotify", verbose_name="Nagranie (Spotify)")
     
     
     # --- HISTORICAL CONTEXT ---
     composition_year = models.IntegerField(blank=True, null=True, verbose_name="Rok powstania")
-    epoch = models.CharField(max_length=4, choices=EpochChoices.choices, blank=True, null=True, verbose_name="Epoka")
+    epoch = models.CharField(max_length=4, choices=EpochChoices.choices, blank=True, verbose_name="Epoka")
 
     class Meta:
         verbose_name = "Utwór"

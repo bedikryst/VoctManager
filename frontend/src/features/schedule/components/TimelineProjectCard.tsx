@@ -13,9 +13,10 @@ import {
 } from 'lucide-react';
 
 import SpotifyWidget from '../../projects/ProjectCard/SpotifyWidget';
+import type { Project } from '../../../shared/types';
 import { Button } from '../../../shared/ui/Button';
 import { useTimelineProjectCard } from '../hooks/useTimelineProjectCard';
-import type { TimelineEvent } from '../hooks/useScheduleData';
+import type { TimelineEvent } from '../types/schedule.dto';
 
 interface TimelineProjectCardProps {
     event: TimelineEvent;
@@ -25,7 +26,7 @@ interface TimelineProjectCardProps {
 }
 
 export default function TimelineProjectCard({ event, isExpanded, onToggle, artistId }: TimelineProjectCardProps): React.JSX.Element {
-    const proj = event.rawObj;
+    const proj = event.rawObj as Project;
     const combinedDressCode = [proj.dress_code_female, proj.dress_code_male].filter(Boolean).join(' / ');
 
     const {

@@ -10,10 +10,10 @@ export interface ArtistCreateDTO {
     last_name: string;
     email: string;
     voice_type: string;
-    phone_number?: string | null;
+    phone_number?: string;
     sight_reading_skill?: number | null;
-    vocal_range_bottom?: string | null;
-    vocal_range_top?: string | null;
+    vocal_range_bottom?: string;
+    vocal_range_top?: string;
 }
 
 export type ArtistUpdateDTO = Partial<ArtistCreateDTO> & {

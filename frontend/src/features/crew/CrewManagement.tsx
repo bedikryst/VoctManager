@@ -14,10 +14,12 @@ import ConfirmModal from '../../shared/ui/ConfirmModal';
 import { Button } from '../../shared/ui/Button';
 import { Input } from '../../shared/ui/Input';
 import { GlassCard } from '../../shared/ui/GlassCard';
+import { useBodyScrollLock } from '../../shared/lib/hooks/useBodyScrollLock';
 
-import CrewEditorPanel, { SPECIALTY_CHOICES } from './CrewEditorPanel';
-import { CrewCard } from './CrewCard';
+import CrewEditorPanel from './components/CrewEditorPanel';
+import { CrewCard } from './components/CrewCard';
 import { useCrewData } from './hooks/useCrewData';
+import { SPECIALTY_CHOICES } from './types/crew.dto';
 
 export default function CrewManagement(): React.JSX.Element {
     const {
@@ -32,10 +34,7 @@ export default function CrewManagement(): React.JSX.Element {
         if (isError) toast.error("Ostrzeżenie", { description: "Nie udało się pobrać listy współpracowników." });
     }, [isError]);
 
-    useEffect(() => {
-        document.body.style.overflow = isPanelOpen || personToDelete ? 'hidden' : '';
-        return () => { document.body.style.overflow = ''; };
-    }, [isPanelOpen, personToDelete]);
+    useBodyScrollLock(isPanelOpen || personToDelete !== null);
 
     return (
         <div className="space-y-6 animate-fade-in relative cursor-default pb-12 max-w-7xl mx-auto px-4 sm:px-0">
