@@ -1,13 +1,13 @@
 /**
  * @file useAppStore.ts
  * @description Global application state managed by Zustand.
- * Handles the page loading sequence, allowing various components 
+ * Handles the page loading sequence, allowing various components
  * (Preloader, Hero, Lenis Scroll) to react synchronously.
  * @architecture Enterprise 2026 Standards
  * @module store/useAppStore
  */
 
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface AppState {
   isLoaded: boolean;

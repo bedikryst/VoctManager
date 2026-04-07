@@ -1,13 +1,13 @@
 /**
  * @file CursorContext.tsx
  * @description Global state management for the custom physics-based cursor.
- * Abstracts cursor interactions, allowing any deeply nested component 
+ * Abstracts cursor interactions, allowing any deeply nested component
  * to mutate the global cursor state without prop drilling.
  * @architecture Enterprise 2026 Standards
  * @module context/CursorContext
  */
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export type CursorType = "default" | "drag" | "pointer";
 
@@ -22,7 +22,11 @@ interface CursorContextType {
 
 const CursorContext = createContext<CursorContextType | null>(null);
 
-export const CursorProvider = ({ children }: { children: ReactNode }): React.JSX.Element => {
+export const CursorProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}): React.JSX.Element => {
   const [cursorType, setCursorType] = useState<CursorType>("default");
   const [cursorText, setCursorText] = useState<string>("");
 
@@ -37,7 +41,7 @@ export const CursorProvider = ({ children }: { children: ReactNode }): React.JSX
   };
 
   const enterPointer = () => setCursorType("pointer");
-  
+
   const leavePointer = () => setCursorType("default");
 
   const value: CursorContextType = {
@@ -46,13 +50,11 @@ export const CursorProvider = ({ children }: { children: ReactNode }): React.JSX
     enterDrag,
     leaveDrag,
     enterPointer,
-    leavePointer
+    leavePointer,
   };
 
   return (
-    <CursorContext.Provider value={value}>
-      {children}
-    </CursorContext.Provider>
+    <CursorContext.Provider value={value}>{children}</CursorContext.Provider>
   );
 };
 

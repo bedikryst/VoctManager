@@ -1,16 +1,16 @@
 /**
  * @file OverlayMenu.tsx
  * @description The Cinematic Curtain (Global Navigation Overlay).
- * Features deep dark mode, staggered typographic reveals, an editorial 
+ * Features deep dark mode, staggered typographic reveals, an editorial
  * serif-to-sans hover effect, and contextual background image reveals.
  * Integrates directly with Lenis to prevent scroll-bleeding.
  * @architecture Enterprise 2026 Standards (Strict TS, Framer Motion Variants)
  * @author Krystian Bugalski
  */
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import React, { useState } from "react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import { Link } from "react-router-dom";
 
 interface OverlayMenuProps {
   isOpen: boolean;
@@ -25,38 +25,58 @@ interface MenuLink {
 
 // --- Animation Variants ---
 const menuVariants: Variants = {
-  closed: { y: "-100%", transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const } },
-  open: { y: "0%", transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const } }
+  closed: {
+    y: "-100%",
+    transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const },
+  },
+  open: {
+    y: "0%",
+    transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const },
+  },
 };
 
 const linkRevealVariants: Variants = {
   closed: { y: "120%", rotate: 5, opacity: 0 },
   open: (i: number) => ({
-    y: "0%", rotate: 0, opacity: 1,
-    transition: { duration: 0.8, delay: 0.3 + (i * 0.08), ease: [0.16, 1, 0.3, 1] as const }
-  })
+    y: "0%",
+    rotate: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.8,
+      delay: 0.3 + i * 0.08,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  }),
 };
 
 const fadeUpVariants: Variants = {
   closed: { opacity: 0, y: 20 },
   open: (delay: number) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.8, delay: 0.4 + delay, ease: [0.16, 1, 0.3, 1] as const }
-  })
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      delay: 0.4 + delay,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  }),
 };
 
 // --- Navigation Payload ---
 const mainLinks: MenuLink[] = [
-  { title: "Strona Główna", path: "/", image: "/wystep2.jpg" }, 
+  { title: "Strona Główna", path: "/", image: "/wystep2.jpg" },
   { title: "O Zespole", path: "/o-zespole", image: "/zespol3.jpg" },
-  { title: "Repertuar", path: "/repertuar", image: "/nuty.jpg" }, 
+  { title: "Repertuar", path: "/repertuar", image: "/nuty.jpg" },
   { title: "Fundacja", path: "/fundacja", image: "/zarzad.jpeg" },
   { title: "Wesprzyj", path: "/wesprzyj", image: "/kontakt.jpg" },
 ];
 
-export default function OverlayMenu({ isOpen, setIsOpen }: OverlayMenuProps): React.JSX.Element {
+export default function OverlayMenu({
+  isOpen,
+  setIsOpen,
+}: OverlayMenuProps): React.JSX.Element {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  
+
   const handleLinkClick = () => {
     setIsOpen(false);
   };
@@ -73,17 +93,22 @@ export default function OverlayMenu({ isOpen, setIsOpen }: OverlayMenuProps): Re
           data-lenis-prevent="true"
           className="fixed inset-0 z-[999] bg-stone-950 text-[#fdfbf7] flex flex-col justify-between overflow-hidden overscroll-none touch-none"
         >
-          
           {/* Background Layers: Contextual Image Reveal & Grid Overlay */}
           <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-stone-950">
             {mainLinks.map((link, i) => (
-              <div 
-                key={`bg-${i}`} 
+              <div
+                key={`bg-${i}`}
                 className={`absolute inset-0 transition-all duration-1000 ease-[0.16,1,0.3,1] ${
-                  hoveredIndex === i ? 'opacity-20 scale-100' : 'opacity-0 scale-110'
+                  hoveredIndex === i
+                    ? "opacity-20 scale-100"
+                    : "opacity-0 scale-110"
                 }`}
               >
-                <img src={link.image} alt="" className="w-full h-full object-cover grayscale mix-blend-luminosity" />
+                <img
+                  src={link.image}
+                  alt=""
+                  className="w-full h-full object-cover grayscale mix-blend-luminosity"
+                />
               </div>
             ))}
           </div>
@@ -96,13 +121,22 @@ export default function OverlayMenu({ isOpen, setIsOpen }: OverlayMenuProps): Re
           </div>
 
           {/* Top Row: Navigation Header */}
-          <motion.div variants={fadeUpVariants} custom={0} className="w-full flex justify-center border-b border-stone-800/50 py-6 px-6 relative z-10">
+          <motion.div
+            variants={fadeUpVariants}
+            custom={0}
+            className="w-full flex justify-center border-b border-stone-800/50 py-6 px-6 relative z-10"
+          >
             <div className="w-full max-w-7xl flex justify-between items-center">
-              <Link to="/" onClick={handleLinkClick} className="text-sm font-medium tracking-[0.2em] uppercase italic hover:opacity-70 transition-opacity" style={{ fontFamily: "'Cormorant', serif" }}>
+              <Link
+                to="/"
+                onClick={handleLinkClick}
+                className="text-sm font-medium tracking-[0.2em] uppercase italic hover:opacity-70 transition-opacity"
+                style={{ fontFamily: "'Cormorant', serif" }}
+              >
                 VoctEnsemble
               </Link>
-              
-              <button 
+
+              <button
                 onClick={() => setIsOpen(false)}
                 className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500 hover:text-[#fdfbf7] transition-colors"
                 aria-label="Close menu"
@@ -111,7 +145,9 @@ export default function OverlayMenu({ isOpen, setIsOpen }: OverlayMenuProps): Re
                   Zamknij
                   <span className="absolute bottom-0 left-0 w-full h-px bg-[#fdfbf7] origin-right scale-x-0 transition-transform duration-500 group-hover:scale-x-100" />
                 </span>
-                <span className="text-lg font-normal leading-none mb-[2px] group-hover:rotate-90 transition-transform duration-500">×</span>
+                <span className="text-lg font-normal leading-none mb-[2px] group-hover:rotate-90 transition-transform duration-500">
+                  ×
+                </span>
               </button>
             </div>
           </motion.div>
@@ -119,56 +155,109 @@ export default function OverlayMenu({ isOpen, setIsOpen }: OverlayMenuProps): Re
           {/* Center Matrix: Menu Body & Links */}
           <div className="flex-grow flex items-center justify-center w-full px-6 py-12 relative z-10">
             <div className="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center">
-              
               {/* Secondary Navigation (Desktop Only) */}
               <div className="hidden md:flex flex-col gap-12 w-4/12">
                 <motion.div variants={fadeUpVariants} custom={0.2}>
-                  <p className="text-[#002395] text-[9px] font-bold uppercase tracking-[0.3em] mb-6">Społeczność</p>
+                  <p className="text-[#002395] text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
+                    Społeczność
+                  </p>
                   <ul className="flex flex-col gap-4 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500">
-                    <li><a href="https://instagram.com/voctensemble" target="_blank" rel="noreferrer" className="hover:text-[#fdfbf7] transition-colors">Instagram</a></li>
-                    <li><a href="https://facebook.com/voctensemble" target="_blank" rel="noreferrer" className="hover:text-[#fdfbf7] transition-colors">Facebook</a></li>
-                    <li><a href="https://www.youtube.com/@VoctEnsemble-nb7gh" target="_blank" rel="noreferrer" className="hover:text-[#fdfbf7] transition-colors">YouTube</a></li>
+                    <li>
+                      <a
+                        href="https://instagram.com/voctensemble"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-[#fdfbf7] transition-colors"
+                      >
+                        Instagram
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="https://facebook.com/voctensemble"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-[#fdfbf7] transition-colors"
+                      >
+                        Facebook
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="https://www.youtube.com/@VoctEnsemble-nb7gh"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-[#fdfbf7] transition-colors"
+                      >
+                        YouTube
+                      </a>
+                    </li>
                   </ul>
                 </motion.div>
                 <motion.div variants={fadeUpVariants} custom={0.3}>
-                  <p className="text-[#002395] text-[9px] font-bold uppercase tracking-[0.3em] mb-6">Biurom / Kontakt</p>
-                  <a href="mailto:kontakt@voctensemble.pl" className="text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-[#fdfbf7] transition-colors">
+                  <p className="text-[#002395] text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
+                    Biurom / Kontakt
+                  </p>
+                  <a
+                    href="mailto:kontakt@voctensemble.pl"
+                    className="text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-[#fdfbf7] transition-colors"
+                  >
                     kontakt@voctensemble.pl
                   </a>
                 </motion.div>
               </div>
 
               {/* Primary Navigation Links */}
-              <nav className="w-full md:w-8/12 flex flex-col gap-4 md:gap-6 mt-12 md:mt-0" onMouseLeave={() => setHoveredIndex(null)}>
+              <nav
+                className="w-full md:w-8/12 flex flex-col gap-4 md:gap-6 mt-12 md:mt-0"
+                onMouseLeave={() => setHoveredIndex(null)}
+              >
                 {mainLinks.map((link, i) => (
-                  <div key={i} className="overflow-hidden pb-2" onMouseEnter={() => setHoveredIndex(i)}>
+                  <div
+                    key={i}
+                    className="overflow-hidden pb-2"
+                    onMouseEnter={() => setHoveredIndex(i)}
+                  >
                     <motion.div custom={i} variants={linkRevealVariants}>
-                      <Link 
+                      <Link
                         to={link.path}
                         onClick={handleLinkClick}
-                        className={`group flex items-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium tracking-tight transition-all duration-500 origin-left ${hoveredIndex !== null && hoveredIndex !== i ? 'text-stone-700' : 'text-stone-300 hover:text-[#fdfbf7]'}`}
+                        className={`group flex items-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium tracking-tight transition-all duration-500 origin-left ${hoveredIndex !== null && hoveredIndex !== i ? "text-stone-700" : "text-stone-300 hover:text-[#fdfbf7]"}`}
                       >
                         <span className="text-sm font-bold text-[#002395] mr-6 md:mr-10 mb-6 md:mb-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                           0{i + 1}
                         </span>
-                        <span className="group-hover:translate-x-4 group-hover:italic transition-all duration-500" style={{ fontFamily: "inherit" }}>
-                          <span className="block group-hover:hidden">{link.title}</span>
-                          <span className="hidden group-hover:block" style={{ fontFamily: "'Cormorant', serif" }}>{link.title}</span>
+                        <span
+                          className="group-hover:translate-x-4 group-hover:italic transition-all duration-500"
+                          style={{ fontFamily: "inherit" }}
+                        >
+                          <span className="block group-hover:hidden">
+                            {link.title}
+                          </span>
+                          <span
+                            className="hidden group-hover:block"
+                            style={{ fontFamily: "'Cormorant', serif" }}
+                          >
+                            {link.title}
+                          </span>
                         </span>
                       </Link>
                     </motion.div>
                   </div>
                 ))}
               </nav>
-
             </div>
           </div>
 
           {/* Bottom Row: System Footer */}
-          <motion.div variants={fadeUpVariants} custom={0.5} className="w-full flex justify-center border-t border-stone-800/50 py-6 px-6 relative z-10 backdrop-blur-sm">
+          <motion.div
+            variants={fadeUpVariants}
+            custom={0.5}
+            className="w-full flex justify-center border-t border-stone-800/50 py-6 px-6 relative z-10 backdrop-blur-sm"
+          >
             <div className="w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-stone-600">
               <p>Kraków, PL — Fundacja VoctEnsemble</p>
-              
+
               <div className="mt-4 sm:mt-0 flex items-center gap-3">
                 <div className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-900 opacity-75"></span>
@@ -178,7 +267,6 @@ export default function OverlayMenu({ isOpen, setIsOpen }: OverlayMenuProps): Re
               </div>
             </div>
           </motion.div>
-
         </motion.div>
       )}
     </AnimatePresence>

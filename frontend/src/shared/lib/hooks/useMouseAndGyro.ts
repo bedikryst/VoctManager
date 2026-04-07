@@ -1,14 +1,14 @@
 /**
  * @file useMouseAndGyro.ts
- * @description Custom React hook capturing 2D motion coordinates. 
- * Maps cursor position on desktop or device orientation (gyroscope) on mobile 
+ * @description Custom React hook capturing 2D motion coordinates.
+ * Maps cursor position on desktop or device orientation (gyroscope) on mobile
  * into normalized, spring-animated Framer Motion values.
  * @architecture Enterprise 2026 Standards
  * @module hooks/useMouseAndGyro
  */
 
-import { useEffect } from 'react';
-import { useMotionValue, useSpring, MotionValue } from 'framer-motion';
+import { useEffect } from "react";
+import { useMotionValue, useSpring, MotionValue } from "framer-motion";
 
 interface MouseAndGyroReturn {
   x: MotionValue<number>;
@@ -33,20 +33,20 @@ export function useMouseAndGyro(): MouseAndGyroReturn {
 
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (!e.gamma || !e.beta) return;
-      
+
       const normalizedX = Math.max(-1, Math.min(1, e.gamma / 45));
       const normalizedY = Math.max(-1, Math.min(1, (e.beta - 45) / 45));
-      
+
       x.set(normalizedX);
       y.set(normalizedY);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('deviceorientation', handleOrientation);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("deviceorientation", handleOrientation);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('deviceorientation', handleOrientation);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("deviceorientation", handleOrientation);
     };
   }, [x, y]);
 

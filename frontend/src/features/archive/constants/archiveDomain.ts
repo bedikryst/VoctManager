@@ -5,8 +5,8 @@
  */
 
 export const ARCHIVE_TABS = {
-    DETAILS: 'DETAILS',
-    TRACKS: 'TRACKS'
+  DETAILS: "DETAILS",
+  TRACKS: "TRACKS",
 } as const;
 
 export type ArchiveTabId = keyof typeof ARCHIVE_TABS;

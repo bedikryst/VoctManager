@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-html.lenis, html.lenis body {
+html.lenis,
+html.lenis body {
   height: auto;
 }
 
@@ -28,10 +29,10 @@ html {
 /* PUBLIC ZONE: Custom Cursor Enforcement     */
 /* ========================================== */
 body:not(.admin-mode),
-body:not(.admin-mode) a, 
-body:not(.admin-mode) button, 
-body:not(.admin-mode) input, 
-body:not(.admin-mode) textarea, 
+body:not(.admin-mode) a,
+body:not(.admin-mode) button,
+body:not(.admin-mode) input,
+body:not(.admin-mode) textarea,
 body:not(.admin-mode) select {
   cursor: none !important;
 }
@@ -45,17 +46,17 @@ body:not(.admin-mode) select {
 /* ADMIN ZONE: System Cursor Normalization    */
 /* ========================================== */
 body.admin-mode {
-  cursor: default; 
+  cursor: default;
 }
 
 /* Disable the text-selection (I-beam) cursor on standard typography */
-body.admin-mode h1, 
-body.admin-mode h2, 
-body.admin-mode h3, 
-body.admin-mode h4, 
-body.admin-mode h5, 
-body.admin-mode h6, 
-body.admin-mode p, 
+body.admin-mode h1,
+body.admin-mode h2,
+body.admin-mode h3,
+body.admin-mode h4,
+body.admin-mode h5,
+body.admin-mode h6,
+body.admin-mode p,
 body.admin-mode label {
   cursor: default;
 }
@@ -67,13 +68,19 @@ body.admin-mode textarea {
 }
 
 /* Ensure interactive elements feel clickable */
-body.admin-mode a, 
-body.admin-mode button, 
+body.admin-mode a,
+body.admin-mode button,
 body.admin-mode [role="button"] {
   cursor: pointer;
 }
 
 /* Protect Tailwind Utility Classes (e.g., cursor-grab in the Program Builder) */
-body.admin-mode .cursor-grab { cursor: grab !important; }
-body.admin-mode .cursor-grabbing { cursor: grabbing !important; }
-body.admin-mode .cursor-not-allowed { cursor: not-allowed !important; }
+body.admin-mode .cursor-grab {
+  cursor: grab !important;
+}
+body.admin-mode .cursor-grabbing {
+  cursor: grabbing !important;
+}
+body.admin-mode .cursor-not-allowed {
+  cursor: not-allowed !important;
+}

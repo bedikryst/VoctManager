@@ -4,13 +4,13 @@
  * @module pages/app/ArchivePage
  */
 
-import React from 'react';
-import ArchiveManagement from '../../features/archive/ArchiveManagement';
+import React from "react";
+import ArchiveManagement from "../../features/archive/ArchiveManagement";
 
 export default function ArchivePage(): React.JSX.Element {
-    return (
-        <div className="page-container">
-            <ArchiveManagement />
-        </div>
-    );
+  return (
+    <div className="page-container">
+      <ArchiveManagement />
+    </div>
+  );
 }

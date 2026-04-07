@@ -5,13 +5,13 @@
  * @module pages/app/ArtistsPage
  */
 
-import React from 'react';
-import ArtistManagement from '../../features/artists/ArtistManagement';
+import React from "react";
+import ArtistManagement from "../../features/artists/ArtistManagement";
 
 export default function ArtistsPage(): React.JSX.Element {
-    return (
-        <div className="page-container">
-            <ArtistManagement />
-        </div>
-    );
+  return (
+    <div className="page-container">
+      <ArtistManagement />
+    </div>
+  );
 }

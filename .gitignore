@@ -58,4 +58,5 @@ frontend/public/**/*.mp4
 frontend/public/**/*.mov
 frontend/public/**/*.webm
 frontend/public/**/*.mp3
+frontend/public/samples/
 voct_data/
