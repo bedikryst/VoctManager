@@ -1,13 +1,12 @@
 /**
  * @file ProgramWidget.tsx
  * @description Dashboard widget displaying the concert program and casting fulfillment status.
- * Exclusively consumes pre-resolved arrays from the React Query cache via useProjectData.
- * Uses complex nested reduction in useMemo to accurately calculate unfulfilled vocal
- * requirements without triggering N+1 rendering cycles or layout shifts.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/widgets/ProgramWidget
  */
 
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ListOrdered, Music } from "lucide-react";
 
 import type {
@@ -24,22 +23,12 @@ interface ProgramWidgetProps {
   onOpenMicroCast?: () => void;
 }
 
-const formatTotalDuration = (totalSeconds: number): string | null => {
-  if (!totalSeconds || totalSeconds === 0) return null;
-  const minutes = Math.floor(totalSeconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const remainingMins = minutes % 60;
-
-  if (hours > 0) return `~ ${hours}h ${remainingMins}min muzyki`;
-  return `~ ${minutes} min muzyki`;
-};
-
 export default function ProgramWidget({
   project,
   onEdit,
   onOpenMicroCast,
 }: ProgramWidgetProps): React.JSX.Element {
-  // Inherit referentially stable lists natively via scoped cache retrieval
+  const { t } = useTranslation();
   const {
     pieces,
     pieceCastings,
@@ -56,6 +45,17 @@ export default function ProgramWidget({
     );
   }, [project.program, pieces]);
 
+  const formatTotalDuration = (totalSeconds: number): string | null => {
+    if (!totalSeconds || totalSeconds === 0) return null;
+    const minutes = Math.floor(totalSeconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const remainingMins = minutes % 60;
+
+    if (hours > 0)
+      return `~ ${hours}h ${remainingMins} ${t("projects.program.music_time_min", "min muzyki")}`;
+    return `~ ${minutes} ${t("projects.program.music_time_min", "min muzyki")}`;
+  };
+
   const handleOpenMicroCast = (
     e: React.MouseEvent<HTMLButtonElement>,
   ): void => {
@@ -69,7 +69,10 @@ export default function ProgramWidget({
       onClick={onEdit}
       className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-[#002395]/40 hover:shadow-md" : ""}`}
       role={onEdit ? "button" : "region"}
-      aria-label="Manage concert program"
+      aria-label={t(
+        "projects.program.aria_label",
+        "Zarządzaj programem koncertu",
+      )}
     >
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
         <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
@@ -78,7 +81,7 @@ export default function ProgramWidget({
             className="text-[#002395] group-hover:scale-110 transition-transform"
             aria-hidden="true"
           />
-          Program Koncertu
+          {t("projects.program.title", "Program Koncertu")}
         </h4>
         {onOpenMicroCast && (
           <button
@@ -107,7 +110,7 @@ export default function ProgramWidget({
 
                 let statusColor = "bg-stone-50 border-stone-100";
                 let textColor = "text-stone-500";
-                let statusText = "Brak wymagań";
+                let statusText = t("projects.program.no_reqs", "Brak wymagań");
 
                 if (requirements.length > 0) {
                   let missingTotal = 0;
@@ -129,11 +132,14 @@ export default function ProgramWidget({
                   if (missingTotal > 0) {
                     statusColor = "bg-red-50 border-red-200";
                     textColor = "text-red-600";
-                    statusText = "Nieobsadzony";
+                    statusText = t(
+                      "projects.program.unfulfilled",
+                      "Nieobsadzony",
+                    );
                   } else {
                     statusColor = "bg-emerald-50 border-emerald-200";
                     textColor = "text-emerald-700";
-                    statusText = "Obsadzony";
+                    statusText = t("projects.program.fulfilled", "Obsadzony");
                   }
                 }
 
@@ -159,7 +165,9 @@ export default function ProgramWidget({
 
             {project.program.length > 5 && (
               <li className="text-[10px] font-bold antialiased text-stone-400 uppercase text-center pt-2">
-                ...i {project.program.length - 5} więcej
+                {t("projects.program.and_more", "...i {{count}} więcej", {
+                  count: project.program.length - 5,
+                })}
               </li>
             )}
           </ul>
@@ -172,14 +180,14 @@ export default function ProgramWidget({
               </span>
             ) : (
               <span className="text-[9px] uppercase tracking-widest font-bold antialiased text-stone-400">
-                Czas nieznany
+                {t("projects.program.duration_unknown", "Czas nieznany")}
               </span>
             )}
           </div>
         </div>
       ) : (
         <p className="text-xs text-stone-500 italic flex-1 flex items-center justify-center py-4">
-          Setlista jest pusta.
+          {t("projects.program.empty", "Setlista jest pusta.")}
         </p>
       )}
     </GlassCard>

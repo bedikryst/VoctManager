@@ -1,12 +1,12 @@
 /**
  * @file CastWidget.tsx
  * @description Dashboard widget displaying the vocal cast (artists) assigned to a project.
- * Strictly consumes pre-fetched aggregations from the React Query cache via useProjectData
- * to prevent the N+1 network request anti-pattern and mute layout shifts.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/widgets/CastWidget
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
 
 import type { Project, Artist } from "../../../../shared/types";
@@ -22,7 +22,7 @@ export default function CastWidget({
   project,
   onEdit,
 }: CastWidgetProps): React.JSX.Element {
-  // Inherits instant cache data populated by the parent ProjectCard
+  const { t } = useTranslation();
   const { participations: projectParticipations, artists } = useProjectData(
     String(project.id),
   );
@@ -37,7 +37,7 @@ export default function CastWidget({
       onClick={onEdit}
       className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-[#002395]/40 hover:shadow-md" : ""}`}
       role={onEdit ? "button" : "region"}
-      aria-label="Manage vocal cast"
+      aria-label={t("projects.cast.aria_label", "Zarządzaj obsadą wokalną")}
     >
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
         <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
@@ -46,11 +46,11 @@ export default function CastWidget({
             className="text-[#002395] group-hover:scale-110 transition-transform"
             aria-hidden="true"
           />
-          Obsada Wokalna
+          {t("projects.cast.title", "Obsada Wokalna")}
         </h4>
         {onEdit && (
           <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-[#002395] opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
-            Edytuj
+            {t("common.actions.edit", "Edytuj")}
           </button>
         )}
       </div>
@@ -81,14 +81,15 @@ export default function CastWidget({
 
           {projectParticipations.length === 0 && (
             <span className="text-xs text-stone-400 italic">
-              Brak obsady wokalnej.
+              {t("projects.cast.empty", "Brak obsady wokalnej.")}
             </span>
           )}
         </div>
       </div>
 
       <div className="text-center text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mt-auto border-t border-stone-100 pt-3">
-        Zatrudnionych: {projectParticipations.length}
+        {t("projects.cast.employed", "Zatrudnionych:")}{" "}
+        {projectParticipations.length}
       </div>
     </GlassCard>
   );

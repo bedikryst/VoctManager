@@ -1,34 +1,33 @@
 /**
  * @file useProjectCard.ts
  * @description Custom hook managing the asynchronous document generation and download lifecycle.
- * Implements the "Headless UI" pattern for file downloads. Encapsulates Blob memory
- * management (preventing memory leaks via revokeObjectURL), HTTP header parsing for
- * dynamic filenames, and integrated toast notification states.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/hooks/useProjectCard
  */
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import api from "../../../../shared/api/api";
+
+import type { ProjectReportEndpoint } from "../../api/project.service";
+import { ProjectService } from "../../api/project.service";
 
 export function useProjectCard(projectId: number | string) {
+  const { t } = useTranslation();
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
   const downloadReport = async (
-    endpoint: string,
+    endpoint: ProjectReportEndpoint,
     defaultFilename: string,
     loaderKey: string,
   ) => {
     setIsDownloading(loaderKey);
-    const toastId = toast.loading("Generowanie dokumentu...");
+    const toastId = toast.loading(
+      t("projects.card.generating_doc", "Generowanie dokumentu..."),
+    );
 
     try {
-      const response = await api.get(
-        `/api/projects/${projectId}/${endpoint}/`,
-        { responseType: "blob" },
-      );
-
-      // Extract filename from Content-Disposition header if available
+      const response = await ProjectService.downloadReport(projectId, endpoint);
       const disposition = response.headers["content-disposition"];
       let filename = defaultFilename;
 
@@ -41,7 +40,6 @@ export function useProjectCard(projectId: number | string) {
         }
       }
 
-      // Safely process the blob and trigger browser download
       const blob = new Blob([response.data], {
         type: response.headers["content-type"],
       });
@@ -53,17 +51,28 @@ export function useProjectCard(projectId: number | string) {
       document.body.appendChild(link);
       link.click();
 
-      // Cleanup DOM and memory
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success("Dokument został pomyślnie pobrany.", { id: toastId });
-    } catch (err) {
+      toast.success(
+        t(
+          "projects.card.download_success",
+          "Dokument został pomyślnie pobrany.",
+        ),
+        { id: toastId },
+      );
+    } catch (error) {
       const message =
-        err instanceof Error
-          ? err.message
-          : "Nie udało się wygenerować dokumentu.";
-      toast.error("Błąd generowania", { id: toastId, description: message });
+        error instanceof Error
+          ? error.message
+          : t(
+              "projects.card.download_unknown_error",
+              "Nie udało się wygenerować dokumentu.",
+            );
+      toast.error(t("common.errors.generation_error", "Błąd generowania"), {
+        id: toastId,
+        description: message,
+      });
     } finally {
       setIsDownloading(null);
     }

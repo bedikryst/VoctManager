@@ -1,18 +1,22 @@
 /**
  * @file useAttendanceMatrix.ts
  * @description Encapsulates optimistic mutations, matrix calculations, and
- * data caching strategies for the Attendance Matrix. Strictly uses React Query
- * for data retrieval, completely bypassing legacy Context APIs.
+ * data caching strategies for the Attendance Matrix. Strictly uses Project domain queries
+ * for data retrieval and services for write operations.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useAttendanceMatrix
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import api from "../../../../shared/api/api";
-import { queryKeys } from "../../../../shared/lib/queryKeys";
-import { useProjectData } from "../../hooks/useProjectData";
+
 import type { Artist, Participation } from "../../../../shared/types";
+import { queryKeys } from "../../../../shared/lib/queryKeys";
+import { useProjectAttendances } from "../../api/project.queries";
+import { ProjectService } from "../../api/project.service";
+import { useProjectData } from "../../hooks/useProjectData";
 
 export type AttendanceStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED" | null;
 
@@ -36,67 +40,59 @@ export const STATUS_CYCLE: AttendanceStatus[] = [
 ];
 
 export const useAttendanceMatrix = (projectId: string) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
-
-  // FETCH CACHED DICTIONARIES (Instant access via React Query)
   const {
     rehearsals,
     participations,
     artists,
     isLoading: isProjectDataLoading,
   } = useProjectData(projectId);
+  const { data: fetchedAttendances = [], isLoading: isLoadingAttendances } =
+    useProjectAttendances(projectId);
 
-  // FETCH MATRIX SPECIFIC DATA
-  const { data: fetchedAttendances = [], isLoading: isLoadingAtt } = useQuery<
-    AttendanceRecord[]
-  >({
-    queryKey: queryKeys.attendances.byProject(projectId),
-    queryFn: async () =>
-      (
-        await api.get<AttendanceRecord[]>(
-          `/api/attendances/?rehearsal__project=${projectId}`,
-        )
-      ).data,
-    staleTime: 60000,
-    enabled: !!projectId,
-  });
-
-  const isLoading = isProjectDataLoading || isLoadingAtt;
-
+  const isLoading = isProjectDataLoading || isLoadingAttendances;
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [mutatingCells, setMutatingCells] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (fetchedAttendances.length > 0) {
-      setAttendances(fetchedAttendances);
-    }
+    setAttendances(fetchedAttendances as AttendanceRecord[]);
   }, [fetchedAttendances]);
 
-  const projectRehearsals = useMemo(() => {
-    return [...rehearsals].sort(
-      (a, b) =>
-        new Date(a.date_time).getTime() - new Date(b.date_time).getTime(),
-    );
-  }, [rehearsals]);
+  const projectRehearsals = useMemo(
+    () =>
+      [...rehearsals].sort(
+        (left, right) =>
+          new Date(left.date_time).getTime() -
+          new Date(right.date_time).getTime(),
+      ),
+    [rehearsals],
+  );
 
   const enrichedParticipations = useMemo<EnrichedParticipation[]>(() => {
     if (!artists || artists.length === 0) return [];
+
     return participations
-      .map((p) => ({
-        ...p,
+      .map((participation) => ({
+        ...participation,
         artistData: artists.find(
-          (a) => String(a.id) === String(p.artist),
+          (artist) => String(artist.id) === String(participation.artist),
         ) as Artist,
       }))
-      .filter((p) => p.artistData)
-      .sort((a, b) =>
-        a.artistData.last_name.localeCompare(b.artistData.last_name),
+      .filter((participation) => participation.artistData)
+      .sort((left, right) =>
+        left.artistData.last_name.localeCompare(right.artistData.last_name),
       );
   }, [participations, artists]);
 
   const attendanceMap = useMemo(() => {
     const map = new Map<string, AttendanceRecord>();
-    attendances.forEach((a) => map.set(`${a.rehearsal}-${a.participation}`, a));
+    attendances.forEach((attendance) =>
+      map.set(
+        `${attendance.rehearsal}-${attendance.participation}`,
+        attendance,
+      ),
+    );
     return map;
   }, [attendances]);
 
@@ -108,9 +104,9 @@ export const useAttendanceMatrix = (projectId: string) => {
     ) => {
       const cellKey = `${rehearsalId}-${participationId}`;
 
-      setMutatingCells((prev) => {
-        if (prev.has(cellKey)) return prev;
-        const next = new Set(prev);
+      setMutatingCells((previous) => {
+        if (previous.has(cellKey)) return previous;
+        const next = new Set(previous);
         next.add(cellKey);
         return next;
       });
@@ -120,25 +116,24 @@ export const useAttendanceMatrix = (projectId: string) => {
       const nextStatus = STATUS_CYCLE[(currentIndex + 1) % STATUS_CYCLE.length];
 
       const tempId = currentRecord?.id || `temp-${Date.now()}`;
-      const queryKeyTarget = queryKeys.attendances.byProject(projectId);
+      const attendanceQueryKey = queryKeys.attendances.byProject(projectId);
 
       const updateStateAndCache = (
-        updater: (prev: AttendanceRecord[]) => AttendanceRecord[],
+        updater: (previous: AttendanceRecord[]) => AttendanceRecord[],
       ) => {
-        setAttendances((prev) => {
-          const nextState = updater(prev);
-          queryClient.setQueryData(queryKeyTarget, nextState);
+        setAttendances((previous) => {
+          const nextState = updater(previous);
+          queryClient.setQueryData(attendanceQueryKey, nextState);
           return nextState;
         });
       };
 
-      // Optimistic UI Update
-      updateStateAndCache((prev) => {
-        const filtered = prev.filter(
-          (a) =>
+      updateStateAndCache((previous) => {
+        const filtered = previous.filter(
+          (attendance) =>
             !(
-              String(a.rehearsal) === String(rehearsalId) &&
-              String(a.participation) === String(participationId)
+              String(attendance.rehearsal) === String(rehearsalId) &&
+              String(attendance.participation) === String(participationId)
             ),
         );
         if (nextStatus === null) return filtered;
@@ -159,50 +154,64 @@ export const useAttendanceMatrix = (projectId: string) => {
           currentRecord?.id &&
           !String(currentRecord.id).startsWith("temp")
         ) {
-          await api.delete(`/api/attendances/${currentRecord.id}/`);
+          await ProjectService.deleteAttendance(currentRecord.id);
         } else if (
           currentRecord?.id &&
           !String(currentRecord.id).startsWith("temp")
         ) {
-          await api.patch(`/api/attendances/${currentRecord.id}/`, {
+          await ProjectService.updateAttendance(currentRecord.id, {
             status: nextStatus,
           });
         } else {
-          const res = await api.post("/api/attendances/", {
+          const createdAttendance = await ProjectService.createAttendance({
             rehearsal: rehearsalId,
             participation: participationId,
             status: nextStatus,
           });
-          updateStateAndCache((prev) =>
-            prev.map((a) => (a.id === tempId ? { ...a, id: res.data.id } : a)),
+          updateStateAndCache((previous) =>
+            previous.map((attendance) =>
+              attendance.id === tempId
+                ? { ...attendance, id: createdAttendance.id }
+                : attendance,
+            ),
           );
         }
-        // Invalidating to ensure server sync across other tabs
+
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: queryKeyTarget }),
+          queryClient.invalidateQueries({ queryKey: attendanceQueryKey }),
           queryClient.invalidateQueries({
             queryKey: queryKeys.rehearsals.byProject(projectId),
           }),
         ]);
-      } catch (error) {
-        toast.error("Nie udało się zapisać zmiany.", {
-          description: "Sprawdź połączenie i spróbuj ponownie.",
-        });
-        // Rollback on Error
-        updateStateAndCache((prev) => {
-          const filtered = prev.filter((a) => a.id !== tempId);
-          if (currentRecord) return [...filtered, currentRecord];
-          return filtered;
+      } catch {
+        toast.error(
+          t(
+            "projects.matrix.toast.save_error",
+            "Nie udało się zapisać zmiany.",
+          ),
+          {
+            description: t(
+              "projects.matrix.toast.save_error_desc",
+              "Sprawdź połączenie i spróbuj ponownie.",
+            ),
+          },
+        );
+
+        updateStateAndCache((previous) => {
+          const filtered = previous.filter(
+            (attendance) => attendance.id !== tempId,
+          );
+          return currentRecord ? [...filtered, currentRecord] : filtered;
         });
       } finally {
-        setMutatingCells((prev) => {
-          const next = new Set(prev);
+        setMutatingCells((previous) => {
+          const next = new Set(previous);
           next.delete(cellKey);
           return next;
         });
       }
     },
-    [projectId, queryClient],
+    [projectId, queryClient, t],
   );
 
   return {

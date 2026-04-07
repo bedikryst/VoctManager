@@ -1,12 +1,12 @@
 /**
  * @file ProjectCardHeader.tsx
  * @description Renders the compact, scannable header for a project card.
- * Exposes core metadata and primary administrative actions.
- * Calculates operational KPIs synchronously from React Query cache.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/ProjectCardHeader
  */
 
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   MapPin,
   ChevronDown,
@@ -20,6 +20,7 @@ import {
   Wrench,
   Users,
 } from "lucide-react";
+
 import type { Project } from "../../../shared/types";
 import { useProjectData } from "../hooks/useProjectData";
 import { useProjectCard } from "./hooks/useProjectCard";
@@ -42,6 +43,7 @@ export default function ProjectCardHeader({
   onEdit,
   onDelete,
 }: ProjectCardHeaderProps): React.JSX.Element {
+  const { t } = useTranslation();
   const { downloadReport, isDownloading } = useProjectCard(project.id);
   const { rehearsals, participations, crewAssignments, isLoading } =
     useProjectData(String(project.id));
@@ -59,7 +61,7 @@ export default function ProjectCardHeader({
 
   const googleMapsUrl = useMemo(() => {
     return project.location
-      ? `https://www.google.com/maps/search/?api=1&query=$$${encodeURIComponent(project.location)}`
+      ? `https://www.google.com/maps/search/?api=1&query=$$$${encodeURIComponent(project.location)}`
       : null;
   }, [project.location]);
 
@@ -81,14 +83,15 @@ export default function ProjectCardHeader({
       className="p-6 md:p-8 flex flex-col lg:flex-row gap-8 justify-between cursor-pointer"
       onClick={onToggle}
     >
-      {/* LEWA STRONA: Nagłówek i Metadane */}
       <div className="flex-1 flex flex-col justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <span
               className={`px-3 py-1 rounded-lg text-[9px] font-bold antialiased uppercase tracking-widest border shadow-sm ${isDone ? "bg-stone-100 text-stone-600 border-stone-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}
             >
-              {isDone ? "Zrealizowano" : "W przygotowaniu"}
+              {isDone
+                ? t("projects.badge_done", "Zrealizowano")
+                : t("projects.badge_active", "W przygotowaniu")}
             </span>
           </div>
 
@@ -107,7 +110,7 @@ export default function ProjectCardHeader({
                   className="text-[#002395]/60"
                   aria-hidden="true"
                 />
-                {projectDate.toLocaleDateString("pl-PL", {
+                {projectDate.toLocaleDateString(t("common.locale", "pl-PL"), {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -120,7 +123,6 @@ export default function ProjectCardHeader({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 hover:bg-stone-100 transition-colors"
-                title="Otwórz w Google Maps"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MapPin
@@ -135,8 +137,9 @@ export default function ProjectCardHeader({
             )}
             {callTimeDate && (
               <span className="flex items-center gap-1.5 text-orange-600 whitespace-nowrap bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100">
-                <Clock size={14} aria-hidden="true" /> Call Time:{" "}
-                {callTimeDate.toLocaleString("pl-PL", {
+                <Clock size={14} aria-hidden="true" />{" "}
+                {t("projects.call_time", "Call Time:")}{" "}
+                {callTimeDate.toLocaleString(t("common.locale", "pl-PL"), {
                   hour: "2-digit",
                   minute: "2-digit",
                   hour12: false,
@@ -146,7 +149,6 @@ export default function ProjectCardHeader({
           </div>
         </div>
 
-        {/* Przyciski Akcji */}
         <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-stone-100">
           <Button
             variant="outline"
@@ -156,7 +158,7 @@ export default function ProjectCardHeader({
             }}
             leftIcon={<Edit2 size={14} aria-hidden="true" />}
           >
-            Zarządzaj
+            {t("projects.actions.manage", "Zarządzaj")}
           </Button>
           <Button
             variant="outline"
@@ -167,19 +169,20 @@ export default function ProjectCardHeader({
             leftIcon={<Trash2 size={14} aria-hidden="true" />}
             className="!border-red-200 !text-red-600 hover:!bg-red-50 hover:!border-red-300"
           >
-            Usuń
+            {t("common.actions.delete", "Usuń")}
           </Button>
           <Button
             variant="outline"
             onClick={onStatusToggle}
             className="ml-auto !text-stone-500 hover:!bg-stone-100"
           >
-            {isDone ? "Oznacz jako Aktywny" : "Zakończ projekt"}
+            {isDone
+              ? t("projects.actions.mark_active", "Oznacz jako Aktywny")
+              : t("projects.actions.mark_done", "Zakończ projekt")}
           </Button>
         </div>
       </div>
 
-      {/* PRAWA STRONA: Wskaźniki i Telemetria */}
       <div className="w-full lg:w-72 flex-shrink-0 bg-stone-50/50 rounded-2xl border border-stone-200/50 p-5 flex flex-col justify-center relative overflow-hidden">
         <div
           className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3 pointer-events-none"
@@ -187,7 +190,7 @@ export default function ProjectCardHeader({
         ></div>
 
         <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-4 border-b border-stone-200/60 pb-2 flex justify-between items-center">
-          Status Produkcji
+          {t("projects.card.status_production", "Status Produkcji")}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -207,7 +210,7 @@ export default function ProjectCardHeader({
                 ) : undefined
               }
               className="!p-1.5 border-transparent shadow-none"
-              title="Pobierz Call Sheet"
+              title={t("projects.exports.call_sheet", "Pobierz Call Sheet")}
             />
             <Button
               variant="outline"
@@ -227,7 +230,7 @@ export default function ProjectCardHeader({
                 ) : undefined
               }
               className="!p-1.5 border-transparent shadow-none"
-              title="Pobierz ZAiKS"
+              title={t("projects.exports.zaiks", "Pobierz ZAiKS")}
             />
             <Button
               variant="outline"
@@ -243,7 +246,7 @@ export default function ProjectCardHeader({
                 ) : undefined
               }
               className="!p-1.5 border-transparent shadow-none"
-              title="Pobierz notkę do DTP"
+              title={t("projects.exports.dtp", "Pobierz notkę do DTP")}
             />
           </div>
         </h4>
@@ -256,7 +259,7 @@ export default function ProjectCardHeader({
                 className="text-stone-400 group-hover/stat:text-[#002395]"
                 aria-hidden="true"
               />{" "}
-              Próby
+              {t("projects.rehearsals.title", "Próby")}
             </span>
             <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
               {isLoading
@@ -272,10 +275,11 @@ export default function ProjectCardHeader({
                 className="text-stone-400 group-hover/stat:text-[#002395]"
                 aria-hidden="true"
               />{" "}
-              Obsada
+              {t("projects.cast.title", "Obsada")}
             </span>
             <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
-              {isLoading ? "-" : stats.castTotal} os.
+              {isLoading ? "-" : stats.castTotal}{" "}
+              {t("common.people_short", "os.")}
             </span>
           </div>
 
@@ -286,16 +290,19 @@ export default function ProjectCardHeader({
                 className="text-stone-400 group-hover/stat:text-[#002395]"
                 aria-hidden="true"
               />{" "}
-              Ekipa
+              {t("projects.crew.title", "Ekipa")}
             </span>
             <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
-              {isLoading ? "-" : stats.crewTotal} os.
+              {isLoading ? "-" : stats.crewTotal}{" "}
+              {t("common.people_short", "os.")}
             </span>
           </div>
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-2 text-[#002395] text-[10px] font-bold antialiased uppercase tracking-[0.15em]">
-          {isExpanded ? "Zwiń Panel" : "Rozwiń Widgety"}
+          {isExpanded
+            ? t("projects.card.collapse", "Zwiń Panel")
+            : t("projects.card.expand", "Rozwiń Widgety")}
           {isExpanded ? (
             <ChevronUp size={16} aria-hidden="true" />
           ) : (

@@ -1,18 +1,21 @@
 /**
  * @file useRehearsalsTab.ts
  * @description Encapsulates mutation logic and state management for rehearsal scheduling.
- * Employs rapid Set lookups for audience targeting and synchronizes with global caches.
+ * Employs rapid Set lookups for audience targeting and synchronizes with Project domain queries.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useRehearsalsTab
  */
 
 import { useState, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
-import api from "../../../../shared/api/api";
-import { queryKeys } from "../../../../shared/lib/queryKeys";
+import type { Artist, Rehearsal } from "../../../../shared/types";
+import {
+  useCreateRehearsal,
+  useDeleteRehearsal,
+} from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
-import type { Rehearsal, Artist } from "../../../../shared/types";
 
 export interface RehearsalFormData {
   date_time: string;
@@ -24,8 +27,7 @@ export interface RehearsalFormData {
 export type TargetType = "TUTTI" | "SECTIONAL" | "CUSTOM";
 
 export const useRehearsalsTab = (projectId: string) => {
-  const queryClient = useQueryClient();
-
+  const { t } = useTranslation();
   const {
     artists,
     participations,
@@ -33,60 +35,64 @@ export const useRehearsalsTab = (projectId: string) => {
     isLoading: isContextLoading,
   } = useProjectData(projectId);
 
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const createRehearsalMutation = useCreateRehearsal(projectId);
+  const deleteRehearsalMutation = useDeleteRehearsal(projectId);
+
   const [rehearsalToDelete, setRehearsalToDelete] = useState<string | null>(
     null,
   );
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
-
   const [formData, setFormData] = useState<RehearsalFormData>({
     date_time: "",
     location: "",
     focus: "",
     is_mandatory: true,
   });
-
   const [targetType, setTargetType] = useState<TargetType>("TUTTI");
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [customParticipants, setCustomParticipants] = useState<string[]>([]);
 
-  const projectRehearsals = useMemo<Rehearsal[]>(() => {
-    return [...rehearsals]
-      .filter((r) => String(r.project) === String(projectId))
-      .sort(
-        (a, b) =>
-          new Date(a.date_time).getTime() - new Date(b.date_time).getTime(),
-      );
-  }, [rehearsals, projectId]);
+  const projectRehearsals = useMemo<Rehearsal[]>(
+    () =>
+      [...rehearsals]
+        .filter((rehearsal) => String(rehearsal.project) === String(projectId))
+        .sort(
+          (left, right) =>
+            new Date(left.date_time).getTime() -
+            new Date(right.date_time).getTime(),
+        ),
+    [rehearsals, projectId],
+  );
 
-  const projectParticipations = useMemo(() => {
-    return participations.filter(
-      (p) => String(p.project) === String(projectId),
-    );
-  }, [participations, projectId]);
+  const projectParticipations = useMemo(
+    () =>
+      participations.filter(
+        (participation) => String(participation.project) === String(projectId),
+      ),
+    [participations, projectId],
+  );
 
   const artistMap = useMemo<Map<string, Artist>>(() => {
     const map = new Map<string, Artist>();
-    if (artists) {
-      artists.forEach((a) => map.set(String(a.id), a));
-    }
+    artists.forEach((artist) => map.set(String(artist.id), artist));
     return map;
   }, [artists]);
 
   const resolveInvitedParticipants = useCallback((): string[] => {
     if (targetType === "TUTTI") {
-      return projectParticipations.map((p) => String(p.id));
+      return projectParticipations.map((participation) =>
+        String(participation.id),
+      );
     }
     if (targetType === "SECTIONAL") {
       return projectParticipations
-        .filter((p) => {
-          const artist = artistMap.get(String(p.artist));
+        .filter((participation) => {
+          const artist = artistMap.get(String(participation.artist));
           if (!artist || !artist.voice_type) return false;
-          return selectedSections.some((sec) =>
-            artist.voice_type?.startsWith(sec),
+          return selectedSections.some((section) =>
+            artist.voice_type?.startsWith(section),
           );
         })
-        .map((p) => String(p.id));
+        .map((participation) => String(participation.id));
     }
     return customParticipants;
   }, [
@@ -98,28 +104,35 @@ export const useRehearsalsTab = (projectId: string) => {
   ]);
 
   const handleAdd = async (
-    e: React.FormEvent<HTMLFormElement>,
+    event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
-    e.preventDefault();
+    event.preventDefault();
 
-    const invitedList = resolveInvitedParticipants();
-    if (invitedList.length === 0) {
-      toast.warning("Wybierz przynajmniej jedną osobę lub sekcję na próbę!");
+    const invitedParticipants = resolveInvitedParticipants();
+    if (invitedParticipants.length === 0) {
+      toast.warning(
+        t(
+          "projects.rehearsals.toast.select_target",
+          "Wybierz przynajmniej jedną osobę lub sekcję na próbę!",
+        ),
+      );
       return;
     }
 
-    setIsSubmitting(true);
-    const toastId = toast.loading("Zapisywanie próby w kalendarzu...");
+    const toastId = toast.loading(
+      t(
+        "projects.rehearsals.toast.saving",
+        "Zapisywanie próby w kalendarzu...",
+      ),
+    );
 
     try {
-      const payload = {
+      await createRehearsalMutation.mutateAsync({
         ...formData,
         project: projectId,
         date_time: new Date(formData.date_time).toISOString(),
-        invited_participations: invitedList,
-      };
-
-      await api.post("/api/rehearsals/", payload);
+        invited_participations: invitedParticipants,
+      });
 
       setFormData({
         date_time: "",
@@ -131,66 +144,71 @@ export const useRehearsalsTab = (projectId: string) => {
       setSelectedSections([]);
       setCustomParticipants([]);
 
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.rehearsals.byProject(projectId),
-      });
-      toast.success("Próba zapisana pomyślnie", { id: toastId });
-    } catch (err) {
-      toast.error("Błąd zapisu", {
+      toast.success(
+        t("projects.rehearsals.toast.save_success", "Próba zapisana pomyślnie"),
+        { id: toastId },
+      );
+    } catch {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
-        description:
+        description: t(
+          "projects.rehearsals.toast.save_error_desc",
           "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie.",
+        ),
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteClick = (id: string | number): void => {
+  const handleDeleteClick = (id: string | number): void =>
     setRehearsalToDelete(String(id));
-  };
 
   const executeDelete = async (): Promise<void> => {
     if (!rehearsalToDelete) return;
-
-    setIsDeleting(true);
-    const toastId = toast.loading("Usuwanie próby...");
+    const toastId = toast.loading(
+      t("projects.rehearsals.toast.removing", "Usuwanie próby..."),
+    );
 
     try {
-      await api.delete(`/api/rehearsals/${rehearsalToDelete}/`);
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.rehearsals.byProject(projectId),
-      });
-      toast.success("Próba została usunięta", { id: toastId });
-    } catch (err) {
-      toast.error("Błąd usuwania", {
+      await deleteRehearsalMutation.mutateAsync(rehearsalToDelete);
+      toast.success(
+        t("projects.rehearsals.toast.remove_success", "Próba została usunięta"),
+        { id: toastId },
+      );
+    } catch {
+      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
-        description: "Nie udało się usunąć próby. Serwer odrzucił żądanie.",
+        description: t(
+          "projects.rehearsals.toast.remove_error_desc",
+          "Nie udało się usunąć próby. Serwer odrzucił żądanie.",
+        ),
       });
     } finally {
-      setIsDeleting(false);
       setRehearsalToDelete(null);
     }
   };
 
-  const toggleSection = (sec: string): void => {
-    setSelectedSections((prev) =>
-      prev.includes(sec) ? prev.filter((s) => s !== sec) : [...prev, sec],
+  const toggleSection = (section: string): void => {
+    setSelectedSections((previous) =>
+      previous.includes(section)
+        ? previous.filter((value) => value !== section)
+        : [...previous, section],
     );
   };
 
   const toggleCustomParticipant = (id: string): void => {
-    setCustomParticipants((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    setCustomParticipants((previous) =>
+      previous.includes(id)
+        ? previous.filter((value) => value !== id)
+        : [...previous, id],
     );
   };
 
   return {
     isLoading: isContextLoading,
-    isSubmitting,
+    isSubmitting: createRehearsalMutation.isPending,
     rehearsalToDelete,
     setRehearsalToDelete,
-    isDeleting,
+    isDeleting: deleteRehearsalMutation.isPending,
     formData,
     setFormData,
     targetType,

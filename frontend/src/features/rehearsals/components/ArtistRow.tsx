@@ -1,11 +1,13 @@
 /**
  * @file ArtistRow.tsx
  * @description Memoized row component for individual attendance updates.
+ * @architecture Enterprise SaaS 2026
  */
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Clock, Edit3, Loader2 } from "lucide-react";
 import type {
   Artist,
@@ -27,6 +29,7 @@ interface ArtistRowProps {
 
 export const ArtistRow = React.memo(
   ({ part, artist, rehearsalId, existingRecord }: ArtistRowProps) => {
+    const { t } = useTranslation();
     const [status, setStatus] = useState<AttendanceStatus | null>(
       existingRecord?.status || null,
     );
@@ -58,7 +61,6 @@ export const ArtistRow = React.memo(
           if (existingRecord?.id) {
             await deleteAttendanceMutation.mutateAsync(existingRecord.id);
           }
-
           return;
         }
 
@@ -81,7 +83,9 @@ export const ArtistRow = React.memo(
           },
         });
       } catch (error) {
-        toast.error(`Błąd zapisu dla: ${artist.last_name}`);
+        toast.error(t("rehearsals.toast.save_error_title", "Błąd zapisu"), {
+          description: `${t("rehearsals.toast.save_error_desc", "Błąd zapisu dla:")} ${artist.last_name}`,
+        });
       }
     };
 
@@ -120,25 +124,25 @@ export const ArtistRow = React.memo(
               onClick={() => handleStatusToggle("PRESENT")}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "PRESENT" ? "bg-emerald-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white"}`}
             >
-              Obecny
+              {t("rehearsals.row.status_present", "Obecny")}
             </button>
             <button
               onClick={() => handleStatusToggle("LATE")}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "LATE" ? "bg-orange-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white"}`}
             >
-              Spóźniony
+              {t("rehearsals.row.status_late", "Spóźniony")}
             </button>
             <button
               onClick={() => handleStatusToggle("ABSENT")}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "ABSENT" ? "bg-red-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white"}`}
             >
-              Nieobecny
+              {t("rehearsals.row.status_absent", "Nieobecny")}
             </button>
             <button
               onClick={() => handleStatusToggle("EXCUSED")}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "EXCUSED" ? "bg-purple-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white"}`}
             >
-              Zwolniony
+              {t("rehearsals.row.status_excused", "Zwolniony")}
             </button>
           </div>
 
@@ -158,7 +162,10 @@ export const ArtistRow = React.memo(
                   <input
                     type="number"
                     min="1"
-                    placeholder="Ile min?"
+                    placeholder={t(
+                      "rehearsals.row.minutes_placeholder",
+                      "Ile min?",
+                    )}
                     value={minutesLate}
                     onChange={(event) => setMinutesLate(event.target.value)}
                     onBlur={handleTextBlur}
@@ -176,7 +183,10 @@ export const ArtistRow = React.memo(
               />
               <input
                 type="text"
-                placeholder="Notatka (opcjonalnie)"
+                placeholder={t(
+                  "rehearsals.row.note_placeholder",
+                  "Notatka (opcjonalnie)",
+                )}
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 onBlur={handleTextBlur}

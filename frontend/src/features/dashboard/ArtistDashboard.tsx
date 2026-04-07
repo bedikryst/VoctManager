@@ -8,6 +8,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Calendar,
   Music,
@@ -41,6 +42,7 @@ const itemVariants: Variants = {
 
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { isLoading, upNextEvent, greeting } = useArtistDashboardData(user?.id);
 
   if (isLoading) {
@@ -52,7 +54,7 @@ export default function ArtistDashboard(): React.JSX.Element {
           aria-hidden="true"
         />
         <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
-          Synchronizacja pulpitu...
+          {t("dashboard.shared.syncing", "Synchronizacja pulpitu...")}
         </span>
       </div>
     );
@@ -71,7 +73,7 @@ export default function ArtistDashboard(): React.JSX.Element {
               <div className="absolute w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
             </div>
             <p className="text-[10px] uppercase tracking-[0.15em] font-bold antialiased text-stone-600">
-              Witaj na platformie
+              {t("dashboard.artist.welcome_badge", "Witaj na platformie")}
             </p>
           </div>
           <h1
@@ -80,13 +82,16 @@ export default function ArtistDashboard(): React.JSX.Element {
           >
             {greeting},{" "}
             <span className="italic text-[#002395] font-bold">
-              {user?.first_name || "Artysto"}
+              {user?.first_name ||
+                t("dashboard.artist.artist_fallback", "Artysto")}
             </span>
             .
           </h1>
           <p className="text-stone-500 mt-3 font-medium tracking-wide text-sm max-w-xl">
-            Oto Twoje muzyczne podsumowanie na dziś. Sprawdź, gdzie powinieneś
-            być i co powinieneś przygotować.
+            {t(
+              "dashboard.artist.hero_desc",
+              "Oto Twoje muzyczne podsumowanie na dziś. Sprawdź, gdzie powinieneś być i co powinieneś przygotować.",
+            )}
           </p>
         </motion.div>
       </header>
@@ -95,7 +100,7 @@ export default function ArtistDashboard(): React.JSX.Element {
         <div className="flex items-center gap-2 mb-6">
           <Sparkles size={16} className="text-[#002395]" aria-hidden="true" />
           <h2 className="text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400">
-            Najbliższe wyzwanie
+            {t("dashboard.artist.next_challenge", "Najbliższe wyzwanie")}
           </h2>
         </div>
 
@@ -123,8 +128,11 @@ export default function ArtistDashboard(): React.JSX.Element {
                 <div className="flex-1">
                   <span className="px-3 py-1.5 bg-white/10 border border-white/20 rounded-lg text-[9px] font-bold uppercase tracking-widest backdrop-blur-md mb-5 inline-block shadow-sm text-blue-100">
                     {upNextEvent.type === "REHEARSAL"
-                      ? "Próba Muzyczna"
-                      : "Wydarzenie Główne"}
+                      ? t("dashboard.artist.badge_rehearsal", "Próba Muzyczna")
+                      : t(
+                          "dashboard.artist.badge_project",
+                          "Wydarzenie Główne",
+                        )}
                   </span>
                   <h3 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight max-w-2xl text-white">
                     {upNextEvent.title}
@@ -164,7 +172,6 @@ export default function ArtistDashboard(): React.JSX.Element {
                         {upNextEvent.data.location}
                       </span>
                     )}
-
                     {upNextEvent.type === "REHEARSAL" &&
                       upNextEvent.absences > 0 && (
                         <span className="flex items-center gap-2 bg-red-500/10 text-red-300 border border-red-500/20 px-4 py-2.5 rounded-xl shadow-sm">
@@ -173,7 +180,11 @@ export default function ArtistDashboard(): React.JSX.Element {
                             className="text-red-400"
                             aria-hidden="true"
                           />
-                          Zgłoszone nieobecności: {upNextEvent.absences}
+                          {t(
+                            "dashboard.artist.absences_reported",
+                            "Zgłoszone nieobecności: {{count}}",
+                            { count: upNextEvent.absences },
+                          )}
                         </span>
                       )}
                   </div>
@@ -188,8 +199,8 @@ export default function ArtistDashboard(): React.JSX.Element {
                   className="w-full lg:w-auto mt-4 lg:mt-0 px-8 py-4 bg-white hover:bg-stone-200 text-stone-900 rounded-2xl font-bold uppercase text-[10px] tracking-[0.15em] transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95 flex items-center justify-center gap-2 flex-shrink-0 group/btn"
                 >
                   {upNextEvent.type === "REHEARSAL"
-                    ? "Sprawdź grafik"
-                    : "Pobierz Nuty"}
+                    ? t("dashboard.artist.btn_schedule", "Sprawdź grafik")
+                    : t("dashboard.artist.btn_materials", "Pobierz Nuty")}
                   <ArrowRight
                     size={16}
                     className="transform group-hover/btn:translate-x-1 transition-transform"
@@ -211,21 +222,26 @@ export default function ArtistDashboard(): React.JSX.Element {
               aria-hidden="true"
             />
             <p className="text-stone-700 text-lg font-bold">
-              Brak nadchodzących wydarzeń
+              {t(
+                "dashboard.artist.empty_events_title",
+                "Brak nadchodzących wydarzeń",
+              )}
             </p>
             <p className="text-stone-500 text-sm mt-2">
-              Odpocznij, twój muzyczny kalendarz jest obecnie pusty.
+              {t(
+                "dashboard.artist.empty_events_desc",
+                "Odpocznij, twój muzyczny kalendarz jest obecnie pusty.",
+              )}
             </p>
           </motion.div>
         )}
       </section>
 
-      {/* BENTO NAVIGATION GRID */}
       <section>
         <div className="flex items-center gap-3 mb-6 ml-2">
           <div className="w-1 h-6 bg-[#002395] rounded-full"></div>
           <h3 className="text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400">
-            Moduły Osobiste
+            {t("dashboard.artist.personal_modules", "Moduły Osobiste")}
           </h3>
         </div>
 
@@ -235,116 +251,90 @@ export default function ArtistDashboard(): React.JSX.Element {
           animate="show"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
         >
-          <Link
-            to="/panel/schedule"
-            className="outline-none group block h-full"
-          >
-            <motion.div variants={itemVariants} className="h-full">
-              <GlassCard
-                variant="premium"
-                className="p-6 flex flex-col h-full hover:border-[#002395]/40 hover:shadow-[0_20px_40px_rgba(0,35,149,0.08)] hover:-translate-y-1 transition-all duration-500"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-50/0 to-orange-50/0 group-hover:from-orange-50/50 group-hover:to-transparent transition-colors duration-500 pointer-events-none"></div>
-                <div className="relative z-10 flex-1">
-                  <div className="w-12 h-12 bg-white border border-stone-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-md group-hover:border-orange-200 transition-all duration-500 text-orange-600">
-                    <Calendar size={20} aria-hidden="true" />
+          {[
+            {
+              id: "schedule",
+              icon: <Calendar size={20} />,
+              color: "orange",
+              title: t(
+                "dashboard.artist.module_schedule_title",
+                "Mój Kalendarz",
+              ),
+              desc: t(
+                "dashboard.artist.module_schedule_desc",
+                "Sprawdź próby, koncerty i zgłoś nieobecność.",
+              ),
+              path: "/panel/schedule",
+            },
+            {
+              id: "materials",
+              icon: <Music size={20} />,
+              color: "emerald",
+              title: t("dashboard.artist.module_materials_title", "Materiały"),
+              desc: t(
+                "dashboard.artist.module_materials_desc",
+                "Pobierz nuty PDF i ćwicz ze ścieżkami audio.",
+              ),
+              path: "/panel/materials",
+            },
+            {
+              id: "resources",
+              icon: <BookOpen size={20} />,
+              color: "purple",
+              title: t(
+                "dashboard.artist.module_resources_title",
+                "Baza Wiedzy",
+              ),
+              desc: t(
+                "dashboard.artist.module_resources_desc",
+                "Sprawdź wytyczne, dress-code i umowy.",
+              ),
+              path: "/panel/resources",
+            },
+          ].map((mod) => (
+            <Link
+              key={mod.id}
+              to={mod.path}
+              className={`outline-none group block h-full ${mod.id === "resources" ? "md:col-span-2 lg:col-span-1" : ""}`}
+            >
+              <motion.div variants={itemVariants} className="h-full">
+                <GlassCard
+                  variant="premium"
+                  className={`p-6 flex flex-col h-full hover:border-[#002395]/40 hover:shadow-[0_20px_40px_rgba(0,35,149,0.08)] hover:-translate-y-1 transition-all duration-500`}
+                >
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br from-${mod.color}-50/0 to-${mod.color}-50/0 group-hover:from-${mod.color}-50/50 group-hover:to-transparent transition-colors duration-500 pointer-events-none`}
+                  ></div>
+                  <div className="relative z-10 flex-1">
+                    <div
+                      className={`w-12 h-12 bg-white border border-stone-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-md group-hover:border-${mod.color}-200 transition-all duration-500 text-${mod.color}-600`}
+                    >
+                      {mod.icon}
+                    </div>
+                    <h4 className="text-xl font-bold text-stone-900 mb-2 tracking-tight group-hover:text-[#002395] transition-colors">
+                      {mod.title}
+                    </h4>
+                    <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
+                      {mod.desc}
+                    </p>
                   </div>
-                  <h4 className="text-xl font-bold text-stone-900 mb-2 tracking-tight group-hover:text-[#002395] transition-colors">
-                    Mój Kalendarz
-                  </h4>
-                  <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
-                    Sprawdź próby, koncerty i w prosty sposób zgłoś swoją
-                    nieobecność inspektorowi.
-                  </p>
-                </div>
-                <div className="relative z-10 flex items-center justify-between pt-6 border-t border-stone-200/50 group-hover:border-orange-200/50 transition-colors mt-6">
-                  <span className="text-[9px] uppercase tracking-[0.15em] font-bold antialiased text-stone-400 group-hover:text-[#002395] transition-colors">
-                    Otwórz Moduł
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-stone-200/60 group-hover:bg-[#002395] group-hover:border-[#002395] shadow-sm transition-all duration-300">
-                    <ChevronRight
-                      className="w-4 h-4 text-stone-400 group-hover:text-white transform group-hover:translate-x-0.5 transition-transform"
-                      aria-hidden="true"
-                    />
+                  <div
+                    className={`relative z-10 flex items-center justify-between pt-6 border-t border-stone-200/50 group-hover:border-${mod.color}-200/50 transition-colors mt-6`}
+                  >
+                    <span className="text-[9px] uppercase tracking-[0.15em] font-bold antialiased text-stone-400 group-hover:text-[#002395] transition-colors">
+                      {t("dashboard.artist.open_module", "Otwórz Moduł")}
+                    </span>
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-stone-200/60 group-hover:bg-[#002395] group-hover:border-[#002395] shadow-sm transition-all duration-300">
+                      <ChevronRight
+                        className="w-4 h-4 text-stone-400 group-hover:text-white transform group-hover:translate-x-0.5 transition-transform"
+                        aria-hidden="true"
+                      />
+                    </div>
                   </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          </Link>
-
-          <Link
-            to="/panel/materials"
-            className="outline-none group block h-full"
-          >
-            <motion.div variants={itemVariants} className="h-full">
-              <GlassCard
-                variant="premium"
-                className="p-6 flex flex-col h-full hover:border-[#002395]/40 hover:shadow-[0_20px_40px_rgba(0,35,149,0.08)] hover:-translate-y-1 transition-all duration-500"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/0 to-emerald-50/0 group-hover:from-emerald-50/50 group-hover:to-transparent transition-colors duration-500 pointer-events-none"></div>
-                <div className="relative z-10 flex-1">
-                  <div className="w-12 h-12 bg-white border border-stone-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-md group-hover:border-emerald-200 transition-all duration-500 text-emerald-600">
-                    <Music size={20} aria-hidden="true" />
-                  </div>
-                  <h4 className="text-xl font-bold text-stone-900 mb-2 tracking-tight group-hover:text-[#002395] transition-colors">
-                    Materiały
-                  </h4>
-                  <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
-                    Twoje osobiste repozytorium. Pobierz nuty PDF i ćwicz z
-                    dedykowanymi ścieżkami audio.
-                  </p>
-                </div>
-                <div className="relative z-10 flex items-center justify-between pt-6 border-t border-stone-200/50 group-hover:border-emerald-200/50 transition-colors mt-6">
-                  <span className="text-[9px] uppercase tracking-[0.15em] font-bold antialiased text-stone-400 group-hover:text-[#002395] transition-colors">
-                    Otwórz Moduł
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-stone-200/60 group-hover:bg-[#002395] group-hover:border-[#002395] shadow-sm transition-all duration-300">
-                    <ChevronRight
-                      className="w-4 h-4 text-stone-400 group-hover:text-white transform group-hover:translate-x-0.5 transition-transform"
-                      aria-hidden="true"
-                    />
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          </Link>
-
-          <Link
-            to="/panel/resources"
-            className="outline-none group block h-full md:col-span-2 lg:col-span-1"
-          >
-            <motion.div variants={itemVariants} className="h-full">
-              <GlassCard
-                variant="premium"
-                className="p-6 flex flex-col h-full hover:border-[#002395]/40 hover:shadow-[0_20px_40px_rgba(0,35,149,0.08)] hover:-translate-y-1 transition-all duration-500"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-purple-50/0 group-hover:from-purple-50/50 group-hover:to-transparent transition-colors duration-500 pointer-events-none"></div>
-                <div className="relative z-10 flex-1">
-                  <div className="w-12 h-12 bg-white border border-stone-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-md group-hover:border-purple-200 transition-all duration-500 text-purple-600">
-                    <BookOpen size={20} aria-hidden="true" />
-                  </div>
-                  <h4 className="text-xl font-bold text-stone-900 mb-2 tracking-tight group-hover:text-[#002395] transition-colors">
-                    Baza Wiedzy
-                  </h4>
-                  <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
-                    Sprawdź wytyczne dyrygenta, obowiązujący dress-code oraz
-                    regulaminy i umowy.
-                  </p>
-                </div>
-                <div className="relative z-10 flex items-center justify-between pt-6 border-t border-stone-200/50 group-hover:border-purple-200/50 transition-colors mt-6">
-                  <span className="text-[9px] uppercase tracking-[0.15em] font-bold antialiased text-stone-400 group-hover:text-[#002395] transition-colors">
-                    Otwórz Moduł
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-stone-200/60 group-hover:bg-[#002395] group-hover:border-[#002395] shadow-sm transition-all duration-300">
-                    <ChevronRight
-                      className="w-4 h-4 text-stone-400 group-hover:text-white transform group-hover:translate-x-0.5 transition-transform"
-                      aria-hidden="true"
-                    />
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          </Link>
+                </GlassCard>
+              </motion.div>
+            </Link>
+          ))}
         </motion.div>
       </section>
     </div>

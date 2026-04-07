@@ -1,101 +1,58 @@
 /**
  * @file useProjectData.ts
- * @description Scoped Data Fetcher for individual projects.
- * Utilizes React Query to share cache across multiple tabs and widgets inside a project card.
- * Pre-fetches global dictionaries with Infinity staleTime to optimize UI responsiveness.
+ * @description Scoped aggregation hook for Project module server state.
+ * Composes domain queries into a stable contract consumed across cards and editor tabs.
  * @module panel/projects/hooks/useProjectData
  */
 
-import { useQueries, QueryClient } from "@tanstack/react-query";
-import api from "../../../shared/api/api";
+import { QueryClient } from "@tanstack/react-query";
+
 import { queryKeys } from "../../../shared/lib/queryKeys";
-import type {
-  Participation,
-  Rehearsal,
-  CrewAssignment,
-  PieceCasting,
-  Artist,
-  Collaborator,
-  Piece,
-} from "../../../shared/types";
+import {
+  useProjectArtistsDictionary,
+  useProjectCollaboratorsDictionary,
+  useProjectCrewAssignments,
+  useProjectParticipations,
+  useProjectPieceCastings,
+  useProjectPiecesDictionary,
+  useProjectRehearsals,
+} from "../api/project.queries";
+import { ProjectService } from "../api/project.service";
 
 export function useProjectData(projectId: string | undefined) {
-  const results = useQueries({
-    queries: [
-      // --- PROJECT-SPECIFIC DATA (Cache: 5 minutes) ---
-      {
-        queryKey: queryKeys.participations.byProject(projectId!),
-        queryFn: async () =>
-          (
-            await api.get<Participation[]>(
-              `/api/participations/?project=${projectId}`,
-            )
-          ).data,
-        staleTime: 1000 * 60 * 5,
-        enabled: !!projectId,
-      },
-      {
-        queryKey: queryKeys.rehearsals.byProject(projectId!),
-        queryFn: async () =>
-          (await api.get<Rehearsal[]>(`/api/rehearsals/?project=${projectId}`))
-            .data,
-        staleTime: 1000 * 60 * 5,
-        enabled: !!projectId,
-      },
-      {
-        queryKey: queryKeys.crewAssignments.byProject(projectId!),
-        queryFn: async () =>
-          (
-            await api.get<CrewAssignment[]>(
-              `/api/crew-assignments/?project=${projectId}`,
-            )
-          ).data,
-        staleTime: 1000 * 60 * 5,
-        enabled: !!projectId,
-      },
-      {
-        queryKey: queryKeys.pieceCastings.byProject(projectId!),
-        queryFn: async () =>
-          (
-            await api.get<PieceCasting[]>(
-              `/api/piece-castings/?participation__project=${projectId}`,
-            )
-          ).data,
-        staleTime: 1000 * 60 * 5,
-        enabled: !!projectId,
-      },
+  const participationsQuery = useProjectParticipations(projectId);
+  const rehearsalsQuery = useProjectRehearsals(projectId);
+  const crewAssignmentsQuery = useProjectCrewAssignments(projectId);
+  const pieceCastingsQuery = useProjectPieceCastings(projectId);
+  const artistsQuery = useProjectArtistsDictionary();
+  const collaboratorsQuery = useProjectCollaboratorsDictionary();
+  const piecesQuery = useProjectPiecesDictionary();
 
-      // --- GLOBAL DICTIONARIES (Cache: Infinity) ---
-      {
-        queryKey: queryKeys.artists.all,
-        queryFn: async () => (await api.get<Artist[]>("/api/artists/")).data,
-        staleTime: Infinity,
-      },
-      {
-        queryKey: queryKeys.collaborators.all,
-        queryFn: async () =>
-          (await api.get<Collaborator[]>("/api/collaborators/")).data,
-        staleTime: Infinity,
-      },
-      {
-        queryKey: queryKeys.pieces.all,
-        queryFn: async () => (await api.get<Piece[]>("/api/pieces/")).data,
-        staleTime: Infinity,
-      },
-    ],
-  });
-
-  const isLoading = results.some((r) => r.isLoading);
-  const isError = results.some((r) => r.isError);
+  const isLoading =
+    participationsQuery.isLoading ||
+    rehearsalsQuery.isLoading ||
+    crewAssignmentsQuery.isLoading ||
+    pieceCastingsQuery.isLoading ||
+    artistsQuery.isLoading ||
+    collaboratorsQuery.isLoading ||
+    piecesQuery.isLoading;
+  const isError =
+    participationsQuery.isError ||
+    rehearsalsQuery.isError ||
+    crewAssignmentsQuery.isError ||
+    pieceCastingsQuery.isError ||
+    artistsQuery.isError ||
+    collaboratorsQuery.isError ||
+    piecesQuery.isError;
 
   return {
-    participations: results[0].data || [],
-    rehearsals: results[1].data || [],
-    crewAssignments: results[2].data || [],
-    pieceCastings: results[3].data || [],
-    artists: results[4].data || [],
-    crew: results[5].data || [],
-    pieces: results[6].data || [],
+    participations: participationsQuery.data || [],
+    rehearsals: rehearsalsQuery.data || [],
+    crewAssignments: crewAssignmentsQuery.data || [],
+    pieceCastings: pieceCastingsQuery.data || [],
+    artists: artistsQuery.data || [],
+    crew: collaboratorsQuery.data || [],
+    pieces: piecesQuery.data || [],
     isLoading,
     isError,
   };
@@ -107,43 +64,31 @@ export const prefetchProjectData = (
 ) => {
   queryClient.prefetchQuery({
     queryKey: queryKeys.participations.byProject(projectId),
-    queryFn: async () =>
-      (
-        await api.get<Participation[]>(
-          `/api/participations/?project=${projectId}`,
-        )
-      ).data,
+    queryFn: () => ProjectService.getParticipationsByProject(projectId),
     staleTime: 1000 * 60 * 5,
   });
 
   queryClient.prefetchQuery({
     queryKey: queryKeys.rehearsals.byProject(projectId),
-    queryFn: async () =>
-      (await api.get<Rehearsal[]>(`/api/rehearsals/?project=${projectId}`))
-        .data,
+    queryFn: () => ProjectService.getRehearsalsByProject(projectId),
     staleTime: 1000 * 60 * 5,
   });
 
   queryClient.prefetchQuery({
     queryKey: queryKeys.crewAssignments.byProject(projectId),
-    queryFn: async () =>
-      (
-        await api.get<CrewAssignment[]>(
-          `/api/crew-assignments/?project=${projectId}`,
-        )
-      ).data,
+    queryFn: () => ProjectService.getCrewAssignmentsByProject(projectId),
     staleTime: 1000 * 60 * 5,
   });
 
   queryClient.prefetchQuery({
     queryKey: queryKeys.artists.all,
-    queryFn: async () => (await api.get<Artist[]>("/api/artists/")).data,
+    queryFn: ProjectService.getArtistsDictionary,
     staleTime: Infinity,
   });
 
   queryClient.prefetchQuery({
     queryKey: queryKeys.pieces.all,
-    queryFn: async () => (await api.get<Piece[]>("/api/pieces/")).data,
+    queryFn: ProjectService.getPiecesDictionary,
     staleTime: Infinity,
   });
 };

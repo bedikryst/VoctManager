@@ -1,13 +1,13 @@
 /**
  * @file ProjectEditorPanel.tsx
  * @description Slide-over modal orchestrator for deep project editing and logistics.
- * Implements strict keyboard accessibility (ESC to close) and dynamic viewport constraints.
+ * Implements guarded tab navigation to prevent accidental data loss of dirty forms.
  * Provides a fluid tab routing system utilizing AnimatePresence for cinematic cross-fades.
- * Refactored to Enterprise 2026 standards: i18n support and strict domain typing.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,6 +35,7 @@ import BudgetTab from "./tabs/BudgetTab";
 import AttendanceMatrixTab from "./tabs/AttendanceMatrixTab";
 
 import { PROJECT_TABS, ProjectTabId } from "../constants/projectDomain";
+import ConfirmModal from "../../../shared/ui/ConfirmModal";
 
 interface TabDefinition {
   id: ProjectTabId;
@@ -103,17 +104,109 @@ export default function ProjectEditorPanel({
   const { t } = useTranslation();
   const [mounted, setMounted] = useState<boolean>(false);
 
+  // Guarded Navigation State
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [pendingTabId, setPendingTabId] = useState<string | null>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Keyboard accessibility and guarded close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) onClose();
+      if (e.key === "Escape" && isOpen) {
+        handleCloseAttempt();
+      }
     };
     if (isOpen) window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, hasUnsavedChanges]);
+
+  // Reset dirty state when panel closes
+  useEffect(() => {
+    if (!isOpen) {
+      setHasUnsavedChanges(false);
+      setPendingTabId(null);
+    }
+  }, [isOpen]);
+
+  const handleTabInteraction = (targetTabId: string) => {
+    if (activeTab === targetTabId) return;
+
+    if (hasUnsavedChanges) {
+      setPendingTabId(targetTabId);
+    } else {
+      onTabChange(targetTabId);
+    }
+  };
+
+  const handleCloseAttempt = () => {
+    if (hasUnsavedChanges) {
+      setPendingTabId("CLOSE_PANEL");
+    } else {
+      onClose();
+    }
+  };
+
+  const confirmNavigation = () => {
+    setHasUnsavedChanges(false);
+    if (pendingTabId === "CLOSE_PANEL") {
+      setPendingTabId(null);
+      onClose();
+    } else if (pendingTabId) {
+      onTabChange(pendingTabId);
+      setPendingTabId(null);
+    }
+  };
+
+  const cancelNavigation = () => {
+    setPendingTabId(null);
+  };
+
+  const renderActiveTab = useCallback(() => {
+    // Restrict access to other tabs if creating a new project
+    if (!project && activeTab !== PROJECT_TABS.DETAILS) {
+      return null;
+    }
+
+    switch (activeTab) {
+      case PROJECT_TABS.DETAILS:
+        return (
+          <DetailsTab
+            project={project}
+            onSuccess={() => setHasUnsavedChanges(false)}
+            onDirtyStateChange={setHasUnsavedChanges}
+          />
+        );
+      case PROJECT_TABS.REHEARSALS:
+        return project ? <RehearsalsTab projectId={project.id} /> : null;
+      case PROJECT_TABS.MATRIX:
+        return project ? <AttendanceMatrixTab projectId={project.id} /> : null;
+      case PROJECT_TABS.CAST:
+        return project ? <CastTab projectId={project.id} /> : null;
+      case PROJECT_TABS.PROGRAM:
+        return project ? (
+          <ProgramTab
+            projectId={project.id}
+            onDirtyStateChange={setHasUnsavedChanges}
+          />
+        ) : null;
+      case PROJECT_TABS.MICRO_CAST:
+        return project ? <MicroCastingTab projectId={project.id} /> : null;
+      case PROJECT_TABS.CREW:
+        return project ? <CrewTab projectId={project.id} /> : null;
+      case PROJECT_TABS.BUDGET:
+        return project ? (
+          <BudgetTab
+            projectId={project.id}
+            onDirtyStateChange={setHasUnsavedChanges}
+          />
+        ) : null;
+      default:
+        return null;
+    }
+  }, [activeTab, project]);
 
   if (!mounted) return null;
 
@@ -126,11 +219,10 @@ export default function ProjectEditorPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            onClick={onClose}
+            onClick={handleCloseAttempt}
             className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
             aria-hidden="true"
           />
-
           <motion.div
             initial={{ x: "100%", opacity: 0.5 }}
             animate={{ x: 0, opacity: 1 }}
@@ -156,20 +248,23 @@ export default function ProjectEditorPanel({
                     {project
                       ? project.title
                       : t(
-                          "projects.dashboard.new_project",
+                          "projects.editor.new_project",
                           "Kreator Nowego Wydarzenia",
                         )}
                   </h3>
                   {project?.status === "DONE" && (
                     <span className="px-2.5 py-1 bg-stone-200/50 text-stone-600 text-[9px] uppercase tracking-widest font-bold antialiased rounded-md border border-stone-200">
-                      Archiwum
+                      {t("projects.editor.archive_badge", "Archiwum")}
                     </span>
                   )}
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={handleCloseAttempt}
                   className="text-stone-400 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200/60 shadow-sm transition-all p-3 rounded-2xl active:scale-95 group"
-                  aria-label="Zamknij panel (ESC)"
+                  aria-label={t(
+                    "common.actions.close_panel",
+                    "Zamknij panel (ESC)",
+                  )}
                 >
                   <X
                     size={20}
@@ -183,14 +278,13 @@ export default function ProjectEditorPanel({
                 <div className="relative">
                   <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-[#f8f7f4] to-transparent pointer-events-none z-10" />
                   <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#f8f7f4] to-transparent pointer-events-none z-10" />
-
                   <div className="flex overflow-x-auto scrollbar-hide gap-2 p-1.5 bg-stone-200/40 border border-stone-200/60 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
                     {TAB_CONFIG.map((tab) => {
                       const isActive = activeTab === tab.id;
                       return (
                         <button
                           key={tab.id}
-                          onClick={() => onTabChange(tab.id)}
+                          onClick={() => handleTabInteraction(tab.id)}
                           className={`flex items-center gap-2 px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex-shrink-0 ${
                             isActive
                               ? "bg-white text-[#002395] shadow-sm border border-white"
@@ -217,30 +311,7 @@ export default function ProjectEditorPanel({
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                     className="w-full"
                   >
-                    {activeTab === PROJECT_TABS.DETAILS && (
-                      <DetailsTab project={project} onSuccess={() => {}} />
-                    )}
-                    {activeTab === PROJECT_TABS.REHEARSALS && project && (
-                      <RehearsalsTab projectId={project.id} />
-                    )}
-                    {activeTab === PROJECT_TABS.MATRIX && project && (
-                      <AttendanceMatrixTab projectId={project.id} />
-                    )}
-                    {activeTab === PROJECT_TABS.CAST && project && (
-                      <CastTab projectId={project.id} />
-                    )}
-                    {activeTab === PROJECT_TABS.PROGRAM && project && (
-                      <ProgramTab projectId={project.id} />
-                    )}
-                    {activeTab === PROJECT_TABS.MICRO_CAST && project && (
-                      <MicroCastingTab projectId={project.id} />
-                    )}
-                    {activeTab === PROJECT_TABS.CREW && project && (
-                      <CrewTab projectId={project.id} />
-                    )}
-                    {activeTab === PROJECT_TABS.BUDGET && project && (
-                      <BudgetTab projectId={project.id} />
-                    )}
+                    {renderActiveTab()}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -248,6 +319,21 @@ export default function ProjectEditorPanel({
           </motion.div>
         </div>
       )}
+
+      {/* Unsaved Changes Guard Modal */}
+      <ConfirmModal
+        isOpen={pendingTabId !== null}
+        title={t("projects.editor.unsaved_changes_title", "Niezapisane zmiany")}
+        description={t(
+          "projects.editor.unsaved_changes_desc",
+          "Masz niezapisane zmiany w tej zakładce. Czy na pewno chcesz opuścić ten widok? Niezapisane dane zostaną utracone.",
+        )}
+        onConfirm={confirmNavigation}
+        onCancel={cancelNavigation}
+        confirmText={t("common.actions.discard", "Odrzuć zmiany")}
+        cancelText={t("common.actions.cancel", "Anuluj")}
+        isDestructive={false}
+      />
     </AnimatePresence>,
     document.body,
   );

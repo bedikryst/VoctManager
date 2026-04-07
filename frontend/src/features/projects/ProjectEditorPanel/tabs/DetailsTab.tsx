@@ -2,10 +2,12 @@
  * @file DetailsTab.tsx
  * @description Handles creation and editing of base project metadata and production timelines.
  * Features "Dirty State Tracking" with a Floating Action Bar (FAB) to defer API syncing.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/DetailsTab
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -25,17 +27,20 @@ import { Button } from "../../../../shared/ui/Button";
 interface DetailsTabProps {
   project: Project | null;
   onSuccess: (updatedProject?: Project) => void;
+  onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
 const STYLE_LABEL =
   "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 const STYLE_GLASS_TEXTAREA =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] resize-none";
+  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-stone-400";
 
 export default function DetailsTab({
   project,
   onSuccess,
+  onDirtyStateChange,
 }: DetailsTabProps): React.JSX.Element {
+  const { t } = useTranslation();
   const {
     formData,
     setFormData,
@@ -46,267 +51,10 @@ export default function DetailsTab({
     handleUpdateRunSheetItem,
     handleRemoveRunSheetItem,
     handleSubmit,
-  } = useDetailsForm(project, onSuccess);
+  } = useDetailsForm(project, onSuccess, onDirtyStateChange);
 
   return (
-    <>
-      <form
-        id="details-form"
-        onSubmit={handleSubmit}
-        className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl space-y-8 p-6 md:p-10 max-w-4xl mx-auto mb-24"
-      >
-        <div className="space-y-6">
-          <div className="flex items-center gap-2.5 border-b border-stone-200/60 pb-3">
-            <Briefcase
-              size={16}
-              className="text-[#002395]"
-              aria-hidden="true"
-            />
-            <h3 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800">
-              Dane Podstawowe
-            </h3>
-          </div>
-
-          <div>
-            <label className={STYLE_LABEL}>Tytuł Projektu *</label>
-            <Input
-              type="text"
-              required
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              placeholder="np. Koncert Noworoczny 2026"
-              disabled={isSubmitting}
-              className="font-bold text-base"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className={STYLE_LABEL}>Data i Godzina Koncertu *</label>
-              <Input
-                type="datetime-local"
-                required
-                value={formData.date_time}
-                onChange={(e) =>
-                  setFormData({ ...formData, date_time: e.target.value })
-                }
-                disabled={isSubmitting}
-              />
-            </div>
-            <div>
-              <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-orange-600 mb-2 ml-1">
-                Call Time (Zbiórka)
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.call_time}
-                onChange={(e) =>
-                  setFormData({ ...formData, call_time: e.target.value })
-                }
-                className="w-full px-4 py-3 text-sm text-stone-800 bg-orange-50/30 backdrop-blur-sm border border-orange-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
-                disabled={isSubmitting}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className={STYLE_LABEL}>Miejsce / Obiekt</label>
-              <Input
-                type="text"
-                value={formData.location}
-                onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
-                }
-                placeholder="np. Filharmonia Narodowa, Warszawa"
-                disabled={isSubmitting}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 ml-1">
-                Ubiór (Panowie)
-              </label>
-              <Input
-                type="text"
-                value={formData.dress_code_male}
-                onChange={(e) =>
-                  setFormData({ ...formData, dress_code_male: e.target.value })
-                }
-                placeholder="np. Czarna koszula, mucha"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 ml-1">
-                Ubiór (Panie)
-              </label>
-              <Input
-                type="text"
-                value={formData.dress_code_female}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    dress_code_female: e.target.value,
-                  })
-                }
-                placeholder="np. Długa czarna suknia"
-              />
-            </div>
-
-            <div className="md:col-span-2 space-y-1.5">
-              <label className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 ml-1">
-                Playlista Spotify (Link)
-              </label>
-              <Input
-                type="url"
-                value={formData.spotify_playlist_url}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    spotify_playlist_url: e.target.value,
-                  })
-                }
-                placeholder="Wklej link do playlisty Spotify..."
-                leftIcon={
-                  <PlayCircle
-                    className="w-4 h-4 text-emerald-500"
-                    aria-hidden="true"
-                  />
-                }
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={STYLE_LABEL}>
-              Ogólny opis projektu (Notatki)
-            </label>
-            <textarea
-              rows={3}
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              className={STYLE_GLASS_TEXTAREA}
-              disabled={isSubmitting}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-5 pt-6 border-t border-stone-200/60">
-          <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
-            <div className="flex items-center gap-2.5">
-              <ListOrdered
-                size={16}
-                className="text-[#002395]"
-                aria-hidden="true"
-              />
-              <h3 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800">
-                Harmonogram Dnia (Run-sheet)
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={handleAddRunSheetItem}
-              disabled={isSubmitting}
-              className="text-[9px] font-bold antialiased uppercase tracking-widest text-[#002395] hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 border border-transparent hover:border-blue-100 disabled:opacity-50"
-            >
-              <Plus size={14} aria-hidden="true" /> Dodaj punkt
-            </button>
-          </div>
-
-          <div className="space-y-3 bg-stone-50/30 p-5 rounded-2xl border border-stone-100/50 shadow-inner">
-            {sortedRunSheet.length > 0 ? (
-              sortedRunSheet.map((item, idx) => (
-                <div
-                  key={item.id || idx}
-                  className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/80 backdrop-blur-md p-4 rounded-xl border border-stone-200/60 shadow-sm relative group transition-all focus-within:border-[#002395]/40 focus-within:ring-2 focus-within:ring-[#002395]/10"
-                >
-                  <div className="flex items-center gap-2.5 w-full sm:w-36 flex-shrink-0">
-                    <Clock
-                      size={14}
-                      className="text-stone-400"
-                      aria-hidden="true"
-                    />
-                    <input
-                      type="time"
-                      required
-                      value={item.time}
-                      onChange={(e) =>
-                        handleUpdateRunSheetItem(
-                          item.id!,
-                          "time",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full text-sm font-bold text-[#002395] bg-transparent outline-none border-b border-dashed border-stone-300 focus:border-[#002395] pb-0.5"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <div className="flex-1 w-full space-y-2.5 border-l border-stone-100 pl-4">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Tytuł (np. Próba Akustyczna)"
-                      value={item.title}
-                      onChange={(e) =>
-                        handleUpdateRunSheetItem(
-                          item.id!,
-                          "title",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full text-sm font-bold text-stone-800 bg-transparent outline-none placeholder-stone-300"
-                      disabled={isSubmitting}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Dodatkowe uwagi (np. tylko soliści i orkiestra)..."
-                      value={item.description || ""}
-                      onChange={(e) =>
-                        handleUpdateRunSheetItem(
-                          item.id!,
-                          "description",
-                          e.target.value,
-                        )
-                      }
-                      className="w-full text-[11px] text-stone-500 italic bg-transparent outline-none placeholder-stone-300"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveRunSheetItem(item.id!)}
-                    disabled={isSubmitting}
-                    className="absolute top-3 right-3 sm:relative sm:top-0 sm:right-0 p-2.5 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100 disabled:opacity-50"
-                    aria-label="Usuń punkt harmonogramu"
-                  >
-                    <Trash2 size={16} aria-hidden="true" />
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-stone-400">
-                <Clock
-                  size={32}
-                  className="mx-auto mb-3 opacity-30"
-                  aria-hidden="true"
-                />
-                <p className="text-[10px] antialiased uppercase tracking-widest font-bold">
-                  Brak agendy
-                </p>
-                <p className="text-xs mt-1 max-w-xs mx-auto opacity-70">
-                  Zbuduj szczegółowy rozkład jazdy na dzień koncertu.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </form>
-
+    <div className="max-w-4xl mx-auto pb-24 relative">
       <AnimatePresence>
         {isDirty && (
           <motion.div
@@ -318,10 +66,13 @@ export default function DetailsTab({
           >
             <div className="flex flex-col ml-2">
               <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
-                Niezapisane Zmiany
+                {t("projects.details_tab.fab.unsaved", "Niezapisane Zmiany")}
               </span>
               <span className="text-xs text-stone-500">
-                Zmodyfikowałeś ustawienia projektu.
+                {t(
+                  "projects.details_tab.fab.description",
+                  "Zmodyfikowałeś ustawienia projektu.",
+                )}
               </span>
             </div>
 
@@ -331,18 +82,331 @@ export default function DetailsTab({
               variant="primary"
               disabled={isSubmitting}
               isLoading={isSubmitting}
-              leftIcon={
-                !isSubmitting ? (
-                  <Save size={16} aria-hidden="true" />
-                ) : undefined
-              }
-              className="flex-shrink-0"
+              leftIcon={<Save size={16} aria-hidden="true" />}
+              className="shadow-sm"
             >
-              Zapisz
+              {t("projects.details_tab.fab.save", "Zapisz Zmiany")}
             </Button>
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2 mb-2">
+          <Briefcase className="text-[#002395]" size={20} aria-hidden="true" />
+          {t("projects.details_tab.header.title", "Szczegóły Wydarzenia")}
+        </h2>
+      </div>
+
+      <form id="details-form" onSubmit={handleSubmit} className="space-y-8">
+        {/* Metadane Główne */}
+        <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
+          <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-[#002395]"
+              aria-hidden="true"
+            ></span>
+            {t("projects.details_tab.sections.title_desc", "Tytuł i Opis")}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className={STYLE_LABEL}>
+                {t("projects.details_tab.fields.title", "Tytuł Projektu *")}
+              </label>
+              <Input
+                type="text"
+                required
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className={STYLE_LABEL}>
+                {t("projects.details_tab.fields.date_time", "Data i Czas *")}
+              </label>
+              <Input
+                type="datetime-local"
+                required
+                value={formData.date_time}
+                onChange={(e) =>
+                  setFormData({ ...formData, date_time: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className={STYLE_LABEL}>
+                {t(
+                  "projects.details_tab.fields.location",
+                  "Lokalizacja / Miejsce",
+                )}
+              </label>
+              <Input
+                type="text"
+                value={formData.location || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, location: e.target.value })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Logistyka */}
+        <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
+          <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500"
+              aria-hidden="true"
+            ></span>
+            {t(
+              "projects.details_tab.sections.logistics",
+              "Zbiórka i Dress Code",
+            )}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className={STYLE_LABEL}>
+                {t(
+                  "projects.details_tab.fields.call_time",
+                  "Zbiórka (Call Time)",
+                )}
+              </label>
+              <Input
+                type="datetime-local"
+                value={formData.call_time || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, call_time: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className={STYLE_LABEL}>
+                {t(
+                  "projects.details_tab.fields.dress_code_female",
+                  "Opcjonalnie: Panie",
+                )}
+              </label>
+              <Input
+                type="text"
+                value={formData.dress_code_female || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    dress_code_female: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div>
+              <label className={STYLE_LABEL}>
+                {t(
+                  "projects.details_tab.fields.dress_code_male",
+                  "Opcjonalnie: Panowie",
+                )}
+              </label>
+              <Input
+                type="text"
+                value={formData.dress_code_male || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, dress_code_male: e.target.value })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Notatki */}
+        <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
+          <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-orange-400"
+              aria-hidden="true"
+            ></span>
+            {t("projects.details_tab.sections.notes", "Notatki Produkcyjne")}
+          </h3>
+          <div>
+            <label className={STYLE_LABEL}>
+              {t("projects.details_tab.fields.description", "Opis wydarzenia")}
+            </label>
+            <textarea
+              rows={4}
+              value={formData.description || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              className={STYLE_GLASS_TEXTAREA}
+              placeholder={t(
+                "projects.details_tab.placeholders.description",
+                "np. Proszę o punktualność...",
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Referencje */}
+        <div className="bg-[#1DB954]/5 border border-[#1DB954]/20 rounded-2xl p-6 md:p-8 shadow-sm">
+          <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
+            <PlayCircle
+              className="text-[#1DB954]"
+              size={16}
+              aria-hidden="true"
+            />
+            {t(
+              "projects.details_tab.sections.references",
+              "Referencje Muzyczne",
+            )}
+          </h3>
+          <div>
+            <label className={STYLE_LABEL}>
+              {t("projects.details_tab.fields.spotify", "Playlista (Spotify)")}
+            </label>
+            <Input
+              type="url"
+              value={formData.spotify_playlist_url || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  spotify_playlist_url: e.target.value,
+                })
+              }
+              placeholder={t(
+                "projects.details_tab.placeholders.spotify",
+                "Wklej link do playlisty z referencjami...",
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Harmonogram (Run Sheet) */}
+        <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-purple-500"
+                aria-hidden="true"
+              ></span>
+              {t(
+                "projects.details_tab.sections.run_sheet",
+                "Harmonogram Dnia Koncertu",
+              )}
+            </h3>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAddRunSheetItem}
+              leftIcon={<Plus size={14} aria-hidden="true" />}
+              className="text-xs"
+            >
+              {t(
+                "projects.details_tab.buttons.add_run_sheet",
+                "Dodaj punkt harmonogramu",
+              )}
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            {sortedRunSheet.length === 0 ? (
+              <div className="text-center py-10 bg-stone-50/50 rounded-xl border border-dashed border-stone-200 flex flex-col items-center">
+                <ListOrdered
+                  size={24}
+                  className="text-stone-300 mb-2"
+                  aria-hidden="true"
+                />
+                <p className="text-xs text-stone-500">
+                  {t(
+                    "projects.details_tab.empty.run_sheet",
+                    "Brak punktów harmonogramu. Dodaj pierwszy!",
+                  )}
+                </p>
+              </div>
+            ) : (
+              <AnimatePresence initial={false}>
+                {sortedRunSheet.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-white p-3 rounded-xl border border-stone-200/60 shadow-sm"
+                  >
+                    <div className="flex-shrink-0 w-full md:w-32 relative">
+                      <Clock
+                        size={14}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+                        aria-hidden="true"
+                      />
+                      <input
+                        type="time"
+                        required
+                        value={item.time}
+                        onChange={(e) =>
+                          handleUpdateRunSheetItem(
+                            item.id!,
+                            "time",
+                            e.target.value,
+                          )
+                        }
+                        className="w-full pl-9 pr-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-mono"
+                        placeholder={t(
+                          "projects.details_tab.run_sheet.time",
+                          "Godz.",
+                        )}
+                      />
+                    </div>
+                    <div className="flex-1 w-full relative">
+                      <input
+                        type="text"
+                        required
+                        value={item.title}
+                        onChange={(e) =>
+                          handleUpdateRunSheetItem(
+                            item.id!,
+                            "title",
+                            e.target.value,
+                          )
+                        }
+                        className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold"
+                        placeholder={t(
+                          "projects.details_tab.run_sheet.title",
+                          "Tytuł",
+                        )}
+                      />
+                    </div>
+                    <div className="flex-1 w-full">
+                      <input
+                        type="text"
+                        value={item.description || ""}
+                        onChange={(e) =>
+                          handleUpdateRunSheetItem(
+                            item.id!,
+                            "description",
+                            e.target.value,
+                          )
+                        }
+                        className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all italic"
+                        placeholder={t(
+                          "projects.details_tab.run_sheet.description",
+                          "Opis (opcjonalny)",
+                        )}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveRunSheetItem(item.id!)}
+                      className="p-2.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 self-end md:self-auto"
+                      aria-label={t("common.actions.delete", "Usuń")}
+                    >
+                      <Trash2 size={16} aria-hidden="true" />
+                    </button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
+        </div>
+      </form>
+    </div>
   );
 }

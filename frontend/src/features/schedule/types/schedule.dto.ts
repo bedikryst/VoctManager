@@ -1,6 +1,8 @@
 /**
  * @file schedule.dto.ts
  * @description Feature-local DTOs and view models for the Schedule domain.
+ * Strictly typed to prevent implicit 'any' and client-side casting hacks.
+ * @architecture Enterprise SaaS 2026
  */
 
 import type {
@@ -12,10 +14,17 @@ import type {
 
 export type ScheduleViewMode = "UPCOMING" | "PAST";
 
+/**
+ * Represents a Rehearsal entity enriched with backend annotations (e.g., Count of absences).
+ */
+export interface EnrichedRehearsal extends Rehearsal {
+  absent_count?: number;
+}
+
 export interface TimelineEvent {
   id: string;
   type: "REHEARSAL" | "PROJECT";
-  rawObj: Project | Rehearsal;
+  rawObj: Project | EnrichedRehearsal;
   date_time: Date;
   title: string;
   location: string | null | undefined;

@@ -3,10 +3,12 @@
  * @description Primary Casting Manager Module for Vocal Assignments.
  * Implements absolute DOM continuity via Unified AnimatePresence preventing cross-list visual popping.
  * Delegates caching and mutation state exclusively to the useCastTab hook.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/CastTab
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   MicVocal,
   BookOpen,
@@ -30,33 +32,27 @@ interface CastTabProps {
 const STYLE_LIST_CONTAINER =
   "flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] bg-white/40 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-2";
 
-export default function CastTab({
-  projectId,
-}: CastTabProps): React.JSX.Element | null {
-  const {
-    participations,
-    isFetching,
-    searchQuery,
-    setSearchQuery,
-    processingId,
-    mobileView,
-    setMobileView,
-    allArtists,
-    assignedIds,
-    toggleCasting,
-  } = useCastTab(projectId);
+interface ArtistCardProps {
+  artist: Artist;
+  isAssigned: boolean;
+  participationId?: string | number;
+  isProcessing: boolean;
+  onToggle: (
+    artistId: string | number,
+    isAssigned: boolean,
+    partId?: string | number,
+  ) => void;
+}
 
-  const ArtistCard = ({
+const ArtistCard = React.memo(
+  ({
     artist,
     isAssigned,
-  }: {
-    artist: Artist;
-    isAssigned: boolean;
-  }) => {
-    const participation = participations.find(
-      (p) => String(p.artist) === String(artist.id),
-    );
-    const isProcessing = processingId === artist.id;
+    participationId,
+    isProcessing,
+    onToggle,
+  }: ArtistCardProps) => {
+    const { t } = useTranslation();
 
     return (
       <motion.div
@@ -103,7 +99,7 @@ export default function CastTab({
                   aria-hidden="true"
                 />
                 <span>
-                  A vista:{" "}
+                  {t("projects.cast.card.a_vista", "A vista:")}{" "}
                   <strong className="text-stone-600">
                     {artist.sight_reading_skill}/5
                   </strong>
@@ -115,9 +111,7 @@ export default function CastTab({
 
         <button
           disabled={isProcessing}
-          onClick={() =>
-            toggleCasting(artist.id, isAssigned, participation?.id)
-          }
+          onClick={() => onToggle(artist.id, isAssigned, participationId)}
           className={`flex justify-center items-center p-2.5 sm:px-4 sm:py-2.5 rounded-lg text-[9px] uppercase font-bold antialiased tracking-widest transition-all shadow-sm active:scale-95 disabled:opacity-50 flex-shrink-0 ${
             isAssigned
               ? "bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
@@ -125,8 +119,12 @@ export default function CastTab({
           }`}
           aria-label={
             isAssigned
-              ? `Usuń ${artist.first_name} z obsady`
-              : `Dodaj ${artist.first_name} do obsady`
+              ? t("projects.cast.card.remove_aria", "Usuń z obsady", {
+                  name: artist.first_name,
+                })
+              : t("projects.cast.card.add_aria", "Dodaj do obsady", {
+                  name: artist.first_name,
+                })
           }
         >
           {isProcessing ? (
@@ -134,22 +132,45 @@ export default function CastTab({
           ) : isAssigned ? (
             <>
               <Trash2 size={14} className="sm:mr-1.5" aria-hidden="true" />{" "}
-              <span className="hidden sm:inline">Usuń</span>
+              <span className="hidden sm:inline">
+                {t("projects.cast.card.remove", "Usuń")}
+              </span>
             </>
           ) : (
             <>
               <UserPlus size={14} className="sm:mr-1.5" aria-hidden="true" />{" "}
-              <span className="hidden sm:inline">Dodaj</span>
+              <span className="hidden sm:inline">
+                {t("projects.cast.card.add", "Dodaj")}
+              </span>
             </>
           )}
         </button>
       </motion.div>
     );
-  };
+  },
+);
+
+ArtistCard.displayName = "ArtistCard";
+
+export default function CastTab({
+  projectId,
+}: CastTabProps): React.JSX.Element | null {
+  const { t } = useTranslation();
+  const {
+    participations,
+    isFetching,
+    searchQuery,
+    setSearchQuery,
+    processingId,
+    mobileView,
+    setMobileView,
+    allArtists,
+    assignedIds,
+    toggleCasting,
+  } = useCastTab(projectId);
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col h-[80vh]">
-      {/* Header & Global Search */}
       <div className="mb-6 space-y-4 flex-shrink-0">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -158,11 +179,13 @@ export default function CastTab({
             </div>
             <div>
               <h4 className="text-[12px] font-bold antialiased uppercase tracking-widest text-stone-800">
-                Casting Główny
+                {t("projects.cast.header.title", "Casting Główny")}
               </h4>
               <p className="text-[10px] text-stone-500 font-medium">
-                Zarządzaj wokalistami. Ustawienie [scrollbar-gutter]
-                neutralizuje skoki układu.
+                {t(
+                  "projects.cast.header.subtitle",
+                  "Zarządzaj wokalistami. Ustawienie [scrollbar-gutter] neutralizuje skoki układu.",
+                )}
               </p>
             </div>
           </div>
@@ -170,7 +193,10 @@ export default function CastTab({
           <div className="w-full md:w-80">
             <Input
               type="text"
-              placeholder="Szukaj artysty..."
+              placeholder={t(
+                "projects.cast.search_placeholder",
+                "Szukaj artysty...",
+              )}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               leftIcon={
@@ -184,20 +210,20 @@ export default function CastTab({
           </div>
         </div>
 
-        {/* Mobile Segmented Control */}
         <div className="md:hidden flex bg-white/60 p-1 rounded-xl border border-stone-200/60 shadow-sm">
           <button
             onClick={() => setMobileView("AVAILABLE")}
             className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mobileView === "AVAILABLE" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500"}`}
           >
-            Baza (
+            {t("projects.cast.mobile.available", "Baza")} (
             {allArtists.filter((a) => !assignedIds.has(String(a.id))).length})
           </button>
           <button
             onClick={() => setMobileView("ASSIGNED")}
             className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mobileView === "ASSIGNED" ? "bg-[#002395] text-white shadow-sm" : "text-stone-500"}`}
           >
-            Obsada ({participations.length})
+            {t("projects.cast.mobile.assigned", "Obsada")} (
+            {participations.length})
           </button>
         </div>
       </div>
@@ -213,7 +239,6 @@ export default function CastTab({
       ) : (
         <AnimatePresence mode="popLayout" initial={false}>
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 overflow-hidden pb-8">
-            {/* Left Column: AVAILABLE ARTISTS */}
             <motion.div
               key="available-list"
               layoutId="available-list-container"
@@ -221,7 +246,7 @@ export default function CastTab({
             >
               <div className="flex items-center justify-between mb-3 px-2">
                 <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-                  Baza Artystów
+                  {t("projects.cast.sections.available", "Baza Artystów")}
                 </span>
                 <span className="text-[9px] font-bold antialiased text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md">
                   {
@@ -239,6 +264,8 @@ export default function CastTab({
                       key={artist.id}
                       artist={artist}
                       isAssigned={false}
+                      isProcessing={processingId === artist.id}
+                      onToggle={toggleCasting}
                     />
                   ))}
                 {allArtists.filter((a) => !assignedIds.has(String(a.id)))
@@ -250,14 +277,13 @@ export default function CastTab({
                       aria-hidden="true"
                     />
                     <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">
-                      Brak dostępnych
+                      {t("projects.cast.empty_available", "Brak dostępnych")}
                     </p>
                   </div>
                 )}
               </div>
             </motion.div>
 
-            {/* Right Column: ASSIGNED ARTISTS */}
             <motion.div
               key="assigned-list"
               layoutId="assigned-list-container"
@@ -265,7 +291,8 @@ export default function CastTab({
             >
               <div className="flex items-center justify-between mb-3 px-2">
                 <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395] flex items-center gap-1.5">
-                  <UserCheck size={14} aria-hidden="true" /> Obsada Projektu
+                  <UserCheck size={14} aria-hidden="true" />{" "}
+                  {t("projects.cast.sections.assigned", "Obsada Projektu")}
                 </span>
                 <span className="text-[9px] font-bold antialiased text-[#002395] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
                   {participations.length}
@@ -277,13 +304,21 @@ export default function CastTab({
               >
                 {allArtists
                   .filter((a) => assignedIds.has(String(a.id)))
-                  .map((artist) => (
-                    <ArtistCard
-                      key={artist.id}
-                      artist={artist}
-                      isAssigned={true}
-                    />
-                  ))}
+                  .map((artist) => {
+                    const participation = participations.find(
+                      (p) => String(p.artist) === String(artist.id),
+                    );
+                    return (
+                      <ArtistCard
+                        key={artist.id}
+                        artist={artist}
+                        isAssigned={true}
+                        participationId={participation?.id}
+                        isProcessing={processingId === artist.id}
+                        onToggle={toggleCasting}
+                      />
+                    );
+                  })}
                 {participations.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-center opacity-60 p-6">
                     <UserCheck
@@ -292,7 +327,7 @@ export default function CastTab({
                       aria-hidden="true"
                     />
                     <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">
-                      Obsada jest pusta
+                      {t("projects.cast.empty_assigned", "Obsada jest pusta")}
                     </p>
                   </div>
                 )}

@@ -1,6 +1,7 @@
 /**
  * @file crew.dto.ts
  * @description Feature-local DTOs and option metadata for the Crew domain.
+ * @architecture Enterprise SaaS 2026
  */
 
 import type { CollaboratorSpecialty } from "../../../shared/types";
@@ -18,14 +19,14 @@ export type CrewWriteDTO = CrewFormData;
 
 export interface CrewSpecialtyOption {
   value: CollaboratorSpecialty;
-  label: string;
+  labelKey: string;
 }
 
 export const SPECIALTY_CHOICES: CrewSpecialtyOption[] = [
-  { value: "SOUND", label: "Reżyseria Dźwięku" },
-  { value: "LIGHT", label: "Reżyseria Świateł" },
-  { value: "VISUALS", label: "Sztuka Wizualna" },
-  { value: "INSTRUMENT", label: "Instrumentalista" },
-  { value: "LOGISTICS", label: "Logistyka" },
-  { value: "OTHER", label: "Inne" },
+  { value: "SOUND", labelKey: "crew.specialties.SOUND" },
+  { value: "LIGHT", labelKey: "crew.specialties.LIGHT" },
+  { value: "VISUALS", labelKey: "crew.specialties.VISUALS" },
+  { value: "INSTRUMENT", labelKey: "crew.specialties.INSTRUMENT" },
+  { value: "LOGISTICS", labelKey: "crew.specialties.LOGISTICS" },
+  { value: "OTHER", labelKey: "crew.specialties.OTHER" },
 ];

@@ -7,6 +7,7 @@
 import React, { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   MapPin,
   CheckCircle2,
@@ -23,6 +24,7 @@ import { Button } from "../../shared/ui/Button";
 import { ArtistRow } from "./components/ArtistRow";
 
 export default function Rehearsals(): React.JSX.Element {
+  const { t } = useTranslation();
   const {
     isLoading,
     isError,
@@ -45,14 +47,20 @@ export default function Rehearsals(): React.JSX.Element {
 
   useEffect(() => {
     if (isError)
-      toast.error("Błąd synchronizacji", {
-        description: "Nie udało się załadować danych.",
-      });
-  }, [isError]);
+      toast.error(
+        t("rehearsals.toast.sync_error_title", "Błąd synchronizacji"),
+        {
+          description: t(
+            "rehearsals.toast.sync_error_desc",
+            "Nie udało się załadować danych.",
+          ),
+        },
+      );
+  }, [isError, t]);
 
   const sectionalDetails = useMemo(() => {
     if (!activeRehearsal || !activeRehearsal.invited_participations?.length)
-      return "Tutti (Cały Zespół)";
+      return t("rehearsals.dashboard.tutti", "Tutti (Cały Zespół)");
 
     const voices = new Set<string>();
     invitedParticipations.forEach((p) => {
@@ -63,17 +71,17 @@ export default function Rehearsals(): React.JSX.Element {
     });
 
     const voiceDict: Record<string, string> = {
-      S: "Soprany",
-      A: "Alty",
-      T: "Tenory",
-      B: "Basy",
-      M: "Mezzosoprany",
-      C: "Kontratenory",
+      S: t("rehearsals.voices.sopranos", "Soprany"),
+      A: t("rehearsals.voices.altos", "Alty"),
+      T: t("rehearsals.voices.tenors", "Tenory"),
+      B: t("rehearsals.voices.basses", "Basy"),
+      M: t("rehearsals.voices.mezzos", "Mezzosoprany"),
+      C: t("rehearsals.voices.countertenors", "Kontratenory"),
     };
     const voiceNames = Array.from(voices).map((v) => voiceDict[v] || v);
 
-    return `Tylko: ${voiceNames.join(", ")}`;
-  }, [activeRehearsal, invitedParticipations, artistMap]);
+    return `${t("rehearsals.dashboard.only", "Tylko:")} ${voiceNames.join(", ")}`;
+  }, [activeRehearsal, invitedParticipations, artistMap, t]);
 
   if (isLoading && displayProjects.length === 0) {
     return (
@@ -94,25 +102,27 @@ export default function Rehearsals(): React.JSX.Element {
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
             <CheckSquare size={12} className="text-[#002395]" />
             <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
-              Moduł Inspektora
+              {t("rehearsals.dashboard.subtitle", "Moduł Inspektora")}
             </p>
           </div>
           <h1
             className="text-4xl md:text-5xl font-medium text-stone-900 leading-tight tracking-tight"
             style={{ fontFamily: "'Cormorant', serif" }}
           >
-            Dziennik{" "}
-            <span className="italic text-[#002395] font-bold">Obecności</span>.
+            {t("rehearsals.dashboard.title", "Dziennik")}{" "}
+            <span className="italic text-[#002395] font-bold">
+              {t("rehearsals.dashboard.title_highlight", "Obecności")}
+            </span>
+            .
           </h1>
         </motion.div>
       </header>
 
-      {/* --- ENTERPRISE PROJECT NAVIGATOR --- */}
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-stone-200/60 pb-4">
           <h2 className="text-sm font-bold text-stone-800 uppercase tracking-widest flex items-center gap-2">
             <Briefcase size={16} className="text-stone-400" />
-            Kontekst Projektu
+            {t("rehearsals.dashboard.project_context", "Kontekst Projektu")}
           </h2>
 
           <div className="flex bg-stone-100/80 p-1 rounded-xl border border-stone-200/60 shadow-sm">
@@ -120,13 +130,13 @@ export default function Rehearsals(): React.JSX.Element {
               onClick={() => setProjectTab("ACTIVE")}
               className={`px-4 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${projectTab === "ACTIVE" ? "bg-white text-[#002395] shadow-sm border border-stone-200/60" : "text-stone-500 hover:text-stone-800"}`}
             >
-              Aktywne
+              {t("rehearsals.tabs.active", "Aktywne")}
             </button>
             <button
               onClick={() => setProjectTab("ARCHIVE")}
               className={`px-4 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5 ${projectTab === "ARCHIVE" ? "bg-white text-stone-800 shadow-sm border border-stone-200/60" : "text-stone-500 hover:text-stone-800"}`}
             >
-              <Archive size={10} /> Archiwum
+              <Archive size={10} /> {t("rehearsals.tabs.archive", "Archiwum")}
             </button>
           </div>
         </div>
@@ -134,7 +144,10 @@ export default function Rehearsals(): React.JSX.Element {
         <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
           {displayProjects.length === 0 ? (
             <div className="text-stone-400 text-xs italic">
-              Brak projektów w tej zakładce.
+              {t(
+                "rehearsals.dashboard.no_projects",
+                "Brak projektów w tej zakładce.",
+              )}
             </div>
           ) : (
             displayProjects.map((project) => {
@@ -172,7 +185,6 @@ export default function Rehearsals(): React.JSX.Element {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-8 mt-4"
         >
-          {/* --- REHEARSAL TIMELINE --- */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-stone-200/60">
             {projectRehearsals.map((reh) => {
               const isSelected = String(activeRehearsalId) === String(reh.id);
@@ -200,7 +212,8 @@ export default function Rehearsals(): React.JSX.Element {
                     })}
                   </span>
                   <span className="text-[8px] font-bold uppercase tracking-widest text-stone-400 truncate max-w-full">
-                    {reh.location || "Brak lok."}
+                    {reh.location ||
+                      t("rehearsals.dashboard.no_location", "Brak lok.")}
                   </span>
                 </button>
               );
@@ -220,16 +233,16 @@ export default function Rehearsals(): React.JSX.Element {
                       }`}
                     >
                       {activeRehearsal.invited_participations?.length
-                        ? "Próba Sekcyjna"
-                        : "Próba Tutti"}
+                        ? t("rehearsals.dashboard.sectional", "Próba Sekcyjna")
+                        : t("rehearsals.dashboard.tutti_badge", "Próba Tutti")}
                     </span>
-                    {/* ENTERPRISE FIX: Wyświetlanie dla kogo jest próba */}
                     <span className="text-[10px] font-bold text-stone-500 bg-white px-2 py-1 rounded border border-stone-200 shadow-sm">
                       {sectionalDetails}
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-stone-900 tracking-tight leading-tight mt-3">
-                    {activeRehearsal.focus || "Praca Bieżąca"}
+                    {activeRehearsal.focus ||
+                      t("rehearsals.dashboard.general_work", "Praca Bieżąca")}
                   </h3>
                   <div className="flex items-center gap-4 mt-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
                     <span className="flex items-center gap-1.5">
@@ -245,12 +258,10 @@ export default function Rehearsals(): React.JSX.Element {
                   </div>
                 </div>
 
-                {/* Prawa strona statystyk (Bez zmian) */}
                 <div className="flex flex-wrap gap-2 lg:gap-4 bg-white p-3 rounded-2xl border border-stone-200/80 shadow-sm">
-                  {/* ... statystyki ... */}
                   <div className="flex flex-col items-center px-4 py-1 border-r border-stone-100 last:border-0">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">
-                      Frekwencja
+                      {t("rehearsals.stats.rate", "Frekwencja")}
                     </span>
                     <span
                       className={`text-lg font-black ${stats.rate >= 80 ? "text-emerald-600" : stats.rate >= 50 ? "text-orange-500" : "text-red-500"}`}
@@ -260,7 +271,7 @@ export default function Rehearsals(): React.JSX.Element {
                   </div>
                   <div className="flex flex-col items-center px-4 py-1 border-r border-stone-100 last:border-0">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">
-                      Obecni
+                      {t("rehearsals.stats.present", "Obecni")}
                     </span>
                     <span className="text-lg font-black text-stone-800">
                       {stats.present + stats.late}
@@ -271,7 +282,7 @@ export default function Rehearsals(): React.JSX.Element {
                   </div>
                   <div className="flex flex-col items-center px-4 py-1 border-r border-stone-100 last:border-0">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">
-                      Braki
+                      {t("rehearsals.stats.absent", "Braki")}
                     </span>
                     <span className="text-lg font-black text-red-500">
                       {stats.absent + stats.excused}
@@ -294,7 +305,11 @@ export default function Rehearsals(): React.JSX.Element {
                     !isMarkingAll ? <CheckCircle2 size={16} /> : undefined
                   }
                 >
-                  Uzupełnij luki ({stats.none}) jako "Obecny"
+                  {t(
+                    "rehearsals.dashboard.bulk_fill",
+                    'Uzupełnij luki ({{count}}) jako "Obecny"',
+                    { count: stats.none },
+                  )}
                 </Button>
               </div>
 
@@ -312,12 +327,12 @@ export default function Rehearsals(): React.JSX.Element {
                       <div className="bg-stone-100/80 px-4 py-2 border-y border-stone-200/60 sticky top-0 z-10 backdrop-blur-md">
                         <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
                           {voiceGroup === "S"
-                            ? "Soprany"
+                            ? t("rehearsals.voices.sopranos", "Soprany")
                             : voiceGroup === "A"
-                              ? "Alty"
+                              ? t("rehearsals.voices.altos", "Alty")
                               : voiceGroup === "T"
-                                ? "Tenory"
-                                : "Basy"}
+                                ? t("rehearsals.voices.tenors", "Tenory")
+                                : t("rehearsals.voices.basses", "Basy")}
                         </span>
                       </div>
                       <div className="flex flex-col">

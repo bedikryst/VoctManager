@@ -2,22 +2,19 @@
  * @file ProjectCard.tsx
  * @description Main orchestrator component for the expandable Project Card.
  * Implements the "Container/Presenter" pattern with an Enterprise Bento-Box Layout.
- * Strictly divides UX into "Artistic" (Conductor focus) and "Production" (Manager focus) zones.
- * Eliminates legacy Context API dependencies in favor of React Query cache sharing.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard
  */
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Briefcase, Music, Wrench } from "lucide-react";
 
-import api from "../../../shared/api/api";
-import { queryKeys } from "../../../shared/lib/queryKeys";
 import type { Project } from "../../../shared/types";
-
 import { GlassCard } from "../../../shared/ui/GlassCard";
+import { useUpdateProjectStatus } from "../api/project.queries";
 import { useProjectData } from "../hooks/useProjectData";
 
 import ProjectCardHeader from "./ProjectCardHeader";
@@ -46,35 +43,48 @@ export default function ProjectCard({
   onEdit,
   onDelete,
 }: ProjectCardProps): React.JSX.Element {
-  const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const updateProjectStatusMutation = useUpdateProjectStatus();
 
   const isDone = project.status === "DONE";
-
-  // Performance optimization: Only pre-warm relations if the card is expanded or in the top 3 visible fold
   const shouldFetch = isExpanded || index < 3;
 
-  // Headless cache initialization. Downstream widgets will consume this automatically.
   useProjectData(shouldFetch ? String(project.id) : undefined);
 
   const toggleLifecycleStatus = async (
-    e: React.MouseEvent<HTMLButtonElement>,
+    event: React.MouseEvent<HTMLButtonElement>,
   ): Promise<void> => {
-    e.stopPropagation();
+    event.stopPropagation();
     const newStatus = isDone ? "ACTIVE" : "DONE";
-    const toastId = toast.loading("Aktualizowanie statusu...");
+    const toastId = toast.loading(
+      t("projects.card.updating_status", "Aktualizowanie statusu..."),
+    );
 
     try {
-      await api.patch(`/api/projects/${project.id}/`, { status: newStatus });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      await updateProjectStatusMutation.mutateAsync({
+        id: project.id,
+        status: newStatus,
+      });
       toast.success(
-        `Projekt oznaczony jako ${newStatus === "DONE" ? "Zrealizowany" : "W przygotowaniu"}`,
+        isDone
+          ? t(
+              "projects.card.status_active",
+              "Projekt oznaczony jako w przygotowaniu",
+            )
+          : t(
+              "projects.card.status_done",
+              "Projekt oznaczony jako zrealizowany",
+            ),
         { id: toastId },
       );
-    } catch (err) {
-      toast.error("Błąd serwera", {
+    } catch {
+      toast.error(t("common.errors.server_error", "Błąd serwera"), {
         id: toastId,
-        description: "Nie udało się zmienić statusu.",
+        description: t(
+          "projects.card.status_update_failed",
+          "Nie udało się zmienić statusu.",
+        ),
       });
     }
   };
@@ -116,10 +126,13 @@ export default function ProjectCard({
               className="bg-stone-50/40 border-t border-white/60 overflow-hidden cursor-default relative z-0"
             >
               <div className="p-5 md:p-8 space-y-10">
-                {/* ARTISTIC ZONE */}
                 <div className="space-y-4">
                   <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
-                    <Music size={14} aria-hidden="true" /> Pulpit Artystyczny
+                    <Music size={14} aria-hidden="true" />
+                    {t(
+                      "projects.card.artistic_dashboard",
+                      "Pulpit Artystyczny",
+                    )}
                   </h4>
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
@@ -149,11 +162,13 @@ export default function ProjectCard({
                   </div>
                 </div>
 
-                {/* PRODUCTION ZONE */}
                 <div className="space-y-4 pt-6 border-t border-stone-200/50">
                   <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-                    <Wrench size={14} aria-hidden="true" /> Logistyka i
-                    Produkcja
+                    <Wrench size={14} aria-hidden="true" />
+                    {t(
+                      "projects.card.logistics_dashboard",
+                      "Logistyka i Produkcja",
+                    )}
                   </h4>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

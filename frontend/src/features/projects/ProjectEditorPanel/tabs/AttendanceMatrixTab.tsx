@@ -3,10 +3,12 @@
  * @description Advanced Attendance Matrix for Directors and Choir Inspectors.
  * Delegates caching and mutation execution to useAttendanceMatrix.
  * Uses aggressive UI memoization to prevent cascading structural re-renders.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/AttendanceMatrixTab
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, Check, X, Clock, ShieldAlert, Users } from "lucide-react";
 import {
   useAttendanceMatrix,
@@ -19,10 +21,16 @@ interface AttendanceMatrixTabProps {
 
 const STATUS_DEF: Record<
   string,
-  { label: string; color: string; icon: React.ReactNode }
+  {
+    labelKey: string;
+    defaultLabel: string;
+    color: string;
+    icon: React.ReactNode;
+  }
 > = {
   null: {
-    label: "Brak wpisu",
+    labelKey: "projects.matrix.status.none",
+    defaultLabel: "Brak wpisu",
     color:
       "bg-stone-50 hover:bg-stone-100 text-stone-200 border border-stone-200/60",
     icon: (
@@ -33,49 +41,34 @@ const STATUS_DEF: Record<
     ),
   },
   PRESENT: {
-    label: "Obecny",
+    labelKey: "projects.matrix.status.present",
+    defaultLabel: "Obecny",
     color:
-      "bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_2px_10px_rgba(16,185,129,0.3)] border border-emerald-600",
-    icon: <Check size={16} strokeWidth={3} aria-hidden="true" />,
-  },
-  ABSENT: {
-    label: "Nieobecny",
-    color:
-      "bg-red-500 hover:bg-red-600 text-white shadow-[0_2px_10px_rgba(239,68,68,0.3)] border border-red-600",
-    icon: <X size={16} strokeWidth={3} aria-hidden="true" />,
+      "bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_2px_10px_rgba(16,185,129,0.3)]",
+    icon: <Check size={14} strokeWidth={3} aria-hidden="true" />,
   },
   LATE: {
-    label: "Spóźniony",
+    labelKey: "projects.matrix.status.late",
+    defaultLabel: "Spóźnienie",
     color:
-      "bg-orange-400 hover:bg-orange-500 text-white shadow-[0_2px_10px_rgba(249,115,22,0.3)] border border-orange-500",
+      "bg-orange-400 hover:bg-orange-500 text-white shadow-[0_2px_10px_rgba(251,146,60,0.3)]",
     icon: <Clock size={14} strokeWidth={3} aria-hidden="true" />,
   },
-  EXCUSED: {
-    label: "Zwolniony",
+  ABSENT: {
+    labelKey: "projects.matrix.status.absent",
+    defaultLabel: "Nieobecny",
     color:
-      "bg-purple-500 hover:bg-purple-600 text-white shadow-[0_2px_10px_rgba(168,85,247,0.3)] border border-purple-600",
+      "bg-red-500 hover:bg-red-600 text-white shadow-[0_2px_10px_rgba(239,68,68,0.3)]",
+    icon: <X size={14} strokeWidth={3} aria-hidden="true" />,
+  },
+  EXCUSED: {
+    labelKey: "projects.matrix.status.excused",
+    defaultLabel: "Zwolniony",
+    color:
+      "bg-purple-500 hover:bg-purple-600 text-white shadow-[0_2px_10px_rgba(168,85,247,0.3)]",
     icon: <ShieldAlert size={14} strokeWidth={3} aria-hidden="true" />,
   },
 };
-
-const VOICE_GROUPS = [
-  { filter: "S", label: "Soprany" },
-  { filter: "A", label: "Alty" },
-  { filter: "T", label: "Tenory" },
-  { filter: "B", label: "Basy" },
-];
-
-interface MatrixCellProps {
-  rehearsalId: string | number;
-  participationId: string | number;
-  record: AttendanceRecord | undefined;
-  onToggle: (
-    rehearsalId: string | number,
-    participationId: string | number,
-    record: AttendanceRecord | undefined,
-  ) => void;
-  isMutating: boolean;
-}
 
 const MatrixCell = React.memo(
   ({
@@ -84,19 +77,29 @@ const MatrixCell = React.memo(
     record,
     onToggle,
     isMutating,
-  }: MatrixCellProps) => {
-    const currentStatus = record?.status || "null";
-    const currentStatusObj =
-      STATUS_DEF[String(currentStatus)] || STATUS_DEF["null"];
+  }: {
+    rehearsalId: string | number;
+    participationId: string | number;
+    record?: AttendanceRecord;
+    onToggle: (
+      rId: string | number,
+      pId: string | number,
+      rec?: AttendanceRecord,
+    ) => void;
+    isMutating: boolean;
+  }) => {
+    const { t } = useTranslation();
+    const currentStatus = record?.status || null;
+    const config = STATUS_DEF[String(currentStatus)] || STATUS_DEF.null;
 
     return (
-      <td className="p-1 border-b border-stone-200/60 text-center">
+      <td className="p-1 border-b border-l border-stone-200/60 text-center relative group">
         <button
           onClick={() => onToggle(rehearsalId, participationId, record)}
           disabled={isMutating}
-          className={`w-full h-10 flex items-center justify-center rounded-lg transition-all active:scale-90 ${currentStatusObj.color} ${isMutating ? "opacity-50 cursor-not-allowed" : ""}`}
-          title={currentStatusObj.label}
-          aria-label={`Oznacz obecność: ${currentStatusObj.label}`}
+          className={`w-7 h-7 mx-auto rounded-md flex items-center justify-center transition-all duration-200 active:scale-90 disabled:opacity-50 disabled:active:scale-100 ${config.color}`}
+          title={t(config.labelKey, config.defaultLabel)}
+          aria-label={t(config.labelKey, config.defaultLabel)}
         >
           {isMutating ? (
             <Loader2
@@ -105,26 +108,23 @@ const MatrixCell = React.memo(
               aria-hidden="true"
             />
           ) : (
-            currentStatusObj.icon
+            config.icon
           )}
         </button>
       </td>
     );
   },
-  (prevProps, nextProps) => {
-    return (
-      prevProps.record?.status === nextProps.record?.status &&
-      prevProps.record?.id === nextProps.record?.id &&
-      prevProps.isMutating === nextProps.isMutating
-    );
-  },
+  (prevProps, nextProps) =>
+    prevProps.record?.status === nextProps.record?.status &&
+    prevProps.isMutating === nextProps.isMutating,
 );
 
 MatrixCell.displayName = "MatrixCell";
 
 export default function AttendanceMatrixTab({
   projectId,
-}: AttendanceMatrixTabProps): React.JSX.Element | null {
+}: AttendanceMatrixTabProps): React.JSX.Element {
+  const { t } = useTranslation();
   const {
     isLoading,
     projectRehearsals,
@@ -136,148 +136,201 @@ export default function AttendanceMatrixTab({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white/40 rounded-2xl border border-stone-200/60">
+      <div className="flex justify-center items-center h-64">
         <Loader2
           size={32}
-          className="animate-spin text-[#002395] mb-4"
+          className="animate-spin text-[#002395] opacity-50"
           aria-hidden="true"
         />
-        <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-          Wczytywanie macierzy...
-        </span>
-      </div>
-    );
-  }
-
-  if (projectRehearsals.length === 0 || enrichedParticipations.length === 0) {
-    return (
-      <div className="text-center py-16 bg-white/40 rounded-2xl border border-dashed border-stone-300/60">
-        <Users
-          size={32}
-          className="mx-auto mb-3 opacity-30 text-stone-400"
-          aria-hidden="true"
-        />
-        <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 block mb-1">
-          Macierz Niedostępna
-        </span>
-        <span className="text-xs text-stone-400 max-w-sm mx-auto block">
-          Aby wyświetlić dziennik obecności, dodaj do projektu przynajmniej
-          jedną próbę oraz przypisz obsadę wokalną.
-        </span>
       </div>
     );
   }
 
   return (
-    <div className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-2xl overflow-hidden flex flex-col h-[75vh]">
-      <div className="bg-stone-50/50 backdrop-blur-sm p-4 border-b border-stone-200/60 flex flex-wrap gap-4 items-center justify-center sm:justify-start flex-shrink-0">
-        <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mr-2">
-          Legenda:
-        </span>
-        {Object.entries(STATUS_DEF)
-          .filter(([k]) => k !== "null")
-          .map(([key, def]) => (
-            <div key={key} className="flex items-center gap-2">
-              <span
-                className={`w-5 h-5 flex items-center justify-center rounded text-white ${def.color}`}
+    <div className="max-w-7xl mx-auto space-y-6 pb-24">
+      <div className="bg-white border border-stone-200/60 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2 mb-2">
+            <Users className="text-[#002395]" size={20} aria-hidden="true" />
+            {t(
+              "projects.matrix.header.title",
+              "Macierz Obecności i Frekwencji",
+            )}
+          </h2>
+          <p className="text-sm text-stone-500">
+            {t(
+              "projects.matrix.header.subtitle",
+              "Szybkie oznaczanie frekwencji na próbach. Zarządzaj statusem klikając w kafelki pod nazwiskiem.",
+            )}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3 bg-stone-50 p-3 rounded-xl border border-stone-100">
+          <div className="w-full text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-1">
+            {t("projects.matrix.legend.title", "Status frekwencji")}
+          </div>
+          {Object.entries(STATUS_DEF).map(([key, config]) => (
+            <div
+              key={key}
+              className="flex items-center gap-1.5 text-xs text-stone-600 font-medium"
+            >
+              <div
+                className={`w-4 h-4 rounded-md flex items-center justify-center ${config.color}`}
+                aria-hidden="true"
               >
-                {def.icon}
-              </span>
-              <span className="text-xs font-medium text-stone-600">
-                {def.label}
-              </span>
+                {config.icon}
+              </div>
+              {t(config.labelKey, config.defaultLabel)}
             </div>
           ))}
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs text-stone-400 italic font-medium">
-            Kliknij w komórkę, aby zmienić status.
-          </span>
         </div>
       </div>
 
-      <div className="overflow-auto flex-1 relative scrollbar-hide">
-        <table className="w-full text-left border-collapse min-w-[800px]">
-          <thead>
+      <div className="bg-white border border-stone-200/80 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
+        <table className="w-full text-sm text-left border-collapse min-w-[800px]">
+          <thead className="bg-stone-50/80 text-[10px] font-bold uppercase tracking-widest text-stone-500 sticky top-0 z-10 backdrop-blur-xl">
             <tr>
-              <th className="p-4 border-b border-stone-200/60 bg-stone-50/90 sticky top-0 left-0 z-30 w-48 backdrop-blur-md shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]">
-                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-                  Artysta
-                </span>
+              <th className="p-4 border-b border-stone-200/80 min-w-[220px] sticky left-0 bg-stone-50/95 backdrop-blur-xl z-20 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
+                {t("projects.matrix.table.rehearsal_date", "Próba / Data")}
               </th>
-
-              {projectRehearsals.map((reh, idx) => (
+              {enrichedParticipations.map((part) => (
                 <th
-                  key={reh.id}
-                  className="p-3 border-b border-stone-200/60 text-center min-w-[60px] max-w-[80px] sticky top-0 z-20 bg-stone-50/90 backdrop-blur-md shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]"
+                  key={part.id}
+                  className="p-4 border-b border-l border-stone-200/80 text-center min-w-[60px]"
                 >
-                  <div className="flex flex-col items-center">
-                    <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-1">
-                      P{idx + 1}
+                  <div className="flex flex-col items-center gap-1">
+                    <span
+                      className="truncate max-w-[80px] font-bold text-stone-700"
+                      title={part.artistData.last_name}
+                    >
+                      {part.artistData.last_name}
                     </span>
-                    <span className="text-xs font-bold text-stone-800">
-                      {new Date(reh.date_time).toLocaleDateString("pl-PL", {
-                        day: "2-digit",
-                        month: "2-digit",
-                      })}
+                    <span className="text-[9px] text-stone-400">
+                      {part.artistData.first_name}
                     </span>
                   </div>
                 </th>
               ))}
-
-              <th className="p-4 border-b border-l border-stone-200/60 text-center w-24 sticky top-0 z-20 bg-stone-50/90 backdrop-blur-md shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]">
-                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-                  Frekw.
-                </span>
+              <th className="p-4 border-b border-l border-stone-200/80 text-center min-w-[80px] text-[#002395]">
+                {t("projects.matrix.table.rate", "Frekwencja")}
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white/40">
-            {VOICE_GROUPS.map((group) => {
-              const groupParticipations = enrichedParticipations.filter((p) =>
-                (p.artistData.voice_type || "").startsWith(group.filter),
-              );
-              if (groupParticipations.length === 0) return null;
+          <tbody className="divide-y divide-stone-100">
+            {projectRehearsals.length === 0 && (
+              <tr>
+                <td
+                  colSpan={enrichedParticipations.length + 2}
+                  className="py-12 text-center text-stone-400 italic text-sm"
+                >
+                  {t(
+                    "projects.matrix.empty.rehearsals",
+                    "Brak zaplanowanych prób w tym projekcie.",
+                  )}
+                </td>
+              </tr>
+            )}
+
+            {projectRehearsals.length > 0 &&
+              enrichedParticipations.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={projectRehearsals.length + 2}
+                    className="py-12 text-center text-stone-400 italic text-sm"
+                  >
+                    {t(
+                      "projects.matrix.empty.cast",
+                      "Brak obsady przypisanej do projektu.",
+                    )}
+                  </td>
+                </tr>
+              )}
+
+            {projectRehearsals.map((reh) => {
+              let presentCount = 0;
+              let totalAssigned = 0;
 
               return (
-                <React.Fragment key={group.filter}>
-                  <tr>
-                    <td
-                      colSpan={projectRehearsals.length + 2}
-                      className="bg-stone-50/80 px-4 py-2 border-b border-stone-200/60 sticky left-0 z-10"
-                    >
-                      <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
-                        {group.label}
-                      </span>
-                    </td>
-                  </tr>
-                  {groupParticipations.map((part) => {
-                    const totalRehearsals = projectRehearsals.length;
-                    const presentCount = projectRehearsals.filter((r) => {
-                      const st = attendanceMap.get(
-                        `${r.id}-${part.id}`,
-                      )?.status;
-                      return st === "PRESENT" || st === "LATE";
-                    }).length;
+                <React.Fragment key={reh.id}>
+                  {(() => {
+                    enrichedParticipations.forEach((part) => {
+                      const isInvited =
+                        reh.invited_participations?.length === 0 ||
+                        reh.invited_participations?.includes(String(part.id));
+                      if (!isInvited) return;
+
+                      totalAssigned++;
+                      const cellKey = `${reh.id}-${part.id}`;
+                      const record = attendanceMap.get(cellKey);
+                      if (
+                        record?.status === "PRESENT" ||
+                        record?.status === "LATE"
+                      ) {
+                        presentCount++;
+                      }
+                    });
+
                     const attendanceRate =
-                      totalRehearsals > 0
-                        ? Math.round((presentCount / totalRehearsals) * 100)
+                      totalAssigned > 0
+                        ? Math.round((presentCount / totalAssigned) * 100)
                         : 0;
 
                     return (
-                      <tr
-                        key={part.id}
-                        className="hover:bg-stone-50/50 transition-colors group/row"
-                      >
-                        <td className="p-3 border-b border-stone-200/60 sticky left-0 z-10 bg-white/80 backdrop-blur-md group-hover/row:bg-stone-50/80 transition-colors">
+                      <tr className="hover:bg-blue-50/30 transition-colors group">
+                        <td className="p-4 font-medium text-stone-900 sticky left-0 bg-white group-hover:bg-blue-50/30 transition-colors z-10 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-stone-800 whitespace-nowrap">
-                              {part.artistData.first_name}{" "}
-                              {part.artistData.last_name}
+                            <span className="text-sm font-bold text-[#002395]">
+                              {new Date(reh.date_time).toLocaleDateString(
+                                t("common.locale", "pl-PL"),
+                                {
+                                  weekday: "short",
+                                  day: "2-digit",
+                                  month: "short",
+                                },
+                              )}{" "}
+                              {new Date(reh.date_time).toLocaleTimeString(
+                                t("common.locale", "pl-PL"),
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </span>
+                            <span className="text-[10px] text-stone-400 font-medium truncate max-w-[200px]">
+                              {reh.location} {reh.focus && `• ${reh.focus}`}
                             </span>
                           </div>
                         </td>
 
-                        {projectRehearsals.map((reh) => {
+                        {enrichedParticipations.map((part) => {
+                          const isInvited =
+                            reh.invited_participations?.length === 0 ||
+                            reh.invited_participations?.includes(
+                              String(part.id),
+                            );
+
+                          if (!isInvited) {
+                            return (
+                              <td
+                                key={`empty-${reh.id}-${part.id}`}
+                                className="p-1 border-b border-l border-stone-200/60 bg-stone-50/50"
+                              >
+                                <div
+                                  className="w-full h-full flex items-center justify-center opacity-20"
+                                  title={t(
+                                    "projects.matrix.not_invited",
+                                    "Nie dotyczy",
+                                  )}
+                                >
+                                  <div
+                                    className="w-6 h-px bg-stone-400 rotate-45"
+                                    aria-hidden="true"
+                                  ></div>
+                                </div>
+                              </td>
+                            );
+                          }
+
                           const cellKey = `${reh.id}-${part.id}`;
                           const record = attendanceMap.get(cellKey);
                           const isMutating = mutatingCells.has(cellKey);
@@ -309,7 +362,7 @@ export default function AttendanceMatrixTab({
                         </td>
                       </tr>
                     );
-                  })}
+                  })()}
                 </React.Fragment>
               );
             })}

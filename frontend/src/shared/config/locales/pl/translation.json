@@ -1,37 +1,24 @@
 {
-  "contracts": {
-    "header": {
-      "badge": "Zarządzanie Finansami",
-      "title": "Kadry i Płace.",
-      "description": "Rozliczaj artystów i ekipę, kontroluj całkowity budżet projektu i generuj umowy."
-    },
-    "kpi": {
-      "priced": "Wycenione Umowy",
-      "missing": "Braki w wycenie",
-      "budget": "Budżet Personelu"
-    },
+  "common": {
+    "locale": "pl-PL",
+    "currency": "PLN",
+    "people_short": "os.",
     "actions": {
-      "massInjectionLabel": "Masowe uzupełnianie stawek (Tylko Chór)",
-      "applyBtn": "Zastosuj Wycenę"
-    }
-  },
-  "projects": {
-    "dashboard": {
-      "title": "Wydarzenia i Produkcja",
-      "subtitle": "Centrum Dowodzenia",
-      "new_project": "Nowy Projekt",
-      "empty_state": "Brak projektów w tym widoku",
-      "empty_hint": "Rozpocznij planowanie nowego wydarzenia."
+      "discard": "Odrzuć zmiany",
+      "cancel": "Anuluj",
+      "save": "Zapisz",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "close_panel": "Zamknij panel (ESC)",
+      "delete_error": "Błąd usuwania"
     },
-    "tabs": {
-      "details": "Szczegóły",
-      "rehearsals": "Terminarz Prób",
-      "matrix": "Obecności",
-      "cast": "Casting Główny",
-      "program": "Setlista",
-      "micro_cast": "Mikro-Obsada",
-      "crew": "Logistyka",
-      "budget": "Budżet"
+    "errors": {
+      "server_error": "Błąd serwera",
+      "server_problem": "Wystąpił problem z serwerem.",
+      "generation_error": "Błąd generowania",
+      "save_error": "Błąd zapisu",
+      "save_problem": "Wystąpił problem podczas zapisywania danych.",
+      "database_error": "Wystąpił problem z połączeniem z bazą danych."
     }
   },
   "auth": {
@@ -53,6 +40,805 @@
       "empty_hint": "Zmień parametry filtrowania lub dodaj nową kompozycję do bazy.",
       "not_found": "Nie znaleźliśmy kompozycji",
       "add_piece": "Dodaj utwór:"
+    }
+  },
+  "schedule": {
+    "dashboard": {
+      "subtitle": "Osobisty Kalendarz",
+      "title": "Mój",
+      "title_highlight": "Harmonogram",
+      "description": "Sprawdzaj próby, zgłaszaj nieobecności i śledź plany koncertowe."
+    },
+    "tabs": {
+      "upcoming": "Nadchodzące",
+      "past": "Historia"
+    },
+    "loading": "Pobieranie grafiku...",
+    "empty": {
+      "title": "Brak wpisów w kalendarzu",
+      "description": "W tym widoku nie masz przypisanych żadnych spotkań ani koncertów."
+    },
+    "event": {
+      "rehearsal_prefix": "Próba:",
+      "generic_event": "Wydarzenie"
+    },
+    "toast": {
+      "submitting": "Wysyłanie zgłoszenia...",
+      "submit_success": "Zgłoszenie zostało zapisane.",
+      "submit_error_title": "Błąd zapisu",
+      "submit_error_desc": "Nie udało się zapisać zgłoszenia."
+    },
+    "card": {
+      "project_badge": "Koncert / Wydarzenie",
+      "call_time": "Zbiórka:",
+      "no_location": "Brak lok.",
+      "tab": {
+        "logistics": "Logistyka & Plan",
+        "setlist": "Repertuar & Divisi"
+      },
+      "dress_code_title": "Szczegóły ubioru",
+      "dress_code_women": "Panie:",
+      "dress_code_men": "Panowie:",
+      "no_notes": "Brak dodatkowych notatek produkcyjnych.",
+      "run_sheet_title": "Harmonogram Dnia",
+      "download_call_sheet": "Call-Sheet PDF",
+      "no_run_sheet": "Harmonogram dnia nie został jeszcze opublikowany przez menedżera.",
+      "no_spotify": "Brak playlisty referencyjnej.",
+      "hide_cast": "Ukryj obsadę",
+      "expand_cast": "Rozwiń obsadę (divisi)",
+      "unknown_artist": "Artysta",
+      "note_label": "Notatka:",
+      "no_divisi": "Brak szczegółowego podziału (divisi) dla tego utworu.",
+      "no_program": "Repertuar nie został jeszcze ustalony."
+    },
+    "rehearsal": {
+      "status_present": "Potwierdzona",
+      "status_late": "Spóźnienie",
+      "status_absent": "Nieobecność",
+      "badge": "Próba",
+      "optional": "Opcjonalna",
+      "no_location": "Brak",
+      "action": {
+        "confirm_short": "Potwierdź",
+        "confirm_long": "Potwierdź Obecność",
+        "edit": "Edytuj",
+        "report_issue": "Zgłoś problem"
+      },
+      "form": {
+        "title": "Formularz nieobecności dla Inspektora",
+        "status_label": "Status *",
+        "option_absent": "Nie będę obecny",
+        "option_late": "Spóźnię się",
+        "reason_label": "Powód / Uwagi *",
+        "reason_placeholder": "np. Korki, choroba...",
+        "cancel": "Anuluj",
+        "submit": "Wyślij"
+      },
+      "details": {
+        "focus_title": "Plan Pracy",
+        "no_focus": "Brak szczegółowego planu dla tej próby.",
+        "reported_absences": "Zgłoszone nieobecności:",
+        "materials_title": "Twoje Nuty",
+        "materials_subtitle": "Przygotuj się do próby",
+        "materials_desc": "Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.",
+        "materials_button": "Materiały"
+      }
+    }
+  },
+
+  "rehearsals": {
+    "dashboard": {
+      "subtitle": "Moduł Inspektora",
+      "title": "Dziennik",
+      "title_highlight": "Obecności",
+      "project_context": "Kontekst Projektu",
+      "no_projects": "Brak projektów w tej zakładce.",
+      "no_location": "Brak lok.",
+      "sectional": "Próba Sekcyjna",
+      "tutti_badge": "Próba Tutti",
+      "tutti": "Tutti (Cały Zespół)",
+      "only": "Tylko:",
+      "general_work": "Praca Bieżąca",
+      "bulk_fill": "Uzupełnij luki ({{count}}) jako \"Obecny\""
+    },
+    "tabs": {
+      "active": "Aktywne",
+      "archive": "Archiwum"
+    },
+    "stats": {
+      "rate": "Frekwencja",
+      "present": "Obecni",
+      "absent": "Braki"
+    },
+    "voices": {
+      "sopranos": "Soprany",
+      "altos": "Alty",
+      "tenors": "Tenory",
+      "basses": "Basy",
+      "mezzos": "Mezzosoprany",
+      "countertenors": "Kontratenory"
+    },
+    "row": {
+      "status_present": "Obecny",
+      "status_late": "Spóźniony",
+      "status_absent": "Nieobecny",
+      "status_excused": "Zwolniony",
+      "minutes_placeholder": "Ile min?",
+      "note_placeholder": "Notatka (opcjonalnie)"
+    },
+    "toast": {
+      "sync_error_title": "Błąd synchronizacji",
+      "sync_error_desc": "Nie udało się załadować danych.",
+      "bulk_marking": "Zbiorcze zaznaczanie obecności...",
+      "bulk_success": "Uzupełniono luki jako 'Obecny'.",
+      "bulk_error_title": "Błąd systemu",
+      "bulk_error_desc": "Nie udało się zapisać masowej obecności.",
+      "save_error_title": "Błąd zapisu",
+      "save_error_desc": "Błąd zapisu dla:"
+    }
+  },
+  "materials": {
+    "dashboard": {
+      "subtitle": "Strefa Artysty",
+      "title": "Materiały do",
+      "title_highlight": "ćwiczeń",
+      "description": "Pobieraj nuty, ćwicz z wykorzystaniem odtwarzacza MIDI z kontrolą tempa i sprawdzaj swoją rolę w zespole.",
+      "search_placeholder": "Szukaj utworu lub kompozytora...",
+      "sync_error_title": "Błąd synchronizacji",
+      "sync_error_desc": "Nie udało się załadować materiałów. Odśwież stronę.",
+      "syncing": "Synchronizacja biblioteki...",
+      "empty_title": "Brak przypisanych materiałów",
+      "empty_desc": "W tej chwili nie masz nadchodzących projektów lub dyrygent nie zatwierdził jeszcze żadnego programu koncertu."
+    },
+    "project": {
+      "event": "Wydarzenie:",
+      "archived_badge": "Projekt Zarchiwizowany"
+    },
+    "piece": {
+      "traditional": "Tradycyjny / Nieznany",
+      "you_sing": "Śpiewasz:",
+      "pdf_badge": "PDF",
+      "audio_badge": "Audio",
+      "locked_badge": "Chronione",
+      "access_locked_title": "Dostęp Zablokowany",
+      "access_locked_desc": "Projekt został zakończony. Materiały ćwiczeniowe oraz partytury nie są już dostępne ze względu na ochronę własności intelektualnej i aranżacji dyrygenta.",
+      "download_pdf": "Pobierz Partyturę (PDF)",
+      "no_pdf": "Nuty niedostępne",
+      "listen_reference": "Posłuchaj Referencji",
+      "your_guidelines": "Twoje wytyczne do utworu",
+      "part": "Partia:",
+      "no_notes": "Dyrygent nie dodał specjalnych uwag.",
+      "cast_divisi": "Obsada utworu (Divisi)",
+      "other_voice": "Inne",
+      "unknown_artist": "Artysta",
+      "no_divisi": "Brak zdefiniowanego podziału głosów.",
+      "practice_tracks": "Ścieżki Ćwiczeniowe (Midi / MP3)",
+      "lyrics_translation": "Tekst Utworu i Tłumaczenie",
+      "original_lyrics": "Oryginał",
+      "translation_notes": "Tłumaczenie (Notatki)"
+    },
+    "player": {
+      "your_voice": "(Twój głos)",
+      "speed_title": "Ustaw tempo na {{rate}}x"
+    }
+  },
+
+  "dashboard": {
+    "shared": {
+      "authorizing": "Autoryzacja...",
+      "loading_telemetry": "Wczytywanie telemetrii...",
+      "syncing": "Synchronizacja pulpitu..."
+    },
+    "artist": {
+      "welcome_badge": "Witaj na platformie",
+      "greeting_night": "Dobrej nocy",
+      "greeting_morning": "Dzień dobry",
+      "greeting_evening": "Dobry wieczór",
+      "artist_fallback": "Artysto",
+      "hero_desc": "Oto Twoje muzyczne podsumowanie na dziś. Sprawdź, gdzie powinieneś być i co powinieneś przygotować.",
+      "next_challenge": "Najbliższe wyzwanie",
+      "badge_rehearsal": "Próba Muzyczna",
+      "badge_project": "Wydarzenie Główne",
+      "absences_reported": "Zgłoszone nieobecności: {{count}}",
+      "btn_schedule": "Sprawdź grafik",
+      "btn_materials": "Pobierz Nuty",
+      "empty_events_title": "Brak nadchodzących wydarzeń",
+      "empty_events_desc": "Odpocznij, twój muzyczny kalendarz jest obecnie pusty.",
+      "personal_modules": "Moduły Osobiste",
+      "module_schedule_title": "Mój Kalendarz",
+      "module_schedule_desc": "Sprawdź próby, koncerty i w prosty sposób zgłoś swoją nieobecność inspektorowi.",
+      "module_materials_title": "Materiały",
+      "module_materials_desc": "Twoje osobiste repozytorium. Pobierz nuty PDF i ćwicz z dedykowanymi ścieżkami audio.",
+      "module_resources_title": "Baza Wiedzy",
+      "module_resources_desc": "Sprawdź wytyczne dyrygenta, obowiązujący dress-code oraz regulaminy i umowy.",
+      "open_module": "Otwórz Moduł",
+      "event_prefix_rehearsal": "Próba:",
+      "event_prefix_project": "Wydarzenie:",
+      "general_work": "Praca bieżąca"
+    },
+    "admin": {
+      "logged_in_as": "Zalogowano jako: {{name}}",
+      "hero_title_1": "Twoje cyfrowe biuro",
+      "hero_title_highlight": "produkcji muzycznej",
+      "kpi_telemetry": "Telemetria Bazy",
+      "kpi_pieces": "Baza Utworów",
+      "kpi_projects": "Aktywne Projekty",
+      "kpi_team_ready": "Gotowość Zespołu",
+      "kpi_people": "{{count}} os.",
+      "voices": {
+        "sopranos": "Soprany",
+        "altos": "Alty",
+        "tenors": "Tenory",
+        "basses": "Basy"
+      },
+      "spotlight_title": "Pulpit Produkcyjny",
+      "spotlight_badge": "Nadchodzące Wydarzenie",
+      "spotlight_repertoire": "Repertuar",
+      "spotlight_pieces_count": "{{count}} utworów",
+      "spotlight_to_concert": "Do koncertu",
+      "spotlight_rehearsals_left": "{{count}} prób",
+      "btn_manage_production": "Zarządzaj Produkcją",
+      "empty_projects_title": "Brak aktywnych wydarzeń",
+      "empty_projects_desc": "Aktualnie nie prowadzisz żadnego projektu koncertowego w systemie.",
+      "btn_plan_project": "Zaplanuj nowy projekt",
+      "next_rehearsal_alert": "Najbliższa Próba: {{title}}",
+      "absences": "Nieobecności: {{count}}",
+      "perfect_attendance": "100% Frekwencji",
+      "open_logbook": "Otwórz dziennik projektu",
+      "system_modules": "Moduły Systemowe",
+      "unknown_project": "Nieznany projekt",
+      "modules": {
+        "projects_title": "Zarządzanie Projektami",
+        "projects_desc": "Centrum dowodzenia produkcją.",
+        "projects_feat_1": "Harmonogramy",
+        "projects_feat_2": "Setlisty",
+        "projects_feat_3": "Casting",
+        "archive_title": "Archiwum Nut",
+        "archive_desc": "Centralna baza biblioteki muzycznej.",
+        "archive_feat_1": "Pliki PDF",
+        "archive_feat_2": "Ścieżki Audio",
+        "archive_feat_3": "Wymagania",
+        "artists_title": "Baza Artystów",
+        "artists_desc": "Zarządzanie chórem i solistami.",
+        "artists_feat_1": "Statystyki SATB",
+        "artists_feat_2": "Profile",
+        "artists_feat_3": "A vista",
+        "contracts_title": "Kadry i Płace",
+        "contracts_desc": "Finanse, umowy i budżetowanie.",
+        "contracts_feat_1": "Stawki",
+        "contracts_feat_2": "Dokumenty",
+        "contracts_feat_3": "Budżet",
+        "crew_title": "Ekipa Techniczna",
+        "crew_desc": "Logistyka i reżyseria wydarzeń.",
+        "crew_feat_1": "Dźwięk",
+        "crew_feat_2": "Światło",
+        "crew_feat_3": "Firmy"
+      }
+    }
+  },
+
+  "crew": {
+    "dashboard": {
+      "subtitle": "Logistyka",
+      "title": "Ekipa",
+      "title_highlight": "Techniczna",
+      "add_btn": "Dodaj Osobę / Firmę",
+      "search_placeholder": "Szukaj po nazwisku lub firmie...",
+      "filter_all": "Wszystkie specjalizacje",
+      "empty_title": "Brak wyników",
+      "empty_desc_search": "Nie znaleźliśmy firmy lub osoby \"{{term}}\". Możesz dodać ją teraz.",
+      "empty_desc_default": "Zmień filtry lub dodaj nową osobę / firmę do bazy.",
+      "add_search_term": "Dodaj do bazy: {{term}}"
+    },
+    "card": {
+      "specialty_other": "Inne",
+      "company": "Firma / Marka",
+      "no_company": "Brak danych",
+      "no_email": "Brak e-mail",
+      "no_phone": "Brak telefonu",
+      "btn_edit": "Edytuj",
+      "btn_delete": "Usuń"
+    },
+    "editor": {
+      "title_edit": "Edycja Danych",
+      "title_new": "Nowy Współpracownik",
+      "contact_person": "Osoba Kontaktowa",
+      "first_name": "Imię *",
+      "last_name": "Nazwisko *",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "business_profile": "Profil Działalności",
+      "specialty": "Specjalizacja *",
+      "company_name": "Firma / Marka (Opcjonalnie)",
+      "company_placeholder": "np. SoundTech Pro Sp. z o.o.",
+      "btn_save": "Zapisz do bazy",
+      "confirm_exit_title": "Masz niezapisane zmiany!",
+      "confirm_exit_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę."
+    },
+    "delete_modal": {
+      "title": "Usunąć tę osobę z bazy?",
+      "desc": "Zniknie ona bezpowrotnie ze spisu. Nie można usunąć osób powiązanych już z koncertami (w takim przypadku zaktualizuj jej dane)."
+    },
+    "specialties": {
+      "SOUND": "Reżyseria Dźwięku",
+      "LIGHT": "Reżyseria Świateł",
+      "VISUALS": "Sztuka Wizualna",
+      "INSTRUMENT": "Instrumentalista",
+      "LOGISTICS": "Logistyka",
+      "OTHER": "Inne"
+    },
+    "toast": {
+      "sync_error": "Nie udało się pobrać listy współpracowników.",
+      "sync_warning": "Ostrzeżenie",
+      "delete_loading": "Usuwanie współpracownika...",
+      "delete_success": "Osoba została usunięta z bazy.",
+      "delete_error_title": "Nie można usunąć tej osoby",
+      "delete_error_desc": "Prawdopodobnie jest ona powiązana z istniejącymi projektami. Spróbuj edytować jej dane.",
+      "save_loading_edit": "Aktualizowanie danych...",
+      "save_loading_new": "Dodawanie współpracownika...",
+      "save_success_edit": "Zaktualizowano profil współpracownika.",
+      "save_success_new": "Dodano nową osobę do bazy.",
+      "save_error_title": "Wystąpił błąd podczas zapisywania danych.",
+      "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie."
+    }
+  },
+  "contracts": {
+    "dashboard": {
+      "subtitle": "Zarządzanie Finansami",
+      "title": "Kadry i",
+      "title_highlight": "Płace",
+      "description": "Zarządzaj wynagrodzeniami artystów i ekipy, kontroluj budżety produkcyjne oraz generuj umowy PDF.",
+      "loading": "Wczytywanie rejestrów...",
+      "select_event_label": "Wybierz Wydarzenie (Kontekst Rozliczeniowy)",
+      "no_event_selected": "— Nie wybrano wydarzenia —",
+      "archived": "(Zarchiwizowane)",
+      "empty_state_title": "Gotowe do rozliczeń",
+      "empty_state_desc": "Wybierz wydarzenie z przełącznika kontekstu powyżej, aby zarządzać stawkami i kontrolować budżet produkcji.",
+      "global_budget": "Globalny Budżet Systemowy",
+      "contracts_issued": "Wystawione Umowy",
+      "valued": "wycenionych",
+      "priced_contracts": "Wycenione Umowy",
+      "missing_appraisals": "Brakujące Wyceny",
+      "personnel_budget": "Budżet Osobowy",
+      "mass_fee_injection": "Masowe Wprowadzenie Stawek (Tylko Chór)",
+      "value_placeholder": "Wartość...",
+      "apply_valuation": "Zastosuj Wycenę",
+      "vocal_cast": "Obsada Wokalna (Chór / Soliści)",
+      "tech_crew": "Ekipa Techniczna i Logistyka",
+      "no_personnel_title": "Brak przypisanego personelu",
+      "no_personnel_desc": "Przejdź do zakładki \"Zarządzanie Projektami\", aby zatrudnić obsadę lub ekipę na to wydarzenie."
+    },
+    "table": {
+      "performer": "Wykonawca",
+      "voice": "Głos",
+      "status": "Status",
+      "gross_amount": "Kwota Brutto",
+      "documents": "Dokumenty",
+      "contractor": "Kontrahent / Firma",
+      "role": "Rola"
+    },
+    "row": {
+      "missing_fee": "Brak Stawki",
+      "save": "Zapisz",
+      "no_name": "Wykonawca"
+    },
+    "toast": {
+      "bulk_applying": "Aplikowanie masowych stawek...",
+      "bulk_success": "Pomyślnie zaktualizowano stawki dla {{count}} osób.",
+      "bulk_error": "Błąd serwera podczas operacji masowej.",
+      "pdf_generating": "Generowanie PDF dla {{name}}...",
+      "pdf_success": "Dokument został pomyślnie wygenerowany.",
+      "pdf_error": "Błąd generowania: {{message}}",
+      "save_error": "Nie udało się zapisać wynagrodzenia dla: {{name}}."
+    }
+  },
+  "projects": {
+    "dashboard": {
+      "subtitle": "Zarządzanie Produkcją",
+      "title": "Projekty i",
+      "title_highlight": "Wydarzenia",
+      "add_btn": "Zaplanuj Nowy Projekt",
+      "header_badge": "Centrum Dowodzenia",
+      "header_title_1": "Wydarzenia i",
+      "header_title_2": "Produkcja",
+      "btn_new_project": "Nowy Projekt",
+      "empty_title": "Brak projektów w tym widoku",
+      "empty_desc": "Rozpocznij planowanie nowego wydarzenia, klikając przycisk \"Nowy Projekt\" powyżej.",
+      "delete_modal_title": "Usunąć projekt?",
+      "delete_modal_desc": "Ta akcja jest nieodwracalna. Spowoduje usunięcie wszystkich powiązanych prób, przypisań ekipy i obsady dla tego projektu."
+    },
+    "filters": {
+      "active": "W przygotowaniu",
+      "done": "Archiwum",
+      "all": "Wszystkie"
+    },
+    "toast": {
+      "sync_error_title": "Błąd synchronizacji",
+      "sync_error_desc": "Słowniki nie zostały pobrane poprawnie.",
+      "delete_loading": "Usuwanie projektu...",
+      "delete_success": "Projekt usunięty pomyślnie",
+      "delete_error_title": "Błąd usuwania",
+      "delete_error_desc": "Sprawdź powiązania projektu w bazie (być może ma przypisane umowy lub obecności)."
+    },
+    "badge_active": "W przygotowaniu",
+    "badge_done": "Zrealizowano",
+    "call_time": "Call Time:",
+    "actions": {
+      "manage": "Zarządzaj",
+      "mark_active": "Oznacz jako Aktywny",
+      "mark_done": "Zakończ projekt"
+    },
+    "exports": {
+      "call_sheet": "Pobierz Call Sheet",
+      "zaiks": "Pobierz ZAiKS",
+      "dtp": "Pobierz notkę do DTP"
+    },
+    "editor": {
+      "new_project": "Kreator Nowego Wydarzenia",
+      "archive_badge": "Archiwum",
+      "unsaved_changes_title": "Niezapisane zmiany",
+      "unsaved_changes_desc": "Masz niezapisane zmiany w tej zakładce. Czy na pewno chcesz opuścić ten widok? Niezapisane dane zostaną utracone."
+    },
+    "tabs": {
+      "details": "Szczegóły & Plan",
+      "rehearsals": "Próby",
+      "matrix": "Obecności",
+      "cast": "Obsada",
+      "program": "Setlista",
+      "micro_cast": "Divisi",
+      "crew": "Ekipa Techniczna",
+      "budget": "Budżet"
+    },
+    "details": {
+      "description_title": "Opis wydarzenia",
+      "no_description": "Nie ma żadnych dodatkowych uwag do tego wydarzenia.",
+      "dress_code_title": "Dress Code",
+      "dress_code_female": "Panie:",
+      "dress_code_male": "Panowie:",
+      "no_dress_code": "Nie ma wymagań co do ubioru.",
+      "toast": {
+        "updating": "Aktualizowanie projektu...",
+        "creating": "Tworzenie projektu...",
+        "update_success": "Zaktualizowano projekt i harmonogram",
+        "create_success": "Utworzono nowy projekt z harmonogramem"
+      }
+    },
+    "matrix": {
+      "header": {
+        "title": "Macierz Obecności i Frekwencji",
+        "subtitle": "Szybkie oznaczanie frekwencji na próbach. Zarządzaj statusem klikając w kafelki pod nazwiskiem."
+      },
+      "legend": {
+        "title": "Status frekwencji"
+      },
+      "table": {
+        "rehearsal_date": "Próba / Data",
+        "rate": "Frekwencja"
+      },
+      "empty": {
+        "rehearsal": "Brak zaplanowanych prób w tym projekcie.",
+        "cast": "Brak obsady przypisanej do projektu."
+      },
+      "not_invited": "Nie dotyczy",
+      "status": {
+        "none": "Brak wpisu",
+        "present": "Obecny",
+        "late": "Spóźnienie",
+        "absent": "Nieobecny",
+        "excused": "Zwolniony"
+      },
+      "toast": {
+        "save_error": "Nie udało się zapisać zmiany.",
+        "save_error_desc": "Sprawdź połączenie i spróbuj ponownie."
+      }
+    },
+    "budget": {
+      "aria_label": "Zarządzaj budżetem projektu",
+      "title": "Kosztorys",
+      "estimated_cost": "Przewidywany Koszt",
+      "header": {
+        "title": "Budżet Produkcyjny",
+        "subtitle": "Zaplanuj i przypisz stawki honorariów dla całego zespołu zaangażowanego w projekt."
+      },
+      "fab": {
+        "unsaved": "Niezapisane zmiany",
+        "description": "Wprowadziłeś zmiany w stawkach."
+      },
+      "summary": {
+        "title": "Podsumowanie Kosztów",
+        "missing": "Brakujące wyceny:"
+      },
+      "kpi": {
+        "calculation": "Kalkulacja",
+        "cast_fees": "Stawki (Obsada)",
+        "crew_fees": "Stawki (Ekipa)",
+        "missing": "Braki",
+        "missing_desc": "poz. bez stawki",
+        "total": "Suma Kosztów"
+      },
+      "empty": {
+        "cast": "Brak obsady przypisanej do projektu."
+      },
+      "sections": {
+        "estimated": "Szacowany Budżet",
+        "description": "Zarządzaj kosztami osobowymi",
+        "cast": "Obsada Wykonawcza",
+        "crew": "Ekipa Techniczna"
+      },
+      "input_placeholder": "Wpisz kwotę...",
+      "missing_fee": "Brak stawki",
+      "toast": {
+        "saving": "Zapisywanie budżetu...",
+        "save_success": "Zapisano stawki i przeliczono budżet",
+        "save_error_desc": "Nie udało się zapisać wszystkich stawek."
+      }
+    },
+    "cast": {
+      "aria_label": "Zarządzaj obsadą wokalną",
+      "title": "Obsada Wokalna",
+      "empty": "Brak obsady wokalnej.",
+      "employed": "Zatrudnionych:",
+      "header": {
+        "title": "Casting Główny",
+        "subtitle": "Zarządzaj wokalistami. Ustawienie [scrollbar-gutter] neutralizuje skoki układu."
+      },
+      "search_placeholder": "Szukaj artysty...",
+      "mobile": {
+        "available": "Baza",
+        "assigned": "Obsada"
+      },
+      "sections": {
+        "available": "Baza Artystów",
+        "assigned": "Obsada Projektu"
+      },
+      "empty_available": "Brak dostępnych",
+      "empty_assigned": "Obsada jest pusta",
+      "card": {
+        "a_vista": "A vista:",
+        "remove": "Usuń",
+        "add": "Dodaj",
+        "remove_aria": "Usuń z obsady",
+        "add_aria": "Dodaj do obsady"
+      },
+      "toast": {
+        "removed": "Usunięto z obsady",
+        "added": "Dodano do obsady"
+      }
+    },
+    "crew": {
+      "aria_label": "Zarządzaj ekipą techniczną",
+      "title": "Ekipa (Crew)",
+      "empty": "Brak przypisanej ekipy technicznej.",
+      "employed": "Zatrudnionych:",
+      "form": {
+        "hire_label": "Zatrudnij z bazy",
+        "select_placeholder": "— Wybierz współpracownika —",
+        "role_label": "Rola na tym koncercie",
+        "role_placeholder": "np. Akustyk FOH",
+        "submit": "Przypisz"
+      },
+      "list": {
+        "title": "Skład Ekipy (Crew)",
+        "assigned_count": "Przypisano: {{count}}",
+        "remove_title": "Usuń z ekipy technicznej"
+      },
+      "toast": {
+        "assigning": "Przypisywanie członka ekipy...",
+        "assign_success": "Członek ekipy przypisany pomyślnie",
+        "assign_error": "Błąd przypisania",
+        "assign_error_desc": "Nie udało się przypisać członka ekipy do projektu.",
+        "removing": "Usuwanie członka ekipy...",
+        "remove_success": "Usunięto przypisanie z projektu",
+        "remove_error_desc": "Nie udało się odpiąć członka ekipy z projektu."
+      }
+    },
+    "program": {
+      "music_time_min": "min muzyki",
+      "aria_label": "Zarządzaj programem koncertu",
+      "title": "Program Koncertu",
+      "no_reqs": "Brak wymagań",
+      "unfulfilled": "Nieobsadzony",
+      "fulfilled": "Obsadzony",
+      "and_more": "...i {{count}} więcej",
+      "duration_unknown": "Czas nieznany",
+      "empty": {
+        "setlist_title": "Setlista jest pusta",
+        "setlist_desc": "Wybierz kompozycje z bazy po prawej stronie, aby zbudować program koncertu.",
+        "no_results": "Brak wyników"
+      },
+      "fab": {
+        "unsaved": "Niezapisane Zmiany",
+        "description": "Zmodyfikowałeś kolejność programu."
+      },
+      "format": {
+        "duration_hours": "~ {{h}}h {{m}}min muzyki",
+        "duration_mins": "~ {{m}} min muzyki",
+        "minutes": "{{m}} min",
+        "seconds": "{{s}} sek"
+      },
+      "actions": {
+        "drag_aria": "Przeciągnij utwór {{title}}",
+        "remove_encore": "Usuń jako BIS",
+        "add_encore": "Oznacz jako BIS",
+        "remove_from_program": "Usuń z programu",
+        "already_added": "Utwór jest już na setliście",
+        "add": "Dodaj do programu"
+      },
+      "badges": {
+        "encore": "BIS",
+        "tracks_count": "Utworów: {{count}}"
+      },
+      "sections": {
+        "setlist": "Setlista Wydarzenia",
+        "database": "Baza Kompozycji"
+      },
+      "search": {
+        "placeholder": "Szukaj utworu..."
+      },
+      "toast": {
+        "adding": "Dodawanie utworu...",
+        "add_success": "Dodano do setlisty",
+        "add_error": "Nie powiodło się dodanie utworu.",
+        "encore_toggled": "Status BIS zmieniony",
+        "encore_error": "Błąd połączenia. Nie udało się zmienić statusu BIS.",
+        "removing": "Usuwanie utworu...",
+        "remove_success": "Usunięto z programu",
+        "saving_order": "Zapisywanie nowego układu...",
+        "save_order_success": "Układ zapisany pomyślnie",
+        "save_order_error": "Serwer odrzucił część zmian. Odświeżam widok."
+      }
+    },
+    "details_tab": {
+      "fab": {
+        "unsaved": "Niezapisane Zmiany",
+        "description": "Zmodyfikowałeś ustawienia projektu.",
+        "save": "Zapisz Zmiany"
+      },
+      "header": {
+        "title": "Szczegóły Wydarzenia"
+      },
+      "sections": {
+        "title_desc": "Tytuł i Opis",
+        "logistics": "Zbiórka i Dress Code",
+        "notes": "Notatki Produkcyjne",
+        "references": "Referencje Muzyczne",
+        "run_sheet": "Harmonogram Dnia Koncertu"
+      },
+      "fields": {
+        "title": "Tytuł Projektu *",
+        "date_time": "Data i Czas *",
+        "location": "Lokalizacja / Miejsce",
+        "call_time": "Zbiórka (Call Time)",
+        "dress_code_female": "Opcjonalnie: Panie",
+        "dress_code_male": "Opcjonalnie: Panowie",
+        "description": "Opis wydarzenia",
+        "spotify": "Playlista (Spotify)"
+      },
+      "placeholders": {
+        "description": "np. Proszę o punktualność...",
+        "spotify": "Wklej link do playlisty z referencjami..."
+      },
+      "buttons": {
+        "add_run_sheet": "Dodaj punkt harmonogramu"
+      },
+      "empty": {
+        "run_sheet": "Brak punktów harmonogramu. Dodaj pierwszy!"
+      },
+      "run_sheet": {
+        "time": "Godz.",
+        "title": "Tytuł",
+        "description": "Opis (opcjonalny)"
+      }
+    },
+    "micro_cast": {
+      "header": {
+        "title": "Divisi i Mikro-Casting",
+        "subtitle": "Przeciągaj wokalistów między sekcjami w ramach wybranego utworu."
+      },
+      "artist": {
+        "drag_aria": "Przeciągnij {{name}}",
+        "note_placeholder": "Notatka...",
+        "add_note": "Dodaj notatkę"
+      },
+      "select_piece": "Wybierz utwór do castingu",
+      "label": {
+        "pieces_in_program": "Utwory w programie"
+      },
+      "buttons": {
+        "play_reference": "Odtwórz Referencję"
+      },
+      "sections": {
+        "unassigned": "Nieprzypisani (Baza Osobowa)"
+      },
+      "voices": {
+        "sopranos": "Soprany",
+        "altos": "Alty",
+        "tenors": "Tenory",
+        "basses": "Basy"
+      },
+      "status": {
+        "free": "Wolny Wakat",
+        "deficit": "Braki: "
+      },
+      "empty": {
+        "pieces": "Brak utworów",
+        "unassigned": "Wszyscy zostali przypisani do ról w tym utworze.",
+        "section": "Brak przypisań w tej sekcji",
+        "no_requirements": "Brak zdefiniowanych wymagań głosowych dla tego utworu w bazie repertuarowej. Używamy trybu dowolnego przypisania (Divisi)."
+      },
+      "toast": {
+        "note_error": "Nie udało się zaktualizować notatki.",
+        "sync_error": "Błąd synchronizacji",
+        "sync_error_desc": "Nie udało się zaktualizować obsady."
+      }
+    },
+    "rehearsals": {
+      "aria_label": "Zarządzaj próbami projektu",
+      "title": "Próby",
+      "upcoming": "Najbliższe Próby",
+      "progress": "Postęp",
+      "absences_reported": "Zgłoszono braki:",
+      "tutti": "TUTTI",
+      "sectional": "SEKCYJNA",
+      "optional": "Opcjonalna",
+      "empty": {
+        "no_rehearsals": "Brak zaplanowanych prób."
+      },
+      "form": {
+        "title": "Zaplanuj nową próbę",
+        "date_time": "Data i Godzina *",
+        "location": "Lokalizacja (Sala) *",
+        "location_placeholder": "np. Sala 102, Akademia",
+        "focus": "Plan Próby / Repertuar (Focus)",
+        "focus_placeholder": "np. Requiem cz. 1-3...",
+        "who": "Kto jest wezwany na próbę?",
+        "type_tutti": "Tutti (Wszyscy)",
+        "type_sectional": "Próba Sekcyjna",
+        "type_custom": "Wybrane osoby",
+        "mandatory": "Obecność obowiązkowa dla wezwanych",
+        "submit": "Zapisz w kalendarzu"
+      },
+      "voices": {
+        "sopranos": "Soprany",
+        "altos": "Alty",
+        "tenors": "Tenory",
+        "basses": "Basy"
+      },
+      "list": {
+        "title": "Harmonogram Prób"
+      },
+      "status": {
+        "finished": "Zakończona",
+        "tutti": "TUTTI",
+        "invited": "Wezwanych: {{count}}",
+        "optional": "Opcjonalna"
+      },
+      "actions": {
+        "delete": "Usuń próbę"
+      },
+      "modal": {
+        "delete_title": "Usunąć tę próbę?",
+        "delete_desc": "Powiązane z tą próbą listy obecności zostaną bezpowrotnie wykasowane. Tej operacji nie można cofnąć."
+      },
+      "toast": {
+        "select_target": "Wybierz przynajmniej jedną osobę lub sekcję na próbę!",
+        "saving": "Zapisywanie próby w kalendarzu...",
+        "save_success": "Próba zapisana pomyślnie",
+        "save_error_desc": "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie.",
+        "removing": "Usuwanie próby...",
+        "remove_success": "Próba została usunięta",
+        "remove_error_desc": "Nie udało się usunąć próby. Serwer odrzucił żądanie."
+      }
+    },
+    "run_sheet": {
+      "title": "Harmonogram dnia koncertu",
+      "empty": "Brak harmonogramu dostępnego dla tego wydarzenia."
+    },
+    "spotify": {
+      "title": "Referencje do odsłuchu",
+      "iframe_title": "Playlista Spotify",
+      "open_app": "Otwórz w aplikacji",
+      "empty": "Brak przypisanej playlisty."
     }
   }
 }

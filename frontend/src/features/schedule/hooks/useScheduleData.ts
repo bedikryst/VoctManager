@@ -1,10 +1,12 @@
 /**
  * @file useScheduleData.ts
  * @description Encapsulates timeline aggregation and attendance reporting for the artist schedule.
+ * @architecture Enterprise SaaS 2026
  */
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { AttendanceStatus } from "../../../shared/types";
 import {
   useScheduleContextData,
@@ -13,6 +15,7 @@ import {
 import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
 
 export const useScheduleData = (artistId?: string | number) => {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ScheduleViewMode>("UPCOMING");
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
@@ -21,9 +24,7 @@ export const useScheduleData = (artistId?: string | number) => {
   const attendanceMutation = useUpsertScheduleAttendance();
 
   const timelineEvents = useMemo<TimelineEvent[]>(() => {
-    if (!artistId || isLoading) {
-      return [];
-    }
+    if (!artistId || isLoading) return [];
 
     const events: TimelineEvent[] = [];
     const activeParticipations = participations.filter(
@@ -36,9 +37,7 @@ export const useScheduleData = (artistId?: string | number) => {
           String(participation.project) === String(rehearsal.project),
       );
 
-      if (!myParticipation) {
-        return;
-      }
+      if (!myParticipation) return;
 
       const isInvited =
         !rehearsal.invited_participations ||
@@ -60,15 +59,13 @@ export const useScheduleData = (artistId?: string | number) => {
           type: "REHEARSAL",
           rawObj: rehearsal,
           date_time: new Date(rehearsal.date_time),
-          title: `Próba: ${project?.title || "Wydarzenie"}`,
+          title: `${t("schedule.event.rehearsal_prefix", "Próba:")} ${project?.title || t("schedule.event.generic_event", "Wydarzenie")}`,
           location: rehearsal.location,
           focus: rehearsal.focus,
           is_mandatory: rehearsal.is_mandatory,
           status: myAttendance?.status || null,
           excuse_note: myAttendance?.excuse_note || null,
-          absences:
-            (rehearsal as typeof rehearsal & { absent_count?: number })
-              .absent_count || 0,
+          absences: rehearsal.absent_count || 0,
           project_id: rehearsal.project,
         });
       }
@@ -97,7 +94,15 @@ export const useScheduleData = (artistId?: string | number) => {
     });
 
     return events;
-  }, [artistId, isLoading, rehearsals, projects, participations, attendances]);
+  }, [
+    artistId,
+    isLoading,
+    rehearsals,
+    projects,
+    participations,
+    attendances,
+    t,
+  ]);
 
   const filteredEvents = useMemo(() => {
     const threshold = new Date(Date.now() - 4 * 60 * 60 * 1000);
@@ -122,7 +127,9 @@ export const useScheduleData = (artistId?: string | number) => {
     status: AttendanceStatus,
     notes: string,
   ) => {
-    const toastId = toast.loading("Wysyłanie zgłoszenia...");
+    const toastId = toast.loading(
+      t("schedule.toast.submitting", "Wysyłanie zgłoszenia..."),
+    );
 
     try {
       const myParticipation = participations.find(
@@ -149,12 +156,18 @@ export const useScheduleData = (artistId?: string | number) => {
         },
       });
 
-      toast.success("Zgłoszenie zostało zapisane.", { id: toastId });
+      toast.success(
+        t("schedule.toast.submit_success", "Zgłoszenie zostało zapisane."),
+        { id: toastId },
+      );
       return true;
     } catch (error) {
-      toast.error("Błąd zapisu", {
+      toast.error(t("schedule.toast.submit_error_title", "Błąd zapisu"), {
         id: toastId,
-        description: "Nie udało się zapisać zgłoszenia.",
+        description: t(
+          "schedule.toast.submit_error_desc",
+          "Nie udało się zapisać zgłoszenia.",
+        ),
       });
       return false;
     }

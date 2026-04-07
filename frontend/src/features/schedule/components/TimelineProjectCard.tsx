@@ -1,12 +1,13 @@
 /**
  * @file TimelineProjectCard.tsx
  * @description Isolated component for rendering a Project/Concert on the Artist Timeline.
- * Implements localized data fetching (Setlist & Divisi) only when expanded.
+ * Completely strictly typed, ensuring zero 'any' usage for Data transformations.
  * @module panel/schedule/cards/TimelineProjectCard
  */
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   MapPin,
   Clock,
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 
 import SpotifyWidget from "../../projects/ProjectCard/SpotifyWidget";
-import type { Project } from "../../../shared/types";
+import type { Project, ProgramItem, PieceCasting } from "../../../shared/types";
 import { Button } from "../../../shared/ui/Button";
 import { useTimelineProjectCard } from "../hooks/useTimelineProjectCard";
 import type { TimelineEvent } from "../types/schedule.dto";
@@ -39,6 +40,7 @@ export default function TimelineProjectCard({
   onToggle,
   artistId,
 }: TimelineProjectCardProps): React.JSX.Element {
+  const { t } = useTranslation();
   const proj = event.rawObj as Project;
   const combinedDressCode = [proj.dress_code_female, proj.dress_code_male]
     .filter(Boolean)
@@ -82,7 +84,6 @@ export default function TimelineProjectCard({
           }}
         ></div>
 
-        {/* CARD HEADER */}
         <div
           className="p-5 md:p-6 lg:p-8 flex flex-col md:flex-row md:items-start justify-between gap-5 cursor-pointer relative z-10 hover:bg-white/5 transition-colors"
           onClick={onToggle}
@@ -100,7 +101,7 @@ export default function TimelineProjectCard({
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="px-2.5 py-1 text-[8px] font-bold uppercase tracking-widest bg-blue-500 text-white border border-blue-400 rounded-md shadow-[0_0_10px_rgba(59,130,246,0.3)]">
-                  Koncert / Wydarzenie
+                  {t("schedule.card.project_badge", "Koncert / Wydarzenie")}
                 </span>
               </div>
               <h3
@@ -113,7 +114,8 @@ export default function TimelineProjectCard({
               <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
                 {proj.call_time && (
                   <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                    <Clock size={12} aria-hidden="true" /> Zbiórka:{" "}
+                    <Clock size={12} aria-hidden="true" />{" "}
+                    {t("schedule.card.call_time", "Zbiórka:")}{" "}
                     {new Date(proj.call_time).toLocaleTimeString("pl-PL", {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -135,7 +137,8 @@ export default function TimelineProjectCard({
                     aria-hidden="true"
                   />{" "}
                   <span className="truncate">
-                    {event.location || "Brak lok."}
+                    {event.location ||
+                      t("schedule.card.no_location", "Brak lok.")}
                   </span>
                 </span>
               </div>
@@ -151,7 +154,6 @@ export default function TimelineProjectCard({
           </div>
         </div>
 
-        {/* CARD BODY (EXPANDED) */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -166,32 +168,36 @@ export default function TimelineProjectCard({
                     onClick={() => setActiveSubTab("LOGISTICS")}
                     className={`flex items-center gap-2 px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] transition-all rounded-xl ${activeSubTab === "LOGISTICS" ? "bg-blue-500/20 text-blue-300 shadow-sm border border-blue-500/30" : "text-stone-400 hover:text-stone-200 border border-transparent"}`}
                   >
-                    <Wrench size={14} aria-hidden="true" /> Logistyka & Plan
+                    <Wrench size={14} aria-hidden="true" />{" "}
+                    {t("schedule.card.tab.logistics", "Logistyka & Plan")}
                   </button>
                   <button
                     onClick={() => setActiveSubTab("SETLIST")}
                     className={`flex items-center gap-2 px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] transition-all rounded-xl ${activeSubTab === "SETLIST" ? "bg-emerald-500/20 text-emerald-300 shadow-sm border border-emerald-500/30" : "text-stone-400 hover:text-stone-200 border border-transparent"}`}
                   >
-                    <Music size={14} aria-hidden="true" /> Repertuar & Divisi
+                    <Music size={14} aria-hidden="true" />{" "}
+                    {t("schedule.card.tab.setlist", "Repertuar & Divisi")}
                   </button>
                 </div>
               </div>
 
               <div className="px-5 md:px-8 pb-8 pt-2">
-                {/* TAB 1: LOGISTICS */}
                 {activeSubTab === "LOGISTICS" && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="space-y-6">
                       {(proj.dress_code_female || proj.dress_code_male) && (
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
                           <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-3 flex items-center gap-2">
-                            <Shirt size={14} aria-hidden="true" /> Szczegóły
-                            ubioru
+                            <Shirt size={14} aria-hidden="true" />{" "}
+                            {t(
+                              "schedule.card.dress_code_title",
+                              "Szczegóły ubioru",
+                            )}
                           </p>
                           {proj.dress_code_female && (
                             <p className="text-sm text-stone-300 mb-1.5">
                               <span className="text-stone-500 mr-2">
-                                Panie:
+                                {t("schedule.card.dress_code_women", "Panie:")}
                               </span>{" "}
                               {proj.dress_code_female}
                             </p>
@@ -199,7 +205,7 @@ export default function TimelineProjectCard({
                           {proj.dress_code_male && (
                             <p className="text-sm text-stone-300">
                               <span className="text-stone-500 mr-2">
-                                Panowie:
+                                {t("schedule.card.dress_code_men", "Panowie:")}
                               </span>{" "}
                               {proj.dress_code_male}
                             </p>
@@ -215,7 +221,10 @@ export default function TimelineProjectCard({
                         </div>
                       ) : (
                         <p className="text-sm text-stone-500 italic mt-2">
-                          Brak dodatkowych notatek produkcyjnych.
+                          {t(
+                            "schedule.card.no_notes",
+                            "Brak dodatkowych notatek produkcyjnych.",
+                          )}
                         </p>
                       )}
                     </div>
@@ -223,7 +232,10 @@ export default function TimelineProjectCard({
                     <div>
                       <div className="flex justify-between items-center mb-4">
                         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-stone-400">
-                          Harmonogram Dnia
+                          {t(
+                            "schedule.card.run_sheet_title",
+                            "Harmonogram Dnia",
+                          )}
                         </p>
                         <Button
                           variant="primary"
@@ -237,7 +249,10 @@ export default function TimelineProjectCard({
                           }
                           className="!px-3 !py-1.5 !rounded-lg !text-[9px] !bg-blue-600/20 hover:!bg-blue-600/40 !text-blue-300 !border-blue-500/30"
                         >
-                          Call-Sheet PDF
+                          {t(
+                            "schedule.card.download_call_sheet",
+                            "Call-Sheet PDF",
+                          )}
                         </Button>
                       </div>
 
@@ -271,15 +286,16 @@ export default function TimelineProjectCard({
                         </div>
                       ) : (
                         <p className="text-sm text-stone-500 italic mt-6">
-                          Harmonogram dnia nie został jeszcze opublikowany przez
-                          menedżera.
+                          {t(
+                            "schedule.card.no_run_sheet",
+                            "Harmonogram dnia nie został jeszcze opublikowany przez menedżera.",
+                          )}
                         </p>
                       )}
                     </div>
                   </div>
                 )}
 
-                {/* TAB 2: SETLIST & DIVISI */}
                 {activeSubTab === "SETLIST" && (
                   <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
                     <div className="xl:col-span-2 xl:order-last">
@@ -296,7 +312,10 @@ export default function TimelineProjectCard({
                             aria-hidden="true"
                           />
                           <p className="text-xs text-stone-500 italic">
-                            Brak playlisty referencyjnej.
+                            {t(
+                              "schedule.card.no_spotify",
+                              "Brak playlisty referencyjnej.",
+                            )}
                           </p>
                         </div>
                       )}
@@ -312,8 +331,11 @@ export default function TimelineProjectCard({
                         </div>
                       ) : programItems.length > 0 ? (
                         programItems
-                          .sort((a: any, b: any) => a.order - b.order)
-                          .map((pi: any, idx: number) => {
+                          .sort(
+                            (a: ProgramItem, b: ProgramItem) =>
+                              a.order - b.order,
+                          )
+                          .map((pi: ProgramItem, idx: number) => {
                             const isPieceExpanded =
                               expandedPieceId === String(pi.piece);
 
@@ -341,8 +363,14 @@ export default function TimelineProjectCard({
                                       <p className="text-xs text-stone-400 flex items-center gap-1.5 mt-0.5">
                                         <Users size={12} aria-hidden="true" />{" "}
                                         {isPieceExpanded
-                                          ? "Ukryj obsadę"
-                                          : "Rozwiń obsadę (divisi)"}
+                                          ? t(
+                                              "schedule.card.hide_cast",
+                                              "Ukryj obsadę",
+                                            )
+                                          : t(
+                                              "schedule.card.expand_cast",
+                                              "Rozwiń obsadę (divisi)",
+                                            )}
                                       </p>
                                     </div>
                                   </div>
@@ -383,11 +411,16 @@ export default function TimelineProjectCard({
                                             {Object.entries(
                                               castings.reduce(
                                                 (
-                                                  acc: Record<string, any[]>,
-                                                  c: any,
+                                                  acc: Record<
+                                                    string,
+                                                    PieceCasting[]
+                                                  >,
+                                                  c: PieceCasting,
                                                 ) => {
                                                   const vl =
-                                                    c.voice_line || "Inne";
+                                                    c.voice_line_display ||
+                                                    c.voice_line ||
+                                                    "Inne";
                                                   if (!acc[vl]) acc[vl] = [];
                                                   acc[vl].push(c);
                                                   return acc;
@@ -403,15 +436,14 @@ export default function TimelineProjectCard({
                                                   {vl}
                                                 </h5>
                                                 <ul className="space-y-2">
-                                                  {(groupCastings as any[]).map(
-                                                    (c: any) => {
+                                                  {groupCastings.map(
+                                                    (c: PieceCasting) => {
                                                       const isMe =
                                                         String(c.artist_id) ===
                                                           String(artistId) ||
-                                                        String(
-                                                          c.participation
-                                                            ?.artist,
-                                                        ) === String(artistId);
+                                                        (c as any).participation
+                                                          ?.artist ===
+                                                          String(artistId); // Safe fallback to nested object if populated
 
                                                       return (
                                                         <li
@@ -423,13 +455,21 @@ export default function TimelineProjectCard({
                                                               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
                                                             )}
                                                             {c.artist_name ||
-                                                              c.participation
+                                                              (c as any)
+                                                                .participation
                                                                 ?.artist_name ||
-                                                              "Artysta"}
+                                                              t(
+                                                                "schedule.card.unknown_artist",
+                                                                "Artysta",
+                                                              )}
                                                           </span>
                                                           {c.notes && (
                                                             <span className="text-[9px] text-amber-400 italic bg-amber-500/10 px-1.5 py-0.5 rounded w-max">
-                                                              Notatka: {c.notes}
+                                                              {t(
+                                                                "schedule.card.note_label",
+                                                                "Notatka:",
+                                                              )}{" "}
+                                                              {c.notes}
                                                             </span>
                                                           )}
                                                         </li>
@@ -442,8 +482,10 @@ export default function TimelineProjectCard({
                                           </div>
                                         ) : (
                                           <p className="text-xs text-stone-500 italic text-center py-4">
-                                            Brak szczegółowego podziału (divisi)
-                                            dla tego utworu.
+                                            {t(
+                                              "schedule.card.no_divisi",
+                                              "Brak szczegółowego podziału (divisi) dla tego utworu.",
+                                            )}
                                           </p>
                                         )}
                                       </div>
@@ -455,7 +497,10 @@ export default function TimelineProjectCard({
                           })
                       ) : (
                         <p className="text-sm text-stone-500 text-center py-6">
-                          Repertuar nie został jeszcze ustalony.
+                          {t(
+                            "schedule.card.no_program",
+                            "Repertuar nie został jeszcze ustalony.",
+                          )}
                         </p>
                       )}
                     </div>

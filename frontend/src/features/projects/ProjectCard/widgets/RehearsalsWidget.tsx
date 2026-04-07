@@ -1,12 +1,12 @@
 /**
  * @file RehearsalsWidget.tsx
  * @description Dashboard widget displaying upcoming rehearsals, progress, and absence alerts.
- * Synchronously consumes pre-fetched rehearsal arrays from the React Query cache via useProjectData.
- * Displays dynamic `absent_count` injected by the backend serializers.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/widgets/RehearsalsWidget
  */
 
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Calendar, UserMinus } from "lucide-react";
 
 import type { Project, Rehearsal } from "../../../../shared/types";
@@ -18,7 +18,6 @@ interface RehearsalsWidgetProps {
   onEdit?: () => void;
 }
 
-// Extends the base Rehearsal type safely for annotated backend fields
 interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;
 }
@@ -27,6 +26,7 @@ export default function RehearsalsWidget({
   project,
   onEdit,
 }: RehearsalsWidgetProps): React.JSX.Element {
+  const { t } = useTranslation();
   const {
     rehearsals: projectRehearsals,
     participations: projectParticipations,
@@ -62,7 +62,10 @@ export default function RehearsalsWidget({
       onClick={onEdit}
       className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-[#002395]/40 hover:shadow-md" : ""}`}
       role={onEdit ? "button" : "region"}
-      aria-label="Manage project rehearsals"
+      aria-label={t(
+        "projects.rehearsals.aria_label",
+        "Zarządzaj próbami projektu",
+      )}
     >
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
         <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
@@ -71,11 +74,11 @@ export default function RehearsalsWidget({
             className="text-[#002395] group-hover:scale-110 transition-transform"
             aria-hidden="true"
           />
-          Najbliższe Próby
+          {t("projects.rehearsals.upcoming", "Najbliższe Próby")}
         </h4>
         {onEdit && (
           <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-[#002395] opacity-0 group-hover:opacity-100 transition-opacity">
-            Edytuj
+            {t("common.actions.edit", "Edytuj")}
           </button>
         )}
       </div>
@@ -84,7 +87,7 @@ export default function RehearsalsWidget({
         <div className="flex flex-col h-full">
           <div className="mb-4">
             <div className="flex justify-between text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-2">
-              <span>Postęp</span>
+              <span>{t("projects.rehearsals.progress", "Postęp")}</span>
               <span>
                 {pastRehearsals.length} / {sortedRehearsals.length}
               </span>
@@ -121,7 +124,7 @@ export default function RehearsalsWidget({
                         <span>
                           <strong className="text-stone-800">
                             {new Date(reh.date_time).toLocaleDateString(
-                              "pl-PL",
+                              t("common.locale", "pl-PL"),
                               {
                                 day: "numeric",
                                 month: "short",
@@ -142,8 +145,12 @@ export default function RehearsalsWidget({
 
                         {absences > 0 && (
                           <span className="flex items-center gap-1 text-[9px] font-bold antialiased uppercase tracking-widest text-red-500 mt-1">
-                            <UserMinus size={10} aria-hidden="true" /> Zgłoszono
-                            braki: {absences}
+                            <UserMinus size={10} aria-hidden="true" />{" "}
+                            {t(
+                              "projects.rehearsals.absences_reported",
+                              "Zgłoszono braki:",
+                            )}{" "}
+                            {absences}
                           </span>
                         )}
                       </div>
@@ -152,11 +159,13 @@ export default function RehearsalsWidget({
                       <span
                         className={`text-[8px] uppercase tracking-widest font-bold antialiased px-1.5 py-0.5 rounded ${isTutti ? "bg-emerald-50 text-emerald-700" : "bg-purple-50 text-purple-700"}`}
                       >
-                        {isTutti ? "TUTTI" : "SEKCYJNA"}
+                        {isTutti
+                          ? t("projects.rehearsals.tutti", "TUTTI")
+                          : t("projects.rehearsals.sectional", "SEKCYJNA")}
                       </span>
                       {!reh.is_mandatory && (
                         <span className="text-[8px] text-orange-600 font-bold antialiased uppercase tracking-widest">
-                          Opcjonalna
+                          {t("projects.rehearsals.optional", "Opcjonalna")}
                         </span>
                       )}
                     </div>
@@ -168,7 +177,7 @@ export default function RehearsalsWidget({
         </div>
       ) : (
         <p className="text-xs text-stone-400 italic flex-1 flex items-center justify-center py-4">
-          Brak zaplanowanych prób.
+          {t("projects.rehearsals.empty", "Brak zaplanowanych prób.")}
         </p>
       )}
     </GlassCard>

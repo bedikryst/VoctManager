@@ -1,37 +1,41 @@
 /**
  * @file useProgramTab.ts
  * @description Encapsulates DnD logic, API synchronization, and dirty-state tracking
- * for the Project Program (Setlist) manager.
- * Relies on React Query structural sharing (useProjectData) instead of Context APIs.
+ * for the Project Program manager. Strictly synchronizes unsaved changes with the parent panel.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useProgramTab
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 
-import api from "../../../../shared/api/api";
-import { queryKeys } from "../../../../shared/lib/queryKeys";
-import { useProjectData } from "../../hooks/useProjectData";
 import type { Piece } from "../../../../shared/types";
+import { queryKeys } from "../../../../shared/lib/queryKeys";
+import { useProjectProgram } from "../../api/project.queries";
+import { ProjectService } from "../../api/project.service";
+import { useProjectData } from "../../hooks/useProjectData";
 
+// Zmienione ID na czysty string (zgodnie z UUID na backendzie)
 export interface ProgramItem {
-  id: string | number;
+  id: string;
   order: number;
-  piece: string | number;
-  piece_id?: string | number;
+  piece: string;
+  piece_id?: string;
   piece_title: string;
   is_encore: boolean;
 }
 
-export const useProgramTab = (projectId: string) => {
+export const useProgramTab = (
+  projectId: string,
+  onDirtyStateChange?: (isDirty: boolean) => void,
+) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
-
-  // Zaciąganie słownika utworów
   const { pieces } = useProjectData(projectId);
-
   const [programItems, setProgramItems] = useState<ProgramItem[]>([]);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -40,92 +44,124 @@ export const useProgramTab = (projectId: string) => {
     data: fetchedProgram,
     isLoading,
     refetch,
-  } = useQuery<ProgramItem[]>({
-    queryKey: queryKeys.program.byProject(projectId),
-    queryFn: async () => {
-      const res = await api.get(`/api/program-items/?project=${projectId}`);
-      const items = Array.isArray(res.data)
-        ? res.data
-        : res.data?.results || [];
-      return items.sort((a: ProgramItem, b: ProgramItem) => a.order - b.order);
-    },
-  });
+  } = useProjectProgram(projectId);
 
   useEffect(() => {
-    if (fetchedProgram) setProgramItems(fetchedProgram);
+    if (fetchedProgram) setProgramItems(fetchedProgram as ProgramItem[]);
   }, [fetchedProgram]);
 
   const isDirty = useMemo(() => {
     if (!fetchedProgram) return false;
-    const currentOrderIds = programItems.map((i) => i.id).join(",");
-    const originalOrderIds = fetchedProgram.map((i) => i.id).join(",");
+    const currentOrderIds = programItems.map((item) => item.id).join(",");
+    const originalOrderIds = fetchedProgram.map((item) => item.id).join(",");
     return currentOrderIds !== originalOrderIds;
   }, [programItems, fetchedProgram]);
+
+  // Synchronizacja brudnego stanu z rodzicem
+  useEffect(() => {
+    if (onDirtyStateChange) {
+      onDirtyStateChange(isDirty);
+    }
+  }, [isDirty, onDirtyStateChange]);
 
   const totalConcertDurationSeconds = useMemo<number>(() => {
     return programItems.reduce((sum, item) => {
       const pieceId = item.piece_id || item.piece;
-      const pieceObj = pieces.find((p) => String(p.id) === String(pieceId));
-      return sum + (pieceObj?.estimated_duration || 0);
+      const piece = pieces.find((candidate) => candidate.id === pieceId);
+      return sum + (piece?.estimated_duration || 0);
     }, 0);
   }, [programItems, pieces]);
 
-  const addedPieceIds = useMemo<string[]>(() => {
-    return programItems.map((item) => String(item.piece_id || item.piece));
-  }, [programItems]);
+  const addedPieceIds = useMemo<string[]>(
+    () => programItems.map((item) => item.piece_id || item.piece),
+    [programItems],
+  );
 
   const filteredPieces = useMemo<Piece[]>(() => {
     if (!searchQuery) return pieces;
-    const term = searchQuery.toLowerCase();
-    return pieces.filter((p) => p.title.toLowerCase().includes(term));
+    const normalizedQuery = searchQuery.toLowerCase();
+    return pieces.filter((piece) =>
+      piece.title.toLowerCase().includes(normalizedQuery),
+    );
   }, [pieces, searchQuery]);
 
-  const handleAddPiece = async (pieceId: string | number): Promise<void> => {
-    if (addedPieceIds.includes(String(pieceId))) return;
+  const handleAddPiece = async (pieceId: string): Promise<void> => {
+    if (addedPieceIds.includes(pieceId)) return;
 
-    const toastId = toast.loading("Dodawanie utworu...");
+    // Pobieramy cały obiekt utworu, aby wyciągnąć jego tytuł (wymagany przez DTO)
+    const targetPiece = pieces.find((p) => p.id === pieceId);
+    if (!targetPiece) return;
+
+    const toastId = toast.loading(
+      t("projects.program.toast.adding", "Dodawanie utworu..."),
+    );
+
     try {
       const safeTimeOrder = Math.floor(Date.now() / 10) % 100000000;
-      await api.post("/api/program-items/", {
+      await ProjectService.createProgramItem({
+        title: targetPiece.title, // Rozwiązanie problemu TS2345
         project: projectId,
         piece: pieceId,
         order: safeTimeOrder,
         is_encore: false,
       });
       await refetch();
-      toast.success("Dodano do setlisty", { id: toastId });
-    } catch (err) {
-      toast.error("Błąd zapisu", {
+      toast.success(
+        t("projects.program.toast.add_success", "Dodano do setlisty"),
+        { id: toastId },
+      );
+    } catch {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
-        description: "Nie powiodło się dodanie utworu.",
+        description: t(
+          "projects.program.toast.add_error",
+          "Nie powiodło się dodanie utworu.",
+        ),
       });
     }
   };
 
   const handleToggleEncore = async (item: ProgramItem): Promise<void> => {
     try {
-      await api.patch(`/api/program-items/${item.id}/`, {
+      await ProjectService.updateProgramItem(item.id, {
         is_encore: !item.is_encore,
       });
       await refetch();
       toast.success(
-        `Utwór ${!item.is_encore ? "oznaczony jako" : "usunięty z"} BIS`,
+        t(
+          "projects.program.toast.encore_toggled",
+          "Status BIS został zaktualizowany",
+        ),
       );
-    } catch (err) {
-      toast.error("Błąd połączenia. Nie udało się zmienić statusu BIS.");
+    } catch {
+      toast.error(
+        t(
+          "projects.program.toast.encore_error",
+          "Błąd połączenia. Nie udało się zmienić statusu BIS.",
+        ),
+      );
     }
   };
 
-  const handleDeleteItem = async (itemId: string | number): Promise<void> => {
-    const toastId = toast.loading("Usuwanie utworu...");
+  const handleDeleteItem = async (itemId: string): Promise<void> => {
+    const toastId = toast.loading(
+      t("projects.program.toast.removing", "Usuwanie utworu..."),
+    );
+
     try {
-      await api.delete(`/api/program-items/${itemId}/`);
+      await ProjectService.deleteProgramItem(itemId);
       await refetch();
-      toast.success("Usunięto z programu", { id: toastId });
-    } catch (err) {
-      toast.error("Błąd usuwania", {
+      toast.success(
+        t("projects.program.toast.remove_success", "Usunięto z programu"),
+        { id: toastId },
+      );
+    } catch {
+      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
-        description: "Wystąpił problem z serwerem.",
+        description: t(
+          "common.errors.server_problem",
+          "Wystąpił problem z serwerem.",
+        ),
       });
     }
   };
@@ -134,41 +170,54 @@ export const useProgramTab = (projectId: string) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setProgramItems((items) => {
-        const oldIndex = items.findIndex((i) => i.id === active.id);
-        const newIndex = items.findIndex((i) => i.id === over.id);
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
     }
   };
 
   const handleCancel = () => {
-    if (fetchedProgram) setProgramItems(fetchedProgram);
+    if (fetchedProgram) setProgramItems(fetchedProgram as ProgramItem[]);
   };
 
   const handleSaveChanges = async (): Promise<void> => {
     if (!isDirty) return;
+
     setIsSaving(true);
-    const toastId = toast.loading("Zapisywanie nowego układu...");
+    const toastId = toast.loading(
+      t("projects.program.toast.saving_order", "Zapisywanie nowego układu..."),
+    );
 
     try {
       const baseSaveOrder = Math.floor(Date.now() / 10) % 100000000;
-      const syncPromises = programItems.map((item, index) =>
-        api.patch(`/api/program-items/${item.id}/`, {
-          order: baseSaveOrder + index,
-        }),
+      await Promise.all(
+        programItems.map((item, index) =>
+          ProjectService.updateProgramItem(item.id, {
+            order: baseSaveOrder + index,
+          }),
+        ),
       );
 
-      await Promise.all(syncPromises);
       await refetch();
       await queryClient.invalidateQueries({
         queryKey: queryKeys.pieceCastings.all,
       });
 
-      toast.success("Układ zapisany pomyślnie", { id: toastId });
-    } catch (err) {
-      toast.error("Błąd zapisu", {
+      toast.success(
+        t(
+          "projects.program.toast.save_order_success",
+          "Układ zapisany pomyślnie",
+        ),
+        { id: toastId },
+      );
+    } catch {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
-        description: "Serwer odrzucił część zmian. Odświeżam widok.",
+        description: t(
+          "projects.program.toast.save_order_error",
+          "Serwer odrzucił część zmian. Odświeżam widok.",
+        ),
       });
       await refetch();
     } finally {

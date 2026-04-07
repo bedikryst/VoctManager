@@ -7,6 +7,7 @@
 
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import api from "../../../shared/api/api";
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import type {
@@ -23,6 +24,8 @@ export interface EnrichedRehearsal extends Rehearsal {
 }
 
 export const useAdminDashboardData = () => {
+  const { t } = useTranslation();
+
   const results = useQueries({
     queries: [
       {
@@ -134,10 +137,15 @@ export const useAdminDashboardData = () => {
       const project = projects.find(
         (p) => String(p.id) === String(next.project),
       );
-      return { ...next, projectTitle: project?.title || "Nieznany projekt" };
+      return {
+        ...next,
+        projectTitle:
+          project?.title ||
+          t("dashboard.admin.unknown_project", "Nieznany projekt"),
+      };
     }
     return null;
-  }, [rehearsals, projects]);
+  }, [rehearsals, projects, t]);
 
   return {
     isLoading,

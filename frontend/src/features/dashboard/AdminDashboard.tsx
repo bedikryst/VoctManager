@@ -5,9 +5,10 @@
  * @module panel/dashboard/AdminDashboard
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Calendar,
   Music,
@@ -30,49 +31,6 @@ import { useAuth } from "../../app/providers/AuthProvider";
 import { GlassCard } from "../../shared/ui/GlassCard";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 
-const ADMIN_MODULES = [
-  {
-    id: "projects",
-    title: "Zarządzanie Projektami",
-    desc: "Centrum dowodzenia produkcją.",
-    features: ["Harmonogramy", "Setlisty", "Casting"],
-    icon: <Briefcase size={20} className="text-[#002395]" />,
-    path: "/panel/project-management",
-  },
-  {
-    id: "archive",
-    title: "Archiwum Nut",
-    desc: "Centralna baza biblioteki muzycznej.",
-    features: ["Pliki PDF", "Ścieżki Audio", "Wymagania"],
-    icon: <Music size={20} className="text-[#002395]" />,
-    path: "/panel/archive-management",
-  },
-  {
-    id: "artists",
-    title: "Baza Artystów",
-    desc: "Zarządzanie chórem i solistami.",
-    features: ["Statystyki SATB", "Profile", "A vista"],
-    icon: <Users size={20} className="text-[#002395]" />,
-    path: "/panel/artists",
-  },
-  {
-    id: "contracts",
-    title: "Kadry i Płace",
-    desc: "Finanse, umowy i budżetowanie.",
-    features: ["Stawki", "Dokumenty", "Budżet"],
-    icon: <FileText size={20} className="text-[#002395]" />,
-    path: "/panel/contracts",
-  },
-  {
-    id: "crew",
-    title: "Ekipa Techniczna",
-    desc: "Logistyka i reżyseria wydarzeń.",
-    features: ["Dźwięk", "Światło", "Firmy"],
-    icon: <Wrench size={20} className="text-[#002395]" />,
-    path: "/panel/crew",
-  },
-];
-
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.1 } },
@@ -88,6 +46,7 @@ const itemVariants: Variants = {
 
 export default function AdminDashboard(): React.JSX.Element {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const {
     isLoading,
     adminStats,
@@ -95,6 +54,90 @@ export default function AdminDashboard(): React.JSX.Element {
     nextProjectStats,
     nextRehearsal,
   } = useAdminDashboardData();
+
+  const ADMIN_MODULES = useMemo(
+    () => [
+      {
+        id: "projects",
+        title: t(
+          "dashboard.admin.modules.projects_title",
+          "Zarządzanie Projektami",
+        ),
+        desc: t(
+          "dashboard.admin.modules.projects_desc",
+          "Centrum dowodzenia produkcją.",
+        ),
+        features: [
+          t("dashboard.admin.modules.projects_feat_1", "Harmonogramy"),
+          t("dashboard.admin.modules.projects_feat_2", "Setlisty"),
+          t("dashboard.admin.modules.projects_feat_3", "Casting"),
+        ],
+        icon: <Briefcase size={20} className="text-[#002395]" />,
+        path: "/panel/project-management",
+      },
+      {
+        id: "archive",
+        title: t("dashboard.admin.modules.archive_title", "Archiwum Nut"),
+        desc: t(
+          "dashboard.admin.modules.archive_desc",
+          "Centralna baza biblioteki muzycznej.",
+        ),
+        features: [
+          t("dashboard.admin.modules.archive_feat_1", "Pliki PDF"),
+          t("dashboard.admin.modules.archive_feat_2", "Ścieżki Audio"),
+          t("dashboard.admin.modules.archive_feat_3", "Wymagania"),
+        ],
+        icon: <Music size={20} className="text-[#002395]" />,
+        path: "/panel/archive-management",
+      },
+      {
+        id: "artists",
+        title: t("dashboard.admin.modules.artists_title", "Baza Artystów"),
+        desc: t(
+          "dashboard.admin.modules.artists_desc",
+          "Zarządzanie chórem i solistami.",
+        ),
+        features: [
+          t("dashboard.admin.modules.artists_feat_1", "Statystyki SATB"),
+          t("dashboard.admin.modules.artists_feat_2", "Profile"),
+          t("dashboard.admin.modules.artists_feat_3", "A vista"),
+        ],
+        icon: <Users size={20} className="text-[#002395]" />,
+        path: "/panel/artists",
+      },
+      {
+        id: "contracts",
+        title: t("dashboard.admin.modules.contracts_title", "Kadry i Płace"),
+        desc: t(
+          "dashboard.admin.modules.contracts_desc",
+          "Finanse, umowy i budżetowanie.",
+        ),
+        features: [
+          t("dashboard.admin.modules.contracts_feat_1", "Stawki"),
+          t("dashboard.admin.modules.contracts_feat_2", "Dokumenty"),
+          t("dashboard.admin.modules.contracts_feat_3", "Budżet"),
+        ],
+        icon: <FileText size={20} className="text-[#002395]" />,
+        path: "/panel/contracts",
+      },
+      {
+        id: "crew",
+        title: t("dashboard.admin.modules.crew_title", "Ekipa Techniczna"),
+        desc: t(
+          "dashboard.admin.modules.crew_desc",
+          "Logistyka i reżyseria wydarzeń.",
+        ),
+        features: [
+          t("dashboard.admin.modules.crew_feat_1", "Dźwięk"),
+          t("dashboard.admin.modules.crew_feat_2", "Światło"),
+          t("dashboard.admin.modules.crew_feat_3", "Firmy"),
+        ],
+        icon: <Wrench size={20} className="text-[#002395]" />,
+        path: "/panel/crew",
+      },
+    ],
+    [t],
+  );
 
   if (isLoading) {
     return (
@@ -104,7 +147,7 @@ export default function AdminDashboard(): React.JSX.Element {
           <div className="w-16 h-16 border-4 border-[#002395] rounded-full border-t-transparent animate-spin"></div>
         </div>
         <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
-          Wczytywanie telemetrii...
+          {t("dashboard.shared.loading_telemetry", "Wczytywanie telemetrii...")}
         </span>
       </div>
     );
@@ -123,16 +166,18 @@ export default function AdminDashboard(): React.JSX.Element {
               <div className="absolute w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
             </div>
             <p className="text-[10px] uppercase tracking-[0.15em] font-bold antialiased text-stone-600">
-              Zalogowano jako: {user?.first_name || "Admin"}
+              {t("dashboard.admin.logged_in_as", "Zalogowano jako: {{name}}", {
+                name: user?.first_name || "Admin",
+              })}
             </p>
           </div>
           <h1
             className="text-4xl md:text-5xl lg:text-6xl font-medium text-stone-900 leading-[1.05] tracking-tight max-w-4xl"
             style={{ fontFamily: "'Cormorant', serif" }}
           >
-            Twoje cyfrowe biuro{" "}
+            {t("dashboard.admin.hero_title_1", "Twoje cyfrowe biuro")}{" "}
             <span className="italic text-[#002395] font-bold">
-              produkcji muzycznej
+              {t("dashboard.admin.hero_title_highlight", "produkcji muzycznej")}
             </span>
             .
           </h1>
@@ -140,7 +185,6 @@ export default function AdminDashboard(): React.JSX.Element {
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* 1. ADMIN KPI WIDGET - 2026 OLED STYLE */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -169,7 +213,7 @@ export default function AdminDashboard(): React.JSX.Element {
                   aria-hidden="true"
                 />
                 <span className="text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400">
-                  Telemetria Bazy
+                  {t("dashboard.admin.kpi_telemetry", "Telemetria Bazy")}
                 </span>
               </div>
             </div>
@@ -177,7 +221,7 @@ export default function AdminDashboard(): React.JSX.Element {
             <div className="relative z-10 grid grid-cols-2 gap-y-8 gap-x-4 mb-6">
               <div>
                 <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1.5">
-                  Baza Utworów
+                  {t("dashboard.admin.kpi_pieces", "Baza Utworów")}
                 </p>
                 <p className="text-4xl font-black tracking-tight text-white">
                   {adminStats.totalPieces}
@@ -185,7 +229,7 @@ export default function AdminDashboard(): React.JSX.Element {
               </div>
               <div>
                 <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1.5">
-                  Aktywne Projekty
+                  {t("dashboard.admin.kpi_projects", "Aktywne Projekty")}
                 </p>
                 <p className="text-4xl font-black tracking-tight text-blue-300">
                   {adminStats.activeProjects}
@@ -194,32 +238,34 @@ export default function AdminDashboard(): React.JSX.Element {
               <div className="col-span-2 border-t border-white/10 pt-6 mt-2">
                 <div className="flex justify-between items-end mb-4">
                   <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500">
-                    Gotowość Zespołu
+                    {t("dashboard.admin.kpi_team_ready", "Gotowość Zespołu")}
                   </p>
                   <span className="text-[10px] font-bold text-stone-300 bg-white/10 px-2 py-1 rounded-md">
-                    {adminStats.satb.Total} os.
+                    {t("dashboard.admin.kpi_people", "{{count}} os.", {
+                      count: adminStats.satb.Total,
+                    })}
                   </span>
                 </div>
 
                 <div className="space-y-3">
                   {[
                     {
-                      label: "Soprany",
+                      label: t("dashboard.admin.voices.sopranos", "Soprany"),
                       val: adminStats.satb.S,
                       color: "bg-rose-500",
                     },
                     {
-                      label: "Alty",
+                      label: t("dashboard.admin.voices.altos", "Alty"),
                       val: adminStats.satb.A,
                       color: "bg-purple-500",
                     },
                     {
-                      label: "Tenory",
+                      label: t("dashboard.admin.voices.tenors", "Tenory"),
                       val: adminStats.satb.T,
                       color: "bg-sky-500",
                     },
                     {
-                      label: "Basy",
+                      label: t("dashboard.admin.voices.basses", "Basy"),
                       val: adminStats.satb.B,
                       color: "bg-emerald-500",
                     },
@@ -247,7 +293,6 @@ export default function AdminDashboard(): React.JSX.Element {
           </GlassCard>
         </motion.div>
 
-        {/* 2. NEXT PROJECT SPOTLIGHT */}
         <div className="xl:col-span-2 flex flex-col gap-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -268,7 +313,7 @@ export default function AdminDashboard(): React.JSX.Element {
                   aria-hidden="true"
                 />
                 <span className="text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400">
-                  Pulpit Produkcyjny
+                  {t("dashboard.admin.spotlight_title", "Pulpit Produkcyjny")}
                 </span>
               </div>
 
@@ -276,7 +321,10 @@ export default function AdminDashboard(): React.JSX.Element {
                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
                   <div className="flex-1">
                     <span className="inline-block px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold uppercase tracking-widest rounded-lg mb-4">
-                      Nadchodzące Wydarzenie
+                      {t(
+                        "dashboard.admin.spotlight_badge",
+                        "Nadchodzące Wydarzenie",
+                      )}
                     </span>
                     <h2
                       className="text-3xl md:text-5xl font-medium text-stone-900 tracking-tight leading-tight mb-6 max-w-2xl"
@@ -312,19 +360,35 @@ export default function AdminDashboard(): React.JSX.Element {
                     <div className="flex flex-wrap items-center gap-6 border-t border-stone-200/80 pt-5">
                       <span className="flex flex-col gap-1">
                         <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 flex items-center gap-1.5">
-                          <ListOrdered size={12} /> Repertuar
+                          <ListOrdered size={12} />{" "}
+                          {t(
+                            "dashboard.admin.spotlight_repertoire",
+                            "Repertuar",
+                          )}
                         </span>
                         <span className="text-sm font-bold text-stone-800">
-                          {nextProjectStats.piecesCount} utworów
+                          {t(
+                            "dashboard.admin.spotlight_pieces_count",
+                            "{{count}} utworów",
+                            { count: nextProjectStats.piecesCount },
+                          )}
                         </span>
                       </span>
                       <div className="w-px h-8 bg-stone-200"></div>
                       <span className="flex flex-col gap-1">
                         <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 flex items-center gap-1.5">
-                          <MicVocal size={12} /> Do koncertu
+                          <MicVocal size={12} />{" "}
+                          {t(
+                            "dashboard.admin.spotlight_to_concert",
+                            "Do koncertu",
+                          )}
                         </span>
                         <span className="text-sm font-bold text-stone-800">
-                          {nextProjectStats.rehearsalsLeft} prób
+                          {t(
+                            "dashboard.admin.spotlight_rehearsals_left",
+                            "{{count}} prób",
+                            { count: nextProjectStats.rehearsalsLeft },
+                          )}
                         </span>
                       </span>
                     </div>
@@ -334,7 +398,10 @@ export default function AdminDashboard(): React.JSX.Element {
                     to="/panel/project-management"
                     className="shrink-0 inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-stone-900 hover:bg-[#002395] text-white text-[10px] font-bold antialiased uppercase tracking-[0.15em] rounded-2xl transition-all shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_10px_25px_rgba(0,35,149,0.3)] hover:-translate-y-0.5 active:scale-95 group"
                   >
-                    Zarządzaj Produkcją{" "}
+                    {t(
+                      "dashboard.admin.btn_manage_production",
+                      "Zarządzaj Produkcją",
+                    )}{" "}
                     <ArrowRight
                       size={14}
                       className="transform group-hover:translate-x-1 transition-transform"
@@ -351,11 +418,16 @@ export default function AdminDashboard(): React.JSX.Element {
                     />
                   </div>
                   <h3 className="text-lg font-bold text-stone-800 mb-1">
-                    Brak aktywnych wydarzeń
+                    {t(
+                      "dashboard.admin.empty_projects_title",
+                      "Brak aktywnych wydarzeń",
+                    )}
                   </h3>
                   <p className="text-sm font-medium text-stone-500 mb-6 max-w-sm">
-                    Aktualnie nie prowadzisz żadnego projektu koncertowego w
-                    systemie.
+                    {t(
+                      "dashboard.admin.empty_projects_desc",
+                      "Aktualnie nie prowadzisz żadnego projektu koncertowego w systemie.",
+                    )}
                   </p>
                   <Link
                     to="/panel/project-management"
@@ -365,14 +437,16 @@ export default function AdminDashboard(): React.JSX.Element {
                       size={16}
                       className="text-stone-400 group-hover:text-white/70"
                     />{" "}
-                    Zaplanuj nowy projekt
+                    {t(
+                      "dashboard.admin.btn_plan_project",
+                      "Zaplanuj nowy projekt",
+                    )}
                   </Link>
                 </div>
               )}
             </GlassCard>
           </motion.div>
 
-          {/* 3. NEXT REHEARSAL ALERT */}
           {nextRehearsal && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -397,7 +471,11 @@ export default function AdminDashboard(): React.JSX.Element {
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
                       <p className="text-[9px] font-bold antialiased uppercase tracking-[0.15em] text-orange-600/90 truncate">
-                        Najbliższa Próba: {nextRehearsal.projectTitle}
+                        {t(
+                          "dashboard.admin.next_rehearsal_alert",
+                          "Najbliższa Próba: {{title}}",
+                          { title: nextRehearsal.projectTitle },
+                        )}
                       </p>
                     </div>
                     <p className="font-bold text-stone-900 text-lg tracking-tight">
@@ -418,19 +496,29 @@ export default function AdminDashboard(): React.JSX.Element {
                 <div className="relative z-10 flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
                   {(nextRehearsal.absent_count || 0) > 0 ? (
                     <span className="flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-200 px-3 py-2 rounded-xl text-[10px] font-bold antialiased uppercase tracking-widest shadow-sm">
-                      <UserMinus size={14} /> Nieobecności:{" "}
-                      {nextRehearsal.absent_count}
+                      <UserMinus size={14} />{" "}
+                      {t(
+                        "dashboard.admin.absences",
+                        "Nieobecności: {{count}}",
+                        { count: nextRehearsal.absent_count },
+                      )}
                     </span>
                   ) : (
                     <span className="hidden md:flex items-center gap-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 py-2 rounded-xl text-[10px] font-bold antialiased uppercase tracking-widest shadow-sm">
-                      100% Frekwencji
+                      {t(
+                        "dashboard.admin.perfect_attendance",
+                        "100% Frekwencji",
+                      )}
                     </span>
                   )}
 
                   <Link
                     to="/panel/project-management"
                     className="p-3 bg-white border border-stone-200/80 text-stone-500 hover:text-[#002395] hover:border-[#002395] rounded-xl transition-all shadow-sm active:scale-95"
-                    title="Otwórz dziennik projektu"
+                    title={t(
+                      "dashboard.admin.open_logbook",
+                      "Otwórz dziennik projektu",
+                    )}
                   >
                     <ArrowRight size={16} />
                   </Link>
@@ -441,12 +529,11 @@ export default function AdminDashboard(): React.JSX.Element {
         </div>
       </div>
 
-      {/* NAVIGATION MODULES */}
       <section className="pt-8">
         <div className="flex items-center gap-3 mb-8 ml-2">
           <div className="w-1 h-6 bg-[#002395] rounded-full"></div>
           <h3 className="text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400">
-            Moduły Systemowe
+            {t("dashboard.admin.system_modules", "Moduły Systemowe")}
           </h3>
         </div>
 
@@ -494,7 +581,7 @@ export default function AdminDashboard(): React.JSX.Element {
 
                   <div className="relative z-10 flex items-center justify-between pt-5 border-t border-stone-200/60 group-hover:border-blue-200/50 transition-colors mt-auto">
                     <span className="text-[9px] uppercase tracking-[0.15em] font-bold antialiased text-stone-400 group-hover:text-[#002395] transition-colors">
-                      Otwórz Moduł
+                      {t("dashboard.artist.open_module", "Otwórz Moduł")}
                     </span>
                     <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-stone-200/60 group-hover:bg-[#002395] group-hover:border-[#002395] shadow-sm transition-all duration-300">
                       <ChevronRight

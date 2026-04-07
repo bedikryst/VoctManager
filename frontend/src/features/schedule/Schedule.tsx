@@ -8,6 +8,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Loader2, CalendarHeart } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useAuth } from "../../app/providers/AuthProvider";
 import { useScheduleData } from "./hooks/useScheduleData";
@@ -16,6 +17,7 @@ import TimelineRehearsalCard from "./components/TimelineRehearsalCard";
 import { GlassCard } from "../../shared/ui/GlassCard";
 
 export default function Schedule(): React.JSX.Element {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     isLoading,
@@ -38,17 +40,24 @@ export default function Schedule(): React.JSX.Element {
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
             <Calendar size={12} className="text-[#002395]" aria-hidden="true" />
             <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
-              Osobisty Kalendarz
+              {t("schedule.dashboard.subtitle", "Osobisty Kalendarz")}
             </p>
           </div>
           <h1
             className="text-4xl md:text-5xl font-medium text-stone-900 leading-tight tracking-tight"
             style={{ fontFamily: "'Cormorant', serif" }}
           >
-            Mój <span className="italic text-[#002395]">Harmonogram</span>.
+            {t("schedule.dashboard.title", "Mój")}{" "}
+            <span className="italic text-[#002395]">
+              {t("schedule.dashboard.title_highlight", "Harmonogram")}
+            </span>
+            .
           </h1>
           <p className="text-stone-500 mt-2 font-medium tracking-wide text-sm">
-            Sprawdzaj próby, zgłaszaj nieobecności i śledź plany koncertowe.
+            {t(
+              "schedule.dashboard.description",
+              "Sprawdzaj próby, zgłaszaj nieobecności i śledź plany koncertowe.",
+            )}
           </p>
         </motion.div>
       </header>
@@ -56,8 +65,11 @@ export default function Schedule(): React.JSX.Element {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="inline-flex items-center p-1.5 bg-white/60 backdrop-blur-xl border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-xl overflow-x-auto max-w-full scrollbar-hide">
           {[
-            { id: "UPCOMING", label: "Nadchodzące" },
-            { id: "PAST", label: "Historia" },
+            {
+              id: "UPCOMING",
+              label: t("schedule.tabs.upcoming", "Nadchodzące"),
+            },
+            { id: "PAST", label: t("schedule.tabs.past", "Historia") },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -83,7 +95,7 @@ export default function Schedule(): React.JSX.Element {
               className="animate-spin text-[#002395]/40 mb-4"
             />
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#002395]/60">
-              Pobieranie grafiku...
+              {t("schedule.loading", "Pobieranie grafiku...")}
             </span>
           </div>
         ) : filteredEvents.length > 0 ? (
@@ -132,11 +144,13 @@ export default function Schedule(): React.JSX.Element {
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">
-                Brak wpisów w kalendarzu
+                {t("schedule.empty.title", "Brak wpisów w kalendarzu")}
               </span>
               <span className="text-xs text-stone-400 max-w-sm">
-                W tym widoku nie masz przypisanych żadnych spotkań ani
-                koncertów.
+                {t(
+                  "schedule.empty.description",
+                  "W tym widoku nie masz przypisanych żadnych spotkań ani koncertów.",
+                )}
               </span>
             </GlassCard>
           </motion.div>

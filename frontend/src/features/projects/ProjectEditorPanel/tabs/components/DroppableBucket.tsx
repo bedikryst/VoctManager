@@ -1,36 +1,50 @@
 /**
  * @file DroppableBucket.tsx
- * @description Droppable container for voice lines in the micro-casting Kanban board.
- * Visually reacts to drag-over states and deficit requirements.
+ * @description Droppable zone container for @dnd-kit.
+ * Handles drop detection and visual feedback during active drag operations.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/components/DroppableBucket
  */
 
 import React from "react";
 import { useDroppable } from "@dnd-kit/core";
 
-interface DroppableBucketProps {
+export interface DroppableBucketProps {
   id: string;
-  children: React.ReactNode;
-  isDeficit: boolean;
-  targetQuantity: number | null;
+  title?: string;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 export function DroppableBucket({
   id,
+  title,
+  className = "",
   children,
-  isDeficit,
-  targetQuantity,
 }: DroppableBucketProps): React.JSX.Element {
-  const { setNodeRef, isOver } = useDroppable({ id });
+  const { isOver, setNodeRef } = useDroppable({
+    id,
+    data: {
+      type: "Bucket",
+      title,
+    },
+  });
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 flex flex-col min-h-[70px] pt-2 pb-2 gap-2 rounded-xl transition-colors 
-                ${isOver ? (isDeficit || targetQuantity === null ? "bg-blue-50/50 shadow-inner" : "bg-emerald-50/50 shadow-inner") : ""}
-            `}
+      aria-label={title ? `Sekcja upuszczania: ${title}` : "Sekcja upuszczania"}
+      className={`relative rounded-xl transition-all duration-200 ${
+        isOver
+          ? "bg-[#002395]/5 ring-2 ring-[#002395]/20 shadow-inner"
+          : "bg-transparent border border-transparent"
+      } ${className}`}
     >
-      {children}
+      {isOver && (
+        <div className="absolute inset-0 bg-gradient-to-b from-[#002395]/5 to-transparent rounded-xl pointer-events-none" />
+      )}
+
+      <div className="relative z-10 h-full flex flex-col">{children}</div>
     </div>
   );
 }

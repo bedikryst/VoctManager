@@ -1,12 +1,12 @@
 /**
  * @file CrewWidget.tsx
  * @description Dashboard widget detailing technical crew assignments for the project.
- * Inherits pre-resolved assignment arrays and global crew dictionaries from the React Query cache.
- * Substring slicing ensures bounded layout constraints for technical role tags.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/widgets/CrewWidget
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Wrench } from "lucide-react";
 
 import type { Project, Collaborator } from "../../../../shared/types";
@@ -22,7 +22,7 @@ export default function CrewWidget({
   project,
   onEdit,
 }: CrewWidgetProps): React.JSX.Element {
-  // Destructuring assignments and the global dictionary from React Query cache
+  const { t } = useTranslation();
   const { crewAssignments: projectCrew, crew } = useProjectData(
     String(project.id),
   );
@@ -37,7 +37,7 @@ export default function CrewWidget({
       onClick={onEdit}
       className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-[#002395]/40 hover:shadow-md" : ""}`}
       role={onEdit ? "button" : "region"}
-      aria-label="Manage technical crew"
+      aria-label={t("projects.crew.aria_label", "Zarządzaj ekipą techniczną")}
     >
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
         <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
@@ -46,11 +46,11 @@ export default function CrewWidget({
             className="text-[#002395] group-hover:scale-110 transition-transform"
             aria-hidden="true"
           />
-          Ekipa (Crew)
+          {t("projects.crew.title", "Ekipa (Crew)")}
         </h4>
         {onEdit && (
           <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-[#002395] opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
-            Edytuj
+            {t("common.actions.edit", "Edytuj")}
           </button>
         )}
       </div>
@@ -87,14 +87,14 @@ export default function CrewWidget({
 
           {projectCrew.length === 0 && (
             <span className="text-xs text-stone-400 italic">
-              Brak przypisanej ekipy.
+              {t("projects.crew.empty", "Brak przypisanej ekipy.")}
             </span>
           )}
         </div>
       </div>
 
       <div className="text-center text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mt-auto border-t border-stone-100 pt-3">
-        Zatrudnionych: {projectCrew.length}
+        {t("projects.crew.employed", "Zatrudnionych:")} {projectCrew.length}
       </div>
     </GlassCard>
   );

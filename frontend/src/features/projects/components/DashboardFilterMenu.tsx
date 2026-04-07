@@ -2,10 +2,12 @@
  * @file DashboardFilterMenu.tsx
  * @description Navigation pill menu for filtering projects by status.
  * Extracted to prevent UI bloat in the main dashboard controller.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/components/DashboardFilterMenu
  */
 
-import React from "react";
+import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export type FilterStatus = "ACTIVE" | "DONE" | "ALL";
 
@@ -13,12 +15,6 @@ interface FilterOption {
   id: FilterStatus;
   label: string;
 }
-
-const FILTER_OPTIONS: FilterOption[] = [
-  { id: "ACTIVE", label: "W przygotowaniu" },
-  { id: "DONE", label: "Archiwum" },
-  { id: "ALL", label: "Wszystkie" },
-];
 
 interface DashboardFilterMenuProps {
   currentFilter: FilterStatus;
@@ -29,6 +25,17 @@ export const DashboardFilterMenu: React.FC<DashboardFilterMenuProps> = ({
   currentFilter,
   onFilterChange,
 }) => {
+  const { t } = useTranslation();
+
+  const filterOptions = useMemo<FilterOption[]>(
+    () => [
+      { id: "ACTIVE", label: t("projects.filters.active", "W przygotowaniu") },
+      { id: "DONE", label: t("projects.filters.done", "Archiwum") },
+      { id: "ALL", label: t("projects.filters.all", "Wszystkie") },
+    ],
+    [t],
+  );
+
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <div
@@ -36,7 +43,7 @@ export const DashboardFilterMenu: React.FC<DashboardFilterMenuProps> = ({
         role="tablist"
         aria-label="Project status filters"
       >
-        {FILTER_OPTIONS.map((filter) => {
+        {filterOptions.map((filter) => {
           const isActive = currentFilter === filter.id;
           return (
             <button

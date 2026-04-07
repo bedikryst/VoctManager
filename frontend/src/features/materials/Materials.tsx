@@ -9,6 +9,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   Search,
   Music,
@@ -29,12 +30,13 @@ import {
 
 import { getReferenceRecordingLinks } from "../../shared/lib/referenceRecordings";
 import { useMaterialsData } from "./hooks/useMaterialsData";
-
 import { GlassCard } from "../../shared/ui/GlassCard";
 import { Input } from "../../shared/ui/Input";
 import { EducationalAudioPlayer } from "./components/EducationalAudioPlayer";
+import type { PieceCasting } from "../../shared/types";
 
 export default function Materials(): React.JSX.Element {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null);
@@ -47,11 +49,17 @@ export default function Materials(): React.JSX.Element {
 
   useEffect(() => {
     if (isError) {
-      toast.error("Błąd synchronizacji", {
-        description: "Nie udało się załadować materiałów. Odśwież stronę.",
-      });
+      toast.error(
+        t("materials.dashboard.sync_error_title", "Błąd synchronizacji"),
+        {
+          description: t(
+            "materials.dashboard.sync_error_desc",
+            "Nie udało się załadować materiałów. Odśwież stronę.",
+          ),
+        },
+      );
     }
-  }, [isError]);
+  }, [isError, t]);
 
   const togglePieceExpand = (pieceId: string) => {
     setExpandedPieceId((prev) => (prev === pieceId ? null : pieceId));
@@ -73,7 +81,7 @@ export default function Materials(): React.JSX.Element {
           aria-hidden="true"
         />
         <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
-          Synchronizacja biblioteki...
+          {t("materials.dashboard.syncing", "Synchronizacja biblioteki...")}
         </span>
       </div>
     );
@@ -94,19 +102,24 @@ export default function Materials(): React.JSX.Element {
               aria-hidden="true"
             />
             <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
-              Strefa Artysty
+              {t("materials.dashboard.subtitle", "Strefa Artysty")}
             </p>
           </div>
           <h1
             className="text-4xl md:text-5xl font-medium text-stone-900 leading-tight tracking-tight"
             style={{ fontFamily: "'Cormorant', serif" }}
           >
-            Materiały do{" "}
-            <span className="italic text-[#002395] font-bold">ćwiczeń</span>.
+            {t("materials.dashboard.title", "Materiały do")}{" "}
+            <span className="italic text-[#002395] font-bold">
+              {t("materials.dashboard.title_highlight", "ćwiczeń")}
+            </span>
+            .
           </h1>
           <p className="text-stone-500 mt-2 font-medium tracking-wide text-sm max-w-xl">
-            Pobieraj nuty, ćwicz z wykorzystaniem odtwarzacza MIDI z kontrolą
-            tempa i sprawdzaj swoją rolę w zespole.
+            {t(
+              "materials.dashboard.description",
+              "Pobieraj nuty, ćwicz z wykorzystaniem odtwarzacza MIDI z kontrolą tempa i sprawdzaj swoją rolę w zespole.",
+            )}
           </p>
         </motion.div>
       </header>
@@ -115,7 +128,10 @@ export default function Materials(): React.JSX.Element {
         <Input
           leftIcon={<Search size={16} />}
           type="text"
-          placeholder="Szukaj utworu lub kompozytora..."
+          placeholder={t(
+            "materials.dashboard.search_placeholder",
+            "Szukaj utworu lub kompozytora...",
+          )}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -149,7 +165,8 @@ export default function Materials(): React.JSX.Element {
                       <h2
                         className={`text-sm font-bold antialiased uppercase tracking-widest ${isArchived ? "text-stone-600" : "text-stone-800"}`}
                       >
-                        Wydarzenie: {group.project.title}
+                        {t("materials.project.event", "Wydarzenie:")}{" "}
+                        {group.project.title}
                       </h2>
                       <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[10px] font-bold antialiased text-stone-500 uppercase tracking-widest flex items-center gap-1">
@@ -160,7 +177,10 @@ export default function Materials(): React.JSX.Element {
                         </p>
                         {isArchived && (
                           <span className="px-2 py-0.5 bg-stone-200 text-stone-600 text-[8px] font-bold antialiased uppercase tracking-widest rounded shadow-sm">
-                            Projekt Zarchiwizowany
+                            {t(
+                              "materials.project.archived_badge",
+                              "Projekt Zarchiwizowany",
+                            )}
                           </span>
                         )}
                       </div>
@@ -171,12 +191,14 @@ export default function Materials(): React.JSX.Element {
                     const isExpanded = expandedPieceId === String(piece.id);
                     const referenceLinks = getReferenceRecordingLinks(piece);
 
-                    // Re-formatting divisi bindings dynamically
+                    // ENTERPRISE FIX: Zdefiniowane na twardo typy, zero "any"
                     const divisiGroups = piece.allCastings.reduce<
-                      Record<string, any[]>
+                      Record<string, PieceCasting[]>
                     >((acc, c) => {
                       const vl =
-                        (c as any).voice_line_display || c.voice_line || "Inne";
+                        c.voice_line_display ||
+                        c.voice_line ||
+                        t("materials.piece.other_voice", "Inne");
                       if (!acc[vl]) acc[vl] = [];
                       acc[vl].push(c);
                       return acc;
@@ -208,13 +230,15 @@ export default function Materials(): React.JSX.Element {
                                 <p className="text-[10px] font-bold antialiased text-stone-500 uppercase tracking-widest mt-1">
                                   {piece.composerData
                                     ? `${piece.composerData.first_name || ""} ${piece.composerData.last_name}`
-                                    : "Tradycyjny / Nieznany"}
+                                    : t(
+                                        "materials.piece.traditional",
+                                        "Tradycyjny / Nieznany",
+                                      )}
                                 </p>
                                 {piece.myCasting && (
                                   <p className="text-[10px] font-bold antialiased text-[#002395] bg-blue-50/80 px-2 py-0.5 rounded border border-blue-100/50 mt-2 inline-block shadow-sm">
-                                    Śpiewasz:{" "}
-                                    {(piece.myCasting as any)
-                                      .voice_line_display ||
+                                    {t("materials.piece.you_sing", "Śpiewasz:")}{" "}
+                                    {piece.myCasting.voice_line_display ||
                                       piece.myCasting.voice_line}
                                   </p>
                                 )}
@@ -225,17 +249,21 @@ export default function Materials(): React.JSX.Element {
                               <div className="flex gap-2">
                                 {!isArchived && piece.sheet_music && (
                                   <span className="px-2.5 py-1.5 bg-blue-50 text-[#002395] text-[9px] tracking-widest font-bold antialiased uppercase rounded-lg border border-blue-100">
-                                    PDF
+                                    {t("materials.piece.pdf_badge", "PDF")}
                                   </span>
                                 )}
                                 {!isArchived && piece.tracks.length > 0 && (
                                   <span className="px-2.5 py-1.5 bg-emerald-50 text-emerald-700 text-[9px] tracking-widest font-bold antialiased uppercase rounded-lg border border-emerald-100">
-                                    Audio
+                                    {t("materials.piece.audio_badge", "Audio")}
                                   </span>
                                 )}
                                 {isArchived && (
                                   <span className="px-2.5 py-1.5 bg-stone-100 text-stone-400 text-[9px] tracking-widest font-bold antialiased uppercase rounded-lg border border-stone-200 flex items-center gap-1.5">
-                                    <Lock size={12} /> Chronione
+                                    <Lock size={12} />{" "}
+                                    {t(
+                                      "materials.piece.locked_badge",
+                                      "Chronione",
+                                    )}
                                   </span>
                                 )}
                               </div>
@@ -268,13 +296,16 @@ export default function Materials(): React.JSX.Element {
                                       />
                                     </div>
                                     <h4 className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-600 mb-2">
-                                      Dostęp Zablokowany
+                                      {t(
+                                        "materials.piece.access_locked_title",
+                                        "Dostęp Zablokowany",
+                                      )}
                                     </h4>
                                     <p className="text-xs text-stone-500 max-w-md leading-relaxed">
-                                      Projekt został zakończony. Materiały
-                                      ćwiczeniowe oraz partytury nie są już
-                                      dostępne ze względu na ochronę własności
-                                      intelektualnej i aranżacji dyrygenta.
+                                      {t(
+                                        "materials.piece.access_locked_desc",
+                                        "Projekt został zakończony. Materiały ćwiczeniowe oraz partytury nie są już dostępne ze względu na ochronę własności intelektualnej i aranżacji dyrygenta.",
+                                      )}
                                     </p>
                                   </div>
                                 ) : (
@@ -291,7 +322,10 @@ export default function Materials(): React.JSX.Element {
                                             size={16}
                                             aria-hidden="true"
                                           />{" "}
-                                          Pobierz Partyturę (PDF)
+                                          {t(
+                                            "materials.piece.download_pdf",
+                                            "Pobierz Partyturę (PDF)",
+                                          )}
                                         </a>
                                       ) : (
                                         <span className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-8 py-3.5 bg-stone-100 border border-stone-200/50 rounded-xl text-[10px] uppercase tracking-widest font-bold antialiased text-stone-400 cursor-not-allowed">
@@ -299,7 +333,10 @@ export default function Materials(): React.JSX.Element {
                                             size={16}
                                             aria-hidden="true"
                                           />{" "}
-                                          Nuty niedostępne
+                                          {t(
+                                            "materials.piece.no_pdf",
+                                            "Nuty niedostępne",
+                                          )}
                                         </span>
                                       )}
 
@@ -314,7 +351,10 @@ export default function Materials(): React.JSX.Element {
                                             size={16}
                                             aria-hidden="true"
                                           />{" "}
-                                          Posłuchaj Referencji
+                                          {t(
+                                            "materials.piece.listen_reference",
+                                            "Posłuchaj Referencji",
+                                          )}
                                         </a>
                                       )}
                                     </div>
@@ -331,11 +371,17 @@ export default function Materials(): React.JSX.Element {
                                             </div>
                                             <div>
                                               <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
-                                                Twoje wytyczne do utworu
+                                                {t(
+                                                  "materials.piece.your_guidelines",
+                                                  "Twoje wytyczne do utworu",
+                                                )}
                                               </h4>
                                               <p className="text-sm font-bold text-stone-800">
-                                                Partia:{" "}
-                                                {(piece.myCasting as any)
+                                                {t(
+                                                  "materials.piece.part",
+                                                  "Partia:",
+                                                )}{" "}
+                                                {piece.myCasting
                                                   .voice_line_display ||
                                                   piece.myCasting.voice_line}
                                               </p>
@@ -347,8 +393,10 @@ export default function Materials(): React.JSX.Element {
                                             </p>
                                           ) : (
                                             <p className="text-xs text-stone-400 italic">
-                                              Dyrygent nie dodał specjalnych
-                                              uwag.
+                                              {t(
+                                                "materials.piece.no_notes",
+                                                "Dyrygent nie dodał specjalnych uwag.",
+                                              )}
                                             </p>
                                           )}
                                         </div>
@@ -357,7 +405,10 @@ export default function Materials(): React.JSX.Element {
                                       <div className="bg-white/50 backdrop-blur-sm border border-stone-200/80 p-5 rounded-2xl shadow-sm h-full">
                                         <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3 flex items-center gap-1.5 border-b border-stone-200/60 pb-2">
                                           <Users size={14} aria-hidden="true" />{" "}
-                                          Obsada utworu (Divisi)
+                                          {t(
+                                            "materials.piece.cast_divisi",
+                                            "Obsada utworu (Divisi)",
+                                          )}
                                         </h4>
                                         {piece.allCastings.length > 0 ? (
                                           <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-h-[160px] overflow-y-auto pr-2 scrollbar-hide">
@@ -372,7 +423,7 @@ export default function Materials(): React.JSX.Element {
                                                   </h5>
                                                   <ul className="space-y-1">
                                                     {groupCastings.map(
-                                                      (c: any) => {
+                                                      (c: PieceCasting) => {
                                                         const isMe =
                                                           piece.myCasting
                                                             ?.id === c.id;
@@ -384,9 +435,11 @@ export default function Materials(): React.JSX.Element {
                                                             {isMe && (
                                                               <span className="w-1.5 h-1.5 bg-[#002395] rounded-full animate-pulse shadow-sm"></span>
                                                             )}
-                                                            {(c as any)
-                                                              .artist_name ||
-                                                              "Artysta"}
+                                                            {c.artist_name ||
+                                                              t(
+                                                                "materials.piece.unknown_artist",
+                                                                "Artysta",
+                                                              )}
                                                           </li>
                                                         );
                                                       },
@@ -398,7 +451,10 @@ export default function Materials(): React.JSX.Element {
                                           </div>
                                         ) : (
                                           <p className="text-xs text-stone-400 italic">
-                                            Brak zdefiniowanego podziału głosów.
+                                            {t(
+                                              "materials.piece.no_divisi",
+                                              "Brak zdefiniowanego podziału głosów.",
+                                            )}
                                           </p>
                                         )}
                                       </div>
@@ -412,7 +468,10 @@ export default function Materials(): React.JSX.Element {
                                             className="text-emerald-600"
                                             aria-hidden="true"
                                           />{" "}
-                                          Ścieżki Ćwiczeniowe (Midi / MP3)
+                                          {t(
+                                            "materials.piece.practice_tracks",
+                                            "Ścieżki Ćwiczeniowe (Midi / MP3)",
+                                          )}
                                         </h4>
                                         <div className="grid grid-cols-1 gap-4">
                                           {piece.tracks.map((track) => (
@@ -450,7 +509,10 @@ export default function Materials(): React.JSX.Element {
                                               className="text-[#002395]"
                                               aria-hidden="true"
                                             />{" "}
-                                            Tekst Utworu i Tłumaczenie
+                                            {t(
+                                              "materials.piece.lyrics_translation",
+                                              "Tekst Utworu i Tłumaczenie",
+                                            )}
                                           </span>
                                           <span className="text-stone-400 bg-white shadow-sm p-1.5 rounded-full border border-stone-100">
                                             {showLyricsFor === piece.id ? (
@@ -479,7 +541,10 @@ export default function Materials(): React.JSX.Element {
                                                 {piece.lyrics_original && (
                                                   <div>
                                                     <h5 className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-3 border-b border-stone-200/60 pb-2">
-                                                      Oryginał
+                                                      {t(
+                                                        "materials.piece.original_lyrics",
+                                                        "Oryginał",
+                                                      )}
                                                     </h5>
                                                     <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed font-serif">
                                                       {piece.lyrics_original}
@@ -489,7 +554,10 @@ export default function Materials(): React.JSX.Element {
                                                 {piece.lyrics_translation && (
                                                   <div>
                                                     <h5 className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-3 border-b border-stone-200/60 pb-2">
-                                                      Tłumaczenie (Notatki)
+                                                      {t(
+                                                        "materials.piece.translation_notes",
+                                                        "Tłumaczenie (Notatki)",
+                                                      )}
                                                     </h5>
                                                     <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed font-serif italic opacity-90">
                                                       {piece.lyrics_translation}
@@ -527,11 +595,16 @@ export default function Materials(): React.JSX.Element {
                   aria-hidden="true"
                 />
                 <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-600 mb-2">
-                  Brak przypisanych materiałów
+                  {t(
+                    "materials.dashboard.empty_title",
+                    "Brak przypisanych materiałów",
+                  )}
                 </span>
                 <span className="text-xs text-stone-400 max-w-md leading-relaxed">
-                  W tej chwili nie masz nadchodzących projektów lub dyrygent nie
-                  zatwierdził jeszcze żadnego programu koncertu.
+                  {t(
+                    "materials.dashboard.empty_desc",
+                    "W tej chwili nie masz nadchodzących projektów lub dyrygent nie zatwierdził jeszcze żadnego programu koncertu.",
+                  )}
                 </span>
               </GlassCard>
             </motion.div>

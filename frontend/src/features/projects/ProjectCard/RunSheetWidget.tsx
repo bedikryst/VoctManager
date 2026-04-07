@@ -2,11 +2,13 @@
  * @file RunSheetWidget.tsx
  * @description Expandable widget displaying the chronological run-sheet (agenda) for the project.
  * Implements collocated UI state (`isOpen`) and uses `useMemo` for sorting the agenda array.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/components/RunSheetWidget
  */
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { ListOrdered, ChevronDown, ChevronUp } from "lucide-react";
 import type { Project } from "../../../shared/types";
 
@@ -19,6 +21,7 @@ export default function RunSheetWidget({
   project,
   onEdit,
 }: RunSheetWidgetProps): React.JSX.Element {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const sortedRunSheet = useMemo(() => {
@@ -42,7 +45,7 @@ export default function RunSheetWidget({
             className="text-[#002395]"
             aria-hidden="true"
           />{" "}
-          Harmonogram dnia koncertu
+          {t("projects.run_sheet.title", "Harmonogram dnia koncertu")}
         </h4>
         <div className="flex items-center gap-4">
           {onEdit && (
@@ -53,7 +56,7 @@ export default function RunSheetWidget({
               }}
               className="text-[10px] uppercase font-bold antialiased tracking-widest text-[#002395] hover:underline"
             >
-              Edytuj
+              {t("common.actions.edit", "Edytuj")}
             </button>
           )}
           <div className="text-stone-400 bg-stone-100 p-1.5 rounded-full">
@@ -109,7 +112,10 @@ export default function RunSheetWidget({
                     aria-hidden="true"
                   />
                   <p className="text-xs text-stone-400 font-medium">
-                    Brak harmonogramu dostępnego dla tego wydarzenia.
+                    {t(
+                      "projects.run_sheet.empty",
+                      "Brak harmonogramu dostępnego dla tego wydarzenia.",
+                    )}
                   </p>
                 </div>
               )}

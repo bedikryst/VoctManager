@@ -1,10 +1,12 @@
 /**
  * @file useRehearsalsData.ts
  * @description Encapsulates relational mapping, navigation state, and KPI calculation for rehearsals.
+ * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { Artist, Attendance } from "../../../shared/types";
 import {
   useMarkMissingAttendancesPresent,
@@ -13,6 +15,7 @@ import {
 import type { ProjectTabType } from "../types/rehearsals.dto";
 
 export const useRehearsalsData = () => {
+  const { t } = useTranslation();
   const [projectTab, setProjectTab] = useState<ProjectTabType>("ACTIVE");
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [activeRehearsalId, setActiveRehearsalId] = useState<string | null>(
@@ -28,6 +31,7 @@ export const useRehearsalsData = () => {
     isLoading,
     isError,
   } = useRehearsalsWorkspaceData();
+
   const markMissingAttendanceMutation = useMarkMissingAttendancesPresent();
 
   const activeProjects = useMemo(() => {
@@ -68,9 +72,7 @@ export const useRehearsalsData = () => {
   }, [artists]);
 
   const projectRehearsals = useMemo(() => {
-    if (!selectedProjectId) {
-      return [];
-    }
+    if (!selectedProjectId) return [];
 
     return rehearsals
       .filter((rehearsal) => String(rehearsal.project) === selectedProjectId)
@@ -82,9 +84,7 @@ export const useRehearsalsData = () => {
   }, [rehearsals, selectedProjectId]);
 
   const projectParticipations = useMemo(() => {
-    if (!selectedProjectId) {
-      return [];
-    }
+    if (!selectedProjectId) return [];
 
     return participations.filter(
       (participation) =>
@@ -119,9 +119,7 @@ export const useRehearsalsData = () => {
   }, [projectRehearsals, activeRehearsalId]);
 
   const invitedParticipations = useMemo(() => {
-    if (!activeRehearsal) {
-      return [];
-    }
+    if (!activeRehearsal) return [];
 
     const invitedIds = activeRehearsal.invited_participations || [];
     const relevantParticipations =
@@ -156,26 +154,20 @@ export const useRehearsalsData = () => {
   }, [attendances, activeRehearsal]);
 
   const stats = useMemo(() => {
-    let present = 0;
-    let late = 0;
-    let absent = 0;
-    let none = 0;
-    let excused = 0;
+    let present = 0,
+      late = 0,
+      absent = 0,
+      none = 0,
+      excused = 0;
 
     invitedParticipations.forEach((participation) => {
       const attendance = attendanceMap.get(String(participation.id));
 
-      if (!attendance) {
-        none += 1;
-      } else if (attendance.status === "PRESENT") {
-        present += 1;
-      } else if (attendance.status === "LATE") {
-        late += 1;
-      } else if (attendance.status === "EXCUSED") {
-        excused += 1;
-      } else {
-        absent += 1;
-      }
+      if (!attendance) none += 1;
+      else if (attendance.status === "PRESENT") present += 1;
+      else if (attendance.status === "LATE") late += 1;
+      else if (attendance.status === "EXCUSED") excused += 1;
+      else absent += 1;
     });
 
     const total = invitedParticipations.length;
@@ -195,11 +187,11 @@ export const useRehearsalsData = () => {
   }, [invitedParticipations, attendanceMap]);
 
   const handleMarkAllPresent = async (): Promise<void> => {
-    if (!activeRehearsalId || invitedParticipations.length === 0) {
-      return;
-    }
+    if (!activeRehearsalId || invitedParticipations.length === 0) return;
 
-    const toastId = toast.loading("Zbiorcze zaznaczanie obecności...");
+    const toastId = toast.loading(
+      t("rehearsals.toast.bulk_marking", "Zbiorcze zaznaczanie obecności..."),
+    );
 
     try {
       const entries = invitedParticipations.flatMap((participation) => {
@@ -219,7 +211,6 @@ export const useRehearsalsData = () => {
               },
             ];
           }
-
           return [];
         }
 
@@ -232,15 +223,22 @@ export const useRehearsalsData = () => {
       });
 
       if (entries.length === 0) {
+        toast.dismiss(toastId);
         return;
       }
 
       await markMissingAttendanceMutation.mutateAsync(entries);
-      toast.success('Uzupełniono luki jako "Obecny".', { id: toastId });
+      toast.success(
+        t("rehearsals.toast.bulk_success", "Uzupełniono luki jako 'Obecny'."),
+        { id: toastId },
+      );
     } catch (error) {
-      toast.error("Błąd systemu", {
+      toast.error(t("rehearsals.toast.bulk_error_title", "Błąd systemu"), {
         id: toastId,
-        description: "Nie udało się zapisać masowej obecności.",
+        description: t(
+          "rehearsals.toast.bulk_error_desc",
+          "Nie udało się zapisać masowej obecności.",
+        ),
       });
     }
   };

@@ -4,130 +4,111 @@
 # ==========================================
 """
 Database models for the Archive application.
-@author Krystian Bugalski
-
-Defines the structure for storing musical repertoire, including 
-composers, musical pieces (sheet music, lyrics), and isolated audio tracks.
-ENTERPRISE UPGRADE: Consolidated duplicated fields and transitioned to 
-strict English documentation standards.
+Stores musical repertoire, composers, sheet music, and audio tracks.
 """
 
 import uuid
 from django.db import models
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
-
-def validate_file_size(value):
-    """Validate file size to prevent abuse."""
-    max_size = 50 * 1024 * 1024  # 50MB
-    if value.size > max_size:
-        raise ValidationError(f'File size must be under {max_size / (1024*1024)}MB. Current: {value.size / (1024*1024):.2f}MB')
+from django.utils.translation import gettext_lazy as _
 
 from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
 
 
+def validate_file_size(value):
+    max_size = 50 * 1024 * 1024  # 50MB
+    if value.size > max_size:
+        raise ValidationError(_('File size must be under %(size)s MB. Current: %(current)s MB') % {
+            'size': max_size / (1024 * 1024),
+            'current': round(value.size / (1024 * 1024), 2)
+        })
+
 class Composer(EnterpriseBaseModel):
-    """
-    Represents a musical composer or arranger.
-    Handles traditional/anonymous works gracefully via its string representation.
-    """
-    first_name = models.CharField(max_length=100, blank=True, verbose_name="Imię")
-    last_name = models.CharField(max_length=100, verbose_name="Nazwisko")
-    birth_year = models.CharField(max_length=50, blank=True, help_text="np. 1885", verbose_name="Rok urodzenia")
-    death_year = models.CharField(max_length=50, blank=True, verbose_name="Rok śmierci")
+    first_name = models.CharField(max_length=100, blank=True, verbose_name=_("First Name"))
+    last_name = models.CharField(max_length=100, verbose_name=_("Last Name"))
+    birth_year = models.CharField(max_length=50, blank=True, help_text=_("e.g. 1885"), verbose_name=_("Birth Year"))
+    death_year = models.CharField(max_length=50, blank=True, verbose_name=_("Death Year"))
 
     class Meta:
-        verbose_name = "Kompozytor"
-        verbose_name_plural = "Kompozytorzy"
+        verbose_name = _("Composer")
+        verbose_name_plural = _("Composers")
         ordering = ['last_name']
 
     def __str__(self):
-        if self.first_name:
-            return f"{self.first_name} {self.last_name}"
-        return self.last_name 
+        return f"{self.first_name} {self.last_name}".strip()
+
 
 class EpochChoices(models.TextChoices):
-    """Enumeration for standard musical epochs to enable precise repertoire filtering."""
-    MEDIEVAL = 'MED', 'Średniowiecze'
-    RENAISSANCE = 'REN', 'Renesans'
-    BAROQUE = 'BAR', 'Barok'
-    CLASSICAL = 'CLA', 'Klasycyzm'
-    ROMANTIC = 'ROM', 'Romantyzm'
-    MODERN_20 = 'M20', 'XX wiek'
-    CONTEMPORARY = 'CON', 'Muzyka Współczesna'
-    POP = 'POP', 'Muzyka Rozrywkowa'
-    FOLK = 'FOLK', 'Folk / Ludowa'
-    OTHER = 'OTH', 'Inne'
+    MEDIEVAL = 'MED', _('Medieval')
+    RENAISSANCE = 'REN', _('Renaissance')
+    BAROQUE = 'BAR', _('Baroque')
+    CLASSICAL = 'CLA', _('Classical')
+    ROMANTIC = 'ROM', _('Romantic')
+    MODERN_20 = 'M20', _('20th Century')
+    CONTEMPORARY = 'CON', _('Contemporary')
+    POP = 'POP', _('Popular Music')
+    FOLK = 'FOLK', _('Folk / Traditional')
+    OTHER = 'OTH', _('Other')
+
 
 class Piece(EnterpriseBaseModel):
-    """
-    Represents a single musical work in the ensemble's repertoire.
-    Stores metadata, sheet music files, and resources for the conductor's workspace.
-    """
-    title = models.CharField(max_length=200, verbose_name="Tytuł utworu")
-    
-    # Safe nullification instead of cascading deletion
+    title = models.CharField(max_length=200, verbose_name=_("Title"))
     composer = models.ForeignKey(
         Composer, on_delete=models.SET_NULL, null=True, blank=True, 
-        related_name='pieces', verbose_name="Kompozytor"
+        related_name='pieces', verbose_name=_("Composer")
     )
-    
-    # --- VOCAL ENSEMBLE SPECIFIC METADATA ---
-    arranger = models.CharField(max_length=150, blank=True, verbose_name="Aranżer")
-    language = models.CharField(max_length=50, blank=True, help_text="np. Łacina, Angielski", verbose_name="Język")
-    estimated_duration = models.PositiveIntegerField(blank=True, null=True, help_text="Czas trwania w sekundach", verbose_name="Szacowany czas trwania")
-    
-    voicing = models.CharField(max_length=50, blank=True, help_text="np. SSAATTBB", verbose_name="Obsada wokalna")
-    description = models.TextField(blank=True, verbose_name="Uwagi / Opis")
-    sheet_music = models.FileField(upload_to='sheet_music/', blank=True, validators=[FileExtensionValidator(['pdf']), validate_file_size], verbose_name="Nuty (Plik PDF)")
+    arranger = models.CharField(max_length=150, blank=True, verbose_name=_("Arranger"))
+    language = models.CharField(max_length=50, blank=True, help_text=_("e.g. Latin, English"), verbose_name=_("Language"))
+    estimated_duration = models.PositiveIntegerField(blank=True, null=True, help_text=_("Duration in seconds"), verbose_name=_("Estimated Duration"))
+    voicing = models.CharField(max_length=50, blank=True, help_text=_("e.g. SSAATTBB"), verbose_name=_("Voicing"))
+    description = models.TextField(blank=True, verbose_name=_("Notes / Description"))
+    sheet_music = models.FileField(upload_to='sheet_music/', blank=True, validators=[FileExtensionValidator(['pdf']), validate_file_size], verbose_name=_("Sheet Music (PDF)"))
 
-    # --- CONDUCTOR & REHEARSAL WORKSPACE ---
-    lyrics_original = models.TextField(blank=True, help_text="Tekst w języku oryginału", verbose_name="Tekst utworu")
-    lyrics_translation = models.TextField(blank=True, help_text="Polskie tłumaczenie", verbose_name="Tłumaczenie")
-    reference_recording_youtube = models.URLField(blank=True, help_text="Link do YouTube", verbose_name="Nagranie (Youtube)")
-    reference_recording_spotify = models.URLField(blank=True, help_text="Link do Spotify", verbose_name="Nagranie (Spotify)")
+    lyrics_original = models.TextField(blank=True, help_text=_("Original language text"), verbose_name=_("Lyrics (Original)"))
+    lyrics_translation = models.TextField(blank=True, help_text=_("Translated text"), verbose_name=_("Lyrics (Translation)"))
+    reference_recording_youtube = models.URLField(blank=True, help_text=_("YouTube URL"), verbose_name=_("Recording (YouTube)"))
+    reference_recording_spotify = models.URLField(blank=True, help_text=_("Spotify URL"), verbose_name=_("Recording (Spotify)"))
     
-    
-    # --- HISTORICAL CONTEXT ---
-    composition_year = models.IntegerField(blank=True, null=True, verbose_name="Rok powstania")
-    epoch = models.CharField(max_length=4, choices=EpochChoices.choices, blank=True, verbose_name="Epoka")
+    composition_year = models.IntegerField(blank=True, null=True, verbose_name=_("Year of Composition"))
+    epoch = models.CharField(max_length=4, choices=EpochChoices.choices, blank=True, verbose_name=_("Epoch"))
 
     class Meta:
-        verbose_name = "Utwór"
-        verbose_name_plural = "Utwory"
+        verbose_name = _("Piece")
+        verbose_name_plural = _("Pieces")
         ordering = ['title']
 
     def __str__(self):
         suffix = f" (arr. {self.arranger})" if self.arranger else ""
         year_str = f" ({self.composition_year})" if self.composition_year else ""
-        if self.composer:
-            return f"{self.composer.last_name}: {self.title}{year_str}{suffix}"
-        return f"{self.title}{year_str}{suffix}"
+        composer_str = f"{self.composer.last_name}: " if self.composer else ""
+        return f"{composer_str}{self.title}{year_str}{suffix}"
 
 
 class PieceVoiceRequirement(models.Model): 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='voice_requirements', verbose_name="Utwór")
-    voice_line = models.CharField(max_length=12, choices=VoiceLine.choices, verbose_name="Głos / Linia")
-    quantity = models.PositiveIntegerField(default=1, verbose_name="Wymagana ilość śpiewaków")
+    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='voice_requirements', verbose_name=_("Piece"))
+    voice_line = models.CharField(max_length=12, choices=VoiceLine.choices, verbose_name=_("Voice Line"))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Required Singers"))
 
     class Meta:
-        verbose_name = "Wymaganie głosowe"
-        verbose_name_plural = "Wymagania głosowe"
+        verbose_name = _("Voice Requirement")
+        verbose_name_plural = _("Voice Requirements")
         unique_together = ('piece', 'voice_line')
 
     def __str__(self):
         return f"{self.piece.title}: {self.quantity}x {self.get_voice_line_display()}"
 
+
 class Track(EnterpriseBaseModel):
-    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='tracks', verbose_name="Utwór")
-    voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name="Linia melodyczna")
-    audio_file = models.FileField(upload_to='audio_tracks/', validators=[FileExtensionValidator(['mp3', 'wav', 'midi']), validate_file_size], verbose_name="Plik Audio (MIDI/MP3)")
+    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='tracks', verbose_name=_("Piece"))
+    voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name=_("Melody Line"))
+    audio_file = models.FileField(upload_to='audio_tracks/', validators=[FileExtensionValidator(['mp3', 'wav', 'midi']), validate_file_size], verbose_name=_("Audio File (MIDI/MP3)"))
 
     class Meta:
-        verbose_name = "Ścieżka dźwiękowa"
-        verbose_name_plural = "Ścieżki dźwiękowe"
+        verbose_name = _("Audio Track")
+        verbose_name_plural = _("Audio Tracks")
 
     def __str__(self):
         return f"{self.piece.title} - {self.get_voice_part_display()}"

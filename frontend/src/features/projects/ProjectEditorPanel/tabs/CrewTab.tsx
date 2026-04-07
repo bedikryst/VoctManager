@@ -3,10 +3,12 @@
  * @description External Collaborator and Crew Logistics Manager.
  * Employs Hash Maps and Sets for rapid resolution of available crew members.
  * Integrates Framer Motion `<AnimatePresence>` for fluid list mutation animations.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/CrewTab
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Wrench, Trash2, Loader2 } from "lucide-react";
 
@@ -22,6 +24,7 @@ interface CrewTabProps {
 export default function CrewTab({
   projectId,
 }: CrewTabProps): React.JSX.Element | null {
+  const { t } = useTranslation();
   const {
     isLoading,
     isMutating,
@@ -42,7 +45,7 @@ export default function CrewTab({
         <GlassCard className="p-6 flex flex-col md:flex-row gap-5 items-end">
           <div className="flex-1 w-full">
             <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">
-              Zatrudnij z bazy
+              {t("projects.crew.form.hire_label", "Zatrudnij z bazy")}
             </label>
             <select
               required
@@ -51,7 +54,12 @@ export default function CrewTab({
               className="w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] appearance-none cursor-pointer font-medium"
               disabled={isMutating}
             >
-              <option value="">— Wybierz współpracownika —</option>
+              <option value="">
+                {t(
+                  "projects.crew.form.select_placeholder",
+                  "— Wybierz współpracownika —",
+                )}
+              </option>
               {availableCrew.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.first_name} {c.last_name} ({c.specialty})
@@ -62,13 +70,16 @@ export default function CrewTab({
 
           <div className="flex-1 w-full">
             <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">
-              Rola na tym koncercie
+              {t("projects.crew.form.role_label", "Rola na tym koncercie")}
             </label>
             <Input
               type="text"
               value={roleDesc}
               onChange={(e) => setRoleDesc(e.target.value)}
-              placeholder="np. Akustyk FOH"
+              placeholder={t(
+                "projects.crew.form.role_placeholder",
+                "np. Akustyk FOH",
+              )}
               disabled={isMutating}
               className="font-medium"
             />
@@ -84,7 +95,7 @@ export default function CrewTab({
             }
             className="w-full md:w-auto h-[46px] px-8"
           >
-            Przypisz
+            {t("projects.crew.form.submit", "Przypisz")}
           </Button>
         </GlassCard>
       </form>
@@ -96,11 +107,13 @@ export default function CrewTab({
               <Wrench size={14} className="text-stone-600" aria-hidden="true" />
             </div>
             <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-700">
-              Skład Ekipy (Crew)
+              {t("projects.crew.list.title", "Skład Ekipy (Crew)")}
             </h4>
           </div>
           <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">
-            Przypisano: {projectAssignments.length}
+            {t("projects.crew.list.assigned_count", "Przypisano: {{count}}", {
+              count: projectAssignments.length,
+            })}
           </span>
         </div>
 
@@ -143,7 +156,10 @@ export default function CrewTab({
                         onClick={() => handleRemove(assignment.id)}
                         className="p-2.5 text-stone-400 hover:text-red-600 bg-white border border-transparent hover:border-red-200 shadow-sm rounded-xl hover:bg-red-50 transition-all active:scale-95 disabled:opacity-50"
                         disabled={isMutating}
-                        title="Usuń z ekipy technicznej"
+                        title={t(
+                          "projects.crew.list.remove_title",
+                          "Usuń z ekipy technicznej",
+                        )}
                       >
                         <Trash2 size={16} aria-hidden="true" />
                       </button>
@@ -156,7 +172,10 @@ export default function CrewTab({
                   animate={{ opacity: 1 }}
                   className="text-[11px] text-stone-400 italic p-8 text-center"
                 >
-                  Brak przypisanej ekipy technicznej.
+                  {t(
+                    "projects.crew.empty",
+                    "Brak przypisanej ekipy technicznej.",
+                  )}
                 </motion.p>
               )}
             </AnimatePresence>

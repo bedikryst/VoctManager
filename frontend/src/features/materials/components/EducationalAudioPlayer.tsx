@@ -6,6 +6,7 @@
  */
 
 import React, { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { PlayCircle, Lock, FastForward } from "lucide-react";
 import type { Track } from "../../../shared/types";
 
@@ -22,6 +23,7 @@ export function EducationalAudioPlayer({
   isLocked,
   onPlay,
 }: EducationalAudioPlayerProps): React.JSX.Element {
+  const { t } = useTranslation();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [speed, setSpeed] = useState<number>(1);
 
@@ -57,7 +59,9 @@ export function EducationalAudioPlayer({
             <PlayCircle size={14} aria-hidden="true" />
           )}
           {track.voice_part_display || track.voice_part}
-          {isMyTrack && !isLocked && " (Twój głos)"}
+          {isMyTrack &&
+            !isLocked &&
+            ` ${t("materials.player.your_voice", "(Twój głos)")}`}
         </span>
       </div>
 
@@ -84,7 +88,11 @@ export function EducationalAudioPlayer({
                 key={rate}
                 onClick={() => changeSpeed(rate)}
                 className={`px-2.5 py-1 text-[9px] font-bold antialiased rounded-md transition-all active:scale-95 ${speed === rate ? "bg-white text-[#002395] shadow-sm border border-stone-200/60" : "text-stone-500 hover:text-stone-800 border border-transparent"}`}
-                title={`Ustaw tempo na ${rate}x`}
+                title={t(
+                  "materials.player.speed_title",
+                  "Ustaw tempo na {{rate}}x",
+                  { rate },
+                )}
               >
                 {rate}x
               </button>

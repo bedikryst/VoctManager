@@ -3,116 +3,93 @@
 # Roster & Logistics Database Models
 # ==========================================
 """
-Database models for the Roster application.
-@author Krystian Bugalski
-
-Manages the core HR and logistical entities for the vocal ensemble, including 
-artists, projects, participation contracts, casting, and rehearsal scheduling.
+Database models for HR and Logistics entities.
 """
 import uuid
-
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
-from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
 
 
 class VoiceType(models.TextChoices):
-    """Enumeration for general vocal classifications."""
-    SOPRANO = 'SOP', 'Sopran'
-    MEZZO = 'MEZ', 'Mezzosopran'
-    ALTO = 'ALT', 'Alt'
-    COUNTERTENOR = 'CT', 'Kontratenor'
-    TENOR = 'TEN', 'Tenor'
-    BARITONE = 'BAR', 'Baryton'
-    BASS = 'BAS', 'Bas'
-    CONDUCTOR = 'DIR', 'Dyrygent'
+    SOPRANO = 'SOP', _('Soprano')
+    MEZZO = 'MEZ', _('Mezzo-Soprano')
+    ALTO = 'ALT', _('Alto')
+    COUNTERTENOR = 'CT', _('Countertenor')
+    TENOR = 'TEN', _('Tenor')
+    BARITONE = 'BAR', _('Baritone')
+    BASS = 'BAS', _('Bass')
+    CONDUCTOR = 'DIR', _('Conductor')
 
 
 class Artist(EnterpriseBaseModel):
-    """
-    Represents a vocal ensemble member and their specific musical capabilities.
-    Automatically provisions and links a Django User model for platform access.
-    """
     user = models.OneToOneField(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='artist_profile', 
-        verbose_name="Konto"
+        User, on_delete=models.SET_NULL, null=True, blank=True, 
+        related_name='artist_profile', verbose_name=_("Account")
     )
-    first_name = models.CharField(max_length=50, verbose_name="Imię")
-    last_name = models.CharField(max_length=50, verbose_name="Nazwisko")
-    email = models.EmailField(unique=True, verbose_name="E-mail")
-    phone_number = models.CharField(max_length=15, blank=True, verbose_name="Telefon")
-    voice_type = models.CharField(max_length=5, choices=VoiceType.choices, verbose_name="Rodzaj głosu")
-    is_active = models.BooleanField(default=True, verbose_name="Aktywny")
+    first_name = models.CharField(max_length=50, verbose_name=_("First Name"))
+    last_name = models.CharField(max_length=50, verbose_name=_("Last Name"))
+    email = models.EmailField(unique=True, verbose_name=_("Email"))
+    phone_number = models.CharField(max_length=15, blank=True, verbose_name=_("Phone"))
+    voice_type = models.CharField(max_length=5, choices=VoiceType.choices, verbose_name=_("Voice Type"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Is Active"))
 
-    # --- VOCAL PROFILE DATA ---
     sight_reading_skill = models.IntegerField(
         choices=[(i, str(i)) for i in range(1, 6)], 
-        blank=True, 
-        null=True, 
-        verbose_name="Czytanie a vista (1-5)"
+        blank=True, null=True, verbose_name=_("Sight Reading Skill (1-5)")
     )
-    vocal_range_bottom = models.CharField(max_length=5, blank=True, help_text="np. G2", verbose_name="Skala (dół)")
-    vocal_range_top = models.CharField(max_length=5, blank=True, help_text="np. C5", verbose_name="Skala (góra)")
+    vocal_range_bottom = models.CharField(max_length=5, blank=True, help_text=_("e.g. G2"), verbose_name=_("Range (Bottom)"))
+    vocal_range_top = models.CharField(max_length=5, blank=True, help_text=_("e.g. C5"), verbose_name=_("Range (Top)"))
 
     class Meta:
-        verbose_name = "Artysta"
-        verbose_name_plural = "Artyści"
+        verbose_name = _("Artist")
+        verbose_name_plural = _("Artists")
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.get_voice_type_display()})"
 
 
 class Project(EnterpriseBaseModel):
-    """
-    Represents a specific production lifecycle (e.g., event, concert series, recording session).
-    Acts as the central entity for logistics, casting, and rehearsal associations.
-    """
     class Status(models.TextChoices):
-        DRAFT = 'DRAFT', 'Szkic / Planowany'
-        ACTIVE = 'ACTIVE', 'W przygotowaniu'
-        COMPLETED = 'DONE', 'Zrealizowany'
-        CANCELLED = 'CANC', 'Anulowany'
+        DRAFT = 'DRAFT', _('Draft / Planned')
+        ACTIVE = 'ACTIVE', _('Active / In Prep')
+        COMPLETED = 'DONE', _('Completed')
+        CANCELLED = 'CANC', _('Cancelled')
 
-    title = models.CharField(max_length=200, verbose_name="Nazwa Projektu")
-    date_time = models.DateTimeField(verbose_name="Data i godzina wydarzenia", default=timezone.now)
-    call_time = models.DateTimeField(blank=True, null=True, help_text="Godzina zbiórki", verbose_name="Call Time")
-    dress_code_male = models.CharField(max_length=100, blank=True, verbose_name="Dress Code (Mężczyźni)")
-    dress_code_female = models.CharField(max_length=100, blank=True, verbose_name="Dress Code (Kobiety)")
-    location = models.CharField(max_length=200, blank=True, verbose_name="Lokalizacja")
-    description = models.TextField(blank=True, verbose_name="Opis")
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name="Status")
-    run_sheet = models.JSONField(default=list, blank=True, verbose_name="Harmonogram Dnia (Run-sheet)")
-    spotify_playlist_url = models.URLField(blank=True, help_text="Link do playlisty Spotify", verbose_name="Playlista (Spotify)")
-
+    title = models.CharField(max_length=200, verbose_name=_("Project Title"))
+    date_time = models.DateTimeField(verbose_name=_("Event Date & Time"), default=timezone.now)
+    call_time = models.DateTimeField(blank=True, null=True, help_text=_("Call time for performers"), verbose_name=_("Call Time"))
+    dress_code_male = models.CharField(max_length=100, blank=True, verbose_name=_("Dress Code (Male)"))
+    dress_code_female = models.CharField(max_length=100, blank=True, verbose_name=_("Dress Code (Female)"))
+    location = models.CharField(max_length=200, blank=True, verbose_name=_("Location"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name=_("Status"))
+    run_sheet = models.JSONField(default=list, blank=True, verbose_name=_("Run-sheet"))
+    spotify_playlist_url = models.URLField(blank=True, help_text=_("Spotify playlist URL"), verbose_name=_("Spotify Playlist"))
 
     class Meta:
-        verbose_name = "Projekt"
-        verbose_name_plural = "Projekty"
+        verbose_name = _("Project")
+        verbose_name_plural = _("Projects")
 
     def __str__(self):
         return f"[{self.get_status_display()}] {self.title}"
 
 
 class ProgramItem(models.Model):
-    """Junction table mapping musical pieces to a project to form an ordered concert setlist."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='program_items')
-    piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, verbose_name="Utwór")
-    order = models.PositiveIntegerField(verbose_name="Kolejność w programie (1, 2, 3...)")
-    is_encore = models.BooleanField(default=False, verbose_name="Czy to BIS?")
+    piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, verbose_name=_("Piece"))
+    order = models.PositiveIntegerField(verbose_name=_("Order (1, 2, 3...)"))
+    is_encore = models.BooleanField(default=False, verbose_name=_("Is Encore?"))
 
     class Meta:
         ordering = ['order']
-        verbose_name = "Pozycja w Programie"
-        verbose_name_plural = "Program Koncertu (Setlista)"
+        verbose_name = _("Program Item")
+        verbose_name_plural = _("Concert Program (Setlist)")
         constraints = [models.UniqueConstraint(fields=['project', 'order'], name='unique_order_per_project')]
 
     def __str__(self):
@@ -120,23 +97,19 @@ class ProgramItem(models.Model):
 
 
 class Participation(EnterpriseBaseModel):
-    """
-    Junction table representing an artist's contractual involvement in a specific project.
-    Stores negotiation status and financial remuneration (fees).
-    """
     class Status(models.TextChoices):
-        INVITED = 'INV', 'Zaproszony'
-        CONFIRMED = 'CON', 'Potwierdzony'
-        DECLINED = 'DEC', 'Odrzucił'
+        INVITED = 'INV', _('Invited')
+        CONFIRMED = 'CON', _('Confirmed')
+        DECLINED = 'DEC', _('Declined')
 
-    artist = models.ForeignKey(Artist, on_delete=models.RESTRICT, related_name='participations', verbose_name="Artysta")
-    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='participations', verbose_name="Projekt")
-    status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name="Status")
-    fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name="Wynagrodzenie")
+    artist = models.ForeignKey(Artist, on_delete=models.RESTRICT, related_name='participations', verbose_name=_("Artist"))
+    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='participations', verbose_name=_("Project"))
+    status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name=_("Status"))
+    fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
 
     class Meta:
-        verbose_name = "Uczestnictwo"
-        verbose_name_plural = "Uczestnictwa"
+        verbose_name = _("Participation")
+        verbose_name_plural = _("Participations")
         constraints = [models.UniqueConstraint(fields=['artist', 'project'], name='unique_project_participation')]
 
     def __str__(self):
@@ -144,89 +117,76 @@ class Participation(EnterpriseBaseModel):
 
 
 class ProjectPieceCasting(models.Model):
-    """
-    Micro-casting resolution table. 
-    Assigns a specific vocal line (divisi) and role to an artist for an individual piece within a project.
-    """
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='castings', verbose_name="Uczestnik")
-    piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, related_name='castings', verbose_name="Utwór")
-    voice_line = models.CharField(max_length=5, choices=VoiceLine.choices, verbose_name="Linia melodyczna (Divisi)")
-    gives_pitch = models.BooleanField(default=False, verbose_name="Daje dźwięk (Kamerton)")
-    notes = models.CharField(max_length=200, blank=True, verbose_name="Notatki")
+    participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='castings', verbose_name=_("Participant"))
+    piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, related_name='castings', verbose_name=_("Piece"))
+    voice_line = models.CharField(max_length=5, choices=VoiceLine.choices, verbose_name=_("Voice Line (Divisi)"))
+    gives_pitch = models.BooleanField(default=False, verbose_name=_("Gives Pitch (Tuning Fork)"))
+    notes = models.CharField(max_length=200, blank=True, verbose_name=_("Notes"))
 
     class Meta:
-        verbose_name = "Obsada Utworu"
-        verbose_name_plural = "Obsady Utworów"
-        # Unique constraint is intentionally omitted to support edge cases where an artist splits divisi mid-piece.
+        verbose_name = _("Piece Casting")
+        verbose_name_plural = _("Piece Castings")
 
 
 class Rehearsal(EnterpriseBaseModel):
-    """Represents a scheduled rehearsal session contextualized to a specific project."""
-    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='rehearsals', verbose_name="Projekt")
-    date_time = models.DateTimeField(verbose_name="Data i godzina")
-    location = models.CharField(max_length=200, verbose_name="Sala prób")
-    focus = models.CharField(max_length=200, blank=True, verbose_name="Cel próby")
-    is_mandatory = models.BooleanField(default=True, verbose_name="Obowiązkowa")
-
+    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='rehearsals', verbose_name=_("Project"))
+    date_time = models.DateTimeField(verbose_name=_("Date & Time"))
+    location = models.CharField(max_length=200, verbose_name=_("Rehearsal Venue"))
+    focus = models.CharField(max_length=200, blank=True, verbose_name=_("Rehearsal Focus"))
+    is_mandatory = models.BooleanField(default=True, verbose_name=_("Is Mandatory"))
     invited_participations = models.ManyToManyField(
-        'Participation', 
-        blank=True, 
-        related_name='invited_rehearsals',
-        verbose_name="Wezwani chórzyści"
+        'Participation', blank=True, related_name='invited_rehearsals', verbose_name=_("Invited Singers")
     )
     
     class Meta:
-        verbose_name = "Próba"
-        verbose_name_plural = "Próby"
+        verbose_name = _("Rehearsal")
+        verbose_name_plural = _("Rehearsals")
         ordering = ['date_time']
 
     def __str__(self):
-        return f"Próba: {self.date_time.strftime('%d.%m %H:%M')}"
+        return f"Rehearsal: {self.date_time.strftime('%d.%m %H:%M')}"
 
 
 class Attendance(models.Model):
-    """Tracks individual attendance and absence justifications for rehearsal sessions."""
     class Status(models.TextChoices):
-        PRESENT = 'PRESENT', 'Obecny'
-        LATE = 'LATE', 'Spóźniony'
-        ABSENT = 'ABSENT', 'Nieobecny'
-        EXCUSED = 'EXCUSED', 'Usprawiedliwiony'
+        PRESENT = 'PRESENT', _('Present')
+        LATE = 'LATE', _('Late')
+        ABSENT = 'ABSENT', _('Absent')
+        EXCUSED = 'EXCUSED', _('Excused')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    rehearsal = models.ForeignKey(Rehearsal, on_delete=models.RESTRICT, related_name='attendances', verbose_name="Próba")
-    participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='attendances', verbose_name="Uczestnik")
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PRESENT, verbose_name="Status")
-    minutes_late = models.PositiveIntegerField(blank=True, null=True, verbose_name="Minuty spóźnienia")
-    excuse_note = models.CharField(max_length=255, blank=True, verbose_name="Powód nieobecności (Notatka chórzysty)")
+    rehearsal = models.ForeignKey(Rehearsal, on_delete=models.RESTRICT, related_name='attendances', verbose_name=_("Rehearsal"))
+    participation = models.ForeignKey(Participation, on_delete=models.RESTRICT, related_name='attendances', verbose_name=_("Participant"))
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PRESENT, verbose_name=_("Status"))
+    minutes_late = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Minutes Late"))
+    excuse_note = models.CharField(max_length=255, blank=True, verbose_name=_("Excuse Note"))
 
     class Meta:
-        verbose_name = "Obecność"
-        verbose_name_plural = "Obecności"
+        verbose_name = _("Attendance")
+        verbose_name_plural = _("Attendances")
         constraints = [models.UniqueConstraint(fields=['rehearsal', 'participation'], name='unique_rehearsal_attendance')]
 
 
 class Collaborator(EnterpriseBaseModel):
-    """Defines external production staff (e.g., sound engineers, lighting designers, instrumentalists)."""
     class Specialty(models.TextChoices):
-        SOUND = 'SOUND', 'Reżyseria Dźwięku'
-        LIGHT = 'LIGHT', 'Reżyseria Świateł'
-        VISUALS = 'VISUALS', 'Sztuka Wizualna'
-        INSTRUMENT = 'INSTRUMENT', 'Instrumentalista'
-        LOGISTICS = 'LOGISTICS', 'Logistyka'
-        OTHER = 'OTHER', 'Inne'
+        SOUND = 'SOUND', _('Sound Engineering')
+        LIGHT = 'LIGHT', _('Lighting Design')
+        VISUALS = 'VISUALS', _('Visual Arts')
+        INSTRUMENT = 'INSTRUMENT', _('Instrumentalist')
+        LOGISTICS = 'LOGISTICS', _('Logistics')
+        OTHER = 'OTHER', _('Other')
 
-    first_name = models.CharField(max_length=50, verbose_name="Imię")
-    last_name = models.CharField(max_length=50, verbose_name="Nazwisko")
-    email = models.EmailField(unique=True, blank=True, null=True, verbose_name="E-mail")
-    phone_number = models.CharField(max_length=15, blank=True, verbose_name="Telefon")
-    company_name = models.CharField(max_length=100, blank=True, verbose_name="Firma / Marka")
-    specialty = models.CharField(max_length=15, choices=Specialty.choices, default=Specialty.OTHER, verbose_name="Specjalizacja")
+    first_name = models.CharField(max_length=50, verbose_name=_("First Name"))
+    last_name = models.CharField(max_length=50, verbose_name=_("Last Name"))
+    email = models.EmailField(unique=True, blank=True, null=True, verbose_name=_("Email"))
+    phone_number = models.CharField(max_length=15, blank=True, verbose_name=_("Phone"))
+    company_name = models.CharField(max_length=100, blank=True, verbose_name=_("Company / Brand"))
+    specialty = models.CharField(max_length=15, choices=Specialty.choices, default=Specialty.OTHER, verbose_name=_("Specialty"))
 
     class Meta:
-        verbose_name = "Współtwórca (Crew)"
-        verbose_name_plural = "Współtwórcy"
+        verbose_name = _("Collaborator (Crew)")
+        verbose_name_plural = _("Collaborators")
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -235,15 +195,15 @@ class Collaborator(EnterpriseBaseModel):
 class CrewAssignment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Status(models.TextChoices):
-        INVITED = 'INV', 'Wstępnie umówiony'
-        CONFIRMED = 'CON', 'Potwierdzony'
+        INVITED = 'INV', _('Tentatively Booked')
+        CONFIRMED = 'CON', _('Confirmed')
         
-    collaborator = models.ForeignKey(Collaborator, on_delete=models.CASCADE, related_name='assignments', verbose_name="Współtwórca")
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='crew_assignments', verbose_name="Projekt")
-    role_description = models.CharField(max_length=150, blank=True, verbose_name="Zakres obowiązków")
-    status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name="Status")
-    fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name="Stawka (PLN)")
+    collaborator = models.ForeignKey(Collaborator, on_delete=models.CASCADE, related_name='assignments', verbose_name=_("Collaborator"))
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='crew_assignments', verbose_name=_("Project"))
+    role_description = models.CharField(max_length=150, blank=True, verbose_name=_("Role Description"))
+    status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name=_("Status"))
+    fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
 
     class Meta:
-        verbose_name = "Przypisanie ekipy"
-        verbose_name_plural = "Przypisania ekipy"
+        verbose_name = _("Crew Assignment")
+        verbose_name_plural = _("Crew Assignments")

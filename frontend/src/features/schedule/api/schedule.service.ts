@@ -1,6 +1,7 @@
 /**
  * @file schedule.service.ts
  * @description Pure HTTP service for the Schedule domain.
+ * @architecture Enterprise SaaS 2026
  */
 
 import api from "../../../shared/api/api";
@@ -10,13 +11,15 @@ import type {
   ProgramItem,
   Project,
   Participation,
-  Rehearsal,
 } from "../../../shared/types";
-import type { ScheduleAttendanceReportDTO } from "../types/schedule.dto";
+import type {
+  ScheduleAttendanceReportDTO,
+  EnrichedRehearsal,
+} from "../types/schedule.dto";
 
 export const ScheduleService = {
-  getRehearsals: async (): Promise<Rehearsal[]> => {
-    const response = await api.get<Rehearsal[]>("/api/rehearsals/");
+  getRehearsals: async (): Promise<EnrichedRehearsal[]> => {
+    const response = await api.get<EnrichedRehearsal[]>("/api/rehearsals/");
     return response.data;
   },
 
@@ -59,7 +62,6 @@ export const ScheduleService = {
     if (!pieceId) {
       return [];
     }
-
     const response = await api.get<PieceCasting[]>(
       `/api/piece-castings/?piece=${pieceId}&participation__project=${projectId}`,
     );
@@ -85,11 +87,8 @@ export const ScheduleService = {
   exportCallSheet: async (projectId: string | number): Promise<Blob> => {
     const response = await api.get(
       `/api/projects/${projectId}/export_call_sheet/`,
-      {
-        responseType: "blob",
-      },
+      { responseType: "blob" },
     );
-
     return response.data as Blob;
   },
 };

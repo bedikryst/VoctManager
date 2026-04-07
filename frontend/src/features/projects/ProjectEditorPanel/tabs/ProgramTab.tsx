@@ -3,10 +3,13 @@
  * @description Setlist Builder with Drag & Drop Reordering and Database search.
  * Implements @dnd-kit for strict accessibility and a Unified Floating Action Bar (FAB).
  * Delegates state and network mutations entirely to useProgramTab.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/ProgramTab
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ListOrdered,
@@ -45,22 +48,53 @@ import { useProgramTab, ProgramItem } from "../hooks/useProgramTab";
 
 interface ProgramTabProps {
   projectId: string;
+  onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
-const formatTotalDuration = (totalSeconds: number): string | null => {
+const formatTotalDuration = (
+  totalSeconds: number | null | undefined,
+  t: TFunction,
+): string | null => {
   if (!totalSeconds || totalSeconds === 0) return null;
   const m = Math.floor(totalSeconds / 60);
   const h = Math.floor(m / 60);
   const remainingMins = m % 60;
-  if (h > 0) return `~ ${h}h ${remainingMins}min muzyki`;
-  return `~ ${m} min muzyki`;
+  if (h > 0)
+    return t(
+      "projects.program.format.duration_hours",
+      "~ {{h}}h {{m}}min muzyki",
+      {
+        h,
+        m: remainingMins,
+      },
+    );
+  return t("projects.program.format.duration_mins", "~ {{m}} min muzyki", {
+    m,
+  });
 };
 
-const formatPieceDuration = (totalSeconds: number): string | null => {
+const formatPieceDuration = (
+  totalSeconds: number | null | undefined,
+  t: TFunction,
+): string | null => {
   if (!totalSeconds) return null;
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
-  return `${m > 0 ? `${m} min` : ""} ${s > 0 ? `${s} sek` : ""}`.trim();
+  const minStr =
+    m > 0
+      ? t("projects.program.format.minutes", "{{m}} min").replace(
+          "{{m}}",
+          String(m),
+        )
+      : "";
+  const secStr =
+    s > 0
+      ? t("projects.program.format.seconds", "{{s}} sek").replace(
+          "{{s}}",
+          String(s),
+        )
+      : "";
+  return `${minStr} ${secStr}`.trim();
 };
 
 function SortablePieceItem({
@@ -69,12 +103,14 @@ function SortablePieceItem({
   pieceObj,
   onToggleEncore,
   onDelete,
+  t,
 }: {
   item: ProgramItem;
   index: number;
   pieceObj?: Piece;
   onToggleEncore: (i: ProgramItem) => void;
-  onDelete: (id: string | number) => void;
+  onDelete: (id: string) => void;
+  t: TFunction;
 }) {
   const {
     attributes,
@@ -83,7 +119,7 @@ function SortablePieceItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id });
+  } = useSortable({ id: item.id! });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -95,13 +131,19 @@ function SortablePieceItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center justify-between bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-xl shadow-sm group relative hover:border-[#002395]/40 hover:shadow-md transition-colors overflow-hidden ${isDragging ? "shadow-lg ring-2 ring-[#002395]/20 scale-[1.02]" : ""}`}
+      className={`flex items-center justify-between bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-xl shadow-sm group relative hover:border-[#002395]/40 hover:shadow-md transition-colors overflow-hidden ${
+        isDragging ? "shadow-lg ring-2 ring-[#002395]/20 scale-[1.02]" : ""
+      }`}
     >
       <div
         {...attributes}
         {...listeners}
         className="flex items-center gap-4 w-full p-4 pr-4 cursor-grab active:cursor-grabbing outline-none"
-        aria-label={`Przeciągnij utwór ${item.piece_title}`}
+        aria-label={t(
+          "projects.program.actions.drag_aria",
+          "Przeciągnij utwór {{title}}",
+          { title: item.piece_title },
+        )}
       >
         <GripVertical
           size={16}
@@ -114,7 +156,9 @@ function SortablePieceItem({
 
         <div className="flex flex-col min-w-0">
           <p
-            className={`text-sm font-bold truncate tracking-tight ${item.is_encore ? "text-[#002395] italic" : "text-stone-800"}`}
+            className={`text-sm font-bold truncate tracking-tight ${
+              item.is_encore ? "text-[#002395] italic" : "text-stone-800"
+            }`}
           >
             {item.piece_title}
           </p>
@@ -127,7 +171,7 @@ function SortablePieceItem({
             {pieceObj?.estimated_duration && (
               <span className="text-[8px] font-bold antialiased text-stone-500 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded-md border border-stone-200/60 flex items-center gap-1.5">
                 <Clock size={10} aria-hidden="true" />{" "}
-                {formatPieceDuration(pieceObj.estimated_duration)}
+                {formatPieceDuration(pieceObj.estimated_duration, t)}
               </span>
             )}
           </div>
@@ -137,19 +181,30 @@ function SortablePieceItem({
       <div className="flex items-center gap-1.5 flex-shrink-0 border-l border-stone-100/80 pl-4 pr-4 relative z-10 self-stretch bg-white/30 backdrop-blur-sm">
         <button
           onClick={() => onToggleEncore(item)}
-          title={item.is_encore ? "Usuń jako BIS" : "Oznacz jako BIS"}
-          className={`p-2.5 rounded-lg transition-colors flex items-center gap-1.5 text-[9px] font-bold antialiased uppercase tracking-widest ${item.is_encore ? "bg-amber-50 text-amber-600 border border-amber-200 shadow-sm" : "text-stone-400 hover:text-amber-500 hover:bg-stone-50 border border-transparent active:scale-95"}`}
+          title={
+            item.is_encore
+              ? t("projects.program.actions.remove_encore", "Usuń jako BIS")
+              : t("projects.program.actions.add_encore", "Oznacz jako BIS")
+          }
+          className={`p-2.5 rounded-lg transition-colors flex items-center gap-1.5 text-[9px] font-bold antialiased uppercase tracking-widest ${
+            item.is_encore
+              ? "bg-amber-50 text-amber-600 border border-amber-200 shadow-sm"
+              : "text-stone-400 hover:text-amber-500 hover:bg-stone-50 border border-transparent active:scale-95"
+          }`}
         >
           <Star
             size={14}
             className={item.is_encore ? "fill-amber-500" : ""}
             aria-hidden="true"
           />{" "}
-          {item.is_encore && "BIS"}
+          {item.is_encore && t("projects.program.badges.encore", "BIS")}
         </button>
         <button
-          onClick={() => onDelete(item.id)}
-          title="Usuń z programu"
+          onClick={() => onDelete(item.id!)}
+          title={t(
+            "projects.program.actions.remove_from_program",
+            "Usuń z programu",
+          )}
           className="p-2.5 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100 active:scale-95"
         >
           <Trash2 size={16} aria-hidden="true" />
@@ -161,7 +216,9 @@ function SortablePieceItem({
 
 export default function ProgramTab({
   projectId,
+  onDirtyStateChange,
 }: ProgramTabProps): React.JSX.Element | null {
+  const { t } = useTranslation();
   const {
     programItems,
     isLoading,
@@ -179,7 +236,7 @@ export default function ProgramTab({
     handleDragEnd,
     handleCancel,
     handleSaveChanges,
-  } = useProgramTab(projectId);
+  } = useProgramTab(projectId, onDirtyStateChange);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -202,10 +259,13 @@ export default function ProgramTab({
           >
             <div className="flex flex-col ml-2">
               <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
-                Niezapisane Zmiany
+                {t("projects.program.fab.unsaved", "Niezapisane Zmiany")}
               </span>
               <span className="text-xs text-stone-500">
-                Zmodyfikowałeś kolejność programu.
+                {t(
+                  "projects.program.fab.description",
+                  "Zmodyfikowałeś kolejność programu.",
+                )}
               </span>
             </div>
 
@@ -216,7 +276,7 @@ export default function ProgramTab({
                 disabled={isSaving}
                 className="!border-transparent hover:!bg-stone-100 !text-stone-500 hover:!text-stone-800"
               >
-                Anuluj
+                {t("common.actions.cancel", "Anuluj")}
               </Button>
               <Button
                 variant="primary"
@@ -227,7 +287,7 @@ export default function ProgramTab({
                   !isSaving ? <Save size={16} aria-hidden="true" /> : undefined
                 }
               >
-                Zapisz
+                {t("common.actions.save", "Zapisz")}
               </Button>
             </div>
           </motion.div>
@@ -243,16 +303,18 @@ export default function ProgramTab({
               className="text-[#002395]"
               aria-hidden="true"
             />{" "}
-            Setlista Wydarzenia
+            {t("projects.program.sections.setlist", "Setlista Wydarzenia")}
           </h3>
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 bg-white/80 px-3 py-1.5 rounded-lg border border-stone-200/60 shadow-sm">
-              Utworów: {programItems.length}
+              {t("projects.program.badges.tracks_count", "Utworów: {{count}}", {
+                count: programItems.length,
+              })}
             </span>
             {totalConcertDurationSeconds > 0 && (
               <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-[#002395] bg-blue-50/80 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm flex items-center gap-1.5">
                 <Clock size={12} aria-hidden="true" />{" "}
-                {formatTotalDuration(totalConcertDurationSeconds)}
+                {formatTotalDuration(totalConcertDurationSeconds, t)}
               </span>
             )}
           </div>
@@ -272,7 +334,7 @@ export default function ProgramTab({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={programItems.map((item) => item.id)}
+              items={programItems.map((item) => item.id!)}
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-3">
@@ -288,6 +350,7 @@ export default function ProgramTab({
                       pieceObj={pieceObj}
                       onToggleEncore={handleToggleEncore}
                       onDelete={handleDeleteItem}
+                      t={t}
                     />
                   );
                 })}
@@ -302,11 +365,13 @@ export default function ProgramTab({
               aria-hidden="true"
             />
             <p className="text-[10px] font-bold antialiased text-stone-500 uppercase tracking-widest mb-1">
-              Setlista jest pusta
+              {t("projects.program.empty.setlist_title", "Setlista jest pusta")}
             </p>
             <p className="text-xs text-stone-400 max-w-xs leading-relaxed">
-              Wybierz kompozycje z bazy po prawej stronie, aby zbudować program
-              koncertu.
+              {t(
+                "projects.program.empty.setlist_desc",
+                "Wybierz kompozycje z bazy po prawej stronie, aby zbudować program koncertu.",
+              )}
             </p>
           </GlassCard>
         )}
@@ -315,14 +380,17 @@ export default function ProgramTab({
       {/* DATABASE SEARCH COLUMN */}
       <GlassCard className="lg:col-span-2 p-6 h-[600px] flex flex-col">
         <h3 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 mb-5 flex items-center gap-2">
-          Baza Kompozycji
+          {t("projects.program.sections.database", "Baza Kompozycji")}
         </h3>
 
         <div className="mb-5 flex-shrink-0">
           <Input
             type="text"
-            placeholder="Szukaj utworu..."
-            value={searchQuery}
+            placeholder={t(
+              "projects.program.search.placeholder",
+              "Szukaj utworu...",
+            )}
+            value={searchQuery || ""}
             onChange={(e) => setSearchQuery(e.target.value)}
             leftIcon={
               <Search size={16} className="text-stone-400" aria-hidden="true" />
@@ -338,18 +406,26 @@ export default function ProgramTab({
               return (
                 <div
                   key={piece.id}
-                  className={`flex items-center justify-between p-3.5 border rounded-xl transition-colors ${isAdded ? "bg-stone-50/50 border-stone-200/50 opacity-60" : "bg-white/60 hover:bg-white border-stone-200/80 shadow-sm hover:border-[#002395]/30"}`}
+                  className={`flex items-center justify-between p-3.5 border rounded-xl transition-colors ${
+                    isAdded
+                      ? "bg-stone-50/50 border-stone-200/50 opacity-60"
+                      : "bg-white/60 hover:bg-white border-stone-200/80 shadow-sm hover:border-[#002395]/30"
+                  }`}
                 >
                   <div className="flex flex-col min-w-0 pr-3">
                     <span
-                      className={`text-sm font-bold truncate tracking-tight ${isAdded ? "text-stone-500 line-through" : "text-stone-800"}`}
+                      className={`text-sm font-bold truncate tracking-tight ${
+                        isAdded
+                          ? "text-stone-500 line-through"
+                          : "text-stone-800"
+                      }`}
                     >
                       {piece.title}
                     </span>
                     {(piece.estimated_duration || piece.voicing) && (
                       <span className="text-[8px] font-bold antialiased text-stone-400 uppercase tracking-widest mt-1 truncate">
                         {piece.estimated_duration
-                          ? `${formatPieceDuration(piece.estimated_duration)} `
+                          ? `${formatPieceDuration(piece.estimated_duration, t)} `
                           : ""}
                         {piece.voicing ? `| ${piece.voicing}` : ""}
                       </span>
@@ -358,12 +434,19 @@ export default function ProgramTab({
 
                   <button
                     disabled={isAdded}
-                    onClick={() => handleAddPiece(piece.id)}
-                    className={`flex-shrink-0 p-2 rounded-lg transition-all active:scale-90 ${isAdded ? "text-emerald-600 bg-emerald-50 border border-emerald-100" : "text-white bg-stone-900 hover:bg-[#002395] shadow-sm"}`}
+                    onClick={() => handleAddPiece(piece.id!)}
+                    className={`flex-shrink-0 p-2 rounded-lg transition-all active:scale-90 ${
+                      isAdded
+                        ? "text-emerald-600 bg-emerald-50 border border-emerald-100"
+                        : "text-white bg-stone-900 hover:bg-[#002395] shadow-sm"
+                    }`}
                     title={
                       isAdded
-                        ? "Utwór jest już na setliście"
-                        : "Dodaj do programu"
+                        ? t(
+                            "projects.program.actions.already_added",
+                            "Utwór jest już na setliście",
+                          )
+                        : t("projects.program.actions.add", "Dodaj do programu")
                     }
                   >
                     {isAdded ? (
@@ -383,7 +466,7 @@ export default function ProgramTab({
                 aria-hidden="true"
               />
               <span className="text-[10px] uppercase font-bold antialiased tracking-widest">
-                Brak wyników
+                {t("projects.program.empty.no_results", "Brak wyników")}
               </span>
             </div>
           )}

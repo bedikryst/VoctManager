@@ -3,11 +3,13 @@
  * @description Master Controller for the Event & Production Management module.
  * Completely eliminates legacy Context API. Child components fetch their own data
  * instantly via React Query structural sharing.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectDashboard
  */
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Plus, Briefcase, Layers } from "lucide-react";
 
 import { useProjectDashboard } from "./hooks/useProjectDashboard";
@@ -23,6 +25,7 @@ import { useBodyScrollLock } from "../../shared/lib/hooks/useBodyScrollLock";
 const MemoizedProjectCard = React.memo(ProjectCard);
 
 export default function ProjectDashboard(): React.JSX.Element {
+  const { t } = useTranslation();
   const {
     isLoading,
     filteredProjects,
@@ -59,15 +62,18 @@ export default function ProjectDashboard(): React.JSX.Element {
                   aria-hidden="true"
                 />
                 <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
-                  Centrum Dowodzenia
+                  {t("projects.dashboard.header_badge", "Centrum Dowodzenia")}
                 </p>
               </div>
               <h1
                 className="text-4xl md:text-5xl font-medium text-stone-900 leading-tight tracking-tight"
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
-                Wydarzenia i{" "}
-                <span className="italic text-[#002395]">Produkcja</span>.
+                {t("projects.dashboard.header_title_1", "Wydarzenia i")}{" "}
+                <span className="italic text-[#002395]">
+                  {t("projects.dashboard.header_title_2", "Produkcja")}
+                </span>
+                .
               </h1>
             </div>
             <Button
@@ -75,7 +81,7 @@ export default function ProjectDashboard(): React.JSX.Element {
               onClick={() => openPanel(null)}
               leftIcon={<Plus size={16} aria-hidden="true" />}
             >
-              Nowy Projekt
+              {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
             </Button>
           </div>
         </motion.div>
@@ -115,11 +121,16 @@ export default function ProjectDashboard(): React.JSX.Element {
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">
-                Brak projektów w tym widoku
+                {t(
+                  "projects.dashboard.empty_title",
+                  "Brak projektów w tym widoku",
+                )}
               </span>
               <span className="text-xs text-stone-400 max-w-sm">
-                Rozpocznij planowanie nowego wydarzenia, klikając przycisk "Nowy
-                Projekt" powyżej.
+                {t(
+                  "projects.dashboard.empty_desc",
+                  'Rozpocznij planowanie nowego wydarzenia, klikając przycisk "Nowy Projekt" powyżej.',
+                )}
               </span>
             </GlassCard>
           </motion.div>
@@ -136,8 +147,11 @@ export default function ProjectDashboard(): React.JSX.Element {
 
       <ConfirmModal
         isOpen={!!projectToDelete}
-        title="Usunąć projekt?"
-        description="Ta akcja jest nieodwracalna. Spowoduje usunięcie wszystkich powiązanych prób, przypisań ekipy i obsady dla tego projektu."
+        title={t("projects.dashboard.delete_modal_title", "Usunąć projekt?")}
+        description={t(
+          "projects.dashboard.delete_modal_desc",
+          "Ta akcja jest nieodwracalna. Spowoduje usunięcie wszystkich powiązanych prób, przypisań ekipy i obsady dla tego projektu.",
+        )}
         onConfirm={executeDelete}
         onCancel={() => setProjectToDelete(null)}
         isLoading={isDeleting}

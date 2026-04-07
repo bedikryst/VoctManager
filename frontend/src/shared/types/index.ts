@@ -6,6 +6,8 @@
  * @module shared/types
  */
 
+import type { ProjectStatus } from "../../features/projects/constants/projectDomain";
+
 export interface BaseModel {
   id: string;
   created_at?: string;
@@ -26,7 +28,7 @@ export type VoiceType =
   | "BAR"
   | "BAS"
   | "DIR";
-export type ProjectStatus = "DRAFT" | "ACTIVE" | "DONE" | "CANC";
+
 export type ParticipationStatus = "INV" | "CON" | "DEC";
 export type CastingRole = "TUTTI" | "SOLO" | "BACK";
 export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "EXCUSED";
@@ -107,14 +109,14 @@ export interface Project extends BaseModel {
   title: string;
   date_time: string;
   call_time?: string | null; // DateTime, can be null
-  dress_code_male?: string;
-  dress_code_female?: string;
-  location?: string;
-  description?: string;
+  dress_code_male?: string | null;
+  dress_code_female?: string | null;
+  location?: string | null;
+  description?: string | null;
+  spotify_playlist_url?: string | null;
   status: ProjectStatus;
   run_sheet?: RunSheetItem[];
   program?: ProgramItem[];
-  spotify_playlist_url?: string;
 }
 
 export interface Participation extends BaseModel {
@@ -226,4 +228,9 @@ export interface PieceCasting extends BaseModel {
   voice_line: VoiceLine;
   gives_pitch: boolean;
   notes?: string;
+
+  voice_line_display?: string;
+  artist_name?: string;
+  project_id?: string;
+  artist_id?: string;
 }

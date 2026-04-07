@@ -1,9 +1,7 @@
+# roster/tasks.py
 """
 Asynchronous background tasks for the Roster application.
-Author: Krystian Bugalski
-
-Utilizes Celery and Redis to handle resource-intensive operations
-(like bulk PDF generation) outside the main request-response cycle.
+Utilizes Celery and Redis to handle resource-intensive operations.
 """
 
 import io
@@ -13,9 +11,8 @@ from celery import shared_task
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from .models import Participation, Project
+from .models import Participation
 
-__author__ = "Krystian Bugalski"
 
 @shared_task(bind=True)
 def generate_project_zip_task(self, project_id):
@@ -24,19 +21,23 @@ def generate_project_zip_task(self, project_id):
     packages them into an in-memory ZIP archive, and saves the file 
     to the default storage. Returns the download URL upon completion.
     """
-    # Optimized query to prevent N+1 issues during template rendering
-    participations = Participation.objects.filter(project_id=project_id).select_related('artist', 'project')
-
-    project = Project.objects.get(id=project_id)
-    safe_title = project.title.replace(' ', '_').replace('/', '-')
+    # Optimized query preventing N+1 issues
+    participations = Participation.objects.filter(
+        project_id=project_id
+    ).select_related('artist', 'project')
 
     if not participations.exists():
         return {"error": "no_artists_in_project"}
+
+    # Project entity is already loaded by select_related, no need for another query
+    project = participations.first().project
+    safe_title = project.title.replace(' ', '_').replace('/', '-')
 
     zip_buffer = io.BytesIO()
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for p in participations:
+            # Weasyprint rendering is memory intensive, process locally per item
             html_string = render_to_string('contracts/contract_pdf.html', {'participation': p})
             pdf_bytes = weasyprint.HTML(string=html_string).write_pdf()
             
@@ -46,10 +47,9 @@ def generate_project_zip_task(self, project_id):
             zip_file.writestr(filename, pdf_bytes)
             
     zip_buffer.seek(0)
+    file_path = f"exports/Contracts_Project_{safe_title}.zip"
     
-    file_path = f"exports/Umowy_Koncert_{safe_title}.zip"
-    
-    # Cleanup previous generation if it exists to save storage space
+    # Cleanup previous generation to save storage space
     if default_storage.exists(file_path):
         default_storage.delete(file_path)
         

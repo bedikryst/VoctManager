@@ -7,15 +7,12 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Edit2, Trash2, Mail, Phone, Briefcase } from "lucide-react";
 import type { Collaborator } from "../../../shared/types";
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import { Button } from "../../../shared/ui/Button";
 import { SPECIALTY_CHOICES } from "../types/crew.dto";
-
-const getSpecialtyLabel = (val: string): string => {
-  return SPECIALTY_CHOICES.find((s) => s.value === val)?.label || "Inne";
-};
 
 interface CrewCardProps {
   person: Collaborator;
@@ -25,8 +22,16 @@ interface CrewCardProps {
 
 export const CrewCard = React.memo(
   ({ person, onEdit, onDelete }: CrewCardProps) => {
+    const { t } = useTranslation();
     const initials =
       `${person.first_name?.charAt(0) || ""}${person.last_name?.charAt(0) || ""}`.toUpperCase();
+
+    const getSpecialtyLabel = (val: string): string => {
+      const choice = SPECIALTY_CHOICES.find((s) => s.value === val);
+      return choice
+        ? t(choice.labelKey)
+        : t("crew.card.specialty_other", "Inne");
+    };
 
     return (
       <motion.div
@@ -57,7 +62,8 @@ export const CrewCard = React.memo(
             <div className="bg-stone-50/80 border border-stone-200/60 rounded-xl p-3.5 mb-5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 flex items-center gap-1.5">
-                  <Briefcase size={10} aria-hidden="true" /> Firma / Marka
+                  <Briefcase size={10} aria-hidden="true" />{" "}
+                  {t("crew.card.company", "Firma / Marka")}
                 </span>
                 <span
                   className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-stone-200 text-stone-700 shadow-sm truncate max-w-[120px]"
@@ -66,7 +72,9 @@ export const CrewCard = React.memo(
                   {person.company_name ? (
                     person.company_name
                   ) : (
-                    <span className="text-stone-400 italic">Brak danych</span>
+                    <span className="text-stone-400 italic">
+                      {t("crew.card.no_company", "Brak danych")}
+                    </span>
                   )}
                 </span>
               </div>
@@ -88,7 +96,7 @@ export const CrewCard = React.memo(
                   </a>
                 ) : (
                   <span className="italic text-stone-400 font-normal">
-                    Brak e-mail
+                    {t("crew.card.no_email", "Brak e-mail")}
                   </span>
                 )}
               </p>
@@ -107,7 +115,7 @@ export const CrewCard = React.memo(
                   </a>
                 ) : (
                   <span className="italic text-stone-400 font-normal">
-                    Brak telefonu
+                    {t("crew.card.no_phone", "Brak telefonu")}
                   </span>
                 )}
               </p>
@@ -121,7 +129,7 @@ export const CrewCard = React.memo(
               leftIcon={<Edit2 size={14} aria-hidden="true" />}
               className="flex-1"
             >
-              Edytuj
+              {t("crew.card.btn_edit", "Edytuj")}
             </Button>
             <Button
               variant="outline"
@@ -129,7 +137,7 @@ export const CrewCard = React.memo(
               leftIcon={<Trash2 size={14} aria-hidden="true" />}
               className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
             >
-              Usuń
+              {t("crew.card.btn_delete", "Usuń")}
             </Button>
           </div>
         </GlassCard>

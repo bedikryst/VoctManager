@@ -1,37 +1,28 @@
 /**
  * @file useCastTab.ts
  * @description State and mutation controller for the Primary Casting Manager.
- * Safely fetches dictionary data via useProjectData and manages assignment toggle mutations.
+ * Resolves dictionaries from shared project queries and delegates writes to the Project domain layer.
  * @module panel/projects/ProjectEditorPanel/hooks/useCastTab
  */
 
 import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
-import api from "../../../../shared/api/api";
-import { queryKeys } from "../../../../shared/lib/queryKeys";
+import {
+  useCreateParticipation,
+  useDeleteParticipation,
+  useUpdateParticipation,
+} from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
-import type { Participation } from "../../../../shared/types";
 
 export const useCastTab = (projectId: string) => {
-  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const { artists, participations, isLoading } = useProjectData(projectId);
 
-  const { artists } = useProjectData(projectId);
-
-  const { data: participations = [], isLoading: isFetching } = useQuery<
-    Participation[]
-  >({
-    queryKey: queryKeys.participations.byProject(projectId),
-    queryFn: async () =>
-      (
-        await api.get<Participation[]>(
-          `/api/participations/?project=${projectId}`,
-        )
-      ).data,
-    staleTime: 60000,
-    enabled: !!projectId,
-  });
+  const createParticipationMutation = useCreateParticipation(projectId);
+  const updateParticipationMutation = useUpdateParticipation(projectId);
+  const deleteParticipationMutation = useDeleteParticipation(projectId);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [processingId, setProcessingId] = useState<string | number | null>(
@@ -43,29 +34,35 @@ export const useCastTab = (projectId: string) => {
 
   const allArtists = useMemo(() => {
     if (!artists || artists.length === 0) return [];
-    let active = artists.filter((a) => a.is_active !== false);
+
+    let activeArtists = artists.filter((artist) => artist.is_active !== false);
 
     if (searchQuery.trim() !== "") {
-      const q = searchQuery.toLowerCase();
-      active = active.filter(
-        (a) =>
-          a.first_name.toLowerCase().includes(q) ||
-          a.last_name.toLowerCase().includes(q) ||
-          a.voice_type_display?.toLowerCase().includes(q),
+      const normalizedQuery = searchQuery.toLowerCase();
+      activeArtists = activeArtists.filter(
+        (artist) =>
+          artist.first_name.toLowerCase().includes(normalizedQuery) ||
+          artist.last_name.toLowerCase().includes(normalizedQuery) ||
+          artist.voice_type_display?.toLowerCase().includes(normalizedQuery),
       );
     }
 
-    return active.sort((a, b) => {
-      const voiceCompare = (a.voice_type || "").localeCompare(
-        b.voice_type || "",
+    return activeArtists.sort((left, right) => {
+      const voiceCompare = (left.voice_type || "").localeCompare(
+        right.voice_type || "",
       );
-      if (voiceCompare !== 0) return voiceCompare;
-      return a.last_name.localeCompare(b.last_name);
+      if (voiceCompare !== 0) {
+        return voiceCompare;
+      }
+      return left.last_name.localeCompare(right.last_name);
     });
   }, [artists, searchQuery]);
 
   const assignedIds = useMemo(
-    () => new Set(participations.map((p) => String(p.artist))),
+    () =>
+      new Set(
+        participations.map((participation) => String(participation.artist)),
+      ),
     [participations],
   );
 
@@ -78,32 +75,36 @@ export const useCastTab = (projectId: string) => {
 
     try {
       if (isCurrentlyCasted && participationId) {
-        await api.delete(`/api/participations/${participationId}/`);
-        toast.success("Usunięto z obsady");
+        await deleteParticipationMutation.mutateAsync(participationId);
+        toast.success(t("projects.cast.toast.removed", "Usunięto z obsady"));
       } else {
         const existingDeclined = participations.find(
-          (p) => String(p.artist) === String(artistId) && p.status === "DEC",
+          (participation) =>
+            String(participation.artist) === String(artistId) &&
+            participation.status === "DEC",
         );
+
         if (existingDeclined) {
-          await api.patch(`/api/participations/${existingDeclined.id}/`, {
-            status: "CON",
+          await updateParticipationMutation.mutateAsync({
+            id: existingDeclined.id,
+            data: { status: "CON" },
           });
         } else {
-          await api.post("/api/participations/", {
+          await createParticipationMutation.mutateAsync({
             artist: artistId,
             project: projectId,
             status: "INV",
           });
         }
-        toast.success("Dodano do obsady");
-      }
 
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.byProject(projectId),
-      });
-    } catch (err) {
-      toast.error("Błąd zapisu", {
-        description: "Wystąpił problem z połączeniem z bazą danych.",
+        toast.success(t("projects.cast.toast.added", "Dodano do obsady"));
+      }
+    } catch {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+        description: t(
+          "common.errors.database_error",
+          "Wystąpił problem z połączeniem z bazą danych.",
+        ),
       });
     } finally {
       setProcessingId(null);
@@ -112,7 +113,7 @@ export const useCastTab = (projectId: string) => {
 
   return {
     participations,
-    isFetching,
+    isFetching: isLoading,
     searchQuery,
     setSearchQuery,
     processingId,

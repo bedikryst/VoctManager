@@ -2,12 +2,14 @@
  * @file Contracts.tsx
  * @description Master view for the HR & Payroll Module.
  * Integrates contextual state hooks, localized components, and the core UI kit.
+ * @architecture Enterprise SaaS 2026
  * @module features/contracts/Contracts
  */
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   Calculator,
   Wallet,
@@ -31,6 +33,7 @@ import { ExportContractButton } from "../../shared/ui/ExportContractButton";
 import { ContractRow } from "./components/ContractRow";
 
 export default function Contracts(): React.JSX.Element {
+  const { t } = useTranslation();
   const {
     isLoading,
     projects,
@@ -47,7 +50,9 @@ export default function Contracts(): React.JSX.Element {
 
   const handleApplyGlobalFee = async (): Promise<void> => {
     if (!globalFee) return;
-    const toastId = toast.loading("Applying bulk fee overrides...");
+    const toastId = toast.loading(
+      t("contracts.toast.bulk_applying", "Aplikowanie masowych stawek..."),
+    );
 
     try {
       const res = await bulkUpdateMutation.mutateAsync({
@@ -55,12 +60,22 @@ export default function Contracts(): React.JSX.Element {
         fee: parseFloat(globalFee),
       });
       toast.success(
-        `Successfully updated fees for ${res.updated_count} members.`,
+        t(
+          "contracts.toast.bulk_success",
+          "Pomyślnie zaktualizowano stawki dla {{count}} osób.",
+          { count: res.updated_count },
+        ),
         { id: toastId },
       );
       setGlobalFee("");
     } catch (e) {
-      toast.error("Server error during bulk operation.", { id: toastId });
+      toast.error(
+        t(
+          "contracts.toast.bulk_error",
+          "Błąd serwera podczas operacji masowej.",
+        ),
+        { id: toastId },
+      );
     }
   };
 
@@ -69,7 +84,11 @@ export default function Contracts(): React.JSX.Element {
     personName: string,
     type: "CAST" | "CREW",
   ): Promise<void> => {
-    const toastId = toast.loading(`Generating PDF for ${personName}...`);
+    const toastId = toast.loading(
+      t("contracts.toast.pdf_generating", "Generowanie PDF dla {{name}}...", {
+        name: personName,
+      }),
+    );
     try {
       const endpoint =
         type === "CAST"
@@ -79,9 +98,21 @@ export default function Contracts(): React.JSX.Element {
         endpoint,
         `Contract_${personName.replace(/ /g, "_")}.pdf`,
       );
-      toast.success(`Document generated successfully.`, { id: toastId });
-    } catch (err: any) {
-      toast.error(`Generation error: ${err.message}`, { id: toastId });
+      toast.success(
+        t(
+          "contracts.toast.pdf_success",
+          "Dokument został pomyślnie wygenerowany.",
+        ),
+        { id: toastId },
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(
+        t("contracts.toast.pdf_error", "Błąd generowania: {{message}}", {
+          message,
+        }),
+        { id: toastId },
+      );
     }
   };
 
@@ -90,7 +121,7 @@ export default function Contracts(): React.JSX.Element {
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Loader2 size={32} className="animate-spin text-[#002395]/40" />
         <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
-          Loading Ledgers...
+          {t("contracts.dashboard.loading", "Wczytywanie rejestrów...")}
         </span>
       </div>
     );
@@ -107,19 +138,24 @@ export default function Contracts(): React.JSX.Element {
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
             <Wallet size={12} className="text-[#002395]" aria-hidden="true" />
             <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
-              Financial Management
+              {t("contracts.dashboard.subtitle", "Zarządzanie Finansami")}
             </p>
           </div>
           <h1
             className="text-4xl md:text-5xl font-medium text-stone-900 leading-tight tracking-tight"
             style={{ fontFamily: "'Cormorant', serif" }}
           >
-            HR &{" "}
-            <span className="italic text-[#002395] font-bold">Payroll</span>.
+            {t("contracts.dashboard.title", "Kadry i")}{" "}
+            <span className="italic text-[#002395] font-bold">
+              {t("contracts.dashboard.title_highlight", "Płace")}
+            </span>
+            .
           </h1>
           <p className="text-stone-500 mt-3 font-medium tracking-wide text-sm max-w-xl">
-            Manage artist and crew remuneration, control production budgets, and
-            generate PDF contracts.
+            {t(
+              "contracts.dashboard.description",
+              "Zarządzaj wynagrodzeniami artystów i ekipy, kontroluj budżety produkcyjne oraz generuj umowy PDF.",
+            )}
           </p>
         </motion.div>
       </header>
@@ -144,7 +180,10 @@ export default function Contracts(): React.JSX.Element {
           </div>
           <div className="flex-1 w-full">
             <label className="block text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400 mb-2 ml-1">
-              Select Event (Billing Context)
+              {t(
+                "contracts.dashboard.select_event_label",
+                "Wybierz Wydarzenie (Kontekst Rozliczeniowy)",
+              )}
             </label>
             <div className="relative">
               <select
@@ -153,13 +192,19 @@ export default function Contracts(): React.JSX.Element {
                 className="w-full px-5 py-4 text-sm text-white bg-white/5 backdrop-blur-md border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold appearance-none cursor-pointer hover:bg-white/10"
               >
                 <option value="" className="text-stone-900">
-                  — No Event Selected —
+                  {t(
+                    "contracts.dashboard.no_event_selected",
+                    "— Nie wybrano wydarzenia —",
+                  )}
                 </option>
                 {projects
                   .filter((p) => p.status !== "CANC")
                   .map((p) => (
                     <option key={p.id} value={p.id} className="text-stone-900">
-                      {p.title} {p.status === "DONE" ? "(Archived)" : ""}
+                      {p.title}{" "}
+                      {p.status === "DONE"
+                        ? t("contracts.dashboard.archived", "(Zarchiwizowane)")
+                        : ""}
                     </option>
                   ))}
               </select>
@@ -193,11 +238,16 @@ export default function Contracts(): React.JSX.Element {
               className="text-2xl font-bold text-stone-800 tracking-tight mb-2 relative z-10"
               style={{ fontFamily: "'Cormorant', serif" }}
             >
-              Ready for Settlement
+              {t(
+                "contracts.dashboard.empty_state_title",
+                "Gotowe do rozliczeń",
+              )}
             </h2>
             <p className="text-sm text-stone-500 max-w-md leading-relaxed relative z-10">
-              Select an event from the context switcher above to manage rates
-              and control the production budget.
+              {t(
+                "contracts.dashboard.empty_state_desc",
+                "Wybierz wydarzenie z przełącznika kontekstu powyżej, aby zarządzać stawkami i kontrolować budżet produkcji.",
+              )}
             </p>
           </GlassCard>
 
@@ -207,7 +257,10 @@ export default function Contracts(): React.JSX.Element {
           >
             <div>
               <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-2">
-                Global System Budget
+                {t(
+                  "contracts.dashboard.global_budget",
+                  "Globalny Budżet Systemowy",
+                )}
               </p>
               <p className="text-3xl font-black text-stone-800 tracking-tight">
                 {globalStats.totalBudget.toLocaleString("en-US")} PLN
@@ -215,12 +268,13 @@ export default function Contracts(): React.JSX.Element {
             </div>
             <div className="pt-6 border-t border-stone-200/60 mt-6">
               <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-2">
-                Contracts Issued
+                {t("contracts.dashboard.contracts_issued", "Wystawione Umowy")}
               </p>
               <p className="text-xl font-bold text-stone-700">
                 {globalStats.totalPriced}{" "}
                 <span className="text-sm font-medium text-stone-400">
-                  / {globalStats.totalContracts} valued
+                  / {globalStats.totalContracts}{" "}
+                  {t("contracts.dashboard.valued", "wycenionych")}
                 </span>
               </p>
             </div>
@@ -243,7 +297,7 @@ export default function Contracts(): React.JSX.Element {
                 <FileSignature size={100} aria-hidden="true" />
               </div>
               <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-2 relative z-10">
-                Priced Contracts
+                {t("contracts.dashboard.priced_contracts", "Wycenione Umowy")}
               </p>
               <p className="text-3xl font-black text-stone-800 tracking-tight relative z-10">
                 {projectStats.pricedContractsCount}{" "}
@@ -267,7 +321,10 @@ export default function Contracts(): React.JSX.Element {
               <p
                 className={`text-[9px] font-bold antialiased uppercase tracking-widest mb-2 relative z-10 ${projectStats.missingContractsCount > 0 ? "text-orange-600" : "text-stone-400"}`}
               >
-                Missing Appraisals
+                {t(
+                  "contracts.dashboard.missing_appraisals",
+                  "Brakujące Wyceny",
+                )}
               </p>
               <p
                 className={`text-3xl font-black tracking-tight relative z-10 ${projectStats.missingContractsCount > 0 ? "text-orange-600" : "text-stone-800"}`}
@@ -282,7 +339,8 @@ export default function Contracts(): React.JSX.Element {
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/30 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 group-hover:scale-125 transition-transform duration-700"></div>
               <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-blue-300 mb-2 relative z-10 flex items-center gap-1.5">
-                <Sparkles size={12} aria-hidden="true" /> Personnel Budget
+                <Sparkles size={12} aria-hidden="true" />{" "}
+                {t("contracts.dashboard.personnel_budget", "Budżet Osobowy")}
               </p>
               <p className="text-3xl font-bold tracking-tight relative z-10">
                 {projectStats.totalBudget.toLocaleString("en-US")} PLN
@@ -296,14 +354,20 @@ export default function Contracts(): React.JSX.Element {
           >
             <div className="w-full lg:flex-1">
               <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3 ml-1">
-                Mass Fee Injection (Choir Only)
+                {t(
+                  "contracts.dashboard.mass_fee_injection",
+                  "Masowe Wprowadzenie Stawek (Tylko Chór)",
+                )}
               </label>
               <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full">
                 <Input
                   type="number"
                   value={globalFee}
                   onChange={(e) => setGlobalFee(e.target.value)}
-                  placeholder="Value..."
+                  placeholder={t(
+                    "contracts.dashboard.value_placeholder",
+                    "Wartość...",
+                  )}
                   rightElement="PLN"
                   className="font-mono sm:max-w-[200px]"
                 />
@@ -319,7 +383,7 @@ export default function Contracts(): React.JSX.Element {
                   }
                   className="w-full sm:w-auto"
                 >
-                  Apply Valuation
+                  {t("contracts.dashboard.apply_valuation", "Zastosuj Wycenę")}
                 </Button>
               </div>
             </div>
@@ -339,20 +403,31 @@ export default function Contracts(): React.JSX.Element {
                   />
                 </div>
                 <h3 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-700">
-                  Vocal Cast (Choir / Soloists)
+                  {t(
+                    "contracts.dashboard.vocal_cast",
+                    "Obsada Wokalna (Chór / Soliści)",
+                  )}
                 </h3>
               </div>
               <div className="overflow-x-auto scrollbar-hide">
                 <table className="w-full text-left text-sm text-stone-600">
                   <thead className="bg-stone-50/30 backdrop-blur-md text-[9px] antialiased uppercase font-bold tracking-widest text-stone-400 border-b border-stone-200/50">
                     <tr>
-                      <th className="px-6 py-4">Performer</th>
-                      <th className="px-6 py-4 hidden sm:table-cell">Voice</th>
-                      <th className="px-6 py-4 hidden md:table-cell">Status</th>
-                      <th className="px-6 py-4 w-64 text-right">
-                        Gross Amount
+                      <th className="px-6 py-4">
+                        {t("contracts.table.performer", "Wykonawca")}
                       </th>
-                      <th className="px-6 py-4 text-right w-32">Documents</th>
+                      <th className="px-6 py-4 hidden sm:table-cell">
+                        {t("contracts.table.voice", "Głos")}
+                      </th>
+                      <th className="px-6 py-4 hidden md:table-cell">
+                        {t("contracts.table.status", "Status")}
+                      </th>
+                      <th className="px-6 py-4 w-64 text-right">
+                        {t("contracts.table.gross_amount", "Kwota Brutto")}
+                      </th>
+                      <th className="px-6 py-4 text-right w-32">
+                        {t("contracts.table.documents", "Dokumenty")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100/50">
@@ -381,20 +456,31 @@ export default function Contracts(): React.JSX.Element {
                   />
                 </div>
                 <h3 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-700">
-                  Technical & Logistics Crew
+                  {t(
+                    "contracts.dashboard.tech_crew",
+                    "Ekipa Techniczna i Logistyka",
+                  )}
                 </h3>
               </div>
               <div className="overflow-x-auto scrollbar-hide">
                 <table className="w-full text-left text-sm text-stone-600">
                   <thead className="bg-stone-50/30 backdrop-blur-md text-[9px] antialiased uppercase font-bold tracking-widest text-stone-400 border-b border-stone-200/50">
                     <tr>
-                      <th className="px-6 py-4">Contractor / Firm</th>
-                      <th className="px-6 py-4 hidden sm:table-cell">Role</th>
-                      <th className="px-6 py-4 hidden md:table-cell">Status</th>
-                      <th className="px-6 py-4 w-64 text-right">
-                        Gross Amount
+                      <th className="px-6 py-4">
+                        {t("contracts.table.contractor", "Kontrahent / Firma")}
                       </th>
-                      <th className="px-6 py-4 text-right w-32">Documents</th>
+                      <th className="px-6 py-4 hidden sm:table-cell">
+                        {t("contracts.table.role", "Rola")}
+                      </th>
+                      <th className="px-6 py-4 hidden md:table-cell">
+                        {t("contracts.table.status", "Status")}
+                      </th>
+                      <th className="px-6 py-4 w-64 text-right">
+                        {t("contracts.table.gross_amount", "Kwota Brutto")}
+                      </th>
+                      <th className="px-6 py-4 text-right w-32">
+                        {t("contracts.table.documents", "Dokumenty")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100/50">
@@ -425,11 +511,16 @@ export default function Contracts(): React.JSX.Element {
             aria-hidden="true"
           />
           <p className="text-[11px] font-bold antialiased text-stone-500 uppercase tracking-widest mb-2">
-            No Personnel Assigned
+            {t(
+              "contracts.dashboard.no_personnel_title",
+              "Brak przypisanego personelu",
+            )}
           </p>
           <p className="text-xs text-stone-400 max-w-sm">
-            Navigate to the "Projects Management" tab to hire cast or crew for
-            this event.
+            {t(
+              "contracts.dashboard.no_personnel_desc",
+              'Przejdź do zakładki "Zarządzanie Projektami", aby zatrudnić obsadę lub ekipę na to wydarzenie.',
+            )}
           </p>
         </GlassCard>
       )}

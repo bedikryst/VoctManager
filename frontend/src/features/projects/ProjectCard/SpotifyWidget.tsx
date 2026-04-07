@@ -2,10 +2,12 @@
  * @file SpotifyWidget.tsx
  * @description Embedded media player widget interfacing with the Spotify Embed API.
  * Implements strict dimension constraints to bypass iframe responsive reflow issues.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/components/SpotifyWidget
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Music, ExternalLink } from "lucide-react";
 
 interface SpotifyWidgetProps {
@@ -15,7 +17,6 @@ interface SpotifyWidgetProps {
   theme?: "light" | "dark";
 }
 
-// Lokalna funkcja formatująca, aby uniknąć błędów brakującego importu
 const getSpotifyEmbedUrl = (url?: string): string | null => {
   if (!url) return null;
   const playlistIdMatch = url.match(/playlist\/([a-zA-Z0-9]+)/);
@@ -29,6 +30,7 @@ export default function SpotifyWidget({
   playlistUrl,
   theme = "light",
 }: SpotifyWidgetProps): React.JSX.Element {
+  const { t } = useTranslation();
   const embedUrl = getSpotifyEmbedUrl(playlistUrl);
 
   const isDark = theme === "dark";
@@ -48,14 +50,14 @@ export default function SpotifyWidget({
     <div className={containerStyle}>
       <h4 className={headerStyle}>
         <Music size={16} className="text-emerald-500" aria-hidden="true" />{" "}
-        Referencje do odsłuchu
+        {t("projects.spotify.title", "Referencje do odsłuchu")}
       </h4>
 
       {embedUrl ? (
         <div className="flex flex-col gap-3">
           <iframe
             src={embedUrl}
-            title="Playlista Spotify"
+            title={t("projects.spotify.iframe_title", "Playlista Spotify")}
             width="100%"
             height="152"
             frameBorder="0"
@@ -73,14 +75,17 @@ export default function SpotifyWidget({
             rel="noopener noreferrer"
             className={buttonStyle}
           >
-            <ExternalLink size={14} aria-hidden="true" /> Otwórz w aplikacji
+            <ExternalLink size={14} aria-hidden="true" />{" "}
+            {t("projects.spotify.open_app", "Otwórz w aplikacji")}
           </a>
         </div>
       ) : (
         <div
           className={`h-[152px] flex items-center justify-center border border-dashed rounded-xl ${isDark ? "border-white/10 bg-white/5 text-stone-500" : "border-stone-200 bg-stone-50/50 text-stone-400"}`}
         >
-          <p className="text-xs italic">Brak przypisanej playlisty.</p>
+          <p className="text-xs italic">
+            {t("projects.spotify.empty", "Brak przypisanej playlisty.")}
+          </p>
         </div>
       )}
     </div>

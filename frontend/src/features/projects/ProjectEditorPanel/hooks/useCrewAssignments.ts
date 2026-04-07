@@ -1,66 +1,77 @@
 /**
  * @file useCrewAssignments.ts
  * @description Encapsulates mutation logic and state management for crew assignments.
- * Extracts dictionary data (collaborators) efficiently from useProjectData cache.
+ * Extracts dictionaries from project queries and delegates writes to the Project domain layer.
  * @module panel/projects/ProjectEditorPanel/hooks/useCrewAssignments
  */
 
 import { useState, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
-import api from "../../../../shared/api/api";
-import { queryKeys } from "../../../../shared/lib/queryKeys";
-import { useProjectData } from "../../hooks/useProjectData";
+import { useTranslation } from "react-i18next";
 import type { Collaborator, CrewAssignment } from "../../../../shared/types";
+import {
+  useCreateCrewAssignment,
+  useDeleteCrewAssignment,
+} from "../../api/project.queries";
+import { useProjectData } from "../../hooks/useProjectData";
 
 export const useCrewAssignments = (projectId: string) => {
-  const queryClient = useQueryClient();
-
-  // FETCH CACHED DATA
+  const { t } = useTranslation();
   const { crew, crewAssignments, isLoading } = useProjectData(projectId);
 
-  // MUTABLE STATE
+  const createCrewAssignmentMutation = useCreateCrewAssignment(projectId);
+  const deleteCrewAssignmentMutation = useDeleteCrewAssignment(projectId);
+
   const [selectedCrewId, setSelectedCrewId] = useState<string>("");
   const [roleDesc, setRoleDesc] = useState<string>("");
-  const [isMutating, setIsMutating] = useState<boolean>(false);
 
-  // DERIVED STATE
-  const projectAssignments = useMemo<CrewAssignment[]>(() => {
-    return crewAssignments.filter(
-      (a) => String(a.project) === String(projectId),
-    );
-  }, [crewAssignments, projectId]);
+  const projectAssignments = useMemo<CrewAssignment[]>(
+    () =>
+      crewAssignments.filter(
+        (assignment) => String(assignment.project) === String(projectId),
+      ),
+    [crewAssignments, projectId],
+  );
 
-  const assignedCrewIds = useMemo<Set<string>>(() => {
-    return new Set(projectAssignments.map((a) => String(a.collaborator)));
-  }, [projectAssignments]);
+  const assignedCrewIds = useMemo<Set<string>>(
+    () =>
+      new Set(
+        projectAssignments.map((assignment) => String(assignment.collaborator)),
+      ),
+    [projectAssignments],
+  );
 
   const availableCrew = useMemo<Collaborator[]>(() => {
-    if (!crew || crew.length === 0) return [];
-    return crew.filter((c) => !assignedCrewIds.has(String(c.id)));
+    if (!crew || crew.length === 0) {
+      return [];
+    }
+    return crew.filter(
+      (collaborator) => !assignedCrewIds.has(String(collaborator.id)),
+    );
   }, [crew, assignedCrewIds]);
 
   const crewMap = useMemo<Map<string, Collaborator>>(() => {
     const map = new Map<string, Collaborator>();
-    if (crew) {
-      crew.forEach((c) => map.set(String(c.id), c));
-    }
+    crew.forEach((collaborator) =>
+      map.set(String(collaborator.id), collaborator),
+    );
     return map;
   }, [crew]);
 
-  // ACTION HANDLERS
   const handleAssign = async (
-    e: React.FormEvent<HTMLFormElement>,
+    event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
-    e.preventDefault();
-    if (!selectedCrewId) return;
+    event.preventDefault();
+    if (!selectedCrewId) {
+      return;
+    }
 
-    setIsMutating(true);
-    const toastId = toast.loading("Przypisywanie członka ekipy...");
+    const toastId = toast.loading(
+      t("projects.crew.toast.assigning", "Przypisywanie członka ekipy..."),
+    );
 
     try {
-      await api.post("/api/crew-assignments/", {
+      await createCrewAssignmentMutation.mutateAsync({
         project: projectId,
         collaborator: selectedCrewId,
         role_description: roleDesc,
@@ -69,39 +80,54 @@ export const useCrewAssignments = (projectId: string) => {
       setSelectedCrewId("");
       setRoleDesc("");
 
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.crewAssignments.byProject(projectId),
-      });
-      toast.success("Członek ekipy przypisany pomyślnie", { id: toastId });
-    } catch (err) {
-      toast.error("Błąd przypisania", {
+      toast.success(
+        t(
+          "projects.crew.toast.assign_success",
+          "Członek ekipy przypisany pomyślnie",
+        ),
+        { id: toastId },
+      );
+    } catch {
+      toast.error(t("projects.crew.toast.assign_error", "Błąd przypisania"), {
         id: toastId,
-        description: "Nie udało się przypisać członka ekipy do projektu.",
+        description: t(
+          "projects.crew.toast.assign_error_desc",
+          "Nie udało się przypisać członka ekipy do projektu.",
+        ),
       });
-    } finally {
-      setIsMutating(false);
     }
   };
 
   const handleRemove = async (id: string | number): Promise<void> => {
-    const toastId = toast.loading("Usuwanie członka ekipy...");
+    const toastId = toast.loading(
+      t("projects.crew.toast.removing", "Usuwanie członka ekipy..."),
+    );
+
     try {
-      await api.delete(`/api/crew-assignments/${id}/`);
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.crewAssignments.byProject(projectId),
-      });
-      toast.success("Usunięto przypisanie z projektu", { id: toastId });
-    } catch (err) {
-      toast.error("Błąd usuwania", {
+      await deleteCrewAssignmentMutation.mutateAsync(id);
+      toast.success(
+        t(
+          "projects.crew.toast.remove_success",
+          "Usunięto przypisanie z projektu",
+        ),
+        { id: toastId },
+      );
+    } catch {
+      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
-        description: "Nie udało się odpiąć członka ekipy z projektu.",
+        description: t(
+          "projects.crew.toast.remove_error_desc",
+          "Nie udało się odpiąć członka ekipy z projektu.",
+        ),
       });
     }
   };
 
   return {
     isLoading,
-    isMutating,
+    isMutating:
+      createCrewAssignmentMutation.isPending ||
+      deleteCrewAssignmentMutation.isPending,
     selectedCrewId,
     setSelectedCrewId,
     roleDesc,

@@ -29,13 +29,12 @@ export default function DashboardHome(): React.JSX.Element {
           <div className="w-16 h-16 border-4 border-[#002395] rounded-full border-t-transparent animate-spin"></div>
         </div>
         <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
-          {t("auth.authorizing", "Autoryzacja...")}
+          {t("dashboard.shared.authorizing", "Autoryzacja...")}
         </span>
       </div>
     );
   }
 
-  // Role-based routing strategy
   if (user?.is_admin) {
     return <AdminDashboard />;
   }

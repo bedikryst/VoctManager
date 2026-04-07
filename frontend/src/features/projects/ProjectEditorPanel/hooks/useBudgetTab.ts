@@ -2,64 +2,148 @@
  * @file useBudgetTab.ts
  * @description Encapsulates dirty-state tracking, financial KPI calculations,
  * and bulk-save mutations for the Project Budgeting module.
- * Safely consumes structural cached data via useProjectData.
+ * Strictly synchronizes unsaved changes with the parent panel.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useBudgetTab
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import api from "../../../../shared/api/api";
+import { useTranslation } from "react-i18next";
+
 import { queryKeys } from "../../../../shared/lib/queryKeys";
+import { ProjectService } from "../../api/project.service";
 import { useProjectData } from "../../hooks/useProjectData";
 
 type FeeMutation = { type: "cast" | "crew"; value: string };
 
-export const useBudgetTab = (projectId: string) => {
+export const useBudgetTab = (
+  projectId: string,
+  onDirtyStateChange?: (isDirty: boolean) => void,
+) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
-
-  // Zaciągamy dane ze zoptymalizowanego cache'u (brak strzałów do API, brak Contextu)
   const { participations, crewAssignments, artists, crew, isLoading } =
     useProjectData(projectId);
 
-  // --- Mutable Local State (Dirty Tracking) ---
   const [dirtyFees, setDirtyFees] = useState<Record<string, FeeMutation>>({});
   const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  const isDirty = useMemo(() => Object.keys(dirtyFees).length > 0, [dirtyFees]);
+
+  // Synchronize internal dirty state with the parent orchestrator
+  useEffect(() => {
+    if (onDirtyStateChange) {
+      onDirtyStateChange(isDirty);
+    }
+  }, [isDirty, onDirtyStateChange]);
 
   const handleFeeChange = (
     id: string,
     value: string,
     type: "cast" | "crew",
   ) => {
-    setDirtyFees((prev) => ({ ...prev, [id]: { type, value } }));
+    setDirtyFees((previous) => ({ ...previous, [id]: { type, value } }));
   };
 
   const handleReset = () => {
     setDirtyFees({});
   };
 
+  const enrichedCast = useMemo(() => {
+    return participations
+      .filter((p) => p.status === "CON" || p.status === "INV")
+      .map((participation) => ({
+        ...participation,
+        artistData: artists.find((a) => a.id === participation.artist),
+      }))
+      .filter((p) => p.artistData)
+      .sort((left, right) =>
+        left.artistData!.last_name.localeCompare(right.artistData!.last_name),
+      );
+  }, [participations, artists]);
+
+  const enrichedCrew = useMemo(() => {
+    return crewAssignments
+      .map((assignment) => ({
+        ...assignment,
+        crewData: crew.find((c) => c.id === assignment.collaborator),
+      }))
+      .filter((assignment) => assignment.crewData)
+      .sort((left, right) =>
+        left.crewData!.last_name.localeCompare(right.crewData!.last_name),
+      );
+  }, [crewAssignments, crew]);
+
+  const kpi = useMemo(() => {
+    let castTotal = 0;
+    let crewTotal = 0;
+    let missingCount = 0;
+
+    enrichedCast.forEach((participation) => {
+      const currentValue = dirtyFees[participation.id]
+        ? dirtyFees[participation.id].value
+        : participation.fee !== null && participation.fee !== undefined
+          ? String(participation.fee)
+          : "";
+
+      if (!currentValue) {
+        missingCount++;
+      } else {
+        castTotal += parseFloat(currentValue) || 0;
+      }
+    });
+
+    enrichedCrew.forEach((assignment) => {
+      const currentValue = dirtyFees[assignment.id]
+        ? dirtyFees[assignment.id].value
+        : assignment.fee !== null && assignment.fee !== undefined
+          ? String(assignment.fee)
+          : "";
+
+      if (!currentValue) {
+        missingCount++;
+      } else {
+        crewTotal += parseFloat(currentValue) || 0;
+      }
+    });
+
+    return {
+      castTotal,
+      crewTotal,
+      missingCount,
+      grandTotal: castTotal + crewTotal,
+    };
+  }, [enrichedCast, enrichedCrew, dirtyFees]);
+
   const handleBulkSave = async () => {
-    const keys = Object.keys(dirtyFees);
-    if (keys.length === 0) return;
+    if (!isDirty) return;
 
     setIsSaving(true);
     const toastId = toast.loading(
-      `Zapisywanie budżetu (${keys.length} modyfikacji)...`,
+      t("projects.budget.toast.saving", "Zapisywanie budżetu..."),
     );
 
     try {
-      const promises = keys.map((id) => {
-        const mutation = dirtyFees[id];
-        const numericVal =
-          mutation.value === "" ? null : parseFloat(mutation.value);
-        const endpoint =
-          mutation.type === "cast"
-            ? `/api/participations/${id}/`
-            : `/api/crew-assignments/${id}/`;
-        return api.patch(endpoint, { fee: numericVal });
-      });
+      const mutationIds = Object.keys(dirtyFees);
+      await Promise.all(
+        mutationIds.map((id) => {
+          const mutation = dirtyFees[id];
+          const numericValue =
+            mutation.value === "" ? null : parseFloat(mutation.value);
 
-      await Promise.all(promises);
+          if (mutation.type === "cast") {
+            return ProjectService.updateParticipation(id, {
+              fee: numericValue,
+            });
+          } else {
+            return ProjectService.updateCrewAssignment(id, {
+              fee: numericValue,
+            });
+          }
+        }),
+      );
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -71,76 +155,25 @@ export const useBudgetTab = (projectId: string) => {
       ]);
 
       setDirtyFees({});
-      toast.success("Budżet zaktualizowany pomyślnie.", { id: toastId });
-    } catch (err) {
-      toast.error("Błąd zapisu", {
+      toast.success(
+        t(
+          "projects.budget.toast.save_success",
+          "Zapisano stawki i przeliczono budżet",
+        ),
+        { id: toastId },
+      );
+    } catch {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
-        description:
-          "Nie udało się zapisać wszystkich stawek. Spróbuj ponownie.",
+        description: t(
+          "projects.budget.toast.save_error_desc",
+          "Nie udało się zapisać wszystkich stawek.",
+        ),
       });
     } finally {
       setIsSaving(false);
     }
   };
-
-  const isDirty = Object.keys(dirtyFees).length > 0;
-
-  // --- Enriched Financial Datasets ---
-  const enrichedCast = useMemo(() => {
-    if (!artists || artists.length === 0) return [];
-    return participations
-      .map((p) => ({
-        ...p,
-        artistData: artists.find((a) => String(a.id) === String(p.artist)),
-      }))
-      .filter((p) => p.artistData && p.status !== "DEC")
-      .sort((a, b) =>
-        a.artistData!.last_name.localeCompare(b.artistData!.last_name),
-      );
-  }, [participations, artists]);
-
-  const enrichedCrew = useMemo(() => {
-    if (!crew || crew.length === 0) return [];
-    return crewAssignments
-      .map((c) => ({
-        ...c,
-        crewData: crew.find((col) => String(col.id) === String(c.collaborator)),
-      }))
-      .filter((c) => c.crewData)
-      .sort((a, b) =>
-        a.crewData!.last_name.localeCompare(b.crewData!.last_name),
-      );
-  }, [crewAssignments, crew]);
-
-  // --- KPI Calculations ---
-  const kpi = useMemo(() => {
-    let castTotal = 0;
-    let crewTotal = 0;
-    let missingCount = 0;
-
-    enrichedCast.forEach((p) => {
-      const currentVal = dirtyFees[String(p.id)]
-        ? dirtyFees[String(p.id)].value
-        : String(p.fee || "");
-      if (!currentVal) missingCount++;
-      else castTotal += parseFloat(currentVal);
-    });
-
-    enrichedCrew.forEach((c) => {
-      const currentVal = dirtyFees[String(c.id)]
-        ? dirtyFees[String(c.id)].value
-        : String(c.fee || "");
-      if (!currentVal) missingCount++;
-      else crewTotal += parseFloat(currentVal);
-    });
-
-    return {
-      castTotal,
-      crewTotal,
-      missingCount,
-      grandTotal: castTotal + crewTotal,
-    };
-  }, [enrichedCast, enrichedCrew, dirtyFees]);
 
   return {
     isLoading,

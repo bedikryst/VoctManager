@@ -1,6 +1,7 @@
 /**
  * @file useMaterialsData.ts
  * @description Encapsulates enrichment and memoized grouping for the Materials domain.
+ * @architecture Enterprise SaaS 2026
  */
 
 import { useMemo } from "react";
@@ -64,22 +65,18 @@ export const useMaterialsData = (
               (candidate) => String(candidate.id) === String(programItem.piece),
             );
 
-            if (!piece) {
-              return null;
-            }
+            if (!piece) return null;
 
             const composerData =
               composers.find(
                 (composer) => String(composer.id) === String(piece.composer),
               ) || null;
 
+            // ENTERPRISE FIX: Użycie standardowego project_id z zaktualizowanego shared/types
             const allCastingsForPiece = pieceCastings.filter((casting) => {
               return (
                 String(casting.piece) === String(piece.id) &&
-                String(
-                  (casting as typeof casting & { project_id?: string | number })
-                    .project_id,
-                ) === String(project.id)
+                String(casting.project_id) === String(project.id)
               );
             });
 
@@ -116,13 +113,10 @@ export const useMaterialsData = (
       .filter(Boolean) as ProjectMaterialGroup[];
 
     return groups.sort((left, right) => {
-      if (left.project.status !== "DONE" && right.project.status === "DONE") {
+      if (left.project.status !== "DONE" && right.project.status === "DONE")
         return -1;
-      }
-
-      if (left.project.status === "DONE" && right.project.status !== "DONE") {
+      if (left.project.status === "DONE" && right.project.status !== "DONE")
         return 1;
-      }
 
       return (
         new Date(left.project.date_time).getTime() -
@@ -141,9 +135,7 @@ export const useMaterialsData = (
   ]);
 
   const filteredGroups = useMemo<ProjectMaterialGroup[]>(() => {
-    if (!searchQuery) {
-      return groupedMaterials;
-    }
+    if (!searchQuery) return groupedMaterials;
 
     const term = searchQuery.toLowerCase();
 

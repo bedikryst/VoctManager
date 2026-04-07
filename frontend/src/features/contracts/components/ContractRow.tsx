@@ -2,11 +2,13 @@
  * @file ContractRow.tsx
  * @description Manages individual row state, and localized PDF generation.
  * Uses strict mutations instead of raw Axios calls.
+ * @architecture Enterprise SaaS 2026
  * @module panel/contracts/ContractRow
  */
 
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { FileText, CheckCircle2 } from "lucide-react";
 import { Input } from "../../../shared/ui/Input";
 import { Button } from "../../../shared/ui/Button";
@@ -32,15 +34,16 @@ export function ContractRow({
   type,
   onDownload,
 }: ContractRowProps): React.JSX.Element {
+  const { t } = useTranslation();
   const updateFeeMutation = useUpdateFee(type);
   const [fee, setFee] = useState<string>(record.fee ? String(record.fee) : "");
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
-  // Zabezpieczenie typu - backend rzuca inne nazwy dla wokalistów i dla techniki
   const personName =
     type === "CAST"
       ? (record as EnrichedParticipation).artist_name
       : (record as EnrichedCrewAssignment).collaborator_name;
+
   const roleDisplay =
     type === "CAST"
       ? (record as EnrichedParticipation).artist_voice_type_display
@@ -58,7 +61,13 @@ export function ContractRow({
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (err) {
       toast.error(
-        `Failed to save remuneration for ${personName || "contractor"}.`,
+        t(
+          "contracts.toast.save_error",
+          "Nie udało się zapisać wynagrodzenia dla: {{name}}.",
+          {
+            name: personName || t("contracts.row.no_name", "Wykonawca"),
+          },
+        ),
       );
     }
   };
@@ -76,7 +85,7 @@ export function ContractRow({
         </p>
         {isMissingFee && (
           <p className="text-[9px] font-bold text-orange-500 uppercase tracking-widest mt-1 md:hidden">
-            Missing Fee
+            {t("contracts.row.missing_fee", "Brak Stawki")}
           </p>
         )}
       </td>
@@ -106,7 +115,11 @@ export function ContractRow({
             isLoading={updateFeeMutation.isPending}
             className={`min-w-[70px] ${saveSuccess ? "border-emerald-200 text-emerald-700 bg-emerald-50" : ""}`}
           >
-            {saveSuccess ? <CheckCircle2 size={14} /> : "Save"}
+            {saveSuccess ? (
+              <CheckCircle2 size={14} />
+            ) : (
+              t("contracts.row.save", "Zapisz")
+            )}
           </Button>
         </div>
       </td>

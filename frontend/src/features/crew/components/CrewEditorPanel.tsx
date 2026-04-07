@@ -1,11 +1,13 @@
 /**
  * @file CrewEditorPanel.tsx
  * @description Slide-over panel and form for creating or editing crew profiles.
+ * @module panel/crew/CrewEditorPanel
  */
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { X, CheckCircle2 } from "lucide-react";
 
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
@@ -34,6 +36,7 @@ export default function CrewEditorPanel({
   person,
   initialSearchContext = "",
 }: CrewEditorPanelProps): React.ReactPortal | null {
+  const { t } = useTranslation();
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -51,9 +54,7 @@ export default function CrewEditorPanel({
   } = useCrewForm(person, initialSearchContext, onClose);
 
   useEffect(() => {
-    if (isOpen) {
-      setFormData(initialFormData);
-    }
+    if (isOpen) setFormData(initialFormData);
   }, [initialFormData, isOpen, setFormData]);
 
   useEffect(() => {
@@ -62,11 +63,7 @@ export default function CrewEditorPanel({
         handleCloseRequest();
       }
     };
-
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-
+    if (isOpen) window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
 
@@ -75,7 +72,6 @@ export default function CrewEditorPanel({
       setShowExitConfirm(true);
       return;
     }
-
     onClose();
   };
 
@@ -84,9 +80,7 @@ export default function CrewEditorPanel({
     onClose();
   };
 
-  if (!mounted) {
-    return null;
-  }
+  if (!mounted) return null;
 
   return createPortal(
     <AnimatePresence>
@@ -116,7 +110,9 @@ export default function CrewEditorPanel({
           >
             <div className="flex justify-between items-center p-6 md:p-8 border-b border-stone-200/50 bg-white/80 backdrop-blur-xl flex-shrink-0 z-20">
               <h3 className="font-serif text-2xl font-bold text-stone-900 tracking-tight">
-                {person?.id ? "Edycja Danych" : "Nowy Współpracownik"}
+                {person?.id
+                  ? t("crew.editor.title_edit", "Edycja Danych")
+                  : t("crew.editor.title_new", "Nowy Współpracownik")}
               </h3>
               <button
                 onClick={handleCloseRequest}
@@ -133,19 +129,21 @@ export default function CrewEditorPanel({
               >
                 <div className="flex-1 space-y-5">
                   <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
-                    Osoba Kontaktowa
+                    {t("crew.editor.contact_person", "Osoba Kontaktowa")}
                   </h4>
                   <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <label className={STYLE_LABEL}>Imię *</label>
+                      <label className={STYLE_LABEL}>
+                        {t("crew.editor.first_name", "Imię *")}
+                      </label>
                       <Input
                         type="text"
                         required
                         value={formData.first_name}
-                        onChange={(event) =>
+                        onChange={(e) =>
                           setFormData({
                             ...formData,
-                            first_name: event.target.value,
+                            first_name: e.target.value,
                           })
                         }
                         disabled={isSubmitting}
@@ -153,15 +151,17 @@ export default function CrewEditorPanel({
                       />
                     </div>
                     <div>
-                      <label className={STYLE_LABEL}>Nazwisko *</label>
+                      <label className={STYLE_LABEL}>
+                        {t("crew.editor.last_name", "Nazwisko *")}
+                      </label>
                       <Input
                         type="text"
                         required
                         value={formData.last_name}
-                        onChange={(event) =>
+                        onChange={(e) =>
                           setFormData({
                             ...formData,
-                            last_name: event.target.value,
+                            last_name: e.target.value,
                           })
                         }
                         disabled={isSubmitting}
@@ -172,28 +172,29 @@ export default function CrewEditorPanel({
 
                   <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <label className={STYLE_LABEL}>E-mail</label>
+                      <label className={STYLE_LABEL}>
+                        {t("crew.editor.email", "E-mail")}
+                      </label>
                       <Input
                         type="email"
                         value={formData.email}
-                        onChange={(event) =>
-                          setFormData({
-                            ...formData,
-                            email: event.target.value,
-                          })
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
                         }
                         disabled={isSubmitting}
                       />
                     </div>
                     <div>
-                      <label className={STYLE_LABEL}>Telefon</label>
+                      <label className={STYLE_LABEL}>
+                        {t("crew.editor.phone", "Telefon")}
+                      </label>
                       <Input
                         type="tel"
                         value={formData.phone_number}
-                        onChange={(event) =>
+                        onChange={(e) =>
                           setFormData({
                             ...formData,
-                            phone_number: event.target.value,
+                            phone_number: e.target.value,
                           })
                         }
                         disabled={isSubmitting}
@@ -203,17 +204,19 @@ export default function CrewEditorPanel({
 
                   <div className="space-y-5 pt-4 border-t border-stone-200/60">
                     <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
-                      Profil Działalności
+                      {t("crew.editor.business_profile", "Profil Działalności")}
                     </h4>
 
                     <div>
-                      <label className={STYLE_LABEL}>Specjalizacja *</label>
+                      <label className={STYLE_LABEL}>
+                        {t("crew.editor.specialty", "Specjalizacja *")}
+                      </label>
                       <select
                         value={formData.specialty}
-                        onChange={(event) =>
+                        onChange={(e) =>
                           setFormData({
                             ...formData,
-                            specialty: event.target
+                            specialty: e.target
                               .value as CrewFormData["specialty"],
                           })
                         }
@@ -222,7 +225,7 @@ export default function CrewEditorPanel({
                       >
                         {SPECIALTY_CHOICES.map((specialty) => (
                           <option key={specialty.value} value={specialty.value}>
-                            {specialty.label}
+                            {t(specialty.labelKey)}
                           </option>
                         ))}
                       </select>
@@ -230,16 +233,22 @@ export default function CrewEditorPanel({
 
                     <div>
                       <label className={STYLE_LABEL}>
-                        Firma / Marka (Opcjonalnie)
+                        {t(
+                          "crew.editor.company_name",
+                          "Firma / Marka (Opcjonalnie)",
+                        )}
                       </label>
                       <Input
                         type="text"
-                        placeholder="np. SoundTech Pro Sp. z o.o."
+                        placeholder={t(
+                          "crew.editor.company_placeholder",
+                          "np. SoundTech Pro Sp. z o.o.",
+                        )}
                         value={formData.company_name}
-                        onChange={(event) =>
+                        onChange={(e) =>
                           setFormData({
                             ...formData,
-                            company_name: event.target.value,
+                            company_name: e.target.value,
                           })
                         }
                         disabled={isSubmitting}
@@ -262,7 +271,7 @@ export default function CrewEditorPanel({
                     }
                     className="w-full"
                   >
-                    Zapisz do bazy
+                    {t("crew.editor.btn_save", "Zapisz do bazy")}
                   </Button>
                 </div>
               </form>
@@ -270,8 +279,14 @@ export default function CrewEditorPanel({
 
             <ConfirmModal
               isOpen={showExitConfirm}
-              title="Masz niezapisane zmiany!"
-              description="Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę."
+              title={t(
+                "crew.editor.confirm_exit_title",
+                "Masz niezapisane zmiany!",
+              )}
+              description={t(
+                "crew.editor.confirm_exit_desc",
+                "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
+              )}
               onConfirm={forceClose}
               onCancel={() => setShowExitConfirm(false)}
             />

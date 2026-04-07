@@ -164,6 +164,7 @@ class ProjectPieceCastingSerializer(serializers.ModelSerializer):
     voice_line_display = serializers.CharField(source='get_voice_line_display', read_only=True)
     artist_name = serializers.SerializerMethodField()
     project_id = serializers.SerializerMethodField()
+    artist_id = serializers.SerializerMethodField()
 
     class Meta:
         model = ProjectPieceCasting
@@ -174,6 +175,9 @@ class ProjectPieceCastingSerializer(serializers.ModelSerializer):
 
     def get_project_id(self, obj) -> str:
         return str(obj.participation.project_id)
+    
+    def get_artist_id(self, obj) -> str:
+        return str(obj.participation.artist_id)
 
 class CollaboratorSerializer(serializers.ModelSerializer):
     class Meta:

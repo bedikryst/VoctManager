@@ -8,6 +8,7 @@
 import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Plus, Search, Filter, Wrench } from "lucide-react";
 
 import ConfirmModal from "../../shared/ui/ConfirmModal";
@@ -22,6 +23,7 @@ import { useCrewData } from "./hooks/useCrewData";
 import { SPECIALTY_CHOICES } from "./types/crew.dto";
 
 export default function CrewManagement(): React.JSX.Element {
+  const { t } = useTranslation();
   const {
     isLoading,
     isError,
@@ -43,10 +45,13 @@ export default function CrewManagement(): React.JSX.Element {
 
   useEffect(() => {
     if (isError)
-      toast.error("Ostrzeżenie", {
-        description: "Nie udało się pobrać listy współpracowników.",
+      toast.error(t("crew.toast.sync_warning", "Ostrzeżenie"), {
+        description: t(
+          "crew.toast.sync_error",
+          "Nie udało się pobrać listy współpracowników.",
+        ),
       });
-  }, [isError]);
+  }, [isError, t]);
 
   useBodyScrollLock(isPanelOpen || personToDelete !== null);
 
@@ -67,14 +72,18 @@ export default function CrewManagement(): React.JSX.Element {
                   aria-hidden="true"
                 />
                 <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
-                  Logistyka
+                  {t("crew.dashboard.subtitle", "Logistyka")}
                 </p>
               </div>
               <h1
                 className="text-3xl md:text-4xl font-medium text-stone-900 leading-tight tracking-tight"
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
-                Ekipa <span className="italic text-[#002395]">Techniczna</span>.
+                {t("crew.dashboard.title", "Ekipa")}{" "}
+                <span className="italic text-[#002395]">
+                  {t("crew.dashboard.title_highlight", "Techniczna")}
+                </span>
+                .
               </h1>
             </div>
             <Button
@@ -82,7 +91,7 @@ export default function CrewManagement(): React.JSX.Element {
               onClick={() => openPanel(null)}
               leftIcon={<Plus size={16} aria-hidden="true" />}
             >
-              Dodaj Osobę / Firmę
+              {t("crew.dashboard.add_btn", "Dodaj Osobę / Firmę")}
             </Button>
           </div>
         </motion.div>
@@ -93,7 +102,10 @@ export default function CrewManagement(): React.JSX.Element {
           <Input
             leftIcon={<Search size={16} />}
             type="text"
-            placeholder="Szukaj po nazwisku lub firmie..."
+            placeholder={t(
+              "crew.dashboard.search_placeholder",
+              "Szukaj po nazwisku lub firmie...",
+            )}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -107,10 +119,12 @@ export default function CrewManagement(): React.JSX.Element {
             onChange={(e) => setSpecialtyFilter(e.target.value)}
             className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] font-bold appearance-none cursor-pointer"
           >
-            <option value="">Wszystkie specjalizacje</option>
+            <option value="">
+              {t("crew.dashboard.filter_all", "Wszystkie specjalizacje")}
+            </option>
             {SPECIALTY_CHOICES.map((s) => (
               <option key={s.value} value={s.value}>
-                {s.label}
+                {t(s.labelKey)}
               </option>
             ))}
           </select>
@@ -149,14 +163,17 @@ export default function CrewManagement(): React.JSX.Element {
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold antialiased text-stone-500 uppercase tracking-widest mb-2">
-                Brak wyników
+                {t("crew.dashboard.empty_title", "Brak wyników")}
               </span>
 
               {searchTerm ? (
                 <div className="flex flex-col items-center gap-3 mt-2">
                   <span className="text-xs text-stone-400 max-w-sm">
-                    Nie znaleźliśmy firmy lub osoby "{searchTerm}". Możesz dodać
-                    ją teraz.
+                    {t(
+                      "crew.dashboard.empty_desc_search",
+                      'Nie znaleźliśmy firmy lub osoby "{{term}}". Możesz dodać ją teraz.',
+                      { term: searchTerm },
+                    )}
                   </span>
                   <Button
                     variant="outline"
@@ -164,12 +181,19 @@ export default function CrewManagement(): React.JSX.Element {
                     leftIcon={<Plus size={14} aria-hidden="true" />}
                     className="mt-2"
                   >
-                    Dodaj do bazy: {searchTerm}
+                    {t(
+                      "crew.dashboard.add_search_term",
+                      "Dodaj do bazy: {{term}}",
+                      { term: searchTerm },
+                    )}
                   </Button>
                 </div>
               ) : (
                 <span className="text-xs text-stone-400 max-w-sm">
-                  Zmień filtry lub dodaj nową osobę / firmę do bazy.
+                  {t(
+                    "crew.dashboard.empty_desc_default",
+                    "Zmień filtry lub dodaj nową osobę / firmę do bazy.",
+                  )}
                 </span>
               )}
             </GlassCard>
@@ -186,8 +210,11 @@ export default function CrewManagement(): React.JSX.Element {
 
       <ConfirmModal
         isOpen={!!personToDelete}
-        title="Usunąć tę osobę z bazy?"
-        description="Zniknie ona bezpowrotnie ze spisu. Nie można usunąć osób powiązanych już z koncertami (w takim przypadku zaktualizuj jej dane)."
+        title={t("crew.delete_modal.title", "Usunąć tę osobę z bazy?")}
+        description={t(
+          "crew.delete_modal.desc",
+          "Zniknie ona bezpowrotnie ze spisu. Nie można usunąć osób powiązanych już z koncertami (w takim przypadku zaktualizuj jej dane).",
+        )}
         onConfirm={executeDelete}
         onCancel={() => setPersonToDelete(null)}
         isLoading={isDeleting}
