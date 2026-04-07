@@ -237,8 +237,7 @@ class CrewAssignment(models.Model):
     class Status(models.TextChoices):
         INVITED = 'INV', 'Wstępnie umówiony'
         CONFIRMED = 'CON', 'Potwierdzony'
-
-    # Zmiana z RESTRICT na CASCADE, by usunięcie projektu usuwało powiązania ekipy
+        
     collaborator = models.ForeignKey(Collaborator, on_delete=models.CASCADE, related_name='assignments', verbose_name="Współtwórca")
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='crew_assignments', verbose_name="Projekt")
     role_description = models.CharField(max_length=150, blank=True, verbose_name="Zakres obowiązków")

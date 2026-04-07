@@ -105,7 +105,7 @@ class Piece(EnterpriseBaseModel):
             return f"{self.composer.last_name}: {self.title}{year_str}{suffix}"
         return f"{self.title}{year_str}{suffix}"
 
-# 2. Zmiana: Wymagania dziedziczą po zwykłym models.Model, NIE po EnterpriseBaseModel.
+
 class PieceVoiceRequirement(models.Model): 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='voice_requirements', verbose_name="Utwór")
@@ -120,10 +120,6 @@ class PieceVoiceRequirement(models.Model):
     def __str__(self):
         return f"{self.piece.title}: {self.quantity}x {self.get_voice_line_display()}"
 
-
-# 1. Zmiana: Track powraca do CASCADE. Skoro używamy Soft Delete na Piece, 
-# Django i tak nie wywoła tego kaskadowo, ale zapobiegnie to błędom ProtectedError
-# przy próbach twardego czyszczenia bazy przez panel Admina.
 class Track(EnterpriseBaseModel):
     piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='tracks', verbose_name="Utwór")
     voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name="Linia melodyczna")

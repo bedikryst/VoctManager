@@ -8,7 +8,7 @@ Domain-driven service layer for the Archive application.
 
 Encapsulates database transactions and core domain rules for the musical repertoire.
 """
-from typing import List
+from typing import List, Optional
 from django.db import transaction
 
 from .models import Piece, PieceVoiceRequirement, Composer
@@ -16,7 +16,7 @@ from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .exceptions import PieceValidationException
 
 def _sync_piece_voice_requirements(piece: Piece, requirements: List[VoiceRequirementDTO]) -> None:
-    """Internal domain logic to replace voice requirements for a piece."""
+    """Internal domain logic to atomically replace voice requirements for a piece."""
     piece.voice_requirements.all().delete()
     
     new_requirements = [
@@ -28,6 +28,7 @@ def _sync_piece_voice_requirements(piece: Piece, requirements: List[VoiceRequire
         for req in requirements
     ]
     PieceVoiceRequirement.objects.bulk_create(new_requirements)
+
 
 def create_piece(dto: PieceWriteDTO, sheet_music_file=None) -> Piece:
     """Orchestrates the creation of a piece and its related vocal requirements."""
@@ -58,6 +59,7 @@ def create_piece(dto: PieceWriteDTO, sheet_music_file=None) -> Piece:
             _sync_piece_voice_requirements(piece, dto.voice_requirements)
             
     return piece
+
 
 def update_piece(piece: Piece, dto: PieceWriteDTO, sheet_music_file=None, update_sheet_music: bool = False) -> Piece:
     """Orchestrates the update of a piece and synchronizes its vocal requirements."""

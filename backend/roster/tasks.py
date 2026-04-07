@@ -31,7 +31,7 @@ def generate_project_zip_task(self, project_id):
     safe_title = project.title.replace(' ', '_').replace('/', '-')
 
     if not participations.exists():
-        return {"error": "Brak artystów w tym projekcie."}
+        return {"error": "no_artists_in_project"}
 
     zip_buffer = io.BytesIO()
     
@@ -57,5 +57,5 @@ def generate_project_zip_task(self, project_id):
     
     return {
         "download_url": default_storage.url(saved_path),
-        "message": "Archiwum zostało wygenerowane pomyślnie."
+        "message": "success"
     }

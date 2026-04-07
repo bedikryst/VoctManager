@@ -118,6 +118,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # --- DJANGO REST FRAMEWORK CONFIGURATION ---
 REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'core.exceptions.enterprise_exception_handler',
+    
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # Primary authentication for React frontend
         'core.authentication.CookieJWTAuthentication', # 

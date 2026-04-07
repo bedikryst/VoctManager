@@ -64,7 +64,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
         if self.action == 'me': return ArtistMeSerializer
         return ArtistBasicSerializer
     
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
         """HTTP to Service Layer orchestration for artist provisioning."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -80,10 +80,8 @@ class ArtistViewSet(viewsets.ModelViewSet):
             vocal_range_top=serializer.validated_data.get('vocal_range_top')
         )
         
-        try:
-            artist = services.provision_artist_with_user_account(dto)
-        except ArtistProvisioningException as e:
-            return Response({"error": "domain_violation", "detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # Domain validation exceptions will be caught by the global exception handler
+        artist = services.provision_artist_with_user_account(dto)
             
         response_serializer = self.get_serializer(artist)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
@@ -108,7 +106,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if user.is_superuser: return base_qs.all()
         return base_qs.filter(participations__artist__user=user).distinct()
     
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         project = serializer.save()
         services.provision_project_creator_participation(project=project, user=self.request.user)
     
@@ -176,7 +174,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         return ParticipationDetailedSerializer if self.request.user.is_superuser else ParticipationBasicSerializer
     
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
         dto = ParticipationRestoreDTO(
             artist_id=request.data.get('artist'), 
             project_id=request.data.get('project')
@@ -206,29 +204,33 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsAdminUser])
     def bulk_fee(self, request) -> Response:
+        """Bulk updates the financial remuneration for all project participants."""
         try:
             dto = ProjectBulkFeeDTO(
                 project_id=request.data.get('project_id'),
                 new_fee=int(request.data.get('fee'))
             )
-            updated_count = services.update_project_bulk_fee(dto)
-            return Response({"detail": f"Successfully updated {updated_count} records.", "updated_count": updated_count}, status=status.HTTP_200_OK)
-        except RosterDomainException as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except (ValueError, TypeError):
-            return Response({"error": "Invalid payload format."}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({"fee": "Invalid payload format. Must be an integer."})
+
+        # Domain exceptions caught globally
+        updated_count = services.update_project_bulk_fee(dto)
+        return Response(
+            {"detail": f"Successfully updated {updated_count} records.", "updated_count": updated_count}, 
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=False, methods=['post'], permission_classes=[IsAdminUser])
     def request_project_zip(self, request) -> Response:
         project_id = request.data.get('project_id')
-        if not project_id: return Response({"error": "Missing project_id"}, status=status.HTTP_400_BAD_REQUEST)
+        if not project_id: raise ValidationError({"project_id": "This field is required."})
         task = generate_project_zip_task.delay(project_id)
         return Response({"task_id": task.id, "status": "processing"}, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
     def check_zip_status(self, request) -> Response:
         task_id = request.query_params.get('task_id')
-        if not task_id: return Response({"error": "Missing task_id"}, status=status.HTTP_400_BAD_REQUEST)
+        if not task_id: raise ValidationError({"task_id": "This field is required."})
         
         result = AsyncResult(task_id)
         if result.state == 'SUCCESS':
@@ -274,7 +276,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         if self.request.user.is_superuser: return qs
         return qs.filter(participation__artist__user=self.request.user)
 
-    def _execute_attendance_validation(self, serializer):
+    def _execute_attendance_validation(self, serializer) -> None:
+        """Translates payload data into DTO and delegates validation to the Service Layer."""
         participation = serializer.validated_data.get('participation', serializer.instance.participation if serializer.instance else None)
         rehearsal = serializer.validated_data.get('rehearsal', serializer.instance.rehearsal if serializer.instance else None)
         
@@ -287,16 +290,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             participation_id=str(participation.id),
             rehearsal_id=str(rehearsal.id)
         )
-        try:
-            services.validate_attendance_write(dto)
-        except RosterDomainException as e:
-            raise ValidationError(str(e))
+        
+        services.validate_attendance_write(dto)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         self._execute_attendance_validation(serializer)
         serializer.save()
         
-    def perform_update(self, serializer):
+    def perform_update(self, serializer) -> None:
         self._execute_attendance_validation(serializer)
         serializer.save()
 
@@ -311,7 +312,7 @@ class ProgramItemViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ProgramItem.objects.select_related('piece').all().order_by('order')
     
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance) -> None:
         services.cascade_delete_program_item(instance)
     
 
