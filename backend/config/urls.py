@@ -20,7 +20,11 @@ from .auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, Logou
 
 from roster.views import ArtistViewSet, CollaboratorViewSet, CrewAssignmentViewSet, ProgramItemViewSet, ProjectViewSet, ParticipationViewSet, RehearsalViewSet, AttendanceViewSet, ProjectPieceCastingViewSet, get_voice_lines, get_voice_types
 from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet, PieceVoiceRequirementViewSet
-
+from core.views import (
+    CurrentUserRetrieveUpdateView, 
+    ChangePasswordView, 
+    ChangeEmailRequestView
+)
 __author__ = "Krystian Bugalski"
 
 # Initialize the REST Framework Router
@@ -64,6 +68,11 @@ urlpatterns = [
     # --- Custom Endpoints for Frontend Options ---
     path('api/options/voice-lines/', get_voice_lines, name='options-voice-lines'),
     path('api/options/voice-types/', get_voice_types, name='options-voice-types'),
+
+    # --- User Settings & Profile Endpoints ---
+    path('api/users/me/', CurrentUserRetrieveUpdateView.as_view(), name='user-me'),
+    path('api/users/me/change-password/', ChangePasswordView.as_view(), name='user-change-password'),
+    path('api/users/me/change-email/', ChangeEmailRequestView.as_view(), name='user-change-email'),
 ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.

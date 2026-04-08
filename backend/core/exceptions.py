@@ -26,3 +26,19 @@ def enterprise_exception_handler(exc, context) -> Response | None:
         }, status=400)
 
     return None
+
+class CoreDomainException(Exception):
+    """Base exception for all Core domain violations."""
+    pass
+
+class ProfileUpdateException(CoreDomainException):
+    """Raised when profile update validation fails at the business logic level."""
+    pass
+
+class InvalidCredentialsException(CoreDomainException):
+    """Raised when authentication verification fails (e.g., wrong current password)."""
+    pass
+
+class EmailAlreadyInUseException(CoreDomainException):
+    """Raised when an attempt is made to claim an already registered email."""
+    pass

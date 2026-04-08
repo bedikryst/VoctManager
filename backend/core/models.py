@@ -5,6 +5,9 @@
 import uuid
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
+from django.utils.translation import gettext_lazy as _
+import zoneinfo
 
 class SoftDeleteQuerySet(models.QuerySet):
     """
@@ -60,3 +63,53 @@ class EnterpriseBaseModel(models.Model):
         self.is_deleted = False
         self.updated_at = timezone.now()
         self.save(update_fields=['is_deleted', 'updated_at'])
+
+class UserProfile(EnterpriseBaseModel):
+    """
+    Enterprise user profile and preferences.
+    Separates domain-specific user configurations from the core authentication model.
+    """
+    
+    class LanguageChoices(models.TextChoices):
+        ENGLISH = 'en', _('English')
+        POLISH = 'pl', _('Polish')
+
+    AVAILABLE_ZONES = sorted(list(zoneinfo.available_timezones()))
+    TIMEZONE_CHOICES = tuple(zip(AVAILABLE_ZONES, AVAILABLE_ZONES))
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        help_text=_("The core authentication user linked to this profile.")
+    )
+    
+    # Contact Info
+    phone_number = models.CharField(
+        max_length=32, 
+        blank=True, 
+        help_text=_("International format phone number.")
+    )
+    
+    # Preferences
+    language = models.CharField(
+        max_length=10,
+        choices=LanguageChoices.choices,
+        default=LanguageChoices.ENGLISH,
+        help_text=_("User preferred UI language.")
+    )
+    timezone = models.CharField(
+        max_length=63,
+        choices=TIMEZONE_CHOICES,
+        default='UTC',
+        help_text=_("Critical for rendering rehearsal/project times correctly across regions.")
+    )
+
+    class Meta:
+        db_table = 'core_user_profile'
+        verbose_name = _('User Profile')
+        verbose_name_plural = _('User Profiles')
+
+    def __str__(self) -> str:
+        return f"Profile for {self.user.email}"
+    
