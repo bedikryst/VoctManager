@@ -14,6 +14,7 @@ export interface UserProfileDTO {
   clothing_size: string;
   shoe_size: string;
   height_cm: number | null;
+  calendar_token: string;
 }
 
 export interface UserMeDTO {

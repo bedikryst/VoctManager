@@ -133,6 +133,13 @@ class UserProfile(EnterpriseBaseModel):
         help_text=_("Height in centimeters. Crucial for stage risers positioning.")
     )
 
+    calendar_token = models.UUIDField(
+        default=uuid.uuid4, 
+        unique=True, 
+        editable=False,
+        help_text=_("Secret token for iCal feed subscription.")
+    )
+    
     class Meta:
         db_table = 'core_user_profile'
         verbose_name = _('User Profile')

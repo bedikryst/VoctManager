@@ -7,15 +7,21 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { User, Shield, Truck, ShieldAlert } from "lucide-react";
+import { User, Shield, Truck, ShieldAlert, Calendar } from "lucide-react";
 
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import GeneralTab from "./GeneralTab";
 import SecurityTab from "./SecurityTab";
 import LogisticsTab from "./LogisticsTab";
 import PrivacyTab from "./PrivacyTab";
+import IntegrationsTab from "./IntegrationsTab";
 
-type TabType = "general" | "security" | "logistics" | "privacy";
+type TabType =
+  | "general"
+  | "security"
+  | "logistics"
+  | "privacy"
+  | "integrations";
 
 export default function SettingsLayout() {
   const { t } = useTranslation();
@@ -41,6 +47,11 @@ export default function SettingsLayout() {
       id: "privacy",
       label: t("settings.tabs.privacy", "Prywatność"),
       icon: <ShieldAlert className="w-4 h-4" />,
+    },
+    {
+      id: "integrations",
+      label: t("settings.tabs.integrations", "Integracje"),
+      icon: <Calendar className="w-4 h-4" />,
     },
   ] as const;
 
@@ -83,6 +94,7 @@ export default function SettingsLayout() {
               {activeTab === "security" && <SecurityTab />}
               {activeTab === "logistics" && <LogisticsTab />}
               {activeTab === "privacy" && <PrivacyTab />}
+              {activeTab === "integrations" && <IntegrationsTab />}
             </motion.div>
           </AnimatePresence>
         </main>

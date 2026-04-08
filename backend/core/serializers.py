@@ -12,7 +12,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = (
             'phone_number', 'language', 'timezone',
             'dietary_preference', 'dietary_notes', 
-            'clothing_size', 'shoe_size', 'height_cm'
+            'clothing_size', 'shoe_size', 'height_cm', 
+            'calendar_token'
         )
 
 

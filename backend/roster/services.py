@@ -31,10 +31,15 @@ def provision_artist_with_user_account(dto: ArtistCreateDTO) -> Artist:
         user.save()
         
         artist = Artist.objects.create(
-            user=user, first_name=dto.first_name, last_name=dto.last_name, 
-            email=dto.email, voice_type=dto.voice_type, phone_number=dto.phone_number,
-            sight_reading_skill=dto.sight_reading_skill, vocal_range_bottom=dto.vocal_range_bottom,
-            vocal_range_top=dto.vocal_range_top
+            user=user, 
+            first_name=dto.first_name, 
+            last_name=dto.last_name, 
+            email=dto.email, 
+            voice_type=dto.voice_type, 
+            phone_number=dto.phone_number or "",               
+            sight_reading_skill=dto.sight_reading_skill, 
+            vocal_range_bottom=dto.vocal_range_bottom or "",   
+            vocal_range_top=dto.vocal_range_top or ""          
         )
     return artist
 

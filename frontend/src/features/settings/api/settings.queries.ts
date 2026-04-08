@@ -80,3 +80,13 @@ export const useDeleteAccount = () => {
     },
   });
 };
+
+export const useResetCalendarToken = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => settingsService.resetCalendarToken(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEYS.me });
+    },
+  });
+};

@@ -70,4 +70,8 @@ export const settingsService = {
   deleteAccount: async (): Promise<void> => {
     await api.post(`${BASE_URL}delete-account/`);
   },
+  resetCalendarToken: async (): Promise<{ calendar_token: string }> => {
+    const response = await api.post(`${BASE_URL}reset-calendar-token/`);
+    return response.data;
+  },
 };

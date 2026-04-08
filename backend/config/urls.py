@@ -25,7 +25,9 @@ from core.views import (
     ChangePasswordView, 
     ChangeEmailRequestView,
     ExportUserDataView,
-    RequestAccountDeletionView
+    RequestAccountDeletionView,
+    ResetCalendarTokenView,
+    CalendarFeedView
 )
 __author__ = "Krystian Bugalski"
 
@@ -56,6 +58,9 @@ urlpatterns = [
     # Auto-generated REST API routes
     path('api/', include(router.urls)),
 
+    # Custom endpoint for calendar feed (iCal format)
+    path('api/calendar/<uuid:token>/feed.ics', CalendarFeedView.as_view(), name='calendar-feed'),
+
     # --- JWT Authentication Endpoints ---
     # Used by the React frontend to obtain and refresh access tokens
     path('api/token/', CookieTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -77,6 +82,7 @@ urlpatterns = [
     path('api/users/me/change-email/', ChangeEmailRequestView.as_view(), name='user-change-email'),
     path('api/users/me/export-data/', ExportUserDataView.as_view(), name='user-export-data'),
     path('api/users/me/delete-account/', RequestAccountDeletionView.as_view(), name='user-delete-account'),
+    path('api/users/me/reset-calendar-token/', ResetCalendarTokenView.as_view(), name='user-reset-calendar-token'),
 ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.
