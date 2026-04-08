@@ -5,6 +5,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+
 import { ScheduleService } from "../api/schedule.service";
 import {
   useSchedulePieceCastings,
@@ -16,6 +18,7 @@ export const useTimelineProjectCard = (
   projectTitle: string,
   isExpanded: boolean,
 ) => {
+  const { t } = useTranslation();
   const [activeSubTab, setActiveSubTab] = useState<"LOGISTICS" | "SETLIST">(
     "LOGISTICS",
   );
@@ -33,7 +36,9 @@ export const useTimelineProjectCard = (
   const handleDownloadCallSheet = async (event: React.MouseEvent) => {
     event.stopPropagation();
     setIsDownloading(true);
-    const toastId = toast.loading("Generowanie dokumentu Call-Sheet...");
+    const toastId = toast.loading(
+      t("schedule.card.download_loading", "Generowanie dokumentu Call-Sheet..."),
+    );
 
     try {
       const blob = await ScheduleService.exportCallSheet(projectId);
@@ -49,11 +54,16 @@ export const useTimelineProjectCard = (
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      toast.success("Plik został pobrany", { id: toastId });
-    } catch (error) {
-      toast.error("Błąd generowania", {
+      toast.success(t("schedule.card.download_success", "Plik został pobrany"), {
         id: toastId,
-        description: "Nie udało się pobrać pliku.",
+      });
+    } catch {
+      toast.error(t("common.errors.generation_error", "Błąd generowania"), {
+        id: toastId,
+        description: t(
+          "schedule.card.download_error_desc",
+          "Nie udało się pobrać pliku.",
+        ),
       });
     } finally {
       setIsDownloading(false);

@@ -20,8 +20,6 @@ import {
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import { Button } from "../../../shared/ui/Button";
 import type { VoiceLineOption } from "../../../shared/types";
-
-// Enterprise Standard: Strictly imported from the Query layer
 import {
   useTracks,
   useUploadTrack,
@@ -40,19 +38,20 @@ export default function TrackUploadManager({
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Client UI State
   const [uploadVoicePart, setUploadVoicePart] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [trackToDelete, setTrackToDelete] = useState<string | null>(null);
 
-  // Server State & Mutations
   const { data: tracks = [], isLoading } = useTracks(pieceId);
   const uploadMutation = useUploadTrack();
   const deleteMutation = useDeleteTrack();
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile || !uploadVoicePart) return;
+  const handleUpload = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!selectedFile || !uploadVoicePart) {
+      return;
+    }
 
     const toastId = toast.loading(
       t("archive.tracks.uploading", "Wgrywanie nagrania..."),
@@ -73,11 +72,13 @@ export default function TrackUploadManager({
         { id: toastId },
       );
 
-      // Clear UI state on success
       setSelectedFile(null);
       setUploadVoicePart("");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (error) {
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch {
       toast.error(
         t(
           "archive.tracks.upload_error",
@@ -89,7 +90,9 @@ export default function TrackUploadManager({
   };
 
   const handleDelete = async () => {
-    if (!trackToDelete) return;
+    if (!trackToDelete) {
+      return;
+    }
 
     const toastId = toast.loading(
       t("archive.tracks.deleting", "Usuwanie nagrania..."),
@@ -101,7 +104,7 @@ export default function TrackUploadManager({
         t("archive.tracks.delete_success", "Plik został usunięty z serwera."),
         { id: toastId },
       );
-    } catch (error) {
+    } catch {
       toast.error(
         t("archive.tracks.delete_error", "Błąd podczas usuwania nagrania."),
         { id: toastId },
@@ -111,16 +114,17 @@ export default function TrackUploadManager({
     }
   };
 
-  const handleAudioPlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
-    const target = e.currentTarget;
-    document.querySelectorAll("audio").forEach((audioEl) => {
-      if (audioEl !== target) audioEl.pause();
+  const handleAudioPlay = (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    const target = event.currentTarget;
+    document.querySelectorAll("audio").forEach((audioElement) => {
+      if (audioElement !== target) {
+        audioElement.pause();
+      }
     });
   };
 
   return (
     <div className="space-y-10">
-      {/* Upload Form */}
       <div className="bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-sm relative">
         <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] mb-5 flex items-center gap-2 border-b border-stone-200/60 pb-2">
           <UploadCloud size={14} />{" "}
@@ -135,17 +139,19 @@ export default function TrackUploadManager({
               <select
                 required
                 value={uploadVoicePart}
-                onChange={(e) => setUploadVoicePart(e.target.value)}
+                onChange={(event) => setUploadVoicePart(event.target.value)}
                 className="w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold appearance-none"
                 disabled={uploadMutation.isPending}
               >
                 <option value="">
-                  — {t("common.select", "Wybierz głos")} —
+                  — {t("common.actions.select", "Wybierz")} —
                 </option>
-                <option value="TUTTI">Tutti</option>
-                {voiceLines.map((vl) => (
-                  <option key={vl.value} value={vl.value}>
-                    {vl.label}
+                <option value="TUTTI">
+                  {t("archive.tracks.tutti", "Tutti")}
+                </option>
+                {voiceLines.map((voiceLine) => (
+                  <option key={voiceLine.value} value={voiceLine.value}>
+                    {voiceLine.label}
                   </option>
                 ))}
               </select>
@@ -153,12 +159,14 @@ export default function TrackUploadManager({
 
             <div>
               <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">
-                {t("archive.tracks.file_upload", "Plik Audio (MP3/WAV/MIDI) *")}
+                {t("archive.tracks.file_upload", "Plik audio (MP3/WAV/MIDI) *")}
               </label>
               <input
                 type="file"
                 ref={fileInputRef}
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                onChange={(event) =>
+                  setSelectedFile(event.target.files?.[0] || null)
+                }
                 accept="audio/*,.mid,.midi"
                 required
                 disabled={uploadMutation.isPending}
@@ -187,10 +195,9 @@ export default function TrackUploadManager({
         </form>
       </div>
 
-      {/* Track List */}
       <div className="space-y-4">
         <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-4 border-b border-stone-200/60 pb-2">
-          {t("archive.tracks.uploaded_tracks", "Wgrane Ścieżki Audio")} (
+          {t("archive.tracks.uploaded_tracks", "Wgrane ścieżki audio")} (
           {tracks.length})
         </h4>
 

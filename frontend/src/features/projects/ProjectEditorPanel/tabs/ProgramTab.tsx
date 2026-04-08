@@ -112,6 +112,7 @@ function SortablePieceItem({
   onDelete: (id: string) => void;
   t: TFunction;
 }) {
+  const safeId = item.id || `program-item-${item.piece}-${index}`;
   const {
     attributes,
     listeners,
@@ -119,7 +120,7 @@ function SortablePieceItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id! });
+  } = useSortable({ id: safeId });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -200,7 +201,7 @@ function SortablePieceItem({
           {item.is_encore && t("projects.program.badges.encore", "BIS")}
         </button>
         <button
-          onClick={() => onDelete(item.id!)}
+          onClick={() => onDelete(safeId)}
           title={t(
             "projects.program.actions.remove_from_program",
             "Usuń z programu",
@@ -251,6 +252,7 @@ export default function ProgramTab({
       <AnimatePresence>
         {isDirty && (
           <motion.div
+            key="fab-menu"
             initial={{ y: 100, opacity: 0, x: "-50%" }}
             animate={{ y: 0, opacity: 1, x: "-50%" }}
             exit={{ y: 100, opacity: 0, x: "-50%" }}
@@ -334,7 +336,10 @@ export default function ProgramTab({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={programItems.map((item) => item.id!)}
+              items={programItems.map(
+                (item, index) =>
+                  item.id || `program-item-${item.piece}-${index}`,
+              )}
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-3">
@@ -342,9 +347,11 @@ export default function ProgramTab({
                   const pieceObj = pieces.find(
                     (p) => String(p.id) === String(item.piece_id || item.piece),
                   );
+                  const safeId =
+                    item.id || `program-item-${item.piece}-${index}`;
                   return (
                     <SortablePieceItem
-                      key={item.id}
+                      key={safeId}
                       item={item}
                       index={index}
                       pieceObj={pieceObj}
@@ -400,12 +407,13 @@ export default function ProgramTab({
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide">
           {filteredPieces.length > 0 ? (
-            filteredPieces.map((piece) => {
+            filteredPieces.map((piece, index) => {
+              const safePieceId = piece.id || `db-piece-${index}`;
               const isAdded = addedPieceIds.includes(String(piece.id));
 
               return (
                 <div
-                  key={piece.id}
+                  key={safePieceId}
                   className={`flex items-center justify-between p-3.5 border rounded-xl transition-colors ${
                     isAdded
                       ? "bg-stone-50/50 border-stone-200/50 opacity-60"
@@ -434,7 +442,7 @@ export default function ProgramTab({
 
                   <button
                     disabled={isAdded}
-                    onClick={() => handleAddPiece(piece.id!)}
+                    onClick={() => handleAddPiece(String(piece.id))}
                     className={`flex-shrink-0 p-2 rounded-lg transition-all active:scale-90 ${
                       isAdded
                         ? "text-emerald-600 bg-emerald-50 border border-emerald-100"

@@ -2,6 +2,7 @@
  * @file projectDomain.ts
  * @description Centralized domain constants for the Project module.
  * Ensures type safety and eliminates "magic strings" across the application.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/constants
  */
 
@@ -27,3 +28,21 @@ export const PROJECT_STATUS = {
 
 export type ProjectStatus =
   (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
+
+export const PROJECT_FILTER = {
+  ACTIVE: "ACTIVE",
+  DONE: "DONE",
+  ALL: "ALL",
+} as const;
+
+export type ProjectFilterId =
+  (typeof PROJECT_FILTER)[keyof typeof PROJECT_FILTER];
+
+export const PROJECT_EXPORT = {
+  CALL_SHEET: "export_call_sheet",
+  ZAIKS: "export_zaiks",
+  DTP: "export_dtp",
+} as const;
+
+export type ProjectExportId =
+  (typeof PROJECT_EXPORT)[keyof typeof PROJECT_EXPORT];

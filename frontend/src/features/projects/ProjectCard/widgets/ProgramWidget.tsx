@@ -145,14 +145,14 @@ export default function ProgramWidget({
 
                 return (
                   <li
-                    key={item.id || index}
+                    key={item.id || `program-item-${item.piece}-${index}`}
                     className={`text-[11px] flex items-center justify-between px-3 py-2 rounded-lg border transition-colors ${statusColor}`}
                   >
                     <span className={`truncate pr-2 font-bold ${textColor}`}>
                       <strong className="opacity-40 w-4 inline-block font-bold">
                         {index + 1}.
                       </strong>{" "}
-                      {item.title || item.piece_title}
+                      {item.piece_title || pieceObj?.title}
                     </span>
                     <span
                       className={`text-[8px] font-bold antialiased uppercase tracking-widest ${textColor}`}

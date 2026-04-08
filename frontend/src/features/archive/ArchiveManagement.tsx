@@ -28,16 +28,16 @@ import { Button } from "../../shared/ui/Button";
 
 import PieceCard from "./components/PieceCard";
 import ArchiveEditorPanel from "./components/ArchiveEditorPanel";
-import { EPOCHS } from "./components/PieceDetailsForm";
 import { useArchiveData } from "./hooks/useArchiveData";
 import type { EnrichedPiece } from "./types/archive.dto";
+import { getArchiveEpochOptions } from "./constants/archiveEpochs";
 
-// Enterprise dependencies
 import { useBodyScrollLock } from "../../shared/lib/hooks/useBodyScrollLock";
 import { ARCHIVE_TABS, ArchiveTabId } from "./constants/archiveDomain";
 
 export default function ArchiveManagement(): React.JSX.Element {
   const { t } = useTranslation();
+  const epochOptions = getArchiveEpochOptions(t);
 
   const {
     isLoading,
@@ -65,27 +65,30 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
-
   const [activeTab, setActiveTab] = useState<ArchiveTabId>(
     ARCHIVE_TABS.DETAILS,
   );
   const [editingPiece, setEditingPiece] = useState<EnrichedPiece | null>(null);
   const [initialSearchContext, setInitialSearchContext] = useState<string>("");
 
-  // Safe DOM Mutation Pattern via custom hook
   useBodyScrollLock(isPanelOpen || pieceToDelete !== null);
 
   useEffect(() => {
-    if (isError)
-      toast.error("Ostrzeżenie synchronizacji", {
-        description: "Nie udało się pobrać wszystkich danych archiwum.",
+    if (isError) {
+      toast.error(t("archive.toast.sync_warning_title", "Ostrzeżenie synchronizacji"), {
+        description: t(
+          "archive.toast.sync_warning_desc",
+          "Nie udało się pobrać wszystkich danych archiwum.",
+        ),
       });
-  }, [isError]);
+    }
+  }, [isError, t]);
 
   useEffect(
     () => () => {
-      if (closeResetTimeoutRef.current)
+      if (closeResetTimeoutRef.current) {
         clearTimeout(closeResetTimeoutRef.current);
+      }
     },
     [],
   );
@@ -100,6 +103,7 @@ export default function ArchiveManagement(): React.JSX.Element {
         clearTimeout(closeResetTimeoutRef.current);
         closeResetTimeoutRef.current = null;
       }
+
       setEditingPiece(piece);
       setActiveTab(tab);
       setInitialSearchContext(context);
@@ -110,8 +114,10 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   const closePanel = useCallback(() => {
     setIsPanelOpen(false);
-    if (closeResetTimeoutRef.current)
+
+    if (closeResetTimeoutRef.current) {
       clearTimeout(closeResetTimeoutRef.current);
+    }
 
     closeResetTimeoutRef.current = setTimeout(() => {
       setEditingPiece(null);
@@ -132,7 +138,6 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   return (
     <div className="space-y-6 animate-fade-in relative cursor-default pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* --- HEADER --- */}
       <header className="relative pt-8 mb-8">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -173,13 +178,12 @@ export default function ArchiveManagement(): React.JSX.Element {
         </motion.div>
       </header>
 
-      {/* --- STATISTICS CARDS --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         <GlassCard
           variant="dark"
           className="relative group hover:-translate-y-0.5 transition-transform"
         >
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#002395] rounded-full blur-[80px] opacity-40 pointer-events-none transition-transform duration-1000 group-hover:scale-125"></div>
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#002395] rounded-full blur-[80px] opacity-40 pointer-events-none transition-transform duration-1000 group-hover:scale-125" />
           <div className="relative z-10 flex items-center justify-between">
             <div>
               <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-blue-300 mb-1.5 flex items-center gap-2">
@@ -231,7 +235,6 @@ export default function ArchiveManagement(): React.JSX.Element {
         </GlassCard>
       </div>
 
-      {/* --- SEARCH AND FILTERS --- */}
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-8">
         <div className="sm:col-span-5">
           <Input
@@ -239,7 +242,7 @@ export default function ArchiveManagement(): React.JSX.Element {
             type="text"
             placeholder={t("archive.dashboard.search_placeholder")}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
         <div className="relative sm:col-span-4">
@@ -248,13 +251,13 @@ export default function ArchiveManagement(): React.JSX.Element {
           </div>
           <select
             value={composerFilter}
-            onChange={(e) => setComposerFilter(e.target.value)}
+            onChange={(event) => setComposerFilter(event.target.value)}
             className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold appearance-none cursor-pointer"
           >
             <option value="">{t("archive.dashboard.filter_composer")}</option>
-            {composers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.last_name} {c.first_name || ""}
+            {composers.map((composer) => (
+              <option key={composer.id} value={composer.id}>
+                {composer.last_name} {composer.first_name || ""}
               </option>
             ))}
           </select>
@@ -265,28 +268,27 @@ export default function ArchiveManagement(): React.JSX.Element {
           </div>
           <select
             value={epochFilter}
-            onChange={(e) => setEpochFilter(e.target.value)}
+            onChange={(event) => setEpochFilter(event.target.value)}
             className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold appearance-none cursor-pointer"
           >
             <option value="">{t("archive.dashboard.filter_epoch")}</option>
-            {EPOCHS.map((ep) => (
-              <option key={ep.value} value={ep.value}>
-                {ep.label}
+            {epochOptions.map((epoch) => (
+              <option key={epoch.value} value={epoch.value}>
+                {epoch.label}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* --- LIST VIEW --- */}
       <div className="grid grid-cols-1 gap-4">
         {isLoading ? (
           <div className="animate-pulse space-y-4">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map((item) => (
               <div
-                key={i}
+                key={item}
                 className="h-28 bg-stone-100/50 rounded-[2rem] w-full border border-white/50"
-              ></div>
+              />
             ))}
           </div>
         ) : displayPieces.length > 0 ? (
@@ -359,8 +361,11 @@ export default function ArchiveManagement(): React.JSX.Element {
 
       <ConfirmModal
         isOpen={!!pieceToDelete}
-        title="Usunąć utwór z archiwum?" // Note: Move to i18n later
-        description="Ten krok usunie bezpowrotnie metadane utworu..."
+        title={t("archive.delete_modal.title", "Usunąć utwór z archiwum?")}
+        description={t(
+          "archive.delete_modal.desc",
+          "Ten krok usunie bezpowrotnie metadane utworu...",
+        )}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setPieceToDelete(null)}
         isLoading={isDeleting}

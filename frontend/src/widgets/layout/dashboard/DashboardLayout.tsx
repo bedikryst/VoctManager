@@ -1,32 +1,27 @@
 /**
  * @file DashboardLayout.tsx
- * @description Main architectural wrapper for the authenticated zone.
- * @architecture Enterprise 2026 Standards
- * Premium "Floating Island" Sidebar with Deep Glassmorphism.
- * Incorporates Framer Motion for liquid mobile menu transitions.
- * Unified RBAC menu architecture ensuring correct feature access.
- * @module core/DashboardLayout
- * @author Krystian Bugalski
+ * @description Main authenticated shell for the dashboard experience.
  */
 
-import React, { useState, useEffect } from "react";
-import { NavLink, Outlet, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import { Link, NavLink, Outlet } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
-  LayoutDashboard,
-  Users,
   Briefcase,
-  Music,
+  Calendar,
   CalendarCheck,
+  FileText,
+  FolderOpen,
+  Headphones,
+  LayoutDashboard,
   LogOut,
   Menu,
-  X,
-  FileText,
-  Calendar,
-  Headphones,
-  FolderOpen,
-  Wrench,
+  Music,
   Settings,
+  Users,
+  Wrench,
+  X,
 } from "lucide-react";
 
 import { useAuth } from "../../../app/providers/AuthProvider";
@@ -41,7 +36,138 @@ interface AuthUser {
   voice_type_display?: string;
 }
 
+interface NavLinkItem {
+  to: string;
+  labelKey: string;
+  icon: React.ReactNode;
+}
+
+interface NavGroup {
+  labelKey: string;
+  links: NavLinkItem[];
+}
+
+const APP_VERSION = "1.0";
+
+const adminNavGroups: NavGroup[] = [
+  {
+    labelKey: "dashboard.layout.groups.overview",
+    links: [
+      {
+        to: "/panel",
+        icon: <LayoutDashboard size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.admin_dashboard",
+      },
+    ],
+  },
+  {
+    labelKey: "dashboard.layout.groups.production",
+    links: [
+      {
+        to: "/panel/project-management",
+        icon: <Briefcase size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.projects",
+      },
+      {
+        to: "/panel/rehearsals",
+        icon: <CalendarCheck size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.attendance",
+      },
+    ],
+  },
+  {
+    labelKey: "dashboard.layout.groups.data_admin",
+    links: [
+      {
+        to: "/panel/artists",
+        icon: <Users size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.artists",
+      },
+      {
+        to: "/panel/crew",
+        icon: <Wrench size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.crew",
+      },
+      {
+        to: "/panel/contracts",
+        icon: <FileText size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.contracts",
+      },
+      {
+        to: "/panel/archive-management",
+        icon: <Music size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.archive",
+      },
+    ],
+  },
+  {
+    labelKey: "dashboard.layout.groups.artist_zone",
+    links: [
+      {
+        to: "/panel/schedule",
+        icon: <Calendar size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.schedule",
+      },
+      {
+        to: "/panel/materials",
+        icon: <Headphones size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.materials",
+      },
+      {
+        to: "/panel/resources",
+        icon: <FolderOpen size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.resources",
+      },
+    ],
+  },
+];
+
+const artistNavGroups: NavGroup[] = [
+  {
+    labelKey: "dashboard.layout.groups.overview",
+    links: [
+      {
+        to: "/panel",
+        icon: <LayoutDashboard size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.artist_dashboard",
+      },
+    ],
+  },
+  {
+    labelKey: "dashboard.layout.groups.my_zone",
+    links: [
+      {
+        to: "/panel/schedule",
+        icon: <Calendar size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.schedule",
+      },
+      {
+        to: "/panel/materials",
+        icon: <Headphones size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.materials",
+      },
+      {
+        to: "/panel/resources",
+        icon: <FolderOpen size={18} aria-hidden="true" />,
+        labelKey: "dashboard.layout.links.resources",
+      },
+    ],
+  },
+];
+
+function BrandMark(): React.JSX.Element {
+  return (
+    <h2
+      className="text-3xl font-medium text-stone-900 tracking-tight"
+      style={{ fontFamily: "'Cormorant', serif" }}
+    >
+      Voct<span className="italic text-[#002395]">Manager</span>
+    </h2>
+  );
+}
+
 export default function DashboardLayout(): React.JSX.Element {
+  const { t } = useTranslation();
   const { user, logout } = useAuth() as {
     user: AuthUser | null;
     logout: () => void;
@@ -49,117 +175,15 @@ export default function DashboardLayout(): React.JSX.Element {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isAdmin = user?.is_admin;
-
-  // --- RBAC Navigation Arrays ---
-  const adminNavGroups = [
-    {
-      label: "Przegląd",
-      links: [
-        {
-          to: "/panel",
-          icon: <LayoutDashboard size={18} aria-hidden="true" />,
-          label: "Pulpit Zarządu",
-        },
-      ],
-    },
-    {
-      label: "Produkcja",
-      links: [
-        {
-          to: "/panel/project-management",
-          icon: <Briefcase size={18} aria-hidden="true" />,
-          label: "Projekty i Koncerty",
-        },
-        {
-          to: "/panel/rehearsals",
-          icon: <CalendarCheck size={18} aria-hidden="true" />,
-          label: "Dziennik Obecności",
-        },
-      ],
-    },
-    {
-      label: "Administracja Bazy",
-      links: [
-        {
-          to: "/panel/artists",
-          icon: <Users size={18} aria-hidden="true" />,
-          label: "Zarządzanie Zespołem",
-        },
-        {
-          to: "/panel/crew",
-          icon: <Wrench size={18} aria-hidden="true" />,
-          label: "Ekipa Techniczna",
-        },
-        {
-          to: "/panel/contracts",
-          icon: <FileText size={18} aria-hidden="true" />,
-          label: "Kadry i Płace",
-        },
-        {
-          to: "/panel/archive-management",
-          icon: <Music size={18} aria-hidden="true" />,
-          label: "Archiwum Nut",
-        },
-      ],
-    },
-    {
-      label: "Strefa Chórzysty",
-      links: [
-        {
-          to: "/panel/schedule",
-          icon: <Calendar size={18} aria-hidden="true" />,
-          label: "Mój Harmonogram",
-        },
-        {
-          to: "/panel/materials",
-          icon: <Headphones size={18} aria-hidden="true" />,
-          label: "Materiały do prób",
-        },
-        {
-          to: "/panel/resources",
-          icon: <FolderOpen size={18} aria-hidden="true" />,
-          label: "Baza Wiedzy",
-        },
-      ],
-    },
-  ];
-
-  const artistNavGroups = [
-    {
-      label: "Przegląd",
-      links: [
-        {
-          to: "/panel",
-          icon: <LayoutDashboard size={18} aria-hidden="true" />,
-          label: "Mój Pulpit",
-        },
-      ],
-    },
-    {
-      label: "Moja Strefa",
-      links: [
-        {
-          to: "/panel/schedule",
-          icon: <Calendar size={18} aria-hidden="true" />,
-          label: "Mój Harmonogram",
-        },
-        {
-          to: "/panel/materials",
-          icon: <Headphones size={18} aria-hidden="true" />,
-          label: "Materiały do prób",
-        },
-        {
-          to: "/panel/resources",
-          icon: <FolderOpen size={18} aria-hidden="true" />,
-          label: "Baza Wiedzy",
-        },
-      ],
-    },
-  ];
-
   const navGroups = isAdmin ? adminNavGroups : artistNavGroups;
+  const userFullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+  const userRoleLabel = isAdmin
+    ? t("dashboard.layout.roles.admin")
+    : user?.voice_type_display || t("dashboard.layout.roles.artist");
+  const mobileRoleLabel = isAdmin
+    ? t("dashboard.layout.roles.management")
+    : t("dashboard.layout.roles.artist");
 
-  // Enforce admin-mode class to prevent global CSS cursor overrides from public zone
   useEffect(() => {
     document.body.classList.add("admin-mode");
     document.body.style.backgroundColor = "#f4f2ee";
@@ -170,39 +194,41 @@ export default function DashboardLayout(): React.JSX.Element {
     };
   }, []);
 
-  // Prevent body scroll when mobile menu overlay is active
   useEffect(() => {
-    if (isMobileMenuOpen) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
+    document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
+
     return () => {
       document.body.style.overflow = "";
     };
   }, [isMobileMenuOpen]);
 
-  // --- Sub-components ---
-  const NavItem = ({
-    to,
-    icon,
-    label,
-  }: {
-    to: string;
-    icon: React.ReactNode;
-    label: string;
-  }) => (
+  const NavItem = ({ to, icon, labelKey }: NavLinkItem) => (
     <NavLink
       to={to}
       end={to === "/panel"}
       onClick={() => setIsMobileMenuOpen(false)}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-bold text-xs tracking-wide border ${
+        [
+          "group flex items-center gap-3 rounded-2xl border px-4 py-3 text-xs font-bold tracking-wide transition-all duration-300",
           isActive
-            ? "bg-[#002395] text-white border-[#001766] shadow-[0_8px_20px_rgba(0,35,149,0.25)]"
-            : "text-stone-500 border-transparent hover:bg-stone-100 hover:text-stone-900 hover:shadow-sm"
-        }`
+            ? "border-[#001766]/20 bg-[linear-gradient(135deg,#002395_0%,#0f4bd8_100%)] text-white shadow-[0_16px_34px_rgba(0,35,149,0.28)]"
+            : "border-transparent bg-white/55 text-stone-500 hover:border-stone-200/70 hover:bg-white hover:text-stone-900 hover:shadow-[0_10px_24px_rgba(28,25,23,0.08)]",
+        ].join(" ")
       }
     >
-      {icon}
-      <span>{label}</span>
+      {({ isActive }) => (
+        <>
+          <span
+            className={[
+              "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
+              isActive ? "bg-white/15" : "bg-black/5 group-hover:bg-stone-100/90",
+            ].join(" ")}
+          >
+            {icon}
+          </span>
+          <span>{t(labelKey)}</span>
+        </>
+      )}
     </NavLink>
   );
 
@@ -210,36 +236,39 @@ export default function DashboardLayout(): React.JSX.Element {
     const initials =
       `${user?.first_name?.[0] || ""}${user?.last_name?.[0] || ""}`.toUpperCase() ||
       "U";
+
     return (
-      <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#002395] border border-blue-100 flex items-center justify-center text-sm font-bold shadow-sm flex-shrink-0">
+      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-sm font-bold text-[#002395] shadow-sm">
         {initials}
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f2ee] flex font-sans">
-      {/* ==========================================
-                DESKTOP SIDEBAR (FLOATING ISLAND)
-            ========================================== */}
-      <aside className="hidden md:flex flex-col w-[280px] bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] shadow-[inset_0_1px_0_rgba(255,255,255,1)] fixed top-4 bottom-4 left-4 z-20 rounded-[2rem] overflow-hidden">
-        <div className="p-7 pb-4 flex-shrink-0 relative z-10">
-          <h2
-            className="text-3xl font-medium text-stone-900 tracking-tight"
-            style={{ fontFamily: "'Cormorant', serif" }}
-          >
-            Voct<span className="italic text-[#002395]">Manager</span>
-          </h2>
-          <div className="mt-2.5 inline-flex items-center px-2.5 py-1 rounded-md bg-white border border-stone-200/60 shadow-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 animate-pulse"></div>
-            <p className="text-[9px] uppercase tracking-widest text-stone-500 font-bold">
-              {isAdmin ? "Panel Zarządu" : "Panel Artysty"}
+    <div className="relative flex min-h-screen bg-[#f4f2ee] font-sans">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-[-12rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(15,75,216,0.10),rgba(15,75,216,0))]" />
+        <div className="absolute bottom-[-18rem] right-[-10rem] h-[32rem] w-[32rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(217,119,6,0.10),rgba(217,119,6,0))]" />
+      </div>
+
+      <aside className="fixed bottom-4 left-4 top-4 z-20 hidden w-[288px] overflow-hidden rounded-[2rem] border border-white/80 bg-white/72 shadow-[0_8px_30px_rgba(0,0,0,0.04)] shadow-[inset_0_1px_0_rgba(255,255,255,1)] backdrop-blur-2xl md:flex md:flex-col">
+        <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,rgba(0,35,149,0.14),rgba(0,35,149,0))]" />
+        <div className="absolute right-[-4rem] top-20 h-36 w-36 rounded-full bg-[radial-gradient(circle_at_center,rgba(15,75,216,0.12),rgba(15,75,216,0))]" />
+
+        <div className="relative z-10 flex-shrink-0 p-7 pb-5">
+          <BrandMark />
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-stone-200/70 bg-white/85 px-3 py-1.5 shadow-sm">
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(34,197,94,0.75)]" />
+            <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-stone-500">
+              {isAdmin
+                ? t("dashboard.layout.brand_badge_admin")
+                : t("dashboard.layout.brand_badge_artist")}
             </p>
           </div>
         </div>
 
         <nav
-          className="flex-1 px-5 py-2 overflow-y-auto relative z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+          className="relative z-10 flex-1 overflow-y-auto px-5 py-2 [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden"
           style={{
             maskImage:
               "linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)",
@@ -248,12 +277,12 @@ export default function DashboardLayout(): React.JSX.Element {
           }}
         >
           <div className="space-y-6 py-4">
-            {navGroups.map((group, idx) => (
-              <div key={idx}>
-                <p className="px-4 text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400 mb-3 border-b border-stone-100/50 pb-2">
-                  {group.label}
+            {navGroups.map((group) => (
+              <div key={group.labelKey}>
+                <p className="mb-3 border-b border-stone-100/80 px-4 pb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                  {t(group.labelKey)}
                 </p>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {group.links.map((link) => (
                     <NavItem key={link.to} {...link} />
                   ))}
@@ -263,25 +292,23 @@ export default function DashboardLayout(): React.JSX.Element {
           </div>
         </nav>
 
-        <div className="p-5 bg-stone-50/50 border-t border-white/60 flex-shrink-0 relative z-10 flex flex-col gap-3">
-          <div className="p-3 rounded-2xl bg-white border border-stone-200/60 shadow-sm flex items-center justify-between group">
-            <div className="flex items-center gap-3 overflow-hidden">
+        <div className="relative z-10 flex flex-shrink-0 flex-col gap-3 border-t border-white/60 bg-stone-50/55 p-5">
+          <div className="flex items-center justify-between rounded-[1.35rem] border border-stone-200/70 bg-white/90 p-3 shadow-sm">
+            <div className="flex min-w-0 items-center gap-3 overflow-hidden">
               <UserAvatar />
               <div className="min-w-0">
-                <p className="text-xs font-bold text-stone-800 truncate">
-                  {user?.first_name} {user?.last_name}
+                <p className="truncate text-xs font-bold text-stone-800">
+                  {userFullName || user?.username}
                 </p>
-                <p className="text-[9px] text-stone-400 uppercase font-bold tracking-widest mt-0.5 truncate">
-                  {isAdmin
-                    ? "Administrator"
-                    : user?.voice_type_display || "Artysta"}
+                <p className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-[0.18em] text-stone-400">
+                  {userRoleLabel}
                 </p>
               </div>
             </div>
             <Link
               to="/panel/settings"
-              className="p-2 text-stone-300 hover:text-[#002395] hover:bg-blue-50 rounded-lg transition-colors"
-              title="Ustawienia Profilu"
+              className="rounded-xl border border-stone-200/80 bg-stone-50 p-2 text-stone-400 transition-colors hover:border-blue-100 hover:bg-blue-50 hover:text-[#002395]"
+              title={t("dashboard.layout.profile_settings")}
             >
               <Settings size={16} aria-hidden="true" />
             </Link>
@@ -289,42 +316,31 @@ export default function DashboardLayout(): React.JSX.Element {
 
           <button
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-[0.15em] text-stone-500 hover:text-red-600 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 active:scale-95"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-transparent px-4 py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-stone-500 transition-all hover:border-red-100 hover:bg-red-50 hover:text-red-600 active:scale-95"
           >
-            <LogOut size={16} aria-hidden="true" /> Wyloguj się
+            <LogOut size={16} aria-hidden="true" />
+            {t("dashboard.layout.logout")}
           </button>
 
-          <div className="text-center pt-2">
-            <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-stone-400 opacity-60">
-              VoctManager Enterprise • v1.0
+          <div className="pt-1 text-center">
+            <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-stone-400 opacity-70">
+              {t("dashboard.layout.footer_version", { version: APP_VERSION })}
             </span>
           </div>
         </div>
       </aside>
 
-      {/* ==========================================
-                MOBILE TOPBAR (GLASSMORPHISM)
-            ========================================== */}
-      <header className="md:hidden fixed top-0 w-full bg-white/80 backdrop-blur-2xl border-b border-stone-200/60 z-50 px-5 py-4 flex justify-between items-center shadow-sm">
-        <div className="flex items-center gap-3">
-          <h2
-            className="text-2xl font-medium text-stone-900 tracking-tight"
-            style={{ fontFamily: "'Cormorant', serif" }}
-          >
-            Voct<span className="italic text-[#002395]">Manager</span>
-          </h2>
-        </div>
+      <header className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-stone-200/60 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-2xl md:hidden">
+        <BrandMark />
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="text-stone-600 p-2 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors border border-stone-200/80 active:scale-95"
+          className="rounded-2xl border border-stone-200/80 bg-white p-2.5 text-stone-600 shadow-sm transition-colors hover:bg-stone-100 active:scale-95"
+          aria-label={t("dashboard.layout.mobile_nav_title")}
         >
           <Menu size={20} aria-hidden="true" />
         </button>
       </header>
 
-      {/* ==========================================
-                MOBILE MENU OVERLAY (FRAMER MOTION)
-            ========================================== */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
@@ -333,33 +349,39 @@ export default function DashboardLayout(): React.JSX.Element {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden fixed inset-0 z-40 bg-stone-900/20 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-stone-900/25 backdrop-blur-sm md:hidden"
               aria-hidden="true"
             />
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="md:hidden fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-[#f4f2ee] shadow-2xl z-50 flex flex-col border-l border-white/60"
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="fixed bottom-0 right-0 top-0 z-50 flex w-4/5 max-w-sm flex-col border-l border-white/60 bg-[#f4f2ee] shadow-2xl md:hidden"
             >
-              <div className="flex justify-between items-center p-5 border-b border-stone-200/50 bg-white/80 backdrop-blur-xl flex-shrink-0 z-20">
-                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
-                  Nawigacja
-                </span>
+              <div className="relative flex flex-shrink-0 items-center justify-between border-b border-stone-200/60 bg-white/84 p-5 backdrop-blur-xl">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#002395]">
+                    {t("dashboard.layout.mobile_nav_title")}
+                  </span>
+                  <div className="mt-2">
+                    <BrandMark />
+                  </div>
+                </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-stone-400 hover:text-stone-900 bg-white border border-stone-200 shadow-sm p-2 rounded-xl transition-all active:scale-95"
+                  className="rounded-2xl border border-stone-200 bg-white p-2 text-stone-400 shadow-sm transition-all hover:text-stone-900 active:scale-95"
+                  aria-label={t("common.actions.cancel")}
                 >
                   <X size={18} aria-hidden="true" />
                 </button>
               </div>
 
-              <nav className="flex-1 px-5 py-6 overflow-y-auto space-y-6">
-                {navGroups.map((group, idx) => (
-                  <div key={idx}>
-                    <p className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 mb-3 border-b border-stone-200/60 pb-2">
-                      {group.label}
+              <nav className="flex-1 space-y-6 overflow-y-auto px-5 py-6">
+                {navGroups.map((group) => (
+                  <div key={group.labelKey}>
+                    <p className="mb-3 border-b border-stone-200/70 px-4 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                      {t(group.labelKey)}
                     </p>
                     <div className="space-y-1.5">
                       {group.links.map((link) => (
@@ -370,35 +392,44 @@ export default function DashboardLayout(): React.JSX.Element {
                 ))}
               </nav>
 
-              <div className="p-5 bg-white/80 backdrop-blur-xl border-t border-stone-200/50 flex-shrink-0 space-y-4 z-20">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-shrink-0 flex-col gap-3 border-t border-stone-200/60 bg-white/84 p-5 backdrop-blur-xl">
+                <div className="flex items-center gap-3 rounded-[1.35rem] border border-stone-200/70 bg-white p-3 shadow-sm">
                   <UserAvatar />
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-stone-800 truncate">
-                      {user?.first_name} {user?.last_name}
+                    <p className="truncate text-sm font-bold text-stone-800">
+                      {userFullName || user?.username}
                     </p>
-                    <p className="text-[10px] text-stone-400 uppercase font-bold tracking-widest truncate">
-                      {isAdmin ? "Zarząd" : "Artysta"}
+                    <p className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">
+                      {mobileRoleLabel}
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={logout}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 text-red-600 font-bold uppercase tracking-widest text-[10px] bg-red-50 hover:bg-red-100 transition-colors border border-red-100 shadow-sm rounded-xl active:scale-95"
-                >
-                  <LogOut size={16} aria-hidden="true" /> Wyloguj się
-                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/panel/settings"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-blue-100 hover:bg-blue-50 hover:text-[#002395]"
+                  >
+                    <Settings size={15} aria-hidden="true" />
+                    {t("dashboard.layout.profile_settings")}
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-red-600 transition-colors hover:bg-red-100 active:scale-95"
+                  >
+                    <LogOut size={15} aria-hidden="true" />
+                    {t("dashboard.layout.logout")}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      {/* ==========================================
-                MAIN CONTENT INJECTION NODE
-            ========================================== */}
-      <main className="flex-1 md:pl-[320px] pt-24 md:pt-8 px-4 sm:px-6 md:pr-8 lg:pr-12 pb-12 transition-all min-w-0">
-        <div className="w-full h-full max-w-7xl mx-auto">
+      <main className="min-w-0 flex-1 px-4 pb-12 pt-24 transition-all sm:px-6 md:pl-[328px] md:pr-8 md:pt-8 lg:pr-12">
+        <div className="mx-auto h-full w-full max-w-7xl">
           <Outlet />
         </div>
       </main>

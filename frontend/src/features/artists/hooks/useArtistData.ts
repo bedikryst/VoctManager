@@ -2,16 +2,19 @@
  * @file useArtistData.ts
  * @description Manages UI state, client-side filtering, and aggregates.
  * Reads data exclusively from the React Query cache via custom hooks.
+ * Fully internationalized.
  * @module hooks/useArtistData
  */
 
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { useArtists, useToggleArtistStatus } from "../api/artist.queries";
-import { useVoiceTypes } from "../../../shared/api/options.queries"; // <-- GLOBALNY IMPORT
+import { useVoiceTypes } from "../../../shared/api/options.queries";
 import type { Artist } from "../../../shared/types";
 
 export const useArtistData = () => {
+  const { t } = useTranslation();
   const {
     data: artists = [],
     isLoading: isArtistsLoading,
@@ -95,8 +98,8 @@ export const useArtistData = () => {
     if (!artistToToggle) return;
     const toastId = toast.loading(
       artistToToggle.willBeActive
-        ? "Aktywowanie konta..."
-        : "Archiwizowanie artysty...",
+        ? t("artists.toast.activating", "Aktywowanie konta...")
+        : t("artists.toast.archiving", "Archiwizowanie artysty..."),
     );
 
     try {
@@ -106,14 +109,17 @@ export const useArtistData = () => {
       });
       toast.success(
         artistToToggle.willBeActive
-          ? "Konto artysty aktywowane"
-          : "Artysta zarchiwizowany",
+          ? t("artists.toast.activated_success", "Konto artysty aktywowane")
+          : t("artists.toast.archived_success", "Artysta zarchiwizowany"),
         { id: toastId },
       );
     } catch (err) {
-      toast.error("Błąd systemu", {
+      toast.error(t("common.errors.server_error", "Błąd serwera"), {
         id: toastId,
-        description: "Nie udało się zmienić statusu artysty.",
+        description: t(
+          "artists.toast.toggle_error_desc",
+          "Nie udało się zmienić statusu artysty.",
+        ),
       });
     } finally {
       setArtistToToggle(null);

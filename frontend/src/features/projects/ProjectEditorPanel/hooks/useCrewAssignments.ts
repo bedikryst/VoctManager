@@ -98,7 +98,7 @@ export const useCrewAssignments = (projectId: string) => {
     }
   };
 
-  const handleRemove = async (id: string | number): Promise<void> => {
+  const handleRemove = async (id: string): Promise<void> => {
     const toastId = toast.loading(
       t("projects.crew.toast.removing", "Usuwanie członka ekipy..."),
     );

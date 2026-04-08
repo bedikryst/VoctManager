@@ -29,6 +29,7 @@ import {
 
 import { useAuth } from "../../app/providers/AuthProvider";
 import { GlassCard } from "../../shared/ui/GlassCard";
+import { formatLocalizedDate, formatLocalizedDateTime } from "../../shared/lib/intl";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 
 const containerVariants: Variants = {
@@ -340,10 +341,11 @@ export default function AdminDashboard(): React.JSX.Element {
                           className="text-[#002395]"
                           aria-hidden="true"
                         />
-                        {new Date(nextProject.date_time).toLocaleDateString(
-                          "pl-PL",
-                          { weekday: "long", day: "numeric", month: "long" },
-                        )}
+                        {formatLocalizedDate(nextProject.date_time, {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                        })}
                       </span>
                       {nextProject.location && (
                         <span className="flex items-center gap-2 bg-stone-50 px-4 py-2.5 rounded-xl border border-stone-200/80 shadow-sm">
@@ -479,16 +481,13 @@ export default function AdminDashboard(): React.JSX.Element {
                       </p>
                     </div>
                     <p className="font-bold text-stone-900 text-lg tracking-tight">
-                      {new Date(nextRehearsal.date_time).toLocaleString(
-                        "pl-PL",
-                        {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )}
+                      {formatLocalizedDateTime(nextRehearsal.date_time, {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                 </div>

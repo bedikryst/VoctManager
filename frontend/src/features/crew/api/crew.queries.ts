@@ -4,17 +4,14 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { CrewService } from "./crew.service";
 import type { CrewWriteDTO } from "../types/crew.dto";
 
-export const CREW_QUERY_KEYS = {
-  collaborators: queryKeys.collaborators.all,
-};
-
 export const useCrewMembers = () => {
   return useQuery({
-    queryKey: CREW_QUERY_KEYS.collaborators,
+    queryKey: queryKeys.collaborators.all,
     queryFn: CrewService.getCrewMembers,
   });
 };
@@ -30,7 +27,7 @@ export const useSaveCrewMember = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: CREW_QUERY_KEYS.collaborators,
+        queryKey: queryKeys.collaborators.all,
       });
     },
   });
@@ -43,7 +40,7 @@ export const useDeleteCrewMember = () => {
     mutationFn: (id: string) => CrewService.deleteCrewMember(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: CREW_QUERY_KEYS.collaborators,
+        queryKey: queryKeys.collaborators.all,
       });
     },
   });

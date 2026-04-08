@@ -6,7 +6,7 @@
  * @module panel/projects/ProjectCard
  */
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -16,11 +16,16 @@ import type { Project } from "../../../shared/types";
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import { useUpdateProjectStatus } from "../api/project.queries";
 import { useProjectData } from "../hooks/useProjectData";
+import {
+  PROJECT_STATUS,
+  PROJECT_TABS,
+  ProjectTabId,
+} from "../constants/projectDomain";
 
 import ProjectCardHeader from "./ProjectCardHeader";
 import ProjectCardDetails from "./ProjectCardDetails";
-import SpotifyWidget from "./SpotifyWidget";
-import RunSheetWidget from "./RunSheetWidget";
+import SpotifyWidget from "./widgets/SpotifyWidget";
+import RunSheetWidget from "./widgets/RunSheetWidget";
 import RehearsalsWidget from "./widgets/RehearsalsWidget";
 import CastWidget from "./widgets/CastWidget";
 import ProgramWidget from "./widgets/ProgramWidget";
@@ -33,8 +38,8 @@ const STYLE_DISABLED =
 export interface ProjectCardProps {
   project: Project;
   index: number;
-  onEdit: (tab?: string) => void;
-  onDelete: () => void;
+  onEdit: (project: Project, tab: ProjectTabId) => void;
+  onDelete: (projectId: string) => void;
 }
 
 export default function ProjectCard({
@@ -47,7 +52,7 @@ export default function ProjectCard({
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const updateProjectStatusMutation = useUpdateProjectStatus();
 
-  const isDone = project.status === "DONE";
+  const isDone = project.status === PROJECT_STATUS.DONE;
   const shouldFetch = isExpanded || index < 3;
 
   useProjectData(shouldFetch ? String(project.id) : undefined);
@@ -56,7 +61,7 @@ export default function ProjectCard({
     event: React.MouseEvent<HTMLButtonElement>,
   ): Promise<void> => {
     event.stopPropagation();
-    const newStatus = isDone ? "ACTIVE" : "DONE";
+    const newStatus = isDone ? PROJECT_STATUS.ACTIVE : PROJECT_STATUS.DONE;
     const toastId = toast.loading(
       t("projects.card.updating_status", "Aktualizowanie statusu..."),
     );
@@ -89,6 +94,40 @@ export default function ProjectCard({
     }
   };
 
+  const handleEditDetails = useCallback(
+    () => onEdit(project, PROJECT_TABS.DETAILS),
+    [onEdit, project],
+  );
+  const handleEditRehearsals = useCallback(
+    () => onEdit(project, PROJECT_TABS.REHEARSALS),
+    [onEdit, project],
+  );
+  const handleEditProgram = useCallback(
+    () => onEdit(project, PROJECT_TABS.PROGRAM),
+    [onEdit, project],
+  );
+  const handleEditMicroCast = useCallback(
+    () => onEdit(project, PROJECT_TABS.MICRO_CAST),
+    [onEdit, project],
+  );
+  const handleEditCast = useCallback(
+    () => onEdit(project, PROJECT_TABS.CAST),
+    [onEdit, project],
+  );
+  const handleEditBudget = useCallback(
+    () => onEdit(project, PROJECT_TABS.BUDGET),
+    [onEdit, project],
+  );
+  const handleEditCrew = useCallback(
+    () => onEdit(project, PROJECT_TABS.CREW),
+    [onEdit, project],
+  );
+
+  const handleDelete = useCallback(
+    () => onDelete(String(project.id)),
+    [onDelete, project.id],
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -113,13 +152,14 @@ export default function ProjectCard({
           isExpanded={isExpanded}
           onToggle={() => setIsExpanded(!isExpanded)}
           onStatusToggle={toggleLifecycleStatus}
-          onEdit={() => onEdit("DETAILS")}
-          onDelete={onDelete}
+          onEdit={handleEditDetails}
+          onDelete={handleDelete}
         />
 
         <AnimatePresence>
           {isExpanded && (
             <motion.div
+              key={`expanded-card-${project.id}`}
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -138,21 +178,18 @@ export default function ProjectCard({
                     <div className="lg:col-span-2">
                       <RehearsalsWidget
                         project={project}
-                        onEdit={() => onEdit("REHEARSALS")}
+                        onEdit={handleEditRehearsals}
                       />
                     </div>
                     <div className="lg:col-span-1">
                       <ProgramWidget
                         project={project}
-                        onEdit={() => onEdit("PROGRAM")}
-                        onOpenMicroCast={() => onEdit("MICRO_CAST")}
+                        onEdit={handleEditProgram}
+                        onOpenMicroCast={handleEditMicroCast}
                       />
                     </div>
                     <div className="lg:col-span-2">
-                      <CastWidget
-                        project={project}
-                        onEdit={() => onEdit("CAST")}
-                      />
+                      <CastWidget project={project} onEdit={handleEditCast} />
                     </div>
                     <div className="lg:col-span-1">
                       <SpotifyWidget
@@ -175,7 +212,7 @@ export default function ProjectCard({
                     <div className="flex flex-col h-full">
                       <RunSheetWidget
                         project={project}
-                        onEdit={() => onEdit("DETAILS")}
+                        onEdit={handleEditDetails}
                       />
                     </div>
                     <div className="flex flex-col h-full gap-6">
@@ -187,14 +224,11 @@ export default function ProjectCard({
                     <div className="lg:col-span-2">
                       <BudgetWidget
                         project={project}
-                        onEdit={() => onEdit("BUDGET")}
+                        onEdit={handleEditBudget}
                       />
                     </div>
                     <div className="lg:col-span-1">
-                      <CrewWidget
-                        project={project}
-                        onEdit={() => onEdit("CREW")}
-                      />
+                      <CrewWidget project={project} onEdit={handleEditCrew} />
                     </div>
                   </div>
                 </div>

@@ -8,18 +8,19 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 
 import type { Piece } from "../../../../shared/types";
-import { queryKeys } from "../../../../shared/lib/queryKeys";
-import { useProjectProgram } from "../../api/project.queries";
-import { ProjectService } from "../../api/project.service";
+import {
+  useProjectProgram,
+  useCreateProgramItem,
+  useUpdateProgramItem,
+  useDeleteProgramItem,
+} from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
 
-// Zmienione ID na czysty string (zgodnie z UUID na backendzie)
 export interface ProgramItem {
   id: string;
   order: number;
@@ -34,17 +35,17 @@ export const useProgramTab = (
   onDirtyStateChange?: (isDirty: boolean) => void,
 ) => {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const { pieces } = useProjectData(projectId);
+
+  const createProgramMutation = useCreateProgramItem(projectId);
+  const updateProgramMutation = useUpdateProgramItem(projectId);
+  const deleteProgramMutation = useDeleteProgramItem(projectId);
+
   const [programItems, setProgramItems] = useState<ProgramItem[]>([]);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  const {
-    data: fetchedProgram,
-    isLoading,
-    refetch,
-  } = useProjectProgram(projectId);
+  const { data: fetchedProgram, isLoading } = useProjectProgram(projectId);
 
   useEffect(() => {
     if (fetchedProgram) setProgramItems(fetchedProgram as ProgramItem[]);
@@ -57,7 +58,6 @@ export const useProgramTab = (
     return currentOrderIds !== originalOrderIds;
   }, [programItems, fetchedProgram]);
 
-  // Synchronizacja brudnego stanu z rodzicem
   useEffect(() => {
     if (onDirtyStateChange) {
       onDirtyStateChange(isDirty);
@@ -67,7 +67,9 @@ export const useProgramTab = (
   const totalConcertDurationSeconds = useMemo<number>(() => {
     return programItems.reduce((sum, item) => {
       const pieceId = item.piece_id || item.piece;
-      const piece = pieces.find((candidate) => candidate.id === pieceId);
+      const piece = pieces.find(
+        (candidate) => String(candidate.id) === pieceId,
+      );
       return sum + (piece?.estimated_duration || 0);
     }, 0);
   }, [programItems, pieces]);
@@ -88,8 +90,7 @@ export const useProgramTab = (
   const handleAddPiece = async (pieceId: string): Promise<void> => {
     if (addedPieceIds.includes(pieceId)) return;
 
-    // Pobieramy cały obiekt utworu, aby wyciągnąć jego tytuł (wymagany przez DTO)
-    const targetPiece = pieces.find((p) => p.id === pieceId);
+    const targetPiece = pieces.find((p) => String(p.id) === pieceId);
     if (!targetPiece) return;
 
     const toastId = toast.loading(
@@ -98,19 +99,18 @@ export const useProgramTab = (
 
     try {
       const safeTimeOrder = Math.floor(Date.now() / 10) % 100000000;
-      await ProjectService.createProgramItem({
-        title: targetPiece.title, // Rozwiązanie problemu TS2345
+      await createProgramMutation.mutateAsync({
+        title: targetPiece.title,
         project: projectId,
         piece: pieceId,
         order: safeTimeOrder,
         is_encore: false,
       });
-      await refetch();
       toast.success(
         t("projects.program.toast.add_success", "Dodano do setlisty"),
         { id: toastId },
       );
-    } catch {
+    } catch (error: unknown) {
       toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: t(
@@ -123,17 +123,17 @@ export const useProgramTab = (
 
   const handleToggleEncore = async (item: ProgramItem): Promise<void> => {
     try {
-      await ProjectService.updateProgramItem(item.id, {
-        is_encore: !item.is_encore,
+      await updateProgramMutation.mutateAsync({
+        id: item.id,
+        data: { is_encore: !item.is_encore },
       });
-      await refetch();
       toast.success(
         t(
           "projects.program.toast.encore_toggled",
           "Status BIS został zaktualizowany",
         ),
       );
-    } catch {
+    } catch (error: unknown) {
       toast.error(
         t(
           "projects.program.toast.encore_error",
@@ -149,13 +149,12 @@ export const useProgramTab = (
     );
 
     try {
-      await ProjectService.deleteProgramItem(itemId);
-      await refetch();
+      await deleteProgramMutation.mutateAsync(itemId);
       toast.success(
         t("projects.program.toast.remove_success", "Usunięto z programu"),
         { id: toastId },
       );
-    } catch {
+    } catch (error: unknown) {
       toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
         description: t(
@@ -193,16 +192,12 @@ export const useProgramTab = (
       const baseSaveOrder = Math.floor(Date.now() / 10) % 100000000;
       await Promise.all(
         programItems.map((item, index) =>
-          ProjectService.updateProgramItem(item.id, {
-            order: baseSaveOrder + index,
+          updateProgramMutation.mutateAsync({
+            id: item.id,
+            data: { order: baseSaveOrder + index },
           }),
         ),
       );
-
-      await refetch();
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.pieceCastings.all,
-      });
 
       toast.success(
         t(
@@ -211,15 +206,15 @@ export const useProgramTab = (
         ),
         { id: toastId },
       );
-    } catch {
+    } catch (error: unknown) {
       toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: t(
           "projects.program.toast.save_order_error",
-          "Serwer odrzucił część zmian. Odświeżam widok.",
+          "Serwer odrzucił część zmian.",
         ),
       });
-      await refetch();
+      handleCancel(); // Wycofaj zmiany na froncie w razie błędu
     } finally {
       setIsSaving(false);
     }

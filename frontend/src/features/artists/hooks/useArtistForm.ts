@@ -2,11 +2,13 @@
  * @file useArtistForm.ts
  * @description Encapsulates complex form state, dirty tracking, and API payload construction.
  * Delegates actual network requests strictly to the Query/Mutation layer.
+ * Fully internationalized.
  * @module features/artists/hooks/useArtistForm
  */
 
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { Artist, VoiceTypeOption } from "../../../shared/types";
 import { useCreateArtist, useUpdateArtist } from "../api/artist.queries";
 import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
@@ -29,6 +31,7 @@ export const useArtistForm = (
   initialSearchContext: string,
   onClose: () => void,
 ) => {
+  const { t } = useTranslation();
   const createMutation = useCreateArtist();
   const updateMutation = useUpdateArtist();
 
@@ -46,7 +49,7 @@ export const useArtistForm = (
       first_name: artist?.first_name || defaultFirst,
       last_name: artist?.last_name || defaultLast,
       email: artist?.email || "",
-      phone_number: artist?.phone_number || "", // Gwarantowany string "" zamiast null
+      phone_number: artist?.phone_number || "",
       voice_type:
         artist?.voice_type ||
         (voiceTypes.length > 0 ? voiceTypes[0].value : "SOP"),
@@ -68,7 +71,9 @@ export const useArtistForm = (
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const toastId = toast.loading(
-      artist?.id ? "Aktualizowanie profilu..." : "Tworzenie konta artysty...",
+      artist?.id
+        ? t("artists.form.toast.updating", "Aktualizowanie profilu...")
+        : t("artists.form.toast.creating", "Tworzenie konta artysty..."),
     );
 
     const payload = {
@@ -84,10 +89,22 @@ export const useArtistForm = (
           id: artist.id,
           data: payload as ArtistUpdateDTO,
         });
-        toast.success("Zaktualizowano profil artysty.", { id: toastId });
+        toast.success(
+          t(
+            "artists.form.toast.update_success",
+            "Zaktualizowano profil artysty.",
+          ),
+          { id: toastId },
+        );
       } else {
         await createMutation.mutateAsync(payload as ArtistCreateDTO);
-        toast.success("Dodano artystę. Konto wygenerowane!", { id: toastId });
+        toast.success(
+          t(
+            "artists.form.toast.create_success",
+            "Dodano artystę. Konto wygenerowane!",
+          ),
+          { id: toastId },
+        );
       }
 
       setFormData(formData);
@@ -98,11 +115,17 @@ export const useArtistForm = (
 
       toast.error(
         isEmailTaken
-          ? "Ten adres e-mail jest już zajęty."
-          : "Wystąpił błąd zapisu.",
+          ? t(
+              "artists.form.toast.email_taken",
+              "Ten adres e-mail jest już zajęty.",
+            )
+          : t("common.errors.save_error", "Błąd zapisu"),
         {
           id: toastId,
-          description: "Sprawdź poprawność danych i spróbuj ponownie.",
+          description: t(
+            "artists.form.toast.save_error_desc",
+            "Sprawdź poprawność danych i spróbuj ponownie.",
+          ),
         },
       );
     }
@@ -113,7 +136,7 @@ export const useArtistForm = (
     setFormData,
     initialFormData,
     isFormDirty,
-    isSubmitting: createMutation.isPending || updateMutation.isPending, // Stan z mutacji!
+    isSubmitting: createMutation.isPending || updateMutation.isPending,
     handleSubmit,
   };
 };

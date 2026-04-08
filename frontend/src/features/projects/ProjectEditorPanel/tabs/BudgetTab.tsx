@@ -61,6 +61,7 @@ export default function BudgetTab({
       <AnimatePresence>
         {isDirty && (
           <motion.div
+            key="fab-menu"
             initial={{ y: 100, opacity: 0, x: "-50%" }}
             animate={{ y: 0, opacity: 1, x: "-50%" }}
             exit={{ y: 100, opacity: 0, x: "-50%" }}
@@ -197,9 +198,10 @@ export default function BudgetTab({
           <div className="bg-white/60 border border-stone-200/60 rounded-2xl shadow-sm overflow-hidden">
             <div className="divide-y divide-stone-100">
               {enrichedCast.map((participation) => {
-                const isItemDirty = !!dirtyFees[participation.id];
-                const currentValue = dirtyFees[participation.id]
-                  ? dirtyFees[participation.id].value
+                const safeId = String(participation.id);
+                const isItemDirty = !!dirtyFees[safeId];
+                const currentValue = dirtyFees[safeId]
+                  ? dirtyFees[safeId].value
                   : participation.fee !== null &&
                       participation.fee !== undefined
                     ? String(participation.fee)
@@ -214,11 +216,11 @@ export default function BudgetTab({
                   >
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-stone-800">
-                        {participation.artistData?.first_name}{" "}
-                        {participation.artistData?.last_name}
+                        {participation.artistData.first_name}{" "}
+                        {participation.artistData.last_name}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mt-0.5">
-                        {participation.artistData?.voice_type}
+                        {participation.artistData.voice_type}
                       </span>
                     </div>
                     <div className="relative w-full sm:w-48 flex-shrink-0">
@@ -230,11 +232,7 @@ export default function BudgetTab({
                         )}
                         value={currentValue}
                         onChange={(e) =>
-                          handleFeeChange(
-                            participation.id,
-                            e.target.value,
-                            "cast",
-                          )
+                          handleFeeChange(safeId, e.target.value, "cast")
                         }
                         className={`w-full px-4 py-2.5 text-sm font-bold text-right text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all !pr-10 ${
                           isItemDirty ? "!bg-white !border-[#002395]/30" : ""
@@ -282,9 +280,10 @@ export default function BudgetTab({
           <div className="bg-white/60 border border-stone-200/60 rounded-2xl shadow-sm overflow-hidden">
             <div className="divide-y divide-stone-100">
               {enrichedCrew.map((assignment) => {
-                const isItemDirty = !!dirtyFees[assignment.id];
-                const currentValue = dirtyFees[assignment.id]
-                  ? dirtyFees[assignment.id].value
+                const safeId = String(assignment.id);
+                const isItemDirty = !!dirtyFees[safeId];
+                const currentValue = dirtyFees[safeId]
+                  ? dirtyFees[safeId].value
                   : assignment.fee !== null && assignment.fee !== undefined
                     ? String(assignment.fee)
                     : "";
@@ -298,12 +297,12 @@ export default function BudgetTab({
                   >
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-stone-800">
-                        {assignment.crewData?.first_name}{" "}
-                        {assignment.crewData?.last_name}
+                        {assignment.crewData.first_name}{" "}
+                        {assignment.crewData.last_name}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mt-0.5">
                         {assignment.role_description ||
-                          assignment.crewData?.specialty}
+                          assignment.crewData.specialty}
                       </span>
                     </div>
                     <div className="relative w-full sm:w-48 flex-shrink-0">
@@ -315,7 +314,7 @@ export default function BudgetTab({
                         )}
                         value={currentValue}
                         onChange={(e) =>
-                          handleFeeChange(assignment.id, e.target.value, "crew")
+                          handleFeeChange(safeId, e.target.value, "crew")
                         }
                         className={`w-full px-4 py-2.5 text-sm font-bold text-right text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all !pr-10 ${
                           isItemDirty ? "!bg-white !border-[#002395]/30" : ""

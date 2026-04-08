@@ -1,33 +1,37 @@
 /**
  * @file useMicroCasting.ts
  * @description State controller for the Micro-Casting Kanban board.
+ * Fully leverages React Query mutations and optimistic UI updates.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useMicroCasting
  */
 
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
 import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 
 import type { Artist, PieceCasting } from "../../../../shared/types";
-import { queryKeys } from "../../../../shared/lib/queryKeys";
 import {
   useProjectPieceCastings,
   useProjectProgram,
   useProjectVoiceLinesDictionary,
+  useCreatePieceCasting,
+  useUpdatePieceCasting,
+  useDeletePieceCasting,
 } from "../../api/project.queries";
-import { ProjectService } from "../../api/project.service";
 import { useProjectData } from "../../hooks/useProjectData";
 
 export const useMicroCasting = (projectId: string) => {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const { artists, pieces, participations } = useProjectData(projectId);
   const { data: voiceLines = [] } = useProjectVoiceLinesDictionary();
   const { data: program = [] } = useProjectProgram(projectId);
   const { data: pieceCastings = [] } = useProjectPieceCastings(projectId);
+
+  const createMutation = useCreatePieceCasting(projectId);
+  const updateMutation = useUpdatePieceCasting(projectId);
+  const deleteMutation = useDeletePieceCasting(projectId);
 
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const [localCastings, setLocalCastings] = useState<PieceCasting[]>([]);
@@ -116,11 +120,11 @@ export const useMicroCasting = (projectId: string) => {
     );
 
     try {
-      await ProjectService.updatePieceCasting(castingId, { notes: newNote });
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.pieceCastings.all,
+      await updateMutation.mutateAsync({
+        id: castingId,
+        data: { notes: newNote },
       });
-    } catch {
+    } catch (error: unknown) {
       setLocalCastings(previousCastings);
       toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         description: t(
@@ -182,18 +186,19 @@ export const useMicroCasting = (projectId: string) => {
     try {
       if (targetVoiceLineId === "UNASSIGNED") {
         if (existingCasting?.id)
-          await ProjectService.deletePieceCasting(existingCasting.id);
+          await deleteMutation.mutateAsync(String(existingCasting.id));
       } else {
         const targetVoiceLine = targetVoiceLineId as PieceCasting["voice_line"];
         if (
           existingCasting?.id &&
           !String(existingCasting.id).startsWith("temp-")
         ) {
-          await ProjectService.updatePieceCasting(existingCasting.id, {
-            voice_line: targetVoiceLine,
+          await updateMutation.mutateAsync({
+            id: String(existingCasting.id),
+            data: { voice_line: targetVoiceLine },
           });
         } else {
-          await ProjectService.createPieceCasting({
+          await createMutation.mutateAsync({
             participation: participationId,
             piece: selectedPieceId as string,
             voice_line: targetVoiceLine,
@@ -201,15 +206,7 @@ export const useMicroCasting = (projectId: string) => {
           });
         }
       }
-
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.pieceCastings.all,
-        }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.program.all }),
-      ]);
-    } catch {
+    } catch (error: unknown) {
       setLocalCastings(previousCastings);
       toast.error(
         t("projects.micro_cast.toast.sync_error", "Błąd synchronizacji"),

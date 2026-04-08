@@ -26,6 +26,10 @@ import {
 import type { AttendanceStatus } from "../../../shared/types";
 import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
+import {
+  formatLocalizedDate,
+  formatLocalizedTime,
+} from "../../../shared/lib/intl";
 import { Input } from "../../../shared/ui/Input";
 import { Button } from "../../../shared/ui/Button";
 
@@ -120,7 +124,7 @@ export default function TimelineRehearsalCard({
             <span
               className={`text-[10px] font-bold uppercase tracking-widest ${currentMaskedStatus === "PRESENT" ? "text-emerald-600" : isExcusedOrLate ? "text-stone-400" : "text-[#002395]/60"}`}
             >
-              {event.date_time.toLocaleString("pl-PL", { month: "short" })}
+              {formatLocalizedDate(event.date_time, { month: "short" })}
             </span>
             <span
               className={`text-3xl font-black leading-none my-0.5 ${currentMaskedStatus === "PRESENT" ? "text-emerald-700" : isExcusedOrLate ? "text-stone-500" : "text-[#002395]"}`}
@@ -128,7 +132,7 @@ export default function TimelineRehearsalCard({
               {event.date_time.getDate()}
             </span>
             <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
-              {event.date_time.toLocaleString("pl-PL", { weekday: "short" })}
+              {formatLocalizedDate(event.date_time, { weekday: "short" })}
             </span>
           </div>
 
@@ -158,7 +162,7 @@ export default function TimelineRehearsalCard({
             <div className="flex flex-wrap items-center gap-4 mt-2 text-[11px] font-bold text-stone-500 uppercase tracking-widest">
               <span className="flex items-center gap-1.5">
                 <Clock size={12} className="text-[#002395]/60" />{" "}
-                {event.date_time.toLocaleTimeString("pl-PL", {
+                {formatLocalizedTime(event.date_time, {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}

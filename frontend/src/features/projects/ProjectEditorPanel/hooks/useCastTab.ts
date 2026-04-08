@@ -1,7 +1,8 @@
 /**
  * @file useCastTab.ts
  * @description State and mutation controller for the Primary Casting Manager.
- * Resolves dictionaries from shared project queries and delegates writes to the Project domain layer.
+ * Resolves dictionaries from shared project queries and delegates writes to the domain layer.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useCastTab
  */
 
@@ -25,9 +26,7 @@ export const useCastTab = (projectId: string) => {
   const deleteParticipationMutation = useDeleteParticipation(projectId);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [processingId, setProcessingId] = useState<string | number | null>(
-    null,
-  );
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<"AVAILABLE" | "ASSIGNED">(
     "AVAILABLE",
   );
@@ -51,9 +50,7 @@ export const useCastTab = (projectId: string) => {
       const voiceCompare = (left.voice_type || "").localeCompare(
         right.voice_type || "",
       );
-      if (voiceCompare !== 0) {
-        return voiceCompare;
-      }
+      if (voiceCompare !== 0) return voiceCompare;
       return left.last_name.localeCompare(right.last_name);
     });
   }, [artists, searchQuery]);
@@ -97,10 +94,9 @@ export const useCastTab = (projectId: string) => {
             status: "INV",
           });
         }
-
         toast.success(t("projects.cast.toast.added", "Dodano do obsady"));
       }
-    } catch {
+    } catch (error: unknown) {
       toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         description: t(
           "common.errors.database_error",

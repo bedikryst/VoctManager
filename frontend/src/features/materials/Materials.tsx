@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 import { getReferenceRecordingLinks } from "../../shared/lib/referenceRecordings";
+import { formatLocalizedDate } from "../../shared/lib/intl";
 import { useMaterialsData } from "./hooks/useMaterialsData";
 import { GlassCard } from "../../shared/ui/GlassCard";
 import { Input } from "../../shared/ui/Input";
@@ -171,9 +172,7 @@ export default function Materials(): React.JSX.Element {
                       <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-[10px] font-bold antialiased text-stone-500 uppercase tracking-widest flex items-center gap-1">
                           <Clock size={10} aria-hidden="true" />{" "}
-                          {new Date(group.project.date_time).toLocaleDateString(
-                            "pl-PL",
-                          )}
+                          {formatLocalizedDate(group.project.date_time)}
                         </p>
                         {isArchived && (
                           <span className="px-2 py-0.5 bg-stone-200 text-stone-600 text-[8px] font-bold antialiased uppercase tracking-widest rounded shadow-sm">

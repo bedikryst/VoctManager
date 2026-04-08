@@ -57,7 +57,7 @@ export default function CrewWidget({
 
       <div className="flex-1 flex flex-col justify-center items-center py-2">
         <div className="flex flex-wrap justify-center gap-2 mb-2">
-          {visibleCrew.map((assign) => {
+          {visibleCrew.map((assign, index) => {
             const person: Collaborator | undefined = crew?.find(
               (c) => String(c.id) === String(assign.collaborator),
             );
@@ -68,7 +68,7 @@ export default function CrewWidget({
 
             return (
               <span
-                key={assign.id}
+                key={assign.id || `crew-${index}`}
                 className="px-2.5 py-1 bg-stone-50 text-stone-700 text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-stone-200 shadow-sm flex items-center gap-1"
               >
                 {person.first_name} {person.last_name.charAt(0)}.

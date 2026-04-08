@@ -21,7 +21,11 @@ import {
   Wrench,
 } from "lucide-react";
 
-import SpotifyWidget from "../../projects/ProjectCard/SpotifyWidget";
+import SpotifyWidget from "../../projects/ProjectCard/widgets/SpotifyWidget";
+import {
+  formatLocalizedDate,
+  formatLocalizedTime,
+} from "../../../shared/lib/intl";
 import type { Project, ProgramItem, PieceCasting } from "../../../shared/types";
 import { Button } from "../../../shared/ui/Button";
 import { useTimelineProjectCard } from "../hooks/useTimelineProjectCard";
@@ -91,7 +95,7 @@ export default function TimelineProjectCard({
           <div className="flex flex-col sm:flex-row sm:items-start gap-4 md:gap-6">
             <div className="w-16 h-16 rounded-2xl border flex flex-col items-center justify-center flex-shrink-0 shadow-sm bg-white/10 border-white/20 text-blue-100 backdrop-blur-md">
               <span className="text-[9px] font-bold uppercase tracking-widest">
-                {event.date_time.toLocaleString("pl-PL", { month: "short" })}
+                {formatLocalizedDate(event.date_time, { month: "short" })}
               </span>
               <span className="text-2xl font-black leading-none my-0.5">
                 {event.date_time.getDate()}
@@ -116,7 +120,7 @@ export default function TimelineProjectCard({
                   <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30">
                     <Clock size={12} aria-hidden="true" />{" "}
                     {t("schedule.card.call_time", "Zbiórka:")}{" "}
-                    {new Date(proj.call_time).toLocaleTimeString("pl-PL", {
+                    {formatLocalizedTime(proj.call_time, {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}

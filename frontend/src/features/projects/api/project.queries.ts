@@ -67,7 +67,8 @@ export const useProjectVoiceLinesDictionary = () =>
 export const useProjectParticipations = (projectId: string | undefined) =>
   useQuery({
     queryKey: queryKeys.participations.byProject(projectId ?? "pending"),
-    queryFn: () => ProjectService.getParticipationsByProject(projectId as string),
+    queryFn: () =>
+      ProjectService.getParticipationsByProject(projectId as string),
     staleTime: PROJECT_RELATION_STALE_TIME,
     enabled: !!projectId,
   });
@@ -83,7 +84,8 @@ export const useProjectRehearsals = (projectId: string | undefined) =>
 export const useProjectCrewAssignments = (projectId: string | undefined) =>
   useQuery({
     queryKey: queryKeys.crewAssignments.byProject(projectId ?? "pending"),
-    queryFn: () => ProjectService.getCrewAssignmentsByProject(projectId as string),
+    queryFn: () =>
+      ProjectService.getCrewAssignmentsByProject(projectId as string),
     staleTime: PROJECT_RELATION_STALE_TIME,
     enabled: !!projectId,
   });
@@ -99,7 +101,8 @@ export const useProjectProgram = (projectId: string | undefined) =>
 export const useProjectPieceCastings = (projectId: string | undefined) =>
   useQuery({
     queryKey: queryKeys.pieceCastings.byProject(projectId ?? "pending"),
-    queryFn: () => ProjectService.getPieceCastingsByProject(projectId as string),
+    queryFn: () =>
+      ProjectService.getPieceCastingsByProject(projectId as string),
     staleTime: FAST_CHANGING_STALE_TIME,
     enabled: !!projectId,
   });
@@ -111,6 +114,8 @@ export const useProjectAttendances = (projectId: string | undefined) =>
     staleTime: FAST_CHANGING_STALE_TIME,
     enabled: !!projectId,
   });
+
+// --- MUTATIONS ---
 
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
@@ -127,7 +132,7 @@ export const useUpdateProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string | number; data: ProjectUpdateDTO }) =>
+    mutationFn: ({ id, data }: { id: string; data: ProjectUpdateDTO }) =>
       ProjectService.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
@@ -142,7 +147,7 @@ export const useDeleteProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string | number) => ProjectService.remove(id),
+    mutationFn: (id: string) => ProjectService.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },
@@ -157,7 +162,7 @@ export const useUpdateProjectStatus = () => {
       id,
       status,
     }: {
-      id: string | number;
+      id: string;
       status: ProjectUpdateDTO["status"];
     }) => ProjectService.update(id, { status }),
     onSuccess: (_, variables) => {
@@ -188,13 +193,8 @@ export const useUpdateParticipation = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string | number;
-      data: ParticipationUpdateDTO;
-    }) => ProjectService.updateParticipation(id, data),
+    mutationFn: ({ id, data }: { id: string; data: ParticipationUpdateDTO }) =>
+      ProjectService.updateParticipation(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.participations.byProject(projectId),
@@ -208,7 +208,7 @@ export const useDeleteParticipation = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string | number) => ProjectService.deleteParticipation(id),
+    mutationFn: (id: string) => ProjectService.deleteParticipation(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.participations.byProject(projectId),
@@ -237,13 +237,8 @@ export const useUpdateCrewAssignment = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string | number;
-      data: CrewAssignmentUpdateDTO;
-    }) => ProjectService.updateCrewAssignment(id, data),
+    mutationFn: ({ id, data }: { id: string; data: CrewAssignmentUpdateDTO }) =>
+      ProjectService.updateCrewAssignment(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.crewAssignments.byProject(projectId),
@@ -257,7 +252,7 @@ export const useDeleteCrewAssignment = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string | number) => ProjectService.deleteCrewAssignment(id),
+    mutationFn: (id: string) => ProjectService.deleteCrewAssignment(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.crewAssignments.byProject(projectId),
@@ -271,7 +266,8 @@ export const useCreateRehearsal = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: RehearsalCreateDTO) => ProjectService.createRehearsal(data),
+    mutationFn: (data: RehearsalCreateDTO) =>
+      ProjectService.createRehearsal(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.rehearsals.byProject(projectId),
@@ -285,7 +281,7 @@ export const useDeleteRehearsal = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string | number) => ProjectService.deleteRehearsal(id),
+    mutationFn: (id: string) => ProjectService.deleteRehearsal(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.rehearsals.byProject(projectId),
@@ -299,7 +295,8 @@ export const useCreateProgramItem = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ProgramItemCreateDTO) => ProjectService.createProgramItem(data),
+    mutationFn: (data: ProgramItemCreateDTO) =>
+      ProjectService.createProgramItem(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.program.byProject(projectId),
@@ -313,13 +310,8 @@ export const useUpdateProgramItem = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string | number;
-      data: ProgramItemUpdateDTO;
-    }) => ProjectService.updateProgramItem(id, data),
+    mutationFn: ({ id, data }: { id: string; data: ProgramItemUpdateDTO }) =>
+      ProjectService.updateProgramItem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.program.byProject(projectId),
@@ -333,7 +325,7 @@ export const useDeleteProgramItem = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string | number) => ProjectService.deleteProgramItem(id),
+    mutationFn: (id: string) => ProjectService.deleteProgramItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.program.byProject(projectId),
@@ -366,13 +358,8 @@ export const useUpdatePieceCasting = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string | number;
-      data: PieceCastingUpdateDTO;
-    }) => ProjectService.updatePieceCasting(id, data),
+    mutationFn: ({ id, data }: { id: string; data: PieceCastingUpdateDTO }) =>
+      ProjectService.updatePieceCasting(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pieceCastings.byProject(projectId),
@@ -390,7 +377,7 @@ export const useDeletePieceCasting = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string | number) => ProjectService.deletePieceCasting(id),
+    mutationFn: (id: string) => ProjectService.deletePieceCasting(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pieceCastings.byProject(projectId),
@@ -408,7 +395,8 @@ export const useCreateAttendance = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: AttendanceCreateDTO) => ProjectService.createAttendance(data),
+    mutationFn: (data: AttendanceCreateDTO) =>
+      ProjectService.createAttendance(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.attendances.byProject(projectId),
@@ -424,13 +412,8 @@ export const useUpdateAttendance = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string | number;
-      data: AttendanceUpdateDTO;
-    }) => ProjectService.updateAttendance(id, data),
+    mutationFn: ({ id, data }: { id: string; data: AttendanceUpdateDTO }) =>
+      ProjectService.updateAttendance(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.attendances.byProject(projectId),
@@ -446,7 +429,7 @@ export const useDeleteAttendance = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string | number) => ProjectService.deleteAttendance(id),
+    mutationFn: (id: string) => ProjectService.deleteAttendance(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.attendances.byProject(projectId),

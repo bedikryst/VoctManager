@@ -58,6 +58,7 @@ export default function DetailsTab({
       <AnimatePresence>
         {isDirty && (
           <motion.div
+            key="fab-menu"
             initial={{ y: 100, opacity: 0, x: "-50%" }}
             animate={{ y: 0, opacity: 1, x: "-50%" }}
             exit={{ y: 100, opacity: 0, x: "-50%" }}
@@ -323,85 +324,89 @@ export default function DetailsTab({
               </div>
             ) : (
               <AnimatePresence initial={false}>
-                {sortedRunSheet.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                    className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-white p-3 rounded-xl border border-stone-200/60 shadow-sm"
-                  >
-                    <div className="flex-shrink-0 w-full md:w-32 relative">
-                      <Clock
-                        size={14}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
-                        aria-hidden="true"
-                      />
-                      <input
-                        type="time"
-                        required
-                        value={item.time}
-                        onChange={(e) =>
-                          handleUpdateRunSheetItem(
-                            item.id!,
-                            "time",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full pl-9 pr-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-mono"
-                        placeholder={t(
-                          "projects.details_tab.run_sheet.time",
-                          "Godz.",
-                        )}
-                      />
-                    </div>
-                    <div className="flex-1 w-full relative">
-                      <input
-                        type="text"
-                        required
-                        value={item.title}
-                        onChange={(e) =>
-                          handleUpdateRunSheetItem(
-                            item.id!,
-                            "title",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold"
-                        placeholder={t(
-                          "projects.details_tab.run_sheet.title",
-                          "Tytuł",
-                        )}
-                      />
-                    </div>
-                    <div className="flex-1 w-full">
-                      <input
-                        type="text"
-                        value={item.description || ""}
-                        onChange={(e) =>
-                          handleUpdateRunSheetItem(
-                            item.id!,
-                            "description",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all italic"
-                        placeholder={t(
-                          "projects.details_tab.run_sheet.description",
-                          "Opis (opcjonalny)",
-                        )}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRunSheetItem(item.id!)}
-                      className="p-2.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 self-end md:self-auto"
-                      aria-label={t("common.actions.delete", "Usuń")}
+                {sortedRunSheet.map((item) => {
+                  const safeId = String(item.id);
+
+                  return (
+                    <motion.div
+                      key={safeId}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                      className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-white p-3 rounded-xl border border-stone-200/60 shadow-sm"
                     >
-                      <Trash2 size={16} aria-hidden="true" />
-                    </button>
-                  </motion.div>
-                ))}
+                      <div className="flex-shrink-0 w-full md:w-32 relative">
+                        <Clock
+                          size={14}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+                          aria-hidden="true"
+                        />
+                        <input
+                          type="time"
+                          required
+                          value={item.time}
+                          onChange={(e) =>
+                            handleUpdateRunSheetItem(
+                              safeId,
+                              "time",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full pl-9 pr-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-mono"
+                          placeholder={t(
+                            "projects.details_tab.run_sheet.time",
+                            "Godz.",
+                          )}
+                        />
+                      </div>
+                      <div className="flex-1 w-full relative">
+                        <input
+                          type="text"
+                          required
+                          value={item.title}
+                          onChange={(e) =>
+                            handleUpdateRunSheetItem(
+                              safeId,
+                              "title",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold"
+                          placeholder={t(
+                            "projects.details_tab.run_sheet.title",
+                            "Tytuł",
+                          )}
+                        />
+                      </div>
+                      <div className="flex-1 w-full">
+                        <input
+                          type="text"
+                          value={item.description || ""}
+                          onChange={(e) =>
+                            handleUpdateRunSheetItem(
+                              safeId,
+                              "description",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all italic"
+                          placeholder={t(
+                            "projects.details_tab.run_sheet.description",
+                            "Opis (opcjonalny)",
+                          )}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveRunSheetItem(safeId)}
+                        className="p-2.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 self-end md:self-auto"
+                        aria-label={t("common.actions.delete", "Usuń")}
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             )}
           </div>

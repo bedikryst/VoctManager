@@ -41,7 +41,7 @@ export const DashboardFilterMenu: React.FC<DashboardFilterMenuProps> = ({
       <div
         className="inline-flex items-center p-1.5 bg-white/60 backdrop-blur-xl border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-xl overflow-x-auto max-w-full scrollbar-hide"
         role="tablist"
-        aria-label="Project status filters"
+        aria-label={t("projects.filters.aria_label", "Filtry statusu projektów")}
       >
         {filterOptions.map((filter) => {
           const isActive = currentFilter === filter.id;

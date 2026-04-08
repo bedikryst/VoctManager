@@ -1,13 +1,14 @@
 /**
  * @file ArtistEditorPanel.tsx
- * @description Slide-over panel and form for creating or editing Artist profiles.
- * Implements dirty-state tracking to prevent accidental data loss. Uses React Portal.
+ * @description Slide-over panel for creating or editing artist profiles.
+ * Prevents accidental data loss with explicit dirty-state confirmation.
  * @module panel/artists/ArtistEditorPanel
  */
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { X, CheckCircle2 } from "lucide-react";
 
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
@@ -36,6 +37,7 @@ export default function ArtistEditorPanel({
   voiceTypes,
   initialSearchContext = "",
 }: ArtistEditorPanelProps): React.ReactPortal | null {
+  const { t } = useTranslation();
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
 
@@ -53,23 +55,30 @@ export default function ArtistEditorPanel({
   } = useArtistForm(artist, voiceTypes, initialSearchContext, onClose);
 
   useEffect(() => {
-    if (isOpen) setFormData(initialFormData);
+    if (isOpen) {
+      setFormData(initialFormData);
+    }
   }, [initialFormData, isOpen, setFormData]);
 
+  const handleCloseRequest = () => {
+    if (isFormDirty) {
+      setShowExitConfirm(true);
+    } else {
+      onClose();
+    }
+  };
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen && !showExitConfirm) {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen && !showExitConfirm) {
         handleCloseRequest();
       }
     };
-    if (isOpen) window.addEventListener("keydown", handleKeyDown);
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
-
-  const handleCloseRequest = () => {
-    if (isFormDirty) setShowExitConfirm(true);
-    else onClose();
-  };
 
   const forceClose = () => {
     setShowExitConfirm(false);
@@ -81,7 +90,7 @@ export default function ArtistEditorPanel({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <React.Fragment key="artist-panel-wrapper">
+        <>
           <motion.div
             key="artist-backdrop"
             initial={{ opacity: 0 }}
@@ -106,7 +115,9 @@ export default function ArtistEditorPanel({
           >
             <div className="flex justify-between items-center p-6 md:p-8 border-b border-stone-200/50 bg-white/80 backdrop-blur-xl flex-shrink-0 z-20">
               <h3 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
-                {artist?.id ? "Edycja Profilu" : "Nowy Artysta"}
+                {artist?.id
+                  ? t("artists.editor.title_edit", "Edycja Profilu")
+                  : t("artists.editor.title_new", "Nowy Artysta")}
               </h3>
               <button
                 onClick={handleCloseRequest}
@@ -124,19 +135,21 @@ export default function ArtistEditorPanel({
                 <div className="flex-1 space-y-8">
                   <div className="space-y-5">
                     <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
-                      Dane Podstawowe
+                      {t("artists.editor.section_basic", "Dane Podstawowe")}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label className={STYLE_LABEL}>Imię *</label>
+                        <label className={STYLE_LABEL}>
+                          {t("artists.editor.first_name", "Imię *")}
+                        </label>
                         <Input
                           type="text"
                           required
                           value={formData.first_name}
-                          onChange={(e) =>
+                          onChange={(event) =>
                             setFormData({
                               ...formData,
-                              first_name: e.target.value,
+                              first_name: event.target.value,
                             })
                           }
                           disabled={isSubmitting}
@@ -144,15 +157,17 @@ export default function ArtistEditorPanel({
                         />
                       </div>
                       <div>
-                        <label className={STYLE_LABEL}>Nazwisko *</label>
+                        <label className={STYLE_LABEL}>
+                          {t("artists.editor.last_name", "Nazwisko *")}
+                        </label>
                         <Input
                           type="text"
                           required
                           value={formData.last_name}
-                          onChange={(e) =>
+                          onChange={(event) =>
                             setFormData({
                               ...formData,
-                              last_name: e.target.value,
+                              last_name: event.target.value,
                             })
                           }
                           disabled={isSubmitting}
@@ -163,26 +178,33 @@ export default function ArtistEditorPanel({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label className={STYLE_LABEL}>E-mail *</label>
+                        <label className={STYLE_LABEL}>
+                          {t("artists.editor.email", "E-mail *")}
+                        </label>
                         <Input
                           type="email"
                           required
                           value={formData.email}
-                          onChange={(e) =>
-                            setFormData({ ...formData, email: e.target.value })
+                          onChange={(event) =>
+                            setFormData({
+                              ...formData,
+                              email: event.target.value,
+                            })
                           }
                           disabled={isSubmitting}
                         />
                       </div>
                       <div>
-                        <label className={STYLE_LABEL}>Telefon</label>
+                        <label className={STYLE_LABEL}>
+                          {t("artists.editor.phone", "Telefon")}
+                        </label>
                         <Input
                           type="tel"
                           value={formData.phone_number}
-                          onChange={(e) =>
+                          onChange={(event) =>
                             setFormData({
                               ...formData,
-                              phone_number: e.target.value,
+                              phone_number: event.target.value,
                             })
                           }
                           disabled={isSubmitting}
@@ -193,47 +215,63 @@ export default function ArtistEditorPanel({
 
                   <div className="space-y-5 pt-4">
                     <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
-                      Profil Wokalny
+                      {t("artists.editor.section_voice", "Profil Wokalny")}
                     </h4>
 
                     <div>
-                      <label className={STYLE_LABEL}>Rodzaj Głosu *</label>
+                      <label className={STYLE_LABEL}>
+                        {t("artists.editor.voice_type", "Rodzaj Głosu *")}
+                      </label>
                       <select
                         value={formData.voice_type}
-                        onChange={(e) =>
+                        onChange={(event) =>
                           setFormData({
                             ...formData,
-                            voice_type: e.target.value,
+                            voice_type: event.target.value,
                           })
                         }
                         className={`${STYLE_SELECT} font-bold appearance-none`}
                         disabled={isSubmitting}
                       >
                         {voiceTypes.length > 0 ? (
-                          voiceTypes.map((vt) => (
-                            <option key={vt.value} value={vt.value}>
-                              {vt.label}
+                          voiceTypes.map((voiceType) => (
+                            <option
+                              key={voiceType.value}
+                              value={voiceType.value}
+                            >
+                              {voiceType.label}
                             </option>
                           ))
                         ) : (
-                          <option value="SOP">Ładowanie...</option>
+                          <option value="SOP">
+                            {t("artists.editor.loading", "Ładowanie...")}
+                          </option>
                         )}
                       </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-5">
                       <div>
-                        <label className={STYLE_LABEL} title="Najniższy dźwięk">
-                          Skala (Dół)
+                        <label
+                          className={STYLE_LABEL}
+                          title={t(
+                            "artists.editor.range_low_title",
+                            "Najniższy dźwięk",
+                          )}
+                        >
+                          {t("artists.editor.range_low", "Skala (Dół)")}
                         </label>
                         <Input
                           type="text"
-                          placeholder="np. G2"
+                          placeholder={t(
+                            "artists.editor.range_low_placeholder",
+                            "np. G2",
+                          )}
                           value={formData.vocal_range_bottom}
-                          onChange={(e) =>
+                          onChange={(event) =>
                             setFormData({
                               ...formData,
-                              vocal_range_bottom: e.target.value,
+                              vocal_range_bottom: event.target.value,
                             })
                           }
                           disabled={isSubmitting}
@@ -241,17 +279,26 @@ export default function ArtistEditorPanel({
                         />
                       </div>
                       <div>
-                        <label className={STYLE_LABEL} title="Najwyższy dźwięk">
-                          Skala (Góra)
+                        <label
+                          className={STYLE_LABEL}
+                          title={t(
+                            "artists.editor.range_high_title",
+                            "Najwyższy dźwięk",
+                          )}
+                        >
+                          {t("artists.editor.range_high", "Skala (Góra)")}
                         </label>
                         <Input
                           type="text"
-                          placeholder="np. C5"
+                          placeholder={t(
+                            "artists.editor.range_high_placeholder",
+                            "np. C5",
+                          )}
                           value={formData.vocal_range_top}
-                          onChange={(e) =>
+                          onChange={(event) =>
                             setFormData({
                               ...formData,
-                              vocal_range_top: e.target.value,
+                              vocal_range_top: event.target.value,
                             })
                           }
                           disabled={isSubmitting}
@@ -262,23 +309,31 @@ export default function ArtistEditorPanel({
 
                     <div>
                       <label className={STYLE_LABEL}>
-                        Czytanie a vista (Ocena)
+                        {t(
+                          "artists.editor.sight_reading",
+                          "Czytanie a vista (Ocena)",
+                        )}
                       </label>
                       <select
                         value={formData.sight_reading_skill}
-                        onChange={(e) =>
+                        onChange={(event) =>
                           setFormData({
                             ...formData,
-                            sight_reading_skill: e.target.value,
+                            sight_reading_skill: event.target.value,
                           })
                         }
                         className={`${STYLE_SELECT} font-bold appearance-none`}
                         disabled={isSubmitting}
                       >
-                        <option value="">— Brak oceny —</option>
-                        {[1, 2, 3, 4, 5].map((num) => (
-                          <option key={num} value={String(num)}>
-                            {num} Gwiazdki
+                        <option value="">
+                          {t("artists.editor.no_rating", "— Brak oceny —")}
+                        </option>
+                        {[1, 2, 3, 4, 5].map((value) => (
+                          <option key={value} value={String(value)}>
+                            {t("artists.editor.stars_count", {
+                              defaultValue: "{{count}} Gwiazdki",
+                              count: value,
+                            })}
                           </option>
                         ))}
                       </select>
@@ -290,10 +345,10 @@ export default function ArtistEditorPanel({
                       <input
                         type="checkbox"
                         checked={formData.is_active}
-                        onChange={(e) =>
+                        onChange={(event) =>
                           setFormData({
                             ...formData,
-                            is_active: e.target.checked,
+                            is_active: event.target.checked,
                           })
                         }
                         className="w-5 h-5 text-[#002395] focus:ring-[#002395]/20 border-stone-300 rounded-md cursor-pointer"
@@ -301,10 +356,16 @@ export default function ArtistEditorPanel({
                       />
                       <div>
                         <span className="block text-sm font-bold text-stone-800">
-                          Aktywny dostęp do platformy
+                          {t(
+                            "artists.editor.active_access_title",
+                            "Aktywny dostęp do platformy",
+                          )}
                         </span>
                         <span className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mt-1">
-                          Zablokuje logowanie w przypadku odznaczenia.
+                          {t(
+                            "artists.editor.active_access_desc",
+                            "Zablokuje logowanie w przypadku odznaczenia.",
+                          )}
                         </span>
                       </div>
                     </label>
@@ -324,7 +385,9 @@ export default function ArtistEditorPanel({
                     }
                     className="w-full"
                   >
-                    {artist?.id ? "Zapisz Profil" : "Utwórz Artystę"}
+                    {artist?.id
+                      ? t("artists.editor.save_profile", "Zapisz Profil")
+                      : t("artists.editor.create_artist", "Utwórz Artystę")}
                   </Button>
                 </div>
               </form>
@@ -332,13 +395,19 @@ export default function ArtistEditorPanel({
 
             <ConfirmModal
               isOpen={showExitConfirm}
-              title="Masz niezapisane zmiany!"
-              description="Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę."
+              title={t(
+                "artists.editor.unsaved_title",
+                "Masz niezapisane zmiany!",
+              )}
+              description={t(
+                "artists.editor.unsaved_desc",
+                "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
+              )}
               onConfirm={forceClose}
               onCancel={() => setShowExitConfirm(false)}
             />
           </motion.div>
-        </React.Fragment>
+        </>
       )}
     </AnimatePresence>,
     document.body,

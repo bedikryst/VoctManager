@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { useRehearsalsTab, TargetType } from "../hooks/useRehearsalsTab";
+import { formatLocalizedDateTime } from "../../../../shared/lib/intl";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import { GlassCard } from "../../../../shared/ui/GlassCard";
 import { Button } from "../../../../shared/ui/Button";
@@ -41,7 +42,7 @@ const STYLE_GLASS_TEXTAREA =
 export default function RehearsalsTab({
   projectId,
 }: RehearsalsTabProps): React.JSX.Element | null {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const {
     isLoading,
     isSubmitting,
@@ -341,15 +342,12 @@ export default function RehearsalsTab({
                           : "bg-blue-50 border-blue-100 text-[#002395]"
                       }`}
                     >
-                      {new Date(reh.date_time).toLocaleString(
-                        i18n.language || "pl-PL",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )}
+                      {formatLocalizedDateTime(reh.date_time, {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
 
                     {isPast && (
@@ -405,7 +403,7 @@ export default function RehearsalsTab({
 
                 <div className="mt-5 md:mt-0 md:ml-4 flex items-center justify-end border-t md:border-t-0 border-stone-200/50 pt-4 md:pt-0">
                   <button
-                    onClick={() => handleDeleteClick(reh.id!)}
+                    onClick={() => handleDeleteClick(reh.id)}
                     className="text-stone-400 hover:text-red-500 p-2.5 rounded-xl bg-white border border-transparent hover:border-red-200 hover:bg-red-50 transition-all shadow-sm active:scale-95"
                     title={t(
                       "projects.rehearsals.actions.delete",

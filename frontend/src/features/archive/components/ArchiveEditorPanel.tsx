@@ -8,12 +8,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { X, FileText, Headphones } from "lucide-react";
 
 import PieceDetailsForm from "./PieceDetailsForm";
 import TrackUploadManager from "./TrackUploadManager";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
-
 import type { Composer, VoiceLineOption } from "../../../shared/types";
 import type { EnrichedPiece } from "../types/archive.dto";
 import { ArchiveTabId } from "../constants/archiveDomain";
@@ -39,6 +39,7 @@ export default function ArchiveEditorPanel({
   voiceLines,
   initialSearchContext,
 }: ArchiveEditorPanelProps): React.ReactPortal | null {
+  const { t } = useTranslation();
   const [isFormDirty, setIsFormDirty] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
@@ -48,8 +49,11 @@ export default function ArchiveEditorPanel({
   }, []);
 
   const handleAttemptClose = useCallback(() => {
-    if (isFormDirty) setShowExitConfirm(true);
-    else onClose();
+    if (isFormDirty) {
+      setShowExitConfirm(true);
+    } else {
+      onClose();
+    }
   }, [isFormDirty, onClose]);
 
   const forceClose = useCallback(() => {
@@ -59,10 +63,13 @@ export default function ArchiveEditorPanel({
   }, [onClose]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        if (showExitConfirm) setShowExitConfirm(false);
-        else handleAttemptClose();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        if (showExitConfirm) {
+          setShowExitConfirm(false);
+        } else {
+          handleAttemptClose();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -74,7 +81,7 @@ export default function ArchiveEditorPanel({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <React.Fragment key="archive-panel-wrapper">
+        <>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -95,7 +102,9 @@ export default function ArchiveEditorPanel({
           >
             <div className="flex justify-between items-center px-6 md:px-10 pt-6 md:pt-10 pb-6 flex-shrink-0 z-20">
               <h3 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
-                {piece ? piece.title : "Nowy Utwór"}
+                {piece
+                  ? piece.title
+                  : t("archive.editor.new_piece", "Nowy Utwór")}
               </h3>
               <button
                 onClick={handleAttemptClose}
@@ -112,13 +121,15 @@ export default function ArchiveEditorPanel({
                     onClick={() => onTabChange("DETAILS")}
                     className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === "DETAILS" ? "bg-white text-[#002395] shadow-sm border border-white" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
                   >
-                    <FileText size={14} aria-hidden="true" /> Metadane
+                    <FileText size={14} aria-hidden="true" />{" "}
+                    {t("archive.editor.tabs.details", "Metadane")}
                   </button>
                   <button
                     onClick={() => onTabChange("TRACKS")}
                     className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === "TRACKS" ? "bg-white text-[#002395] shadow-sm border border-white" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
                   >
-                    <Headphones size={14} aria-hidden="true" /> Ścieżki MP3
+                    <Headphones size={14} aria-hidden="true" />{" "}
+                    {t("archive.editor.tabs.tracks", "Ścieżki MP3")}
                   </button>
                 </div>
               </div>
@@ -138,7 +149,9 @@ export default function ArchiveEditorPanel({
                       actionType: "SAVE_AND_ADD" | "SAVE_AND_CLOSE",
                     ) => {
                       setIsFormDirty(false);
-                      if (actionType === "SAVE_AND_CLOSE") onClose();
+                      if (actionType === "SAVE_AND_CLOSE") {
+                        onClose();
+                      }
                     }}
                   />
                 )}
@@ -153,13 +166,19 @@ export default function ArchiveEditorPanel({
 
             <ConfirmModal
               isOpen={showExitConfirm}
-              title="Masz niezapisane zmiany!"
-              description="Wprowadziłeś zmiany w formularzu, które nie zostały jeszcze zapisane w bazie. Czy na pewno chcesz zamknąć panel? Niezapisane dane przepadną."
+              title={t(
+                "archive.editor.unsaved_title",
+                "Masz niezapisane zmiany!",
+              )}
+              description={t(
+                "archive.editor.unsaved_desc",
+                "Wprowadziłeś zmiany w formularzu, które nie zostały jeszcze zapisane w bazie. Czy na pewno chcesz zamknąć panel? Niezapisane dane przepadną.",
+              )}
               onConfirm={forceClose}
               onCancel={() => setShowExitConfirm(false)}
             />
           </motion.div>
-        </React.Fragment>
+        </>
       )}
     </AnimatePresence>,
     document.body,

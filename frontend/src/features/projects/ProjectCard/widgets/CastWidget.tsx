@@ -57,7 +57,7 @@ export default function CastWidget({
 
       <div className="flex-1 flex flex-col justify-center items-center py-2">
         <div className="flex flex-wrap justify-center gap-2 mb-2">
-          {visibleParticipations.map((part) => {
+          {visibleParticipations.map((part, index) => {
             const artist: Artist | undefined = artists?.find(
               (a) => String(a.id) === String(part.artist),
             );
@@ -65,7 +65,7 @@ export default function CastWidget({
 
             return (
               <span
-                key={part.id}
+                key={part.id || `cast-${index}`}
                 className="px-2.5 py-1 bg-stone-50 text-stone-700 text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-stone-200 shadow-sm"
               >
                 {artist.first_name} {artist.last_name.charAt(0)}.
@@ -81,7 +81,7 @@ export default function CastWidget({
 
           {projectParticipations.length === 0 && (
             <span className="text-xs text-stone-400 italic">
-              {t("projects.cast.empty", "Brak obsady wokalnej.")}
+              {t("projects.cast.empty_widget", "Brak obsady wokalnej.")}
             </span>
           )}
         </div>

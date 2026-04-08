@@ -11,8 +11,13 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, Check, X, Clock, ShieldAlert, Users } from "lucide-react";
 import {
+  formatLocalizedDate,
+  formatLocalizedTime,
+} from "../../../../shared/lib/intl";
+import {
   useAttendanceMatrix,
-  AttendanceRecord,
+  type AttendanceRecord,
+  type AttendanceStatus,
 } from "../hooks/useAttendanceMatrix";
 
 interface AttendanceMatrixTabProps {
@@ -20,7 +25,7 @@ interface AttendanceMatrixTabProps {
 }
 
 const STATUS_DEF: Record<
-  string,
+  NonNullable<AttendanceStatus> | "null",
   {
     labelKey: string;
     defaultLabel: string;
@@ -70,6 +75,11 @@ const STATUS_DEF: Record<
   },
 };
 
+type StatusKey = NonNullable<AttendanceStatus> | "null";
+const isStatusKey = (key: string): key is StatusKey => {
+  return key in STATUS_DEF;
+};
+
 const MatrixCell = React.memo(
   ({
     rehearsalId,
@@ -78,19 +88,22 @@ const MatrixCell = React.memo(
     onToggle,
     isMutating,
   }: {
-    rehearsalId: string | number;
-    participationId: string | number;
-    record?: AttendanceRecord;
+    rehearsalId: string;
+    participationId: string;
+    record: AttendanceRecord | undefined;
     onToggle: (
-      rId: string | number,
-      pId: string | number,
-      rec?: AttendanceRecord,
+      rId: string,
+      pId: string,
+      rec: AttendanceRecord | undefined,
     ) => void;
     isMutating: boolean;
   }) => {
     const { t } = useTranslation();
     const currentStatus = record?.status || null;
-    const config = STATUS_DEF[String(currentStatus)] || STATUS_DEF.null;
+    const rawKey = String(currentStatus);
+    const config = isStatusKey(rawKey)
+      ? STATUS_DEF[rawKey]
+      : STATUS_DEF["null"];
 
     return (
       <td className="p-1 border-b border-l border-stone-200/60 text-center relative group">
@@ -280,21 +293,15 @@ export default function AttendanceMatrixTab({
                         <td className="p-4 font-medium text-stone-900 sticky left-0 bg-white group-hover:bg-blue-50/30 transition-colors z-10 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
                           <div className="flex flex-col">
                             <span className="text-sm font-bold text-[#002395]">
-                              {new Date(reh.date_time).toLocaleDateString(
-                                t("common.locale", "pl-PL"),
-                                {
-                                  weekday: "short",
-                                  day: "2-digit",
-                                  month: "short",
-                                },
-                              )}{" "}
-                              {new Date(reh.date_time).toLocaleTimeString(
-                                t("common.locale", "pl-PL"),
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
+                              {formatLocalizedDate(reh.date_time, {
+                                weekday: "short",
+                                day: "2-digit",
+                                month: "short",
+                              })}{" "}
+                              {formatLocalizedTime(reh.date_time, {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </span>
                             <span className="text-[10px] text-stone-400 font-medium truncate max-w-[200px]">
                               {reh.location} {reh.focus && `• ${reh.focus}`}

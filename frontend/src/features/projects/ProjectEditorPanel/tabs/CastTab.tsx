@@ -35,13 +35,9 @@ const STYLE_LIST_CONTAINER =
 interface ArtistCardProps {
   artist: Artist;
   isAssigned: boolean;
-  participationId?: string | number;
+  participationId?: string;
   isProcessing: boolean;
-  onToggle: (
-    artistId: string | number,
-    isAssigned: boolean,
-    partId?: string | number,
-  ) => void;
+  onToggle: (artistId: string, isAssigned: boolean, partId?: string) => void;
 }
 
 const ArtistCard = React.memo(
@@ -111,7 +107,9 @@ const ArtistCard = React.memo(
 
         <button
           disabled={isProcessing}
-          onClick={() => onToggle(artist.id, isAssigned, participationId)}
+          onClick={() =>
+            onToggle(String(artist.id), isAssigned, participationId)
+          }
           className={`flex justify-center items-center p-2.5 sm:px-4 sm:py-2.5 rounded-lg text-[9px] uppercase font-bold antialiased tracking-widest transition-all shadow-sm active:scale-95 disabled:opacity-50 flex-shrink-0 ${
             isAssigned
               ? "bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
@@ -148,10 +146,14 @@ const ArtistCard = React.memo(
       </motion.div>
     );
   },
+  (prevProps, nextProps) =>
+    prevProps.artist.id === nextProps.artist.id &&
+    prevProps.isAssigned === nextProps.isAssigned &&
+    prevProps.isProcessing === nextProps.isProcessing &&
+    prevProps.participationId === nextProps.participationId,
 );
 
 ArtistCard.displayName = "ArtistCard";
-
 export default function CastTab({
   projectId,
 }: CastTabProps): React.JSX.Element | null {
@@ -264,7 +266,7 @@ export default function CastTab({
                       key={artist.id}
                       artist={artist}
                       isAssigned={false}
-                      isProcessing={processingId === artist.id}
+                      isProcessing={processingId === String(artist.id)}
                       onToggle={toggleCasting}
                     />
                   ))}
@@ -314,7 +316,7 @@ export default function CastTab({
                         artist={artist}
                         isAssigned={true}
                         participationId={participation?.id}
-                        isProcessing={processingId === artist.id}
+                        isProcessing={processingId === String(artist.id)}
                         onToggle={toggleCasting}
                       />
                     );

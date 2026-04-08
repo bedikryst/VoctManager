@@ -30,7 +30,6 @@ export type VoiceType =
   | "DIR";
 
 export type ParticipationStatus = "INV" | "CON" | "DEC";
-export type CastingRole = "TUTTI" | "SOLO" | "BACK";
 export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "EXCUSED";
 export type CollaboratorSpecialty =
   | "SOUND"
@@ -91,6 +90,7 @@ export interface Artist extends BaseModel {
   voice_type_display?: string;
   is_active: boolean;
   username?: string;
+  is_admin?: boolean;
   sight_reading_skill?: number | null; // Numeric, can be null
   vocal_range_bottom?: string;
   vocal_range_top?: string;
@@ -117,13 +117,23 @@ export interface Project extends BaseModel {
   status: ProjectStatus;
   run_sheet?: RunSheetItem[];
   program?: ProgramItem[];
+  cast?: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    voice_type: VoiceType;
+    voice_type_display: string;
+  }>;
 }
 
 export interface Participation extends BaseModel {
-  artist: string; // Foreign Key ID
-  project: string; // Foreign Key ID
+  artist: string;
+  project: string;
   status: ParticipationStatus;
-  fee?: string | number | null; // Decimal, can be null
+  fee?: string | number | null;
+  artist_name?: string;
+  project_name?: string;
+  artist_voice_type_display?: string;
 }
 
 export interface Rehearsal extends BaseModel {
@@ -133,6 +143,7 @@ export interface Rehearsal extends BaseModel {
   focus?: string;
   is_mandatory: boolean;
   invited_participations?: string[];
+  absent_count?: number;
 }
 
 export interface Attendance extends BaseModel {
@@ -213,11 +224,11 @@ export interface Piece extends BaseModel {
 }
 
 export interface ProgramItem extends BaseModel {
-  project: string; // Foreign Key ID
-  piece: string; // Foreign Key ID
-  piece_id?: string;
+  project: string | number;
+  piece: string | number;
+  piece_id?: string | number;
+  title?: string;
   piece_title?: string;
-  title: string;
   order: number;
   is_encore: boolean;
 }

@@ -45,7 +45,6 @@ export const useDetailsForm = (
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
 
-  // BASELINE: Przechowuje punkt odniesienia, co jest odporne na opóźnienia w refetchowaniu
   const [baseline, setBaseline] = useState<Project | null>(project);
 
   const [formData, setFormData] = useState<ProjectFormData>({
@@ -63,11 +62,10 @@ export const useDetailsForm = (
     const initialSheet = project?.run_sheet || [];
     return initialSheet.map((item, index) => ({
       ...item,
-      id: item.id || `runsheet-init-${index}-${Date.now()}`,
+      id: item.id ? String(item.id) : `runsheet-init-${index}-${Date.now()}`,
     }));
   });
 
-  // Zrzut wszystkich lokalnych stanów do punktu odniesienia (np. po pomyślnym zapisie)
   const resetFormToProject = useCallback((source: Project) => {
     setBaseline(source);
     setFormData({
@@ -83,14 +81,13 @@ export const useDetailsForm = (
     setRunSheet(
       (source.run_sheet || []).map((item, index) => ({
         ...item,
-        id: item.id || `runsheet-init-${index}-${Date.now()}`,
+        id: item.id ? String(item.id) : `runsheet-init-${index}-${Date.now()}`,
       })),
     );
   }, []);
 
-  // Synchronizacja przy pierwszym montowaniu lub gdy nadrzędny komponent zmieni ID projektu (np. z kreatora na edycję)
   useEffect(() => {
-    if (project && project.id !== baseline?.id) {
+    if (project && String(project.id) !== String(baseline?.id)) {
       resetFormToProject(project);
     }
   }, [project?.id, baseline?.id, resetFormToProject]);
@@ -114,7 +111,6 @@ export const useDetailsForm = (
       formData.spotify_playlist_url !== (baseline.spotify_playlist_url || "") ||
       formData.description !== (baseline.description || "");
 
-    // Obcinamy ID z harmonogramu do porównania, aby nie blokować się przez tymczasowe vs prawdziwe UUID z bazy
     const cleanLocalRunSheet = runSheet.map((item) => ({
       time: item.time,
       title: item.title,
@@ -155,20 +151,18 @@ export const useDetailsForm = (
   }, []);
 
   const handleUpdateRunSheetItem = useCallback(
-    (id: string | number, field: keyof RunSheetItem, value: string) => {
+    (id: string, field: keyof RunSheetItem, value: string) => {
       setRunSheet((prev) =>
         prev.map((item) =>
-          String(item.id) === String(id) ? { ...item, [field]: value } : item,
+          String(item.id) === id ? { ...item, [field]: value } : item,
         ),
       );
     },
     [],
   );
 
-  const handleRemoveRunSheetItem = useCallback((id: string | number) => {
-    setRunSheet((prev) =>
-      prev.filter((item) => String(item.id) !== String(id)),
-    );
+  const handleRemoveRunSheetItem = useCallback((id: string) => {
+    setRunSheet((prev) => prev.filter((item) => String(item.id) !== id));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -202,7 +196,7 @@ export const useDetailsForm = (
 
       if (baseline?.id) {
         const updatedProject = await updateProjectMutation.mutateAsync({
-          id: baseline.id,
+          id: String(baseline.id),
           data: payload as ProjectUpdateDTO,
         });
         toast.success(
@@ -212,7 +206,6 @@ export const useDetailsForm = (
           ),
           { id: toastId },
         );
-        // FIX: Błyskawicznie resetujemy stan w oparciu o zwrotkę z serwera (zniknięcie FAB)
         resetFormToProject(updatedProject);
         onSuccess(updatedProject);
       } else {
@@ -226,17 +219,22 @@ export const useDetailsForm = (
           ),
           { id: toastId },
         );
-        // FIX: Błyskawicznie resetujemy stan do zapisanego projektu (zniknięcie FAB)
         resetFormToProject(createdProject);
         onSuccess(createdProject);
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data
-        ? Object.values(error.response.data).flat().join(" | ")
-        : t(
-            "common.errors.save_problem",
-            "Wystąpił problem podczas zapisywania danych.",
-          );
+    } catch (error: unknown) {
+      const isAxiosError = (
+        err: unknown,
+      ): err is { response?: { data?: Record<string, string[]> } } =>
+        typeof err === "object" && err !== null && "response" in err;
+
+      const errorMessage =
+        isAxiosError(error) && error.response?.data
+          ? Object.values(error.response.data).flat().join(" | ")
+          : t(
+              "common.errors.save_problem",
+              "Wystąpił problem podczas zapisywania danych.",
+            );
 
       toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
