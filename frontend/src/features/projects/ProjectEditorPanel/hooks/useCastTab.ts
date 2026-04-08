@@ -1,7 +1,8 @@
 /**
  * @file useCastTab.ts
  * @description State and mutation controller for the Primary Casting Manager.
- * Resolves dictionaries from shared project queries and delegates writes to the Project domain layer.
+ * Resolves dictionaries from shared project queries and delegates writes to the domain layer.
+ * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useCastTab
  */
 
@@ -25,9 +26,7 @@ export const useCastTab = (projectId: string) => {
   const deleteParticipationMutation = useDeleteParticipation(projectId);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [processingId, setProcessingId] = useState<string | number | null>(
-    null,
-  );
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<"AVAILABLE" | "ASSIGNED">(
     "AVAILABLE",
   );
@@ -51,9 +50,7 @@ export const useCastTab = (projectId: string) => {
       const voiceCompare = (left.voice_type || "").localeCompare(
         right.voice_type || "",
       );
-      if (voiceCompare !== 0) {
-        return voiceCompare;
-      }
+      if (voiceCompare !== 0) return voiceCompare;
       return left.last_name.localeCompare(right.last_name);
     });
   }, [artists, searchQuery]);
@@ -71,35 +68,35 @@ export const useCastTab = (projectId: string) => {
     isCurrentlyCasted: boolean,
     participationId?: string | number,
   ): Promise<void> => {
-    setProcessingId(artistId);
+    const artistKey = String(artistId);
+    setProcessingId(artistKey);
 
     try {
       if (isCurrentlyCasted && participationId) {
-        await deleteParticipationMutation.mutateAsync(participationId);
+        await deleteParticipationMutation.mutateAsync(String(participationId));
         toast.success(t("projects.cast.toast.removed", "Usunięto z obsady"));
       } else {
         const existingDeclined = participations.find(
           (participation) =>
-            String(participation.artist) === String(artistId) &&
+            String(participation.artist) === artistKey &&
             participation.status === "DEC",
         );
 
         if (existingDeclined) {
           await updateParticipationMutation.mutateAsync({
-            id: existingDeclined.id,
+            id: String(existingDeclined.id),
             data: { status: "CON" },
           });
         } else {
           await createParticipationMutation.mutateAsync({
-            artist: artistId,
+            artist: artistKey,
             project: projectId,
             status: "INV",
           });
         }
-
         toast.success(t("projects.cast.toast.added", "Dodano do obsady"));
       }
-    } catch {
+    } catch (error: unknown) {
       toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         description: t(
           "common.errors.database_error",

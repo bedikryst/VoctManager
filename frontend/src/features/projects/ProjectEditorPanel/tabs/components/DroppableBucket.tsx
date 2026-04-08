@@ -8,6 +8,7 @@
 
 import React from "react";
 import { useDroppable } from "@dnd-kit/core";
+import { useTranslation } from "react-i18next";
 
 export interface DroppableBucketProps {
   id: string;
@@ -22,6 +23,7 @@ export function DroppableBucket({
   className = "",
   children,
 }: DroppableBucketProps): React.JSX.Element {
+  const { t } = useTranslation();
   const { isOver, setNodeRef } = useDroppable({
     id,
     data: {
@@ -33,7 +35,15 @@ export function DroppableBucket({
   return (
     <div
       ref={setNodeRef}
-      aria-label={title ? `Sekcja upuszczania: ${title}` : "Sekcja upuszczania"}
+      aria-label={
+        title
+          ? t(
+              "projects.micro_cast.bucket.aria_with_title",
+              "Sekcja upuszczania: {{title}}",
+              { title },
+            )
+          : t("projects.micro_cast.bucket.aria", "Sekcja upuszczania")
+      }
       className={`relative rounded-xl transition-all duration-200 ${
         isOver
           ? "bg-[#002395]/5 ring-2 ring-[#002395]/20 shadow-inner"

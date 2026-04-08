@@ -90,8 +90,8 @@ interface ProjectEditorPanelProps {
   isOpen: boolean;
   onClose: () => void;
   project: Project | null;
-  activeTab: string;
-  onTabChange: (tabId: string) => void;
+  activeTab: ProjectTabId;
+  onTabChange: (tabId: ProjectTabId) => void;
 }
 
 export default function ProjectEditorPanel({
@@ -104,9 +104,10 @@ export default function ProjectEditorPanel({
   const { t } = useTranslation();
   const [mounted, setMounted] = useState<boolean>(false);
 
-  // Guarded Navigation State
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
-  const [pendingTabId, setPendingTabId] = useState<string | null>(null);
+  const [pendingTabId, setPendingTabId] = useState<
+    ProjectTabId | "CLOSE_PANEL" | null
+  >(null);
 
   useEffect(() => {
     setMounted(true);
@@ -131,7 +132,7 @@ export default function ProjectEditorPanel({
     }
   }, [isOpen]);
 
-  const handleTabInteraction = (targetTabId: string) => {
+  const handleTabInteraction = (targetTabId: ProjectTabId) => {
     if (activeTab === targetTabId) return;
 
     if (hasUnsavedChanges) {
@@ -154,7 +155,7 @@ export default function ProjectEditorPanel({
     if (pendingTabId === "CLOSE_PANEL") {
       setPendingTabId(null);
       onClose();
-    } else if (pendingTabId) {
+    } else if (pendingTabId !== null) {
       onTabChange(pendingTabId);
       setPendingTabId(null);
     }
@@ -213,7 +214,10 @@ export default function ProjectEditorPanel({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex justify-end">
+        <div
+          key="editor-panel-root"
+          className="fixed inset-0 z-[100] flex justify-end"
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

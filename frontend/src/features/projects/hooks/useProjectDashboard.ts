@@ -11,48 +11,49 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import type { Project } from "../../../shared/types";
-import {
-  useDeleteProject,
-  useProjectArtistsDictionary,
-  useProjectCollaboratorsDictionary,
-  useProjectPiecesDictionary,
-  useProjects,
-  useProjectVoiceLinesDictionary,
-} from "../api/project.queries";
+import { useDeleteProject, useProjects } from "../api/project.queries";
 
-export type FilterStatus = "ACTIVE" | "DONE" | "ALL";
+import {
+  PROJECT_STATUS,
+  PROJECT_FILTER,
+  PROJECT_TABS,
+  type ProjectFilterId,
+  type ProjectTabId,
+} from "../constants/projectDomain";
 
 interface UseProjectDashboardReturn {
   isLoading: boolean;
   filteredProjects: Project[];
-  listFilter: FilterStatus;
-  setListFilter: (filter: FilterStatus) => void;
+  listFilter: ProjectFilterId;
+  setListFilter: (filter: ProjectFilterId) => void;
   isPanelOpen: boolean;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab: ProjectTabId;
+  setActiveTab: (tab: ProjectTabId) => void;
   editingProject: Project | null;
   projectToDelete: string | null;
   setProjectToDelete: (id: string | null) => void;
   isDeleting: boolean;
-  openPanel: (project?: Project | null, tab?: string) => void;
+  openPanel: (project?: Project | null, tab?: ProjectTabId) => void;
   closePanel: () => void;
   executeDelete: () => Promise<void>;
 }
 
 export const useProjectDashboard = (): UseProjectDashboardReturn => {
   const { t } = useTranslation();
-  const [listFilter, setListFilter] = useState<FilterStatus>("ACTIVE");
+
+  const [listFilter, setListFilter] = useState<ProjectFilterId>(
+    PROJECT_FILTER.ACTIVE,
+  );
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>("DETAILS");
+  const [activeTab, setActiveTab] = useState<ProjectTabId>(
+    PROJECT_TABS.DETAILS,
+  );
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   const deleteProjectMutation = useDeleteProject();
+
   const projectsQuery = useProjects();
-  const piecesQuery = useProjectPiecesDictionary();
-  const voiceLinesQuery = useProjectVoiceLinesDictionary();
-  const artistsQuery = useProjectArtistsDictionary();
-  const collaboratorsQuery = useProjectCollaboratorsDictionary();
 
   const editingProjectRef = useRef<Project | null>(null);
 
@@ -60,20 +61,8 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
     editingProjectRef.current = editingProject;
   }, [editingProject]);
 
-  const isLoading =
-    projectsQuery.isLoading ||
-    piecesQuery.isLoading ||
-    voiceLinesQuery.isLoading ||
-    artistsQuery.isLoading ||
-    collaboratorsQuery.isLoading;
-
-  const isError =
-    projectsQuery.isError ||
-    piecesQuery.isError ||
-    voiceLinesQuery.isError ||
-    artistsQuery.isError ||
-    collaboratorsQuery.isError;
-
+  const isLoading = projectsQuery.isLoading;
+  const isError = projectsQuery.isError;
   const projects = projectsQuery.data ?? [];
 
   useEffect(() => {
@@ -81,7 +70,7 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
       toast.error(t("projects.toast.sync_error_title", "Błąd synchronizacji"), {
         description: t(
           "projects.toast.sync_error_desc",
-          "Słowniki nie zostały pobrane poprawnie.",
+          "Nie udało się pobrać listy projektów.",
         ),
       });
     }
@@ -90,12 +79,19 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
   const filteredProjects = useMemo<Project[]>(() => {
     return projects
       .filter((project) => {
-        const status = project.status || "DRAFT";
-        if (listFilter === "ACTIVE") {
-          return status !== "DONE" && status !== "CANC";
+        const status = project.status || PROJECT_STATUS.DRAFT;
+
+        if (listFilter === PROJECT_FILTER.ACTIVE) {
+          return (
+            status !== PROJECT_STATUS.DONE &&
+            status !== PROJECT_STATUS.CANCELLED
+          );
         }
-        if (listFilter === "DONE") {
-          return status === "DONE" || status === "CANC";
+        if (listFilter === PROJECT_FILTER.DONE) {
+          return (
+            status === PROJECT_STATUS.DONE ||
+            status === PROJECT_STATUS.CANCELLED
+          );
         }
         return true;
       })
@@ -107,7 +103,10 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
   }, [projects, listFilter]);
 
   const openPanel = useCallback(
-    (project: Project | null = null, tab: string = "DETAILS"): void => {
+    (
+      project: Project | null = null,
+      tab: ProjectTabId = PROJECT_TABS.DETAILS,
+    ): void => {
       setEditingProject(project);
       setActiveTab(tab);
       setIsPanelOpen(true);

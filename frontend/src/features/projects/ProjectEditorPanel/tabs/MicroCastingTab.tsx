@@ -192,19 +192,28 @@ export default function MicroCastingTab({
               >
                 {[...program]
                   .sort((a, b) => a.order - b.order)
-                  .map((item) => {
+                  .map((item, index) => {
                     const piece = pieces.find(
                       (p) => String(p.id) === String(item.piece),
                     );
+
                     const status = pieceStatuses[String(item.piece)];
-                    let statusSymbol = "";
-                    if (status === "OK") statusSymbol = " ✓";
-                    if (status === "DEFICIT") statusSymbol = " ⚠️";
+
+                    // Zamiast emotikon, nadajemy odpowiednią klasę koloru Tailwind
+                    let optionColorClass = "text-stone-500"; // FREE (Brak wymagań)
+                    if (status === "OK")
+                      optionColorClass = "text-emerald-600 font-bold";
+                    if (status === "DEFICIT")
+                      optionColorClass = "text-red-600 font-bold";
 
                     return (
-                      <option key={item.id} value={item.piece}>
-                        {item.order}. {item.title || piece?.title}
-                        {statusSymbol}
+                      <option
+                        key={item.id || `microcast-opt-${item.piece}-${index}`}
+                        value={item.piece}
+                        className={optionColorClass}
+                      >
+                        {/* Wyświetlamy po prostu kolejny numer z map() zamiast długiego timestampu */}
+                        {index + 1}. {item.piece_title || piece?.title}
                       </option>
                     );
                   })}
@@ -249,7 +258,7 @@ export default function MicroCastingTab({
             >
               <div className="space-y-2">
                 {unassignedParticipations.map((part) => {
-                  const artist = artistMap.get(String(part.artist));
+                  const artist = artistMap.get(String(part.id));
                   if (!artist) return null;
                   return (
                     <DraggableArtist
@@ -278,7 +287,6 @@ export default function MicroCastingTab({
             </DroppableBucket>
           </GlassCard>
 
-          {/* Główny obszar - Sekcje */}
           <GlassCard className="lg:col-span-3 p-6 flex flex-col h-full bg-white/40">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-200/60">
               <div className="flex items-center gap-3">
@@ -358,13 +366,16 @@ export default function MicroCastingTab({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                  {requirements.map((req) =>
-                    renderBucket(
+                  {requirements.map((req) => {
+                    const displayLabel = (
+                      req as typeof req & { voice_line_display?: string }
+                    ).voice_line_display;
+                    return renderBucket(
                       req.voice_line,
-                      (req as any).voice_line_display || req.voice_line,
+                      displayLabel || req.voice_line,
                       req.quantity,
-                    ),
-                  )}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -377,16 +388,22 @@ export default function MicroCastingTab({
               easing: "cubic-bezier(0.18, 0.67, 0.38, 1)",
             }}
           >
-            {activeDragId && artistMap.has(activeDragId) ? (
-              <DraggableArtist
-                participationId={activeDragId}
-                artist={artistMap.get(activeDragId)!}
-                isOverlay={true}
-                casting={localCastings.find(
-                  (c) => String(c.participation) === activeDragId,
-                )}
-              />
-            ) : null}
+            {(() => {
+              if (!activeDragId) return null;
+              const dragArtist = artistMap.get(activeDragId);
+              if (!dragArtist) return null;
+
+              return (
+                <DraggableArtist
+                  participationId={activeDragId}
+                  artist={dragArtist}
+                  isOverlay={true}
+                  casting={localCastings.find(
+                    (c) => String(c.participation) === activeDragId,
+                  )}
+                />
+              );
+            })()}
           </DragOverlay>
         </DndContext>
       </div>

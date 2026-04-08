@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import type { ProjectReportEndpoint } from "../../api/project.service";
 import { ProjectService } from "../../api/project.service";
 
-export function useProjectCard(projectId: number | string) {
+export function useProjectCard(projectId: string) {
   const { t } = useTranslation();
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
 

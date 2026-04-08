@@ -21,7 +21,12 @@ import {
   Users,
 } from "lucide-react";
 
+import { PROJECT_STATUS } from "../constants/projectDomain";
 import type { Project } from "../../../shared/types";
+import {
+  formatLocalizedDate,
+  formatLocalizedTime,
+} from "../../../shared/lib/intl";
 import { useProjectData } from "../hooks/useProjectData";
 import { useProjectCard } from "./hooks/useProjectCard";
 import { Button } from "../../../shared/ui/Button";
@@ -44,11 +49,11 @@ export default function ProjectCardHeader({
   onDelete,
 }: ProjectCardHeaderProps): React.JSX.Element {
   const { t } = useTranslation();
-  const { downloadReport, isDownloading } = useProjectCard(project.id);
+  const { downloadReport, isDownloading } = useProjectCard(String(project.id));
   const { rehearsals, participations, crewAssignments, isLoading } =
     useProjectData(String(project.id));
 
-  const isDone = project.status === "DONE";
+  const isDone = project.status === PROJECT_STATUS.DONE;
 
   const projectDate = useMemo(
     () => new Date(project.date_time),
@@ -61,7 +66,7 @@ export default function ProjectCardHeader({
 
   const googleMapsUrl = useMemo(() => {
     return project.location
-      ? `https://www.google.com/maps/search/?api=1&query=$$$${encodeURIComponent(project.location)}`
+      ? `https://maps.google.com/?q=${encodeURIComponent(project.location)}`
       : null;
   }, [project.location]);
 
@@ -110,7 +115,7 @@ export default function ProjectCardHeader({
                   className="text-[#002395]/60"
                   aria-hidden="true"
                 />
-                {projectDate.toLocaleDateString(t("common.locale", "pl-PL"), {
+                {formatLocalizedDate(projectDate, {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -139,7 +144,7 @@ export default function ProjectCardHeader({
               <span className="flex items-center gap-1.5 text-orange-600 whitespace-nowrap bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100">
                 <Clock size={14} aria-hidden="true" />{" "}
                 {t("projects.call_time", "Call Time:")}{" "}
-                {callTimeDate.toLocaleString(t("common.locale", "pl-PL"), {
+                {formatLocalizedTime(callTimeDate, {
                   hour: "2-digit",
                   minute: "2-digit",
                   hour12: false,

@@ -10,7 +10,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ListOrdered, ChevronDown, ChevronUp } from "lucide-react";
-import type { Project } from "../../../shared/types";
+import type { Project } from "../../../../shared/types";
 
 interface RunSheetWidgetProps {
   project: Project;
@@ -72,6 +72,7 @@ export default function RunSheetWidget({
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            key="runsheet-widget-content"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}

@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { Calendar, UserMinus } from "lucide-react";
 
 import type { Project, Rehearsal } from "../../../../shared/types";
+import { formatLocalizedDateTime } from "../../../../shared/lib/intl";
 import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "../../../../shared/ui/GlassCard";
 
@@ -101,7 +102,7 @@ export default function RehearsalsWidget({
           </div>
 
           <ul className="space-y-3 flex-1 mt-2">
-            {upcomingRehearsals.map((reh) => {
+            {upcomingRehearsals.map((reh, index) => {
               const invitedCount: number =
                 reh.invited_participations?.length || 0;
               const isTutti: boolean =
@@ -111,7 +112,7 @@ export default function RehearsalsWidget({
 
               return (
                 <li
-                  key={reh.id}
+                  key={reh.id || `reh-${index}`}
                   className="text-[11px] text-stone-600 flex flex-col gap-1 border-b border-stone-50 last:border-0 pb-2 last:pb-0"
                 >
                   <div className="flex items-start justify-between">
@@ -123,15 +124,12 @@ export default function RehearsalsWidget({
                       <div className="flex flex-col">
                         <span>
                           <strong className="text-stone-800">
-                            {new Date(reh.date_time).toLocaleDateString(
-                              t("common.locale", "pl-PL"),
-                              {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
+                            {formatLocalizedDateTime(reh.date_time, {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </strong>
                           <span className="text-stone-400 ml-1">
                             ({reh.location})
@@ -177,7 +175,10 @@ export default function RehearsalsWidget({
         </div>
       ) : (
         <p className="text-xs text-stone-400 italic flex-1 flex items-center justify-center py-4">
-          {t("projects.rehearsals.empty", "Brak zaplanowanych prób.")}
+          {t(
+            "projects.rehearsals.empty.no_rehearsals",
+            "Brak zaplanowanych prób.",
+          )}
         </p>
       )}
     </GlassCard>

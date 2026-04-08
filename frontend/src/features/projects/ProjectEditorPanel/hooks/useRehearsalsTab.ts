@@ -148,7 +148,7 @@ export const useRehearsalsTab = (projectId: string) => {
         t("projects.rehearsals.toast.save_success", "Próba zapisana pomyślnie"),
         { id: toastId },
       );
-    } catch {
+    } catch (error: unknown) {
       toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: t(
@@ -159,8 +159,7 @@ export const useRehearsalsTab = (projectId: string) => {
     }
   };
 
-  const handleDeleteClick = (id: string | number): void =>
-    setRehearsalToDelete(String(id));
+  const handleDeleteClick = (id: string): void => setRehearsalToDelete(id);
 
   const executeDelete = async (): Promise<void> => {
     if (!rehearsalToDelete) return;
@@ -174,7 +173,7 @@ export const useRehearsalsTab = (projectId: string) => {
         t("projects.rehearsals.toast.remove_success", "Próba została usunięta"),
         { id: toastId },
       );
-    } catch {
+    } catch (error: unknown) {
       toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
         description: t(

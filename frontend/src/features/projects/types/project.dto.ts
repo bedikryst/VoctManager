@@ -72,7 +72,7 @@ export interface ProgramItemCreateDTO {
 export type ProgramItemUpdateDTO = Partial<ProgramItemCreateDTO>;
 
 export interface PieceCastingCreateDTO {
-  participation: string | number;
+  participation: string; // ✅ WZORZEC ENTERPRISE: Usunięto | number
   piece: string;
   voice_line: VoiceLine;
   gives_pitch: boolean;
@@ -82,8 +82,8 @@ export interface PieceCastingCreateDTO {
 export type PieceCastingUpdateDTO = Partial<PieceCastingCreateDTO>;
 
 export interface AttendanceCreateDTO {
-  rehearsal: string | number;
-  participation: string | number;
+  rehearsal: string; // ✅ WZORZEC ENTERPRISE: Usunięto | number
+  participation: string; // ✅ WZORZEC ENTERPRISE: Usunięto | number
   status: Attendance["status"];
 }
 

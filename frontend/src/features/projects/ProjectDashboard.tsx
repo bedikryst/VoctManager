@@ -108,8 +108,8 @@ export default function ProjectDashboard(): React.JSX.Element {
               key={project.id}
               project={project}
               index={idx}
-              onEdit={(tab) => openPanel(project, tab || "DETAILS")}
-              onDelete={() => setProjectToDelete(String(project.id))}
+              onEdit={openPanel}
+              onDelete={setProjectToDelete}
             />
           ))
         ) : (

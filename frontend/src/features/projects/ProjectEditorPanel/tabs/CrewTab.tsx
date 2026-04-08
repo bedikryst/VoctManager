@@ -153,7 +153,7 @@ export default function CrewTab({
                         </p>
                       </div>
                       <button
-                        onClick={() => handleRemove(assignment.id)}
+                        onClick={() => handleRemove(String(assignment.id))}
                         className="p-2.5 text-stone-400 hover:text-red-600 bg-white border border-transparent hover:border-red-200 shadow-sm rounded-xl hover:bg-red-50 transition-all active:scale-95 disabled:opacity-50"
                         disabled={isMutating}
                         title={t(

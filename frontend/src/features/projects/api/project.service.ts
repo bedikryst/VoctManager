@@ -70,7 +70,10 @@ export const ProjectService = {
     id: string | number,
     data: ProjectUpdateDTO,
   ): Promise<Project> => {
-    const response = await api.patch<Project>(`${PROJECTS_BASE_URL}${id}/`, data);
+    const response = await api.patch<Project>(
+      `${PROJECTS_BASE_URL}${id}/`,
+      data,
+    );
     return response.data;
   },
 
@@ -79,7 +82,7 @@ export const ProjectService = {
   },
 
   downloadReport: async (
-    projectId: string | number,
+    projectId: string,
     endpoint: ProjectReportEndpoint,
   ): Promise<AxiosResponse<Blob>> =>
     api.get(`${PROJECTS_BASE_URL}${projectId}/${endpoint}/`, {
@@ -118,7 +121,10 @@ export const ProjectService = {
   createParticipation: async (
     data: ParticipationCreateDTO,
   ): Promise<Participation> => {
-    const response = await api.post<Participation>(PARTICIPATIONS_BASE_URL, data);
+    const response = await api.post<Participation>(
+      PARTICIPATIONS_BASE_URL,
+      data,
+    );
     return response.data;
   },
 
@@ -209,7 +215,9 @@ export const ProjectService = {
     return [...response.data].sort((a, b) => a.order - b.order);
   },
 
-  createProgramItem: async (data: ProgramItemCreateDTO): Promise<ProgramItem> => {
+  createProgramItem: async (
+    data: ProgramItemCreateDTO,
+  ): Promise<ProgramItem> => {
     const response = await api.post<ProgramItem>(PROGRAM_ITEMS_BASE_URL, data);
     return response.data;
   },
@@ -241,7 +249,10 @@ export const ProjectService = {
   createPieceCasting: async (
     data: PieceCastingCreateDTO,
   ): Promise<PieceCasting> => {
-    const response = await api.post<PieceCasting>(PIECE_CASTINGS_BASE_URL, data);
+    const response = await api.post<PieceCasting>(
+      PIECE_CASTINGS_BASE_URL,
+      data,
+    );
     return response.data;
   },
 
@@ -269,9 +280,7 @@ export const ProjectService = {
     return response.data;
   },
 
-  createAttendance: async (
-    data: AttendanceCreateDTO,
-  ): Promise<Attendance> => {
+  createAttendance: async (data: AttendanceCreateDTO): Promise<Attendance> => {
     const response = await api.post<Attendance>(ATTENDANCES_BASE_URL, data);
     return response.data;
   },

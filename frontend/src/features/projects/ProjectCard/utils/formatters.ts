@@ -4,12 +4,13 @@
  * @architecture Enterprise SaaS 2026
  */
 
-export const formatDate = (dateString: string | undefined | null): string => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
+import {
+  formatLocalizedDate,
+  formatLocalizedTime,
+} from "../../../../shared/lib/intl";
 
-  return date.toLocaleDateString("pl-PL", {
+export const formatDate = (dateString: string | undefined | null): string => {
+  return formatLocalizedDate(dateString, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -18,11 +19,7 @@ export const formatDate = (dateString: string | undefined | null): string => {
 };
 
 export const formatTime = (dateString: string | undefined | null): string => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
-
-  return date.toLocaleTimeString("pl-PL", {
+  return formatLocalizedTime(dateString, {
     hour: "2-digit",
     minute: "2-digit",
   });
