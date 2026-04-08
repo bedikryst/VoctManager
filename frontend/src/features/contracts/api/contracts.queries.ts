@@ -1,34 +1,30 @@
 /**
  * @file contracts.queries.ts
- * @description React Query hooks for Server State management.
+ * @description React Query hooks for Contracts server state.
  * @architecture Enterprise SaaS 2026
- * @module panel/contracts/api
+ * Uses the shared query key factory to keep cache invalidation aligned with the rest of the app.
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { ContractsService } from "./contracts.service";
 import type {
   EnrichedParticipation,
   EnrichedCrewAssignment,
 } from "../types/contracts.dto";
 
-export const CONTRACT_QUERY_KEYS = {
-  projects: ["contracts", "projects"] as const,
-  participations: ["contracts", "participations"] as const,
-  crew: ["contracts", "crew"] as const,
-};
-
 export const useContractLedgers = () => {
   const projectsQuery = useQuery({
-    queryKey: CONTRACT_QUERY_KEYS.projects,
+    queryKey: queryKeys.projects.all,
     queryFn: ContractsService.getProjects,
   });
   const castQuery = useQuery({
-    queryKey: CONTRACT_QUERY_KEYS.participations,
+    queryKey: queryKeys.participations.all,
     queryFn: ContractsService.getParticipations,
   });
   const crewQuery = useQuery({
-    queryKey: CONTRACT_QUERY_KEYS.crew,
+    queryKey: queryKeys.crewAssignments.all,
     queryFn: ContractsService.getCrewAssignments,
   });
 
@@ -44,6 +40,7 @@ export const useContractLedgers = () => {
 
 export const useUpdateFee = (type: "CAST" | "CREW") => {
   const queryClient = useQueryClient();
+
   return useMutation<
     EnrichedParticipation | EnrichedCrewAssignment,
     Error,
@@ -57,8 +54,8 @@ export const useUpdateFee = (type: "CAST" | "CREW") => {
       queryClient.invalidateQueries({
         queryKey:
           type === "CAST"
-            ? CONTRACT_QUERY_KEYS.participations
-            : CONTRACT_QUERY_KEYS.crew,
+            ? queryKeys.participations.all
+            : queryKeys.crewAssignments.all,
       });
     },
   });
@@ -66,12 +63,13 @@ export const useUpdateFee = (type: "CAST" | "CREW") => {
 
 export const useBulkUpdateFee = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: ({ projectId, fee }: { projectId: string; fee: number }) =>
       ContractsService.bulkUpdateParticipationsFee(projectId, fee),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: CONTRACT_QUERY_KEYS.participations,
+        queryKey: queryKeys.participations.all,
       });
     },
   });

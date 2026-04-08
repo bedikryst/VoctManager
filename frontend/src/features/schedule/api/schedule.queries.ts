@@ -9,6 +9,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import { ScheduleService } from "./schedule.service";
 import type { ScheduleAttendanceReportDTO } from "../types/schedule.dto";
@@ -65,10 +66,10 @@ export const useSchedulePieceCastings = (
   enabled: boolean,
 ) => {
   return useQuery({
-    queryKey: [
-      ...queryKeys.pieceCastings.byProject(projectId),
-      { piece: pieceId },
-    ],
+    queryKey: queryKeys.pieceCastings.byProjectPiece(
+      projectId,
+      pieceId ?? "pending",
+    ),
     queryFn: () =>
       ScheduleService.getPieceCastingsByProjectPiece(projectId, pieceId),
     enabled: enabled && !!pieceId,

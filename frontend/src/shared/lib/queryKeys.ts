@@ -1,13 +1,13 @@
 /**
  * @file queryKeys.ts
- * @description Centralized Query Key Factory for React Query.
- * @architecture Enterprise 2026
- * Prevents magic strings, eliminates typos, and ensures global cache synchronization
- * across heavily isolated FSD modules (e.g., HR, Finance, Schedule, Archive).
+ * @description Centralized query key factory for React Query.
+ * @architecture Enterprise SaaS 2026
+ * Prevents magic strings, removes duplication, and keeps cache synchronization consistent
+ * across isolated feature domains.
  */
 
 export const queryKeys = {
-  // --- ZASOBY LUDZKIE (ROSTER) ---
+  // --- PEOPLE AND ROSTER ---
   artists: {
     all: ["artists"] as const,
     details: (id: string | number) => ["artists", String(id)] as const,
@@ -21,7 +21,7 @@ export const queryKeys = {
     voiceLines: ["voiceLines"] as const,
   },
 
-  // --- PROJEKTY I LOGISTYKA ---
+  // --- PROJECTS AND LOGISTICS ---
   projects: {
     all: ["projects"] as const,
     active: ["projects", { status: "ACTIVE" }] as const,
@@ -48,9 +48,14 @@ export const queryKeys = {
     all: ["pieceCastings"] as const,
     byProject: (projectId: string | number) =>
       ["pieceCastings", { project: String(projectId) }] as const,
+    byProjectPiece: (projectId: string | number, pieceId: string | number) =>
+      [
+        "pieceCastings",
+        { project: String(projectId), piece: String(pieceId) },
+      ] as const,
   },
 
-  // --- PRÓBY I OBECNOŚCI ---
+  // --- REHEARSALS AND ATTENDANCE ---
   rehearsals: {
     all: ["rehearsals"] as const,
     byProject: (projectId: string | number) =>
@@ -68,7 +73,7 @@ export const queryKeys = {
       ["attendances", { project: String(projectId) }] as const,
   },
 
-  // --- ARCHIWUM NUT (ARCHIVE) ---
+  // --- ARCHIVE AND MUSIC LIBRARY ---
   pieces: {
     all: ["pieces"] as const,
     details: (id: string | number) => ["pieces", String(id)] as const,

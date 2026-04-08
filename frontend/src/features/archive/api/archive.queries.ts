@@ -1,21 +1,18 @@
 /**
  * @file archive.queries.ts
- * @description React Query hooks for the Archive domain Server State management.
- * Handles caching, background fetching, and optimistic updates.
+ * @description React Query hooks for the Archive domain server state.
+ * Handles caching, invalidation, and write orchestration through global query keys.
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { queryKeys } from "../../../shared/lib/queryKeys";
 import { ArchiveService } from "./archive.service";
 import type { PieceWriteDTO } from "../types/archive.dto";
 
-export const ARCHIVE_QUERY_KEYS = {
-  pieces: ["archive", "pieces"] as const,
-  composers: ["archive", "composers"] as const,
-};
-
 export const usePieces = () => {
   return useQuery({
-    queryKey: ARCHIVE_QUERY_KEYS.pieces,
+    queryKey: queryKeys.pieces.all,
     queryFn: ArchiveService.getPieces,
     staleTime: 1000 * 60 * 5,
   });
@@ -23,45 +20,50 @@ export const usePieces = () => {
 
 export const useComposers = () => {
   return useQuery({
-    queryKey: ARCHIVE_QUERY_KEYS.composers,
+    queryKey: queryKeys.composers.all,
     queryFn: ArchiveService.getComposers,
-    staleTime: 1000 * 60 * 60, // Composers rarely change
+    staleTime: 1000 * 60 * 60,
   });
 };
 
 export const useCreatePiece = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (data: PieceWriteDTO) => ArchiveService.createPiece(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ARCHIVE_QUERY_KEYS.pieces });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all });
     },
   });
 };
 
 export const useUpdatePiece = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<PieceWriteDTO> }) =>
       ArchiveService.updatePiece(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ARCHIVE_QUERY_KEYS.pieces });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all });
     },
   });
 };
 
 export const useDeletePiece = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (id: string) => ArchiveService.deletePiece(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ARCHIVE_QUERY_KEYS.pieces });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks.all });
     },
   });
 };
 
 export const useUploadTrack = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: ({
       pieceId,
@@ -73,24 +75,27 @@ export const useUploadTrack = () => {
       file: File;
     }) => ArchiveService.uploadTrack(pieceId, voiceLine, file),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ARCHIVE_QUERY_KEYS.pieces }); // Odświeża utwory i ich podpięte tracki
+      queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks.all });
     },
   });
 };
 
 export const useDeleteTrack = () => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (trackId: string) => ArchiveService.deleteTrack(trackId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ARCHIVE_QUERY_KEYS.pieces });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pieces.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks.all });
     },
   });
 };
 
 export const useTracks = (pieceId: string | number) => {
   return useQuery({
-    queryKey: [...ARCHIVE_QUERY_KEYS.pieces, "tracks", pieceId],
+    queryKey: queryKeys.tracks.byPiece(pieceId),
     queryFn: () => ArchiveService.getTracksByPiece(pieceId),
   });
 };
