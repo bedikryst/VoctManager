@@ -1,13 +1,14 @@
 /**
  * @file usePieceForm.ts
- * @description Manages complex internal form state for the Archive Editor.
- * Bridges the gap between the advanced UI (composer dropdowns, dynamic requirements)
- * and strict API data contracts.
+ * @description Manages internal form state for the Archive editor.
+ * Bridges complex UI interactions with strict archive DTO contracts.
  * @architecture Enterprise SaaS 2026
  */
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+
 import { useCreatePiece, useUpdatePiece } from "../api/archive.queries";
 import type {
   PieceWriteDTO,
@@ -34,15 +35,13 @@ export const usePieceForm = (
   onDirtyStateChange?: (isDirty: boolean) => void,
   onSuccess?: (updatedPiece: any, actionType: SubmitAction) => void,
 ) => {
-  // 1. Server Mutations
+  const { t } = useTranslation();
   const createMutation = useCreatePiece();
   const updateMutation = useUpdatePiece();
 
-  // 2. Core Actions
   const [submitAction, setSubmitAction] =
     useState<SubmitAction>("SAVE_AND_CLOSE");
 
-  // 3. Initial Form Hydration
   const initialFormData = useMemo<PieceFormState>(() => {
     const totalSeconds = piece?.estimated_duration || 0;
     const mins =
@@ -68,19 +67,16 @@ export const usePieceForm = (
     };
   }, [piece, initialSearchContext]);
 
-  // 4. Local UI State
   const [formData, setFormData] = useState<PieceFormState>(initialFormData);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [requirements, setRequirements] = useState<VoiceRequirementDTO[]>(
-    piece?.voice_requirements?.map((req) => ({
-      voice_line: req.voice_line,
-      quantity: req.quantity,
+    piece?.voice_requirements?.map((requirement) => ({
+      voice_line: requirement.voice_line,
+      quantity: requirement.quantity,
     })) || [],
   );
 
-  // 5. Composer Search & Dropdown State
   const [isAddingComposer, setIsAddingComposer] = useState(false);
   const [newComposerData, setNewComposerData] = useState({
     first_name: "",
@@ -89,36 +85,37 @@ export const usePieceForm = (
     death_year: "",
   });
 
-  // Auto-fill the search box if we are editing an existing piece
-  const initialCompSearch = piece?.composer
+  const initialComposerSearch = piece?.composer
     ? `${piece.composer.last_name} ${piece.composer.first_name || ""}`.trim()
     : "";
-  const [compSearchTerm, setCompSearchTerm] = useState(initialCompSearch);
+  const [compSearchTerm, setCompSearchTerm] = useState(initialComposerSearch);
   const [isCompDropdownOpen, setIsCompDropdownOpen] = useState(false);
 
   const filteredComposers = useMemo(() => {
-    if (!compSearchTerm) return composers;
-    return composers.filter((c) =>
-      `${c.first_name || ""} ${c.last_name}`
+    if (!compSearchTerm) {
+      return composers;
+    }
+    return composers.filter((composer) =>
+      `${composer.first_name || ""} ${composer.last_name}`
         .toLowerCase()
         .includes(compSearchTerm.toLowerCase()),
     );
   }, [composers, compSearchTerm]);
 
-  // 6. Dirty State Tracking
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    if (onDirtyStateChange) onDirtyStateChange(isDirty);
+    if (onDirtyStateChange) {
+      onDirtyStateChange(isDirty);
+    }
   }, [isDirty, onDirtyStateChange]);
 
-  // Reset state when the selected piece changes
   useEffect(() => {
     setFormData(initialFormData);
     setRequirements(
-      piece?.voice_requirements?.map((req) => ({
-        voice_line: req.voice_line,
-        quantity: req.quantity,
+      piece?.voice_requirements?.map((requirement) => ({
+        voice_line: requirement.voice_line,
+        quantity: requirement.quantity,
       })) || [],
     );
     setSelectedFile(null);
@@ -131,37 +128,44 @@ export const usePieceForm = (
     );
   }, [initialFormData, piece]);
 
-  // 7. Input Handlers
   const handleRequirementChange = (index: number, delta: number) => {
-    const newReqs = [...requirements];
-    newReqs[index].quantity = Math.max(1, newReqs[index].quantity + delta);
-    setRequirements(newReqs);
+    const nextRequirements = [...requirements];
+    nextRequirements[index].quantity = Math.max(
+      1,
+      nextRequirements[index].quantity + delta,
+    );
+    setRequirements(nextRequirements);
     setIsDirty(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
     const isCreate = !piece?.id;
     const toastId = toast.loading(
       isCreate
-        ? "Dodawanie utworu do archiwum..."
-        : "Aktualizowanie metadanych...",
+        ? t("archive.form.toast.creating", "Dodawanie utworu do archiwum...")
+        : t("archive.form.toast.updating", "Aktualizowanie metadanych..."),
     );
 
     if (isAddingComposer) {
-      toast.error("Ograniczenie systemowe", {
-        id: toastId,
-        description:
-          "Dodawanie kompozytorów w locie wymaga osobnego endpointu. Wybierz kompozytora z listy.",
-      });
+      toast.error(
+        t("archive.form.toast.constraint_title", "Ograniczenie systemowe"),
+        {
+          id: toastId,
+          description: t(
+            "archive.form.toast.constraint_desc",
+            "Dodawanie kompozytorów w locie wymaga osobnego endpointu. Wybierz kompozytora z listy.",
+          ),
+        },
+      );
       return;
     }
-    const calculatedDuration =
-      parseInt(formData.durationMins || "0") * 60 +
-      parseInt(formData.durationSecs || "0");
 
-    // Assemble strict DTO
+    const calculatedDuration =
+      parseInt(formData.durationMins || "0", 10) * 60 +
+      parseInt(formData.durationSecs || "0", 10);
+
     const payload: PieceWriteDTO = {
       title: formData.title as string,
       composer: formData.composer || undefined,
@@ -188,29 +192,41 @@ export const usePieceForm = (
     try {
       if (isCreate) {
         const newPiece = await createMutation.mutateAsync(payload);
-        toast.success("Utwór dodany pomyślnie.", { id: toastId });
-        if (onSuccess) onSuccess(newPiece, submitAction);
+        toast.success(
+          t("archive.form.toast.create_success", "Utwór dodany pomyślnie."),
+          { id: toastId },
+        );
+        if (onSuccess) {
+          onSuccess(newPiece, submitAction);
+        }
       } else {
         const updatedPiece = await updateMutation.mutateAsync({
           id: piece!.id,
           data: payload,
         });
-        toast.success("Zmiany zostały zapisane.", { id: toastId });
-        if (onSuccess) onSuccess(updatedPiece, submitAction);
+        toast.success(
+          t("archive.form.toast.update_success", "Zmiany zostały zapisane."),
+          { id: toastId },
+        );
+        if (onSuccess) {
+          onSuccess(updatedPiece, submitAction);
+        }
       }
       setIsDirty(false);
-    } catch (err: any) {
-      toast.error("Błąd zapisu.", {
+    } catch (error: any) {
+      toast.error(t("archive.form.toast.save_error_title", "Błąd zapisu."), {
         id: toastId,
         description:
-          err?.response?.data?.detail ||
-          "Sprawdź poprawność danych i spróbuj ponownie.",
+          error?.response?.data?.detail ||
+          t(
+            "archive.form.toast.save_error_desc",
+            "Sprawdź poprawność danych i spróbuj ponownie.",
+          ),
       });
     }
   };
 
   return {
-    // Form Data & Files
     formData,
     setFormData,
     requirements,
@@ -218,14 +234,10 @@ export const usePieceForm = (
     selectedFile,
     setSelectedFile,
     fileInputRef,
-
-    // Submission State
     isSubmitting: createMutation.isPending || updateMutation.isPending,
     submitAction,
     setSubmitAction,
     handleSubmit,
-
-    // Composer UI State
     isAddingComposer,
     setIsAddingComposer,
     newComposerData,
@@ -235,8 +247,6 @@ export const usePieceForm = (
     isCompDropdownOpen,
     setIsCompDropdownOpen,
     filteredComposers,
-
-    // Helpers
     handleRequirementChange,
   };
 };

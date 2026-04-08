@@ -9,6 +9,7 @@
       "save": "Zapisz",
       "edit": "Edytuj",
       "delete": "Usuń",
+      "select": "Wybierz",
       "close_panel": "Zamknij panel (ESC)",
       "delete_error": "Błąd usuwania",
       "confirm": "Potwierdź",
@@ -21,6 +22,38 @@
       "save_error": "Błąd zapisu",
       "save_problem": "Wystąpił problem podczas zapisywania danych.",
       "database_error": "Wystąpił problem z połączeniem z bazą danych."
+    },
+    "toast": {
+      "sync_warning_title": "Ostrzeżenie synchronizacji",
+      "sync_warning_desc": "Nie udało się pobrać wszystkich danych archiwum."
+    },
+    "delete_modal": {
+      "title": "Usunąć utwór z archiwum?",
+      "desc": "Ten krok usunie bezpowrotnie metadane utworu..."
+    },
+    "editor": {
+      "new_piece": "Nowy Utwór",
+      "unsaved_title": "Masz niezapisane zmiany!",
+      "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały jeszcze zapisane w bazie. Czy na pewno chcesz zamknąć panel? Niezapisane dane przepadną.",
+      "tabs": {
+        "details": "Metadane",
+        "tracks": "Ścieżki MP3"
+      }
+    },
+    "tracks": {
+      "tutti": "Tutti"
+    },
+    "form": {
+      "toast": {
+        "creating": "Dodawanie utworu do archiwum...",
+        "updating": "Aktualizowanie metadanych...",
+        "constraint_title": "Ograniczenie systemowe",
+        "constraint_desc": "Dodawanie kompozytorów w locie wymaga osobnego endpointu. Wybierz kompozytora z listy.",
+        "create_success": "Utwór dodany pomyślnie.",
+        "update_success": "Zmiany zostały zapisane.",
+        "save_error_title": "Błąd zapisu.",
+        "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie."
+      }
     }
   },
   "auth": {
@@ -42,6 +75,278 @@
       "empty_hint": "Zmień parametry filtrowania lub dodaj nową kompozycję do bazy.",
       "not_found": "Nie znaleźliśmy kompozycji",
       "add_piece": "Dodaj utwór:"
+    },
+    "toast": {
+      "sync_warning_title": "Ostrzeżenie synchronizacji",
+      "sync_warning_desc": "Nie udało się pobrać wszystkich danych archiwum.",
+      "delete_loading": "Usuwanie \"{{title}}\"...",
+      "delete_success": "Utwór został usunięty z archiwum.",
+      "delete_error_title": "Nie udało się usunąć utworu.",
+      "delete_error_desc": "Upewnij się, że utwór nie jest powiązany z aktywnymi projektami."
+    },
+    "delete_modal": {
+      "title": "Usunąć utwór z archiwum?",
+      "desc": "Ten krok usunie bezpowrotnie metadane utworu..."
+    },
+    "card": {
+      "traditional_unknown": "Tradycyjny / Nieznany",
+      "metadata_title": "Metadane utworu",
+      "composer_title": "Kompozytor",
+      "divisi_title": "Algorytm Divisi",
+      "fields": {
+        "language": "Język",
+        "arranger": "Aranżer",
+        "voicing": "Obsada",
+        "duration": "Czas"
+      },
+      "actions": {
+        "edit": "Edytuj metadane",
+        "manage_audio": "Zarządzaj audio",
+        "delete": "Usuń utwór"
+      },
+      "reference": {
+        "youtube": "Nagranie referencyjne YouTube",
+        "spotify": "Nagranie referencyjne Spotify",
+        "generic": "Nagranie referencyjne"
+      }
+    },
+    "editor": {
+      "new_piece": "Nowy utwór",
+      "unsaved_title": "Masz niezapisane zmiany!",
+      "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały jeszcze zapisane w bazie. Czy na pewno chcesz zamknąć panel? Niezapisane dane przepadną.",
+      "tabs": {
+        "details": "Metadane",
+        "tracks": "Ścieżki MP3"
+      }
+    },
+    "tracks": {
+      "tutti": "Tutti",
+      "uploading": "Wgrywanie nagrania...",
+      "upload_success": "Nagranie zostało dodane pomyślnie.",
+      "upload_error": "Błąd wgrywania. Upewnij się, że plik ma odpowiedni format.",
+      "deleting": "Usuwanie nagrania...",
+      "delete_success": "Plik został usunięty z serwera.",
+      "delete_error": "Błąd podczas usuwania nagrania.",
+      "add_material": "Dodaj materiał ćwiczeniowy",
+      "voice_part": "Partia wokalna *",
+      "file_upload": "Plik audio (MP3/WAV/MIDI) *",
+      "upload_button": "Wgraj nagranie",
+      "uploaded_tracks": "Wgrane ścieżki audio",
+      "no_files": "Brak plików audio",
+      "delete_confirm_title": "Usunąć nagranie z serwera?",
+      "delete_confirm_desc": "Plik audio zostanie bezpowrotnie usunięty z bazy danych."
+    },
+    "form": {
+      "fields": {
+        "title": "Tytuł utworu *",
+        "composer": "Kompozytor",
+        "arranger": "Aranżer",
+        "epoch": "Epoka muzyczna",
+        "composition_year": "Rok powstania",
+        "language": "Język",
+        "voicing": "Obsada wokalna (zapis tradycyjny)",
+        "duration": "Szacowany czas trwania",
+        "lyrics_original": "Tekst oryginalny",
+        "lyrics_translation": "Tłumaczenie (notatki)",
+        "reference_youtube": "Referencja YouTube",
+        "reference_spotify": "Referencja Spotify",
+        "sheet_music": "Partytura / nuty (opcjonalnie PDF)"
+      },
+      "sections": {
+        "requirements": "Wymagania wykonawcze",
+        "divisi": "Algorytm obsady (Divisi)",
+        "materials": "Materiały i teksty"
+      },
+      "descriptions": {
+        "divisi": "Wybierz głosy i ustal minimalną ilość śpiewaków do weryfikacji braków kadrowych w trybie mikro-obsady."
+      },
+      "placeholders": {
+        "title": "np. Lacrimosa",
+        "composer_first_name": "Imię",
+        "composer_last_name": "Nazwisko *",
+        "composer_birth_year": "Rok ur.",
+        "composer_death_year": "Rok śm.",
+        "composer_search": "Szukaj na liście (lub zostaw puste)",
+        "arranger": "np. John Rutter",
+        "epoch": "— Wybierz epokę —",
+        "composition_year": "np. 1741",
+        "language": "np. Łacina",
+        "voicing": "np. SSAATTBB, Chór + Soliści",
+        "duration_minutes": "Minuty",
+        "duration_seconds": "Sekundy",
+        "lyrics_original": "Wklej oryginalny tekst utworu...",
+        "lyrics_translation": "Wklej polskie tłumaczenie...",
+        "reference_youtube": "https://youtube.com/watch?v=...",
+        "reference_spotify": "https://open.spotify.com/track/..."
+      },
+      "composer": {
+        "unknown": "— Tradycyjny / Nieznany —"
+      },
+      "epochs": {
+        "med": "Średniowiecze",
+        "ren": "Renesans",
+        "bar": "Barok",
+        "cla": "Klasycyzm",
+        "rom": "Romantyzm",
+        "m20": "XX wiek",
+        "con": "Muzyka Współczesna",
+        "pop": "Rozrywka",
+        "folk": "Folk / Ludowa"
+      },
+      "units": {
+        "minutes_short": "min",
+        "seconds_short": "sek"
+      },
+      "status": {
+        "sheet_music_attached": "Dokument nutowy jest już załączony w bazie."
+      },
+      "empty": {
+        "requirements": "Brak zdefiniowanych wymagań."
+      },
+      "actions": {
+        "back_to_search": "Wróć do wyszukiwarki",
+        "add_new": "+ Dodaj nowego",
+        "save_add": "Zapisz i dodaj kolejny",
+        "save_close": "Zapisz i zamknij",
+        "save_changes": "Zapisz zmiany"
+      },
+      "toast": {
+        "creating": "Dodawanie utworu do archiwum...",
+        "updating": "Aktualizowanie metadanych...",
+        "constraint_title": "Ograniczenie systemowe",
+        "constraint_desc": "Dodawanie kompozytorów w locie wymaga osobnego endpointu. Wybierz kompozytora z listy.",
+        "create_success": "Utwór dodany pomyślnie.",
+        "update_success": "Zmiany zostały zapisane.",
+        "save_error_title": "Błąd zapisu.",
+        "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie."
+      }
+    }
+  },
+  "resources": {
+    "dashboard": {
+      "badge": "Baza wiedzy i dokumenty",
+      "title": "Zasoby",
+      "title_highlight": "Fundacji"
+    },
+    "banner": {
+      "title": "Sekcja poglądowa (wersja demo)",
+      "description": "Widoczna poniżej struktura plików ma charakter makiety. Prawdziwe, docelowe dokumenty, umowy i regulaminy fundacji zostaną wgrane w późniejszym etapie wdrożenia CMS."
+    },
+    "cms": {
+      "title": "Moduł CMS w przygotowaniu",
+      "description": "Możliwość wgrywania i edycji plików na serwerze zostanie aktywowana po podpięciu docelowego API."
+    },
+    "actions": {
+      "add_category": "Dodaj kategorię",
+      "edit_category": "Edytuj kategorię",
+      "delete_category": "Usuń kategorię",
+      "delete_file": "Usuń plik",
+      "download_file": "Pobierz {{title}}",
+      "add_document": "Dodaj nowy dokument"
+    },
+    "categories": {
+      "wardrobe": {
+        "title": "Garderoba i Dress Code",
+        "description": "Wytyczne dotyczące ujednoliconego stroju koncertowego oraz zasady dbania o powierzone elementy garderoby.",
+        "files": {
+          "dress_guide": "Przewodnik: Suknia Chóralna (Sopran / Alt)",
+          "tuxedo_guide": "Wytyczne: Frak i Muszka (Tenor / Bas)"
+        }
+      },
+      "regulations": {
+        "title": "Regulaminy i Statuty",
+        "description": "Oficjalne dokumenty fundacji, zasady współpracy, polityka prywatności oraz regulaminy uczestnictwa w próbach.",
+        "files": {
+          "statute": "Statut Fundacji (Wersja 2026 - Zaktualizowany po walnym zgromadzeniu zarządu)",
+          "choir_rules": "Regulamin Chórzysty i Zasady Obecności",
+          "gdpr": "Polityka Przetwarzania Danych Osobowych (RODO)"
+        }
+      }
+    }
+  },
+  "artists": {
+    "dashboard": {
+      "sync_warning_title": "Ostrzeżenie",
+      "sync_warning_desc": "Nie udało się pobrać danych o artystach.",
+      "subtitle": "Zasoby Ludzkie",
+      "title_prefix": "Zarządzanie",
+      "title_highlight": "Zespołem",
+      "add_artist": "Dodaj Artystę",
+      "search_placeholder": "Szukaj po nazwisku...",
+      "all_voices": "Wszystkie głosy",
+      "empty_title": "Brak wyników",
+      "empty_desc_search": "Nie znaleźliśmy chórzysty \"{{term}}\". Możesz dodać go teraz do bazy.",
+      "add_search_term": "Dodaj: {{term}}",
+      "empty_desc_default": "Zmień kryteria wyszukiwania lub dodaj nową osobę do bazy.",
+      "activate_title": "Aktywować profil?",
+      "archive_title": "Zarchiwizować artystę?",
+      "activate_desc": "Artysta odzyska możliwość logowania się do platformy i będzie widoczny w obsadzie nowych projektów.",
+      "archive_desc": "Artysta utraci dostęp do panelu. Jego dane historyczne w przeszłych projektach zostaną zachowane."
+    },
+    "filters": {
+      "sopranos": "Soprany",
+      "altos": "Alty",
+      "tenors": "Tenory",
+      "basses": "Basy",
+      "all": "Tutti"
+    },
+    "card": {
+      "active_account_title": "Konto aktywne i połączone z platformą",
+      "archive_badge": "Archiwum",
+      "voice_range": "Skala Głosu",
+      "none": "Brak",
+      "sight_reading": "A Vista",
+      "sight_reading_title": "Czytanie a vista: {{level}}/5",
+      "unverified": "Brak weryfikacji",
+      "no_phone": "Brak telefonu",
+      "inactive_account": "Konto nieaktywne",
+      "edit": "Edytuj",
+      "archive_action": "Archiwum",
+      "activate_action": "Aktywuj"
+    },
+    "editor": {
+      "title_edit": "Edycja Profilu",
+      "title_new": "Nowy Artysta",
+      "section_basic": "Dane Podstawowe",
+      "section_voice": "Profil Wokalny",
+      "first_name": "Imię *",
+      "last_name": "Nazwisko *",
+      "email": "E-mail *",
+      "phone": "Telefon",
+      "voice_type": "Rodzaj Głosu *",
+      "loading": "Ładowanie...",
+      "range_low_title": "Najniższy dźwięk",
+      "range_high_title": "Najwyższy dźwięk",
+      "range_low": "Skala (Dół)",
+      "range_high": "Skala (Góra)",
+      "range_low_placeholder": "np. G2",
+      "range_high_placeholder": "np. C5",
+      "sight_reading": "Czytanie a vista (Ocena)",
+      "no_rating": "— Brak oceny —",
+      "stars_count": "{{count}} Gwiazdki",
+      "active_access_title": "Aktywny dostęp do platformy",
+      "active_access_desc": "Zablokuje logowanie w przypadku odznaczenia.",
+      "save_profile": "Zapisz Profil",
+      "create_artist": "Utwórz Artystę",
+      "unsaved_title": "Masz niezapisane zmiany!",
+      "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę."
+    },
+    "toast": {
+      "activating": "Aktywowanie konta...",
+      "archiving": "Archiwizowanie artysty...",
+      "activated_success": "Konto artysty aktywowane",
+      "archived_success": "Artysta zarchiwizowany",
+      "toggle_error_desc": "Nie udało się zmienić statusu artysty."
+    },
+    "form": {
+      "toast": {
+        "updating": "Aktualizowanie profilu...",
+        "creating": "Tworzenie konta artysty...",
+        "update_success": "Zaktualizowano profil artysty.",
+        "create_success": "Dodano artystę. Konto wygenerowane!",
+        "email_taken": "Ten adres e-mail jest już zajęty.",
+        "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie."
+      }
     }
   },
   "schedule": {
@@ -74,6 +379,9 @@
       "project_badge": "Koncert / Wydarzenie",
       "call_time": "Zbiórka:",
       "no_location": "Brak lok.",
+      "download_loading": "Generowanie dokumentu Call-Sheet...",
+      "download_success": "Plik został pobrany",
+      "download_error_desc": "Nie udało się pobrać pliku.",
       "tab": {
         "logistics": "Logistyka & Plan",
         "setlist": "Repertuar & Divisi"
@@ -226,6 +534,39 @@
   },
 
   "dashboard": {
+    "layout": {
+      "brand_badge_admin": "Panel zarządu",
+      "brand_badge_artist": "Panel artysty",
+      "mobile_nav_title": "Nawigacja",
+      "profile_settings": "Ustawienia profilu",
+      "logout": "Wyloguj się",
+      "footer_version": "VoctManager Enterprise • v{{version}}",
+      "roles": {
+        "admin": "Administrator",
+        "artist": "Artysta",
+        "management": "Zarząd"
+      },
+      "groups": {
+        "overview": "Przegląd",
+        "production": "Produkcja",
+        "data_admin": "Administracja bazy",
+        "artist_zone": "Strefa chórzysty",
+        "my_zone": "Moja strefa"
+      },
+      "links": {
+        "admin_dashboard": "Pulpit zarządu",
+        "artist_dashboard": "Mój pulpit",
+        "projects": "Projekty i koncerty",
+        "attendance": "Dziennik obecności",
+        "artists": "Zarządzanie zespołem",
+        "crew": "Ekipa techniczna",
+        "contracts": "Kadry i płace",
+        "archive": "Archiwum nut",
+        "schedule": "Mój harmonogram",
+        "materials": "Materiały do prób",
+        "resources": "Baza wiedzy"
+      }
+    },
     "shared": {
       "authorizing": "Autoryzacja...",
       "loading_telemetry": "Wczytywanie telemetrii...",
@@ -452,7 +793,8 @@
     "filters": {
       "active": "W przygotowaniu",
       "done": "Archiwum",
-      "all": "Wszystkie"
+      "all": "Wszystkie",
+      "aria_label": "Filtry statusu projektów"
     },
     "card": {
       "updating_status": "Aktualizowanie statusu...",
@@ -756,6 +1098,12 @@
       "select_piece": "Wybierz utwór do castingu",
       "label": {
         "pieces_in_program": "Utwory w programie"
+      },
+      "buckets": {
+        "unassigned": {
+          "aria_with_title": "Sekcja upuszczania: {{title}}",
+          "aria": "Sekcja upuszczania: "
+        }
       },
       "buttons": {
         "play_reference": "Odtwórz Referencję"

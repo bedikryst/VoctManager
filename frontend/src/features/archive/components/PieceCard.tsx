@@ -7,6 +7,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Edit2,
   Trash2,
@@ -20,9 +21,8 @@ import {
 } from "lucide-react";
 
 import type { EnrichedPiece } from "../types/archive.dto";
-import { EPOCHS } from "./PieceDetailsForm";
+import { getArchiveEpochOptions } from "../constants/archiveEpochs";
 import { getReferenceRecordingLinks } from "../../../shared/lib/referenceRecordings";
-
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import { Button } from "../../../shared/ui/Button";
 
@@ -52,14 +52,19 @@ const getEpochColor = (epochId?: string | null): string => {
   );
 };
 
-const getEpochLabel = (val: string) =>
-  EPOCHS.find((e) => e.value === val)?.label || val;
+const formatDuration = (
+  totalSeconds: number | null | undefined,
+  minutesLabel: string,
+  secondsLabel: string,
+): string | null => {
+  if (!totalSeconds) {
+    return null;
+  }
 
-const formatDuration = (totalSeconds?: number | null): string | null => {
-  if (!totalSeconds) return null;
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m > 0 ? `${m} min` : ""} ${s > 0 ? `${s} sek` : ""}`.trim();
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes > 0 ? `${minutes} ${minutesLabel}` : ""} ${seconds > 0 ? `${seconds} ${secondsLabel}` : ""}`.trim();
 };
 
 export default function PieceCard({
@@ -69,9 +74,16 @@ export default function PieceCard({
   onOpenPanel,
   onDelete,
 }: PieceCardProps): React.JSX.Element {
-  const comp = piece.composer;
+  const { t } = useTranslation();
+  const epochOptions = getArchiveEpochOptions(t);
+  const composer = piece.composer;
   const pieceTracks = piece.tracks || [];
   const referenceLinks = getReferenceRecordingLinks(piece);
+  const minutesLabel = t("archive.form.units.minutes_short", "min");
+  const secondsLabel = t("archive.form.units.seconds_short", "sek");
+
+  const getEpochLabel = (value: string) =>
+    epochOptions.find((epoch) => epoch.value === value)?.label || value;
 
   return (
     <GlassCard
@@ -103,9 +115,12 @@ export default function PieceCard({
 
             <div className="flex items-center gap-3 text-[10px] font-bold antialiased text-stone-500 uppercase tracking-widest mt-1">
               <span>
-                {comp
-                  ? `${comp.first_name || ""} ${comp.last_name}`.trim()
-                  : "Tradycyjny / Nieznany"}
+                {composer
+                  ? `${composer.first_name || ""} ${composer.last_name}`.trim()
+                  : t(
+                      "archive.card.traditional_unknown",
+                      "Tradycyjny / Nieznany",
+                    )}
               </span>
               {piece.composition_year && (
                 <span className="flex items-center gap-1.5 border-l border-stone-300 pl-3">
@@ -124,7 +139,11 @@ export default function PieceCard({
               {piece.estimated_duration && (
                 <span className="px-2 py-1 border border-stone-200/80 bg-white/60 backdrop-blur-sm rounded-md flex items-center gap-1 shadow-sm">
                   <Clock size={10} aria-hidden="true" />{" "}
-                  {formatDuration(piece.estimated_duration)}
+                  {formatDuration(
+                    piece.estimated_duration,
+                    minutesLabel,
+                    secondsLabel,
+                  )}
                 </span>
               )}
             </div>
@@ -171,13 +190,13 @@ export default function PieceCard({
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div>
                     <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-3 border-b border-stone-200/60 pb-2">
-                      Metadane Utworu
+                      {t("archive.card.metadata_title", "Metadane utworu")}
                     </h4>
                     <div className="space-y-2 text-sm text-stone-700 font-medium">
                       {piece.language && (
                         <p>
                           <span className="font-bold antialiased text-stone-400 text-[10px] uppercase tracking-widest w-24 inline-block">
-                            Język:
+                            {t("archive.card.fields.language", "Język")}:
                           </span>{" "}
                           {piece.language}
                         </p>
@@ -185,7 +204,7 @@ export default function PieceCard({
                       {piece.arranger && (
                         <p>
                           <span className="font-bold antialiased text-stone-400 text-[10px] uppercase tracking-widest w-24 inline-block">
-                            Aranżer:
+                            {t("archive.card.fields.arranger", "Aranżer")}:
                           </span>{" "}
                           {piece.arranger}
                         </p>
@@ -193,7 +212,7 @@ export default function PieceCard({
                       {piece.voicing && (
                         <p>
                           <span className="font-bold antialiased text-stone-400 text-[10px] uppercase tracking-widest w-24 inline-block">
-                            Obsada:
+                            {t("archive.card.fields.voicing", "Obsada")}:
                           </span>{" "}
                           {piece.voicing}
                         </p>
@@ -201,9 +220,13 @@ export default function PieceCard({
                       {piece.estimated_duration && (
                         <p>
                           <span className="font-bold antialiased text-stone-400 text-[10px] uppercase tracking-widest w-24 inline-block">
-                            Czas:
+                            {t("archive.card.fields.duration", "Czas")}:
                           </span>{" "}
-                          {formatDuration(piece.estimated_duration)}
+                          {formatDuration(
+                            piece.estimated_duration,
+                            minutesLabel,
+                            secondsLabel,
+                          )}
                         </p>
                       )}
                     </div>
@@ -211,28 +234,35 @@ export default function PieceCard({
 
                   <div>
                     <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-3 border-b border-stone-200/60 pb-2">
-                      Kompozytor
+                      {t("archive.card.composer_title", "Kompozytor")}
                     </h4>
-                    {comp ? (
+                    {composer ? (
                       <div className="text-sm text-stone-700">
                         <p className="font-bold text-stone-900 text-base">
-                          {comp.first_name} {comp.last_name}
+                          {composer.first_name} {composer.last_name}
                         </p>
-                        {(comp.birth_year || comp.death_year) && (
+                        {(composer.birth_year || composer.death_year) && (
                           <p className="mt-1 flex items-center gap-1 text-stone-500 text-[11px] font-bold antialiased tracking-widest uppercase">
                             <span>
-                              {comp.birth_year ? `* ${comp.birth_year}` : ""}
+                              {composer.birth_year
+                                ? `* ${composer.birth_year}`
+                                : ""}
                             </span>
                             <span className="mx-1 opacity-50">|</span>
                             <span>
-                              {comp.death_year ? `† ${comp.death_year}` : ""}
+                              {composer.death_year
+                                ? `† ${composer.death_year}`
+                                : ""}
                             </span>
                           </p>
                         )}
                       </div>
                     ) : (
                       <p className="text-xs text-stone-400 italic">
-                        Tradycyjny / Nieznany
+                        {t(
+                          "archive.card.traditional_unknown",
+                          "Tradycyjny / Nieznany",
+                        )}
                       </p>
                     )}
 
@@ -240,17 +270,18 @@ export default function PieceCard({
                       piece.voice_requirements.length > 0 && (
                         <div className="mt-5">
                           <h4 className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-2 border-b border-stone-200/60 pb-1.5">
-                            Algorytm Divisi
+                            {t("archive.card.divisi_title", "Algorytm Divisi")}
                           </h4>
                           <div className="flex flex-wrap gap-2 mt-2.5">
-                            {piece.voice_requirements.map((req) => (
+                            {piece.voice_requirements.map((requirement) => (
                               <span
-                                key={req.id}
+                                key={requirement.id}
                                 className="px-2.5 py-1 bg-white/60 border border-[#002395]/20 text-[#002395] text-[9px] font-bold antialiased uppercase tracking-widest rounded-md shadow-sm"
                               >
-                                {(req as any).voice_line_display ||
-                                  req.voice_line}
-                                : {req.quantity}
+                                {(
+                                  requirement as { voice_line_display?: string }
+                                ).voice_line_display || requirement.voice_line}
+                                : {requirement.quantity}
                               </span>
                             ))}
                           </div>
@@ -262,36 +293,36 @@ export default function PieceCard({
                 <div className="flex flex-col gap-3 min-w-[220px] border-t lg:border-t-0 border-stone-200/60 pt-6 lg:pt-0">
                   <Button
                     variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                      event.stopPropagation();
                       onOpenPanel(piece, "DETAILS");
                     }}
                     leftIcon={<Edit2 size={14} />}
                     className="w-full justify-center"
                   >
-                    Edytuj Metadane
+                    {t("archive.card.actions.edit", "Edytuj metadane")}
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                      event.stopPropagation();
                       onOpenPanel(piece, "TRACKS");
                     }}
                     leftIcon={<Headphones size={14} />}
                     className="w-full justify-center"
                   >
-                    Zarządzaj Audio
+                    {t("archive.card.actions.manage_audio", "Zarządzaj audio")}
                   </Button>
                   <Button
                     variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                      event.stopPropagation();
                       onDelete();
                     }}
                     leftIcon={<Trash2 size={14} />}
                     className="w-full justify-center text-red-500 hover:text-red-600 hover:bg-red-50 mt-2"
                   >
-                    Usuń Utwór
+                    {t("archive.card.actions.delete", "Usuń utwór")}
                   </Button>
                 </div>
               </div>
@@ -313,10 +344,19 @@ export default function PieceCard({
                           <Headphones size={16} />
                         )}
                         {link.platform === "youtube"
-                          ? "Nagranie Referencyjne YouTube"
+                          ? t(
+                              "archive.card.reference.youtube",
+                              "Nagranie referencyjne YouTube",
+                            )
                           : link.platform === "spotify"
-                            ? "Nagranie Referencyjne Spotify"
-                            : "Nagranie Referencyjne"}
+                            ? t(
+                                "archive.card.reference.spotify",
+                                "Nagranie referencyjne Spotify",
+                              )
+                            : t(
+                                "archive.card.reference.generic",
+                                "Nagranie referencyjne",
+                              )}
                       </a>
                     ))}
                   </div>

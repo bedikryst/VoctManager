@@ -1,0 +1,65 @@
+import i18n from "../config/i18n";
+
+type DateInput = Date | string | number | null | undefined;
+
+const DEFAULT_LOCALE = "en-US";
+
+const normalizeLanguage = (language?: string): string => {
+  const candidate = language || i18n.resolvedLanguage || i18n.language || "en";
+  return candidate.split("-")[0];
+};
+
+const toValidDate = (value: DateInput): Date | null => {
+  if (value == null) return null;
+
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+export const getIntlLocale = (language?: string): string =>
+  i18n.t("common.locale", {
+    lng: normalizeLanguage(language),
+    defaultValue: DEFAULT_LOCALE,
+  });
+
+const formatDateValue = (
+  value: DateInput,
+  options: Intl.DateTimeFormatOptions,
+  language?: string,
+): string => {
+  const date = toValidDate(value);
+  if (!date) return "";
+
+  return new Intl.DateTimeFormat(getIntlLocale(language), options).format(date);
+};
+
+export const formatLocalizedDate = (
+  value: DateInput,
+  options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  },
+  language?: string,
+): string => formatDateValue(value, options, language);
+
+export const formatLocalizedTime = (
+  value: DateInput,
+  options: Intl.DateTimeFormatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+  },
+  language?: string,
+): string => formatDateValue(value, options, language);
+
+export const formatLocalizedDateTime = (
+  value: DateInput,
+  options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  },
+  language?: string,
+): string => formatDateValue(value, options, language);

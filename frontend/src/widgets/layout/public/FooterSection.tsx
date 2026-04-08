@@ -10,6 +10,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import { Link } from "react-router-dom";
+import { formatLocalizedTime } from "../../../shared/lib/intl";
 import ElegantHeading from "../../../shared/ui/ElegantHeading";
 
 // --- Animation Variants ---
@@ -36,7 +37,7 @@ export default function FooterSection(): React.JSX.Element {
     const updateTime = () => {
       const now = new Date();
       setCurrentTime(
-        now.toLocaleTimeString("pl-PL", {
+        formatLocalizedTime(now, {
           timeZone: "Europe/Warsaw",
           hour: "2-digit",
           minute: "2-digit",

@@ -9,6 +9,7 @@
       "save": "Save",
       "edit": "Edit",
       "delete": "Delete",
+      "select": "Select",
       "close_panel": "Close panel (ESC)",
       "delete_error": "Deletion error",
       "confirm": "Confirm",
@@ -21,6 +22,38 @@
       "save_error": "Save error",
       "save_problem": "A problem occurred while saving data.",
       "database_error": "A database connection problem occurred."
+    },
+    "toast": {
+      "sync_warning_title": "Sync warning",
+      "sync_warning_desc": "Failed to fetch all archive data."
+    },
+    "delete_modal": {
+      "title": "Delete piece from archive?",
+      "desc": "This step will permanently remove the piece metadata..."
+    },
+    "editor": {
+      "new_piece": "New Piece",
+      "unsaved_title": "You have unsaved changes!",
+      "unsaved_desc": "You have made changes in the form that have not been saved yet. Are you sure you want to close the panel? Unsaved data will be lost.",
+      "tabs": {
+        "details": "Metadata",
+        "tracks": "MP3 Tracks"
+      }
+    },
+    "tracks": {
+      "tutti": "Tutti"
+    },
+    "form": {
+      "toast": {
+        "creating": "Adding piece to archive...",
+        "updating": "Updating metadata...",
+        "constraint_title": "System constraint",
+        "constraint_desc": "Creating composers inline requires a separate endpoint. Select a composer from the list.",
+        "create_success": "Piece added successfully.",
+        "update_success": "Changes have been saved.",
+        "save_error_title": "Save error.",
+        "save_error_desc": "Check the data and try again."
+      }
     }
   },
   "auth": {
@@ -42,6 +75,278 @@
       "empty_hint": "Change filter parameters or add a new composition to the database.",
       "not_found": "Composition not found",
       "add_piece": "Add piece:"
+    },
+    "toast": {
+      "sync_warning_title": "Sync warning",
+      "sync_warning_desc": "Failed to fetch all archive data.",
+      "delete_loading": "Deleting \"{{title}}\"...",
+      "delete_success": "Piece was removed from the archive.",
+      "delete_error_title": "Failed to remove the piece.",
+      "delete_error_desc": "Make sure the piece is not linked to active projects."
+    },
+    "delete_modal": {
+      "title": "Delete piece from archive?",
+      "desc": "This step will permanently remove the piece metadata..."
+    },
+    "card": {
+      "traditional_unknown": "Traditional / Unknown",
+      "metadata_title": "Piece Metadata",
+      "composer_title": "Composer",
+      "divisi_title": "Divisi Algorithm",
+      "fields": {
+        "language": "Language",
+        "arranger": "Arranger",
+        "voicing": "Voicing",
+        "duration": "Duration"
+      },
+      "actions": {
+        "edit": "Edit Metadata",
+        "manage_audio": "Manage Audio",
+        "delete": "Delete Piece"
+      },
+      "reference": {
+        "youtube": "YouTube Reference Recording",
+        "spotify": "Spotify Reference Recording",
+        "generic": "Reference Recording"
+      }
+    },
+    "editor": {
+      "new_piece": "New Piece",
+      "unsaved_title": "You have unsaved changes!",
+      "unsaved_desc": "You have made changes in the form that have not been saved to the database yet. Are you sure you want to close the panel? Unsaved data will be lost.",
+      "tabs": {
+        "details": "Metadata",
+        "tracks": "MP3 Tracks"
+      }
+    },
+    "tracks": {
+      "tutti": "Tutti",
+      "uploading": "Uploading recording...",
+      "upload_success": "Recording was added successfully.",
+      "upload_error": "Upload error. Make sure the file format is supported.",
+      "deleting": "Deleting recording...",
+      "delete_success": "File was removed from the server.",
+      "delete_error": "An error occurred while deleting the recording.",
+      "add_material": "Add Practice Material",
+      "voice_part": "Voice Part *",
+      "file_upload": "Audio File (MP3/WAV/MIDI) *",
+      "upload_button": "Upload Recording",
+      "uploaded_tracks": "Uploaded Audio Tracks",
+      "no_files": "No audio files",
+      "delete_confirm_title": "Delete recording from the server?",
+      "delete_confirm_desc": "The audio file will be permanently removed from the database."
+    },
+    "form": {
+      "fields": {
+        "title": "Piece Title *",
+        "composer": "Composer",
+        "arranger": "Arranger",
+        "epoch": "Musical Period",
+        "composition_year": "Composition Year",
+        "language": "Language",
+        "voicing": "Voicing (Traditional Notation)",
+        "duration": "Estimated Duration",
+        "lyrics_original": "Original Lyrics",
+        "lyrics_translation": "Translation (Notes)",
+        "reference_youtube": "YouTube Reference",
+        "reference_spotify": "Spotify Reference",
+        "sheet_music": "Score / Sheet Music (Optional PDF)"
+      },
+      "sections": {
+        "requirements": "Performance Requirements",
+        "divisi": "Cast Algorithm (Divisi)",
+        "materials": "Materials and Texts"
+      },
+      "descriptions": {
+        "divisi": "Select voice parts and define the minimum number of singers required to validate staffing gaps in micro-casting mode."
+      },
+      "placeholders": {
+        "title": "e.g., Lacrimosa",
+        "composer_first_name": "First name",
+        "composer_last_name": "Last name *",
+        "composer_birth_year": "Birth year",
+        "composer_death_year": "Death year",
+        "composer_search": "Search the list (or leave empty)",
+        "arranger": "e.g., John Rutter",
+        "epoch": "— Select period —",
+        "composition_year": "e.g., 1741",
+        "language": "e.g., Latin",
+        "voicing": "e.g., SSAATTBB, Choir + Soloists",
+        "duration_minutes": "Minutes",
+        "duration_seconds": "Seconds",
+        "lyrics_original": "Paste the original lyrics...",
+        "lyrics_translation": "Paste the translation...",
+        "reference_youtube": "https://youtube.com/watch?v=...",
+        "reference_spotify": "https://open.spotify.com/track/..."
+      },
+      "composer": {
+        "unknown": "— Traditional / Unknown —"
+      },
+      "epochs": {
+        "med": "Medieval",
+        "ren": "Renaissance",
+        "bar": "Baroque",
+        "cla": "Classical",
+        "rom": "Romantic",
+        "m20": "20th Century",
+        "con": "Contemporary Music",
+        "pop": "Entertainment",
+        "folk": "Folk / Traditional"
+      },
+      "units": {
+        "minutes_short": "min",
+        "seconds_short": "sec"
+      },
+      "status": {
+        "sheet_music_attached": "Sheet music is already attached in the database."
+      },
+      "empty": {
+        "requirements": "No requirements defined."
+      },
+      "actions": {
+        "back_to_search": "Back to Search",
+        "add_new": "+ Add New",
+        "save_add": "Save and Add Another",
+        "save_close": "Save and Close",
+        "save_changes": "Save Changes"
+      },
+      "toast": {
+        "creating": "Adding piece to archive...",
+        "updating": "Updating metadata...",
+        "constraint_title": "System constraint",
+        "constraint_desc": "Creating composers inline requires a separate endpoint. Select a composer from the list.",
+        "create_success": "Piece added successfully.",
+        "update_success": "Changes have been saved.",
+        "save_error_title": "Save error.",
+        "save_error_desc": "Check the data and try again."
+      }
+    }
+  },
+  "resources": {
+    "dashboard": {
+      "badge": "Knowledge Base and Documents",
+      "title": "Foundation",
+      "title_highlight": "Resources"
+    },
+    "banner": {
+      "title": "Preview Section (Demo Version)",
+      "description": "The file structure shown below is a mock-up. The actual documents, contracts, and foundation regulations will be uploaded in a later CMS rollout phase."
+    },
+    "cms": {
+      "title": "CMS Module in Progress",
+      "description": "The ability to upload and edit files on the server will be enabled once the target API is connected."
+    },
+    "actions": {
+      "add_category": "Add Category",
+      "edit_category": "Edit Category",
+      "delete_category": "Delete Category",
+      "delete_file": "Delete File",
+      "download_file": "Download {{title}}",
+      "add_document": "Add New Document"
+    },
+    "categories": {
+      "wardrobe": {
+        "title": "Wardrobe and Dress Code",
+        "description": "Guidelines for standardized concert attire and rules for taking care of entrusted wardrobe items.",
+        "files": {
+          "dress_guide": "Guide: Choral Dress (Soprano / Alto)",
+          "tuxedo_guide": "Guide: Tuxedo and Bow Tie (Tenor / Bass)"
+        }
+      },
+      "regulations": {
+        "title": "Regulations and Statutes",
+        "description": "Official foundation documents, collaboration rules, privacy policy, and rehearsal participation regulations.",
+        "files": {
+          "statute": "Foundation Statute (2026 Version - Updated After the Board General Assembly)",
+          "choir_rules": "Choir Member Regulations and Attendance Rules",
+          "gdpr": "Personal Data Processing Policy (GDPR)"
+        }
+      }
+    }
+  },
+  "artists": {
+    "dashboard": {
+      "sync_warning_title": "Warning",
+      "sync_warning_desc": "Failed to fetch artist data.",
+      "subtitle": "Human Resources",
+      "title_prefix": "Team",
+      "title_highlight": "Management",
+      "add_artist": "Add Artist",
+      "search_placeholder": "Search by last name...",
+      "all_voices": "All Voices",
+      "empty_title": "No results",
+      "empty_desc_search": "We could not find choir member \"{{term}}\". You can add them to the database now.",
+      "add_search_term": "Add: {{term}}",
+      "empty_desc_default": "Change the search criteria or add a new person to the database.",
+      "activate_title": "Activate profile?",
+      "archive_title": "Archive artist?",
+      "activate_desc": "The artist will regain access to the platform and become available in castings for new projects.",
+      "archive_desc": "The artist will lose access to the panel. Historical data in past projects will be preserved."
+    },
+    "filters": {
+      "sopranos": "Sopranos",
+      "altos": "Altos",
+      "tenors": "Tenors",
+      "basses": "Basses",
+      "all": "Tutti"
+    },
+    "card": {
+      "active_account_title": "Account active and connected to the platform",
+      "archive_badge": "Archive",
+      "voice_range": "Voice Range",
+      "none": "None",
+      "sight_reading": "Sight-reading",
+      "sight_reading_title": "Sight-reading: {{level}}/5",
+      "unverified": "Not verified",
+      "no_phone": "No phone",
+      "inactive_account": "Inactive account",
+      "edit": "Edit",
+      "archive_action": "Archive",
+      "activate_action": "Activate"
+    },
+    "editor": {
+      "title_edit": "Edit Profile",
+      "title_new": "New Artist",
+      "section_basic": "Basic Information",
+      "section_voice": "Vocal Profile",
+      "first_name": "First Name *",
+      "last_name": "Last Name *",
+      "email": "E-mail *",
+      "phone": "Phone",
+      "voice_type": "Voice Type *",
+      "loading": "Loading...",
+      "range_low_title": "Lowest Note",
+      "range_high_title": "Highest Note",
+      "range_low": "Range (Low)",
+      "range_high": "Range (High)",
+      "range_low_placeholder": "e.g., G2",
+      "range_high_placeholder": "e.g., C5",
+      "sight_reading": "Sight-reading (Score)",
+      "no_rating": "— No rating —",
+      "stars_count": "{{count}} Stars",
+      "active_access_title": "Active platform access",
+      "active_access_desc": "Unchecking will block login access.",
+      "save_profile": "Save Profile",
+      "create_artist": "Create Artist",
+      "unsaved_title": "You have unsaved changes!",
+      "unsaved_desc": "You made changes in the form that have not been saved. Closing the panel will discard them."
+    },
+    "toast": {
+      "activating": "Activating account...",
+      "archiving": "Archiving artist...",
+      "activated_success": "Artist account activated",
+      "archived_success": "Artist archived",
+      "toggle_error_desc": "Failed to change the artist's status."
+    },
+    "form": {
+      "toast": {
+        "updating": "Updating profile...",
+        "creating": "Creating artist account...",
+        "update_success": "Artist profile updated.",
+        "create_success": "Artist added. Account generated!",
+        "email_taken": "This email address is already in use.",
+        "save_error_desc": "Check the data and try again."
+      }
     }
   },
   "schedule": {
@@ -74,6 +379,9 @@
       "project_badge": "Concert / Event",
       "call_time": "Call Time:",
       "no_location": "No loc.",
+      "download_loading": "Generating Call Sheet document...",
+      "download_success": "File downloaded successfully",
+      "download_error_desc": "Failed to download the file.",
       "tab": {
         "logistics": "Logistics & Plan",
         "setlist": "Repertoire & Divisi"
@@ -224,6 +532,39 @@
     }
   },
   "dashboard": {
+    "layout": {
+      "brand_badge_admin": "Management Panel",
+      "brand_badge_artist": "Artist Panel",
+      "mobile_nav_title": "Navigation",
+      "profile_settings": "Profile Settings",
+      "logout": "Log Out",
+      "footer_version": "VoctManager Enterprise • v{{version}}",
+      "roles": {
+        "admin": "Administrator",
+        "artist": "Artist",
+        "management": "Management"
+      },
+      "groups": {
+        "overview": "Overview",
+        "production": "Production",
+        "data_admin": "Data Administration",
+        "artist_zone": "Artist Zone",
+        "my_zone": "My Zone"
+      },
+      "links": {
+        "admin_dashboard": "Executive Dashboard",
+        "artist_dashboard": "My Dashboard",
+        "projects": "Projects and Concerts",
+        "attendance": "Attendance Log",
+        "artists": "Team Management",
+        "crew": "Technical Crew",
+        "contracts": "HR and Payroll",
+        "archive": "Sheet Music Archive",
+        "schedule": "My Schedule",
+        "materials": "Rehearsal Materials",
+        "resources": "Knowledge Base"
+      }
+    },
     "shared": {
       "authorizing": "Authorizing...",
       "loading_telemetry": "Loading telemetry...",
@@ -449,7 +790,8 @@
     "filters": {
       "active": "In preparation",
       "done": "Archive",
-      "all": "All"
+      "all": "All",
+      "aria_label": "Project status filters"
     },
     "card": {
       "updating_status": "Updating status...",
@@ -753,6 +1095,12 @@
       "select_piece": "Select piece for casting",
       "label": {
         "pieces_in_program": "Pieces in program"
+      },
+      "buckets": {
+        "unassigned": {
+          "aria_with_title": "Droppable Section: {{title}}",
+          "aria": "Droppable Section: "
+        }
       },
       "buttons": {
         "play_reference": "Play Reference"

@@ -7,6 +7,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   usePieces,
   useComposers,
@@ -17,6 +18,7 @@ import type { Piece } from "../../../shared/types";
 import { EnrichedPiece } from "../types/archive.dto";
 
 export const useArchiveData = () => {
+  const { t } = useTranslation();
   // 1. Server State delegation (Zero HTTP logic here)
   const {
     data: pieces = [],
@@ -92,18 +94,31 @@ export const useArchiveData = () => {
   const executeDelete = async () => {
     if (!pieceToDelete) return;
 
-    const toastId = toast.loading(`Deleting "${pieceToDelete.title}"...`);
+    const toastId = toast.loading(
+      t("archive.toast.delete_loading", 'Usuwanie "{{title}}"...', {
+        title: pieceToDelete.title,
+      }),
+    );
 
     try {
       await deleteMutation.mutateAsync(pieceToDelete.id);
-      toast.success("Piece permanently removed from the archive.", {
-        id: toastId,
-      });
+      toast.success(
+        t("archive.toast.delete_success", "Utwór został usunięty z archiwum."),
+        {
+          id: toastId,
+        },
+      );
     } catch (err) {
-      toast.error("Deletion failed.", {
-        id: toastId,
-        description: "Ensure this piece is not linked to active projects.",
-      });
+      toast.error(
+        t("archive.toast.delete_error_title", "Nie udało się usunąć utworu."),
+        {
+          id: toastId,
+          description: t(
+            "archive.toast.delete_error_desc",
+            "Upewnij się, że utwór nie jest powiązany z aktywnymi projektami.",
+          ),
+        },
+      );
     } finally {
       setPieceToDelete(null);
     }

@@ -25,6 +25,7 @@ import {
 
 import { useAuth } from "../../app/providers/AuthProvider";
 import { GlassCard } from "../../shared/ui/GlassCard";
+import { formatLocalizedDate, formatLocalizedTime } from "../../shared/lib/intl";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
 
 const containerVariants: Variants = {
@@ -145,7 +146,7 @@ export default function ArtistDashboard(): React.JSX.Element {
                         className="text-blue-400"
                         aria-hidden="true"
                       />
-                      {upNextEvent.date.toLocaleDateString("pl-PL", {
+                      {formatLocalizedDate(upNextEvent.date, {
                         weekday: "long",
                         day: "numeric",
                         month: "long",
@@ -157,7 +158,7 @@ export default function ArtistDashboard(): React.JSX.Element {
                         className="text-blue-400"
                         aria-hidden="true"
                       />
-                      {upNextEvent.date.toLocaleTimeString("pl-PL", {
+                      {formatLocalizedTime(upNextEvent.date, {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}

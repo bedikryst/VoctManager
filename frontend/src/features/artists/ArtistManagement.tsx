@@ -1,14 +1,14 @@
 /**
  * @file ArtistManagement.tsx
- * @description HR & Roster Management Module Controller.
- * Implements high-density Card Grid view for superior glanceability.
- * Delegates data fetching and filtering to useArtistData hook.
+ * @description HR and roster management module controller.
+ * Implements a high-density card grid and delegates state to feature hooks.
  * @module panel/artists/ArtistManagement
  */
 
 import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { UserPlus, Search, Filter, Users, LayoutGrid } from "lucide-react";
 
 import { useArtistData } from "./hooks/useArtistData";
@@ -18,11 +18,11 @@ import { Input } from "../../shared/ui/Input";
 import { GlassCard } from "../../shared/ui/GlassCard";
 import { VoiceFilterButton } from "./components/VoiceFilterButton";
 import { useBodyScrollLock } from "../../shared/lib/hooks/useBodyScrollLock";
-
 import ArtistEditorPanel from "./components/ArtistEditorPanel";
 import { ArtistCard } from "./components/ArtistCard";
 
 export default function ArtistManagement(): React.JSX.Element {
+  const { t } = useTranslation();
   const {
     isLoading,
     isError,
@@ -46,11 +46,15 @@ export default function ArtistManagement(): React.JSX.Element {
   } = useArtistData();
 
   useEffect(() => {
-    if (isError)
-      toast.error("Ostrzeżenie", {
-        description: "Nie udało się pobrać danych o artystach.",
+    if (isError) {
+      toast.error(t("artists.dashboard.sync_warning_title", "Ostrzeżenie"), {
+        description: t(
+          "artists.dashboard.sync_warning_desc",
+          "Nie udało się pobrać danych o artystach.",
+        ),
       });
-  }, [isError]);
+    }
+  }, [isError, t]);
 
   useBodyScrollLock(isPanelOpen || artistToToggle !== null);
 
@@ -71,15 +75,18 @@ export default function ArtistManagement(): React.JSX.Element {
                   aria-hidden="true"
                 />
                 <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
-                  Zasoby Ludzkie
+                  {t("artists.dashboard.subtitle", "Zasoby Ludzkie")}
                 </p>
               </div>
               <h1
                 className="text-3xl md:text-4xl font-medium text-stone-900 leading-tight tracking-tight"
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
-                Zarządzanie{" "}
-                <span className="italic text-[#002395]">Zespołem</span>.
+                {t("artists.dashboard.title_prefix", "Zarządzanie")}{" "}
+                <span className="italic text-[#002395]">
+                  {t("artists.dashboard.title_highlight", "Zespołem")}
+                </span>
+                .
               </h1>
             </div>
             <Button
@@ -87,45 +94,44 @@ export default function ArtistManagement(): React.JSX.Element {
               onClick={() => openPanel(null)}
               leftIcon={<UserPlus size={16} aria-hidden="true" />}
             >
-              Dodaj Artystę
+              {t("artists.dashboard.add_artist", "Dodaj Artystę")}
             </Button>
           </div>
         </motion.div>
       </header>
 
-      {/* --- FILTER BAR --- */}
       <div className="inline-flex flex-wrap items-center gap-2.5 p-2.5 bg-white/60 backdrop-blur-xl border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-3xl w-full sm:w-auto mb-2">
         <VoiceFilterButton
           voiceType="S"
-          label="Soprany"
+          label={t("artists.filters.sopranos", "Soprany")}
           count={ensembleBalance.S}
           isActive={voiceFilter === "S"}
           onClick={() => setVoiceFilter(voiceFilter === "S" ? "" : "S")}
         />
         <VoiceFilterButton
           voiceType="A"
-          label="Alty"
+          label={t("artists.filters.altos", "Alty")}
           count={ensembleBalance.A}
           isActive={voiceFilter === "A"}
           onClick={() => setVoiceFilter(voiceFilter === "A" ? "" : "A")}
         />
         <VoiceFilterButton
           voiceType="T"
-          label="Tenory"
+          label={t("artists.filters.tenors", "Tenory")}
           count={ensembleBalance.T}
           isActive={voiceFilter === "T"}
           onClick={() => setVoiceFilter(voiceFilter === "T" ? "" : "T")}
         />
         <VoiceFilterButton
           voiceType="B"
-          label="Basy"
+          label={t("artists.filters.basses", "Basy")}
           count={ensembleBalance.B}
           isActive={voiceFilter === "B"}
           onClick={() => setVoiceFilter(voiceFilter === "B" ? "" : "B")}
         />
         <VoiceFilterButton
           voiceType="ALL"
-          label="Tutti"
+          label={t("artists.filters.all", "Tutti")}
           count={ensembleBalance.Total}
           isActive={voiceFilter === ""}
           onClick={() => setVoiceFilter("")}
@@ -137,9 +143,12 @@ export default function ArtistManagement(): React.JSX.Element {
           <Input
             leftIcon={<Search size={16} />}
             type="text"
-            placeholder="Szukaj po nazwisku..."
+            placeholder={t(
+              "artists.dashboard.search_placeholder",
+              "Szukaj po nazwisku...",
+            )}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
         <div className="relative w-full sm:w-72 flex-shrink-0">
@@ -148,13 +157,15 @@ export default function ArtistManagement(): React.JSX.Element {
           </div>
           <select
             value={voiceFilter}
-            onChange={(e) => setVoiceFilter(e.target.value)}
+            onChange={(event) => setVoiceFilter(event.target.value)}
             className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] font-bold appearance-none cursor-pointer"
           >
-            <option value="">Wszystkie głosy</option>
-            {voiceTypes.map((vt) => (
-              <option key={vt.value} value={vt.value}>
-                {vt.label}
+            <option value="">
+              {t("artists.dashboard.all_voices", "Wszystkie głosy")}
+            </option>
+            {voiceTypes.map((voiceType) => (
+              <option key={voiceType.value} value={voiceType.value}>
+                {voiceType.label}
               </option>
             ))}
           </select>
@@ -163,11 +174,11 @@ export default function ArtistManagement(): React.JSX.Element {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isLoading ? (
-          Array.from({ length: 8 }).map((_, i) => (
+          Array.from({ length: 8 }).map((_, index) => (
             <div
-              key={i}
+              key={index}
               className="h-64 bg-stone-100/50 rounded-[2rem] border border-white/50 animate-pulse"
-            ></div>
+            />
           ))
         ) : displayArtists.length > 0 ? (
           <AnimatePresence>
@@ -193,14 +204,17 @@ export default function ArtistManagement(): React.JSX.Element {
                 aria-hidden="true"
               />
               <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">
-                Brak wyników
+                {t("artists.dashboard.empty_title", "Brak wyników")}
               </span>
 
               {searchTerm ? (
                 <div className="flex flex-col items-center gap-3 mt-2">
                   <span className="text-xs text-stone-400 max-w-sm">
-                    Nie znaleźliśmy chórzysty "{searchTerm}". Możesz dodać go
-                    teraz do bazy.
+                    {t("artists.dashboard.empty_desc_search", {
+                      defaultValue:
+                        'Nie znaleźliśmy chórzysty "{{term}}". Możesz dodać go teraz do bazy.',
+                      term: searchTerm,
+                    })}
                   </span>
                   <Button
                     variant="outline"
@@ -208,12 +222,18 @@ export default function ArtistManagement(): React.JSX.Element {
                     leftIcon={<UserPlus size={14} aria-hidden="true" />}
                     className="mt-2"
                   >
-                    Dodaj: {searchTerm}
+                    {t("artists.dashboard.add_search_term", {
+                      defaultValue: "Dodaj: {{term}}",
+                      term: searchTerm,
+                    })}
                   </Button>
                 </div>
               ) : (
                 <span className="text-xs text-stone-400 max-w-sm">
-                  Zmień kryteria wyszukiwania lub dodaj nową osobę do bazy.
+                  {t(
+                    "artists.dashboard.empty_desc_default",
+                    "Zmień kryteria wyszukiwania lub dodaj nową osobę do bazy.",
+                  )}
                 </span>
               )}
             </GlassCard>
@@ -233,13 +253,19 @@ export default function ArtistManagement(): React.JSX.Element {
         isOpen={!!artistToToggle}
         title={
           artistToToggle?.willBeActive
-            ? "Aktywować profil?"
-            : "Zarchiwizować artystę?"
+            ? t("artists.dashboard.activate_title", "Aktywować profil?")
+            : t("artists.dashboard.archive_title", "Zarchiwizować artystę?")
         }
         description={
           artistToToggle?.willBeActive
-            ? "Artysta odzyska możliwość logowania się do platformy i będzie widoczny w obsadzie nowych projektów."
-            : "Artysta utraci dostęp do panelu. Jego dane historyczne w przeszłych projektach zostaną zachowane."
+            ? t(
+                "artists.dashboard.activate_desc",
+                "Artysta odzyska możliwość logowania się do platformy i będzie widoczny w obsadzie nowych projektów.",
+              )
+            : t(
+                "artists.dashboard.archive_desc",
+                "Artysta utraci dostęp do panelu. Jego dane historyczne w przeszłych projektach zostaną zachowane.",
+              )
         }
         onConfirm={executeStatusToggle}
         onCancel={() => setArtistToToggle(null)}

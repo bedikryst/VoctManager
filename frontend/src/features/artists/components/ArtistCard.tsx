@@ -1,12 +1,13 @@
 /**
  * @file ArtistCard.tsx
- * @description Isolated, memoized UI component for a single artist directory card.
- * Designed as a dense "Bento Card" grid item exposing critical data at a glance.
+ * @description Memoized card component for a single artist profile.
+ * Presents the most important roster data with dense, scannable UI.
  * @module panel/artists/ArtistCard
  */
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Mail,
   Phone,
@@ -17,6 +18,7 @@ import {
   Star,
   User,
 } from "lucide-react";
+
 import type { Artist } from "../../../shared/types";
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import { Button } from "../../../shared/ui/Button";
@@ -28,36 +30,41 @@ interface ArtistCardProps {
 }
 
 export const getVoiceColorConfig = (voiceType?: string | null) => {
-  if (!voiceType)
+  if (!voiceType) {
     return {
       bg: "bg-stone-50",
       text: "text-stone-600",
       border: "border-stone-200",
     };
-  if (voiceType.startsWith("S"))
+  }
+  if (voiceType.startsWith("S")) {
     return {
       bg: "bg-rose-50/80",
       text: "text-rose-700",
       border: "border-rose-200",
     };
-  if (voiceType.startsWith("A") || voiceType === "MEZ")
+  }
+  if (voiceType.startsWith("A") || voiceType === "MEZ") {
     return {
       bg: "bg-purple-50/80",
       text: "text-purple-700",
       border: "border-purple-200",
     };
-  if (voiceType.startsWith("T") || voiceType === "CT")
+  }
+  if (voiceType.startsWith("T") || voiceType === "CT") {
     return {
       bg: "bg-sky-50/80",
       text: "text-sky-700",
       border: "border-sky-200",
     };
-  if (voiceType.startsWith("B"))
+  }
+  if (voiceType.startsWith("B")) {
     return {
       bg: "bg-emerald-50/80",
       text: "text-emerald-700",
       border: "border-emerald-200",
     };
+  }
   return {
     bg: "bg-stone-50",
     text: "text-stone-600",
@@ -65,17 +72,25 @@ export const getVoiceColorConfig = (voiceType?: string | null) => {
   };
 };
 
-const renderStars = (level?: number | null) => {
-  if (!level)
+const renderStars = (
+  t: ReturnType<typeof useTranslation>["t"],
+  level?: number | null,
+) => {
+  if (!level) {
     return (
       <span className="text-stone-400 italic text-[10px] font-bold">
-        Brak weryfikacji
+        {t("artists.card.unverified", "Brak weryfikacji")}
       </span>
     );
+  }
+
   return (
     <div
       className="flex gap-0.5 items-center"
-      title={`Czytanie a vista: ${level}/5`}
+      title={t("artists.card.sight_reading_title", {
+        defaultValue: "Czytanie a vista: {{level}}/5",
+        level,
+      })}
     >
       {[1, 2, 3, 4, 5].map((star) => (
         <Star
@@ -93,9 +108,10 @@ const renderStars = (level?: number | null) => {
 
 export const ArtistCard = React.memo(
   ({ artist, onEdit, onToggleStatus }: ArtistCardProps) => {
+    const { t } = useTranslation();
     const initials =
       `${artist.first_name?.charAt(0) || ""}${artist.last_name?.charAt(0) || ""}`.toUpperCase();
-    const vColor = getVoiceColorConfig(artist.voice_type);
+    const voiceColor = getVoiceColorConfig(artist.voice_type);
 
     return (
       <motion.div
@@ -119,8 +135,11 @@ export const ArtistCard = React.memo(
                 {artist.user && artist.is_active && (
                   <span
                     className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm"
-                    title="Konto aktywne i połączone z platformą"
-                  ></span>
+                    title={t(
+                      "artists.card.active_account_title",
+                      "Konto aktywne i połączone z platformą",
+                    )}
+                  />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -129,13 +148,13 @@ export const ArtistCard = React.memo(
                 </h3>
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
                   <span
-                    className={`px-2 py-0.5 text-[8px] font-bold antialiased uppercase tracking-widest rounded-md border shadow-sm ${artist.is_active ? `${vColor.bg} ${vColor.text} ${vColor.border}` : "bg-stone-100 text-stone-400 border-stone-200"}`}
+                    className={`px-2 py-0.5 text-[8px] font-bold antialiased uppercase tracking-widest rounded-md border shadow-sm ${artist.is_active ? `${voiceColor.bg} ${voiceColor.text} ${voiceColor.border}` : "bg-stone-100 text-stone-400 border-stone-200"}`}
                   >
                     {artist.voice_type_display || artist.voice_type}
                   </span>
                   {!artist.is_active && (
                     <span className="px-2 py-0.5 bg-stone-200 text-stone-600 text-[8px] antialiased uppercase tracking-widest font-bold rounded-md border border-stone-300 shadow-sm">
-                      Archiwum
+                      {t("artists.card.archive_badge", "Archiwum")}
                     </span>
                   )}
                 </div>
@@ -145,23 +164,27 @@ export const ArtistCard = React.memo(
             <div className="bg-stone-50/80 border border-stone-200/60 rounded-xl p-3.5 mb-5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
               <div className="flex items-center justify-between mb-2 pb-2 border-b border-stone-200/60">
                 <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 flex items-center gap-1.5">
-                  <Activity size={10} /> Skala Głosu
+                  <Activity size={10} />{" "}
+                  {t("artists.card.voice_range", "Skala Głosu")}
                 </span>
                 <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded bg-white border shadow-sm ${vColor.border} ${vColor.text}`}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded bg-white border shadow-sm ${voiceColor.border} ${voiceColor.text}`}
                 >
                   {artist.vocal_range_bottom || artist.vocal_range_top ? (
-                    `${artist.vocal_range_bottom || "?"} — ${artist.vocal_range_top || "?"}`
+                    `${artist.vocal_range_bottom || "?"} – ${artist.vocal_range_top || "?"}`
                   ) : (
-                    <span className="text-stone-400 italic">Brak</span>
+                    <span className="text-stone-400 italic">
+                      {t("artists.card.none", "Brak")}
+                    </span>
                   )}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 flex items-center gap-1.5">
-                  <Star size={10} /> A Vista
+                  <Star size={10} />{" "}
+                  {t("artists.card.sight_reading", "A Vista")}
                 </span>
-                {renderStars(artist.sight_reading_skill)}
+                {renderStars(t, artist.sight_reading_skill)}
               </div>
             </div>
 
@@ -190,7 +213,7 @@ export const ArtistCard = React.memo(
                   </a>
                 ) : (
                   <span className="text-stone-400 italic text-[11px] font-normal">
-                    Brak telefonu
+                    {t("artists.card.no_phone", "Brak telefonu")}
                   </span>
                 )}
               </p>
@@ -198,7 +221,7 @@ export const ArtistCard = React.memo(
                 <p className="flex items-center gap-2.5 text-orange-500/80 mt-1">
                   <User size={14} aria-hidden="true" />
                   <span className="text-[10px] uppercase font-bold tracking-widest">
-                    Konto nieaktywne
+                    {t("artists.card.inactive_account", "Konto nieaktywne")}
                   </span>
                 </p>
               )}
@@ -212,7 +235,7 @@ export const ArtistCard = React.memo(
               leftIcon={<Edit2 size={14} aria-hidden="true" />}
               className="flex-1"
             >
-              Edytuj
+              {t("artists.card.edit", "Edytuj")}
             </Button>
 
             <Button
@@ -227,19 +250,18 @@ export const ArtistCard = React.memo(
               }
               className={`flex-1 ${artist.is_active ? "border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" : "border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"}`}
             >
-              {artist.is_active ? "Archiwum" : "Aktywuj"}
+              {artist.is_active
+                ? t("artists.card.archive_action", "Archiwum")
+                : t("artists.card.activate_action", "Aktywuj")}
             </Button>
           </div>
         </GlassCard>
       </motion.div>
     );
   },
-  (prevProps, nextProps) => {
-    return (
-      prevProps.artist.id === nextProps.artist.id &&
-      prevProps.artist.is_active === nextProps.artist.is_active
-    );
-  },
+  (previousProps, nextProps) =>
+    previousProps.artist.id === nextProps.artist.id &&
+    previousProps.artist.is_active === nextProps.artist.is_active,
 );
 
 ArtistCard.displayName = "ArtistCard";

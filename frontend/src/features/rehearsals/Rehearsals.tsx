@@ -19,6 +19,11 @@ import {
 } from "lucide-react";
 
 import { useRehearsalsData } from "./hooks/useRehearsalsData";
+import {
+  formatLocalizedDate,
+  formatLocalizedDateTime,
+  formatLocalizedTime,
+} from "../../shared/lib/intl";
 import { GlassCard } from "../../shared/ui/GlassCard";
 import { Button } from "../../shared/ui/Button";
 import { ArtistRow } from "./components/ArtistRow";
@@ -165,7 +170,7 @@ export default function Rehearsals(): React.JSX.Element {
                   <div
                     className={`text-[9px] font-bold uppercase tracking-widest mb-2 ${isSelected ? "text-blue-200" : "text-stone-400"}`}
                   >
-                    {new Date(project.date_time).toLocaleDateString("pl-PL")}
+                    {formatLocalizedDate(project.date_time)}
                   </div>
                   <h3
                     className={`font-bold text-sm truncate ${isSelected ? "text-white" : "text-stone-800"}`}
@@ -198,7 +203,7 @@ export default function Rehearsals(): React.JSX.Element {
                   <span
                     className={`text-[9px] font-bold antialiased uppercase tracking-widest mb-1 ${isSelected ? "text-[#002395]" : "text-stone-400"}`}
                   >
-                    {new Date(reh.date_time).toLocaleDateString("pl-PL", {
+                    {formatLocalizedDate(reh.date_time, {
                       day: "numeric",
                       month: "short",
                     })}
@@ -206,7 +211,7 @@ export default function Rehearsals(): React.JSX.Element {
                   <span
                     className={`text-xl font-black tracking-tight leading-none mb-1.5 ${isSelected ? "text-stone-900" : isPast ? "text-stone-400" : "text-stone-700"}`}
                   >
-                    {new Date(reh.date_time).toLocaleTimeString("pl-PL", {
+                    {formatLocalizedTime(reh.date_time, {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -247,10 +252,11 @@ export default function Rehearsals(): React.JSX.Element {
                   <div className="flex items-center gap-4 mt-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
                     <span className="flex items-center gap-1.5">
                       <Clock size={12} />{" "}
-                      {new Date(activeRehearsal.date_time).toLocaleString(
-                        "pl-PL",
-                        { weekday: "long", hour: "2-digit", minute: "2-digit" },
-                      )}
+                      {formatLocalizedDateTime(activeRehearsal.date_time, {
+                        weekday: "long",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <MapPin size={12} /> {activeRehearsal.location}
