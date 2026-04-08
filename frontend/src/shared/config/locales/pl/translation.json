@@ -10,7 +10,9 @@
       "edit": "Edytuj",
       "delete": "Usuń",
       "close_panel": "Zamknij panel (ESC)",
-      "delete_error": "Błąd usuwania"
+      "delete_error": "Błąd usuwania",
+      "confirm": "Potwierdź",
+      "loading": "Przetwarzanie..."
     },
     "errors": {
       "server_error": "Błąd serwera",
@@ -452,6 +454,17 @@
       "done": "Archiwum",
       "all": "Wszystkie"
     },
+    "card": {
+      "updating_status": "Aktualizowanie statusu...",
+      "status_active": "Projekt oznaczony jako w przygotowaniu",
+      "status_done": "Projekt oznaczony jako zrealizowany",
+      "status_update_failed": "Nie udało się zmienić statusu.",
+      "artistic_dashboard": "Pulpit Artystyczny",
+      "logistics_dashboard": "Logistyka i Produkcja",
+      "collapse": "Zwiń",
+      "expand": "Rozwiń",
+      "status_production": "Status produkcji"
+    },
     "toast": {
       "sync_error_title": "Błąd synchronizacji",
       "sync_error_desc": "Słowniki nie zostały pobrane poprawnie.",
@@ -709,8 +722,8 @@
         "date_time": "Data i Czas *",
         "location": "Lokalizacja / Miejsce",
         "call_time": "Zbiórka (Call Time)",
-        "dress_code_female": "Opcjonalnie: Panie",
-        "dress_code_male": "Opcjonalnie: Panowie",
+        "dress_code_female": "Dress Code: Panie",
+        "dress_code_male": "Dress Code: Panowie",
         "description": "Opis wydarzenia",
         "spotify": "Playlista (Spotify)"
       },

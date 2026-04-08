@@ -8,8 +8,8 @@ i18n.use(initReactI18next).init({
     pl: { translation: pl },
     en: { translation: en },
   },
-  lng: "pl", // Domyślny język
-  fallbackLng: "en", // Język awaryjny
+  lng: "en", // Domyślny język
+  fallbackLng: "pl", // Język awaryjny
   interpolation: { escapeValue: false },
 });
 

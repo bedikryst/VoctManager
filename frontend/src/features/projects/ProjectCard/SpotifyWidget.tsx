@@ -12,12 +12,12 @@ import { Music, ExternalLink } from "lucide-react";
 
 interface SpotifyWidgetProps {
   /** The raw Spotify URL provided by the user/API */
-  playlistUrl?: string;
+  playlistUrl?: string | null;
   /** Adaptive theming for cross-module usage */
   theme?: "light" | "dark";
 }
 
-const getSpotifyEmbedUrl = (url?: string): string | null => {
+const getSpotifyEmbedUrl = (url?: string | null): string | null => {
   if (!url) return null;
   const playlistIdMatch = url.match(/playlist\/([a-zA-Z0-9]+)/);
   if (playlistIdMatch && playlistIdMatch[1]) {
@@ -70,7 +70,7 @@ export default function SpotifyWidget({
             className="rounded-xl shadow-sm block"
           />
           <a
-            href={playlistUrl}
+            href={playlistUrl || undefined}
             target="_blank"
             rel="noopener noreferrer"
             className={buttonStyle}
