@@ -13,6 +13,12 @@ class UserPreferencesUpdateDTO:
     language: str = 'en'
     timezone: str = 'UTC'
 
+    dietary_preference: str = 'none'
+    dietary_notes: str = ''
+    clothing_size: str = ''
+    shoe_size: str = ''
+    height_cm: Optional[int] = None
+
 @dataclass(frozen=True)
 class UserPasswordChangeDTO:
     old_password: str

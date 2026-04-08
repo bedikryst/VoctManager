@@ -23,7 +23,9 @@ from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet, PieceVoic
 from core.views import (
     CurrentUserRetrieveUpdateView, 
     ChangePasswordView, 
-    ChangeEmailRequestView
+    ChangeEmailRequestView,
+    ExportUserDataView,
+    RequestAccountDeletionView
 )
 __author__ = "Krystian Bugalski"
 
@@ -73,6 +75,8 @@ urlpatterns = [
     path('api/users/me/', CurrentUserRetrieveUpdateView.as_view(), name='user-me'),
     path('api/users/me/change-password/', ChangePasswordView.as_view(), name='user-change-password'),
     path('api/users/me/change-email/', ChangeEmailRequestView.as_view(), name='user-change-email'),
+    path('api/users/me/export-data/', ExportUserDataView.as_view(), name='user-export-data'),
+    path('api/users/me/delete-account/', RequestAccountDeletionView.as_view(), name='user-delete-account'),
 ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.

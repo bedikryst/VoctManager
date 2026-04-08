@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 import zoneinfo
+from .constants import DietaryChoices, ClothingSizeChoices
 
 class SoftDeleteQuerySet(models.QuerySet):
     """
@@ -103,6 +104,33 @@ class UserProfile(EnterpriseBaseModel):
         choices=TIMEZONE_CHOICES,
         default='UTC',
         help_text=_("Critical for rendering rehearsal/project times correctly across regions.")
+    )
+
+    dietary_preference = models.CharField(
+        max_length=15,
+        choices=DietaryChoices.choices,
+        default=DietaryChoices.NONE,
+        help_text=_("Primary dietary requirement for catering.")
+    )
+    dietary_notes = models.TextField(
+        blank=True,
+        help_text=_("Specific allergies or custom dietary instructions.")
+    )
+    clothing_size = models.CharField(
+        max_length=5,
+        choices=ClothingSizeChoices.choices,
+        blank=True,
+        help_text=_("Standard touring or uniform shirt size.")
+    )
+    shoe_size = models.CharField(
+        max_length=10,
+        blank=True,
+        help_text=_("European shoe size format (e.g., 42, 42.5).")
+    )
+    height_cm = models.PositiveSmallIntegerField(
+        null=True, 
+        blank=True,
+        help_text=_("Height in centimeters. Crucial for stage risers positioning.")
     )
 
     class Meta:

@@ -25,3 +25,18 @@ class VoiceLine(models.TextChoices):
     BACKGROUND = 'BACK', _('Backing Vocals')
     ACCOMPANIMENT = 'ACC', _('Accompaniment')
     PRONUNCIATION = 'PRON', _('Pronunciation / Diction')
+
+class DietaryChoices(models.TextChoices):
+    NONE = 'none', _('Brak wymagań')
+    VEGE = 'vege', _('Wegetariańska')
+    VEGAN = 'vegan', _('Wegańska')
+    GF = 'gf', _('Bez glutenu')
+    LF = 'lf', _('Bez laktozy')
+
+class ClothingSizeChoices(models.TextChoices):
+    XS = 'xs', 'XS'
+    S = 's', 'S'
+    M = 'm', 'M'
+    L = 'l', 'L'
+    XL = 'xl', 'XL'
+    XXL = 'xxl', 'XXL'

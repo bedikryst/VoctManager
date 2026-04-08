@@ -9,37 +9,58 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for nested user preferences."""
     class Meta:
         model = UserProfile
-        fields = ('phone_number', 'language', 'timezone')
+        fields = (
+            'phone_number', 'language', 'timezone',
+            'dietary_preference', 'dietary_notes', 
+            'clothing_size', 'shoe_size', 'height_cm'
+        )
 
 
 class UserMeSerializer(serializers.ModelSerializer):
     """
-    Aggregated view of the current authenticated user, combining Auth data 
-    with their specific Profile preferences.
+    Enterprise Aggregated Serializer.
+    Combines Auth, Profile (Core) and Artist (Roster) data into a single DTO.
     """
     profile = UserProfileSerializer()
+    voice_type = serializers.SerializerMethodField()
+    voice_type_display = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'profile')
-        read_only_fields = ('id', 'email') # Email is changed via dedicated endpoint
+        fields = (
+            'id', 'email', 'first_name', 'last_name', 
+            'profile', 'voice_type', 'voice_type_display'
+        )
+        read_only_fields = ('id', 'email', 'voice_type', 'voice_type_display')
 
-    def update(self, instance, validated_data):
-        profile_data = validated_data.pop('profile', None)
+    def get_voice_type(self, obj):
+        if hasattr(obj, 'artist_profile'):
+            return obj.artist_profile.voice_type
+        return None
+
+    def get_voice_type_display(self, obj):
+        if hasattr(obj, 'artist_profile'):
+            return obj.artist_profile.get_voice_type_display()
+        return "N/A"
+
+    def to_representation(self, instance):
+        """
+        Logic to ensure first_name and last_name are populated from Artist profile 
+        if the core User fields are empty.
+        """
+        data = super().to_representation(instance)
         
-        # Update core user fields (first_name, last_name)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        # Update or create nested profile
-        if profile_data:
-            UserProfile.objects.update_or_create(
-                user=instance, 
-                defaults=profile_data
-            )
+        # Fallback to Artist profile names if User names are missing
+        if hasattr(instance, 'artist_profile'):
+            artist = instance.artist_profile
+            if not data['first_name']: data['first_name'] = artist.first_name
+            if not data['last_name']: data['last_name'] = artist.last_name
             
-        return instance
+            # If phone in profile is empty, use phone from artist
+            if not data['profile']['phone_number'] and artist.phone_number:
+                data['profile']['phone_number'] = artist.phone_number
+        
+        return data
 
 
 class ChangePasswordSerializer(serializers.Serializer):

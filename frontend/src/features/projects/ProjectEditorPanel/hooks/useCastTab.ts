@@ -71,27 +71,28 @@ export const useCastTab = (projectId: string) => {
     isCurrentlyCasted: boolean,
     participationId?: string | number,
   ): Promise<void> => {
-    setProcessingId(artistId);
+    const artistKey = String(artistId);
+    setProcessingId(artistKey);
 
     try {
       if (isCurrentlyCasted && participationId) {
-        await deleteParticipationMutation.mutateAsync(participationId);
+        await deleteParticipationMutation.mutateAsync(String(participationId));
         toast.success(t("projects.cast.toast.removed", "Usunięto z obsady"));
       } else {
         const existingDeclined = participations.find(
           (participation) =>
-            String(participation.artist) === String(artistId) &&
+            String(participation.artist) === artistKey &&
             participation.status === "DEC",
         );
 
         if (existingDeclined) {
           await updateParticipationMutation.mutateAsync({
-            id: existingDeclined.id,
+            id: String(existingDeclined.id),
             data: { status: "CON" },
           });
         } else {
           await createParticipationMutation.mutateAsync({
-            artist: artistId,
+            artist: artistKey,
             project: projectId,
             status: "INV",
           });

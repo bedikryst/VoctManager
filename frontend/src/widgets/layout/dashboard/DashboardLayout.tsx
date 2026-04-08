@@ -279,7 +279,7 @@ export default function DashboardLayout(): React.JSX.Element {
               </div>
             </div>
             <Link
-              to="/panel"
+              to="/panel/settings"
               className="p-2 text-stone-300 hover:text-[#002395] hover:bg-blue-50 rounded-lg transition-colors"
               title="Ustawienia Profilu"
             >

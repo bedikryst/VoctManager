@@ -20,6 +20,7 @@ import NoiseOverlay from "../shared/ui/NoiseOverlay";
 import Preloader from "../shared/ui/Preloader";
 import ProtectedRoute from "./router/ProtectedRoute";
 import DashboardLayout from "../widgets/layout/dashboard/DashboardLayout";
+import SettingsPage from "../pages/app/SettingsPage";
 
 import Home from "../pages/public/HomePage";
 import Login from "../pages/public/LoginPage";
@@ -88,6 +89,7 @@ export default function App(): React.JSX.Element {
               <Route path="resources" element={<Resources />} />
               <Route path="materials" element={<Materials />} />
               <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Route>
         </Routes>
