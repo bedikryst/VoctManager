@@ -6,9 +6,9 @@
 REST API Controllers for the Roster application.
 @architecture Enterprise SaaS 2026
 
-Strictly handles HTTP protocol parsing, role-based QuerySet routing, and Response 
-formatting. Delegates all state-mutating business logic to the Service Layer, 
-and all document compilation to the Infrastructure Layer.
+Strictly handles HTTP protocol parsing, role-based QuerySet routing, and Response formatting. 
+Delegates ALL state-mutating business logic (CRUD operations triggering side-effects) 
+to the Service Layer.
 """
 
 import io
@@ -23,15 +23,12 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
-# Core imports
 from core.constants import VoiceLine
 from .tasks import generate_project_zip_task
-
-# Enterprise Architecture Injection
-from . import services
 from .infrastructure.document_generator import DocumentGenerator
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ParticipationRestoreDTO
-from .exceptions import RosterDomainException, ArtistProvisioningException
+
+from . import services
 
 from .models import (
     Artist, CrewAssignment, Project, Participation, ProgramItem, 
@@ -51,7 +48,6 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 
 class ArtistViewSet(viewsets.ModelViewSet):
-    """Endpoint for managing Artist profiles and accounts."""
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
@@ -65,7 +61,6 @@ class ArtistViewSet(viewsets.ModelViewSet):
         return ArtistBasicSerializer
     
     def create(self, request, *args, **kwargs) -> Response:
-        """HTTP to Service Layer orchestration for artist provisioning."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -80,11 +75,8 @@ class ArtistViewSet(viewsets.ModelViewSet):
             vocal_range_top=serializer.validated_data.get('vocal_range_top')
         )
         
-        # Domain validation exceptions will be caught by the global exception handler
         artist = services.provision_artist_with_user_account(dto)
-            
-        response_serializer = self.get_serializer(artist)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(self.get_serializer(artist).data, status=status.HTTP_201_CREATED)
     
     @action(detail=False, methods=['get'])
     def me(self, request) -> Response:
@@ -93,7 +85,6 @@ class ArtistViewSet(viewsets.ModelViewSet):
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    """Core controller for managing musical production lifecycles."""
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
@@ -106,9 +97,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if user.is_superuser: return base_qs.all()
         return base_qs.filter(participations__artist__user=user).distinct()
     
-    def perform_create(self, serializer) -> None:
-        project = serializer.save()
-        services.provision_project_creator_participation(project=project, user=self.request.user)
+    def create(self, request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        project = services.create_project_with_creator(user=request.user, validated_data=serializer.validated_data)
+        return Response(self.get_serializer(project).data, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['get'])
     def roster(self, request, pk=None) -> Response:
@@ -161,7 +154,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 class ParticipationViewSet(viewsets.ModelViewSet):
-    """Manages contractual and financial relationships."""
     permission_classes = [permissions.IsAuthenticated] 
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project', 'artist', 'status']
@@ -187,13 +179,19 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        participation = services.create_participation(serializer.validated_data)
+        return Response(self.get_serializer(participation).data, status=status.HTTP_201_CREATED)
+
+    def perform_destroy(self, instance) -> None:
+        """Delegates participation deletion (removal from project) to the Service Layer."""
+        services.delete_participation(instance)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
     def contract(self, request, pk=None) -> FileResponse:
         participation = self.get_object()
         pdf_bytes = DocumentGenerator.generate_participation_contract_pdf(participation)
-        
         buffer = io.BytesIO(pdf_bytes)
         buffer.seek(0)
         
@@ -204,7 +202,6 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsAdminUser])
     def bulk_fee(self, request) -> Response:
-        """Bulk updates the financial remuneration for all project participants."""
         try:
             dto = ProjectBulkFeeDTO(
                 project_id=request.data.get('project_id'),
@@ -213,7 +210,6 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         except (ValueError, TypeError):
             raise ValidationError({"fee": "Invalid payload format. Must be an integer."})
 
-        # Domain exceptions caught globally
         updated_count = services.update_project_bulk_fee(dto)
         return Response(
             {"detail": f"Successfully updated {updated_count} records.", "updated_count": updated_count}, 
@@ -243,7 +239,6 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
 
 class RehearsalViewSet(viewsets.ModelViewSet):
-    """Manages rehearsal scheduling and related metadata."""
     serializer_class = RehearsalSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend]
@@ -252,7 +247,6 @@ class RehearsalViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         absent_annotation = Count('attendances', filter=Q(attendances__status__in=['ABSENT', 'EXCUSED']))
-
         qs = Rehearsal.objects.select_related('project').prefetch_related(
             'invited_participations', 'invited_participations__artist'
         ).annotate(absent_count=absent_annotation)
@@ -263,9 +257,28 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             Q(invited_participations__isnull=True) | Q(invited_participations__artist__user=user)
         ).distinct()
 
+    def create(self, request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        invited = serializer.validated_data.pop('invited_participations', None)
+        rehearsal = services.create_rehearsal(serializer.validated_data, invited_participations=invited)
+        return Response(self.get_serializer(rehearsal).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs) -> Response:
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        invited = serializer.validated_data.pop('invited_participations', None)
+        rehearsal = services.update_rehearsal(instance, serializer.validated_data, invited_participations=invited)
+        return Response(self.get_serializer(rehearsal).data)
+
+    def perform_destroy(self, instance) -> None:
+        """Delegates rehearsal cancellation to trigger broadcast notifications."""
+        services.delete_rehearsal(instance)
+
 
 class AttendanceViewSet(viewsets.ModelViewSet):
-    """Manages individual attendance tracking and absence justifications."""
     serializer_class = AttendanceSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
@@ -277,7 +290,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return qs.filter(participation__artist__user=self.request.user)
 
     def _execute_attendance_validation(self, serializer) -> None:
-        """Translates payload data into DTO and delegates validation to the Service Layer."""
         participation = serializer.validated_data.get('participation', serializer.instance.participation if serializer.instance else None)
         rehearsal = serializer.validated_data.get('rehearsal', serializer.instance.rehearsal if serializer.instance else None)
         
@@ -290,7 +302,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             participation_id=str(participation.id),
             rehearsal_id=str(rehearsal.id)
         )
-        
         services.validate_attendance_write(dto)
 
     def perform_create(self, serializer) -> None:
@@ -299,11 +310,17 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         
     def perform_update(self, serializer) -> None:
         self._execute_attendance_validation(serializer)
-        serializer.save()
+        if 'status' in serializer.validated_data:
+            services.update_attendance_status(
+                attendance=serializer.instance,
+                new_status=serializer.validated_data['status'],
+                is_admin=self.request.user.is_superuser
+            )
+        else:
+            serializer.save()
 
 
 class ProgramItemViewSet(viewsets.ModelViewSet):
-    """Manages the ordered setlist (program) of a project."""
     serializer_class = ProgramItemSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend]
@@ -322,6 +339,19 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece', 'participation__project', 'participation']
 
+    def create(self, request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        casting = services.create_piece_casting(serializer.validated_data)
+        return Response(self.get_serializer(casting).data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer) -> None:
+        """Delegates casting updates to trigger notifications."""
+        services.update_piece_casting(serializer.instance, serializer.validated_data)
+
+    def perform_destroy(self, instance) -> None:
+        """Delegates casting removal to trigger notifications."""
+        services.delete_piece_casting(instance)
 
 class CollaboratorViewSet(viewsets.ModelViewSet):
     queryset = Collaborator.objects.all()
@@ -335,6 +365,12 @@ class CrewAssignmentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project', 'collaborator'] 
+
+    def create(self, request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        assignment = services.create_crew_assignment(serializer.validated_data)
+        return Response(self.get_serializer(assignment).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['get'])
     def contract(self, request, pk=None) -> FileResponse:

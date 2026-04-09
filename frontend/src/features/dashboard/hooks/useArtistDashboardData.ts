@@ -10,7 +10,12 @@ import { useQueries } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import api from "../../../shared/api/api";
 import { queryKeys } from "../../../shared/lib/queryKeys";
-import type { Project, Rehearsal, Participation } from "../../../shared/types";
+import type {
+  Project,
+  Rehearsal,
+  Participation,
+  Attendance,
+} from "../../../shared/types";
 
 export interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;
@@ -42,9 +47,18 @@ export const useArtistDashboardData = (artistId?: string | number) => {
         enabled: !!artistId,
       },
       {
-        queryKey: queryKeys.projects.active,
+        queryKey: queryKeys.projects.all,
+        queryFn: async () => (await api.get<Project[]>("/api/projects/")).data,
+      },
+      {
+        queryKey: queryKeys.attendances.byArtist(artistId!),
         queryFn: async () =>
-          (await api.get<Project[]>("/api/projects/?status=ACTIVE")).data,
+          (
+            await api.get<Attendance[]>(
+              `/api/attendances/?participation__artist=${artistId}`,
+            )
+          ).data,
+        enabled: !!artistId,
       },
     ],
   });
@@ -53,38 +67,72 @@ export const useArtistDashboardData = (artistId?: string | number) => {
   const participations = results[0].data || [];
   const rehearsals = results[1].data || [];
   const projects = results[2].data || [];
+  const attendances = results[3].data || [];
 
-  const upNextEvent = useMemo(() => {
+  const { upNextRehearsal, upNextProject } = useMemo(() => {
     const now = new Date();
-    const myProjectIds = participations.map((p) => String(p.project));
-    const myProjects = projects.filter((p) =>
-      myProjectIds.includes(String(p.id)),
+    const activeParticipations = participations.filter(
+      (p) => p.status !== "DEC",
+    );
+    const myProjectIds = activeParticipations.map((p) => String(p.project));
+
+    const myProjects = projects.filter(
+      (p) => myProjectIds.includes(String(p.id)) && p.status !== "CANC",
     );
 
-    const allEvents = [
-      ...rehearsals.map((r) => ({
-        type: "REHEARSAL" as const,
-        date: new Date(r.date_time),
-        data: r,
-        title: `${t("dashboard.artist.event_prefix_rehearsal", "Próba:")} ${r.focus || t("dashboard.artist.general_work", "Praca bieżąca")}`,
-        absences: r.absent_count || 0,
-      })),
-      ...myProjects.map((p) => ({
+    const displayThreshold = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+
+    // 1. Znajdź najbliższą próbę (dołącz status obecności)
+    const futureRehearsals = rehearsals
+      .filter((r) => {
+        const date = new Date(r.date_time);
+        return !isNaN(date.getTime()) && date >= displayThreshold;
+      })
+      .map((r) => {
+        const myParticipation = activeParticipations.find(
+          (p) => String(p.project) === String(r.project),
+        );
+        const myAttendance = attendances.find(
+          (a) =>
+            String(a.rehearsal) === String(r.id) &&
+            String(a.participation) === String(myParticipation?.id),
+        );
+        const project = projects.find(
+          (p) => String(p.id) === String(r.project),
+        );
+        return {
+          type: "REHEARSAL" as const,
+          date: new Date(r.date_time),
+          data: r,
+          title:
+            project?.title ||
+            t("dashboard.artist.general_work", "Praca bieżąca"),
+          absences: r.absent_count || 0,
+          participationId: myParticipation?.id,
+          attendance: myAttendance,
+        };
+      })
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    // 2. Znajdź najbliższy koncert/projekt
+    const futureProjects = myProjects
+      .filter((p) => {
+        const date = new Date(p.date_time);
+        return !isNaN(date.getTime()) && date >= displayThreshold;
+      })
+      .map((p) => ({
         type: "PROJECT" as const,
         date: new Date(p.date_time),
         data: p,
-        title: `${t("dashboard.artist.event_prefix_project", "Wydarzenie:")} ${p.title}`,
-        absences: 0,
-      })),
-    ];
-
-    const displayThreshold = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-    const futureEvents = allEvents
-      .filter((e) => !isNaN(e.date.getTime()) && e.date >= displayThreshold)
+        title: p.title,
+      }))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    return futureEvents.length > 0 ? futureEvents[0] : null;
-  }, [participations, rehearsals, projects, t]);
+    return {
+      upNextRehearsal: futureRehearsals.length > 0 ? futureRehearsals[0] : null,
+      upNextProject: futureProjects.length > 0 ? futureProjects[0] : null,
+    };
+  }, [participations, rehearsals, projects, attendances, t]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -94,5 +142,5 @@ export const useArtistDashboardData = (artistId?: string | number) => {
     return t("dashboard.artist.greeting_evening", "Dobry wieczór");
   }, [t]);
 
-  return { isLoading, upNextEvent, greeting };
+  return { isLoading, upNextRehearsal, upNextProject, greeting };
 };

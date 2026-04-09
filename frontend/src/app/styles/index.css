@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+  --font-serif:
+    "Cormorant", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
 html.lenis,
 html.lenis body {
   height: auto;

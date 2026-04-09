@@ -1,7 +1,8 @@
 /**
  * @file AdminDashboard.tsx
  * @description Mission Control Dashboard for Choir Managers & Conductors.
- * Presents global telemetric data, logistical alerts, and navigation modules.
+ * Refactored to Enterprise SaaS 2026 High-Density (Bento Grid) standard.
+ * Includes full-card clickable areas (Fitts's Law optimization).
  * @module panel/dashboard/AdminDashboard
  */
 
@@ -25,28 +26,32 @@ import {
   Activity,
   UserMinus,
   Plus,
+  AlertCircle,
 } from "lucide-react";
 
 import { useAuth } from "../../app/providers/AuthProvider";
 import { GlassCard } from "../../shared/ui/GlassCard";
-import { formatLocalizedDate, formatLocalizedDateTime } from "../../shared/lib/intl";
+import {
+  formatLocalizedDate,
+  formatLocalizedDateTime,
+} from "../../shared/lib/intl";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 15 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 24 },
+    transition: { type: "spring", stiffness: 400, damping: 30 },
   },
 };
 
 export default function AdminDashboard(): React.JSX.Element {
-  const { user } = useAuth();
+  const { user } = useAuth() as any;
   const { t } = useTranslation();
   const {
     isLoading,
@@ -60,80 +65,57 @@ export default function AdminDashboard(): React.JSX.Element {
     () => [
       {
         id: "projects",
-        title: t(
-          "dashboard.admin.modules.projects_title",
-          "Zarządzanie Projektami",
-        ),
+        title: t("dashboard.admin.modules.projects_title", "Projekty"),
         desc: t(
           "dashboard.admin.modules.projects_desc",
           "Centrum dowodzenia produkcją.",
         ),
-        features: [
-          t("dashboard.admin.modules.projects_feat_1", "Harmonogramy"),
-          t("dashboard.admin.modules.projects_feat_2", "Setlisty"),
-          t("dashboard.admin.modules.projects_feat_3", "Casting"),
-        ],
-        icon: <Briefcase size={20} className="text-[#002395]" />,
+        features: ["Harmonogramy", "Setlisty", "Casting"],
+        icon: <Briefcase size={18} className="text-[#002395]" />,
         path: "/panel/project-management",
       },
       {
         id: "archive",
-        title: t("dashboard.admin.modules.archive_title", "Archiwum Nut"),
+        title: t("dashboard.admin.modules.archive_title", "Archiwum"),
         desc: t(
           "dashboard.admin.modules.archive_desc",
-          "Centralna baza biblioteki muzycznej.",
+          "Baza biblioteki muzycznej.",
         ),
-        features: [
-          t("dashboard.admin.modules.archive_feat_1", "Pliki PDF"),
-          t("dashboard.admin.modules.archive_feat_2", "Ścieżki Audio"),
-          t("dashboard.admin.modules.archive_feat_3", "Wymagania"),
-        ],
-        icon: <Music size={20} className="text-[#002395]" />,
+        features: ["Nuty PDF", "Audio", "Wymagania"],
+        icon: <Music size={18} className="text-[#002395]" />,
         path: "/panel/archive-management",
       },
       {
         id: "artists",
-        title: t("dashboard.admin.modules.artists_title", "Baza Artystów"),
+        title: t("dashboard.admin.modules.artists_title", "Artyści"),
         desc: t(
           "dashboard.admin.modules.artists_desc",
           "Zarządzanie chórem i solistami.",
         ),
-        features: [
-          t("dashboard.admin.modules.artists_feat_1", "Statystyki SATB"),
-          t("dashboard.admin.modules.artists_feat_2", "Profile"),
-          t("dashboard.admin.modules.artists_feat_3", "A vista"),
-        ],
-        icon: <Users size={20} className="text-[#002395]" />,
+        features: ["SATB", "Profile", "A vista"],
+        icon: <Users size={18} className="text-[#002395]" />,
         path: "/panel/artists",
       },
       {
         id: "contracts",
-        title: t("dashboard.admin.modules.contracts_title", "Kadry i Płace"),
+        title: t("dashboard.admin.modules.contracts_title", "Finanse"),
         desc: t(
           "dashboard.admin.modules.contracts_desc",
-          "Finanse, umowy i budżetowanie.",
+          "Umowy i budżetowanie.",
         ),
-        features: [
-          t("dashboard.admin.modules.contracts_feat_1", "Stawki"),
-          t("dashboard.admin.modules.contracts_feat_2", "Dokumenty"),
-          t("dashboard.admin.modules.contracts_feat_3", "Budżet"),
-        ],
-        icon: <FileText size={20} className="text-[#002395]" />,
+        features: ["Stawki", "Dokumenty", "Budżet"],
+        icon: <FileText size={18} className="text-[#002395]" />,
         path: "/panel/contracts",
       },
       {
         id: "crew",
-        title: t("dashboard.admin.modules.crew_title", "Ekipa Techniczna"),
+        title: t("dashboard.admin.modules.crew_title", "Technika"),
         desc: t(
           "dashboard.admin.modules.crew_desc",
           "Logistyka i reżyseria wydarzeń.",
         ),
-        features: [
-          t("dashboard.admin.modules.crew_feat_1", "Dźwięk"),
-          t("dashboard.admin.modules.crew_feat_2", "Światło"),
-          t("dashboard.admin.modules.crew_feat_3", "Firmy"),
-        ],
-        icon: <Wrench size={20} className="text-[#002395]" />,
+        features: ["Dźwięk", "Światło", "Firmy"],
+        icon: <Wrench size={18} className="text-[#002395]" />,
         path: "/panel/crew",
       },
     ],
@@ -142,459 +124,348 @@ export default function AdminDashboard(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center space-y-5">
+      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
         <div className="relative flex items-center justify-center">
-          <div className="absolute w-16 h-16 border-4 border-[#002395]/20 rounded-full"></div>
-          <div className="w-16 h-16 border-4 border-[#002395] rounded-full border-t-transparent animate-spin"></div>
+          <div className="absolute w-12 h-12 border-2 border-[#002395]/20 rounded-full"></div>
+          <div className="w-12 h-12 border-2 border-[#002395] rounded-full border-t-transparent animate-spin"></div>
         </div>
-        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
-          {t("dashboard.shared.loading_telemetry", "Wczytywanie telemetrii...")}
+        <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-stone-500">
+          {t("dashboard.shared.loading_telemetry", "Synchronizacja danych...")}
         </span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-10 animate-fade-in relative cursor-default pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <header className="relative pt-8">
+    <div className="animate-fade-in relative cursor-default pb-12 w-full max-w-7xl mx-auto">
+      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="relative flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 z-10"></div>
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
+            </div>
+            <p className="text-[10px] uppercase tracking-widest text-stone-500 font-bold">
+              {t("dashboard.admin.welcome_back", "Witaj z powrotem")} •{" "}
+              {user?.first_name || "Admin"}
+            </p>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight flex items-baseline gap-1.5">
+            Pulpit
+            <span
+              className="italic text-transparent bg-clip-text bg-gradient-to-r from-[#002395] to-blue-500 pr-1 pb-1"
+              style={{ fontFamily: "'Cormorant', serif", fontSize: "1.15em" }}
+            >
+              Produkcyjny
+            </span>
+          </h1>
+        </div>
+
+        <Link
+          to="/panel/project-management"
+          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-white border border-stone-200/80 hover:border-[#002395] text-stone-700 hover:text-[#002395] text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
+        >
+          <Plus size={14} />{" "}
+          {t("dashboard.admin.btn_new_project", "Nowy Projekt")}
+        </Link>
+      </header>
+
+      {/* ALERT O PRÓBIE - Cały obszar jest teraz klikalnym linkiem (group/alert) */}
+      {nextRehearsal && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
         >
-          <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-white/80 shadow-sm mb-6">
-            <div className="relative flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 z-10"></div>
-              <div className="absolute w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
-            </div>
-            <p className="text-[10px] uppercase tracking-[0.15em] font-bold antialiased text-stone-600">
-              {t("dashboard.admin.logged_in_as", "Zalogowano jako: {{name}}", {
-                name: user?.first_name || "Admin",
-              })}
-            </p>
-          </div>
-          <h1
-            className="text-4xl md:text-5xl lg:text-6xl font-medium text-stone-900 leading-[1.05] tracking-tight max-w-4xl"
-            style={{ fontFamily: "'Cormorant', serif" }}
+          <Link
+            to="/panel/rehearsals"
+            className="block bg-white border-l-4 border-l-orange-500 border border-stone-200/60 shadow-sm hover:shadow-md rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group/alert hover:border-orange-300 transition-all outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50"
           >
-            {t("dashboard.admin.hero_title_1", "Twoje cyfrowe biuro")}{" "}
-            <span className="italic text-[#002395] font-bold">
-              {t("dashboard.admin.hero_title_highlight", "produkcji muzycznej")}
-            </span>
-            .
-          </h1>
-        </motion.div>
-      </header>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center shrink-0 group-hover/alert:bg-orange-100 transition-colors">
+                <AlertCircle size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600/90 mb-0.5">
+                  {t(
+                    "dashboard.admin.next_rehearsal_alert",
+                    "Najbliższa Próba • {{title}}",
+                    { title: nextRehearsal.projectTitle },
+                  )}
+                </p>
+                <p className="text-sm font-bold text-stone-800">
+                  {formatLocalizedDateTime(nextRehearsal.date_time, {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {(nextRehearsal.absent_count || 0) > 0 ? (
+                <span className="flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                  <UserMinus size={12} />{" "}
+                  {t("dashboard.admin.absences", "Braki: {{count}}", {
+                    count: nextRehearsal.absent_count,
+                  })}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                  100% Frekwencji
+                </span>
+              )}
+              {/* Zmienione z <Link> na zwykły <div>, żeby zachować wygląd strzałki */}
+              <div className="p-1.5 text-stone-400 group-hover/alert:text-orange-600 transition-colors">
+                <ArrowRight
+                  size={16}
+                  className="transform group-hover/alert:translate-x-1 transition-transform"
+                />
+              </div>
+            </div>
+          </Link>
+        </motion.div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        {/* LEWA: Statystyki (Nieklikalne) */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="col-span-1"
+          className="col-span-1 h-full"
         >
           <GlassCard
             variant="dark"
-            className="h-full p-8 md:p-10 flex flex-col justify-between group"
+            className="h-full p-6 flex flex-col justify-between overflow-hidden relative"
           >
-            <div className="absolute -top-32 -right-32 w-80 h-80 bg-[#002395] rounded-full blur-[100px] opacity-50 pointer-events-none transition-transform duration-1000 group-hover:scale-110"></div>
-            <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
-            <div
-              className="absolute inset-0 opacity-[0.05] pointer-events-none"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-                backgroundSize: "24px 24px",
-              }}
-            ></div>
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-500 rounded-full blur-[60px] opacity-20 pointer-events-none"></div>
 
-            <div className="relative z-10 mb-10">
-              <div className="flex items-center gap-2.5">
-                <Activity
-                  size={16}
-                  className="text-blue-400"
-                  aria-hidden="true"
-                />
-                <span className="text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400">
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <Activity size={14} className="text-blue-400" />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
                   {t("dashboard.admin.kpi_telemetry", "Telemetria Bazy")}
                 </span>
               </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+                    Baza Utworów
+                  </p>
+                  <p className="text-2xl font-black text-white">
+                    {adminStats.totalPieces}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+                    Aktywne Projekty
+                  </p>
+                  <p className="text-2xl font-black text-blue-300">
+                    {adminStats.activeProjects}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="relative z-10 grid grid-cols-2 gap-y-8 gap-x-4 mb-6">
-              <div>
-                <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1.5">
-                  {t("dashboard.admin.kpi_pieces", "Baza Utworów")}
+            <div className="border-t border-white/10 pt-4 mt-auto">
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-stone-500">
+                  Gotowość Zespołu
                 </p>
-                <p className="text-4xl font-black tracking-tight text-white">
-                  {adminStats.totalPieces}
-                </p>
+                <span className="text-[9px] font-bold text-stone-300 bg-white/10 px-1.5 py-0.5 rounded">
+                  {adminStats.satb.Total} os.
+                </span>
               </div>
-              <div>
-                <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1.5">
-                  {t("dashboard.admin.kpi_projects", "Aktywne Projekty")}
-                </p>
-                <p className="text-4xl font-black tracking-tight text-blue-300">
-                  {adminStats.activeProjects}
-                </p>
-              </div>
-              <div className="col-span-2 border-t border-white/10 pt-6 mt-2">
-                <div className="flex justify-between items-end mb-4">
-                  <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500">
-                    {t("dashboard.admin.kpi_team_ready", "Gotowość Zespołu")}
-                  </p>
-                  <span className="text-[10px] font-bold text-stone-300 bg-white/10 px-2 py-1 rounded-md">
-                    {t("dashboard.admin.kpi_people", "{{count}} os.", {
-                      count: adminStats.satb.Total,
-                    })}
-                  </span>
-                </div>
 
-                <div className="space-y-3">
-                  {[
-                    {
-                      label: t("dashboard.admin.voices.sopranos", "Soprany"),
-                      val: adminStats.satb.S,
-                      color: "bg-rose-500",
-                    },
-                    {
-                      label: t("dashboard.admin.voices.altos", "Alty"),
-                      val: adminStats.satb.A,
-                      color: "bg-purple-500",
-                    },
-                    {
-                      label: t("dashboard.admin.voices.tenors", "Tenory"),
-                      val: adminStats.satb.T,
-                      color: "bg-sky-500",
-                    },
-                    {
-                      label: t("dashboard.admin.voices.basses", "Basy"),
-                      val: adminStats.satb.B,
-                      color: "bg-emerald-500",
-                    },
-                  ].map((voice) => (
-                    <div key={voice.label} className="flex items-center gap-3">
-                      <span className="text-[10px] font-bold text-stone-400 w-12">
-                        {voice.label}
-                      </span>
-                      <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div
-                          className={`${voice.color} h-full rounded-full`}
-                          style={{
-                            width: `${adminStats.satb.Total ? (voice.val / adminStats.satb.Total) * 100 : 0}%`,
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-xs font-bold text-white w-6 text-right">
-                        {voice.val}
-                      </span>
+              <div className="space-y-2">
+                {[
+                  { label: "S", val: adminStats.satb.S, color: "bg-rose-500" },
+                  {
+                    label: "A",
+                    val: adminStats.satb.A,
+                    color: "bg-purple-500",
+                  },
+                  { label: "T", val: adminStats.satb.T, color: "bg-sky-500" },
+                  {
+                    label: "B",
+                    val: adminStats.satb.B,
+                    color: "bg-emerald-500",
+                  },
+                ].map((voice) => (
+                  <div key={voice.label} className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-stone-400 w-4">
+                      {voice.label}
+                    </span>
+                    <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={`${voice.color} h-full rounded-full`}
+                        style={{
+                          width: `${adminStats.satb.Total ? (voice.val / adminStats.satb.Total) * 100 : 0}%`,
+                        }}
+                      ></div>
                     </div>
-                  ))}
-                </div>
+                    <span className="text-[10px] font-bold text-white w-5 text-right">
+                      {voice.val}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </GlassCard>
         </motion.div>
 
-        <div className="xl:col-span-2 flex flex-col gap-6">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex-1"
+        {/* PRAWA: Nadchodzący projekt - Cały GlassCard jest teraz klikalnym linkiem (group/project) */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="lg:col-span-2 h-full"
+        >
+          <Link
+            to="/panel/project-management"
+            className="block h-full outline-none group/project active:scale-[0.99] transition-transform"
           >
             <GlassCard
               variant="premium"
-              className="h-full p-8 md:p-10 flex flex-col justify-between"
+              className="h-full p-6 flex flex-col justify-between group-hover/project:border-[#002395]/30 group-hover/project:shadow-md transition-all duration-300 bg-white/40 group-hover/project:bg-white/60"
             >
-              <div className="absolute top-0 right-0 w-96 h-96 bg-blue-400/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
-
-              <div className="relative z-10 flex items-center gap-2 mb-8">
-                <Calendar
-                  size={16}
-                  className="text-[#002395]"
-                  aria-hidden="true"
-                />
-                <span className="text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400">
-                  {t("dashboard.admin.spotlight_title", "Pulpit Produkcyjny")}
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar size={14} className="text-[#002395]" />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 group-hover/project:text-[#002395] transition-colors">
+                  {t("dashboard.admin.spotlight_title", "Wydarzenie Główne")}
                 </span>
               </div>
 
               {nextProject && nextProjectStats ? (
-                <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                  <div className="flex-1">
-                    <span className="inline-block px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold uppercase tracking-widest rounded-lg mb-4">
-                      {t(
-                        "dashboard.admin.spotlight_badge",
-                        "Nadchodzące Wydarzenie",
-                      )}
-                    </span>
+                <div className="flex flex-col h-full justify-between">
+                  <div>
                     <h2
-                      className="text-3xl md:text-5xl font-medium text-stone-900 tracking-tight leading-tight mb-6 max-w-2xl"
+                      className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight mb-4 group-hover/project:text-[#002395] transition-colors"
                       style={{ fontFamily: "'Cormorant', serif" }}
                     >
                       {nextProject.title}
                     </h2>
-
-                    <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-stone-700 mb-6">
-                      <span className="flex items-center gap-2 bg-stone-50 px-4 py-2.5 rounded-xl border border-stone-200/80 shadow-sm">
-                        <Clock
-                          size={14}
-                          className="text-[#002395]"
-                          aria-hidden="true"
-                        />
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-stone-700 mb-6">
+                      <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80">
+                        <Clock size={12} className="text-[#002395]" />
                         {formatLocalizedDate(nextProject.date_time, {
-                          weekday: "long",
                           day: "numeric",
-                          month: "long",
+                          month: "short",
+                          year: "numeric",
                         })}
                       </span>
                       {nextProject.location && (
-                        <span className="flex items-center gap-2 bg-stone-50 px-4 py-2.5 rounded-xl border border-stone-200/80 shadow-sm">
-                          <MapPin
-                            size={14}
-                            className="text-[#002395]"
-                            aria-hidden="true"
-                          />
+                        <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80">
+                          <MapPin size={12} className="text-[#002395]" />
                           {nextProject.location}
                         </span>
                       )}
                     </div>
+                  </div>
 
-                    <div className="flex flex-wrap items-center gap-6 border-t border-stone-200/80 pt-5">
-                      <span className="flex flex-col gap-1">
-                        <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 flex items-center gap-1.5">
-                          <ListOrdered size={12} />{" "}
-                          {t(
-                            "dashboard.admin.spotlight_repertoire",
-                            "Repertuar",
-                          )}
+                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-t border-stone-200/80 pt-4 mt-auto">
+                    <div className="flex gap-6">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
+                          <ListOrdered size={10} /> Repertuar
                         </span>
-                        <span className="text-sm font-bold text-stone-800">
-                          {t(
-                            "dashboard.admin.spotlight_pieces_count",
-                            "{{count}} utworów",
-                            { count: nextProjectStats.piecesCount },
-                          )}
+                        <span className="text-xs font-bold text-stone-800">
+                          {nextProjectStats.piecesCount} utworów
                         </span>
-                      </span>
-                      <div className="w-px h-8 bg-stone-200"></div>
-                      <span className="flex flex-col gap-1">
-                        <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 flex items-center gap-1.5">
-                          <MicVocal size={12} />{" "}
-                          {t(
-                            "dashboard.admin.spotlight_to_concert",
-                            "Do koncertu",
-                          )}
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
+                          <MicVocal size={10} /> Do koncertu
                         </span>
-                        <span className="text-sm font-bold text-stone-800">
-                          {t(
-                            "dashboard.admin.spotlight_rehearsals_left",
-                            "{{count}} prób",
-                            { count: nextProjectStats.rehearsalsLeft },
-                          )}
+                        <span className="text-xs font-bold text-stone-800">
+                          {nextProjectStats.rehearsalsLeft} prób
                         </span>
-                      </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <Link
-                    to="/panel/project-management"
-                    className="shrink-0 inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-stone-900 hover:bg-[#002395] text-white text-[10px] font-bold antialiased uppercase tracking-[0.15em] rounded-2xl transition-all shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_10px_25px_rgba(0,35,149,0.3)] hover:-translate-y-0.5 active:scale-95 group"
-                  >
-                    {t(
-                      "dashboard.admin.btn_manage_production",
-                      "Zarządzaj Produkcją",
-                    )}{" "}
-                    <ArrowRight
-                      size={14}
-                      className="transform group-hover:translate-x-1 transition-transform"
-                    />
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 md:py-16 text-center relative z-10 w-full bg-stone-50/50 border border-dashed border-stone-300/60 rounded-[2rem]">
-                  <div className="w-16 h-16 bg-white rounded-full shadow-sm border border-stone-100 flex items-center justify-center mb-5">
-                    <Briefcase
-                      size={28}
-                      className="text-[#002395]/40"
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <h3 className="text-lg font-bold text-stone-800 mb-1">
-                    {t(
-                      "dashboard.admin.empty_projects_title",
-                      "Brak aktywnych wydarzeń",
-                    )}
-                  </h3>
-                  <p className="text-sm font-medium text-stone-500 mb-6 max-w-sm">
-                    {t(
-                      "dashboard.admin.empty_projects_desc",
-                      "Aktualnie nie prowadzisz żadnego projektu koncertowego w systemie.",
-                    )}
-                  </p>
-                  <Link
-                    to="/panel/project-management"
-                    className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-[#002395] border border-stone-200/80 hover:border-[#002395] text-stone-700 hover:text-white text-[10px] font-bold antialiased uppercase tracking-[0.15em] rounded-xl transition-all shadow-sm active:scale-95 group"
-                  >
-                    <Plus
-                      size={16}
-                      className="text-stone-400 group-hover:text-white/70"
-                    />{" "}
-                    {t(
-                      "dashboard.admin.btn_plan_project",
-                      "Zaplanuj nowy projekt",
-                    )}
-                  </Link>
-                </div>
-              )}
-            </GlassCard>
-          </motion.div>
-
-          {nextRehearsal && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="bg-gradient-to-r from-orange-50 to-white border border-orange-200/60 shadow-sm rounded-[2rem] p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden group">
-                <div
-                  className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 2px 2px, #f97316 1px, transparent 0)",
-                    backgroundSize: "24px 24px",
-                  }}
-                ></div>
-
-                <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
-                  <div className="w-12 h-12 rounded-[1rem] bg-white text-orange-500 flex items-center justify-center shadow-sm border border-orange-100 flex-shrink-0">
-                    <Clock size={20} aria-hidden="true" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                      <p className="text-[9px] font-bold antialiased uppercase tracking-[0.15em] text-orange-600/90 truncate">
-                        {t(
-                          "dashboard.admin.next_rehearsal_alert",
-                          "Najbliższa Próba: {{title}}",
-                          { title: nextRehearsal.projectTitle },
-                        )}
-                      </p>
-                    </div>
-                    <p className="font-bold text-stone-900 text-lg tracking-tight">
-                      {formatLocalizedDateTime(nextRehearsal.date_time, {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative z-10 flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
-                  {(nextRehearsal.absent_count || 0) > 0 ? (
-                    <span className="flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-200 px-3 py-2 rounded-xl text-[10px] font-bold antialiased uppercase tracking-widest shadow-sm">
-                      <UserMinus size={14} />{" "}
-                      {t(
-                        "dashboard.admin.absences",
-                        "Nieobecności: {{count}}",
-                        { count: nextRehearsal.absent_count },
-                      )}
-                    </span>
-                  ) : (
-                    <span className="hidden md:flex items-center gap-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 px-3 py-2 rounded-xl text-[10px] font-bold antialiased uppercase tracking-widest shadow-sm">
-                      {t(
-                        "dashboard.admin.perfect_attendance",
-                        "100% Frekwencji",
-                      )}
-                    </span>
-                  )}
-
-                  <Link
-                    to="/panel/project-management"
-                    className="p-3 bg-white border border-stone-200/80 text-stone-500 hover:text-[#002395] hover:border-[#002395] rounded-xl transition-all shadow-sm active:scale-95"
-                    title={t(
-                      "dashboard.admin.open_logbook",
-                      "Otwórz dziennik projektu",
-                    )}
-                  >
-                    <ArrowRight size={16} />
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      <section className="pt-8">
-        <div className="flex items-center gap-3 mb-8 ml-2">
-          <div className="w-1 h-6 bg-[#002395] rounded-full"></div>
-          <h3 className="text-[10px] font-bold antialiased uppercase tracking-[0.2em] text-stone-400">
-            {t("dashboard.admin.system_modules", "Moduły Systemowe")}
-          </h3>
-        </div>
-
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5"
-        >
-          {ADMIN_MODULES.map((card) => (
-            <Link
-              key={card.id}
-              to={card.path}
-              className="outline-none group block h-full"
-            >
-              <motion.div variants={itemVariants} className="h-full">
-                <GlassCard
-                  variant="premium"
-                  className="p-6 flex flex-col h-full hover:border-[#002395]/40 hover:shadow-[0_20px_40px_rgba(0,35,149,0.08)] hover:-translate-y-1 transition-all duration-500"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/50 group-hover:to-transparent transition-colors duration-500 pointer-events-none"></div>
-
-                  <div className="relative z-10 flex-1">
-                    <div className="w-12 h-12 bg-white border border-stone-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-md group-hover:border-blue-200 transition-all duration-500">
-                      {card.icon}
-                    </div>
-                    <h4 className="text-lg font-bold text-stone-900 mb-2 tracking-tight group-hover:text-[#002395] transition-colors">
-                      {card.title}
-                    </h4>
-                    <p className="text-[11px] text-stone-500 font-medium leading-relaxed mb-6">
-                      {card.desc}
-                    </p>
-                  </div>
-
-                  <div className="relative z-10 flex flex-wrap gap-1.5 mb-6">
-                    {card.features.map((feature, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2.5 py-1 bg-stone-100/80 text-stone-500 text-[9px] font-bold antialiased uppercase tracking-widest rounded-md border border-stone-200/50 group-hover:bg-white group-hover:border-[#002395]/20 group-hover:text-[#002395]/80 transition-colors"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="relative z-10 flex items-center justify-between pt-5 border-t border-stone-200/60 group-hover:border-blue-200/50 transition-colors mt-auto">
-                    <span className="text-[9px] uppercase tracking-[0.15em] font-bold antialiased text-stone-400 group-hover:text-[#002395] transition-colors">
-                      {t("dashboard.artist.open_module", "Otwórz Moduł")}
-                    </span>
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-stone-200/60 group-hover:bg-[#002395] group-hover:border-[#002395] shadow-sm transition-all duration-300">
-                      <ChevronRight
-                        className="w-4 h-4 text-stone-400 group-hover:text-white transform group-hover:translate-x-0.5 transition-transform"
-                        aria-hidden="true"
+                    {/* Zmienione z <Link> na zwykły <div> - pełni rolę wizualnego CTA */}
+                    <div className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-stone-900 group-hover/project:bg-[#002395] text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm">
+                      Otwórz Projekt{" "}
+                      <ArrowRight
+                        size={14}
+                        className="transform group-hover/project:translate-x-1 transition-transform"
                       />
                     </div>
                   </div>
-                </GlassCard>
-              </motion.div>
-            </Link>
-          ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-center h-full opacity-60">
+                  <Briefcase size={24} className="text-stone-300 mb-3" />
+                  <p className="text-xs font-bold text-stone-500 mb-1">
+                    Brak aktywnych wydarzeń
+                  </p>
+                </div>
+              )}
+            </GlassCard>
+          </Link>
         </motion.div>
-      </section>
+      </div>
+
+      {/* 4. MODUŁY SYSTEMOWE */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4"
+      >
+        {ADMIN_MODULES.map((card) => (
+          <Link
+            key={card.id}
+            to={card.path}
+            className="outline-none group block h-full"
+          >
+            <motion.div variants={itemVariants} className="h-full">
+              <GlassCard
+                variant="premium"
+                className="p-5 flex flex-col h-full hover:border-[#002395]/30 hover:shadow-md transition-all duration-300 bg-white/40"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-white border border-stone-200/60 rounded-xl flex items-center justify-center group-hover:border-[#002395]/40 group-hover:text-[#002395] transition-colors shadow-sm shrink-0">
+                    {card.icon}
+                  </div>
+                  <h4 className="text-sm font-bold text-stone-900 tracking-tight group-hover:text-[#002395] transition-colors line-clamp-1">
+                    {card.title}
+                  </h4>
+                </div>
+
+                <p className="text-[11px] text-stone-500 font-medium leading-snug mb-4 line-clamp-2">
+                  {card.desc}
+                </p>
+
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {card.features.map((feature, idx) => (
+                    <span
+                      key={idx}
+                      className="px-1.5 py-0.5 bg-stone-100 text-stone-500 text-[8px] font-bold uppercase tracking-widest rounded border border-stone-200/40"
+                    >
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 mt-auto">
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-stone-400 group-hover:text-[#002395] transition-colors">
+                    Otwórz Moduł
+                  </span>
+                  <ChevronRight
+                    size={14}
+                    className="text-stone-400 group-hover:text-[#002395] group-hover:translate-x-0.5 transition-transform"
+                  />
+                </div>
+              </GlassCard>
+            </motion.div>
+          </Link>
+        ))}
+      </motion.div>
     </div>
   );
 }

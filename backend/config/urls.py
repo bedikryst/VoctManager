@@ -29,6 +29,7 @@ from core.views import (
     ResetCalendarTokenView,
     CalendarFeedView
 )
+from notifications.views import NotificationViewSet
 __author__ = "Krystian Bugalski"
 
 # Initialize the REST Framework Router
@@ -50,6 +51,9 @@ router.register(r'composers', ComposerViewSet, basename='composer')
 router.register(r'pieces', PieceViewSet, basename='piece')
 router.register(r'tracks', TrackViewSet, basename='track')
 router.register(r'piece-voice-requirements', PieceVoiceRequirementViewSet, basename='piece-voice-requirement')
+
+# --- System & Notifications ---
+router.register(r'notifications', NotificationViewSet, basename='notification') 
 
 urlpatterns = [
     # Django Admin Panel

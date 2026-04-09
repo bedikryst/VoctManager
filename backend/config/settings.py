@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'core',
     'roster',
     'archive',
+    'notifications',
 ]
 
 MIDDLEWARE = [
