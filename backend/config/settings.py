@@ -60,6 +60,12 @@ INSTALLED_APPS = [
     'notifications',
 ]
 
+# --- AUTHENTICATION BACKENDS ---
+AUTHENTICATION_BACKENDS = [
+    'core.authentication.EmailAuthBackend',     
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',

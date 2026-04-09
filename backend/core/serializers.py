@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import UserProfile
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 
@@ -87,3 +88,20 @@ class RequestEmailChangeSerializer(serializers.Serializer):
 class AccountDeletionSerializer(serializers.Serializer):
     """Strict validation for account deletion requiring re-authentication."""
     password = serializers.CharField(required=True, write_only=True)
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Enterprise Identity Serializer.
+    Explicitly defines email as the primary identification field.
+    """
+    email = serializers.EmailField()
+    password = serializers.CharField(style={'input_type': 'password'})
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'username' in self.fields:
+            del self.fields['username']
+
+    def validate(self, attrs):
+        attrs[User.USERNAME_FIELD] = attrs.get('email')
+        return super().validate(attrs)

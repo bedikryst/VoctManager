@@ -41,7 +41,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<LoginResponse>;
+  login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => void;
 }
 
@@ -86,11 +86,11 @@ export const AuthProvider = ({
   }, []);
 
   const login = async (
-    username: string,
+    email: string,
     password: string,
   ): Promise<LoginResponse> => {
     try {
-      await api.post("/api/token/", { username, password });
+      await api.post("/api/token/", { email, password });
 
       // Get user data after successful login
       const userResponse = await api.get<AuthUser>("/api/artists/me/");

@@ -88,11 +88,9 @@ class UserProfile(EnterpriseBaseModel):
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
-        # PROTECT instead of CASCADE. We do not allow silent, cascading hard-deletes of the Profile.
-        # If the User needs to be deleted, the Profile must be explicitly handled (e.g., anonymized).
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='profile',
-        help_text=_("The core authentication user linked to this profile.")
+        help_text=_("The core authentication user linked to this profile. Cascades on hard delete.")
     )
     
     # Contact Info

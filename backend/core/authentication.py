@@ -4,9 +4,37 @@ Custom JWT Authentication with Cookie Support.
 @architecture Enterprise SaaS 2026 Security Standards.
 """
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import ModelBackend
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 
+User = get_user_model()
+
+class EmailAuthBackend(ModelBackend):
+    """
+    Enterprise Identity: Enables authentication via Email instead of the default UUID username.
+    Performs secure, case-insensitive email matching and handles legacy ghost-account duplicates.
+    """
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        email = kwargs.get('email') or username
+        if not email:
+            return None
+            
+        try:
+            user = User.objects.filter(email__iexact=email, is_active=True).first()
+            
+            if not user:
+                raise User.DoesNotExist
+                
+        except User.DoesNotExist:
+            User().set_password(password)
+            return None
+
+        if user.check_password(password) and self.user_can_authenticate(user):
+            return user
+        return None
+    
 class CookieJWTAuthentication(JWTAuthentication):
     """
     Enterprise JWT Authentication.

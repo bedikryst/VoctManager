@@ -13,6 +13,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
+from .signals import account_soft_deleted
 
 from .models import UserProfile
 from .dtos import UserPreferencesUpdateDTO, UserPasswordChangeDTO, UserEmailChangeDTO, UserAccountDeletionDTO
@@ -34,6 +35,61 @@ class UserIdentityService:
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         return {"uidb64": uidb64, "token": token}
+
+    @staticmethod
+    def provision_user_account(email: str, first_name: str, last_name: str, language: str = 'en') -> User:
+        """
+        Enterprise IAM: Provisions a new core identity and profile.
+        Generates a collision-free UUID username, handles activation tokens, 
+        and explicitly dispatches the secure onboarding email.
+        """
+        if User.objects.filter(email__iexact=email).exists():
+            raise EmailAlreadyInUseException("email_in_use")
+
+        with transaction.atomic():
+            # SaaS 2026 Standard: Abstract usernames prevent enumeration and PII leaks
+            username = str(uuid.uuid4())
+            
+            user = User.objects.create(
+                username=username, 
+                email=email, 
+                first_name=first_name,
+                last_name=last_name,
+                is_active=False
+            )
+            user.set_unusable_password() 
+            user.save()
+            
+            # Explicit Profile Creation
+            profile = UserProfile.objects.create(
+                user=user,
+                language=language
+            )
+            
+            # Generate Activation Tokens
+            payload = UserIdentityService.generate_activation_token_payload(user)
+            activation_link = (
+                f"{settings.CORS_ALLOWED_ORIGINS[0]}/activate"
+                f"?uid={payload['uidb64']}&token={payload['token']}"
+            )
+
+            # Dispatch Operational Email
+            transaction.on_commit(
+                lambda: send_transactional_email_task.delay(
+                    recipient_email=user.email,
+                    subject="Welcome to VoctManager - Activate Your Account",
+                    template_name="account_activation",
+                    context={
+                        "first_name": user.first_name,
+                        "activation_link": activation_link,
+                    },
+                    fallback_language=language,
+                    email_type=EmailType.OPERATIONAL
+                )
+            )
+            
+            logger.info(f"Core IAM identity provisioned and invite dispatched for: {email}")
+            return user
 
     @staticmethod
     def activate_account_and_set_password(uidb64: str, token: str, new_password: str) -> User:
@@ -123,43 +179,47 @@ class UserIdentityService:
     @staticmethod
     def process_account_soft_deletion(user: User, dto: UserAccountDeletionDTO) -> None:
         """
-        Executes GDPR Right to Erasure (Soft Delete) and dispatches confirmation email.
+        Executes GDPR Right to Erasure (Soft Delete).
+        Anonymizes PII data to free up the email for future registration,
+        deactivates the account, and emits a domain event for dependent contexts.
         """
         if not user.check_password(dto.current_password):
             logger.warning(f"Failed account deletion attempt (invalid password) for user: {user.email}")
             raise InvalidCredentialsException("invalid_current_password")
         
-        user_email = user.email
+        original_email = user.email
 
         with transaction.atomic():
-            # 1. Zablokowanie dostępu do konta (Autoryzacja Django)
+            # 1. GDPR Anonymization (Freeing up unique constraints)
+            anonymized_id = str(user.id)
+            user.email = f"deleted_{anonymized_id}@anonymized.local"
+            user.username = anonymized_id
+            user.first_name = "Deleted"
+            user.last_name = "User"
             user.is_active = False  
-            user.save(update_fields=['is_active'])
+            user.save(update_fields=['email', 'username', 'first_name', 'last_name', 'is_active'])
             
-            # 2. Enterprise Soft-Delete: Ukrywamy profil artysty w module Roster
-            # Wykorzystujemy tutaj naszą logikę z EnterpriseBaseModel (is_deleted = True)
-            if hasattr(user, 'artist_profile'):
-                user.artist_profile.delete() 
-
-            # 3. Enterprise Soft-Delete: Wygaszamy preferencje usera
+            # 2. Delete Core Preferences entirely
             if hasattr(user, 'profile'):
                 user.profile.delete() 
+                
+            # 3. Emit Domain Event (Handled by Roster to soft-delete Artist)
+            account_soft_deleted.send(sender=UserIdentityService, user=user)
             
-            # 4. Wysyłka maila potwierdzającego usunięcie (zakładając, że stworzysz szablon)
+            # 4. Dispatch confirmation email (using the original email we stored)
             transaction.on_commit(
                 lambda: send_transactional_email_task.delay(
-                    recipient_email=user_email,
-                    subject="Your VoctManager Account has been deleted",
+                    recipient_email=original_email,
+                    subject="Your VoctManager Account has been successfully deleted",
                     template_name="account_deleted",
-                    context={"user_email": user_email},
+                    context={"user_email": original_email},
                     fallback_language='en',
                     email_type=EmailType.CRITICAL_SECURITY
                 )
             )
             
-        logger.info(f"Account soft-deleted (deactivated) and notification queued for user: {user_email}")
-
-
+        logger.info(f"Account soft-deleted and GDPR-anonymized for user ID: {anonymized_id}")
+        
 class UserPreferencesService:
     """Service managing application-specific user configurations and GDPR exports."""
 

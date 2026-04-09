@@ -1,3 +1,4 @@
+// frontend/src/features/auth/types/auth.dto.ts
 export interface ActivateAccountPayload {
   uidb64: string;
   token: string;
@@ -7,5 +8,4 @@ export interface ActivateAccountPayload {
 export interface ActivateAccountResponse {
   detail: string;
   email: string;
-  username: string;
 }

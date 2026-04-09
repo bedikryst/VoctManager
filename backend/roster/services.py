@@ -15,6 +15,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from core.exceptions import EmailAlreadyInUseException
 from notifications.email_service import EmailType
 
 from core.models import UserProfile
@@ -37,7 +38,7 @@ from .models import (
     Artist, Project, Participation, ProgramItem, 
     ProjectPieceCasting, Rehearsal, Attendance, CrewAssignment
 )
-from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ParticipationRestoreDTO
+from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO
 from .exceptions import ArtistProvisioningException, AttendanceValidationException, ParticipationException
 
 logger = logging.getLogger(__name__)
@@ -49,69 +50,43 @@ class ArtistHRService:
 
     @staticmethod
     def provision_artist(dto: ArtistCreateDTO) -> Artist:
-        if User.objects.filter(email__iexact=dto.email).exists() or \
-           Artist.objects.filter(email__iexact=dto.email, is_deleted=False).exists():
-             raise ArtistProvisioningException(f"Account with email {dto.email} already exists.")
-        
-        raw_username = f"{dto.first_name[0].lower()}{dto.last_name.lower()}".replace(' ', '')
-        base_username = unicodedata.normalize('NFKD', raw_username).encode('ASCII', 'ignore').decode('utf-8')
-        
-        username = base_username
-        counter = 2
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
-            
-        with transaction.atomic():
-            # 1. Create User
-            user = User.objects.create(username=username, email=dto.email, is_active=False)
-            user.set_unusable_password() 
-            user.save()
-            
-            # 2. EXPLICITLY Create Profile (No more reliance on hidden signals)
-            profile_lang = getattr(dto, 'language', 'pl')
-            profile = UserProfile.objects.create(
-                user=user,
-                language=profile_lang
-            )
-            
-            # 3. Create Artist Details
-            artist = Artist.objects.create(
-                user=user, 
-                first_name=dto.first_name, 
-                last_name=dto.last_name, 
-                email=dto.email, 
-                voice_type=dto.voice_type, 
-                phone_number=dto.phone_number or "",               
-                sight_reading_skill=dto.sight_reading_skill, 
-                vocal_range_bottom=dto.vocal_range_bottom or "",   
-                vocal_range_top=dto.vocal_range_top or ""          
-            )
-
-            # 4. Generate Tokens
-            payload = UserIdentityService.generate_activation_token_payload(user)
-            activation_link = (
-                f"{settings.CORS_ALLOWED_ORIGINS[0]}/activate"
-                f"?uid={payload['uidb64']}&token={payload['token']}"
-            )
-
-            # 5. Dispatch Operational Email
-            transaction.on_commit(
-                lambda: send_transactional_email_task.delay(
-                    recipient_email=user.email,
-                    subject="Welcome to VoctEnsemble - Activate Your Account",
-                    template_name="account_activation",
-                    context={
-                        "first_name": artist.first_name,
-                        "activation_link": activation_link,
-                    },
-                    fallback_language=profile_lang,
-                    email_type=EmailType.OPERATIONAL
+        """
+        Provisions a new Artist entity within the Roster domain.
+        Delegates core identity creation and notification to the IAM Service.
+        """
+        # Ensure domain-level uniqueness (preventing soft-delete ghost collisions)
+        if Artist.objects.filter(email__iexact=dto.email, is_deleted=False).exists():
+             raise ArtistProvisioningException(f"Active artist with email {dto.email} already exists.")
+             
+        try:
+            with transaction.atomic():
+                # 1. Delegate Identity Management to Core Bounded Context
+                user = UserIdentityService.provision_user_account(
+                    email=dto.email,
+                    first_name=dto.first_name,
+                    last_name=dto.last_name,
+                    language=getattr(dto, 'language', 'en')
                 )
-            )
-            
-            logger.info(f"Successfully provisioned artist and dispatched invite for: {dto.email}")
-            return artist
+                
+                # 2. Create Roster-specific entity
+                artist = Artist.objects.create(
+                    user=user, 
+                    first_name=dto.first_name, 
+                    last_name=dto.last_name, 
+                    email=dto.email, 
+                    voice_type=dto.voice_type, 
+                    phone_number=dto.phone_number or "",               
+                    sight_reading_skill=dto.sight_reading_skill, 
+                    vocal_range_bottom=dto.vocal_range_bottom or "",   
+                    vocal_range_top=dto.vocal_range_top or ""          
+                )
+
+                logger.info(f"Successfully provisioned artist HR profile for: {dto.email}")
+                return artist
+                
+        except EmailAlreadyInUseException:
+            # Catch Core exception and map it to Roster Domain exception
+            raise ArtistProvisioningException(f"Account with email {dto.email} already exists.")
     
     @staticmethod
     def archive_artist(artist: Artist) -> None:
@@ -203,25 +178,7 @@ class ProjectManagementService:
                 
         return project
 
-    @staticmethod
-    def create_participation(validated_data: Dict[str, Any]) -> Participation:
-        with transaction.atomic():
-            participation = Participation.objects.create(**validated_data)
-            
-            if participation.artist.user_id:
-                metadata = ProjectInvitationMetadata(
-                    project_id=participation.project_id,
-                    project_name=participation.project.title,
-                ).model_dump(mode="json")
-                
-                transaction.on_commit(lambda: send_notification_task.delay(
-                    recipient_id=str(participation.artist.user_id),
-                    notification_type=NotificationType.PROJECT_INVITATION,
-                    level=NotificationLevel.INFO,
-                    metadata=metadata
-                ))
-        return participation
-
+    
     @staticmethod
     def delete_participation(participation: Participation) -> None:
         user_id = participation.artist.user_id
@@ -242,29 +199,53 @@ class ProjectManagementService:
                     level=NotificationLevel.WARNING,
                     metadata=metadata
                 ))
-
     @staticmethod
-    def handle_soft_deleted_participation(dto: ParticipationRestoreDTO) -> Optional[Participation]:
-        deleted = Participation.all_objects.filter(artist_id=dto.artist_id, project_id=dto.project_id, is_deleted=True).first()
-        if deleted:
-            with transaction.atomic():
-                deleted.restore()
-                if deleted.artist.user_id:
-                    metadata = ProjectInvitationMetadata(
-                        project_id=deleted.project_id,
-                        project_name=deleted.project.title,
-                        message="You have been re-added to the project."
-                    ).model_dump(mode="json")
-                    
-                    transaction.on_commit(lambda: send_notification_task.delay(
-                        recipient_id=str(deleted.artist.user_id),
-                        notification_type=NotificationType.PROJECT_INVITATION,
-                        level=NotificationLevel.INFO,
-                        metadata=metadata
-                    ))
-            return deleted
-        return None
+    def create_or_restore_participation(validated_data: Dict[str, Any]) -> Participation:
+        """
+        Enterprise Upsert Pattern: Checks for an archived (soft-deleted) participation first.
+        If found, restores it to preserve history and avoid constraint collisions. 
+        If not, creates a fresh participation.
+        """
+        artist = validated_data.get('artist')
+        project = validated_data.get('project')
 
+        with transaction.atomic():
+            # 1. Look for a soft-deleted record using the explicit base manager
+            archived_participation = Participation.all_objects.filter(
+                artist=artist, project=project, is_deleted=True
+            ).first()
+
+            if archived_participation:
+                # 2A. RESTORE PATH
+                # Update any new values passed in the request (e.g., a new fee or status)
+                for attr, value in validated_data.items():
+                    setattr(archived_participation, attr, value)
+                
+                archived_participation.restore() # Saves and sets is_deleted=False
+                participation = archived_participation
+                message = "You have been re-added to the project."
+            else:
+                # 2B. CREATE PATH
+                participation = Participation.objects.create(**validated_data)
+                message = None # Default invitation message
+
+            # 3. Dispatch Notification
+            if participation.artist.user_id:
+                metadata = ProjectInvitationMetadata(
+                    project_id=participation.project_id,
+                    project_name=participation.project.title,
+                    message=message
+                ).model_dump(mode="json")
+                
+                transaction.on_commit(lambda: send_notification_task.delay(
+                    recipient_id=str(participation.artist.user_id),
+                    notification_type=NotificationType.PROJECT_INVITATION,
+                    level=NotificationLevel.INFO,
+                    metadata=metadata
+                ))
+
+        return participation
+    
     @staticmethod
     def update_project_bulk_fee(dto: ProjectBulkFeeDTO) -> int:
         if dto.new_fee < 0:

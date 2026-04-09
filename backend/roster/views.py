@@ -25,7 +25,7 @@ from .tasks import generate_project_zip_task
 from .infrastructure.document_generator import DocumentGenerator
 
 # Pydantic DTOs
-from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ParticipationRestoreDTO
+from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO
 
 # Service Objects
 from .services import (
@@ -202,17 +202,12 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         return ParticipationDetailedSerializer if self.request.user.is_superuser else ParticipationBasicSerializer
     
     def create(self, request, *args, **kwargs) -> Response:
-        try:
-            dto = ParticipationRestoreDTO(**request.data)
-            restored = ProjectManagementService.handle_soft_deleted_participation(dto)
-            if restored:
-                return Response(self.get_serializer(restored).data, status=status.HTTP_200_OK)
-        except ValidationError:
-            pass 
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        participation = ProjectManagementService.create_participation(serializer.validated_data)
+        
+        participation = ProjectManagementService.create_or_restore_participation(
+            serializer.validated_data
+        )
         return Response(self.get_serializer(participation).data, status=status.HTTP_201_CREATED)
 
     def perform_destroy(self, instance) -> None:
@@ -242,19 +237,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs) -> Response:
         try:
-            payload = {
-                "requesting_user_id": request.user.id,
-                "is_superuser": request.user.is_superuser,
-                "participation_id": request.data.get('participation'),
-                "rehearsal_id": request.data.get('rehearsal'),
-                "status": request.data.get('status'),
-                "minutes_late": request.data.get('minutes_late'),
-                "excuse_note": request.data.get('excuse_note', '')
-            }
-            dto = AttendanceRecordDTO(**payload)
+            dto = AttendanceRecordDTO(
+                requesting_user_id=request.user.id,
+                is_superuser=request.user.is_superuser,
+                **request.data
+            )
         except ValidationError as e:
             return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             attendance = RehearsalOperationsService.record_attendance(dto)
             return Response(self.get_serializer(attendance).data, status=status.HTTP_201_CREATED)
@@ -287,17 +276,14 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         rehearsal = RehearsalOperationsService.schedule_rehearsal(serializer.validated_data, invited_participations=invited)
         return Response(self.get_serializer(rehearsal).data, status=status.HTTP_201_CREATED)
 
-    def update(self, request, *args, **kwargs) -> Response:
-        """Restored update method routing to the RehearsalOperationsService."""
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
+    def perform_update(self, serializer) -> None:
         invited = serializer.validated_data.pop('invited_participations', None)
         
-        rehearsal = RehearsalOperationsService.update_rehearsal(instance, serializer.validated_data, invited_participations=invited)
-        return Response(self.get_serializer(rehearsal).data)
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal=serializer.instance, 
+            validated_data=serializer.validated_data, 
+            invited_participations=invited
+        )
 
     def perform_destroy(self, instance) -> None:
         RehearsalOperationsService.delete_rehearsal(instance)

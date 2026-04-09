@@ -32,8 +32,8 @@ class AttendanceRecordDTO(EnterpriseBaseDTO):
     is_superuser: bool = False
     
     # Using UUID type automatically validates the string format
-    participation_id: UUID
-    rehearsal_id: UUID
+    participation_id: UUID = Field(alias="participation")
+    rehearsal_id: UUID = Field(alias="rehearsal")
     
     status: str = Field(..., min_length=1, max_length=10)
     minutes_late: Optional[int] = Field(None, ge=0)
@@ -44,8 +44,3 @@ class ProjectBulkFeeDTO(EnterpriseBaseDTO):
     project_id: UUID
     # Enforces decimal precision and prevents negative payouts
     new_fee: Decimal = Field(..., ge=0, max_digits=8, decimal_places=2)
-
-
-class ParticipationRestoreDTO(EnterpriseBaseDTO):
-    artist_id: UUID
-    project_id: UUID

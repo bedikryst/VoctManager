@@ -27,10 +27,15 @@ export const ArtistService = {
     return response.data;
   },
 
-  toggleStatus: async (id: string, isActive: boolean): Promise<Artist> => {
-    const response = await api.patch<Artist>(`${BASE_URL}${id}/`, {
-      is_active: isActive,
-    });
-    return response.data;
+  toggleStatus: async (
+    id: string,
+    isActive: boolean,
+  ): Promise<Artist | void> => {
+    if (isActive) {
+      const response = await api.post<Artist>(`${BASE_URL}${id}/restore/`);
+      return response.data;
+    } else {
+      await api.post(`${BASE_URL}${id}/archive/`);
+    }
   },
 };

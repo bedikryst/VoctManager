@@ -7,15 +7,15 @@
  * @author Krystian Bugalski
  */
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../app/providers/AuthProvider';
-import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useAuth } from "../../app/providers/AuthProvider";
+import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 
 export default function Login(): React.JSX.Element {
-  const [username, setUsername] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -25,8 +25,8 @@ export default function Login(): React.JSX.Element {
 
   // Enforce system cursor normalization for accessibility on the auth screen
   useEffect(() => {
-      document.body.classList.add('admin-mode');
-      return () => document.body.classList.remove('admin-mode');
+    document.body.classList.add("admin-mode");
+    return () => document.body.classList.remove("admin-mode");
   }, []);
 
   // Smart redirect resolution
@@ -37,35 +37,43 @@ export default function Login(): React.JSX.Element {
     setError(null);
     setIsSubmitting(true);
 
-    const result = await login(username, password);
+    const result = await login(email, password);
 
     if (result.success) {
       // Prevents the login view from lingering in the browser history stack
       navigate(from, { replace: true });
     } else {
-      setError(result.error || 'Autoryzacja nie powiodła się.');
+      setError(result.error || "Autoryzacja nie powiodła się.");
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#fdfbf7] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-[#002395] selection:text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
-      
+    <div
+      className="min-h-screen bg-[#fdfbf7] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-[#002395] selection:text-white"
+      style={{ fontFamily: "'Poppins', sans-serif" }}
+    >
       <div className="absolute top-8 left-8">
-        <Link to="/" className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-[#002395] transition-colors">
+        <Link
+          to="/"
+          className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-[#002395] transition-colors"
+        >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           <span>Powrót na stronę główną</span>
         </Link>
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
           className="text-center"
         >
-          <h2 className="text-4xl md:text-5xl font-medium text-stone-900 mb-2" style={{ fontFamily: "'Cormorant', serif" }}>
+          <h2
+            className="text-4xl md:text-5xl font-medium text-stone-900 mb-2"
+            style={{ fontFamily: "'Cormorant', serif" }}
+          >
             Voct<span className="italic text-[#002395]">Manager</span>
           </h2>
           <p className="mt-2 text-sm text-stone-500 font-light tracking-wide uppercase">
@@ -74,41 +82,52 @@ export default function Login(): React.JSX.Element {
         </motion.div>
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] as const }}
+        transition={{
+          duration: 0.6,
+          delay: 0.1,
+          ease: [0.16, 1, 0.3, 1] as const,
+        }}
         className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
       >
         <div className="bg-white py-8 px-4 shadow-xl shadow-stone-200/50 sm:rounded-xl border border-stone-100 sm:px-10 relative overflow-hidden">
-          
           {/* Aesthetic Gradient Top Border */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#002395] to-blue-400" aria-hidden="true" />
+          <div
+            className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#002395] to-blue-400"
+            aria-hidden="true"
+          />
 
           <form className="space-y-6 mt-2" onSubmit={handleSubmit}>
-            
             <div>
-              <label htmlFor="username" className="block text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2">
-                Nazwa Użytkownika
+              <label
+                htmlFor="email"
+                className="block text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2"
+              >
+                Adres e-mail
               </label>
               <div className="mt-1">
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  autoComplete="username"
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
                   required
                   disabled={isSubmitting}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2.5 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#002395] focus:border-[#002395] sm:text-sm font-medium transition-all disabled:bg-stone-50 disabled:text-stone-400"
-                  placeholder="np. jkowalski"
+                  placeholder="np. jan.kowalski@voctensemble.pl"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2"
+              >
                 Hasło
               </label>
               <div className="mt-1">
@@ -129,39 +148,45 @@ export default function Login(): React.JSX.Element {
 
             {/* Error Message with ARIA Live Region for Accessibility */}
             <div aria-live="polite">
-                {error && (
-                <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md"
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md"
                 >
-                    <div className="flex">
+                  <div className="flex">
                     <div className="flex-shrink-0">
-                        <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+                      <AlertCircle
+                        className="h-5 w-5 text-red-500"
+                        aria-hidden="true"
+                      />
                     </div>
                     <div className="ml-3">
-                        <p className="text-sm text-red-700 font-medium">
+                      <p className="text-sm text-red-700 font-medium">
                         {error}
-                        </p>
+                      </p>
                     </div>
-                    </div>
+                  </div>
                 </motion.div>
-                )}
+              )}
             </div>
 
             <div>
               <button
                 type="submit"
-                disabled={isSubmitting || !username || !password}
+                disabled={isSubmitting || !email || !password}
                 className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-xs uppercase tracking-widest font-bold text-white bg-stone-900 hover:bg-[#002395] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#002395] transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed group"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    <Loader2
+                      className="w-4 h-4 animate-spin"
+                      aria-hidden="true"
+                    />
                     Autoryzacja...
                   </span>
                 ) : (
-                  'Zaloguj się'
+                  "Zaloguj się"
                 )}
               </button>
             </div>

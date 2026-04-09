@@ -25,7 +25,6 @@ export default function ActivatePage(): React.JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Cała logika pobrana z naszego nowego kontrolera (Hooka)
   const {
     password,
     setPassword,
@@ -78,7 +77,6 @@ export default function ActivatePage(): React.JSX.Element {
       className="relative min-h-screen overflow-hidden bg-[#f6f1e8] selection:bg-[#002395] selection:text-white"
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
-      {/* Tło i dekoracje (Zachowane) */}
       <div
         className="pointer-events-none absolute inset-0 opacity-90"
         aria-hidden="true"
@@ -203,7 +201,6 @@ export default function ActivatePage(): React.JSX.Element {
 
               {!activatedData ? (
                 <>
-                  {/* FORMULARZ USTAWIENIA HASŁA */}
                   <div className="mb-8">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
                       {t("auth.activate.form.subtitle", "Password setup")}
@@ -357,7 +354,6 @@ export default function ActivatePage(): React.JSX.Element {
                 </>
               ) : (
                 <div className="flex h-full flex-col justify-center">
-                  {/* SUKCES - WYŚWIETLANIE LOGINU I E-MAILA */}
                   <div className="rounded-3xl border border-emerald-200 bg-emerald-50/80 p-6">
                     <div className="flex items-start gap-4">
                       <div className="rounded-2xl bg-emerald-100 p-3">
@@ -397,23 +393,22 @@ export default function ActivatePage(): React.JSX.Element {
                           )}
                         </p>
 
-                        {/* HIGHLIGHT WYGENEROWANEGO LOGINU */}
                         <div className="mt-5 mb-3 p-4 rounded-xl bg-white border border-emerald-200/60 shadow-sm">
                           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 mb-1">
                             {t(
                               "auth.activate.success.your_username",
-                              "Your generated username",
+                              "Your username to log in",
                             )}
                           </p>
                           <p className="font-mono text-xl font-bold text-[#002395] tracking-tight">
-                            {activatedData.username}
+                            {activatedData.email}
                           </p>
                         </div>
 
                         <p className="text-xs text-stone-500 leading-relaxed">
                           {t(
                             "auth.activate.success.instruction",
-                            "Proceed to the login page and use this username (or your email) along with your newly created password to access the panel.",
+                            "Proceed to the login page and use your email along with your newly created password to access the panel.",
                           )}
                         </p>
                       </div>
