@@ -835,8 +835,6 @@ msgid "Crew Assignments"
 msgstr "Obsługa techniczna"
 
 #: templates/emails/account_activation.html:12
-#, fuzzy
-#| msgid "Project Invitation"
 msgid "VoctManager Invitation"
 msgstr "Zaproszenie do VoctManager"
 
