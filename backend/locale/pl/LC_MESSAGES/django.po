@@ -847,12 +847,10 @@ msgstr "Aktywuj swój profil artysty"
 #: templates/emails/account_activation.txt:8
 #, python-format
 msgid "Hello %(first_name)s,"
-msgstr ""
+msgstr "Witaj %(first_name)s,"
 
 #: templates/emails/account_activation.html:17
 #: templates/emails/account_activation.txt:10
-#, fuzzy
-#| msgid "Hello"
 msgid "Hello,"
 msgstr "Witaj"
 
@@ -878,6 +876,8 @@ msgid ""
 "This activation link is unique to your account. For your security, it will "
 "expire automatically. Please do not share it with anyone."
 msgstr ""
+"Ten link aktywacyjny jest przypisany wyłącznie do Twojego konta. Ze względów bezpieczeństwa wygaśnie on automatycznie."
+"Prosimy nie udostępniać go nikomu."
 
 #: templates/emails/account_activation.html:40
 msgid "Activate Account"

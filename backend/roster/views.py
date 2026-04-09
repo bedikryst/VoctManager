@@ -79,6 +79,38 @@ class ArtistViewSet(viewsets.ModelViewSet):
         except ArtistProvisioningException as e:
             return Response({"error": str(e)}, status=status.HTTP_409_CONFLICT)
     
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def archive(self, request, pk=None) -> Response:
+        """
+        Executes a Soft Delete (Archiving) of an Artist.
+        Delegates access revocation and entity hiding to the Service Layer.
+        """
+        artist = self.get_object()
+        ArtistHRService.archive_artist(artist)
+        
+        # Enterprise Standard: 204 No Content for successful deletion/archiving
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def restore(self, request, pk=None) -> Response:
+        """
+        Restores a previously archived Artist.
+        Bypasses the default Manager to locate and reinstate soft-deleted records.
+        """
+        try:
+            # We MUST use all_objects because standard objects hide is_deleted=True
+            artist = Artist.all_objects.get(pk=pk)
+        except Artist.DoesNotExist:
+            return Response(
+                {"detail": "Archived artist not found."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        ArtistHRService.restore_artist(artist)
+        
+        # Return the restored object with a 200 OK status
+        return Response(self.get_serializer(artist).data, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['get'])
     def me(self, request) -> Response:
         queryset = Artist.objects.select_related('user__profile')

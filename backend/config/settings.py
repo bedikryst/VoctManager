@@ -6,6 +6,7 @@ Enterprise configuration for VoctManager.
 Strictly typed environment variables via django-environ.
 """
 
+import os
 from pathlib import Path
 import environ
 import sentry_sdk
@@ -106,6 +107,14 @@ DATABASES = {
 
 # --- INTERNATIONALIZATION ---
 LANGUAGE_CODE = 'en-us'
+LANGUAGES = [
+    ('en', 'English'),
+    ('pl', 'Polish'),
+    ('fr', 'French'),
+]
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'), 
+]
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True

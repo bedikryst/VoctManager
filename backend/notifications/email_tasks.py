@@ -2,7 +2,6 @@
 import logging
 from typing import Any, Dict
 from celery import shared_task
-from .email_service import EmailDispatcherService
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +19,13 @@ def send_transactional_email_task(
     subject: str, 
     template_name: str, 
     context: Dict[str, Any],
-    language_code: str = 'en',
-    email_type: str = 'CRITICAL_SECURITY'  # Import EmailType from service and use its string value
+    fallback_language: str = 'en',
+    email_type: str = 'CRITICAL_SECURITY'
 ):
+    """
+    Enterprise Celery Task for asynchronous email dispatching.
+    Delegates execution to the EmailDispatcherService.
+    """
     from .email_service import EmailDispatcherService
     
     EmailDispatcherService.dispatch(
@@ -30,6 +33,6 @@ def send_transactional_email_task(
         subject=subject,
         template_name=template_name,
         context=context,
-        language_code=language_code,
+        fallback_language=fallback_language,
         email_type=email_type
     )

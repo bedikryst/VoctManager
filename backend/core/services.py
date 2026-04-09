@@ -12,10 +12,15 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.utils import timezone
 from django.db import transaction
+from django.conf import settings
 
 from .models import UserProfile
 from .dtos import UserPreferencesUpdateDTO, UserPasswordChangeDTO, UserEmailChangeDTO, UserAccountDeletionDTO
 from .exceptions import InvalidCredentialsException, EmailAlreadyInUseException
+
+# Enterprise Imports for Notifications
+from notifications.email_tasks import send_transactional_email_task
+from notifications.email_service import EmailType
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -32,9 +37,12 @@ class UserIdentityService:
 
     @staticmethod
     def activate_account_and_set_password(uidb64: str, token: str, new_password: str) -> User:
+        """
+        Activates the user account and explicitly dispatches a welcome email.
+        """
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
+            user = User.objects.select_related('profile').get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             logger.warning(f"Failed account activation attempt with invalid UID: {uidb64}")
             raise InvalidCredentialsException("invalid_activation_link")
@@ -47,18 +55,53 @@ class UserIdentityService:
             user.set_password(new_password)
             user.is_active = True
             user.save(update_fields=['password', 'is_active'])
-            logger.info(f"Account successfully activated for user: {user.email}")
+            
+            # Resolve fallback language safely
+            fallback_lang = user.profile.language if hasattr(user, 'profile') else 'en'
+
+            # Dispatch Welcome Email
+            transaction.on_commit(
+                lambda: send_transactional_email_task.delay(
+                    recipient_email=user.email,
+                    subject="Welcome to VoctManager",
+                    template_name="welcome_email",
+                    context={
+                        "first_name": getattr(user, "first_name", ""),
+                        "frontend_url": f"{settings.CORS_ALLOWED_ORIGINS[0]}/login",
+                    },
+                    fallback_language=fallback_lang,
+                    email_type=EmailType.OPERATIONAL
+                )
+            )
+
+            logger.info(f"Account successfully activated and welcome email queued for user: {user.email}")
             return user
 
     @staticmethod
     def change_user_password(user: User, dto: UserPasswordChangeDTO) -> None:
+        """
+        Changes user password and explicitly dispatches a critical security alert.
+        """
         if not user.check_password(dto.old_password):
             logger.warning(f"Failed password change attempt (invalid password) for user: {user.email}")
             raise InvalidCredentialsException("invalid_current_password")
 
-        user.set_password(dto.new_password)
-        user.save()
-        logger.info(f"Password successfully changed for user: {user.email}")
+        with transaction.atomic():
+            user.set_password(dto.new_password)
+            user.save()
+            
+            # Dispatch Security Alert
+            transaction.on_commit(
+                lambda: send_transactional_email_task.delay(
+                    recipient_email=user.email,
+                    subject="Security Alert: Password Changed",
+                    template_name="password_changed",
+                    context={"user_email": user.email},
+                    fallback_language='en', # Dispatcher resolves correct language via DB
+                    email_type=EmailType.CRITICAL_SECURITY
+                )
+            )
+            logger.info(f"Password successfully changed and security alert queued for user: {user.email}")
 
     @staticmethod
     def process_email_change(user: User, dto: UserEmailChangeDTO) -> User:
@@ -73,25 +116,48 @@ class UserIdentityService:
         old_email = user.email
         user.email = dto.new_email
         user.save(update_fields=['email'])
+        
         logger.info(f"Email changed successfully from {old_email} to {dto.new_email}")
         return user
 
     @staticmethod
     def process_account_soft_deletion(user: User, dto: UserAccountDeletionDTO) -> None:
-        """Executes GDPR Right to Erasure (Soft Delete) after Zero-Trust verification."""
+        """
+        Executes GDPR Right to Erasure (Soft Delete) and dispatches confirmation email.
+        """
         if not user.check_password(dto.current_password):
             logger.warning(f"Failed account deletion attempt (invalid password) for user: {user.email}")
             raise InvalidCredentialsException("invalid_current_password")
         
+        user_email = user.email
+
         with transaction.atomic():
-            # Soft Delete - blocks login but keeps historical roster data intact
+            # 1. Zablokowanie dostępu do konta (Autoryzacja Django)
             user.is_active = False  
             user.save(update_fields=['is_active'])
             
-            # Note: We do NOT delete the UserProfile here because it's protected.
-            # If full anonymization is needed later, it happens asynchronously.
+            # 2. Enterprise Soft-Delete: Ukrywamy profil artysty w module Roster
+            # Wykorzystujemy tutaj naszą logikę z EnterpriseBaseModel (is_deleted = True)
+            if hasattr(user, 'artist_profile'):
+                user.artist_profile.delete() 
+
+            # 3. Enterprise Soft-Delete: Wygaszamy preferencje usera
+            if hasattr(user, 'profile'):
+                user.profile.delete() 
             
-        logger.info(f"Account soft-deleted (deactivated) for user: {user.email}")
+            # 4. Wysyłka maila potwierdzającego usunięcie (zakładając, że stworzysz szablon)
+            transaction.on_commit(
+                lambda: send_transactional_email_task.delay(
+                    recipient_email=user_email,
+                    subject="Your VoctManager Account has been deleted",
+                    template_name="account_deleted",
+                    context={"user_email": user_email},
+                    fallback_language='en',
+                    email_type=EmailType.CRITICAL_SECURITY
+                )
+            )
+            
+        logger.info(f"Account soft-deleted (deactivated) and notification queued for user: {user_email}")
 
 
 class UserPreferencesService:

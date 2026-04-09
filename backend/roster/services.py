@@ -15,6 +15,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from notifications.email_service import EmailType
 
 from core.models import UserProfile
 from notifications.tasks import send_notification_task, send_bulk_notifications_task
@@ -62,14 +63,19 @@ class ArtistHRService:
             counter += 1
             
         with transaction.atomic():
+            # 1. Create User
             user = User.objects.create(username=username, email=dto.email, is_active=False)
             user.set_unusable_password() 
             user.save()
             
-            profile = UserProfile.objects.get(user=user)
-            profile.language = getattr(dto, 'language', 'pl')
-            profile.save(update_fields=['language'])
+            # 2. EXPLICITLY Create Profile (No more reliance on hidden signals)
+            profile_lang = getattr(dto, 'language', 'pl')
+            profile = UserProfile.objects.create(
+                user=user,
+                language=profile_lang
+            )
             
+            # 3. Create Artist Details
             artist = Artist.objects.create(
                 user=user, 
                 first_name=dto.first_name, 
@@ -82,15 +88,14 @@ class ArtistHRService:
                 vocal_range_top=dto.vocal_range_top or ""          
             )
 
+            # 4. Generate Tokens
             payload = UserIdentityService.generate_activation_token_payload(user)
             activation_link = (
                 f"{settings.CORS_ALLOWED_ORIGINS[0]}/activate"
                 f"?uid={payload['uidb64']}&token={payload['token']}"
             )
 
-            # Pobieramy profil, aby zachować zgodność i18n
-            profile_lang = user.profile.language if hasattr(user, 'profile') else 'en'
-
+            # 5. Dispatch Operational Email
             transaction.on_commit(
                 lambda: send_transactional_email_task.delay(
                     recipient_email=user.email,
@@ -100,12 +105,43 @@ class ArtistHRService:
                         "first_name": artist.first_name,
                         "activation_link": activation_link,
                     },
-                    language_code=profile.language
+                    fallback_language=profile_lang,
+                    email_type=EmailType.OPERATIONAL
                 )
             )
             
             logger.info(f"Successfully provisioned artist and dispatched invite for: {dto.email}")
             return artist
+    
+    @staticmethod
+    def archive_artist(artist: Artist) -> None:
+        """Przenosi artystę do archiwum i blokuje mu możliwość logowania do aplikacji."""
+        with transaction.atomic():
+            # 1. Soft Delete Artysty (ukrywa go na listach)
+            artist.delete() 
+            
+            # 2. Blokada logowania (Zatrzymuje autoryzację JWT/Sesji)
+            if artist.user_id:
+                user = artist.user
+                user.is_active = False
+                user.save(update_fields=['is_active'])
+            
+            logger.info(f"Artist {artist.email} archived and user access revoked.")
+
+    @staticmethod
+    def restore_artist(artist: Artist) -> None:
+        """Przywraca artystę z archiwum i odblokowuje mu dostęp."""
+        with transaction.atomic():
+            # 1. Przywrócenie Artysty (odkręcenie Soft Delete)
+            artist.restore() 
+            
+            # 2. Odblokowanie logowania
+            if artist.user_id:
+                user = artist.user
+                user.is_active = True
+                user.save(update_fields=['is_active'])
+            
+            logger.info(f"Artist {artist.email} restored and user access granted.")
 
 
 class ProjectManagementService:
