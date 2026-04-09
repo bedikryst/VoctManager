@@ -14,17 +14,20 @@ def send_transactional_email_task(
     recipient_email: str, 
     subject: str, 
     template_name: str, 
-    context: Dict[str, Any]
+    context: Dict[str, Any],
+    language_code: str = 'en'  
 ):
     """
     Background worker task to dispatch transactional emails.
+    Now supports explicit language context for i18n.
     """
     try:
         EmailDispatcherService.dispatch(
             recipient_email=recipient_email,
             subject=subject,
             template_name=template_name,
-            context=context
+            context=context,
+            language_code=language_code   
         )
     except Exception as exc:
         raise self.retry(exc=exc)

@@ -38,7 +38,7 @@ class PieceWriteDTO(EnterpriseBaseDTO):
     reference_recording_spotify: Optional[HttpUrl] = None
     
     # Basic sanity check for composition years
-    composition_year: Optional[int] = Field(None, ge=1000, le=2100)
+    composition_year: Optional[int] = Field(None, ge=500, le=2100)
     epoch: Optional[str] = Field(None, max_length=4)
     
     voice_requirements: Optional[List[VoiceRequirementDTO]] = None

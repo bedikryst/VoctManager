@@ -1,0 +1,61 @@
+{% extends "emails/base.html" %} {% load i18n %} {% block content %}
+<h1 style="margin-bottom: 24px">
+  {% trans "Welcome to VoctEnsemble" %}{% if first_name %}, {{ first_name }}{%
+  endif %}.
+</h1>
+
+<p style="margin-bottom: 16px">
+  {% trans "We are thrilled to welcome you to VoctManager — the digital heart of
+  our artistic operations. This platform was designed to streamline our creative
+  process, from repertoire management to concert logistics, ensuring you can
+  focus entirely on the music." %}
+</p>
+
+<p style="margin-bottom: 32px">
+  {% trans "Your profile has been successfully provisioned. You can now log in
+  to view your upcoming projects, access sheet music, and review rehearsal
+  schedules." %}
+</p>
+
+<table
+  width="100%"
+  border="0"
+  cellspacing="0"
+  cellpadding="0"
+  style="margin-bottom: 40px"
+>
+  <tr>
+    <td align="center">
+      <a
+        href="{{ frontend_url|default:'https://voctensemble.com/login' }}"
+        class="btn"
+        style="
+          display: inline-block;
+          background-color: #111827;
+          color: #ffffff;
+          text-decoration: none;
+          padding: 14px 28px;
+          border-radius: 4px;
+          font-size: 14px;
+          font-weight: 500;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        "
+      >
+        {% trans "Access Your Dashboard" %}
+      </a>
+    </td>
+  </tr>
+</table>
+
+<div class="divider"></div>
+
+<p style="margin-bottom: 8px; color: #6b7280; font-size: 14px">
+  {% trans "If you experience any issues logging in, please reach out to the
+  administration team." %}
+</p>
+<p style="margin-bottom: 0; color: #6b7280; font-size: 14px">
+  {% trans "Musically yours," %}<br />
+  <strong style="color: #4b5563">{% trans "The VoctEnsemble Team" %}</strong>
+</p>
+{% endblock %}

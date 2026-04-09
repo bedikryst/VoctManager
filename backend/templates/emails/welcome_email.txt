@@ -1,0 +1,13 @@
+{% load i18n %}
+{% trans "Welcome to VoctEnsemble" %}{% if first_name %}, {{ first_name }}{% endif %}.
+
+{% trans "We are thrilled to welcome you to VoctManager — the digital heart of our artistic operations. This platform was designed to streamline our creative process, from repertoire management to concert logistics, ensuring you can focus entirely on the music." %}
+
+{% trans "Your profile has been successfully provisioned. You can now log in to view your upcoming projects, access sheet music, and review rehearsal schedules." %}
+
+{% trans "Access Your Dashboard here:" %} {{ frontend_url|default:'https://voctensemble.com/login' }}
+
+{% trans "If you experience any issues logging in, please reach out to the administration team." %}
+
+{% trans "Musically yours," %}
+{% trans "The VoctEnsemble Team" %}
