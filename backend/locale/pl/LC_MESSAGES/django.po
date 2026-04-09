@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VoctManager 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-09 15:07+0000\n"
+"POT-Creation-Date: 2026-04-09 17:07+0000\n"
 "PO-Revision-Date: 2026-04-09 17:15+0100\n"
 "Last-Translator: Krystian Bugalski\n"
 "Language-Team: Polish\n"
@@ -21,7 +21,8 @@ msgstr ""
 #: archive/models.py:17
 #, python-format
 msgid "File size must be under %(size)s MB. Current: %(current)s MB"
-msgstr "Rozmiar pliku musi być mniejszy niż %(size)s MB. Aktualny: %(current)s MB"
+msgstr ""
+"Rozmiar pliku musi być mniejszy niż %(size)s MB. Aktualny: %(current)s MB"
 
 #: archive/models.py:23 roster/models.py:40 roster/models.py:221
 msgid "First Name"
@@ -356,7 +357,9 @@ msgstr "Preferowany język interfejsu użytkownika."
 #: core/models.py:116
 msgid ""
 "Critical for rendering rehearsal/project times correctly across regions."
-msgstr "Kluczowe dla prawidłowego wyświetlania czasu prób i projektów w różnych strefach czasowych."
+msgstr ""
+"Kluczowe dla prawidłowego wyświetlania czasu prób i projektów w różnych "
+"strefach czasowych."
 
 #: core/models.py:123
 msgid "Primary dietary requirement for catering."
@@ -831,6 +834,62 @@ msgstr "Przypisanie obsługi"
 msgid "Crew Assignments"
 msgstr "Obsługa techniczna"
 
+#: templates/emails/account_activation.html:12
+#, fuzzy
+#| msgid "Project Invitation"
+msgid "VoctManager Invitation"
+msgstr "Zaproszenie do VoctManager"
+
+#: templates/emails/account_activation.html:16
+#: templates/emails/account_activation.txt:4
+msgid "Activate your artist profile"
+msgstr "Aktywuj swój profil artysty"
+
+#: templates/emails/account_activation.html:20
+#: templates/emails/account_activation.txt:7
+msgid "Hello"
+msgstr "Witaj"
+
+#: templates/emails/account_activation.html:41
+msgid "Security Notice:"
+msgstr "Informacja o bezpieczeństwie:"
+
+#: templates/emails/account_activation.html:75
+msgid "Activate Account"
+msgstr "Aktywuj Konto"
+
+#: templates/emails/account_activation.html:96
+#: templates/emails/account_activation.txt:19
+#: templates/emails/welcome_email.html:58 templates/emails/welcome_email.txt:12
+msgid "Musically yours,"
+msgstr "Z muzycznym pozdrowieniem,"
+
+#: templates/emails/account_activation.html:97
+#: templates/emails/account_activation.txt:20
+#: templates/emails/welcome_email.html:59 templates/emails/welcome_email.txt:13
+msgid "The VoctEnsemble Team"
+msgstr "Zespół VoctEnsemble"
+
+#: templates/emails/account_activation.txt:2
+msgid "VOCTMANAGER INVITATION"
+msgstr "Zaproszenie do VoctManager"
+
+#: templates/emails/account_activation.txt:9
+msgid "Your exclusive access to VoctManager has been prepared. Complete the final activation step to set your secure password and enter the operational workspace used for our projects and rehearsals."
+msgstr "Twój ekskluzywny dostęp do platformy VoctManager jest już gotowy. Dokończ proces aktywacji, aby ustawić bezpieczne hasło i uzyskać dostęp do panelu operacyjnego, w którym zarządzamy naszymi projektami i próbami."
+
+#: templates/emails/account_activation.txt:11
+msgid "If the button does not work, securely copy and paste this link into your browser:"
+msgstr "Jeśli przycisk nie działa, bezpiecznie skopiuj i wklej poniższy link do przeglądarki:"
+
+#: templates/emails/account_activation.txt:13
+msgid "ACTIVATE ACCOUNT NOW:"
+msgstr "AKTYWUJ KONTO TERAZ:"
+
+#: templates/emails/account_activation.txt:17
+msgid "If you did not expect this message, contact the VoctEnsemble administration team."
+msgstr "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z zespołem administracyjnym VoctEnsemble."
+
 #: templates/emails/welcome_email.html:3 templates/emails/welcome_email.txt:2
 msgid "Welcome to VoctEnsemble"
 msgstr "Witaj w VoctEnsemble"
@@ -839,14 +898,6 @@ msgstr "Witaj w VoctEnsemble"
 msgid "Access Your Dashboard"
 msgstr "Przejdź do panelu"
 
-#: templates/emails/welcome_email.html:58 templates/emails/welcome_email.txt:12
-msgid "Musically yours,"
-msgstr "Z muzycznym pozdrowieniem,"
-
-#: templates/emails/welcome_email.html:59 templates/emails/welcome_email.txt:13
-msgid "The VoctEnsemble Team"
-msgstr "Zespół VoctEnsemble"
-
 #: templates/emails/welcome_email.txt:4
 msgid ""
 "We are thrilled to welcome you to VoctManager — the digital heart of our "
@@ -854,14 +905,18 @@ msgid ""
 "process, from repertoire management to concert logistics, ensuring you can "
 "focus entirely on the music."
 msgstr ""
-"Z ogromną radością witamy Cię w VoctManager — cyfrowym sercu naszych operacji artystycznych. Ta platforma została zaprojektowana, aby usprawnić nasz proces twórczy — od zarządzania repertuarem po logistykę koncertową — tak, abyś mógł/mogła skupić się wyłącznie na muzyce."
+"Z ogromną radością witamy Cię w VoctManager — cyfrowym sercu naszych "
+"operacji artystycznych. Ta platforma została zaprojektowana, aby usprawnić "
+"nasz proces twórczy — od zarządzania repertuarem po logistykę koncertową — "
+"tak, abyś mógł/mogła skupić się wyłącznie na muzyce."
 
 #: templates/emails/welcome_email.txt:6
 msgid ""
 "Your profile has been successfully provisioned. You can now log in to view "
 "your upcoming projects, access sheet music, and review rehearsal schedules."
 msgstr ""
-"Twój profil został pomyślnie utworzony. Możesz teraz zalogować się, aby sprawdzić nadchodzące projekty, pobrać nuty oraz przejrzeć harmonogram prób."
+"Twój profil został pomyślnie utworzony. Możesz teraz zalogować się, aby "
+"sprawdzić nadchodzące projekty, pobrać nuty oraz przejrzeć harmonogram prób."
 
 #: templates/emails/welcome_email.txt:8
 msgid "Access Your Dashboard here:"
@@ -872,4 +927,5 @@ msgid ""
 "If you experience any issues logging in, please reach out to the "
 "administration team."
 msgstr ""
-"W razie problemów z logowaniem, prosimy o kontakt z zespołem administracyjnym."
+"W razie problemów z logowaniem, prosimy o kontakt z zespołem "
+"administracyjnym."

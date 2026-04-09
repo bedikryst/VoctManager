@@ -21,6 +21,7 @@ from .auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, Logou
 from roster.views import ArtistViewSet, CollaboratorViewSet, CrewAssignmentViewSet, ProgramItemViewSet, ProjectViewSet, ParticipationViewSet, RehearsalViewSet, AttendanceViewSet, ProjectPieceCastingViewSet, get_voice_lines, get_voice_types
 from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet, PieceVoiceRequirementViewSet
 from core.views import (
+    ActivateAccountView,
     CurrentUserRetrieveUpdateView, 
     ChangePasswordView, 
     ChangeEmailRequestView,
@@ -81,6 +82,7 @@ urlpatterns = [
     path('api/options/voice-types/', get_voice_types, name='options-voice-types'),
 
     # --- User Settings & Profile Endpoints ---
+    path('api/users/activate/', ActivateAccountView.as_view(), name='user-activate-account'),
     path('api/users/me/', CurrentUserRetrieveUpdateView.as_view(), name='user-me'),
     path('api/users/me/change-password/', ChangePasswordView.as_view(), name='user-change-password'),
     path('api/users/me/change-email/', ChangeEmailRequestView.as_view(), name='user-change-email'),

@@ -23,6 +23,7 @@ export interface ArtistFormData {
   sight_reading_skill: string;
   vocal_range_bottom: string;
   vocal_range_top: string;
+  language: string;
 }
 
 export const useArtistForm = (
@@ -59,6 +60,7 @@ export const useArtistForm = (
         : "",
       vocal_range_bottom: artist?.vocal_range_bottom || "",
       vocal_range_top: artist?.vocal_range_top || "",
+      language: "pl",
     };
   }, [artist, voiceTypes, initialSearchContext]);
 
@@ -76,18 +78,33 @@ export const useArtistForm = (
         : t("artists.form.toast.creating", "Tworzenie konta artysty..."),
     );
 
-    const payload = {
-      ...formData,
+    // 1. Czysty payload zgodny z ArtistCreateDTO na backendzie (bez is_active)
+    const basePayload: ArtistCreateDTO = {
+      first_name: formData.first_name.trim(),
+      last_name: formData.last_name.trim(),
+      email: formData.email.trim(),
+      voice_type: formData.voice_type,
+      // Zamieniamy puste stringi na undefined, aby Pydantic traktował je jako brak wartości (optional)
+      phone_number: formData.phone_number.trim() || undefined,
+      vocal_range_bottom: formData.vocal_range_bottom.trim() || undefined,
+      vocal_range_top: formData.vocal_range_top.trim() || undefined,
       sight_reading_skill: formData.sight_reading_skill
         ? parseInt(formData.sight_reading_skill, 10)
-        : undefined,
+        : null,
+      language: formData.language,
     };
 
     try {
       if (artist?.id) {
+        // 2. Dla edycji dorzucamy is_active (ArtistUpdateDTO)
+        const updatePayload: ArtistUpdateDTO = {
+          ...basePayload,
+          is_active: formData.is_active,
+        };
+
         await updateMutation.mutateAsync({
           id: artist.id,
-          data: payload as ArtistUpdateDTO,
+          data: updatePayload,
         });
         toast.success(
           t(
@@ -97,7 +114,8 @@ export const useArtistForm = (
           { id: toastId },
         );
       } else {
-        await createMutation.mutateAsync(payload as ArtistCreateDTO);
+        // 3. Dla tworzenia wysyłamy czysty basePayload
+        await createMutation.mutateAsync(basePayload);
         toast.success(
           t(
             "artists.form.toast.create_success",
@@ -111,6 +129,7 @@ export const useArtistForm = (
       onClose();
     } catch (err: any) {
       console.error("[ArtistEditor] Form submission failed:", err);
+      // ... reszta catch pozostaje bez zmian
       const isEmailTaken = err?.response?.data?.email;
 
       toast.error(

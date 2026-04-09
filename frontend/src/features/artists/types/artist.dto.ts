@@ -14,6 +14,7 @@ export interface ArtistCreateDTO {
   sight_reading_skill?: number | null;
   vocal_range_bottom?: string;
   vocal_range_top?: string;
+  language?: string;
 }
 
 export type ArtistUpdateDTO = Partial<ArtistCreateDTO> & {

@@ -1,7 +1,10 @@
 # notifications/email_tasks.py
+import logging
+from typing import Any, Dict
 from celery import shared_task
-from typing import Dict, Any
 from .email_service import EmailDispatcherService
+
+logger = logging.getLogger(__name__)
 
 @shared_task(
     name="emails.send_transactional_email",
@@ -15,11 +18,11 @@ def send_transactional_email_task(
     subject: str, 
     template_name: str, 
     context: Dict[str, Any],
-    language_code: str = 'en'  
+    language_code: str = 'en'
 ):
     """
     Background worker task to dispatch transactional emails.
-    Now supports explicit language context for i18n.
+    Supports explicit language context for i18n and automatic retries.
     """
     try:
         EmailDispatcherService.dispatch(
@@ -27,7 +30,8 @@ def send_transactional_email_task(
             subject=subject,
             template_name=template_name,
             context=context,
-            language_code=language_code   
+            language_code=language_code
         )
     except Exception as exc:
+        logger.warning(f"Email task failed for {recipient_email}, retrying...")
         raise self.retry(exc=exc)

@@ -35,6 +35,12 @@ class UserPasswordChangeDTO(EnterpriseBaseDTO):
     new_password: str = Field(..., min_length=8) 
 
 
+class UserAccountActivationDTO(EnterpriseBaseDTO):
+    uidb64: str = Field(..., min_length=1)
+    token: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8)
+
+
 class UserEmailChangeDTO(EnterpriseBaseDTO):
     # EmailStr automatically validates regex and domain structures
     new_email: EmailStr

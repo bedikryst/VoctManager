@@ -1,7 +1,9 @@
 # core/views.py
 from django.contrib.auth import get_user_model, logout, update_session_auth_hash
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import generics, status, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -11,12 +13,56 @@ from pydantic import ValidationError
 
 from .ical_service import ICalGeneratorService
 from .serializers import UserMeSerializer, UserProfileSerializer
-from .dtos import UserPreferencesUpdateDTO, UserPasswordChangeDTO, UserEmailChangeDTO, UserAccountDeletionDTO
+from .dtos import (
+    UserPreferencesUpdateDTO,
+    UserPasswordChangeDTO,
+    UserEmailChangeDTO,
+    UserAccountDeletionDTO,
+    UserAccountActivationDTO,
+)
 from .services import UserIdentityService, UserPreferencesService
 from .exceptions import InvalidCredentialsException, EmailAlreadyInUseException
 from .models import UserProfile
 
 User = get_user_model()
+
+
+class ActivateAccountView(views.APIView):
+    """Public endpoint for finalizing invited account activation."""
+    permission_classes = ()
+    authentication_classes = ()
+
+    def post(self, request, *args, **kwargs):
+        try:
+            dto = UserAccountActivationDTO(**request.data)
+            validate_password(dto.new_password)
+        except ValidationError as e:
+            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+        except DjangoValidationError as e:
+            return Response(
+                {"validation_errors": {"new_password": list(e.messages)}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = UserIdentityService.activate_account_and_set_password(
+                uidb64=dto.uidb64,
+                token=dto.token,
+                new_password=dto.new_password,
+            )
+            return Response(
+                {
+                    "detail": "Account activated successfully.",
+                    "email": user.email,
+                    "username": user.username,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except InvalidCredentialsException as e:
+            return Response(
+                {"error_code": str(e), "message": "Activation link is invalid or expired."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
 
 class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):

@@ -24,6 +24,7 @@ import SettingsPage from "../pages/app/SettingsPage";
 
 import Home from "../pages/public/HomePage";
 import Login from "../pages/public/LoginPage";
+import Activate from "../pages/public/ActivatePage";
 
 import Contracts from "../features/contracts/Contracts";
 import DashboardHome from "../features/dashboard/DashboardHome";
@@ -41,9 +42,10 @@ export default function App(): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
 
   const isPanelRoute: boolean = location.pathname.startsWith("/panel");
-  const isLoginRoute: boolean = location.pathname === "/login";
+  const isAuthRoute: boolean =
+    location.pathname === "/login" || location.pathname === "/activate";
 
-  const shouldShowGlobalComponents: boolean = !isPanelRoute && !isLoginRoute;
+  const shouldShowGlobalComponents: boolean = !isPanelRoute && !isAuthRoute;
 
   return (
     <>
@@ -67,6 +69,14 @@ export default function App(): React.JSX.Element {
             element={
               <PageTransition>
                 <Login />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/activate"
+            element={
+              <PageTransition>
+                <Activate />
               </PageTransition>
             }
           />

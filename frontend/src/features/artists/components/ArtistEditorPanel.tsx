@@ -212,7 +212,27 @@ export default function ArtistEditorPanel({
                       </div>
                     </div>
                   </div>
-
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                    <div>
+                      <label className={STYLE_LABEL}>
+                        {t("artists.editor.language", "Język wiadomości *")}
+                      </label>
+                      <select
+                        value={formData.language}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            language: event.target.value,
+                          })
+                        }
+                        className={`${STYLE_SELECT} font-bold appearance-none`}
+                        disabled={isSubmitting}
+                      >
+                        <option value="pl">Polski</option>
+                        <option value="en">English</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="space-y-5 pt-4">
                     <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
                       {t("artists.editor.section_voice", "Profil Wokalny")}
@@ -340,36 +360,38 @@ export default function ArtistEditorPanel({
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-stone-200/60">
-                    <label className="flex items-center gap-4 p-4 border border-stone-200/80 rounded-xl bg-white/50 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer hover:border-[#002395]/40 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.is_active}
-                        onChange={(event) =>
-                          setFormData({
-                            ...formData,
-                            is_active: event.target.checked,
-                          })
-                        }
-                        className="w-5 h-5 text-[#002395] focus:ring-[#002395]/20 border-stone-300 rounded-md cursor-pointer"
-                        disabled={isSubmitting}
-                      />
-                      <div>
-                        <span className="block text-sm font-bold text-stone-800">
-                          {t(
-                            "artists.editor.active_access_title",
-                            "Aktywny dostęp do platformy",
-                          )}
-                        </span>
-                        <span className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mt-1">
-                          {t(
-                            "artists.editor.active_access_desc",
-                            "Zablokuje logowanie w przypadku odznaczenia.",
-                          )}
-                        </span>
-                      </div>
-                    </label>
-                  </div>
+                  {artist?.id && (
+                    <div className="pt-6 border-t border-stone-200/60">
+                      <label className="flex items-center gap-4 p-4 border border-stone-200/80 rounded-xl bg-white/50 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer hover:border-[#002395]/40 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={formData.is_active}
+                          onChange={(event) =>
+                            setFormData({
+                              ...formData,
+                              is_active: event.target.checked,
+                            })
+                          }
+                          className="w-5 h-5 text-[#002395] focus:ring-[#002395]/20 border-stone-300 rounded-md cursor-pointer"
+                          disabled={isSubmitting}
+                        />
+                        <div>
+                          <span className="block text-sm font-bold text-stone-800">
+                            {t(
+                              "artists.editor.active_access_title",
+                              "Aktywny dostęp do platformy",
+                            )}
+                          </span>
+                          <span className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mt-1">
+                            {t(
+                              "artists.editor.active_access_desc",
+                              "Zablokuje logowanie w przypadku odznaczenia.",
+                            )}
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 <div className="sticky bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-stone-200/60 p-4 md:p-6 -mx-6 md:-mx-8 -mb-8 mt-8 flex flex-col sm:flex-row gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-b-2xl">

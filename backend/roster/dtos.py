@@ -23,7 +23,7 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     sight_reading_skill: Optional[int] = Field(None, ge=1, le=5)
     vocal_range_bottom: Optional[str] = Field(None, max_length=5)
     vocal_range_top: Optional[str] = Field(None, max_length=5)
-
+    language: str = Field(default='pl', max_length=10)
 
 class AttendanceRecordDTO(EnterpriseBaseDTO):
     # Added missing fields that the Service layer expects!
