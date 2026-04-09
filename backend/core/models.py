@@ -153,7 +153,7 @@ class UserProfile(EnterpriseBaseModel):
     
     email_notifications_enabled = models.BooleanField(
         default=True,
-        help_text=_("Toggle flag for receiving non-critical system updates via email.")
+        help_text=_("Determines if the user receives non-critical operational emails.")
     )
     
     class Meta:

@@ -9,11 +9,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSettingsData, useUpdatePreferences } from "../api/settings.queries";
 import { UpdatePreferencesPayload } from "../types/settings.dto";
+import { useTranslation } from "react-i18next";
 
 export function useGeneralSettings() {
   const { data: user, isLoading: isFetching } = useSettingsData();
   const { mutateAsync: updatePreferences, isPending } = useUpdatePreferences();
-
+  const { i18n } = useTranslation();
   const [formData, setFormData] = useState<UpdatePreferencesPayload>({
     first_name: "",
     last_name: "",
@@ -84,6 +85,12 @@ export function useGeneralSettings() {
     try {
       await updatePreferences(formData);
       setStatus({ type: "success" });
+
+      const newLang = formData.profile.language;
+      if (newLang && i18n.language !== newLang) {
+        i18n.changeLanguage(newLang);
+        document.documentElement.lang = newLang; // synchronizacja a11y
+      }
 
       // Ukrywamy komunikat o sukcesie po 3 sekundach
       setTimeout(() => setStatus({ type: null }), 3000);

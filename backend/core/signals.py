@@ -16,7 +16,6 @@ from .models import UserProfile
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def handle_user_creation_and_profile(sender, instance, created, **kwargs):
     """
@@ -39,38 +38,50 @@ def handle_user_creation_and_profile(sender, instance, created, **kwargs):
                     language_code=profile.language
                 )
             )
-            logger.info(f"Queued welcome email for new active user: {instance.email}")
-        
-
+            logger.info(f"Registered welcome email task for new active user: {instance.email}")
 
 @receiver(pre_save, sender=settings.AUTH_USER_MODEL)
 def detect_security_changes(sender, instance, **kwargs):
+    """
+    Detects security-critical field changes (e.g., password).
+    Crucially uses transaction.on_commit to prevent false-positive alerts on failed DB saves.
+    """
     if not instance.pk:
         return
 
     try:
-        user_with_profile = User.objects.select_related("profile").get(pk=instance.pk)
+        # Optimization: Fetch only the password hash from DB
+        old_user = User.objects.only('password').get(pk=instance.pk)
     except User.DoesNotExist:
         return
 
-    if user_with_profile.is_active and user_with_profile.password != instance.password:
-        send_transactional_email_task.delay(
-            recipient_email=instance.email,
-            subject="Security Alert: Password Changed",
-            template_name="password_changed",
-            context={"user_email": instance.email},
-            language_code=getattr(user_with_profile.profile, 'language', 'en')
-        )
-        logger.info(f"Queued password change security email for: {instance.email}")
+    if old_user.password != instance.password:
+        language = 'en'
+        if hasattr(instance, 'profile'):
+            language = instance.profile.language
 
+        transaction.on_commit(
+            lambda: send_transactional_email_task.delay(
+                recipient_email=instance.email,
+                subject="Security Alert: Password Changed",
+                template_name="password_changed",
+                context={"user_email": instance.email},
+                language_code=language
+            )
+        )
+        logger.info(f"Registered password change security email task for: {instance.email}")
 
 @receiver(pre_delete, sender=settings.AUTH_USER_MODEL)
 def handle_account_deletion(sender, instance, **kwargs):
+    """
+    Dispatches GDPR-compliant account deletion confirmation.
+    """
     send_transactional_email_task.delay(
         recipient_email=instance.email,
         subject="Your VoctManager Account has been deleted",
         template_name="account_deleted",
         context={"user_email": instance.email},
-        # GDPR hard-delete uses default EN to guarantee delivery
+        # Defaulting to EN as profile might be deleted concurrently
+        language_code='en' 
     )
     logger.info(f"Queued account deletion confirmation email for: {instance.email}")

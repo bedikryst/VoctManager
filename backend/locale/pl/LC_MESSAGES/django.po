@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VoctManager 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-09 17:07+0000\n"
+"POT-Creation-Date: 2026-04-09 18:18+0000\n"
 "PO-Revision-Date: 2026-04-09 17:15+0100\n"
 "Last-Translator: Krystian Bugalski\n"
 "Language-Team: Polish\n"
@@ -386,8 +386,8 @@ msgid "Secret token for iCal feed subscription."
 msgstr "Prywatny token subskrypcji kalendarza iCal."
 
 #: core/models.py:156
-msgid "Toggle flag for receiving non-critical system updates via email."
-msgstr "Otrzymywanie powiadomień systemowych drogą mailową."
+msgid "Determines if the user receives non-critical operational emails."
+msgstr ""
 
 #: core/models.py:161
 msgid "User Profile"
@@ -834,36 +834,71 @@ msgstr "Przypisanie obsługi"
 msgid "Crew Assignments"
 msgstr "Obsługa techniczna"
 
-#: templates/emails/account_activation.html:12
+#: templates/emails/account_activation.html:6
 msgid "VoctManager Invitation"
 msgstr "Zaproszenie do VoctManager"
 
-#: templates/emails/account_activation.html:16
+#: templates/emails/account_activation.html:10
 #: templates/emails/account_activation.txt:4
 msgid "Activate your artist profile"
 msgstr "Aktywuj swój profil artysty"
 
-#: templates/emails/account_activation.html:20
-#: templates/emails/account_activation.txt:7
-msgid "Hello"
+#: templates/emails/account_activation.html:15
+#: templates/emails/account_activation.txt:8
+#, python-format
+msgid "Hello %(first_name)s,"
+msgstr ""
+
+#: templates/emails/account_activation.html:17
+#: templates/emails/account_activation.txt:10
+#, fuzzy
+#| msgid "Hello"
+msgid "Hello,"
 msgstr "Witaj"
 
-#: templates/emails/account_activation.html:41
+#: templates/emails/account_activation.html:22
+#: templates/emails/account_activation.txt:13
+msgid ""
+"Your exclusive access to VoctManager has been prepared. Complete the final "
+"activation step to set your secure password and enter the operational "
+"workspace used for our projects and rehearsals."
+msgstr ""
+"Twój ekskluzywny dostęp do platformy VoctManager jest już gotowy. Dokończ "
+"proces aktywacji, aby ustawić bezpieczne hasło i uzyskać dostęp do panelu "
+"operacyjnego, w którym zarządzamy naszymi projektami i próbami."
+
+#: templates/emails/account_activation.html:29
+#: templates/emails/account_activation.txt:17
 msgid "Security Notice:"
 msgstr "Informacja o bezpieczeństwie:"
 
-#: templates/emails/account_activation.html:75
+#: templates/emails/account_activation.html:30
+#: templates/emails/account_activation.txt:17
+msgid ""
+"This activation link is unique to your account. For your security, it will "
+"expire automatically. Please do not share it with anyone."
+msgstr ""
+
+#: templates/emails/account_activation.html:40
 msgid "Activate Account"
 msgstr "Aktywuj Konto"
 
-#: templates/emails/account_activation.html:96
-#: templates/emails/account_activation.txt:19
+#: templates/emails/account_activation.html:49
+msgid ""
+"If the button does not work, securely copy and paste this link into your "
+"browser:"
+msgstr ""
+"Jeśli przycisk nie działa, bezpiecznie skopiuj i wklej poniższy link do "
+"przeglądarki:"
+
+#: templates/emails/account_activation.html:58
+#: templates/emails/account_activation.txt:29
 #: templates/emails/welcome_email.html:58 templates/emails/welcome_email.txt:12
 msgid "Musically yours,"
 msgstr "Z muzycznym pozdrowieniem,"
 
-#: templates/emails/account_activation.html:97
-#: templates/emails/account_activation.txt:20
+#: templates/emails/account_activation.html:59
+#: templates/emails/account_activation.txt:30
 #: templates/emails/welcome_email.html:59 templates/emails/welcome_email.txt:13
 msgid "The VoctEnsemble Team"
 msgstr "Zespół VoctEnsemble"
@@ -872,21 +907,17 @@ msgstr "Zespół VoctEnsemble"
 msgid "VOCTMANAGER INVITATION"
 msgstr "Zaproszenie do VoctManager"
 
-#: templates/emails/account_activation.txt:9
-msgid "Your exclusive access to VoctManager has been prepared. Complete the final activation step to set your secure password and enter the operational workspace used for our projects and rehearsals."
-msgstr "Twój ekskluzywny dostęp do platformy VoctManager jest już gotowy. Dokończ proces aktywacji, aby ustawić bezpieczne hasło i uzyskać dostęp do panelu operacyjnego, w którym zarządzamy naszymi projektami i próbami."
-
-#: templates/emails/account_activation.txt:11
-msgid "If the button does not work, securely copy and paste this link into your browser:"
-msgstr "Jeśli przycisk nie działa, bezpiecznie skopiuj i wklej poniższy link do przeglądarki:"
-
-#: templates/emails/account_activation.txt:13
+#: templates/emails/account_activation.txt:21
 msgid "ACTIVATE ACCOUNT NOW:"
 msgstr "AKTYWUJ KONTO TERAZ:"
 
-#: templates/emails/account_activation.txt:17
-msgid "If you did not expect this message, contact the VoctEnsemble administration team."
-msgstr "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z zespołem administracyjnym VoctEnsemble."
+#: templates/emails/account_activation.txt:25
+msgid ""
+"If you did not expect this message, contact the VoctEnsemble administration "
+"team."
+msgstr ""
+"Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z zespołem "
+"administracyjnym VoctEnsemble."
 
 #: templates/emails/welcome_email.html:3 templates/emails/welcome_email.txt:2
 msgid "Welcome to VoctEnsemble"
@@ -927,3 +958,6 @@ msgid ""
 msgstr ""
 "W razie problemów z logowaniem, prosimy o kontakt z zespołem "
 "administracyjnym."
+
+#~ msgid "Toggle flag for receiving non-critical system updates via email."
+#~ msgstr "Otrzymywanie powiadomień systemowych drogą mailową."

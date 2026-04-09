@@ -1,0 +1,3 @@
+# .prettierignore
+backend/templates/**/*.html
+backend/templates/**/*.txt

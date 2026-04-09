@@ -15,6 +15,7 @@ import React, {
   ReactNode,
 } from "react";
 import api, { type AuthRequestConfig } from "../../shared/api/api";
+import i18n from "../../shared/config/i18n";
 
 export interface AuthUser {
   id: string | number;
@@ -25,6 +26,10 @@ export interface AuthUser {
   is_admin?: boolean;
   artist_profile_id?: string | number;
   voice_type_display?: string;
+  profile?: {
+    language?: string;
+    [key: string]: any;
+  };
 }
 
 export interface LoginResponse {
@@ -48,9 +53,15 @@ export const AuthProvider = ({
   children: ReactNode;
 }): React.JSX.Element => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const userLang = user?.profile?.language;
+    if (userLang && i18n.language !== userLang) {
+      i18n.changeLanguage(userLang);
+      document.documentElement.lang = userLang;
+    }
+
     const checkAuth = async () => {
       try {
         const silentAuthCheckConfig: AuthRequestConfig = {

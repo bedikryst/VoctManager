@@ -9,8 +9,10 @@ logger = logging.getLogger(__name__)
 @shared_task(
     name="emails.send_transactional_email",
     bind=True,
-    max_retries=3,
-    default_retry_delay=10
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 4},
+    retry_backoff=True,
+    retry_jitter=True
 )
 def send_transactional_email_task(
     self, 
@@ -18,20 +20,16 @@ def send_transactional_email_task(
     subject: str, 
     template_name: str, 
     context: Dict[str, Any],
-    language_code: str = 'en'
+    language_code: str = 'en',
+    email_type: str = 'CRITICAL_SECURITY'  # Import EmailType from service and use its string value
 ):
-    """
-    Background worker task to dispatch transactional emails.
-    Supports explicit language context for i18n and automatic retries.
-    """
-    try:
-        EmailDispatcherService.dispatch(
-            recipient_email=recipient_email,
-            subject=subject,
-            template_name=template_name,
-            context=context,
-            language_code=language_code
-        )
-    except Exception as exc:
-        logger.warning(f"Email task failed for {recipient_email}, retrying...")
-        raise self.retry(exc=exc)
+    from .email_service import EmailDispatcherService
+    
+    EmailDispatcherService.dispatch(
+        recipient_email=recipient_email,
+        subject=subject,
+        template_name=template_name,
+        context=context,
+        language_code=language_code,
+        email_type=email_type
+    )

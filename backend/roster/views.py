@@ -81,6 +81,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def me(self, request) -> Response:
+        queryset = Artist.objects.select_related('user__profile')
         artist = get_object_or_404(Artist, user=request.user)
         return Response(self.get_serializer(artist).data)
 

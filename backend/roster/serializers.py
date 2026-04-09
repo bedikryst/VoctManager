@@ -17,7 +17,7 @@ from .models import (
     Artist, Collaborator, CrewAssignment, Project, Participation, 
     ProgramItem, Rehearsal, Attendance, ProjectPieceCasting
 )
-
+from core.serializers import UserProfileSerializer
 # --- 1. ARTIST SERIALIZERS ---
 
 class ArtistBasicSerializer(serializers.ModelSerializer):
@@ -47,7 +47,8 @@ class ArtistMeSerializer(serializers.ModelSerializer):
     is_admin = serializers.BooleanField(source='user.is_superuser', read_only=True)
     voice_type_display = serializers.CharField(source='get_voice_type_display', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
-
+    profile = UserProfileSerializer(source='user.profile', read_only=True)
+    
     class Meta:
         model = Artist
         exclude = (

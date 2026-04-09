@@ -5,13 +5,23 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import translation
+from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
+
+
+class EmailType:
+    """
+    Enum-like classification of emails to enforce delivery rules.
+    """
+    CRITICAL_SECURITY = 'CRITICAL_SECURITY'  
+    OPERATIONAL = 'OPERATIONAL'              
 
 class EmailDispatcherService:
     """
     Enterprise service for compiling and dispatching operational emails.
-    Delegates template rendering, handles i18n context, and ensures proper MIME composition.
+    Handles user preferences, i18n context, and template rendering.
     """
 
     @classmethod
@@ -21,15 +31,26 @@ class EmailDispatcherService:
         subject: str, 
         template_name: str, 
         context: Dict[str, Any],
-        language_code: Optional[str] = 'en'
+        language_code: Optional[str] = 'en',
+        email_type: str = EmailType.CRITICAL_SECURITY
     ) -> None:
         """
-        Compiles the HTML/Text templates in the user's preferred language 
-        and dispatches the email payload.
+        Compiles templates and dispatches email. 
+        Respects user opt-out preferences for non-critical emails.
         """
-        # Context manager ensures language is only overridden for this specific rendering task
+        # 1. Enforce User Preferences
+        if email_type == EmailType.OPERATIONAL:
+            try:
+                user = User.objects.select_related('profile').get(email=recipient_email)
+                if not user.profile.email_notifications_enabled:
+                    logger.info(f"Skipped dispatching [{template_name}] to {recipient_email}: User opted out.")
+                    return
+            except User.DoesNotExist:
+                logger.warning(f"Attempted to send operational email to non-existent user: {recipient_email}")
+                return
+
+        # 2. Render and Dispatch
         with translation.override(language_code):
-            # Pass the language code to the context for conditional HTML rendering (e.g., dir="ltr")
             context['lang'] = language_code
             
             html_content = render_to_string(f"emails/{template_name}.html", context)
@@ -45,7 +66,7 @@ class EmailDispatcherService:
             
             try:
                 msg.send()
-                logger.info(f"Successfully dispatched email [{template_name}] to {recipient_email} in language [{language_code}]")
+                logger.info(f"Successfully dispatched {email_type} email [{template_name}] to {recipient_email} (lang: {language_code})")
             except Exception as e:
                 logger.error(f"Failed to dispatch email [{template_name}] to {recipient_email}: {str(e)}", exc_info=True)
                 raise

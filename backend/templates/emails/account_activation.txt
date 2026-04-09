@@ -1,20 +1,30 @@
 {% load i18n %}
-{% trans "VOCTMANAGER INVITATION" %}
+{% translate "VOCTMANAGER INVITATION" %}
 
-{% trans "Activate your artist profile" %}
+{% translate "Activate your artist profile" %}
 =========================================
 
-{% trans "Hello" %}{% if first_name %} {{ first_name }}{% endif %},
+{% if first_name %}
+{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}
+{% else %}
+{% translate "Hello," %}
+{% endif %}
 
-{% trans "Your exclusive access to VoctManager has been prepared. Complete the final activation step to set your secure password and enter the operational workspace used for our projects and rehearsals." %}
+{% blocktranslate trimmed %}
+Your exclusive access to VoctManager has been prepared. Complete the final activation step to set your secure password and enter the operational workspace used for our projects and rehearsals.
+{% endblocktranslate %}
 
-{% trans "Security Notice: This activation link is unique to your account. For your security, it will expire automatically. Please do not share it with anyone." %}
+{% translate "Security Notice:" %} {% blocktranslate trimmed %}
+This activation link is unique to your account. For your security, it will expire automatically. Please do not share it with anyone.
+{% endblocktranslate %}
 
-{% trans "ACTIVATE ACCOUNT NOW:" %} 
+{% translate "ACTIVATE ACCOUNT NOW:" %} 
 {{ activation_link }}
 
 -----------------------------------------
-{% trans "If you did not expect this message, contact the VoctEnsemble administration team." %}
+{% blocktranslate trimmed %}
+If you did not expect this message, contact the VoctEnsemble administration team.
+{% endblocktranslate %}
 
-{% trans "Musically yours," %}
-{% trans "The VoctEnsemble Team" %}
+{% translate "Musically yours," %}
+{% translate "The VoctEnsemble Team" %}
