@@ -7,10 +7,9 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 from django.utils import timezone
 import uuid
-from datetime import timedelta
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from roster.models import Project, Rehearsal, Participation
+from backend.core.ical_service import ICalGeneratorService
 
 from .serializers import (
     UserMeSerializer, 
@@ -201,83 +200,17 @@ class CalendarFeedView(views.APIView):
     permission_classes = () # IMPORTANT: Public access required for Google/Apple Calendar
     authentication_classes = () 
 
+    @extend_schema(responses={200: str}) # (Optional) describe for Swagger if needed
     def get(self, request, token, *args, **kwargs):
+        # 1. Fetch user by secret token
         profile = get_object_or_404(UserProfile, calendar_token=token)
-        user = profile.user
         
-        if not hasattr(user, 'artist_profile'):
-            return HttpResponse(self._generate_empty_ics(), content_type='text/calendar; charset=utf-8')
-
-        artist = user.artist_profile
+        # 2. Delegate business logic to service layer
+        ics_content = ICalGeneratorService.generate_user_feed(profile.user)
         
-        active_statuses = [Participation.Status.INVITED, Participation.Status.CONFIRMED]
-        
-        projects = Project.objects.filter(
-            participations__artist=artist,
-            participations__status__in=active_statuses
-        ).exclude(status=Project.Status.CANCELLED)
-
-        rehearsals = Rehearsal.objects.filter(
-            project__in=projects
-        ).distinct()
-
-        ics_content = self._build_ics(projects, rehearsals)
-        
+        # 3. Return RFC compliant response
         response = HttpResponse(ics_content, content_type='text/calendar; charset=utf-8')
-        response['Content-Disposition'] = f'attachment; filename="voctmanager_schedule.ics"'
+        response['Content-Disposition'] = 'attachment; filename="voctmanager_schedule.ics"'
+        # Ensure proxies don't cache this dynamic feed
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return response
-
-    def _build_ics(self, projects, rehearsals):
-        """Builds an RFC 5545 compliant ICS string manually to avoid external dependencies."""
-        lines = [
-            "BEGIN:VCALENDAR",
-            "VERSION:2.0",
-            "PRODID:-//VoctManager Enterprise//EN",
-            "CALSCALE:GREGORIAN",
-            "METHOD:PUBLISH",
-            "X-WR-CALNAME:VoctManager Schedule",
-            "X-WR-TIMEZONE:UTC",
-        ]
-
-        now_utc = timezone.now().strftime('%Y%m%dT%H%M%SZ')
-
-        for reh in rehearsals:
-            start_time = reh.date_time
-            end_time = start_time + timedelta(hours=3) # Domyślnie 3 godziny
-            
-            lines.extend([
-                "BEGIN:VEVENT",
-                f"UID:rehearsal_{reh.id}@voctmanager.com",
-                f"DTSTAMP:{now_utc}",
-                f"DTSTART:{start_time.strftime('%Y%m%dT%H%M%SZ')}",
-                f"DTEND:{end_time.strftime('%Y%m%dT%H%M%SZ')}",
-                f"SUMMARY:[Próba] {reh.project.title}",
-                f"LOCATION:{reh.location}",
-                f"DESCRIPTION:Cel: {reh.focus if reh.focus else 'Brak'}\\nProjekt: {reh.project.title}",
-                "END:VEVENT"
-            ])
-
-        for proj in projects:
-            start_time = proj.call_time if proj.call_time else proj.date_time
-            end_time = proj.date_time + timedelta(hours=4) # Domyślnie 4 godziny po koncercie
-            
-            lines.extend([
-                "BEGIN:VEVENT",
-                f"UID:project_{proj.id}@voctmanager.com",
-                f"DTSTAMP:{now_utc}",
-                f"DTSTART:{start_time.strftime('%Y%m%dT%H%M%SZ')}",
-                f"DTEND:{end_time.strftime('%Y%m%dT%H%M%SZ')}",
-                f"SUMMARY:[Koncert] {proj.title}",
-                f"LOCATION:{proj.location}",
-                f"DESCRIPTION:Ubiór M: {proj.dress_code_male}\\nUbiór K: {proj.dress_code_female}\\n{proj.description}",
-                "END:VEVENT"
-            ])
-
-        lines.append("END:VCALENDAR")
-        # RFC 5545 requires CRLF line endings
-        return "\r\n".join(lines)
-
-    def _generate_empty_ics(self):
-        return "\r\n".join([
-            "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//VoctManager Enterprise//EN", "END:VCALENDAR"
-        ])
