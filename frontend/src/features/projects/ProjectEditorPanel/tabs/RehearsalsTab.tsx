@@ -21,6 +21,7 @@ import {
   UserCheck,
   Calendar1,
   Loader2,
+  Edit2,
 } from "lucide-react";
 
 import { useRehearsalsTab, TargetType } from "../hooks/useRehearsalsTab";
@@ -46,6 +47,7 @@ export default function RehearsalsTab({
   const {
     isLoading,
     isSubmitting,
+    isEditing,
     rehearsalToDelete,
     setRehearsalToDelete,
     isDeleting,
@@ -58,7 +60,9 @@ export default function RehearsalsTab({
     projectRehearsals,
     projectParticipations,
     artistMap,
-    handleAdd,
+    handleSubmit,
+    handleEditClick,
+    handleCancelEdit,
     handleDeleteClick,
     executeDelete,
     toggleSection,
@@ -67,12 +71,18 @@ export default function RehearsalsTab({
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
-      <form onSubmit={handleAdd}>
+      <form onSubmit={handleSubmit}>
         <GlassCard className="p-6 md:p-8 flex flex-col gap-6">
           <div className="flex items-center gap-2.5 border-b border-stone-200/60 pb-3">
-            <Clock size={16} className="text-[#002395]" aria-hidden="true" />
+            <Clock
+              size={16}
+              className={isEditing ? "text-orange-500" : "text-[#002395]"}
+              aria-hidden="true"
+            />
             <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800">
-              {t("projects.rehearsals.form.title", "Zaplanuj nową próbę")}
+              {isEditing
+                ? t("projects.rehearsals.form.title_edit", "Edytuj próbę")
+                : t("projects.rehearsals.form.title", "Zaplanuj nową próbę")}
             </h4>
           </div>
 
@@ -284,15 +294,30 @@ export default function RehearsalsTab({
               </span>
             </label>
 
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isSubmitting}
-              isLoading={isSubmitting}
-              className="w-full md:w-auto"
-            >
-              {t("projects.rehearsals.form.submit", "Zapisz w kalendarzu")}
-            </Button>
+            <div className="flex gap-2 w-full md:w-auto">
+              {isEditing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                  className="w-full md:w-auto"
+                >
+                  {t("common.actions.cancel", "Anuluj")}
+                </Button>
+              )}
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isSubmitting}
+                isLoading={isSubmitting}
+                className="w-full md:w-auto"
+              >
+                {isEditing
+                  ? t("projects.rehearsals.form.update", "Aktualizuj próbę")
+                  : t("projects.rehearsals.form.submit", "Zapisz w kalendarzu")}
+              </Button>
+            </div>
           </div>
         </GlassCard>
       </form>
@@ -401,7 +426,18 @@ export default function RehearsalsTab({
                   </div>
                 </div>
 
-                <div className="mt-5 md:mt-0 md:ml-4 flex items-center justify-end border-t md:border-t-0 border-stone-200/50 pt-4 md:pt-0">
+                {/* Sekcja przycisków Edytuj / Usuń */}
+                <div className="mt-5 md:mt-0 md:ml-4 flex items-center justify-end gap-1 border-t md:border-t-0 border-stone-200/50 pt-4 md:pt-0">
+                  <button
+                    onClick={() => handleEditClick(reh)}
+                    className="text-stone-400 hover:text-blue-500 p-2.5 rounded-xl bg-white border border-transparent hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm active:scale-95"
+                    title={t(
+                      "projects.rehearsals.actions.edit",
+                      "Edytuj próbę",
+                    )}
+                  >
+                    <Edit2 size={16} aria-hidden="true" />
+                  </button>
                   <button
                     onClick={() => handleDeleteClick(reh.id)}
                     className="text-stone-400 hover:text-red-500 p-2.5 rounded-xl bg-white border border-transparent hover:border-red-200 hover:bg-red-50 transition-all shadow-sm active:scale-95"

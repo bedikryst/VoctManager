@@ -15,7 +15,7 @@ import { MobileNavigation } from "./components/MobileNavigation";
 const APP_VERSION = "0.7";
 
 export default function DashboardLayout(): React.JSX.Element {
-  const { user, logout } = useAuth() as any;
+  const { user, logout } = useAuth();
 
   // Global styling for the app zone
   useEffect(() => {

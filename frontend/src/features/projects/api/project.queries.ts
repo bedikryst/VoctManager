@@ -23,6 +23,7 @@ import type {
   ProjectCreateDTO,
   ProjectUpdateDTO,
   RehearsalCreateDTO,
+  RehearsalUpdateDTO,
 } from "../types/project.dto";
 
 const STATIC_DICTIONARY_STALE_TIME = 1000 * 60 * 60 * 24;
@@ -268,6 +269,21 @@ export const useCreateRehearsal = (projectId: string) => {
   return useMutation({
     mutationFn: (data: RehearsalCreateDTO) =>
       ProjectService.createRehearsal(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.rehearsals.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+    },
+  });
+};
+
+export const useUpdateRehearsal = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: RehearsalUpdateDTO }) =>
+      ProjectService.updateRehearsal(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.rehearsals.byProject(projectId),

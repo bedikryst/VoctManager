@@ -77,6 +77,51 @@ def create_project_with_creator(user: User, validated_data: Dict[str, Any]) -> P
             )
     return project
 
+def update_project(project: Project, validated_data: Dict[str, Any]) -> Project:
+    """Updates core project details and broadcasts a notification to all participants."""
+    FIELD_NAMES = {
+        "title": "Tytuł",
+        "date_time": "Data",
+        "location": "Lokalizacja",
+        "call_time": "Zbiórka (Call-time)",
+        "status": "Status",
+        "dress_code_male": "Ubiór",
+        "dress_code_female": "Ubiór"
+    }
+    
+    changes = []
+    
+    with transaction.atomic():
+        for attr, value in validated_data.items():
+            old_value = getattr(project, attr)
+            if old_value != value:
+                changes.append(FIELD_NAMES.get(attr, attr))
+            setattr(project, attr, value)
+            
+        project.save()
+
+        qs = Participation.objects.filter(project=project, is_deleted=False)
+        recipient_ids = [str(p.artist.user_id) for p in qs if p.artist.user_id]
+        
+        if recipient_ids and changes:
+            unique_changes = list(set(changes))
+            transaction.on_commit(lambda: send_bulk_notifications_task.delay(
+                recipient_ids=recipient_ids,
+                notification_type=NotificationType.PROJECT_UPDATED,
+                level=(
+                    NotificationLevel.URGENT if any(k in changes for k in ["Data", "Zbiórka (Call-time)"])
+                    else NotificationLevel.WARNING
+                ),
+                metadata={
+                    "project_id": str(project.id),
+                    "project_name": project.title,
+                    "message": "Szczegóły projektu zostały zaktualizowane.",
+                    "changes": unique_changes
+                }
+            ))
+            
+    return project
+
 def create_participation(validated_data: Dict[str, Any]) -> Participation:
     with transaction.atomic():
         participation = Participation.objects.create(**validated_data)
@@ -167,11 +212,25 @@ def create_rehearsal(validated_data: Dict[str, Any], invited_participations: Opt
     return rehearsal
 
 def update_rehearsal(rehearsal: Rehearsal, validated_data: Dict[str, Any], invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
+    
+    FIELD_NAMES = {
+        "date_time": "Data / Godzina",
+        "location": "Lokalizacja",
+        "focus": "Plan pracy",
+        "is_mandatory": "Obowiązkowość"
+    }
+    
+    changes = []
+    
     with transaction.atomic():
         for attr, value in validated_data.items():
+            old_value = getattr(rehearsal, attr)
+            if old_value != value:
+                changes.append(FIELD_NAMES.get(attr, attr))
             setattr(rehearsal, attr, value)
+            
         rehearsal.save()
-        
+
         if invited_participations is not None:
             rehearsal.invited_participations.set(invited_participations)
 
@@ -186,10 +245,14 @@ def update_rehearsal(rehearsal: Rehearsal, validated_data: Dict[str, Any], invit
             transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                 recipient_ids=recipient_ids,
                 notification_type=NotificationType.REHEARSAL_UPDATED,
-                level=NotificationLevel.WARNING,
+                level=(
+                    NotificationLevel.URGENT if "Data / Godzina" in changes 
+                    else (NotificationLevel.WARNING if changes else NotificationLevel.INFO)
+                ),
                 metadata={
                     "rehearsal_id": str(rehearsal.id),
-                    "project_name": rehearsal.project.title
+                    "project_name": rehearsal.project.title,
+                    "changes": changes
                 }
             ))
     return rehearsal

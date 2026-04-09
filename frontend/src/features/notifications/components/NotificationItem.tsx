@@ -58,26 +58,40 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 }) => {
   const { i18n, t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth() as any;
+  const { user } = useAuth();
   const { mutate: markAsRead } = useMarkNotificationRead();
 
   const isAdmin = user?.is_admin;
 
   const getUiConfig = () => {
-    if (notification.level === "URGENT") {
+    // KLUCZOWA ZMIANA: Zabezpieczenie przed złą wielkością liter z Django API
+    const level = String(notification.level || "INFO").toUpperCase();
+
+    if (level === "URGENT") {
       return {
         icon: AlertTriangle,
-        color: "text-red-500",
-        bg: "bg-red-50 border-red-100",
+        color: "text-red-600",
+        bg: "bg-red-50 border-red-200",
+        pillClass: "bg-red-100 text-red-700 border-red-200",
+        // Zostawiamy delikatny czerwony ślad nawet po przeczytaniu
+        readBg: "bg-white border-red-200/60 hover:bg-red-50/50",
       };
     }
-    if (notification.level === "WARNING") {
+    if (level === "WARNING") {
       return {
         icon: AlertTriangle,
         color: "text-amber-500",
-        bg: "bg-amber-50 border-amber-100",
+        bg: "bg-amber-50 border-amber-200",
+        pillClass: "bg-amber-100 text-amber-700 border-amber-200",
+        // Zostawiamy delikatny żółty ślad nawet po przeczytaniu
+        readBg: "bg-white border-amber-200/60 hover:bg-amber-50/50",
       };
     }
+
+    // Domyślne ustawienia dla powiadomień informacyjnych (INFO)
+    const infoPill = "bg-[#002395]/10 text-[#002395] border-[#002395]/20";
+    const infoReadBg =
+      "border-transparent bg-transparent hover:bg-white hover:shadow-sm hover:border-stone-200/60";
 
     switch (notification.notification_type) {
       case "PROJECT_INVITATION":
@@ -85,6 +99,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           icon: Briefcase,
           color: "text-blue-600",
           bg: "bg-blue-50 border-blue-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
         };
       case "REHEARSAL_SCHEDULED":
       case "REHEARSAL_UPDATED":
@@ -92,66 +108,76 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           icon: Calendar,
           color: "text-emerald-600",
           bg: "bg-emerald-50 border-emerald-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
         };
       case "MATERIAL_UPLOADED":
         return {
           icon: Headphones,
           color: "text-purple-600",
           bg: "bg-purple-50 border-purple-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
         };
       case "PIECE_CASTING_ASSIGNED":
         return {
           icon: Music,
           color: "text-indigo-600",
           bg: "bg-indigo-50 border-indigo-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
         };
       case "ABSENCE_APPROVED":
         return {
           icon: CheckCircle,
           color: "text-emerald-500",
           bg: "bg-emerald-50 border-emerald-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
         };
       case "ABSENCE_REJECTED":
         return {
           icon: XCircle,
           color: "text-rose-500",
           bg: "bg-rose-50 border-rose-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
         };
       case "CREW_ASSIGNED":
         return {
           icon: UserCheck,
           color: "text-cyan-600",
           bg: "bg-cyan-50 border-cyan-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
         };
       default:
         return {
           icon: Info,
           color: "text-stone-500",
           bg: "bg-stone-50 border-stone-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
         };
     }
   };
 
-  const { icon: Icon, color, bg } = getUiConfig();
+  const { icon: Icon, color, bg, pillClass, readBg } = getUiConfig();
   const timeAgo = getRelativeTime(notification.created_at, i18n.language);
 
-  // --- SMART ROUTING LOGIC ---
   const navigateToContext = () => {
     const type = notification.notification_type;
 
-    // Nuty i pliki audio
     if (type === "MATERIAL_UPLOADED") {
       return navigate(
         isAdmin ? "/panel/archive-management" : "/panel/materials",
       );
     }
 
-    // Próby i frekwencja
     if (type.includes("REHEARSAL") || type.includes("ABSENCE")) {
       return navigate(isAdmin ? "/panel/rehearsals" : "/panel/schedule");
     }
 
-    // Projekty, umowy i obsady
     if (
       type.includes("PROJECT") ||
       type.includes("CASTING") ||
@@ -162,29 +188,27 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       );
     }
 
-    // Fallback dla systemu
     return navigate("/panel");
   };
 
   const handleClick = () => {
-    // 1. Oznacz jako przeczytane, jeśli jeszcze nie jest
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
-    // 2. Przenieś użytkownika do odpowiedniego widoku
     navigateToContext();
-
-    // 3. Zamknij szufladę
     onClosePanel();
   };
+
+  const projectName = notification.metadata?.project_name as string | undefined;
+  const pieceTitle = notification.metadata?.piece_title as string | undefined;
+  const message = notification.metadata?.message as string | undefined;
+  const changes = notification.metadata?.changes as string[] | undefined;
 
   return (
     <div
       onClick={handleClick}
       className={`group relative flex cursor-pointer gap-4 rounded-2xl border p-4 transition-all duration-300 ${
-        notification.is_read
-          ? "border-transparent bg-transparent hover:bg-white hover:shadow-sm hover:border-stone-200/60"
-          : `shadow-sm ${bg} hover:shadow-md`
+        notification.is_read ? readBg : `shadow-sm ${bg} hover:shadow-md`
       }`}
     >
       {!notification.is_read && (
@@ -198,8 +222,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       </div>
 
       <div className="flex-1 min-w-0 pr-6">
-        {" "}
-        {/* Zwiększony prawy padding, żeby nie nachodziło na kropkę/strzałkę */}
         <p
           className={`text-xs font-bold uppercase tracking-wide transition-colors ${notification.is_read ? "text-stone-500 group-hover:text-stone-700" : "text-stone-900"}`}
         >
@@ -208,22 +230,36 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             notification.notification_type.replace(/_/g, " "),
           )}
         </p>
-        {/* USUNIĘTO line-clamp-2 - tekst będzie naturalnie zwijał się do nowych linijek */}
+
         <div className="mt-1 text-sm text-stone-600 leading-snug">
-          {notification.metadata.project_name && (
-            <span className="font-semibold text-stone-800">
-              {notification.metadata.project_name}
-            </span>
+          {projectName && (
+            <span className="font-semibold text-stone-800">{projectName}</span>
           )}
-          {notification.metadata.piece_title &&
-            ` - ${notification.metadata.piece_title}`}
-          {notification.metadata.message &&
-            ` - ${notification.metadata.message}`}
+          {pieceTitle && ` - ${pieceTitle}`}
+          {message && ` - ${message}`}
         </div>
-        <p className="mt-2 text-[10px] font-medium text-stone-400">{timeAgo}</p>
+
+        {changes && changes.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mr-1">
+              Zmieniono:
+            </span>
+            {changes.map((change, idx) => (
+              <span
+                key={idx}
+                className={`px-1.5 py-0.5 rounded-[4px] border text-[9px] font-bold uppercase tracking-widest shadow-sm ${pillClass}`}
+              >
+                {change}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <p className="mt-2.5 text-[10px] font-medium text-stone-400">
+          {timeAgo}
+        </p>
       </div>
 
-      {/* Subtelna strzałka pokazująca się po najechaniu (hover) wskazująca, że to jest link */}
       <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100 text-stone-300">
         <ChevronRight size={18} />
       </div>

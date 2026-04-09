@@ -30,6 +30,7 @@ export interface NotificationMetadata {
   voice_line?: string;
   role?: string;
   message?: string;
+  changes?: string[];
   [key: string]: unknown; // Fallback for future metadata
 }
 

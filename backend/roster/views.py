@@ -103,6 +103,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = services.create_project_with_creator(user=request.user, validated_data=serializer.validated_data)
         return Response(self.get_serializer(project).data, status=status.HTTP_201_CREATED)
     
+    def perform_update(self, serializer) -> None:
+        """Delegates project updates to the Service Layer to trigger notifications."""
+        services.update_project(serializer.instance, serializer.validated_data)
+
     @action(detail=True, methods=['get'])
     def roster(self, request, pk=None) -> Response:
         project = self.get_object()

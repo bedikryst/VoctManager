@@ -57,7 +57,7 @@ const itemVariants: Variants = {
 };
 
 export default function ArtistDashboard(): React.JSX.Element {
-  const { user } = useAuth() as any;
+  const { user } = useAuth();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { isLoading, upNextRehearsal, upNextProject, greeting } =

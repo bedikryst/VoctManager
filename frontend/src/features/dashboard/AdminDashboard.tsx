@@ -51,7 +51,7 @@ const itemVariants: Variants = {
 };
 
 export default function AdminDashboard(): React.JSX.Element {
-  const { user } = useAuth() as any;
+  const { user } = useAuth();
   const { t } = useTranslation();
   const {
     isLoading,

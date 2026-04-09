@@ -2,6 +2,7 @@
  * @file useRehearsalsTab.ts
  * @description Encapsulates mutation logic and state management for rehearsal scheduling.
  * Employs rapid Set lookups for audience targeting and synchronizes with Project domain queries.
+ * Now fully supports CRUD lifecycle (Create, Read, Update, Delete) with intelligent form hydration.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useRehearsalsTab
  */
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 import type { Artist, Rehearsal } from "../../../../shared/types";
 import {
   useCreateRehearsal,
+  useUpdateRehearsal,
   useDeleteRehearsal,
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
@@ -36,21 +38,29 @@ export const useRehearsalsTab = (projectId: string) => {
   } = useProjectData(projectId);
 
   const createRehearsalMutation = useCreateRehearsal(projectId);
+  const updateRehearsalMutation = useUpdateRehearsal(projectId);
   const deleteRehearsalMutation = useDeleteRehearsal(projectId);
 
+  // --- STATE ---
+  const [editingRehearsalId, setEditingRehearsalId] = useState<string | null>(
+    null,
+  );
   const [rehearsalToDelete, setRehearsalToDelete] = useState<string | null>(
     null,
   );
+
   const [formData, setFormData] = useState<RehearsalFormData>({
     date_time: "",
     location: "",
     focus: "",
     is_mandatory: true,
   });
+
   const [targetType, setTargetType] = useState<TargetType>("TUTTI");
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [customParticipants, setCustomParticipants] = useState<string[]>([]);
 
+  // --- COMPUTED DATA ---
   const projectRehearsals = useMemo<Rehearsal[]>(
     () =>
       [...rehearsals]
@@ -77,6 +87,7 @@ export const useRehearsalsTab = (projectId: string) => {
     return map;
   }, [artists]);
 
+  // --- LOGIC ---
   const resolveInvitedParticipants = useCallback((): string[] => {
     if (targetType === "TUTTI") {
       return projectParticipations.map((participation) =>
@@ -103,7 +114,52 @@ export const useRehearsalsTab = (projectId: string) => {
     customParticipants,
   ]);
 
-  const handleAdd = async (
+  const resetForm = () => {
+    setEditingRehearsalId(null);
+    setFormData({ date_time: "", location: "", focus: "", is_mandatory: true });
+    setTargetType("TUTTI");
+    setSelectedSections([]);
+    setCustomParticipants([]);
+  };
+
+  const handleEditClick = (rehearsal: Rehearsal) => {
+    setEditingRehearsalId(String(rehearsal.id));
+
+    // Konwersja czasu z bazy (ISO/UTC) do lokalnego inputa datetime-local (YYYY-MM-DDTHH:mm)
+    const localDate = new Date(rehearsal.date_time);
+    // Poprawka uwzględniająca strefę czasową:
+    const offset = localDate.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(localDate.getTime() - offset)
+      .toISOString()
+      .slice(0, 16);
+
+    setFormData({
+      date_time: localISOTime,
+      location: rehearsal.location || "",
+      focus: rehearsal.focus || "",
+      is_mandatory: rehearsal.is_mandatory ?? true,
+    });
+
+    // Inteligentne odtworzenie typu targetowania
+    const invitedIds = rehearsal.invited_participations?.map(String) || [];
+    if (
+      invitedIds.length === 0 ||
+      invitedIds.length === projectParticipations.length
+    ) {
+      setTargetType("TUTTI");
+      setCustomParticipants([]);
+    } else {
+      // Bezpieczny fallback do trybu niestandardowego dla edycji
+      setTargetType("CUSTOM");
+      setCustomParticipants(invitedIds);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    resetForm();
+  };
+
+  const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     event.preventDefault();
@@ -119,33 +175,45 @@ export const useRehearsalsTab = (projectId: string) => {
       return;
     }
 
+    const isEditing = !!editingRehearsalId;
     const toastId = toast.loading(
-      t(
-        "projects.rehearsals.toast.saving",
-        "Zapisywanie próby w kalendarzu...",
-      ),
+      isEditing
+        ? t("projects.rehearsals.toast.updating", "Aktualizowanie próby...")
+        : t(
+            "projects.rehearsals.toast.saving",
+            "Zapisywanie próby w kalendarzu...",
+          ),
     );
 
     try {
-      await createRehearsalMutation.mutateAsync({
+      const payload = {
         ...formData,
         project: projectId,
-        date_time: new Date(formData.date_time).toISOString(),
+        date_time: new Date(formData.date_time).toISOString(), // Formatujemy z powrotem na UTC
         invited_participations: invitedParticipants,
-      });
+      };
 
-      setFormData({
-        date_time: "",
-        location: "",
-        focus: "",
-        is_mandatory: true,
-      });
-      setTargetType("TUTTI");
-      setSelectedSections([]);
-      setCustomParticipants([]);
+      if (isEditing) {
+        await updateRehearsalMutation.mutateAsync({
+          id: editingRehearsalId,
+          data: payload,
+        });
+      } else {
+        await createRehearsalMutation.mutateAsync(payload);
+      }
+
+      resetForm();
 
       toast.success(
-        t("projects.rehearsals.toast.save_success", "Próba zapisana pomyślnie"),
+        isEditing
+          ? t(
+              "projects.rehearsals.toast.update_success",
+              "Próba zaktualizowana pomyślnie",
+            )
+          : t(
+              "projects.rehearsals.toast.save_success",
+              "Próba zapisana pomyślnie",
+            ),
         { id: toastId },
       );
     } catch (error: unknown) {
@@ -169,6 +237,9 @@ export const useRehearsalsTab = (projectId: string) => {
 
     try {
       await deleteRehearsalMutation.mutateAsync(rehearsalToDelete);
+      if (editingRehearsalId === rehearsalToDelete) {
+        resetForm(); // Jeśli usunęliśmy próbę, którą właśnie edytowaliśmy
+      }
       toast.success(
         t("projects.rehearsals.toast.remove_success", "Próba została usunięta"),
         { id: toastId },
@@ -204,7 +275,9 @@ export const useRehearsalsTab = (projectId: string) => {
 
   return {
     isLoading: isContextLoading,
-    isSubmitting: createRehearsalMutation.isPending,
+    isSubmitting:
+      createRehearsalMutation.isPending || updateRehearsalMutation.isPending,
+    isEditing: !!editingRehearsalId,
     rehearsalToDelete,
     setRehearsalToDelete,
     isDeleting: deleteRehearsalMutation.isPending,
@@ -217,7 +290,9 @@ export const useRehearsalsTab = (projectId: string) => {
     projectRehearsals,
     projectParticipations,
     artistMap,
-    handleAdd,
+    handleSubmit,
+    handleEditClick,
+    handleCancelEdit,
     handleDeleteClick,
     executeDelete,
     toggleSection,
