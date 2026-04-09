@@ -1,17 +1,19 @@
 # notifications/services.py
+# ==========================================
+# Notifications Business Logic (Domain Services)
+# Standard: Enterprise SaaS 2026
+# ==========================================
 import logging
 from typing import Dict, Any, Optional
-from django.contrib.auth import get_user_model
 from django.db import transaction
 from .models import Notification, NotificationType, NotificationLevel
 
 logger = logging.getLogger(__name__)
-User = get_user_model()
 
 class NotificationService:
     """
     Enterprise service for handling all notification-related business logic.
-    Ensures data integrity and acts as the single source of truth for notification creation.
+    Ensures data integrity and acts as the single source of truth for in-app alert creation.
     """
 
     @classmethod
@@ -23,7 +25,7 @@ class NotificationService:
         metadata: Optional[Dict[str, Any]] = None
     ) -> Optional[Notification]:
         """
-        Creates a single notification safely.
+        Creates a single notification safely and prepares for real-time hooks.
         """
         if metadata is None:
             metadata = {}
@@ -36,10 +38,11 @@ class NotificationService:
                     level=level,
                     metadata=metadata
                 )
-            logger.info(f"Notification created for user {recipient_id}: {notification_type}")
             
-            # FUTURE HOOK: Here we will trigger WebSockets/SSE in Phase 2
-            # e.g., realtime_dispatcher.send(recipient_id, serialized_notification)
+            logger.info(f"In-app notification [{notification_type}] created for user {recipient_id}")
+            
+            # FUTURE ENTERPRISE HOOK:
+            # transaction.on_commit(lambda: realtime_dispatcher.send(recipient_id, serialized_notification))
             
             return notification
         except Exception as e:

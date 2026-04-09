@@ -1,55 +1,64 @@
 # notifications/dtos.py
-from typing import Any, Union, List
-from typing_extensions import TypedDict, NotRequired 
-from dataclasses import dataclass, field
+# ==========================================
+# Notifications Data Transfer Objects (DTOs)
+# Standard: Enterprise SaaS 2026 (Pydantic V2)
+# ==========================================
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Optional, Union, List, Dict, Any
+from uuid import UUID
+
+class EnterpriseBaseDTO(BaseModel):
+    """Base payload model ensuring immutability for Celery serialization."""
+    model_config = ConfigDict(frozen=True, extra='forbid')
 
 # ==========================================
 # METADATA SCHEMAS (STRICT TYPING)
 # ==========================================
 
 # --- Project Management ---
-class ProjectInvitationMetadata(TypedDict):
-    project_id: str
+class ProjectInvitationMetadata(EnterpriseBaseDTO):
+    project_id: UUID
     project_name: str
-    message: NotRequired[str]
+    message: Optional[str] = None
 
-class ProjectUpdatedMetadata(TypedDict):
-    project_id: NotRequired[str] 
+class ProjectUpdatedMetadata(EnterpriseBaseDTO):
+    project_id: Optional[UUID] = None 
     project_name: str
-    message: NotRequired[str]
-    changes: NotRequired[List[str]]
+    message: Optional[str] = None
+    changes: Optional[List[str]] = None
 
 # --- Rehearsals ---
-class RehearsalScheduledMetadata(TypedDict):
-    rehearsal_id: str
-    project_id: str
+class RehearsalScheduledMetadata(EnterpriseBaseDTO):
+    rehearsal_id: UUID
+    project_id: UUID
     project_name: str
 
-class RehearsalUpdatedMetadata(TypedDict):
-    rehearsal_id: str
+class RehearsalUpdatedMetadata(EnterpriseBaseDTO):
+    rehearsal_id: UUID
     project_name: str
     changes: List[str]
 
-class RehearsalCancelledMetadata(TypedDict):
+class RehearsalCancelledMetadata(EnterpriseBaseDTO):
     project_name: str
     message: str
 
 # --- Casting & Repertoire ---
-class PieceCastingMetadata(TypedDict):
-    piece_id: NotRequired[str]
+class PieceCastingMetadata(EnterpriseBaseDTO):
+    piece_id: Optional[UUID] = None
     piece_title: str
-    voice_line: NotRequired[str]
-    message: NotRequired[str]
+    voice_line: Optional[str] = None
+    message: Optional[str] = None
 
 # --- HR & Logistics ---
-class CrewAssignedMetadata(TypedDict):
-    project_id: str
+class CrewAssignedMetadata(EnterpriseBaseDTO):
+    project_id: UUID
     project_name: str
     role: str
 
-class AbsenceStatusMetadata(TypedDict):
-    rehearsal_id: str
+class AbsenceStatusMetadata(EnterpriseBaseDTO):
+    rehearsal_id: UUID
 
+# Polymorphic Payload Definition
 NotificationMetadataPayload = Union[
     ProjectInvitationMetadata,
     ProjectUpdatedMetadata,
@@ -59,20 +68,19 @@ NotificationMetadataPayload = Union[
     PieceCastingMetadata,
     CrewAssignedMetadata,
     AbsenceStatusMetadata,
-    dict #Fallback
+    Dict[str, Any] # Enterprise fallback for manual custom alerts
 ]
 
 # ==========================================
-# DATA TRANSFER OBJECTS
+# CORE DATA TRANSFER OBJECT
 # ==========================================
 
-@dataclass(frozen=True)
-class NotificationCreateDTO:
+class NotificationCreateDTO(EnterpriseBaseDTO):
     """
     Data Transfer Object strictly typing the payload for notification creation.
     Guarantees structural integrity before passing to Celery and Service layers.
     """
-    recipient_id: str
-    notification_type: str
-    level: str
-    metadata: NotificationMetadataPayload = field(default_factory=dict)
+    recipient_id: UUID
+    notification_type: str = Field(..., max_length=50)
+    level: str = Field(..., max_length=20)
+    metadata: NotificationMetadataPayload = Field(default_factory=dict)

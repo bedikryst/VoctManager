@@ -1,13 +1,8 @@
 # archive/models.py
 # ==========================================
 # Archive Database Models
+# Standard: Enterprise SaaS 2026
 # ==========================================
-"""
-Database models for the Archive application.
-Stores musical repertoire, composers, sheet music, and audio tracks.
-"""
-
-import uuid
 from django.db import models
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
@@ -15,7 +10,6 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
-
 
 def validate_file_size(value):
     max_size = 50 * 1024 * 1024  # 50MB
@@ -35,10 +29,12 @@ class Composer(EnterpriseBaseModel):
         verbose_name = _("Composer")
         verbose_name_plural = _("Composers")
         ordering = ['last_name']
+        indexes = [
+            models.Index(fields=['last_name', 'first_name']),
+        ]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip()
-
 
 class EpochChoices(models.TextChoices):
     MEDIEVAL = 'MED', _('Medieval')
@@ -52,11 +48,10 @@ class EpochChoices(models.TextChoices):
     FOLK = 'FOLK', _('Folk / Traditional')
     OTHER = 'OTH', _('Other')
 
-
 class Piece(EnterpriseBaseModel):
     title = models.CharField(max_length=200, verbose_name=_("Title"))
     composer = models.ForeignKey(
-        Composer, on_delete=models.SET_NULL, null=True, blank=True, 
+        Composer, on_delete=models.RESTRICT, null=True, blank=True, 
         related_name='pieces', verbose_name=_("Composer")
     )
     arranger = models.CharField(max_length=150, blank=True, verbose_name=_("Arranger"))
@@ -64,6 +59,8 @@ class Piece(EnterpriseBaseModel):
     estimated_duration = models.PositiveIntegerField(blank=True, null=True, help_text=_("Duration in seconds"), verbose_name=_("Estimated Duration"))
     voicing = models.CharField(max_length=50, blank=True, help_text=_("e.g. SSAATTBB"), verbose_name=_("Voicing"))
     description = models.TextField(blank=True, verbose_name=_("Notes / Description"))
+    
+    # Note: In a cloud-native app, we should eventually use django-storages + S3 for this
     sheet_music = models.FileField(upload_to='sheet_music/', blank=True, validators=[FileExtensionValidator(['pdf']), validate_file_size], verbose_name=_("Sheet Music (PDF)"))
 
     lyrics_original = models.TextField(blank=True, help_text=_("Original language text"), verbose_name=_("Lyrics (Original)"))
@@ -78,6 +75,10 @@ class Piece(EnterpriseBaseModel):
         verbose_name = _("Piece")
         verbose_name_plural = _("Pieces")
         ordering = ['title']
+        indexes = [
+            models.Index(fields=['title']),
+            models.Index(fields=['epoch']),
+        ]
 
     def __str__(self):
         suffix = f" (arr. {self.arranger})" if self.arranger else ""
@@ -85,24 +86,31 @@ class Piece(EnterpriseBaseModel):
         composer_str = f"{self.composer.last_name}: " if self.composer else ""
         return f"{composer_str}{self.title}{year_str}{suffix}"
 
-
-class PieceVoiceRequirement(models.Model): 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='voice_requirements', verbose_name=_("Piece"))
+class PieceVoiceRequirement(EnterpriseBaseModel): 
+    # Changed from standard models.Model to EnterpriseBaseModel
+    piece = models.ForeignKey(Piece, on_delete=models.RESTRICT, related_name='voice_requirements', verbose_name=_("Piece"))
     voice_line = models.CharField(max_length=12, choices=VoiceLine.choices, verbose_name=_("Voice Line"))
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("Required Singers"))
 
     class Meta:
         verbose_name = _("Voice Requirement")
         verbose_name_plural = _("Voice Requirements")
-        unique_together = ('piece', 'voice_line')
+        constraints = [
+            # Replaced unique_together with constraint aware of soft deletes
+            models.UniqueConstraint(
+                fields=['piece', 'voice_line'],
+                condition=models.Q(is_deleted=False),
+                name='unique_active_voice_requirement'
+            )
+        ]
 
     def __str__(self):
         return f"{self.piece.title}: {self.quantity}x {self.get_voice_line_display()}"
 
 
 class Track(EnterpriseBaseModel):
-    piece = models.ForeignKey(Piece, on_delete=models.CASCADE, related_name='tracks', verbose_name=_("Piece"))
+    # Changed from CASCADE to RESTRICT
+    piece = models.ForeignKey(Piece, on_delete=models.RESTRICT, related_name='tracks', verbose_name=_("Piece"))
     voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name=_("Melody Line"))
     audio_file = models.FileField(upload_to='audio_tracks/', validators=[FileExtensionValidator(['mp3', 'wav', 'midi']), validate_file_size], verbose_name=_("Audio File (MIDI/MP3)"))
 

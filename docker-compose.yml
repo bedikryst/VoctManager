@@ -1,9 +1,12 @@
 # docker-compose.yml
-# Base configuration mapping shared infrastructure components
+# ==========================================
+# VoctManager Infrastructure Configuration
+# Standard: Enterprise SaaS 2026
+# ==========================================
 
 services:
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_DB: ${DB_NAME}
@@ -11,40 +14,61 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # Ensures the database is actually ready to accept connections before other services start
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     container_name: voct_redis
     restart: always
-    # Secure Redis with a password to prevent unauthorized message queue access
     command: redis-server --requirepass ${REDIS_PASSWORD:-voct_super_secret_redis}
+    healthcheck:
+      # Verification that Redis is responding to pings
+      test:
+        [
+          "CMD-SHELL",
+          "redis-cli -a ${REDIS_PASSWORD:-voct_super_secret_redis} ping | grep PONG",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   web:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     restart: always
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
-      - .env  
+      - .env
     environment:
       - DB_HOST=db
-      # Inject authenticated Redis URLs for Celery task queuing
+      # Centralized Redis connection strings with authentication
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
     volumes:
-      # Bind Mounts
       - ./voct_data/media:/app/media
-      - ./voct_data/static:/app/static  
+      - ./voct_data/static:/app/static
 
   celery:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: voct_celery
     restart: always
     depends_on:
-      - web
-      - redis
-      - db
+      web:
+        condition: service_started
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -52,9 +76,8 @@ services:
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
     volumes:
-      # Bind Mounts
       - ./voct_data/media:/app/media
-      - ./voct_data/static:/app/static  
+      - ./voct_data/static:/app/static
 
   frontend:
     build:
@@ -62,9 +85,10 @@ services:
       dockerfile: Dockerfile
     restart: always
     depends_on:
-      - web
+      web:
+        condition: service_started
     volumes:
-      # Nginx receives static and media files as read-only (ro)
+      # Serve media and static files via Nginx as read-only
       - ./voct_data/media:/app/media:ro
       - ./voct_data/static:/app/static:ro
 

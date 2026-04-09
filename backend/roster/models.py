@@ -1,6 +1,7 @@
 # roster/models.py
 # ==========================================
 # Roster & Logistics Database Models
+# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 Database models for HR and Logistics entities.
@@ -8,7 +9,7 @@ Database models for HR and Logistics entities.
 import uuid
 from django.utils import timezone
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
 from core.models import EnterpriseBaseModel
@@ -28,12 +29,20 @@ class VoiceType(models.TextChoices):
 
 class Artist(EnterpriseBaseModel):
     user = models.OneToOneField(
-        User, on_delete=models.SET_NULL, null=True, blank=True, 
-        related_name='artist_profile', verbose_name=_("Account")
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='artist_profile', 
+        verbose_name=_("Account"),
+        help_text=_("Linked authentication identity. SET_NULL preserves historical HR data if account is deleted.")
     )
     first_name = models.CharField(max_length=50, verbose_name=_("First Name"))
     last_name = models.CharField(max_length=50, verbose_name=_("Last Name"))
-    email = models.EmailField(unique=True, verbose_name=_("Email"))
+    
+    # Removed standard unique=True to prevent SoftDelete ghost conflicts. Handled in Meta.
+    email = models.EmailField(verbose_name=_("Email")) 
+    
     phone_number = models.CharField(max_length=15, blank=True, verbose_name=_("Phone"))
     voice_type = models.CharField(max_length=5, choices=VoiceType.choices, verbose_name=_("Voice Type"))
     is_active = models.BooleanField(default=True, verbose_name=_("Is Active"))
@@ -48,6 +57,14 @@ class Artist(EnterpriseBaseModel):
     class Meta:
         verbose_name = _("Artist")
         verbose_name_plural = _("Artists")
+        constraints = [
+            # Enterprise Solution: Ensures email is unique ONLY among non-deleted artists
+            models.UniqueConstraint(
+                fields=['email'],
+                condition=models.Q(is_deleted=False),
+                name='unique_active_artist_email'
+            )
+        ]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.get_voice_type_display()})"
@@ -74,6 +91,10 @@ class Project(EnterpriseBaseModel):
     class Meta:
         verbose_name = _("Project")
         verbose_name_plural = _("Projects")
+        indexes = [
+            # Speeds up dashboard queries filtering by status and ordering by date
+            models.Index(fields=['status', 'date_time']),
+        ]
 
     def __str__(self):
         return f"[{self.get_status_display()}] {self.title}"
@@ -90,7 +111,9 @@ class ProgramItem(models.Model):
         ordering = ['order']
         verbose_name = _("Program Item")
         verbose_name_plural = _("Concert Program (Setlist)")
-        constraints = [models.UniqueConstraint(fields=['project', 'order'], name='unique_order_per_project')]
+        constraints = [
+            models.UniqueConstraint(fields=['project', 'order'], name='unique_order_per_project')
+        ]
 
     def __str__(self):
         return f"{self.order}. {self.piece.title}"
@@ -110,7 +133,14 @@ class Participation(EnterpriseBaseModel):
     class Meta:
         verbose_name = _("Participation")
         verbose_name_plural = _("Participations")
-        constraints = [models.UniqueConstraint(fields=['artist', 'project'], name='unique_project_participation')]
+        constraints = [
+            # Ensure an artist is only invited to a project once
+            models.UniqueConstraint(
+                fields=['artist', 'project'], 
+                condition=models.Q(is_deleted=False),
+                name='unique_active_project_participation'
+            )
+        ]
 
     def __str__(self):
         return f"{self.artist.last_name} -> {self.project.title}"
@@ -127,6 +157,9 @@ class ProjectPieceCasting(models.Model):
     class Meta:
         verbose_name = _("Piece Casting")
         verbose_name_plural = _("Piece Castings")
+        indexes = [
+            models.Index(fields=['participation', 'piece']),
+        ]
 
 
 class Rehearsal(EnterpriseBaseModel):
@@ -143,6 +176,9 @@ class Rehearsal(EnterpriseBaseModel):
         verbose_name = _("Rehearsal")
         verbose_name_plural = _("Rehearsals")
         ordering = ['date_time']
+        indexes = [
+            models.Index(fields=['project', 'date_time']),
+        ]
 
     def __str__(self):
         return f"Rehearsal: {self.date_time.strftime('%d.%m %H:%M')}"
@@ -165,7 +201,12 @@ class Attendance(models.Model):
     class Meta:
         verbose_name = _("Attendance")
         verbose_name_plural = _("Attendances")
-        constraints = [models.UniqueConstraint(fields=['rehearsal', 'participation'], name='unique_rehearsal_attendance')]
+        constraints = [
+            models.UniqueConstraint(fields=['rehearsal', 'participation'], name='unique_rehearsal_attendance')
+        ]
+        indexes = [
+            models.Index(fields=['rehearsal', 'status']), # Performance optimization for conductor dashboards
+        ]
 
 
 class Collaborator(EnterpriseBaseModel):
@@ -179,7 +220,7 @@ class Collaborator(EnterpriseBaseModel):
 
     first_name = models.CharField(max_length=50, verbose_name=_("First Name"))
     last_name = models.CharField(max_length=50, verbose_name=_("Last Name"))
-    email = models.EmailField(unique=True, blank=True, null=True, verbose_name=_("Email"))
+    email = models.EmailField(blank=True, null=True, verbose_name=_("Email")) # Removed unique=True
     phone_number = models.CharField(max_length=15, blank=True, verbose_name=_("Phone"))
     company_name = models.CharField(max_length=100, blank=True, verbose_name=_("Company / Brand"))
     specialty = models.CharField(max_length=15, choices=Specialty.choices, default=Specialty.OTHER, verbose_name=_("Specialty"))
@@ -187,6 +228,13 @@ class Collaborator(EnterpriseBaseModel):
     class Meta:
         verbose_name = _("Collaborator (Crew)")
         verbose_name_plural = _("Collaborators")
+        constraints = [
+            models.UniqueConstraint(
+                fields=['email'],
+                condition=models.Q(is_deleted=False) & models.Q(email__isnull=False),
+                name='unique_active_collaborator_email'
+            )
+        ]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -207,3 +255,6 @@ class CrewAssignment(models.Model):
     class Meta:
         verbose_name = _("Crew Assignment")
         verbose_name_plural = _("Crew Assignments")
+        indexes = [
+            models.Index(fields=['project', 'status']),
+        ]

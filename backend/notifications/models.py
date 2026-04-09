@@ -53,6 +53,8 @@ class Notification(EnterpriseBaseModel):
     """
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        # Here CASCADE is acceptable ONLY because if the Core User is hard-deleted (GDPR purge), 
+        # wiping their personal notifications directly via SQL is required by law.
         on_delete=models.CASCADE,
         related_name='notifications',
         db_index=True,
@@ -72,7 +74,7 @@ class Notification(EnterpriseBaseModel):
     )
     is_read = models.BooleanField(
         default=False,
-        db_index=True,
+        db_index=True, 
         help_text=_("Indicates whether the recipient has viewed this notification.")
     )
     read_at = models.DateTimeField(
