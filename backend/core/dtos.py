@@ -28,3 +28,10 @@ class UserPasswordChangeDTO:
 class UserEmailChangeDTO:
     new_email: str
     current_password: str
+
+@dataclass(frozen=True)
+class UserAccountDeletionDTO:
+    """
+    Data contract enforcing re-authentication before account erasure.
+    """
+    current_password: str

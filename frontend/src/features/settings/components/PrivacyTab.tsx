@@ -1,17 +1,21 @@
 /**
  * @file PrivacyTab.tsx
  * @description Tab for GDPR compliance handling (Data Portability and Account Erasure).
+ * Enforces Zero Trust re-authentication before permitting destructive actions.
  * @module features/settings/components
  */
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ShieldAlert, Download, Trash2, FileJson } from "lucide-react";
+import axios from "axios";
 
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import { Button } from "../../../shared/ui/Button";
+import { Input } from "../../../shared/ui/Input";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import { useExportData, useDeleteAccount } from "../api/settings.queries";
+import type { ApiErrorResponse } from "../types/settings.dto";
 
 export default function PrivacyTab() {
   const { t } = useTranslation();
@@ -20,13 +24,33 @@ export default function PrivacyTab() {
   const { mutate: deleteAccount, isPending: isDeleting } = useDeleteAccount();
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [errorCode, setErrorCode] = useState<string | null>(null);
 
   const handleExport = () => {
     exportData();
   };
 
   const handleDeleteConfirm = () => {
-    deleteAccount();
+    setErrorCode(null);
+    deleteAccount(
+      { password: deletePassword },
+      {
+        onError: (error: unknown) => {
+          if (axios.isAxiosError<ApiErrorResponse>(error)) {
+            setErrorCode(error.response?.data?.error_code || "unknown_error");
+          } else {
+            setErrorCode("unknown_error");
+          }
+        },
+      },
+    );
+  };
+
+  const handleCloseModal = () => {
+    setIsDeleteModalOpen(false);
+    setDeletePassword("");
+    setErrorCode(null);
   };
 
   return (
@@ -46,7 +70,7 @@ export default function PrivacyTab() {
         </div>
 
         <div className="space-y-8">
-          {/* Eksport Danych */}
+          {/* Data Export Area */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 rounded-2xl bg-white/40 border border-stone-200/50">
             <div className="space-y-1">
               <h3 className="text-sm font-black text-stone-800 uppercase tracking-wider flex items-center gap-2">
@@ -70,7 +94,7 @@ export default function PrivacyTab() {
             </Button>
           </div>
 
-          {/* Strefa Niebezpieczna */}
+          {/* Danger Zone */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 rounded-2xl bg-red-50/50 border border-red-100">
             <div className="space-y-1">
               <h3 className="text-sm font-black text-red-800 uppercase tracking-wider flex items-center gap-2">
@@ -91,7 +115,7 @@ export default function PrivacyTab() {
         </div>
       </GlassCard>
 
-      {/* Modal Potwierdzający */}
+      {/* Confirmation Modal with Re-Authentication */}
       <ConfirmModal
         isOpen={isDeleteModalOpen}
         title={t(
@@ -99,19 +123,49 @@ export default function PrivacyTab() {
           "Czy na pewno chcesz usunąć konto?",
         )}
         description={
-          <span className="flex flex-col gap-2">
-            <span>
-              Ta akcja jest <strong>nieodwracalna</strong>. Stracisz dostęp do
-              wszystkich materiałów chóru, nut i harmonogramów.
+          <div className="flex flex-col gap-4 text-left">
+            <span className="flex flex-col gap-2">
+              <span>
+                Ta akcja jest <strong>nieodwracalna</strong>. Stracisz dostęp do
+                wszystkich materiałów chóru, nut i harmonogramów.
+              </span>
+              <span>
+                Twoja historia obecności zostanie zachowana z powodów
+                audytowych, ale konto zostanie trwale zdezaktywowane.
+              </span>
             </span>
-            <span>
-              Twoja historia obecności zostanie zachowana z powodów audytowych,
-              ale konto zostanie trwale zdezaktywowane.
-            </span>
-          </span>
+
+            <div className="mt-4 border-t border-stone-200/60 pt-4">
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
+                {t(
+                  "settings.privacy.confirmPasswordLabel",
+                  "Potwierdź hasłem, aby usunąć",
+                )}
+              </label>
+              <Input
+                type="password"
+                placeholder={t(
+                  "settings.privacy.passwordPlaceholder",
+                  "Obecne hasło",
+                )}
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                hasError={errorCode === "invalid_current_password"}
+                disabled={isDeleting}
+              />
+              {errorCode === "invalid_current_password" && (
+                <p className="text-xs text-red-500 font-medium pl-1 mt-1">
+                  {t(
+                    "settings.errors.invalid_current_password",
+                    "Błędne hasło. Spróbuj ponownie.",
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
         }
         onConfirm={handleDeleteConfirm}
-        onCancel={() => setIsDeleteModalOpen(false)}
+        onCancel={handleCloseModal}
         isLoading={isDeleting}
         isDestructive={true}
         confirmText={t("common.actions.confirmDelete", "Tak, Usuń Konto")}

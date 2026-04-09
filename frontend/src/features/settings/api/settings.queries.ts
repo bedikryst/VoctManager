@@ -12,6 +12,7 @@ import {
   UpdatePreferencesPayload,
   ChangePasswordPayload,
   ChangeEmailPayload,
+  DeleteAccountPayload,
 } from "../types/settings.dto";
 
 export const SETTINGS_QUERY_KEYS = {
@@ -73,9 +74,9 @@ export const useExportData = () => {
 
 export const useDeleteAccount = () => {
   return useMutation({
-    mutationFn: () => settingsService.deleteAccount(),
+    mutationFn: (payload: DeleteAccountPayload) =>
+      settingsService.deleteAccount(payload),
     onSuccess: () => {
-      // Backend wyczyścił sesję. Twarde przeładowanie usunie stan i wyśle nas do logowania.
       window.location.href = "/login";
     },
   });

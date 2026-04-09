@@ -10,12 +10,14 @@ import uuid
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from backend.core.ical_service import ICalGeneratorService
+from rest_framework.throttling import UserRateThrottle
 
 from .serializers import (
     UserMeSerializer, 
     ChangePasswordSerializer, 
     RequestEmailChangeSerializer,
-    UserProfileSerializer
+    UserProfileSerializer,
+    AccountDeletionSerializer
 )
 from .dtos import UserPreferencesUpdateDTO, UserPasswordChangeDTO, UserEmailChangeDTO
 from .services import update_user_preferences, change_user_password, process_email_change
@@ -159,21 +161,30 @@ class ExportUserDataView(views.APIView):
 class RequestAccountDeletionView(views.APIView):
     """
     POST /api/v1/users/me/delete-account/
-    GDPR Right to Erasure (Soft Delete Pattern).
+    GDPR Right to Erasure (Soft Delete Pattern) with mandatory re-authentication.
+    Secured with rate limiting against brute-force attacks.
     """
     permission_classes = (IsAuthenticated,)
+    throttle_classes = [UserRateThrottle] # Ochrona Brute-Force (ustaw limit np. 5/min w settings.py)
+    serializer_class = AccountDeletionSerializer
 
     @extend_schema(responses={204: None})
     def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         user = request.user
+        password = serializer.validated_data['password']
+
+        # Zero Trust: Verify identity before destructive action
+        if not user.check_password(password):
+            raise InvalidCredentialsException("invalid_current_password")
         
-        # Soft Delete - blocks login but keeps historical concert/roster data intact
+        # Soft Delete - blocks login but keeps historical roster data intact
         user.is_active = False  
         user.save(update_fields=['is_active'])
 
-        # Wylogowanie użytkownika po stronie serwera
         logout(request)
-
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 

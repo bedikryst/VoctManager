@@ -18,6 +18,16 @@ from django.conf import settings
 
 from notifications.tasks import send_notification_task, send_bulk_notifications_task
 from notifications.models import NotificationType, NotificationLevel
+from notifications.dtos import (
+    ProjectInvitationMetadata, 
+    ProjectUpdatedMetadata,
+    RehearsalScheduledMetadata,
+    RehearsalUpdatedMetadata,
+    RehearsalCancelledMetadata,
+    PieceCastingMetadata,
+    CrewAssignedMetadata,
+    AbsenceStatusMetadata
+)
 
 from .models import (
     Artist, Project, Participation, ProgramItem, 
@@ -80,13 +90,13 @@ def create_project_with_creator(user: User, validated_data: Dict[str, Any]) -> P
 def update_project(project: Project, validated_data: Dict[str, Any]) -> Project:
     """Updates core project details and broadcasts a notification to all participants."""
     FIELD_NAMES = {
-        "title": "Tytuł",
-        "date_time": "Data",
-        "location": "Lokalizacja",
-        "call_time": "Zbiórka (Call-time)",
+        "title": "Title",
+        "date_time": "Date",
+        "location": "Location",
+        "call_time": "Call-time",
         "status": "Status",
-        "dress_code_male": "Ubiór",
-        "dress_code_female": "Ubiór"
+        "dress_code_male": "Dress Code",
+        "dress_code_female": "Dress Code"
     }
     
     changes = []
@@ -105,19 +115,21 @@ def update_project(project: Project, validated_data: Dict[str, Any]) -> Project:
         
         if recipient_ids and changes:
             unique_changes = list(set(changes))
+            payload: ProjectUpdatedMetadata = {
+                "project_id": str(project.id),
+                "project_name": project.title,
+                "message": "Project details have been updated.",
+                "changes": unique_changes
+            }
+            
             transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                 recipient_ids=recipient_ids,
                 notification_type=NotificationType.PROJECT_UPDATED,
                 level=(
-                    NotificationLevel.URGENT if any(k in changes for k in ["Data", "Zbiórka (Call-time)"])
+                    NotificationLevel.URGENT if any(k in changes for k in ["Date", "Call-time"])
                     else NotificationLevel.WARNING
                 ),
-                metadata={
-                    "project_id": str(project.id),
-                    "project_name": project.title,
-                    "message": "Szczegóły projektu zostały zaktualizowane.",
-                    "changes": unique_changes
-                }
+                metadata=payload
             ))
             
     return project
@@ -127,14 +139,16 @@ def create_participation(validated_data: Dict[str, Any]) -> Participation:
         participation = Participation.objects.create(**validated_data)
         
         if participation.artist.user_id:
+            payload: ProjectInvitationMetadata = {
+                "project_id": str(participation.project_id),
+                "project_name": participation.project.title,
+            }
+            
             transaction.on_commit(lambda: send_notification_task.delay(
                 recipient_id=str(participation.artist.user_id),
                 notification_type=NotificationType.PROJECT_INVITATION,
                 level=NotificationLevel.INFO,
-                metadata={
-                    "project_id": str(participation.project_id),
-                    "project_name": participation.project.title,
-                }
+                metadata=payload
             ))
     return participation
 
@@ -153,15 +167,17 @@ def handle_soft_deleted_participation(dto: ParticipationRestoreDTO) -> Optional[
             deleted.restore()
             
             if deleted.artist.user_id:
+                payload: ProjectInvitationMetadata = {
+                    "project_id": str(deleted.project_id),
+                    "project_name": deleted.project.title,
+                    "message": "You have been re-added to the project."
+                }
+                
                 transaction.on_commit(lambda: send_notification_task.delay(
                     recipient_id=str(deleted.artist.user_id),
                     notification_type=NotificationType.PROJECT_INVITATION,
                     level=NotificationLevel.INFO,
-                    metadata={
-                        "project_id": str(deleted.project_id),
-                        "project_name": deleted.project.title,
-                        "message": "You have been re-added to the project."
-                    }
+                    metadata=payload
                 ))
         return deleted
     return None
@@ -172,17 +188,19 @@ def delete_participation(participation: Participation) -> None:
     project_name = participation.project.title
     
     with transaction.atomic():
-        participation.delete()  # Uruchomi soft-delete z EnterpriseBaseModel
+        participation.delete()  # Triggers soft-delete from EnterpriseBaseModel
         
         if user_id:
+            payload: ProjectUpdatedMetadata = {
+                "project_name": project_name,
+                "message": "You have been removed from this project."
+            }
+            
             transaction.on_commit(lambda: send_notification_task.delay(
                 recipient_id=str(user_id),
                 notification_type=NotificationType.PROJECT_UPDATED,
                 level=NotificationLevel.WARNING,
-                metadata={
-                    "project_name": project_name,
-                    "message": "You have been removed from this project."
-                }
+                metadata=payload
             ))
 
 
@@ -194,30 +212,31 @@ def create_rehearsal(validated_data: Dict[str, Any], invited_participations: Opt
         if invited_participations:
             rehearsal.invited_participations.set(invited_participations)
 
-        # Broadcast notification
         qs = invited_participations if invited_participations else Participation.objects.filter(project=rehearsal.project)
         recipient_ids = [str(p.artist.user_id) for p in qs if p.artist.user_id]
         
         if recipient_ids:
+            payload: RehearsalScheduledMetadata = {
+                "rehearsal_id": str(rehearsal.id),
+                "project_id": str(rehearsal.project_id),
+                "project_name": rehearsal.project.title
+            }
+            
             transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                 recipient_ids=recipient_ids,
                 notification_type=NotificationType.REHEARSAL_SCHEDULED,
                 level=NotificationLevel.INFO,
-                metadata={
-                    "rehearsal_id": str(rehearsal.id),
-                    "project_id": str(rehearsal.project_id),
-                    "project_name": rehearsal.project.title
-                }
+                metadata=payload
             ))
     return rehearsal
 
 def update_rehearsal(rehearsal: Rehearsal, validated_data: Dict[str, Any], invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
     
     FIELD_NAMES = {
-        "date_time": "Data / Godzina",
-        "location": "Lokalizacja",
-        "focus": "Plan pracy",
-        "is_mandatory": "Obowiązkowość"
+        "date_time": "Date / Time",
+        "location": "Location",
+        "focus": "Focus / Plan",
+        "is_mandatory": "Mandatory Status"
     }
     
     changes = []
@@ -234,7 +253,6 @@ def update_rehearsal(rehearsal: Rehearsal, validated_data: Dict[str, Any], invit
         if invited_participations is not None:
             rehearsal.invited_participations.set(invited_participations)
 
-        # Notify about schedule change
         qs = rehearsal.invited_participations.all()
         if not qs.exists():
             qs = Participation.objects.filter(project=rehearsal.project)
@@ -242,18 +260,20 @@ def update_rehearsal(rehearsal: Rehearsal, validated_data: Dict[str, Any], invit
         recipient_ids = [str(p.artist.user_id) for p in qs if p.artist.user_id]
         
         if recipient_ids:
+            payload: RehearsalUpdatedMetadata = {
+                "rehearsal_id": str(rehearsal.id),
+                "project_name": rehearsal.project.title,
+                "changes": changes
+            }
+            
             transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                 recipient_ids=recipient_ids,
                 notification_type=NotificationType.REHEARSAL_UPDATED,
                 level=(
-                    NotificationLevel.URGENT if "Data / Godzina" in changes 
+                    NotificationLevel.URGENT if "Date / Time" in changes 
                     else (NotificationLevel.WARNING if changes else NotificationLevel.INFO)
                 ),
-                metadata={
-                    "rehearsal_id": str(rehearsal.id),
-                    "project_name": rehearsal.project.title,
-                    "changes": changes
-                }
+                metadata=payload
             ))
     return rehearsal
 
@@ -270,15 +290,18 @@ def delete_rehearsal(rehearsal: Rehearsal) -> None:
         rehearsal.delete()
         
         if recipient_ids:
+            payload: RehearsalCancelledMetadata = {
+                "project_name": project_name,
+                "message": "A scheduled rehearsal has been cancelled."
+            }
+            
             transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                 recipient_ids=recipient_ids,
                 notification_type=NotificationType.REHEARSAL_CANCELLED,
-                level=NotificationLevel.URGENT, # URGENT pokaże się na czerwono
-                metadata={
-                    "project_name": project_name,
-                    "message": "A scheduled rehearsal has been cancelled."
-                }
+                level=NotificationLevel.URGENT,
+                metadata=payload
             ))
+
 
 # --- ATTENDANCE & HR ---
 
@@ -313,16 +336,21 @@ def update_attendance_status(attendance: Attendance, new_status: str, is_admin: 
         # Admin approving/rejecting triggers info to the artist
         if is_admin and new_status in ['EXCUSED', 'ABSENT']:
             notif_type = NotificationType.ABSENCE_APPROVED if new_status == 'EXCUSED' else NotificationType.ABSENCE_REJECTED
+            
+            payload: AbsenceStatusMetadata = {
+                "rehearsal_id": str(attendance.rehearsal_id)
+            }
+            
             transaction.on_commit(lambda: send_notification_task.delay(
                 recipient_id=str(user_id),
                 notification_type=notif_type,
                 level=NotificationLevel.INFO,
-                metadata={"rehearsal_id": str(attendance.rehearsal_id)}
+                metadata=payload
             ))
             
         # Artist requesting absence triggers info to admins (or implicitly recorded)
         elif not is_admin and new_status == 'ABSENT':
-            # Example hook: Could send bulk notification to HR admins here
+            # Future Hook: Send bulk notification to HR admins here
             pass
             
     return attendance
@@ -343,15 +371,17 @@ def create_piece_casting(validated_data: Dict[str, Any]) -> ProjectPieceCasting:
         
         user_id = casting.participation.artist.user_id
         if user_id:
+            payload: PieceCastingMetadata = {
+                "piece_id": str(casting.piece_id),
+                "piece_title": casting.piece.title,
+                "voice_line": casting.voice_line
+            }
+            
             transaction.on_commit(lambda: send_notification_task.delay(
                 recipient_id=str(user_id),
                 notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
                 level=NotificationLevel.INFO,
-                metadata={
-                    "piece_id": str(casting.piece_id),
-                    "piece_title": casting.piece.title,
-                    "voice_line": casting.voice_line
-                }
+                metadata=payload
             ))
     return casting
 
@@ -364,15 +394,17 @@ def update_piece_casting(casting: ProjectPieceCasting, validated_data: Dict[str,
         
         user_id = casting.participation.artist.user_id
         if user_id:
+            payload: PieceCastingMetadata = {
+                "piece_id": str(casting.piece_id),
+                "piece_title": casting.piece.title,
+                "voice_line": casting.voice_line
+            }
+            
             transaction.on_commit(lambda: send_notification_task.delay(
                 recipient_id=str(user_id),
                 notification_type=NotificationType.PIECE_CASTING_UPDATED,
                 level=NotificationLevel.INFO,
-                metadata={
-                    "piece_id": str(casting.piece_id),
-                    "piece_title": casting.piece.title,
-                    "voice_line": casting.voice_line
-                }
+                metadata=payload
             ))
     return casting
 
@@ -385,14 +417,16 @@ def delete_piece_casting(casting: ProjectPieceCasting) -> None:
         casting.delete()
         
         if user_id:
+            payload: PieceCastingMetadata = {
+                "piece_title": piece_title,
+                "message": f"Your casting for '{piece_title}' has been removed."
+            }
+            
             transaction.on_commit(lambda: send_notification_task.delay(
                 recipient_id=str(user_id),
                 notification_type=NotificationType.PIECE_CASTING_UPDATED,
                 level=NotificationLevel.WARNING,
-                metadata={
-                    "piece_title": piece_title,
-                    "message": f"Your casting for '{piece_title}' has been removed."
-                }
+                metadata=payload
             ))
 
 def create_crew_assignment(validated_data: Dict[str, Any]) -> CrewAssignment:
@@ -401,14 +435,16 @@ def create_crew_assignment(validated_data: Dict[str, Any]) -> CrewAssignment:
         
         user_id = assignment.collaborator.user_id
         if user_id:
+            payload: CrewAssignedMetadata = {
+                "project_id": str(assignment.project_id),
+                "project_name": assignment.project.title,
+                "role": assignment.role
+            }
+            
             transaction.on_commit(lambda: send_notification_task.delay(
                 recipient_id=str(user_id),
                 notification_type=NotificationType.CREW_ASSIGNED,
                 level=NotificationLevel.INFO,
-                metadata={
-                    "project_id": str(assignment.project_id),
-                    "project_name": assignment.project.title,
-                    "role": assignment.role
-                }
+                metadata=payload
             ))
     return assignment

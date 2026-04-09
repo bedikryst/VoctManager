@@ -2,6 +2,7 @@
  * @file NotificationItem.tsx
  * @description Renders a single notification row with dynamic icons and styling.
  * Implements Enterprise Deep-Linking to route users directly to the affected entities.
+ * Fully strictly typed using Discriminated Unions to prevent metadata access violations.
  * @architecture Enterprise SaaS 2026
  */
 
@@ -64,7 +65,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   const isAdmin = user?.is_admin;
 
   const getUiConfig = () => {
-    // KLUCZOWA ZMIANA: Zabezpieczenie przed złą wielkością liter z Django API
+    // API safety wrapper for uppercase
     const level = String(notification.level || "INFO").toUpperCase();
 
     if (level === "URGENT") {
@@ -73,7 +74,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         color: "text-red-600",
         bg: "bg-red-50 border-red-200",
         pillClass: "bg-red-100 text-red-700 border-red-200",
-        // Zostawiamy delikatny czerwony ślad nawet po przeczytaniu
         readBg: "bg-white border-red-200/60 hover:bg-red-50/50",
       };
     }
@@ -83,12 +83,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         color: "text-amber-500",
         bg: "bg-amber-50 border-amber-200",
         pillClass: "bg-amber-100 text-amber-700 border-amber-200",
-        // Zostawiamy delikatny żółty ślad nawet po przeczytaniu
         readBg: "bg-white border-amber-200/60 hover:bg-amber-50/50",
       };
     }
 
-    // Domyślne ustawienia dla powiadomień informacyjnych (INFO)
+    // Default INFO configuration
     const infoPill = "bg-[#002395]/10 text-[#002395] border-[#002395]/20";
     const infoReadBg =
       "border-transparent bg-transparent hover:bg-white hover:shadow-sm hover:border-stone-200/60";
@@ -120,6 +119,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           readBg: infoReadBg,
         };
       case "PIECE_CASTING_ASSIGNED":
+      case "PIECE_CASTING_UPDATED":
         return {
           icon: Music,
           color: "text-indigo-600",
@@ -199,10 +199,54 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     onClosePanel();
   };
 
-  const projectName = notification.metadata?.project_name as string | undefined;
-  const pieceTitle = notification.metadata?.piece_title as string | undefined;
-  const message = notification.metadata?.message as string | undefined;
-  const changes = notification.metadata?.changes as string[] | undefined;
+  // ==========================================
+  // TYPE-SAFE METADATA EXTRACTION
+  // ==========================================
+  let projectName: string | undefined;
+  let pieceTitle: string | undefined;
+  let message: string | undefined;
+  let changes: string[] | undefined;
+
+  // TypeScript intelligently narrows the `.metadata` type inside each case block
+  switch (notification.notification_type) {
+    case "PROJECT_INVITATION":
+      projectName = notification.metadata.project_name;
+      message = notification.metadata.message;
+      break;
+    case "PROJECT_UPDATED":
+      projectName = notification.metadata.project_name;
+      message = notification.metadata.message;
+      changes = notification.metadata.changes;
+      break;
+    case "REHEARSAL_SCHEDULED":
+      projectName = notification.metadata.project_name;
+      break;
+    case "REHEARSAL_UPDATED":
+      projectName = notification.metadata.project_name;
+      changes = notification.metadata.changes;
+      break;
+    case "REHEARSAL_CANCELLED":
+      projectName = notification.metadata.project_name;
+      message = notification.metadata.message;
+      break;
+    case "PIECE_CASTING_ASSIGNED":
+    case "PIECE_CASTING_UPDATED":
+      pieceTitle = notification.metadata.piece_title;
+      message = notification.metadata.message;
+      break;
+    case "CREW_ASSIGNED":
+      projectName = notification.metadata.project_name;
+      message = t("notifications.crew_role", {
+        defaultValue: `Assigned Role: {{role}}`,
+        role: notification.metadata.role,
+      });
+      break;
+    // ABSENCE limits metadata strictly to rehearsal_id
+    case "ABSENCE_APPROVED":
+    case "ABSENCE_REJECTED":
+    case "ABSENCE_REQUESTED":
+      break;
+  }
 
   return (
     <div
@@ -223,7 +267,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
       <div className="flex-1 min-w-0 pr-6">
         <p
-          className={`text-xs font-bold uppercase tracking-wide transition-colors ${notification.is_read ? "text-stone-500 group-hover:text-stone-700" : "text-stone-900"}`}
+          className={`text-xs font-bold uppercase tracking-wide transition-colors ${
+            notification.is_read
+              ? "text-stone-500 group-hover:text-stone-700"
+              : "text-stone-900"
+          }`}
         >
           {t(
             `notifications.types.${notification.notification_type}`,
@@ -235,14 +283,16 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {projectName && (
             <span className="font-semibold text-stone-800">{projectName}</span>
           )}
-          {pieceTitle && ` - ${pieceTitle}`}
-          {message && ` - ${message}`}
+          {pieceTitle && (
+            <span className="font-semibold text-stone-800">{pieceTitle}</span>
+          )}
+          {message && (projectName || pieceTitle ? ` - ${message}` : message)}
         </div>
 
         {changes && changes.length > 0 && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mr-1">
-              Zmieniono:
+              {t("notifications.changed", "Changed:")}
             </span>
             {changes.map((change, idx) => (
               <span

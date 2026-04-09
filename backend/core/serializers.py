@@ -83,3 +83,7 @@ class RequestEmailChangeSerializer(serializers.Serializer):
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
+    
+class AccountDeletionSerializer(serializers.Serializer):
+    """Strict validation for account deletion requiring re-authentication."""
+    password = serializers.CharField(required=True, write_only=True)

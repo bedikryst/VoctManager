@@ -11,6 +11,7 @@ import {
   UpdatePreferencesPayload,
   ChangePasswordPayload,
   ChangeEmailPayload,
+  DeleteAccountPayload,
 } from "../types/settings.dto";
 
 const BASE_URL = "/api/users/me/";
@@ -67,8 +68,8 @@ export const settingsService = {
     window.URL.revokeObjectURL(url);
   },
 
-  deleteAccount: async (): Promise<void> => {
-    await api.post(`${BASE_URL}delete-account/`);
+  deleteAccount: async (payload: DeleteAccountPayload): Promise<void> => {
+    await api.post(`${BASE_URL}delete-account/`, payload);
   },
   resetCalendarToken: async (): Promise<{ calendar_token: string }> => {
     const response = await api.post(`${BASE_URL}reset-calendar-token/`);

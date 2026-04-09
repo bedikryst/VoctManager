@@ -1,17 +1,20 @@
 /**
  * @file SecurityTab.tsx
  * @description Secure interface for changing passwords and sensitive account data.
+ * Fully type-safe error handling to prevent runtime UI crashes.
  * @module features/settings/components
  */
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound, ShieldCheck } from "lucide-react";
+import axios from "axios";
 
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import { Input } from "../../../shared/ui/Input";
 import { Button } from "../../../shared/ui/Button";
 import { useChangePassword } from "../api/settings.queries";
+import type { ApiErrorResponse } from "../types/settings.dto";
 
 export default function SecurityTab() {
   const { t } = useTranslation();
@@ -32,10 +35,15 @@ export default function SecurityTab() {
     try {
       await changePassword(passwords);
       setSuccess(true);
-      setPasswords({ old_password: "", new_password: "" }); // Reset formularza
-    } catch (error: any) {
-      // Łapiemy error_code zdefiniowany w core/exceptions.py na Backendzie
-      setErrorCode(error.response?.data?.error_code || "unknown_error");
+      // Clean up sensitive state immediately after success
+      setPasswords({ old_password: "", new_password: "" });
+    } catch (error: unknown) {
+      // Type-safe error extraction (Zero Tolerance for 'any')
+      if (axios.isAxiosError<ApiErrorResponse>(error)) {
+        setErrorCode(error.response?.data?.error_code || "unknown_error");
+      } else {
+        setErrorCode("unknown_error");
+      }
     }
   };
 

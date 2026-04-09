@@ -55,5 +55,8 @@ export interface ChangeEmailPayload {
 export interface ApiErrorResponse {
   error_code?: string;
   message?: string;
-  [key: string]: any; // For field-specific validation errors (e.g., { new_password: ["Too short"] })
+}
+
+export interface DeleteAccountPayload {
+  password: string;
 }
