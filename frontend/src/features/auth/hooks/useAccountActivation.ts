@@ -7,25 +7,30 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import { authService } from "../api/auth.service";
 
-const getActivationErrorMessage = (error: any): string => {
-  const errorCode = error?.response?.data?.error_code;
-  const passwordErrors = error?.response?.data?.validation_errors?.new_password;
+const getActivationErrorMessage = (error: unknown): string => {
+  if (isAxiosError(error) && error.response?.data) {
+    const { error_code, validation_errors, message } = error.response.data;
+    const passwordErrors = validation_errors?.new_password;
 
-  if (Array.isArray(passwordErrors) && passwordErrors.length > 0) {
-    return passwordErrors[0];
+    if (Array.isArray(passwordErrors) && passwordErrors.length > 0) {
+      return passwordErrors[0];
+    }
+
+    if (error_code === "expired_activation_link") {
+      return "auth.activate.errors.expired_link";
+    }
+
+    if (error_code === "invalid_activation_link") {
+      return "auth.activate.errors.invalid_link";
+    }
+
+    return message || "auth.activate.errors.activation_failed";
   }
 
-  if (errorCode === "expired_activation_link") {
-    return "auth.activate.errors.expired_link";
-  }
-
-  if (errorCode === "invalid_activation_link") {
-    return "auth.activate.errors.invalid_link";
-  }
-
-  return error?.response?.data?.message || "auth.activate.errors.activation_failed";
+  return "auth.activate.errors.activation_failed";
 };
 
 export const useAccountActivation = () => {
@@ -56,7 +61,7 @@ export const useAccountActivation = () => {
       setActivatedData({ email: data.email });
       setFormError(null);
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       setFormError(getActivationErrorMessage(error));
     },
   });

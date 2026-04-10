@@ -1,5 +1,5 @@
 /**
- * @file AuthContext.tsx
+ * @file AuthProvider.tsx
  * @description Authentication Context Provider.
  * Manages global authentication state, JWT lifecycle, and user profile data.
  * Exposes a custom hook (useAuth) to protect routes and conditionally render UI.
@@ -14,12 +14,10 @@ import React, {
   useEffect,
   type ReactNode,
 } from "react";
+import { isAxiosError } from "axios";
 import api, { type AuthRequestConfig } from "../../shared/api/api";
 import i18n from "../../shared/config/i18n";
-import type {
-  AuthProfile,
-  AuthUser,
-} from "../../shared/auth/auth.types";
+import type { AuthProfile, AuthUser } from "../../shared/auth/auth.types";
 
 interface UserIdentityResponse {
   id: string | number;
@@ -110,10 +108,11 @@ export const AuthProvider = ({
     const checkAuth = async () => {
       try {
         setUser(await buildAuthUser());
-      } catch (error) {
-        // Not authenticated, stay logged out
+      } catch (error: unknown) {
         setUser(null);
-        console.log("User not authenticated");
+        console.info(
+          "Authentication check completed: User is unauthenticated.",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -131,12 +130,15 @@ export const AuthProvider = ({
       setUser(await buildAuthUser());
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        isAxiosError(error) && error.response?.data?.detail
+          ? error.response.data.detail
+          : "Błąd logowania. Sprawdź dane wejściowe.";
+
       return {
         success: false,
-        error:
-          error.response?.data?.detail ||
-          "Błąd logowania. Sprawdź dane wejściowe.",
+        error: errorMessage,
       };
     }
   };
@@ -144,8 +146,8 @@ export const AuthProvider = ({
   const logout = async () => {
     try {
       await api.post("/api/logout/");
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch (error: unknown) {
+      console.error("Logout process encountered an error:", error);
     } finally {
       setUser(null);
       window.location.href = "/login";

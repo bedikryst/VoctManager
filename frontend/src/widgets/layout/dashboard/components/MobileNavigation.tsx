@@ -53,7 +53,6 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
       <header className="fixed top-0 z-40 flex w-full items-center justify-between border-b border-stone-200/60 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-2xl md:hidden">
         <BrandMark />
         <div className="flex items-center gap-2">
-          {/* DZWONECZEK NA MOBILE */}
           <NotificationCenter />
           <button
             onClick={() => setIsOpen(true)}

@@ -24,7 +24,6 @@ interface DesktopSidebarProps {
   logout: () => void;
 }
 
-// Miniaturka logo dla zwiniętego paska - delikatnie zmniejszona
 const BrandIcon = () => (
   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#002395_0%,#0f4bd8_100%)] shadow-md shadow-blue-900/20">
     <span
@@ -66,9 +65,6 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
       onMouseLeave={() => setIsHovered(false)}
       className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col overflow-hidden rounded-3xl border border-white/80 bg-white/75 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-2xl transition-shadow hover:shadow-[0_20px_50px_rgba(0,35,149,0.12)]"
     >
-      {/* UWAGA: Usunięto problematyczne rozmyte koła (radial-gradient) dla czystszego widoku */}
-
-      {/* TOP: LOGO - Zmniejszono wysokość z h-24 do h-16 */}
       <div className="relative z-10 flex h-16 flex-shrink-0 items-center justify-center pt-2">
         <AnimatePresence mode="wait">
           {isHovered ? (
@@ -105,7 +101,6 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
             "linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)",
         }}
       >
-        {/* Zmniejszono odstępy między grupami ze space-y-6 na space-y-4 */}
         <div className="space-y-4 py-2">
           {navGroups.map((group) => (
             <div key={group.labelKey}>
@@ -123,14 +118,12 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 )}
               </div>
 
-              {/* Zmniejszono odstępy między linkami ze space-y-1.5 na space-y-0.5 */}
               <div className="space-y-0.5">
                 {group.links.map((link) => (
                   <NavLink
                     key={link.to}
                     to={link.to}
                     end={link.to === "/panel"}
-                    // Zmieniono padding na py-2, font na text-[13px] i zaokrąglenie na rounded-xl
                     className={({ isActive }) =>
                       `group/link relative flex items-center rounded-xl border px-3 py-2 text-[13px] font-bold tracking-wide transition-all duration-300 ${
                         isActive

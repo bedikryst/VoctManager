@@ -41,6 +41,7 @@ import { downloadFile } from "../../shared/lib/downloadFile";
 import api from "../../shared/api/api";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
 import { useUpsertScheduleAttendance } from "../../features/schedule/api/schedule.queries";
+import type { AttendanceStatus } from "../../shared/types";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -63,15 +64,15 @@ export default function ArtistDashboard(): React.JSX.Element {
   const { isLoading, upNextRehearsal, upNextProject, greeting } =
     useArtistDashboardData(user?.artist_profile_id ?? undefined);
 
-  // Mechanika zgłaszania nieobecności
+  /* Absence Reporting Mechanics */
   const attendanceMutation = useUpsertScheduleAttendance();
   const [reportingRehearsal, setReportingRehearsal] = useState(false);
   const [reportForm, setReportForm] = useState<{
-    status: string;
+    status: AttendanceStatus;
     notes: string;
   }>({ status: "ABSENT", notes: "" });
 
-  // Mechanika pobierania Call-sheet
+  /* Call-sheet Download Mechanics */
   const [isDownloadingRunSheet, setIsDownloadingRunSheet] = useState(false);
 
   const ARTIST_MODULES = useMemo(
@@ -151,7 +152,7 @@ export default function ArtistDashboard(): React.JSX.Element {
       });
       queryClient.invalidateQueries({ queryKey: ["attendances"] });
       toast.success("Obecność potwierdzona!", { id: toastId });
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error("Błąd podczas zapisywania", { id: toastId });
     }
   };
@@ -166,7 +167,7 @@ export default function ArtistDashboard(): React.JSX.Element {
         payload: {
           rehearsal: upNextRehearsal.data.id,
           participation: upNextRehearsal.participationId,
-          status: reportForm.status as any,
+          status: reportForm.status,
           excuse_note: reportForm.notes,
         },
       });
@@ -174,12 +175,12 @@ export default function ArtistDashboard(): React.JSX.Element {
       setReportingRehearsal(false);
       setReportForm({ status: "ABSENT", notes: "" });
       toast.success("Zgłoszenie zostało wysłane", { id: toastId });
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error("Wystąpił błąd", { id: toastId });
     }
   };
 
-  // Funkcja pobierania Call-sheet na bieżąco
+  /* Live Call-sheet Download Function */
   const handleDownloadRunSheet = async () => {
     if (!upNextProject) return;
     setIsDownloadingRunSheet(true);
@@ -201,7 +202,7 @@ export default function ArtistDashboard(): React.JSX.Element {
         t("dashboard.artist.download_success", "Pobrano harmonogram pomyślnie"),
         { id: toastId },
       );
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error(
         t("dashboard.artist.download_error", "Błąd pobierania harmonogramu"),
         { id: toastId },
@@ -220,7 +221,7 @@ export default function ArtistDashboard(): React.JSX.Element {
 
   return (
     <div className="animate-fade-in relative cursor-default pb-12 w-full max-w-7xl mx-auto">
-      {/* 1. KOMPAKTOWY HEADER */}
+      {/* 1. COMPACT HEADER */}
       <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
@@ -277,7 +278,7 @@ export default function ArtistDashboard(): React.JSX.Element {
           <div
             className={`grid grid-cols-1 ${upNextRehearsal && upNextProject ? "lg:grid-cols-2" : ""} gap-4`}
           >
-            {/* KARTA PRÓBY */}
+            {/* REHEARSAL CARD */}
             {upNextRehearsal && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -381,7 +382,7 @@ export default function ArtistDashboard(): React.JSX.Element {
                               onChange={(e) =>
                                 setReportForm({
                                   ...reportForm,
-                                  status: e.target.value,
+                                  status: e.target.value as AttendanceStatus,
                                 })
                               }
                               className="w-1/3 px-3 py-2 text-xs font-bold text-stone-800 bg-white border border-stone-200/80 rounded-lg outline-none focus:ring-2 focus:ring-[#002395]/20 appearance-none"
@@ -430,7 +431,7 @@ export default function ArtistDashboard(): React.JSX.Element {
               </motion.div>
             )}
 
-            {/* KARTA KONCERTU / PROJEKTU */}
+            {/* CONCERT / PROJECT CARD */}
             {upNextProject && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -464,7 +465,6 @@ export default function ArtistDashboard(): React.JSX.Element {
                         })}
                       </span>
 
-                      {/* Poprawka błędu call_time za pomocą formatLocalizedTime */}
                       {upNextProject.data.call_time && (
                         <span className="flex items-center gap-2">
                           <Clock size={14} className="text-blue-400" />
@@ -485,7 +485,7 @@ export default function ArtistDashboard(): React.JSX.Element {
                     </div>
                   </div>
 
-                  {/* Panel Akcji dla Projektu (2 przyciski) */}
+                  {/* Project Action Panel */}
                   <div className="relative z-10 border-t border-white/10 bg-white/5 p-4 flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handleDownloadRunSheet}
@@ -521,7 +521,7 @@ export default function ArtistDashboard(): React.JSX.Element {
         )}
       </section>
 
-      {/* 3. MODUŁY OSOBISTE */}
+      {/* 3. PERSONAL MODULES */}
       <section>
         <div className="flex items-center gap-2 mb-3">
           <div className="w-1 h-4 bg-[#002395] rounded-full"></div>

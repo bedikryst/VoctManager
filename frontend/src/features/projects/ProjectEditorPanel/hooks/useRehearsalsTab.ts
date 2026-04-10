@@ -238,7 +238,7 @@ export const useRehearsalsTab = (projectId: string) => {
     try {
       await deleteRehearsalMutation.mutateAsync(rehearsalToDelete);
       if (editingRehearsalId === rehearsalToDelete) {
-        resetForm(); // Jeśli usunęliśmy próbę, którą właśnie edytowaliśmy
+        resetForm();
       }
       toast.success(
         t("projects.rehearsals.toast.remove_success", "Próba została usunięta"),
