@@ -9,7 +9,7 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from .constants import DietaryChoices, ClothingSizeChoices
+from .constants import AppRole, DietaryChoices, ClothingSizeChoices
 
 class SoftDeleteQuerySet(models.QuerySet):
     """
@@ -153,6 +153,18 @@ class UserProfile(EnterpriseBaseModel):
         default=True,
         help_text=_("Determines if the user receives non-critical operational emails.")
     )
+
+    # === ENTERPRISE RBAC ===
+    role = models.CharField(
+        max_length=20,
+        choices=AppRole.choices,
+        default=AppRole.ARTIST,
+        help_text=_("Business role defining application access level.")
+    )
+    
+    @property
+    def is_manager(self) -> bool:
+        return self.role == AppRole.MANAGER
     
     class Meta:
         db_table = 'core_user_profile'

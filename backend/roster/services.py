@@ -38,7 +38,7 @@ from .models import (
     Artist, Project, Participation, ProgramItem, 
     ProjectPieceCasting, Rehearsal, Attendance, CrewAssignment
 )
-from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO
+from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectUpdateDTO, ProjectCreateDTO
 from .exceptions import ArtistProvisioningException, AttendanceValidationException, ParticipationException
 
 logger = logging.getLogger(__name__)
@@ -123,9 +123,9 @@ class ProjectManagementService:
     """Service handling the lifecycle of concert projects and artist participations."""
 
     @staticmethod
-    def create_project_with_creator(user: User, validated_data: Dict[str, Any]) -> Project:
+    def create_project_with_creator(user: User, dto: ProjectCreateDTO) -> Project:
         with transaction.atomic():
-            project = Project.objects.create(**validated_data)
+            project = Project.objects.create(**dto.model_dump())
             if hasattr(user, 'artist_profile'):
                 Participation.objects.create(
                     artist=user.artist_profile, 
@@ -137,16 +137,18 @@ class ProjectManagementService:
             return project
 
     @staticmethod
-    def update_project(project: Project, validated_data: Dict[str, Any]) -> Project:
+    def update_project(project: Project, dto: ProjectUpdateDTO) -> Project:
         FIELD_NAMES = {
             "title": "Title", "date_time": "Date", "location": "Location",
             "call_time": "Call-time", "status": "Status", 
             "dress_code_male": "Dress Code", "dress_code_female": "Dress Code"
         }
         changes = []
-        
+
+        update_data = dto.model_dump(exclude_unset=True)
+
         with transaction.atomic():
-            for attr, value in validated_data.items():
+            for attr, value in update_data.items():
                 old_value = getattr(project, attr)
                 if old_value != value:
                     changes.append(FIELD_NAMES.get(attr, attr))
@@ -159,7 +161,6 @@ class ProjectManagementService:
             
             if recipient_ids and changes:
                 unique_changes = list(set(changes))
-                # ENTERPRISE: Instantiate Pydantic model and dump to JSON-serializable dict
                 metadata = ProjectUpdatedMetadata(
                     project_id=project.id,
                     project_name=project.title,

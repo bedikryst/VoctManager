@@ -22,9 +22,14 @@ export default function IntegrationsTab() {
     useResetCalendarToken();
   const [copied, setCopied] = useState(false);
 
-  if (isLoading) return <div className="p-8 text-center">Wczytywanie...</div>;
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center">
+        {t("common.state.loading", "Wczytywanie...")}
+      </div>
+    );
+  }
 
-  // Budowanie pełnego URLa dla aplikacji (Frontend wie, gdzie jest Backend)
   const backendUrl = import.meta.env.VITE_API_URL || window.location.origin;
   const calendarUrl = user?.profile?.calendar_token
     ? `${backendUrl}/api/calendar/${user.profile.calendar_token}/feed.ics`
@@ -45,7 +50,7 @@ export default function IntegrationsTab() {
       <div className="mb-8">
         <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-[#002395]" />
-          {t("settings.integrations.title", "Integracje i Kalendarze")}
+          {t("settings.integrations.title", "Integracje i kalendarze")}
         </h2>
         <p className="text-sm text-stone-500 mt-1">
           {t(
@@ -63,20 +68,26 @@ export default function IntegrationsTab() {
             </div>
             <div>
               <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider">
-                Live Sync (Apple, Google, Outlook)
+                {t(
+                  "settings.integrations.live_sync_title",
+                  "Synchronizacja na żywo (Apple, Google, Outlook)",
+                )}
               </h3>
               <p className="text-xs text-blue-800/80 leading-relaxed mt-1">
-                Użyj tego linku, aby zasubskrybować kalendarz chóru. Twoje próby
-                i koncerty będą aktualizować się automatycznie. Pamiętaj, aby
-                dodać to jako <strong>"Subskrypcję" (URL)</strong>, a nie
-                jednorazowy plik pobrany z dysku.
+                {t(
+                  "settings.integrations.live_sync_desc",
+                  'Użyj tego linku, aby zasubskrybować kalendarz chóru. Twoje próby i koncerty będą aktualizować się automatycznie. Dodaj go jako "Subskrypcję" (URL), a nie jednorazowy plik pobrany z dysku.',
+                )}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col gap-2 mt-4">
             <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-1">
-              Twój Prywatny Adres Kalendarza
+              {t(
+                "settings.integrations.calendar_url_label",
+                "Twój prywatny adres kalendarza",
+              )}
             </label>
             <div className="flex flex-col md:flex-row gap-3">
               <input
@@ -97,7 +108,9 @@ export default function IntegrationsTab() {
                   )
                 }
               >
-                {copied ? "Skopiowano" : "Kopiuj Link"}
+                {copied
+                  ? t("settings.integrations.copied", "Skopiowano")
+                  : t("settings.integrations.copy_link", "Kopiuj link")}
               </Button>
             </div>
           </div>
@@ -107,12 +120,13 @@ export default function IntegrationsTab() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h4 className="text-sm font-bold text-stone-800">
-                Zresetuj swój link
+                {t("settings.integrations.reset_title", "Zresetuj swój link")}
               </h4>
               <p className="text-xs text-stone-500 mt-1 max-w-md">
-                Jeśli podejrzewasz, że ktoś niepowołany uzyskał dostęp do
-                Twojego linku kalendarza, wygeneruj go ponownie. Poprzedni adres
-                natychmiast przestanie działać.
+                {t(
+                  "settings.integrations.reset_desc",
+                  "Jeśli podejrzewasz, że ktoś niepowołany uzyskał dostęp do Twojego linku kalendarza, wygeneruj go ponownie. Poprzedni adres natychmiast przestanie działać.",
+                )}
               </p>
             </div>
             <Button
@@ -121,7 +135,7 @@ export default function IntegrationsTab() {
               isLoading={isResetting}
               leftIcon={<RefreshCw className="w-4 h-4" />}
             >
-              Wygeneruj Nowy Link
+              {t("settings.integrations.reset_btn", "Wygeneruj nowy link")}
             </Button>
           </div>
         </div>

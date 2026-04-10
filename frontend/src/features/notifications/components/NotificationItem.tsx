@@ -31,13 +31,12 @@ interface NotificationItemProps {
   onClosePanel: () => void;
 }
 
-// Zero-dependency native relative time formatter
 const getRelativeTime = (dateString: string, lang: string): string => {
   const date = new Date(dateString);
   const now = new Date();
   const diffInSeconds = Math.round((date.getTime() - now.getTime()) / 1000);
 
-  const rtf = new Intl.RelativeTimeFormat(lang || "en", { numeric: "auto" });
+  const rtf = new Intl.RelativeTimeFormat(lang || "pl", { numeric: "auto" });
 
   const absDiff = Math.abs(diffInSeconds);
   if (absDiff < 60) return rtf.format(Math.round(diffInSeconds), "second");
@@ -65,7 +64,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   const isAdmin = user?.is_admin;
 
   const getUiConfig = () => {
-    // API safety wrapper for uppercase
     const level = String(notification.level || "INFO").toUpperCase();
 
     if (level === "URGENT") {
@@ -87,7 +85,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       };
     }
 
-    // Default INFO configuration
     const infoPill = "bg-[#002395]/10 text-[#002395] border-[#002395]/20";
     const infoReadBg =
       "border-transparent bg-transparent hover:bg-white hover:shadow-sm hover:border-stone-200/60";
@@ -199,15 +196,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     onClosePanel();
   };
 
-  // ==========================================
-  // TYPE-SAFE METADATA EXTRACTION
-  // ==========================================
   let projectName: string | undefined;
   let pieceTitle: string | undefined;
   let message: string | undefined;
   let changes: string[] | undefined;
 
-  // TypeScript intelligently narrows the `.metadata` type inside each case block
   switch (notification.notification_type) {
     case "PROJECT_INVITATION":
       projectName = notification.metadata.project_name;
@@ -237,11 +230,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     case "CREW_ASSIGNED":
       projectName = notification.metadata.project_name;
       message = t("notifications.crew_role", {
-        defaultValue: `Assigned Role: {{role}}`,
+        defaultValue: "Przypisana rola: {{role}}",
         role: notification.metadata.role,
       });
       break;
-    // ABSENCE limits metadata strictly to rehearsal_id
     case "ABSENCE_APPROVED":
     case "ABSENCE_REJECTED":
     case "ABSENCE_REQUESTED":
@@ -275,7 +267,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         >
           {t(
             `notifications.types.${notification.notification_type}`,
-            notification.notification_type.replace(/_/g, " "),
+            "Powiadomienie systemowe",
           )}
         </p>
 
@@ -292,7 +284,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         {changes && changes.length > 0 && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mr-1">
-              {t("notifications.changed", "Changed:")}
+              {t("notifications.changed", "Zmiany:")}
             </span>
             {changes.map((change, idx) => (
               <span

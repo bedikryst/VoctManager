@@ -21,12 +21,10 @@ export const NotificationCenter: React.FC = () => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Queries
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { data: notifications = [], isLoading } = useNotifications();
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
 
-  // Prevent background scrolling when drawer is open
   useEffect(() => {
     if (isOpen) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
@@ -37,15 +35,13 @@ export const NotificationCenter: React.FC = () => {
 
   return (
     <>
-      {/* TRIGGER BUTTON (THE BELL) */}
       <button
         onClick={() => setIsOpen(true)}
         className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200/80 bg-white/60 text-stone-600 shadow-sm transition-all hover:bg-white hover:text-[#002395] active:scale-95"
-        aria-label={t("notifications.title")}
+        aria-label={t("notifications.title", "Powiadomienia")}
       >
         <Bell size={18} strokeWidth={2.5} />
 
-        {/* Animated Badge for Unread Count */}
         <AnimatePresence>
           {unreadCount > 0 && (
             <motion.div
@@ -60,11 +56,9 @@ export const NotificationCenter: React.FC = () => {
         </AnimatePresence>
       </button>
 
-      {/* OVERLAY & DRAWER */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -74,7 +68,6 @@ export const NotificationCenter: React.FC = () => {
               aria-hidden="true"
             />
 
-            {/* Sliding Drawer */}
             <motion.div
               initial={{ x: "100%", opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -82,14 +75,13 @@ export const NotificationCenter: React.FC = () => {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed bottom-0 right-0 top-0 z-[70] flex w-full max-w-sm flex-col bg-[#f8f7f5] shadow-2xl border-l border-white/60"
             >
-              {/* Header */}
               <div className="flex flex-shrink-0 items-center justify-between border-b border-stone-200/60 bg-white/80 p-5 backdrop-blur-xl">
                 <div>
                   <h3 className="text-lg font-bold text-stone-900">
-                    {t("notifications.title", "Notifications")}
+                    {t("notifications.title", "Powiadomienia")}
                   </h3>
                   <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500">
-                    {unreadCount} {t("notifications.unread", "Unread")}
+                    {unreadCount} {t("notifications.unread", "nieprzeczytane")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -99,7 +91,7 @@ export const NotificationCenter: React.FC = () => {
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-stone-500 transition-colors hover:bg-stone-200 hover:text-stone-900"
                       title={t(
                         "notifications.mark_all_read",
-                        "Mark all as read",
+                        "Oznacz wszystkie jako przeczytane",
                       )}
                     >
                       <Check size={16} strokeWidth={3} />
@@ -114,7 +106,6 @@ export const NotificationCenter: React.FC = () => {
                 </div>
               </div>
 
-              {/* List Content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-2 [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden">
                 {isLoading ? (
                   <div className="flex h-32 items-center justify-center text-stone-400">
@@ -143,12 +134,12 @@ export const NotificationCenter: React.FC = () => {
                       <Bell size={24} />
                     </div>
                     <p className="mt-4 text-sm font-bold text-stone-500">
-                      {t("notifications.empty_title", "All caught up!")}
+                      {t("notifications.empty_title", "Wszystko przeczytane")}
                     </p>
                     <p className="mt-1 text-xs text-stone-400">
                       {t(
                         "notifications.empty_subtitle",
-                        "You have no new notifications.",
+                        "Nie masz nowych powiadomień.",
                       )}
                     </p>
                   </div>

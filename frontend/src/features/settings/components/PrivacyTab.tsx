@@ -59,7 +59,7 @@ export default function PrivacyTab() {
         <div className="mb-8">
           <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-[#002395]" />
-            {t("settings.privacy.title", "Prywatność i Dane (RODO)")}
+            {t("settings.privacy.title", "Prywatność i dane (RODO)")}
           </h2>
           <p className="text-sm text-stone-500 mt-1">
             {t(
@@ -70,17 +70,16 @@ export default function PrivacyTab() {
         </div>
 
         <div className="space-y-8">
-          {/* Data Export Area */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 rounded-2xl bg-white/40 border border-stone-200/50">
             <div className="space-y-1">
               <h3 className="text-sm font-black text-stone-800 uppercase tracking-wider flex items-center gap-2">
                 <FileJson className="w-4 h-4 text-stone-500" />
-                {t("settings.privacy.exportTitle", "Eksport Danych")}
+                {t("settings.privacy.exportTitle", "Eksport danych")}
               </h3>
               <p className="text-xs text-stone-500 max-w-md leading-relaxed">
                 {t(
                   "settings.privacy.exportDesc",
-                  "Pobierz kopię wszystkich danych przypisanych do Twojego konta w maszynowo czytelnym formacie (JSON).",
+                  "Pobierz kopię wszystkich danych przypisanych do Twojego konta w maszynowo czytelnym formacie JSON.",
                 )}
               </p>
             </div>
@@ -94,28 +93,26 @@ export default function PrivacyTab() {
             </Button>
           </div>
 
-          {/* Danger Zone */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 rounded-2xl bg-red-50/50 border border-red-100">
             <div className="space-y-1">
               <h3 className="text-sm font-black text-red-800 uppercase tracking-wider flex items-center gap-2">
                 <Trash2 className="w-4 h-4 text-red-500" />
-                {t("settings.privacy.deleteTitle", "Usuń Konto")}
+                {t("settings.privacy.deleteTitle", "Usuń konto")}
               </h3>
               <p className="text-xs text-red-600/80 max-w-md leading-relaxed">
                 {t(
                   "settings.privacy.deleteDesc",
-                  "Trwałe zablokowanie dostępu do aplikacji. Twoje historyczne dane z prób i koncertów zostaną zanonimizowane dla celów statystycznych chóru.",
+                  "Trwale zablokuj dostęp do aplikacji. Historyczne dane z prób i koncertów zostaną zanonimizowane na potrzeby statystyki chóru.",
                 )}
               </p>
             </div>
             <Button variant="danger" onClick={() => setIsDeleteModalOpen(true)}>
-              {t("common.actions.deleteAccount", "Usuń Konto")}
+              {t("common.actions.deleteAccount", "Usuń konto")}
             </Button>
           </div>
         </div>
       </GlassCard>
 
-      {/* Confirmation Modal with Re-Authentication */}
       <ConfirmModal
         isOpen={isDeleteModalOpen}
         title={t(
@@ -126,12 +123,21 @@ export default function PrivacyTab() {
           <div className="flex flex-col gap-4 text-left">
             <span className="flex flex-col gap-2">
               <span>
-                Ta akcja jest <strong>nieodwracalna</strong>. Stracisz dostęp do
-                wszystkich materiałów chóru, nut i harmonogramów.
+                {t("settings.privacy.modalDescLine1Prefix", "Ta akcja jest")}{" "}
+                <strong>
+                  {t("settings.privacy.modalDescLine1Highlight", "nieodwracalna")}
+                </strong>
+                .{" "}
+                {t(
+                  "settings.privacy.modalDescLine1Suffix",
+                  "Stracisz dostęp do wszystkich materiałów chóru, nut i harmonogramów.",
+                )}
               </span>
               <span>
-                Twoja historia obecności zostanie zachowana z powodów
-                audytowych, ale konto zostanie trwale zdezaktywowane.
+                {t(
+                  "settings.privacy.modalDescLine2",
+                  "Historia obecności zostanie zachowana z powodów audytowych, ale konto zostanie trwale zdezaktywowane.",
+                )}
               </span>
             </span>
 
@@ -139,7 +145,7 @@ export default function PrivacyTab() {
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
                 {t(
                   "settings.privacy.confirmPasswordLabel",
-                  "Potwierdź hasłem, aby usunąć",
+                  "Potwierdź hasłem, aby usunąć konto",
                 )}
               </label>
               <Input
@@ -168,7 +174,7 @@ export default function PrivacyTab() {
         onCancel={handleCloseModal}
         isLoading={isDeleting}
         isDestructive={true}
-        confirmText={t("common.actions.confirmDelete", "Tak, Usuń Konto")}
+        confirmText={t("common.actions.confirmDelete", "Tak, usuń konto")}
       />
     </>
   );

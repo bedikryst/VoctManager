@@ -25,7 +25,7 @@ from .tasks import generate_project_zip_task
 from .infrastructure.document_generator import DocumentGenerator
 
 # Pydantic DTOs
-from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO
+from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectCreateDTO
 
 # Service Objects
 from .services import (
@@ -132,13 +132,42 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return base_qs.filter(participations__artist__user=user).distinct()
     
     def create(self, request, *args, **kwargs) -> Response:
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        project = ProjectManagementService.create_project_with_creator(user=request.user, validated_data=serializer.validated_data)
+        """
+        [CQRS Command] - Walidacja przez Pydantic DTO
+        """
+        try:
+            dto = ProjectCreateDTO(**request.data)
+        except ValidationError as e:
+            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            
+        project = ProjectManagementService.create_project_with_creator(
+            user=request.user, 
+            dto=dto
+        )
         return Response(self.get_serializer(project).data, status=status.HTTP_201_CREATED)
     
-    def perform_update(self, serializer) -> None:
-        ProjectManagementService.update_project(serializer.instance, serializer.validated_data)
+    def update(self, request, *args, **kwargs) -> Response:
+        """
+        [CQRS Command] - Zastępuje standardowe działanie DRF dla metody PUT
+        """
+        project = self.get_object()
+        try:
+            dto = ProjectUpdateDTO(**request.data)
+        except ValidationError as e:
+            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            
+        updated_project = ProjectManagementService.update_project(project, dto)
+        return Response(self.get_serializer(updated_project).data, status=status.HTTP_200_OK)
+
+    def partial_update(self, request, *args, **kwargs) -> Response:
+        """
+        [CQRS Command] - Zastępuje standardowe działanie DRF dla metody PATCH
+        """
+        return self.update(request, *args, **kwargs)
+
+    # ==========================================
+    # Custom Actions (Raports / Exports / SSoT Endpoints)
+    # ==========================================
 
     @action(detail=True, methods=['get'])
     def roster(self, request, pk=None) -> Response:
@@ -186,7 +215,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename="Sklad_DTP_{project.title.replace(" ", "_")}.txt"'
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         return response
-
 
 class ParticipationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated] 

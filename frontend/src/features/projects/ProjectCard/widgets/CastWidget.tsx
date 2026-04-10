@@ -46,7 +46,7 @@ export default function CastWidget({
             className="text-[#002395] group-hover:scale-110 transition-transform"
             aria-hidden="true"
           />
-          {t("projects.cast.title", "Obsada Wokalna")}
+          {t("projects.cast.title", "Obsada wokalna")}
         </h4>
         {onEdit && (
           <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-[#002395] opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
@@ -81,7 +81,7 @@ export default function CastWidget({
 
           {projectParticipations.length === 0 && (
             <span className="text-xs text-stone-400 italic">
-              {t("projects.cast.empty_widget", "Brak obsady wokalnej.")}
+              {t("projects.cast.empty", "Brak obsady wokalnej.")}
             </span>
           )}
         </div>

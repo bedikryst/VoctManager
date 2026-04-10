@@ -18,17 +18,14 @@ const getActivationErrorMessage = (error: any): string => {
   }
 
   if (errorCode === "expired_activation_link") {
-    return "This activation link has expired. Request a fresh invitation from the administrator.";
+    return "auth.activate.errors.expired_link";
   }
 
   if (errorCode === "invalid_activation_link") {
-    return "This activation link is invalid. Verify the full URL or request a new invitation.";
+    return "auth.activate.errors.invalid_link";
   }
 
-  return (
-    error?.response?.data?.message ||
-    "Account activation failed. Verify the link details and try again."
-  );
+  return error?.response?.data?.message || "auth.activate.errors.activation_failed";
 };
 
 export const useAccountActivation = () => {
@@ -69,19 +66,17 @@ export const useAccountActivation = () => {
     event.preventDefault();
 
     if (!hasActivationParams) {
-      setFormError(
-        "The activation link is incomplete. Open the latest invitation email and try again.",
-      );
+      setFormError("auth.activate.errors.incomplete_link");
       return;
     }
 
     if (password.length < 8) {
-      setFormError("Use a password with at least 8 characters.");
+      setFormError("auth.activate.errors.password_too_short");
       return;
     }
 
     if (password !== confirmPassword) {
-      setFormError("The password confirmation does not match.");
+      setFormError("auth.activate.errors.password_mismatch");
       return;
     }
 

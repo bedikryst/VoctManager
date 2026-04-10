@@ -7,14 +7,15 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
 import { useSettingsData, useUpdatePreferences } from "../api/settings.queries";
 import { UpdatePreferencesPayload } from "../types/settings.dto";
-import { useTranslation } from "react-i18next";
 
 export function useGeneralSettings() {
   const { data: user, isLoading: isFetching } = useSettingsData();
   const { mutateAsync: updatePreferences, isPending } = useUpdatePreferences();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [formData, setFormData] = useState<UpdatePreferencesPayload>({
     first_name: "",
     last_name: "",
@@ -22,7 +23,6 @@ export function useGeneralSettings() {
       phone_number: "",
       language: "pl",
       timezone: "UTC",
-      // Logistics fields required by DTO (maintained silently)
       dietary_preference: "none",
       dietary_notes: "",
       clothing_size: "",
@@ -45,7 +45,6 @@ export function useGeneralSettings() {
           phone_number: user.profile?.phone_number || "",
           language: user.profile?.language || "pl",
           timezone: user.profile?.timezone || "UTC",
-          // Preserving logistics data to satisfy TS and prevent accidental overwrite
           dietary_preference: user.profile?.dietary_preference || "none",
           dietary_notes: user.profile?.dietary_notes || "",
           clothing_size: user.profile?.clothing_size || "",
@@ -72,7 +71,7 @@ export function useGeneralSettings() {
         height_cm: user.profile?.height_cm || null,
       },
     };
-    // Deep comparison za pomocą stringify (wydajne i bezpieczne dla prostych DTO)
+
     return JSON.stringify(formData) !== JSON.stringify(initialData);
   }, [formData, user]);
 
@@ -89,15 +88,17 @@ export function useGeneralSettings() {
       const newLang = formData.profile.language;
       if (newLang && i18n.language !== newLang) {
         i18n.changeLanguage(newLang);
-        document.documentElement.lang = newLang; // synchronizacja a11y
+        document.documentElement.lang = newLang;
       }
 
-      // Ukrywamy komunikat o sukcesie po 3 sekundach
       setTimeout(() => setStatus({ type: null }), 3000);
     } catch (error: any) {
       const errorMsg =
         error.response?.data?.message ||
-        "Wystąpił błąd podczas zapisywania zmian.";
+        t(
+          "common.errors.save_problem",
+          "Wystąpił problem podczas zapisywania danych.",
+        );
       setStatus({ type: "error", message: errorMsg });
     }
   };

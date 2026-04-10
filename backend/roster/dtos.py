@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional, Union
 from uuid import UUID
 from decimal import Decimal
+from datetime import datetime
 
 class EnterpriseBaseDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra='forbid')
@@ -44,3 +45,29 @@ class ProjectBulkFeeDTO(EnterpriseBaseDTO):
     project_id: UUID
     # Enforces decimal precision and prevents negative payouts
     new_fee: Decimal = Field(..., ge=0, max_digits=8, decimal_places=2)
+
+class ProjectCreateDTO(EnterpriseBaseDTO):
+    """Data contract for creating a new project."""
+    title: str = Field(..., min_length=1, max_length=200)
+    date_time: datetime
+    call_time: Optional[datetime] = None
+    location: str = Field(default='', max_length=200)
+    description: str = Field(default='')
+    dress_code_male: str = Field(default='', max_length=100)
+    dress_code_female: str = Field(default='', max_length=100)
+    status: str = Field(default='DRAFT', max_length=10)
+    spotify_playlist_url: Optional[str] = None
+    run_sheet: list = Field(default_factory=list)
+
+class ProjectUpdateDTO(EnterpriseBaseDTO):
+    """Data contract for partial or full updates of a project."""
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    date_time: Optional[datetime] = None
+    call_time: Optional[datetime] = None
+    location: Optional[str] = Field(None, max_length=200)
+    description: Optional[str] = None
+    dress_code_male: Optional[str] = Field(None, max_length=100)
+    dress_code_female: Optional[str] = Field(None, max_length=100)
+    status: Optional[str] = Field(None, max_length=10)
+    spotify_playlist_url: Optional[str] = None
+    run_sheet: Optional[list] = None

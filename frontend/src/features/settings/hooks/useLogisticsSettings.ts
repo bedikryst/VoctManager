@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
 import { useSettingsData, useUpdatePreferences } from "../api/settings.queries";
 import { UpdatePreferencesPayload } from "../types/settings.dto";
 
 export function useLogisticsSettings() {
+  const { t } = useTranslation();
   const { data: user, isLoading: isFetching } = useSettingsData();
   const { mutateAsync: updatePreferences, isPending } = useUpdatePreferences();
 
@@ -11,7 +14,7 @@ export function useLogisticsSettings() {
     dietary_notes: "",
     clothing_size: "",
     shoe_size: "",
-    height_cm: "" as string | number, // trzymamy jako string dla formularza, parsujemy przy wysyłce
+    height_cm: "" as string | number,
   });
 
   const [status, setStatus] = useState<{
@@ -49,7 +52,6 @@ export function useLogisticsSettings() {
 
     setStatus({ type: null });
 
-    // Budujemy pełen payload, zachowując istniejące dane Generalne (imię, język itd.)
     const payload: UpdatePreferencesPayload = {
       first_name: user.first_name || "",
       last_name: user.last_name || "",
@@ -74,7 +76,10 @@ export function useLogisticsSettings() {
     } catch (error: any) {
       setStatus({
         type: "error",
-        message: "Błąd podczas zapisywania logistyki.",
+        message: t(
+          "common.errors.save_problem",
+          "Wystąpił problem podczas zapisywania danych.",
+        ),
       });
     }
   };

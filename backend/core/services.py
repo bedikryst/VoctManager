@@ -13,7 +13,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
-from .signals import account_soft_deleted
+from .signals import account_soft_deleted, user_email_changed, user_pii_updated
 
 from .models import UserProfile
 from .dtos import UserPreferencesUpdateDTO, UserPasswordChangeDTO, UserEmailChangeDTO, UserAccountDeletionDTO
@@ -172,7 +172,8 @@ class UserIdentityService:
         old_email = user.email
         user.email = dto.new_email
         user.save(update_fields=['email'])
-        
+
+        user_email_changed.send(sender=UserIdentityService, user=user, old_email=old_email, new_email=dto.new_email)
         logger.info(f"Email changed successfully from {old_email} to {dto.new_email}")
         return user
 
@@ -244,14 +245,8 @@ class UserPreferencesService:
                 }
             )
 
-            if hasattr(user, 'artist_profile'):
-                artist = user.artist_profile
-                artist.first_name = dto.first_name
-                artist.last_name = dto.last_name
-                if dto.phone_number:
-                    artist.phone_number = dto.phone_number
-                artist.save(update_fields=['first_name', 'last_name', 'phone_number', 'updated_at'])
-
+            user_pii_updated.send(sender=UserPreferencesService, user=user, dto=dto)
+            
             logger.info(f"User preferences synchronized for: {user.email}")
             return user
 

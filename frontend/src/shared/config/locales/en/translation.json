@@ -13,7 +13,10 @@
       "close_panel": "Close panel (ESC)",
       "delete_error": "Deletion error",
       "confirm": "Confirm",
-      "loading": "Processing..."
+      "loading": "Processing...",
+      "download": "Download",
+      "deleteAccount": "Delete Account",
+      "confirmDelete": "Yes, Delete Account"
     },
     "errors": {
       "server_error": "Server error",
@@ -54,10 +57,68 @@
         "save_error_title": "Save error.",
         "save_error_desc": "Check the data and try again."
       }
+    },
+    "state": {
+      "loading": "Loading...",
+      "saved": "Saved"
     }
   },
   "auth": {
-    "authorizing": "Authorizing..."
+    "authorizing": "Authorizing...",
+    "activate": {
+      "back_to_home": "Back to homepage",
+      "badge": "Invite Activation",
+      "subtitle": "VoctManager Access",
+      "title_1": "Activate your",
+      "title_2": "artist panel",
+      "description": "Complete the final onboarding step to secure your account and enter the operational workspace used for projects, rehearsals, and ensemble coordination.",
+      "features": {
+        "security": {
+          "title": "Secure onboarding",
+          "desc": "The activation link is bound to your invited account and unlocks the private dashboard only after password setup."
+        },
+        "access": {
+          "title": "One-step access",
+          "desc": "After activation you can sign in immediately and review rehearsals, projects, and operational materials."
+        },
+        "workspace": {
+          "title": "Professional workspace",
+          "desc": "VoctManager centralizes artistic communication, roster data, and production logistics in one panel."
+        }
+      },
+      "form": {
+        "subtitle": "Password setup",
+        "title": "Finalize your access",
+        "description": "Choose a secure password for the invited account. Once activated, you will use the standard login page to enter the panel.",
+        "security_title": "Security standard",
+        "security_desc": "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
+        "missing_params": "This link is missing activation parameters. Open the latest invitation email and use the full button or URL.",
+        "new_password": "New password",
+        "new_password_placeholder": "Create a secure password",
+        "confirm_password": "Confirm password",
+        "confirm_password_placeholder": "Repeat the password",
+        "activating_btn": "Activating account",
+        "activate_btn": "Activate account"
+      },
+      "success": {
+        "subtitle": "Activation complete",
+        "title": "Your panel is ready",
+        "desc_1": "The account assigned to ",
+        "desc_2": " has been secured and activated.",
+        "your_username": "Your username to log in",
+        "instruction": "Proceed to the login page and use your email along with your newly created password to access the panel.",
+        "go_to_login": "Go to login",
+        "return_home": "Return home"
+      },
+      "errors": {
+        "expired_link": "This activation link has expired. Request a fresh invitation from the administrator.",
+        "invalid_link": "This activation link is invalid. Verify the full URL or request a new invitation.",
+        "activation_failed": "Account activation failed. Verify the link details and try again.",
+        "incomplete_link": "The activation link is incomplete. Open the latest invitation email and try again.",
+        "password_too_short": "Use a password with at least 8 characters.",
+        "password_mismatch": "The password confirmation does not match."
+      }
+    }
   },
   "archive": {
     "dashboard": {
@@ -329,7 +390,8 @@
       "save_profile": "Save Profile",
       "create_artist": "Create Artist",
       "unsaved_title": "You have unsaved changes!",
-      "unsaved_desc": "You made changes in the form that have not been saved. Closing the panel will discard them."
+      "unsaved_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
+      "language": "Message Language *"
     },
     "toast": {
       "activating": "Activating account...",
@@ -595,7 +657,23 @@
       "open_module": "Open Module",
       "event_prefix_rehearsal": "Rehearsal:",
       "event_prefix_project": "Event:",
-      "general_work": "General work"
+      "general_work": "General work",
+      "download_error": "Failed to download the schedule",
+      "download_runsheet": "Schedule (Call sheet)",
+      "download_success": "Schedule downloaded successfully",
+      "downloading_runsheet": "Generating schedule...",
+      "next_challenges": "On the horizon",
+      "confirm_presence_loading": "Confirming attendance...",
+      "confirm_presence_note": "Attendance confirmed from the dashboard",
+      "confirm_presence_success": "Attendance confirmed!",
+      "attendance_save_error": "Error while saving",
+      "header_title_prefix": "Music",
+      "header_title_highlight": "Dashboard",
+      "absence_reported": "Absence reported",
+      "edit_report": "Edit report",
+      "project_badge": "Concert",
+      "call_time": "Call time:",
+      "materials_link": "Scores and Audio"
     },
     "admin": {
       "logged_in_as": "Logged in as: {{name}}",
@@ -654,7 +732,13 @@
         "crew_feat_1": "Sound",
         "crew_feat_2": "Lighting",
         "crew_feat_3": "Companies"
-      }
+      },
+      "btn_new_project": "New Project",
+      "welcome_back": "Welcome back",
+      "header_title_prefix": "Production",
+      "header_title_highlight": "Dashboard",
+      "open_project": "Open Project",
+      "open_module": "Open Module"
     }
   },
   "crew": {
@@ -802,7 +886,10 @@
       "logistics_dashboard": "Logistics & Production",
       "collapse": "Collapse",
       "expand": "Expand",
-      "status_production": "Production status"
+      "status_production": "Production status",
+      "generating_doc": "Generating document...",
+      "download_success": "Document downloaded successfully.",
+      "download_unknown_error": "Failed to generate the document."
     },
     "toast": {
       "sync_error_title": "Sync error",
@@ -852,7 +939,8 @@
         "updating": "Updating project...",
         "creating": "Creating project...",
         "update_success": "Project and schedule updated",
-        "create_success": "New project and schedule created"
+        "create_success": "New project and schedule created",
+        "saving": "Saving project details..."
       }
     },
     "matrix": {
@@ -869,7 +957,8 @@
       },
       "empty": {
         "rehearsal": "No scheduled rehearsals in this project.",
-        "cast": "No cast assigned to the project."
+        "cast": "No cast assigned to the project.",
+        "rehearsals": "No rehearsals scheduled in this project."
       },
       "not_invited": "N/A",
       "status": {
@@ -1128,6 +1217,10 @@
         "note_error": "Failed to update note.",
         "sync_error": "Sync error",
         "sync_error_desc": "Failed to update cast."
+      },
+      "bucket": {
+        "aria": "Droppable Section",
+        "aria_with_title": "Droppable Section: {{title}}"
       }
     },
     "rehearsals": {
@@ -1154,7 +1247,9 @@
         "type_sectional": "Sectional Rehearsal",
         "type_custom": "Selected people",
         "mandatory": "Mandatory attendance for invitees",
-        "submit": "Save to calendar"
+        "submit": "Save to calendar",
+        "title_edit": "Edit rehearsal",
+        "update": "Update rehearsal"
       },
       "voices": {
         "sopranos": "Sopranos",
@@ -1172,7 +1267,8 @@
         "optional": "Optional"
       },
       "actions": {
-        "delete": "Delete rehearsal"
+        "delete": "Delete rehearsal",
+        "edit": "Edit rehearsal"
       },
       "modal": {
         "delete_title": "Delete this rehearsal?",
@@ -1185,7 +1281,9 @@
         "save_error_desc": "A problem occurred while saving to the database. Check the form and connection.",
         "removing": "Deleting rehearsal...",
         "remove_success": "Rehearsal has been deleted",
-        "remove_error_desc": "Failed to delete rehearsal. The server rejected the request."
+        "remove_error_desc": "Failed to delete rehearsal. The server rejected the request.",
+        "update_success": "Rehearsal updated successfully",
+        "updating": "Updating rehearsal..."
       }
     },
     "run_sheet": {
@@ -1197,6 +1295,117 @@
       "iframe_title": "Spotify Playlist",
       "open_app": "Open in app",
       "empty": "No playlist assigned."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "Unread",
+    "mark_all_read": "Mark all as read",
+    "empty_title": "All caught up!",
+    "empty_subtitle": "You have no new notifications.",
+    "changed": "Changed:",
+    "crew_role": "Assigned Role: {{role}}",
+    "types": {
+      "PROJECT_INVITATION": "Project Invitation",
+      "PROJECT_UPDATED": "Project Updated",
+      "PROJECT_CANCELLED": "Project Cancelled",
+      "PROJECT_REMINDER": "Project Reminder",
+      "REHEARSAL_SCHEDULED": "Rehearsal Scheduled",
+      "REHEARSAL_UPDATED": "Rehearsal Updated",
+      "REHEARSAL_CANCELLED": "Rehearsal Cancelled",
+      "REHEARSAL_REMINDER": "Rehearsal Reminder",
+      "PIECE_CASTING_ASSIGNED": "Piece Casting Assigned",
+      "PIECE_CASTING_UPDATED": "Piece Casting Updated",
+      "MATERIAL_UPLOADED": "Material Uploaded",
+      "CREW_ASSIGNED": "Crew Assigned",
+      "CONTRACT_ISSUED": "Contract Issued",
+      "ABSENCE_REQUESTED": "Absence Requested",
+      "ABSENCE_APPROVED": "Absence Approved",
+      "ABSENCE_REJECTED": "Absence Rejected",
+      "SYSTEM_ALERT": "System Alert"
+    }
+  },
+  "settings": {
+    "errors": {
+      "invalid_current_password": "Invalid password. Try again."
+    },
+    "general": {
+      "firstName": "First Name",
+      "language": "Interface Language",
+      "lastName": "Last Name",
+      "phone": "Phone Number",
+      "subtitle": "Manage your data and application preferences.",
+      "timezone": "Time Zone",
+      "title": "General Settings"
+    },
+    "integrations": {
+      "subtitle": "Synchronize the rehearsal schedule with your phone calendar.",
+      "title": "Integrations and Calendars",
+      "live_sync_title": "Live Sync (Apple, Google, Outlook)",
+      "live_sync_desc": "Use this link to subscribe to the choir calendar. Your rehearsals and concerts will update automatically. Add it as a URL subscription, not as a one-time downloaded file.",
+      "calendar_url_label": "Your private calendar address",
+      "copied": "Copied",
+      "copy_link": "Copy Link",
+      "reset_title": "Reset your link",
+      "reset_desc": "If you suspect unauthorized access to your calendar link, generate it again. The previous address will stop working immediately.",
+      "reset_btn": "Generate New Link"
+    },
+    "logistics": {
+      "subtitle": "Data used by management to order costumes and catering.",
+      "title": "Logistics and Travel",
+      "sections": {
+        "catering": "Catering",
+        "measurements": "Measurements and Costumes"
+      },
+      "dietary_preference": "Dietary Preference",
+      "dietary_notes": "Notes / Allergies (optional)",
+      "dietary_notes_placeholder": "e.g. nut allergy, no seafood...",
+      "dietary_options": {
+        "none": "No requirements",
+        "vege": "Vegetarian",
+        "vegan": "Vegan",
+        "gf": "Gluten-free",
+        "lf": "Lactose-free"
+      },
+      "clothing_size": "Clothing Size",
+      "shoe_size": "Shoe Size (EU)",
+      "shoe_size_placeholder": "e.g. 42",
+      "height": "Height (cm)",
+      "height_placeholder": "e.g. 175"
+    },
+    "membership": {
+      "title": "Artist Profile",
+      "voice": "Your Voice"
+    },
+    "privacy": {
+      "confirmPasswordLabel": "Confirm with your password to delete the account",
+      "deleteDesc": "Permanently block access to the application. Historical rehearsal and concert data will be anonymized for choir statistics.",
+      "deleteTitle": "Delete Account",
+      "exportDesc": "Download a copy of all data assigned to your account in machine-readable JSON format.",
+      "exportTitle": "Data Export",
+      "modalDescLine1Highlight": "irreversible",
+      "modalDescLine1Prefix": "This action is",
+      "modalDescLine1Suffix": "You will lose access to all choir materials, scores, and schedules.",
+      "modalDescLine2": "Attendance history will be preserved for audit purposes, but the account will be permanently deactivated.",
+      "modalTitle": "Are you sure you want to delete the account?",
+      "passwordPlaceholder": "Current password",
+      "subtitle": "Manage your personal data and account permissions.",
+      "title": "Privacy and Data (GDPR)"
+    },
+    "security": {
+      "newPassword": "New Password",
+      "oldPassword": "Current Password",
+      "subtitle": "Manage your password and account security settings.",
+      "success": "Your password has been changed successfully.",
+      "title": "Security",
+      "updatePassword": "Change Password"
+    },
+    "tabs": {
+      "general": "General",
+      "integrations": "Integrations",
+      "logistics": "Logistics",
+      "privacy": "Privacy",
+      "security": "Security"
     }
   }
 }

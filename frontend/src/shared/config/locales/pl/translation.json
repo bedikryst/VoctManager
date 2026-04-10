@@ -13,7 +13,10 @@
       "close_panel": "Zamknij panel (ESC)",
       "delete_error": "Błąd usuwania",
       "confirm": "Potwierdź",
-      "loading": "Przetwarzanie..."
+      "loading": "Przetwarzanie...",
+      "download": "Pobierz",
+      "deleteAccount": "Usuń konto",
+      "confirmDelete": "Tak, usuń konto"
     },
     "errors": {
       "server_error": "Błąd serwera",
@@ -54,10 +57,68 @@
         "save_error_title": "Błąd zapisu.",
         "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie."
       }
+    },
+    "state": {
+      "loading": "Wczytywanie...",
+      "saved": "Zapisano"
     }
   },
   "auth": {
-    "authorizing": "Autoryzacja..."
+    "authorizing": "Autoryzacja...",
+    "activate": {
+      "back_to_home": "Powrót na stronę główną",
+      "badge": "Aktywacja zaproszenia",
+      "subtitle": "Dostęp do VoctManagera",
+      "title_1": "Aktywuj swój",
+      "title_2": "panel artysty",
+      "description": "Dokończ ostatni krok wdrożenia, aby zabezpieczyć konto i uzyskać dostęp do panelu używanego do projektów, prób i koordynacji zespołu.",
+      "features": {
+        "security": {
+          "title": "Bezpieczna aktywacja",
+          "desc": "Link aktywacyjny jest przypisany do zaproszonego konta i odblokowuje prywatny panel dopiero po ustawieniu hasła."
+        },
+        "access": {
+          "title": "Szybki start",
+          "desc": "Po aktywacji możesz od razu zalogować się i sprawdzić próby, projekty oraz materiały organizacyjne."
+        },
+        "workspace": {
+          "title": "Panel pracy zespołu",
+          "desc": "VoctManager centralizuje komunikację artystyczną, dane zespołu i logistykę produkcyjną w jednym miejscu."
+        }
+      },
+      "form": {
+        "subtitle": "Ustawienie hasła",
+        "title": "Dokończ aktywację",
+        "description": "Ustaw bezpieczne hasło dla zaproszonego konta. Po aktywacji zalogujesz się do panelu przez standardową stronę logowania.",
+        "security_title": "Standard bezpieczeństwa",
+        "security_desc": "Użyj co najmniej 8 znaków. Zalecane jest dłuższe hasło z małymi i wielkimi literami, cyframi oraz znakami specjalnymi.",
+        "missing_params": "W tym linku brakuje parametrów aktywacyjnych. Otwórz najnowszy e-mail z zaproszeniem i użyj pełnego przycisku lub adresu URL.",
+        "new_password": "Nowe hasło",
+        "new_password_placeholder": "Utwórz bezpieczne hasło",
+        "confirm_password": "Potwierdź hasło",
+        "confirm_password_placeholder": "Powtórz hasło",
+        "activating_btn": "Aktywowanie konta",
+        "activate_btn": "Aktywuj konto"
+      },
+      "success": {
+        "subtitle": "Aktywacja zakończona",
+        "title": "Twój panel jest gotowy",
+        "desc_1": "Konto przypisane do ",
+        "desc_2": " zostało zabezpieczone i aktywowane.",
+        "your_username": "Twój login do panelu",
+        "instruction": "Przejdź do strony logowania i użyj swojego adresu e-mail oraz nowo utworzonego hasła, aby wejść do panelu.",
+        "go_to_login": "Przejdź do logowania",
+        "return_home": "Wróć na stronę główną"
+      },
+      "errors": {
+        "expired_link": "Ten link aktywacyjny wygasł. Poproś administratora o nowe zaproszenie.",
+        "invalid_link": "Ten link aktywacyjny jest nieprawidłowy. Sprawdź pełny adres URL lub poproś o nowe zaproszenie.",
+        "activation_failed": "Aktywacja konta nie powiodła się. Sprawdź dane linku i spróbuj ponownie.",
+        "incomplete_link": "Link aktywacyjny jest niekompletny. Otwórz najnowszy e-mail z zaproszeniem i spróbuj ponownie.",
+        "password_too_short": "Użyj hasła o długości co najmniej 8 znaków.",
+        "password_mismatch": "Potwierdzenie hasła nie jest zgodne."
+      }
+    }
   },
   "archive": {
     "dashboard": {
@@ -329,7 +390,8 @@
       "save_profile": "Zapisz Profil",
       "create_artist": "Utwórz Artystę",
       "unsaved_title": "Masz niezapisane zmiany!",
-      "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę."
+      "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
+      "language": "Język wiadomości *"
     },
     "toast": {
       "activating": "Aktywowanie konta...",
@@ -435,7 +497,6 @@
       }
     }
   },
-
   "rehearsals": {
     "dashboard": {
       "subtitle": "Moduł Inspektora",
@@ -532,7 +593,6 @@
       "speed_title": "Ustaw tempo na {{rate}}x"
     }
   },
-
   "dashboard": {
     "layout": {
       "brand_badge_admin": "Panel zarządu",
@@ -597,7 +657,23 @@
       "open_module": "Otwórz Moduł",
       "event_prefix_rehearsal": "Próba:",
       "event_prefix_project": "Wydarzenie:",
-      "general_work": "Praca bieżąca"
+      "general_work": "Praca bieżąca",
+      "next_challenges": "Na horyzoncie",
+      "downloading_runsheet": "Generowanie harmonogramu...",
+      "download_success": "Pobrano harmonogram pomyślnie",
+      "download_error": "Błąd pobierania harmonogramu",
+      "confirm_presence_loading": "Potwierdzanie obecności...",
+      "confirm_presence_note": "Obecność potwierdzona z dashboardu",
+      "confirm_presence_success": "Obecność potwierdzona!",
+      "attendance_save_error": "Błąd podczas zapisywania",
+      "header_title_prefix": "Pulpit",
+      "header_title_highlight": "Muzyczny",
+      "absence_reported": "Zgłoszono nieobecność",
+      "edit_report": "Edytuj zgłoszenie",
+      "project_badge": "Koncert",
+      "call_time": "Zbiórka (Call time):",
+      "materials_link": "Nuty i audio",
+      "download_runsheet": "Harmonogram (Call sheet)"
     },
     "admin": {
       "logged_in_as": "Zalogowano jako: {{name}}",
@@ -656,10 +732,15 @@
         "crew_feat_1": "Dźwięk",
         "crew_feat_2": "Światło",
         "crew_feat_3": "Firmy"
-      }
+      },
+      "welcome_back": "Witaj z powrotem",
+      "btn_new_project": "Nowy projekt",
+      "header_title_prefix": "Pulpit",
+      "header_title_highlight": "Produkcyjny",
+      "open_project": "Otwórz projekt",
+      "open_module": "Otwórz moduł"
     }
   },
-
   "crew": {
     "dashboard": {
       "subtitle": "Logistyka",
@@ -805,7 +886,10 @@
       "logistics_dashboard": "Logistyka i Produkcja",
       "collapse": "Zwiń",
       "expand": "Rozwiń",
-      "status_production": "Status produkcji"
+      "status_production": "Status produkcji",
+      "generating_doc": "Generowanie dokumentu...",
+      "download_success": "Dokument został pomyślnie pobrany.",
+      "download_unknown_error": "Nie udało się wygenerować dokumentu."
     },
     "toast": {
       "sync_error_title": "Błąd synchronizacji",
@@ -855,7 +939,8 @@
         "updating": "Aktualizowanie projektu...",
         "creating": "Tworzenie projektu...",
         "update_success": "Zaktualizowano projekt i harmonogram",
-        "create_success": "Utworzono nowy projekt z harmonogramem"
+        "create_success": "Utworzono nowy projekt z harmonogramem",
+        "saving": "Zapisywanie szczegółów projektu..."
       }
     },
     "matrix": {
@@ -872,7 +957,8 @@
       },
       "empty": {
         "rehearsal": "Brak zaplanowanych prób w tym projekcie.",
-        "cast": "Brak obsady przypisanej do projektu."
+        "cast": "Brak obsady przypisanej do projektu.",
+        "rehearsals": "Brak zaplanowanych prób w tym projekcie."
       },
       "not_invited": "Nie dotyczy",
       "status": {
@@ -1131,6 +1217,10 @@
         "note_error": "Nie udało się zaktualizować notatki.",
         "sync_error": "Błąd synchronizacji",
         "sync_error_desc": "Nie udało się zaktualizować obsady."
+      },
+      "bucket": {
+        "aria": "Sekcja upuszczania: ",
+        "aria_with_title": "Sekcja upuszczania: {{title}}"
       }
     },
     "rehearsals": {
@@ -1157,7 +1247,9 @@
         "type_sectional": "Próba Sekcyjna",
         "type_custom": "Wybrane osoby",
         "mandatory": "Obecność obowiązkowa dla wezwanych",
-        "submit": "Zapisz w kalendarzu"
+        "submit": "Zapisz w kalendarzu",
+        "title_edit": "Edytuj próbę",
+        "update": "Aktualizuj próbę"
       },
       "voices": {
         "sopranos": "Soprany",
@@ -1175,7 +1267,8 @@
         "optional": "Opcjonalna"
       },
       "actions": {
-        "delete": "Usuń próbę"
+        "delete": "Usuń próbę",
+        "edit": "Edytuj próbę"
       },
       "modal": {
         "delete_title": "Usunąć tę próbę?",
@@ -1188,7 +1281,9 @@
         "save_error_desc": "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie.",
         "removing": "Usuwanie próby...",
         "remove_success": "Próba została usunięta",
-        "remove_error_desc": "Nie udało się usunąć próby. Serwer odrzucił żądanie."
+        "remove_error_desc": "Nie udało się usunąć próby. Serwer odrzucił żądanie.",
+        "updating": "Aktualizowanie próby...",
+        "update_success": "Próba zaktualizowana pomyślnie"
       }
     },
     "run_sheet": {
@@ -1200,6 +1295,117 @@
       "iframe_title": "Playlista Spotify",
       "open_app": "Otwórz w aplikacji",
       "empty": "Brak przypisanej playlisty."
+    }
+  },
+  "settings": {
+    "tabs": {
+      "general": "Ogólne",
+      "security": "Bezpieczeństwo",
+      "logistics": "Logistyka",
+      "privacy": "Prywatność",
+      "integrations": "Integracje"
+    },
+    "errors": {
+      "invalid_current_password": "Błędne hasło. Spróbuj ponownie."
+    },
+    "general": {
+      "title": "Ustawienia ogólne",
+      "subtitle": "Zarządzaj swoimi danymi i preferencjami aplikacji.",
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "phone": "Numer telefonu",
+      "language": "Język interfejsu",
+      "timezone": "Strefa czasowa"
+    },
+    "membership": {
+      "title": "Profil artysty",
+      "voice": "Twój głos"
+    },
+    "security": {
+      "title": "Bezpieczeństwo",
+      "subtitle": "Zarządzaj hasłem i zabezpieczeniami konta.",
+      "oldPassword": "Obecne hasło",
+      "newPassword": "Nowe hasło",
+      "updatePassword": "Zmień hasło",
+      "success": "Hasło zostało pomyślnie zmienione."
+    },
+    "privacy": {
+      "title": "Prywatność i dane (RODO)",
+      "subtitle": "Zarządzaj swoimi danymi osobowymi oraz uprawnieniami do konta.",
+      "exportTitle": "Eksport danych",
+      "exportDesc": "Pobierz kopię wszystkich danych przypisanych do Twojego konta w maszynowo czytelnym formacie JSON.",
+      "deleteTitle": "Usuń konto",
+      "deleteDesc": "Trwale zablokuj dostęp do aplikacji. Historyczne dane z prób i koncertów zostaną zanonimizowane na potrzeby statystyki chóru.",
+      "modalTitle": "Czy na pewno chcesz usunąć konto?",
+      "modalDescLine1Prefix": "Ta akcja jest",
+      "modalDescLine1Highlight": "nieodwracalna",
+      "modalDescLine1Suffix": "Stracisz dostęp do wszystkich materiałów chóru, nut i harmonogramów.",
+      "modalDescLine2": "Historia obecności zostanie zachowana z powodów audytowych, ale konto zostanie trwale zdezaktywowane.",
+      "confirmPasswordLabel": "Potwierdź hasłem, aby usunąć konto",
+      "passwordPlaceholder": "Obecne hasło"
+    },
+    "integrations": {
+      "title": "Integracje i kalendarze",
+      "subtitle": "Zsynchronizuj harmonogram prób ze swoim kalendarzem w telefonie.",
+      "live_sync_title": "Synchronizacja na żywo (Apple, Google, Outlook)",
+      "live_sync_desc": "Użyj tego linku, aby zasubskrybować kalendarz chóru. Twoje próby i koncerty będą aktualizować się automatycznie. Dodaj go jako \"Subskrypcję\" (URL), a nie jednorazowy plik pobrany z dysku.",
+      "calendar_url_label": "Twój prywatny adres kalendarza",
+      "copied": "Skopiowano",
+      "copy_link": "Kopiuj link",
+      "reset_title": "Zresetuj swój link",
+      "reset_desc": "Jeśli podejrzewasz, że ktoś niepowołany uzyskał dostęp do Twojego linku kalendarza, wygeneruj go ponownie. Poprzedni adres natychmiast przestanie działać.",
+      "reset_btn": "Wygeneruj nowy link"
+    },
+    "logistics": {
+      "title": "Logistyka i trasy",
+      "subtitle": "Dane wykorzystywane przez management do zamawiania strojów i cateringu.",
+      "sections": {
+        "catering": "Catering",
+        "measurements": "Wymiary i stroje"
+      },
+      "dietary_preference": "Preferencja żywieniowa",
+      "dietary_notes": "Uwagi / alergie (opcjonalnie)",
+      "dietary_notes_placeholder": "Np. uczulenie na orzechy, brak owoców morza...",
+      "dietary_options": {
+        "none": "Brak wymagań",
+        "vege": "Wegetariańska",
+        "vegan": "Wegańska",
+        "gf": "Bez glutenu",
+        "lf": "Bez laktozy"
+      },
+      "clothing_size": "Rozmiar ubrań",
+      "shoe_size": "Rozmiar buta (EU)",
+      "shoe_size_placeholder": "Np. 42",
+      "height": "Wzrost (cm)",
+      "height_placeholder": "Np. 175"
+    }
+  },
+  "notifications": {
+    "title": "Powiadomienia",
+    "unread": "nieprzeczytane",
+    "mark_all_read": "Oznacz wszystkie jako przeczytane",
+    "empty_title": "Wszystko przeczytane",
+    "empty_subtitle": "Nie masz nowych powiadomień.",
+    "changed": "Zmiany:",
+    "crew_role": "Przypisana rola: {{role}}",
+    "types": {
+      "PROJECT_INVITATION": "Zaproszenie do projektu",
+      "PROJECT_UPDATED": "Aktualizacja projektu",
+      "PROJECT_CANCELLED": "Odwołanie projektu",
+      "PROJECT_REMINDER": "Przypomnienie o projekcie",
+      "REHEARSAL_SCHEDULED": "Zaplanowano próbę",
+      "REHEARSAL_UPDATED": "Aktualizacja próby",
+      "REHEARSAL_CANCELLED": "Odwołanie próby",
+      "REHEARSAL_REMINDER": "Przypomnienie o próbie",
+      "PIECE_CASTING_ASSIGNED": "Przypisanie do utworu",
+      "PIECE_CASTING_UPDATED": "Aktualizacja obsady utworu",
+      "MATERIAL_UPLOADED": "Dodano materiał",
+      "CREW_ASSIGNED": "Przypisanie ekipy",
+      "CONTRACT_ISSUED": "Wystawiono umowę",
+      "ABSENCE_REQUESTED": "Zgłoszono nieobecność",
+      "ABSENCE_APPROVED": "Zaakceptowano nieobecność",
+      "ABSENCE_REJECTED": "Odrzucono nieobecność",
+      "SYSTEM_ALERT": "Alert systemowy"
     }
   }
 }

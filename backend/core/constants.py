@@ -40,3 +40,9 @@ class ClothingSizeChoices(models.TextChoices):
     L = 'l', 'L'
     XL = 'xl', 'XL'
     XXL = 'xxl', 'XXL'
+
+
+class AppRole(models.TextChoices):
+    MANAGER = 'MANAGER', _('Manager / Conductor')
+    ARTIST = 'ARTIST', _('Artist / Singer')
+    CREW = 'CREW', _('Crew / Collaborator')

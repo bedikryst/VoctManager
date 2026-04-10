@@ -44,29 +44,32 @@ export default function ActivatePage(): React.JSX.Element {
 
   const activationHighlights = [
     {
-      title: t("auth.activate.features.security.title", "Secure onboarding"),
+      title: t(
+        "auth.activate.features.security.title",
+        "Bezpieczna aktywacja",
+      ),
       description: t(
         "auth.activate.features.security.desc",
-        "The activation link is bound to your invited account and unlocks the private dashboard only after password setup.",
+        "Link aktywacyjny jest przypisany do zaproszonego konta i odblokowuje prywatny panel dopiero po ustawieniu hasła.",
       ),
       icon: ShieldCheck,
     },
     {
-      title: t("auth.activate.features.access.title", "One-step access"),
+      title: t("auth.activate.features.access.title", "Szybki start"),
       description: t(
         "auth.activate.features.access.desc",
-        "After activation you can sign in immediately and review rehearsals, projects, and operational materials.",
+        "Po aktywacji możesz od razu zalogować się i sprawdzić próby, projekty oraz materiały organizacyjne.",
       ),
       icon: KeyRound,
     },
     {
       title: t(
         "auth.activate.features.workspace.title",
-        "Professional workspace",
+        "Panel pracy zespołu",
       ),
       description: t(
         "auth.activate.features.workspace.desc",
-        "VoctManager centralizes artistic communication, roster data, and production logistics in one panel.",
+        "VoctManager centralizuje komunikację artystyczną, dane zespołu i logistykę produkcyjną w jednym miejscu.",
       ),
       icon: Sparkles,
     },
@@ -101,11 +104,11 @@ export default function ActivatePage(): React.JSX.Element {
             className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] font-medium text-stone-500 transition-colors hover:text-[#002395]"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            <span>{t("auth.activate.back_to_home", "Back to homepage")}</span>
+            <span>{t("auth.activate.back_to_home", "Powrót na stronę główną")}</span>
           </Link>
 
           <div className="rounded-full border border-white/70 bg-white/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-600 shadow-sm shadow-stone-300/30 backdrop-blur">
-            {t("auth.activate.badge", "Invite Activation")}
+            {t("auth.activate.badge", "Aktywacja zaproszenia")}
           </div>
         </div>
 
@@ -136,21 +139,21 @@ export default function ActivatePage(): React.JSX.Element {
 
               <div className="relative">
                 <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.28em] text-blue-100/90">
-                  {t("auth.activate.subtitle", "VoctManager Access")}
+                  {t("auth.activate.subtitle", "Dostęp do VoctManagera")}
                 </p>
                 <h1
                   className="max-w-xl text-5xl leading-none text-white md:text-6xl"
                   style={{ fontFamily: "'Cormorant', serif" }}
                 >
-                  {t("auth.activate.title_1", "Activate your")}
+                  {t("auth.activate.title_1", "Aktywuj swój")}
                   <span className="ml-3 italic text-cyan-200">
-                    {t("auth.activate.title_2", "artist panel")}
+                    {t("auth.activate.title_2", "panel artysty")}
                   </span>
                 </h1>
                 <p className="mt-6 max-w-xl text-sm leading-7 text-stone-200/88 md:text-base">
                   {t(
                     "auth.activate.description",
-                    "Complete the final onboarding step to secure your account and enter the operational workspace used for projects, rehearsals, and ensemble coordination.",
+                    "Dokończ ostatni krok wdrożenia, aby zabezpieczyć konto i uzyskać dostęp do panelu używanego do projektów, prób i koordynacji zespołu.",
                   )}
                 </p>
 
@@ -203,18 +206,18 @@ export default function ActivatePage(): React.JSX.Element {
                 <>
                   <div className="mb-8">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                      {t("auth.activate.form.subtitle", "Password setup")}
+                      {t("auth.activate.form.subtitle", "Ustawienie hasła")}
                     </p>
                     <h2
                       className="mt-3 text-4xl text-stone-900"
                       style={{ fontFamily: "'Cormorant', serif" }}
                     >
-                      {t("auth.activate.form.title", "Finalize your access")}
+                      {t("auth.activate.form.title", "Dokończ aktywację")}
                     </h2>
                     <p className="mt-3 max-w-lg text-sm leading-7 text-stone-600">
                       {t(
                         "auth.activate.form.description",
-                        "Choose a secure password for the invited account. Once activated, you will use the standard login page to enter the panel.",
+                        "Ustaw bezpieczne hasło dla zaproszonego konta. Po aktywacji zalogujesz się do panelu przez standardową stronę logowania.",
                       )}
                     </p>
                   </div>
@@ -229,13 +232,13 @@ export default function ActivatePage(): React.JSX.Element {
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-700">
                           {t(
                             "auth.activate.form.security_title",
-                            "Security standard",
+                            "Standard bezpieczeństwa",
                           )}
                         </p>
                         <p className="mt-2 text-sm leading-6 text-stone-600">
                           {t(
                             "auth.activate.form.security_desc",
-                            "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
+                            "Użyj co najmniej 8 znaków. Zalecane jest dłuższe hasło z małymi i wielkimi literami, cyframi oraz znakami specjalnymi.",
                           )}
                         </p>
                       </div>
@@ -246,7 +249,7 @@ export default function ActivatePage(): React.JSX.Element {
                     <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                       {t(
                         "auth.activate.form.missing_params",
-                        "This link is missing activation parameters. Open the latest invitation email and use the full button or URL.",
+                        "W tym linku brakuje parametrów aktywacyjnych. Otwórz najnowszy e-mail z zaproszeniem i użyj pełnego przycisku lub adresu URL.",
                       )}
                     </div>
                   )}
@@ -257,7 +260,7 @@ export default function ActivatePage(): React.JSX.Element {
                         htmlFor="new-password"
                         className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500"
                       >
-                        {t("auth.activate.form.new_password", "New password")}
+                        {t("auth.activate.form.new_password", "Nowe hasło")}
                       </label>
                       <input
                         id="new-password"
@@ -271,7 +274,7 @@ export default function ActivatePage(): React.JSX.Element {
                         className="block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-900 shadow-sm transition-all placeholder:text-stone-400 focus:border-[#002395] focus:outline-none focus:ring-2 focus:ring-[#002395]/20 disabled:bg-stone-100 disabled:text-stone-400"
                         placeholder={t(
                           "auth.activate.form.new_password_placeholder",
-                          "Create a secure password",
+                          "Utwórz bezpieczne hasło",
                         )}
                       />
                     </div>
@@ -283,7 +286,7 @@ export default function ActivatePage(): React.JSX.Element {
                       >
                         {t(
                           "auth.activate.form.confirm_password",
-                          "Confirm password",
+                          "Potwierdź hasło",
                         )}
                       </label>
                       <input
@@ -300,7 +303,7 @@ export default function ActivatePage(): React.JSX.Element {
                         className="block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-900 shadow-sm transition-all placeholder:text-stone-400 focus:border-[#002395] focus:outline-none focus:ring-2 focus:ring-[#002395]/20 disabled:bg-stone-100 disabled:text-stone-400"
                         placeholder={t(
                           "auth.activate.form.confirm_password_placeholder",
-                          "Repeat the password",
+                          "Powtórz hasło",
                         )}
                       />
                     </div>
@@ -343,11 +346,11 @@ export default function ActivatePage(): React.JSX.Element {
                           />
                           {t(
                             "auth.activate.form.activating_btn",
-                            "Activating account",
+                            "Aktywowanie konta",
                           )}
                         </span>
                       ) : (
-                        t("auth.activate.form.activate_btn", "Activate account")
+                        t("auth.activate.form.activate_btn", "Aktywuj konto")
                       )}
                     </button>
                   </form>
@@ -366,7 +369,7 @@ export default function ActivatePage(): React.JSX.Element {
                         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
                           {t(
                             "auth.activate.success.subtitle",
-                            "Activation complete",
+                            "Aktywacja zakończona",
                           )}
                         </p>
                         <h2
@@ -375,21 +378,21 @@ export default function ActivatePage(): React.JSX.Element {
                         >
                           {t(
                             "auth.activate.success.title",
-                            "Your panel is ready",
+                            "Twój panel jest gotowy",
                           )}
                         </h2>
 
                         <p className="mt-3 text-sm leading-7 text-stone-700">
                           {t(
                             "auth.activate.success.desc_1",
-                            "The account assigned to ",
+                            "Konto przypisane do ",
                           )}
                           <span className="font-semibold">
                             {activatedData.email}
                           </span>
                           {t(
                             "auth.activate.success.desc_2",
-                            " has been secured and activated.",
+                            " zostało zabezpieczone i aktywowane.",
                           )}
                         </p>
 
@@ -397,7 +400,7 @@ export default function ActivatePage(): React.JSX.Element {
                           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 mb-1">
                             {t(
                               "auth.activate.success.your_username",
-                              "Your username to log in",
+                              "Twój login do panelu",
                             )}
                           </p>
                           <p className="font-mono text-xl font-bold text-[#002395] tracking-tight">
@@ -408,7 +411,7 @@ export default function ActivatePage(): React.JSX.Element {
                         <p className="text-xs text-stone-500 leading-relaxed">
                           {t(
                             "auth.activate.success.instruction",
-                            "Proceed to the login page and use your email along with your newly created password to access the panel.",
+                            "Przejdź do strony logowania i użyj swojego adresu e-mail oraz nowo utworzonego hasła, aby wejść do panelu.",
                           )}
                         </p>
                       </div>
@@ -421,13 +424,13 @@ export default function ActivatePage(): React.JSX.Element {
                       onClick={() => navigate("/login")}
                       className="flex-1 rounded-xl bg-stone-900 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition-colors hover:bg-[#002395]"
                     >
-                      {t("auth.activate.success.go_to_login", "Go to login")}
+                      {t("auth.activate.success.go_to_login", "Przejdź do logowania")}
                     </button>
                     <Link
                       to="/"
                       className="flex-1 rounded-xl border border-stone-300 px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition-colors hover:border-stone-900 hover:text-stone-900"
                     >
-                      {t("auth.activate.success.return_home", "Return home")}
+                      {t("auth.activate.success.return_home", "Wróć na stronę główną")}
                     </Link>
                   </div>
                 </div>
