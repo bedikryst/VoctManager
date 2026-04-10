@@ -1,12 +1,17 @@
 # core/views.py
+# ==========================================
+# Core Account & Identity Views
+# Standard: Enterprise SaaS 2026
+# ==========================================
 from django.contrib.auth import get_user_model, logout, update_session_auth_hash
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.password_validation import validate_password
+
 from rest_framework import generics, status, views
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.throttling import UserRateThrottle
 from drf_spectacular.utils import extend_schema
 from pydantic import ValidationError
@@ -28,10 +33,14 @@ User = get_user_model()
 
 
 class ActivateAccountView(views.APIView):
-    """Public endpoint for finalizing invited account activation."""
-    permission_classes = ()
+    """
+    POST /api/v1/auth/activate/
+    Public endpoint for finalizing invited account activation.
+    """
+    permission_classes = (AllowAny,)
     authentication_classes = ()
 
+    @extend_schema(responses={200: dict, 400: dict, 403: dict})
     def post(self, request, *args, **kwargs):
         try:
             dto = UserAccountActivationDTO(**request.data)
@@ -54,7 +63,6 @@ class ActivateAccountView(views.APIView):
                 {
                     "detail": "Account activated successfully.",
                     "email": user.email,
-                    "username": user.username,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -66,17 +74,26 @@ class ActivateAccountView(views.APIView):
 
 
 class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
-    """Retrieves or updates the currently authenticated user's preferences."""
+    """
+    GET, PATCH /api/v1/users/me/
+    Retrieves or updates the currently authenticated user's profile and preferences.
+    """
     serializer_class = UserMeSerializer
     permission_classes = (IsAuthenticated,)
 
     def get_object(self):
-        user = self.request.user
-        UserProfile.objects.get_or_create(user=user)
-        return user
+        """
+        Retrieves the authenticated user.
+        Note: Profile existence is assumed to be handled asynchronously via Signals 
+        upon user creation. GET requests must remain idempotent.
+        """
+        return self.request.user
 
+    @extend_schema(responses={200: UserMeSerializer, 400: dict})
     def update(self, request, *args, **kwargs):
-        # We bypass DRF Serializer validation for incoming writes and use strict Pydantic DTOs
+        """
+        Updates user preferences using strict Pydantic DTO validation before hitting the database.
+        """
         try:
             profile_data = request.data.get('profile', {})
             payload = {
@@ -89,18 +106,21 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
         except ValidationError as e:
             return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Delegate to Service Layer
+        # Delegate persistence to the Service Layer
         UserPreferencesService.update_user_preferences(request.user, dto)
         
-        # Return updated serialized object
+        # Return the fully resolved and serialized user object
         return Response(self.get_serializer(self.get_object()).data, status=status.HTTP_200_OK)
 
 
 class ChangePasswordView(views.APIView):
-    """Secure endpoint for updating user credentials."""
+    """
+    POST /api/v1/users/me/change-password/
+    Secure endpoint for updating user credentials.
+    """
     permission_classes = (IsAuthenticated,)
 
-    @extend_schema(responses={204: None})
+    @extend_schema(responses={204: None, 400: dict, 403: dict})
     def post(self, request, *args, **kwargs):
         try:
             dto = UserPasswordChangeDTO(**request.data)
@@ -109,20 +129,26 @@ class ChangePasswordView(views.APIView):
 
         try:
             UserIdentityService.change_user_password(request.user, dto)
-            update_session_auth_hash(request, request.user) # Keeps the user logged in
+            # Prevent the user from being logged out by rotating the session hash
+            update_session_auth_hash(request, request.user) 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except InvalidCredentialsException as e:
-            return Response({"error_code": str(e), "message": "Invalid current password."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error_code": str(e), "message": "Invalid current password."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
 
 
 class ChangeEmailRequestView(views.APIView):
-    """Initiates an email change process."""
+    """
+    POST /api/v1/users/me/change-email/
+    Initiates the enterprise email change workflow.
+    """
     permission_classes = (IsAuthenticated,)
 
-    @extend_schema(responses={200: UserMeSerializer})
+    @extend_schema(responses={200: UserMeSerializer, 400: dict, 403: dict, 409: dict})
     def post(self, request, *args, **kwargs):
         try:
-            # Map DRF incoming naming to Pydantic expectations if necessary
             payload = {
                 "new_email": request.data.get('new_email'),
                 "current_password": request.data.get('password')
@@ -135,9 +161,15 @@ class ChangeEmailRequestView(views.APIView):
             updated_user = UserIdentityService.process_email_change(request.user, dto)
             return Response(UserMeSerializer(updated_user).data, status=status.HTTP_200_OK)
         except InvalidCredentialsException as e:
-            return Response({"error_code": str(e), "message": "Authentication failed."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error_code": str(e), "message": "Authentication failed."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
         except EmailAlreadyInUseException as e:
-            return Response({"error_code": str(e), "message": "This email is already in use."}, status=status.HTTP_409_CONFLICT)
+            return Response(
+                {"error_code": str(e), "message": "This email is already in use."}, 
+                status=status.HTTP_409_CONFLICT
+            )
 
 
 class ExportUserDataView(views.APIView):
@@ -146,17 +178,18 @@ class ExportUserDataView(views.APIView):
     GDPR Right to Data Portability. 
     """
     permission_classes = (IsAuthenticated,)
+    throttle_classes = [UserRateThrottle]
 
     @extend_schema(responses={200: dict})
     def get(self, request, *args, **kwargs):
         user = request.user
-        # We serialize the profile here to avoid pushing DRF logic into the Service Layer
+        # Maintain domain isolation: Serialize profile outside the service layer
         profile_data = UserProfileSerializer(user.profile).data if hasattr(user, 'profile') else {}
         
         export_data = UserPreferencesService.generate_gdpr_export(user, profile_data)
 
         response = JsonResponse(export_data, json_dumps_params={'indent': 2})
-        response['Content-Disposition'] = f'attachment; filename="voctmanager_data_{user.id}.json"'
+        response['Content-Disposition'] = f'attachment; filename="voctmanager_export_{user.id}.json"'
         return response
 
 
@@ -164,15 +197,14 @@ class RequestAccountDeletionView(views.APIView):
     """
     POST /api/v1/users/me/delete-account/
     GDPR Right to Erasure (Soft Delete Pattern) with mandatory re-authentication.
-    Secured with rate limiting against brute-force attacks.
+    Secured with strict rate limiting against brute-force attacks.
     """
     permission_classes = (IsAuthenticated,)
     throttle_classes = [UserRateThrottle]
 
-    @extend_schema(responses={204: None})
+    @extend_schema(responses={204: None, 400: dict, 403: dict})
     def post(self, request, *args, **kwargs):
         try:
-            # Map the incoming 'password' field to the DTO's 'current_password'
             dto = UserAccountDeletionDTO(current_password=request.data.get('password'))
         except ValidationError as e:
             return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
@@ -182,13 +214,16 @@ class RequestAccountDeletionView(views.APIView):
             logout(request)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except InvalidCredentialsException as e:
-            return Response({"error_code": str(e), "message": "Authentication failed."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error_code": str(e), "message": "Authentication failed."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
 
 
 class ResetCalendarTokenView(views.APIView):
     """
     POST /api/v1/users/me/reset-calendar-token/
-    Regenerates the secret token, instantly invalidating the old calendar URL.
+    Regenerates the secret token, instantly invalidating the previous calendar URL.
     """
     permission_classes = (IsAuthenticated,)
 
@@ -201,9 +236,9 @@ class ResetCalendarTokenView(views.APIView):
 class CalendarFeedView(views.APIView):
     """
     GET /api/v1/calendar/<calendar_token>/feed.ics
-    Public but unguessable endpoint that generates a live RFC 5545 compliant iCalendar feed.
+    Public but unguessable endpoint generating a live RFC 5545 compliant iCalendar feed.
     """
-    permission_classes = ()
+    permission_classes = (AllowAny,)
     authentication_classes = () 
 
     @extend_schema(responses={200: str})

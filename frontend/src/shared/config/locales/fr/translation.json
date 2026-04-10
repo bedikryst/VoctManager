@@ -13,7 +13,10 @@
       "close_panel": "Fermer le panneau (ESC)",
       "delete_error": "Erreur de suppression",
       "confirm": "Confirmer",
-      "loading": "Traitement..."
+      "loading": "Traitement...",
+      "download": "Télécharger",
+      "deleteAccount": "Supprimer le compte",
+      "confirmDelete": "Oui, supprimer le compte"
     },
     "errors": {
       "server_error": "Erreur serveur",
@@ -54,10 +57,68 @@
         "save_error_title": "Erreur d'enregistrement.",
         "save_error_desc": "Vérifiez les données et réessayez."
       }
+    },
+    "state": {
+      "loading": "Chargement...",
+      "saved": "Enregistré"
     }
   },
   "auth": {
-    "authorizing": "Autorisation..."
+    "authorizing": "Autorisation...",
+    "activate": {
+      "back_to_home": "Retour à la page d'accueil",
+      "badge": "Activation d'invitation",
+      "subtitle": "Accès VoctManager",
+      "title_1": "Activez votre",
+      "title_2": "panneau artiste",
+      "description": "Complétez l'étape finale d'intégration pour sécuriser votre compte et accéder à l'espace de travail opérationnel utilisé pour les projets, les répétitions et la coordination de l'ensemble.",
+      "features": {
+        "security": {
+          "title": "Intégration sécurisée",
+          "desc": "Le lien d'activation est lié à votre compte invité et déverrouille le tableau de bord privé uniquement après la configuration du mot de passe."
+        },
+        "access": {
+          "title": "Accès en une étape",
+          "desc": "Après activation, vous pouvez vous connecter immédiatement et consulter les répétitions, les projets et les matériels opérationnels."
+        },
+        "workspace": {
+          "title": "Espace de travail professionnel",
+          "desc": "VoctManager centralise la communication artistique, les données de l'équipe et la logistique de production dans un seul panneau."
+        }
+      },
+      "form": {
+        "subtitle": "Configuration du mot de passe",
+        "title": "Finalisez votre accès",
+        "description": "Choisissez un mot de passe sécurisé pour le compte invité. Une fois activé, vous utiliserez la page de connexion standard pour accéder au panneau.",
+        "security_title": "Norme de sécurité",
+        "security_desc": "Utilisez au moins 8 caractères. Un mot de passe plus long avec des lettres majuscules et minuscules, des chiffres et des symboles est recommandé.",
+        "missing_params": "Ce lien manque de paramètres d'activation. Ouvrez le dernier e-mail d'invitation et utilisez le bouton ou l'URL complet.",
+        "new_password": "Nouveau mot de passe",
+        "new_password_placeholder": "Créez un mot de passe sécurisé",
+        "confirm_password": "Confirmer le mot de passe",
+        "confirm_password_placeholder": "Répétez le mot de passe",
+        "activating_btn": "Activation du compte",
+        "activate_btn": "Activer le compte"
+      },
+      "success": {
+        "subtitle": "Activation terminée",
+        "title": "Votre panneau est prêt",
+        "desc_1": "Le compte assigné à ",
+        "desc_2": " a été sécurisé et activé.",
+        "your_username": "Votre nom d'utilisateur pour vous connecter",
+        "instruction": "Allez à la page de connexion et utilisez votre adresse e-mail avec votre nouveau mot de passe pour accéder au panneau.",
+        "go_to_login": "Aller à la connexion",
+        "return_home": "Retour à l'accueil"
+      },
+      "errors": {
+        "expired_link": "Ce lien d'activation a expiré. Demandez une nouvelle invitation à l'administrateur.",
+        "invalid_link": "Ce lien d'activation n'est pas valide. Vérifiez l'URL complet ou demandez une nouvelle invitation.",
+        "activation_failed": "L'activation du compte a échoué. Vérifiez les détails du lien et réessayez.",
+        "incomplete_link": "Le lien d'activation est incomplet. Ouvrez le dernier e-mail d'invitation et réessayez.",
+        "password_too_short": "Utilisez un mot de passe avec au moins 8 caractères.",
+        "password_mismatch": "La confirmation du mot de passe ne correspond pas."
+      }
+    }
   },
   "archive": {
     "dashboard": {
@@ -329,7 +390,8 @@
       "save_profile": "Enregistrer le profil",
       "create_artist": "Créer l'artiste",
       "unsaved_title": "Vous avez des modifications non enregistrées !",
-      "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera."
+      "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera.",
+      "language": "Langue des messages *"
     },
     "toast": {
       "activating": "Activation du compte...",
@@ -476,7 +538,7 @@
       "note_placeholder": "Note (optionnelle)"
     },
     "toast": {
-      "sync_error_title": "Erreur de synchronisation",
+      "sync_error_title": "Erreur de synchronization",
       "sync_error_desc": "Impossible de charger les données.",
       "bulk_marking": "Mise à jour groupée des présences...",
       "bulk_success": "Les absences ont été complétées comme « Présent ».",
@@ -545,7 +607,7 @@
         "management": "Direction"
       },
       "groups": {
-        "overview": "Vue d’ensemble",
+        "overview": "Vue d'ensemble",
         "production": "Production",
         "data_admin": "Administration des données",
         "artist_zone": "Espace choriste",
@@ -556,7 +618,7 @@
         "artist_dashboard": "Mon tableau de bord",
         "projects": "Projets et concerts",
         "attendance": "Journal de présence",
-        "artists": "Gestion de l’ensemble",
+        "artists": "Gestion de l'ensemble",
         "crew": "Équipe technique",
         "contracts": "RH et paie",
         "archive": "Archive des partitions",
@@ -595,7 +657,23 @@
       "open_module": "Ouvrir le module",
       "event_prefix_rehearsal": "Répétition :",
       "event_prefix_project": "Événement :",
-      "general_work": "Travail général"
+      "general_work": "Travail général",
+      "next_challenges": "À l'horizon",
+      "download_error": "Erreur lors du téléchargement du planning",
+      "download_runsheet": "Planning (Call sheet)",
+      "download_success": "Planning téléchargé avec succès",
+      "downloading_runsheet": "Génération du planning...",
+      "confirm_presence_loading": "Confirmation de la présence...",
+      "confirm_presence_note": "Présence confirmée depuis le tableau de bord",
+      "confirm_presence_success": "Présence confirmée !",
+      "attendance_save_error": "Erreur lors de la sauvegarde",
+      "header_title_prefix": "Tableau de bord",
+      "header_title_highlight": "Musique",
+      "absence_reported": "Absence signalée",
+      "edit_report": "Modifier le rapport",
+      "project_badge": "Concert",
+      "call_time": "Convocation :",
+      "materials_link": "Partitions et audio"
     },
     "admin": {
       "logged_in_as": "Connecté en tant que : {{name}}",
@@ -654,7 +732,13 @@
         "crew_feat_1": "Son",
         "crew_feat_2": "Lumière",
         "crew_feat_3": "Sociétés"
-      }
+      },
+      "btn_new_project": "Nouveau projet",
+      "welcome_back": "Bienvenue",
+      "header_title_prefix": "Tableau de bord",
+      "header_title_highlight": "Production",
+      "open_project": "Ouvrir le projet",
+      "open_module": "Ouvrir le module"
     }
   },
   "crew": {
@@ -802,7 +886,10 @@
       "logistics_dashboard": "Logistique & Production",
       "collapse": "Réduire",
       "expand": "Développer",
-      "status_production": "Statut de production"
+      "status_production": "Statut de production",
+      "generating_doc": "Génération du document...",
+      "download_success": "Document téléchargé avec succès.",
+      "download_unknown_error": "Impossible de générer le document."
     },
     "toast": {
       "sync_error_title": "Erreur de synchronisation",
@@ -852,7 +939,8 @@
         "updating": "Mise à jour du projet...",
         "creating": "Création du projet...",
         "update_success": "Projet et planning mis à jour",
-        "create_success": "Nouveau projet et planning créés"
+        "create_success": "Nouveau projet et planning créés",
+        "saving": "Enregistrement des détails du projet..."
       }
     },
     "matrix": {
@@ -869,7 +957,8 @@
       },
       "empty": {
         "rehearsal": "Aucune répétition planifiée dans ce projet.",
-        "cast": "Aucune distribution assignée à ce projet."
+        "cast": "Aucune distribution assignée à ce projet.",
+        "rehearsals": "Aucune répétition planifiée dans ce projet."
       },
       "not_invited": "N/A",
       "status": {
@@ -1128,6 +1217,10 @@
         "note_error": "Impossible de mettre à jour la note.",
         "sync_error": "Erreur de synchronisation",
         "sync_error_desc": "Impossible de mettre à jour la distribution."
+      },
+      "bucket": {
+        "aria": "Section de dépôt: ",
+        "aria_with_title": "Section de dépôt: {{title}}"
       }
     },
     "rehearsals": {
@@ -1154,7 +1247,9 @@
         "type_sectional": "Répétition de pupitre",
         "type_custom": "Personnes sélectionnées",
         "mandatory": "Présence obligatoire pour les invités",
-        "submit": "Enregistrer dans le calendrier"
+        "submit": "Enregistrer dans le calendrier",
+        "title_edit": "Modifier la répétition",
+        "update": "Mettre à jour la répétition"
       },
       "voices": {
         "sopranos": "Sopranos",
@@ -1172,7 +1267,8 @@
         "optional": "Optionnel"
       },
       "actions": {
-        "delete": "Supprimer la répétition"
+        "delete": "Supprimer la répétition",
+        "edit": "Modifier la répétition"
       },
       "modal": {
         "delete_title": "Supprimer cette répétition ?",
@@ -1185,7 +1281,9 @@
         "save_error_desc": "Un problème est survenu lors de l'enregistrement dans la base. Vérifiez le formulaire et la connexion.",
         "removing": "Suppression de la répétition...",
         "remove_success": "La répétition a été supprimée",
-        "remove_error_desc": "Impossible de supprimer la répétition. Le serveur a rejeté la requête."
+        "remove_error_desc": "Impossible de supprimer la répétition. Le serveur a rejeté la requête.",
+        "updating": "Mise à jour de la répétition...",
+        "update_success": "Répétition mise à jour avec succès"
       }
     },
     "run_sheet": {
@@ -1197,6 +1295,117 @@
       "iframe_title": "Playlist Spotify",
       "open_app": "Ouvrir dans l'application",
       "empty": "Aucune playlist assignée."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "Non lues",
+    "mark_all_read": "Marquer tout comme lu",
+    "empty_title": "À jour !",
+    "empty_subtitle": "Vous n'avez pas de nouvelles notifications.",
+    "changed": "Changements :",
+    "crew_role": "Rôle assigné : {{role}}",
+    "types": {
+      "PROJECT_INVITATION": "Invitation au projet",
+      "PROJECT_UPDATED": "Projet mis à jour",
+      "PROJECT_CANCELLED": "Projet annulé",
+      "PROJECT_REMINDER": "Rappel du projet",
+      "REHEARSAL_SCHEDULED": "Répétition planifiée",
+      "REHEARSAL_UPDATED": "Répétition mise à jour",
+      "REHEARSAL_CANCELLED": "Répétition annulée",
+      "REHEARSAL_REMINDER": "Rappel de répétition",
+      "PIECE_CASTING_ASSIGNED": "Casting de pièce assigné",
+      "PIECE_CASTING_UPDATED": "Casting de pièce mis à jour",
+      "MATERIAL_UPLOADED": "Matériel téléversé",
+      "CREW_ASSIGNED": "Équipe assignée",
+      "CONTRACT_ISSUED": "Contrat émis",
+      "ABSENCE_REQUESTED": "Absence demandée",
+      "ABSENCE_APPROVED": "Absence approuvée",
+      "ABSENCE_REJECTED": "Absence rejetée",
+      "SYSTEM_ALERT": "Alerte système"
+    }
+  },
+  "settings": {
+    "tabs": {
+      "general": "Général",
+      "security": "Sécurité",
+      "logistics": "Logistique",
+      "privacy": "Confidentialité",
+      "integrations": "Intégrations"
+    },
+    "errors": {
+      "invalid_current_password": "Mot de passe invalide. Réessayez."
+    },
+    "general": {
+      "title": "Paramètres généraux",
+      "subtitle": "Gérez vos données et préférences d'application.",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "phone": "Numéro de téléphone",
+      "language": "Langue de l'interface",
+      "timezone": "Fuseau horaire"
+    },
+    "membership": {
+      "title": "Profil artiste",
+      "voice": "Votre voix"
+    },
+    "security": {
+      "title": "Sécurité",
+      "subtitle": "Gérez votre mot de passe et les paramètres de sécurité du compte.",
+      "oldPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "updatePassword": "Changer le mot de passe",
+      "success": "Votre mot de passe a été changé avec succès."
+    },
+    "privacy": {
+      "title": "Confidentialité et données (RGPD)",
+      "subtitle": "Gérez vos données personnelles et les permissions du compte.",
+      "exportTitle": "Export de données",
+      "exportDesc": "Téléchargez une copie de toutes les données assignées à votre compte au format JSON lisible par machine.",
+      "deleteTitle": "Supprimer le compte",
+      "deleteDesc": "Bloquez définitivement l'accès à l'application. Les données historiques des répétitions et concerts seront anonymisées pour les statistiques du chœur.",
+      "modalTitle": "Êtes-vous sûr de vouloir supprimer le compte ?",
+      "modalDescLine1Prefix": "Cette action est",
+      "modalDescLine1Highlight": "irréversible",
+      "modalDescLine1Suffix": "Vous perdrez l'accès à tous les matériaux du chœur, partitions et plannings.",
+      "modalDescLine2": "L'historique des présences sera conservé à titre informatif, mais le compte sera définitivement désactivé.",
+      "confirmPasswordLabel": "Confirmez avec votre mot de passe pour supprimer le compte",
+      "passwordPlaceholder": "Mot de passe actuel"
+    },
+    "integrations": {
+      "title": "Intégrations et calendriers",
+      "subtitle": "Synchronisez votre planning de répétitions avec votre calendrier téléphonique.",
+      "live_sync_title": "Synchronisation active (Apple, Google, Outlook)",
+      "live_sync_desc": "Utilisez ce lien pour vous abonner au calendrier du chœur. Vos répétitions et concerts se mettront à jour automatiquement. Ajoutez-le comme un abonnement (URL), et non comme un fichier téléchargé une seule fois.",
+      "calendar_url_label": "Votre adresse de calendrier privée",
+      "copied": "Copié",
+      "copy_link": "Copier le lien",
+      "reset_title": "Réinitialisez votre lien",
+      "reset_desc": "Si vous soupçonnez un accès non autorisé à votre lien de calendrier, générez-le à nouveau. L'adresse précédente cessera de fonctionner immédiatement.",
+      "reset_btn": "Générer un nouveau lien"
+    },
+    "logistics": {
+      "title": "Logistique et déplacements",
+      "subtitle": "Données utilisées par la direction pour commander les tenues et la restauration.",
+      "sections": {
+        "catering": "Restauration",
+        "measurements": "Mesures et tenues"
+      },
+      "dietary_preference": "Préférence alimentaire",
+      "dietary_notes": "Notes / Allergies (optionnel)",
+      "dietary_notes_placeholder": "ex. allergie aux cacahuètes, pas de fruits de mer...",
+      "dietary_options": {
+        "none": "Aucune exigence",
+        "vege": "Végétarien",
+        "vegan": "Vegan",
+        "gf": "Sans gluten",
+        "lf": "Sans lactose"
+      },
+      "clothing_size": "Taille de vêtement",
+      "shoe_size": "Pointure (UE)",
+      "shoe_size_placeholder": "ex. 42",
+      "height": "Taille (cm)",
+      "height_placeholder": "ex. 175"
     }
   }
 }

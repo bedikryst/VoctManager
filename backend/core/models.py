@@ -166,6 +166,16 @@ class UserProfile(EnterpriseBaseModel):
     def is_manager(self) -> bool:
         return self.role == AppRole.MANAGER
     
+    @property
+    def is_artist(self) -> bool:
+        """Evaluates if the user possesses Artist-level privileges."""
+        return self.role == AppRole.ARTIST
+
+    @property
+    def is_crew(self) -> bool:
+        """Evaluates if the user possesses Crew-level privileges."""
+        return self.role == AppRole.CREW
+        
     class Meta:
         db_table = 'core_user_profile'
         verbose_name = _('User Profile')

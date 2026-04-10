@@ -1,3 +1,4 @@
+# archive/views.py
 """
 ===============================================================================
 Archive API ViewSets (Controllers)
@@ -16,32 +17,21 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 
+from core.permissions import IsManagerOrReadOnly  # ENTERPRISE FIX: Centralized RBAC
+
 from .models import Composer, Piece, Track, PieceVoiceRequirement
 from .serializers import ComposerSerializer, PieceSerializer, TrackSerializer, PieceVoiceRequirementSerializer
 from . import services
 
 
-class IsAdminOrReadOnly(permissions.BasePermission):
-    """
-    Enterprise RBAC (Role-Based Access Control) policy.
-    Allows read-only access to all authenticated artists, but explicitly 
-    restricts state mutations (WRITE operations) to administrative users.
-    """
-    def has_permission(self, request, view) -> bool:
-        if request.method in permissions.SAFE_METHODS: 
-            return True
-        return bool(request.user and request.user.is_superuser)
-
-
 class ComposerViewSet(viewsets.ModelViewSet):
     """
     Endpoint for managing musical composers and arrangers.
-    Note: Standard DRF mutations are acceptable here as Composer acts as a 
-    simple dictionary/lookup entity without complex domain constraints.
+    Read-only for Artists. Write access exclusively for Managers.
     """
     queryset = Composer.objects.all()
     serializer_class = ComposerSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
 
 class PieceViewSet(viewsets.ModelViewSet):
@@ -51,7 +41,7 @@ class PieceViewSet(viewsets.ModelViewSet):
     """
     queryset = Piece.objects.select_related('composer').prefetch_related('tracks', 'voice_requirements').all()
     serializer_class = PieceSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
@@ -96,20 +86,24 @@ class TrackViewSet(viewsets.ModelViewSet):
     serializer_class = TrackSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece', 'voice_part']
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
     def create(self, request, *args, **kwargs) -> Response:
         """
-        SECURITY BOUNDARY: 
-        In a fully mature SaaS, this should delegate to TrackService.create_track().
-        For now, we enforce standard DRF behavior explicitly to denote where 
-        future business logic (e.g., MP3 compression/validation) must be injected.
+        Delegates Track creation (and potential future audio-processing side-effects) 
+        to the Domain Service Layer.
         """
-        return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        track = services.ArchiveManagementService.create_track(serializer.validated_data)
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(self.get_serializer(track).data, status=status.HTTP_201_CREATED, headers=headers)
 
-    def update(self, request, *args, **kwargs) -> Response:
-        """Enforces update boundaries."""
-        return super().update(request, *args, **kwargs)
+    def perform_destroy(self, instance) -> None:
+        """Ensures safe deletion via service layer."""
+        services.ArchiveManagementService.delete_track(instance)
 
 
 class PieceVoiceRequirementViewSet(viewsets.ReadOnlyModelViewSet):
@@ -124,4 +118,4 @@ class PieceVoiceRequirementViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = PieceVoiceRequirement.objects.all()
     serializer_class = PieceVoiceRequirementSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]

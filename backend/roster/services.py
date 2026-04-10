@@ -364,8 +364,8 @@ class RehearsalOperationsService:
         if participation.project_id != rehearsal.project_id:
             raise AttendanceValidationException("Project mismatch between participation and rehearsal.")
 
-        if not dto.is_superuser and participation.artist.user_id != dto.requesting_user_id:
-            raise AttendanceValidationException("Can only record self-attendance.")
+        if not dto.is_manager and participation.artist.user_id != dto.requesting_user_id:
+            raise AttendanceValidationException("Can only record self-attendance unless you are a Manager.")
 
         with transaction.atomic():
             attendance, created = Attendance.objects.update_or_create(
@@ -374,7 +374,7 @@ class RehearsalOperationsService:
                 defaults={'status': dto.status, 'minutes_late': dto.minutes_late, 'excuse_note': dto.excuse_note}
             )
             
-            if dto.is_superuser and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
+            if dto.is_manager and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
                 notif_type = NotificationType.ABSENCE_APPROVED if dto.status == 'EXCUSED' else NotificationType.ABSENCE_REJECTED
                 metadata = AbsenceStatusMetadata(rehearsal_id=rehearsal.id).model_dump(mode="json")
                 

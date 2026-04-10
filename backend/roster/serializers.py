@@ -1,15 +1,12 @@
 # roster/serializers.py
 # ==========================================
 # Roster API Serializers
+# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 REST API Serializers for the Roster application.
-@architecture Enterprise SaaS 2026
-
 Handles pure data transformation (Object <-> JSON). 
-Adheres to the Single Responsibility Principle by completely omitting business,
-financial, and permission logic. Role-based data exposure is handled by explicitly
-defining separated serializers (Basic vs Detailed) routed via ViewSets.
+Delegates role-based data exposure to explicitly defined serializers routed via ViewSets.
 """
 
 from rest_framework import serializers
@@ -18,14 +15,16 @@ from .models import (
     ProgramItem, Rehearsal, Attendance, ProjectPieceCasting
 )
 from core.serializers import UserProfileSerializer
+
 # --- 1. ARTIST SERIALIZERS ---
 
 class ArtistBasicSerializer(serializers.ModelSerializer):
     """
     Publicly safe Artist entity. 
-    Strips all sensitive contact and vocal capability data.
+    Strips all sensitive contact, HR, and financial data.
     """
-    is_admin = serializers.BooleanField(source='user.is_superuser', read_only=True)
+    # Enterprise RBAC: Expose business role, not DB admin status
+    is_manager = serializers.BooleanField(source='user.profile.is_manager', read_only=True)
     voice_type_display = serializers.CharField(source='get_voice_type_display', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
     
@@ -42,9 +41,9 @@ class ArtistBasicSerializer(serializers.ModelSerializer):
 class ArtistMeSerializer(serializers.ModelSerializer):
     """
     Self-profile view for the artist.
-    Exposes personal contact info, but strictly hides HR evaluation metrics.
+    Exposes personal contact info, but safely maps nested profile data.
     """
-    is_admin = serializers.BooleanField(source='user.is_superuser', read_only=True)
+    is_manager = serializers.BooleanField(source='user.profile.is_manager', read_only=True)
     voice_type_display = serializers.CharField(source='get_voice_type_display', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
     profile = UserProfileSerializer(source='user.profile', read_only=True)
@@ -59,8 +58,8 @@ class ArtistMeSerializer(serializers.ModelSerializer):
 
 class ArtistDetailedSerializer(ArtistBasicSerializer):
     """
-    Highly privileged Artist entity for Admins and self-profile views.
-    Inherits from Basic but exposes all fields.
+    Highly privileged Artist entity exclusively for Managers and HR.
+    Exposes all operational and capability fields.
     """
     class Meta:
         model = Artist
@@ -84,12 +83,11 @@ class ParticipationBasicSerializer(serializers.ModelSerializer):
 
 class ParticipationDetailedSerializer(ParticipationBasicSerializer):
     """
-    Privileged contract configuration including financial metrics for HR/Admins.
+    Privileged contract configuration including financial metrics for Management.
     """
     class Meta:
         model = Participation
         fields = '__all__'
-
 
 # --- 3. PROJECT & REHEARSAL SERIALIZERS ---
 

@@ -27,10 +27,8 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     language: str = Field(default='pl', max_length=10)
 
 class AttendanceRecordDTO(EnterpriseBaseDTO):
-    # Added missing fields that the Service layer expects!
-    # Accepts string or int for flexibility with Django's default User Model (which uses int PKs)
     requesting_user_id: Union[int, str] 
-    is_superuser: bool = False
+    is_manager: bool = False
     
     # Using UUID type automatically validates the string format
     participation_id: UUID = Field(alias="participation")

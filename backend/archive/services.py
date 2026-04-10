@@ -16,7 +16,7 @@ import logging
 from typing import List
 from django.db import transaction
 
-from .models import Piece, PieceVoiceRequirement, Composer
+from .models import Piece, PieceVoiceRequirement, Composer, Track
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .exceptions import PieceValidationException
 from .signals import piece_material_updated_event
@@ -131,3 +131,29 @@ class ArchiveManagementService:
 
         logger.info(f"[ArchiveService] Updated repertoire piece: '{piece.title}'")
         return piece
+    
+    @classmethod
+    def create_track(cls, validated_data: dict) -> Track:
+        """
+        Provisions a new rehearsal track.
+        Future-proofed for launching async Celery tasks (e.g. MP3 compression/normalization).
+        """
+        with transaction.atomic():
+            track = Track.objects.create(**validated_data)
+            
+            # FUTURE ENTERPRISE IMPLEMENTATION:
+            # transaction.on_commit(lambda: process_audio_file_task.delay(track.id))
+            
+            logger.info(f"[ArchiveService] Track created for piece '{track.piece.title}' (Line: {track.voice_part})")
+            return track
+
+    @classmethod
+    def delete_track(cls, track: Track) -> None:
+        """
+        Soft-deletes an audio track. 
+        Maintains referential integrity and audit trails.
+        """
+        with transaction.atomic():
+            track_name = str(track)
+            track.delete()
+            logger.info(f"[ArchiveService] Track removed: {track_name}")

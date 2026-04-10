@@ -5,42 +5,34 @@
 # ==========================================
 """
 REST API Controllers for the Roster application.
-Strictly handles HTTP protocol parsing, role-based QuerySet routing, and Response formatting. 
+Strictly handles HTTP protocol parsing, RBAC-based QuerySet routing, and Response formatting. 
 Delegates ALL state-mutating business logic to the Service Layer.
 """
 import io
-from celery.result import AsyncResult
 from django.db.models import Q, Count
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, status
-from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from pydantic import ValidationError
 
 from core.constants import VoiceLine
-from .tasks import generate_project_zip_task
+# Enterprise RBAC Imports
+from core.permissions import IsManager, IsManagerOrReadOnly, IsOwnerOrManager
+
 from .infrastructure.document_generator import DocumentGenerator
 
-# Pydantic DTOs
-from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectCreateDTO
-
-# Service Objects
-from .services import (
-    ArtistHRService, ProjectManagementService, 
-    RehearsalOperationsService, CastingAndCrewService
-)
+# Pydantic DTOs & Services
+from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectCreateDTO, ProjectUpdateDTO
+from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService, CastingAndCrewService
 
 # Models & Exceptions
-from .models import (
-    Artist, CrewAssignment, Project, Participation, ProgramItem, 
-    Rehearsal, Attendance, VoiceType, ProjectPieceCasting, Collaborator
-)
+from .models import Artist, CrewAssignment, Project, Participation, ProgramItem, Rehearsal, Attendance, VoiceType, ProjectPieceCasting, Collaborator
 from .exceptions import ArtistProvisioningException, AttendanceValidationException
 
-# Read-Only Serializers (Used strictly for OUTGOING responses & basic nested writes)
+# Serializers
 from .serializers import (
     CollaboratorSerializer, CrewAssignmentSerializer, ArtistMeSerializer,
     ProgramItemSerializer, ProjectSerializer, RehearsalSerializer, 
@@ -48,22 +40,27 @@ from .serializers import (
     ArtistDetailedSerializer, ParticipationBasicSerializer, ParticipationDetailedSerializer, 
 )
 
-class IsAdminOrReadOnly(permissions.BasePermission):
-    def has_permission(self, request, view) -> bool:
-        if request.method in permissions.SAFE_METHODS: return True
-        return bool(request.user and request.user.is_superuser)
+def _is_manager(user) -> bool:
+    """Helper for evaluating manager privileges safely."""
+    return hasattr(user, 'profile') and user.profile.is_manager
 
 
 class ArtistViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    """
+    Artist Lifecycle & HR Management.
+    Read access is public to authenticated users (for roster visibility).
+    Write access is restricted to Managers.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
     def get_queryset(self):
-        user = self.request.user
+        # Data Partitioning: Managers see everyone, Artists see restricted subsets or everyone (depending on biz rules). 
+        # Here we allow seeing all active artists, but serializers will strip sensitive data.
         qs = Artist.objects.select_related('user').all()
-        return qs if user.is_superuser else qs.filter(user=user)
+        return qs if _is_manager(self.request.user) else qs.filter(user=self.request.user)
     
     def get_serializer_class(self):
-        if self.request.user.is_superuser: return ArtistDetailedSerializer
+        if _is_manager(self.request.user): return ArtistDetailedSerializer
         if self.action == 'me': return ArtistMeSerializer
         return ArtistBasicSerializer
     
@@ -79,77 +76,59 @@ class ArtistViewSet(viewsets.ModelViewSet):
         except ArtistProvisioningException as e:
             return Response({"error": str(e)}, status=status.HTTP_409_CONFLICT)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[IsManager])
     def archive(self, request, pk=None) -> Response:
-        """
-        Executes a Soft Delete (Archiving) of an Artist.
-        Delegates access revocation and entity hiding to the Service Layer.
-        """
+        """Executes a Soft Delete (Archiving) of an Artist."""
         artist = self.get_object()
         ArtistHRService.archive_artist(artist)
-        
-        # Enterprise Standard: 204 No Content for successful deletion/archiving
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[IsManager])
     def restore(self, request, pk=None) -> Response:
-        """
-        Restores a previously archived Artist.
-        Bypasses the default Manager to locate and reinstate soft-deleted records.
-        """
+        """Restores a previously archived Artist."""
         try:
-            # We MUST use all_objects because standard objects hide is_deleted=True
             artist = Artist.all_objects.get(pk=pk)
         except Artist.DoesNotExist:
-            return Response(
-                {"detail": "Archived artist not found."}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": "Archived artist not found."}, status=status.HTTP_404_NOT_FOUND)
             
         ArtistHRService.restore_artist(artist)
-        
-        # Return the restored object with a 200 OK status
         return Response(self.get_serializer(artist).data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def me(self, request) -> Response:
-        queryset = Artist.objects.select_related('user__profile')
         artist = get_object_or_404(Artist, user=request.user)
         return Response(self.get_serializer(artist).data)
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all()
+    """
+    Project Orchestration.
+    Write operations restricted to Managers. Artists only see projects they are cast in.
+    """
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['status']
 
     def get_queryset(self):
         user = self.request.user
         base_qs = Project.objects.prefetch_related('participations__artist', 'program_items__piece')
-        if user.is_superuser: return base_qs.all()
+        
+        if _is_manager(user): 
+            return base_qs.all()
+            
         return base_qs.filter(participations__artist__user=user).distinct()
     
     def create(self, request, *args, **kwargs) -> Response:
-        """
-        [CQRS Command] - Walidacja przez Pydantic DTO
-        """
         try:
             dto = ProjectCreateDTO(**request.data)
         except ValidationError as e:
             return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
             
-        project = ProjectManagementService.create_project_with_creator(
-            user=request.user, 
-            dto=dto
-        )
+        project = ProjectManagementService.create_project_with_creator(user=request.user, dto=dto)
         return Response(self.get_serializer(project).data, status=status.HTTP_201_CREATED)
     
     def update(self, request, *args, **kwargs) -> Response:
-        """
-        [CQRS Command] - Zastępuje standardowe działanie DRF dla metody PUT
-        """
         project = self.get_object()
         try:
             dto = ProjectUpdateDTO(**request.data)
@@ -160,14 +139,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(updated_project).data, status=status.HTTP_200_OK)
 
     def partial_update(self, request, *args, **kwargs) -> Response:
-        """
-        [CQRS Command] - Zastępuje standardowe działanie DRF dla metody PATCH
-        """
         return self.update(request, *args, **kwargs)
-
-    # ==========================================
-    # Custom Actions (Raports / Exports / SSoT Endpoints)
-    # ==========================================
 
     @action(detail=True, methods=['get'])
     def roster(self, request, pk=None) -> Response:
@@ -179,7 +151,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         ]
         return Response(roster_data)
     
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def export_call_sheet(self, request, pk=None) -> FileResponse:
         project = self.get_object()
         participations = Participation.objects.filter(project=project, is_deleted=False).select_related('artist').order_by('artist__last_name')
@@ -194,19 +166,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         return response
 
-    @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def export_zaiks(self, request, pk=None) -> StreamingHttpResponse:
         project = self.get_object()
         program = ProgramItem.objects.filter(project=project).select_related('piece').order_by('order')
-        response = StreamingHttpResponse(
-            DocumentGenerator.generate_zaiks_csv_iterator(program),
-            content_type='text/csv; charset=utf-8-sig'
-        )
+        response = StreamingHttpResponse(DocumentGenerator.generate_zaiks_csv_iterator(program), content_type='text/csv; charset=utf-8-sig')
         response['Content-Disposition'] = f'attachment; filename="ZAiKS_{project.title.replace(" ", "_")}.csv"'
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         return response
 
-    @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def export_dtp(self, request, pk=None) -> HttpResponse:
         project = self.get_object()
         participations = Participation.objects.filter(project=project, is_deleted=False).select_related('artist').order_by('artist__last_name')
@@ -216,32 +185,30 @@ class ProjectViewSet(viewsets.ModelViewSet):
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         return response
 
+
 class ParticipationViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated] 
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly] 
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project', 'artist', 'status']
 
     def get_queryset(self):
         user = self.request.user
         qs = Participation.objects.select_related('artist__user', 'artist', 'project').all()
-        return qs if user.is_superuser else qs.filter(artist__user=user)
+        return qs if _is_manager(user) else qs.filter(artist__user=user)
 
     def get_serializer_class(self):
-        return ParticipationDetailedSerializer if self.request.user.is_superuser else ParticipationBasicSerializer
+        return ParticipationDetailedSerializer if _is_manager(self.request.user) else ParticipationBasicSerializer
     
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        participation = ProjectManagementService.create_or_restore_participation(
-            serializer.validated_data
-        )
+        participation = ProjectManagementService.create_or_restore_participation(serializer.validated_data)
         return Response(self.get_serializer(participation).data, status=status.HTTP_201_CREATED)
 
     def perform_destroy(self, instance) -> None:
         ProjectManagementService.delete_participation(instance)
 
-    @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsAdminUser])
+    @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsManager])
     def bulk_fee(self, request) -> Response:
         try:
             dto = ProjectBulkFeeDTO(**request.data)
@@ -260,14 +227,15 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Attendance.objects.select_related('rehearsal', 'rehearsal__project', 'participation', 'participation__artist', 'participation__artist__user')
-        if self.request.user.is_superuser: return qs
+        if _is_manager(self.request.user): return qs
         return qs.filter(participation__artist__user=self.request.user)
 
     def create(self, request, *args, **kwargs) -> Response:
         try:
             dto = AttendanceRecordDTO(
                 requesting_user_id=request.user.id,
-                is_superuser=request.user.is_superuser,
+                # Fix: Replaced is_superuser with is_manager
+                is_manager=_is_manager(request.user),
                 **request.data
             )
         except ValidationError as e:
@@ -281,7 +249,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
 class RehearsalViewSet(viewsets.ModelViewSet):
     serializer_class = RehearsalSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project', 'invited_participations__artist']
 
@@ -292,7 +260,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             'invited_participations', 'invited_participations__artist'
         ).annotate(absent_count=absent_annotation)
 
-        if user.is_superuser: return qs
+        if _is_manager(user): return qs
         return qs.filter(project__participations__artist__user=user).filter(
             Q(invited_participations__isnull=True) | Q(invited_participations__artist__user=user)
         ).distinct()
@@ -306,7 +274,6 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer) -> None:
         invited = serializer.validated_data.pop('invited_participations', None)
-        
         RehearsalOperationsService.update_rehearsal(
             rehearsal=serializer.instance, 
             validated_data=serializer.validated_data, 
@@ -319,7 +286,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
 class ProgramItemViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramItemSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project', 'piece']
 
@@ -330,6 +297,7 @@ class ProgramItemViewSet(viewsets.ModelViewSet):
 class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
     queryset = ProjectPieceCasting.objects.all()
     serializer_class = ProjectPieceCastingSerializer
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece', 'participation__project', 'participation']
 
@@ -349,13 +317,13 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
 class CollaboratorViewSet(viewsets.ModelViewSet):
     queryset = Collaborator.objects.all()
     serializer_class = CollaboratorSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
 
 class CrewAssignmentViewSet(viewsets.ModelViewSet):
     queryset = CrewAssignment.objects.all()
     serializer_class = CrewAssignmentSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project', 'collaborator'] 
 
