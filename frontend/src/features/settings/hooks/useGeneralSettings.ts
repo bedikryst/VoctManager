@@ -8,11 +8,16 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../app/providers/AuthProvider";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../../../shared/lib/queryKeys";
 
 import { useSettingsData, useUpdatePreferences } from "../api/settings.queries";
 import { UpdatePreferencesPayload } from "../types/settings.dto";
 
 export function useGeneralSettings() {
+  const queryClient = useQueryClient();
+  const { refreshUser } = useAuth();
   const { data: user, isLoading: isFetching } = useSettingsData();
   const { mutateAsync: updatePreferences, isPending } = useUpdatePreferences();
   const { i18n, t } = useTranslation();
@@ -83,6 +88,11 @@ export function useGeneralSettings() {
 
     try {
       await updatePreferences(formData);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.settings.data,
+      });
+      await refreshUser();
+
       setStatus({ type: "success" });
 
       const newLang = formData.profile.language;

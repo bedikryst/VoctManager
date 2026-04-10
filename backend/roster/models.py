@@ -16,8 +16,6 @@ from django.utils.translation import gettext_lazy as _
 from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
 
-AVAILABLE_ZONES = sorted(list(zoneinfo.available_timezones()))
-TIMEZONE_CHOICES = tuple(zip(AVAILABLE_ZONES, AVAILABLE_ZONES))
 DEFAULT_EVENT_TIMEZONE = 'Europe/Warsaw'
 
 
@@ -87,7 +85,6 @@ class Project(EnterpriseBaseModel):
     call_time = models.DateTimeField(blank=True, null=True, help_text=_("Call time for performers"), verbose_name=_("Call Time"))
     timezone = models.CharField(
         max_length=63,
-        choices=TIMEZONE_CHOICES,
         default=DEFAULT_EVENT_TIMEZONE,
         help_text=_("Local timezone for this project's primary location. Critical for UI rendering and iCal feeds.")
     )    
@@ -178,7 +175,6 @@ class Rehearsal(EnterpriseBaseModel):
     date_time = models.DateTimeField(verbose_name=_("Date & Time"))
     timezone = models.CharField(
         max_length=63,
-        choices=TIMEZONE_CHOICES,
         default=DEFAULT_EVENT_TIMEZONE,
         help_text=_("Local timezone for this specific rehearsal. Essential for tours crossing multiple timezones.")
     )

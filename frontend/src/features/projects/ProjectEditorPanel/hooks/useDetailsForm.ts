@@ -196,12 +196,23 @@ export const useDetailsForm = (
         description: item.description || "",
       }));
 
+      const safeDateTimeStr =
+        formData.date_time.length === 16
+          ? `${formData.date_time}:00`
+          : formData.date_time;
+
+      const safeCallTimeStr =
+        formData.call_time?.length === 16
+          ? `${formData.call_time}:00`
+          : formData.call_time;
+
       const absoluteDateTime = fromZonedTime(
-        formData.date_time,
+        safeDateTimeStr,
         formData.timezone,
       ).toISOString();
-      const absoluteCallTime = formData.call_time
-        ? fromZonedTime(formData.call_time, formData.timezone).toISOString()
+
+      const absoluteCallTime = safeCallTimeStr
+        ? fromZonedTime(safeCallTimeStr, formData.timezone).toISOString()
         : null;
 
       const payload: ProjectCreateDTO | ProjectUpdateDTO = {

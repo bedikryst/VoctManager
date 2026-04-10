@@ -8,7 +8,7 @@ REST API Serializers for the Roster application.
 Handles pure data transformation (Object <-> JSON). 
 Delegates role-based data exposure to explicitly defined serializers routed via ViewSets.
 """
-
+import zoneinfo
 from rest_framework import serializers
 from .models import (
     Artist, Collaborator, CrewAssignment, Project, Participation, 
@@ -117,7 +117,18 @@ class ProjectSerializer(serializers.ModelSerializer):
             }
             for p in participations
         ]
-        
+    
+    def validate_timezone(self, value: str) -> str:
+        """
+        Safely validates the timezone string against the server's IANA database.
+        Prevents OS-dependent database constraints failure.
+        """
+        if value not in zoneinfo.available_timezones():
+            raise serializers.ValidationError(
+                f"Timezone '{value}' is not recognized by the server's tzdata."
+            )
+        return value
+    
     def get_program(self, obj) -> list[dict]:
         """Returns ordered setlist configuration."""
         items = obj.program_items.all()
@@ -144,6 +155,16 @@ class RehearsalSerializer(serializers.ModelSerializer):
         model = Rehearsal
         fields = '__all__'
 
+    def validate_timezone(self, value: str) -> str:
+        """
+        Safely validates the timezone string against the server's IANA database.
+        Prevents OS-dependent database constraints failure.
+        """
+        if value not in zoneinfo.available_timezones():
+            raise serializers.ValidationError(
+                f"Timezone '{value}' is not recognized by the server's tzdata."
+            )
+        return value
 
 # --- 4. RELATIONAL & JUNCTION SERIALIZERS ---
 

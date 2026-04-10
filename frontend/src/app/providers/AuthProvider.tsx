@@ -51,6 +51,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -121,6 +122,15 @@ export const AuthProvider = ({
     checkAuth();
   }, []);
 
+  const refreshUser = async () => {
+    try {
+      const freshUser = await buildAuthUser();
+      setUser(freshUser);
+    } catch (error) {
+      console.error("Failed to refresh user session data", error);
+    }
+  };
+
   const login = async (
     email: string,
     password: string,
@@ -160,6 +170,7 @@ export const AuthProvider = ({
     isLoading,
     login,
     logout,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -48,6 +48,7 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     """Data contract for creating a new project."""
     title: str = Field(..., min_length=1, max_length=200)
     date_time: datetime
+    timezone: str = 'Europe/Warsaw'
     call_time: Optional[datetime] = None
     location: str = Field(default='', max_length=200)
     description: str = Field(default='')
@@ -61,6 +62,7 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     """Data contract for partial or full updates of a project."""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     date_time: Optional[datetime] = None
+    timezone: Optional[str] = None
     call_time: Optional[datetime] = None
     location: Optional[str] = Field(None, max_length=200)
     description: Optional[str] = None

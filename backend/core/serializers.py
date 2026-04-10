@@ -3,6 +3,8 @@
 # Core Serializers & Field-Level Security
 # Standard: Enterprise SaaS 2026
 # ==========================================
+import zoneinfo
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
@@ -39,13 +41,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # Critical Security: Users cannot escalate their own role or spoof tokens
         read_only_fields = ('role', 'calendar_token')
 
+    def validate_timezone(self, value: str) -> str:
+        """
+        Safely validates the timezone string against the server's IANA database.
+        Prevents OS-dependent database constraints failure.
+        """
+        if value not in zoneinfo.available_timezones():
+            raise serializers.ValidationError(
+                f"Timezone '{value}' is not recognized by the server's tzdata."
+            )
+        return value
+
 
 class UserMeSerializer(serializers.ModelSerializer):
     """
     Enterprise Aggregated Serializer.
     Combines core Auth Identity, Profile preferences, and Artist domain data into a single DTO.
     """
-    profile = UserProfileSerializer(read_only=True)
+    profile = UserProfileSerializer()
     voice_type = serializers.SerializerMethodField()
     voice_type_display = serializers.SerializerMethodField()
     
@@ -56,6 +69,25 @@ class UserMeSerializer(serializers.ModelSerializer):
             'profile', 'voice_type', 'voice_type_display'
         )
         read_only_fields = ('id', 'email', 'voice_type', 'voice_type_display')
+
+    def update(self, instance, validated_data):
+        """
+        Explicitly handles nested updates for the UserProfile entity.
+        DRF ModelSerializers do not support nested object mutation natively.
+        """
+        profile_data = validated_data.pop('profile', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if profile_data and hasattr(instance, 'profile'):
+            profile = instance.profile
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
+
+        return instance
 
     def get_voice_type(self, obj) -> str | None:
         """Safely resolves the domain-specific voice type."""

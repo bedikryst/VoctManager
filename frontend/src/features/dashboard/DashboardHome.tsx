@@ -14,6 +14,7 @@ import { isManager } from "../../shared/auth/rbac";
 
 import AdminDashboard from "./AdminDashboard";
 import ArtistDashboard from "./ArtistDashboard";
+import { UserLocalClock } from "../../shared/ui/UserLocalClock";
 
 export default function DashboardHome(): React.JSX.Element {
   const { user, isLoading } = useAuth();
@@ -36,9 +37,13 @@ export default function DashboardHome(): React.JSX.Element {
     );
   }
 
-  if (isManager(user)) {
-    return <AdminDashboard />;
-  }
+  return (
+    <div className="flex flex-col w-full animate-in fade-in duration-500">
+      <div className="flex justify-end w-full mb-6">
+        <UserLocalClock />
+      </div>
 
-  return <ArtistDashboard />;
+      {isManager(user) ? <AdminDashboard /> : <ArtistDashboard />}
+    </div>
+  );
 }

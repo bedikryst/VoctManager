@@ -73,6 +73,11 @@ export const queryKeys = {
       ["attendances", { project: String(projectId) }] as const,
   },
 
+  // --- USER PREFERENCES & SETTINGS ---
+  settings: {
+    data: ["settings-data"] as const,
+  },
+
   // --- ARCHIVE AND MUSIC LIBRARY ---
   pieces: {
     all: ["pieces"] as const,

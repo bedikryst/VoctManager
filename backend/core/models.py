@@ -4,11 +4,11 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import uuid
-import zoneinfo
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+
 from .constants import AppRole, DietaryChoices, ClothingSizeChoices
 
 class SoftDeleteQuerySet(models.QuerySet):
@@ -83,9 +83,6 @@ class UserProfile(EnterpriseBaseModel):
         ENGLISH = 'en', _('English')
         POLISH = 'pl', _('Polish')
 
-    AVAILABLE_ZONES = sorted(list(zoneinfo.available_timezones()))
-    TIMEZONE_CHOICES = tuple(zip(AVAILABLE_ZONES, AVAILABLE_ZONES))
-
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -109,9 +106,8 @@ class UserProfile(EnterpriseBaseModel):
     )
     timezone = models.CharField(
         max_length=63,
-        choices=TIMEZONE_CHOICES,
         default='UTC',
-        help_text=_("Critical for rendering rehearsal/project times correctly across regions.")
+        help_text=_("Local timezone for this entity. Critical for UI rendering and iCal feeds.")
     )
 
     dietary_preference = models.CharField(
