@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../app/providers/AuthProvider";
+import { isManager } from "../../shared/auth/rbac";
 
 interface ResourceFile {
   id: number;
@@ -49,7 +50,7 @@ const STYLE_GLASS_CARD =
 export default function Resources(): React.JSX.Element {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const isAdmin = user?.is_admin;
+  const isAdmin = isManager(user);
 
   const documentCategories = useMemo<ResourceCategory[]>(
     () => [

@@ -44,12 +44,12 @@ export default function Materials(): React.JSX.Element {
   const [showLyricsFor, setShowLyricsFor] = useState<string | null>(null);
 
   const { isLoading, isError, filteredGroups } = useMaterialsData(
-    user?.id,
+    user?.artist_profile_id ?? undefined,
     searchQuery,
   );
 
   useEffect(() => {
-    if (isError) {
+    if (isError && user?.artist_profile_id) {
       toast.error(
         t("materials.dashboard.sync_error_title", "Błąd synchronizacji"),
         {
@@ -60,7 +60,7 @@ export default function Materials(): React.JSX.Element {
         },
       );
     }
-  }, [isError, t]);
+  }, [isError, t, user?.artist_profile_id]);
 
   const togglePieceExpand = (pieceId: string) => {
     setExpandedPieceId((prev) => (prev === pieceId ? null : pieceId));
@@ -73,7 +73,7 @@ export default function Materials(): React.JSX.Element {
     });
   };
 
-  if (isLoading && !!user?.id) {
+  if (isLoading && !!user?.artist_profile_id) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Loader2

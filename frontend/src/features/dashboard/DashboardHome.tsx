@@ -10,6 +10,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../app/providers/AuthProvider";
+import { isManager } from "../../shared/auth/rbac";
 
 import AdminDashboard from "./AdminDashboard";
 import ArtistDashboard from "./ArtistDashboard";
@@ -35,7 +36,7 @@ export default function DashboardHome(): React.JSX.Element {
     );
   }
 
-  if (user?.is_admin) {
+  if (isManager(user)) {
     return <AdminDashboard />;
   }
 

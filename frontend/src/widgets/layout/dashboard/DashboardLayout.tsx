@@ -12,8 +12,6 @@ import { useAuth } from "../../../app/providers/AuthProvider";
 import { DesktopSidebar } from "./components/DesktopSidebar";
 import { MobileNavigation } from "./components/MobileNavigation";
 
-const APP_VERSION = "0.7";
-
 export default function DashboardLayout(): React.JSX.Element {
   const { user, logout } = useAuth();
 
@@ -37,7 +35,7 @@ export default function DashboardLayout(): React.JSX.Element {
       </div>
 
       {/* Enterprise Modular Navigation Components */}
-      <DesktopSidebar user={user} logout={logout} APP_VERSION={APP_VERSION} />
+      <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
 
       {/* Main Content Area - Zwróć uwagę na md:pl-[120px]! */}

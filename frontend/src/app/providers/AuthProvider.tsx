@@ -12,24 +12,34 @@ import React, {
   useContext,
   useState,
   useEffect,
-  ReactNode,
+  type ReactNode,
 } from "react";
 import api, { type AuthRequestConfig } from "../../shared/api/api";
 import i18n from "../../shared/config/i18n";
+import type {
+  AuthProfile,
+  AuthUser,
+} from "../../shared/auth/auth.types";
 
-export interface AuthUser {
+interface UserIdentityResponse {
   id: string | number;
-  username: string;
   email: string;
   first_name?: string;
   last_name?: string;
-  is_admin?: boolean;
-  artist_profile_id?: string | number;
-  voice_type_display?: string;
-  profile?: {
-    language?: string;
-    [key: string]: any;
-  };
+  voice_type?: string | null;
+  voice_type_display?: string | null;
+  profile?: AuthProfile | null;
+}
+
+interface ArtistSelfResponse {
+  id: string | number;
+  username?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  voice_type?: string | null;
+  voice_type_display?: string | null;
+  profile?: AuthProfile | null;
 }
 
 export interface LoginResponse {
@@ -47,6 +57,39 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const silentAuthCheckConfig: AuthRequestConfig = {
+  skipAuthRefresh: true,
+  skipAuthRedirect: true,
+};
+
+const buildAuthUser = async (): Promise<AuthUser> => {
+  const identityResponse = await api.get<UserIdentityResponse>(
+    "/api/users/me/",
+    silentAuthCheckConfig,
+  );
+
+  const artistResponse = await api
+    .get<ArtistSelfResponse>("/api/artists/me/", silentAuthCheckConfig)
+    .then((response) => response.data)
+    .catch(() => null);
+
+  return {
+    id: identityResponse.data.id,
+    email: identityResponse.data.email || artistResponse?.email || "",
+    username: artistResponse?.username,
+    first_name:
+      identityResponse.data.first_name || artistResponse?.first_name || "",
+    last_name:
+      identityResponse.data.last_name || artistResponse?.last_name || "",
+    artist_profile_id: artistResponse?.id ?? null,
+    voice_type: identityResponse.data.voice_type ?? artistResponse?.voice_type,
+    voice_type_display:
+      identityResponse.data.voice_type_display ??
+      artistResponse?.voice_type_display,
+    profile: identityResponse.data.profile ?? artistResponse?.profile ?? null,
+  };
+};
+
 export const AuthProvider = ({
   children,
 }: {
@@ -61,18 +104,12 @@ export const AuthProvider = ({
       i18n.changeLanguage(userLang);
       document.documentElement.lang = userLang;
     }
+  }, [user?.profile?.language]);
 
+  useEffect(() => {
     const checkAuth = async () => {
       try {
-        const silentAuthCheckConfig: AuthRequestConfig = {
-          skipAuthRefresh: true,
-          skipAuthRedirect: true,
-        };
-        const response = await api.get<AuthUser>(
-          "/api/artists/me/",
-          silentAuthCheckConfig,
-        );
-        setUser(response.data);
+        setUser(await buildAuthUser());
       } catch (error) {
         // Not authenticated, stay logged out
         setUser(null);
@@ -91,10 +128,7 @@ export const AuthProvider = ({
   ): Promise<LoginResponse> => {
     try {
       await api.post("/api/token/", { email, password });
-
-      // Get user data after successful login
-      const userResponse = await api.get<AuthUser>("/api/artists/me/");
-      setUser(userResponse.data);
+      setUser(await buildAuthUser());
 
       return { success: true };
     } catch (error: any) {

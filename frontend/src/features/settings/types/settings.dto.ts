@@ -5,7 +5,13 @@
  * @module features/settings/types
  */
 
+import type { AppRole } from "../../../shared/auth/auth.types";
+
 export interface UserProfileDTO {
+  role?: AppRole;
+  is_manager?: boolean;
+  is_artist?: boolean;
+  is_crew?: boolean;
   phone_number: string;
   language: string;
   timezone: string;

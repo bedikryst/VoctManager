@@ -90,7 +90,7 @@ export interface Artist extends BaseModel {
   voice_type_display?: string;
   is_active: boolean;
   username?: string;
-  is_admin?: boolean;
+  is_manager?: boolean;
   sight_reading_skill?: number | null; // Numeric, can be null
   vocal_range_bottom?: string;
   vocal_range_top?: string;

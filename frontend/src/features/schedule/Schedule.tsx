@@ -28,7 +28,7 @@ export default function Schedule(): React.JSX.Element {
     filteredEvents,
     handleAbsenceSubmit,
     artistId,
-  } = useScheduleData(user?.id);
+  } = useScheduleData(user?.artist_profile_id ?? undefined);
 
   return (
     <div className="space-y-6 animate-fade-in relative cursor-default pb-24 max-w-4xl mx-auto px-4 sm:px-0">

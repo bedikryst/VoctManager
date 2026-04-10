@@ -19,6 +19,7 @@ import CustomCursor from "../shared/ui/CustomCursor";
 import NoiseOverlay from "../shared/ui/NoiseOverlay";
 import Preloader from "../shared/ui/Preloader";
 import ProtectedRoute from "./router/ProtectedRoute";
+import ManagerRoute from "./router/ManagerRoute";
 import DashboardLayout from "../widgets/layout/dashboard/DashboardLayout";
 import SettingsPage from "../pages/app/SettingsPage";
 
@@ -84,18 +85,20 @@ export default function App(): React.JSX.Element {
           <Route element={<ProtectedRoute />}>
             <Route path="/panel" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
-              <Route path="contracts" element={<Contracts />} />
-              <Route path="rehearsals" element={<Rehearsals />} />
-              <Route path="artists" element={<ArtistManagement />} />
-              <Route
-                path="project-management"
-                element={<ProjectManagement />}
-              />
-              <Route
-                path="archive-management"
-                element={<ArchiveManagement />}
-              />
-              <Route path="crew" element={<CrewManagement />} />
+              <Route element={<ManagerRoute />}>
+                <Route path="contracts" element={<Contracts />} />
+                <Route path="rehearsals" element={<Rehearsals />} />
+                <Route path="artists" element={<ArtistManagement />} />
+                <Route
+                  path="project-management"
+                  element={<ProjectManagement />}
+                />
+                <Route
+                  path="archive-management"
+                  element={<ArchiveManagement />}
+                />
+                <Route path="crew" element={<CrewManagement />} />
+              </Route>
               <Route path="resources" element={<Resources />} />
               <Route path="materials" element={<Materials />} />
               <Route path="schedule" element={<Schedule />} />

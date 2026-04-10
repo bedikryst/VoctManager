@@ -11,9 +11,11 @@ import {
   BrandMark,
 } from "../navigation.config";
 import { NotificationCenter } from "../../../../features/notifications/components/NotificationCenter";
+import { isCrew, isManager } from "../../../../shared/auth/rbac";
+import type { AuthUser } from "../../../../shared/auth/auth.types";
 
 interface MobileNavigationProps {
-  user: any;
+  user: AuthUser | null;
   logout: () => void;
 }
 
@@ -31,14 +33,16 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
     };
   }, [isOpen]);
 
-  const isAdmin = user?.is_admin;
-  const navGroups = isAdmin ? adminNavGroups : artistNavGroups;
+  const isManagerUser = isManager(user);
+  const navGroups = isManagerUser ? adminNavGroups : artistNavGroups;
   const userFullName = [user?.first_name, user?.last_name]
     .filter(Boolean)
     .join(" ");
-  const mobileRoleLabel = isAdmin
+  const mobileRoleLabel = isManagerUser
     ? t("dashboard.layout.roles.management")
-    : t("dashboard.layout.roles.artist");
+    : isCrew(user)
+      ? t("dashboard.layout.roles.crew", "Crew")
+      : user?.voice_type_display || t("dashboard.layout.roles.artist");
   const initials =
     `${user?.first_name?.[0] || ""}${user?.last_name?.[0] || ""}`.toUpperCase() ||
     "U";
@@ -136,7 +140,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-stone-800">
-                      {userFullName || user?.username}
+                      {userFullName || user?.email}
                     </p>
                     <p className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">
                       {mobileRoleLabel}

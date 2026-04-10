@@ -25,6 +25,7 @@ import {
 import type { NotificationDTO } from "../types/notifications.dto";
 import { useMarkNotificationRead } from "../api/notifications.queries";
 import { useAuth } from "../../../app/providers/AuthProvider";
+import { isManager } from "../../../shared/auth/rbac";
 
 interface NotificationItemProps {
   notification: NotificationDTO;
@@ -61,7 +62,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   const { user } = useAuth();
   const { mutate: markAsRead } = useMarkNotificationRead();
 
-  const isAdmin = user?.is_admin;
+  const isAdmin = isManager(user);
 
   const getUiConfig = () => {
     const level = String(notification.level || "INFO").toUpperCase();

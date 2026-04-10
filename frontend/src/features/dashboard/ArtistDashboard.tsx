@@ -61,7 +61,7 @@ export default function ArtistDashboard(): React.JSX.Element {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { isLoading, upNextRehearsal, upNextProject, greeting } =
-    useArtistDashboardData(user?.id);
+    useArtistDashboardData(user?.artist_profile_id ?? undefined);
 
   // Mechanika zgłaszania nieobecności
   const attendanceMutation = useUpsertScheduleAttendance();

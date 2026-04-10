@@ -37,7 +37,6 @@ export const useAccountActivation = () => {
 
   const [activatedData, setActivatedData] = useState<{
     email: string;
-    username: string;
   } | null>(null);
 
   const activationContext = useMemo(
@@ -54,7 +53,7 @@ export const useAccountActivation = () => {
   const activationMutation = useMutation({
     mutationFn: authService.activateAccount,
     onSuccess: (data) => {
-      setActivatedData({ email: data.email, username: data.username });
+      setActivatedData({ email: data.email });
       setFormError(null);
     },
     onError: (error) => {
