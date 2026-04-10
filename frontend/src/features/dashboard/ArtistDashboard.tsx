@@ -42,6 +42,7 @@ import api from "../../shared/api/api";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
 import { useUpsertScheduleAttendance } from "../../features/schedule/api/schedule.queries";
 import type { AttendanceStatus } from "../../shared/types";
+import { DualTimeDisplay } from "../../shared/ui/DualTimeDisplay";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -71,6 +72,12 @@ export default function ArtistDashboard(): React.JSX.Element {
     status: AttendanceStatus;
     notes: string;
   }>({ status: "ABSENT", notes: "" });
+
+  const isDifferentTimezone = (eventTimezone?: string) => {
+    if (!eventTimezone) return false;
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return eventTimezone !== userTimezone;
+  };
 
   /* Call-sheet Download Mechanics */
   const [isDownloadingRunSheet, setIsDownloadingRunSheet] = useState(false);
@@ -324,19 +331,30 @@ export default function ArtistDashboard(): React.JSX.Element {
                     <div className="flex flex-col gap-2 text-[11px] font-bold text-stone-600 mb-6">
                       <span className="flex items-center gap-2">
                         <Calendar size={14} className="text-[#002395]/60" />{" "}
-                        {formatLocalizedDate(upNextRehearsal.date, {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                        })}
+                        {formatLocalizedDate(
+                          upNextRehearsal.date,
+                          {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          },
+                          undefined,
+                          upNextRehearsal.data.timezone,
+                        )}
                       </span>
-                      <span className="flex items-center gap-2">
-                        <Clock size={14} className="text-[#002395]/60" />{" "}
-                        {formatLocalizedTime(upNextRehearsal.date, {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                      <DualTimeDisplay
+                        value={upNextRehearsal.date}
+                        timeZone={upNextRehearsal.data.timezone}
+                        icon={
+                          <Clock
+                            size={14}
+                            className="text-[#002395]/60"
+                            aria-hidden="true"
+                          />
+                        }
+                        localTimeClassName="text-[10px] text-stone-400 font-medium pl-6"
+                      />
+
                       {upNextRehearsal.data.location && (
                         <span className="flex items-center gap-2">
                           <MapPin size={14} className="text-[#002395]/60" />{" "}
@@ -458,22 +476,32 @@ export default function ArtistDashboard(): React.JSX.Element {
                     <div className="flex flex-col gap-2 text-[11px] font-bold text-stone-300 mb-6">
                       <span className="flex items-center gap-2">
                         <Calendar size={14} className="text-blue-400" />{" "}
-                        {formatLocalizedDate(upNextProject.date, {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                        })}
+                        {formatLocalizedDate(
+                          upNextProject.date,
+                          {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          },
+                          undefined,
+                          upNextProject.data.timezone,
+                        )}
                       </span>
 
                       {upNextProject.data.call_time && (
-                        <span className="flex items-center gap-2">
-                          <Clock size={14} className="text-blue-400" />
-                          Zbiórka (Call-time):{" "}
-                          {formatLocalizedTime(upNextProject.data.call_time, {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                        <DualTimeDisplay
+                          value={upNextProject.data.call_time}
+                          timeZone={upNextProject.data.timezone}
+                          label="Zbiórka (Call-time): "
+                          icon={
+                            <Clock
+                              size={14}
+                              className="text-blue-400"
+                              aria-hidden="true"
+                            />
+                          }
+                          localTimeClassName="text-[10px] text-blue-300/70 font-medium pl-6"
+                        />
                       )}
 
                       {upNextProject.data.location && (

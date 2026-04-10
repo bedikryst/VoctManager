@@ -80,3 +80,14 @@ export const formatLocalizedDateTime = (
   language?: string,
   timeZone?: string,
 ): string => formatDateValue(value, options, language, timeZone);
+
+export const isDifferentTimezone = (targetTimeZone?: string): boolean => {
+  if (!targetTimeZone) return false;
+  try {
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return targetTimeZone !== userTimezone;
+  } catch (error) {
+    // Graceful fallback if browser doesn't support resolvedOptions().timeZone
+    return false;
+  }
+};

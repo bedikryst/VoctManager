@@ -17,11 +17,11 @@ import {
   Briefcase,
   Archive,
 } from "lucide-react";
+import { DualTimeDisplay } from "../../shared/ui/DualTimeDisplay";
 
 import { useRehearsalsData } from "./hooks/useRehearsalsData";
 import {
   formatLocalizedDate,
-  formatLocalizedDateTime,
   formatLocalizedTime,
 } from "../../shared/lib/intl";
 import { GlassCard } from "../../shared/ui/GlassCard";
@@ -170,7 +170,12 @@ export default function Rehearsals(): React.JSX.Element {
                   <div
                     className={`text-[9px] font-bold uppercase tracking-widest mb-2 ${isSelected ? "text-blue-200" : "text-stone-400"}`}
                   >
-                    {formatLocalizedDate(project.date_time)}
+                    {formatLocalizedDate(
+                      project.date_time,
+                      undefined,
+                      undefined,
+                      project.timezone,
+                    )}
                   </div>
                   <h3
                     className={`font-bold text-sm truncate ${isSelected ? "text-white" : "text-stone-800"}`}
@@ -203,18 +208,28 @@ export default function Rehearsals(): React.JSX.Element {
                   <span
                     className={`text-[9px] font-bold antialiased uppercase tracking-widest mb-1 ${isSelected ? "text-[#002395]" : "text-stone-400"}`}
                   >
-                    {formatLocalizedDate(reh.date_time, {
-                      day: "numeric",
-                      month: "short",
-                    })}
+                    {formatLocalizedDate(
+                      reh.date_time,
+                      {
+                        day: "numeric",
+                        month: "short",
+                      },
+                      undefined,
+                      reh.timezone,
+                    )}
                   </span>
                   <span
                     className={`text-xl font-black tracking-tight leading-none mb-1.5 ${isSelected ? "text-stone-900" : isPast ? "text-stone-400" : "text-stone-700"}`}
                   >
-                    {formatLocalizedTime(reh.date_time, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatLocalizedTime(
+                      reh.date_time,
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                      undefined,
+                      reh.timezone,
+                    )}
                   </span>
                   <span className="text-[8px] font-bold uppercase tracking-widest text-stone-400 truncate max-w-full">
                     {reh.location ||
@@ -249,17 +264,40 @@ export default function Rehearsals(): React.JSX.Element {
                     {activeRehearsal.focus ||
                       t("rehearsals.dashboard.general_work", "Praca Bieżąca")}
                   </h3>
-                  <div className="flex items-center gap-4 mt-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-                    <span className="flex items-center gap-1.5">
-                      <Clock size={12} />{" "}
-                      {formatLocalizedDateTime(activeRehearsal.date_time, {
-                        weekday: "long",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+
+                  {/* ZMODYFIKOWANA SEKCJA CZASU I LOKALIZACJI */}
+                  <div className="flex flex-wrap items-center gap-2 mt-3 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
+                    <span className="flex items-center gap-1.5 bg-stone-100/50 px-2.5 py-1.5 rounded-lg border border-stone-200/80">
+                      <Clock size={12} aria-hidden="true" />{" "}
+                      {formatLocalizedDate(
+                        activeRehearsal.date_time,
+                        {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                        },
+                        undefined,
+                        activeRehearsal.timezone,
+                      )}
                     </span>
-                    <span className="flex items-center gap-1.5">
-                      <MapPin size={12} /> {activeRehearsal.location}
+
+                    <DualTimeDisplay
+                      value={activeRehearsal.date_time}
+                      timeZone={activeRehearsal.timezone}
+                      containerClassName="flex items-center gap-1.5 bg-stone-100/50 px-2.5 py-1.5 rounded-lg border border-stone-200/80"
+                      primaryTimeClassName="flex items-center gap-1.5 text-stone-600"
+                      localTimeClassName="text-[9px] text-orange-600/90 font-bold normal-case tracking-normal border-l border-stone-200 pl-1.5"
+                    />
+
+                    <span className="flex items-center gap-1.5 bg-stone-100/50 px-2.5 py-1.5 rounded-lg border border-stone-200/80 truncate max-w-[250px]">
+                      <MapPin
+                        size={12}
+                        className="flex-shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">
+                        {activeRehearsal.location}
+                      </span>
                     </span>
                   </div>
                 </div>

@@ -32,6 +32,7 @@ import {
 } from "../../../shared/lib/intl";
 import { Input } from "../../../shared/ui/Input";
 import { Button } from "../../../shared/ui/Button";
+import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
 
 interface TimelineRehearsalCardProps {
   event: TimelineEvent;
@@ -57,6 +58,7 @@ export default function TimelineRehearsalCard({
   viewMode,
 }: TimelineRehearsalCardProps): React.JSX.Element {
   const { t } = useTranslation();
+  const tz = (event.rawObj as { timezone?: string })?.timezone;
   const {
     reportingMode,
     setReportingMode,
@@ -124,15 +126,30 @@ export default function TimelineRehearsalCard({
             <span
               className={`text-[10px] font-bold uppercase tracking-widest ${currentMaskedStatus === "PRESENT" ? "text-emerald-600" : isExcusedOrLate ? "text-stone-400" : "text-[#002395]/60"}`}
             >
-              {formatLocalizedDate(event.date_time, { month: "short" })}
+              {formatLocalizedDate(
+                event.date_time,
+                { month: "short" },
+                undefined,
+                tz,
+              )}
             </span>
             <span
               className={`text-3xl font-black leading-none my-0.5 ${currentMaskedStatus === "PRESENT" ? "text-emerald-700" : isExcusedOrLate ? "text-stone-500" : "text-[#002395]"}`}
             >
-              {event.date_time.getDate()}
+              {formatLocalizedDate(
+                event.date_time,
+                { day: "numeric" },
+                undefined,
+                tz,
+              )}
             </span>
             <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
-              {formatLocalizedDate(event.date_time, { weekday: "short" })}
+              {formatLocalizedDate(
+                event.date_time,
+                { weekday: "short" },
+                undefined,
+                tz,
+              )}
             </span>
           </div>
 
@@ -160,13 +177,20 @@ export default function TimelineRehearsalCard({
               {event.title}
             </h3>
             <div className="flex flex-wrap items-center gap-4 mt-2 text-[11px] font-bold text-stone-500 uppercase tracking-widest">
-              <span className="flex items-center gap-1.5">
-                <Clock size={12} className="text-[#002395]/60" />{" "}
-                {formatLocalizedTime(event.date_time, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+              <DualTimeDisplay
+                value={event.date_time}
+                timeZone={tz}
+                icon={
+                  <Clock
+                    size={12}
+                    className="text-[#002395]/60"
+                    aria-hidden="true"
+                  />
+                }
+                containerClassName="flex items-center gap-1.5"
+                primaryTimeClassName="flex items-center gap-1.5"
+                localTimeClassName="text-[9px] text-stone-400 font-medium normal-case tracking-normal pl-2"
+              />
               <span className="flex items-center gap-1.5 truncate max-w-[200px]">
                 <MapPin size={12} className="text-[#002395]/60 flex-shrink-0" />{" "}
                 <span className="truncate">

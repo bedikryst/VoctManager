@@ -30,14 +30,10 @@ import { GlassCard } from "../../../../shared/ui/GlassCard";
 import { Button } from "../../../../shared/ui/Button";
 import { Input } from "../../../../shared/ui/Input";
 
-// New native IANA timezone helper and formatters
+// New native IANA timezone helper and global formatters
 import { getAvailableTimezones } from "../../../../shared/lib/timezone";
-import {
-  formatDate,
-  formatEventTime,
-  formatUserLocalTime,
-  isDifferentTimezone,
-} from "../../ProjectCard/utils/formatters";
+import { formatLocalizedDate } from "../../../../shared/lib/intl";
+import { DualTimeDisplay } from "../../../../shared/ui/DualTimeDisplay";
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -112,7 +108,6 @@ export default function RehearsalsTab({
               />
             </div>
 
-            {/* Added Native Timezone Select Component */}
             <div className="md:col-span-1 w-full">
               <label className={STYLE_LABEL}>
                 {t("projects.rehearsals.form.timezone", "Strefa Czasowa *")}
@@ -154,7 +149,6 @@ export default function RehearsalsTab({
             </div>
           </div>
 
-          {/* ... [Rest of the form UI remains untouched] ... */}
           <div className="w-full">
             <label className={STYLE_LABEL}>
               {t(
@@ -177,7 +171,6 @@ export default function RehearsalsTab({
             />
           </div>
 
-          {/* Target audience UI ... */}
           <div className="bg-white/60 border border-stone-200/60 rounded-2xl p-5 shadow-sm overflow-hidden">
             <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 mb-4 ml-1">
               {t("projects.rehearsals.form.who", "Kto jest wezwany na próbę?")}
@@ -384,9 +377,6 @@ export default function RehearsalsTab({
               invitedCount === 0 ||
               invitedCount === projectParticipations.length;
 
-            // Calculate timezone presentation logic for list iteration
-            const hasDiffTz = isDifferentTimezone(reh.timezone);
-
             return (
               <div
                 key={reh.id}
@@ -398,29 +388,28 @@ export default function RehearsalsTab({
               >
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
-                    {/* Time rendering with Dual Time logic */}
-                    <div className="flex flex-col gap-1 w-full md:w-auto">
-                      <div
-                        className={`px-3 py-1.5 rounded-lg border font-bold text-sm tracking-tight shadow-sm w-fit ${
-                          isPast
-                            ? "bg-white/50 border-stone-200 text-stone-500"
-                            : "bg-blue-50 border-blue-100 text-[#002395]"
-                        }`}
+                    {/* Zmodyfikowana sekcja czasu korzystająca z DualTimeDisplay */}
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                      <span
+                        className={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-[#002395]"}`}
                       >
-                        {formatDate(reh.date_time, reh.timezone, "short")}
-                        <span className="mx-1 opacity-50">•</span>
-                        {formatEventTime(
+                        <Calendar1 size={14} aria-hidden="true" />
+                        {formatLocalizedDate(
                           reh.date_time,
+                          { day: "numeric", month: "short" },
+                          undefined,
                           reh.timezone,
-                          hasDiffTz,
                         )}
-                      </div>
-                      {hasDiffTz && (
-                        <span className="text-[9px] text-stone-500 font-medium ml-1 w-fit whitespace-nowrap">
-                          ({t("projects.timezone.local", "Twój czas:")}{" "}
-                          {formatUserLocalTime(reh.date_time)})
-                        </span>
-                      )}
+                      </span>
+
+                      <DualTimeDisplay
+                        value={reh.date_time}
+                        timeZone={reh.timezone}
+                        icon={<Clock size={14} aria-hidden="true" />}
+                        containerClassName={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-[#002395]"}`}
+                        primaryTimeClassName="flex items-center gap-1.5"
+                        localTimeClassName="text-[10px] font-medium normal-case tracking-normal border-l border-current opacity-70 pl-1.5 ml-0.5"
+                      />
                     </div>
 
                     {isPast && (
@@ -474,7 +463,6 @@ export default function RehearsalsTab({
                   </div>
                 </div>
 
-                {/* Edit / Delete section */}
                 <div className="mt-5 md:mt-0 md:ml-4 flex items-center justify-end gap-1 border-t md:border-t-0 border-stone-200/50 pt-4 md:pt-0">
                   <button
                     onClick={() => handleEditClick(reh)}

@@ -31,10 +31,8 @@ import {
 
 import { useAuth } from "../../app/providers/AuthProvider";
 import { GlassCard } from "../../shared/ui/GlassCard";
-import {
-  formatLocalizedDate,
-  formatLocalizedDateTime,
-} from "../../shared/lib/intl";
+import { formatLocalizedDate } from "../../shared/lib/intl";
+import { DualTimeDisplay } from "../../shared/ui/DualTimeDisplay";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 
 const containerVariants: Variants = {
@@ -194,14 +192,20 @@ export default function AdminDashboard(): React.JSX.Element {
                   )}
                 </p>
                 <p className="text-sm font-bold text-stone-800">
-                  {formatLocalizedDateTime(nextRehearsal.date_time, {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatLocalizedDate(
+                    nextRehearsal.date_time,
+                    { weekday: "long", day: "numeric", month: "long" },
+                    undefined,
+                    nextRehearsal.timezone,
+                  )}
                 </p>
+                <DualTimeDisplay
+                  value={nextRehearsal.date_time}
+                  timeZone={nextRehearsal.timezone}
+                  containerClassName="flex items-center gap-1.5"
+                  primaryTimeClassName="text-[11px] font-bold text-stone-500"
+                  localTimeClassName="text-[10px] text-orange-600/80 font-bold"
+                />
               </div>
             </div>
 
@@ -351,16 +355,41 @@ export default function AdminDashboard(): React.JSX.Element {
                     </h2>
                     <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-stone-700 mb-6">
                       <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80">
-                        <Clock size={12} className="text-[#002395]" />
-                        {formatLocalizedDate(nextProject.date_time, {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        <Calendar
+                          size={12}
+                          className="text-[#002395]"
+                          aria-hidden="true"
+                        />
+                        {formatLocalizedDate(
+                          nextProject.date_time,
+                          { day: "numeric", month: "short", year: "numeric" },
+                          undefined,
+                          nextProject.timezone,
+                        )}
                       </span>
+
+                      <DualTimeDisplay
+                        value={nextProject.date_time}
+                        timeZone={nextProject.timezone}
+                        icon={
+                          <Clock
+                            size={12}
+                            className="text-[#002395]"
+                            aria-hidden="true"
+                          />
+                        }
+                        containerClassName="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80"
+                        primaryTimeClassName="flex items-center gap-1.5 text-[11px] font-bold text-stone-700"
+                        localTimeClassName="text-[10px] text-stone-500 font-medium border-l border-stone-200 pl-1.5"
+                      />
+
                       {nextProject.location && (
                         <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80">
-                          <MapPin size={12} className="text-[#002395]" />
+                          <MapPin
+                            size={12}
+                            className="text-[#002395]"
+                            aria-hidden="true"
+                          />
                           {nextProject.location}
                         </span>
                       )}

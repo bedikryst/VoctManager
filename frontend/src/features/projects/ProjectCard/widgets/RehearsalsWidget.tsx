@@ -14,12 +14,9 @@ import type { Project, Rehearsal } from "../../../../shared/types";
 import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "../../../../shared/ui/GlassCard";
 
-// Import new formatters
-import {
-  formatDate,
-  formatEventTime,
-  isDifferentTimezone,
-} from "../utils/formatters";
+// Import global formatters and components
+import { formatLocalizedDate } from "../../../../shared/lib/intl";
+import { DualTimeDisplay } from "../../../../shared/ui/DualTimeDisplay";
 
 interface RehearsalsWidgetProps {
   project: Project;
@@ -116,7 +113,6 @@ export default function RehearsalsWidget({
                 invitedCount === 0 ||
                 invitedCount === projectParticipations.length;
               const absences = reh.absent_count || 0;
-              const hasDiffTz = isDifferentTimezone(reh.timezone);
 
               return (
                 <li
@@ -130,22 +126,31 @@ export default function RehearsalsWidget({
                         aria-hidden="true"
                       />
                       <div className="flex flex-col">
-                        <span>
-                          <strong className="text-stone-800">
-                            {formatDate(reh.date_time, reh.timezone, "short")}
-                            <span className="mx-1 text-stone-300 font-normal">
+                        {/* Zmodyfikowana struktura czasu dla Widgetu */}
+                        <span className="flex flex-wrap items-center gap-1">
+                          <strong className="text-stone-800 flex items-center gap-1">
+                            {formatLocalizedDate(
+                              reh.date_time,
+                              { day: "numeric", month: "short" },
+                              undefined,
+                              reh.timezone,
+                            )}
+                            <span className="text-stone-300 font-normal mx-0.5">
                               •
                             </span>
-                            {formatEventTime(
-                              reh.date_time,
-                              reh.timezone,
-                              hasDiffTz,
-                            )}
+                            <DualTimeDisplay
+                              value={reh.date_time}
+                              timeZone={reh.timezone}
+                              containerClassName="inline-flex items-center gap-1"
+                              primaryTimeClassName="inline-flex items-center gap-1"
+                              localTimeClassName="text-[9px] text-stone-400 font-medium normal-case tracking-normal pl-1"
+                            />
                           </strong>
                           <span className="text-stone-400 ml-1">
                             ({reh.location})
                           </span>
                         </span>
+
                         {reh.focus && (
                           <span className="text-[10px] text-stone-500 italic line-clamp-1 mt-0.5">
                             {reh.focus}

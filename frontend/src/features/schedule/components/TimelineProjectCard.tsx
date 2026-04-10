@@ -20,7 +20,7 @@ import {
   Music,
   Wrench,
 } from "lucide-react";
-
+import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
 import SpotifyWidget from "../../projects/ProjectCard/widgets/SpotifyWidget";
 import {
   formatLocalizedDate,
@@ -95,10 +95,20 @@ export default function TimelineProjectCard({
           <div className="flex flex-col sm:flex-row sm:items-start gap-4 md:gap-6">
             <div className="w-16 h-16 rounded-2xl border flex flex-col items-center justify-center flex-shrink-0 shadow-sm bg-white/10 border-white/20 text-blue-100 backdrop-blur-md">
               <span className="text-[9px] font-bold uppercase tracking-widest">
-                {formatLocalizedDate(event.date_time, { month: "short" })}
+                {formatLocalizedDate(
+                  event.date_time,
+                  { month: "short" },
+                  undefined,
+                  proj.timezone,
+                )}
               </span>
               <span className="text-2xl font-black leading-none my-0.5">
-                {event.date_time.getDate()}
+                {formatLocalizedDate(
+                  event.date_time,
+                  { day: "numeric" },
+                  undefined,
+                  proj.timezone,
+                )}
               </span>
             </div>
 
@@ -117,14 +127,15 @@ export default function TimelineProjectCard({
 
               <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
                 {proj.call_time && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                    <Clock size={12} aria-hidden="true" />{" "}
-                    {t("schedule.card.call_time", "Zbiórka:")}{" "}
-                    {formatLocalizedTime(proj.call_time, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
+                  <DualTimeDisplay
+                    value={proj.call_time}
+                    timeZone={proj.timezone}
+                    label={t("schedule.card.call_time", "Zbiórka: ")}
+                    icon={<Clock size={12} aria-hidden="true" />}
+                    containerClassName="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30"
+                    primaryTimeClassName="flex items-center gap-1.5"
+                    localTimeClassName="text-[9px] text-orange-300/70 border-l border-orange-500/30 pl-1.5"
+                  />
                 )}
                 {combinedDressCode && (
                   <span

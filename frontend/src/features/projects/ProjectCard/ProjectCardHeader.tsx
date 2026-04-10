@@ -20,6 +20,7 @@ import {
   Trash2,
   Wrench,
   Users,
+  Calendar,
 } from "lucide-react";
 
 import { PROJECT_STATUS } from "../constants/projectDomain";
@@ -28,13 +29,9 @@ import { useProjectData } from "../hooks/useProjectData";
 import { useProjectCard } from "./hooks/useProjectCard";
 import { Button } from "../../../shared/ui/Button";
 
-// Import new formatters
-import {
-  formatDate,
-  formatEventTime,
-  formatUserLocalTime,
-  isDifferentTimezone,
-} from "./utils/formatters";
+// Importujemy ustandaryzowane mechanizmy z shared
+import { formatLocalizedDate } from "../../../shared/lib/intl";
+import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
 
 interface ProjectCardHeaderProps {
   project: Project;
@@ -60,12 +57,10 @@ export default function ProjectCardHeader({
 
   const isDone = project.status === PROJECT_STATUS.DONE;
 
-  // Calculate timezone presentation logic
-  const hasDiffTz = isDifferentTimezone(project.timezone);
-
+  // Poprawiony standardowy link do Google Maps
   const googleMapsUrl = useMemo(() => {
     return project.location
-      ? `https://maps.google.com/?q=${encodeURIComponent(project.location)}`
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.location)}`
       : null;
   }, [project.location]);
 
@@ -107,39 +102,52 @@ export default function ProjectCardHeader({
           </h2>
 
           <div className="flex flex-wrap items-start gap-4 text-xs font-bold text-stone-500 uppercase tracking-widest mb-6">
-            {/* Event Date & Time Logic */}
+            {/* SEKCJA CZASU I DATY */}
             {project.date_time && (
-              <div className="flex flex-col gap-1.5">
-                <span className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit">
-                  <Clock
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit text-stone-600">
+                  <Calendar
                     size={14}
                     className="text-[#002395]/60"
                     aria-hidden="true"
                   />
-                  {formatDate(project.date_time, project.timezone)}
-                  <span className="mx-1 text-stone-300">•</span>
-                  {formatEventTime(
+                  {formatLocalizedDate(
                     project.date_time,
+                    {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    },
+                    undefined,
                     project.timezone,
-                    hasDiffTz,
                   )}
                 </span>
-                {hasDiffTz && (
-                  <span className="text-[10px] text-stone-400 normal-case tracking-normal font-medium ml-1">
-                    ({t("projects.timezone.local", "Twój czas:")}{" "}
-                    {formatUserLocalTime(project.date_time)})
-                  </span>
-                )}
+
+                <DualTimeDisplay
+                  value={project.date_time}
+                  timeZone={project.timezone}
+                  icon={
+                    <Clock
+                      size={14}
+                      className="text-[#002395]/60"
+                      aria-hidden="true"
+                    />
+                  }
+                  containerClassName="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit text-stone-700"
+                  primaryTimeClassName="flex items-center gap-1.5"
+                  localTimeClassName="text-[10px] text-stone-400 font-medium normal-case tracking-normal border-l border-stone-200/60 pl-2"
+                />
               </div>
             )}
 
-            {/* Location Logic */}
+            {/* SEKCJA LOKALIZACJI */}
             {googleMapsUrl && (
               <a
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 hover:bg-stone-100 transition-colors w-fit"
+                className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 hover:bg-stone-100 transition-colors w-fit mt-1 lg:mt-0"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MapPin
@@ -153,25 +161,17 @@ export default function ProjectCardHeader({
               </a>
             )}
 
-            {/* Call Time Logic */}
+            {/* SEKCJA CALL TIME */}
             {project.call_time && (
-              <div className="flex flex-col gap-1.5">
-                <span className="flex items-center gap-1.5 text-orange-600 whitespace-nowrap bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 w-fit">
-                  <Clock size={14} aria-hidden="true" />{" "}
-                  {t("projects.call_time", "Call Time:")}{" "}
-                  {formatEventTime(
-                    project.call_time,
-                    project.timezone,
-                    hasDiffTz,
-                  )}
-                </span>
-                {hasDiffTz && (
-                  <span className="text-[10px] text-orange-500/70 normal-case tracking-normal font-medium ml-1">
-                    ({t("projects.timezone.local", "Twój czas:")}{" "}
-                    {formatUserLocalTime(project.call_time)})
-                  </span>
-                )}
-              </div>
+              <DualTimeDisplay
+                value={project.call_time}
+                timeZone={project.timezone}
+                label={`${t("projects.call_time", "Call Time:")} `}
+                icon={<Clock size={14} aria-hidden="true" />}
+                containerClassName="flex items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 w-fit mt-1 lg:mt-0"
+                primaryTimeClassName="flex items-center gap-1.5 text-orange-600 whitespace-nowrap"
+                localTimeClassName="text-[10px] text-orange-500/70 font-medium normal-case tracking-normal border-l border-orange-200 pl-2"
+              />
             )}
           </div>
         </div>
@@ -210,6 +210,7 @@ export default function ProjectCardHeader({
         </div>
       </div>
 
+      {/* PRAWA STRONA KARTY (Bez zmian) */}
       <div className="w-full lg:w-72 flex-shrink-0 bg-stone-50/50 rounded-2xl border border-stone-200/50 p-5 flex flex-col justify-center relative overflow-hidden">
         <div
           className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3 pointer-events-none"
