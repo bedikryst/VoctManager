@@ -25,11 +25,19 @@ import {
 } from "lucide-react";
 
 import { useRehearsalsTab, TargetType } from "../hooks/useRehearsalsTab";
-import { formatLocalizedDateTime } from "../../../../shared/lib/intl";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import { GlassCard } from "../../../../shared/ui/GlassCard";
 import { Button } from "../../../../shared/ui/Button";
 import { Input } from "../../../../shared/ui/Input";
+
+// New native IANA timezone helper and formatters
+import { getAvailableTimezones } from "../../../../shared/lib/timezone";
+import {
+  formatDate,
+  formatEventTime,
+  formatUserLocalTime,
+  isDifferentTimezone,
+} from "../../ProjectCard/utils/formatters";
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -44,6 +52,8 @@ export default function RehearsalsTab({
   projectId,
 }: RehearsalsTabProps): React.JSX.Element | null {
   const { t } = useTranslation();
+  const timezones = getAvailableTimezones();
+
   const {
     isLoading,
     isSubmitting,
@@ -86,8 +96,8 @@ export default function RehearsalsTab({
             </h4>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex-1 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1 w-full">
               <label className={STYLE_LABEL}>
                 {t("projects.rehearsals.form.date_time", "Data i Godzina *")}
               </label>
@@ -101,7 +111,30 @@ export default function RehearsalsTab({
                 disabled={isSubmitting}
               />
             </div>
-            <div className="flex-1 w-full">
+
+            {/* Added Native Timezone Select Component */}
+            <div className="md:col-span-1 w-full">
+              <label className={STYLE_LABEL}>
+                {t("projects.rehearsals.form.timezone", "Strefa Czasowa *")}
+              </label>
+              <select
+                required
+                value={formData.timezone}
+                onChange={(e) =>
+                  setFormData({ ...formData, timezone: e.target.value })
+                }
+                disabled={isSubmitting}
+                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+              >
+                {timezones.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz.replace(/_/g, " ")}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="md:col-span-1 w-full">
               <label className={STYLE_LABEL}>
                 {t("projects.rehearsals.form.location", "Lokalizacja (Sala) *")}
               </label>
@@ -121,6 +154,7 @@ export default function RehearsalsTab({
             </div>
           </div>
 
+          {/* ... [Rest of the form UI remains untouched] ... */}
           <div className="w-full">
             <label className={STYLE_LABEL}>
               {t(
@@ -143,6 +177,7 @@ export default function RehearsalsTab({
             />
           </div>
 
+          {/* Target audience UI ... */}
           <div className="bg-white/60 border border-stone-200/60 rounded-2xl p-5 shadow-sm overflow-hidden">
             <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 mb-4 ml-1">
               {t("projects.rehearsals.form.who", "Kto jest wezwany na próbę?")}
@@ -349,6 +384,9 @@ export default function RehearsalsTab({
               invitedCount === 0 ||
               invitedCount === projectParticipations.length;
 
+            // Calculate timezone presentation logic for list iteration
+            const hasDiffTz = isDifferentTimezone(reh.timezone);
+
             return (
               <div
                 key={reh.id}
@@ -360,29 +398,39 @@ export default function RehearsalsTab({
               >
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <div
-                      className={`px-3 py-1.5 rounded-lg border font-bold text-sm tracking-tight shadow-sm ${
-                        isPast
-                          ? "bg-white/50 border-stone-200 text-stone-500"
-                          : "bg-blue-50 border-blue-100 text-[#002395]"
-                      }`}
-                    >
-                      {formatLocalizedDateTime(reh.date_time, {
-                        day: "2-digit",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    {/* Time rendering with Dual Time logic */}
+                    <div className="flex flex-col gap-1 w-full md:w-auto">
+                      <div
+                        className={`px-3 py-1.5 rounded-lg border font-bold text-sm tracking-tight shadow-sm w-fit ${
+                          isPast
+                            ? "bg-white/50 border-stone-200 text-stone-500"
+                            : "bg-blue-50 border-blue-100 text-[#002395]"
+                        }`}
+                      >
+                        {formatDate(reh.date_time, reh.timezone, "short")}
+                        <span className="mx-1 opacity-50">•</span>
+                        {formatEventTime(
+                          reh.date_time,
+                          reh.timezone,
+                          hasDiffTz,
+                        )}
+                      </div>
+                      {hasDiffTz && (
+                        <span className="text-[9px] text-stone-500 font-medium ml-1 w-fit whitespace-nowrap">
+                          ({t("projects.timezone.local", "Twój czas:")}{" "}
+                          {formatUserLocalTime(reh.date_time)})
+                        </span>
+                      )}
                     </div>
 
                     {isPast && (
-                      <span className="px-2.5 py-1 bg-stone-200/60 text-stone-600 text-[8px] antialiased uppercase tracking-widest font-bold rounded-md">
+                      <span className="px-2.5 py-1 bg-stone-200/60 text-stone-600 text-[8px] antialiased uppercase tracking-widest font-bold rounded-md h-fit">
                         {t("projects.rehearsals.status.finished", "Zakończona")}
                       </span>
                     )}
 
                     <span
-                      className={`px-2.5 py-1 border text-[8px] antialiased uppercase tracking-widest font-bold rounded-md shadow-sm ${
+                      className={`px-2.5 py-1 border text-[8px] antialiased uppercase tracking-widest font-bold rounded-md shadow-sm h-fit ${
                         isTutti
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-purple-50 text-purple-700 border-purple-200"
@@ -398,7 +446,7 @@ export default function RehearsalsTab({
                     </span>
 
                     {!reh.is_mandatory && (
-                      <span className="px-2.5 py-1 bg-orange-50 text-orange-600 border border-orange-200 shadow-sm text-[8px] antialiased uppercase tracking-widest font-bold rounded-md">
+                      <span className="px-2.5 py-1 bg-orange-50 text-orange-600 border border-orange-200 shadow-sm text-[8px] antialiased uppercase tracking-widest font-bold rounded-md h-fit">
                         {t("projects.rehearsals.status.optional", "Opcjonalna")}
                       </span>
                     )}
@@ -426,7 +474,7 @@ export default function RehearsalsTab({
                   </div>
                 </div>
 
-                {/* Sekcja przycisków Edytuj / Usuń */}
+                {/* Edit / Delete section */}
                 <div className="mt-5 md:mt-0 md:ml-4 flex items-center justify-end gap-1 border-t md:border-t-0 border-stone-200/50 pt-4 md:pt-0">
                   <button
                     onClick={() => handleEditClick(reh)}

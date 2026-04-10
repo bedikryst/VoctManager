@@ -1,6 +1,7 @@
 /**
  * @file ProjectCardHeader.tsx
  * @description Renders the compact, scannable header for a project card.
+ * Integrates dual-timezone presentation layer for traveling artists.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/ProjectCardHeader
  */
@@ -23,13 +24,17 @@ import {
 
 import { PROJECT_STATUS } from "../constants/projectDomain";
 import type { Project } from "../../../shared/types";
-import {
-  formatLocalizedDate,
-  formatLocalizedTime,
-} from "../../../shared/lib/intl";
 import { useProjectData } from "../hooks/useProjectData";
 import { useProjectCard } from "./hooks/useProjectCard";
 import { Button } from "../../../shared/ui/Button";
+
+// Import new formatters
+import {
+  formatDate,
+  formatEventTime,
+  formatUserLocalTime,
+  isDifferentTimezone,
+} from "./utils/formatters";
 
 interface ProjectCardHeaderProps {
   project: Project;
@@ -55,14 +60,8 @@ export default function ProjectCardHeader({
 
   const isDone = project.status === PROJECT_STATUS.DONE;
 
-  const projectDate = useMemo(
-    () => new Date(project.date_time),
-    [project.date_time],
-  );
-  const callTimeDate = useMemo(
-    () => (project.call_time ? new Date(project.call_time) : null),
-    [project.call_time],
-  );
+  // Calculate timezone presentation logic
+  const hasDiffTz = isDifferentTimezone(project.timezone);
 
   const googleMapsUrl = useMemo(() => {
     return project.location
@@ -107,27 +106,40 @@ export default function ProjectCardHeader({
             {project.title}
           </h2>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-stone-500 uppercase tracking-widest mb-6">
+          <div className="flex flex-wrap items-start gap-4 text-xs font-bold text-stone-500 uppercase tracking-widest mb-6">
+            {/* Event Date & Time Logic */}
             {project.date_time && (
-              <span className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60">
-                <Clock
-                  size={14}
-                  className="text-[#002395]/60"
-                  aria-hidden="true"
-                />
-                {formatLocalizedDate(projectDate, {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </span>
+              <div className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit">
+                  <Clock
+                    size={14}
+                    className="text-[#002395]/60"
+                    aria-hidden="true"
+                  />
+                  {formatDate(project.date_time, project.timezone)}
+                  <span className="mx-1 text-stone-300">•</span>
+                  {formatEventTime(
+                    project.date_time,
+                    project.timezone,
+                    hasDiffTz,
+                  )}
+                </span>
+                {hasDiffTz && (
+                  <span className="text-[10px] text-stone-400 normal-case tracking-normal font-medium ml-1">
+                    ({t("projects.timezone.local", "Twój czas:")}{" "}
+                    {formatUserLocalTime(project.date_time)})
+                  </span>
+                )}
+              </div>
             )}
+
+            {/* Location Logic */}
             {googleMapsUrl && (
               <a
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 hover:bg-stone-100 transition-colors"
+                className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 hover:bg-stone-100 transition-colors w-fit"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MapPin
@@ -140,16 +152,26 @@ export default function ProjectCardHeader({
                 </span>
               </a>
             )}
-            {callTimeDate && (
-              <span className="flex items-center gap-1.5 text-orange-600 whitespace-nowrap bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100">
-                <Clock size={14} aria-hidden="true" />{" "}
-                {t("projects.call_time", "Call Time:")}{" "}
-                {formatLocalizedTime(callTimeDate, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })}
-              </span>
+
+            {/* Call Time Logic */}
+            {project.call_time && (
+              <div className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1.5 text-orange-600 whitespace-nowrap bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 w-fit">
+                  <Clock size={14} aria-hidden="true" />{" "}
+                  {t("projects.call_time", "Call Time:")}{" "}
+                  {formatEventTime(
+                    project.call_time,
+                    project.timezone,
+                    hasDiffTz,
+                  )}
+                </span>
+                {hasDiffTz && (
+                  <span className="text-[10px] text-orange-500/70 normal-case tracking-normal font-medium ml-1">
+                    ({t("projects.timezone.local", "Twój czas:")}{" "}
+                    {formatUserLocalTime(project.call_time)})
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>

@@ -1,6 +1,7 @@
 /**
  * @file RehearsalsWidget.tsx
  * @description Dashboard widget displaying upcoming rehearsals, progress, and absence alerts.
+ * Implements context-aware timezone formatting.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/widgets/RehearsalsWidget
  */
@@ -10,9 +11,15 @@ import { useTranslation } from "react-i18next";
 import { Calendar, UserMinus } from "lucide-react";
 
 import type { Project, Rehearsal } from "../../../../shared/types";
-import { formatLocalizedDateTime } from "../../../../shared/lib/intl";
 import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "../../../../shared/ui/GlassCard";
+
+// Import new formatters
+import {
+  formatDate,
+  formatEventTime,
+  isDifferentTimezone,
+} from "../utils/formatters";
 
 interface RehearsalsWidgetProps {
   project: Project;
@@ -109,6 +116,7 @@ export default function RehearsalsWidget({
                 invitedCount === 0 ||
                 invitedCount === projectParticipations.length;
               const absences = reh.absent_count || 0;
+              const hasDiffTz = isDifferentTimezone(reh.timezone);
 
               return (
                 <li
@@ -124,12 +132,15 @@ export default function RehearsalsWidget({
                       <div className="flex flex-col">
                         <span>
                           <strong className="text-stone-800">
-                            {formatLocalizedDateTime(reh.date_time, {
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {formatDate(reh.date_time, reh.timezone, "short")}
+                            <span className="mx-1 text-stone-300 font-normal">
+                              •
+                            </span>
+                            {formatEventTime(
+                              reh.date_time,
+                              reh.timezone,
+                              hasDiffTz,
+                            )}
                           </strong>
                           <span className="text-stone-400 ml-1">
                             ({reh.location})

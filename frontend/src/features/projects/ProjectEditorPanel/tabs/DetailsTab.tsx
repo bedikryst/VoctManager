@@ -19,6 +19,7 @@ import {
   Save,
 } from "lucide-react";
 
+import { getAvailableTimezones } from "../../../../shared/lib/timezone";
 import type { Project } from "../../../../shared/types";
 import { useDetailsForm } from "../hooks/useDetailsForm";
 import { Input } from "../../../../shared/ui/Input";
@@ -52,6 +53,7 @@ export default function DetailsTab({
     handleRemoveRunSheetItem,
     handleSubmit,
   } = useDetailsForm(project, onSuccess, onDirtyStateChange);
+  const timezones = getAvailableTimezones();
 
   return (
     <div className="max-w-4xl mx-auto pb-24 relative">
@@ -123,6 +125,7 @@ export default function DetailsTab({
                 }
               />
             </div>
+
             <div>
               <label className={STYLE_LABEL}>
                 {t("projects.details_tab.fields.date_time", "Data i Czas *")}
@@ -135,6 +138,25 @@ export default function DetailsTab({
                   setFormData({ ...formData, date_time: e.target.value })
                 }
               />
+            </div>
+            <div className="md:col-span-1">
+              <label className={STYLE_LABEL}>
+                {t("projects.details_tab.fields.timezone", "Strefa Czasowa *")}
+              </label>
+              <select
+                required
+                value={formData.timezone}
+                onChange={(e) =>
+                  setFormData({ ...formData, timezone: e.target.value })
+                }
+                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+              >
+                {timezones.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz.replace(/_/g, " ")}{" "}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className={STYLE_LABEL}>
