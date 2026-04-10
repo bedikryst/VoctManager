@@ -72,7 +72,6 @@ export const useMaterialsData = (
                 (composer) => String(composer.id) === String(piece.composer),
               ) || null;
 
-            // ENTERPRISE FIX: Użycie standardowego project_id z zaktualizowanego shared/types
             const allCastingsForPiece = pieceCastings.filter((casting) => {
               return (
                 String(casting.piece) === String(piece.id) &&

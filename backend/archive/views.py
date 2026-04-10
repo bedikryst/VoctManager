@@ -17,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 
-from core.permissions import IsManagerOrReadOnly  # ENTERPRISE FIX: Centralized RBAC
+from core.permissions import IsManagerOrReadOnly  
 
 from .models import Composer, Piece, Track, PieceVoiceRequirement
 from .serializers import ComposerSerializer, PieceSerializer, TrackSerializer, PieceVoiceRequirementSerializer

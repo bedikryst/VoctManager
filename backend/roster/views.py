@@ -234,7 +234,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         try:
             dto = AttendanceRecordDTO(
                 requesting_user_id=request.user.id,
-                # Fix: Replaced is_superuser with is_manager
                 is_manager=_is_manager(request.user),
                 **request.data
             )

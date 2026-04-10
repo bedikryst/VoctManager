@@ -2,7 +2,7 @@
  * @file useRehearsalsTab.ts
  * @description Encapsulates mutation logic and state management for rehearsal scheduling.
  * Employs rapid Set lookups for audience targeting and synchronizes with Project domain queries.
- * Now fully supports CRUD lifecycle (Create, Read, Update, Delete) with intelligent form hydration.
+ * Now fully supports CRUD lifecycle with Enterprise Contextual Timezones.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useRehearsalsTab
  */
@@ -10,7 +10,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz"; // ✅ Najnowszy standard stref czasowych
 import type { Artist, Rehearsal } from "../../../../shared/types";
 import {
   useCreateRehearsal,
@@ -21,6 +21,7 @@ import { useProjectData } from "../../hooks/useProjectData";
 
 export interface RehearsalFormData {
   date_time: string;
+  timezone: string; // ✅ WZORZEC ENTERPRISE: Kontekst strefy czasowej wydarzenia
   location: string;
   focus: string;
   is_mandatory: boolean;
@@ -28,9 +29,27 @@ export interface RehearsalFormData {
 
 export type TargetType = "TUTTI" | "SECTIONAL" | "CUSTOM";
 
+// Funkcja pomocnicza: Absolute UTC -> Zoned Local String (do inputu)
+const toZonedInputString = (
+  dateString?: string | null,
+  timezone: string = "Europe/Warsaw",
+): string => {
+  if (!dateString) return "";
+  try {
+    return formatInTimeZone(
+      new Date(dateString),
+      timezone,
+      "yyyy-MM-dd'T'HH:mm",
+    );
+  } catch {
+    return "";
+  }
+};
+
 export const useRehearsalsTab = (projectId: string) => {
   const { t } = useTranslation();
   const {
+    project,
     artists,
     participations,
     rehearsals,
@@ -49,8 +68,11 @@ export const useRehearsalsTab = (projectId: string) => {
     null,
   );
 
+  const defaultTimezone = project?.timezone || "Europe/Warsaw";
+
   const [formData, setFormData] = useState<RehearsalFormData>({
     date_time: "",
+    timezone: defaultTimezone,
     location: "",
     focus: "",
     is_mandatory: true,
@@ -116,7 +138,13 @@ export const useRehearsalsTab = (projectId: string) => {
 
   const resetForm = () => {
     setEditingRehearsalId(null);
-    setFormData({ date_time: "", location: "", focus: "", is_mandatory: true });
+    setFormData({
+      date_time: "",
+      timezone: project?.timezone || "Europe/Warsaw",
+      location: "",
+      focus: "",
+      is_mandatory: true,
+    });
     setTargetType("TUTTI");
     setSelectedSections([]);
     setCustomParticipants([]);
@@ -125,22 +153,17 @@ export const useRehearsalsTab = (projectId: string) => {
   const handleEditClick = (rehearsal: Rehearsal) => {
     setEditingRehearsalId(String(rehearsal.id));
 
-    // Konwersja czasu z bazy (ISO/UTC) do lokalnego inputa datetime-local (YYYY-MM-DDTHH:mm)
-    const localDate = new Date(rehearsal.date_time);
-    // Poprawka uwzględniająca strefę czasową:
-    const offset = localDate.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(localDate.getTime() - offset)
-      .toISOString()
-      .slice(0, 16);
+    const rehearsalTimezone =
+      rehearsal.timezone || project?.timezone || "Europe/Warsaw";
 
     setFormData({
-      date_time: localISOTime,
+      date_time: toZonedInputString(rehearsal.date_time, rehearsalTimezone),
+      timezone: rehearsalTimezone,
       location: rehearsal.location || "",
       focus: rehearsal.focus || "",
       is_mandatory: rehearsal.is_mandatory ?? true,
     });
 
-    // Inteligentne odtworzenie typu targetowania
     const invitedIds = rehearsal.invited_participations?.map(String) || [];
     if (
       invitedIds.length === 0 ||
@@ -149,7 +172,6 @@ export const useRehearsalsTab = (projectId: string) => {
       setTargetType("TUTTI");
       setCustomParticipants([]);
     } else {
-      // Bezpieczny fallback do trybu niestandardowego dla edycji
       setTargetType("CUSTOM");
       setCustomParticipants(invitedIds);
     }
@@ -186,10 +208,16 @@ export const useRehearsalsTab = (projectId: string) => {
     );
 
     try {
+      const absoluteDateTime = fromZonedTime(
+        formData.date_time,
+        formData.timezone,
+      ).toISOString();
+
       const payload = {
         ...formData,
         project: projectId,
-        date_time: new Date(formData.date_time).toISOString(), // Formatujemy z powrotem na UTC
+        date_time: absoluteDateTime,
+        timezone: formData.timezone,
         invited_participations: invitedParticipants,
       };
 

@@ -7,6 +7,7 @@
 Database models for HR and Logistics entities.
 """
 import uuid
+import zoneinfo
 from django.utils import timezone
 from django.db import models
 from django.conf import settings
@@ -14,6 +15,10 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
+
+AVAILABLE_ZONES = sorted(list(zoneinfo.available_timezones()))
+TIMEZONE_CHOICES = tuple(zip(AVAILABLE_ZONES, AVAILABLE_ZONES))
+DEFAULT_EVENT_TIMEZONE = 'Europe/Warsaw'
 
 
 class VoiceType(models.TextChoices):
@@ -80,6 +85,12 @@ class Project(EnterpriseBaseModel):
     title = models.CharField(max_length=200, verbose_name=_("Project Title"))
     date_time = models.DateTimeField(verbose_name=_("Event Date & Time"), default=timezone.now)
     call_time = models.DateTimeField(blank=True, null=True, help_text=_("Call time for performers"), verbose_name=_("Call Time"))
+    timezone = models.CharField(
+        max_length=63,
+        choices=TIMEZONE_CHOICES,
+        default=DEFAULT_EVENT_TIMEZONE,
+        help_text=_("Local timezone for this project's primary location. Critical for UI rendering and iCal feeds.")
+    )    
     dress_code_male = models.CharField(max_length=100, blank=True, verbose_name=_("Dress Code (Male)"))
     dress_code_female = models.CharField(max_length=100, blank=True, verbose_name=_("Dress Code (Female)"))
     location = models.CharField(max_length=200, blank=True, verbose_name=_("Location"))
@@ -165,6 +176,12 @@ class ProjectPieceCasting(models.Model):
 class Rehearsal(EnterpriseBaseModel):
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='rehearsals', verbose_name=_("Project"))
     date_time = models.DateTimeField(verbose_name=_("Date & Time"))
+    timezone = models.CharField(
+        max_length=63,
+        choices=TIMEZONE_CHOICES,
+        default=DEFAULT_EVENT_TIMEZONE,
+        help_text=_("Local timezone for this specific rehearsal. Essential for tours crossing multiple timezones.")
+    )
     location = models.CharField(max_length=200, verbose_name=_("Rehearsal Venue"))
     focus = models.CharField(max_length=200, blank=True, verbose_name=_("Rehearsal Focus"))
     is_mandatory = models.BooleanField(default=True, verbose_name=_("Is Mandatory"))

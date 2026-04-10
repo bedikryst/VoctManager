@@ -10,6 +10,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import type { Project, RunSheetItem } from "../../../../shared/types";
 import { useCreateProject, useUpdateProject } from "../../api/project.queries";
 import type {
@@ -19,6 +20,7 @@ import type {
 
 export interface ProjectFormData {
   title: string;
+  timezone: string;
   date_time: string;
   call_time: string;
   location: string;
@@ -28,12 +30,20 @@ export interface ProjectFormData {
   description: string;
 }
 
-const toLocalISOString = (dateString?: string | null): string => {
+const toZonedInputString = (
+  dateString?: string | null,
+  timezone: string = "Europe/Warsaw",
+): string => {
   if (!dateString) return "";
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return "";
-  const offset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  try {
+    return formatInTimeZone(
+      new Date(dateString),
+      timezone,
+      "yyyy-MM-dd'T'HH:mm",
+    );
+  } catch {
+    return "";
+  }
 };
 
 export const useDetailsForm = (
@@ -49,8 +59,9 @@ export const useDetailsForm = (
 
   const [formData, setFormData] = useState<ProjectFormData>({
     title: project?.title || "",
-    date_time: toLocalISOString(project?.date_time),
-    call_time: toLocalISOString(project?.call_time),
+    timezone: project?.timezone || "Europe/Warsaw", // Domyślnie dla nowych projektów
+    date_time: toZonedInputString(project?.date_time, project?.timezone),
+    call_time: toZonedInputString(project?.call_time, project?.timezone),
     location: project?.location || "",
     dress_code_male: project?.dress_code_male || "",
     dress_code_female: project?.dress_code_female || "",
@@ -70,8 +81,9 @@ export const useDetailsForm = (
     setBaseline(source);
     setFormData({
       title: source.title || "",
-      date_time: toLocalISOString(source.date_time),
-      call_time: toLocalISOString(source.call_time),
+      timezone: source.timezone || "Europe/Warsaw",
+      date_time: toZonedInputString(source.date_time, source.timezone),
+      call_time: toZonedInputString(source.call_time, source.timezone),
       location: source.location || "",
       dress_code_male: source.dress_code_male || "",
       dress_code_female: source.dress_code_female || "",
@@ -101,10 +113,15 @@ export const useDetailsForm = (
       );
     }
 
+    const baselineTimezone = baseline.timezone || "Europe/Warsaw";
+
     const basicFieldsChanged =
       formData.title !== (baseline.title || "") ||
-      formData.date_time !== toLocalISOString(baseline.date_time) ||
-      formData.call_time !== toLocalISOString(baseline.call_time) ||
+      formData.timezone !== baselineTimezone ||
+      formData.date_time !==
+        toZonedInputString(baseline.date_time, baselineTimezone) ||
+      formData.call_time !==
+        toZonedInputString(baseline.call_time, baselineTimezone) ||
       formData.location !== (baseline.location || "") ||
       formData.dress_code_male !== (baseline.dress_code_male || "") ||
       formData.dress_code_female !== (baseline.dress_code_female || "") ||
@@ -129,7 +146,6 @@ export const useDetailsForm = (
     return basicFieldsChanged || runSheetChanged;
   }, [formData, baseline, runSheet]);
 
-  // Synchronize internal dirty state with the parent orchestrator
   useEffect(() => {
     if (onDirtyStateChange) {
       onDirtyStateChange(isDirty);
@@ -180,12 +196,19 @@ export const useDetailsForm = (
         description: item.description || "",
       }));
 
+      const absoluteDateTime = fromZonedTime(
+        formData.date_time,
+        formData.timezone,
+      ).toISOString();
+      const absoluteCallTime = formData.call_time
+        ? fromZonedTime(formData.call_time, formData.timezone).toISOString()
+        : null;
+
       const payload: ProjectCreateDTO | ProjectUpdateDTO = {
         title: formData.title,
-        date_time: new Date(formData.date_time).toISOString(),
-        call_time: formData.call_time
-          ? new Date(formData.call_time).toISOString()
-          : null,
+        timezone: formData.timezone,
+        date_time: absoluteDateTime,
+        call_time: absoluteCallTime,
         location: formData.location || "",
         dress_code_male: formData.dress_code_male || "",
         dress_code_female: formData.dress_code_female || "",

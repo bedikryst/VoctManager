@@ -18,6 +18,7 @@ import type { ProjectStatus } from "../constants/projectDomain";
 export interface ProjectCreateDTO {
   title: string;
   date_time: string;
+  timezone: string;
   call_time?: string | null;
   location?: string | null;
   dress_code_male?: string | null;
@@ -53,6 +54,7 @@ export type CrewAssignmentUpdateDTO = Partial<CrewAssignmentCreateDTO>;
 export interface RehearsalCreateDTO {
   project: string;
   date_time: string;
+  timezone: string;
   location: string;
   focus?: string;
   is_mandatory: boolean;

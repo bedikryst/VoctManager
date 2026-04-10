@@ -108,6 +108,7 @@ export interface RunSheetItem {
 export interface Project extends BaseModel {
   title: string;
   date_time: string;
+  timezone: string;
   call_time?: string | null; // DateTime, can be null
   dress_code_male?: string | null;
   dress_code_female?: string | null;
@@ -139,6 +140,7 @@ export interface Participation extends BaseModel {
 export interface Rehearsal extends BaseModel {
   project: string; // Foreign Key ID
   date_time: string;
+  timezone: string;
   location: string;
   focus?: string;
   is_mandatory: boolean;

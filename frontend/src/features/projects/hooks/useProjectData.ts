@@ -2,6 +2,7 @@
  * @file useProjectData.ts
  * @description Scoped aggregation hook for Project module server state.
  * Composes domain queries into a stable contract consumed across cards and editor tabs.
+ * Automatically resolves the root project entity from the cache.
  * @module panel/projects/hooks/useProjectData
  */
 
@@ -9,6 +10,7 @@ import { QueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "../../../shared/lib/queryKeys";
 import {
+  useProjects, // ✅ Dodano import głównego zapytania projektów
   useProjectArtistsDictionary,
   useProjectCollaboratorsDictionary,
   useProjectCrewAssignments,
@@ -20,6 +22,7 @@ import {
 import { ProjectService } from "../api/project.service";
 
 export function useProjectData(projectId: string | undefined) {
+  const projectsQuery = useProjects(); // ✅ Pobieramy zbuforowaną listę projektów
   const participationsQuery = useProjectParticipations(projectId);
   const rehearsalsQuery = useProjectRehearsals(projectId);
   const crewAssignmentsQuery = useProjectCrewAssignments(projectId);
@@ -29,6 +32,7 @@ export function useProjectData(projectId: string | undefined) {
   const piecesQuery = useProjectPiecesDictionary();
 
   const isLoading =
+    projectsQuery.isLoading ||
     participationsQuery.isLoading ||
     rehearsalsQuery.isLoading ||
     crewAssignmentsQuery.isLoading ||
@@ -36,7 +40,9 @@ export function useProjectData(projectId: string | undefined) {
     artistsQuery.isLoading ||
     collaboratorsQuery.isLoading ||
     piecesQuery.isLoading;
+
   const isError =
+    projectsQuery.isError ||
     participationsQuery.isError ||
     rehearsalsQuery.isError ||
     crewAssignmentsQuery.isError ||
@@ -45,7 +51,11 @@ export function useProjectData(projectId: string | undefined) {
     collaboratorsQuery.isError ||
     piecesQuery.isError;
 
+  const project =
+    projectsQuery.data?.find((p) => String(p.id) === String(projectId)) || null;
+
   return {
+    project, // ✅ Teraz TypeScript i nasz hook prób poprawnie go rozpoznają
     participations: participationsQuery.data || [],
     rehearsals: rehearsalsQuery.data || [],
     crewAssignments: crewAssignmentsQuery.data || [],

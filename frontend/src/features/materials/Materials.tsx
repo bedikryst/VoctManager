@@ -190,7 +190,6 @@ export default function Materials(): React.JSX.Element {
                     const isExpanded = expandedPieceId === String(piece.id);
                     const referenceLinks = getReferenceRecordingLinks(piece);
 
-                    // ENTERPRISE FIX: Zdefiniowane na twardo typy, zero "any"
                     const divisiGroups = piece.allCastings.reduce<
                       Record<string, PieceCasting[]>
                     >((acc, c) => {
