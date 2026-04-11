@@ -12,6 +12,7 @@ import {
   Music,
   Briefcase,
   X,
+  Loader2,
 } from "lucide-react";
 
 import { useLocations, useCreateLocation } from "../api/logistics.queries";
@@ -39,12 +40,15 @@ const CATEGORY_CONFIG: Record<
 
 export const LocationsManager = () => {
   const { t } = useTranslation();
-  const { data: locations, isLoading } = useLocations();
+  const { data: locationsData, isLoading } = useLocations();
   const createLocationMutation = useCreateLocation();
 
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [selectedCategory, setSelectedCategory] =
     useState<LocationCategory>("CONCERT_HALL");
+
+  // Type safety: Ensure we always operate on an array
+  const locations = Array.isArray(locationsData) ? locationsData : [];
 
   const handleLocationSelect = async (
     locationData: Partial<LocationCreateDto>,
@@ -60,16 +64,20 @@ export const LocationsManager = () => {
       longitude: locationData.longitude,
     };
 
-    await createLocationMutation.mutateAsync(payload);
-    setIsAddingMode(false);
+    try {
+      await createLocationMutation.mutateAsync(payload);
+      setIsAddingMode(false);
+    } catch (error) {
+      console.error("Failed to create location", error);
+      // Future: Trigger a global Toast notification here
+    }
   };
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[50vh] text-white/50">
-        <span className="animate-pulse">
-          {t("common.loading", "Loading data...")}
-        </span>
+        <Loader2 className="animate-spin mr-2" size={24} />
+        <span>{t("common.loading", "Loading data...")}</span>
       </div>
     );
   }
@@ -86,6 +94,7 @@ export const LocationsManager = () => {
           onClick={() => setIsAddingMode(!isAddingMode)}
           variant={isAddingMode ? "secondary" : "primary"}
           className="flex items-center gap-2"
+          disabled={createLocationMutation.isPending}
         >
           {isAddingMode ? <X size={18} /> : <Plus size={18} />}
           {isAddingMode
@@ -133,10 +142,15 @@ export const LocationsManager = () => {
                 </div>
               </div>
 
-              <div>
+              <div className="relative">
                 <h3 className="text-white/80 font-medium mb-4 text-lg">
                   {t("logistics.search_google", "2. Search Google Maps")}
                 </h3>
+                {createLocationMutation.isPending && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-lg">
+                    <Loader2 className="animate-spin text-white" size={32} />
+                  </div>
+                )}
                 <LocationAutocomplete
                   onLocationSelect={handleLocationSelect}
                   placeholder={t(
@@ -150,7 +164,7 @@ export const LocationsManager = () => {
         )}
       </AnimatePresence>
 
-      {/* Locations Grid - Adjusted for full screen width (xl:grid-cols-4) */}
+      {/* Locations Grid */}
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         initial="hidden"
@@ -160,7 +174,7 @@ export const LocationsManager = () => {
           visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
         }}
       >
-        {locations?.map((location) => {
+        {locations.map((location) => {
           const CategoryIcon =
             CATEGORY_CONFIG[location.category]?.icon || MapPin;
 
@@ -209,7 +223,8 @@ export const LocationsManager = () => {
           );
         })}
 
-        {locations?.length === 0 && !isAddingMode && (
+        {/* Empty State */}
+        {locations.length === 0 && !isAddingMode && (
           <div className="col-span-full py-32 text-center text-white/40">
             <Globe className="mx-auto mb-6 opacity-30" size={64} />
             <p className="text-xl font-light">

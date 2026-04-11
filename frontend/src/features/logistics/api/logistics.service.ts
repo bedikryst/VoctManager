@@ -10,7 +10,7 @@ const LOGISTICS_BASE_URL = "/logistics/locations/";
 export const logisticsService = {
   getLocations: async (): Promise<LocationDto[]> => {
     const response = await api.get(LOGISTICS_BASE_URL);
-    return response.data;
+    return response.data.results ?? response.data;
   },
 
   createLocation: async (data: LocationCreateDto): Promise<LocationDto> => {

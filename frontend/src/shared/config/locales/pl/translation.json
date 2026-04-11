@@ -205,10 +205,10 @@
       "section_basic": "Dane Podstawowe",
       "section_voice": "Profil Wokalny",
       "sight_reading": "Czytanie a vista (Ocena)",
-      "stars_count_one": "",
-      "stars_count_few": "",
-      "stars_count_many": "",
-      "stars_count_other": "",
+      "stars_count_one": "{{count}} gwiazdka",
+      "stars_count_few": "{{count}} gwiazdki",
+      "stars_count_many": "{{count}} gwiazdek",
+      "stars_count_other": "{{count}} gwiazdek",
       "title_edit": "Edycja Profilu",
       "title_new": "Nowy Artysta",
       "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
@@ -303,6 +303,7 @@
       "save": "Zapisz",
       "select": "Wybierz"
     },
+    "cancel": "Anuluj",
     "currency": "PLN",
     "errors": {
       "database_error": "Wystąpił problem z połączeniem z bazą danych.",
@@ -312,6 +313,7 @@
       "server_error": "Błąd serwera",
       "server_problem": "Wystąpił problem z serwerem."
     },
+    "loading": "Wczytywanie...",
     "locale": "pl-PL",
     "people_short": "os.",
     "state": {
@@ -319,7 +321,7 @@
       "saved": "Zapisano"
     },
     "timezone": {
-      "local": ""
+      "local": "Czas Lokalny"
     }
   },
   "contracts": {
@@ -365,10 +367,10 @@
     "toast": {
       "bulk_applying": "Aplikowanie masowych stawek...",
       "bulk_error": "Błąd serwera podczas operacji masowej.",
-      "bulk_success_one": "",
-      "bulk_success_few": "",
-      "bulk_success_many": "",
-      "bulk_success_other": "",
+      "bulk_success_one": "Zaktualizowano 1 umowę.",
+      "bulk_success_few": "Zaktualizowano {{count}} umowy.",
+      "bulk_success_many": "Zaktualizowano {{count}} umów.",
+      "bulk_success_other": "Zaktualizowano {{count}} umów.",
       "pdf_error": "Błąd generowania: {{message}}",
       "pdf_generating": "Generowanie PDF dla {{name}}...",
       "pdf_success": "Dokument został pomyślnie wygenerowany.",
@@ -434,10 +436,10 @@
   },
   "dashboard": {
     "admin": {
-      "absences_one": "",
-      "absences_few": "",
-      "absences_many": "",
-      "absences_other": "",
+      "absences_one": "{{count}} zgłoszona nieobecność",
+      "absences_few": "{{count}} zgłoszone nieobecności",
+      "absences_many": "{{count}} zgłoszonych nieobecności",
+      "absences_other": "{{count}} zgłoszonych nieobecności",
       "btn_new_project": "Nowy projekt",
       "kpi_telemetry": "Telemetria Bazy",
       "modules": {
@@ -479,13 +481,36 @@
       "personal_modules": "Moduły Osobiste"
     },
     "layout": {
+      "groups": {
+        "artist_zone": "Strefa Artysty",
+        "data_admin": "Bazy Danych",
+        "logistics": "Logistyka",
+        "my_zone": "Moja Strefa",
+        "overview": "Przegląd",
+        "production": "Produkcja"
+      },
+      "links": {
+        "accommodation": "Zakwaterowanie",
+        "admin_dashboard": "Pulpit Główny",
+        "archive": "Archiwum Nut",
+        "artist_dashboard": "Pulpit Artysty",
+        "artists": "Baza Artystów",
+        "attendance": "Próby i Obecności",
+        "contracts": "Umowy i Rozliczenia",
+        "crew": "Ekipa Techniczna",
+        "locations": "Lokalizacje",
+        "materials": "Materiały Ćwiczeniowe",
+        "projects": "Zarządzanie Projektami",
+        "resources": "Zasoby i Wiedza",
+        "schedule": "Mój Kalendarz"
+      },
       "logout": "Wyloguj się",
       "mobile_nav_title": "Nawigacja",
       "profile_settings": "Ustawienia profilu",
       "roles": {
         "admin": "Administrator",
         "artist": "Artysta",
-        "crew": "",
+        "crew": "Obsługa Techniczna",
         "management": "Zarząd"
       }
     },
@@ -494,6 +519,19 @@
       "loading_telemetry": "Wczytywanie telemetrii...",
       "syncing": "Synchronizacja pulpitu..."
     }
+  },
+  "logistics": {
+    "add_location": "Dodaj lokalizację",
+    "autocomplete": {
+      "placeholder": "Zacznij wpisywać nazwę miejsca..."
+    },
+    "empty_state": "Brak lokalizacji w bazie.",
+    "empty_state_sub": "Wyszukaj powyżej, aby dodać pierwsze miejsce z Google Maps.",
+    "locations": {
+      "title": "Baza Lokalizacji"
+    },
+    "search_google": "Szukaj w Google Maps...",
+    "select_category": "Wybierz kategorię"
   },
   "materials": {
     "dashboard": {
@@ -649,10 +687,10 @@
         "submit": "Przypisz"
       },
       "list": {
-        "assigned_count_one": "",
-        "assigned_count_few": "",
-        "assigned_count_many": "",
-        "assigned_count_other": "",
+        "assigned_count_one": "{{count}} osoba przypisana",
+        "assigned_count_few": "{{count}} osoby przypisane",
+        "assigned_count_many": "{{count}} osób przypisanych",
+        "assigned_count_other": "{{count}} osób przypisanych",
         "remove_title": "Usuń z ekipy technicznej",
         "title": "Skład Ekipy (Crew)"
       },
@@ -710,7 +748,7 @@
         "dress_code_male": "Dress Code: Panowie",
         "location": "Lokalizacja / Miejsce",
         "spotify": "Playlista (Spotify)",
-        "timezone": "",
+        "timezone": "Strefa czasowa",
         "title": "Tytuł Projektu *"
       },
       "header": {
@@ -827,17 +865,17 @@
         "remove_encore": "Usuń jako BIS",
         "remove_from_program": "Usuń z programu"
       },
-      "and_more_one": "",
-      "and_more_few": "",
-      "and_more_many": "",
-      "and_more_other": "",
+      "and_more_one": "i jeszcze 1...",
+      "and_more_few": "i jeszcze {{count}}...",
+      "and_more_many": "i jeszcze {{count}}...",
+      "and_more_other": "i jeszcze {{count}}...",
       "aria_label": "Zarządzaj programem koncertu",
       "badges": {
         "encore": "BIS",
-        "tracks_count_one": "",
-        "tracks_count_few": "",
-        "tracks_count_many": "",
-        "tracks_count_other": ""
+        "tracks_count_one": "{{count}} ścieżka",
+        "tracks_count_few": "{{count}} ścieżki",
+        "tracks_count_many": "{{count}} ścieżek",
+        "tracks_count_other": "{{count}} ścieżek"
       },
       "duration_unknown": "Czas nieznany",
       "empty": {
@@ -898,7 +936,7 @@
         "location_placeholder": "np. Sala 102, Akademia",
         "mandatory": "Obecność obowiązkowa dla wezwanych",
         "submit": "Zapisz w kalendarzu",
-        "timezone": "",
+        "timezone": "Strefa czasowa",
         "title": "Zaplanuj nową próbę",
         "title_edit": "Edytuj próbę",
         "type_custom": "Wybrane osoby",
@@ -919,10 +957,10 @@
       "sectional": "SEKCYJNA",
       "status": {
         "finished": "Zakończona",
-        "invited_one": "",
-        "invited_few": "",
-        "invited_many": "",
-        "invited_other": "",
+        "invited_one": "1 zaproszony",
+        "invited_few": "{{count}} zaproszonych",
+        "invited_many": "{{count}} zaproszonych",
+        "invited_other": "{{count}} zaproszonych",
         "optional": "Opcjonalna",
         "tutti": "TUTTI"
       },
@@ -968,10 +1006,10 @@
   },
   "rehearsals": {
     "dashboard": {
-      "bulk_fill_one": "",
-      "bulk_fill_few": "",
-      "bulk_fill_many": "",
-      "bulk_fill_other": "",
+      "bulk_fill_one": "Uzupełnij {{count}} brak",
+      "bulk_fill_few": "Uzupełnij {{count}} braki",
+      "bulk_fill_many": "Uzupełnij {{count}} braków",
+      "bulk_fill_other": "Uzupełnij {{count}} braków",
       "general_work": "Praca Bieżąca",
       "no_location": "Brak lok.",
       "no_projects": "Brak projektów w tej zakładce.",

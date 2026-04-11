@@ -187,7 +187,7 @@ export default function ProgramWidget({
         </div>
       ) : (
         <p className="text-xs text-stone-500 italic flex-1 flex items-center justify-center py-4">
-          {t("projects.program.empty", "Setlista jest pusta.")}
+          {t("projects.program.empty.setlist_title", "Setlista jest pusta.")}
         </p>
       )}
     </GlassCard>

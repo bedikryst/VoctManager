@@ -205,9 +205,9 @@
       "section_basic": "Informations de base",
       "section_voice": "Profil vocal",
       "sight_reading": "Déchiffrage (évaluation)",
-      "stars_count_one": "",
-      "stars_count_many": "",
-      "stars_count_other": "",
+      "stars_count_one": "{{count}} étoile",
+      "stars_count_many": "{{count}} étoiles",
+      "stars_count_other": "{{count}} étoiles",
       "title_edit": "Modification du profil",
       "title_new": "Nouvel artiste",
       "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera.",
@@ -302,6 +302,7 @@
       "save": "Enregistrer",
       "select": "Sélectionner"
     },
+    "cancel": "Annuler",
     "currency": "PLN",
     "errors": {
       "database_error": "Un problème de connexion à la base de données est survenu.",
@@ -311,6 +312,7 @@
       "server_error": "Erreur serveur",
       "server_problem": "Un problème est survenu avec le serveur."
     },
+    "loading": "Chargement...",
     "locale": "fr-FR",
     "people_short": "pers.",
     "state": {
@@ -318,7 +320,7 @@
       "saved": "Enregistré"
     },
     "timezone": {
-      "local": ""
+      "local": "Heure locale"
     }
   },
   "contracts": {
@@ -364,9 +366,9 @@
     "toast": {
       "bulk_applying": "Application des tarifs groupés...",
       "bulk_error": "Erreur serveur pendant l'opération groupée.",
-      "bulk_success_one": "",
-      "bulk_success_many": "",
-      "bulk_success_other": "",
+      "bulk_success_one": "1 contrat mis à jour.",
+      "bulk_success_many": "{{count}} contrats mis à jour.",
+      "bulk_success_other": "{{count}} contrats mis à jour.",
       "pdf_error": "Erreur de génération : {{message}}",
       "pdf_generating": "Génération du PDF pour {{name}}...",
       "pdf_success": "Document généré avec succès.",
@@ -432,9 +434,9 @@
   },
   "dashboard": {
     "admin": {
-      "absences_one": "",
-      "absences_many": "",
-      "absences_other": "",
+      "absences_one": "{{count}} absence signalée",
+      "absences_many": "{{count}} absences signalées",
+      "absences_other": "{{count}} absences signalées",
       "btn_new_project": "Nouveau projet",
       "kpi_telemetry": "Télémétrie de la base",
       "modules": {
@@ -476,13 +478,36 @@
       "personal_modules": "Modules personnels"
     },
     "layout": {
+      "groups": {
+        "artist_zone": "Zone Artiste",
+        "data_admin": "Bases de Données",
+        "logistics": "Logistique",
+        "my_zone": "Ma Zone",
+        "overview": "Aperçu",
+        "production": "Production"
+      },
+      "links": {
+        "accommodation": "Hébergement",
+        "admin_dashboard": "Tableau de bord Admin",
+        "archive": "Archives Musicales",
+        "artist_dashboard": "Tableau de bord Artiste",
+        "artists": "Base des Artistes",
+        "attendance": "Répétitions et Présences",
+        "contracts": "Contrats et Facturation",
+        "crew": "Équipe Technique",
+        "locations": "Lieux",
+        "materials": "Matériel d'étude",
+        "projects": "Gestion des Projets",
+        "resources": "Ressources",
+        "schedule": "Mon Calendrier"
+      },
       "logout": "Se déconnecter",
       "mobile_nav_title": "Navigation",
       "profile_settings": "Paramètres du profil",
       "roles": {
         "admin": "Administrateur",
         "artist": "Artiste",
-        "crew": "",
+        "crew": "Équipe technique",
         "management": "Direction"
       }
     },
@@ -491,6 +516,19 @@
       "loading_telemetry": "Chargement de la télémétrie...",
       "syncing": "Synchronisation du tableau de bord..."
     }
+  },
+  "logistics": {
+    "add_location": "Ajouter un lieu",
+    "autocomplete": {
+      "placeholder": "Rechercher une adresse, un hôtel..."
+    },
+    "empty_state": "Aucun lieu dans la base.",
+    "empty_state_sub": "Recherchez ci-dessus pour ajouter votre premier lieu depuis Google Maps.",
+    "locations": {
+      "title": "Base de Lieux"
+    },
+    "search_google": "Rechercher sur Google Maps...",
+    "select_category": "Sélectionnez une catégorie"
   },
   "materials": {
     "dashboard": {
@@ -646,9 +684,9 @@
         "submit": "Assigner"
       },
       "list": {
-        "assigned_count_one": "",
-        "assigned_count_many": "",
-        "assigned_count_other": "",
+        "assigned_count_one": "{{count}} personne assignée",
+        "assigned_count_many": "{{count}} personnes assignées",
+        "assigned_count_other": "{{count}} personnes assignées",
         "remove_title": "Retirer de l'équipe technique",
         "title": "Membres de l'équipe"
       },
@@ -706,7 +744,7 @@
         "dress_code_male": "Dress code : hommes",
         "location": "Lieu / salle",
         "spotify": "Playlist (Spotify)",
-        "timezone": "",
+        "timezone": "Fuseau horaire",
         "title": "Titre du projet *"
       },
       "header": {
@@ -823,15 +861,15 @@
         "remove_encore": "Retirer comme bis",
         "remove_from_program": "Retirer du programme"
       },
-      "and_more_one": "",
-      "and_more_many": "",
-      "and_more_other": "",
+      "and_more_one": "et 1 de plus...",
+      "and_more_many": "et {{count}} de plus...",
+      "and_more_other": "et {{count}} de plus...",
       "aria_label": "Gérer le programme du concert",
       "badges": {
         "encore": "BIS",
-        "tracks_count_one": "",
-        "tracks_count_many": "",
-        "tracks_count_other": ""
+        "tracks_count_one": "{{count}} piste",
+        "tracks_count_many": "{{count}} pistes",
+        "tracks_count_other": "{{count}} pistes"
       },
       "duration_unknown": "Durée inconnue",
       "empty": {
@@ -892,7 +930,7 @@
         "location_placeholder": "ex. salle 102, académie",
         "mandatory": "Présence obligatoire pour les invités",
         "submit": "Enregistrer dans le calendrier",
-        "timezone": "",
+        "timezone": "Fuseau horaire",
         "title": "Planifier une nouvelle répétition",
         "title_edit": "Modifier la répétition",
         "type_custom": "Personnes sélectionnées",
@@ -913,9 +951,9 @@
       "sectional": "PUPITRE",
       "status": {
         "finished": "Terminée",
-        "invited_one": "",
-        "invited_many": "",
-        "invited_other": "",
+        "invited_one": "1 invité",
+        "invited_many": "{{count}} invités",
+        "invited_other": "{{count}} invités",
         "optional": "Optionnel",
         "tutti": "TUTTI"
       },
@@ -961,9 +999,9 @@
   },
   "rehearsals": {
     "dashboard": {
-      "bulk_fill_one": "",
-      "bulk_fill_many": "",
-      "bulk_fill_other": "",
+      "bulk_fill_one": "Remplir {{count}} manquant",
+      "bulk_fill_many": "Remplir {{count}} manquants",
+      "bulk_fill_other": "Remplir {{count}} manquants",
       "general_work": "Travail général",
       "no_location": "Sans lieu",
       "no_projects": "Aucun projet dans cet onglet.",

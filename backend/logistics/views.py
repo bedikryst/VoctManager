@@ -19,8 +19,13 @@ class LocationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        # Admin can potentially see all, but for general logistics we filter active
-        return Location.objects.filter(is_active=True)
+        """
+        Returns active locations for lists to avoid cluttering UI,
+        but allows retrieving inactive locations by ID for historical continuity.
+        """
+        if self.action == 'list':
+            return Location.objects.filter(is_active=True)
+        return Location.objects.all()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -54,20 +59,9 @@ class LocationViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """
-        Soft delete implementation. Does not remove record from DB.
+        Delegates soft deletion to the Service Layer.
         """
         instance = self.get_object()
-        
-        # We reuse update to set is_active to False
-        dto = LocationUpdateDTO(
-            name=instance.name,
-            category=instance.category,
-            formatted_address=instance.formatted_address,
-            latitude=instance.latitude,
-            longitude=instance.longitude,
-            internal_notes=instance.internal_notes,
-            is_active=False
-        )
-        LogisticsService.update_location(instance.id, dto)
+        LogisticsService.deactivate_location(instance.id)
         
         return Response(status=status.HTTP_204_NO_CONTENT)

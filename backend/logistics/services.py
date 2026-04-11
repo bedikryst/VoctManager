@@ -1,5 +1,7 @@
 import logging
 from uuid import UUID
+from decimal import Decimal
+from typing import Optional
 from django.db import transaction
 from .models import Location
 from .dtos import LocationCreateDTO, LocationUpdateDTO
@@ -51,10 +53,13 @@ class LogisticsService:
         """
         location = Location.objects.get(id=location_id)
         
-        # Check if coordinates changed and require a new timezone lookup
+        # Explicit Decimal casting check to prevent false positives from DB vs DTO formats
+        def _to_decimal(val: Optional[Decimal]) -> Optional[Decimal]:
+            return Decimal(str(val)) if val is not None else None
+
         coordinates_changed = (
-            location.latitude != dto.latitude or 
-            location.longitude != dto.longitude
+            _to_decimal(location.latitude) != _to_decimal(dto.latitude) or 
+            _to_decimal(location.longitude) != _to_decimal(dto.longitude)
         )
 
         location.name = dto.name
@@ -72,4 +77,19 @@ class LogisticsService:
                 logger.info(f"Updated timezone to '{fetched_tz}' for location '{location.name}'")
 
         location.save()
+        return location
+
+    @staticmethod
+    @transaction.atomic
+    def deactivate_location(location_id: UUID) -> Location:
+        """
+        Soft deletes a location so it cannot be used for new projects,
+        but preserves the record for historical references.
+        """
+        location = Location.objects.get(id=location_id)
+        location.is_active = False
+        # Optimize DB write by only updating the required fields
+        location.save(update_fields=['is_active', 'updated_at'])
+        
+        logger.info(f"Deactivated location '{location.name}' (ID: {location.id})")
         return location

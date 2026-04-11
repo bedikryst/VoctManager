@@ -10,6 +10,7 @@ Views MUST delegate all business logic to these stateless classes.
 """
 import logging
 import unicodedata
+from uuid import UUID
 from typing import Optional, List, Dict, Any
 from django.conf import settings
 from django.utils import timezone
@@ -17,6 +18,7 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from core.exceptions import EmailAlreadyInUseException
 from notifications.email_service import EmailType
+
 
 from core.models import UserProfile
 from notifications.tasks import send_notification_task, send_bulk_notifications_task
@@ -38,13 +40,29 @@ from .models import (
     Artist, Project, Participation, ProgramItem, 
     ProjectPieceCasting, Rehearsal, Attendance, CrewAssignment
 )
-from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectUpdateDTO, ProjectCreateDTO
+from logistics.models import Location
+from .dtos import RehearsalCreateDTO, RehearsalUpdateDTO, ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectUpdateDTO, ProjectCreateDTO
 from .exceptions import ArtistProvisioningException, AttendanceValidationException, ParticipationException
+from typing import Tuple
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-
+def resolve_location_and_timezone(location_id: Optional[UUID], fallback_timezone: str) -> Tuple[Optional[Location], str]:
+    """
+    Enforces Single Source of Truth for timezones based on the Logistics module.
+    """
+    if not location_id:
+        return None, fallback_timezone
+        
+    try:
+        location = Location.objects.get(id=location_id)
+        # Magic happens here: overriding the timezone with the location's official timezone
+        return location, location.timezone
+    except Location.DoesNotExist:
+        logger.warning(f"Location with ID {location_id} not found. Using fallback timezone.")
+        return None, fallback_timezone
+    
 class ArtistHRService:
     """Service handling HR operations, onboarding, and artist lifecycles."""
 
@@ -125,7 +143,18 @@ class ProjectManagementService:
     @staticmethod
     def create_project_with_creator(user: User, dto: ProjectCreateDTO) -> Project:
         with transaction.atomic():
-            project = Project.objects.create(**dto.model_dump())
+            # 1. Extract and map data, explicitly excluding location_id from the dump
+            create_data = dto.model_dump(exclude={'location_id'})
+            
+            # 2. Resolve Domain Logistics
+            location, resolved_timezone = resolve_location_and_timezone(dto.location_id, dto.timezone)
+            
+            # 3. Inject resolved data
+            create_data['location'] = location
+            create_data['timezone'] = resolved_timezone
+
+            project = Project.objects.create(**create_data)
+
             if hasattr(user, 'artist_profile'):
                 Participation.objects.create(
                     artist=user.artist_profile, 
@@ -133,21 +162,34 @@ class ProjectManagementService:
                     status=Participation.Status.CONFIRMED, 
                     fee=0
                 )
-            logger.info(f"Project '{project.title}' created by {user.email}")
+            logger.info(f"Project '{project.title}' created by {user.email} with timezone {resolved_timezone}")
             return project
-
+            
     @staticmethod
     def update_project(project: Project, dto: ProjectUpdateDTO) -> Project:
         FIELD_NAMES = {
-            "title": "Title", "date_time": "Date", "location": "Location",
+            "title": "Title", "date_time": "Date", "location_id": "Location",
             "call_time": "Call-time", "status": "Status", 
             "dress_code_male": "Dress Code", "dress_code_female": "Dress Code"
         }
         changes = []
 
-        update_data = dto.model_dump(exclude_unset=True)
+        # Exclude location_id to handle it manually via the helper
+        update_data = dto.model_dump(exclude={'location_id'}, exclude_unset=True)
 
         with transaction.atomic():
+            # Resolve location and timezone if location_id was provided in the update DTO
+            if dto.location_id is not None:
+                location, resolved_timezone = resolve_location_and_timezone(
+                    dto.location_id, 
+                    dto.timezone or project.timezone
+                )
+                update_data['location'] = location
+                update_data['timezone'] = resolved_timezone
+                
+                if project.location_id != location.id if location else None:
+                    changes.append("Location")
+
             for attr, value in update_data.items():
                 old_value = getattr(project, attr)
                 if old_value != value:
@@ -260,10 +302,17 @@ class ProjectManagementService:
 
 
 class RehearsalOperationsService:
-    @staticmethod
-    def schedule_rehearsal(validated_data: Dict[str, Any], invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
+    def schedule_rehearsal(dto: RehearsalCreateDTO, invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
+        
         with transaction.atomic():
-            rehearsal = Rehearsal.objects.create(**validated_data)
+            create_data = dto.model_dump(exclude={'location_id'})
+            location, resolved_timezone = resolve_location_and_timezone(dto.location_id, dto.timezone)
+            
+            create_data['location'] = location
+            create_data['timezone'] = resolved_timezone
+
+            rehearsal = Rehearsal.objects.create(**create_data)
+            
             if invited_participations:
                 rehearsal.invited_participations.set(invited_participations)
 
@@ -286,15 +335,27 @@ class RehearsalOperationsService:
         return rehearsal
 
     @staticmethod
-    def update_rehearsal(rehearsal: Rehearsal, validated_data: Dict[str, Any], invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
+    def update_rehearsal(rehearsal: Rehearsal, dto: RehearsalUpdateDTO, invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
         FIELD_NAMES = {
-            "date_time": "Date / Time", "location": "Location",
+            "date_time": "Date / Time", "location_id": "Location",
             "focus": "Focus / Plan", "is_mandatory": "Mandatory Status"
         }
         changes = []
+        update_data = dto.model_dump(exclude={'location_id'}, exclude_unset=True)
         
         with transaction.atomic():
-            for attr, value in validated_data.items():
+            if dto.location_id is not None:
+                location, resolved_timezone = resolve_location_and_timezone(
+                    dto.location_id, 
+                    dto.timezone or rehearsal.timezone
+                )
+                update_data['location'] = location
+                update_data['timezone'] = resolved_timezone
+                
+                if rehearsal.location_id != location.id if location else None:
+                    changes.append("Location")
+
+            for attr, value in update_data.items():
                 old_value = getattr(rehearsal, attr)
                 if old_value != value:
                     changes.append(FIELD_NAMES.get(attr, attr))

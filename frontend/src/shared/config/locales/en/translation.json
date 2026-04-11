@@ -205,8 +205,8 @@
       "section_basic": "Basic Information",
       "section_voice": "Vocal Profile",
       "sight_reading": "Sight-reading (Score)",
-      "stars_count_one": "{{count}} Gwiazdki",
-      "stars_count_other": "{{count}} Gwiazdki",
+      "stars_count_one": "{{count}} star",
+      "stars_count_other": "{{count}} stars",
       "title_edit": "Edit Profile",
       "title_new": "New Artist",
       "unsaved_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
@@ -301,6 +301,7 @@
       "save": "Save",
       "select": "Select"
     },
+    "cancel": "Cancel",
     "currency": "PLN",
     "errors": {
       "database_error": "A database connection problem occurred.",
@@ -310,6 +311,7 @@
       "server_error": "Server error",
       "server_problem": "A problem occurred with the server."
     },
+    "loading": "Loading data...",
     "locale": "en-US",
     "people_short": "ppl.",
     "state": {
@@ -363,8 +365,8 @@
     "toast": {
       "bulk_applying": "Applying bulk rates...",
       "bulk_error": "Server error during bulk operation.",
-      "bulk_success_one": "Pomyślnie zaktualizowano stawki dla {{count}} osób.",
-      "bulk_success_other": "Pomyślnie zaktualizowano stawki dla {{count}} osób.",
+      "bulk_success_one": "1 contract updated.",
+      "bulk_success_other": "{{count}} contracts updated.",
       "pdf_error": "Generation error: {{message}}",
       "pdf_generating": "Generating PDF for {{name}}...",
       "pdf_success": "Document generated successfully.",
@@ -430,8 +432,8 @@
   },
   "dashboard": {
     "admin": {
-      "absences_one": "Braki: {{count}}",
-      "absences_other": "Braki: {{count}}",
+      "absences_one": "{{count}} absence reported",
+      "absences_other": "{{count}} absences reported",
       "btn_new_project": "New Project",
       "kpi_telemetry": "Database Telemetry",
       "modules": {
@@ -473,6 +475,29 @@
       "personal_modules": "Personal Modules"
     },
     "layout": {
+      "groups": {
+        "artist_zone": "Artist Zone",
+        "data_admin": "Databases",
+        "logistics": "Logistics",
+        "my_zone": "My Zone",
+        "overview": "Overview",
+        "production": "Production"
+      },
+      "links": {
+        "accommodation": "Accommodation",
+        "admin_dashboard": "Admin Dashboard",
+        "archive": "Music Archive",
+        "artist_dashboard": "Artist Dashboard",
+        "artists": "Artists Roster",
+        "attendance": "Rehearsals & Attendance",
+        "contracts": "Contracts & Payroll",
+        "crew": "Technical Crew",
+        "locations": "Locations",
+        "materials": "Practice Materials",
+        "projects": "Project Management",
+        "resources": "Knowledge Base",
+        "schedule": "My Schedule"
+      },
       "logout": "Log Out",
       "mobile_nav_title": "Navigation",
       "profile_settings": "Profile Settings",
@@ -488,6 +513,19 @@
       "loading_telemetry": "Loading telemetry...",
       "syncing": "Syncing dashboard..."
     }
+  },
+  "logistics": {
+    "add_location": "Add Location",
+    "autocomplete": {
+      "placeholder": "Type a venue, hotel, or address..."
+    },
+    "empty_state": "Your global locations database is empty.",
+    "empty_state_sub": "Add your first concert hall or hotel to begin.",
+    "locations": {
+      "title": "Global Locations"
+    },
+    "search_google": "2. Search Google Maps",
+    "select_category": "1. Select Category"
   },
   "materials": {
     "dashboard": {
@@ -643,8 +681,8 @@
         "submit": "Assign"
       },
       "list": {
-        "assigned_count_one": "Przypisano: {{count}}",
-        "assigned_count_other": "Przypisano: {{count}}",
+        "assigned_count_one": "{{count}} assigned",
+        "assigned_count_other": "{{count}} assigned",
         "remove_title": "Remove from technical crew",
         "title": "Crew Members"
       },
@@ -819,13 +857,13 @@
         "remove_encore": "Remove as Encore",
         "remove_from_program": "Remove from program"
       },
-      "and_more_one": "...i {{count}} więcej",
-      "and_more_other": "...i {{count}} więcej",
+      "and_more_one": "and 1 more...",
+      "and_more_other": "and {{count}} more...",
       "aria_label": "Manage concert program",
       "badges": {
         "encore": "ENCORE",
-        "tracks_count_one": "Utworów: {{count}}",
-        "tracks_count_other": "Utworów: {{count}}"
+        "tracks_count_one": "{{count}} track",
+        "tracks_count_other": "{{count}} tracks"
       },
       "duration_unknown": "Duration unknown",
       "empty": {
@@ -907,8 +945,8 @@
       "sectional": "SECTIONAL",
       "status": {
         "finished": "Finished",
-        "invited_one": "Wezwanych: {{count}}",
-        "invited_other": "Wezwanych: {{count}}",
+        "invited_one": "1 invited",
+        "invited_other": "{{count}} invited",
         "optional": "Optional",
         "tutti": "TUTTI"
       },
@@ -954,8 +992,8 @@
   },
   "rehearsals": {
     "dashboard": {
-      "bulk_fill_one": "Uzupełnij luki ({{count}}) jako \"Obecny\"",
-      "bulk_fill_other": "Uzupełnij luki ({{count}}) jako \"Obecny\"",
+      "bulk_fill_one": "Fill 1 missing as 'Present'",
+      "bulk_fill_other": "Fill {{count}} missing as 'Present'",
       "general_work": "General Work",
       "no_location": "No loc.",
       "no_projects": "No projects in this tab.",

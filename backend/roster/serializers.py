@@ -91,6 +91,13 @@ class ParticipationDetailedSerializer(ParticipationBasicSerializer):
 
 # --- 3. PROJECT & REHEARSAL SERIALIZERS ---
 
+class LocationSnippetSerializer(serializers.Serializer):
+    """Minimal representation of Location for read operations."""
+    id = serializers.UUIDField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    category = serializers.CharField(read_only=True)
+    timezone = serializers.CharField(read_only=True)
+
 class ProjectSerializer(serializers.ModelSerializer):
     """
     Serializes the central Project entity.
@@ -98,7 +105,9 @@ class ProjectSerializer(serializers.ModelSerializer):
     """
     cast = serializers.SerializerMethodField()
     program = serializers.SerializerMethodField()
-
+    location = LocationSnippetSerializer(read_only=True)
+    location_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    
     class Meta:
         model = Project
         fields = '__all__'
@@ -150,6 +159,8 @@ class RehearsalSerializer(serializers.ModelSerializer):
     via the QuerySet to prevent N+1 serialization bottlenecks.
     """
     absent_count = serializers.IntegerField(read_only=True, default=0)
+    location = LocationSnippetSerializer(read_only=True)
+    location_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Rehearsal

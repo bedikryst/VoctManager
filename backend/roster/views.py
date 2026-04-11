@@ -25,7 +25,11 @@ from core.permissions import IsManager, IsManagerOrReadOnly, IsOwnerOrManager
 from .infrastructure.document_generator import DocumentGenerator
 
 # Pydantic DTOs & Services
-from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectCreateDTO, ProjectUpdateDTO
+from .dtos import (
+    ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, 
+    ProjectCreateDTO, ProjectUpdateDTO, 
+    RehearsalCreateDTO, RehearsalUpdateDTO
+)
 from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService, CastingAndCrewService
 
 # Models & Exceptions
@@ -265,23 +269,45 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         ).distinct()
 
     def create(self, request, *args, **kwargs) -> Response:
+        # 1. Validate Domain Data via Pydantic
+        try:
+            dto = RehearsalCreateDTO(**request.data)
+        except ValidationError as e:
+            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Validate Many-To-Many DB Relations via DRF
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        invited = serializer.validated_data.pop('invited_participations', None)
-        rehearsal = RehearsalOperationsService.schedule_rehearsal(serializer.validated_data, invited_participations=invited)
+        invited = serializer.validated_data.get('invited_participations', None)
+
+        # 3. Delegate to Strict Service Layer
+        rehearsal = RehearsalOperationsService.schedule_rehearsal(dto=dto, invited_participations=invited)
         return Response(self.get_serializer(rehearsal).data, status=status.HTTP_201_CREATED)
 
-    def perform_update(self, serializer) -> None:
-        invited = serializer.validated_data.pop('invited_participations', None)
-        RehearsalOperationsService.update_rehearsal(
-            rehearsal=serializer.instance, 
-            validated_data=serializer.validated_data, 
+    def update(self, request, *args, **kwargs) -> Response:
+        rehearsal = self.get_object()
+        
+        try:
+            dto = RehearsalUpdateDTO(**request.data)
+        except ValidationError as e:
+            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            
+        serializer = self.get_serializer(rehearsal, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        invited = serializer.validated_data.get('invited_participations', None)
+        
+        updated_rehearsal = RehearsalOperationsService.update_rehearsal(
+            rehearsal=rehearsal, 
+            dto=dto, 
             invited_participations=invited
         )
+        return Response(self.get_serializer(updated_rehearsal).data, status=status.HTTP_200_OK)
+
+    def partial_update(self, request, *args, **kwargs) -> Response:
+        return self.update(request, *args, **kwargs)
 
     def perform_destroy(self, instance) -> None:
         RehearsalOperationsService.delete_rehearsal(instance)
-
 
 class ProgramItemViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramItemSerializer

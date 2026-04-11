@@ -90,7 +90,14 @@ class Project(EnterpriseBaseModel):
     )    
     dress_code_male = models.CharField(max_length=100, blank=True, verbose_name=_("Dress Code (Male)"))
     dress_code_female = models.CharField(max_length=100, blank=True, verbose_name=_("Dress Code (Female)"))
-    location = models.CharField(max_length=200, blank=True, verbose_name=_("Location"))
+    location = models.ForeignKey(
+        'logistics.Location',
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name='projects',
+        help_text=_("Primary location for the project. Dictates the default timezone.")
+    )
     description = models.TextField(blank=True, verbose_name=_("Description"))
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name=_("Status"))
     run_sheet = models.JSONField(default=list, blank=True, verbose_name=_("Run-sheet"))
@@ -178,7 +185,14 @@ class Rehearsal(EnterpriseBaseModel):
         default=DEFAULT_EVENT_TIMEZONE,
         help_text=_("Local timezone for this specific rehearsal. Essential for tours crossing multiple timezones.")
     )
-    location = models.CharField(max_length=200, verbose_name=_("Rehearsal Venue"))
+    location = models.ForeignKey(
+        'logistics.Location',
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name='rehearsals',
+        help_text=_("Specific location for this rehearsal. Overrides project default if needed.")
+    )
     focus = models.CharField(max_length=200, blank=True, verbose_name=_("Rehearsal Focus"))
     is_mandatory = models.BooleanField(default=True, verbose_name=_("Is Mandatory"))
     invited_participations = models.ManyToManyField(
