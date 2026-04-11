@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Toaster } from "sonner";
+import { APIProvider } from "@vis.gl/react-google-maps";
 
 import GlobalNavbar from "../widgets/layout/public/GlobalNavbar";
 import OverlayMenu from "../widgets/layout/public/OverlayMenu";
@@ -50,7 +51,11 @@ export default function App(): React.JSX.Element {
   const shouldShowGlobalComponents: boolean = !isPanelRoute && !isAuthRoute;
 
   return (
-    <>
+    <APIProvider
+      apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
+      version="weekly"
+      libraries={["places", "geocoding"]}
+    >
       {shouldShowGlobalComponents && <Preloader />}
       {shouldShowGlobalComponents && (
         <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
@@ -119,6 +124,6 @@ export default function App(): React.JSX.Element {
       {shouldShowGlobalComponents && <CustomCursor />}
 
       <Toaster position="top-right" richColors closeButton duration={4000} />
-    </>
+    </APIProvider>
   );
 }

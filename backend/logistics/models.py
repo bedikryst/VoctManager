@@ -41,7 +41,6 @@ class Location(models.Model):
         max_length=255, 
         null=True, 
         blank=True, 
-        unique=True,
         help_text=_("Unique identifier from Google Places API. Null for private/custom locations.")
     )
     formatted_address = models.TextField(
@@ -88,6 +87,13 @@ class Location(models.Model):
         ordering = ["name"]
         indexes = [
             models.Index(fields=["category", "is_active"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['google_place_id'],
+                condition=models.Q(is_active=True) & models.Q(google_place_id__isnull=False),
+                name='unique_active_google_place_id'
+            )
         ]
 
     def __str__(self) -> str:

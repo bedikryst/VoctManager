@@ -14,13 +14,13 @@ import {
   X,
   Loader2,
   Cpu,
+  CheckCircle2,
 } from "lucide-react";
 
 import { useLocations, useCreateLocation } from "../api/logistics.queries";
-import { LocationAutocomplete } from "./LocationAutocomplete";
+import { LocationMapPicker } from "./LocationMapPicker"; // Używamy naszego nowego komponentu mapy
 import { LocationCreateDto } from "../types/logistics.dto";
 import type { LocationCategory } from "../../../shared/types";
-import { GlassCard } from "../../../shared/ui/GlassCard";
 import { Button } from "../../../shared/ui/Button";
 
 const CATEGORY_CONFIG: Record<
@@ -48,28 +48,48 @@ export const LocationsManager = () => {
   const [selectedCategory, setSelectedCategory] =
     useState<LocationCategory>("CONCERT_HALL");
 
-  // Type safety: Ensure we always operate on an array
-  const locations = Array.isArray(locationsData) ? locationsData : [];
+  // Przechowujemy dane z mapy w stanie tymczasowym (Draft), dopóki user nie kliknie "Zapisz"
+  const [draftLocation, setDraftLocation] =
+    useState<Partial<LocationCreateDto> | null>(null);
 
-  const handleLocationSelect = async (
-    locationData: Partial<LocationCreateDto>,
-  ) => {
-    if (!locationData.name || !locationData.formatted_address) return;
+  // Bezpieczna ekstrakcja tablicy (obsługa paginacji DRF: { count, results: [] } lub czystego [])
+  const locations = Array.isArray(locationsData)
+    ? locationsData
+    : (locationsData as any)?.results || [];
+
+  const handleLocationSelect = (locationData: Partial<LocationCreateDto>) => {
+    // Tylko aktualizujemy stan wizualny - nie wysyłamy jeszcze do bazy!
+    setDraftLocation(locationData);
+  };
+
+  const handleSaveToDatabase = async () => {
+    if (!draftLocation?.name || !draftLocation?.formatted_address) return;
 
     const payload: LocationCreateDto = {
-      name: locationData.name,
-      formatted_address: locationData.formatted_address,
+      name: draftLocation.name,
+      formatted_address: draftLocation.formatted_address,
       category: selectedCategory,
-      google_place_id: locationData.google_place_id,
-      latitude: locationData.latitude,
-      longitude: locationData.longitude,
+      google_place_id: draftLocation.google_place_id || null,
+      latitude:
+        draftLocation.latitude != null
+          ? Number(draftLocation.latitude.toFixed(6))
+          : null,
+      longitude:
+        draftLocation.longitude != null
+          ? Number(draftLocation.longitude.toFixed(6))
+          : null,
     };
 
     try {
       await createLocationMutation.mutateAsync(payload);
+      // Reset po sukcesie
       setIsAddingMode(false);
-    } catch (error) {
-      console.error("Failed to create location", error);
+      setDraftLocation(null);
+    } catch (error: any) {
+      console.error(
+        "DRF Validation Error Details:",
+        error.response?.data || error.message,
+      );
     }
   };
 
@@ -86,9 +106,7 @@ export const LocationsManager = () => {
 
   return (
     <div className="relative w-full min-h-[calc(100vh-4rem)] bg-[#030712] overflow-hidden rounded-[2rem] border border-white/5 shadow-2xl p-6 md:p-10">
-      {/* Futuristic Background Elements */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none mix-blend-overlay" />
 
       <div className="relative z-10 space-y-10">
@@ -107,14 +125,16 @@ export const LocationsManager = () => {
           </div>
 
           <Button
-            onClick={() => setIsAddingMode(!isAddingMode)}
+            onClick={() => {
+              setIsAddingMode(!isAddingMode);
+              setDraftLocation(null); // Reset draft on toggle
+            }}
             variant={isAddingMode ? "secondary" : "primary"}
             className={`flex items-center gap-2 transition-all duration-300 ${
               !isAddingMode
                 ? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_0_20px_rgba(6,182,212,0.3)]"
                 : ""
             }`}
-            disabled={createLocationMutation.isPending}
           >
             {isAddingMode ? <X size={18} /> : <Plus size={18} />}
             {isAddingMode
@@ -138,15 +158,10 @@ export const LocationsManager = () => {
               className="overflow-hidden"
             >
               <div className="p-8 space-y-8 bg-white/[0.02] border border-cyan-500/20 shadow-[inset_0_0_30px_rgba(6,182,212,0.05)] backdrop-blur-xl rounded-2xl mb-8 relative">
-                {/* Decorative UI line */}
-                <div className="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-
+                {/* Krok 1: Kategoria */}
                 <div>
                   <h3 className="text-cyan-400/80 uppercase font-mono tracking-wider mb-4 text-xs">
-                    {t(
-                      "logistics.select_category",
-                      "01 // Select Classification",
-                    )}
+                    01 // Select Classification
                   </h3>
                   <div className="flex flex-wrap gap-3">
                     {(Object.keys(CATEGORY_CONFIG) as LocationCategory[]).map(
@@ -176,37 +191,52 @@ export const LocationsManager = () => {
                   </div>
                 </div>
 
+                {/* Krok 2: Mapa */}
                 <div className="relative">
                   <h3 className="text-cyan-400/80 uppercase font-mono tracking-wider mb-4 text-xs">
-                    {t(
-                      "logistics.search_google",
-                      "02 // Uplink to Google Maps",
-                    )}
+                    02 // Pinpoint Location
                   </h3>
-                  {createLocationMutation.isPending && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-lg border border-cyan-500/30">
-                      <div className="flex flex-col items-center">
-                        <Loader2
-                          className="animate-spin text-cyan-400 mb-2"
-                          size={32}
-                        />
-                        <span className="text-cyan-400 text-xs font-mono tracking-widest uppercase animate-pulse">
-                          Syncing...
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  {/* Zakładam, że LocationAutocomplete ma przezroczyste/ciemne tło w swoich stylach. Jeśli nie, zaktualizuj też ten komponent */}
-                  <div className="[&>div]:bg-black/50 [&>div]:border-white/10 [&>div]:text-white">
-                    <LocationAutocomplete
+                  <div className="bg-black/20 p-2 rounded-xl border border-white/5">
+                    <LocationMapPicker
                       onLocationSelect={handleLocationSelect}
-                      placeholder={t(
-                        "logistics.autocomplete.placeholder",
-                        "Awaiting input sequence...",
-                      )}
                     />
                   </div>
                 </div>
+
+                {/* Krok 3: Potwierdzenie zapisu (pojawia się tylko gdy user wskaże miejsce) */}
+                <AnimatePresence>
+                  {draftLocation && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="pt-6 border-t border-cyan-500/20 flex flex-col md:flex-row justify-between items-center gap-4"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium text-lg">
+                          {draftLocation.name}
+                        </span>
+                        <span className="text-white/50 text-sm font-mono truncate max-w-md">
+                          {draftLocation.formatted_address}
+                        </span>
+                      </div>
+
+                      <Button
+                        onClick={handleSaveToDatabase}
+                        disabled={createLocationMutation.isPending}
+                        className="bg-cyan-500 text-black hover:bg-cyan-400 w-full md:w-auto flex items-center gap-2 justify-center shadow-[0_0_20px_rgba(6,182,212,0.4)] px-8 py-3"
+                      >
+                        {createLocationMutation.isPending ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <CheckCircle2 size={18} />
+                        )}
+                        <span className="font-bold tracking-wide uppercase text-sm">
+                          {t("common.save", "Add to Database")}
+                        </span>
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           )}
@@ -222,9 +252,10 @@ export const LocationsManager = () => {
             visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
           }}
         >
-          {locations.map((location) => {
+          {locations.map((location: any) => {
             const CategoryIcon =
-              CATEGORY_CONFIG[location.category]?.icon || MapPin;
+              CATEGORY_CONFIG[location.category as LocationCategory]?.icon ||
+              MapPin;
 
             return (
               <motion.div
@@ -240,7 +271,6 @@ export const LocationsManager = () => {
                 }}
               >
                 <div className="h-full p-6 flex flex-col justify-between group bg-white/[0.02] border border-white/5 hover:border-cyan-500/30 rounded-2xl transition-all duration-500 relative overflow-hidden">
-                  {/* Hover effect background */}
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-indigo-500/0 group-hover:from-cyan-500/5 group-hover:to-indigo-500/5 transition-all duration-500" />
 
                   <div className="space-y-5 relative z-10">
@@ -268,15 +298,6 @@ export const LocationsManager = () => {
                       </p>
                     </div>
                   </div>
-
-                  {location.internal_notes && (
-                    <div className="mt-6 pt-4 border-t border-white/5 relative z-10">
-                      <p className="text-xs text-slate-400 font-mono">
-                        <span className="text-indigo-400 mr-2">{">"}</span>
-                        {location.internal_notes}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </motion.div>
             );

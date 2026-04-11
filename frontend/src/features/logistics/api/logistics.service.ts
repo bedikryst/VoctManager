@@ -5,7 +5,7 @@ import {
   LocationUpdateDto,
 } from "../types/logistics.dto";
 
-const LOGISTICS_BASE_URL = "/logistics/locations/";
+const LOGISTICS_BASE_URL = "api/logistics/locations/";
 
 export const logisticsService = {
   getLocations: async (): Promise<LocationDto[]> => {
