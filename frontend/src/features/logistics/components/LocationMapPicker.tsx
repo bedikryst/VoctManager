@@ -1,3 +1,10 @@
+/**
+ * @file LocationMapPicker.tsx
+ * @description Provides an interactive Google Map with a search overlay to pick precise geographical locations.
+ * Utilizes the Google Maps Places API (New) with Session Tokens for optimized billing.
+ * @module features/logistics/components/LocationMapPicker
+ */
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -8,24 +15,29 @@ import {
   MapMouseEvent,
 } from "@vis.gl/react-google-maps";
 import { Search, MapPin, Navigation, Loader2 } from "lucide-react";
-import { LocationCreateDto } from "../types/logistics.dto";
+import { useDebounceValue } from "usehooks-ts"; // Modern standard for debouncing
+
+import type { LocationFormValues } from "../types/logistics.dto"; // Synced with Zod schema
 import { Button } from "../../../shared/ui/Button";
 
 interface LocationMapPickerProps {
-  onLocationSelect: (locationData: Partial<LocationCreateDto>) => void;
+  onLocationSelect: (locationData: Partial<LocationFormValues>) => void;
 }
 
-const DEFAULT_CENTER = { lat: 52.2297, lng: 21.0122 };
+const DEFAULT_CENTER: google.maps.LatLngLiteral = {
+  lat: 52.2297,
+  lng: 21.0122,
+};
 
 export const LocationMapPicker = ({
   onLocationSelect,
 }: LocationMapPickerProps) => {
   const { t } = useTranslation();
 
-  // Dedykowane ID mapy dla edytora
+  // Dedicated map instance reference
   const map = useMap("VOCTMANAGER_PICKER_MAP");
 
-  // Pobieramy NOWĄ bibliotekę places
+  // Load necessary Google Maps libraries dynamically
   const placesLibrary = useMapsLibrary("places");
   const geocodingLibrary = useMapsLibrary("geocoding");
 
@@ -34,57 +46,63 @@ export const LocationMapPicker = ({
   const [markerPos, setMarkerPos] =
     useState<google.maps.LatLngLiteral>(DEFAULT_CENTER);
   const [inputValue, setInputValue] = useState("");
-  const [debouncedValue, setDebouncedValue] = useState("");
 
-  // Silne typowanie dla Nowego API
+  // Replaces custom useEffect + setTimeout for safe, leak-free debouncing
+  const [debouncedValue] = useDebounceValue(inputValue, 300);
+
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompleteSuggestion[]
   >([]);
-
   const [isOpen, setIsOpen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+
   const [sessionToken, setSessionToken] =
     useState<google.maps.places.AutocompleteSessionToken | null>(null);
 
-  // Inicjalizacja Tokenu Sesji z wykorzystaniem zbuforowanej biblioteki
+  /**
+   * Initializes the Autocomplete Session Token to group requests for billing optimization.
+   */
   useEffect(() => {
     if (placesLibrary) {
       setSessionToken(new placesLibrary.AutocompleteSessionToken());
     }
   }, [placesLibrary]);
 
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(inputValue), 300);
-    return () => clearTimeout(handler);
-  }, [inputValue]);
-
-  // NOWE API: Wyszukiwanie Sugestii z pełnym wsparciem dla tokenizacji (redukcja kosztów)
+  /**
+   * Fetches place suggestions based on the debounced input value using the New Places API.
+   */
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!debouncedValue.trim() || !placesLibrary || !sessionToken) {
         setSuggestions([]);
         return;
       }
+
       try {
-        const request = {
-          input: debouncedValue,
-          sessionToken: sessionToken,
-        };
         const { suggestions: newSuggestions } =
           await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions(
-            request,
+            {
+              input: debouncedValue,
+              sessionToken: sessionToken,
+            },
           );
 
         setSuggestions(newSuggestions);
         setIsOpen(true);
       } catch (error) {
-        console.error("[VoctManager] Error fetching suggestions:", error);
+        console.error(
+          "[VoctManager] Failed to fetch autocomplete suggestions:",
+          error,
+        );
       }
     };
+
     fetchSuggestions();
   }, [debouncedValue, placesLibrary, sessionToken]);
 
-  // NOWE API: Pobieranie dokładnych detali miejsca po kliknięciu
+  /**
+   * Handles the selection of a specific suggestion from the dropdown and extracts detailed fields.
+   */
   const handleSelectSuggestion = async (
     suggestion: google.maps.places.AutocompleteSuggestion,
   ) => {
@@ -93,22 +111,23 @@ export const LocationMapPicker = ({
     try {
       const place = suggestion.placePrediction.toPlace();
 
-      // Wymuszamy pobranie tylko niezbędnych pól
+      // Restrict payload to essential fields to optimize data usage and latency
       await place.fetchFields({
         fields: ["id", "displayName", "formattedAddress", "location"],
       });
 
       const name = place.displayName || "";
       const address = place.formattedAddress || "";
-      const lat = place.location?.lat() || 0;
-      const lng = place.location?.lng() || 0;
-      const newPos = { lat, lng };
+      const newPos = {
+        lat: place.location?.lat() ?? 0,
+        lng: place.location?.lng() ?? 0,
+      };
 
       setInputValue(name || address);
       setIsOpen(false);
       setSuggestions([]);
 
-      // Odświeżenie tokenu do nowych zapytań
+      // Refresh session token for subsequent independent queries
       setSessionToken(new placesLibrary.AutocompleteSessionToken());
 
       setMarkerPos(newPos);
@@ -116,18 +135,20 @@ export const LocationMapPicker = ({
       map?.setZoom(16);
 
       onLocationSelect({
-        name: name,
+        name,
         formatted_address: address,
         google_place_id: place.id,
         latitude: newPos.lat,
         longitude: newPos.lng,
       });
     } catch (error) {
-      console.error("[VoctManager] Error fetching place details:", error);
+      console.error("[VoctManager] Failed to fetch place details:", error);
     }
   };
 
-  // Obsługa Reverse Geocoding przy kliknięciu bezpośrednio w mapę
+  /**
+   * Performs reverse geocoding when the user clicks directly on the map interface.
+   */
   const handleMapClick = useCallback(
     (e: MapMouseEvent) => {
       if (!e.detail.latLng || !geocodingLibrary) return;
@@ -154,10 +175,13 @@ export const LocationMapPicker = ({
     [geocodingLibrary, onLocationSelect],
   );
 
+  /**
+   * Uses HTML5 Geolocation to center the map on the user's physical position.
+   */
   const handleLocateMe = () => {
     if (!navigator.geolocation) return;
-    setIsLocating(true);
 
+    setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const pos = {
@@ -173,6 +197,9 @@ export const LocationMapPicker = ({
     );
   };
 
+  /**
+   * Handles closing the suggestion dropdown when clicking outside the component.
+   */
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (

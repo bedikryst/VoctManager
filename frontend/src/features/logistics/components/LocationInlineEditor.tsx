@@ -2,22 +2,22 @@
  * @file LocationInlineEditor.tsx
  * @description Inline expandable editor for logistics locations.
  * Spans full width of the grid, pushing other items smoothly.
+ * Integrates React Hook Form and Zod validation schemas.
  * @module features/logistics/components/LocationInlineEditor
  */
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { X, CheckCircle2, MapPin, Globe, Loader2 } from "lucide-react";
+import { X, CheckCircle2, MapPin, Globe } from "lucide-react";
+import { cn } from "../../../shared/lib/utils";
 
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import { Button } from "../../../shared/ui/Button";
 import { Input } from "../../../shared/ui/Input";
 import type { LocationDto } from "../types/logistics.dto";
-import type { LocationCategory } from "../../../shared/types";
 import { useLocationForm } from "../hooks/useLocationForm";
 import { LocationMapPicker } from "./LocationMapPicker";
-import { LocationAutocomplete } from "./LocationAutocomplete";
 
 interface LocationInlineEditorProps {
   location: LocationDto | null;
@@ -36,17 +36,11 @@ export default function LocationInlineEditor({
   const { t } = useTranslation();
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
 
-  const {
-    formData,
-    handleDraftChange,
-    handleGooglePlaceSelect,
-    isFormDirty,
-    isSubmitting,
-    handleSubmit,
-  } = useLocationForm(location, onClose);
+  const { form, handleGooglePlaceSelect, isDirty, isSubmitting, onSubmit } =
+    useLocationForm(location, onClose);
 
   const handleCloseRequest = () => {
-    if (isFormDirty) {
+    if (isDirty) {
       setShowExitConfirm(true);
     } else {
       onClose();
@@ -59,7 +53,7 @@ export default function LocationInlineEditor({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showExitConfirm, handleCloseRequest]);
+  }, [showExitConfirm, isDirty]); // Added isDirty to dependencies
 
   const forceClose = () => {
     setShowExitConfirm(false);
@@ -76,7 +70,7 @@ export default function LocationInlineEditor({
       className="col-span-full overflow-hidden"
     >
       <div className="bg-white/80 backdrop-blur-2xl border border-[#002395]/20 rounded-3xl shadow-[0_20px_40px_rgba(0,35,149,0.08)] relative my-2 overflow-hidden">
-        {/* Luksusowy akcent dekoracyjny */}
+        {/* Decorative accent */}
         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#002395] to-sky-400" />
 
         <div className="flex justify-between items-center p-6 md:p-8 border-b border-stone-200/50 bg-white/40">
@@ -94,6 +88,7 @@ export default function LocationInlineEditor({
           </div>
           <button
             onClick={handleCloseRequest}
+            type="button"
             className="text-stone-400 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200/60 shadow-sm transition-all p-2.5 rounded-2xl active:scale-95"
           >
             <X size={20} />
@@ -101,8 +96,9 @@ export default function LocationInlineEditor({
         </div>
 
         <div className="p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Integracja Google Maps dla nowych miejsc */}
+          {/* Note the form.handleSubmit wrap around our onSubmit */}
+          <form onSubmit={onSubmit} className="space-y-8">
+            {/* Google Maps Integration for new entries */}
             {!location?.id && (
               <div className="space-y-5 bg-[#002395]/5 p-6 rounded-2xl border border-[#002395]/10 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                 <div className="flex items-center gap-2 mb-2">
@@ -125,7 +121,7 @@ export default function LocationInlineEditor({
             )}
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* Kolumna 1: Podstawowe */}
+              {/* Column 1: Basic Information */}
               <div className="space-y-6">
                 <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
                   {t("logistics.editor.section_basic", "Dane Podstawowe")}
@@ -136,15 +132,14 @@ export default function LocationInlineEditor({
                     {t("logistics.editor.category", "Klasyfikacja *")}
                   </label>
                   <select
-                    value={formData.category}
-                    onChange={(event) =>
-                      handleDraftChange(
-                        "category",
-                        event.target.value as LocationCategory,
-                      )
-                    }
-                    className={`${STYLE_SELECT} font-bold appearance-none`}
+                    {...form.register("category")}
                     disabled={isSubmitting}
+                    className={cn(
+                      STYLE_SELECT,
+                      "font-bold appearance-none",
+                      form.formState.errors.category &&
+                        "border-red-500 focus:ring-red-500/20 focus:border-red-500",
+                    )}
                   >
                     <option value="CONCERT_HALL">
                       {t(
@@ -174,6 +169,11 @@ export default function LocationInlineEditor({
                       {t("logistics.categories.other", "Inne")}
                     </option>
                   </select>
+                  {form.formState.errors.category && (
+                    <p className="text-red-500 text-xs mt-1.5 ml-1">
+                      {t(form.formState.errors.category.message as string)}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -182,15 +182,23 @@ export default function LocationInlineEditor({
                   </label>
                   <Input
                     type="text"
-                    required
-                    value={formData.name || ""}
-                    onChange={(event) =>
-                      handleDraftChange("name", event.target.value)
-                    }
+                    {...form.register("name")}
                     disabled={isSubmitting}
-                    className="font-bold"
-                    placeholder="np. Filharmonia Narodowa - Sala Kameralna"
+                    className={cn(
+                      "font-bold",
+                      form.formState.errors.name &&
+                        "border-red-500 focus:ring-red-500/20 focus:border-red-500",
+                    )}
+                    placeholder={t(
+                      "logistics.editor.placeholder_name",
+                      "np. Filharmonia Narodowa - Sala Kameralna",
+                    )}
                   />
+                  {form.formState.errors.name && (
+                    <p className="text-red-500 text-xs mt-1.5 ml-1">
+                      {t(form.formState.errors.name.message as string)}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -203,23 +211,31 @@ export default function LocationInlineEditor({
                     </div>
                     <input
                       type="text"
-                      required
-                      value={formData.formatted_address || ""}
-                      onChange={(event) =>
-                        handleDraftChange(
-                          "formatted_address",
-                          event.target.value,
-                        )
-                      }
+                      {...form.register("formatted_address")}
                       disabled={isSubmitting}
-                      className="w-full pl-10 pr-4 py-3 bg-white/50 border border-stone-200/60 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all text-sm font-medium"
-                      placeholder="np. ul. Jasna 5, 00-013 Warszawa"
+                      className={cn(
+                        "w-full pl-10 pr-4 py-3 bg-white/50 border border-stone-200/60 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all text-sm font-medium",
+                        form.formState.errors.formatted_address &&
+                          "border-red-500 focus:ring-red-500/20 focus:border-red-500",
+                      )}
+                      placeholder={t(
+                        "logistics.editor.placeholder_address",
+                        "np. ul. Jasna 5, 00-013 Warszawa",
+                      )}
                     />
                   </div>
+                  {form.formState.errors.formatted_address && (
+                    <p className="text-red-500 text-xs mt-1.5 ml-1">
+                      {t(
+                        form.formState.errors.formatted_address
+                          .message as string,
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Kolumna 2: Logistyka Wewnętrzna */}
+              {/* Column 2: Internal Logistics */}
               <div className="space-y-6">
                 <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
                   {t("logistics.editor.section_notes", "Instrukcje Wewnętrzne")}
@@ -233,17 +249,25 @@ export default function LocationInlineEditor({
                     )}
                   </label>
                   <textarea
-                    value={formData.internal_notes || ""}
-                    onChange={(event) =>
-                      handleDraftChange("internal_notes", event.target.value)
-                    }
-                    className="flex-1 w-full px-4 py-4 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] min-h-[160px] resize-y"
+                    {...form.register("internal_notes")}
+                    disabled={isSubmitting}
+                    className={cn(
+                      "flex-1 w-full px-4 py-4 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] min-h-[160px] resize-y",
+                      form.formState.errors.internal_notes &&
+                        "border-red-500 focus:ring-red-500/20 focus:border-red-500",
+                    )}
                     placeholder={t(
                       "logistics.editor.notes_placeholder",
                       "np. Wejście dla artystów znajduje się od strony parkingu. Kod do bramy: 1234#.",
                     )}
-                    disabled={isSubmitting}
                   />
+                  {form.formState.errors.internal_notes && (
+                    <p className="text-red-500 text-xs mt-1.5 ml-1">
+                      {t(
+                        form.formState.errors.internal_notes.message as string,
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -260,9 +284,7 @@ export default function LocationInlineEditor({
               <Button
                 type="submit"
                 variant="primary"
-                disabled={
-                  isSubmitting || !formData.name || !formData.formatted_address
-                }
+                disabled={isSubmitting}
                 isLoading={isSubmitting}
                 leftIcon={
                   !isSubmitting ? <CheckCircle2 size={16} /> : undefined

@@ -96,7 +96,7 @@ export const LocationsGlobalMap = ({
       className="w-full h-[600px] rounded-[2rem] overflow-hidden border border-stone-200/60 shadow-[0_20px_40px_rgba(0,35,149,0.05)] relative bg-stone-50"
     >
       <Map
-        defaultZoom={4}
+        defaultZoom={6.5}
         defaultCenter={defaultCenter}
         mapId="VOCTMANAGER_GLOBAL_MAP"
         disableDefaultUI={true}

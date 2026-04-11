@@ -1,30 +1,22 @@
 /**
  * @file useArtistForm.ts
- * @description Encapsulates complex form state, dirty tracking, and API payload construction.
- * Delegates actual network requests strictly to the Query/Mutation layer.
- * Fully internationalized.
+ * @description Encapsulates form state, Zod validation, and API payload construction using RHF.
  * @module features/artists/hooks/useArtistForm
  */
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { Artist, VoiceTypeOption } from "../../../shared/types";
 import { useCreateArtist, useUpdateArtist } from "../api/artist.queries";
-import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
-
-export interface ArtistFormData {
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  voice_type: string;
-  is_active: boolean;
-  sight_reading_skill: string;
-  vocal_range_bottom: string;
-  vocal_range_top: string;
-  language: string;
-}
+import {
+  artistFormSchema,
+  type ArtistFormValues,
+  type ArtistCreateDTO,
+  type ArtistUpdateDTO,
+} from "../types/artist.dto";
 
 export const useArtistForm = (
   artist: Artist | null,
@@ -36,19 +28,22 @@ export const useArtistForm = (
   const createMutation = useCreateArtist();
   const updateMutation = useUpdateArtist();
 
-  const initialFormData = useMemo<ArtistFormData>(() => {
-    let defaultFirst = "";
-    let defaultLast = "";
-
+  const defaultNames = useMemo(() => {
+    let first = "";
+    let last = "";
     if (!artist && initialSearchContext) {
       const parts = initialSearchContext.trim().split(" ");
-      defaultFirst = parts[0] || "";
-      defaultLast = parts.slice(1).join(" ") || "";
+      first = parts[0] || "";
+      last = parts.slice(1).join(" ") || "";
     }
+    return { first, last };
+  }, [artist, initialSearchContext]);
 
-    return {
-      first_name: artist?.first_name || defaultFirst,
-      last_name: artist?.last_name || defaultLast,
+  const form = useForm<ArtistFormValues>({
+    resolver: zodResolver(artistFormSchema),
+    defaultValues: {
+      first_name: artist?.first_name || defaultNames.first,
+      last_name: artist?.last_name || defaultNames.last,
       email: artist?.email || "",
       phone_number: artist?.phone_number || "",
       voice_type:
@@ -61,47 +56,69 @@ export const useArtistForm = (
       vocal_range_bottom: artist?.vocal_range_bottom || "",
       vocal_range_top: artist?.vocal_range_top || "",
       language: "pl",
-    };
-  }, [artist, voiceTypes, initialSearchContext]);
+    },
+  });
 
-  const [formData, setFormData] = useState<ArtistFormData>(initialFormData);
+  useEffect(() => {
+    if (artist) {
+      form.reset({
+        first_name: artist.first_name,
+        last_name: artist.last_name,
+        email: artist.email,
+        phone_number: artist.phone_number || "",
+        voice_type: artist.voice_type,
+        is_active: artist.is_active,
+        sight_reading_skill: artist.sight_reading_skill
+          ? String(artist.sight_reading_skill)
+          : "",
+        vocal_range_bottom: artist.vocal_range_bottom || "",
+        vocal_range_top: artist.vocal_range_top || "",
+        language: "pl",
+      });
+    } else {
+      form.reset({
+        first_name: defaultNames.first,
+        last_name: defaultNames.last,
+        email: "",
+        phone_number: "",
+        voice_type: voiceTypes.length > 0 ? voiceTypes[0].value : "SOP",
+        is_active: true,
+        sight_reading_skill: "",
+        vocal_range_bottom: "",
+        vocal_range_top: "",
+        language: "pl",
+      });
+    }
+  }, [artist, defaultNames, voiceTypes, form]);
 
-  const isFormDirty = useMemo(() => {
-    return JSON.stringify(formData) !== JSON.stringify(initialFormData);
-  }, [formData, initialFormData]);
-
-  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = async (data: ArtistFormValues) => {
     const toastId = toast.loading(
       artist?.id
         ? t("artists.form.toast.updating", "Aktualizowanie profilu...")
         : t("artists.form.toast.creating", "Tworzenie konta artysty..."),
     );
 
-    // 1. Czysty payload zgodny z ArtistCreateDTO na backendzie (bez is_active)
     const basePayload: ArtistCreateDTO = {
-      first_name: formData.first_name.trim(),
-      last_name: formData.last_name.trim(),
-      email: formData.email.trim(),
-      voice_type: formData.voice_type,
-      // Zamieniamy puste stringi na undefined, aby Pydantic traktował je jako brak wartości (optional)
-      phone_number: formData.phone_number.trim() || undefined,
-      vocal_range_bottom: formData.vocal_range_bottom.trim() || undefined,
-      vocal_range_top: formData.vocal_range_top.trim() || undefined,
-      sight_reading_skill: formData.sight_reading_skill
-        ? parseInt(formData.sight_reading_skill, 10)
+      first_name: data.first_name.trim(),
+      last_name: data.last_name.trim(),
+      email: data.email.trim(),
+      voice_type: data.voice_type,
+      phone_number: data.phone_number?.trim() || undefined,
+      vocal_range_bottom: data.vocal_range_bottom?.trim() || undefined,
+      vocal_range_top: data.vocal_range_top?.trim() || undefined,
+      sight_reading_skill: data.sight_reading_skill
+        ? parseInt(data.sight_reading_skill, 10)
         : null,
-      language: formData.language,
+      language: data.language,
     };
 
     try {
       if (artist?.id) {
-        // 2. Dla edycji dorzucamy is_active (ArtistUpdateDTO)
+        const { language, ...safeBasePayload } = basePayload;
         const updatePayload: ArtistUpdateDTO = {
-          ...basePayload,
-          is_active: formData.is_active,
+          ...safeBasePayload,
+          is_active: data.is_active,
         };
-
         await updateMutation.mutateAsync({
           id: artist.id,
           data: updatePayload,
@@ -114,7 +131,6 @@ export const useArtistForm = (
           { id: toastId },
         );
       } else {
-        // 3. Dla tworzenia wysyłamy czysty basePayload
         await createMutation.mutateAsync(basePayload);
         toast.success(
           t(
@@ -124,12 +140,9 @@ export const useArtistForm = (
           { id: toastId },
         );
       }
-
-      setFormData(formData);
       onClose();
     } catch (err: any) {
       console.error("[ArtistEditor] Form submission failed:", err);
-      // ... reszta catch pozostaje bez zmian
       const isEmailTaken = err?.response?.data?.email;
 
       toast.error(
@@ -151,11 +164,9 @@ export const useArtistForm = (
   };
 
   return {
-    formData,
-    setFormData,
-    initialFormData,
-    isFormDirty,
+    form,
+    isDirty: form.formState.isDirty,
     isSubmitting: createMutation.isPending || updateMutation.isPending,
-    handleSubmit,
+    onSubmit: form.handleSubmit(onSubmit),
   };
 };
