@@ -16,6 +16,7 @@ import { Input } from "../../../shared/ui/Input";
 import type { LocationDto } from "../types/logistics.dto";
 import type { LocationCategory } from "../../../shared/types";
 import { useLocationForm } from "../hooks/useLocationForm";
+import { LocationMapPicker } from "./LocationMapPicker";
 import { LocationAutocomplete } from "./LocationAutocomplete";
 
 interface LocationInlineEditorProps {
@@ -119,9 +120,7 @@ export default function LocationInlineEditor({
                     "Wyszukaj miejsce na mapie, aby automatycznie uzupełnić dane, koordynaty i strefę czasową. Pozwoli to na inteligentne zarządzanie czasem w projektach.",
                   )}
                 </p>
-                <LocationAutocomplete
-                  onLocationSelect={handleGooglePlaceSelect}
-                />
+                <LocationMapPicker onLocationSelect={handleGooglePlaceSelect} />
               </div>
             )}
 

@@ -29,16 +29,13 @@ export const DualTimeDisplay: React.FC<DualTimeDisplayProps> = ({
   localTimeClassName = "text-[10px] font-bold text-stone-500 uppercase tracking-widest pl-6 opacity-80",
 }) => {
   const { t } = useTranslation();
-  const { user } = useAuth(); // 1. Pobieramy profil użytkownika
+  const { user } = useAuth();
 
   if (!value) return null;
 
-  // 2. Bezpieczny fallback dla stref:
-  // Czas użytkownika (z profilu) vs Czas wydarzenia (z bazy danych)
   const userTimezone = user?.profile?.timezone || "UTC";
-  const eventTimezone = timeZone || "Europe/Warsaw"; // domyślna strefa eventów
+  const eventTimezone = timeZone || "Europe/Warsaw";
 
-  // 3. Porównujemy bezpośrednio profil ze strefą wydarzenia, ignorując zegar sprzętowy przeglądarki
   const hasDiffTz = eventTimezone !== userTimezone;
 
   const primaryTimeOptions: Intl.DateTimeFormatOptions = {
@@ -50,7 +47,7 @@ export const DualTimeDisplay: React.FC<DualTimeDisplayProps> = ({
   const localTimeOptions: Intl.DateTimeFormatOptions = {
     hour: "2-digit",
     minute: "2-digit",
-    timeZoneName: "short", // Pokazujemy skrót dla czasu lokalnego dla jasności (np. EST)
+    timeZoneName: "short",
   };
 
   return (

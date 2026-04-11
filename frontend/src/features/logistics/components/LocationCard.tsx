@@ -17,6 +17,7 @@ import type { LocationDto } from "../types/logistics.dto";
 import type { LocationCategory } from "../../../shared/types";
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import { Button } from "../../../shared/ui/Button";
+import { useLocalTime } from "../../../shared/lib/hooks/useLocalTime";
 
 interface LocationCardProps {
   location: LocationDto;
@@ -50,6 +51,7 @@ export const LocationCard = React.memo(
     const { t } = useTranslation();
     const config = CATEGORY_CONFIG[location.category] || CATEGORY_CONFIG.OTHER;
     const Icon = config.icon;
+    const liveLocalTime = useLocalTime(location.timezone);
 
     return (
       <motion.div
@@ -80,8 +82,28 @@ export const LocationCard = React.memo(
                       location.category.replace("_", " "),
                     )}
                   </span>
-                  <span className="px-2 py-0.5 text-[8px] font-bold antialiased uppercase tracking-widest rounded-md border shadow-sm bg-stone-100 text-stone-500 border-stone-200 flex items-center gap-1">
-                    <Clock size={10} /> {location.timezone}
+                  <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-md border shadow-sm bg-stone-100/80 text-stone-600 border-stone-200 flex items-center gap-1.5 backdrop-blur-sm">
+                    <Clock
+                      size={11}
+                      className={
+                        liveLocalTime ? "text-[#002395]" : "text-stone-400"
+                      }
+                    />
+                    {liveLocalTime ? (
+                      <span>
+                        {liveLocalTime}{" "}
+                        <span className="text-[8px] text-stone-400 ml-1 tracking-widest uppercase">
+                          {location.timezone
+                            .split("/")
+                            .pop()
+                            ?.replace("_", " ")}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-[8px] uppercase tracking-widest">
+                        {location.timezone}
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>

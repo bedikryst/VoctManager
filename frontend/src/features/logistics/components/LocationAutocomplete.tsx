@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { LocationCreateDto } from "../types/logistics.dto";
 import { Search, MapPin } from "lucide-react";
 
@@ -13,6 +14,9 @@ export const LocationAutocomplete = ({
   placeholder,
 }: LocationAutocompleteProps) => {
   const { t } = useTranslation();
+
+  const placesLibrary = useMapsLibrary("places");
+
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
@@ -24,34 +28,20 @@ export const LocationAutocomplete = ({
   const [sessionToken, setSessionToken] =
     useState<google.maps.places.AutocompleteSessionToken | null>(null);
 
-  // Initialize Places Session Token
   useEffect(() => {
-    const initToken = async () => {
-      if (!window.google?.maps) {
-        console.warn("Google Maps API is not loaded.");
-        return;
-      }
-      const { AutocompleteSessionToken } =
-        (await window.google.maps.importLibrary(
-          "places",
-        )) as google.maps.PlacesLibrary;
-      setSessionToken(new AutocompleteSessionToken());
-    };
-    initToken();
-  }, []);
+    if (placesLibrary) {
+      setSessionToken(new placesLibrary.AutocompleteSessionToken());
+    }
+  }, [placesLibrary]);
 
-  // Debounce input value
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(inputValue);
     }, 300);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [inputValue]);
 
-  // Fetch suggestions when debounced value changes
+  // Pobieranie sugestii
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!debouncedValue.trim()) {
@@ -60,20 +50,19 @@ export const LocationAutocomplete = ({
         return;
       }
 
-      if (!sessionToken || !window.google?.maps) return;
+      if (!placesLibrary || !sessionToken) return;
 
       try {
-        const { AutocompleteSuggestion } =
-          (await window.google.maps.importLibrary(
-            "places",
-          )) as google.maps.PlacesLibrary;
         const request = {
           input: debouncedValue,
           sessionToken: sessionToken,
         };
 
         const { suggestions: newSuggestions } =
-          await AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+          await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions(
+            request,
+          );
+
         setSuggestions(newSuggestions);
         setIsOpen(true);
       } catch (error) {
@@ -83,23 +72,20 @@ export const LocationAutocomplete = ({
     };
 
     fetchSuggestions();
-  }, [debouncedValue, sessionToken]);
+  }, [debouncedValue, placesLibrary, sessionToken]);
 
-  // Handle typing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
 
-  // Handle suggestion selection
   const handleSelect = async (
     suggestion: google.maps.places.AutocompleteSuggestion,
   ) => {
-    if (!suggestion.placePrediction) return;
+    if (!suggestion.placePrediction || !placesLibrary) return;
 
     try {
       const place = suggestion.placePrediction.toPlace();
 
-      // Fetch details using the new Place API
       await place.fetchFields({
         fields: ["id", "displayName", "formattedAddress", "location"],
       });
@@ -111,12 +97,7 @@ export const LocationAutocomplete = ({
       setIsOpen(false);
       setSuggestions([]);
 
-      // Refresh session token after successful selection to optimize billing
-      const { AutocompleteSessionToken } =
-        (await window.google.maps.importLibrary(
-          "places",
-        )) as google.maps.PlacesLibrary;
-      setSessionToken(new AutocompleteSessionToken());
+      setSessionToken(new placesLibrary.AutocompleteSessionToken());
 
       onLocationSelect({
         name: name,
@@ -130,7 +111,6 @@ export const LocationAutocomplete = ({
     }
   };
 
-  // Close suggestions dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -159,11 +139,12 @@ export const LocationAutocomplete = ({
         }}
         placeholder={
           placeholder ||
-          t("logistics.autocomplete.placeholder", "Search global locations...")
+          t(
+            "logistics.autocomplete.placeholder",
+            "Wyszukaj globalne lokacje...",
+          )
         }
-        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl 
-                   text-white placeholder-white/40 focus:outline-none focus:ring-2 
-                   focus:ring-white/20 backdrop-blur-md transition-all duration-300"
+        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 backdrop-blur-md transition-all duration-300"
       />
 
       {isOpen && suggestions.length > 0 && (

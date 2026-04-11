@@ -21,7 +21,11 @@ export const LocationMapPicker = ({
   onLocationSelect,
 }: LocationMapPickerProps) => {
   const { t } = useTranslation();
-  const map = useMap();
+
+  // Dedykowane ID mapy dla edytora
+  const map = useMap("VOCTMANAGER_PICKER_MAP");
+
+  // Pobieramy NOWĄ bibliotekę places
   const placesLibrary = useMapsLibrary("places");
   const geocodingLibrary = useMapsLibrary("geocoding");
 
@@ -31,28 +35,30 @@ export const LocationMapPicker = ({
     useState<google.maps.LatLngLiteral>(DEFAULT_CENTER);
   const [inputValue, setInputValue] = useState("");
   const [debouncedValue, setDebouncedValue] = useState("");
+
+  // Silne typowanie dla Nowego API
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompleteSuggestion[]
   >([]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [sessionToken, setSessionToken] =
     useState<google.maps.places.AutocompleteSessionToken | null>(null);
 
-  // Inicjalizacja tokenu sesji (optymalizacja billingu Google)
+  // Inicjalizacja Tokenu Sesji z wykorzystaniem zbuforowanej biblioteki
   useEffect(() => {
     if (placesLibrary) {
       setSessionToken(new placesLibrary.AutocompleteSessionToken());
     }
   }, [placesLibrary]);
 
-  // Debounce dla zapytań tekstowych
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(inputValue), 300);
     return () => clearTimeout(handler);
   }, [inputValue]);
 
-  // Headless Autocomplete (pobieranie podpowiedzi zamiast używania starego widgetu)
+  // NOWE API: Wyszukiwanie Sugestii z pełnym wsparciem dla tokenizacji (redukcja kosztów)
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!debouncedValue.trim() || !placesLibrary || !sessionToken) {
@@ -60,63 +66,68 @@ export const LocationMapPicker = ({
         return;
       }
       try {
-        const request = { input: debouncedValue, sessionToken };
+        const request = {
+          input: debouncedValue,
+          sessionToken: sessionToken,
+        };
         const { suggestions: newSuggestions } =
           await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions(
             request,
           );
+
         setSuggestions(newSuggestions);
         setIsOpen(true);
       } catch (error) {
-        console.error("Error fetching places suggestions:", error);
+        console.error("[VoctManager] Error fetching suggestions:", error);
       }
     };
     fetchSuggestions();
   }, [debouncedValue, placesLibrary, sessionToken]);
 
-  // Wybór miejsca z customowej listy rozwijanej
+  // NOWE API: Pobieranie dokładnych detali miejsca po kliknięciu
   const handleSelectSuggestion = async (
     suggestion: google.maps.places.AutocompleteSuggestion,
   ) => {
-    if (!suggestion.placePrediction || !placesLibrary) return;
+    if (!placesLibrary || !suggestion.placePrediction) return;
 
     try {
       const place = suggestion.placePrediction.toPlace();
+
+      // Wymuszamy pobranie tylko niezbędnych pól
       await place.fetchFields({
         fields: ["id", "displayName", "formattedAddress", "location"],
       });
 
       const name = place.displayName || "";
       const address = place.formattedAddress || "";
-      const location = place.location;
+      const lat = place.location?.lat() || 0;
+      const lng = place.location?.lng() || 0;
+      const newPos = { lat, lng };
 
       setInputValue(name || address);
       setIsOpen(false);
       setSuggestions([]);
 
-      // Reset tokenu po udanym wyszukaniu
+      // Odświeżenie tokenu do nowych zapytań
       setSessionToken(new placesLibrary.AutocompleteSessionToken());
 
-      if (location) {
-        const newPos = { lat: location.lat(), lng: location.lng() };
-        setMarkerPos(newPos);
-        map?.panTo(newPos);
-        map?.setZoom(16);
+      setMarkerPos(newPos);
+      map?.panTo(newPos);
+      map?.setZoom(16);
 
-        onLocationSelect({
-          name: name,
-          formatted_address: address,
-          google_place_id: place.id,
-          latitude: newPos.lat,
-          longitude: newPos.lng,
-        });
-      }
+      onLocationSelect({
+        name: name,
+        formatted_address: address,
+        google_place_id: place.id,
+        latitude: newPos.lat,
+        longitude: newPos.lng,
+      });
     } catch (error) {
-      console.error("Error fetching place details:", error);
+      console.error("[VoctManager] Error fetching place details:", error);
     }
   };
 
-  // Reverse Geocoding: Kliknięcie na mapę -> zmiana w adres
+  // Obsługa Reverse Geocoding przy kliknięciu bezpośrednio w mapę
   const handleMapClick = useCallback(
     (e: MapMouseEvent) => {
       if (!e.detail.latLng || !geocodingLibrary) return;
@@ -143,7 +154,6 @@ export const LocationMapPicker = ({
     [geocodingLibrary, onLocationSelect],
   );
 
-  // HTML5 Geolokalizacja natywna
   const handleLocateMe = () => {
     if (!navigator.geolocation) return;
     setIsLocating(true);
@@ -159,14 +169,10 @@ export const LocationMapPicker = ({
         map?.setZoom(15);
         setIsLocating(false);
       },
-      () => {
-        setIsLocating(false);
-        console.warn("Geolocation permission denied.");
-      },
+      () => setIsLocating(false),
     );
   };
 
-  // Zamknięcie dropdowna po kliknięciu poza niego
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -182,10 +188,9 @@ export const LocationMapPicker = ({
 
   return (
     <div className="space-y-4" ref={dropdownRef}>
-      {/* Search & Action Bar */}
       <div className="flex flex-col sm:flex-row gap-3 relative">
         <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-cyan-400/50 z-10">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#002395]/50 z-10">
             <Search size={18} />
           </div>
           <input
@@ -195,26 +200,23 @@ export const LocationMapPicker = ({
             onFocus={() => suggestions.length > 0 && setIsOpen(true)}
             placeholder={t(
               "logistics.map.search_placeholder",
-              "Search global locations...",
+              "Wyszukaj globalne lokacje...",
             )}
-            className="w-full pl-10 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl 
-                       text-white placeholder-white/40 focus:outline-none focus:ring-2 
-                       focus:ring-cyan-500/50 backdrop-blur-md transition-all duration-300 relative z-10"
+            className="w-full pl-10 pr-4 py-3 bg-white/50 border border-stone-200/60 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 backdrop-blur-md transition-all duration-300 relative z-10 font-medium text-sm"
           />
 
-          {/* Custom Glassmorphism Dropdown */}
           {isOpen && suggestions.length > 0 && (
-            <ul className="absolute z-50 w-full mt-2 py-2 bg-black/80 backdrop-blur-2xl border border-cyan-500/20 rounded-xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+            <ul className="absolute z-50 w-full mt-2 py-2 bg-white/95 backdrop-blur-xl border border-stone-200/60 rounded-xl overflow-hidden shadow-2xl">
               {suggestions.map((suggestion, index) => {
                 if (!suggestion.placePrediction) return null;
                 return (
                   <li
                     key={index}
                     onClick={() => handleSelectSuggestion(suggestion)}
-                    className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-cyan-500/10 transition-colors duration-200 text-white/90 text-sm border-b border-white/5 last:border-0"
+                    className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-[#002395]/5 transition-colors duration-200 text-stone-700 text-sm border-b border-stone-100 last:border-0"
                   >
-                    <MapPin size={16} className="text-cyan-400/70 shrink-0" />
-                    <span className="truncate">
+                    <MapPin size={16} className="text-[#002395]/70 shrink-0" />
+                    <span className="truncate text-stone-900 font-medium">
                       {suggestion.placePrediction.text.text}
                     </span>
                   </li>
@@ -229,7 +231,7 @@ export const LocationMapPicker = ({
           variant="secondary"
           onClick={handleLocateMe}
           disabled={isLocating}
-          className="flex items-center gap-2 bg-cyan-500/10 border-cyan-500/20 text-cyan-300 hover:bg-cyan-500/20"
+          className="flex items-center gap-2"
         >
           {isLocating ? (
             <Loader2 size={18} className="animate-spin" />
@@ -237,48 +239,23 @@ export const LocationMapPicker = ({
             <Navigation size={18} />
           )}
           <span className="hidden sm:inline">
-            {t("logistics.map.locate_me", "My Location")}
+            {t("logistics.map.locate_me", "Moja Lokalizacja")}
           </span>
         </Button>
       </div>
 
-      {inputValue && (
-        <div className="text-right">
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false);
-              onLocationSelect({
-                name: inputValue,
-                formatted_address: inputValue,
-              });
-            }}
-            className="text-xs text-cyan-400/70 hover:text-cyan-300 transition-colors font-mono tracking-wide"
-          >
-            {t(
-              "logistics.map.use_as_custom",
-              "↳ Save as private/custom workspace",
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* Map Container */}
-      <div className="w-full h-[350px] rounded-xl overflow-hidden border border-white/10 shadow-[0_0_40px_rgba(6,182,212,0.1)] relative">
+      <div className="w-full h-[350px] rounded-xl overflow-hidden border border-stone-200/60 shadow-inner relative bg-stone-50">
         <Map
           defaultZoom={12}
           defaultCenter={DEFAULT_CENTER}
-          mapId="DEMO_MAP_ID"
+          mapId="VOCTMANAGER_PICKER_MAP"
           disableDefaultUI={true}
           onClick={handleMapClick}
           className="w-full h-full"
         >
           <AdvancedMarker position={markerPos}>
-            <div className="w-10 h-10 bg-cyan-500/20 rounded-full flex items-center justify-center animate-pulse">
-              <MapPin
-                className="text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]"
-                size={24}
-              />
+            <div className="w-10 h-10 bg-[#002395]/10 rounded-full flex items-center justify-center animate-pulse border border-[#002395]/20">
+              <MapPin className="text-[#002395] drop-shadow-md" size={24} />
             </div>
           </AdvancedMarker>
         </Map>

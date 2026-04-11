@@ -51,7 +51,18 @@ export const useLocationForm = (
     setFormData(initialFormData);
   }, [initialFormData]);
 
-  const handleDraftChange = (field: keyof LocationCreateDto, value: any) => {
+  const cleanCoordinate = (
+    val: number | string | undefined | null,
+  ): number | null => {
+    if (val === undefined || val === null || val === "") return null;
+    const num = typeof val === "string" ? parseFloat(val) : val;
+    return isNaN(num) ? null : parseFloat(num.toFixed(6));
+  };
+
+  const handleDraftChange = <K extends keyof LocationCreateDto>(
+    field: K,
+    value: LocationCreateDto[K],
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -86,8 +97,9 @@ export const useLocationForm = (
           name: formData.name,
           category: formData.category as LocationCategory,
           formatted_address: formData.formatted_address,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
+          google_place_id: formData.google_place_id || null,
+          latitude: cleanCoordinate(formData.latitude),
+          longitude: cleanCoordinate(formData.longitude),
           internal_notes: formData.internal_notes || "",
           is_active: true,
         };
@@ -105,8 +117,8 @@ export const useLocationForm = (
           category: formData.category as LocationCategory,
           formatted_address: formData.formatted_address,
           google_place_id: formData.google_place_id || null,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
+          latitude: cleanCoordinate(formData.latitude),
+          longitude: cleanCoordinate(formData.longitude),
           internal_notes: formData.internal_notes || "",
         };
         await createMutation.mutateAsync(createPayload);

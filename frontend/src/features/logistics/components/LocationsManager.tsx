@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Plus, Search, Filter, Map, LayoutGrid } from "lucide-react";
+import { Plus, Search, Map as MapIcon, LayoutGrid, Globe2 } from "lucide-react";
 
+import { LocationsGlobalMap } from "./LocationsGlobalMap";
 import { useLocationsData } from "../hooks/useLocationsData";
 import { useBodyScrollLock } from "../../../shared/lib/hooks/useBodyScrollLock";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
@@ -11,14 +12,58 @@ import { Button } from "../../../shared/ui/Button";
 import { Input } from "../../../shared/ui/Input";
 import { GlassCard } from "../../../shared/ui/GlassCard";
 import { LocationCard } from "./LocationCard";
-import LocationInlineEditor from "./LocationInlineEditor"; // Używamy Inline Editora
+import LocationInlineEditor from "./LocationInlineEditor";
+import type { LocationCategory } from "../../../shared/types";
+
+const FILTER_CATEGORIES: {
+  value: LocationCategory | "";
+  labelKey: string;
+  fallback: string;
+}[] = [
+  { value: "", labelKey: "logistics.filters.all", fallback: "Wszystkie" },
+  {
+    value: "CONCERT_HALL",
+    labelKey: "logistics.categories.concert_hall",
+    fallback: "Sale Koncertowe",
+  },
+  {
+    value: "REHEARSAL_ROOM",
+    labelKey: "logistics.categories.rehearsal_room",
+    fallback: "Sale Prób",
+  },
+  {
+    value: "HOTEL",
+    labelKey: "logistics.categories.hotel",
+    fallback: "Hotele",
+  },
+  {
+    value: "AIRPORT",
+    labelKey: "logistics.categories.airport",
+    fallback: "Lotniska",
+  },
+  {
+    value: "TRANSIT_STATION",
+    labelKey: "logistics.categories.transit",
+    fallback: "Stacje",
+  },
+  {
+    value: "WORKSPACE",
+    labelKey: "logistics.categories.workspace",
+    fallback: "Przestrzenie",
+  },
+  { value: "OTHER", labelKey: "logistics.categories.other", fallback: "Inne" },
+];
 
 export const LocationsManager = (): React.JSX.Element => {
   const { t } = useTranslation();
+  const [viewMode, setViewMode] = React.useState<"grid" | "map">("grid");
+
   const {
     isLoading,
     isError,
+    locations,
     displayLocations,
+    categoryStats,
     searchTerm,
     setSearchTerm,
     categoryFilter,
@@ -44,16 +89,34 @@ export const LocationsManager = (): React.JSX.Element => {
     }
   }, [isError, t]);
 
-  // Blokujemy tło tylko przy próbie usunięcia (Modal). Edytor jest teraz inline!
   useBodyScrollLock(locationToArchive !== null);
 
   const toggleAddMode = () => {
     if (isPanelOpen && !editingLocation) {
-      closePanel(); // Jeśli dodawanie jest już otwarte, zamknij
+      closePanel();
     } else {
-      openPanel(null); // Otwórz formularz dodawania
+      openPanel(null);
     }
   };
+
+  // Architektura Smart Grouping - kategoryzacja wizualna
+  const groupedLocations = useMemo(() => {
+    const groups = {} as Record<string, typeof displayLocations>;
+
+    // Inicjalizacja pustych tablic w ustalonej kolejności (aby zachować stały layout)
+    FILTER_CATEGORIES.forEach((cat) => {
+      if (cat.value) groups[cat.value] = [];
+    });
+
+    // Grupowanie lokacji do odpowiednich "wiaderek"
+    displayLocations.forEach((loc) => {
+      if (!groups[loc.category]) groups[loc.category] = [];
+      groups[loc.category].push(loc);
+    });
+
+    // Odfiltrowujemy puste grupy (żeby nie rysować nagłówka z wynikiem 0)
+    return Object.entries(groups).filter(([_, locs]) => locs.length > 0);
+  }, [displayLocations]);
 
   return (
     <div className="space-y-6 animate-fade-in relative cursor-default pb-12 max-w-7xl mx-auto px-4 sm:px-0">
@@ -66,7 +129,7 @@ export const LocationsManager = (): React.JSX.Element => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-                <Map size={12} className="text-[#002395]" />
+                <MapIcon size={12} className="text-[#002395]" />
                 <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
                   {t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
                 </p>
@@ -107,8 +170,9 @@ export const LocationsManager = (): React.JSX.Element => {
         </motion.div>
       </header>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="flex-1">
+      {/* PASEK AKCJI: Wyszukiwarka i Przełącznik Widoków */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-between">
+        <div className="w-full sm:max-w-md">
           <Input
             leftIcon={<Search size={16} />}
             type="text"
@@ -120,105 +184,181 @@ export const LocationsManager = (): React.JSX.Element => {
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
-        <div className="relative w-full sm:w-72 flex-shrink-0">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Filter size={16} className="text-stone-400" />
-          </div>
-          <select
-            value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value as any)}
-            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold appearance-none cursor-pointer"
+
+        <div className="flex bg-stone-200/50 p-1 rounded-xl border border-stone-200/80 shrink-0">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "grid" ? "bg-white text-[#002395] shadow-sm font-bold" : "text-stone-500 hover:text-stone-700 hover:bg-white/50"}`}
           >
-            <option value="">
-              {t("logistics.filters.all", "Wszystkie kategorie")}
-            </option>
-            <option value="CONCERT_HALL">
-              {t("logistics.categories.concert_hall", "Sale Koncertowe")}
-            </option>
-            <option value="REHEARSAL_ROOM">
-              {t("logistics.categories.rehearsal_room", "Sale Prób")}
-            </option>
-            <option value="HOTEL">
-              {t("logistics.categories.hotel", "Hotele")}
-            </option>
-            <option value="AIRPORT">
-              {t("logistics.categories.airport", "Lotniska")}
-            </option>
-          </select>
+            <LayoutGrid size={18} />
+          </button>
+          <button
+            onClick={() => setViewMode("map")}
+            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "map" ? "bg-white text-[#002395] shadow-sm font-bold" : "text-stone-500 hover:text-stone-700 hover:bg-white/50"}`}
+          >
+            <Globe2 size={18} />
+          </button>
         </div>
       </div>
 
-      <motion.div
-        layout
-        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+      {/* LUKSUSOWE PRZYCISKI KATEGORII (Pills ze statystykami) */}
+      <div
+        className="flex items-center gap-3 overflow-x-auto pb-4 mb-4 w-full [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: "none" }}
       >
-        {/* === Zjazd Edytora z góry dla akcji DODAJ NOWE === */}
-        <AnimatePresence mode="popLayout">
-          {isPanelOpen && !editingLocation && (
-            <LocationInlineEditor
-              key="new-location-editor"
-              location={null}
-              onClose={closePanel}
-            />
-          )}
-        </AnimatePresence>
+        {FILTER_CATEGORIES.map((cat) => {
+          const count =
+            cat.value === "" ? locations.length : categoryStats[cat.value] || 0;
 
-        {isLoading ? (
-          Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={`skeleton-${index}`}
-              className="h-64 bg-stone-100/50 rounded-[2rem] border border-white/50 animate-pulse"
-            />
-          ))
-        ) : displayLocations.length > 0 ? (
-          <AnimatePresence mode="popLayout">
-            {displayLocations.map((loc) => {
-              // === Zmiana karty w Edytor dla akcji EDYTUJ ISTNIEJĄCE ===
-              if (isPanelOpen && editingLocation?.id === loc.id) {
-                return (
-                  <LocationInlineEditor
-                    key={`edit-${loc.id}`}
-                    location={loc}
-                    onClose={closePanel}
-                  />
-                );
-              }
+          return (
+            <button
+              key={`filter-${cat.value}`}
+              onClick={() => setCategoryFilter(cat.value)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold antialiased transition-all duration-300 border shrink-0 outline-none
+                ${
+                  categoryFilter === cat.value
+                    ? "bg-[#002395] text-white border-[#002395] shadow-[0_8px_16px_rgba(0,35,149,0.2)]"
+                    : "bg-white/60 text-stone-600 border-stone-200/60 hover:bg-white hover:border-stone-300 hover:shadow-sm"
+                }`}
+            >
+              {t(cat.labelKey, cat.fallback)}
+              <span
+                className={`px-2 py-0.5 rounded-md text-[10px] shadow-inner ${
+                  categoryFilter === cat.value
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100/80 text-stone-500 border border-stone-200/50"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-              // Standardowa Karta Lokacji
-              return (
-                <LocationCard
-                  key={`card-${loc.id}`}
-                  location={loc}
-                  onEdit={openPanel}
-                  onArchive={setLocationToArchive}
+      <AnimatePresence mode="wait">
+        {viewMode === "map" ? (
+          <motion.div
+            key="map-view"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex flex-col gap-6"
+          >
+            <AnimatePresence mode="popLayout">
+              {isPanelOpen && !editingLocation && (
+                <LocationInlineEditor
+                  key="new-location-editor"
+                  location={null}
+                  onClose={closePanel}
                 />
-              );
-            })}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+            <LocationsGlobalMap locations={displayLocations} />
+          </motion.div>
         ) : (
           <motion.div
+            key="grid-view"
+            layout
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="col-span-full"
+            exit={{ opacity: 0 }}
+            className="flex flex-col gap-10" // Zamiana grid na kolumnę dla zgrupowanych sekcji
           >
-            <GlassCard className="p-16 flex flex-col items-center justify-center text-center">
-              <LayoutGrid
-                size={48}
-                className="text-stone-300 mb-4 opacity-50"
-              />
-              <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">
-                {t("logistics.dashboard.empty_title", "Brak wyników")}
-              </span>
-              <span className="text-xs text-stone-400 max-w-sm">
-                {t(
-                  "logistics.dashboard.empty_desc",
-                  "Zmień filtry lub dodaj nowe miejsce korzystając z integracji Google Maps.",
-                )}
-              </span>
-            </GlassCard>
+            <AnimatePresence mode="popLayout">
+              {/* Edytor tworzenia zawsze na samej górze */}
+              {isPanelOpen && !editingLocation && (
+                <LocationInlineEditor
+                  key="new-location-editor"
+                  location={null}
+                  onClose={closePanel}
+                />
+              )}
+            </AnimatePresence>
+
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={`skeleton-${index}`}
+                    className="h-64 bg-stone-100/50 rounded-[2rem] border border-white/50 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : displayLocations.length > 0 ? (
+              // RENDEROWANIE SMART GROUPING
+              groupedLocations.map(([category, locs]) => (
+                <div key={category} className="w-full relative">
+                  {/* Nagłówek Sekcji */}
+                  <div className="flex items-center gap-3 mb-5 border-b border-stone-200/60 pb-3">
+                    <h2 className="text-lg font-bold text-stone-800 tracking-tight">
+                      {t(
+                        `logistics.categories.${category.toLowerCase()}`,
+                        category.replace("_", " "),
+                      )}
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-md bg-stone-100 border border-stone-200 text-stone-500 text-[10px] font-bold">
+                      {locs.length}
+                    </span>
+                  </div>
+
+                  {/* Siatka dla konkretnej Kategorii */}
+                  <motion.div
+                    layout
+                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {locs.map((loc) => {
+                        // Jeśli kliknięto "Edytuj", karta w tej grupie zamienia się na szeroki edytor
+                        if (isPanelOpen && editingLocation?.id === loc.id) {
+                          return (
+                            <LocationInlineEditor
+                              key={`edit-${loc.id}`}
+                              location={loc}
+                              onClose={closePanel}
+                            />
+                          );
+                        }
+                        // Standardowa karta
+                        return (
+                          <LocationCard
+                            key={`card-${loc.id}`}
+                            location={loc}
+                            onEdit={openPanel}
+                            onArchive={setLocationToArchive}
+                          />
+                        );
+                      })}
+                    </AnimatePresence>
+                  </motion.div>
+                </div>
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full"
+              >
+                <GlassCard className="p-16 flex flex-col items-center justify-center text-center">
+                  <MapIcon
+                    size={48}
+                    className="text-stone-300 mb-4 opacity-50"
+                  />
+                  <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">
+                    {t("logistics.dashboard.empty_title", "Brak wyników")}
+                  </span>
+                  <span className="text-xs text-stone-400 max-w-sm">
+                    {t(
+                      "logistics.dashboard.empty_desc",
+                      "Zmień filtry lub dodaj nowe miejsce korzystając z integracji Google Maps.",
+                    )}
+                  </span>
+                </GlassCard>
+              </motion.div>
+            )}
           </motion.div>
         )}
-      </motion.div>
+      </AnimatePresence>
 
       <ConfirmModal
         isOpen={!!locationToArchive}

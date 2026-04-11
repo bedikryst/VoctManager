@@ -38,7 +38,7 @@ class Location(models.Model):
     
     # --- Google Maps Platform Integration ---
     google_place_id = models.CharField(
-        max_length=255, 
+        max_length=512, 
         null=True, 
         blank=True, 
         help_text=_("Unique identifier from Google Places API. Null for private/custom locations.")
