@@ -53,6 +53,8 @@ export default function App(): React.JSX.Element {
   return (
     <APIProvider
       apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
+      onLoad={() => console.log("Maps API Core Initialized")}
+      solutionChannel="GMP_visgl_reactgooglemaps_v1_0"
       version="weekly"
       libraries={["places", "geocoding"]}
     >
