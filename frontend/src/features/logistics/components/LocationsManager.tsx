@@ -13,6 +13,7 @@ import {
   Briefcase,
   X,
   Loader2,
+  Cpu,
 } from "lucide-react";
 
 import { useLocations, useCreateLocation } from "../api/logistics.queries";
@@ -69,179 +70,242 @@ export const LocationsManager = () => {
       setIsAddingMode(false);
     } catch (error) {
       console.error("Failed to create location", error);
-      // Future: Trigger a global Toast notification here
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-[50vh] text-white/50">
-        <Loader2 className="animate-spin mr-2" size={24} />
-        <span>{t("common.loading", "Loading data...")}</span>
+      <div className="flex flex-col justify-center items-center min-h-[60vh] bg-[#050914] rounded-3xl border border-white/5">
+        <Loader2 className="animate-spin text-cyan-400 mb-4" size={48} />
+        <span className="text-cyan-400/50 font-mono tracking-widest uppercase text-sm">
+          {t("common.loading", "Initializing Data Core...")}
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-8">
-      {/* Header Section */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-semibold text-white tracking-tight">
-          {t("logistics.locations.title", "Global Locations")}
-        </h1>
+    <div className="relative w-full min-h-[calc(100vh-4rem)] bg-[#030712] overflow-hidden rounded-[2rem] border border-white/5 shadow-2xl p-6 md:p-10">
+      {/* Futuristic Background Elements */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none mix-blend-overlay" />
 
-        <Button
-          onClick={() => setIsAddingMode(!isAddingMode)}
-          variant={isAddingMode ? "secondary" : "primary"}
-          className="flex items-center gap-2"
-          disabled={createLocationMutation.isPending}
-        >
-          {isAddingMode ? <X size={18} /> : <Plus size={18} />}
-          {isAddingMode
-            ? t("common.cancel", "Cancel")
-            : t("logistics.add_location", "Add Location")}
-        </Button>
-      </div>
+      <div className="relative z-10 space-y-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <Cpu className="text-cyan-400" size={20} />
+              <span className="text-cyan-400 uppercase tracking-widest text-xs font-bold">
+                Logistics Module
+              </span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-light text-white tracking-tight">
+              {t("logistics.locations.title", "Global Locations")}
+            </h1>
+          </div>
 
-      {/* Add New Location (Smooth Expand) */}
-      <AnimatePresence>
-        {isAddingMode && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, y: -20 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -20 }}
-            className="overflow-hidden"
+          <Button
+            onClick={() => setIsAddingMode(!isAddingMode)}
+            variant={isAddingMode ? "secondary" : "primary"}
+            className={`flex items-center gap-2 transition-all duration-300 ${
+              !isAddingMode
+                ? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+                : ""
+            }`}
+            disabled={createLocationMutation.isPending}
           >
-            <GlassCard className="p-8 space-y-8 bg-white/5 border-white/10 shadow-2xl mb-8">
-              <div>
-                <h3 className="text-white/80 font-medium mb-4 text-lg">
-                  {t("logistics.select_category", "1. Select Category")}
-                </h3>
-                <div className="flex flex-wrap gap-4">
-                  {(Object.keys(CATEGORY_CONFIG) as LocationCategory[]).map(
-                    (category) => {
-                      const { icon: Icon, labelKey } =
-                        CATEGORY_CONFIG[category];
-                      const isSelected = selectedCategory === category;
-                      return (
-                        <button
-                          key={category}
-                          onClick={() => setSelectedCategory(category)}
-                          className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                            isSelected
-                              ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105"
-                              : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
-                          }`}
-                        >
-                          <Icon size={18} />
-                          {t(labelKey, category.replace("_", " "))}
-                        </button>
-                      );
-                    },
+            {isAddingMode ? <X size={18} /> : <Plus size={18} />}
+            {isAddingMode
+              ? t("common.cancel", "Abort Operation")
+              : t("logistics.add_location", "New Location")}
+          </Button>
+        </div>
+
+        {/* Add New Location (Smooth Expand) */}
+        <AnimatePresence>
+          {isAddingMode && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -20, filter: "blur(10px)" }}
+              animate={{
+                opacity: 1,
+                height: "auto",
+                y: 0,
+                filter: "blur(0px)",
+              }}
+              exit={{ opacity: 0, height: 0, y: -20, filter: "blur(10px)" }}
+              className="overflow-hidden"
+            >
+              <div className="p-8 space-y-8 bg-white/[0.02] border border-cyan-500/20 shadow-[inset_0_0_30px_rgba(6,182,212,0.05)] backdrop-blur-xl rounded-2xl mb-8 relative">
+                {/* Decorative UI line */}
+                <div className="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+
+                <div>
+                  <h3 className="text-cyan-400/80 uppercase font-mono tracking-wider mb-4 text-xs">
+                    {t(
+                      "logistics.select_category",
+                      "01 // Select Classification",
+                    )}
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
+                    {(Object.keys(CATEGORY_CONFIG) as LocationCategory[]).map(
+                      (category) => {
+                        const { icon: Icon, labelKey } =
+                          CATEGORY_CONFIG[category];
+                        const isSelected = selectedCategory === category;
+                        return (
+                          <button
+                            key={category}
+                            onClick={() => setSelectedCategory(category)}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border ${
+                              isSelected
+                                ? "bg-cyan-500/10 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                                : "bg-black/40 border-white/5 text-white/50 hover:bg-white/5 hover:text-white"
+                            }`}
+                          >
+                            <Icon
+                              size={16}
+                              className={isSelected ? "text-cyan-400" : ""}
+                            />
+                            {t(labelKey, category.replace("_", " "))}
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <h3 className="text-cyan-400/80 uppercase font-mono tracking-wider mb-4 text-xs">
+                    {t(
+                      "logistics.search_google",
+                      "02 // Uplink to Google Maps",
+                    )}
+                  </h3>
+                  {createLocationMutation.isPending && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-lg border border-cyan-500/30">
+                      <div className="flex flex-col items-center">
+                        <Loader2
+                          className="animate-spin text-cyan-400 mb-2"
+                          size={32}
+                        />
+                        <span className="text-cyan-400 text-xs font-mono tracking-widest uppercase animate-pulse">
+                          Syncing...
+                        </span>
+                      </div>
+                    </div>
                   )}
+                  {/* Zakładam, że LocationAutocomplete ma przezroczyste/ciemne tło w swoich stylach. Jeśli nie, zaktualizuj też ten komponent */}
+                  <div className="[&>div]:bg-black/50 [&>div]:border-white/10 [&>div]:text-white">
+                    <LocationAutocomplete
+                      onLocationSelect={handleLocationSelect}
+                      placeholder={t(
+                        "logistics.autocomplete.placeholder",
+                        "Awaiting input sequence...",
+                      )}
+                    />
+                  </div>
                 </div>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              <div className="relative">
-                <h3 className="text-white/80 font-medium mb-4 text-lg">
-                  {t("logistics.search_google", "2. Search Google Maps")}
-                </h3>
-                {createLocationMutation.isPending && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-lg">
-                    <Loader2 className="animate-spin text-white" size={32} />
+        {/* Locations Grid */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
+          }}
+        >
+          {locations.map((location) => {
+            const CategoryIcon =
+              CATEGORY_CONFIG[location.category]?.icon || MapPin;
+
+            return (
+              <motion.div
+                key={location.id}
+                variants={{
+                  hidden: { opacity: 0, scale: 0.95, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    transition: { type: "spring", stiffness: 100 },
+                  },
+                }}
+              >
+                <div className="h-full p-6 flex flex-col justify-between group bg-white/[0.02] border border-white/5 hover:border-cyan-500/30 rounded-2xl transition-all duration-500 relative overflow-hidden">
+                  {/* Hover effect background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-indigo-500/0 group-hover:from-cyan-500/5 group-hover:to-indigo-500/5 transition-all duration-500" />
+
+                  <div className="space-y-5 relative z-10">
+                    <div className="flex justify-between items-start">
+                      <div className="p-3 bg-black/40 rounded-xl border border-white/5 group-hover:border-cyan-500/30 transition-colors shadow-inner">
+                        <CategoryIcon
+                          className="text-cyan-400/80 group-hover:text-cyan-300 transition-colors"
+                          size={22}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-cyan-500/10 text-xs text-cyan-200 border border-cyan-500/20 backdrop-blur-sm">
+                        <Clock size={12} />
+                        <span className="font-mono tracking-wider">
+                          {location.timezone}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xl font-medium text-slate-200 tracking-tight leading-tight group-hover:text-white transition-colors">
+                        {location.name}
+                      </h4>
+                      <p className="text-sm text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                        {location.formatted_address}
+                      </p>
+                    </div>
                   </div>
-                )}
-                <LocationAutocomplete
-                  onLocationSelect={handleLocationSelect}
-                  placeholder={t(
-                    "logistics.autocomplete.placeholder",
-                    "Type a venue, hotel, or address...",
+
+                  {location.internal_notes && (
+                    <div className="mt-6 pt-4 border-t border-white/5 relative z-10">
+                      <p className="text-xs text-slate-400 font-mono">
+                        <span className="text-indigo-400 mr-2">{">"}</span>
+                        {location.internal_notes}
+                      </p>
+                    </div>
                   )}
+                </div>
+              </motion.div>
+            );
+          })}
+
+          {/* Empty State */}
+          {locations.length === 0 && !isAddingMode && (
+            <div className="col-span-full py-32 flex flex-col items-center justify-center text-slate-500">
+              <div className="relative mb-8">
+                <div className="absolute inset-0 bg-cyan-500/20 blur-3xl rounded-full" />
+                <Globe
+                  className="relative text-cyan-500/40"
+                  size={80}
+                  strokeWidth={1}
                 />
               </div>
-            </GlassCard>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Locations Grid */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: { opacity: 0 },
-          visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
-        }}
-      >
-        {locations.map((location) => {
-          const CategoryIcon =
-            CATEGORY_CONFIG[location.category]?.icon || MapPin;
-
-          return (
-            <motion.div
-              key={location.id}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 },
-              }}
-            >
-              <GlassCard className="h-full p-6 flex flex-col justify-between group hover:bg-white/10 transition-all duration-500">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div className="p-3 bg-white/5 rounded-xl group-hover:bg-white/10 transition-colors shadow-inner">
-                      <CategoryIcon className="text-white/80" size={24} />
-                    </div>
-                    {/* Timezone Badge */}
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 text-xs text-white/70 border border-white/5 shadow-sm">
-                      <Clock size={12} />
-                      <span className="font-mono tracking-wide">
-                        {location.timezone}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <h4 className="text-xl font-semibold text-white tracking-tight leading-tight">
-                      {location.name}
-                    </h4>
-                    <p className="text-sm text-white/50 mt-2 line-clamp-3 leading-relaxed">
-                      {location.formatted_address}
-                    </p>
-                  </div>
-                </div>
-
-                {location.internal_notes && (
-                  <div className="mt-6 pt-4 border-t border-white/5">
-                    <p className="text-xs text-white/40 italic">
-                      {location.internal_notes}
-                    </p>
-                  </div>
+              <p className="text-2xl font-light text-slate-300">
+                {t("logistics.empty_state", "Database is empty.")}
+              </p>
+              <p className="text-sm mt-3 text-slate-500 font-mono tracking-widest uppercase">
+                {t(
+                  "logistics.empty_state_sub",
+                  "Awaiting first synchronization",
                 )}
-              </GlassCard>
-            </motion.div>
-          );
-        })}
-
-        {/* Empty State */}
-        {locations.length === 0 && !isAddingMode && (
-          <div className="col-span-full py-32 text-center text-white/40">
-            <Globe className="mx-auto mb-6 opacity-30" size={64} />
-            <p className="text-xl font-light">
-              {t(
-                "logistics.empty_state",
-                "Your global locations database is empty.",
-              )}
-            </p>
-            <p className="text-sm mt-3 text-white/30">
-              {t(
-                "logistics.empty_state_sub",
-                "Add your first concert hall or hotel to begin.",
-              )}
-            </p>
-          </div>
-        )}
-      </motion.div>
+              </p>
+            </div>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 };

@@ -100,7 +100,9 @@ class ArtistViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def me(self, request) -> Response:
-        artist = get_object_or_404(Artist, user=request.user)
+        artist = Artist.objects.filter(user=request.user).first()
+        if not artist:
+            return Response(None, status=status.HTTP_204_NO_CONTENT)
         return Response(self.get_serializer(artist).data)
 
 
