@@ -253,3 +253,9 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_SSL_REDIRECT = True
+
+# --- COOKIE SECURITY & CSRF DEFAULTS ---
+# These ensure the SPA can read the CSRF token and cookies aren't leaked cross-site
+CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'

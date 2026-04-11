@@ -60,3 +60,7 @@ frontend/public/**/*.webm
 frontend/public/**/*.mp3
 frontend/public/samples/
 voct_data/
+
+# --- Other ---
+gemini/
+gemini.md
