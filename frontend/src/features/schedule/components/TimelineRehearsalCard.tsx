@@ -28,7 +28,6 @@ import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import {
   formatLocalizedDate,
-  formatLocalizedTime,
 } from "../../../shared/lib/intl";
 import { Input } from "../../../shared/ui/Input";
 import { Button } from "../../../shared/ui/Button";

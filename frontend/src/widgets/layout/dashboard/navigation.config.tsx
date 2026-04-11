@@ -1,4 +1,3 @@
-// frontend/src/widgets/layout/dashboard/navigation.config.tsx
 import React from "react";
 import {
   Briefcase,
@@ -11,6 +10,7 @@ import {
   Music,
   Users,
   Wrench,
+  MapPin,
 } from "lucide-react";
 
 export interface NavLinkItem {
@@ -48,6 +48,22 @@ export const adminNavGroups: NavGroup[] = [
         icon: <CalendarCheck size={18} />,
         labelKey: "dashboard.layout.links.attendance",
       },
+    ],
+  },
+  {
+    labelKey: "dashboard.layout.groups.logistics",
+    links: [
+      {
+        to: "/panel/locations",
+        icon: <MapPin size={18} />,
+        labelKey: "dashboard.layout.links.locations",
+      },
+      // TODO: add accommodation link when implemented
+      // {
+      //   to: "/panel/accommodation",
+      //   icon: <Bed size={18} />,
+      //   labelKey: "dashboard.layout.links.accommodation",
+      // },
     ],
   },
   {

@@ -35,7 +35,6 @@ import { useAuth } from "../../app/providers/AuthProvider";
 import { GlassCard } from "../../shared/ui/GlassCard";
 import {
   formatLocalizedDate,
-  formatLocalizedTime,
 } from "../../shared/lib/intl";
 import { downloadFile } from "../../shared/lib/downloadFile";
 import api from "../../shared/api/api";
@@ -72,12 +71,6 @@ export default function ArtistDashboard(): React.JSX.Element {
     status: AttendanceStatus;
     notes: string;
   }>({ status: "ABSENT", notes: "" });
-
-  const isDifferentTimezone = (eventTimezone?: string) => {
-    if (!eventTimezone) return false;
-    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return eventTimezone !== userTimezone;
-  };
 
   /* Call-sheet Download Mechanics */
   const [isDownloadingRunSheet, setIsDownloadingRunSheet] = useState(false);

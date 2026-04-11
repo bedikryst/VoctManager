@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'roster',
     'archive',
     'notifications',
+    'logistics',
 ]
 
 # --- AUTHENTICATION BACKENDS ---
@@ -259,3 +260,10 @@ if not DEBUG:
 CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+
+# ==========================================
+# EXTERNAL APIS & INTEGRATIONS
+# ==========================================
+# Google Maps Platform (Logistics, Geocoding, Time Zones)
+GOOGLE_MAPS_BACKEND_KEY = env("GOOGLE_MAPS_BACKEND_KEY", default=None)

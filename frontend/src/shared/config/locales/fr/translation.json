@@ -1,994 +1,570 @@
 {
-  "common": {
-    "locale": "fr-FR",
-    "currency": "PLN",
-    "people_short": "pers.",
-    "actions": {
-      "discard": "Ignorer les modifications",
-      "cancel": "Annuler",
-      "save": "Enregistrer",
-      "edit": "Modifier",
-      "delete": "Supprimer",
-      "select": "Sélectionner",
-      "close_panel": "Fermer le panneau (ESC)",
-      "delete_error": "Erreur de suppression",
-      "confirm": "Confirmer",
-      "loading": "Traitement...",
-      "download": "Télécharger",
-      "deleteAccount": "Supprimer le compte",
-      "confirmDelete": "Oui, supprimer le compte"
-    },
-    "errors": {
-      "server_error": "Erreur serveur",
-      "server_problem": "Un problème est survenu avec le serveur.",
-      "generation_error": "Erreur de génération",
-      "save_error": "Erreur d'enregistrement",
-      "save_problem": "Un problème est survenu lors de l'enregistrement des données.",
-      "database_error": "Un problème de connexion à la base de données est survenu."
-    },
-    "toast": {
-      "sync_warning_title": "Avertissement de synchronisation",
-      "sync_warning_desc": "Impossible de récupérer toutes les données de l'archive."
-    },
-    "delete_modal": {
-      "title": "Supprimer la pièce de l'archive ?",
-      "desc": "Cette étape supprimera définitivement les métadonnées de la pièce..."
-    },
-    "editor": {
-      "new_piece": "Nouvelle pièce",
-      "unsaved_title": "Vous avez des modifications non enregistrées !",
-      "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas encore été enregistrées. Voulez-vous vraiment fermer le panneau ? Les données non enregistrées seront perdues.",
-      "tabs": {
-        "details": "Métadonnées",
-        "tracks": "Pistes MP3"
-      }
-    },
-    "tracks": {
-      "tutti": "Tutti"
-    },
-    "form": {
-      "toast": {
-        "creating": "Ajout de la pièce à l'archive...",
-        "updating": "Mise à jour des métadonnées...",
-        "constraint_title": "Contrainte système",
-        "constraint_desc": "La création de compositeurs à la volée nécessite un endpoint distinct. Sélectionnez un compositeur dans la liste.",
-        "create_success": "Pièce ajoutée avec succès.",
-        "update_success": "Les modifications ont été enregistrées.",
-        "save_error_title": "Erreur d'enregistrement.",
-        "save_error_desc": "Vérifiez les données et réessayez."
-      }
-    },
-    "state": {
-      "loading": "Chargement...",
-      "saved": "Enregistré"
-    }
-  },
-  "auth": {
-    "authorizing": "Autorisation...",
-    "activate": {
-      "back_to_home": "Retour à la page d'accueil",
-      "badge": "Activation d'invitation",
-      "subtitle": "Accès VoctManager",
-      "title_1": "Activez votre",
-      "title_2": "panneau artiste",
-      "description": "Complétez l'étape finale d'intégration pour sécuriser votre compte et accéder à l'espace de travail opérationnel utilisé pour les projets, les répétitions et la coordination de l'ensemble.",
-      "features": {
-        "security": {
-          "title": "Intégration sécurisée",
-          "desc": "Le lien d'activation est lié à votre compte invité et déverrouille le tableau de bord privé uniquement après la configuration du mot de passe."
-        },
-        "access": {
-          "title": "Accès en une étape",
-          "desc": "Après activation, vous pouvez vous connecter immédiatement et consulter les répétitions, les projets et les matériels opérationnels."
-        },
-        "workspace": {
-          "title": "Espace de travail professionnel",
-          "desc": "VoctManager centralise la communication artistique, les données de l'équipe et la logistique de production dans un seul panneau."
-        }
-      },
-      "form": {
-        "subtitle": "Configuration du mot de passe",
-        "title": "Finalisez votre accès",
-        "description": "Choisissez un mot de passe sécurisé pour le compte invité. Une fois activé, vous utiliserez la page de connexion standard pour accéder au panneau.",
-        "security_title": "Norme de sécurité",
-        "security_desc": "Utilisez au moins 8 caractères. Un mot de passe plus long avec des lettres majuscules et minuscules, des chiffres et des symboles est recommandé.",
-        "missing_params": "Ce lien manque de paramètres d'activation. Ouvrez le dernier e-mail d'invitation et utilisez le bouton ou l'URL complet.",
-        "new_password": "Nouveau mot de passe",
-        "new_password_placeholder": "Créez un mot de passe sécurisé",
-        "confirm_password": "Confirmer le mot de passe",
-        "confirm_password_placeholder": "Répétez le mot de passe",
-        "activating_btn": "Activation du compte",
-        "activate_btn": "Activer le compte"
-      },
-      "success": {
-        "subtitle": "Activation terminée",
-        "title": "Votre panneau est prêt",
-        "desc_1": "Le compte assigné à ",
-        "desc_2": " a été sécurisé et activé.",
-        "your_username": "Votre nom d'utilisateur pour vous connecter",
-        "instruction": "Allez à la page de connexion et utilisez votre adresse e-mail avec votre nouveau mot de passe pour accéder au panneau.",
-        "go_to_login": "Aller à la connexion",
-        "return_home": "Retour à l'accueil"
-      },
-      "errors": {
-        "expired_link": "Ce lien d'activation a expiré. Demandez une nouvelle invitation à l'administrateur.",
-        "invalid_link": "Ce lien d'activation n'est pas valide. Vérifiez l'URL complet ou demandez une nouvelle invitation.",
-        "activation_failed": "L'activation du compte a échoué. Vérifiez les détails du lien et réessayez.",
-        "incomplete_link": "Le lien d'activation est incomplet. Ouvrez le dernier e-mail d'invitation et réessayez.",
-        "password_too_short": "Utilisez un mot de passe avec au moins 8 caractères.",
-        "password_mismatch": "La confirmation du mot de passe ne correspond pas."
-      }
-    }
-  },
   "archive": {
-    "dashboard": {
-      "subtitle": "Ressources du répertoire",
-      "title": "Archive de",
-      "title_highlight": "Partitions",
-      "new_piece": "Nouvelle pièce",
-      "stats_total": "Éléments dans la base",
-      "stats_pdf": "Partitions disponibles (PDF)",
-      "stats_audio": "Pistes audio (MIDI/MP3)",
-      "search_placeholder": "Rechercher une pièce par titre...",
-      "filter_composer": "Tous les compositeurs",
-      "filter_epoch": "Toutes les époques",
-      "empty_state": "Aucun résultat",
-      "empty_hint": "Modifiez les filtres ou ajoutez une nouvelle composition à la base de données.",
-      "not_found": "Composition introuvable",
-      "add_piece": "Ajouter la pièce :"
-    },
-    "toast": {
-      "sync_warning_title": "Avertissement de synchronisation",
-      "sync_warning_desc": "Impossible de récupérer toutes les données de l'archive.",
-      "delete_loading": "Suppression de \"{{title}}\"...",
-      "delete_success": "La pièce a été supprimée de l'archive.",
-      "delete_error_title": "Impossible de supprimer la pièce.",
-      "delete_error_desc": "Assurez-vous que la pièce n'est pas liée à des projets actifs."
-    },
-    "delete_modal": {
-      "title": "Supprimer la pièce de l'archive ?",
-      "desc": "Cette étape supprimera définitivement les métadonnées de la pièce..."
-    },
     "card": {
-      "traditional_unknown": "Traditionnel / Inconnu",
-      "metadata_title": "Métadonnées de la pièce",
+      "actions": {
+        "delete": "Supprimer la pièce",
+        "edit": "Modifier les métadonnées",
+        "manage_audio": "Gérer l'audio"
+      },
       "composer_title": "Compositeur",
       "divisi_title": "Algorithme Divisi",
       "fields": {
-        "language": "Langue",
         "arranger": "Arrangeur",
-        "voicing": "Distribution",
-        "duration": "Durée"
+        "duration": "Durée",
+        "language": "Langue",
+        "voicing": "Distribution"
       },
-      "actions": {
-        "edit": "Modifier les métadonnées",
-        "manage_audio": "Gérer l'audio",
-        "delete": "Supprimer la pièce"
-      },
+      "metadata_title": "Métadonnées de la pièce",
       "reference": {
-        "youtube": "Enregistrement de référence YouTube",
+        "generic": "Enregistrement de référence",
         "spotify": "Enregistrement de référence Spotify",
-        "generic": "Enregistrement de référence"
-      }
+        "youtube": "Enregistrement de référence YouTube"
+      },
+      "traditional_unknown": "Traditionnel / Inconnu"
+    },
+    "dashboard": {
+      "add_piece": "Ajouter la pièce :",
+      "empty_hint": "Modifiez les filtres ou ajoutez une nouvelle composition à la base de données.",
+      "empty_state": "Aucun résultat",
+      "filter_composer": "Tous les compositeurs",
+      "filter_epoch": "Toutes les époques",
+      "new_piece": "Nouvelle pièce",
+      "not_found": "Composition introuvable",
+      "search_placeholder": "Rechercher une pièce par titre...",
+      "stats_audio": "Pistes audio (MIDI/MP3)",
+      "stats_pdf": "Partitions disponibles (PDF)",
+      "stats_total": "Éléments dans la base",
+      "subtitle": "Ressources du répertoire",
+      "title": "Archive de",
+      "title_highlight": "Partitions"
+    },
+    "delete_modal": {
+      "desc": "Cette étape supprimera définitivement les métadonnées de la pièce...",
+      "title": "Supprimer la pièce de l'archive ?"
     },
     "editor": {
       "new_piece": "Nouvelle pièce",
-      "unsaved_title": "Vous avez des modifications non enregistrées !",
-      "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas encore été enregistrées dans la base. Voulez-vous vraiment fermer le panneau ? Les données non enregistrées seront perdues.",
       "tabs": {
         "details": "Métadonnées",
         "tracks": "Pistes MP3"
-      }
-    },
-    "tracks": {
-      "tutti": "Tutti",
-      "uploading": "Téléversement de l'enregistrement...",
-      "upload_success": "L'enregistrement a été ajouté avec succès.",
-      "upload_error": "Erreur de téléversement. Vérifiez que le format du fichier est pris en charge.",
-      "deleting": "Suppression de l'enregistrement...",
-      "delete_success": "Le fichier a été supprimé du serveur.",
-      "delete_error": "Une erreur est survenue lors de la suppression de l'enregistrement.",
-      "add_material": "Ajouter un support de pratique",
-      "voice_part": "Partie vocale *",
-      "file_upload": "Fichier audio (MP3/WAV/MIDI) *",
-      "upload_button": "Téléverser l'enregistrement",
-      "uploaded_tracks": "Pistes audio téléversées",
-      "no_files": "Aucun fichier audio",
-      "delete_confirm_title": "Supprimer l'enregistrement du serveur ?",
-      "delete_confirm_desc": "Le fichier audio sera supprimé définitivement de la base de données."
+      },
+      "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas encore été enregistrées dans la base. Voulez-vous vraiment fermer le panneau ? Les données non enregistrées seront perdues.",
+      "unsaved_title": "Vous avez des modifications non enregistrées !"
     },
     "form": {
-      "fields": {
-        "title": "Titre de la pièce *",
-        "composer": "Compositeur",
-        "arranger": "Arrangeur",
-        "epoch": "Période musicale",
-        "composition_year": "Année de composition",
-        "language": "Langue",
-        "voicing": "Distribution vocale (notation traditionnelle)",
-        "duration": "Durée estimée",
-        "lyrics_original": "Paroles originales",
-        "lyrics_translation": "Traduction (notes)",
-        "reference_youtube": "Référence YouTube",
-        "reference_spotify": "Référence Spotify",
-        "sheet_music": "Partition / matériel (PDF facultatif)"
-      },
-      "sections": {
-        "requirements": "Exigences d'exécution",
-        "divisi": "Algorithme de distribution (Divisi)",
-        "materials": "Supports et textes"
-      },
-      "descriptions": {
-        "divisi": "Sélectionnez les pupitres et définissez le nombre minimal de chanteurs requis pour vérifier les manques d'effectif en mode micro-casting."
-      },
-      "placeholders": {
-        "title": "ex. Lacrimosa",
-        "composer_first_name": "Prénom",
-        "composer_last_name": "Nom *",
-        "composer_birth_year": "Année de naissance",
-        "composer_death_year": "Année de décès",
-        "composer_search": "Rechercher dans la liste (ou laisser vide)",
-        "arranger": "ex. John Rutter",
-        "epoch": "— Sélectionner une époque —",
-        "composition_year": "ex. 1741",
-        "language": "ex. Latin",
-        "voicing": "ex. SSAATTBB, Chœur + Solistes",
-        "duration_minutes": "Minutes",
-        "duration_seconds": "Secondes",
-        "lyrics_original": "Collez les paroles originales...",
-        "lyrics_translation": "Collez la traduction...",
-        "reference_youtube": "https://youtube.com/watch?v=...",
-        "reference_spotify": "https://open.spotify.com/track/..."
+      "actions": {
+        "add_new": "+ Ajouter un nouveau",
+        "back_to_search": "Retour à la recherche",
+        "save_add": "Enregistrer et ajouter un autre",
+        "save_changes": "Enregistrer les modifications",
+        "save_close": "Enregistrer et fermer"
       },
       "composer": {
         "unknown": "— Traditionnel / Inconnu —"
       },
-      "epochs": {
-        "med": "Moyen Âge",
-        "ren": "Renaissance",
-        "bar": "Baroque",
-        "cla": "Classicisme",
-        "rom": "Romantisme",
-        "m20": "XXe siècle",
-        "con": "Musique contemporaine",
-        "pop": "Divertissement",
-        "folk": "Folk / Traditionnel"
-      },
-      "units": {
-        "minutes_short": "min",
-        "seconds_short": "s"
-      },
-      "status": {
-        "sheet_music_attached": "La partition est déjà jointe dans la base de données."
+      "descriptions": {
+        "divisi": "Sélectionnez les pupitres et définissez le nombre minimal de chanteurs requis pour vérifier les manques d'effectif en mode micro-casting."
       },
       "empty": {
         "requirements": "Aucune exigence définie."
       },
-      "actions": {
-        "back_to_search": "Retour à la recherche",
-        "add_new": "+ Ajouter un nouveau",
-        "save_add": "Enregistrer et ajouter un autre",
-        "save_close": "Enregistrer et fermer",
-        "save_changes": "Enregistrer les modifications"
+      "fields": {
+        "arranger": "Arrangeur",
+        "composer": "Compositeur",
+        "composition_year": "Année de composition",
+        "duration": "Durée estimée",
+        "epoch": "Période musicale",
+        "language": "Langue",
+        "lyrics_original": "Paroles originales",
+        "lyrics_translation": "Traduction (notes)",
+        "reference_spotify": "Référence Spotify",
+        "reference_youtube": "Référence YouTube",
+        "sheet_music": "Partition / matériel (PDF facultatif)",
+        "title": "Titre de la pièce *",
+        "voicing": "Distribution vocale (notation traditionnelle)"
+      },
+      "placeholders": {
+        "arranger": "ex. John Rutter",
+        "composer_birth_year": "Année de naissance",
+        "composer_death_year": "Année de décès",
+        "composer_first_name": "Prénom",
+        "composer_last_name": "Nom *",
+        "composer_search": "Rechercher dans la liste (ou laisser vide)",
+        "composition_year": "ex. 1741",
+        "duration_minutes": "Minutes",
+        "duration_seconds": "Secondes",
+        "epoch": "— Sélectionner une époque —",
+        "language": "ex. Latin",
+        "lyrics_original": "Collez les paroles originales...",
+        "lyrics_translation": "Collez la traduction...",
+        "reference_spotify": "https://open.spotify.com/track/...",
+        "reference_youtube": "https://youtube.com/watch?v=...",
+        "title": "ex. Lacrimosa",
+        "voicing": "ex. SSAATTBB, Chœur + Solistes"
+      },
+      "sections": {
+        "divisi": "Algorithme de distribution (Divisi)",
+        "materials": "Supports et textes",
+        "requirements": "Exigences d'exécution"
+      },
+      "status": {
+        "sheet_music_attached": "La partition est déjà jointe dans la base de données."
       },
       "toast": {
-        "creating": "Ajout de la pièce à l'archive...",
-        "updating": "Mise à jour des métadonnées...",
-        "constraint_title": "Contrainte système",
         "constraint_desc": "La création de compositeurs à la volée nécessite un endpoint distinct. Sélectionnez un compositeur dans la liste.",
+        "constraint_title": "Contrainte système",
         "create_success": "Pièce ajoutée avec succès.",
-        "update_success": "Les modifications ont été enregistrées.",
+        "creating": "Ajout de la pièce à l'archive...",
+        "save_error_desc": "Vérifiez les données et réessayez.",
         "save_error_title": "Erreur d'enregistrement.",
-        "save_error_desc": "Vérifiez les données et réessayez."
-      }
-    }
-  },
-  "resources": {
-    "dashboard": {
-      "badge": "Base de connaissances et documents",
-      "title": "Ressources de la",
-      "title_highlight": "Fondation"
-    },
-    "banner": {
-      "title": "Section d'aperçu (version démo)",
-      "description": "La structure de fichiers affichée ci-dessous est une maquette. Les documents, contrats et règlements réels de la fondation seront téléversés lors d'une phase ultérieure de déploiement du CMS."
-    },
-    "cms": {
-      "title": "Module CMS en préparation",
-      "description": "La possibilité de téléverser et modifier des fichiers sur le serveur sera activée une fois l'API cible connectée."
-    },
-    "actions": {
-      "add_category": "Ajouter une catégorie",
-      "edit_category": "Modifier la catégorie",
-      "delete_category": "Supprimer la catégorie",
-      "delete_file": "Supprimer le fichier",
-      "download_file": "Télécharger {{title}}",
-      "add_document": "Ajouter un nouveau document"
-    },
-    "categories": {
-      "wardrobe": {
-        "title": "Tenue et dress code",
-        "description": "Consignes relatives à la tenue de concert standardisée et règles d'entretien des éléments de garde-robe confiés.",
-        "files": {
-          "dress_guide": "Guide : Robe chorale (Soprano / Alto)",
-          "tuxedo_guide": "Guide : Frac et nœud papillon (Ténor / Basse)"
-        }
+        "update_success": "Les modifications ont été enregistrées.",
+        "updating": "Mise à jour des métadonnées..."
       },
-      "regulations": {
-        "title": "Règlements et statuts",
-        "description": "Documents officiels de la fondation, règles de collaboration, politique de confidentialité et règlements de participation aux répétitions.",
-        "files": {
-          "statute": "Statut de la fondation (version 2026 - mis à jour après l'assemblée générale du conseil)",
-          "choir_rules": "Règlement des choristes et règles de présence",
-          "gdpr": "Politique de traitement des données personnelles (RGPD)"
-        }
+      "units": {
+        "minutes_short": "min",
+        "seconds_short": "s"
       }
+    },
+    "toast": {
+      "delete_error_desc": "Assurez-vous que la pièce n'est pas liée à des projets actifs.",
+      "delete_error_title": "Impossible de supprimer la pièce.",
+      "delete_loading": "Suppression de \"{{title}}\"...",
+      "delete_success": "La pièce a été supprimée de l'archive.",
+      "sync_warning_desc": "Impossible de récupérer toutes les données de l'archive.",
+      "sync_warning_title": "Avertissement de synchronisation"
+    },
+    "tracks": {
+      "add_material": "Ajouter un support de pratique",
+      "delete_confirm_desc": "Le fichier audio sera supprimé définitivement de la base de données.",
+      "delete_confirm_title": "Supprimer l'enregistrement du serveur ?",
+      "delete_error": "Une erreur est survenue lors de la suppression de l'enregistrement.",
+      "delete_success": "Le fichier a été supprimé du serveur.",
+      "deleting": "Suppression de l'enregistrement...",
+      "file_upload": "Fichier audio (MP3/WAV/MIDI) *",
+      "no_files": "Aucun fichier audio",
+      "tutti": "Tutti",
+      "upload_button": "Téléverser l'enregistrement",
+      "upload_error": "Erreur de téléversement. Vérifiez que le format du fichier est pris en charge.",
+      "upload_success": "L'enregistrement a été ajouté avec succès.",
+      "uploaded_tracks": "Pistes audio téléversées",
+      "uploading": "Téléversement de l'enregistrement...",
+      "voice_part": "Partie vocale *"
     }
   },
   "artists": {
-    "dashboard": {
-      "sync_warning_title": "Avertissement",
-      "sync_warning_desc": "Impossible de récupérer les données des artistes.",
-      "subtitle": "Ressources humaines",
-      "title_prefix": "Gestion de",
-      "title_highlight": "l'ensemble",
-      "add_artist": "Ajouter un artiste",
-      "search_placeholder": "Rechercher par nom...",
-      "all_voices": "Toutes les voix",
-      "empty_title": "Aucun résultat",
-      "empty_desc_search": "Nous n'avons pas trouvé le choriste \"{{term}}\". Vous pouvez l'ajouter à la base maintenant.",
-      "add_search_term": "Ajouter : {{term}}",
-      "empty_desc_default": "Modifiez les critères de recherche ou ajoutez une nouvelle personne à la base.",
-      "activate_title": "Activer le profil ?",
-      "archive_title": "Archiver l'artiste ?",
-      "activate_desc": "L'artiste retrouvera l'accès à la plateforme et redeviendra disponible pour les nouvelles distributions.",
-      "archive_desc": "L'artiste perdra l'accès au panneau. Les données historiques des projets passés seront conservées."
-    },
-    "filters": {
-      "sopranos": "Sopranos",
-      "altos": "Altos",
-      "tenors": "Ténors",
-      "basses": "Basses",
-      "all": "Tutti"
-    },
     "card": {
+      "activate_action": "Activer",
       "active_account_title": "Compte actif et connecté à la plateforme",
+      "archive_action": "Archiver",
       "archive_badge": "Archive",
-      "voice_range": "Étendue vocale",
+      "edit": "Modifier",
+      "inactive_account": "Compte inactif",
+      "no_phone": "Pas de téléphone",
       "none": "Aucun",
       "sight_reading": "Déchiffrage",
       "sight_reading_title": "Déchiffrage : {{level}}/5",
       "unverified": "Non vérifié",
-      "no_phone": "Pas de téléphone",
-      "inactive_account": "Compte inactif",
-      "edit": "Modifier",
-      "archive_action": "Archiver",
-      "activate_action": "Activer"
+      "voice_range": "Étendue vocale"
+    },
+    "dashboard": {
+      "activate_desc": "L'artiste retrouvera l'accès à la plateforme et redeviendra disponible pour les nouvelles distributions.",
+      "activate_title": "Activer le profil ?",
+      "add_artist": "Ajouter un artiste",
+      "add_search_term": "Ajouter : {{term}}",
+      "all_voices": "Toutes les voix",
+      "archive_desc": "L'artiste perdra l'accès au panneau. Les données historiques des projets passés seront conservées.",
+      "archive_title": "Archiver l'artiste ?",
+      "empty_desc_default": "Modifiez les critères de recherche ou ajoutez une nouvelle personne à la base.",
+      "empty_desc_search": "Nous n'avons pas trouvé le choriste \"{{term}}\". Vous pouvez l'ajouter à la base maintenant.",
+      "empty_title": "Aucun résultat",
+      "search_placeholder": "Rechercher par nom...",
+      "subtitle": "Ressources humaines",
+      "sync_warning_desc": "Impossible de récupérer les données des artistes.",
+      "sync_warning_title": "Avertissement",
+      "title_highlight": "l'ensemble",
+      "title_prefix": "Gestion de"
     },
     "editor": {
-      "title_edit": "Modification du profil",
-      "title_new": "Nouvel artiste",
-      "section_basic": "Informations de base",
-      "section_voice": "Profil vocal",
-      "first_name": "Prénom *",
-      "last_name": "Nom *",
+      "active_access_desc": "Le décocher bloquera l'accès à la connexion.",
+      "active_access_title": "Accès actif à la plateforme",
+      "create_artist": "Créer l'artiste",
       "email": "E-mail *",
-      "phone": "Téléphone",
-      "voice_type": "Type de voix *",
+      "first_name": "Prénom *",
+      "language": "Langue des messages *",
+      "last_name": "Nom *",
       "loading": "Chargement...",
-      "range_low_title": "Note la plus grave",
+      "no_rating": "— Aucune évaluation —",
+      "phone": "Téléphone",
+      "range_high": "Étendue (aigu)",
+      "range_high_placeholder": "ex. C5",
       "range_high_title": "Note la plus aiguë",
       "range_low": "Étendue (grave)",
-      "range_high": "Étendue (aigu)",
       "range_low_placeholder": "ex. G2",
-      "range_high_placeholder": "ex. C5",
-      "sight_reading": "Déchiffrage (évaluation)",
-      "no_rating": "— Aucune évaluation —",
-      "stars_count": "{{count}} étoiles",
-      "active_access_title": "Accès actif à la plateforme",
-      "active_access_desc": "Le décocher bloquera l'accès à la connexion.",
+      "range_low_title": "Note la plus grave",
       "save_profile": "Enregistrer le profil",
-      "create_artist": "Créer l'artiste",
-      "unsaved_title": "Vous avez des modifications non enregistrées !",
+      "section_basic": "Informations de base",
+      "section_voice": "Profil vocal",
+      "sight_reading": "Déchiffrage (évaluation)",
+      "stars_count_one": "",
+      "stars_count_many": "",
+      "stars_count_other": "",
+      "title_edit": "Modification du profil",
+      "title_new": "Nouvel artiste",
       "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera.",
-      "language": "Langue des messages *"
+      "unsaved_title": "Vous avez des modifications non enregistrées !",
+      "voice_type": "Type de voix *"
     },
-    "toast": {
-      "activating": "Activation du compte...",
-      "archiving": "Archivage de l'artiste...",
-      "activated_success": "Compte artiste activé",
-      "archived_success": "Artiste archivé",
-      "toggle_error_desc": "Impossible de modifier le statut de l'artiste."
+    "filters": {
+      "all": "Tutti",
+      "altos": "Altos",
+      "basses": "Basses",
+      "sopranos": "Sopranos",
+      "tenors": "Ténors"
     },
     "form": {
       "toast": {
-        "updating": "Mise à jour du profil...",
-        "creating": "Création du compte artiste...",
-        "update_success": "Profil artiste mis à jour.",
         "create_success": "Artiste ajouté. Compte généré !",
+        "creating": "Création du compte artiste...",
         "email_taken": "Cette adresse e-mail est déjà utilisée.",
-        "save_error_desc": "Vérifiez les données et réessayez."
+        "save_error_desc": "Vérifiez les données et réessayez.",
+        "update_success": "Profil artiste mis à jour.",
+        "updating": "Mise à jour du profil..."
       }
-    }
-  },
-  "schedule": {
-    "dashboard": {
-      "subtitle": "Calendrier personnel",
-      "title": "Mon",
-      "title_highlight": "Planning",
-      "description": "Consultez les répétitions, signalez vos absences et suivez les plans de concert."
-    },
-    "tabs": {
-      "upcoming": "À venir",
-      "past": "Historique"
-    },
-    "loading": "Chargement du planning...",
-    "empty": {
-      "title": "Aucune entrée dans le calendrier",
-      "description": "Vous n'avez aucun rendez-vous ou concert assigné dans cette vue."
-    },
-    "event": {
-      "rehearsal_prefix": "Répétition :",
-      "generic_event": "Événement"
     },
     "toast": {
-      "submitting": "Envoi du signalement...",
-      "submit_success": "Le signalement a été enregistré.",
-      "submit_error_title": "Erreur d'enregistrement",
-      "submit_error_desc": "Impossible d'enregistrer le signalement."
-    },
-    "card": {
-      "project_badge": "Concert / Événement",
-      "call_time": "Convocation :",
-      "no_location": "Sans lieu",
-      "download_loading": "Génération du document Call Sheet...",
-      "download_success": "Fichier téléchargé avec succès",
-      "download_error_desc": "Impossible de télécharger le fichier.",
-      "tab": {
-        "logistics": "Logistique & Plan",
-        "setlist": "Répertoire & Divisi"
-      },
-      "dress_code_title": "Détails de la tenue",
-      "dress_code_women": "Femmes :",
-      "dress_code_men": "Hommes :",
-      "no_notes": "Aucune note de production supplémentaire.",
-      "run_sheet_title": "Feuille de route",
-      "download_call_sheet": "Call Sheet PDF",
-      "no_run_sheet": "La feuille de route n'a pas encore été publiée par le manager.",
-      "no_spotify": "Aucune playlist de référence.",
-      "hide_cast": "Masquer la distribution",
-      "expand_cast": "Développer la distribution (divisi)",
-      "unknown_artist": "Artiste",
-      "note_label": "Note :",
-      "no_divisi": "Aucune division vocale détaillée (divisi) pour cette pièce.",
-      "no_program": "Le répertoire n'a pas encore été défini."
-    },
-    "rehearsal": {
-      "status_present": "Confirmé",
-      "status_late": "Retard",
-      "status_absent": "Absent",
-      "badge": "Répétition",
-      "optional": "Optionnel",
-      "no_location": "Aucun",
-      "action": {
-        "confirm_short": "Confirmer",
-        "confirm_long": "Confirmer la présence",
-        "edit": "Modifier",
-        "report_issue": "Signaler un problème"
+      "activated_success": "Compte artiste activé",
+      "activating": "Activation du compte...",
+      "archived_success": "Artiste archivé",
+      "archiving": "Archivage de l'artiste...",
+      "toggle_error_desc": "Impossible de modifier le statut de l'artiste."
+    }
+  },
+  "auth": {
+    "activate": {
+      "back_to_home": "Retour à la page d'accueil",
+      "badge": "Activation d'invitation",
+      "description": "Complétez l'étape finale d'intégration pour sécuriser votre compte et accéder à l'espace de travail opérationnel utilisé pour les projets, les répétitions et la coordination de l'ensemble.",
+      "features": {
+        "access": {
+          "desc": "Après activation, vous pouvez vous connecter immédiatement et consulter les répétitions, les projets et les matériels opérationnels.",
+          "title": "Accès en une étape"
+        },
+        "security": {
+          "desc": "Le lien d'activation est lié à votre compte invité et déverrouille le tableau de bord privé uniquement après la configuration du mot de passe.",
+          "title": "Intégration sécurisée"
+        },
+        "workspace": {
+          "desc": "VoctManager centralise la communication artistique, les données de l'équipe et la logistique de production dans un seul panneau.",
+          "title": "Espace de travail professionnel"
+        }
       },
       "form": {
-        "title": "Formulaire d'absence pour l'inspecteur",
-        "status_label": "Statut *",
-        "option_absent": "Je serai absent",
-        "option_late": "Je serai en retard",
-        "reason_label": "Motif / Notes *",
-        "reason_placeholder": "ex. embouteillages, maladie...",
-        "cancel": "Annuler",
-        "submit": "Envoyer"
+        "activate_btn": "Activer le compte",
+        "activating_btn": "Activation du compte",
+        "confirm_password": "Confirmer le mot de passe",
+        "confirm_password_placeholder": "Répétez le mot de passe",
+        "description": "Choisissez un mot de passe sécurisé pour le compte invité. Une fois activé, vous utiliserez la page de connexion standard pour accéder au panneau.",
+        "missing_params": "Ce lien manque de paramètres d'activation. Ouvrez le dernier e-mail d'invitation et utilisez le bouton ou l'URL complet.",
+        "new_password": "Nouveau mot de passe",
+        "new_password_placeholder": "Créez un mot de passe sécurisé",
+        "security_desc": "Utilisez au moins 8 caractères. Un mot de passe plus long avec des lettres majuscules et minuscules, des chiffres et des symboles est recommandé.",
+        "security_title": "Norme de sécurité",
+        "subtitle": "Configuration du mot de passe",
+        "title": "Finalisez votre accès"
       },
-      "details": {
-        "focus_title": "Plan de travail",
-        "no_focus": "Aucun plan détaillé pour cette répétition.",
-        "reported_absences": "Absences signalées :",
-        "materials_title": "Vos partitions",
-        "materials_subtitle": "Préparez-vous pour la répétition",
-        "materials_desc": "Téléchargez les partitions PDF et travaillez vos parties avec le lecteur.",
-        "materials_button": "Supports"
-      }
+      "subtitle": "Accès VoctManager",
+      "success": {
+        "desc_1": "Le compte assigné à ",
+        "desc_2": " a été sécurisé et activé.",
+        "go_to_login": "Aller à la connexion",
+        "instruction": "Allez à la page de connexion et utilisez votre adresse e-mail avec votre nouveau mot de passe pour accéder au panneau.",
+        "return_home": "Retour à l'accueil",
+        "subtitle": "Activation terminée",
+        "title": "Votre panneau est prêt",
+        "your_username": "Votre nom d'utilisateur pour vous connecter"
+      },
+      "title_1": "Activez votre",
+      "title_2": "panneau artiste"
     }
   },
-  "rehearsals": {
+  "common": {
+    "actions": {
+      "cancel": "Annuler",
+      "close_panel": "Fermer le panneau (ESC)",
+      "confirmDelete": "Oui, supprimer le compte",
+      "delete": "Supprimer",
+      "delete_error": "Erreur de suppression",
+      "deleteAccount": "Supprimer le compte",
+      "discard": "Ignorer les modifications",
+      "download": "Télécharger",
+      "edit": "Modifier",
+      "loading": "Traitement...",
+      "save": "Enregistrer",
+      "select": "Sélectionner"
+    },
+    "currency": "PLN",
+    "errors": {
+      "database_error": "Un problème de connexion à la base de données est survenu.",
+      "generation_error": "Erreur de génération",
+      "save_error": "Erreur d'enregistrement",
+      "save_problem": "Un problème est survenu lors de l'enregistrement des données.",
+      "server_error": "Erreur serveur",
+      "server_problem": "Un problème est survenu avec le serveur."
+    },
+    "locale": "fr-FR",
+    "people_short": "pers.",
+    "state": {
+      "loading": "Chargement...",
+      "saved": "Enregistré"
+    },
+    "timezone": {
+      "local": ""
+    }
+  },
+  "contracts": {
     "dashboard": {
-      "subtitle": "Module inspecteur",
-      "title": "Journal des",
-      "title_highlight": "présences",
-      "project_context": "Contexte du projet",
-      "no_projects": "Aucun projet dans cet onglet.",
-      "no_location": "Sans lieu",
-      "sectional": "Répétition de pupitre",
-      "tutti_badge": "Répétition tutti",
-      "tutti": "Tutti (ensemble complet)",
-      "only": "Seulement :",
-      "general_work": "Travail général",
-      "bulk_fill": "Compléter les absences ({{count}}) comme « Présent »"
-    },
-    "tabs": {
-      "active": "Actif",
-      "archive": "Archive"
-    },
-    "stats": {
-      "rate": "Taux de présence",
-      "present": "Présents",
-      "absent": "Absents"
-    },
-    "voices": {
-      "sopranos": "Sopranos",
-      "altos": "Altos",
-      "tenors": "Ténors",
-      "basses": "Basses",
-      "mezzos": "Mezzo-sopranos",
-      "countertenors": "Contreténors"
+      "apply_valuation": "Appliquer l'évaluation",
+      "archived": "(Archivé)",
+      "contracts_issued": "Contrats émis",
+      "description": "Gérez les rémunérations des artistes et de l'équipe, contrôlez les budgets de production et générez des contrats PDF.",
+      "empty_state_desc": "Sélectionnez un événement dans le sélecteur de contexte ci-dessus pour gérer les tarifs et contrôler le budget de production.",
+      "empty_state_title": "Prêt pour la facturation",
+      "global_budget": "Budget global du système",
+      "loading": "Chargement des registres...",
+      "mass_fee_injection": "Injection massive de tarifs (chœur uniquement)",
+      "missing_appraisals": "Évaluations manquantes",
+      "no_event_selected": "— Aucun événement sélectionné —",
+      "no_personnel_desc": "Accédez à l'onglet « Gestion de projets » pour recruter la distribution ou l'équipe pour cet événement.",
+      "no_personnel_title": "Aucun personnel assigné",
+      "personnel_budget": "Budget du personnel",
+      "priced_contracts": "Contrats chiffrés",
+      "select_event_label": "Sélectionner l'événement (contexte de facturation)",
+      "subtitle": "Gestion financière",
+      "tech_crew": "Équipe technique & logistique",
+      "title": "RH &",
+      "title_highlight": "Paie",
+      "value_placeholder": "Valeur...",
+      "valued": "évalués",
+      "vocal_cast": "Distribution vocale (chœur / solistes)"
     },
     "row": {
-      "status_present": "Présent",
-      "status_late": "En retard",
-      "status_absent": "Absent",
-      "status_excused": "Excusé",
-      "minutes_placeholder": "Combien de min ?",
-      "note_placeholder": "Note (optionnelle)"
+      "missing_fee": "Tarif manquant",
+      "no_name": "Interprète",
+      "save": "Enregistrer"
+    },
+    "table": {
+      "contractor": "Prestataire / Entreprise",
+      "documents": "Documents",
+      "gross_amount": "Montant brut",
+      "performer": "Interprète",
+      "role": "Rôle",
+      "status": "Statut",
+      "voice": "Voix"
     },
     "toast": {
-      "sync_error_title": "Erreur de synchronization",
-      "sync_error_desc": "Impossible de charger les données.",
-      "bulk_marking": "Mise à jour groupée des présences...",
-      "bulk_success": "Les absences ont été complétées comme « Présent ».",
-      "bulk_error_title": "Erreur système",
-      "bulk_error_desc": "Impossible d'enregistrer les présences groupées.",
-      "save_error_title": "Erreur d'enregistrement",
-      "save_error_desc": "Erreur d'enregistrement pour :"
+      "bulk_applying": "Application des tarifs groupés...",
+      "bulk_error": "Erreur serveur pendant l'opération groupée.",
+      "bulk_success_one": "",
+      "bulk_success_many": "",
+      "bulk_success_other": "",
+      "pdf_error": "Erreur de génération : {{message}}",
+      "pdf_generating": "Génération du PDF pour {{name}}...",
+      "pdf_success": "Document généré avec succès.",
+      "save_error": "Impossible d'enregistrer la rémunération pour : {{name}}."
     }
   },
-  "materials": {
+  "crew": {
+    "card": {
+      "btn_delete": "Supprimer",
+      "btn_edit": "Modifier",
+      "company": "Entreprise / Marque",
+      "no_company": "Aucune donnée",
+      "no_email": "Pas d'e-mail",
+      "no_phone": "Pas de téléphone",
+      "specialty_other": "Autre"
+    },
     "dashboard": {
-      "subtitle": "Espace artiste",
-      "title": "Supports de",
-      "title_highlight": "travail",
-      "description": "Téléchargez les partitions, travaillez avec le lecteur MIDI à vitesse réglable et consultez votre rôle dans l'ensemble.",
-      "search_placeholder": "Rechercher une pièce ou un compositeur...",
-      "sync_error_title": "Erreur de synchronisation",
-      "sync_error_desc": "Impossible de charger les supports. Actualisez la page.",
-      "syncing": "Synchronisation de la bibliothèque...",
-      "empty_title": "Aucun support attribué",
-      "empty_desc": "Vous n'avez actuellement aucun projet à venir ou le chef n'a pas encore validé le programme du concert."
+      "add_btn": "Ajouter une personne / entreprise",
+      "add_search_term": "Ajouter à la base : {{term}}",
+      "empty_desc_default": "Modifiez les filtres ou ajoutez une nouvelle personne / entreprise à la base.",
+      "empty_desc_search": "Nous n'avons pas trouvé l'entreprise ou la personne \"{{term}}\". Vous pouvez l'ajouter maintenant.",
+      "empty_title": "Aucun résultat",
+      "filter_all": "Toutes les spécialités",
+      "search_placeholder": "Rechercher par nom ou entreprise...",
+      "subtitle": "Logistique",
+      "title": "Équipe",
+      "title_highlight": "technique"
     },
-    "project": {
-      "event": "Événement :",
-      "archived_badge": "Projet archivé"
+    "delete_modal": {
+      "desc": "Elle sera définitivement supprimée du registre. Vous ne pouvez pas supprimer des personnes déjà assignées à des concerts (mettez plutôt leurs données à jour).",
+      "title": "Supprimer cette personne de la base ?"
     },
-    "piece": {
-      "traditional": "Traditionnel / Inconnu",
-      "you_sing": "Vous chantez :",
-      "pdf_badge": "PDF",
-      "audio_badge": "Audio",
-      "locked_badge": "Protégé",
-      "access_locked_title": "Accès verrouillé",
-      "access_locked_desc": "Le projet est terminé. Les supports de travail et les partitions ne sont plus disponibles en raison de la protection de la propriété intellectuelle et des arrangements du chef.",
-      "download_pdf": "Télécharger la partition (PDF)",
-      "no_pdf": "Partition indisponible",
-      "listen_reference": "Écouter la référence",
-      "your_guidelines": "Vos consignes pour la pièce",
-      "part": "Partie :",
-      "no_notes": "Le chef n'a ajouté aucune note particulière.",
-      "cast_divisi": "Distribution de la pièce (Divisi)",
-      "other_voice": "Autre",
-      "unknown_artist": "Artiste",
-      "no_divisi": "Aucune division vocale définie.",
-      "practice_tracks": "Pistes de travail (MIDI / MP3)",
-      "lyrics_translation": "Paroles et traduction",
-      "original_lyrics": "Original",
-      "translation_notes": "Traduction (notes)"
+    "editor": {
+      "btn_save": "Enregistrer dans la base",
+      "business_profile": "Profil d'activité",
+      "company_name": "Entreprise / Marque (optionnel)",
+      "company_placeholder": "ex. SoundTech Pro LLC",
+      "confirm_exit_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera.",
+      "confirm_exit_title": "Vous avez des modifications non enregistrées !",
+      "contact_person": "Personne de contact",
+      "email": "E-mail",
+      "first_name": "Prénom *",
+      "last_name": "Nom *",
+      "phone": "Téléphone",
+      "specialty": "Spécialité *",
+      "title_edit": "Modification des données",
+      "title_new": "Nouveau collaborateur"
     },
-    "player": {
-      "your_voice": "(Votre voix)",
-      "speed_title": "Régler le tempo à {{rate}}x"
+    "toast": {
+      "delete_error_desc": "Elle est probablement liée à des projets existants. Essayez plutôt de modifier ses données.",
+      "delete_error_title": "Impossible de supprimer cette personne",
+      "delete_loading": "Suppression du collaborateur...",
+      "delete_success": "La personne a été retirée de la base.",
+      "save_error_desc": "Vérifiez les données et réessayez.",
+      "save_error_title": "Une erreur est survenue lors de l'enregistrement des données.",
+      "save_loading_edit": "Mise à jour des données...",
+      "save_loading_new": "Ajout du collaborateur...",
+      "save_success_edit": "Profil du collaborateur mis à jour.",
+      "save_success_new": "Nouvelle personne ajoutée à la base.",
+      "sync_error": "Impossible de récupérer la liste des collaborateurs.",
+      "sync_warning": "Avertissement"
     }
   },
   "dashboard": {
+    "admin": {
+      "absences_one": "",
+      "absences_many": "",
+      "absences_other": "",
+      "btn_new_project": "Nouveau projet",
+      "kpi_telemetry": "Télémétrie de la base",
+      "modules": {
+        "archive_desc": "Base centrale de la bibliothèque musicale.",
+        "archive_title": "Archive des partitions",
+        "artists_desc": "Gestion du chœur et des solistes.",
+        "artists_title": "Base artistes",
+        "contracts_desc": "Finances, contrats et budgétisation.",
+        "contracts_title": "RH & Paie",
+        "crew_desc": "Logistique et régie des événements.",
+        "crew_title": "Équipe technique",
+        "projects_desc": "Centre de commandement de la production.",
+        "projects_title": "Gestion de projets"
+      },
+      "next_rehearsal_alert": "Prochaine répétition : {{title}}",
+      "spotlight_title": "Tableau de bord de production",
+      "unknown_project": "Projet inconnu",
+      "welcome_back": "Bienvenue"
+    },
+    "artist": {
+      "download_error": "Erreur lors du téléchargement du planning",
+      "download_runsheet": "Planning (Call sheet)",
+      "download_success": "Planning téléchargé avec succès",
+      "downloading_runsheet": "Génération du planning...",
+      "empty_events_desc": "Reposez-vous, votre calendrier musical est actuellement vide.",
+      "empty_events_title": "Aucun événement à venir",
+      "general_work": "Travail général",
+      "greeting_evening": "Bonsoir",
+      "greeting_morning": "Bonjour",
+      "greeting_night": "Bonne nuit",
+      "module_materials_desc": "Votre espace personnel. Téléchargez les partitions PDF et travaillez avec des pistes audio dédiées.",
+      "module_materials_title": "Supports",
+      "module_resources_desc": "Consultez les consignes du chef, le dress code en vigueur et les contrats/règlements.",
+      "module_resources_title": "Base de connaissances",
+      "module_schedule_desc": "Consultez les répétitions, les concerts et signalez facilement votre absence à l'inspecteur.",
+      "module_schedule_title": "Mon calendrier",
+      "next_challenges": "À l'horizon",
+      "open_module": "Ouvrir le module",
+      "personal_modules": "Modules personnels"
+    },
     "layout": {
-      "brand_badge_admin": "Panneau de direction",
-      "brand_badge_artist": "Panneau artiste",
+      "logout": "Se déconnecter",
       "mobile_nav_title": "Navigation",
       "profile_settings": "Paramètres du profil",
-      "logout": "Se déconnecter",
-      "footer_version": "VoctManager Enterprise • v{{version}}",
       "roles": {
         "admin": "Administrateur",
         "artist": "Artiste",
+        "crew": "",
         "management": "Direction"
-      },
-      "groups": {
-        "overview": "Vue d'ensemble",
-        "production": "Production",
-        "data_admin": "Administration des données",
-        "artist_zone": "Espace choriste",
-        "my_zone": "Mon espace"
-      },
-      "links": {
-        "admin_dashboard": "Tableau de bord de direction",
-        "artist_dashboard": "Mon tableau de bord",
-        "projects": "Projets et concerts",
-        "attendance": "Journal de présence",
-        "artists": "Gestion de l'ensemble",
-        "crew": "Équipe technique",
-        "contracts": "RH et paie",
-        "archive": "Archive des partitions",
-        "schedule": "Mon planning",
-        "materials": "Supports de répétition",
-        "resources": "Base de connaissances"
       }
     },
     "shared": {
       "authorizing": "Autorisation...",
       "loading_telemetry": "Chargement de la télémétrie...",
       "syncing": "Synchronisation du tableau de bord..."
-    },
-    "artist": {
-      "welcome_badge": "Bienvenue sur la plateforme",
-      "greeting_night": "Bonne nuit",
-      "greeting_morning": "Bonjour",
-      "greeting_evening": "Bonsoir",
-      "artist_fallback": "Artiste",
-      "hero_desc": "Voici votre résumé musical du jour. Vérifiez où vous devez être et ce que vous devez préparer.",
-      "next_challenge": "Prochain défi",
-      "badge_rehearsal": "Répétition musicale",
-      "badge_project": "Événement principal",
-      "absences_reported": "Absences signalées : {{count}}",
-      "btn_schedule": "Voir le planning",
-      "btn_materials": "Télécharger les partitions",
-      "empty_events_title": "Aucun événement à venir",
-      "empty_events_desc": "Reposez-vous, votre calendrier musical est actuellement vide.",
-      "personal_modules": "Modules personnels",
-      "module_schedule_title": "Mon calendrier",
-      "module_schedule_desc": "Consultez les répétitions, les concerts et signalez facilement votre absence à l'inspecteur.",
-      "module_materials_title": "Supports",
-      "module_materials_desc": "Votre espace personnel. Téléchargez les partitions PDF et travaillez avec des pistes audio dédiées.",
-      "module_resources_title": "Base de connaissances",
-      "module_resources_desc": "Consultez les consignes du chef, le dress code en vigueur et les contrats/règlements.",
-      "open_module": "Ouvrir le module",
-      "event_prefix_rehearsal": "Répétition :",
-      "event_prefix_project": "Événement :",
-      "general_work": "Travail général",
-      "next_challenges": "À l'horizon",
-      "download_error": "Erreur lors du téléchargement du planning",
-      "download_runsheet": "Planning (Call sheet)",
-      "download_success": "Planning téléchargé avec succès",
-      "downloading_runsheet": "Génération du planning...",
-      "confirm_presence_loading": "Confirmation de la présence...",
-      "confirm_presence_note": "Présence confirmée depuis le tableau de bord",
-      "confirm_presence_success": "Présence confirmée !",
-      "attendance_save_error": "Erreur lors de la sauvegarde",
-      "header_title_prefix": "Tableau de bord",
-      "header_title_highlight": "Musique",
-      "absence_reported": "Absence signalée",
-      "edit_report": "Modifier le rapport",
-      "project_badge": "Concert",
-      "call_time": "Convocation :",
-      "materials_link": "Partitions et audio"
-    },
-    "admin": {
-      "logged_in_as": "Connecté en tant que : {{name}}",
-      "hero_title_1": "Votre bureau numérique de",
-      "hero_title_highlight": "production musicale",
-      "kpi_telemetry": "Télémétrie de la base",
-      "kpi_pieces": "Base du répertoire",
-      "kpi_projects": "Projets actifs",
-      "kpi_team_ready": "Préparation de l'ensemble",
-      "kpi_people": "{{count}} pers.",
-      "voices": {
-        "sopranos": "Sopranos",
-        "altos": "Altos",
-        "tenors": "Ténors",
-        "basses": "Basses"
-      },
-      "spotlight_title": "Tableau de bord de production",
-      "spotlight_badge": "Événement à venir",
-      "spotlight_repertoire": "Répertoire",
-      "spotlight_pieces_count": "{{count}} pièces",
-      "spotlight_to_concert": "Jusqu'au concert",
-      "spotlight_rehearsals_left": "{{count}} répétitions",
-      "btn_manage_production": "Gérer la production",
-      "empty_projects_title": "Aucun événement actif",
-      "empty_projects_desc": "Vous ne gérez actuellement aucun projet de concert dans le système.",
-      "btn_plan_project": "Planifier un nouveau projet",
-      "next_rehearsal_alert": "Prochaine répétition : {{title}}",
-      "absences": "Absences : {{count}}",
-      "perfect_attendance": "100 % de présence",
-      "open_logbook": "Ouvrir le journal du projet",
-      "system_modules": "Modules système",
-      "unknown_project": "Projet inconnu",
-      "modules": {
-        "projects_title": "Gestion de projets",
-        "projects_desc": "Centre de commandement de la production.",
-        "projects_feat_1": "Plannings",
-        "projects_feat_2": "Setlists",
-        "projects_feat_3": "Casting",
-        "archive_title": "Archive des partitions",
-        "archive_desc": "Base centrale de la bibliothèque musicale.",
-        "archive_feat_1": "Fichiers PDF",
-        "archive_feat_2": "Pistes audio",
-        "archive_feat_3": "Exigences",
-        "artists_title": "Base artistes",
-        "artists_desc": "Gestion du chœur et des solistes.",
-        "artists_feat_1": "Statistiques SATB",
-        "artists_feat_2": "Profils",
-        "artists_feat_3": "Déchiffrage",
-        "contracts_title": "RH & Paie",
-        "contracts_desc": "Finances, contrats et budgétisation.",
-        "contracts_feat_1": "Tarifs",
-        "contracts_feat_2": "Documents",
-        "contracts_feat_3": "Budget",
-        "crew_title": "Équipe technique",
-        "crew_desc": "Logistique et régie des événements.",
-        "crew_feat_1": "Son",
-        "crew_feat_2": "Lumière",
-        "crew_feat_3": "Sociétés"
-      },
-      "btn_new_project": "Nouveau projet",
-      "welcome_back": "Bienvenue",
-      "header_title_prefix": "Tableau de bord",
-      "header_title_highlight": "Production",
-      "open_project": "Ouvrir le projet",
-      "open_module": "Ouvrir le module"
     }
   },
-  "crew": {
+  "materials": {
     "dashboard": {
-      "subtitle": "Logistique",
-      "title": "Équipe",
-      "title_highlight": "technique",
-      "add_btn": "Ajouter une personne / entreprise",
-      "search_placeholder": "Rechercher par nom ou entreprise...",
-      "filter_all": "Toutes les spécialités",
-      "empty_title": "Aucun résultat",
-      "empty_desc_search": "Nous n'avons pas trouvé l'entreprise ou la personne \"{{term}}\". Vous pouvez l'ajouter maintenant.",
-      "empty_desc_default": "Modifiez les filtres ou ajoutez une nouvelle personne / entreprise à la base.",
-      "add_search_term": "Ajouter à la base : {{term}}"
+      "description": "Téléchargez les partitions, travaillez avec le lecteur MIDI à vitesse réglable et consultez votre rôle dans l'ensemble.",
+      "empty_desc": "Vous n'avez actuellement aucun projet à venir ou le chef n'a pas encore validé le programme du concert.",
+      "empty_title": "Aucun support attribué",
+      "search_placeholder": "Rechercher une pièce ou un compositeur...",
+      "subtitle": "Espace artiste",
+      "sync_error_desc": "Impossible de charger les supports. Actualisez la page.",
+      "sync_error_title": "Erreur de synchronisation",
+      "syncing": "Synchronisation de la bibliothèque...",
+      "title": "Supports de",
+      "title_highlight": "travail"
     },
-    "card": {
-      "specialty_other": "Autre",
-      "company": "Entreprise / Marque",
-      "no_company": "Aucune donnée",
-      "no_email": "Pas d'e-mail",
-      "no_phone": "Pas de téléphone",
-      "btn_edit": "Modifier",
-      "btn_delete": "Supprimer"
+    "piece": {
+      "access_locked_desc": "Le projet est terminé. Les supports de travail et les partitions ne sont plus disponibles en raison de la protection de la propriété intellectuelle et des arrangements du chef.",
+      "access_locked_title": "Accès verrouillé",
+      "audio_badge": "Audio",
+      "cast_divisi": "Distribution de la pièce (Divisi)",
+      "download_pdf": "Télécharger la partition (PDF)",
+      "listen_reference": "Écouter la référence",
+      "locked_badge": "Protégé",
+      "lyrics_translation": "Paroles et traduction",
+      "no_divisi": "Aucune division vocale définie.",
+      "no_notes": "Le chef n'a ajouté aucune note particulière.",
+      "no_pdf": "Partition indisponible",
+      "original_lyrics": "Original",
+      "other_voice": "Autre",
+      "part": "Partie :",
+      "pdf_badge": "PDF",
+      "practice_tracks": "Pistes de travail (MIDI / MP3)",
+      "traditional": "Traditionnel / Inconnu",
+      "translation_notes": "Traduction (notes)",
+      "unknown_artist": "Artiste",
+      "you_sing": "Vous chantez :",
+      "your_guidelines": "Vos consignes pour la pièce"
     },
-    "editor": {
-      "title_edit": "Modification des données",
-      "title_new": "Nouveau collaborateur",
-      "contact_person": "Personne de contact",
-      "first_name": "Prénom *",
-      "last_name": "Nom *",
-      "email": "E-mail",
-      "phone": "Téléphone",
-      "business_profile": "Profil d'activité",
-      "specialty": "Spécialité *",
-      "company_name": "Entreprise / Marque (optionnel)",
-      "company_placeholder": "ex. SoundTech Pro LLC",
-      "btn_save": "Enregistrer dans la base",
-      "confirm_exit_title": "Vous avez des modifications non enregistrées !",
-      "confirm_exit_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera."
+    "player": {
+      "speed_title": "Régler le tempo à {{rate}}x",
+      "your_voice": "(Votre voix)"
     },
-    "delete_modal": {
-      "title": "Supprimer cette personne de la base ?",
-      "desc": "Elle sera définitivement supprimée du registre. Vous ne pouvez pas supprimer des personnes déjà assignées à des concerts (mettez plutôt leurs données à jour)."
-    },
-    "specialties": {
-      "SOUND": "Ingénierie du son",
-      "LIGHT": "Conception lumière",
-      "VISUALS": "Arts visuels",
-      "INSTRUMENT": "Instrumentiste",
-      "LOGISTICS": "Logistique",
-      "OTHER": "Autre"
-    },
-    "toast": {
-      "sync_error": "Impossible de récupérer la liste des collaborateurs.",
-      "sync_warning": "Avertissement",
-      "delete_loading": "Suppression du collaborateur...",
-      "delete_success": "La personne a été retirée de la base.",
-      "delete_error_title": "Impossible de supprimer cette personne",
-      "delete_error_desc": "Elle est probablement liée à des projets existants. Essayez plutôt de modifier ses données.",
-      "save_loading_edit": "Mise à jour des données...",
-      "save_loading_new": "Ajout du collaborateur...",
-      "save_success_edit": "Profil du collaborateur mis à jour.",
-      "save_success_new": "Nouvelle personne ajoutée à la base.",
-      "save_error_title": "Une erreur est survenue lors de l'enregistrement des données.",
-      "save_error_desc": "Vérifiez les données et réessayez."
+    "project": {
+      "archived_badge": "Projet archivé",
+      "event": "Événement :"
     }
   },
-  "contracts": {
-    "dashboard": {
-      "subtitle": "Gestion financière",
-      "title": "RH &",
-      "title_highlight": "Paie",
-      "description": "Gérez les rémunérations des artistes et de l'équipe, contrôlez les budgets de production et générez des contrats PDF.",
-      "loading": "Chargement des registres...",
-      "select_event_label": "Sélectionner l'événement (contexte de facturation)",
-      "no_event_selected": "— Aucun événement sélectionné —",
-      "archived": "(Archivé)",
-      "empty_state_title": "Prêt pour la facturation",
-      "empty_state_desc": "Sélectionnez un événement dans le sélecteur de contexte ci-dessus pour gérer les tarifs et contrôler le budget de production.",
-      "global_budget": "Budget global du système",
-      "contracts_issued": "Contrats émis",
-      "valued": "évalués",
-      "priced_contracts": "Contrats chiffrés",
-      "missing_appraisals": "Évaluations manquantes",
-      "personnel_budget": "Budget du personnel",
-      "mass_fee_injection": "Injection massive de tarifs (chœur uniquement)",
-      "value_placeholder": "Valeur...",
-      "apply_valuation": "Appliquer l'évaluation",
-      "vocal_cast": "Distribution vocale (chœur / solistes)",
-      "tech_crew": "Équipe technique & logistique",
-      "no_personnel_title": "Aucun personnel assigné",
-      "no_personnel_desc": "Accédez à l'onglet « Gestion de projets » pour recruter la distribution ou l'équipe pour cet événement."
-    },
-    "table": {
-      "performer": "Interprète",
-      "voice": "Voix",
-      "status": "Statut",
-      "gross_amount": "Montant brut",
-      "documents": "Documents",
-      "contractor": "Prestataire / Entreprise",
-      "role": "Rôle"
-    },
-    "row": {
-      "missing_fee": "Tarif manquant",
-      "save": "Enregistrer",
-      "no_name": "Interprète"
-    },
-    "toast": {
-      "bulk_applying": "Application des tarifs groupés...",
-      "bulk_success": "Tarifs mis à jour avec succès pour {{count}} personnes.",
-      "bulk_error": "Erreur serveur pendant l'opération groupée.",
-      "pdf_generating": "Génération du PDF pour {{name}}...",
-      "pdf_success": "Document généré avec succès.",
-      "pdf_error": "Erreur de génération : {{message}}",
-      "save_error": "Impossible d'enregistrer la rémunération pour : {{name}}."
-    }
+  "notifications": {
+    "changed": "Changements :",
+    "crew_role": "Rôle assigné : {{role}}",
+    "empty_subtitle": "Vous n'avez pas de nouvelles notifications.",
+    "empty_title": "À jour !",
+    "mark_all_read": "Marquer tout comme lu",
+    "title": "Notifications",
+    "unread": "Non lues"
   },
   "projects": {
-    "dashboard": {
-      "subtitle": "Gestion de production",
-      "title": "Projets &",
-      "title_highlight": "Événements",
-      "add_btn": "Planifier un nouveau projet",
-      "header_badge": "Centre de commandement",
-      "header_title_1": "Événements &",
-      "header_title_2": "Production",
-      "btn_new_project": "Nouveau projet",
-      "empty_title": "Aucun projet dans cette vue",
-      "empty_desc": "Commencez à planifier un nouvel événement en cliquant sur le bouton « Nouveau projet » ci-dessus.",
-      "delete_modal_title": "Supprimer le projet ?",
-      "delete_modal_desc": "Cette action est irréversible. Elle supprimera toutes les répétitions, affectations d'équipe et distributions associées à ce projet."
-    },
-    "filters": {
-      "active": "En préparation",
-      "done": "Archive",
-      "all": "Tous",
-      "aria_label": "Filtres de statut des projets"
-    },
-    "card": {
-      "updating_status": "Mise à jour du statut...",
-      "status_active": "Projet marqué comme en préparation",
-      "status_done": "Projet marqué comme terminé",
-      "status_update_failed": "Impossible de mettre à jour le statut.",
-      "artistic_dashboard": "Tableau de bord artistique",
-      "logistics_dashboard": "Logistique & Production",
-      "collapse": "Réduire",
-      "expand": "Développer",
-      "status_production": "Statut de production",
-      "generating_doc": "Génération du document...",
-      "download_success": "Document téléchargé avec succès.",
-      "download_unknown_error": "Impossible de générer le document."
-    },
-    "toast": {
-      "sync_error_title": "Erreur de synchronisation",
-      "sync_error_desc": "Les dictionnaires n'ont pas été récupérés correctement.",
-      "delete_loading": "Suppression du projet...",
-      "delete_success": "Projet supprimé avec succès",
-      "delete_error_title": "Erreur de suppression",
-      "delete_error_desc": "Vérifiez les relations du projet dans la base de données (il peut avoir des contrats ou des présences associés)."
-    },
-    "badge_active": "En préparation",
-    "badge_done": "Terminé",
-    "call_time": "Convocation :",
     "actions": {
       "manage": "Gérer",
       "mark_active": "Marquer comme actif",
       "mark_done": "Clore le projet"
     },
-    "exports": {
-      "call_sheet": "Télécharger le Call Sheet",
-      "zaiks": "Télécharger ZAiKS",
-      "dtp": "Télécharger la note DTP"
-    },
-    "editor": {
-      "new_project": "Créateur de nouvel événement",
-      "archive_badge": "Archive",
-      "unsaved_changes_title": "Modifications non enregistrées",
-      "unsaved_changes_desc": "Vous avez des modifications non enregistrées dans cet onglet. Voulez-vous vraiment quitter ? Les données non enregistrées seront perdues."
-    },
-    "tabs": {
-      "details": "Détails & Plan",
-      "rehearsals": "Répétitions",
-      "matrix": "Présences",
-      "cast": "Distribution",
-      "program": "Setlist",
-      "micro_cast": "Divisi",
-      "crew": "Équipe technique",
-      "budget": "Budget"
-    },
-    "details": {
-      "description_title": "Description de l'événement",
-      "no_description": "Aucune note supplémentaire pour cet événement.",
-      "dress_code_title": "Dress code",
-      "dress_code_female": "Femmes :",
-      "dress_code_male": "Hommes :",
-      "no_dress_code": "Aucune exigence vestimentaire.",
-      "toast": {
-        "updating": "Mise à jour du projet...",
-        "creating": "Création du projet...",
-        "update_success": "Projet et planning mis à jour",
-        "create_success": "Nouveau projet et planning créés",
-        "saving": "Enregistrement des détails du projet..."
-      }
-    },
-    "matrix": {
-      "header": {
-        "title": "Matrice de présence",
-        "subtitle": "Marquage rapide des présences aux répétitions. Gérez le statut en cliquant sur les tuiles sous chaque nom."
-      },
-      "legend": {
-        "title": "Statut de présence"
-      },
-      "table": {
-        "rehearsal_date": "Répétition / Date",
-        "rate": "Taux"
-      },
-      "empty": {
-        "rehearsal": "Aucune répétition planifiée dans ce projet.",
-        "cast": "Aucune distribution assignée à ce projet.",
-        "rehearsals": "Aucune répétition planifiée dans ce projet."
-      },
-      "not_invited": "N/A",
-      "status": {
-        "none": "Aucune entrée",
-        "present": "Présent",
-        "late": "En retard",
-        "absent": "Absent",
-        "excused": "Excusé"
-      },
-      "toast": {
-        "save_error": "Impossible d'enregistrer la modification.",
-        "save_error_desc": "Vérifiez votre connexion et réessayez."
-      }
-    },
+    "badge_active": "En préparation",
+    "badge_done": "Terminé",
     "budget": {
       "aria_label": "Gérer le budget du projet",
-      "title": "Estimation",
+      "empty": {
+        "cast": "Aucune distribution assignée au projet."
+      },
       "estimated_cost": "Coût estimé",
-      "header": {
-        "title": "Budget de production",
-        "subtitle": "Planifiez et attribuez les tarifs pour l'ensemble de l'équipe impliquée dans le projet."
-      },
       "fab": {
-        "unsaved": "Modifications non enregistrées",
-        "description": "Vous avez modifié les tarifs."
+        "description": "Vous avez modifié les tarifs.",
+        "unsaved": "Modifications non enregistrées"
       },
-      "summary": {
-        "title": "Résumé des coûts",
-        "missing": "Évaluations manquantes :"
-      },
+      "input_placeholder": "Saisir un montant...",
       "kpi": {
         "calculation": "Calcul",
         "cast_fees": "Tarifs (distribution)",
@@ -997,99 +573,275 @@
         "missing_desc": "éléments sans tarif",
         "total": "Coût total"
       },
-      "empty": {
-        "cast": "Aucune distribution assignée au projet."
-      },
-      "sections": {
-        "estimated": "Budget estimé",
-        "description": "Gérer les coûts de personnel",
-        "cast": "Distribution vocale",
-        "crew": "Équipe technique"
-      },
-      "input_placeholder": "Saisir un montant...",
       "missing_fee": "Tarif manquant",
+      "sections": {
+        "cast": "Distribution vocale",
+        "crew": "Équipe technique",
+        "description": "Gérer les coûts de personnel",
+        "estimated": "Budget estimé"
+      },
+      "title": "Estimation",
       "toast": {
-        "saving": "Enregistrement du budget...",
+        "save_error_desc": "Impossible d'enregistrer tous les tarifs.",
         "save_success": "Tarifs enregistrés et budget recalculé",
-        "save_error_desc": "Impossible d'enregistrer tous les tarifs."
+        "saving": "Enregistrement du budget..."
       }
+    },
+    "call_time": "Convocation :",
+    "card": {
+      "artistic_dashboard": "Tableau de bord artistique",
+      "collapse": "Réduire",
+      "download_success": "Document téléchargé avec succès.",
+      "download_unknown_error": "Impossible de générer le document.",
+      "expand": "Développer",
+      "generating_doc": "Génération du document...",
+      "logistics_dashboard": "Logistique & Production",
+      "status_active": "Projet marqué comme en préparation",
+      "status_done": "Projet marqué comme terminé",
+      "status_production": "Statut de production",
+      "status_update_failed": "Impossible de mettre à jour le statut.",
+      "updating_status": "Mise à jour du statut..."
     },
     "cast": {
       "aria_label": "Gérer la distribution vocale",
-      "title": "Distribution vocale",
-      "empty": "Aucune distribution vocale.",
-      "employed": "Recrutés :",
-      "header": {
-        "title": "Casting principal",
-        "subtitle": "Gérez les chanteurs. Le réglage [scrollbar-gutter] neutralise les sauts de mise en page."
-      },
-      "search_placeholder": "Rechercher un artiste...",
-      "mobile": {
-        "available": "Base",
-        "assigned": "Distribution"
-      },
-      "sections": {
-        "available": "Base artistes",
-        "assigned": "Distribution du projet"
-      },
-      "empty_available": "Aucun disponible",
-      "empty_assigned": "La distribution est vide",
       "card": {
         "a_vista": "Déchiffrage :",
-        "remove": "Retirer",
         "add": "Ajouter",
-        "remove_aria": "Retirer de la distribution",
-        "add_aria": "Ajouter à la distribution"
+        "add_aria": "Ajouter à la distribution",
+        "remove": "Retirer",
+        "remove_aria": "Retirer de la distribution"
       },
+      "employed": "Recrutés :",
+      "empty": "Aucune distribution vocale.",
+      "empty_assigned": "La distribution est vide",
+      "empty_available": "Aucun disponible",
+      "header": {
+        "subtitle": "Gérez les chanteurs. Le réglage [scrollbar-gutter] neutralise les sauts de mise en page.",
+        "title": "Casting principal"
+      },
+      "mobile": {
+        "assigned": "Distribution",
+        "available": "Base"
+      },
+      "search_placeholder": "Rechercher un artiste...",
+      "sections": {
+        "assigned": "Distribution du projet",
+        "available": "Base artistes"
+      },
+      "title": "Distribution vocale",
       "toast": {
-        "removed": "Retiré de la distribution",
-        "added": "Ajouté à la distribution"
+        "added": "Ajouté à la distribution",
+        "removed": "Retiré de la distribution"
       }
     },
     "crew": {
       "aria_label": "Gérer l'équipe technique",
-      "title": "Équipe",
-      "empty": "Aucune équipe technique assignée.",
       "employed": "Recrutés :",
+      "empty": "Aucune équipe technique assignée.",
       "form": {
         "hire_label": "Recruter depuis la base",
-        "select_placeholder": "— Sélectionner un collaborateur —",
         "role_label": "Rôle pour ce concert",
         "role_placeholder": "ex. ingénieur FOH",
+        "select_placeholder": "— Sélectionner un collaborateur —",
         "submit": "Assigner"
       },
       "list": {
-        "title": "Membres de l'équipe",
-        "assigned_count": "Assignés : {{count}}",
-        "remove_title": "Retirer de l'équipe technique"
+        "assigned_count_one": "",
+        "assigned_count_many": "",
+        "assigned_count_other": "",
+        "remove_title": "Retirer de l'équipe technique",
+        "title": "Membres de l'équipe"
       },
+      "title": "Équipe",
       "toast": {
-        "assigning": "Affectation du membre d'équipe...",
-        "assign_success": "Membre d'équipe affecté avec succès",
         "assign_error": "Erreur d'affectation",
         "assign_error_desc": "Impossible d'affecter ce membre d'équipe au projet.",
-        "removing": "Suppression de l'affectation...",
+        "assign_success": "Membre d'équipe affecté avec succès",
+        "assigning": "Affectation du membre d'équipe...",
+        "remove_error_desc": "Impossible de retirer ce membre d'équipe du projet.",
         "remove_success": "Affectation supprimée du projet",
-        "remove_error_desc": "Impossible de retirer ce membre d'équipe du projet."
+        "removing": "Suppression de l'affectation..."
+      }
+    },
+    "dashboard": {
+      "btn_new_project": "Nouveau projet",
+      "delete_modal_desc": "Cette action est irréversible. Elle supprimera toutes les répétitions, affectations d'équipe et distributions associées à ce projet.",
+      "delete_modal_title": "Supprimer le projet ?",
+      "empty_desc": "Commencez à planifier un nouvel événement en cliquant sur le bouton « Nouveau projet » ci-dessus.",
+      "empty_title": "Aucun projet dans cette vue",
+      "header_badge": "Centre de commandement",
+      "header_title_1": "Événements &",
+      "header_title_2": "Production"
+    },
+    "details": {
+      "description_title": "Description de l'événement",
+      "dress_code_female": "Femmes :",
+      "dress_code_male": "Hommes :",
+      "dress_code_title": "Dress code",
+      "no_description": "Aucune note supplémentaire pour cet événement.",
+      "no_dress_code": "Aucune exigence vestimentaire.",
+      "toast": {
+        "create_success": "Nouveau projet et planning créés",
+        "saving": "Enregistrement des détails du projet...",
+        "update_success": "Projet et planning mis à jour"
+      }
+    },
+    "details_tab": {
+      "buttons": {
+        "add_run_sheet": "Ajouter un élément à la feuille de route"
+      },
+      "empty": {
+        "run_sheet": "Aucun élément de feuille de route. Ajoutez le premier !"
+      },
+      "fab": {
+        "description": "Vous avez modifié les paramètres du projet.",
+        "save": "Enregistrer les modifications",
+        "unsaved": "Modifications non enregistrées"
+      },
+      "fields": {
+        "call_time": "Convocation",
+        "date_time": "Date et heure *",
+        "description": "Description de l'événement",
+        "dress_code_female": "Dress code : femmes",
+        "dress_code_male": "Dress code : hommes",
+        "location": "Lieu / salle",
+        "spotify": "Playlist (Spotify)",
+        "timezone": "",
+        "title": "Titre du projet *"
+      },
+      "header": {
+        "title": "Détails de l'événement"
+      },
+      "placeholders": {
+        "description": "ex. merci d'être ponctuel...",
+        "spotify": "Collez le lien de la playlist de référence..."
+      },
+      "run_sheet": {
+        "description": "Description (optionnelle)",
+        "time": "Heure",
+        "title": "Titre"
+      },
+      "sections": {
+        "logistics": "Convocation et dress code",
+        "notes": "Notes de production",
+        "references": "Références musicales",
+        "run_sheet": "Feuille de route du jour du concert",
+        "title_desc": "Titre et description"
+      }
+    },
+    "editor": {
+      "archive_badge": "Archive",
+      "new_project": "Créateur de nouvel événement",
+      "unsaved_changes_desc": "Vous avez des modifications non enregistrées dans cet onglet. Voulez-vous vraiment quitter ? Les données non enregistrées seront perdues.",
+      "unsaved_changes_title": "Modifications non enregistrées"
+    },
+    "exports": {
+      "call_sheet": "Télécharger le Call Sheet",
+      "dtp": "Télécharger la note DTP",
+      "zaiks": "Télécharger ZAiKS"
+    },
+    "filters": {
+      "active": "En préparation",
+      "all": "Tous",
+      "aria_label": "Filtres de statut des projets",
+      "done": "Archive"
+    },
+    "matrix": {
+      "empty": {
+        "cast": "Aucune distribution assignée à ce projet.",
+        "rehearsals": "Aucune répétition planifiée dans ce projet."
+      },
+      "header": {
+        "subtitle": "Marquage rapide des présences aux répétitions. Gérez le statut en cliquant sur les tuiles sous chaque nom.",
+        "title": "Matrice de présence"
+      },
+      "legend": {
+        "title": "Statut de présence"
+      },
+      "not_invited": "N/A",
+      "table": {
+        "rate": "Taux",
+        "rehearsal_date": "Répétition / Date"
+      },
+      "toast": {
+        "save_error": "Impossible d'enregistrer la modification.",
+        "save_error_desc": "Vérifiez votre connexion et réessayez."
+      }
+    },
+    "micro_cast": {
+      "artist": {
+        "add_note": "Ajouter une note",
+        "drag_aria": "Faire glisser {{name}}",
+        "note_placeholder": "Note..."
+      },
+      "bucket": {
+        "aria": "Section de dépôt: ",
+        "aria_with_title": "Section de dépôt: {{title}}"
+      },
+      "buttons": {
+        "play_reference": "Lire la référence"
+      },
+      "empty": {
+        "no_requirements": "Aucune exigence vocale définie pour cette pièce dans la base du répertoire. Mode d'affectation libre (Divisi) utilisé.",
+        "pieces": "Aucune pièce",
+        "section": "Aucune affectation dans cette section",
+        "unassigned": "Tout le monde a été assigné à des rôles dans cette pièce."
+      },
+      "header": {
+        "subtitle": "Faites glisser les chanteurs entre les sections dans la pièce sélectionnée.",
+        "title": "Divisi et micro-casting"
+      },
+      "label": {
+        "pieces_in_program": "Pièces du programme"
+      },
+      "sections": {
+        "unassigned": "Non assignés (base de roster)"
+      },
+      "select_piece": "Sélectionner une pièce pour le casting",
+      "status": {
+        "deficit": "Déficit : ",
+        "free": "Poste vacant"
+      },
+      "toast": {
+        "note_error": "Impossible de mettre à jour la note.",
+        "sync_error": "Erreur de synchronisation",
+        "sync_error_desc": "Impossible de mettre à jour la distribution."
+      },
+      "voices": {
+        "altos": "Altos",
+        "basses": "Basses",
+        "sopranos": "Sopranos",
+        "tenors": "Ténors"
       }
     },
     "program": {
-      "music_time_min": "min de musique",
+      "actions": {
+        "add": "Ajouter au programme",
+        "add_encore": "Marquer comme bis",
+        "already_added": "La pièce est déjà dans la setlist",
+        "drag_aria": "Faire glisser la pièce {{title}}",
+        "remove_encore": "Retirer comme bis",
+        "remove_from_program": "Retirer du programme"
+      },
+      "and_more_one": "",
+      "and_more_many": "",
+      "and_more_other": "",
       "aria_label": "Gérer le programme du concert",
-      "title": "Programme du concert",
-      "no_reqs": "Aucune exigence",
-      "unfulfilled": "Non couvert",
-      "fulfilled": "Couvert",
-      "and_more": "...et {{count}} autres",
+      "badges": {
+        "encore": "BIS",
+        "tracks_count_one": "",
+        "tracks_count_many": "",
+        "tracks_count_other": ""
+      },
       "duration_unknown": "Durée inconnue",
       "empty": {
-        "setlist_title": "La setlist est vide",
+        "no_results": "Aucun résultat",
         "setlist_desc": "Sélectionnez des compositions dans la base à droite pour construire le programme du concert.",
-        "no_results": "Aucun résultat"
+        "setlist_title": "La setlist est vide"
       },
       "fab": {
-        "unsaved": "Modifications non enregistrées",
-        "description": "Vous avez modifié l'ordre du programme."
+        "description": "Vous avez modifié l'ordre du programme.",
+        "unsaved": "Modifications non enregistrées"
       },
       "format": {
         "duration_hours": "~ {{h}}h {{m}}min de musique",
@@ -1097,315 +849,378 @@
         "minutes": "{{m}} min",
         "seconds": "{{s}} s"
       },
-      "actions": {
-        "drag_aria": "Faire glisser la pièce {{title}}",
-        "remove_encore": "Retirer comme bis",
-        "add_encore": "Marquer comme bis",
-        "remove_from_program": "Retirer du programme",
-        "already_added": "La pièce est déjà dans la setlist",
-        "add": "Ajouter au programme"
-      },
-      "badges": {
-        "encore": "BIS",
-        "tracks_count": "Pistes : {{count}}"
-      },
-      "sections": {
-        "setlist": "Setlist de l'événement",
-        "database": "Base des compositions"
-      },
+      "fulfilled": "Couvert",
+      "music_time_min": "min de musique",
+      "no_reqs": "Aucune exigence",
       "search": {
         "placeholder": "Rechercher une pièce..."
       },
+      "sections": {
+        "database": "Base des compositions",
+        "setlist": "Setlist de l'événement"
+      },
+      "title": "Programme du concert",
       "toast": {
-        "adding": "Ajout de la pièce...",
-        "add_success": "Ajouté à la setlist",
         "add_error": "Impossible d'ajouter la pièce.",
-        "encore_toggled": "Statut bis modifié",
+        "add_success": "Ajouté à la setlist",
+        "adding": "Ajout de la pièce...",
         "encore_error": "Erreur de connexion. Impossible de modifier le statut bis.",
-        "removing": "Suppression de la pièce...",
+        "encore_toggled": "Statut bis modifié",
         "remove_success": "Retiré du programme",
-        "saving_order": "Enregistrement du nouvel ordre...",
+        "removing": "Suppression de la pièce...",
+        "save_order_error": "Le serveur a rejeté certaines modifications. Actualisation de la vue.",
         "save_order_success": "Ordre enregistré avec succès",
-        "save_order_error": "Le serveur a rejeté certaines modifications. Actualisation de la vue."
-      }
-    },
-    "details_tab": {
-      "fab": {
-        "unsaved": "Modifications non enregistrées",
-        "description": "Vous avez modifié les paramètres du projet.",
-        "save": "Enregistrer les modifications"
+        "saving_order": "Enregistrement du nouvel ordre..."
       },
-      "header": {
-        "title": "Détails de l'événement"
-      },
-      "sections": {
-        "title_desc": "Titre et description",
-        "logistics": "Convocation et dress code",
-        "notes": "Notes de production",
-        "references": "Références musicales",
-        "run_sheet": "Feuille de route du jour du concert"
-      },
-      "fields": {
-        "title": "Titre du projet *",
-        "date_time": "Date et heure *",
-        "location": "Lieu / salle",
-        "call_time": "Convocation",
-        "dress_code_female": "Dress code : femmes",
-        "dress_code_male": "Dress code : hommes",
-        "description": "Description de l'événement",
-        "spotify": "Playlist (Spotify)"
-      },
-      "placeholders": {
-        "description": "ex. merci d'être ponctuel...",
-        "spotify": "Collez le lien de la playlist de référence..."
-      },
-      "buttons": {
-        "add_run_sheet": "Ajouter un élément à la feuille de route"
-      },
-      "empty": {
-        "run_sheet": "Aucun élément de feuille de route. Ajoutez le premier !"
-      },
-      "run_sheet": {
-        "time": "Heure",
-        "title": "Titre",
-        "description": "Description (optionnelle)"
-      }
-    },
-    "micro_cast": {
-      "header": {
-        "title": "Divisi et micro-casting",
-        "subtitle": "Faites glisser les chanteurs entre les sections dans la pièce sélectionnée."
-      },
-      "artist": {
-        "drag_aria": "Faire glisser {{name}}",
-        "note_placeholder": "Note...",
-        "add_note": "Ajouter une note"
-      },
-      "select_piece": "Sélectionner une pièce pour le casting",
-      "label": {
-        "pieces_in_program": "Pièces du programme"
-      },
-      "buckets": {
-        "unassigned": {
-          "aria_with_title": "Section de dépôt: {{title}}",
-          "aria": "Section de dépôt: "
-        }
-      },
-      "buttons": {
-        "play_reference": "Lire la référence"
-      },
-      "sections": {
-        "unassigned": "Non assignés (base de roster)"
-      },
-      "voices": {
-        "sopranos": "Sopranos",
-        "altos": "Altos",
-        "tenors": "Ténors",
-        "basses": "Basses"
-      },
-      "status": {
-        "free": "Poste vacant",
-        "deficit": "Déficit : "
-      },
-      "empty": {
-        "pieces": "Aucune pièce",
-        "unassigned": "Tout le monde a été assigné à des rôles dans cette pièce.",
-        "section": "Aucune affectation dans cette section",
-        "no_requirements": "Aucune exigence vocale définie pour cette pièce dans la base du répertoire. Mode d'affectation libre (Divisi) utilisé."
-      },
-      "toast": {
-        "note_error": "Impossible de mettre à jour la note.",
-        "sync_error": "Erreur de synchronisation",
-        "sync_error_desc": "Impossible de mettre à jour la distribution."
-      },
-      "bucket": {
-        "aria": "Section de dépôt: ",
-        "aria_with_title": "Section de dépôt: {{title}}"
-      }
+      "unfulfilled": "Non couvert"
     },
     "rehearsals": {
-      "aria_label": "Gérer les répétitions du projet",
-      "title": "Répétitions",
-      "upcoming": "Répétitions à venir",
-      "progress": "Progression",
       "absences_reported": "Absences signalées :",
-      "tutti": "TUTTI",
-      "sectional": "PUPITRE",
-      "optional": "Optionnel",
-      "empty": {
-        "no_rehearsals": "Aucune répétition planifiée."
-      },
-      "form": {
-        "title": "Planifier une nouvelle répétition",
-        "date_time": "Date et heure *",
-        "location": "Lieu (salle) *",
-        "location_placeholder": "ex. salle 102, académie",
-        "focus": "Plan / Focus de répétition",
-        "focus_placeholder": "ex. Requiem pt. 1-3...",
-        "who": "Qui est convoqué à la répétition ?",
-        "type_tutti": "Tutti (tout le monde)",
-        "type_sectional": "Répétition de pupitre",
-        "type_custom": "Personnes sélectionnées",
-        "mandatory": "Présence obligatoire pour les invités",
-        "submit": "Enregistrer dans le calendrier",
-        "title_edit": "Modifier la répétition",
-        "update": "Mettre à jour la répétition"
-      },
-      "voices": {
-        "sopranos": "Sopranos",
-        "altos": "Altos",
-        "tenors": "Ténors",
-        "basses": "Basses"
-      },
-      "list": {
-        "title": "Planning des répétitions"
-      },
-      "status": {
-        "finished": "Terminée",
-        "tutti": "TUTTI",
-        "invited": "Invités : {{count}}",
-        "optional": "Optionnel"
-      },
       "actions": {
         "delete": "Supprimer la répétition",
         "edit": "Modifier la répétition"
       },
-      "modal": {
-        "delete_title": "Supprimer cette répétition ?",
-        "delete_desc": "Les listes de présence liées à cette répétition seront supprimées définitivement. Cette opération est irréversible."
+      "aria_label": "Gérer les répétitions du projet",
+      "empty": {
+        "no_rehearsals": "Aucune répétition planifiée."
       },
+      "form": {
+        "date_time": "Date et heure *",
+        "focus": "Plan / Focus de répétition",
+        "focus_placeholder": "ex. Requiem pt. 1-3...",
+        "location": "Lieu (salle) *",
+        "location_placeholder": "ex. salle 102, académie",
+        "mandatory": "Présence obligatoire pour les invités",
+        "submit": "Enregistrer dans le calendrier",
+        "timezone": "",
+        "title": "Planifier une nouvelle répétition",
+        "title_edit": "Modifier la répétition",
+        "type_custom": "Personnes sélectionnées",
+        "type_sectional": "Répétition de pupitre",
+        "type_tutti": "Tutti (tout le monde)",
+        "update": "Mettre à jour la répétition",
+        "who": "Qui est convoqué à la répétition ?"
+      },
+      "list": {
+        "title": "Planning des répétitions"
+      },
+      "modal": {
+        "delete_desc": "Les listes de présence liées à cette répétition seront supprimées définitivement. Cette opération est irréversible.",
+        "delete_title": "Supprimer cette répétition ?"
+      },
+      "optional": "Optionnel",
+      "progress": "Progression",
+      "sectional": "PUPITRE",
+      "status": {
+        "finished": "Terminée",
+        "invited_one": "",
+        "invited_many": "",
+        "invited_other": "",
+        "optional": "Optionnel",
+        "tutti": "TUTTI"
+      },
+      "title": "Répétitions",
       "toast": {
-        "select_target": "Sélectionnez au moins une personne ou un pupitre pour la répétition !",
-        "saving": "Enregistrement de la répétition dans le calendrier...",
-        "save_success": "Répétition enregistrée avec succès",
-        "save_error_desc": "Un problème est survenu lors de l'enregistrement dans la base. Vérifiez le formulaire et la connexion.",
-        "removing": "Suppression de la répétition...",
-        "remove_success": "La répétition a été supprimée",
         "remove_error_desc": "Impossible de supprimer la répétition. Le serveur a rejeté la requête.",
-        "updating": "Mise à jour de la répétition...",
-        "update_success": "Répétition mise à jour avec succès"
+        "remove_success": "La répétition a été supprimée",
+        "removing": "Suppression de la répétition...",
+        "save_error_desc": "Un problème est survenu lors de l'enregistrement dans la base. Vérifiez le formulaire et la connexion.",
+        "save_success": "Répétition enregistrée avec succès",
+        "saving": "Enregistrement de la répétition dans le calendrier...",
+        "select_target": "Sélectionnez au moins une personne ou un pupitre pour la répétition !",
+        "update_success": "Répétition mise à jour avec succès",
+        "updating": "Mise à jour de la répétition..."
+      },
+      "tutti": "TUTTI",
+      "upcoming": "Répétitions à venir",
+      "voices": {
+        "altos": "Altos",
+        "basses": "Basses",
+        "sopranos": "Sopranos",
+        "tenors": "Ténors"
       }
     },
     "run_sheet": {
-      "title": "Feuille de route du jour du concert",
-      "empty": "Aucune feuille de route disponible pour cet événement."
+      "empty": "Aucune feuille de route disponible pour cet événement.",
+      "title": "Feuille de route du jour du concert"
     },
     "spotify": {
-      "title": "Pistes de référence",
+      "empty": "Aucune playlist assignée.",
       "iframe_title": "Playlist Spotify",
       "open_app": "Ouvrir dans l'application",
-      "empty": "Aucune playlist assignée."
+      "title": "Pistes de référence"
+    },
+    "toast": {
+      "delete_error_desc": "Vérifiez les relations du projet dans la base de données (il peut avoir des contrats ou des présences associés).",
+      "delete_error_title": "Erreur de suppression",
+      "delete_loading": "Suppression du projet...",
+      "delete_success": "Projet supprimé avec succès",
+      "sync_error_desc": "Les dictionnaires n'ont pas été récupérés correctement.",
+      "sync_error_title": "Erreur de synchronisation"
     }
   },
-  "notifications": {
-    "title": "Notifications",
-    "unread": "Non lues",
-    "mark_all_read": "Marquer tout comme lu",
-    "empty_title": "À jour !",
-    "empty_subtitle": "Vous n'avez pas de nouvelles notifications.",
-    "changed": "Changements :",
-    "crew_role": "Rôle assigné : {{role}}",
-    "types": {
-      "PROJECT_INVITATION": "Invitation au projet",
-      "PROJECT_UPDATED": "Projet mis à jour",
-      "PROJECT_CANCELLED": "Projet annulé",
-      "PROJECT_REMINDER": "Rappel du projet",
-      "REHEARSAL_SCHEDULED": "Répétition planifiée",
-      "REHEARSAL_UPDATED": "Répétition mise à jour",
-      "REHEARSAL_CANCELLED": "Répétition annulée",
-      "REHEARSAL_REMINDER": "Rappel de répétition",
-      "PIECE_CASTING_ASSIGNED": "Casting de pièce assigné",
-      "PIECE_CASTING_UPDATED": "Casting de pièce mis à jour",
-      "MATERIAL_UPLOADED": "Matériel téléversé",
-      "CREW_ASSIGNED": "Équipe assignée",
-      "CONTRACT_ISSUED": "Contrat émis",
-      "ABSENCE_REQUESTED": "Absence demandée",
-      "ABSENCE_APPROVED": "Absence approuvée",
-      "ABSENCE_REJECTED": "Absence rejetée",
-      "SYSTEM_ALERT": "Alerte système"
+  "rehearsals": {
+    "dashboard": {
+      "bulk_fill_one": "",
+      "bulk_fill_many": "",
+      "bulk_fill_other": "",
+      "general_work": "Travail général",
+      "no_location": "Sans lieu",
+      "no_projects": "Aucun projet dans cet onglet.",
+      "only": "Seulement :",
+      "project_context": "Contexte du projet",
+      "sectional": "Répétition de pupitre",
+      "subtitle": "Module inspecteur",
+      "title": "Journal des",
+      "title_highlight": "présences",
+      "tutti": "Tutti (ensemble complet)",
+      "tutti_badge": "Répétition tutti"
+    },
+    "row": {
+      "minutes_placeholder": "Combien de min ?",
+      "note_placeholder": "Note (optionnelle)",
+      "status_absent": "Absent",
+      "status_excused": "Excusé",
+      "status_late": "En retard",
+      "status_present": "Présent"
+    },
+    "stats": {
+      "absent": "Absents",
+      "present": "Présents",
+      "rate": "Taux de présence"
+    },
+    "tabs": {
+      "active": "Actif",
+      "archive": "Archive"
+    },
+    "toast": {
+      "bulk_error_desc": "Impossible d'enregistrer les présences groupées.",
+      "bulk_error_title": "Erreur système",
+      "bulk_marking": "Mise à jour groupée des présences...",
+      "bulk_success": "Les absences ont été complétées comme « Présent ».",
+      "save_error_desc": "Erreur d'enregistrement pour :",
+      "save_error_title": "Erreur d'enregistrement",
+      "sync_error_desc": "Impossible de charger les données.",
+      "sync_error_title": "Erreur de synchronization"
+    },
+    "voices": {
+      "altos": "Altos",
+      "basses": "Basses",
+      "countertenors": "Contreténors",
+      "mezzos": "Mezzo-sopranos",
+      "sopranos": "Sopranos",
+      "tenors": "Ténors"
+    }
+  },
+  "resources": {
+    "actions": {
+      "add_category": "Ajouter une catégorie",
+      "add_document": "Ajouter un nouveau document",
+      "delete_category": "Supprimer la catégorie",
+      "delete_file": "Supprimer le fichier",
+      "download_file": "Télécharger {{title}}",
+      "edit_category": "Modifier la catégorie"
+    },
+    "banner": {
+      "description": "La structure de fichiers affichée ci-dessous est une maquette. Les documents, contrats et règlements réels de la fondation seront téléversés lors d'une phase ultérieure de déploiement du CMS.",
+      "title": "Section d'aperçu (version démo)"
+    },
+    "categories": {
+      "regulations": {
+        "description": "Documents officiels de la fondation, règles de collaboration, politique de confidentialité et règlements de participation aux répétitions.",
+        "files": {
+          "choir_rules": "Règlement des choristes et règles de présence",
+          "gdpr": "Politique de traitement des données personnelles (RGPD)",
+          "statute": "Statut de la fondation (version 2026 - mis à jour après l'assemblée générale du conseil)"
+        },
+        "title": "Règlements et statuts"
+      },
+      "wardrobe": {
+        "description": "Consignes relatives à la tenue de concert standardisée et règles d'entretien des éléments de garde-robe confiés.",
+        "files": {
+          "dress_guide": "Guide : Robe chorale (Soprano / Alto)",
+          "tuxedo_guide": "Guide : Frac et nœud papillon (Ténor / Basse)"
+        },
+        "title": "Tenue et dress code"
+      }
+    },
+    "cms": {
+      "description": "La possibilité de téléverser et modifier des fichiers sur le serveur sera activée une fois l'API cible connectée.",
+      "title": "Module CMS en préparation"
+    },
+    "dashboard": {
+      "badge": "Base de connaissances et documents",
+      "title": "Ressources de la",
+      "title_highlight": "Fondation"
+    }
+  },
+  "schedule": {
+    "card": {
+      "call_time": "Convocation :",
+      "download_call_sheet": "Call Sheet PDF",
+      "download_error_desc": "Impossible de télécharger le fichier.",
+      "download_loading": "Génération du document Call Sheet...",
+      "download_success": "Fichier téléchargé avec succès",
+      "dress_code_men": "Hommes :",
+      "dress_code_title": "Détails de la tenue",
+      "dress_code_women": "Femmes :",
+      "expand_cast": "Développer la distribution (divisi)",
+      "hide_cast": "Masquer la distribution",
+      "no_divisi": "Aucune division vocale détaillée (divisi) pour cette pièce.",
+      "no_location": "Sans lieu",
+      "no_notes": "Aucune note de production supplémentaire.",
+      "no_program": "Le répertoire n'a pas encore été défini.",
+      "no_run_sheet": "La feuille de route n'a pas encore été publiée par le manager.",
+      "no_spotify": "Aucune playlist de référence.",
+      "note_label": "Note :",
+      "project_badge": "Concert / Événement",
+      "run_sheet_title": "Feuille de route",
+      "tab": {
+        "logistics": "Logistique & Plan",
+        "setlist": "Répertoire & Divisi"
+      },
+      "unknown_artist": "Artiste"
+    },
+    "dashboard": {
+      "description": "Consultez les répétitions, signalez vos absences et suivez les plans de concert.",
+      "subtitle": "Calendrier personnel",
+      "title": "Mon",
+      "title_highlight": "Planning"
+    },
+    "empty": {
+      "description": "Vous n'avez aucun rendez-vous ou concert assigné dans cette vue.",
+      "title": "Aucune entrée dans le calendrier"
+    },
+    "event": {
+      "generic_event": "Événement",
+      "rehearsal_prefix": "Répétition :"
+    },
+    "loading": "Chargement du planning...",
+    "rehearsal": {
+      "action": {
+        "confirm_long": "Confirmer la présence",
+        "confirm_short": "Confirmer",
+        "edit": "Modifier",
+        "report_issue": "Signaler un problème"
+      },
+      "badge": "Répétition",
+      "details": {
+        "focus_title": "Plan de travail",
+        "materials_button": "Supports",
+        "materials_desc": "Téléchargez les partitions PDF et travaillez vos parties avec le lecteur.",
+        "materials_subtitle": "Préparez-vous pour la répétition",
+        "materials_title": "Vos partitions",
+        "no_focus": "Aucun plan détaillé pour cette répétition.",
+        "reported_absences": "Absences signalées :"
+      },
+      "form": {
+        "cancel": "Annuler",
+        "option_absent": "Je serai absent",
+        "option_late": "Je serai en retard",
+        "reason_label": "Motif / Notes *",
+        "reason_placeholder": "ex. embouteillages, maladie...",
+        "status_label": "Statut *",
+        "submit": "Envoyer",
+        "title": "Formulaire d'absence pour l'inspecteur"
+      },
+      "no_location": "Aucun",
+      "optional": "Optionnel",
+      "status_absent": "Absent",
+      "status_late": "Retard",
+      "status_present": "Confirmé"
+    },
+    "tabs": {
+      "past": "Historique",
+      "upcoming": "À venir"
+    },
+    "toast": {
+      "submit_error_desc": "Impossible d'enregistrer le signalement.",
+      "submit_error_title": "Erreur d'enregistrement",
+      "submit_success": "Le signalement a été enregistré.",
+      "submitting": "Envoi du signalement..."
     }
   },
   "settings": {
-    "tabs": {
-      "general": "Général",
-      "security": "Sécurité",
-      "logistics": "Logistique",
-      "privacy": "Confidentialité",
-      "integrations": "Intégrations"
-    },
     "errors": {
       "invalid_current_password": "Mot de passe invalide. Réessayez."
     },
     "general": {
-      "title": "Paramètres généraux",
-      "subtitle": "Gérez vos données et préférences d'application.",
       "firstName": "Prénom",
+      "language": "Langue de l'interface",
       "lastName": "Nom",
       "phone": "Numéro de téléphone",
-      "language": "Langue de l'interface",
-      "timezone": "Fuseau horaire"
+      "subtitle": "Gérez vos données et préférences d'application.",
+      "timezone": "Fuseau horaire",
+      "title": "Paramètres généraux"
+    },
+    "integrations": {
+      "calendar_url_label": "Votre adresse de calendrier privée",
+      "copied": "Copié",
+      "copy_link": "Copier le lien",
+      "live_sync_desc": "Utilisez ce lien pour vous abonner au calendrier du chœur. Vos répétitions et concerts se mettront à jour automatiquement. Ajoutez-le comme un abonnement (URL), et non comme un fichier téléchargé une seule fois.",
+      "live_sync_title": "Synchronisation active (Apple, Google, Outlook)",
+      "reset_btn": "Générer un nouveau lien",
+      "reset_desc": "Si vous soupçonnez un accès non autorisé à votre lien de calendrier, générez-le à nouveau. L'adresse précédente cessera de fonctionner immédiatement.",
+      "reset_title": "Réinitialisez votre lien",
+      "subtitle": "Synchronisez votre planning de répétitions avec votre calendrier téléphonique.",
+      "title": "Intégrations et calendriers"
+    },
+    "logistics": {
+      "clothing_size": "Taille de vêtement",
+      "dietary_notes": "Notes / Allergies (optionnel)",
+      "dietary_notes_placeholder": "ex. allergie aux cacahuètes, pas de fruits de mer...",
+      "dietary_options": {
+        "gf": "Sans gluten",
+        "lf": "Sans lactose",
+        "none": "Aucune exigence",
+        "vegan": "Vegan",
+        "vege": "Végétarien"
+      },
+      "dietary_preference": "Préférence alimentaire",
+      "height": "Taille (cm)",
+      "height_placeholder": "ex. 175",
+      "sections": {
+        "catering": "Restauration",
+        "measurements": "Mesures et tenues"
+      },
+      "shoe_size": "Pointure (UE)",
+      "shoe_size_placeholder": "ex. 42",
+      "subtitle": "Données utilisées par la direction pour commander les tenues et la restauration.",
+      "title": "Logistique et déplacements"
     },
     "membership": {
       "title": "Profil artiste",
       "voice": "Votre voix"
     },
-    "security": {
-      "title": "Sécurité",
-      "subtitle": "Gérez votre mot de passe et les paramètres de sécurité du compte.",
-      "oldPassword": "Mot de passe actuel",
-      "newPassword": "Nouveau mot de passe",
-      "updatePassword": "Changer le mot de passe",
-      "success": "Votre mot de passe a été changé avec succès."
-    },
     "privacy": {
-      "title": "Confidentialité et données (RGPD)",
-      "subtitle": "Gérez vos données personnelles et les permissions du compte.",
-      "exportTitle": "Export de données",
-      "exportDesc": "Téléchargez une copie de toutes les données assignées à votre compte au format JSON lisible par machine.",
-      "deleteTitle": "Supprimer le compte",
+      "confirmPasswordLabel": "Confirmez avec votre mot de passe pour supprimer le compte",
       "deleteDesc": "Bloquez définitivement l'accès à l'application. Les données historiques des répétitions et concerts seront anonymisées pour les statistiques du chœur.",
-      "modalTitle": "Êtes-vous sûr de vouloir supprimer le compte ?",
-      "modalDescLine1Prefix": "Cette action est",
+      "deleteTitle": "Supprimer le compte",
+      "exportDesc": "Téléchargez une copie de toutes les données assignées à votre compte au format JSON lisible par machine.",
+      "exportTitle": "Export de données",
       "modalDescLine1Highlight": "irréversible",
+      "modalDescLine1Prefix": "Cette action est",
       "modalDescLine1Suffix": "Vous perdrez l'accès à tous les matériaux du chœur, partitions et plannings.",
       "modalDescLine2": "L'historique des présences sera conservé à titre informatif, mais le compte sera définitivement désactivé.",
-      "confirmPasswordLabel": "Confirmez avec votre mot de passe pour supprimer le compte",
-      "passwordPlaceholder": "Mot de passe actuel"
+      "modalTitle": "Êtes-vous sûr de vouloir supprimer le compte ?",
+      "passwordPlaceholder": "Mot de passe actuel",
+      "subtitle": "Gérez vos données personnelles et les permissions du compte.",
+      "title": "Confidentialité et données (RGPD)"
     },
-    "integrations": {
-      "title": "Intégrations et calendriers",
-      "subtitle": "Synchronisez votre planning de répétitions avec votre calendrier téléphonique.",
-      "live_sync_title": "Synchronisation active (Apple, Google, Outlook)",
-      "live_sync_desc": "Utilisez ce lien pour vous abonner au calendrier du chœur. Vos répétitions et concerts se mettront à jour automatiquement. Ajoutez-le comme un abonnement (URL), et non comme un fichier téléchargé une seule fois.",
-      "calendar_url_label": "Votre adresse de calendrier privée",
-      "copied": "Copié",
-      "copy_link": "Copier le lien",
-      "reset_title": "Réinitialisez votre lien",
-      "reset_desc": "Si vous soupçonnez un accès non autorisé à votre lien de calendrier, générez-le à nouveau. L'adresse précédente cessera de fonctionner immédiatement.",
-      "reset_btn": "Générer un nouveau lien"
+    "security": {
+      "newPassword": "Nouveau mot de passe",
+      "oldPassword": "Mot de passe actuel",
+      "subtitle": "Gérez votre mot de passe et les paramètres de sécurité du compte.",
+      "success": "Votre mot de passe a été changé avec succès.",
+      "title": "Sécurité",
+      "updatePassword": "Changer le mot de passe"
     },
-    "logistics": {
-      "title": "Logistique et déplacements",
-      "subtitle": "Données utilisées par la direction pour commander les tenues et la restauration.",
-      "sections": {
-        "catering": "Restauration",
-        "measurements": "Mesures et tenues"
-      },
-      "dietary_preference": "Préférence alimentaire",
-      "dietary_notes": "Notes / Allergies (optionnel)",
-      "dietary_notes_placeholder": "ex. allergie aux cacahuètes, pas de fruits de mer...",
-      "dietary_options": {
-        "none": "Aucune exigence",
-        "vege": "Végétarien",
-        "vegan": "Vegan",
-        "gf": "Sans gluten",
-        "lf": "Sans lactose"
-      },
-      "clothing_size": "Taille de vêtement",
-      "shoe_size": "Pointure (UE)",
-      "shoe_size_placeholder": "ex. 42",
-      "height": "Taille (cm)",
-      "height_placeholder": "ex. 175"
+    "tabs": {
+      "general": "Général",
+      "integrations": "Intégrations",
+      "logistics": "Logistique",
+      "privacy": "Confidentialité",
+      "security": "Sécurité"
     }
   }
 }

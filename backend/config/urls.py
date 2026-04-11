@@ -89,6 +89,8 @@ urlpatterns = [
     path('api/users/me/export-data/', ExportUserDataView.as_view(), name='user-export-data'),
     path('api/users/me/delete-account/', RequestAccountDeletionView.as_view(), name='user-delete-account'),
     path('api/users/me/reset-calendar-token/', ResetCalendarTokenView.as_view(), name='user-reset-calendar-token'),
+
+    path("api/logistics/", include("logistics.urls")),
 ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.

@@ -24,7 +24,6 @@ import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
 import SpotifyWidget from "../../projects/ProjectCard/widgets/SpotifyWidget";
 import {
   formatLocalizedDate,
-  formatLocalizedTime,
 } from "../../../shared/lib/intl";
 import type { Project, ProgramItem, PieceCasting } from "../../../shared/types";
 import { Button } from "../../../shared/ui/Button";

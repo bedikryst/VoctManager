@@ -174,6 +174,31 @@ export interface CrewAssignment extends BaseModel {
 }
 
 // ==========================================
+// DOMAIN ENTITIES: LOGISTICS
+// ==========================================
+
+export type LocationCategory =
+  | "CONCERT_HALL"
+  | "REHEARSAL_ROOM"
+  | "HOTEL"
+  | "AIRPORT"
+  | "TRANSIT_STATION"
+  | "WORKSPACE"
+  | "OTHER";
+
+export interface Location extends BaseModel {
+  name: string;
+  category: LocationCategory;
+  google_place_id?: string | null;
+  formatted_address: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  timezone: string;
+  internal_notes?: string;
+  is_active: boolean;
+}
+
+// ==========================================
 // DOMAIN ENTITIES: ARCHIVE
 // ==========================================
 

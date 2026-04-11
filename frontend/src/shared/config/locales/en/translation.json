@@ -1,994 +1,567 @@
 {
-  "common": {
-    "locale": "en-US",
-    "currency": "PLN",
-    "people_short": "ppl.",
-    "actions": {
-      "discard": "Discard changes",
-      "cancel": "Cancel",
-      "save": "Save",
-      "edit": "Edit",
-      "delete": "Delete",
-      "select": "Select",
-      "close_panel": "Close panel (ESC)",
-      "delete_error": "Deletion error",
-      "confirm": "Confirm",
-      "loading": "Processing...",
-      "download": "Download",
-      "deleteAccount": "Delete Account",
-      "confirmDelete": "Yes, Delete Account"
-    },
-    "errors": {
-      "server_error": "Server error",
-      "server_problem": "A problem occurred with the server.",
-      "generation_error": "Generation error",
-      "save_error": "Save error",
-      "save_problem": "A problem occurred while saving data.",
-      "database_error": "A database connection problem occurred."
-    },
-    "toast": {
-      "sync_warning_title": "Sync warning",
-      "sync_warning_desc": "Failed to fetch all archive data."
-    },
-    "delete_modal": {
-      "title": "Delete piece from archive?",
-      "desc": "This step will permanently remove the piece metadata..."
-    },
-    "editor": {
-      "new_piece": "New Piece",
-      "unsaved_title": "You have unsaved changes!",
-      "unsaved_desc": "You have made changes in the form that have not been saved yet. Are you sure you want to close the panel? Unsaved data will be lost.",
-      "tabs": {
-        "details": "Metadata",
-        "tracks": "MP3 Tracks"
-      }
-    },
-    "tracks": {
-      "tutti": "Tutti"
-    },
-    "form": {
-      "toast": {
-        "creating": "Adding piece to archive...",
-        "updating": "Updating metadata...",
-        "constraint_title": "System constraint",
-        "constraint_desc": "Creating composers inline requires a separate endpoint. Select a composer from the list.",
-        "create_success": "Piece added successfully.",
-        "update_success": "Changes have been saved.",
-        "save_error_title": "Save error.",
-        "save_error_desc": "Check the data and try again."
-      }
-    },
-    "state": {
-      "loading": "Loading...",
-      "saved": "Saved"
-    }
-  },
-  "auth": {
-    "authorizing": "Authorizing...",
-    "activate": {
-      "back_to_home": "Back to homepage",
-      "badge": "Invite Activation",
-      "subtitle": "VoctManager Access",
-      "title_1": "Activate your",
-      "title_2": "artist panel",
-      "description": "Complete the final onboarding step to secure your account and enter the operational workspace used for projects, rehearsals, and ensemble coordination.",
-      "features": {
-        "security": {
-          "title": "Secure onboarding",
-          "desc": "The activation link is bound to your invited account and unlocks the private dashboard only after password setup."
-        },
-        "access": {
-          "title": "One-step access",
-          "desc": "After activation you can sign in immediately and review rehearsals, projects, and operational materials."
-        },
-        "workspace": {
-          "title": "Professional workspace",
-          "desc": "VoctManager centralizes artistic communication, roster data, and production logistics in one panel."
-        }
-      },
-      "form": {
-        "subtitle": "Password setup",
-        "title": "Finalize your access",
-        "description": "Choose a secure password for the invited account. Once activated, you will use the standard login page to enter the panel.",
-        "security_title": "Security standard",
-        "security_desc": "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
-        "missing_params": "This link is missing activation parameters. Open the latest invitation email and use the full button or URL.",
-        "new_password": "New password",
-        "new_password_placeholder": "Create a secure password",
-        "confirm_password": "Confirm password",
-        "confirm_password_placeholder": "Repeat the password",
-        "activating_btn": "Activating account",
-        "activate_btn": "Activate account"
-      },
-      "success": {
-        "subtitle": "Activation complete",
-        "title": "Your panel is ready",
-        "desc_1": "The account assigned to ",
-        "desc_2": " has been secured and activated.",
-        "your_username": "Your username to log in",
-        "instruction": "Proceed to the login page and use your email along with your newly created password to access the panel.",
-        "go_to_login": "Go to login",
-        "return_home": "Return home"
-      },
-      "errors": {
-        "expired_link": "This activation link has expired. Request a fresh invitation from the administrator.",
-        "invalid_link": "This activation link is invalid. Verify the full URL or request a new invitation.",
-        "activation_failed": "Account activation failed. Verify the link details and try again.",
-        "incomplete_link": "The activation link is incomplete. Open the latest invitation email and try again.",
-        "password_too_short": "Use a password with at least 8 characters.",
-        "password_mismatch": "The password confirmation does not match."
-      }
-    }
-  },
   "archive": {
-    "dashboard": {
-      "subtitle": "Repertoire Resources",
-      "title": "Sheet Music",
-      "title_highlight": "Archive",
-      "new_piece": "New Piece",
-      "stats_total": "Items in database",
-      "stats_pdf": "Available Scores (PDF)",
-      "stats_audio": "Audio Tracks (MIDI/MP3)",
-      "search_placeholder": "Search piece by title...",
-      "filter_composer": "All Composers",
-      "filter_epoch": "All Epochs",
-      "empty_state": "No results",
-      "empty_hint": "Change filter parameters or add a new composition to the database.",
-      "not_found": "Composition not found",
-      "add_piece": "Add piece:"
-    },
-    "toast": {
-      "sync_warning_title": "Sync warning",
-      "sync_warning_desc": "Failed to fetch all archive data.",
-      "delete_loading": "Deleting \"{{title}}\"...",
-      "delete_success": "Piece was removed from the archive.",
-      "delete_error_title": "Failed to remove the piece.",
-      "delete_error_desc": "Make sure the piece is not linked to active projects."
-    },
-    "delete_modal": {
-      "title": "Delete piece from archive?",
-      "desc": "This step will permanently remove the piece metadata..."
-    },
     "card": {
-      "traditional_unknown": "Traditional / Unknown",
-      "metadata_title": "Piece Metadata",
+      "actions": {
+        "delete": "Delete Piece",
+        "edit": "Edit Metadata",
+        "manage_audio": "Manage Audio"
+      },
       "composer_title": "Composer",
       "divisi_title": "Divisi Algorithm",
       "fields": {
-        "language": "Language",
         "arranger": "Arranger",
-        "voicing": "Voicing",
-        "duration": "Duration"
+        "duration": "Duration",
+        "language": "Language",
+        "voicing": "Voicing"
       },
-      "actions": {
-        "edit": "Edit Metadata",
-        "manage_audio": "Manage Audio",
-        "delete": "Delete Piece"
-      },
+      "metadata_title": "Piece Metadata",
       "reference": {
-        "youtube": "YouTube Reference Recording",
+        "generic": "Reference Recording",
         "spotify": "Spotify Reference Recording",
-        "generic": "Reference Recording"
-      }
+        "youtube": "YouTube Reference Recording"
+      },
+      "traditional_unknown": "Traditional / Unknown"
+    },
+    "dashboard": {
+      "add_piece": "Add piece:",
+      "empty_hint": "Change filter parameters or add a new composition to the database.",
+      "empty_state": "No results",
+      "filter_composer": "All Composers",
+      "filter_epoch": "All Epochs",
+      "new_piece": "New Piece",
+      "not_found": "Composition not found",
+      "search_placeholder": "Search piece by title...",
+      "stats_audio": "Audio Tracks (MIDI/MP3)",
+      "stats_pdf": "Available Scores (PDF)",
+      "stats_total": "Items in database",
+      "subtitle": "Repertoire Resources",
+      "title": "Sheet Music",
+      "title_highlight": "Archive"
+    },
+    "delete_modal": {
+      "desc": "This step will permanently remove the piece metadata...",
+      "title": "Delete piece from archive?"
     },
     "editor": {
       "new_piece": "New Piece",
-      "unsaved_title": "You have unsaved changes!",
-      "unsaved_desc": "You have made changes in the form that have not been saved to the database yet. Are you sure you want to close the panel? Unsaved data will be lost.",
       "tabs": {
         "details": "Metadata",
         "tracks": "MP3 Tracks"
-      }
-    },
-    "tracks": {
-      "tutti": "Tutti",
-      "uploading": "Uploading recording...",
-      "upload_success": "Recording was added successfully.",
-      "upload_error": "Upload error. Make sure the file format is supported.",
-      "deleting": "Deleting recording...",
-      "delete_success": "File was removed from the server.",
-      "delete_error": "An error occurred while deleting the recording.",
-      "add_material": "Add Practice Material",
-      "voice_part": "Voice Part *",
-      "file_upload": "Audio File (MP3/WAV/MIDI) *",
-      "upload_button": "Upload Recording",
-      "uploaded_tracks": "Uploaded Audio Tracks",
-      "no_files": "No audio files",
-      "delete_confirm_title": "Delete recording from the server?",
-      "delete_confirm_desc": "The audio file will be permanently removed from the database."
+      },
+      "unsaved_desc": "You have made changes in the form that have not been saved to the database yet. Are you sure you want to close the panel? Unsaved data will be lost.",
+      "unsaved_title": "You have unsaved changes!"
     },
     "form": {
-      "fields": {
-        "title": "Piece Title *",
-        "composer": "Composer",
-        "arranger": "Arranger",
-        "epoch": "Musical Period",
-        "composition_year": "Composition Year",
-        "language": "Language",
-        "voicing": "Voicing (Traditional Notation)",
-        "duration": "Estimated Duration",
-        "lyrics_original": "Original Lyrics",
-        "lyrics_translation": "Translation (Notes)",
-        "reference_youtube": "YouTube Reference",
-        "reference_spotify": "Spotify Reference",
-        "sheet_music": "Score / Sheet Music (Optional PDF)"
-      },
-      "sections": {
-        "requirements": "Performance Requirements",
-        "divisi": "Cast Algorithm (Divisi)",
-        "materials": "Materials and Texts"
-      },
-      "descriptions": {
-        "divisi": "Select voice parts and define the minimum number of singers required to validate staffing gaps in micro-casting mode."
-      },
-      "placeholders": {
-        "title": "e.g., Lacrimosa",
-        "composer_first_name": "First name",
-        "composer_last_name": "Last name *",
-        "composer_birth_year": "Birth year",
-        "composer_death_year": "Death year",
-        "composer_search": "Search the list (or leave empty)",
-        "arranger": "e.g., John Rutter",
-        "epoch": "— Select period —",
-        "composition_year": "e.g., 1741",
-        "language": "e.g., Latin",
-        "voicing": "e.g., SSAATTBB, Choir + Soloists",
-        "duration_minutes": "Minutes",
-        "duration_seconds": "Seconds",
-        "lyrics_original": "Paste the original lyrics...",
-        "lyrics_translation": "Paste the translation...",
-        "reference_youtube": "https://youtube.com/watch?v=...",
-        "reference_spotify": "https://open.spotify.com/track/..."
+      "actions": {
+        "add_new": "+ Add New",
+        "back_to_search": "Back to Search",
+        "save_add": "Save and Add Another",
+        "save_changes": "Save Changes",
+        "save_close": "Save and Close"
       },
       "composer": {
         "unknown": "— Traditional / Unknown —"
       },
-      "epochs": {
-        "med": "Medieval",
-        "ren": "Renaissance",
-        "bar": "Baroque",
-        "cla": "Classical",
-        "rom": "Romantic",
-        "m20": "20th Century",
-        "con": "Contemporary Music",
-        "pop": "Entertainment",
-        "folk": "Folk / Traditional"
-      },
-      "units": {
-        "minutes_short": "min",
-        "seconds_short": "sec"
-      },
-      "status": {
-        "sheet_music_attached": "Sheet music is already attached in the database."
+      "descriptions": {
+        "divisi": "Select voice parts and define the minimum number of singers required to validate staffing gaps in micro-casting mode."
       },
       "empty": {
         "requirements": "No requirements defined."
       },
-      "actions": {
-        "back_to_search": "Back to Search",
-        "add_new": "+ Add New",
-        "save_add": "Save and Add Another",
-        "save_close": "Save and Close",
-        "save_changes": "Save Changes"
+      "fields": {
+        "arranger": "Arranger",
+        "composer": "Composer",
+        "composition_year": "Composition Year",
+        "duration": "Estimated Duration",
+        "epoch": "Musical Period",
+        "language": "Language",
+        "lyrics_original": "Original Lyrics",
+        "lyrics_translation": "Translation (Notes)",
+        "reference_spotify": "Spotify Reference",
+        "reference_youtube": "YouTube Reference",
+        "sheet_music": "Score / Sheet Music (Optional PDF)",
+        "title": "Piece Title *",
+        "voicing": "Voicing (Traditional Notation)"
+      },
+      "placeholders": {
+        "arranger": "e.g., John Rutter",
+        "composer_birth_year": "Birth year",
+        "composer_death_year": "Death year",
+        "composer_first_name": "First name",
+        "composer_last_name": "Last name *",
+        "composer_search": "Search the list (or leave empty)",
+        "composition_year": "e.g., 1741",
+        "duration_minutes": "Minutes",
+        "duration_seconds": "Seconds",
+        "epoch": "— Select period —",
+        "language": "e.g., Latin",
+        "lyrics_original": "Paste the original lyrics...",
+        "lyrics_translation": "Paste the translation...",
+        "reference_spotify": "https://open.spotify.com/track/...",
+        "reference_youtube": "https://youtube.com/watch?v=...",
+        "title": "e.g., Lacrimosa",
+        "voicing": "e.g., SSAATTBB, Choir + Soloists"
+      },
+      "sections": {
+        "divisi": "Cast Algorithm (Divisi)",
+        "materials": "Materials and Texts",
+        "requirements": "Performance Requirements"
+      },
+      "status": {
+        "sheet_music_attached": "Sheet music is already attached in the database."
       },
       "toast": {
-        "creating": "Adding piece to archive...",
-        "updating": "Updating metadata...",
-        "constraint_title": "System constraint",
         "constraint_desc": "Creating composers inline requires a separate endpoint. Select a composer from the list.",
+        "constraint_title": "System constraint",
         "create_success": "Piece added successfully.",
-        "update_success": "Changes have been saved.",
+        "creating": "Adding piece to archive...",
+        "save_error_desc": "Check the data and try again.",
         "save_error_title": "Save error.",
-        "save_error_desc": "Check the data and try again."
-      }
-    }
-  },
-  "resources": {
-    "dashboard": {
-      "badge": "Knowledge Base and Documents",
-      "title": "Foundation",
-      "title_highlight": "Resources"
-    },
-    "banner": {
-      "title": "Preview Section (Demo Version)",
-      "description": "The file structure shown below is a mock-up. The actual documents, contracts, and foundation regulations will be uploaded in a later CMS rollout phase."
-    },
-    "cms": {
-      "title": "CMS Module in Progress",
-      "description": "The ability to upload and edit files on the server will be enabled once the target API is connected."
-    },
-    "actions": {
-      "add_category": "Add Category",
-      "edit_category": "Edit Category",
-      "delete_category": "Delete Category",
-      "delete_file": "Delete File",
-      "download_file": "Download {{title}}",
-      "add_document": "Add New Document"
-    },
-    "categories": {
-      "wardrobe": {
-        "title": "Wardrobe and Dress Code",
-        "description": "Guidelines for standardized concert attire and rules for taking care of entrusted wardrobe items.",
-        "files": {
-          "dress_guide": "Guide: Choral Dress (Soprano / Alto)",
-          "tuxedo_guide": "Guide: Tuxedo and Bow Tie (Tenor / Bass)"
-        }
+        "update_success": "Changes have been saved.",
+        "updating": "Updating metadata..."
       },
-      "regulations": {
-        "title": "Regulations and Statutes",
-        "description": "Official foundation documents, collaboration rules, privacy policy, and rehearsal participation regulations.",
-        "files": {
-          "statute": "Foundation Statute (2026 Version - Updated After the Board General Assembly)",
-          "choir_rules": "Choir Member Regulations and Attendance Rules",
-          "gdpr": "Personal Data Processing Policy (GDPR)"
-        }
+      "units": {
+        "minutes_short": "min",
+        "seconds_short": "sec"
       }
+    },
+    "toast": {
+      "delete_error_desc": "Make sure the piece is not linked to active projects.",
+      "delete_error_title": "Failed to remove the piece.",
+      "delete_loading": "Deleting \"{{title}}\"...",
+      "delete_success": "Piece was removed from the archive.",
+      "sync_warning_desc": "Failed to fetch all archive data.",
+      "sync_warning_title": "Sync warning"
+    },
+    "tracks": {
+      "add_material": "Add Practice Material",
+      "delete_confirm_desc": "The audio file will be permanently removed from the database.",
+      "delete_confirm_title": "Delete recording from the server?",
+      "delete_error": "An error occurred while deleting the recording.",
+      "delete_success": "File was removed from the server.",
+      "deleting": "Deleting recording...",
+      "file_upload": "Audio File (MP3/WAV/MIDI) *",
+      "no_files": "No audio files",
+      "tutti": "Tutti",
+      "upload_button": "Upload Recording",
+      "upload_error": "Upload error. Make sure the file format is supported.",
+      "upload_success": "Recording was added successfully.",
+      "uploaded_tracks": "Uploaded Audio Tracks",
+      "uploading": "Uploading recording...",
+      "voice_part": "Voice Part *"
     }
   },
   "artists": {
-    "dashboard": {
-      "sync_warning_title": "Warning",
-      "sync_warning_desc": "Failed to fetch artist data.",
-      "subtitle": "Human Resources",
-      "title_prefix": "Team",
-      "title_highlight": "Management",
-      "add_artist": "Add Artist",
-      "search_placeholder": "Search by last name...",
-      "all_voices": "All Voices",
-      "empty_title": "No results",
-      "empty_desc_search": "We could not find choir member \"{{term}}\". You can add them to the database now.",
-      "add_search_term": "Add: {{term}}",
-      "empty_desc_default": "Change the search criteria or add a new person to the database.",
-      "activate_title": "Activate profile?",
-      "archive_title": "Archive artist?",
-      "activate_desc": "The artist will regain access to the platform and become available in castings for new projects.",
-      "archive_desc": "The artist will lose access to the panel. Historical data in past projects will be preserved."
-    },
-    "filters": {
-      "sopranos": "Sopranos",
-      "altos": "Altos",
-      "tenors": "Tenors",
-      "basses": "Basses",
-      "all": "Tutti"
-    },
     "card": {
+      "activate_action": "Activate",
       "active_account_title": "Account active and connected to the platform",
+      "archive_action": "Archive",
       "archive_badge": "Archive",
-      "voice_range": "Voice Range",
+      "edit": "Edit",
+      "inactive_account": "Inactive account",
+      "no_phone": "No phone",
       "none": "None",
       "sight_reading": "Sight-reading",
       "sight_reading_title": "Sight-reading: {{level}}/5",
       "unverified": "Not verified",
-      "no_phone": "No phone",
-      "inactive_account": "Inactive account",
-      "edit": "Edit",
-      "archive_action": "Archive",
-      "activate_action": "Activate"
+      "voice_range": "Voice Range"
+    },
+    "dashboard": {
+      "activate_desc": "The artist will regain access to the platform and become available in castings for new projects.",
+      "activate_title": "Activate profile?",
+      "add_artist": "Add Artist",
+      "add_search_term": "Add: {{term}}",
+      "all_voices": "All Voices",
+      "archive_desc": "The artist will lose access to the panel. Historical data in past projects will be preserved.",
+      "archive_title": "Archive artist?",
+      "empty_desc_default": "Change the search criteria or add a new person to the database.",
+      "empty_desc_search": "We could not find choir member \"{{term}}\". You can add them to the database now.",
+      "empty_title": "No results",
+      "search_placeholder": "Search by last name...",
+      "subtitle": "Human Resources",
+      "sync_warning_desc": "Failed to fetch artist data.",
+      "sync_warning_title": "Warning",
+      "title_highlight": "Management",
+      "title_prefix": "Team"
     },
     "editor": {
-      "title_edit": "Edit Profile",
-      "title_new": "New Artist",
-      "section_basic": "Basic Information",
-      "section_voice": "Vocal Profile",
-      "first_name": "First Name *",
-      "last_name": "Last Name *",
+      "active_access_desc": "Unchecking will block login access.",
+      "active_access_title": "Active platform access",
+      "create_artist": "Create Artist",
       "email": "E-mail *",
-      "phone": "Phone",
-      "voice_type": "Voice Type *",
+      "first_name": "First Name *",
+      "language": "Message Language *",
+      "last_name": "Last Name *",
       "loading": "Loading...",
-      "range_low_title": "Lowest Note",
+      "no_rating": "— No rating —",
+      "phone": "Phone",
+      "range_high": "Range (High)",
+      "range_high_placeholder": "e.g., C5",
       "range_high_title": "Highest Note",
       "range_low": "Range (Low)",
-      "range_high": "Range (High)",
       "range_low_placeholder": "e.g., G2",
-      "range_high_placeholder": "e.g., C5",
-      "sight_reading": "Sight-reading (Score)",
-      "no_rating": "— No rating —",
-      "stars_count": "{{count}} Stars",
-      "active_access_title": "Active platform access",
-      "active_access_desc": "Unchecking will block login access.",
+      "range_low_title": "Lowest Note",
       "save_profile": "Save Profile",
-      "create_artist": "Create Artist",
-      "unsaved_title": "You have unsaved changes!",
+      "section_basic": "Basic Information",
+      "section_voice": "Vocal Profile",
+      "sight_reading": "Sight-reading (Score)",
+      "stars_count_one": "{{count}} Gwiazdki",
+      "stars_count_other": "{{count}} Gwiazdki",
+      "title_edit": "Edit Profile",
+      "title_new": "New Artist",
       "unsaved_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
-      "language": "Message Language *"
+      "unsaved_title": "You have unsaved changes!",
+      "voice_type": "Voice Type *"
     },
-    "toast": {
-      "activating": "Activating account...",
-      "archiving": "Archiving artist...",
-      "activated_success": "Artist account activated",
-      "archived_success": "Artist archived",
-      "toggle_error_desc": "Failed to change the artist's status."
+    "filters": {
+      "all": "Tutti",
+      "altos": "Altos",
+      "basses": "Basses",
+      "sopranos": "Sopranos",
+      "tenors": "Tenors"
     },
     "form": {
       "toast": {
-        "updating": "Updating profile...",
-        "creating": "Creating artist account...",
-        "update_success": "Artist profile updated.",
         "create_success": "Artist added. Account generated!",
+        "creating": "Creating artist account...",
         "email_taken": "This email address is already in use.",
-        "save_error_desc": "Check the data and try again."
+        "save_error_desc": "Check the data and try again.",
+        "update_success": "Artist profile updated.",
+        "updating": "Updating profile..."
       }
-    }
-  },
-  "schedule": {
-    "dashboard": {
-      "subtitle": "Personal Calendar",
-      "title": "My",
-      "title_highlight": "Schedule",
-      "description": "Check rehearsals, report absences, and track concert plans."
-    },
-    "tabs": {
-      "upcoming": "Upcoming",
-      "past": "History"
-    },
-    "loading": "Loading schedule...",
-    "empty": {
-      "title": "No calendar entries",
-      "description": "You don't have any assigned meetings or concerts in this view."
-    },
-    "event": {
-      "rehearsal_prefix": "Rehearsal:",
-      "generic_event": "Event"
     },
     "toast": {
-      "submitting": "Submitting report...",
-      "submit_success": "Report has been saved.",
-      "submit_error_title": "Save error",
-      "submit_error_desc": "Failed to save the report."
-    },
-    "card": {
-      "project_badge": "Concert / Event",
-      "call_time": "Call Time:",
-      "no_location": "No loc.",
-      "download_loading": "Generating Call Sheet document...",
-      "download_success": "File downloaded successfully",
-      "download_error_desc": "Failed to download the file.",
-      "tab": {
-        "logistics": "Logistics & Plan",
-        "setlist": "Repertoire & Divisi"
-      },
-      "dress_code_title": "Dress Code Details",
-      "dress_code_women": "Women:",
-      "dress_code_men": "Men:",
-      "no_notes": "No additional production notes.",
-      "run_sheet_title": "Run Sheet",
-      "download_call_sheet": "Call-Sheet PDF",
-      "no_run_sheet": "The run sheet has not been published by the manager yet.",
-      "no_spotify": "No reference playlist.",
-      "hide_cast": "Hide cast",
-      "expand_cast": "Expand cast (divisi)",
-      "unknown_artist": "Artist",
-      "note_label": "Note:",
-      "no_divisi": "No detailed voice splitting (divisi) for this piece.",
-      "no_program": "The repertoire has not been set yet."
-    },
-    "rehearsal": {
-      "status_present": "Confirmed",
-      "status_late": "Running Late",
-      "status_absent": "Absent",
-      "badge": "Rehearsal",
-      "optional": "Optional",
-      "no_location": "None",
-      "action": {
-        "confirm_short": "Confirm",
-        "confirm_long": "Confirm Attendance",
-        "edit": "Edit",
-        "report_issue": "Report issue"
+      "activated_success": "Artist account activated",
+      "activating": "Activating account...",
+      "archived_success": "Artist archived",
+      "archiving": "Archiving artist...",
+      "toggle_error_desc": "Failed to change the artist's status."
+    }
+  },
+  "auth": {
+    "activate": {
+      "back_to_home": "Back to homepage",
+      "badge": "Invite Activation",
+      "description": "Complete the final onboarding step to secure your account and enter the operational workspace used for projects, rehearsals, and ensemble coordination.",
+      "features": {
+        "access": {
+          "desc": "After activation you can sign in immediately and review rehearsals, projects, and operational materials.",
+          "title": "One-step access"
+        },
+        "security": {
+          "desc": "The activation link is bound to your invited account and unlocks the private dashboard only after password setup.",
+          "title": "Secure onboarding"
+        },
+        "workspace": {
+          "desc": "VoctManager centralizes artistic communication, roster data, and production logistics in one panel.",
+          "title": "Professional workspace"
+        }
       },
       "form": {
-        "title": "Absence Form for the Inspector",
-        "status_label": "Status *",
-        "option_absent": "I will be absent",
-        "option_late": "I will be late",
-        "reason_label": "Reason / Notes *",
-        "reason_placeholder": "e.g., Traffic, illness...",
-        "cancel": "Cancel",
-        "submit": "Submit"
+        "activate_btn": "Activate account",
+        "activating_btn": "Activating account",
+        "confirm_password": "Confirm password",
+        "confirm_password_placeholder": "Repeat the password",
+        "description": "Choose a secure password for the invited account. Once activated, you will use the standard login page to enter the panel.",
+        "missing_params": "This link is missing activation parameters. Open the latest invitation email and use the full button or URL.",
+        "new_password": "New password",
+        "new_password_placeholder": "Create a secure password",
+        "security_desc": "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
+        "security_title": "Security standard",
+        "subtitle": "Password setup",
+        "title": "Finalize your access"
       },
-      "details": {
-        "focus_title": "Rehearsal Focus",
-        "no_focus": "No detailed plan for this rehearsal.",
-        "reported_absences": "Reported absences:",
-        "materials_title": "Your Sheet Music",
-        "materials_subtitle": "Prepare for the rehearsal",
-        "materials_desc": "Download PDF scores and practice your parts with the player.",
-        "materials_button": "Materials"
-      }
+      "subtitle": "VoctManager Access",
+      "success": {
+        "desc_1": "The account assigned to ",
+        "desc_2": " has been secured and activated.",
+        "go_to_login": "Go to login",
+        "instruction": "Proceed to the login page and use your email along with your newly created password to access the panel.",
+        "return_home": "Return home",
+        "subtitle": "Activation complete",
+        "title": "Your panel is ready",
+        "your_username": "Your username to log in"
+      },
+      "title_1": "Activate your",
+      "title_2": "artist panel"
     }
   },
-  "rehearsals": {
+  "common": {
+    "actions": {
+      "cancel": "Cancel",
+      "close_panel": "Close panel (ESC)",
+      "confirmDelete": "Yes, Delete Account",
+      "delete": "Delete",
+      "delete_error": "Deletion error",
+      "deleteAccount": "Delete Account",
+      "discard": "Discard changes",
+      "download": "Download",
+      "edit": "Edit",
+      "loading": "Processing...",
+      "save": "Save",
+      "select": "Select"
+    },
+    "currency": "PLN",
+    "errors": {
+      "database_error": "A database connection problem occurred.",
+      "generation_error": "Generation error",
+      "save_error": "Save error",
+      "save_problem": "A problem occurred while saving data.",
+      "server_error": "Server error",
+      "server_problem": "A problem occurred with the server."
+    },
+    "locale": "en-US",
+    "people_short": "ppl.",
+    "state": {
+      "loading": "Loading...",
+      "saved": "Saved"
+    },
+    "timezone": {
+      "local": "Twój czas:"
+    }
+  },
+  "contracts": {
     "dashboard": {
-      "subtitle": "Inspector Module",
-      "title": "Attendance",
-      "title_highlight": "Logbook",
-      "project_context": "Project Context",
-      "no_projects": "No projects in this tab.",
-      "no_location": "No loc.",
-      "sectional": "Sectional Rehearsal",
-      "tutti_badge": "Tutti Rehearsal",
-      "tutti": "Tutti (Full Ensemble)",
-      "only": "Only:",
-      "general_work": "General Work",
-      "bulk_fill": "Fill gaps ({{count}}) as \"Present\""
-    },
-    "tabs": {
-      "active": "Active",
-      "archive": "Archive"
-    },
-    "stats": {
-      "rate": "Attendance Rate",
-      "present": "Present",
-      "absent": "Missing"
-    },
-    "voices": {
-      "sopranos": "Sopranos",
-      "altos": "Altos",
-      "tenors": "Tenors",
-      "basses": "Basses",
-      "mezzos": "Mezzo-sopranos",
-      "countertenors": "Countertenors"
+      "apply_valuation": "Apply Valuation",
+      "archived": "(Archived)",
+      "contracts_issued": "Issued Contracts",
+      "description": "Manage artist and crew compensation, control production budgets, and generate PDF contracts.",
+      "empty_state_desc": "Select an event from the context switcher above to manage rates and control the production budget.",
+      "empty_state_title": "Ready for billing",
+      "global_budget": "Global System Budget",
+      "loading": "Loading registries...",
+      "mass_fee_injection": "Bulk Fee Injection (Choir Only)",
+      "missing_appraisals": "Missing Appraisals",
+      "no_event_selected": "— No event selected —",
+      "no_personnel_desc": "Go to the \"Project Management\" tab to hire cast or crew for this event.",
+      "no_personnel_title": "No personnel assigned",
+      "personnel_budget": "Personnel Budget",
+      "priced_contracts": "Priced Contracts",
+      "select_event_label": "Select Event (Billing Context)",
+      "subtitle": "Finance Management",
+      "tech_crew": "Tech Crew & Logistics",
+      "title": "HR &",
+      "title_highlight": "Payroll",
+      "value_placeholder": "Value...",
+      "valued": "valued",
+      "vocal_cast": "Vocal Cast (Choir / Soloists)"
     },
     "row": {
-      "status_present": "Present",
-      "status_late": "Late",
-      "status_absent": "Absent",
-      "status_excused": "Excused",
-      "minutes_placeholder": "How many min?",
-      "note_placeholder": "Note (optional)"
+      "missing_fee": "Missing Fee",
+      "no_name": "Performer",
+      "save": "Save"
+    },
+    "table": {
+      "contractor": "Contractor / Company",
+      "documents": "Documents",
+      "gross_amount": "Gross Amount",
+      "performer": "Performer",
+      "role": "Role",
+      "status": "Status",
+      "voice": "Voice"
     },
     "toast": {
-      "sync_error_title": "Sync error",
-      "sync_error_desc": "Failed to load data.",
-      "bulk_marking": "Bulk marking attendance...",
-      "bulk_success": "Filled gaps as 'Present'.",
-      "bulk_error_title": "System error",
-      "bulk_error_desc": "Failed to save bulk attendance.",
-      "save_error_title": "Save error",
-      "save_error_desc": "Save error for:"
+      "bulk_applying": "Applying bulk rates...",
+      "bulk_error": "Server error during bulk operation.",
+      "bulk_success_one": "Pomyślnie zaktualizowano stawki dla {{count}} osób.",
+      "bulk_success_other": "Pomyślnie zaktualizowano stawki dla {{count}} osób.",
+      "pdf_error": "Generation error: {{message}}",
+      "pdf_generating": "Generating PDF for {{name}}...",
+      "pdf_success": "Document generated successfully.",
+      "save_error": "Failed to save compensation for: {{name}}."
     }
   },
-  "materials": {
+  "crew": {
+    "card": {
+      "btn_delete": "Delete",
+      "btn_edit": "Edit",
+      "company": "Company / Brand",
+      "no_company": "No data",
+      "no_email": "No email",
+      "no_phone": "No phone",
+      "specialty_other": "Other"
+    },
     "dashboard": {
-      "subtitle": "Artist Zone",
-      "title": "Practice",
-      "title_highlight": "Materials",
-      "description": "Download sheet music, practice using the MIDI player with tempo control, and check your role in the ensemble.",
-      "search_placeholder": "Search piece or composer...",
-      "sync_error_title": "Sync error",
-      "sync_error_desc": "Failed to load materials. Refresh the page.",
-      "syncing": "Syncing library...",
-      "empty_title": "No assigned materials",
-      "empty_desc": "You currently have no upcoming projects or the conductor hasn't approved any concert program yet."
+      "add_btn": "Add Person / Company",
+      "add_search_term": "Add to database: {{term}}",
+      "empty_desc_default": "Change filters or add a new person / company to the database.",
+      "empty_desc_search": "We didn't find the company or person \"{{term}}\". You can add it now.",
+      "empty_title": "No results",
+      "filter_all": "All specialties",
+      "search_placeholder": "Search by name or company...",
+      "subtitle": "Logistics",
+      "title": "Tech",
+      "title_highlight": "Crew"
     },
-    "project": {
-      "event": "Event:",
-      "archived_badge": "Archived Project"
+    "delete_modal": {
+      "desc": "They will be permanently removed from the roster. You cannot delete people already assigned to concerts (update their data instead).",
+      "title": "Delete this person from the database?"
     },
-    "piece": {
-      "traditional": "Traditional / Unknown",
-      "you_sing": "You sing:",
-      "pdf_badge": "PDF",
-      "audio_badge": "Audio",
-      "locked_badge": "Protected",
-      "access_locked_title": "Access Locked",
-      "access_locked_desc": "The project has concluded. Practice materials and scores are no longer available due to intellectual property and conductor arrangement protection.",
-      "download_pdf": "Download Score (PDF)",
-      "no_pdf": "Sheet music unavailable",
-      "listen_reference": "Listen to Reference",
-      "your_guidelines": "Your guidelines for the piece",
-      "part": "Part:",
-      "no_notes": "The conductor has not added any special notes.",
-      "cast_divisi": "Piece Cast (Divisi)",
-      "other_voice": "Other",
-      "unknown_artist": "Artist",
-      "no_divisi": "No voice division defined.",
-      "practice_tracks": "Practice Tracks (MIDI / MP3)",
-      "lyrics_translation": "Lyrics and Translation",
-      "original_lyrics": "Original",
-      "translation_notes": "Translation (Notes)"
+    "editor": {
+      "btn_save": "Save to database",
+      "business_profile": "Business Profile",
+      "company_name": "Company / Brand (Optional)",
+      "company_placeholder": "e.g., SoundTech Pro LLC",
+      "confirm_exit_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
+      "confirm_exit_title": "You have unsaved changes!",
+      "contact_person": "Contact Person",
+      "email": "E-mail",
+      "first_name": "First Name *",
+      "last_name": "Last Name *",
+      "phone": "Phone",
+      "specialty": "Specialty *",
+      "title_edit": "Edit Data",
+      "title_new": "New Collaborator"
     },
-    "player": {
-      "your_voice": "(Your voice)",
-      "speed_title": "Set tempo to {{rate}}x"
+    "toast": {
+      "delete_error_desc": "They are likely associated with existing projects. Try editing their data instead.",
+      "delete_error_title": "Cannot delete this person",
+      "delete_loading": "Deleting collaborator...",
+      "delete_success": "Person has been removed from the database.",
+      "save_error_desc": "Check the data and try again.",
+      "save_error_title": "An error occurred while saving data.",
+      "save_loading_edit": "Updating data...",
+      "save_loading_new": "Adding collaborator...",
+      "save_success_edit": "Collaborator profile updated.",
+      "save_success_new": "New person added to the database.",
+      "sync_error": "Failed to fetch collaborators list.",
+      "sync_warning": "Warning"
     }
   },
   "dashboard": {
+    "admin": {
+      "absences_one": "Braki: {{count}}",
+      "absences_other": "Braki: {{count}}",
+      "btn_new_project": "New Project",
+      "kpi_telemetry": "Database Telemetry",
+      "modules": {
+        "archive_desc": "Central music library database.",
+        "archive_title": "Sheet Music Archive",
+        "artists_desc": "Choir and soloist management.",
+        "artists_title": "Artist Database",
+        "contracts_desc": "Finances, contracts, and budgeting.",
+        "contracts_title": "HR & Payroll",
+        "crew_desc": "Event logistics and directing.",
+        "crew_title": "Technical Crew",
+        "projects_desc": "Production command center.",
+        "projects_title": "Project Management"
+      },
+      "next_rehearsal_alert": "Next Rehearsal: {{title}}",
+      "spotlight_title": "Production Dashboard",
+      "unknown_project": "Unknown project",
+      "welcome_back": "Welcome back"
+    },
+    "artist": {
+      "download_error": "Failed to download the schedule",
+      "download_runsheet": "Schedule (Call sheet)",
+      "download_success": "Schedule downloaded successfully",
+      "downloading_runsheet": "Generating schedule...",
+      "empty_events_desc": "Take a rest, your musical calendar is currently empty.",
+      "empty_events_title": "No upcoming events",
+      "general_work": "General work",
+      "greeting_evening": "Good evening",
+      "greeting_morning": "Good morning",
+      "greeting_night": "Good night",
+      "module_materials_desc": "Your personal repository. Download PDF scores and practice with dedicated audio tracks.",
+      "module_materials_title": "Materials",
+      "module_resources_desc": "Check conductor guidelines, current dress code, and contracts/regulations.",
+      "module_resources_title": "Knowledge Base",
+      "module_schedule_desc": "Check rehearsals, concerts, and easily report your absence to the inspector.",
+      "module_schedule_title": "My Calendar",
+      "next_challenges": "On the horizon",
+      "open_module": "Open Module",
+      "personal_modules": "Personal Modules"
+    },
     "layout": {
-      "brand_badge_admin": "Management Panel",
-      "brand_badge_artist": "Artist Panel",
+      "logout": "Log Out",
       "mobile_nav_title": "Navigation",
       "profile_settings": "Profile Settings",
-      "logout": "Log Out",
-      "footer_version": "VoctManager Enterprise • v{{version}}",
       "roles": {
         "admin": "Administrator",
         "artist": "Artist",
+        "crew": "Crew",
         "management": "Management"
-      },
-      "groups": {
-        "overview": "Overview",
-        "production": "Production",
-        "data_admin": "Data Administration",
-        "artist_zone": "Artist Zone",
-        "my_zone": "My Zone"
-      },
-      "links": {
-        "admin_dashboard": "Executive Dashboard",
-        "artist_dashboard": "My Dashboard",
-        "projects": "Projects and Concerts",
-        "attendance": "Attendance Log",
-        "artists": "Team Management",
-        "crew": "Technical Crew",
-        "contracts": "HR and Payroll",
-        "archive": "Sheet Music Archive",
-        "schedule": "My Schedule",
-        "materials": "Rehearsal Materials",
-        "resources": "Knowledge Base"
       }
     },
     "shared": {
       "authorizing": "Authorizing...",
       "loading_telemetry": "Loading telemetry...",
       "syncing": "Syncing dashboard..."
-    },
-    "artist": {
-      "welcome_badge": "Welcome to the platform",
-      "greeting_night": "Good night",
-      "greeting_morning": "Good morning",
-      "greeting_evening": "Good evening",
-      "artist_fallback": "Artist",
-      "hero_desc": "Here is your musical summary for today. Check where you need to be and what you need to prepare.",
-      "next_challenge": "Next challenge",
-      "badge_rehearsal": "Music Rehearsal",
-      "badge_project": "Main Event",
-      "absences_reported": "Reported absences: {{count}}",
-      "btn_schedule": "Check schedule",
-      "btn_materials": "Download Scores",
-      "empty_events_title": "No upcoming events",
-      "empty_events_desc": "Take a rest, your musical calendar is currently empty.",
-      "personal_modules": "Personal Modules",
-      "module_schedule_title": "My Calendar",
-      "module_schedule_desc": "Check rehearsals, concerts, and easily report your absence to the inspector.",
-      "module_materials_title": "Materials",
-      "module_materials_desc": "Your personal repository. Download PDF scores and practice with dedicated audio tracks.",
-      "module_resources_title": "Knowledge Base",
-      "module_resources_desc": "Check conductor guidelines, current dress code, and contracts/regulations.",
-      "open_module": "Open Module",
-      "event_prefix_rehearsal": "Rehearsal:",
-      "event_prefix_project": "Event:",
-      "general_work": "General work",
-      "download_error": "Failed to download the schedule",
-      "download_runsheet": "Schedule (Call sheet)",
-      "download_success": "Schedule downloaded successfully",
-      "downloading_runsheet": "Generating schedule...",
-      "next_challenges": "On the horizon",
-      "confirm_presence_loading": "Confirming attendance...",
-      "confirm_presence_note": "Attendance confirmed from the dashboard",
-      "confirm_presence_success": "Attendance confirmed!",
-      "attendance_save_error": "Error while saving",
-      "header_title_prefix": "Music",
-      "header_title_highlight": "Dashboard",
-      "absence_reported": "Absence reported",
-      "edit_report": "Edit report",
-      "project_badge": "Concert",
-      "call_time": "Call time:",
-      "materials_link": "Scores and Audio"
-    },
-    "admin": {
-      "logged_in_as": "Logged in as: {{name}}",
-      "hero_title_1": "Your digital",
-      "hero_title_highlight": "music production office",
-      "kpi_telemetry": "Database Telemetry",
-      "kpi_pieces": "Repertoire Base",
-      "kpi_projects": "Active Projects",
-      "kpi_team_ready": "Ensemble Readiness",
-      "kpi_people": "{{count}} ppl.",
-      "voices": {
-        "sopranos": "Sopranos",
-        "altos": "Altos",
-        "tenors": "Tenors",
-        "basses": "Basses"
-      },
-      "spotlight_title": "Production Dashboard",
-      "spotlight_badge": "Upcoming Event",
-      "spotlight_repertoire": "Repertoire",
-      "spotlight_pieces_count": "{{count}} pieces",
-      "spotlight_to_concert": "Until concert",
-      "spotlight_rehearsals_left": "{{count}} rehearsals",
-      "btn_manage_production": "Manage Production",
-      "empty_projects_title": "No active events",
-      "empty_projects_desc": "You are currently not managing any concert projects in the system.",
-      "btn_plan_project": "Plan a new project",
-      "next_rehearsal_alert": "Next Rehearsal: {{title}}",
-      "absences": "Absences: {{count}}",
-      "perfect_attendance": "100% Attendance",
-      "open_logbook": "Open project logbook",
-      "system_modules": "System Modules",
-      "unknown_project": "Unknown project",
-      "modules": {
-        "projects_title": "Project Management",
-        "projects_desc": "Production command center.",
-        "projects_feat_1": "Schedules",
-        "projects_feat_2": "Setlists",
-        "projects_feat_3": "Casting",
-        "archive_title": "Sheet Music Archive",
-        "archive_desc": "Central music library database.",
-        "archive_feat_1": "PDF Files",
-        "archive_feat_2": "Audio Tracks",
-        "archive_feat_3": "Requirements",
-        "artists_title": "Artist Database",
-        "artists_desc": "Choir and soloist management.",
-        "artists_feat_1": "SATB Statistics",
-        "artists_feat_2": "Profiles",
-        "artists_feat_3": "A vista",
-        "contracts_title": "HR & Payroll",
-        "contracts_desc": "Finances, contracts, and budgeting.",
-        "contracts_feat_1": "Rates",
-        "contracts_feat_2": "Documents",
-        "contracts_feat_3": "Budget",
-        "crew_title": "Technical Crew",
-        "crew_desc": "Event logistics and directing.",
-        "crew_feat_1": "Sound",
-        "crew_feat_2": "Lighting",
-        "crew_feat_3": "Companies"
-      },
-      "btn_new_project": "New Project",
-      "welcome_back": "Welcome back",
-      "header_title_prefix": "Production",
-      "header_title_highlight": "Dashboard",
-      "open_project": "Open Project",
-      "open_module": "Open Module"
     }
   },
-  "crew": {
+  "materials": {
     "dashboard": {
-      "subtitle": "Logistics",
-      "title": "Tech",
-      "title_highlight": "Crew",
-      "add_btn": "Add Person / Company",
-      "search_placeholder": "Search by name or company...",
-      "filter_all": "All specialties",
-      "empty_title": "No results",
-      "empty_desc_search": "We didn't find the company or person \"{{term}}\". You can add it now.",
-      "empty_desc_default": "Change filters or add a new person / company to the database.",
-      "add_search_term": "Add to database: {{term}}"
+      "description": "Download sheet music, practice using the MIDI player with tempo control, and check your role in the ensemble.",
+      "empty_desc": "You currently have no upcoming projects or the conductor hasn't approved any concert program yet.",
+      "empty_title": "No assigned materials",
+      "search_placeholder": "Search piece or composer...",
+      "subtitle": "Artist Zone",
+      "sync_error_desc": "Failed to load materials. Refresh the page.",
+      "sync_error_title": "Sync error",
+      "syncing": "Syncing library...",
+      "title": "Practice",
+      "title_highlight": "Materials"
     },
-    "card": {
-      "specialty_other": "Other",
-      "company": "Company / Brand",
-      "no_company": "No data",
-      "no_email": "No email",
-      "no_phone": "No phone",
-      "btn_edit": "Edit",
-      "btn_delete": "Delete"
+    "piece": {
+      "access_locked_desc": "The project has concluded. Practice materials and scores are no longer available due to intellectual property and conductor arrangement protection.",
+      "access_locked_title": "Access Locked",
+      "audio_badge": "Audio",
+      "cast_divisi": "Piece Cast (Divisi)",
+      "download_pdf": "Download Score (PDF)",
+      "listen_reference": "Listen to Reference",
+      "locked_badge": "Protected",
+      "lyrics_translation": "Lyrics and Translation",
+      "no_divisi": "No voice division defined.",
+      "no_notes": "The conductor has not added any special notes.",
+      "no_pdf": "Sheet music unavailable",
+      "original_lyrics": "Original",
+      "other_voice": "Other",
+      "part": "Part:",
+      "pdf_badge": "PDF",
+      "practice_tracks": "Practice Tracks (MIDI / MP3)",
+      "traditional": "Traditional / Unknown",
+      "translation_notes": "Translation (Notes)",
+      "unknown_artist": "Artist",
+      "you_sing": "You sing:",
+      "your_guidelines": "Your guidelines for the piece"
     },
-    "editor": {
-      "title_edit": "Edit Data",
-      "title_new": "New Collaborator",
-      "contact_person": "Contact Person",
-      "first_name": "First Name *",
-      "last_name": "Last Name *",
-      "email": "E-mail",
-      "phone": "Phone",
-      "business_profile": "Business Profile",
-      "specialty": "Specialty *",
-      "company_name": "Company / Brand (Optional)",
-      "company_placeholder": "e.g., SoundTech Pro LLC",
-      "btn_save": "Save to database",
-      "confirm_exit_title": "You have unsaved changes!",
-      "confirm_exit_desc": "You made changes in the form that have not been saved. Closing the panel will discard them."
+    "player": {
+      "speed_title": "Set tempo to {{rate}}x",
+      "your_voice": "(Your voice)"
     },
-    "delete_modal": {
-      "title": "Delete this person from the database?",
-      "desc": "They will be permanently removed from the roster. You cannot delete people already assigned to concerts (update their data instead)."
-    },
-    "specialties": {
-      "SOUND": "Sound Engineering",
-      "LIGHT": "Lighting Design",
-      "VISUALS": "Visual Arts",
-      "INSTRUMENT": "Instrumentalist",
-      "LOGISTICS": "Logistics",
-      "OTHER": "Other"
-    },
-    "toast": {
-      "sync_error": "Failed to fetch collaborators list.",
-      "sync_warning": "Warning",
-      "delete_loading": "Deleting collaborator...",
-      "delete_success": "Person has been removed from the database.",
-      "delete_error_title": "Cannot delete this person",
-      "delete_error_desc": "They are likely associated with existing projects. Try editing their data instead.",
-      "save_loading_edit": "Updating data...",
-      "save_loading_new": "Adding collaborator...",
-      "save_success_edit": "Collaborator profile updated.",
-      "save_success_new": "New person added to the database.",
-      "save_error_title": "An error occurred while saving data.",
-      "save_error_desc": "Check the data and try again."
+    "project": {
+      "archived_badge": "Archived Project",
+      "event": "Event:"
     }
   },
-  "contracts": {
-    "dashboard": {
-      "subtitle": "Finance Management",
-      "title": "HR &",
-      "title_highlight": "Payroll",
-      "description": "Manage artist and crew compensation, control production budgets, and generate PDF contracts.",
-      "loading": "Loading registries...",
-      "select_event_label": "Select Event (Billing Context)",
-      "no_event_selected": "— No event selected —",
-      "archived": "(Archived)",
-      "empty_state_title": "Ready for billing",
-      "empty_state_desc": "Select an event from the context switcher above to manage rates and control the production budget.",
-      "global_budget": "Global System Budget",
-      "contracts_issued": "Issued Contracts",
-      "valued": "valued",
-      "priced_contracts": "Priced Contracts",
-      "missing_appraisals": "Missing Appraisals",
-      "personnel_budget": "Personnel Budget",
-      "mass_fee_injection": "Bulk Fee Injection (Choir Only)",
-      "value_placeholder": "Value...",
-      "apply_valuation": "Apply Valuation",
-      "vocal_cast": "Vocal Cast (Choir / Soloists)",
-      "tech_crew": "Tech Crew & Logistics",
-      "no_personnel_title": "No personnel assigned",
-      "no_personnel_desc": "Go to the \"Project Management\" tab to hire cast or crew for this event."
-    },
-    "table": {
-      "performer": "Performer",
-      "voice": "Voice",
-      "status": "Status",
-      "gross_amount": "Gross Amount",
-      "documents": "Documents",
-      "contractor": "Contractor / Company",
-      "role": "Role"
-    },
-    "row": {
-      "missing_fee": "Missing Fee",
-      "save": "Save",
-      "no_name": "Performer"
-    },
-    "toast": {
-      "bulk_applying": "Applying bulk rates...",
-      "bulk_success": "Successfully updated rates for {{count}} people.",
-      "bulk_error": "Server error during bulk operation.",
-      "pdf_generating": "Generating PDF for {{name}}...",
-      "pdf_success": "Document generated successfully.",
-      "pdf_error": "Generation error: {{message}}",
-      "save_error": "Failed to save compensation for: {{name}}."
-    }
+  "notifications": {
+    "changed": "Changed:",
+    "crew_role": "Assigned Role: {{role}}",
+    "empty_subtitle": "You have no new notifications.",
+    "empty_title": "All caught up!",
+    "mark_all_read": "Mark all as read",
+    "title": "Notifications",
+    "unread": "Unread"
   },
   "projects": {
-    "dashboard": {
-      "subtitle": "Production Management",
-      "title": "Projects &",
-      "title_highlight": "Events",
-      "add_btn": "Plan New Project",
-      "header_badge": "Command Center",
-      "header_title_1": "Events &",
-      "header_title_2": "Production",
-      "btn_new_project": "New Project",
-      "empty_title": "No projects in this view",
-      "empty_desc": "Start planning a new event by clicking the \"New Project\" button above.",
-      "delete_modal_title": "Delete project?",
-      "delete_modal_desc": "This action is irreversible. It will delete all associated rehearsals, crew assignments, and cast for this project."
-    },
-    "filters": {
-      "active": "In preparation",
-      "done": "Archive",
-      "all": "All",
-      "aria_label": "Project status filters"
-    },
-    "card": {
-      "updating_status": "Updating status...",
-      "status_active": "Project marked as in preparation",
-      "status_done": "Project marked as completed",
-      "status_update_failed": "Failed to update status.",
-      "artistic_dashboard": "Artistic Dashboard",
-      "logistics_dashboard": "Logistics & Production",
-      "collapse": "Collapse",
-      "expand": "Expand",
-      "status_production": "Production status",
-      "generating_doc": "Generating document...",
-      "download_success": "Document downloaded successfully.",
-      "download_unknown_error": "Failed to generate the document."
-    },
-    "toast": {
-      "sync_error_title": "Sync error",
-      "sync_error_desc": "Dictionaries were not fetched properly.",
-      "delete_loading": "Deleting project...",
-      "delete_success": "Project deleted successfully",
-      "delete_error_title": "Deletion error",
-      "delete_error_desc": "Check project relations in the database (it might have assigned contracts or attendance records)."
-    },
-    "badge_active": "In preparation",
-    "badge_done": "Completed",
-    "call_time": "Call Time:",
     "actions": {
       "manage": "Manage",
       "mark_active": "Mark as Active",
       "mark_done": "Complete project"
     },
-    "exports": {
-      "call_sheet": "Download Call Sheet",
-      "zaiks": "Download ZAiKS",
-      "dtp": "Download DTP Note"
-    },
-    "editor": {
-      "new_project": "New Event Creator",
-      "archive_badge": "Archive",
-      "unsaved_changes_title": "Unsaved changes",
-      "unsaved_changes_desc": "You have unsaved changes in this tab. Are you sure you want to leave? Unsaved data will be lost."
-    },
-    "tabs": {
-      "details": "Details & Plan",
-      "rehearsals": "Rehearsals",
-      "matrix": "Attendance",
-      "cast": "Cast",
-      "program": "Setlist",
-      "micro_cast": "Divisi",
-      "crew": "Technical Crew",
-      "budget": "Budget"
-    },
-    "details": {
-      "description_title": "Event Description",
-      "no_description": "There are no additional notes for this event.",
-      "dress_code_title": "Dress Code",
-      "dress_code_female": "Women:",
-      "dress_code_male": "Men:",
-      "no_dress_code": "No dress code requirements.",
-      "toast": {
-        "updating": "Updating project...",
-        "creating": "Creating project...",
-        "update_success": "Project and schedule updated",
-        "create_success": "New project and schedule created",
-        "saving": "Saving project details..."
-      }
-    },
-    "matrix": {
-      "header": {
-        "title": "Attendance Matrix",
-        "subtitle": "Quick attendance marking for rehearsals. Manage status by clicking tiles under the name."
-      },
-      "legend": {
-        "title": "Attendance status"
-      },
-      "table": {
-        "rehearsal_date": "Rehearsal / Date",
-        "rate": "Rate"
-      },
-      "empty": {
-        "rehearsal": "No scheduled rehearsals in this project.",
-        "cast": "No cast assigned to the project.",
-        "rehearsals": "No rehearsals scheduled in this project."
-      },
-      "not_invited": "N/A",
-      "status": {
-        "none": "No entry",
-        "present": "Present",
-        "late": "Late",
-        "absent": "Absent",
-        "excused": "Excused"
-      },
-      "toast": {
-        "save_error": "Failed to save the change.",
-        "save_error_desc": "Check your connection and try again."
-      }
-    },
+    "badge_active": "In preparation",
+    "badge_done": "Completed",
     "budget": {
       "aria_label": "Manage project budget",
-      "title": "Estimate",
+      "empty": {
+        "cast": "No cast assigned to the project."
+      },
       "estimated_cost": "Estimated Cost",
-      "header": {
-        "title": "Production Budget",
-        "subtitle": "Plan and assign fee rates for the entire ensemble involved in the project."
-      },
       "fab": {
-        "unsaved": "Unsaved changes",
-        "description": "You have made changes to the rates."
+        "description": "You have made changes to the rates.",
+        "unsaved": "Unsaved changes"
       },
-      "summary": {
-        "title": "Cost Summary",
-        "missing": "Missing appraisals:"
-      },
+      "input_placeholder": "Enter amount...",
       "kpi": {
         "calculation": "Calculation",
         "cast_fees": "Rates (Cast)",
@@ -997,99 +570,272 @@
         "missing_desc": "items without rate",
         "total": "Total Cost"
       },
-      "empty": {
-        "cast": "No cast assigned to the project."
-      },
-      "sections": {
-        "estimated": "Estimated Budget",
-        "description": "Manage personnel costs",
-        "cast": "Vocal Cast",
-        "crew": "Technical Crew"
-      },
-      "input_placeholder": "Enter amount...",
       "missing_fee": "Missing fee",
+      "sections": {
+        "cast": "Vocal Cast",
+        "crew": "Technical Crew",
+        "description": "Manage personnel costs",
+        "estimated": "Estimated Budget"
+      },
+      "title": "Estimate",
       "toast": {
-        "saving": "Saving budget...",
+        "save_error_desc": "Failed to save all rates.",
         "save_success": "Rates saved and budget recalculated",
-        "save_error_desc": "Failed to save all rates."
+        "saving": "Saving budget..."
       }
+    },
+    "call_time": "Call Time:",
+    "card": {
+      "artistic_dashboard": "Artistic Dashboard",
+      "collapse": "Collapse",
+      "download_success": "Document downloaded successfully.",
+      "download_unknown_error": "Failed to generate the document.",
+      "expand": "Expand",
+      "generating_doc": "Generating document...",
+      "logistics_dashboard": "Logistics & Production",
+      "status_active": "Project marked as in preparation",
+      "status_done": "Project marked as completed",
+      "status_production": "Production status",
+      "status_update_failed": "Failed to update status.",
+      "updating_status": "Updating status..."
     },
     "cast": {
       "aria_label": "Manage vocal cast",
-      "title": "Vocal Cast",
-      "empty": "No vocal cast.",
-      "employed": "Employed:",
-      "header": {
-        "title": "Main Casting",
-        "subtitle": "Manage vocalists. The [scrollbar-gutter] setting neutralizes layout shifts."
-      },
-      "search_placeholder": "Search artist...",
-      "mobile": {
-        "available": "Database",
-        "assigned": "Cast"
-      },
-      "sections": {
-        "available": "Artist Database",
-        "assigned": "Project Cast"
-      },
-      "empty_available": "None available",
-      "empty_assigned": "The cast is empty",
       "card": {
         "a_vista": "Sight-reading:",
-        "remove": "Remove",
         "add": "Add",
-        "remove_aria": "Remove from cast",
-        "add_aria": "Add to cast"
+        "add_aria": "Add to cast",
+        "remove": "Remove",
+        "remove_aria": "Remove from cast"
       },
+      "employed": "Employed:",
+      "empty": "No vocal cast.",
+      "empty_assigned": "The cast is empty",
+      "empty_available": "None available",
+      "header": {
+        "subtitle": "Manage vocalists. The [scrollbar-gutter] setting neutralizes layout shifts.",
+        "title": "Main Casting"
+      },
+      "mobile": {
+        "assigned": "Cast",
+        "available": "Database"
+      },
+      "search_placeholder": "Search artist...",
+      "sections": {
+        "assigned": "Project Cast",
+        "available": "Artist Database"
+      },
+      "title": "Vocal Cast",
       "toast": {
-        "removed": "Removed from cast",
-        "added": "Added to cast"
+        "added": "Added to cast",
+        "removed": "Removed from cast"
       }
     },
     "crew": {
       "aria_label": "Manage technical crew",
-      "title": "Crew",
-      "empty": "No technical crew assigned.",
       "employed": "Employed:",
+      "empty": "No technical crew assigned.",
       "form": {
         "hire_label": "Hire from database",
-        "select_placeholder": "— Select collaborator —",
         "role_label": "Role for this concert",
         "role_placeholder": "e.g., FOH Engineer",
+        "select_placeholder": "— Select collaborator —",
         "submit": "Assign"
       },
       "list": {
-        "title": "Crew Members",
-        "assigned_count": "Assigned: {{count}}",
-        "remove_title": "Remove from technical crew"
+        "assigned_count_one": "Przypisano: {{count}}",
+        "assigned_count_other": "Przypisano: {{count}}",
+        "remove_title": "Remove from technical crew",
+        "title": "Crew Members"
       },
+      "title": "Crew",
       "toast": {
-        "assigning": "Assigning crew member...",
-        "assign_success": "Crew member assigned successfully",
         "assign_error": "Assignment error",
         "assign_error_desc": "Failed to assign crew member to the project.",
-        "removing": "Removing crew member...",
+        "assign_success": "Crew member assigned successfully",
+        "assigning": "Assigning crew member...",
+        "remove_error_desc": "Failed to unassign crew member from the project.",
         "remove_success": "Removed assignment from the project",
-        "remove_error_desc": "Failed to unassign crew member from the project."
+        "removing": "Removing crew member..."
+      }
+    },
+    "dashboard": {
+      "btn_new_project": "New Project",
+      "delete_modal_desc": "This action is irreversible. It will delete all associated rehearsals, crew assignments, and cast for this project.",
+      "delete_modal_title": "Delete project?",
+      "empty_desc": "Start planning a new event by clicking the \"New Project\" button above.",
+      "empty_title": "No projects in this view",
+      "header_badge": "Command Center",
+      "header_title_1": "Events &",
+      "header_title_2": "Production"
+    },
+    "details": {
+      "description_title": "Event Description",
+      "dress_code_female": "Women:",
+      "dress_code_male": "Men:",
+      "dress_code_title": "Dress Code",
+      "no_description": "There are no additional notes for this event.",
+      "no_dress_code": "No dress code requirements.",
+      "toast": {
+        "create_success": "New project and schedule created",
+        "saving": "Saving project details...",
+        "update_success": "Project and schedule updated"
+      }
+    },
+    "details_tab": {
+      "buttons": {
+        "add_run_sheet": "Add run sheet item"
+      },
+      "empty": {
+        "run_sheet": "No run sheet items. Add the first one!"
+      },
+      "fab": {
+        "description": "You modified the project settings.",
+        "save": "Save Changes",
+        "unsaved": "Unsaved Changes"
+      },
+      "fields": {
+        "call_time": "Call Time",
+        "date_time": "Date and Time *",
+        "description": "Event description",
+        "dress_code_female": "Dress Code: Women",
+        "dress_code_male": "Dress Code: Men",
+        "location": "Location / Venue",
+        "spotify": "Playlist (Spotify)",
+        "timezone": "Strefa Czasowa *",
+        "title": "Project Title *"
+      },
+      "header": {
+        "title": "Event Details"
+      },
+      "placeholders": {
+        "description": "e.g., Please be punctual...",
+        "spotify": "Paste link to reference playlist..."
+      },
+      "run_sheet": {
+        "description": "Description (optional)",
+        "time": "Time",
+        "title": "Title"
+      },
+      "sections": {
+        "logistics": "Call Time and Dress Code",
+        "notes": "Production Notes",
+        "references": "Musical References",
+        "run_sheet": "Concert Day Run Sheet",
+        "title_desc": "Title and Description"
+      }
+    },
+    "editor": {
+      "archive_badge": "Archive",
+      "new_project": "New Event Creator",
+      "unsaved_changes_desc": "You have unsaved changes in this tab. Are you sure you want to leave? Unsaved data will be lost.",
+      "unsaved_changes_title": "Unsaved changes"
+    },
+    "exports": {
+      "call_sheet": "Download Call Sheet",
+      "dtp": "Download DTP Note",
+      "zaiks": "Download ZAiKS"
+    },
+    "filters": {
+      "active": "In preparation",
+      "all": "All",
+      "aria_label": "Project status filters",
+      "done": "Archive"
+    },
+    "matrix": {
+      "empty": {
+        "cast": "No cast assigned to the project.",
+        "rehearsals": "No rehearsals scheduled in this project."
+      },
+      "header": {
+        "subtitle": "Quick attendance marking for rehearsals. Manage status by clicking tiles under the name.",
+        "title": "Attendance Matrix"
+      },
+      "legend": {
+        "title": "Attendance status"
+      },
+      "not_invited": "N/A",
+      "table": {
+        "rate": "Rate",
+        "rehearsal_date": "Rehearsal / Date"
+      },
+      "toast": {
+        "save_error": "Failed to save the change.",
+        "save_error_desc": "Check your connection and try again."
+      }
+    },
+    "micro_cast": {
+      "artist": {
+        "add_note": "Add note",
+        "drag_aria": "Drag {{name}}",
+        "note_placeholder": "Note..."
+      },
+      "bucket": {
+        "aria": "Droppable Section",
+        "aria_with_title": "Droppable Section: {{title}}"
+      },
+      "buttons": {
+        "play_reference": "Play Reference"
+      },
+      "empty": {
+        "no_requirements": "No voice requirements defined for this piece in the repertoire database. Using open assignment mode (Divisi).",
+        "pieces": "No pieces",
+        "section": "No assignments in this section",
+        "unassigned": "Everyone has been assigned to roles in this piece."
+      },
+      "header": {
+        "subtitle": "Drag vocalists between sections within the selected piece.",
+        "title": "Divisi and Micro-Casting"
+      },
+      "label": {
+        "pieces_in_program": "Pieces in program"
+      },
+      "sections": {
+        "unassigned": "Unassigned (Roster Base)"
+      },
+      "select_piece": "Select piece for casting",
+      "status": {
+        "deficit": "Deficit: ",
+        "free": "Open Vacancy"
+      },
+      "toast": {
+        "note_error": "Failed to update note.",
+        "sync_error": "Sync error",
+        "sync_error_desc": "Failed to update cast."
+      },
+      "voices": {
+        "altos": "Altos",
+        "basses": "Basses",
+        "sopranos": "Sopranos",
+        "tenors": "Tenors"
       }
     },
     "program": {
-      "music_time_min": "min of music",
+      "actions": {
+        "add": "Add to program",
+        "add_encore": "Mark as Encore",
+        "already_added": "Piece is already in the setlist",
+        "drag_aria": "Drag piece {{title}}",
+        "remove_encore": "Remove as Encore",
+        "remove_from_program": "Remove from program"
+      },
+      "and_more_one": "...i {{count}} więcej",
+      "and_more_other": "...i {{count}} więcej",
       "aria_label": "Manage concert program",
-      "title": "Concert Program",
-      "no_reqs": "No requirements",
-      "unfulfilled": "Unfulfilled",
-      "fulfilled": "Fulfilled",
-      "and_more": "...and {{count}} more",
+      "badges": {
+        "encore": "ENCORE",
+        "tracks_count_one": "Utworów: {{count}}",
+        "tracks_count_other": "Utworów: {{count}}"
+      },
       "duration_unknown": "Duration unknown",
       "empty": {
-        "setlist_title": "Setlist is empty",
+        "no_results": "No results",
         "setlist_desc": "Select compositions from the database on the right to build the concert program.",
-        "no_results": "No results"
+        "setlist_title": "Setlist is empty"
       },
       "fab": {
-        "unsaved": "Unsaved Changes",
-        "description": "You modified the program order."
+        "description": "You modified the program order.",
+        "unsaved": "Unsaved Changes"
       },
       "format": {
         "duration_hours": "~ {{h}}h {{m}}min of music",
@@ -1097,232 +843,293 @@
         "minutes": "{{m}} min",
         "seconds": "{{s}} sec"
       },
-      "actions": {
-        "drag_aria": "Drag piece {{title}}",
-        "remove_encore": "Remove as Encore",
-        "add_encore": "Mark as Encore",
-        "remove_from_program": "Remove from program",
-        "already_added": "Piece is already in the setlist",
-        "add": "Add to program"
-      },
-      "badges": {
-        "encore": "ENCORE",
-        "tracks_count": "Tracks: {{count}}"
-      },
-      "sections": {
-        "setlist": "Event Setlist",
-        "database": "Composition Database"
-      },
+      "fulfilled": "Fulfilled",
+      "music_time_min": "min of music",
+      "no_reqs": "No requirements",
       "search": {
         "placeholder": "Search piece..."
       },
+      "sections": {
+        "database": "Composition Database",
+        "setlist": "Event Setlist"
+      },
+      "title": "Concert Program",
       "toast": {
-        "adding": "Adding piece...",
-        "add_success": "Added to setlist",
         "add_error": "Failed to add piece.",
-        "encore_toggled": "Encore status changed",
+        "add_success": "Added to setlist",
+        "adding": "Adding piece...",
         "encore_error": "Connection error. Failed to change encore status.",
-        "removing": "Removing piece...",
+        "encore_toggled": "Encore status changed",
         "remove_success": "Removed from program",
-        "saving_order": "Saving new order...",
+        "removing": "Removing piece...",
+        "save_order_error": "Server rejected some changes. Refreshing view.",
         "save_order_success": "Order saved successfully",
-        "save_order_error": "Server rejected some changes. Refreshing view."
-      }
-    },
-    "details_tab": {
-      "fab": {
-        "unsaved": "Unsaved Changes",
-        "description": "You modified the project settings.",
-        "save": "Save Changes"
+        "saving_order": "Saving new order..."
       },
-      "header": {
-        "title": "Event Details"
-      },
-      "sections": {
-        "title_desc": "Title and Description",
-        "logistics": "Call Time and Dress Code",
-        "notes": "Production Notes",
-        "references": "Musical References",
-        "run_sheet": "Concert Day Run Sheet"
-      },
-      "fields": {
-        "title": "Project Title *",
-        "date_time": "Date and Time *",
-        "location": "Location / Venue",
-        "call_time": "Call Time",
-        "dress_code_female": "Dress Code: Women",
-        "dress_code_male": "Dress Code: Men",
-        "description": "Event description",
-        "spotify": "Playlist (Spotify)"
-      },
-      "placeholders": {
-        "description": "e.g., Please be punctual...",
-        "spotify": "Paste link to reference playlist..."
-      },
-      "buttons": {
-        "add_run_sheet": "Add run sheet item"
-      },
-      "empty": {
-        "run_sheet": "No run sheet items. Add the first one!"
-      },
-      "run_sheet": {
-        "time": "Time",
-        "title": "Title",
-        "description": "Description (optional)"
-      }
-    },
-    "micro_cast": {
-      "header": {
-        "title": "Divisi and Micro-Casting",
-        "subtitle": "Drag vocalists between sections within the selected piece."
-      },
-      "artist": {
-        "drag_aria": "Drag {{name}}",
-        "note_placeholder": "Note...",
-        "add_note": "Add note"
-      },
-      "select_piece": "Select piece for casting",
-      "label": {
-        "pieces_in_program": "Pieces in program"
-      },
-      "buckets": {
-        "unassigned": {
-          "aria_with_title": "Droppable Section: {{title}}",
-          "aria": "Droppable Section: "
-        }
-      },
-      "buttons": {
-        "play_reference": "Play Reference"
-      },
-      "sections": {
-        "unassigned": "Unassigned (Roster Base)"
-      },
-      "voices": {
-        "sopranos": "Sopranos",
-        "altos": "Altos",
-        "tenors": "Tenors",
-        "basses": "Basses"
-      },
-      "status": {
-        "free": "Open Vacancy",
-        "deficit": "Deficit: "
-      },
-      "empty": {
-        "pieces": "No pieces",
-        "unassigned": "Everyone has been assigned to roles in this piece.",
-        "section": "No assignments in this section",
-        "no_requirements": "No voice requirements defined for this piece in the repertoire database. Using open assignment mode (Divisi)."
-      },
-      "toast": {
-        "note_error": "Failed to update note.",
-        "sync_error": "Sync error",
-        "sync_error_desc": "Failed to update cast."
-      },
-      "bucket": {
-        "aria": "Droppable Section",
-        "aria_with_title": "Droppable Section: {{title}}"
-      }
+      "unfulfilled": "Unfulfilled"
     },
     "rehearsals": {
-      "aria_label": "Manage project rehearsals",
-      "title": "Rehearsals",
-      "upcoming": "Upcoming Rehearsals",
-      "progress": "Progress",
       "absences_reported": "Reported absences:",
-      "tutti": "TUTTI",
-      "sectional": "SECTIONAL",
-      "optional": "Optional",
-      "empty": {
-        "no_rehearsals": "No scheduled rehearsals."
-      },
-      "form": {
-        "title": "Schedule new rehearsal",
-        "date_time": "Date and Time *",
-        "location": "Location (Room) *",
-        "location_placeholder": "e.g., Room 102, Academy",
-        "focus": "Rehearsal Plan / Focus",
-        "focus_placeholder": "e.g., Requiem pt. 1-3...",
-        "who": "Who is called for the rehearsal?",
-        "type_tutti": "Tutti (Everyone)",
-        "type_sectional": "Sectional Rehearsal",
-        "type_custom": "Selected people",
-        "mandatory": "Mandatory attendance for invitees",
-        "submit": "Save to calendar",
-        "title_edit": "Edit rehearsal",
-        "update": "Update rehearsal"
-      },
-      "voices": {
-        "sopranos": "Sopranos",
-        "altos": "Altos",
-        "tenors": "Tenors",
-        "basses": "Basses"
-      },
-      "list": {
-        "title": "Rehearsal Schedule"
-      },
-      "status": {
-        "finished": "Finished",
-        "tutti": "TUTTI",
-        "invited": "Invited: {{count}}",
-        "optional": "Optional"
-      },
       "actions": {
         "delete": "Delete rehearsal",
         "edit": "Edit rehearsal"
       },
-      "modal": {
-        "delete_title": "Delete this rehearsal?",
-        "delete_desc": "Attendance lists associated with this rehearsal will be permanently deleted. This operation cannot be undone."
+      "aria_label": "Manage project rehearsals",
+      "empty": {
+        "no_rehearsals": "No scheduled rehearsals."
       },
+      "form": {
+        "date_time": "Date and Time *",
+        "focus": "Rehearsal Plan / Focus",
+        "focus_placeholder": "e.g., Requiem pt. 1-3...",
+        "location": "Location (Room) *",
+        "location_placeholder": "e.g., Room 102, Academy",
+        "mandatory": "Mandatory attendance for invitees",
+        "submit": "Save to calendar",
+        "timezone": "Strefa Czasowa *",
+        "title": "Schedule new rehearsal",
+        "title_edit": "Edit rehearsal",
+        "type_custom": "Selected people",
+        "type_sectional": "Sectional Rehearsal",
+        "type_tutti": "Tutti (Everyone)",
+        "update": "Update rehearsal",
+        "who": "Who is called for the rehearsal?"
+      },
+      "list": {
+        "title": "Rehearsal Schedule"
+      },
+      "modal": {
+        "delete_desc": "Attendance lists associated with this rehearsal will be permanently deleted. This operation cannot be undone.",
+        "delete_title": "Delete this rehearsal?"
+      },
+      "optional": "Optional",
+      "progress": "Progress",
+      "sectional": "SECTIONAL",
+      "status": {
+        "finished": "Finished",
+        "invited_one": "Wezwanych: {{count}}",
+        "invited_other": "Wezwanych: {{count}}",
+        "optional": "Optional",
+        "tutti": "TUTTI"
+      },
+      "title": "Rehearsals",
       "toast": {
-        "select_target": "Select at least one person or section for the rehearsal!",
-        "saving": "Saving rehearsal to calendar...",
-        "save_success": "Rehearsal saved successfully",
-        "save_error_desc": "A problem occurred while saving to the database. Check the form and connection.",
-        "removing": "Deleting rehearsal...",
-        "remove_success": "Rehearsal has been deleted",
         "remove_error_desc": "Failed to delete rehearsal. The server rejected the request.",
+        "remove_success": "Rehearsal has been deleted",
+        "removing": "Deleting rehearsal...",
+        "save_error_desc": "A problem occurred while saving to the database. Check the form and connection.",
+        "save_success": "Rehearsal saved successfully",
+        "saving": "Saving rehearsal to calendar...",
+        "select_target": "Select at least one person or section for the rehearsal!",
         "update_success": "Rehearsal updated successfully",
         "updating": "Updating rehearsal..."
+      },
+      "tutti": "TUTTI",
+      "upcoming": "Upcoming Rehearsals",
+      "voices": {
+        "altos": "Altos",
+        "basses": "Basses",
+        "sopranos": "Sopranos",
+        "tenors": "Tenors"
       }
     },
     "run_sheet": {
-      "title": "Concert Day Run Sheet",
-      "empty": "No run sheet available for this event."
+      "empty": "No run sheet available for this event.",
+      "title": "Concert Day Run Sheet"
     },
     "spotify": {
-      "title": "Reference Tracks",
+      "empty": "No playlist assigned.",
       "iframe_title": "Spotify Playlist",
       "open_app": "Open in app",
-      "empty": "No playlist assigned."
+      "title": "Reference Tracks"
+    },
+    "toast": {
+      "delete_error_desc": "Check project relations in the database (it might have assigned contracts or attendance records).",
+      "delete_error_title": "Deletion error",
+      "delete_loading": "Deleting project...",
+      "delete_success": "Project deleted successfully",
+      "sync_error_desc": "Dictionaries were not fetched properly.",
+      "sync_error_title": "Sync error"
     }
   },
-  "notifications": {
-    "title": "Notifications",
-    "unread": "Unread",
-    "mark_all_read": "Mark all as read",
-    "empty_title": "All caught up!",
-    "empty_subtitle": "You have no new notifications.",
-    "changed": "Changed:",
-    "crew_role": "Assigned Role: {{role}}",
-    "types": {
-      "PROJECT_INVITATION": "Project Invitation",
-      "PROJECT_UPDATED": "Project Updated",
-      "PROJECT_CANCELLED": "Project Cancelled",
-      "PROJECT_REMINDER": "Project Reminder",
-      "REHEARSAL_SCHEDULED": "Rehearsal Scheduled",
-      "REHEARSAL_UPDATED": "Rehearsal Updated",
-      "REHEARSAL_CANCELLED": "Rehearsal Cancelled",
-      "REHEARSAL_REMINDER": "Rehearsal Reminder",
-      "PIECE_CASTING_ASSIGNED": "Piece Casting Assigned",
-      "PIECE_CASTING_UPDATED": "Piece Casting Updated",
-      "MATERIAL_UPLOADED": "Material Uploaded",
-      "CREW_ASSIGNED": "Crew Assigned",
-      "CONTRACT_ISSUED": "Contract Issued",
-      "ABSENCE_REQUESTED": "Absence Requested",
-      "ABSENCE_APPROVED": "Absence Approved",
-      "ABSENCE_REJECTED": "Absence Rejected",
-      "SYSTEM_ALERT": "System Alert"
+  "rehearsals": {
+    "dashboard": {
+      "bulk_fill_one": "Uzupełnij luki ({{count}}) jako \"Obecny\"",
+      "bulk_fill_other": "Uzupełnij luki ({{count}}) jako \"Obecny\"",
+      "general_work": "General Work",
+      "no_location": "No loc.",
+      "no_projects": "No projects in this tab.",
+      "only": "Only:",
+      "project_context": "Project Context",
+      "sectional": "Sectional Rehearsal",
+      "subtitle": "Inspector Module",
+      "title": "Attendance",
+      "title_highlight": "Logbook",
+      "tutti": "Tutti (Full Ensemble)",
+      "tutti_badge": "Tutti Rehearsal"
+    },
+    "row": {
+      "minutes_placeholder": "How many min?",
+      "note_placeholder": "Note (optional)",
+      "status_absent": "Absent",
+      "status_excused": "Excused",
+      "status_late": "Late",
+      "status_present": "Present"
+    },
+    "stats": {
+      "absent": "Missing",
+      "present": "Present",
+      "rate": "Attendance Rate"
+    },
+    "tabs": {
+      "active": "Active",
+      "archive": "Archive"
+    },
+    "toast": {
+      "bulk_error_desc": "Failed to save bulk attendance.",
+      "bulk_error_title": "System error",
+      "bulk_marking": "Bulk marking attendance...",
+      "bulk_success": "Filled gaps as 'Present'.",
+      "save_error_desc": "Save error for:",
+      "save_error_title": "Save error",
+      "sync_error_desc": "Failed to load data.",
+      "sync_error_title": "Sync error"
+    },
+    "voices": {
+      "altos": "Altos",
+      "basses": "Basses",
+      "countertenors": "Countertenors",
+      "mezzos": "Mezzo-sopranos",
+      "sopranos": "Sopranos",
+      "tenors": "Tenors"
+    }
+  },
+  "resources": {
+    "actions": {
+      "add_category": "Add Category",
+      "add_document": "Add New Document",
+      "delete_category": "Delete Category",
+      "delete_file": "Delete File",
+      "download_file": "Download {{title}}",
+      "edit_category": "Edit Category"
+    },
+    "banner": {
+      "description": "The file structure shown below is a mock-up. The actual documents, contracts, and foundation regulations will be uploaded in a later CMS rollout phase.",
+      "title": "Preview Section (Demo Version)"
+    },
+    "categories": {
+      "regulations": {
+        "description": "Official foundation documents, collaboration rules, privacy policy, and rehearsal participation regulations.",
+        "files": {
+          "choir_rules": "Choir Member Regulations and Attendance Rules",
+          "gdpr": "Personal Data Processing Policy (GDPR)",
+          "statute": "Foundation Statute (2026 Version - Updated After the Board General Assembly)"
+        },
+        "title": "Regulations and Statutes"
+      },
+      "wardrobe": {
+        "description": "Guidelines for standardized concert attire and rules for taking care of entrusted wardrobe items.",
+        "files": {
+          "dress_guide": "Guide: Choral Dress (Soprano / Alto)",
+          "tuxedo_guide": "Guide: Tuxedo and Bow Tie (Tenor / Bass)"
+        },
+        "title": "Wardrobe and Dress Code"
+      }
+    },
+    "cms": {
+      "description": "The ability to upload and edit files on the server will be enabled once the target API is connected.",
+      "title": "CMS Module in Progress"
+    },
+    "dashboard": {
+      "badge": "Knowledge Base and Documents",
+      "title": "Foundation",
+      "title_highlight": "Resources"
+    }
+  },
+  "schedule": {
+    "card": {
+      "call_time": "Call Time:",
+      "download_call_sheet": "Call-Sheet PDF",
+      "download_error_desc": "Failed to download the file.",
+      "download_loading": "Generating Call Sheet document...",
+      "download_success": "File downloaded successfully",
+      "dress_code_men": "Men:",
+      "dress_code_title": "Dress Code Details",
+      "dress_code_women": "Women:",
+      "expand_cast": "Expand cast (divisi)",
+      "hide_cast": "Hide cast",
+      "no_divisi": "No detailed voice splitting (divisi) for this piece.",
+      "no_location": "No loc.",
+      "no_notes": "No additional production notes.",
+      "no_program": "The repertoire has not been set yet.",
+      "no_run_sheet": "The run sheet has not been published by the manager yet.",
+      "no_spotify": "No reference playlist.",
+      "note_label": "Note:",
+      "project_badge": "Concert / Event",
+      "run_sheet_title": "Run Sheet",
+      "tab": {
+        "logistics": "Logistics & Plan",
+        "setlist": "Repertoire & Divisi"
+      },
+      "unknown_artist": "Artist"
+    },
+    "dashboard": {
+      "description": "Check rehearsals, report absences, and track concert plans.",
+      "subtitle": "Personal Calendar",
+      "title": "My",
+      "title_highlight": "Schedule"
+    },
+    "empty": {
+      "description": "You don't have any assigned meetings or concerts in this view.",
+      "title": "No calendar entries"
+    },
+    "event": {
+      "generic_event": "Event",
+      "rehearsal_prefix": "Rehearsal:"
+    },
+    "loading": "Loading schedule...",
+    "rehearsal": {
+      "action": {
+        "confirm_long": "Confirm Attendance",
+        "confirm_short": "Confirm",
+        "edit": "Edit",
+        "report_issue": "Report issue"
+      },
+      "badge": "Rehearsal",
+      "details": {
+        "focus_title": "Rehearsal Focus",
+        "materials_button": "Materials",
+        "materials_desc": "Download PDF scores and practice your parts with the player.",
+        "materials_subtitle": "Prepare for the rehearsal",
+        "materials_title": "Your Sheet Music",
+        "no_focus": "No detailed plan for this rehearsal.",
+        "reported_absences": "Reported absences:"
+      },
+      "form": {
+        "cancel": "Cancel",
+        "option_absent": "I will be absent",
+        "option_late": "I will be late",
+        "reason_label": "Reason / Notes *",
+        "reason_placeholder": "e.g., Traffic, illness...",
+        "status_label": "Status *",
+        "submit": "Submit",
+        "title": "Absence Form for the Inspector"
+      },
+      "no_location": "None",
+      "optional": "Optional",
+      "status_absent": "Absent",
+      "status_late": "Running Late",
+      "status_present": "Confirmed"
+    },
+    "tabs": {
+      "past": "History",
+      "upcoming": "Upcoming"
+    },
+    "toast": {
+      "submit_error_desc": "Failed to save the report.",
+      "submit_error_title": "Save error",
+      "submit_success": "Report has been saved.",
+      "submitting": "Submitting report..."
     }
   },
   "settings": {
@@ -1339,39 +1146,39 @@
       "title": "General Settings"
     },
     "integrations": {
-      "subtitle": "Synchronize the rehearsal schedule with your phone calendar.",
-      "title": "Integrations and Calendars",
-      "live_sync_title": "Live Sync (Apple, Google, Outlook)",
-      "live_sync_desc": "Use this link to subscribe to the choir calendar. Your rehearsals and concerts will update automatically. Add it as a URL subscription, not as a one-time downloaded file.",
       "calendar_url_label": "Your private calendar address",
       "copied": "Copied",
       "copy_link": "Copy Link",
-      "reset_title": "Reset your link",
+      "live_sync_desc": "Use this link to subscribe to the choir calendar. Your rehearsals and concerts will update automatically. Add it as a URL subscription, not as a one-time downloaded file.",
+      "live_sync_title": "Live Sync (Apple, Google, Outlook)",
+      "reset_btn": "Generate New Link",
       "reset_desc": "If you suspect unauthorized access to your calendar link, generate it again. The previous address will stop working immediately.",
-      "reset_btn": "Generate New Link"
+      "reset_title": "Reset your link",
+      "subtitle": "Synchronize the rehearsal schedule with your phone calendar.",
+      "title": "Integrations and Calendars"
     },
     "logistics": {
-      "subtitle": "Data used by management to order costumes and catering.",
-      "title": "Logistics and Travel",
+      "clothing_size": "Clothing Size",
+      "dietary_notes": "Notes / Allergies (optional)",
+      "dietary_notes_placeholder": "e.g. nut allergy, no seafood...",
+      "dietary_options": {
+        "gf": "Gluten-free",
+        "lf": "Lactose-free",
+        "none": "No requirements",
+        "vegan": "Vegan",
+        "vege": "Vegetarian"
+      },
+      "dietary_preference": "Dietary Preference",
+      "height": "Height (cm)",
+      "height_placeholder": "e.g. 175",
       "sections": {
         "catering": "Catering",
         "measurements": "Measurements and Costumes"
       },
-      "dietary_preference": "Dietary Preference",
-      "dietary_notes": "Notes / Allergies (optional)",
-      "dietary_notes_placeholder": "e.g. nut allergy, no seafood...",
-      "dietary_options": {
-        "none": "No requirements",
-        "vege": "Vegetarian",
-        "vegan": "Vegan",
-        "gf": "Gluten-free",
-        "lf": "Lactose-free"
-      },
-      "clothing_size": "Clothing Size",
       "shoe_size": "Shoe Size (EU)",
       "shoe_size_placeholder": "e.g. 42",
-      "height": "Height (cm)",
-      "height_placeholder": "e.g. 175"
+      "subtitle": "Data used by management to order costumes and catering.",
+      "title": "Logistics and Travel"
     },
     "membership": {
       "title": "Artist Profile",

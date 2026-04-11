@@ -22,6 +22,7 @@ import ProtectedRoute from "./router/ProtectedRoute";
 import ManagerRoute from "./router/ManagerRoute";
 import DashboardLayout from "../widgets/layout/dashboard/DashboardLayout";
 import SettingsPage from "../pages/app/SettingsPage";
+import LogisticsLocationsPage from "../pages/app/LogisticsLocationsPage";
 
 import Home from "../pages/public/HomePage";
 import Login from "../pages/public/LoginPage";
@@ -98,6 +99,7 @@ export default function App(): React.JSX.Element {
                   element={<ArchiveManagement />}
                 />
                 <Route path="crew" element={<CrewManagement />} />
+                <Route path="locations" element={<LogisticsLocationsPage />} />
               </Route>
               <Route path="resources" element={<Resources />} />
               <Route path="materials" element={<Materials />} />
