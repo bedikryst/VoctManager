@@ -12,7 +12,7 @@ import {
   ArrowRight,
   Briefcase,
 } from "lucide-react";
-import { formatLocalizedDate } from "@/shared/lib/intl";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";

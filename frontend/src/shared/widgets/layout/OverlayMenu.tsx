@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { cva } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 import { MAIN_PUBLIC_LINKS } from "@/shared/config/navigation/public.config";
-import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import {
   MENU_PANEL_VARIANTS,
   STAGGERED_REVEAL_VARIANTS,

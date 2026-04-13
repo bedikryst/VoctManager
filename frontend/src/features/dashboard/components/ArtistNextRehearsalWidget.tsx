@@ -21,7 +21,7 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
-import { formatLocalizedDate } from "@/shared/lib/intl";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { cn } from "@/shared/lib/utils";
 import { useUpsertScheduleAttendance } from "../../schedule/api/schedule.queries";
 import { AbsenceReportForm, type AbsenceFormValues } from "./AbsenceReportForm";

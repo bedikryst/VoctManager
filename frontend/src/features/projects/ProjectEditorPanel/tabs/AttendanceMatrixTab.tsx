@@ -10,7 +10,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, Check, X, Clock, ShieldAlert, Users } from "lucide-react";
-import { formatLocalizedDate, formatLocalizedTime } from "@/shared/lib/intl";
+import {
+  formatLocalizedDate,
+  formatLocalizedTime,
+} from "@/shared/lib/time/intl";
 import {
   useAttendanceMatrix,
   type AttendanceRecord,

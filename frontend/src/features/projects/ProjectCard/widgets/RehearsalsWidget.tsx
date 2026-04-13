@@ -15,7 +15,7 @@ import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 // Import global formatters and components
-import { formatLocalizedDate } from "@/shared/lib/intl";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 
 interface RehearsalsWidgetProps {

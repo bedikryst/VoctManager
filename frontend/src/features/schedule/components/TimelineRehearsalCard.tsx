@@ -26,7 +26,7 @@ import {
 import type { AttendanceStatus } from "@/shared/types";
 import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
-import { formatLocalizedDate } from "@/shared/lib/intl";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";

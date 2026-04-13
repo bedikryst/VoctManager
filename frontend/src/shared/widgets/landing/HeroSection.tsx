@@ -9,8 +9,8 @@
 
 import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useMouseAndGyro } from "@/shared/lib/hooks/useMouseAndGyro";
-import { useScrollyAudio } from "@/shared/lib/hooks/useScrollyAudio";
+import { useMouseAndGyro } from "@/shared/ui/kinematics/hooks/useMouseAndGyro";
+import { useScrollyAudio } from "@/shared/ui/kinematics/hooks/useScrollyAudio";
 
 export default function HeroSection() {
   // ==========================================

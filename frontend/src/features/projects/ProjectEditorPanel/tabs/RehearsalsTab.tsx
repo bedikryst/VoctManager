@@ -31,8 +31,8 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 
 // New native IANA timezone helper and global formatters
-import { getAvailableTimezones } from "@/shared/lib/timezone";
-import { formatLocalizedDate } from "@/shared/lib/intl";
+import { getAvailableTimezones } from "@/shared/lib/time/timezone";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 
 interface RehearsalsTabProps {

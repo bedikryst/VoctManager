@@ -17,7 +17,7 @@ import { Button } from "@ui/primitives/Button";
 import { Input } from "@ui/primitives/Input";
 import { GlassCard } from "@ui/composites/GlassCard";
 import { VoiceFilterButton } from "./components/VoiceFilterButton";
-import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import ArtistEditorPanel from "./components/ArtistEditorPanel";
 import { ArtistCard } from "./components/ArtistCard";
 

@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { MapPin, Clock } from "lucide-react";
 import type { LocationDto } from "../types/logistics.dto";
-import { useLocalTime } from "@/shared/lib/hooks/useLocalTime";
+import { useLocalTime } from "@/shared/lib/time/hooks/useLocalTime";
 
 interface LocationsGlobalMapProps {
   locations: LocationDto[];

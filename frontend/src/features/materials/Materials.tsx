@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 
 import { getReferenceRecordingLinks } from "@/features/archive/constants/referenceRecordings";
-import { formatLocalizedDate } from "@/shared/lib/intl";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { useMaterialsData } from "./hooks/useMaterialsData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Input } from "@/shared/ui/primitives/Input";

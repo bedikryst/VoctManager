@@ -6,7 +6,7 @@ import { Plus, Search, Map as MapIcon, LayoutGrid, Globe2 } from "lucide-react";
 
 import { LocationsGlobalMap } from "./LocationsGlobalMap";
 import { useLocationsData } from "../hooks/useLocationsData";
-import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";

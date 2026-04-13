@@ -13,7 +13,7 @@ import { motion, type Variants } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/app/store/useAppStore";
 import { cn } from "@/shared/lib/utils";
-import { useNavbarKinematics } from "@/shared/lib/hooks/useNavbarKinematics";
+import { useNavbarKinematics } from "@/shared/ui/kinematics/hooks/useNavbarKinematics";
 import { BASE_TRANSITION, EASE } from "@/shared/ui/kinematics/motion-presets";
 
 // --- Types & Interfaces ---

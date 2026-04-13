@@ -20,8 +20,8 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
-import { formatLocalizedDate } from "@/shared/lib/intl";
-import { downloadFile } from "@/shared/lib/downloadFile";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
+import { downloadFile } from "@/shared/lib/io/downloadFile";
 import api from "@/shared/api/api";
 
 export function ArtistNextProjectWidget({ project }: { project: any }) {

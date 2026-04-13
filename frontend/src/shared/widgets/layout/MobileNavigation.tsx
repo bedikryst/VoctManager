@@ -21,7 +21,7 @@ import { NotificationCenter } from "@/features/notifications/components/Notifica
 import { isCrew, isManager } from "@/shared/auth/rbac";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
-import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 interface MobileNavigationProps {
   user: AuthUser | null;

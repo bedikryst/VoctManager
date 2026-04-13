@@ -11,7 +11,7 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { formatLocalizedTime } from "@/shared/lib/intl";
+import { formatLocalizedTime } from "@/shared/lib/time/intl";
 import { ElegantHeading } from "@/shared/ui/kinematics/ElegantHeading";
 import { FADE_UP_VARIANTS } from "@/shared/ui/kinematics/motion-presets";
 

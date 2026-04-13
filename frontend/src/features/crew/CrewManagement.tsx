@@ -15,7 +15,7 @@ import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
 import { Input } from "@ui/primitives/Input";
 import { GlassCard } from "@ui/composites/GlassCard";
-import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 import CrewEditorPanel from "./components/CrewEditorPanel";
 import { CrewCard } from "./components/CrewCard";

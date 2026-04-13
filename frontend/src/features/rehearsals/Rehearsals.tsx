@@ -22,7 +22,10 @@ import { useLocationResolver } from "../logistics/hooks/useLocationResolver";
 import { LocationPreview } from "../logistics/components/LocationPreview";
 
 import { useRehearsalsData } from "./hooks/useRehearsalsData";
-import { formatLocalizedDate, formatLocalizedTime } from "@/shared/lib/intl";
+import {
+  formatLocalizedDate,
+  formatLocalizedTime,
+} from "@/shared/lib/time/intl";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { ArtistRow } from "./components/ArtistRow";

@@ -19,7 +19,7 @@ import {
   Save,
 } from "lucide-react";
 
-import { getAvailableTimezones } from "@/shared/lib/timezone";
+import { getAvailableTimezones } from "@/shared/lib/time/timezone";
 import type { Project } from "@/shared/types";
 import { useDetailsForm } from "../hooks/useDetailsForm";
 import { Input } from "@/shared/ui/primitives/Input";

@@ -30,7 +30,7 @@ import { useProjectCard } from "./hooks/useProjectCard";
 import { Button } from "@/shared/ui/primitives/Button";
 
 // Importujemy ustandaryzowane mechanizmy z shared
-import { formatLocalizedDate } from "@/shared/lib/intl";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 
 interface ProjectCardHeaderProps {

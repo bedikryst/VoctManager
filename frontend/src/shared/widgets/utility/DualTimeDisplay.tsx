@@ -9,7 +9,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { cva, type VariantProps } from "class-variance-authority";
-import { formatLocalizedTime } from "@/shared/lib/intl";
+import { formatLocalizedTime } from "@/shared/lib/time/intl";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { cn } from "@/shared/lib/utils";
 

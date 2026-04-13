@@ -20,7 +20,7 @@ import { DashboardFilterMenu } from "./components/DashboardFilterMenu";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
-import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 const MemoizedProjectCard = React.memo(ProjectCard);
 

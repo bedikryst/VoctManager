@@ -22,7 +22,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import { downloadFile } from "@/shared/lib/downloadFile";
+import { downloadFile } from "@/shared/lib/io/downloadFile";
 import { useContractsData } from "./hooks/useContractsData";
 import { useBulkUpdateFee } from "./api/contracts.queries";
 

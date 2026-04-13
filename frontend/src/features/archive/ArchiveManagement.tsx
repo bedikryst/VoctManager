@@ -32,7 +32,7 @@ import { useArchiveData } from "./hooks/useArchiveData";
 import type { EnrichedPiece } from "./types/archive.dto";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
 
-import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ARCHIVE_TABS, ArchiveTabId } from "./constants/archiveDomain";
 
 export default function ArchiveManagement(): React.JSX.Element {

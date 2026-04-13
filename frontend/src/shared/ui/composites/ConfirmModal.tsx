@@ -13,6 +13,7 @@ import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cva } from "class-variance-authority";
 import { Button } from "@/shared/ui/primitives/Button";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 const iconContainerVariants = cva(
   "p-3 rounded-full flex-shrink-0 transition-colors duration-300",
@@ -55,24 +56,23 @@ export const ConfirmModal = ({
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
+  useBodyScrollLock(isOpen);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === "Escape" && !isLoading) onCancel();
-      };
-      window.addEventListener("keydown", handleEscape);
-      return () => {
-        document.body.style.overflow = "unset";
-        window.removeEventListener("keydown", handleEscape);
-      };
-    } else {
-      document.body.style.overflow = "unset";
-    }
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isLoading) onCancel();
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
   }, [isOpen, isLoading, onCancel]);
 
   if (!mounted) return null;

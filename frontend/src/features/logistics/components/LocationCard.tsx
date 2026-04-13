@@ -17,7 +17,7 @@ import type { LocationDto } from "../types/logistics.dto";
 import type { LocationCategory } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
-import { useLocalTime } from "@/shared/lib/hooks/useLocalTime";
+import { useLocalTime } from "@/shared/lib/time/hooks/useLocalTime";
 
 interface LocationCardProps {
   location: LocationDto;
