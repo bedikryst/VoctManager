@@ -37,32 +37,27 @@ export const ElegantHeading = ({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-brand mb-2"
+          // Ethereal UI: Narzucamy styl ikonie bez łamania typów Reacta (Brak React.cloneElement i 'as')
+          className="mb-3 text-ethereal-gold [&>svg]:h-8 [&>svg]:w-8 [&>svg]:stroke-[1.2px]"
         >
-          {React.isValidElement(icon)
-            ? React.cloneElement(
-                icon as React.ReactElement<{
-                  size?: number;
-                  strokeWidth?: number;
-                }>,
-                { size: 32, strokeWidth: 1.2 },
-              )
-            : icon}
+          {icon}
         </motion.div>
       )}
+
       <motion.h2
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="font-serif text-3xl md:text-4xl tracking-tight text-stone-900"
+        className="font-serif text-3xl md:text-4xl tracking-tight text-ethereal-ink"
       >
         {title}
       </motion.h2>
+
       {description && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-stone-500 max-w-2xl leading-relaxed"
+          className="text-ethereal-graphite max-w-2xl text-sm leading-relaxed"
         >
           {description}
         </motion.p>

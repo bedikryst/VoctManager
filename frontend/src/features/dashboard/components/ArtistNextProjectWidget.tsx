@@ -2,6 +2,7 @@
  * @file ArtistNextProjectWidget.tsx
  * @description Isolated widget for the next concert/project spotlight.
  * Refactored to Enterprise SaaS 2026 standard: Strict Typing (No 'any') and complete i18n.
+ * Powered by Ethereal UI (Gold palette for Projects/Concerts).
  * @architecture Enterprise SaaS 2026
  */
 import React, { useState } from "react";
@@ -15,6 +16,7 @@ import {
   Download,
   ArrowRight,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -26,7 +28,7 @@ import { downloadFile } from "@/shared/lib/io/downloadFile";
 import api from "@/shared/api/api";
 import type { Project } from "@/shared/types";
 
-// Definicja ścisłego kontraktu DTO, odwzorowująca dane z useArtistDashboardData
+// Definicja ścisłego kontraktu DTO
 export interface UpcomingProjectDto {
   type: "PROJECT";
   date: Date;
@@ -44,7 +46,6 @@ export function ArtistNextProjectWidget({
   const { t } = useTranslation();
   const [isDownloadingRunSheet, setIsDownloadingRunSheet] = useState(false);
 
-  // Strażnik (Guard Clause) chroniący przed renderowaniem pustego stanu
   if (!project) return null;
 
   const handleDownloadRunSheet = async () => {
@@ -86,33 +87,32 @@ export function ArtistNextProjectWidget({
 
   return (
     <GlassCard
-      variant="dark"
+      variant="ethereal"
+      padding="none"
+      glow={true}
       className="flex flex-col h-full relative z-10 !overflow-visible"
     >
-      {/* Background Layer with glow effect and strict clipping */}
+      {/* Ethereal Glow: Emituje ciepłe, złote światło dla projektów scenicznych */}
       <div
-        className="absolute inset-0 rounded-[inherit] overflow-hidden pointer-events-none -z-10 bg-stone-900"
+        className="absolute inset-0 rounded-[inherit] overflow-hidden pointer-events-none -z-10"
         aria-hidden="true"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-ethereal-gold/10 rounded-full blur-[50px] -translate-y-1/2 translate-x-1/4" />
       </div>
 
-      <div className="p-6 flex-1 relative z-50 rounded-t-[inherit]">
-        <Badge
-          variant="brand"
-          className="bg-white/10 text-blue-100 border-white/20 mb-4 backdrop-blur-sm"
-          icon={<Music size={12} className="text-blue-300" />}
-        >
-          {t("dashboard.artist.badge_concert", "Koncert")}
+      <div className="p-6 md:p-8 flex-1 relative z-50 rounded-t-[inherit]">
+        <Badge variant="outline">
+          <Sparkles size={10} className="mr-1.5 text-ethereal-gold/80" />
+          {t("dashboard.artist.badge_concert", "Wydarzenie Główne")}
         </Badge>
 
-        <h3 className="text-2xl font-bold font-serif tracking-tight mb-4 leading-tight text-white">
+        <h3 className="text-2xl md:text-3xl font-bold font-serif tracking-tight mb-5 leading-tight text-ethereal-ink">
           {project.title}
         </h3>
 
-        <div className="flex flex-col gap-2 text-[11px] font-bold text-stone-300 mb-6">
+        <div className="flex flex-col gap-3 text-xs font-medium text-ethereal-graphite mb-2">
           <span className="flex items-center gap-2">
-            <Calendar size={14} className="text-blue-400" />{" "}
+            <Calendar size={14} className="text-ethereal-gold" />{" "}
             {formatLocalizedDate(
               project.date,
               { weekday: "long", day: "numeric", month: "long" },
@@ -125,18 +125,19 @@ export function ArtistNextProjectWidget({
             <DualTimeDisplay
               value={project.data.call_time}
               timeZone={project.data.timezone}
-              label={t(
-                "dashboard.artist.label_call_time",
-                "Zbiórka (Call-time): ",
-              )}
+              label={t("dashboard.artist.label_call_time", "Zbiórka: ")}
               icon={
-                <Clock size={14} className="text-blue-400" aria-hidden="true" />
+                <Clock
+                  size={14}
+                  className="text-ethereal-gold"
+                  aria-hidden="true"
+                />
               }
             />
           )}
 
           {project.data.location && (
-            <div className="flex items-center gap-2 text-blue-100 pl-0.5 z-[100]">
+            <div className="flex items-center gap-2 text-ethereal-graphite pl-0.5 z-[100]">
               <LocationPreview
                 locationRef={project.data.location}
                 fallback={t("common.tba", "TBA")}
@@ -146,28 +147,26 @@ export function ArtistNextProjectWidget({
         </div>
       </div>
 
-      <div className="relative z-10 border-t border-white/10 bg-white/5 p-4 flex flex-col sm:flex-row gap-2 rounded-b-[inherit]">
-        {/* W przyszłości, przy pełnej implementacji CVA, można to zastąpić komponentem <Button variant="darkOutline"> */}
+      {/* Dolny pasek akcji */}
+      <div className="relative z-10 border-t border-ethereal-incense/10 bg-ethereal-alabaster/40 p-4 flex flex-col sm:flex-row gap-2 rounded-b-[inherit]">
         <button
           onClick={handleDownloadRunSheet}
           disabled={isDownloadingRunSheet}
-          className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 active:scale-95"
+          className="flex-1 bg-white/60 hover:bg-white border border-ethereal-incense/30 hover:border-ethereal-gold/40 text-ethereal-ink px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 active:scale-95"
         >
           {isDownloadingRunSheet ? (
-            <Loader2 size={14} className="animate-spin" />
+            <Loader2 size={14} className="animate-spin text-ethereal-gold" />
           ) : (
-            <Download size={14} />
+            <Download size={14} className="text-ethereal-gold" />
           )}
-          {t(
-            "dashboard.artist.btn_download_runsheet",
-            "Harmonogram (Call-sheet)",
-          )}
+          {t("dashboard.artist.btn_download_runsheet", "Harmonogram (PDF)")}
         </button>
 
         <Link
           to="/panel/materials"
-          className="flex-1 bg-white hover:bg-stone-200 text-stone-900 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm group/btn active:scale-95"
+          className="flex-1 bg-ethereal-gold hover:bg-ethereal-gold/90 text-white px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shadow-sm group/btn active:scale-95"
         >
+          <Music size={14} />
           {t("dashboard.artist.btn_materials", "Nuty i Audio")}{" "}
           <ArrowRight
             size={14}

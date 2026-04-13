@@ -1,6 +1,8 @@
 /**
  * @file Badge.tsx
  * @description Standardised micro-status indicator.
+ * Refactored to Enterprise SaaS 2026 standard. Embraces Ethereal UI token taxonomy.
+ * Zero Tech-Debt. Strict TypeScript 7.0 compliance.
  * @module shared/ui/primitives/Badge
  */
 
@@ -9,15 +11,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border transition-colors",
+  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border transition-all duration-300",
   {
     variants: {
       variant: {
-        success: "bg-emerald-50 text-emerald-600 border-emerald-100",
-        danger: "bg-red-50 text-red-600 border-red-100",
-        warning: "bg-orange-50 text-orange-600 border-orange-100",
-        neutral: "bg-stone-100 text-stone-600 border-stone-200",
-        brand: "bg-blue-50 text-brand border-blue-100",
+        success:
+          "bg-ethereal-sage/10 text-ethereal-sage border-ethereal-sage/30 shadow-sm",
+        warning:
+          "bg-ethereal-gold/10 text-ethereal-gold border-ethereal-gold/40 shadow-sm",
+        danger:
+          "bg-ethereal-incense/10 text-ethereal-incense border-ethereal-incense/30 shadow-sm",
+        neutral:
+          "bg-ethereal-alabaster text-ethereal-graphite border-ethereal-incense/20",
+        brand:
+          "bg-ethereal-ink/5 text-ethereal-ink border-ethereal-incense/30 backdrop-blur-sm",
+        outline:
+          "bg-transparent text-ethereal-graphite border-ethereal-incense/30",
+        glass:
+          "bg-white/45 backdrop-blur-[8px] text-ethereal-ink border-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_2px_8px_rgba(166,146,121,0.05)]",
       },
     },
     defaultVariants: {
@@ -44,7 +55,10 @@ export function Badge({
   return (
     <span className={cn(badgeVariants({ variant, className }))} {...props}>
       {icon && (
-        <span className="shrink-0" aria-hidden="true">
+        <span
+          className="shrink-0 flex items-center justify-center"
+          aria-hidden="true"
+        >
           {icon}
         </span>
       )}

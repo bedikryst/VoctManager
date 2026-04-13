@@ -25,6 +25,7 @@ import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
+import { ArtistEmptyState } from "./components/ArtistEmptyState";
 
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -130,33 +131,7 @@ export default function ArtistDashboard(): React.JSX.Element {
         </div>
 
         {!upNextRehearsal && !upNextProject ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <GlassCard
-              variant="ethereal"
-              padding="lg"
-              className="flex flex-col items-center justify-center py-16 text-center"
-            >
-              <div className="p-4 rounded-full bg-ethereal-incense/5 mb-4">
-                <Activity
-                  size={28}
-                  className="text-ethereal-graphite/40"
-                  aria-hidden="true"
-                />
-              </div>
-              <p className="text-ethereal-ink text-sm font-bold tracking-wide">
-                {t(
-                  "dashboard.artist.empty_events_title",
-                  "Brak nadchodzących wydarzeń",
-                )}
-              </p>
-              <p className="text-ethereal-graphite text-xs mt-1.5 max-w-sm">
-                {t(
-                  "dashboard.artist.empty_events_desc",
-                  "Odpocznij, twój muzyczny kalendarz jest obecnie pusty. Aura została zharmonizowana.",
-                )}
-              </p>
-            </GlassCard>
-          </motion.div>
+          <ArtistEmptyState />
         ) : (
           <div
             className={cn(

@@ -2,6 +2,7 @@
  * @file ArtistNextRehearsalWidget.tsx
  * @description Isolated widget for managing the next rehearsal attendance.
  * Refactored to Enterprise SaaS 2026 standard: Strict Typing (No 'any') and complete i18n.
+ * Powered by Ethereal UI (Sage palette for Rehearsals).
  * @architecture Enterprise SaaS 2026
  */
 import React, { useState } from "react";
@@ -51,7 +52,6 @@ export function ArtistNextRehearsalWidget({
   const attendanceMutation = useUpsertScheduleAttendance();
   const [reportingRehearsal, setReportingRehearsal] = useState(false);
 
-  // Zabezpieczenie przed renderowaniem pustego stanu
   if (!rehearsal) return null;
 
   const currentStatus = rehearsal.attendance?.status;
@@ -126,38 +126,40 @@ export function ArtistNextRehearsalWidget({
 
   return (
     <GlassCard
-      variant="solid"
+      variant="ethereal"
+      padding="none"
+      glow={true}
       className="flex flex-col h-full transition-all duration-300 relative z-10 !overflow-visible"
     >
-      {/* Tło izolowane na warstwie -z-10 */}
+      {/* Subtelne zabarwienie tła uzależnione od statusu (zamiast emerald/orange używamy sage/incense) */}
       <div
         className={cn(
-          "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-colors duration-300",
+          "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-colors duration-500",
           isPresent
-            ? "bg-emerald-50/30"
+            ? "bg-ethereal-sage/5"
             : isExcusedOrLate
-              ? "bg-orange-50/20"
-              : "bg-white/40",
+              ? "bg-ethereal-incense/5"
+              : "bg-transparent",
         )}
         aria-hidden="true"
       />
 
-      <div className="p-6 flex-1 rounded-t-[inherit]">
+      <div className="p-6 md:p-8 flex-1 rounded-t-[inherit]">
         <div className="flex items-center justify-between mb-4">
-          <Badge
-            variant="neutral"
-            icon={<Clock size={12} className="text-stone-400" />}
-          >
+          <Badge variant="outline">
+            <Clock size={10} className="mr-1.5" />
             {t("dashboard.artist.badge_rehearsal", "Próba")}
           </Badge>
 
           {isPresent && (
-            <Badge variant="success" icon={<CheckCircle2 size={12} />}>
+            <Badge variant="outline">
+              <CheckCircle2 size={10} className="mr-1.5" />
               {t("dashboard.artist.badge_confirmed", "Potwierdzona")}
             </Badge>
           )}
           {(currentStatus === "ABSENT" || currentStatus === "EXCUSED") && (
-            <Badge variant="danger" icon={<XCircle size={12} />}>
+            <Badge variant="outline">
+              <XCircle size={10} className="mr-1.5" />
               {t(
                 "dashboard.artist.badge_absence_reported",
                 "Zgłoszono absencję",
@@ -165,19 +167,20 @@ export function ArtistNextRehearsalWidget({
             </Badge>
           )}
           {currentStatus === "LATE" && (
-            <Badge variant="warning" icon={<AlertCircle size={12} />}>
+            <Badge variant="outline">
+              <AlertCircle size={10} className="mr-1.5" />
               {t("dashboard.artist.badge_late", "Spóźnienie")}
             </Badge>
           )}
         </div>
 
-        <h3 className="text-2xl font-bold font-serif tracking-tight mb-4 leading-tight text-stone-900">
+        <h3 className="text-2xl md:text-3xl font-bold font-serif tracking-tight mb-5 leading-tight text-ethereal-ink">
           {rehearsal.title}
         </h3>
 
-        <div className="flex flex-col gap-2 text-[11px] font-bold text-stone-600 mb-6 relative z-50">
+        <div className="flex flex-col gap-3 text-xs font-medium text-ethereal-graphite mb-2 relative z-50">
           <span className="flex items-center gap-2">
-            <Calendar size={14} className="text-brand/60" />{" "}
+            <Calendar size={14} className="text-ethereal-sage/70" />{" "}
             {formatLocalizedDate(
               rehearsal.date,
               { weekday: "long", day: "numeric", month: "long" },
@@ -189,7 +192,11 @@ export function ArtistNextRehearsalWidget({
             value={rehearsal.date}
             timeZone={rehearsal.data.timezone}
             icon={
-              <Clock size={14} className="text-brand/60" aria-hidden="true" />
+              <Clock
+                size={14}
+                className="text-ethereal-sage/70"
+                aria-hidden="true"
+              />
             }
           />
           {rehearsal.data.location && (
@@ -203,34 +210,33 @@ export function ArtistNextRehearsalWidget({
         </div>
       </div>
 
-      <div className="border-t border-stone-200/60 bg-stone-50/80 p-4 rounded-b-[inherit]">
+      {/* Dolny pasek akcji / Formularz */}
+      <div className="border-t border-ethereal-incense/10 bg-ethereal-alabaster/40 p-4 rounded-b-[inherit]">
         {!reportingRehearsal ? (
           <div className="flex flex-col sm:flex-row gap-2 relative z-10">
             {!isPresent && (
               <button
                 onClick={handleConfirmPresence}
                 disabled={attendanceMutation.isPending}
-                // W przyszłości zalecam zastąpić to zintegrowanym komponentem <Button variant="success"> z CVA
-                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
+                className="flex-1 bg-ethereal-sage/10 border border-ethereal-sage/30 hover:bg-ethereal-sage/20 text-ethereal-sage px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shadow-sm active:scale-95 disabled:opacity-50"
               >
-                <Check size={14} />{" "}
+                <Check size={14} strokeWidth={2.5} />{" "}
                 {t(
                   "dashboard.artist.btn_confirm_presence",
-                  "Potwierdzź Obecność",
+                  "Potwierdź Obecność",
                 )}
               </button>
             )}
             <button
               onClick={() => setReportingRehearsal(true)}
-              // W przyszłości zalecam zastąpić to <Button variant={isExcusedOrLate ? "outline" : "warningOutline"}>
               className={cn(
-                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border shadow-sm active:scale-95",
+                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border shadow-sm active:scale-95",
                 isExcusedOrLate
-                  ? "border-stone-200 bg-white text-stone-600 hover:bg-stone-100"
-                  : "border-orange-200 bg-white text-orange-600 hover:bg-orange-50",
+                  ? "border-ethereal-incense/30 bg-white text-ethereal-graphite hover:bg-ethereal-incense/10 hover:text-ethereal-ink"
+                  : "border-ethereal-incense/20 bg-white/50 text-ethereal-graphite hover:bg-ethereal-alabaster hover:border-ethereal-incense/40",
               )}
             >
-              <AlertCircle size={14} />{" "}
+              <AlertCircle size={14} strokeWidth={2} />{" "}
               {currentStatus
                 ? t("dashboard.artist.btn_edit_report", "Edytuj zgłoszenie")
                 : t("dashboard.artist.btn_report_issue", "Zgłoś problem")}
@@ -242,11 +248,14 @@ export function ArtistNextRehearsalWidget({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
             >
-              <AbsenceReportForm
-                onSubmit={onSubmitAbsence}
-                onCancel={() => setReportingRehearsal(false)}
-              />
+              <div className="pt-2">
+                <AbsenceReportForm
+                  onSubmit={onSubmitAbsence}
+                  onCancel={() => setReportingRehearsal(false)}
+                />
+              </div>
             </motion.div>
           </AnimatePresence>
         )}

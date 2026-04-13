@@ -8,36 +8,38 @@
   --font-serif:
     "Cormorant", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 
-  /* Enterprise Design Tokens (migrated from the old config) */
-  --color-brand: #002395;
-  --color-brand-dark: #001766;
-  --color-brand-light: #e6e9f4;
-
   /* =========================================
      ETHEREAL UI COLOR PALETTE
      ========================================= */
 
-  /* Baza światła i pergaminu (Backgrounds & Cards) */
   --color-ethereal-alabaster: #f7f7f5;
   --color-ethereal-parchment: #ebe8e1;
   --color-ethereal-marble: #fdfdfd;
 
-  /* Barwy akcentujące (Modules & States) */
-  --color-ethereal-gold: #c2a878; /* Zastępuje jaskrawy pomarańcz/żółć */
-  --color-ethereal-sage: #8f9a8a; /* Zastępuje szmaragd (emerald) */
-  --color-ethereal-amethyst: #8c7a9e; /* Zastępuje jaskrawy fiolet */
-  --color-ethereal-incense: #a69279; /* Subtelne powiadomienia i ramki */
+  --color-ethereal-gold: #c2a878;
+  --color-ethereal-sage: #8f9a8a;
+  --color-ethereal-amethyst: #8c7a9e;
+  --color-ethereal-incense: #a69279;
 
-  /* Typografia */
-  --color-ethereal-ink: #2c2a28; /* Czerń przełamana sepią */
-  --color-ethereal-graphite: #5a5753; /* Wyciszony tekst pomocniczy */
+  --color-ethereal-ink: #2c2a28;
+  --color-ethereal-graphite: #5a5753;
 
   /* =========================================
-     GLASSMORPHISM TOKENS
+     GLASSMORPHISM & KINEMATICS TOKENS
      ========================================= */
   --blur-ethereal: 12px;
   --color-glass-surface: rgba(253, 253, 253, 0.6);
-  --color-glass-border: rgba(194, 168, 120, 0.15); /* Złota poświata */
+  --color-glass-border: rgba(194, 168, 120, 0.15);
+
+  /* Centralizacja rozproszenia światła dla komponentów GlassCard */
+  --shadow-glass-ethereal:
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    0 8px 32px rgba(166, 146, 121, 0.08);
+  --shadow-glass-ethereal-hover:
+    inset 0 1px 1px rgba(255, 255, 255, 1),
+    0 12px 40px rgba(166, 146, 121, 0.12);
+  --shadow-glass-solid: 0 4px 16px rgba(166, 146, 121, 0.04);
+  --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
 }
 
 /* ========================================== */

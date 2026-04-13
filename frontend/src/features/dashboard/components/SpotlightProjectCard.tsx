@@ -108,7 +108,7 @@ export function SpotlightProjectCard({
                   </div>
 
                   {project.location && (
-                    <div className="flex items-center bg-white/60 backdrop-blur-md px-3 py-2 rounded-xl border border-ethereal-incense/10 shadow-sm">
+                    <div className="flex items-center bg-white/60 backdrop-blur-md rounded-xl shadow-sm">
                       <LocationPreview
                         locationRef={project.location}
                         fallback={t("dashboard.admin.no_location", "TBA")}
