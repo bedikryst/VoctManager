@@ -32,6 +32,18 @@ export const SLOW_TRANSITION: Transition = {
   ease: EASE.buttery,
 };
 
+export const etherealFadeInVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      duration: DURATION.fast,
+      ease: EASE.buttery,
+    },
+  },
+};
+
 // --- Reusable Variants (Tree-Shakeable) ---
 export const FADE_UP_VARIANTS: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -68,4 +80,28 @@ export const STAGGERED_REVEAL_VARIANTS: Variants = {
       ease: EASE.buttery,
     },
   }),
+};
+
+export const BENTO_CONTAINER_VARIANTS: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+export const BENTO_ITEM_VARIANTS: Variants = {
+  hidden: { opacity: 0, y: 15, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: DURATION.fast,
+      ease: EASE.buttery,
+    },
+  },
 };

@@ -12,6 +12,32 @@
   --color-brand: #002395;
   --color-brand-dark: #001766;
   --color-brand-light: #e6e9f4;
+
+  /* =========================================
+     ETHEREAL UI COLOR PALETTE
+     ========================================= */
+
+  /* Baza światła i pergaminu (Backgrounds & Cards) */
+  --color-ethereal-alabaster: #f7f7f5;
+  --color-ethereal-parchment: #ebe8e1;
+  --color-ethereal-marble: #fdfdfd;
+
+  /* Barwy akcentujące (Modules & States) */
+  --color-ethereal-gold: #c2a878; /* Zastępuje jaskrawy pomarańcz/żółć */
+  --color-ethereal-sage: #8f9a8a; /* Zastępuje szmaragd (emerald) */
+  --color-ethereal-amethyst: #8c7a9e; /* Zastępuje jaskrawy fiolet */
+  --color-ethereal-incense: #a69279; /* Subtelne powiadomienia i ramki */
+
+  /* Typografia */
+  --color-ethereal-ink: #2c2a28; /* Czerń przełamana sepią */
+  --color-ethereal-graphite: #5a5753; /* Wyciszony tekst pomocniczy */
+
+  /* =========================================
+     GLASSMORPHISM TOKENS
+     ========================================= */
+  --blur-ethereal: 12px;
+  --color-glass-surface: rgba(253, 253, 253, 0.6);
+  --color-glass-border: rgba(194, 168, 120, 0.15); /* Złota poświata */
 }
 
 /* ========================================== */
@@ -23,7 +49,7 @@
   }
 
   body {
-    @apply bg-stone-50 text-stone-900 antialiased selection:bg-brand selection:text-white;
+    @apply bg-ethereal-alabaster text-ethereal-ink font-sans antialiased selection:bg-ethereal-gold/20 selection:text-ethereal-ink;
   }
 }
 

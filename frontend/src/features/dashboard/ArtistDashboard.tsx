@@ -18,6 +18,11 @@ import {
   Loader2,
 } from "lucide-react";
 
+import {
+  StaggeredBentoContainer,
+  StaggeredBentoItem,
+} from "@/shared/ui/kinematics/StaggeredBentoGrid";
+
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
@@ -25,21 +30,6 @@ import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
-
-// Kinematics: Staggered animation for the Ethereal UI entry
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 400, damping: 30 },
-  },
-};
 
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -54,11 +44,11 @@ export default function ArtistDashboard(): React.JSX.Element {
     () => [
       {
         id: "schedule",
-        icon: <Calendar size={18} className="text-orange-600" />,
-        iconBgClass: "bg-orange-50 border-orange-100",
+        icon: <Calendar size={18} className="text-ethereal-gold" />,
+        iconBgClass: "bg-ethereal-gold/10 border-ethereal-gold/20",
         hoverClass:
-          "hover:border-orange-300/60 hover:shadow-[0_8px_24px_rgba(249,115,22,0.12)]",
-        titleColorClass: "group-hover/module:text-orange-600",
+          "hover:border-ethereal-gold/40 hover:shadow-[0_8px_24px_rgba(194,168,120,0.12)]",
+        titleColorClass: "group-hover/module:text-ethereal-gold",
         title: t("dashboard.artist.module_schedule_title", "Mój Kalendarz"),
         description: t(
           "dashboard.artist.module_schedule_desc",
@@ -68,11 +58,11 @@ export default function ArtistDashboard(): React.JSX.Element {
       },
       {
         id: "materials",
-        icon: <Music size={18} className="text-emerald-600" />,
-        iconBgClass: "bg-emerald-50 border-emerald-100",
+        icon: <Music size={18} className="text-ethereal-sage" />,
+        iconBgClass: "bg-ethereal-sage/10 border-ethereal-sage/20",
         hoverClass:
-          "hover:border-emerald-300/60 hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]",
-        titleColorClass: "group-hover/module:text-emerald-600",
+          "hover:border-ethereal-sage/40 hover:shadow-[0_8px_24px_rgba(143,154,138,0.12)]",
+        titleColorClass: "group-hover/module:text-ethereal-sage",
         title: t("dashboard.artist.module_materials_title", "Materiały"),
         description: t(
           "dashboard.artist.module_materials_desc",
@@ -82,11 +72,11 @@ export default function ArtistDashboard(): React.JSX.Element {
       },
       {
         id: "resources",
-        icon: <BookOpen size={18} className="text-purple-600" />,
-        iconBgClass: "bg-purple-50 border-purple-100",
+        icon: <BookOpen size={18} className="text-ethereal-amethyst" />,
+        iconBgClass: "bg-ethereal-amethyst/10 border-ethereal-amethyst/20",
         hoverClass:
-          "hover:border-purple-300/60 hover:shadow-[0_8px_24px_rgba(168,85,247,0.12)]",
-        titleColorClass: "group-hover/module:text-purple-600",
+          "hover:border-ethereal-amethyst/40 hover:shadow-[0_8px_24px_rgba(140,122,158,0.12)]",
+        titleColorClass: "group-hover/module:text-ethereal-amethyst",
         title: t("dashboard.artist.module_resources_title", "Baza Wiedzy"),
         description: t(
           "dashboard.artist.module_resources_desc",
@@ -207,27 +197,25 @@ export default function ArtistDashboard(): React.JSX.Element {
       {/* QUICK ACCESS MODULES */}
       <section aria-labelledby="modules-heading">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-1 h-4 bg-brand rounded-full" aria-hidden="true" />
+          <div
+            className="w-1 h-4 bg-ethereal-gold rounded-full"
+            aria-hidden="true"
+          />
           <h3
             id="modules-heading"
-            className="text-[9px] font-bold uppercase tracking-widest text-stone-400"
+            className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite"
           >
             {t("dashboard.artist.personal_modules", "Szybki Dostęp")}
           </h3>
         </div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-        >
+        <StaggeredBentoContainer className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {ARTIST_MODULES.map((mod) => (
-            <motion.div key={mod.id} variants={itemVariants} className="h-full">
+            <StaggeredBentoItem key={mod.id} className="h-full">
               <SystemModuleCard {...mod} />
-            </motion.div>
+            </StaggeredBentoItem>
           ))}
-        </motion.div>
+        </StaggeredBentoContainer>
       </section>
     </div>
   );

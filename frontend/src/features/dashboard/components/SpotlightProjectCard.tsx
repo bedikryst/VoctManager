@@ -1,9 +1,10 @@
 /**
  * @file SpotlightProjectCard.tsx
- * @description Solves the overflow clipping issue by decoupling clipping from the parent.
- * Strictly typed and fully internationalized for the VoctEnsemble SaaS.
+ * @description Transcendent View for the Main Production Event.
+ * Refactored to Ethereal UI Standards (2026): Zero Tech-Debt & Semantic Color Space.
  * @architecture Enterprise SaaS 2026
  */
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -42,7 +43,7 @@ export function SpotlightProjectCard({
   return (
     <Link
       to="/panel/projects"
-      className="block h-full outline-none group/project active:scale-[0.99] transition-transform"
+      className="block h-full outline-none group/project active:scale-[0.99] transition-all duration-500"
       aria-label={
         project
           ? project.title
@@ -51,20 +52,25 @@ export function SpotlightProjectCard({
     >
       <GlassCard
         variant="solid"
-        className="h-full flex flex-col justify-between !overflow-visible relative z-10"
+        className={cn(
+          "h-full flex flex-col justify-between !overflow-visible relative z-10 transition-all duration-500",
+          "border-ethereal-incense/20 group-hover/project:border-ethereal-gold/40",
+          "group-hover/project:shadow-[0_8px_32px_rgba(194,168,120,0.08)]",
+        )}
       >
+        {/* Subtle Background Glow Overlay */}
         <div
           className={cn(
-            "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-all duration-300",
-            "bg-white/40 group-hover/project:bg-white/60 group-hover/project:border-brand/30 group-hover/project:shadow-md",
+            "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-all duration-700",
+            "bg-ethereal-marble/40 group-hover/project:bg-ethereal-marble/70",
           )}
           aria-hidden="true"
         />
 
         <div className="p-6 flex-1 rounded-t-[inherit]">
           <div className="flex items-center gap-2 mb-4">
-            <Calendar size={14} className="text-brand" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 group-hover/project:text-brand transition-colors">
+            <Calendar size={14} className="text-ethereal-gold" />
+            <span className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite group-hover/project:text-ethereal-gold transition-colors duration-500">
               {t("dashboard.admin.spotlight_title", "Wydarzenie Główne")}
             </span>
           </div>
@@ -72,12 +78,12 @@ export function SpotlightProjectCard({
           {project && stats ? (
             <div className="flex flex-col h-full justify-between">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold font-serif text-stone-900 tracking-tight leading-tight mb-4 group-hover/project:text-brand transition-colors">
+                <h2 className="text-2xl md:text-3xl font-bold font-serif text-ethereal-ink tracking-tight leading-tight mb-4 group-hover/project:text-ethereal-gold transition-colors duration-700">
                   {project.title}
                 </h2>
-                <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-stone-700 mb-6">
-                  <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80">
-                    <Calendar size={12} className="text-brand" />
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-ethereal-graphite mb-6">
+                  <span className="flex items-center gap-1.5 bg-ethereal-alabaster px-2.5 py-1.5 rounded-lg border border-ethereal-incense/10 shadow-sm">
+                    <Calendar size={12} className="text-ethereal-gold" />
                     {formatLocalizedDate(
                       project.date_time,
                       { day: "numeric", month: "short", year: "numeric" },
@@ -85,13 +91,15 @@ export function SpotlightProjectCard({
                       project.timezone,
                     )}
                   </span>
-                  <DualTimeDisplay
-                    value={project.date_time}
-                    timeZone={project.timezone}
-                    icon={<Clock size={12} className="text-brand" />}
-                  />
+                  <div className="bg-ethereal-alabaster px-2.5 py-1.5 rounded-lg border border-ethereal-incense/10 shadow-sm">
+                    <DualTimeDisplay
+                      value={project.date_time}
+                      timeZone={project.timezone}
+                      icon={<Clock size={12} className="text-ethereal-gold" />}
+                    />
+                  </div>
                   {project.location && (
-                    <div className="flex items-center bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80 z-[100]">
+                    <div className="flex items-center bg-ethereal-alabaster px-2.5 py-1.5 rounded-lg border border-ethereal-incense/10 shadow-sm z-[100]">
                       <LocationPreview
                         locationRef={project.location}
                         fallback={t("dashboard.admin.no_location", "TBA")}
@@ -103,8 +111,8 @@ export function SpotlightProjectCard({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-6 text-center h-full opacity-60">
-              <Briefcase size={24} className="text-stone-300 mb-3" />
-              <p className="text-xs font-bold text-stone-500 mb-1">
+              <Briefcase size={24} className="text-ethereal-incense" />
+              <p className="text-xs font-bold text-ethereal-graphite mb-1">
                 {t(
                   "dashboard.admin.no_active_events",
                   "Brak aktywnych wydarzeń",
@@ -116,25 +124,25 @@ export function SpotlightProjectCard({
 
         {project && stats && (
           <div className="p-6 pt-0 mt-auto rounded-b-[inherit]">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-t border-stone-200/80 pt-4">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-t border-ethereal-incense/10 pt-4">
               <div className="flex gap-6">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
-                    <ListOrdered size={10} />{" "}
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-ethereal-graphite flex items-center gap-1">
+                    <ListOrdered size={10} className="text-ethereal-sage" />{" "}
                     {t("dashboard.admin.repertoire", "Repertuar")}
                   </span>
-                  <span className="text-xs font-bold text-stone-800">
+                  <span className="text-xs font-bold text-ethereal-ink">
                     {t("dashboard.admin.pieces_count", "{{count}} utworów", {
                       count: stats.piecesCount,
                     })}
                   </span>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
-                    <MicVocal size={10} />{" "}
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-ethereal-graphite flex items-center gap-1">
+                    <MicVocal size={10} className="text-ethereal-amethyst" />{" "}
                     {t("dashboard.admin.to_concert", "Do koncertu")}
                   </span>
-                  <span className="text-xs font-bold text-stone-800">
+                  <span className="text-xs font-bold text-ethereal-ink">
                     {t("dashboard.admin.rehearsals_left", "{{count}} prób", {
                       count: stats.rehearsalsLeft,
                     })}
@@ -142,11 +150,11 @@ export function SpotlightProjectCard({
                 </div>
               </div>
 
-              <div className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-stone-900 group-hover/project:bg-brand text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm">
+              <div className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-ethereal-ink group-hover/project:bg-ethereal-gold text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all duration-500 shadow-sm">
                 {t("dashboard.admin.open_project", "Otwórz Projekt")}
                 <ArrowRight
                   size={14}
-                  className="transform group-hover/project:translate-x-1 transition-transform"
+                  className="transform group-hover/project:translate-x-1 transition-transform duration-500"
                 />
               </div>
             </div>
