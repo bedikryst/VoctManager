@@ -10,7 +10,9 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { queryKeys } from "@/shared/lib/queryKeys";
+import { artistKeys } from "@/features/artists/api/artist.queries";
+import { projectKeys } from "@/features/projects/api/project.queries";
+import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { ScheduleService } from "./schedule.service";
 import type { ScheduleAttendanceReportDTO } from "../types/schedule.dto";
 
@@ -18,22 +20,22 @@ export const useScheduleContextData = (artistId?: string | number) => {
   const results = useQueries({
     queries: [
       {
-        queryKey: queryKeys.rehearsals.byArtist(artistId ?? "anonymous"),
+        queryKey: rehearsalKeys.rehearsals.byArtist(artistId ?? "anonymous"),
         queryFn: () => ScheduleService.getRehearsals(),
         enabled: !!artistId,
       },
       {
-        queryKey: queryKeys.projects.all,
+        queryKey: projectKeys.projects.all,
         queryFn: ScheduleService.getProjects,
         enabled: !!artistId,
       },
       {
-        queryKey: queryKeys.participations.byArtist(artistId ?? "anonymous"),
+        queryKey: projectKeys.participations.byArtist(artistId ?? "anonymous"),
         queryFn: () => ScheduleService.getParticipationsByArtist(artistId!),
         enabled: !!artistId,
       },
       {
-        queryKey: queryKeys.attendances.byArtist(artistId ?? "anonymous"),
+        queryKey: rehearsalKeys.attendances.byArtist(artistId ?? "anonymous"),
         queryFn: () => ScheduleService.getAttendancesByArtist(artistId!),
         enabled: !!artistId,
       },
@@ -54,7 +56,7 @@ export const useScheduleProgramItems = (
   enabled: boolean,
 ) => {
   return useQuery({
-    queryKey: queryKeys.program.byProject(projectId),
+    queryKey: projectKeys.program.byProject(projectId),
     queryFn: () => ScheduleService.getProgramItemsByProject(projectId),
     enabled,
   });
@@ -66,7 +68,7 @@ export const useSchedulePieceCastings = (
   enabled: boolean,
 ) => {
   return useQuery({
-    queryKey: queryKeys.pieceCastings.byProjectPiece(
+    queryKey: projectKeys.pieceCastings.byProjectPiece(
       projectId,
       pieceId ?? "pending",
     ),
@@ -89,7 +91,7 @@ export const useUpsertScheduleAttendance = () => {
     }) => ScheduleService.saveAttendanceReport(existingAttendanceId, payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: queryKeys.attendances.all,
+        queryKey: rehearsalKeys.attendances.all,
       });
     },
   });

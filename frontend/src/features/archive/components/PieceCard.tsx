@@ -22,7 +22,7 @@ import {
 
 import type { EnrichedPiece } from "../types/archive.dto";
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
-import { getReferenceRecordingLinks } from "@/shared/lib/referenceRecordings";
+import { getReferenceRecordingLinks } from "@/features/archive/constants/referenceRecordings";
 import { GlassCard } from "@ui/composites/GlassCard";
 import { Button } from "@ui/primitives/Button";
 

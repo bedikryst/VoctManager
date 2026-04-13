@@ -9,11 +9,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArtistService } from "./artist.service";
 import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
-import { queryKeys } from "@/shared/lib/queryKeys";
+
+export const artistKeys = {
+  artists: {
+    all: ["artists"] as const,
+    details: (id: string | number) => ["artists", String(id)] as const,
+  },
+};
 
 export const useArtists = () => {
   return useQuery({
-    queryKey: queryKeys.artists.all,
+    queryKey: artistKeys.artists.all,
     queryFn: ArtistService.getAll,
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
@@ -24,7 +30,7 @@ export const useCreateArtist = () => {
   return useMutation({
     mutationFn: (data: ArtistCreateDTO) => ArtistService.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.artists.all });
+      queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
     },
   });
 };
@@ -35,7 +41,7 @@ export const useUpdateArtist = () => {
     mutationFn: ({ id, data }: { id: string; data: ArtistUpdateDTO }) =>
       ArtistService.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.artists.all });
+      queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
     },
   });
 };
@@ -46,7 +52,7 @@ export const useToggleArtistStatus = () => {
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       ArtistService.toggleStatus(id, isActive),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.artists.all });
+      queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
     },
   });
 };

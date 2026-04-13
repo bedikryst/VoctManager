@@ -11,8 +11,8 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import type { Artist, Participation } from "@/shared/types";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import {
   useProjectAttendances,
   useCreateAttendance,
@@ -130,7 +130,7 @@ export const useAttendanceMatrix = (projectId: string) => {
       const nextStatus = STATUS_CYCLE[(currentIndex + 1) % STATUS_CYCLE.length];
 
       const tempId = currentRecord?.id || `temp-${Date.now()}`;
-      const attendanceQueryKey = queryKeys.attendances.byProject(projectId);
+      const attendanceQueryKey = rehearsalKeys.attendances.byProject(projectId);
 
       const updateStateAndCache = (
         updater: (previous: AttendanceRecord[]) => AttendanceRecord[],
@@ -189,7 +189,7 @@ export const useAttendanceMatrix = (projectId: string) => {
         }
 
         await queryClient.invalidateQueries({
-          queryKey: queryKeys.rehearsals.byProject(projectId),
+          queryKey: rehearsalKeys.rehearsals.byProject(projectId),
         });
       } catch (error: unknown) {
         toast.error(

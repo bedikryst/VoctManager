@@ -8,9 +8,13 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
-import { queryKeys } from "@/shared/lib/queryKeys";
+import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
+import { projectKeys } from "@/features/projects/api/project.queries";
+import { artistKeys } from "@/features/artists/api/artist.queries";
+import { archiveKeys } from "@/features/archive/api/archive.queries";
+
 import {
-  useProjects, // ✅ Dodano import głównego zapytania projektów
+  useProjects,
   useProjectArtistsDictionary,
   useProjectCollaboratorsDictionary,
   useProjectCrewAssignments,
@@ -22,7 +26,7 @@ import {
 import { ProjectService } from "../api/project.service";
 
 export function useProjectData(projectId: string | undefined) {
-  const projectsQuery = useProjects(); // ✅ Pobieramy zbuforowaną listę projektów
+  const projectsQuery = useProjects();
   const participationsQuery = useProjectParticipations(projectId);
   const rehearsalsQuery = useProjectRehearsals(projectId);
   const crewAssignmentsQuery = useProjectCrewAssignments(projectId);
@@ -73,31 +77,31 @@ export const prefetchProjectData = (
   projectId: string,
 ) => {
   queryClient.prefetchQuery({
-    queryKey: queryKeys.participations.byProject(projectId),
+    queryKey: projectKeys.participations.byProject(projectId),
     queryFn: () => ProjectService.getParticipationsByProject(projectId),
     staleTime: 1000 * 60 * 5,
   });
 
   queryClient.prefetchQuery({
-    queryKey: queryKeys.rehearsals.byProject(projectId),
+    queryKey: rehearsalKeys.rehearsals.byProject(projectId),
     queryFn: () => ProjectService.getRehearsalsByProject(projectId),
     staleTime: 1000 * 60 * 5,
   });
 
   queryClient.prefetchQuery({
-    queryKey: queryKeys.crewAssignments.byProject(projectId),
+    queryKey: projectKeys.crewAssignments.byProject(projectId),
     queryFn: () => ProjectService.getCrewAssignmentsByProject(projectId),
     staleTime: 1000 * 60 * 5,
   });
 
   queryClient.prefetchQuery({
-    queryKey: queryKeys.artists.all,
+    queryKey: artistKeys.artists.all,
     queryFn: ProjectService.getArtistsDictionary,
     staleTime: Infinity,
   });
 
   queryClient.prefetchQuery({
-    queryKey: queryKeys.pieces.all,
+    queryKey: archiveKeys.pieces.all,
     queryFn: ProjectService.getPiecesDictionary,
     staleTime: Infinity,
   });

@@ -4,17 +4,37 @@
  */
 
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import { RehearsalsService } from "./rehearsals.service";
 import type { AttendanceUpsertDTO } from "../types/rehearsals.dto";
+import { projectKeys } from "@/features/projects/api/project.queries";
+import { artistKeys } from "@/features/artists/api/artist.queries";
+
+export const rehearsalKeys = {
+  rehearsals: {
+    all: ["rehearsals"] as const,
+    byProject: (projectId: string | number) =>
+      ["rehearsals", { project: String(projectId) }] as const,
+    byArtist: (artistId: string | number) =>
+      ["rehearsals", { artist: String(artistId) }] as const,
+  },
+  attendances: {
+    all: ["attendances"] as const,
+    byRehearsal: (rehearsalId: string | number) =>
+      ["attendances", { rehearsal: String(rehearsalId) }] as const,
+    byArtist: (artistId: string | number) =>
+      ["attendances", { artist: String(artistId) }] as const,
+    byProject: (projectId: string | number) =>
+      ["attendances", { project: String(projectId) }] as const,
+  },
+};
 
 const invalidateRehearsalsDomain = async (
   queryClient: ReturnType<typeof useQueryClient>,
 ): Promise<void> => {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: queryKeys.attendances.all }),
-    queryClient.invalidateQueries({ queryKey: queryKeys.rehearsals.all }),
-    queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+    queryClient.invalidateQueries({ queryKey: rehearsalKeys.attendances.all }),
+    queryClient.invalidateQueries({ queryKey: rehearsalKeys.rehearsals.all }),
+    queryClient.invalidateQueries({ queryKey: projectKeys.projects.all }),
   ]);
 };
 
@@ -22,23 +42,23 @@ export const useRehearsalsWorkspaceData = () => {
   const results = useQueries({
     queries: [
       {
-        queryKey: queryKeys.projects.all,
+        queryKey: projectKeys.projects.all,
         queryFn: RehearsalsService.getProjects,
       },
       {
-        queryKey: queryKeys.rehearsals.all,
+        queryKey: rehearsalKeys.rehearsals.all,
         queryFn: RehearsalsService.getRehearsals,
       },
       {
-        queryKey: queryKeys.participations.all,
+        queryKey: projectKeys.participations.all,
         queryFn: RehearsalsService.getParticipations,
       },
       {
-        queryKey: queryKeys.attendances.all,
+        queryKey: rehearsalKeys.attendances.all,
         queryFn: RehearsalsService.getAttendances,
       },
       {
-        queryKey: queryKeys.artists.all,
+        queryKey: artistKeys.artists.all,
         queryFn: RehearsalsService.getArtists,
       },
       {

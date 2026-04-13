@@ -6,8 +6,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-import { queryKeys } from "@/shared/lib/queryKeys";
+import { projectKeys } from "@/features/projects/api/project.queries";
 import { ContractsService } from "./contracts.service";
 import type {
   EnrichedParticipation,
@@ -16,15 +15,15 @@ import type {
 
 export const useContractLedgers = () => {
   const projectsQuery = useQuery({
-    queryKey: queryKeys.projects.all,
+    queryKey: projectKeys.projects.all,
     queryFn: ContractsService.getProjects,
   });
   const castQuery = useQuery({
-    queryKey: queryKeys.participations.all,
+    queryKey: projectKeys.participations.all,
     queryFn: ContractsService.getParticipations,
   });
   const crewQuery = useQuery({
-    queryKey: queryKeys.crewAssignments.all,
+    queryKey: projectKeys.crewAssignments.all,
     queryFn: ContractsService.getCrewAssignments,
   });
 
@@ -54,8 +53,8 @@ export const useUpdateFee = (type: "CAST" | "CREW") => {
       queryClient.invalidateQueries({
         queryKey:
           type === "CAST"
-            ? queryKeys.participations.all
-            : queryKeys.crewAssignments.all,
+            ? projectKeys.participations.all
+            : projectKeys.crewAssignments.all,
       });
     },
   });
@@ -69,7 +68,7 @@ export const useBulkUpdateFee = () => {
       ContractsService.bulkUpdateParticipationsFee(projectId, fee),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.all,
+        queryKey: projectKeys.participations.all,
       });
     },
   });

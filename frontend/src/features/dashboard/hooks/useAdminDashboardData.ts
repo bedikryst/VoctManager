@@ -9,7 +9,10 @@ import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import api from "@/shared/api/api";
-import { queryKeys } from "@/shared/lib/queryKeys";
+import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
+import { projectKeys } from "@/features/projects/api/project.queries";
+import { artistKeys } from "@/features/artists/api/artist.queries";
+import { archiveKeys } from "@/features/archive/api/archive.queries";
 import type {
   Project,
   Artist,
@@ -29,25 +32,25 @@ export const useAdminDashboardData = () => {
   const results = useQueries({
     queries: [
       {
-        queryKey: queryKeys.projects.all,
+        queryKey: projectKeys.projects.all,
         queryFn: async () => (await api.get<Project[]>("/api/projects/")).data,
       },
       {
-        queryKey: queryKeys.rehearsals.all,
+        queryKey: rehearsalKeys.rehearsals.all,
         queryFn: async () =>
           (await api.get<EnrichedRehearsal[]>("/api/rehearsals/")).data,
       },
       {
-        queryKey: queryKeys.artists.all,
+        queryKey: artistKeys.artists.all,
         queryFn: async () => (await api.get<Artist[]>("/api/artists/")).data,
       },
       {
-        queryKey: queryKeys.program.all,
+        queryKey: projectKeys.program.all,
         queryFn: async () =>
           (await api.get<ProgramItem[]>("/api/program-items/")).data,
       },
       {
-        queryKey: queryKeys.pieces.all,
+        queryKey: archiveKeys.pieces.all,
         queryFn: async () => (await api.get<Piece[]>("/api/pieces/")).data,
       },
     ],

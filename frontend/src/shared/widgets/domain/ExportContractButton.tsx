@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Download, AlertCircle } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { useExportProject } from "@/shared/lib/hooks/useExportProject";
+import { useExportProject } from "@/features/contracts/hooks/useExportProject";
 import { Button } from "@/shared/ui/primitives/Button";
 import { cn } from "@/shared/lib/utils";
 import { BASE_TRANSITION } from "@/shared/ui/kinematics/motion-presets";

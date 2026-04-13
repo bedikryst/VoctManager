@@ -7,7 +7,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { queryKeys } from "@/shared/lib/queryKeys";
+import { artistKeys } from "@/features/artists/api/artist.queries";
+import { crewKeys } from "@/features/crew/api/crew.queries";
+import { archiveKeys } from "@/features/archive/api/archive.queries";
+import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
+
 import { ProjectService } from "./project.service";
 import type {
   AttendanceCreateDTO,
@@ -25,49 +29,85 @@ import type {
   RehearsalCreateDTO,
   RehearsalUpdateDTO,
 } from "../types/project.dto";
+import { OPTIONS_QUERY_KEYS } from "@/shared/api/options.queries";
 
 const STATIC_DICTIONARY_STALE_TIME = 1000 * 60 * 60 * 24;
 const PROJECT_RELATION_STALE_TIME = 1000 * 60 * 5;
 const FAST_CHANGING_STALE_TIME = 1000 * 60;
 
+export const projectKeys = {
+  projects: {
+    all: ["projects"] as const,
+    active: ["projects", { status: "ACTIVE" }] as const,
+    details: (id: string | number) => ["projects", String(id)] as const,
+  },
+  participations: {
+    all: ["participations"] as const,
+    byProject: (projectId: string | number) =>
+      ["participations", { project: String(projectId) }] as const,
+    byArtist: (artistId: string | number) =>
+      ["participations", { artist: String(artistId) }] as const,
+  },
+  crewAssignments: {
+    all: ["crewAssignments"] as const,
+    byProject: (projectId: string | number) =>
+      ["crewAssignments", { project: String(projectId) }] as const,
+  },
+  program: {
+    all: ["program"] as const,
+    byProject: (projectId: string | number) =>
+      ["program", { project: String(projectId) }] as const,
+  },
+  pieceCastings: {
+    all: ["pieceCastings"] as const,
+    byProject: (projectId: string | number) =>
+      ["pieceCastings", { project: String(projectId) }] as const,
+    byProjectPiece: (projectId: string | number, pieceId: string | number) =>
+      [
+        "pieceCastings",
+        { project: String(projectId), piece: String(pieceId) },
+      ] as const,
+  },
+};
+
 export const useProjects = () =>
   useQuery({
-    queryKey: queryKeys.projects.all,
+    queryKey: projectKeys.projects.all,
     queryFn: ProjectService.getAll,
     staleTime: PROJECT_RELATION_STALE_TIME,
   });
 
 export const useProjectArtistsDictionary = () =>
   useQuery({
-    queryKey: queryKeys.artists.all,
+    queryKey: artistKeys.artists.all,
     queryFn: ProjectService.getArtistsDictionary,
     staleTime: STATIC_DICTIONARY_STALE_TIME,
   });
 
 export const useProjectPiecesDictionary = () =>
   useQuery({
-    queryKey: queryKeys.pieces.all,
+    queryKey: archiveKeys.pieces.all,
     queryFn: ProjectService.getPiecesDictionary,
     staleTime: STATIC_DICTIONARY_STALE_TIME,
   });
 
 export const useProjectCollaboratorsDictionary = () =>
   useQuery({
-    queryKey: queryKeys.collaborators.all,
+    queryKey: crewKeys.collaborators.all,
     queryFn: ProjectService.getCollaboratorsDictionary,
     staleTime: STATIC_DICTIONARY_STALE_TIME,
   });
 
 export const useProjectVoiceLinesDictionary = () =>
   useQuery({
-    queryKey: queryKeys.options.voiceLines,
+    queryKey: OPTIONS_QUERY_KEYS.voiceLines,
     queryFn: ProjectService.getVoiceLinesDictionary,
     staleTime: STATIC_DICTIONARY_STALE_TIME,
   });
 
 export const useProjectParticipations = (projectId: string | undefined) =>
   useQuery({
-    queryKey: queryKeys.participations.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.participations.byProject(projectId ?? "pending"),
     queryFn: () =>
       ProjectService.getParticipationsByProject(projectId as string),
     staleTime: PROJECT_RELATION_STALE_TIME,
@@ -76,7 +116,7 @@ export const useProjectParticipations = (projectId: string | undefined) =>
 
 export const useProjectRehearsals = (projectId: string | undefined) =>
   useQuery({
-    queryKey: queryKeys.rehearsals.byProject(projectId ?? "pending"),
+    queryKey: rehearsalKeys.rehearsals.byProject(projectId ?? "pending"),
     queryFn: () => ProjectService.getRehearsalsByProject(projectId as string),
     staleTime: PROJECT_RELATION_STALE_TIME,
     enabled: !!projectId,
@@ -84,7 +124,7 @@ export const useProjectRehearsals = (projectId: string | undefined) =>
 
 export const useProjectCrewAssignments = (projectId: string | undefined) =>
   useQuery({
-    queryKey: queryKeys.crewAssignments.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.crewAssignments.byProject(projectId ?? "pending"),
     queryFn: () =>
       ProjectService.getCrewAssignmentsByProject(projectId as string),
     staleTime: PROJECT_RELATION_STALE_TIME,
@@ -93,7 +133,7 @@ export const useProjectCrewAssignments = (projectId: string | undefined) =>
 
 export const useProjectProgram = (projectId: string | undefined) =>
   useQuery({
-    queryKey: queryKeys.program.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.program.byProject(projectId ?? "pending"),
     queryFn: () => ProjectService.getProgramByProject(projectId as string),
     staleTime: FAST_CHANGING_STALE_TIME,
     enabled: !!projectId,
@@ -101,7 +141,7 @@ export const useProjectProgram = (projectId: string | undefined) =>
 
 export const useProjectPieceCastings = (projectId: string | undefined) =>
   useQuery({
-    queryKey: queryKeys.pieceCastings.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.pieceCastings.byProject(projectId ?? "pending"),
     queryFn: () =>
       ProjectService.getPieceCastingsByProject(projectId as string),
     staleTime: FAST_CHANGING_STALE_TIME,
@@ -110,7 +150,7 @@ export const useProjectPieceCastings = (projectId: string | undefined) =>
 
 export const useProjectAttendances = (projectId: string | undefined) =>
   useQuery({
-    queryKey: queryKeys.attendances.byProject(projectId ?? "pending"),
+    queryKey: rehearsalKeys.attendances.byProject(projectId ?? "pending"),
     queryFn: () => ProjectService.getAttendancesByProject(projectId as string),
     staleTime: FAST_CHANGING_STALE_TIME,
     enabled: !!projectId,
@@ -124,7 +164,7 @@ export const useCreateProject = () => {
   return useMutation({
     mutationFn: (data: ProjectCreateDTO) => ProjectService.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -136,9 +176,9 @@ export const useUpdateProject = () => {
     mutationFn: ({ id, data }: { id: string; data: ProjectUpdateDTO }) =>
       ProjectService.update(id, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.projects.details(variables.id),
+        queryKey: projectKeys.projects.details(variables.id),
       });
     },
   });
@@ -150,7 +190,7 @@ export const useDeleteProject = () => {
   return useMutation({
     mutationFn: (id: string) => ProjectService.remove(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -167,9 +207,9 @@ export const useUpdateProjectStatus = () => {
       status: ProjectUpdateDTO["status"];
     }) => ProjectService.update(id, { status }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.projects.details(variables.id),
+        queryKey: projectKeys.projects.details(variables.id),
       });
     },
   });
@@ -183,9 +223,9 @@ export const useCreateParticipation = (projectId: string) => {
       ProjectService.createParticipation(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.byProject(projectId),
+        queryKey: projectKeys.participations.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -198,9 +238,9 @@ export const useUpdateParticipation = (projectId: string) => {
       ProjectService.updateParticipation(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.byProject(projectId),
+        queryKey: projectKeys.participations.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -212,9 +252,9 @@ export const useDeleteParticipation = (projectId: string) => {
     mutationFn: (id: string) => ProjectService.deleteParticipation(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.participations.byProject(projectId),
+        queryKey: projectKeys.participations.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -227,9 +267,9 @@ export const useCreateCrewAssignment = (projectId: string) => {
       ProjectService.createCrewAssignment(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.crewAssignments.byProject(projectId),
+        queryKey: projectKeys.crewAssignments.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -242,9 +282,9 @@ export const useUpdateCrewAssignment = (projectId: string) => {
       ProjectService.updateCrewAssignment(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.crewAssignments.byProject(projectId),
+        queryKey: projectKeys.crewAssignments.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -256,9 +296,9 @@ export const useDeleteCrewAssignment = (projectId: string) => {
     mutationFn: (id: string) => ProjectService.deleteCrewAssignment(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.crewAssignments.byProject(projectId),
+        queryKey: projectKeys.crewAssignments.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -271,9 +311,9 @@ export const useCreateRehearsal = (projectId: string) => {
       ProjectService.createRehearsal(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.rehearsals.byProject(projectId),
+        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -286,9 +326,9 @@ export const useUpdateRehearsal = (projectId: string) => {
       ProjectService.updateRehearsal(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.rehearsals.byProject(projectId),
+        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -300,9 +340,9 @@ export const useDeleteRehearsal = (projectId: string) => {
     mutationFn: (id: string) => ProjectService.deleteRehearsal(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.rehearsals.byProject(projectId),
+        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -315,9 +355,9 @@ export const useCreateProgramItem = (projectId: string) => {
       ProjectService.createProgramItem(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.program.byProject(projectId),
+        queryKey: projectKeys.program.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.program.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.program.all });
     },
   });
 };
@@ -330,9 +370,9 @@ export const useUpdateProgramItem = (projectId: string) => {
       ProjectService.updateProgramItem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.program.byProject(projectId),
+        queryKey: projectKeys.program.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.program.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.program.all });
     },
   });
 };
@@ -344,9 +384,9 @@ export const useDeleteProgramItem = (projectId: string) => {
     mutationFn: (id: string) => ProjectService.deleteProgramItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.program.byProject(projectId),
+        queryKey: projectKeys.program.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.program.all });
+      queryClient.invalidateQueries({ queryKey: projectKeys.program.all });
     },
   });
 };
@@ -359,13 +399,15 @@ export const useCreatePieceCasting = (projectId: string) => {
       ProjectService.createPieceCasting(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.pieceCastings.byProject(projectId),
+        queryKey: projectKeys.pieceCastings.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pieceCastings.all });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.program.byProject(projectId),
+        queryKey: projectKeys.pieceCastings.all,
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.program.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -378,13 +420,15 @@ export const useUpdatePieceCasting = (projectId: string) => {
       ProjectService.updatePieceCasting(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.pieceCastings.byProject(projectId),
+        queryKey: projectKeys.pieceCastings.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pieceCastings.all });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.program.byProject(projectId),
+        queryKey: projectKeys.pieceCastings.all,
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.program.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -396,13 +440,15 @@ export const useDeletePieceCasting = (projectId: string) => {
     mutationFn: (id: string) => ProjectService.deletePieceCasting(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.pieceCastings.byProject(projectId),
+        queryKey: projectKeys.pieceCastings.byProject(projectId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pieceCastings.all });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.program.byProject(projectId),
+        queryKey: projectKeys.pieceCastings.all,
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.program.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
     },
   });
 };
@@ -415,10 +461,10 @@ export const useCreateAttendance = (projectId: string) => {
       ProjectService.createAttendance(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.attendances.byProject(projectId),
+        queryKey: rehearsalKeys.attendances.byProject(projectId),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.rehearsals.byProject(projectId),
+        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
       });
     },
   });
@@ -432,10 +478,10 @@ export const useUpdateAttendance = (projectId: string) => {
       ProjectService.updateAttendance(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.attendances.byProject(projectId),
+        queryKey: rehearsalKeys.attendances.byProject(projectId),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.rehearsals.byProject(projectId),
+        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
       });
     },
   });
@@ -448,10 +494,10 @@ export const useDeleteAttendance = (projectId: string) => {
     mutationFn: (id: string) => ProjectService.deleteAttendance(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.attendances.byProject(projectId),
+        queryKey: rehearsalKeys.attendances.byProject(projectId),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.rehearsals.byProject(projectId),
+        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
       });
     },
   });

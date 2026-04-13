@@ -15,13 +15,14 @@ import {
   DeleteAccountPayload,
 } from "../types/settings.dto";
 
-export const SETTINGS_QUERY_KEYS = {
-  me: ["user", "me"] as const,
+export const settingsKeys = {
+  all: ["settings"] as const,
+  data: ["settings", "me"] as const,
 };
 
 export const useSettingsData = () => {
   return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.me,
+    queryKey: settingsKeys.data,
     queryFn: settingsService.getCurrentUser,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
@@ -36,7 +37,7 @@ export const useUpdatePreferences = () => {
       settingsService.updatePreferences(payload),
     onSuccess: (data) => {
       // 1. Update the local React Query cache optimistically
-      queryClient.setQueryData(SETTINGS_QUERY_KEYS.me, data);
+      queryClient.setQueryData(settingsKeys.data, data);
 
       // 2. Synchronize the application UI language immediately
       if (data.profile?.language && i18n.language !== data.profile.language) {
@@ -61,7 +62,7 @@ export const useChangeEmail = () => {
       settingsService.changeEmail(payload),
     onSuccess: (data) => {
       // Update cache with the new email
-      queryClient.setQueryData(SETTINGS_QUERY_KEYS.me, data);
+      queryClient.setQueryData(settingsKeys.data, data);
     },
   });
 };
@@ -87,7 +88,7 @@ export const useResetCalendarToken = () => {
   return useMutation({
     mutationFn: () => settingsService.resetCalendarToken(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEYS.me });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.data });
     },
   });
 };

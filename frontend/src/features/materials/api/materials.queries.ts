@@ -4,44 +4,45 @@
  */
 
 import { useQueries } from "@tanstack/react-query";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import { MaterialsService } from "./materials.service";
+import { projectKeys } from "@/features/projects/api/project.queries";
+import { archiveKeys } from "@/features/archive/api/archive.queries";
 
 export const useMaterialsContextData = (userId?: string | number) => {
   const results = useQueries({
     queries: [
       {
-        queryKey: queryKeys.projects.all,
+        queryKey: projectKeys.projects.all,
         queryFn: MaterialsService.getProjects,
         enabled: !!userId,
       },
       {
-        queryKey: queryKeys.participations.byArtist(userId ?? "anonymous"),
+        queryKey: projectKeys.participations.byArtist(userId ?? "anonymous"),
         queryFn: () => MaterialsService.getParticipationsByArtist(userId!),
         enabled: !!userId,
       },
       {
-        queryKey: queryKeys.program.all,
+        queryKey: projectKeys.program.all,
         queryFn: MaterialsService.getProgramItems,
         enabled: !!userId,
       },
       {
-        queryKey: queryKeys.pieceCastings.all,
+        queryKey: projectKeys.pieceCastings.all,
         queryFn: MaterialsService.getPieceCastings,
         enabled: !!userId,
       },
       {
-        queryKey: queryKeys.pieces.all,
+        queryKey: archiveKeys.pieces.all,
         queryFn: MaterialsService.getPieces,
         enabled: !!userId,
       },
       {
-        queryKey: queryKeys.composers.all,
+        queryKey: archiveKeys.composers.all,
         queryFn: MaterialsService.getComposers,
         enabled: !!userId,
       },
       {
-        queryKey: queryKeys.tracks.all,
+        queryKey: archiveKeys.tracks.all,
         queryFn: MaterialsService.getTracks,
         enabled: !!userId,
       },

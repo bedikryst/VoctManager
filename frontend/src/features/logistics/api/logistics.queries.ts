@@ -5,10 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { logisticsService } from "./logistics.service";
-import type {
-  LocationCreateDto,
-  LocationUpdateDto,
-} from "../types/logistics.dto";
+import type { LocationDto, LocationUpdateDto } from "../types/logistics.dto";
 
 export const logisticsQueryKeys = {
   all: ["locations"] as const,
@@ -27,8 +24,7 @@ export const useCreateLocation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: LocationCreateDto) =>
-      logisticsService.createLocation(data),
+    mutationFn: (data: LocationDto) => logisticsService.createLocation(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: logisticsQueryKeys.lists() });
     },

@@ -28,7 +28,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { getReferenceRecordingLinks } from "@/shared/lib/referenceRecordings";
+import { getReferenceRecordingLinks } from "@/features/archive/constants/referenceRecordings";
 import { formatLocalizedDate } from "@/shared/lib/intl";
 import { useMaterialsData } from "./hooks/useMaterialsData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";

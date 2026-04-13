@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 import { useMicroCasting } from "../hooks/useMicroCasting";
-import { getPrimaryReferenceRecording } from "@/shared/lib/referenceRecordings";
+import { getPrimaryReferenceRecording } from "@/features/archive/constants/referenceRecordings";
 import { DraggableArtist } from "./components/DraggableArtist";
 import { DroppableBucket } from "./components/DroppableBucket";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
