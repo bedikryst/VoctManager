@@ -1,7 +1,8 @@
 /**
  * @file ArtistNextRehearsalWidget.tsx
  * @description Isolated widget for managing the next rehearsal attendance.
- * Uses shared UI components and fixes tooltip clipping.
+ * Refactored to Enterprise SaaS 2026 standard: Strict Typing (No 'any') and complete i18n.
+ * @architecture Enterprise SaaS 2026
  */
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,14 +26,35 @@ import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { cn } from "@/shared/lib/utils";
 import { useUpsertScheduleAttendance } from "../../schedule/api/schedule.queries";
 import { AbsenceReportForm, type AbsenceFormValues } from "./AbsenceReportForm";
+import type { Rehearsal, Attendance } from "@/shared/types";
 
-export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
+// Definicja kontraktu danych (DTO) dla wyabstrahowanego widżetu
+export interface UpcomingRehearsalDto {
+  type: "REHEARSAL";
+  date: Date;
+  data: Rehearsal;
+  title: string;
+  absences: number;
+  participationId?: string | number;
+  attendance?: Attendance;
+}
+
+export interface ArtistNextRehearsalWidgetProps {
+  rehearsal: UpcomingRehearsalDto;
+}
+
+export function ArtistNextRehearsalWidget({
+  rehearsal,
+}: ArtistNextRehearsalWidgetProps): React.JSX.Element | null {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const attendanceMutation = useUpsertScheduleAttendance();
   const [reportingRehearsal, setReportingRehearsal] = useState(false);
 
-  const currentStatus = rehearsal?.attendance?.status;
+  // Zabezpieczenie przed renderowaniem pustego stanu
+  if (!rehearsal) return null;
+
+  const currentStatus = rehearsal.attendance?.status;
   const isPresent = currentStatus === "PRESENT";
   const isExcusedOrLate =
     currentStatus === "EXCUSED" ||
@@ -40,8 +62,12 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
     currentStatus === "ABSENT";
 
   const handleConfirmPresence = async () => {
-    if (!rehearsal || !rehearsal.participationId) return;
-    const toastId = toast.loading("Potwierdzanie obecności...");
+    if (!rehearsal.participationId) return;
+
+    const toastId = toast.loading(
+      t("dashboard.artist.toast_confirming", "Potwierdzanie obecności..."),
+    );
+
     try {
       await attendanceMutation.mutateAsync({
         existingAttendanceId: rehearsal.attendance?.id,
@@ -49,19 +75,31 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
           rehearsal: rehearsal.data.id,
           participation: rehearsal.participationId,
           status: "PRESENT",
-          excuse_note: "Obecność potwierdzona z Dashboardu",
+          excuse_note: t(
+            "dashboard.artist.note_dashboard_confirm",
+            "Obecność potwierdzona z Dashboardu",
+          ),
         },
       });
       queryClient.invalidateQueries({ queryKey: ["attendances"] });
-      toast.success("Obecność potwierdzona!", { id: toastId });
+      toast.success(
+        t("dashboard.artist.toast_confirm_success", "Obecność potwierdzona!"),
+        { id: toastId },
+      );
     } catch (err: unknown) {
-      toast.error("Błąd podczas zapisywania", { id: toastId });
+      toast.error(t("common.error_saving", "Błąd podczas zapisywania"), {
+        id: toastId,
+      });
     }
   };
 
   const onSubmitAbsence = async (data: AbsenceFormValues) => {
-    if (!rehearsal || !rehearsal.participationId) return;
-    const toastId = toast.loading("Zapisywanie zgłoszenia...");
+    if (!rehearsal.participationId) return;
+
+    const toastId = toast.loading(
+      t("dashboard.artist.toast_saving_report", "Zapisywanie zgłoszenia..."),
+    );
+
     try {
       await attendanceMutation.mutateAsync({
         existingAttendanceId: rehearsal.attendance?.id,
@@ -74,9 +112,15 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
       });
       queryClient.invalidateQueries({ queryKey: ["attendances"] });
       setReportingRehearsal(false);
-      toast.success("Zgłoszenie zostało wysłane", { id: toastId });
+      toast.success(
+        t(
+          "dashboard.artist.toast_report_success",
+          "Zgłoszenie zostało wysłane",
+        ),
+        { id: toastId },
+      );
     } catch (err: unknown) {
-      toast.error("Wystąpił błąd", { id: toastId });
+      toast.error(t("common.error_occurred", "Wystąpił błąd"), { id: toastId });
     }
   };
 
@@ -85,7 +129,7 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
       variant="solid"
       className="flex flex-col h-full transition-all duration-300 relative z-10 !overflow-visible"
     >
-      {/* Tło izolowane na warstwie -z-10 zapobiega ucinaniu dymków przez kontener nadrzędny */}
+      {/* Tło izolowane na warstwie -z-10 */}
       <div
         className={cn(
           "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-colors duration-300",
@@ -95,6 +139,7 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
               ? "bg-orange-50/20"
               : "bg-white/40",
         )}
+        aria-hidden="true"
       />
 
       <div className="p-6 flex-1 rounded-t-[inherit]">
@@ -103,30 +148,30 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
             variant="neutral"
             icon={<Clock size={12} className="text-stone-400" />}
           >
-            Próba
+            {t("dashboard.artist.badge_rehearsal", "Próba")}
           </Badge>
 
           {isPresent && (
             <Badge variant="success" icon={<CheckCircle2 size={12} />}>
-              Potwierdzona
+              {t("dashboard.artist.badge_confirmed", "Potwierdzona")}
             </Badge>
           )}
           {(currentStatus === "ABSENT" || currentStatus === "EXCUSED") && (
             <Badge variant="danger" icon={<XCircle size={12} />}>
-              Zgłoszono absencję
+              {t(
+                "dashboard.artist.badge_absence_reported",
+                "Zgłoszono absencję",
+              )}
             </Badge>
           )}
           {currentStatus === "LATE" && (
             <Badge variant="warning" icon={<AlertCircle size={12} />}>
-              Spóźnienie
+              {t("dashboard.artist.badge_late", "Spóźnienie")}
             </Badge>
           )}
         </div>
 
-        <h3
-          className="text-2xl font-bold tracking-tight mb-4 leading-tight text-stone-900"
-          style={{ fontFamily: "'Cormorant', serif" }}
-        >
+        <h3 className="text-2xl font-bold font-serif tracking-tight mb-4 leading-tight text-stone-900">
           {rehearsal.title}
         </h3>
 
@@ -151,7 +196,7 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
             <div className="flex items-center gap-2 pl-0.5 z-[100]">
               <LocationPreview
                 locationRef={rehearsal.data.location}
-                fallback="TBA"
+                fallback={t("common.tba", "TBA")}
               />
             </div>
           )}
@@ -165,22 +210,30 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
               <button
                 onClick={handleConfirmPresence}
                 disabled={attendanceMutation.isPending}
-                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                // W przyszłości zalecam zastąpić to zintegrowanym komponentem <Button variant="success"> z CVA
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
               >
-                <Check size={14} /> Potwierdź Obecność
+                <Check size={14} />{" "}
+                {t(
+                  "dashboard.artist.btn_confirm_presence",
+                  "Potwierdzź Obecność",
+                )}
               </button>
             )}
             <button
               onClick={() => setReportingRehearsal(true)}
+              // W przyszłości zalecam zastąpić to <Button variant={isExcusedOrLate ? "outline" : "warningOutline"}>
               className={cn(
-                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border bg-white shadow-sm active:scale-95",
+                "flex-1 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border shadow-sm active:scale-95",
                 isExcusedOrLate
-                  ? "border-stone-200 text-stone-600 hover:bg-stone-100"
-                  : "border-orange-200 text-orange-600 hover:bg-orange-50",
+                  ? "border-stone-200 bg-white text-stone-600 hover:bg-stone-100"
+                  : "border-orange-200 bg-white text-orange-600 hover:bg-orange-50",
               )}
             >
               <AlertCircle size={14} />{" "}
-              {currentStatus ? "Edytuj zgłoszenie" : "Zgłoś problem"}
+              {currentStatus
+                ? t("dashboard.artist.btn_edit_report", "Edytuj zgłoszenie")
+                : t("dashboard.artist.btn_report_issue", "Zgłoś problem")}
             </button>
           </div>
         ) : (
@@ -188,6 +241,7 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
             >
               <AbsenceReportForm
                 onSubmit={onSubmitAbsence}

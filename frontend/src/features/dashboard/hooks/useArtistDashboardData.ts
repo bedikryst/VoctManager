@@ -85,7 +85,6 @@ export const useArtistDashboardData = (artistId?: string | number) => {
 
     const displayThreshold = new Date(now.getTime() - 2 * 60 * 60 * 1000);
 
-    // 1. Znajdź najbliższą próbę (dołącz status obecności)
     const futureRehearsals = rehearsals
       .filter((r) => {
         const date = new Date(r.date_time);
@@ -117,7 +116,6 @@ export const useArtistDashboardData = (artistId?: string | number) => {
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    // 2. Znajdź najbliższy koncert/projekt
     const futureProjects = myProjects
       .filter((p) => {
         const date = new Date(p.date_time);

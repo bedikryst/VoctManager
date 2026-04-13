@@ -2,7 +2,7 @@
  * @file AdminDashboard.tsx
  * @description Mission Control Dashboard for Choir Managers & Conductors.
  * Refactored to Enterprise SaaS 2026 High-Density (Bento Grid) standard.
- * Implements Controller Pattern with deeply extracted components for zero tech-debt.
+ * Implements Controller Pattern with zero tech-debt and full i18n.
  * @module panel/dashboard/AdminDashboard
  */
 
@@ -32,6 +32,7 @@ const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
+
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },
   show: {
@@ -44,6 +45,7 @@ const itemVariants: Variants = {
 export default function AdminDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();
+
   const {
     isLoading,
     adminStats,
@@ -61,7 +63,11 @@ export default function AdminDashboard(): React.JSX.Element {
           "dashboard.admin.modules.projects_desc",
           "Centrum dowodzenia produkcją.",
         ),
-        features: ["Harmonogramy", "Setlisty", "Casting"],
+        features: [
+          t("dashboard.admin.features.schedules", "Harmonogramy"),
+          t("dashboard.admin.features.setlists", "Setlisty"),
+          t("dashboard.admin.features.casting", "Casting"),
+        ],
         icon: <Briefcase size={18} className="text-brand" />,
         path: "/panel/projects",
       },
@@ -72,7 +78,11 @@ export default function AdminDashboard(): React.JSX.Element {
           "dashboard.admin.modules.archive_desc",
           "Baza biblioteki muzycznej.",
         ),
-        features: ["Nuty PDF", "Audio", "Wymagania"],
+        features: [
+          t("dashboard.admin.features.pdf_scores", "Nuty PDF"),
+          t("dashboard.admin.features.audio", "Audio"),
+          t("dashboard.admin.features.requirements", "Wymagania"),
+        ],
         icon: <Music size={18} className="text-brand" />,
         path: "/panel/archive-management",
       },
@@ -83,7 +93,11 @@ export default function AdminDashboard(): React.JSX.Element {
           "dashboard.admin.modules.artists_desc",
           "Zarządzanie chórem i solistami.",
         ),
-        features: ["SATB", "Profile", "A vista"],
+        features: [
+          t("dashboard.admin.features.satb", "SATB"),
+          t("dashboard.admin.features.profiles", "Profile"),
+          t("dashboard.admin.features.sight_reading", "A vista"),
+        ],
         icon: <Users size={18} className="text-brand" />,
         path: "/panel/artists",
       },
@@ -94,7 +108,11 @@ export default function AdminDashboard(): React.JSX.Element {
           "dashboard.admin.modules.contracts_desc",
           "Umowy i budżetowanie.",
         ),
-        features: ["Stawki", "Dokumenty", "Budżet"],
+        features: [
+          t("dashboard.admin.features.rates", "Stawki"),
+          t("dashboard.admin.features.documents", "Dokumenty"),
+          t("dashboard.admin.features.budget", "Budżet"),
+        ],
         icon: <FileText size={18} className="text-brand" />,
         path: "/panel/contracts",
       },
@@ -105,7 +123,11 @@ export default function AdminDashboard(): React.JSX.Element {
           "dashboard.admin.modules.crew_desc",
           "Logistyka i reżyseria wydarzeń.",
         ),
-        features: ["Dźwięk", "Światło", "Firmy"],
+        features: [
+          t("dashboard.admin.features.sound", "Dźwięk"),
+          t("dashboard.admin.features.light", "Światło"),
+          t("dashboard.admin.features.vendors", "Firmy"),
+        ],
         icon: <Wrench size={18} className="text-brand" />,
         path: "/panel/crew",
       },
@@ -115,7 +137,10 @@ export default function AdminDashboard(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
+      <div
+        className="flex h-[60vh] flex-col items-center justify-center space-y-4"
+        aria-busy="true"
+      >
         <Loader2
           size={48}
           strokeWidth={1}
@@ -140,22 +165,19 @@ export default function AdminDashboard(): React.JSX.Element {
             </div>
             <p className="text-[10px] uppercase tracking-widest text-stone-500 font-bold">
               {t("dashboard.admin.welcome_back", "Witaj z powrotem")} •{" "}
-              {user?.first_name || "Admin"}
+              {user?.first_name || t("common.admin_generic", "Administratorze")}
             </p>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight flex items-baseline gap-1.5">
-            Pulpit
-            <span
-              className="italic text-transparent bg-clip-text bg-gradient-to-r from-brand to-blue-500 pr-1 pb-1"
-              style={{ fontFamily: "'Cormorant', serif", fontSize: "1.15em" }}
-            >
-              Produkcyjny
+            {t("dashboard.admin.title_main", "Pulpit")}
+            <span className="italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-brand to-blue-500 pr-1 pb-1 text-[1.15em]">
+              {t("dashboard.admin.title_sub", "Produkcyjny")}
             </span>
           </h1>
         </div>
 
         <Link
-          to="/panel/projects"
+          to="/panel/projects/new"
           className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-white border border-stone-200/80 hover:border-brand text-stone-700 hover:text-brand text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
         >
           <Plus size={14} />{" "}
@@ -181,7 +203,7 @@ export default function AdminDashboard(): React.JSX.Element {
           animate={{ opacity: 1, scale: 1 }}
           className="col-span-1 h-full"
         >
-          <TelemetryWidget adminStats={adminStats} t={t} />
+          <TelemetryWidget adminStats={adminStats} />
         </motion.div>
 
         <motion.div
@@ -193,7 +215,6 @@ export default function AdminDashboard(): React.JSX.Element {
           <SpotlightProjectCard
             project={nextProject}
             stats={nextProjectStats}
-            t={t}
           />
         </motion.div>
       </div>

@@ -1,22 +1,37 @@
 /**
  * @file AbsenceReportForm.tsx
  * @description Inline absence reporting form powered by React Hook Form & Zod.
+ * Refactored to Enterprise SaaS 2026 i18n and Component Variant Authority (CVA) standards.
  * @architecture Enterprise SaaS 2026
  */
-import React from "react";
+import React, { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Send, Loader2 } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+import { useTranslation } from "react-i18next";
+
+// Ethereal UI Primitives - delegacja zarządzania wariantami poprzez CVA
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
 import type { AttendanceStatus } from "@/shared/types";
 
-const absenceSchema = z.object({
-  status: z.enum(["ABSENT", "LATE"] as const),
-  notes: z.string().min(3, "Proszę podać powód/uwagi."),
-});
+// Dynamiczny schemat Zod pozwalający na wstrzyknięcie funkcji translacji
+const createAbsenceSchema = (t: (key: string, defaultText: string) => string) =>
+  z.object({
+    status: z.enum(["ABSENT", "LATE"] as const),
+    notes: z
+      .string()
+      .min(
+        3,
+        t(
+          "dashboard.artist.validation_notes_min",
+          "Proszę podać powód/uwagi (min. 3 znaki).",
+        ),
+      ),
+  });
 
-export type AbsenceFormValues = z.infer<typeof absenceSchema>;
+export type AbsenceFormValues = z.infer<ReturnType<typeof createAbsenceSchema>>;
 
 interface AbsenceReportFormProps {
   onSubmit: (data: AbsenceFormValues) => Promise<void>;
@@ -27,6 +42,10 @@ export function AbsenceReportForm({
   onSubmit,
   onCancel,
 }: AbsenceReportFormProps): React.JSX.Element {
+  const { t } = useTranslation();
+
+  const absenceSchema = useMemo(() => createAbsenceSchema(t), [t]);
+
   const {
     register,
     handleSubmit,
@@ -48,55 +67,71 @@ export function AbsenceReportForm({
     >
       <div className="flex flex-col gap-2">
         <div className="flex gap-3">
+          {/* Zwykły select został zaktualizowany pod kątem i18n. 
+            W przyszłości warto również i ten element wyabstrahować do CVA (np. Select.tsx).
+          */}
           <select
             {...register("status")}
             className="w-1/3 px-3 py-2 text-xs font-bold text-stone-800 bg-white border border-stone-200/80 rounded-lg outline-none focus:ring-2 focus:ring-brand/20 appearance-none shadow-sm cursor-pointer"
+            aria-label={t("dashboard.artist.absence_status", "Status absencji")}
           >
-            <option value="ABSENT">Nie będę</option>
-            <option value="LATE">Spóźnię się</option>
+            <option value="ABSENT">
+              {t("dashboard.artist.status_absent", "Nie będę")}
+            </option>
+            <option value="LATE">
+              {t("dashboard.artist.status_late", "Spóźnię się")}
+            </option>
           </select>
-          <input
-            type="text"
-            placeholder="Powód / Uwagi..."
-            {...register("notes")}
-            className={cn(
-              "flex-1 px-3 py-2 text-xs font-medium bg-white border rounded-lg outline-none focus:ring-2 focus:ring-brand/20 shadow-sm",
-              errors.notes
-                ? "border-red-500/50 focus:border-red-500/50 text-red-900 placeholder:text-red-300"
-                : "border-stone-200/80 text-stone-800",
-            )}
-          />
+
+          <div className="flex-1">
+            <Input
+              {...register("notes")}
+              placeholder={t(
+                "dashboard.artist.notes_placeholder",
+                "Powód / Uwagi...",
+              )}
+              hasError={!!errors.notes}
+              error={errors.notes?.message}
+              className="w-full"
+            />
+          </div>
         </div>
+
         {errors.notes && (
-          <span className="text-[10px] font-bold text-red-500 pl-1">
+          <span
+            className="text-[10px] font-bold text-red-500 pl-1"
+            role="alert"
+          >
             {errors.notes.message}
           </span>
         )}
       </div>
 
-      <div className="flex gap-2 justify-end">
-        <button
+      <div className="flex gap-2 justify-end mt-2">
+        <Button
           type="button"
+          variant="ghost" // wykorzystanie CVA zamiast klasycznych ciągów klas
+          size="sm"
           onClick={() => {
             reset();
             onCancel();
           }}
-          className="px-4 py-2 text-[9px] font-bold uppercase text-stone-500 hover:text-stone-800 transition-colors"
         >
-          Anuluj
-        </button>
-        <button
+          {t("common.cancel", "Anuluj")}
+        </Button>
+        <Button
           type="submit"
+          variant="primary"
+          size="sm"
           disabled={isSubmitting}
-          className="px-4 py-2 bg-brand text-white rounded-lg text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-blue-800 disabled:opacity-50 shadow-sm transition-all active:scale-95"
         >
           {isSubmitting ? (
-            <Loader2 size={12} className="animate-spin" />
+            <Loader2 size={12} className="animate-spin mr-1.5 inline-block" />
           ) : (
-            <Send size={12} />
+            <Send size={12} className="mr-1.5 inline-block" />
           )}
-          Wyślij
-        </button>
+          {t("common.send", "Wyślij")}
+        </Button>
       </div>
     </form>
   );

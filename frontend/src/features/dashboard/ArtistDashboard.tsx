@@ -2,7 +2,7 @@
  * @file ArtistDashboard.tsx
  * @description Highly personalized Assistant Dashboard for Artists.
  * Refactored to Enterprise SaaS 2026 High-Density (Bento Grid) standard.
- * Implements Controller Pattern for zero tech-debt.
+ * Implements Controller Pattern with zero tech-debt and full i18n.
  * @module panel/dashboard/ArtistDashboard
  */
 
@@ -18,6 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 
+import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
 import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
@@ -25,10 +26,12 @@ import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
 
+// Kinematics: Staggered animation for the Ethereal UI entry
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
+
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },
   show: {
@@ -41,9 +44,12 @@ const itemVariants: Variants = {
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();
+
+  // Data Fetching via specialized hook
   const { isLoading, upNextRehearsal, upNextProject, greeting } =
     useArtistDashboardData(user?.artist_profile_id ?? undefined);
 
+  // Definition of Dashboard Modules using the i18n system
   const ARTIST_MODULES = useMemo(
     () => [
       {
@@ -94,7 +100,10 @@ export default function ArtistDashboard(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
+      <div
+        className="flex h-[60vh] flex-col items-center justify-center space-y-4"
+        aria-busy="true"
+      >
         <Loader2
           size={48}
           strokeWidth={1}
@@ -109,7 +118,7 @@ export default function ArtistDashboard(): React.JSX.Element {
 
   return (
     <div className="animate-fade-in relative cursor-default pb-12 w-full max-w-7xl mx-auto">
-      {/* HEADER */}
+      {/* HEADER SECTION */}
       <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
@@ -118,26 +127,27 @@ export default function ArtistDashboard(): React.JSX.Element {
               <div className="absolute w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping opacity-75" />
             </div>
             <p className="text-[10px] uppercase tracking-widest text-stone-500 font-bold">
-              {greeting} • {user?.first_name || "Artysto"}
+              {greeting} •{" "}
+              {user?.first_name || t("common.artist_generic", "Artysto")}
             </p>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight flex items-baseline gap-1.5">
-            Pulpit
-            <span
-              className="italic text-transparent bg-clip-text bg-gradient-to-r from-brand to-blue-500 pr-1 pb-1"
-              style={{ fontFamily: "'Cormorant', serif", fontSize: "1.15em" }}
-            >
-              Muzyczny
+            {t("dashboard.artist.title_main", "Pulpit")}
+            <span className="italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-brand to-blue-500 pr-1 pb-1 text-[1.15em]">
+              {t("dashboard.artist.title_sub", "Muzyczny")}
             </span>
           </h1>
         </div>
       </header>
 
       {/* HORIZON SECTION (SPOTLIGHT WIDGETS) */}
-      <section className="mb-8">
+      <section className="mb-8" aria-labelledby="horizon-heading">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={14} className="text-brand" aria-hidden="true" />
-          <h2 className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
+          <h2
+            id="horizon-heading"
+            className="text-[9px] font-bold uppercase tracking-widest text-stone-400"
+          >
             {t("dashboard.artist.next_challenges", "Na horyzoncie")}
           </h2>
         </div>
@@ -148,7 +158,11 @@ export default function ArtistDashboard(): React.JSX.Element {
             animate={{ opacity: 1 }}
             className="bg-white border border-dashed border-stone-300/60 rounded-[1.5rem] p-8 text-center flex flex-col items-center"
           >
-            <Activity size={32} className="text-stone-300 mb-3" />
+            <Activity
+              size={32}
+              className="text-stone-300 mb-3"
+              aria-hidden="true"
+            />
             <p className="text-stone-800 text-sm font-bold">
               {t(
                 "dashboard.artist.empty_events_title",
@@ -164,7 +178,10 @@ export default function ArtistDashboard(): React.JSX.Element {
           </motion.div>
         ) : (
           <div
-            className={`grid grid-cols-1 ${upNextRehearsal && upNextProject ? "lg:grid-cols-2" : ""} gap-4`}
+            className={cn(
+              "grid grid-cols-1 gap-4",
+              upNextRehearsal && upNextProject ? "lg:grid-cols-2" : "",
+            )}
           >
             {upNextRehearsal && (
               <motion.div
@@ -188,10 +205,13 @@ export default function ArtistDashboard(): React.JSX.Element {
       </section>
 
       {/* QUICK ACCESS MODULES */}
-      <section>
+      <section aria-labelledby="modules-heading">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-1 h-4 bg-brand rounded-full" />
-          <h3 className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
+          <div className="w-1 h-4 bg-brand rounded-full" aria-hidden="true" />
+          <h3
+            id="modules-heading"
+            className="text-[9px] font-bold uppercase tracking-widest text-stone-400"
+          >
             {t("dashboard.artist.personal_modules", "Szybki Dostęp")}
           </h3>
         </div>

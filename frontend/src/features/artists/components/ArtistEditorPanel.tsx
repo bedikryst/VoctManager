@@ -10,7 +10,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2 } from "lucide-react";
-import { cn } from "@/shared/lib/utils"; // <-- WAŻNE: Dodany import utils
+import { cn } from "@/shared/lib/utils";
 
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
