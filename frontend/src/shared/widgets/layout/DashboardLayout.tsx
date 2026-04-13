@@ -2,6 +2,7 @@
  * @file DashboardLayout.tsx
  * @description Main authenticated shell for the dashboard experience.
  * Orchestrates the Smart Sidebar, Mobile Nav, and Main Content area.
+ * Zero Tech-Debt Ethereal UI Edition.
  * @module shared/widgets/layout/DashboardLayout
  */
 
@@ -17,10 +18,10 @@ const AmbientDecorators = (): React.JSX.Element => (
     className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
     aria-hidden="true"
   >
-    {/* VoctEnsemble Brand Primary Glow */}
-    <div className="absolute -left-[12rem] -top-[8rem] h-[28rem] w-[28rem] rounded-full bg-brand/10 blur-3xl mix-blend-multiply opacity-70" />
-    {/* Warm Complementary Glow */}
-    <div className="absolute -bottom-[18rem] -right-[10rem] h-[32rem] w-[32rem] rounded-full bg-amber-500/10 blur-3xl mix-blend-multiply opacity-70" />
+    {/* Ethereal Gold Epiphany Glow */}
+    <div className="absolute -left-[12rem] -top-[8rem] h-[36rem] w-[36rem] rounded-full bg-ethereal-gold/10 blur-[80px] mix-blend-multiply opacity-80 transition-opacity duration-1000" />
+    {/* Ethereal Sage Grounding Glow */}
+    <div className="absolute -bottom-[18rem] -right-[10rem] h-[40rem] w-[40rem] rounded-full bg-ethereal-sage/10 blur-[100px] mix-blend-multiply opacity-60 transition-opacity duration-1000" />
   </div>
 );
 
@@ -36,12 +37,11 @@ export const DashboardLayout = (): React.JSX.Element => {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen w-full bg-stone-100 font-sans text-stone-900 antialiased selection:bg-brand selection:text-white">
+    // REMOVED bg-stone-100. Using bg-transparent so the body radial-gradient shines through.
+    <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
       <AmbientDecorators />
 
-      {/* Enterprise Modular Navigation Components */}
       <DesktopSidebar user={user} logout={logout} />
-      {/* Assuming MobileNavigation is also flattened in the same directory */}
       <MobileNavigation user={user} logout={logout} />
 
       <main

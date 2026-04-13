@@ -15,17 +15,18 @@ const glassCardVariants = cva(
     variants: {
       variant: {
         ethereal:
-          "bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.03)]",
-        solid: "bg-white/95 border border-stone-200/60 shadow-sm",
-        dark: "bg-[#2a2a2a] backdrop-blur-3xl border border-white/10 text-white shadow-2xl",
+          "bg-white/45 backdrop-blur-[16px] border border-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_8px_32px_rgba(166,146,121,0.08)]",
+        solid:
+          "bg-ethereal-marble/95 border border-ethereal-incense/15 shadow-[0_4px_16px_rgba(166,146,121,0.04)]",
+        dark: "bg-ethereal-ink backdrop-blur-3xl border border-ethereal-incense/20 text-ethereal-marble shadow-2xl",
         outline:
-          "bg-transparent border border-stone-200/40 hover:border-stone-300/60",
+          "bg-transparent border border-ethereal-incense/30 hover:border-ethereal-gold hover:shadow-[0_4px_16px_rgba(194,168,120,0.1)]",
       },
       glow: {
-        true: "after:absolute after:inset-0 after:-z-10 after:opacity-0 after:shadow-[0_0_50px_-12px_var(--tw-shadow-color)] after:shadow-brand/30 after:transition-opacity after:duration-500 hover:after:opacity-100",
+        true: "after:absolute after:inset-0 after:-z-10 after:opacity-0 after:shadow-[0_0_60px_-10px_var(--tw-shadow-color)] after:shadow-ethereal-gold/40 after:transition-opacity after:duration-700 hover:after:opacity-100",
       },
       isHoverable: {
-        true: "hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl cursor-pointer",
+        true: "hover:-translate-y-1.5 hover:scale-[1.01] cursor-pointer hover:shadow-[inset_0_1px_1px_rgba(255,255,255,1),0_12px_40px_rgba(166,146,121,0.12)]",
       },
       padding: {
         none: "p-0",

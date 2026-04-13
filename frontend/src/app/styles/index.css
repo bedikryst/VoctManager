@@ -49,7 +49,16 @@
   }
 
   body {
-    @apply bg-ethereal-alabaster text-ethereal-ink font-sans antialiased selection:bg-ethereal-gold/20 selection:text-ethereal-ink;
+    /* Sacral Lighting Effect: Central radiance fading into parchment depth */
+    background-color: var(--color-ethereal-alabaster);
+    background-image: radial-gradient(
+      circle at 50% 0%,
+      var(--color-ethereal-marble) 0%,
+      var(--color-ethereal-alabaster) 45%,
+      var(--color-ethereal-parchment) 100%
+    );
+    background-attachment: fixed;
+    @apply text-ethereal-ink font-sans antialiased selection:bg-ethereal-gold/20 selection:text-ethereal-ink;
   }
 }
 

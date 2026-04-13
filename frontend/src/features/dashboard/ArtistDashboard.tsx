@@ -2,21 +2,14 @@
  * @file ArtistDashboard.tsx
  * @description Highly personalized Assistant Dashboard for Artists.
  * Refactored to Enterprise SaaS 2026 High-Density (Bento Grid) standard.
- * Implements Controller Pattern with zero tech-debt and full i18n.
+ * Zero Tech-Debt. Purged all legacy tokens. Uses pure Ethereal UI design language.
  * @module panel/dashboard/ArtistDashboard
  */
 
 import React, { useMemo } from "react";
-import { motion, Variants } from "framer-motion";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import {
-  Calendar,
-  Music,
-  BookOpen,
-  Sparkles,
-  Activity,
-  Loader2,
-} from "lucide-react";
+import { Calendar, Music, BookOpen, Sparkles, Activity } from "lucide-react";
 
 import {
   StaggeredBentoContainer,
@@ -27,6 +20,8 @@ import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
 import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
@@ -35,11 +30,9 @@ export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  // Data Fetching via specialized hook
   const { isLoading, upNextRehearsal, upNextProject, greeting } =
     useArtistDashboardData(user?.artist_profile_id ?? undefined);
 
-  // Definition of Dashboard Modules using the i18n system
   const ARTIST_MODULES = useMemo(
     () => [
       {
@@ -90,19 +83,9 @@ export default function ArtistDashboard(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div
-        className="flex h-[60vh] flex-col items-center justify-center space-y-4"
-        aria-busy="true"
-      >
-        <Loader2
-          size={48}
-          strokeWidth={1}
-          className="animate-spin text-brand"
-        />
-        <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-stone-500">
-          {t("dashboard.shared.syncing", "Synchronizacja pulpitu...")}
-        </span>
-      </div>
+      <EtherealLoader
+        message={t("dashboard.shared.syncing", "Synchronizacja pulpitu...")}
+      />
     );
   }
 
@@ -113,17 +96,17 @@ export default function ArtistDashboard(): React.JSX.Element {
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <div className="relative flex items-center justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 z-10" />
-              <div className="absolute w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping opacity-75" />
+              <div className="w-1.5 h-1.5 rounded-full bg-ethereal-sage z-10" />
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-ethereal-sage animate-ping opacity-75" />
             </div>
-            <p className="text-[10px] uppercase tracking-widest text-stone-500 font-bold">
+            <p className="text-[10px] uppercase tracking-widest text-ethereal-graphite font-bold">
               {greeting} •{" "}
               {user?.first_name || t("common.artist_generic", "Artysto")}
             </p>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight flex items-baseline gap-1.5">
+          <h1 className="text-2xl md:text-3xl font-bold text-ethereal-ink tracking-tight flex items-baseline gap-1.5">
             {t("dashboard.artist.title_main", "Pulpit")}
-            <span className="italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-brand to-blue-500 pr-1 pb-1 text-[1.15em]">
+            <span className="italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-ethereal-gold to-ethereal-sage pr-1 pb-1 text-[1.15em]">
               {t("dashboard.artist.title_sub", "Muzyczny")}
             </span>
           </h1>
@@ -133,38 +116,46 @@ export default function ArtistDashboard(): React.JSX.Element {
       {/* HORIZON SECTION (SPOTLIGHT WIDGETS) */}
       <section className="mb-8" aria-labelledby="horizon-heading">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles size={14} className="text-brand" aria-hidden="true" />
+          <Sparkles
+            size={14}
+            className="text-ethereal-gold"
+            aria-hidden="true"
+          />
           <h2
             id="horizon-heading"
-            className="text-[9px] font-bold uppercase tracking-widest text-stone-400"
+            className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite"
           >
             {t("dashboard.artist.next_challenges", "Na horyzoncie")}
           </h2>
         </div>
 
         {!upNextRehearsal && !upNextProject ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white border border-dashed border-stone-300/60 rounded-[1.5rem] p-8 text-center flex flex-col items-center"
-          >
-            <Activity
-              size={32}
-              className="text-stone-300 mb-3"
-              aria-hidden="true"
-            />
-            <p className="text-stone-800 text-sm font-bold">
-              {t(
-                "dashboard.artist.empty_events_title",
-                "Brak nadchodzących wydarzeń",
-              )}
-            </p>
-            <p className="text-stone-500 text-xs mt-1">
-              {t(
-                "dashboard.artist.empty_events_desc",
-                "Odpocznij, twój muzyczny kalendarz jest obecnie pusty.",
-              )}
-            </p>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <GlassCard
+              variant="ethereal"
+              padding="lg"
+              className="flex flex-col items-center justify-center py-16 text-center"
+            >
+              <div className="p-4 rounded-full bg-ethereal-incense/5 mb-4">
+                <Activity
+                  size={28}
+                  className="text-ethereal-graphite/40"
+                  aria-hidden="true"
+                />
+              </div>
+              <p className="text-ethereal-ink text-sm font-bold tracking-wide">
+                {t(
+                  "dashboard.artist.empty_events_title",
+                  "Brak nadchodzących wydarzeń",
+                )}
+              </p>
+              <p className="text-ethereal-graphite text-xs mt-1.5 max-w-sm">
+                {t(
+                  "dashboard.artist.empty_events_desc",
+                  "Odpocznij, twój muzyczny kalendarz jest obecnie pusty. Aura została zharmonizowana.",
+                )}
+              </p>
+            </GlassCard>
           </motion.div>
         ) : (
           <div
