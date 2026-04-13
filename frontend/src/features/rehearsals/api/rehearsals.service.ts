@@ -12,6 +12,7 @@ import type {
   Rehearsal,
 } from "../../../shared/types";
 import type { AttendanceUpsertDTO } from "../types/rehearsals.dto";
+import type { LocationDto } from "../../logistics/types/logistics.dto";
 
 export const RehearsalsService = {
   getProjects: async (): Promise<Project[]> => {
@@ -57,5 +58,10 @@ export const RehearsalsService = {
 
   deleteAttendance: async (id: string): Promise<void> => {
     await api.delete(`/api/attendances/${id}/`);
+  },
+
+  getLocations: async (): Promise<LocationDto[]> => {
+    const response = await api.get<LocationDto[]>("/api/logistics/locations/");
+    return response.data;
   },
 };

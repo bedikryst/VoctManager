@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
-import { LocationCreateDto } from "../types/logistics.dto";
 import { Search, MapPin } from "lucide-react";
+import { useDebounceValue } from "usehooks-ts";
+import { LocationDto } from "../types/logistics.dto";
 
 interface LocationAutocompleteProps {
-  onLocationSelect: (locationData: Partial<LocationCreateDto>) => void;
+  onLocationSelect: (locationData: Partial<LocationDto>) => void;
   placeholder?: string;
 }
 
@@ -20,7 +21,7 @@ export const LocationAutocomplete = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
-  const [debouncedValue, setDebouncedValue] = useState("");
+  const [debouncedValue] = useDebounceValue(inputValue, 300);
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompleteSuggestion[]
   >([]);
@@ -34,14 +35,6 @@ export const LocationAutocomplete = ({
     }
   }, [placesLibrary]);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(inputValue);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [inputValue]);
-
-  // Pobieranie sugestii
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!debouncedValue.trim()) {

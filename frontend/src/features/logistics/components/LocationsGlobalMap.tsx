@@ -15,18 +15,15 @@ interface LocationsGlobalMapProps {
   locations: LocationDto[];
 }
 
-// 1. Sub-komponent odpowiedzialny tylko za inteligentne centrowanie mapy
 const BoundsFitter = ({ locations }: { locations: LocationDto[] }) => {
   const map = useMap("VOCTMANAGER_GLOBAL_MAP");
 
   useEffect(() => {
-    // Upewniamy się, że mapa jest załadowana i mamy bibliotekę Google
     if (!map || !window.google || locations.length === 0) return;
 
     const bounds = new window.google.maps.LatLngBounds();
     let validLocationsCount = 0;
 
-    // Rozciągamy "pudełko" na podstawie koordynatów lokacji
     locations.forEach((loc) => {
       if (loc.latitude && loc.longitude) {
         bounds.extend({
@@ -38,16 +35,14 @@ const BoundsFitter = ({ locations }: { locations: LocationDto[] }) => {
     });
 
     if (validLocationsCount > 1) {
-      // Jeśli mamy wiele punktów - dopasuj i dodaj 50px luksusowego marginesu
       map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
     } else if (validLocationsCount === 1) {
-      // Jeśli to tylko 1 punkt - wyśrodkuj i daj przyjemny zoom (14 to widok dzielnicy)
       map.setCenter(bounds.getCenter());
       map.setZoom(14);
     }
   }, [map, locations]);
 
-  return null; // Ten komponent nie renderuje UI, jedynie operuje na API Mapy
+  return null;
 };
 
 const LocationInfo = ({ location }: { location: LocationDto }) => {
@@ -85,7 +80,6 @@ export const LocationsGlobalMap = ({
     null,
   );
 
-  // Defaultowy fallback, póki BoundsFitter nie przejmie kontroli
   const defaultCenter = { lat: 52.0, lng: 19.0 };
 
   return (
@@ -103,7 +97,6 @@ export const LocationsGlobalMap = ({
         gestureHandling="greedy"
         className="w-full h-full"
       >
-        {/* Odpalamy nasz inteligentny fiter */}
         <BoundsFitter locations={locations} />
 
         {locations.map((loc) => {

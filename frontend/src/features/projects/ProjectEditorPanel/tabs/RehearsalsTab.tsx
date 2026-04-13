@@ -388,7 +388,6 @@ export default function RehearsalsTab({
               >
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
-                    {/* Zmodyfikowana sekcja czasu korzystająca z DualTimeDisplay */}
                     <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                       <span
                         className={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-[#002395]"}`}

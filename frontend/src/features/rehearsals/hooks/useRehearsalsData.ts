@@ -13,6 +13,7 @@ import {
   useRehearsalsWorkspaceData,
 } from "../api/rehearsals.queries";
 import type { ProjectTabType } from "../types/rehearsals.dto";
+import type { LocationDto } from "../../logistics/types/logistics.dto";
 
 export const useRehearsalsData = () => {
   const { t } = useTranslation();
@@ -28,6 +29,7 @@ export const useRehearsalsData = () => {
     participations,
     attendances,
     artists,
+    locations,
     isLoading,
     isError,
   } = useRehearsalsWorkspaceData();
@@ -48,6 +50,12 @@ export const useRehearsalsData = () => {
 
   const displayProjects =
     projectTab === "ACTIVE" ? activeProjects : archivedProjects;
+
+  const locationMap = useMemo(() => {
+    const map = new Map<string, LocationDto>();
+    locations.forEach((loc) => map.set(String(loc.id), loc));
+    return map;
+  }, [locations]);
 
   useEffect(() => {
     if (!selectedProjectId && displayProjects.length > 0) {
@@ -258,6 +266,7 @@ export const useRehearsalsData = () => {
     invitedParticipations,
     artistMap,
     attendanceMap,
+    locationMap,
     stats,
     isMarkingAll: markMissingAttendanceMutation.isPending,
     handleMarkAllPresent,

@@ -18,6 +18,8 @@ import {
   Archive,
 } from "lucide-react";
 import { DualTimeDisplay } from "../../shared/ui/DualTimeDisplay";
+import { useLocationResolver } from "../logistics/hooks/useLocationResolver";
+import { LocationPreview } from "../logistics/components/LocationPreview";
 
 import { useRehearsalsData } from "./hooks/useRehearsalsData";
 import {
@@ -45,10 +47,13 @@ export default function Rehearsals(): React.JSX.Element {
     invitedParticipations,
     artistMap,
     attendanceMap,
+    locationMap,
     stats,
     isMarkingAll,
     handleMarkAllPresent,
   } = useRehearsalsData();
+
+  const { resolveLocation, getLocationName } = useLocationResolver();
 
   useEffect(() => {
     if (isError)
@@ -232,8 +237,10 @@ export default function Rehearsals(): React.JSX.Element {
                     )}
                   </span>
                   <span className="text-[8px] font-bold uppercase tracking-widest text-stone-400 truncate max-w-full">
-                    {reh.location ||
-                      t("rehearsals.dashboard.no_location", "Brak lok.")}
+                    {getLocationName(
+                      reh.location,
+                      t("rehearsals.dashboard.no_location", "Brak lok."),
+                    )}
                   </span>
                 </button>
               );
@@ -265,7 +272,6 @@ export default function Rehearsals(): React.JSX.Element {
                       t("rehearsals.dashboard.general_work", "Praca Bieżąca")}
                   </h3>
 
-                  {/* ZMODYFIKOWANA SEKCJA CZASU I LOKALIZACJI */}
                   <div className="flex flex-wrap items-center gap-2 mt-3 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
                     <span className="flex items-center gap-1.5 bg-stone-100/50 px-2.5 py-1.5 rounded-lg border border-stone-200/80">
                       <Clock size={12} aria-hidden="true" />{" "}
@@ -289,16 +295,13 @@ export default function Rehearsals(): React.JSX.Element {
                       localTimeClassName="text-[9px] text-orange-600/90 font-bold normal-case tracking-normal border-l border-stone-200 pl-1.5"
                     />
 
-                    <span className="flex items-center gap-1.5 bg-stone-100/50 px-2.5 py-1.5 rounded-lg border border-stone-200/80 truncate max-w-[250px]">
-                      <MapPin
-                        size={12}
-                        className="flex-shrink-0"
-                        aria-hidden="true"
-                      />
-                      <span className="truncate">
-                        {activeRehearsal.location}
-                      </span>
-                    </span>
+                    <LocationPreview
+                      locationRef={activeRehearsal.location}
+                      fallback={t(
+                        "rehearsals.dashboard.no_location",
+                        "Brak lok.",
+                      )}
+                    />
                   </div>
                 </div>
 

@@ -3,14 +3,16 @@
  * @description Feature-local DTOs for the Rehearsals domain.
  */
 
+import { z } from "zod";
 import type { AttendanceStatus } from "../../../shared/types";
 
-export type ProjectTabType = "ACTIVE" | "ARCHIVE";
+export const attendanceUpsertSchema = z.object({
+  rehearsal: z.string().uuid(),
+  participation: z.string().uuid(),
+  status: z.enum(["PRESENT", "LATE", "ABSENT", "EXCUSED"]),
+  minutes_late: z.number().positive().nullable().optional(),
+  excuse_note: z.string().nullable().optional(),
+});
 
-export interface AttendanceUpsertDTO {
-  rehearsal: string;
-  participation: string;
-  status: AttendanceStatus;
-  minutes_late: number | null;
-  excuse_note: string | null;
-}
+export type AttendanceUpsertDTO = z.infer<typeof attendanceUpsertSchema>;
+export type ProjectTabType = "ACTIVE" | "ARCHIVE";

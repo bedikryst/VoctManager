@@ -4,11 +4,19 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Clock, Edit3, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+import {
+  attendanceUpsertSchema,
+  type AttendanceUpsertDTO,
+} from "../types/rehearsals.dto";
 import type {
   Artist,
   Attendance,
@@ -20,6 +28,14 @@ import {
   useUpsertAttendanceRecord,
 } from "../api/rehearsals.queries";
 
+// We extend the strictly-typed DTO schema to allow 'status' to be optional in the UI state.
+// This allows us to represent the "unselected" state without TypeScript or Zod throwing errors.
+const rowFormSchema = attendanceUpsertSchema.extend({
+  status: z.enum(["PRESENT", "LATE", "ABSENT", "EXCUSED"]).optional(),
+});
+
+type RowFormValues = z.infer<typeof rowFormSchema>;
+
 interface ArtistRowProps {
   part: Participation;
   artist: Artist;
@@ -30,74 +46,78 @@ interface ArtistRowProps {
 export const ArtistRow = React.memo(
   ({ part, artist, rehearsalId, existingRecord }: ArtistRowProps) => {
     const { t } = useTranslation();
-    const [status, setStatus] = useState<AttendanceStatus | null>(
-      existingRecord?.status || null,
-    );
-    const [minutesLate, setMinutesLate] = useState(
-      existingRecord?.minutes_late ? String(existingRecord.minutes_late) : "",
-    );
-    const [note, setNote] = useState(existingRecord?.excuse_note || "");
 
-    const upsertAttendanceMutation = useUpsertAttendanceRecord();
-    const deleteAttendanceMutation = useDeleteAttendanceRecord();
-    const isSyncing =
-      upsertAttendanceMutation.isPending || deleteAttendanceMutation.isPending;
+    const upsertMutation = useUpsertAttendanceRecord();
+    const deleteMutation = useDeleteAttendanceRecord();
+    const isSyncing = upsertMutation.isPending || deleteMutation.isPending;
 
+    // Initialize React Hook Form
+    const form = useForm<RowFormValues>({
+      resolver: zodResolver(rowFormSchema),
+      defaultValues: {
+        rehearsal: rehearsalId,
+        participation: part.id,
+        status: existingRecord?.status || undefined,
+        minutes_late: existingRecord?.minutes_late || null,
+        excuse_note: existingRecord?.excuse_note || "",
+      },
+    });
+
+    // Extract reactive values for UI rendering
+    const status = form.watch("status");
+    const note = form.watch("excuse_note");
+
+    // Sync external changes (e.g., from bulk "Mark All Present" action)
     useEffect(() => {
-      setStatus(existingRecord?.status || null);
-      setMinutesLate(
-        existingRecord?.minutes_late ? String(existingRecord.minutes_late) : "",
-      );
-      setNote(existingRecord?.excuse_note || "");
-    }, [existingRecord]);
+      form.reset({
+        rehearsal: rehearsalId,
+        participation: part.id,
+        status: existingRecord?.status || undefined,
+        minutes_late: existingRecord?.minutes_late || null,
+        excuse_note: existingRecord?.excuse_note || "",
+      });
+    }, [existingRecord, rehearsalId, part.id, form]);
 
-    const saveToServer = async (
-      nextStatus: AttendanceStatus | null,
-      nextMinutesLate: string,
-      nextNote: string,
-    ) => {
+    const onSubmit = async (data: RowFormValues) => {
       try {
-        if (!nextStatus) {
+        // If status is undefined, the user toggled the button off -> Delete record
+        if (!data.status) {
           if (existingRecord?.id) {
-            await deleteAttendanceMutation.mutateAsync(existingRecord.id);
+            await deleteMutation.mutateAsync(existingRecord.id);
           }
           return;
         }
 
-        await upsertAttendanceMutation.mutateAsync({
+        // Otherwise, it's an upsert operation. Safe to cast as AttendanceUpsertDTO since status exists.
+        await upsertMutation.mutateAsync({
           id: existingRecord?.id,
-          data: {
-            rehearsal: rehearsalId,
-            participation: part.id,
-            status: nextStatus,
-            minutes_late:
-              nextStatus === "LATE" && nextMinutesLate
-                ? parseInt(nextMinutesLate, 10)
-                : null,
-            excuse_note:
-              nextStatus === "EXCUSED" ||
-              nextStatus === "ABSENT" ||
-              nextStatus === "LATE"
-                ? nextNote
-                : null,
-          },
+          data: data as AttendanceUpsertDTO,
         });
       } catch (error) {
-        toast.error(t("rehearsals.toast.save_error_title", "Błąd zapisu"), {
-          description: `${t("rehearsals.toast.save_error_desc", "Błąd zapisu dla:")} ${artist.last_name}`,
+        toast.error(t("rehearsals.toast.save_error_title", "Save Error"), {
+          description: `${t("rehearsals.toast.save_error_desc", "Failed to save data for:")} ${artist.last_name}`,
         });
       }
     };
 
-    const handleStatusToggle = (targetStatus: AttendanceStatus) => {
-      const nextStatus = status === targetStatus ? null : targetStatus;
-      setStatus(nextStatus);
-      void saveToServer(nextStatus, minutesLate, note);
+    const handleStatusChange = (targetStatus: AttendanceStatus) => {
+      const currentStatus = form.getValues("status");
+      const nextStatus =
+        currentStatus === targetStatus ? undefined : targetStatus;
+
+      form.setValue("status", nextStatus, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+
+      // Trigger save immediately upon status toggle
+      void form.handleSubmit(onSubmit)();
     };
 
-    const handleTextBlur = () => {
-      if (status) {
-        void saveToServer(status, minutesLate, note);
+    const handleBlur = () => {
+      // Trigger auto-save on blur only if something changed and a status is actively selected
+      if (form.formState.isDirty && form.getValues("status")) {
+        void form.handleSubmit(onSubmit)();
       }
     };
 
@@ -121,26 +141,30 @@ export const ArtistRow = React.memo(
         <div className="flex-1 flex flex-col xl:flex-row items-start xl:items-center gap-3 md:gap-6 w-full justify-end">
           <div className="flex bg-stone-100/50 p-1 rounded-xl border border-stone-200/60 shadow-sm w-full sm:w-auto flex-shrink-0">
             <button
-              onClick={() => handleStatusToggle("PRESENT")}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "PRESENT" ? "bg-emerald-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white"}`}
+              onClick={() => handleStatusChange("PRESENT")}
+              disabled={isSyncing}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "PRESENT" ? "bg-emerald-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white disabled:opacity-50"}`}
             >
               {t("rehearsals.row.status_present", "Obecny")}
             </button>
             <button
-              onClick={() => handleStatusToggle("LATE")}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "LATE" ? "bg-orange-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white"}`}
+              onClick={() => handleStatusChange("LATE")}
+              disabled={isSyncing}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "LATE" ? "bg-orange-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white disabled:opacity-50"}`}
             >
               {t("rehearsals.row.status_late", "Spóźniony")}
             </button>
             <button
-              onClick={() => handleStatusToggle("ABSENT")}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "ABSENT" ? "bg-red-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white"}`}
+              onClick={() => handleStatusChange("ABSENT")}
+              disabled={isSyncing}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "ABSENT" ? "bg-red-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white disabled:opacity-50"}`}
             >
               {t("rehearsals.row.status_absent", "Nieobecny")}
             </button>
             <button
-              onClick={() => handleStatusToggle("EXCUSED")}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "EXCUSED" ? "bg-purple-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white"}`}
+              onClick={() => handleStatusChange("EXCUSED")}
+              disabled={isSyncing}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${status === "EXCUSED" ? "bg-purple-500 text-white shadow-md" : "text-stone-500 hover:text-stone-800 hover:bg-white disabled:opacity-50"}`}
             >
               {t("rehearsals.row.status_excused", "Zwolniony")}
             </button>
@@ -166,9 +190,11 @@ export const ArtistRow = React.memo(
                       "rehearsals.row.minutes_placeholder",
                       "Ile min?",
                     )}
-                    value={minutesLate}
-                    onChange={(event) => setMinutesLate(event.target.value)}
-                    onBlur={handleTextBlur}
+                    {...form.register("minutes_late", {
+                      setValueAs: (v) =>
+                        v === "" || Number.isNaN(Number(v)) ? null : Number(v),
+                    })}
+                    onBlur={handleBlur}
                     disabled={isSyncing}
                     className="w-24 text-xs font-bold text-orange-800 py-2 pl-7 pr-2 border border-orange-200/80 rounded-lg outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 bg-orange-50/50 shadow-sm transition-all"
                   />
@@ -187,9 +213,8 @@ export const ArtistRow = React.memo(
                   "rehearsals.row.note_placeholder",
                   "Notatka (opcjonalnie)",
                 )}
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                onBlur={handleTextBlur}
+                {...form.register("excuse_note")}
+                onBlur={handleBlur}
                 disabled={isSyncing}
                 className={`w-full text-xs font-medium pl-8 pr-8 py-2 rounded-lg outline-none focus:ring-2 transition-all ${
                   status === "EXCUSED"

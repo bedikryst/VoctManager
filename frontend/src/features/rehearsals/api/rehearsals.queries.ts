@@ -41,6 +41,10 @@ export const useRehearsalsWorkspaceData = () => {
         queryKey: queryKeys.artists.all,
         queryFn: RehearsalsService.getArtists,
       },
+      {
+        queryKey: ["locations", "list"],
+        queryFn: RehearsalsService.getLocations,
+      },
     ],
   });
 
@@ -50,6 +54,7 @@ export const useRehearsalsWorkspaceData = () => {
     participations: results[2].data || [],
     attendances: results[3].data || [],
     artists: results[4].data || [],
+    locations: results[5].data || [],
     isLoading: results.some((query) => query.isLoading),
     isError: results.some((query) => query.isError),
   };
