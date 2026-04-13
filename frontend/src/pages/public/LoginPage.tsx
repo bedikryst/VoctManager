@@ -1,7 +1,8 @@
 /**
  * @file Login.tsx
  * @description Authentication gateway for the VoctManager Dashboard.
- * Interfaces with AuthContext to retrieve JWTs and manages intelligent post-login redirection.
+ * Refactored to fully embody Ethereal UI standards (Glassmorphism)
+ * and strictly adheres to i18n architectural standards.
  * @architecture Enterprise 2026 Standards
  * @module pages/Login
  * @author Krystian Bugalski
@@ -10,8 +11,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
+
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
 
 export default function Login(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
@@ -22,6 +27,7 @@ export default function Login(): React.JSX.Element {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   // Enforce system cursor normalization for accessibility on the auth screen
   useEffect(() => {
@@ -40,26 +46,25 @@ export default function Login(): React.JSX.Element {
     const result = await login(email, password);
 
     if (result.success) {
-      // Prevents the login view from lingering in the browser history stack
       navigate(from, { replace: true });
     } else {
-      setError(result.error || "Autoryzacja nie powiodła się.");
+      setError(
+        result.error ||
+          t("auth.login.error_default", "Autoryzacja nie powiodła się."),
+      );
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div
-      className="min-h-screen bg-[#fdfbf7] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-brand selection:text-white"
-      style={{ fontFamily: "'Poppins', sans-serif" }}
-    >
+    <div className="min-h-screen bg-transparent flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="absolute top-8 left-8">
         <Link
           to="/"
-          className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-brand transition-colors"
+          className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-ethereal-graphite hover:text-ethereal-gold transition-colors"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-          <span>Powrót na stronę główną</span>
+          <span>{t("auth.login.back_to_lobby", "Powrót do przedsionka")}</span>
         </Link>
       </div>
 
@@ -67,45 +72,41 @@ export default function Login(): React.JSX.Element {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="text-center"
         >
-          <h2
-            className="text-4xl md:text-5xl font-medium text-stone-900 mb-2"
-            style={{ fontFamily: "'Cormorant', serif" }}
-          >
-            Voct<span className="italic text-brand">Manager</span>
+          <h2 className="text-5xl md:text-6xl font-medium text-ethereal-ink mb-3 font-serif tracking-tight">
+            Voct<span className="italic text-ethereal-gold pr-2">Manager</span>
           </h2>
-          <p className="mt-2 text-sm text-stone-500 font-light tracking-wide uppercase">
-            Panel Administracyjny & Kadrowy
+          <p className="mt-2 text-[11px] text-ethereal-graphite font-bold tracking-[0.2em] uppercase">
+            {t("auth.login.subtitle", "Panel Administracyjny & Kadrowy")}
           </p>
         </motion.div>
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
-          duration: 0.6,
-          delay: 0.1,
-          ease: [0.16, 1, 0.3, 1] as const,
+          duration: 0.8,
+          delay: 0.15,
+          ease: [0.16, 1, 0.3, 1],
         }}
-        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+        className="mt-10 sm:mx-auto sm:w-full sm:max-w-md relative z-10"
       >
-        <div className="bg-white py-8 px-4 shadow-xl shadow-stone-200/50 sm:rounded-xl border border-stone-100 sm:px-10 relative overflow-hidden">
-          {/* Aesthetic Gradient Top Border */}
-          <div
-            className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand to-blue-400"
-            aria-hidden="true"
-          />
-
-          <form className="space-y-6 mt-2" onSubmit={handleSubmit}>
+        <GlassCard
+          variant="ethereal"
+          padding="lg"
+          glow={true}
+          className="!pt-10"
+        >
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="email"
-                className="block text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2"
+                className="block text-[10px] font-bold uppercase tracking-[0.15em] text-ethereal-graphite mb-2 ml-1"
               >
-                Adres e-mail
+                {t("auth.login.email_label", "Adres e-mail")}
               </label>
               <div className="mt-1">
                 <input
@@ -117,8 +118,11 @@ export default function Login(): React.JSX.Element {
                   disabled={isSubmitting}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2.5 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand sm:text-sm font-medium transition-all disabled:bg-stone-50 disabled:text-stone-400"
-                  placeholder="np. jan.kowalski@voctensemble.pl"
+                  className="appearance-none block w-full px-4 py-3 bg-white/40 backdrop-blur-sm border border-ethereal-incense/20 rounded-xl shadow-sm placeholder-ethereal-graphite/40 text-ethereal-ink focus:outline-none focus:ring-2 focus:ring-ethereal-gold/40 focus:border-ethereal-gold/50 sm:text-sm font-medium transition-all disabled:opacity-50"
+                  placeholder={t(
+                    "auth.login.email_placeholder",
+                    "np. jan.kowalski@voctensemble.pl",
+                  )}
                 />
               </div>
             </div>
@@ -126,9 +130,9 @@ export default function Login(): React.JSX.Element {
             <div>
               <label
                 htmlFor="password"
-                className="block text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2"
+                className="block text-[10px] font-bold uppercase tracking-[0.15em] text-ethereal-graphite mb-2 ml-1"
               >
-                Hasło
+                {t("auth.login.password_label", "Klucz dostępu")}
               </label>
               <div className="mt-1">
                 <input
@@ -140,19 +144,18 @@ export default function Login(): React.JSX.Element {
                   disabled={isSubmitting}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2.5 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand sm:text-sm font-medium transition-all disabled:bg-stone-50 disabled:text-stone-400"
-                  placeholder="••••••••"
+                  className="appearance-none block w-full px-4 py-3 bg-white/40 backdrop-blur-sm border border-ethereal-incense/20 rounded-xl shadow-sm placeholder-ethereal-graphite/40 text-ethereal-ink focus:outline-none focus:ring-2 focus:ring-ethereal-gold/40 focus:border-ethereal-gold/50 sm:text-sm font-medium transition-all disabled:opacity-50"
+                  placeholder={t("auth.login.password_placeholder", "••••••••")}
                 />
               </div>
             </div>
 
-            {/* Error Message with ARIA Live Region for Accessibility */}
             <div aria-live="polite">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md"
+                  className="bg-red-50/80 backdrop-blur-md border-l-4 border-red-400 p-4 rounded-r-xl shadow-sm"
                 >
                   <div className="flex">
                     <div className="flex-shrink-0">
@@ -162,7 +165,7 @@ export default function Login(): React.JSX.Element {
                       />
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm text-red-700 font-medium">
+                      <p className="text-sm text-red-800 font-medium">
                         {error}
                       </p>
                     </div>
@@ -171,33 +174,31 @@ export default function Login(): React.JSX.Element {
               )}
             </div>
 
-            <div>
-              <button
+            <div className="pt-2">
+              <Button
                 type="submit"
-                disabled={isSubmitting || !email || !password}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-xs uppercase tracking-widest font-bold text-white bg-stone-900 hover:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed group"
+                variant="primary"
+                fullWidth
+                size="lg"
+                isLoading={isSubmitting}
+                disabled={!email || !password}
               >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2
-                      className="w-4 h-4 animate-spin"
-                      aria-hidden="true"
-                    />
-                    Autoryzacja...
-                  </span>
-                ) : (
-                  "Zaloguj się"
-                )}
-              </button>
+                {isSubmitting
+                  ? t("auth.login.submitting", "Autoryzacja...")
+                  : t("auth.login.submit_button", "Autoryzuj dostęp")}
+              </Button>
             </div>
           </form>
 
           <div className="mt-8 text-center">
-            <p className="text-[10px] text-stone-400 uppercase tracking-widest">
-              Zabezpieczone przez JWT Auth
+            <p className="text-[9px] text-ethereal-graphite/60 uppercase tracking-[0.2em] font-bold">
+              {t(
+                "auth.login.footer_security",
+                "Zabezpieczone przez JWT Auth • 2026",
+              )}
             </p>
           </div>
-        </div>
+        </GlassCard>
       </motion.div>
     </div>
   );

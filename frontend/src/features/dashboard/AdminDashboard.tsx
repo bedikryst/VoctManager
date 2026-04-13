@@ -2,13 +2,13 @@
  * @file AdminDashboard.tsx
  * @description Mission Control Dashboard for Choir Managers & Conductors.
  * Refactored to Ethereal UI (2026) with zero tech-debt.
- * Implements centralized kinematics and semantic color tokens.
+ * Implements "The Choir Effect" staggered entrance seamlessly driven by DashboardHome.
  * @module panel/dashboard/AdminDashboard
  */
 
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
   Music,
@@ -16,7 +16,6 @@ import {
   Users,
   Briefcase,
   Wrench,
-  Plus,
   Loader2,
 } from "lucide-react";
 
@@ -28,19 +27,38 @@ import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";
 import { TelemetryWidget } from "./components/TelemetryWidget";
 import { SpotlightProjectCard } from "./components/SpotlightProjectCard";
-import { buttonVariants } from "@/shared/ui/primitives/Button";
 import { cn } from "@/shared/lib/utils";
 
-// Kinematics: Importing the centralized conductor components
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
-import {
-  etherealFadeInVariants,
-  DURATION,
-  EASE,
-} from "@/shared/ui/kinematics/motion-presets";
+// ==========================================
+// KINEMATICS TOKENS (Child Variants)
+// ==========================================
+
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12, // Kaskada odpali się poprawnie, bo renderujemy ją PO pobraniu danych
+    },
+  },
+};
+
+const itemKinematics: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+    filter: "blur(12px)",
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.85,
+      ease: [0.25, 0.1, 0.25, 1], // Ethereal Sacral Curve
+    },
+  },
+};
 
 export default function AdminDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -144,6 +162,7 @@ export default function AdminDashboard(): React.JSX.Element {
     [t],
   );
 
+  // Lokalny loader dla pobierania danych widgetów
   if (isLoading) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
@@ -160,14 +179,18 @@ export default function AdminDashboard(): React.JSX.Element {
   }
 
   return (
-    <div className="relative cursor-default pb-12 w-full max-w-7xl mx-auto">
-      {/* HEADER SECTION */}
-      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={etherealFadeInVariants}
-        >
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="relative cursor-default pb-12 w-full max-w-[1800px] mx-auto px-6 lg:px-12"
+    >
+      {/* HEADER SECTION - Dziedziczy stagger z DashboardHome */}
+      <motion.header
+        variants={itemKinematics}
+        className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4"
+      >
+        <div>
           <div className="flex items-center gap-2 mb-1.5">
             <div className="relative flex items-center justify-center">
               <div className="w-1.5 h-1.5 rounded-full bg-ethereal-sage z-10" />
@@ -184,43 +207,27 @@ export default function AdminDashboard(): React.JSX.Element {
               {t("dashboard.admin.title_sub", "Produkcyjny")}
             </span>
           </h1>
-        </motion.div>
+        </div>
 
-        <div className="flex justify-end w-full">
+        <div className="flex justify-start md:justify-end">
           <UserLocalClock />
         </div>
-      </header>
+      </motion.header>
 
       {/* TOP NOTIFICATION BAR */}
       {nextRehearsal && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: DURATION.base, ease: EASE.buttery }}
-          className="mb-8"
-        >
+        <motion.div variants={itemKinematics} className="mb-8">
           <NextRehearsalAlert rehearsal={nextRehearsal} />
         </motion.div>
       )}
 
       {/* KPI & SPOTLIGHT BENTO GRID */}
-      <div className="relative z-30 grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={etherealFadeInVariants}
-          className="col-span-1 h-full"
-        >
+      <div className="relative z-30 grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+        <motion.div variants={itemKinematics} className="col-span-1 h-full">
           <TelemetryWidget adminStats={adminStats} />
         </motion.div>
 
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={etherealFadeInVariants}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-2 h-full"
-        >
+        <motion.div variants={itemKinematics} className="xl:col-span-2 h-full">
           <SpotlightProjectCard
             project={nextProject}
             stats={nextProjectStats}
@@ -228,16 +235,14 @@ export default function AdminDashboard(): React.JSX.Element {
         </motion.div>
       </div>
 
-      {/* SYSTEM MODULES GRID - Using Centralized Kinematics */}
-      <div className="relative z-10">
-        <StaggeredBentoContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
-          {ADMIN_MODULES.map((mod) => (
-            <StaggeredBentoItem key={mod.id} className="h-full">
-              <SystemModuleCard {...mod} />
-            </StaggeredBentoItem>
-          ))}
-        </StaggeredBentoContainer>
+      {/* SYSTEM MODULES GRID - Kinematics applied directly to the Grid Items */}
+      <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+        {ADMIN_MODULES.map((mod) => (
+          <motion.div variants={itemKinematics} key={mod.id} className="h-full">
+            <SystemModuleCard {...mod} />
+          </motion.div>
+        ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
