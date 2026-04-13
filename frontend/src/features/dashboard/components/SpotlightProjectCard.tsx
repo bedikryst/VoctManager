@@ -13,7 +13,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { formatLocalizedDate } from "@/shared/lib/intl";
-import { DualTimeDisplay } from "@/shared/widgets/layout/DualTimeDisplay";
+import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { cn } from "@/shared/lib/utils";
@@ -76,9 +76,6 @@ export function SpotlightProjectCard({
                     value={project.date_time}
                     timeZone={project.timezone}
                     icon={<Clock size={12} className="text-brand" />}
-                    containerClassName="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80"
-                    primaryTimeClassName="flex items-center gap-1.5 text-[11px] font-bold text-stone-700"
-                    localTimeClassName="text-[10px] text-stone-500 font-medium border-l border-stone-200 pl-1.5"
                   />
                   {project.location && (
                     <div className="flex items-center bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80 z-[100]">

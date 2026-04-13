@@ -12,7 +12,10 @@ import { LogOut, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cva } from "class-variance-authority";
 
-import { adminNavGroups, artistNavGroups } from "./navigation.config";
+import {
+  ADMIN_NAV_GROUPS as adminNavGroups,
+  ARTIST_NAV_GROUPS as artistNavGroups,
+} from "../../config/navigation/dashboard.config";
 import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
 import { isCrew, isManager } from "@/shared/auth/rbac";
 import type { AuthUser } from "@/shared/auth/auth.types";

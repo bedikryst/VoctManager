@@ -1,8 +1,8 @@
 /**
- * @file navigation.config.tsx
- * @description Centralized routing configuration for the authenticated dashboard.
- * Separated strictly into structural logic without UI rendering components.
- * @module shared/widgets/layout/navigation.config
+ * @file dashboard.config.tsx
+ * @description Centralized navigation schema for the authenticated Dashboard.
+ * Implements RBAC-ready structures and i18next marking.
+ * @module shared/config/navigation/dashboard
  */
 
 import React from "react";
@@ -20,7 +20,7 @@ import {
   MapPin,
 } from "lucide-react";
 
-// Dummy function to mark keys for i18next extraction
+// Marker for i18next-parser to extract keys
 const t = (key: string): string => key;
 
 export interface NavLinkItem {
@@ -34,7 +34,7 @@ export interface NavGroup {
   links: NavLinkItem[];
 }
 
-export const adminNavGroups: NavGroup[] = [
+export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
   {
     labelKey: t("dashboard.layout.groups.overview"),
     links: [
@@ -115,9 +115,9 @@ export const adminNavGroups: NavGroup[] = [
       },
     ],
   },
-];
+] as const;
 
-export const artistNavGroups: NavGroup[] = [
+export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
   {
     labelKey: t("dashboard.layout.groups.overview"),
     links: [
@@ -148,4 +148,4 @@ export const artistNavGroups: NavGroup[] = [
       },
     ],
   },
-];
+] as const;

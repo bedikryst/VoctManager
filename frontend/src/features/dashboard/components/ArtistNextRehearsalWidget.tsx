@@ -19,7 +19,7 @@ import {
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { DualTimeDisplay } from "@/shared/widgets/layout/DualTimeDisplay";
+import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { formatLocalizedDate } from "@/shared/lib/intl";
 import { cn } from "@/shared/lib/utils";

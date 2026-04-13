@@ -29,7 +29,7 @@ import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { formatLocalizedDate } from "@/shared/lib/intl";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
-import { DualTimeDisplay } from "@/shared/widgets/layout/DualTimeDisplay";
+import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 
 interface TimelineRehearsalCardProps {
   event: TimelineEvent;

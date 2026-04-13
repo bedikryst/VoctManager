@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { AlertCircle, UserMinus, ArrowRight } from "lucide-react";
 
 import { formatLocalizedDate } from "@/shared/lib/intl";
-import { DualTimeDisplay } from "@/shared/widgets/layout/DualTimeDisplay";
+import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { cn } from "@/shared/lib/utils";

@@ -17,7 +17,7 @@ import {
   Briefcase,
   Archive,
 } from "lucide-react";
-import { DualTimeDisplay } from "../../shared/widgets/layout/DualTimeDisplay";
+import { DualTimeDisplay } from "../../shared/widgets/utility/DualTimeDisplay";
 import { useLocationResolver } from "../logistics/hooks/useLocationResolver";
 import { LocationPreview } from "../logistics/components/LocationPreview";
 
