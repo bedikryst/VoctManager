@@ -2,38 +2,59 @@
  * @file DualTimeDisplay.tsx
  * @description Enterprise UI Component for dual-timezone time presentation.
  * Automatically handles the display of event timezone vs local user timezone.
- * @module shared/widgets/DualTimeDisplay
+ * Refactored to Strict TS 7.0 and cva-driven Ethereal UI architecture.
+ * @module shared/widgets/utility/DualTimeDisplay
  */
+
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { cva, type VariantProps } from "class-variance-authority";
 import { formatLocalizedTime } from "@/shared/lib/intl";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { cn } from "@/shared/lib/utils";
 
-export interface DualTimeDisplayProps {
+const containerVariants = cva("flex flex-col transition-all duration-300", {
+  variants: {
+    spacing: {
+      default: "gap-1",
+      compact: "gap-0.5",
+    },
+  },
+  defaultVariants: {
+    spacing: "default",
+  },
+});
+
+const primaryTimeVariants = cva(
+  "flex items-center gap-2 font-semibold text-stone-800 tracking-tight",
+);
+const localTimeVariants = cva(
+  "text-[10px] font-bold text-stone-400 uppercase tracking-[0.15em] pl-6 opacity-80",
+);
+
+export interface DualTimeDisplayProps extends VariantProps<
+  typeof containerVariants
+> {
   value: Date | string | number | null | undefined;
   timeZone?: string;
   label?: React.ReactNode;
   icon?: React.ReactNode;
-  containerClassName?: string;
-  primaryTimeClassName?: string;
-  localTimeClassName?: string;
 }
 
-export const DualTimeDisplay: React.FC<DualTimeDisplayProps> = ({
+export const DualTimeDisplay = ({
   value,
   timeZone,
   label,
   icon,
-  containerClassName = "flex flex-col gap-1",
-  primaryTimeClassName = "flex items-center gap-2 font-semibold",
-  localTimeClassName = "text-[10px] font-bold text-stone-500 uppercase tracking-widest pl-6 opacity-80",
-}) => {
+  spacing,
+}: DualTimeDisplayProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
   if (!value) return null;
 
-  const userTimezone = user?.profile?.timezone || "UTC";
+  const fallbackTz = t("common.timezones.defaultFallback", "UTC");
+  const userTimezone = user?.profile?.timezone || fallbackTz;
   const eventTimezone = timeZone || "Europe/Warsaw";
 
   const hasDiffTz = eventTimezone !== userTimezone;
@@ -51,9 +72,9 @@ export const DualTimeDisplay: React.FC<DualTimeDisplayProps> = ({
   };
 
   return (
-    <div className={containerClassName}>
-      <span className={primaryTimeClassName}>
-        {icon}
+    <div className={cn(containerVariants({ spacing }))}>
+      <span className={primaryTimeVariants()}>
+        {icon && <span aria-hidden="true">{icon}</span>}
         {label && <span>{label}</span>}
         {formatLocalizedTime(
           value,
@@ -62,16 +83,16 @@ export const DualTimeDisplay: React.FC<DualTimeDisplayProps> = ({
           eventTimezone,
         )}
       </span>
+
       {hasDiffTz && (
-        <span className={localTimeClassName}>
-          ({t("common.timezone.local")}{" "}
+        <span className={localTimeVariants()}>
           {formatLocalizedTime(
             value,
             localTimeOptions,
             undefined,
             userTimezone,
-          )}
-          )
+          )}{" "}
+          {t("common.time.localSuffix", "(Twój czas)")}
         </span>
       )}
     </div>

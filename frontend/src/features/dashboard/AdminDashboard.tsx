@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
-import { SystemModuleCard } from "@/widgets/SystemModuleCard";
+import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";
@@ -63,7 +63,7 @@ export default function AdminDashboard(): React.JSX.Element {
         ),
         features: ["Harmonogramy", "Setlisty", "Casting"],
         icon: <Briefcase size={18} className="text-brand" />,
-        path: "/panel/project-management",
+        path: "/panel/projects",
       },
       {
         id: "archive",
@@ -155,7 +155,7 @@ export default function AdminDashboard(): React.JSX.Element {
         </div>
 
         <Link
-          to="/panel/project-management"
+          to="/panel/projects"
           className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-white border border-stone-200/80 hover:border-brand text-stone-700 hover:text-brand text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
         >
           <Plus size={14} />{" "}

@@ -1,3 +1,10 @@
+/**
+ * @file navigation.config.tsx
+ * @description Centralized routing configuration for the authenticated dashboard.
+ * Separated strictly into structural logic without UI rendering components.
+ * @module shared/widgets/layout/navigation.config
+ */
+
 import React from "react";
 import {
   Briefcase,
@@ -14,12 +21,12 @@ import {
 } from "lucide-react";
 
 // Dummy function to mark keys for i18next extraction
-const t = (key: string) => key;
+const t = (key: string): string => key;
 
 export interface NavLinkItem {
   to: string;
   labelKey: string;
-  icon: React.ReactNode;
+  icon: React.ReactElement<{ className?: string; size?: number }>;
 }
 
 export interface NavGroup {
@@ -42,7 +49,7 @@ export const adminNavGroups: NavGroup[] = [
     labelKey: t("dashboard.layout.groups.production"),
     links: [
       {
-        to: "/panel/project-management",
+        to: "/panel/projects",
         icon: <Briefcase size={18} />,
         labelKey: t("dashboard.layout.links.projects"),
       },
@@ -61,12 +68,6 @@ export const adminNavGroups: NavGroup[] = [
         icon: <MapPin size={18} />,
         labelKey: t("dashboard.layout.links.locations"),
       },
-      // TODO: add accommodation link when implemented
-      // {
-      //   to: "/panel/accommodation",
-      //   icon: <Bed size={18} />,
-      //   labelKey: t("dashboard.layout.links.accommodation"),
-      // },
     ],
   },
   {
@@ -148,12 +149,3 @@ export const artistNavGroups: NavGroup[] = [
     ],
   },
 ];
-
-export const BrandMark = () => (
-  <h2
-    className="text-3xl font-medium text-stone-900 tracking-tight"
-    style={{ fontFamily: "'Cormorant', serif" }}
-  >
-    Voct<span className="italic text-brand">Manager</span>
-  </h2>
-);

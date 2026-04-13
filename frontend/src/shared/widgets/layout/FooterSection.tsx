@@ -3,15 +3,16 @@
  * @description The Cinematic Epilogue (Awwwards Style Footer).
  * Features high-contrast dark mode, a live status indicator with local time,
  * an architectural "Back to Top" thread, and a massive interactive typographic monolith.
- * @architecture Enterprise 2026 Standards (Strict TypeScript & Framer Motion Variants)
- * @author Krystian Bugalski
+ * Refactored to Enterprise 2026 Standards (Strict TS 7.0, i18next, Memory-Safe Intervals).
+ * @module shared/widgets/layout/FooterSection
  */
 
-import React, { useRef, useEffect, useState } from "react";
-import { motion, useScroll, useTransform, Variants } from "framer-motion";
+import React, { useRef, useEffect, useState, useCallback } from "react";
+import { motion, useScroll, useTransform, type Variants } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { formatLocalizedTime } from "@/shared/lib/intl";
-import { ElegantHeading } from "@ui/kinematics/ElegantHeading";
+import { ElegantHeading } from "@/shared/ui/kinematics/ElegantHeading";
 
 // --- Animation Variants ---
 const fadeUpVariants: Variants = {
@@ -27,14 +28,16 @@ const fadeUpVariants: Variants = {
   }),
 };
 
-export default function FooterSection(): React.JSX.Element {
+export const FooterSection = (): React.JSX.Element => {
+  const { t } = useTranslation();
+
   // --- State & References ---
-  const footerRef = useRef<HTMLElement>(null);
+  const footerRef = useRef<HTMLElement | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("");
 
-  // Live clock initialization for the status indicator
+  // Live clock initialization for the status indicator (Memory Safe)
   useEffect(() => {
-    const updateTime = () => {
+    const updateTime = (): void => {
       const now = new Date();
       setCurrentTime(
         formatLocalizedTime(now, {
@@ -46,6 +49,7 @@ export default function FooterSection(): React.JSX.Element {
     };
 
     updateTime();
+    // 60000ms = 1 minute interval. Cleared meticulously on unmount.
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -59,15 +63,16 @@ export default function FooterSection(): React.JSX.Element {
   const massiveTextY = useTransform(scrollYProgress, [0, 1], [100, 0]);
   const lineProgress = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
 
-  const scrollToTop = () => {
+  const scrollToTop = useCallback((): void => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
 
   // --- Render ---
   return (
     <footer
       ref={footerRef}
       className="relative bg-stone-950 text-[#fdfbf7] pt-32 md:pt-48 pb-6 overflow-hidden selection:bg-[#fdfbf7] selection:text-stone-950"
+      aria-label={t("footer.aria.region", "Site Footer")}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-0 relative z-10">
         {/* The Final Thread (Architectural Grid Line & Return Button) */}
@@ -86,8 +91,8 @@ export default function FooterSection(): React.JSX.Element {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true, amount: 1 }}
             transition={{ delay: 0.5, duration: 1 }}
-            aria-label="Scroll to top"
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-16 h-16 rounded-full border border-stone-800 bg-stone-950 flex items-center justify-center group hover:border-[#fdfbf7] transition-colors duration-500"
+            aria-label={t("footer.actions.scrollToTop", "Scroll to top")}
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-16 h-16 rounded-full border border-stone-800 bg-stone-950 flex items-center justify-center group hover:border-[#fdfbf7] transition-colors duration-500 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#fdfbf7]"
           >
             <div className="w-1 h-1 bg-stone-500 rounded-full group-hover:bg-[#fdfbf7] group-hover:-translate-y-2 transition-all duration-300" />
           </motion.button>
@@ -105,21 +110,23 @@ export default function FooterSection(): React.JSX.Element {
             custom={0.1}
             className="flex items-center gap-3"
           >
-            <div className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            <div className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
             </div>
             <p className="text-[9px] uppercase tracking-[0.3em] text-stone-400 font-bold">
-              Fundacja Nieaktywna
+              {t("footer.status.inactive", "Fundacja Nieaktywna")}
             </p>
           </motion.div>
 
           <motion.div
             variants={fadeUpVariants}
             custom={0.2}
-            className="text-[9px] uppercase tracking-[0.3em] text-stone-500 text-right"
+            className="text-[9px] uppercase tracking-[0.3em] text-stone-500 text-right font-mono"
           >
-            <p>Kraków, PL — {currentTime} CET</p>
+            <p>
+              {t("footer.status.location", "Kraków, PL")} — {currentTime} CET
+            </p>
           </motion.div>
         </motion.div>
 
@@ -136,20 +143,20 @@ export default function FooterSection(): React.JSX.Element {
               custom={0.1}
               className="text-brand text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6"
             >
-              VII. Mecenat
+              {t("footer.patronage.chapter", "VII. Mecenat")}
             </motion.p>
 
-            <div className="mb-8">
+            <div className="mb-8 select-none">
               <ElegantHeading
-                title="Stań się"
+                title={t("footer.patronage.heading1", "Stań się")}
                 className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-[#fdfbf7]"
               />
               <ElegantHeading
-                title=" częścią"
+                title={t("footer.patronage.heading2", " częścią")}
                 className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-[#fdfbf7]"
               />
               <ElegantHeading
-                title="harmonii."
+                title={t("footer.patronage.heading3", "harmonii.")}
                 className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-stone-500 italic"
               />
             </div>
@@ -159,9 +166,10 @@ export default function FooterSection(): React.JSX.Element {
               custom={0.3}
               className="text-stone-400 font-light text-sm max-w-sm mb-12 leading-relaxed"
             >
-              Tworzymy pomost między sztuką a odbiorcą. Wesprzyj działania
-              naszej fundacji i pomóż nam przywracać muzyce jej pierwotną siłę
-              dotykania serc.
+              {t(
+                "footer.patronage.description",
+                "Tworzymy pomost między sztuką a odbiorcą. Wesprzyj działania naszej fundacji i pomóż nam przywracać muzyce jej pierwotną siłę dotykania serc.",
+              )}
             </motion.p>
 
             <motion.div
@@ -171,11 +179,11 @@ export default function FooterSection(): React.JSX.Element {
             >
               <Link
                 to="/wesprzyj"
-                className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#fdfbf7] text-stone-950 overflow-hidden rounded-full transition-transform active:scale-95 w-max"
+                className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#fdfbf7] text-stone-950 overflow-hidden rounded-full transition-transform active:scale-95 w-max outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
               >
                 <div className="absolute inset-0 w-full h-full bg-brand rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 ease-[0.16,1,0.3,1] origin-center" />
                 <span className="relative z-10 text-[10px] uppercase tracking-[0.2em] font-bold group-hover:text-white transition-colors duration-500">
-                  Wesprzyj Fundację
+                  {t("footer.actions.support", "Wesprzyj Fundację")}
                 </span>
               </Link>
             </motion.div>
@@ -193,24 +201,34 @@ export default function FooterSection(): React.JSX.Element {
                 custom={0.2}
                 className="text-stone-500 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6"
               >
-                Biuletyn Artystyczny
+                {t("footer.newsletter.title", "Biuletyn Artystyczny")}
               </motion.p>
               <motion.form
                 variants={fadeUpVariants}
                 custom={0.3}
                 className="relative w-full group"
+                onSubmit={(e) => e.preventDefault()}
               >
                 <input
                   type="email"
-                  placeholder="Zostaw swój email"
+                  required
+                  placeholder={t(
+                    "footer.newsletter.placeholder",
+                    "Zostaw swój email",
+                  )}
+                  aria-label={t(
+                    "footer.newsletter.aria",
+                    "Wpisz adres email do newslettera",
+                  )}
                   className="w-full bg-transparent border-b border-stone-800 py-4 text-sm text-[#fdfbf7] placeholder-stone-600 focus:outline-none focus:border-brand transition-colors peer"
                 />
                 <button
                   type="submit"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-stone-600 peer-focus:text-brand group-hover:text-[#fdfbf7] transition-colors"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-stone-600 peer-focus:text-brand hover:text-[#fdfbf7] transition-colors outline-none"
+                  aria-label={t("footer.newsletter.submit", "Zapisz się")}
                 >
                   <span className="text-[9px] uppercase tracking-[0.2em] font-bold">
-                    Wyślij
+                    {t("footer.newsletter.button", "Wyślij")}
                   </span>
                 </button>
               </motion.form>
@@ -222,35 +240,39 @@ export default function FooterSection(): React.JSX.Element {
               className="mt-20 md:mt-0 grid grid-cols-2 gap-8 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500"
             >
               <div className="flex flex-col gap-5">
-                <span className="text-stone-700 mb-2">Fundacja</span>
+                <span className="text-stone-700 mb-2">
+                  {t("footer.links.foundation", "Fundacja")}
+                </span>
                 <Link
                   to="/fundacja"
-                  className="hover:text-[#fdfbf7] transition-colors w-max"
+                  className="hover:text-[#fdfbf7] transition-colors w-max outline-none"
                 >
-                  O nas
+                  {t("footer.links.about", "O nas")}
                 </Link>
                 <a
                   href="mailto:kontakt@voctensemble.pl"
-                  className="hover:text-[#fdfbf7] transition-colors w-max"
+                  className="hover:text-[#fdfbf7] transition-colors w-max outline-none"
                 >
-                  Kontakt
+                  {t("footer.links.contact", "Kontakt")}
                 </a>
               </div>
               <div className="flex flex-col gap-5">
-                <span className="text-stone-700 mb-2">Społeczność</span>
+                <span className="text-stone-700 mb-2">
+                  {t("footer.links.socials", "Społeczność")}
+                </span>
                 <a
                   href="https://instagram.com/voctensemble"
                   target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-[#fdfbf7] transition-colors w-max"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#fdfbf7] transition-colors w-max outline-none"
                 >
                   Instagram
                 </a>
                 <a
                   href="https://facebook.com/voctensemble"
                   target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-[#fdfbf7] transition-colors w-max"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#fdfbf7] transition-colors w-max outline-none"
                 >
                   Facebook
                 </a>
@@ -263,25 +285,29 @@ export default function FooterSection(): React.JSX.Element {
         <div className="w-full relative flex flex-col items-center justify-end h-[20vh] md:h-[35vh]">
           <motion.div
             style={{ y: massiveTextY }}
-            className="absolute bottom-[-5%] w-full flex justify-center overflow-hidden"
+            className="absolute bottom-[-5%] w-full flex justify-center overflow-hidden pointer-events-none"
           >
             <h1
-              className="text-[16vw] font-bold leading-none tracking-tighter text-transparent select-none transition-all duration-700 hover:text-[#fdfbf7] cursor-default"
+              className="text-[16vw] font-bold leading-none tracking-tighter text-transparent select-none transition-all duration-700 pointer-events-auto hover:text-[#fdfbf7] cursor-default"
               style={{ WebkitTextStroke: "1px rgba(253,251,247,0.15)" }}
+              aria-hidden="true"
             >
               VOCTENSEMBLE
             </h1>
           </motion.div>
 
           <div className="w-full flex flex-col sm:flex-row justify-between items-center text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-stone-600 relative z-10 pb-2 border-t border-stone-800/50 pt-6 mt-12 bg-stone-950/80 backdrop-blur-sm">
-            <p>© {new Date().getFullYear()} VoctEnsemble.</p>
+            <p>
+              © {new Date().getFullYear()} VoctEnsemble.{" "}
+              {t("common.rightsReserved")}
+            </p>
             <p className="mt-2 sm:mt-0">
-              Code & Design by{" "}
+              {t("footer.credits", "Code & Design by")}{" "}
               <a
                 href="https://github.com/bedikryst"
                 target="_blank"
-                rel="noreferrer"
-                className="text-stone-400 hover:text-[#fdfbf7] transition-colors"
+                rel="noopener noreferrer"
+                className="text-stone-400 hover:text-[#fdfbf7] transition-colors outline-none"
               >
                 K. Bugalski
               </a>
@@ -291,4 +317,4 @@ export default function FooterSection(): React.JSX.Element {
       </div>
     </footer>
   );
-}
+};

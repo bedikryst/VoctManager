@@ -14,7 +14,7 @@ import { isManager } from "@/shared/auth/rbac";
 
 import AdminDashboard from "./AdminDashboard";
 import ArtistDashboard from "./ArtistDashboard";
-import { UserLocalClock } from "@/widgets/UserLocalClock";
+import { UserLocalClock } from "@/shared/widgets/utility/UserLocalClock";
 
 export default function DashboardHome(): React.JSX.Element {
   const { user, isLoading } = useAuth();

@@ -11,11 +11,11 @@ import React, { useRef } from "react";
 import { ReactLenis } from "lenis/react";
 import { useAppStore } from "@/app/store/useAppStore";
 
-import HeroSection from "@/widgets/landing/HeroSection";
-import ExperienceSection from "@/widgets/landing/ExperienceSection";
-import WhatWeDoSection from "@/widgets/landing/WhatWeDoSection";
-import WhatWeSingSection from "@/widgets/landing/WhatWeSingSection";
-import TeamSection from "@/widgets/landing/TeamSection";
+import HeroSection from "@/shared/widgets/landing/HeroSection";
+import ExperienceSection from "@/shared/widgets/landing/ExperienceSection";
+import WhatWeDoSection from "@/shared/widgets/landing/WhatWeDoSection";
+import WhatWeSingSection from "@/shared/widgets/landing/WhatWeSingSection";
+import TeamSection from "@/shared/widgets/landing/TeamSection";
 
 export default function Home(): React.JSX.Element {
   // Expected to return a boolean indicating readiness

@@ -20,7 +20,7 @@ import {
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
-import { SystemModuleCard } from "@/widgets/SystemModuleCard";
+import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";

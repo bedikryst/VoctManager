@@ -181,9 +181,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       type.includes("CASTING") ||
       type === "CREW_ASSIGNED"
     ) {
-      return navigate(
-        isAdmin ? "/panel/project-management" : "/panel/schedule",
-      );
+      return navigate(isAdmin ? "/panel/projects" : "/panel/schedule");
     }
 
     return navigate("/panel");

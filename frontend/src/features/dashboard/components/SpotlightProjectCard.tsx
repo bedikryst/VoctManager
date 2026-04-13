@@ -13,7 +13,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { formatLocalizedDate } from "@/shared/lib/intl";
-import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
+import { DualTimeDisplay } from "@/shared/widgets/layout/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { cn } from "@/shared/lib/utils";
@@ -29,7 +29,7 @@ export function SpotlightProjectCard({
 }) {
   return (
     <Link
-      to="/panel/project-management"
+      to="/panel/projects"
       className="block h-full outline-none group/project active:scale-[0.99] transition-transform"
     >
       {/* !overflow-visible IS CRITICAL HERE: It allows tooltips/dymki to escape the card bounds */}

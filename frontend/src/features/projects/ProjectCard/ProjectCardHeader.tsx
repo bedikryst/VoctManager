@@ -31,7 +31,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 
 // Importujemy ustandaryzowane mechanizmy z shared
 import { formatLocalizedDate } from "@/shared/lib/intl";
-import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
+import { DualTimeDisplay } from "@/shared/widgets/layout/DualTimeDisplay";
 
 interface ProjectCardHeaderProps {
   project: Project;

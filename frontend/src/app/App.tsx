@@ -12,16 +12,16 @@ import { AnimatePresence } from "framer-motion";
 import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
-import GlobalNavbar from "@/widgets/layout/public/GlobalNavbar";
-import OverlayMenu from "@/widgets/layout/public/OverlayMenu";
-import FooterSection from "@/widgets/layout/public/FooterSection";
+import { GlobalNavbar } from "@/shared/widgets/layout/GlobalNavbar";
+import OverlayMenu from "@/shared/widgets/layout/OverlayMenu";
+import { FooterSection } from "@/shared/widgets/layout/FooterSection";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { CustomCursor } from "@/shared/ui/kinematics/CustomCursor";
 import { NoiseOverlay } from "@/shared/ui/kinematics/NoiseOverlay";
 import { Preloader } from "@/shared/ui/kinematics/Preloader";
 import ProtectedRoute from "./router/ProtectedRoute";
 import ManagerRoute from "./router/ManagerRoute";
-import DashboardLayout from "@/widgets/layout/dashboard/DashboardLayout";
+import { DashboardLayout } from "@/shared/widgets/layout/DashboardLayout";
 import SettingsPage from "@pages/app/SettingsPage";
 import LogisticsLocationsPage from "@pages/app/LogisticsLocationsPage";
 
@@ -97,10 +97,7 @@ export default function App(): React.JSX.Element {
                 <Route path="contracts" element={<Contracts />} />
                 <Route path="rehearsals" element={<Rehearsals />} />
                 <Route path="artists" element={<ArtistManagement />} />
-                <Route
-                  path="project-management"
-                  element={<ProjectManagement />}
-                />
+                <Route path="projects" element={<ProjectManagement />} />
                 <Route
                   path="archive-management"
                   element={<ArchiveManagement />}

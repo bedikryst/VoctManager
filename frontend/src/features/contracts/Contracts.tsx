@@ -29,7 +29,7 @@ import { useBulkUpdateFee } from "./api/contracts.queries";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
-import { ExportContractButton } from "@/widgets/ExportContractButton";
+import { ExportContractButton } from "@/shared/widgets/domain/ExportContractButton";
 import { ContractRow } from "./components/ContractRow";
 
 export default function Contracts(): React.JSX.Element {

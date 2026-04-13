@@ -16,7 +16,7 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 // Import global formatters and components
 import { formatLocalizedDate } from "@/shared/lib/intl";
-import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
+import { DualTimeDisplay } from "@/shared/widgets/layout/DualTimeDisplay";
 
 interface RehearsalsWidgetProps {
   project: Project;
