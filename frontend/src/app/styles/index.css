@@ -9,6 +9,22 @@
     "Cormorant", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
+/* ========================================== */
+/* BASE LAYER: Enterprise Normalization 2026  */
+/* ========================================== */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-stone-50 text-stone-900 antialiased selection:bg-[#002395] selection:text-white;
+  }
+}
+
+/* ========================================== */
+/* LENIS SMOOTH SCROLLING                     */
+/* ========================================== */
 html.lenis,
 html.lenis body {
   height: auto;

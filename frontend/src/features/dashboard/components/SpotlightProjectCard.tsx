@@ -34,7 +34,7 @@ export function SpotlightProjectCard({
     >
       {/* !overflow-visible IS CRITICAL HERE: It allows tooltips/dymki to escape the card bounds */}
       <GlassCard
-        variant="premium"
+        variant="solid"
         className="h-full flex flex-col justify-between !overflow-visible relative z-10"
       >
         {/* Background Layer: Contains the blur & overflow-hidden so the glass effect works without trapping the tooltips */}

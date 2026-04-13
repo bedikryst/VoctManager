@@ -248,7 +248,7 @@ export default function Rehearsals(): React.JSX.Element {
           </div>
 
           {activeRehearsal && (
-            <GlassCard noPadding variant="premium" className="flex flex-col">
+            <GlassCard variant="solid" className="flex flex-col">
               <div className="p-6 md:p-8 bg-stone-50/50 border-b border-stone-200/60 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
                   <div className="flex items-center gap-2 mb-2">

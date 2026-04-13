@@ -39,7 +39,7 @@ export function SystemModuleCard({
       className="outline-none group/module block h-full active:scale-[0.99] transition-transform"
     >
       <GlassCard
-        variant="premium"
+        variant="solid"
         className={cn(
           "p-5 flex flex-col h-full bg-white/40 transition-all duration-300",
           hoverClass,

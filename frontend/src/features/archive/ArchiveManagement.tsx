@@ -75,12 +75,15 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   useEffect(() => {
     if (isError) {
-      toast.error(t("archive.toast.sync_warning_title", "Ostrzeżenie synchronizacji"), {
-        description: t(
-          "archive.toast.sync_warning_desc",
-          "Nie udało się pobrać wszystkich danych archiwum.",
-        ),
-      });
+      toast.error(
+        t("archive.toast.sync_warning_title", "Ostrzeżenie synchronizacji"),
+        {
+          description: t(
+            "archive.toast.sync_warning_desc",
+            "Nie udało się pobrać wszystkich danych archiwum.",
+          ),
+        },
+      );
     }
   }, [isError, t]);
 
@@ -197,7 +200,7 @@ export default function ArchiveManagement(): React.JSX.Element {
         </GlassCard>
 
         <GlassCard
-          variant="premium"
+          variant="solid"
           className="flex items-center justify-between hover:-translate-y-0.5 transition-transform"
         >
           <div>
@@ -214,7 +217,7 @@ export default function ArchiveManagement(): React.JSX.Element {
         </GlassCard>
 
         <GlassCard
-          variant="premium"
+          variant="solid"
           className="flex items-center justify-between hover:-translate-y-0.5 transition-transform"
         >
           <div>
@@ -238,6 +241,7 @@ export default function ArchiveManagement(): React.JSX.Element {
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-8">
         <div className="sm:col-span-5">
           <Input
+            variant="glass"
             leftIcon={<Search size={16} />}
             type="text"
             placeholder={t("archive.dashboard.search_placeholder")}

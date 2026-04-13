@@ -1,65 +1,125 @@
 /**
  * @file Input.tsx
- * @description Standardized input field with built-in glassmorphism aesthetics,
- * optional icon slots, and strict type safety.
- * @module ui/Input
+ * @description Enterprise-grade input field with integrated label and error handling.
+ * Optimized for react-hook-form and zod validation.
+ * Aesthetics: Ethereal UI (Sacral Minimalism).
+ * @module shared/ui/Input
  */
 
-import React, { InputHTMLAttributes } from "react";
+import React, { InputHTMLAttributes, forwardRef, useId } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "../lib/utils";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  /** Optional icon component rendered on the left side */
+const inputVariants = cva(
+  // Base: Glassmorphism foundation, subtle transitions, elegant typography
+  "w-full rounded-xl text-sm transition-all duration-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        /** Ethereal glass effect - default for the choir portal */
+        glass:
+          "bg-white/40 backdrop-blur-md border border-stone-200/60 text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] focus:border-[#002395]/40 focus:ring-[#002395]/10",
+        /** High-contrast dark mode for evening concert management */
+        dark: "bg-white/5 backdrop-blur-xl border border-white/10 text-white shadow-2xl focus:border-blue-500/50 focus:ring-blue-500/20 hover:bg-white/10",
+        /** Subtle, solid background for dense data tables */
+        ghost:
+          "bg-transparent border-transparent hover:bg-stone-100 focus:bg-white focus:border-stone-200",
+      },
+      hasError: {
+        true: "border-red-400 bg-red-50/50 focus:border-red-500 focus:ring-red-500/10 text-red-900",
+      },
+    },
+    defaultVariants: {
+      variant: "glass",
+      hasError: false,
+    },
+  },
+);
+
+export interface InputProps
+  extends
+    Omit<InputHTMLAttributes<HTMLInputElement>, "variant">,
+    VariantProps<typeof inputVariants> {
+  /** Text label displayed above the input */
+  label?: string;
+  /** Error message from validation schema (e.g., zod) */
+  error?: string;
+  /** Optional icon rendered on the left side */
   leftIcon?: React.ReactNode;
-  /** Optional element (e.g., currency label) rendered on the right side */
+  /** Optional element (e.g., unit, currency) on the right side */
   rightElement?: React.ReactNode;
-  /** Applies error state styling if true */
-  hasError?: boolean;
-  /** Toggles a darker, high-contrast aesthetic */
-  isDark?: boolean;
 }
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    {
-      leftIcon,
-      rightElement,
-      hasError = false,
-      isDark = false,
-      className = "",
-      ...props
-    },
+    { label, error, variant, leftIcon, rightElement, className, id, ...props },
     ref,
   ) => {
-    const baseStyles =
-      "w-full text-sm rounded-xl focus:outline-none focus:ring-2 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
-    const themeStyles = isDark
-      ? "text-white bg-white/5 backdrop-blur-md border border-white/10 focus:ring-blue-500/50 hover:bg-white/10 font-bold"
-      : "text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 focus:ring-[#002395]/20 focus:border-[#002395]/40";
-    const errorStyles = hasError
-      ? "border-red-400 focus:ring-red-500/20 text-red-900 bg-red-50"
-      : "";
-
-    const paddingLeft = leftIcon ? "pl-11" : "px-4";
-    const paddingRight = rightElement ? "pr-12" : "px-4";
+    const internalId = useId();
+    const inputId = id || internalId;
+    const errorId = `${inputId}-error`;
+    const hasError = !!error;
 
     return (
-      <div className="relative w-full">
-        {leftIcon && (
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-stone-400">
-            {leftIcon}
-          </div>
+      <div className="flex w-full flex-col gap-1.5">
+        {label && (
+          <label
+            htmlFor={inputId}
+            className="ml-1 text-[10px] font-bold uppercase tracking-[0.1em] text-stone-500 antialiased"
+          >
+            {label}
+          </label>
         )}
 
-        <input
-          ref={ref}
-          className={`${baseStyles} ${themeStyles} ${errorStyles} ${paddingLeft} ${paddingRight} py-3 ${className}`}
-          {...props}
-        />
+        <div className="relative flex items-center">
+          {leftIcon && (
+            <div
+              className="absolute left-4 flex items-center justify-center text-stone-400"
+              aria-hidden="true"
+            >
+              {/* Force strokeWidth 1.5 for sacral elegance if it's a lucide icon */}
+              {React.isValidElement(leftIcon)
+                ? React.cloneElement(leftIcon as React.ReactElement<any>, {
+                    size: 18,
+                    strokeWidth: 1.5,
+                    hidden: "true",
+                  })
+                : leftIcon}
+            </div>
+          )}
 
-        {rightElement && (
-          <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-stone-400 text-xs font-bold">
-            {rightElement}
-          </div>
+          <input
+            id={inputId}
+            ref={ref}
+            aria-invalid={hasError}
+            aria-describedby={hasError ? errorId : undefined}
+            className={cn(
+              inputVariants({ variant, hasError, className }),
+              leftIcon ? "pl-11" : "px-4",
+              rightElement ? "pr-12" : "px-4",
+              "py-3",
+            )}
+            {...props}
+          />
+
+          {rightElement && (
+            <div
+              className="absolute right-4 flex items-center justify-center text-[10px] font-bold text-stone-400 uppercase tracking-tighter"
+              aria-hidden="true"
+            >
+              {rightElement}
+            </div>
+          )}
+        </div>
+
+        {/* Error message with entrance animation */}
+        {hasError && (
+          <span
+            id={errorId}
+            className="ml-1 animate-in fade-in slide-in-from-top-1 text-[10px] font-medium text-red-500 duration-300"
+          >
+            {error}
+          </span>
         )}
       </div>
     );

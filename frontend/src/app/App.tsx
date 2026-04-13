@@ -122,7 +122,7 @@ export default function App(): React.JSX.Element {
         <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
       )}
 
-      <NoiseOverlay />
+      {shouldShowGlobalComponents && <NoiseOverlay />}
       {shouldShowGlobalComponents && <CustomCursor />}
 
       <Toaster position="top-right" richColors closeButton duration={4000} />

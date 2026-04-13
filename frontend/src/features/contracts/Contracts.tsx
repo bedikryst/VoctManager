@@ -223,7 +223,7 @@ export default function Contracts(): React.JSX.Element {
           className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4"
         >
           <GlassCard
-            variant="premium"
+            variant="solid"
             className="lg:col-span-2 flex flex-col justify-center items-start"
           >
             <div className="absolute -right-12 -top-12 text-stone-200 opacity-20 pointer-events-none">
@@ -252,7 +252,7 @@ export default function Contracts(): React.JSX.Element {
           </GlassCard>
 
           <GlassCard
-            variant="premium"
+            variant="solid"
             className="flex flex-col justify-between bg-gradient-to-b from-stone-50/50 to-white/30"
           >
             <div>
@@ -290,7 +290,7 @@ export default function Contracts(): React.JSX.Element {
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <GlassCard
-              variant="premium"
+              variant="solid"
               className="flex flex-col justify-center items-center hover:-translate-y-0.5"
             >
               <div className="absolute -right-4 -bottom-4 text-emerald-900 opacity-[0.03] pointer-events-none group-hover:scale-110 transition-transform duration-700">
@@ -309,7 +309,7 @@ export default function Contracts(): React.JSX.Element {
 
             <GlassCard
               variant={
-                projectStats.missingContractsCount > 0 ? "warning" : "premium"
+                projectStats.missingContractsCount > 0 ? "outline" : "solid"
               }
               className="flex flex-col justify-center items-center"
             >
@@ -349,7 +349,7 @@ export default function Contracts(): React.JSX.Element {
           </div>
 
           <GlassCard
-            variant="premium"
+            variant="solid"
             className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
           >
             <div className="w-full lg:flex-1">
@@ -393,7 +393,7 @@ export default function Contracts(): React.JSX.Element {
           </GlassCard>
 
           {currentCast.length > 0 && (
-            <GlassCard variant="premium" noPadding className="overflow-hidden">
+            <GlassCard variant="solid" className="overflow-hidden">
               <div className="p-5 bg-stone-50/50 border-b border-stone-200/60 flex items-center gap-2.5 relative z-10">
                 <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm">
                   <Users
@@ -446,7 +446,7 @@ export default function Contracts(): React.JSX.Element {
           )}
 
           {currentCrew.length > 0 && (
-            <GlassCard variant="premium" noPadding className="overflow-hidden">
+            <GlassCard variant="solid" className="overflow-hidden">
               <div className="p-5 bg-stone-50/50 border-b border-stone-200/60 flex items-center gap-2.5 relative z-10">
                 <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center border border-stone-200 shadow-sm">
                   <Wrench
@@ -502,7 +502,7 @@ export default function Contracts(): React.JSX.Element {
 
       {selectedProjectId && projectStats.totalContracts === 0 && (
         <GlassCard
-          variant="premium"
+          variant="solid"
           className="flex flex-col items-center justify-center text-center mt-8"
         >
           <Users

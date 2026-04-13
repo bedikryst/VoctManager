@@ -82,7 +82,7 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
 
   return (
     <GlassCard
-      variant="premium"
+      variant="solid"
       className="flex flex-col h-full transition-all duration-300 relative z-10 !overflow-visible"
     >
       {/* Tło izolowane na warstwie -z-10 zapobiega ucinaniu dymków przez kontener nadrzędny */}
