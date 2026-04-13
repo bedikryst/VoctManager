@@ -65,3 +65,4 @@ voct_data/
 gemini/
 gemini.md
 .github/
+.prettierignore

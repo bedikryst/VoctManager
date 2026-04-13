@@ -3,30 +3,17 @@
  * @description The Cinematic Epilogue (Awwwards Style Footer).
  * Features high-contrast dark mode, a live status indicator with local time,
  * an architectural "Back to Top" thread, and a massive interactive typographic monolith.
- * Refactored to Enterprise 2026 Standards (Strict TS 7.0, i18next, Memory-Safe Intervals).
+ * Refactored to Enterprise 2026 Standards (Strict TS 7.0, i18next, Centralized Kinematics).
  * @module shared/widgets/layout/FooterSection
  */
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import { motion, useScroll, useTransform, type Variants } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatLocalizedTime } from "@/shared/lib/intl";
 import { ElegantHeading } from "@/shared/ui/kinematics/ElegantHeading";
-
-// --- Animation Variants ---
-const fadeUpVariants: Variants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (delay: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 1.2,
-      delay: delay,
-      ease: [0.16, 1, 0.3, 1] as const,
-    },
-  }),
-};
+import { FADE_UP_VARIANTS } from "@/shared/ui/kinematics/motion-presets";
 
 export const FooterSection = (): React.JSX.Element => {
   const { t } = useTranslation();
@@ -106,7 +93,7 @@ export const FooterSection = (): React.JSX.Element => {
           className="flex justify-between items-center border-b border-stone-800/50 pb-8 mb-20 md:mb-32"
         >
           <motion.div
-            variants={fadeUpVariants}
+            variants={FADE_UP_VARIANTS}
             custom={0.1}
             className="flex items-center gap-3"
           >
@@ -120,7 +107,7 @@ export const FooterSection = (): React.JSX.Element => {
           </motion.div>
 
           <motion.div
-            variants={fadeUpVariants}
+            variants={FADE_UP_VARIANTS}
             custom={0.2}
             className="text-[9px] uppercase tracking-[0.3em] text-stone-500 text-right font-mono"
           >
@@ -139,7 +126,7 @@ export const FooterSection = (): React.JSX.Element => {
             className="md:w-5/12 mb-20 md:mb-0"
           >
             <motion.p
-              variants={fadeUpVariants}
+              variants={FADE_UP_VARIANTS}
               custom={0.1}
               className="text-brand text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6"
             >
@@ -162,7 +149,7 @@ export const FooterSection = (): React.JSX.Element => {
             </div>
 
             <motion.p
-              variants={fadeUpVariants}
+              variants={FADE_UP_VARIANTS}
               custom={0.3}
               className="text-stone-400 font-light text-sm max-w-sm mb-12 leading-relaxed"
             >
@@ -173,7 +160,7 @@ export const FooterSection = (): React.JSX.Element => {
             </motion.p>
 
             <motion.div
-              variants={fadeUpVariants}
+              variants={FADE_UP_VARIANTS}
               custom={0.4}
               className="flex flex-col sm:flex-row gap-8 items-start sm:items-center"
             >
@@ -197,14 +184,14 @@ export const FooterSection = (): React.JSX.Element => {
           >
             <div>
               <motion.p
-                variants={fadeUpVariants}
+                variants={FADE_UP_VARIANTS}
                 custom={0.2}
                 className="text-stone-500 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6"
               >
                 {t("footer.newsletter.title", "Biuletyn Artystyczny")}
               </motion.p>
               <motion.form
-                variants={fadeUpVariants}
+                variants={FADE_UP_VARIANTS}
                 custom={0.3}
                 className="relative w-full group"
                 onSubmit={(e) => e.preventDefault()}
@@ -235,7 +222,7 @@ export const FooterSection = (): React.JSX.Element => {
             </div>
 
             <motion.div
-              variants={fadeUpVariants}
+              variants={FADE_UP_VARIANTS}
               custom={0.4}
               className="mt-20 md:mt-0 grid grid-cols-2 gap-8 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500"
             >

@@ -3,28 +3,28 @@
  * @description The Cinematic Curtain (Global Navigation Overlay).
  * Features deep dark mode, staggered typographic reveals, an editorial
  * serif-to-sans hover effect, and contextual background image reveals.
- * Refactored to Enterprise 2026 Standards: Strict TS 7.0, i18next, CVA variants.
+ * Refactored to Enterprise 2026 Standards: Centralized Kinematics, Body Scroll Lock.
  * @module shared/widgets/layout/OverlayMenu
  */
 
 import React, { useState } from "react";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cva } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 import { MAIN_PUBLIC_LINKS } from "@/shared/config/navigation/public.config";
+import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import {
+  MENU_PANEL_VARIANTS,
+  STAGGERED_REVEAL_VARIANTS,
+  FADE_UP_VARIANTS,
+} from "@/shared/ui/kinematics/motion-presets";
 
 // --- Types & Interfaces ---
 interface OverlayMenuProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-}
-
-interface MenuLink {
-  labelKey: string;
-  path: string;
-  image: string;
 }
 
 // --- Ethereal UI Variants (CVA) ---
@@ -43,53 +43,15 @@ const linkTextVariants = cva(
   },
 );
 
-// --- Animation Variants ---
-const BUTTERY_EASE = [0.16, 1, 0.3, 1] as const;
-
-const menuVariants: Variants = {
-  closed: {
-    y: "-100%",
-    transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const },
-  },
-  open: {
-    y: "0%",
-    transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const },
-  },
-};
-
-const linkRevealVariants: Variants = {
-  closed: { y: "120%", rotate: 5, opacity: 0 },
-  open: (i: number) => ({
-    y: "0%",
-    rotate: 0,
-    opacity: 1,
-    transition: {
-      duration: 0.8,
-      delay: 0.3 + i * 0.08,
-      ease: BUTTERY_EASE,
-    },
-  }),
-};
-
-const fadeUpVariants: Variants = {
-  closed: { opacity: 0, y: 20 },
-  open: (delay: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.8,
-      delay: 0.4 + delay,
-      ease: BUTTERY_EASE,
-    },
-  }),
-};
-
 export const OverlayMenu = ({
   isOpen,
   setIsOpen,
 }: OverlayMenuProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  // Declarative lock ensures scroll integrity beneath the curtain
+  useBodyScrollLock(isOpen);
 
   const handleLinkClick = (): void => {
     setIsOpen(false);
@@ -100,7 +62,7 @@ export const OverlayMenu = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          variants={menuVariants}
+          variants={MENU_PANEL_VARIANTS}
           initial="closed"
           animate="open"
           exit="closed"
@@ -145,8 +107,8 @@ export const OverlayMenu = ({
 
           {/* Top Row: Navigation Header */}
           <motion.div
-            variants={fadeUpVariants}
-            custom={0}
+            variants={FADE_UP_VARIANTS}
+            custom={0.4}
             className="w-full flex justify-center border-b border-stone-800/50 py-6 px-6 relative z-10"
           >
             <div className="w-full max-w-7xl flex justify-between items-center">
@@ -183,7 +145,7 @@ export const OverlayMenu = ({
             <div className="w-full max-w-7xl flex flex-col md:flex-row justify-between items-start md:items-center">
               {/* Secondary Navigation (Desktop Only) */}
               <div className="hidden md:flex flex-col gap-12 w-4/12">
-                <motion.div variants={fadeUpVariants} custom={0.2}>
+                <motion.div variants={FADE_UP_VARIANTS} custom={0.6}>
                   <p className="text-brand text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
                     {t("nav.overlay.sections.community", "Społeczność")}
                   </p>
@@ -202,7 +164,7 @@ export const OverlayMenu = ({
                     ))}
                   </ul>
                 </motion.div>
-                <motion.div variants={fadeUpVariants} custom={0.3}>
+                <motion.div variants={FADE_UP_VARIANTS} custom={0.7}>
                   <p className="text-brand text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
                     {t("nav.overlay.sections.contact", "Biurom / Kontakt")}
                   </p>
@@ -232,7 +194,10 @@ export const OverlayMenu = ({
                       className="overflow-hidden pb-2"
                       onMouseEnter={() => setHoveredIndex(i)}
                     >
-                      <motion.div custom={i} variants={linkRevealVariants}>
+                      <motion.div
+                        custom={i}
+                        variants={STAGGERED_REVEAL_VARIANTS}
+                      >
                         <Link
                           to={link.path}
                           onClick={handleLinkClick}
@@ -262,8 +227,8 @@ export const OverlayMenu = ({
 
           {/* Bottom Row: System Footer */}
           <motion.div
-            variants={fadeUpVariants}
-            custom={0.5}
+            variants={FADE_UP_VARIANTS}
+            custom={0.9}
             className="w-full flex justify-center border-t border-stone-800/50 py-6 px-6 relative z-10 backdrop-blur-sm"
           >
             <div className="w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-stone-600">

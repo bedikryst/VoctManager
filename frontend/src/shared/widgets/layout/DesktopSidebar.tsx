@@ -1,11 +1,11 @@
 /**
  * @file DesktopSidebar.tsx
  * @description Enterprise SaaS Collapsible Sidebar (High-Density Mode).
- * Refactored for Ethereal UI, strict TS 7.0, and cva variant management.
+ * Refactored for Ethereal UI, strict TS 7.0, cva variants, and seamless kinematic continuity.
  * @module shared/widgets/layout/DesktopSidebar
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { LogOut, Settings } from "lucide-react";
@@ -20,6 +20,7 @@ import { NotificationCenter } from "@/features/notifications/components/Notifica
 import { isCrew, isManager } from "@/shared/auth/rbac";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
+import { useSidebarKinematics } from "@/shared/widgets/hooks/useSidebarKinematics";
 
 interface DesktopSidebarProps {
   user: AuthUser | null;
@@ -67,8 +68,10 @@ export const DesktopSidebar = ({
   logout,
 }: DesktopSidebarProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const [isHovered, setIsHovered] = useState<boolean>(false);
 
+  // Injection of the Kinematic Hook with forceClose capabilities
+  const { isExpanded, handleMouseEnter, handleMouseLeave } =
+    useSidebarKinematics();
   const isManagerUser = isManager(user);
   const navGroups = isManagerUser ? adminNavGroups : artistNavGroups;
 
@@ -88,18 +91,18 @@ export const DesktopSidebar = ({
 
   return (
     <motion.aside
-      initial={{ width: 88 }}
-      animate={{ width: isHovered ? 280 : 88 }}
+      initial={false}
+      animate={{ width: isExpanded ? 280 : 88 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col overflow-hidden rounded-3xl border border-white/80 bg-white/75 shadow-sm backdrop-blur-2xl transition-shadow hover:shadow-xl"
       aria-label={t("dashboard.layout.aria.sidebar", "Main Navigation")}
     >
       {/* Top: Brand Section */}
       <div className="relative z-10 flex h-16 flex-shrink-0 items-center justify-center pt-2">
         <AnimatePresence mode="wait">
-          {isHovered ? (
+          {isExpanded ? (
             <motion.div
               key="full-logo"
               initial={{ opacity: 0, x: -10 }}
@@ -137,7 +140,7 @@ export const DesktopSidebar = ({
           {navGroups.map((group) => (
             <div key={group.labelKey}>
               <div className="mb-1.5 flex h-4 items-center px-2">
-                {isHovered && (
+                {isExpanded && (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -154,7 +157,7 @@ export const DesktopSidebar = ({
                   <NavLink
                     key={link.to}
                     to={link.to}
-                    end={link.to === "/panel"}
+                    end={link.to === "/panel"} // Explicit closure on navigation
                     className={({ isActive }) =>
                       cn(navLinkVariants({ isActive }))
                     }
@@ -173,7 +176,7 @@ export const DesktopSidebar = ({
                         <div
                           className={cn(
                             "overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out",
-                            isHovered
+                            isExpanded
                               ? "ml-3 max-w-[150px] opacity-100"
                               : "max-w-0 opacity-0",
                           )}
@@ -192,7 +195,7 @@ export const DesktopSidebar = ({
 
       {/* Bottom: User Actions */}
       <div className="relative z-10 flex flex-shrink-0 flex-col border-t border-stone-200/50 bg-stone-50/40 p-3 transition-all duration-300">
-        {isHovered ? (
+        {isExpanded ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -219,7 +222,7 @@ export const DesktopSidebar = ({
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Link
-                to="/panel/settings"
+                to="/panel/settings" // Explicit closure on navigation
                 className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-500 shadow-sm transition-colors hover:text-brand outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <Settings size={13} aria-hidden="true" />
@@ -243,6 +246,7 @@ export const DesktopSidebar = ({
             <NotificationCenter />
             <Link
               to="/panel/settings"
+              onClick={logout}
               className="text-stone-400 transition-colors hover:text-brand outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg p-1"
               aria-label={t("dashboard.layout.actions.settings", "Ustawienia")}
             >

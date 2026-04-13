@@ -9,7 +9,10 @@
 
 import { create } from "zustand";
 
-interface AppState {
+export interface AppState {
+  isSidebarExpanded: boolean;
+  setSidebarExpanded: (expanded: boolean) => void;
+
   isLoaded: boolean;
   setIsLoaded: (status: boolean) => void;
 }
@@ -17,4 +20,8 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   isLoaded: false,
   setIsLoaded: (status: boolean) => set({ isLoaded: status }),
+
+  isSidebarExpanded: false,
+  setSidebarExpanded: (expanded: boolean) =>
+    set({ isSidebarExpanded: expanded }),
 }));

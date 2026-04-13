@@ -146,7 +146,6 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
             icon={
               <Clock size={14} className="text-brand/60" aria-hidden="true" />
             }
-            localTimeClassName="text-[10px] text-stone-400 font-medium pl-6"
           />
           {rehearsal.data.location && (
             <div className="flex items-center gap-2 pl-0.5 z-[100]">

@@ -13,7 +13,7 @@ import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
 import { GlobalNavbar } from "@/shared/widgets/layout/GlobalNavbar";
-import OverlayMenu from "@/shared/widgets/layout/OverlayMenu";
+import { OverlayMenu } from "@/shared/widgets/layout/OverlayMenu";
 import { FooterSection } from "@/shared/widgets/layout/FooterSection";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { CustomCursor } from "@/shared/ui/kinematics/CustomCursor";

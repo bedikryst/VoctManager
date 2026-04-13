@@ -2,23 +2,19 @@
  * @file GlobalNavbar.tsx
  * @description Global, scroll-responsive navigation bar with kinematic states.
  * Implements "Immersive Mode" (bare) on the Home page, guarantees a clean start.
- * Mathematically tracks viewport to assemble into a pill with precise dimensions.
  * Refactored to Strict TS 7.0, i18next integration, and Ethereal UI compliance.
+ * Decoupled logic resides in useNavbarKinematics.
  * @module shared/widgets/layout/GlobalNavbar
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Link, useLocation } from "react-router-dom";
-import {
-  motion,
-  useScroll,
-  useMotionValueEvent,
-  type Variants,
-  type Transition,
-} from "framer-motion";
+import React from "react";
+import { Link } from "react-router-dom";
+import { motion, type Variants } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/app/store/useAppStore";
 import { cn } from "@/shared/lib/utils";
+import { useNavbarKinematics } from "@/shared/widgets/hooks/useNavbarKinematics";
+import { BASE_TRANSITION, EASE } from "@/shared/ui/kinematics/motion-presets";
 
 // --- Types & Interfaces ---
 interface GlobalNavbarProps {
@@ -26,89 +22,31 @@ interface GlobalNavbarProps {
   setMenuOpen: (open: boolean) => void;
 }
 
-interface WindowData {
-  isMobile: boolean;
-  vh: number;
-}
-
-type NavState = "bare" | "top" | "pill";
-
 // Assuming minimal AppStore interface to strictly avoid `any`
 interface AppStoreState {
   isLoaded: boolean;
 }
 
-// --- Animation Constants ---
-const BUTTERY_EASE = [0.16, 1, 0.3, 1] as const;
-const TRANSITION_CONFIG: Transition = { duration: 1.2, ease: BUTTERY_EASE };
+// Extension of the base transition specific to navbar breathing time
+const NAV_TRANSITION = { ...BASE_TRANSITION, duration: 1.2 };
 
 export const GlobalNavbar = ({
   menuOpen,
   setMenuOpen,
 }: GlobalNavbarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
-  const location = useLocation();
-  const isHome = location.pathname === "/";
 
   // Strict typing for Zustand store selector
   const isLoaded = useAppStore(
     (state: unknown) => (state as AppStoreState).isLoaded,
   );
 
-  // --- Viewport & State Management ---
-  const [windowData, setWindowData] = useState<WindowData>({
-    isMobile: typeof window !== "undefined" ? window.innerWidth < 768 : false,
-    vh: typeof window !== "undefined" ? window.innerHeight : 0,
-  });
-
-  const [navState, setNavState] = useState<NavState>(isHome ? "bare" : "top");
-  const [isDarkBg, setIsDarkBg] = useState<boolean>(false);
-
-  // Debounced window resize handler
-  useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const handleResize = (): void => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        setWindowData({
-          isMobile: window.innerWidth < 768,
-          vh: window.innerHeight,
-        });
-      }, 200);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout(timeoutId);
-    };
-  }, []);
-
-  // --- Scroll Kinematics ---
-  const { scrollY } = useScroll();
-
-  const handleScrollChange = useCallback(
-    (latest: number) => {
-      if (isHome) {
-        const { vh, isMobile } = windowData;
-        const darkStart = isMobile ? vh * 2.5 : vh * 4.5;
-        const darkEnd = isMobile ? vh * 4.5 : vh * 6.5;
-
-        setIsDarkBg(latest >= darkStart && latest < darkEnd);
-        setNavState(latest < darkEnd ? "bare" : "pill");
-      } else {
-        setIsDarkBg(false);
-        setNavState(latest < 100 ? "top" : "pill");
-      }
-    },
-    [isHome, windowData],
-  );
-
-  useMotionValueEvent(scrollY, "change", handleScrollChange);
+  // Injection of the Kinematic Hook (SRP adherence)
+  const { navState, isDarkBg, isMobile, isHome, isHidden } =
+    useNavbarKinematics();
 
   // Render halt for protected zones
-  if (location.pathname.startsWith("/panel")) {
+  if (isHidden) {
     return null;
   }
 
@@ -118,29 +56,29 @@ export const GlobalNavbar = ({
       width: "100%",
       maxWidth: "100%",
       marginTop: "0px",
-      paddingLeft: windowData.isMobile ? "24px" : "48px",
-      paddingRight: windowData.isMobile ? "24px" : "48px",
+      paddingLeft: isMobile ? "24px" : "48px",
+      paddingRight: isMobile ? "24px" : "48px",
       paddingTop: "32px",
       paddingBottom: "32px",
       borderRadius: "0px",
       backgroundColor: "rgba(255, 255, 255, 0)",
       borderColor: "rgba(255, 255, 255, 0)",
       boxShadow: "0px 0px 0px rgba(0,0,0,0)",
-      transition: TRANSITION_CONFIG,
+      transition: NAV_TRANSITION,
     },
     top: {
       width: "100%",
       maxWidth: "100%",
       marginTop: "0px",
-      paddingLeft: windowData.isMobile ? "24px" : "48px",
-      paddingRight: windowData.isMobile ? "24px" : "48px",
+      paddingLeft: isMobile ? "24px" : "48px",
+      paddingRight: isMobile ? "24px" : "48px",
       paddingTop: "32px",
       paddingBottom: "32px",
       borderRadius: "0px",
       backgroundColor: "rgba(255, 255, 255, 0)",
       borderColor: "rgba(255, 255, 255, 0)",
       boxShadow: "0px 0px 0px rgba(0,0,0,0)",
-      transition: TRANSITION_CONFIG,
+      transition: NAV_TRANSITION,
     },
     pill: {
       width: "92%",
@@ -154,7 +92,7 @@ export const GlobalNavbar = ({
       backgroundColor: "rgba(255, 255, 255, 0.7)",
       borderColor: "rgba(255, 255, 255, 0.5)",
       boxShadow: "0px 12px 40px rgba(0,0,0,0.06)",
-      transition: TRANSITION_CONFIG,
+      transition: NAV_TRANSITION,
     },
   };
 
@@ -164,21 +102,21 @@ export const GlobalNavbar = ({
       y: -15,
       filter: "blur(4px)",
       pointerEvents: "none",
-      transition: { duration: 0.6, ease: BUTTERY_EASE },
+      transition: { duration: 0.6, ease: EASE.buttery },
     },
     top: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
       pointerEvents: "auto",
-      transition: TRANSITION_CONFIG,
+      transition: NAV_TRANSITION,
     },
     pill: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
       pointerEvents: "auto",
-      transition: TRANSITION_CONFIG,
+      transition: NAV_TRANSITION,
     },
   };
 
@@ -190,25 +128,25 @@ export const GlobalNavbar = ({
       marginLeft: "0px",
       filter: "blur(4px)",
       pointerEvents: "none",
-      transition: { duration: 0.8, ease: BUTTERY_EASE },
+      transition: { duration: 0.8, ease: EASE.buttery },
     },
     top: {
       opacity: 1,
       x: 0,
-      width: windowData.isMobile ? 40 : 105,
-      marginLeft: windowData.isMobile ? "12px" : "20px",
+      width: isMobile ? 40 : 105,
+      marginLeft: isMobile ? "12px" : "20px",
       filter: "blur(0px)",
       pointerEvents: "auto",
-      transition: TRANSITION_CONFIG,
+      transition: NAV_TRANSITION,
     },
     pill: {
       opacity: 1,
       x: 0,
-      width: windowData.isMobile ? 40 : 105,
-      marginLeft: windowData.isMobile ? "12px" : "20px",
+      width: isMobile ? 40 : 105,
+      marginLeft: isMobile ? "12px" : "20px",
       filter: "blur(0px)",
       pointerEvents: "auto",
-      transition: TRANSITION_CONFIG,
+      transition: NAV_TRANSITION,
     },
   };
 
@@ -236,7 +174,7 @@ export const GlobalNavbar = ({
         <motion.div className="flex-1 flex justify-start items-center">
           <button
             onClick={() => setMenuOpen(true)}
-            className="group flex flex-col space-y-1.5 p-3 pl-0 hover:opacity-50 active:scale-95 transition-all duration-500"
+            className="group flex flex-col space-y-1.5 p-3 pl-0 hover:opacity-50 active:scale-95 transition-all duration-500 outline-none"
             aria-label={t("nav.aria.openMenu", "Open Navigation Menu")}
             aria-expanded={menuOpen}
           >
@@ -273,7 +211,7 @@ export const GlobalNavbar = ({
           <Link
             to="/"
             style={{
-              fontSize: windowData.isMobile
+              fontSize: isMobile
                 ? isPill
                   ? "0.875rem"
                   : "1rem"
@@ -289,7 +227,7 @@ export const GlobalNavbar = ({
             <span
               className={cn(
                 "overflow-hidden flex items-center whitespace-nowrap transition-all duration-1000",
-                windowData.isMobile && isPill
+                isMobile && isPill
                   ? "max-w-0 opacity-0"
                   : "max-w-[100px] opacity-100",
               )}
@@ -300,7 +238,7 @@ export const GlobalNavbar = ({
             <span
               className={cn(
                 "overflow-hidden flex items-center whitespace-nowrap transition-all duration-1000",
-                windowData.isMobile && isPill
+                isMobile && isPill
                   ? "max-w-0 opacity-0"
                   : "max-w-[100px] opacity-100",
               )}
@@ -358,12 +296,12 @@ export const GlobalNavbar = ({
                     : "bg-transparent border-stone-900/30 text-stone-900 hover:bg-stone-900 hover:text-stone-100 hover:border-transparent",
                 )}
               >
-                {!windowData.isMobile && (
+                {!isMobile && (
                   <span className="text-[10px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-colors duration-300">
                     {t("nav.actions.donate", "Wesprzyj")}
                   </span>
                 )}
-                {windowData.isMobile && (
+                {isMobile && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"

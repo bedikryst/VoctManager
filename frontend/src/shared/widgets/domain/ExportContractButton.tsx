@@ -13,6 +13,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { useExportProject } from "@/shared/lib/hooks/useExportProject";
 import { Button } from "@/shared/ui/primitives/Button";
 import { cn } from "@/shared/lib/utils";
+import { BASE_TRANSITION } from "@/shared/ui/kinematics/motion-presets";
 
 const exportContainerVariants = cva(
   "relative flex items-center justify-center min-h-[40px] transition-all duration-500",
@@ -56,7 +57,7 @@ export const ExportContractButton = ({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            transition={BASE_TRANSITION}
           >
             <Button variant="primary" onClick={handleExport}>
               {t("export.actions.generateZip")}
@@ -70,6 +71,7 @@ export const ExportContractButton = ({
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
+            transition={BASE_TRANSITION}
           >
             <Button
               variant="secondary"
@@ -87,6 +89,7 @@ export const ExportContractButton = ({
             key="success"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={BASE_TRANSITION}
             className="flex items-center gap-4"
           >
             <a
@@ -112,6 +115,7 @@ export const ExportContractButton = ({
             key="error"
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
+            transition={BASE_TRANSITION}
             className="flex items-center gap-3"
           >
             <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-red-600 animate-pulse">

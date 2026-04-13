@@ -2,10 +2,11 @@
  * @file MobileNavigation.tsx
  * @description Enterprise SaaS Mobile Off-canvas Navigation.
  * Implements Ethereal UI glassmorphism and strict Framer Motion kinematics.
+ * Body scroll strictly managed via declarative useBodyScrollLock hook.
  * @module shared/widgets/layout/MobileNavigation
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -20,6 +21,7 @@ import { NotificationCenter } from "@/features/notifications/components/Notifica
 import { isCrew, isManager } from "@/shared/auth/rbac";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
+import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
 
 interface MobileNavigationProps {
   user: AuthUser | null;
@@ -42,7 +44,6 @@ const mobileNavLinkVariants = cva(
   },
 );
 
-// Lokalna definicja komponentu wizualnego, odseparowana od logiki routingu
 const BrandMark = (): React.JSX.Element => (
   <h2
     className="text-2xl font-medium text-stone-900 tracking-tight select-none"
@@ -59,20 +60,8 @@ export const MobileNavigation = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    // Elegant body scroll lock management
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      document.body.style.touchAction = "none";
-    } else {
-      document.body.style.overflow = "";
-      document.body.style.touchAction = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.touchAction = "";
-    };
-  }, [isOpen]);
+  // Declarative body scroll locking implementation
+  useBodyScrollLock(isOpen);
 
   const isManagerUser = isManager(user);
   const navGroups = isManagerUser ? adminNavGroups : artistNavGroups;
@@ -92,7 +81,6 @@ export const MobileNavigation = ({
 
   return (
     <>
-      {/* Floating Action Button for Mobile */}
       <div className="fixed bottom-6 right-6 z-[70] md:hidden">
         <button
           onClick={() => setIsOpen(true)}
@@ -117,7 +105,6 @@ export const MobileNavigation = ({
             aria-modal="true"
             role="dialog"
           >
-            {/* Header */}
             <div className="flex h-20 items-center justify-between px-6 border-b border-stone-200/40">
               <BrandMark />
               <div className="flex items-center gap-4">
@@ -135,7 +122,6 @@ export const MobileNavigation = ({
               </div>
             </div>
 
-            {/* Scrollable Nav Area */}
             <nav className="flex-1 overflow-y-auto px-6 py-8">
               <div className="space-y-8">
                 {navGroups.map((group) => (
@@ -177,7 +163,6 @@ export const MobileNavigation = ({
               </div>
             </nav>
 
-            {/* Bottom Safe Area & User Actions */}
             <div className="border-t border-stone-200/50 bg-stone-50/50 px-6 pb-safe pt-6 pb-8">
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-brand/10 text-sm font-bold text-brand">
