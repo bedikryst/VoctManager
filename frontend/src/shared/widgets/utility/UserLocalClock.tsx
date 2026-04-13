@@ -1,39 +1,17 @@
 /**
  * @file UserLocalClock.tsx
- * @description Minimalist widget displaying the user's local time based on their profile timezone.
- * Conforms to Ethereal UI standards using cva for variant management and strict TypeScript.
+ * @description Minimalist chronometer displaying the user's local time.
+ * Conforms to Ethereal UI standards: pure glassmorphism, editorial micro-typography, and zero tech-debt.
  * @module shared/widgets/utility/UserLocalClock
  */
 
 import React, { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
-import { cva, type VariantProps } from "class-variance-authority";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-const clockWidgetVariants = cva(
-  "flex items-center gap-3 px-4 py-2.5 backdrop-blur-xl border rounded-2xl shadow-sm transition-all duration-300",
-  {
-    variants: {
-      theme: {
-        ethereal: "bg-white/60 border-stone-200/60 hover:bg-white/80",
-        dark: "bg-stone-900/60 border-stone-800/60 hover:bg-stone-900/80",
-      },
-    },
-    defaultVariants: {
-      theme: "ethereal",
-    },
-  },
-);
-
-interface UserLocalClockProps extends VariantProps<
-  typeof clockWidgetVariants
-> {}
-
-export const UserLocalClock = ({
-  theme,
-}: UserLocalClockProps): React.JSX.Element | null => {
+export const UserLocalClock = (): React.JSX.Element | null => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [time, setTime] = useState<Date>(new Date());
@@ -41,6 +19,7 @@ export const UserLocalClock = ({
   const fallbackTimezone = t("common.timezones.defaultFallback", "UTC");
   const userTimezone = user?.profile?.timezone || fallbackTimezone;
 
+  // Precision chronometer tick
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -55,16 +34,28 @@ export const UserLocalClock = ({
     userTimezone.split("/").pop()?.replace(/_/g, " ") || fallbackTimezone;
 
   return (
-    <div className={clockWidgetVariants({ theme })}>
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand/10 text-brand shrink-0">
-        <Clock size={16} strokeWidth={2.5} aria-hidden="true" />
+    <div className="group flex items-center gap-4 rounded-2xl border border-ethereal-incense/15 bg-white/5 px-5 py-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_12px_rgba(166,146,121,0.05)] backdrop-blur-xl transition-colors duration-700 hover:border-ethereal-gold/30 hover:bg-white/10">
+      {/* Iconography: The Silent Escapement */}
+      <div className="flex shrink-0 items-center justify-center">
+        <Clock
+          size={16}
+          strokeWidth={1.5}
+          className="text-ethereal-gold/70 transition-colors duration-500 group-hover:text-ethereal-gold"
+          aria-hidden="true"
+        />
       </div>
-      <div className="flex flex-col min-w-[70px]">
-        <span className="text-sm font-black text-stone-800 tracking-tight leading-none mb-0.5 antialiased">
+
+      {/* Typography: Editorial Chronometrics */}
+      <div className="flex min-w-[75px] flex-col">
+        <span className="mb-1 font-serif text-[1.35rem] font-medium leading-none tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold">
           {formattedTime}
         </span>
-        <span className="text-[8px] font-bold text-stone-400 uppercase tracking-[0.15em] leading-none truncate max-w-[120px]">
-          {displayZone} • {formattedDate}
+        <span className="max-w-[140px] truncate text-[8.5px] font-bold uppercase leading-none tracking-[0.2em] text-ethereal-graphite/70 transition-colors duration-500 group-hover:text-ethereal-graphite">
+          {displayZone}{" "}
+          <span className="mx-0.5 text-ethereal-gold/40" aria-hidden="true">
+            •
+          </span>{" "}
+          {formattedDate}
         </span>
       </div>
     </div>

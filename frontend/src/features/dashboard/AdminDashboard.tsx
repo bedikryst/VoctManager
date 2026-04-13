@@ -2,12 +2,11 @@
  * @file AdminDashboard.tsx
  * @description Mission Control Dashboard for Choir Managers & Conductors.
  * Refactored to Ethereal UI (2026) with zero tech-debt.
- * Implements "The Choir Effect" staggered entrance seamlessly driven by DashboardHome.
+ * Implements the "Dynamic Triptych" - a 3-row, 2-column asymmetrical matrix.
  * @module panel/dashboard/AdminDashboard
  */
 
 import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -16,6 +15,7 @@ import {
   Users,
   Briefcase,
   Wrench,
+  Map,
   Loader2,
 } from "lucide-react";
 
@@ -27,7 +27,6 @@ import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";
 import { TelemetryWidget } from "./components/TelemetryWidget";
 import { SpotlightProjectCard } from "./components/SpotlightProjectCard";
-import { cn } from "@/shared/lib/utils";
 
 // ==========================================
 // KINEMATICS TOKENS (Child Variants)
@@ -37,9 +36,7 @@ const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.12, // Kaskada odpali się poprawnie, bo renderujemy ją PO pobraniu danych
-    },
+    transition: { staggerChildren: 0.08 },
   },
 };
 
@@ -55,7 +52,11 @@ const itemKinematics: Variants = {
     filter: "blur(0px)",
     transition: {
       duration: 0.85,
-      ease: [0.25, 0.1, 0.25, 1], // Ethereal Sacral Curve
+      ease: [0.25, 0.1, 0.25, 1],
+    },
+    transitionEnd: {
+      filter: "",
+      transform: "none",
     },
   },
 };
@@ -72,10 +73,7 @@ export default function AdminDashboard(): React.JSX.Element {
     nextRehearsal,
   } = useAdminDashboardData();
 
-  /**
-   * Definition of Admin Modules with semantic Ethereal UI colors.
-   * Each module maps to a natural pigment: Gold (Command), Sage (Music), Amethyst (People).
-   */
+  // Wzbogacone opisy domenowe dostosowane do większej przestrzeni typograficznej
   const ADMIN_MODULES = useMemo(
     () => [
       {
@@ -83,31 +81,47 @@ export default function AdminDashboard(): React.JSX.Element {
         title: t("dashboard.admin.modules.projects_title", "Projekty"),
         description: t(
           "dashboard.admin.modules.projects_desc",
-          "Centrum dowodzenia produkcją.",
+          "Główne centrum dowodzenia produkcją muzyczną. Zaawansowane planowanie sezonu artystycznego, wizualizacja osi czasu oraz zintegrowane harmonogramy dla wszystkich departamentów operacyjnych.",
         ),
         features: [
           t("dashboard.admin.features.schedules", "Harmonogramy"),
           t("dashboard.admin.features.setlists", "Setlisty"),
-          t("dashboard.admin.features.casting", "Casting"),
         ],
-        icon: <Briefcase size={18} className="text-ethereal-gold" />,
-        iconBgClass: "bg-ethereal-gold/10 border-ethereal-gold/20",
+        icon: <Briefcase size={22} className="text-ethereal-gold" />,
+        iconBgClass:
+          "border-ethereal-gold/20 bg-ethereal-gold/10 text-ethereal-gold",
         path: "/panel/projects",
+      },
+      {
+        id: "logistics",
+        title: t("dashboard.admin.modules.logistics_title", "Logistyka"),
+        description: t(
+          "dashboard.admin.modules.logistics_desc",
+          "Zarządzanie infrastrukturą zewnętrzną oraz mobilnością. Kompleksowa baza obiektów sakralnych i koncertowych z pełną specyfikacją przestrzenną, transportem oraz zakwaterowaniem zespołu.",
+        ),
+        features: [
+          t("dashboard.admin.features.locations", "Lokacje"),
+          t("dashboard.admin.features.transport", "Transport"),
+        ],
+        icon: <Map size={22} className="text-ethereal-sage" />,
+        iconBgClass:
+          "border-ethereal-sage/20 bg-ethereal-sage/10 text-ethereal-sage",
+        path: "/panel/locations",
       },
       {
         id: "archive",
         title: t("dashboard.admin.modules.archive_title", "Archiwum"),
         description: t(
           "dashboard.admin.modules.archive_desc",
-          "Baza biblioteki muzycznej.",
+          "Scentralizowane repozytorium wiedzy. Dostęp do zdigitalizowanych partytur, wymogów wykonawczych oraz referencyjnych nagrań audio, gwarantujący spójność interpretacyjną zespołu.",
         ),
         features: [
           t("dashboard.admin.features.pdf_scores", "Nuty PDF"),
-          t("dashboard.admin.features.audio", "Audio"),
-          t("dashboard.admin.features.requirements", "Wymagania"),
+          t("dashboard.admin.features.audio", "Audio referencyjne"),
         ],
-        icon: <Music size={18} className="text-ethereal-sage" />,
-        iconBgClass: "bg-ethereal-sage/10 border-ethereal-sage/20",
+        icon: <Music size={22} className="text-ethereal-graphite" />,
+        iconBgClass:
+          "border-ethereal-graphite/20 bg-ethereal-graphite/10 text-ethereal-graphite",
         path: "/panel/archive-management",
       },
       {
@@ -115,15 +129,15 @@ export default function AdminDashboard(): React.JSX.Element {
         title: t("dashboard.admin.modules.artists_title", "Artyści"),
         description: t(
           "dashboard.admin.modules.artists_desc",
-          "Zarządzanie chórem i solistami.",
+          "Zarządzanie aparatem wykonawczym. Precyzyjna analiza balansu głosów (SATB), przydział do wymagających ról oraz monitorowanie historii artystycznej chórzystów i solistów.",
         ),
         features: [
           t("dashboard.admin.features.satb", "SATB"),
           t("dashboard.admin.features.profiles", "Profile"),
-          t("dashboard.admin.features.sight_reading", "A vista"),
         ],
-        icon: <Users size={18} className="text-ethereal-amethyst" />,
-        iconBgClass: "bg-ethereal-amethyst/10 border-ethereal-amethyst/20",
+        icon: <Users size={22} className="text-ethereal-amethyst" />,
+        iconBgClass:
+          "border-ethereal-amethyst/20 bg-ethereal-amethyst/10 text-ethereal-amethyst",
         path: "/panel/artists",
       },
       {
@@ -131,15 +145,15 @@ export default function AdminDashboard(): React.JSX.Element {
         title: t("dashboard.admin.modules.contracts_title", "Finanse"),
         description: t(
           "dashboard.admin.modules.contracts_desc",
-          "Umowy i budżetowanie.",
+          "Środowisko prawno-budżetowe. Zautomatyzowane generowanie umów, zarządzanie stawkami ryczałtowymi i godzinowymi oraz pełen audyt budżetowy nadchodzących projektów.",
         ),
         features: [
           t("dashboard.admin.features.rates", "Stawki"),
-          t("dashboard.admin.features.documents", "Dokumenty"),
           t("dashboard.admin.features.budget", "Budżet"),
         ],
-        icon: <FileText size={18} className="text-ethereal-incense" />,
-        iconBgClass: "bg-ethereal-incense/10 border-ethereal-incense/20",
+        icon: <FileText size={22} className="text-ethereal-incense" />,
+        iconBgClass:
+          "border-ethereal-incense/20 bg-ethereal-incense/10 text-ethereal-incense",
         path: "/panel/contracts",
       },
       {
@@ -147,22 +161,20 @@ export default function AdminDashboard(): React.JSX.Element {
         title: t("dashboard.admin.modules.crew_title", "Technika"),
         description: t(
           "dashboard.admin.modules.crew_desc",
-          "Logistyka i reżyseria wydarzeń.",
+          "Logistyka wsparcia technicznego i reżyserii. Koordynacja inżynierów dźwięku, reżyserów światła oraz podwykonawców zewnętrznych podczas kluczowych wydarzeń sezonu.",
         ),
         features: [
-          t("dashboard.admin.features.sound", "Dźwięk"),
-          t("dashboard.admin.features.light", "Światło"),
-          t("dashboard.admin.features.vendors", "Firmy"),
+          t("dashboard.admin.features.sound", "Dźwięk & Światło"),
+          t("dashboard.admin.features.vendors", "Podwykonawcy"),
         ],
-        icon: <Wrench size={18} className="text-ethereal-graphite" />,
-        iconBgClass: "bg-ethereal-alabaster border-ethereal-incense/10",
+        icon: <Wrench size={22} className="text-ethereal-ink" />,
+        iconBgClass: "border-ethereal-ink/10 bg-white/40 text-ethereal-ink",
         path: "/panel/crew",
       },
     ],
     [t],
   );
 
-  // Lokalny loader dla pobierania danych widgetów
   if (isLoading) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
@@ -172,7 +184,10 @@ export default function AdminDashboard(): React.JSX.Element {
           className="animate-spin text-ethereal-gold"
         />
         <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-ethereal-graphite">
-          {t("dashboard.shared.loading_telemetry", "Synchronizacja danych...")}
+          {t(
+            "dashboard.shared.loading_telemetry",
+            "Wczytywanie architektury systemu...",
+          )}
         </span>
       </div>
     );
@@ -183,15 +198,14 @@ export default function AdminDashboard(): React.JSX.Element {
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      className="relative cursor-default pb-12 w-full max-w-[1800px] mx-auto px-6 lg:px-12"
+      className="relative cursor-default pb-16 w-full max-w-[1800px] mx-auto px-6 lg:px-12"
     >
-      {/* HEADER SECTION - Dziedziczy stagger z DashboardHome */}
       <motion.header
         variants={itemKinematics}
-        className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4"
+        className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6"
       >
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex items-center gap-3 mb-2">
             <div className="relative flex items-center justify-center">
               <div className="w-1.5 h-1.5 rounded-full bg-ethereal-sage z-10" />
               <div className="absolute w-1.5 h-1.5 rounded-full bg-ethereal-sage animate-ping opacity-75" />
@@ -201,7 +215,7 @@ export default function AdminDashboard(): React.JSX.Element {
               {user?.first_name || t("common.admin_generic", "Administratorze")}
             </p>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-ethereal-ink tracking-tight flex items-baseline gap-1.5">
+          <h1 className="text-3xl md:text-4xl font-bold text-ethereal-ink tracking-tight flex items-baseline gap-2">
             {t("dashboard.admin.title_main", "Pulpit")}
             <span className="italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-ethereal-gold to-ethereal-sage pr-1 pb-1 text-[1.15em]">
               {t("dashboard.admin.title_sub", "Produkcyjny")}
@@ -214,34 +228,74 @@ export default function AdminDashboard(): React.JSX.Element {
         </div>
       </motion.header>
 
-      {/* TOP NOTIFICATION BAR */}
       {nextRehearsal && (
-        <motion.div variants={itemKinematics} className="mb-8">
+        <motion.div variants={itemKinematics} className="mb-10">
           <NextRehearsalAlert rehearsal={nextRehearsal} />
         </motion.div>
       )}
 
-      {/* KPI & SPOTLIGHT BENTO GRID */}
-      <div className="relative z-30 grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-        <motion.div variants={itemKinematics} className="col-span-1 h-full">
+      {/* =========================================================
+          THE DYNAMIC TRIPTYCH (3 Rows, 2 Asymmetrical Columns)
+          ========================================================= */}
+      <div className="relative z-30 grid grid-cols-1 md:grid-cols-12 auto-rows-fr gap-6 xl:gap-8">
+        {/* TOP LEVEL: Telemetry & Spotlight */}
+        <motion.div
+          variants={itemKinematics}
+          className="md:col-span-12 xl:col-span-3 min-h-[16rem]"
+        >
           <TelemetryWidget adminStats={adminStats} />
         </motion.div>
-
-        <motion.div variants={itemKinematics} className="xl:col-span-2 h-full">
+        <motion.div
+          variants={itemKinematics}
+          className="md:col-span-12 xl:col-span-9 min-h-[16rem]"
+        >
           <SpotlightProjectCard
             project={nextProject}
             stats={nextProjectStats}
           />
         </motion.div>
-      </div>
 
-      {/* SYSTEM MODULES GRID - Kinematics applied directly to the Grid Items */}
-      <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
-        {ADMIN_MODULES.map((mod) => (
-          <motion.div variants={itemKinematics} key={mod.id} className="h-full">
-            <SystemModuleCard {...mod} />
-          </motion.div>
-        ))}
+        {/* ROW 1: Asymmetry 7 / 5 */}
+        <motion.div
+          variants={itemKinematics}
+          className="md:col-span-6 xl:col-span-7"
+        >
+          <SystemModuleCard {...ADMIN_MODULES[0]} /> {/* Projekty */}
+        </motion.div>
+        <motion.div
+          variants={itemKinematics}
+          className="md:col-span-6 xl:col-span-5"
+        >
+          <SystemModuleCard {...ADMIN_MODULES[1]} /> {/* Logistyka */}
+        </motion.div>
+
+        {/* ROW 2: Asymmetry 5 / 7 (Counter-balance) */}
+        <motion.div
+          variants={itemKinematics}
+          className="md:col-span-6 xl:col-span-5"
+        >
+          <SystemModuleCard {...ADMIN_MODULES[2]} /> {/* Archiwum */}
+        </motion.div>
+        <motion.div
+          variants={itemKinematics}
+          className="md:col-span-6 xl:col-span-7"
+        >
+          <SystemModuleCard {...ADMIN_MODULES[3]} /> {/* Artyści */}
+        </motion.div>
+
+        {/* ROW 3: Asymmetry 7 / 5 (Resolution) */}
+        <motion.div
+          variants={itemKinematics}
+          className="md:col-span-6 xl:col-span-7"
+        >
+          <SystemModuleCard {...ADMIN_MODULES[4]} /> {/* Finanse */}
+        </motion.div>
+        <motion.div
+          variants={itemKinematics}
+          className="md:col-span-6 xl:col-span-5"
+        >
+          <SystemModuleCard {...ADMIN_MODULES[5]} /> {/* Technika */}
+        </motion.div>
       </div>
     </motion.div>
   );

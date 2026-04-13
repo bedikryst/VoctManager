@@ -1,74 +1,23 @@
 /**
  * @file SystemModuleCard.tsx
- * @description Standardised domain card for routing to distinct SaaS modules.
- * Refactored to utilize class-variance-authority for strict style bindings.
+ * @description Ethereal UI domain card for routing to distinct SaaS modules.
+ * Purged of legacy B2B styles. Implements editorial micro-typography,
+ * expanded descriptive space, and pure glassmorphism.
  * @module shared/widgets/domain/SystemModuleCard
  */
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { cva, type VariantProps } from "class-variance-authority";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { cn } from "@/shared/lib/utils";
 
-const moduleCardVariants = cva(
-  "p-5 flex flex-col h-full transition-all duration-300 border",
-  {
-    variants: {
-      colorScheme: {
-        brand: "hover:border-brand/30 hover:shadow-md",
-        emerald: "hover:border-emerald-500/30 hover:shadow-md",
-        stone: "hover:border-stone-400/30 hover:shadow-md",
-      },
-      glassOpacity: {
-        light: "bg-white/40",
-        medium: "bg-white/60",
-      },
-    },
-    defaultVariants: {
-      colorScheme: "brand",
-      glassOpacity: "light",
-    },
-  },
-);
-
-const iconWrapperVariants = cva(
-  "w-10 h-10 border rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-colors",
-  {
-    variants: {
-      colorScheme: {
-        brand: "bg-white border-stone-200/60 text-brand",
-        emerald: "bg-emerald-50 border-emerald-100 text-emerald-600",
-        stone: "bg-stone-50 border-stone-200 text-stone-600",
-      },
-    },
-    defaultVariants: {
-      colorScheme: "brand",
-    },
-  },
-);
-
-const textVariants = cva("transition-colors", {
-  variants: {
-    colorScheme: {
-      brand: "group-hover/module:text-brand",
-      emerald: "group-hover/module:text-emerald-600",
-      stone: "group-hover/module:text-stone-800",
-    },
-  },
-  defaultVariants: {
-    colorScheme: "brand",
-  },
-});
-
-interface SystemModuleCardProps extends VariantProps<
-  typeof moduleCardVariants
-> {
+export interface SystemModuleCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
+  iconBgClass?: string;
   path: string;
   features?: string[];
   openLabelKey?: string;
@@ -78,9 +27,8 @@ export const SystemModuleCard = ({
   title,
   description,
   icon,
+  iconBgClass,
   path,
-  colorScheme,
-  glassOpacity,
   features,
   openLabelKey = "common.actions.openModule",
 }: SystemModuleCardProps): React.JSX.Element => {
@@ -89,56 +37,66 @@ export const SystemModuleCard = ({
   return (
     <Link
       to={path}
-      className="outline-none group/module block h-full active:scale-[0.99] transition-transform"
+      className="outline-none group block h-full"
       aria-label={t("common.aria.navigateTo", { destination: title })}
     >
       <GlassCard
-        variant="solid"
-        className={cn(moduleCardVariants({ colorScheme, glassOpacity }))}
+        variant="ethereal"
+        className="flex h-full flex-col p-6 md:p-8 transition-colors duration-700 hover:border-white/70"
       >
-        <div className="flex items-center gap-3 mb-4">
-          <div className={cn(iconWrapperVariants({ colorScheme }))}>{icon}</div>
-          <h4
+        {/* Header: Heraldic Iconography & Title */}
+        <div className="mb-5 flex items-center gap-4">
+          <div
             className={cn(
-              "text-sm font-bold text-stone-900 tracking-tight line-clamp-1",
-              textVariants({ colorScheme }),
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border backdrop-blur-md transition-transform duration-700 group-hover:scale-105",
+              iconBgClass ||
+                "border-ethereal-incense/20 bg-ethereal-incense/10 text-ethereal-incense",
             )}
           >
+            {icon}
+          </div>
+          <h3 className="font-serif text-[1.65rem] font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold">
             {title}
-          </h4>
+          </h3>
         </div>
-        <p className="text-[11px] text-stone-500 font-medium leading-snug mb-6 line-clamp-2">
-          {description}
-        </p>
 
+        {/* Description: Expanded Narrative Space */}
+        <div className="flex-grow">
+          <p className="mb-8 text-[13px] font-normal leading-[1.8] text-ethereal-graphite/95">
+            {description}
+          </p>
+        </div>
+
+        {/* Features: Editorial Micro-typography */}
         {features && features.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4">
+          <div className="mb-8 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
             {features.map((feature, idx) => (
-              <span
-                key={`${feature}-${idx}`}
-                className="px-1.5 py-0.5 bg-stone-100 text-stone-500 text-[8px] font-bold uppercase tracking-widest rounded border border-stone-200/40"
-              >
-                {feature}
-              </span>
+              <React.Fragment key={`${feature}-${idx}`}>
+                <span className="text-[9.5px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/70 transition-colors duration-500 group-hover:text-ethereal-ink">
+                  {feature}
+                </span>
+                {idx < features.length - 1 && (
+                  <span
+                    className="text-[10px] text-ethereal-gold/40"
+                    aria-hidden="true"
+                  >
+                    •
+                  </span>
+                )}
+              </React.Fragment>
             ))}
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-3 border-t border-stone-200/60 mt-auto group-hover/module:border-stone-300/60 transition-colors">
-          <span
-            className={cn(
-              "text-[9px] uppercase tracking-wider font-bold text-stone-400",
-              textVariants({ colorScheme }),
-            )}
-          >
+        {/* Footer Action: The Silent Invitation */}
+        <div className="mt-auto flex items-center justify-between border-t border-ethereal-incense/15 pt-4 transition-colors duration-700 group-hover:border-ethereal-gold/30">
+          <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
             {t(openLabelKey)}
           </span>
-          <ChevronRight
-            size={14}
-            className={cn(
-              "text-stone-400 transform group-hover/module:translate-x-0.5 transition-all",
-              textVariants({ colorScheme }),
-            )}
+          <ArrowRight
+            size={16}
+            strokeWidth={1.5}
+            className="text-ethereal-incense/50 transition-all duration-700 group-hover:translate-x-1 group-hover:text-ethereal-gold"
             aria-hidden="true"
           />
         </div>

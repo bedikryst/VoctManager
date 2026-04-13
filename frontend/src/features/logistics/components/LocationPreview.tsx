@@ -1,6 +1,7 @@
 /**
  * @file LocationPreview.tsx
- * @description Enhanced Interactive Location Badge with full-card click support.
+ * @description Ethereal UI Interactive Location Badge.
+ * Features kinematic glassmorphism popovers, robust z-indexing, and an opaque reading pedestal.
  * @architecture Enterprise SaaS 2026
  */
 
@@ -11,6 +12,7 @@ import { MapPin, Navigation, ExternalLink } from "lucide-react";
 import { Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useLocationResolver } from "../hooks/useLocationResolver";
 import type { LocationDto } from "../types/logistics.dto";
+import { cn } from "@/shared/lib/utils";
 
 interface LocationPreviewProps {
   locationRef: string | LocationDto | unknown;
@@ -20,7 +22,7 @@ interface LocationPreviewProps {
 
 export const LocationPreview = ({
   locationRef,
-  fallback = "Unknown Location",
+  fallback,
   className = "",
 }: LocationPreviewProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -30,6 +32,9 @@ export const LocationPreview = ({
   const [isOpen, setIsOpen] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const displayFallback =
+    fallback || t("logistics.preview.unknown_location", "Nieznana lokacja");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -63,16 +68,16 @@ export const LocationPreview = ({
 
     const { latitude, longitude, google_place_id, name, formatted_address } =
       location;
+    const baseUrl = "https://www.google.com/maps/search/?api=1";
+    let url = baseUrl;
 
-    let url = "";
     if (google_place_id) {
-      // Oficjalny format Google Maps Search API
-      url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&query_place_id=${google_place_id}`;
+      url += `&query=${encodeURIComponent(name)}&query_place_id=${google_place_id}`;
     } else if (latitude && longitude) {
-      url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+      url += `&query=${latitude},${longitude}`;
     } else {
       const query = encodeURIComponent(`${name} ${formatted_address || ""}`);
-      url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+      url += `&query=${query}`;
     }
 
     window.open(url, "_blank", "noopener,noreferrer");
@@ -80,9 +85,16 @@ export const LocationPreview = ({
 
   if (!location) {
     return (
-      <span className={`flex items-center gap-1.5 text-stone-500 ${className}`}>
-        <MapPin size={12} className="flex-shrink-0" />
-        <span className="truncate">{fallback}</span>
+      <span
+        className={cn(
+          "flex items-center gap-1.5 text-ethereal-graphite/60",
+          className,
+        )}
+      >
+        <MapPin size={12} className="shrink-0" />
+        <span className="truncate text-[10px] font-bold uppercase tracking-widest">
+          {displayFallback}
+        </span>
       </span>
     );
   }
@@ -100,89 +112,111 @@ export const LocationPreview = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
+      {/* THE ANCHOR BADGE */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 bg-stone-100/50 hover:bg-brand/5 hover:text-brand hover:border-brand/30 px-2.5 py-1.5 rounded-lg border border-stone-200/80 transition-all group ${className}`}
+        className={cn(
+          "group flex items-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-white/5 px-2.5 py-1.5 backdrop-blur-md transition-all duration-500 hover:border-ethereal-gold/40 hover:bg-white/10",
+          className,
+        )}
       >
         <MapPin
           size={12}
-          className="flex-shrink-0 text-stone-400 group-hover:text-brand transition-colors"
+          className="shrink-0 text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold"
         />
-        <span className="truncate font-bold antialiased uppercase tracking-widest text-[10px]">
+        <span className="truncate text-[10px] font-bold uppercase tracking-widest text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold">
           {location.name}
         </span>
       </button>
 
+      {/* THE ETHEREAL POPOVER */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 5, scale: 0.95 }}
-            whileHover={{ y: -2, transition: { duration: 0.1 } }}
+            initial={{ opacity: 0, y: 10, scale: 0.95, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: 5, scale: 0.95, filter: "blur(4px)" }}
+            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            /* Z-100 gwarantuje absolutną dominację nad resztą widoków */
+            className="absolute left-0 top-full z-[100] mt-3 flex w-72 cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-ethereal-gold/80 bg-white/70 p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_24px_64px_rgba(166,146,121,0.25)] backdrop-blur-[32px]"
             onClick={openInGoogleMaps}
-            className="absolute z-50 top-full left-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-brand/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col cursor-pointer ring-1 ring-black/5"
           >
-            {/* MAP PREVIEW */}
-            {hasCoordinates ? (
-              <div className="w-full h-32 bg-stone-100 relative pointer-events-none grayscale-[0.3] group-hover:grayscale-0 transition-all">
-                <Map
-                  defaultZoom={15}
-                  defaultCenter={{
-                    lat: Number(location.latitude),
-                    lng: Number(location.longitude),
-                  }}
-                  disableDefaultUI={true}
-                  gestureHandling="none"
-                  mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
-                  id={`PREVIEW_${location.id}`}
-                  className="w-full h-full"
-                >
-                  <AdvancedMarker
-                    position={{
+            {/* MAP PREVIEW COMPARTMENT */}
+            <div className="relative z-0 h-32 w-full overflow-hidden rounded-[1.5rem]">
+              {hasCoordinates ? (
+                <div className="group relative h-full w-full grayscale-[0.2] transition-all duration-700 hover:grayscale-0">
+                  <Map
+                    defaultZoom={15}
+                    defaultCenter={{
                       lat: Number(location.latitude),
                       lng: Number(location.longitude),
                     }}
+                    disableDefaultUI={true}
+                    gestureHandling="none"
+                    mapId={import.meta.env.VITE_GOOGLE_MAP_ID || "DEMO_MAP_ID"}
+                    id={`PREVIEW_${location.id}`}
+                    className="h-full w-full"
                   >
-                    <div className="flex flex-col items-center gap-0.5 group">
-                      <MapPin
-                        className="text-[#2e57dd] transition-transform group-hover:-translate-y-1"
-                        size={24}
-                      />
-                      <div className="w-1.5 h-1 rounded-full bg-[#c49a45] blur-[1px] opacity-60" />
-                    </div>
-                  </AdvancedMarker>
-                </Map>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-              </div>
-            ) : (
-              <div className="w-full h-24 bg-stone-50 flex items-center justify-center border-b border-stone-100">
-                <span className="text-[9px] text-stone-400 font-bold uppercase tracking-widest">
-                  {t("logistics.preview.no_map", "Map Preview Unavailable")}
-                </span>
-              </div>
-            )}
-
-            {/* DETAILS */}
-            <div className="p-4 flex flex-col gap-3 relative">
-              <div>
-                <div className="flex justify-between items-start">
-                  <p className="text-[8px] font-bold antialiased uppercase tracking-widest text-brand mb-0.5">
-                    {location.category}
-                  </p>
-                  <ExternalLink size={10} className="text-stone-300" />
+                    <AdvancedMarker
+                      position={{
+                        lat: Number(location.latitude),
+                        lng: Number(location.longitude),
+                      }}
+                    >
+                      <div className="group flex flex-col items-center gap-0.5">
+                        <MapPin
+                          className="text-ethereal-gold transition-transform duration-700 group-hover:-translate-y-1"
+                          size={24}
+                          strokeWidth={1.5}
+                        />
+                        <div className="h-1 w-1.5 rounded-full bg-ethereal-ink/40 blur-[2px]" />
+                      </div>
+                    </AdvancedMarker>
+                  </Map>
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ethereal-ink/20 to-transparent mix-blend-multiply" />
                 </div>
-                <h4 className="text-sm font-bold text-stone-900 leading-tight">
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-white/20">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite/60">
+                    {t("logistics.preview.no_map", "Brak współrzędnych mapy")}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* LOCATION DETAILS COMPARTMENT (The Reading Pedestal) */}
+            <div className="group/details relative z-20 mt-1.5 flex flex-col gap-3 rounded-[1.5rem] bg-ethereal-marble/95 p-5 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+              <div>
+                <div className="mb-2 flex items-start justify-between">
+                  <p className="text-[8.5px] font-bold uppercase tracking-[0.2em] text-ethereal-sage">
+                    {location.category ||
+                      t("logistics.preview.default_category", "Lokacja")}
+                  </p>
+                  <ExternalLink
+                    size={12}
+                    strokeWidth={1.5}
+                    className="text-ethereal-incense/40 transition-colors duration-500 group-hover/details:text-ethereal-gold"
+                  />
+                </div>
+                <h4 className="font-serif text-xl font-medium leading-tight tracking-wide text-ethereal-ink">
                   {location.name}
                 </h4>
-                <p className="text-[10px] text-stone-500 mt-1 line-clamp-2 leading-relaxed">
+                <p className="mt-2 line-clamp-2 text-[11px] font-light leading-relaxed text-ethereal-graphite">
                   {location.formatted_address}
                 </p>
               </div>
 
-              <div className="w-full py-2.5 bg-brand/5 group-hover:bg-brand group-hover:text-white text-brand text-[9px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2">
-                <Navigation size={12} />
-                {t("logistics.preview.get_directions", "Wyznacz trasę")}
+              {/* ACTION FOOTER */}
+              <div className="mt-2 flex items-center justify-between border-t border-ethereal-incense/15 pt-4 transition-colors duration-700 group-hover/details:border-ethereal-gold/30">
+                <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/70 transition-colors duration-500 group-hover/details:text-ethereal-gold">
+                  {t("logistics.preview.get_directions", "Wyznacz trasę")}
+                </span>
+                <Navigation
+                  size={14}
+                  strokeWidth={1.5}
+                  className="text-ethereal-incense/50 transition-all duration-700 group-hover/details:translate-x-1 group-hover/details:text-ethereal-gold"
+                  aria-hidden="true"
+                />
               </div>
             </div>
           </motion.div>

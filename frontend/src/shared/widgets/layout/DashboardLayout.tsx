@@ -1,8 +1,9 @@
 /**
  * @file DashboardLayout.tsx
- * @description Main authenticated shell for the dashboard experience.
- * Orchestrates the Smart Sidebar, Mobile Nav, and Main Content area.
- * Zero Tech-Debt Ethereal UI Edition.
+ * @description Master shell for the VoctManager Dashboard.
+ * Optimised for zero-latency performance with deep, static Ethereal UI pigmentation.
+ * Provides the perfect backdrop for advanced glassmorphism refraction.
+ * @architecture Enterprise SaaS 2026
  * @module shared/widgets/layout/DashboardLayout
  */
 
@@ -18,17 +19,24 @@ const AmbientDecorators = (): React.JSX.Element => (
     className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
     aria-hidden="true"
   >
-    {/* Ethereal Gold Epiphany Glow */}
-    <div className="absolute -left-[12rem] -top-[8rem] h-[36rem] w-[36rem] rounded-full bg-ethereal-gold/10 blur-[80px] mix-blend-multiply opacity-80 transition-opacity duration-1000" />
-    {/* Ethereal Sage Grounding Glow */}
-    <div className="absolute -bottom-[18rem] -right-[10rem] h-[40rem] w-[40rem] rounded-full bg-ethereal-sage/10 blur-[100px] mix-blend-multiply opacity-60 transition-opacity duration-1000" />
+    {/* Global Noise - Retained for organic texture integrity */}
+    <div className="absolute inset-0 bg-noise opacity-[0.03] mix-blend-multiply" />
+
+    {/* Ethereal Gold - Amplified pigmentation for deeper refraction */}
+    <div className="absolute -left-[5%] -top-[5%] h-[45vw] w-[45vw] rounded-full bg-ethereal-gold/30 blur-[100px] mix-blend-multiply" />
+
+    {/* Ethereal Sage - Amplified grounding presence */}
+    <div className="absolute -bottom-[10%] -right-[5%] h-[55vw] w-[55vw] rounded-full bg-ethereal-sage/30 blur-[120px] mix-blend-multiply" />
+
+    {/* Center Safe Zone - Neutral marble light to preserve typography legibility */}
+    <div className="absolute left-1/2 top-1/2 h-[70vh] w-[70vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-ethereal-marble/40 blur-[80px]" />
   </div>
 );
 
 export const DashboardLayout = (): React.JSX.Element => {
   const { user, logout } = useAuth();
 
-  // Global styling enforcement for the secure admin zone
+  // Enforce system cursor and administrative mode styling
   useEffect(() => {
     document.body.classList.add("admin-mode");
     return () => {
@@ -37,8 +45,8 @@ export const DashboardLayout = (): React.JSX.Element => {
   }, []);
 
   return (
-    // REMOVED bg-stone-100. Using bg-transparent so the body radial-gradient shines through.
     <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
+      {/* Static Decorators Layer */}
       <AmbientDecorators />
 
       <DesktopSidebar user={user} logout={logout} />
@@ -49,6 +57,7 @@ export const DashboardLayout = (): React.JSX.Element => {
         id="main-content"
       >
         <div className="mx-auto flex h-full w-full max-w-7xl flex-col">
+          {/* Viewport for the application's domain content */}
           <Outlet />
         </div>
       </main>
