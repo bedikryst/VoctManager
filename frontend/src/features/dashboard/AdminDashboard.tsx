@@ -20,8 +20,8 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { useAuth } from "../../app/providers/AuthProvider";
-import { SystemModuleCard } from "../../shared/ui/SystemModuleCard";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { SystemModuleCard } from "@/shared/ui/widgets/SystemModuleCard";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";
@@ -62,7 +62,7 @@ export default function AdminDashboard(): React.JSX.Element {
           "Centrum dowodzenia produkcją.",
         ),
         features: ["Harmonogramy", "Setlisty", "Casting"],
-        icon: <Briefcase size={18} className="text-[#002395]" />,
+        icon: <Briefcase size={18} className="text-brand" />,
         path: "/panel/project-management",
       },
       {
@@ -73,7 +73,7 @@ export default function AdminDashboard(): React.JSX.Element {
           "Baza biblioteki muzycznej.",
         ),
         features: ["Nuty PDF", "Audio", "Wymagania"],
-        icon: <Music size={18} className="text-[#002395]" />,
+        icon: <Music size={18} className="text-brand" />,
         path: "/panel/archive-management",
       },
       {
@@ -84,7 +84,7 @@ export default function AdminDashboard(): React.JSX.Element {
           "Zarządzanie chórem i solistami.",
         ),
         features: ["SATB", "Profile", "A vista"],
-        icon: <Users size={18} className="text-[#002395]" />,
+        icon: <Users size={18} className="text-brand" />,
         path: "/panel/artists",
       },
       {
@@ -95,7 +95,7 @@ export default function AdminDashboard(): React.JSX.Element {
           "Umowy i budżetowanie.",
         ),
         features: ["Stawki", "Dokumenty", "Budżet"],
-        icon: <FileText size={18} className="text-[#002395]" />,
+        icon: <FileText size={18} className="text-brand" />,
         path: "/panel/contracts",
       },
       {
@@ -106,7 +106,7 @@ export default function AdminDashboard(): React.JSX.Element {
           "Logistyka i reżyseria wydarzeń.",
         ),
         features: ["Dźwięk", "Światło", "Firmy"],
-        icon: <Wrench size={18} className="text-[#002395]" />,
+        icon: <Wrench size={18} className="text-brand" />,
         path: "/panel/crew",
       },
     ],
@@ -119,7 +119,7 @@ export default function AdminDashboard(): React.JSX.Element {
         <Loader2
           size={48}
           strokeWidth={1}
-          className="animate-spin text-[#002395]"
+          className="animate-spin text-brand"
         />
         <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-stone-500">
           {t("dashboard.shared.loading_telemetry", "Synchronizacja danych...")}
@@ -146,7 +146,7 @@ export default function AdminDashboard(): React.JSX.Element {
           <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight flex items-baseline gap-1.5">
             Pulpit
             <span
-              className="italic text-transparent bg-clip-text bg-gradient-to-r from-[#002395] to-blue-500 pr-1 pb-1"
+              className="italic text-transparent bg-clip-text bg-gradient-to-r from-brand to-blue-500 pr-1 pb-1"
               style={{ fontFamily: "'Cormorant', serif", fontSize: "1.15em" }}
             >
               Produkcyjny
@@ -156,7 +156,7 @@ export default function AdminDashboard(): React.JSX.Element {
 
         <Link
           to="/panel/project-management"
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-white border border-stone-200/80 hover:border-[#002395] text-stone-700 hover:text-[#002395] text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
+          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-white border border-stone-200/80 hover:border-brand text-stone-700 hover:text-brand text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
         >
           <Plus size={14} />{" "}
           {t("dashboard.admin.btn_new_project", "Nowy Projekt")}

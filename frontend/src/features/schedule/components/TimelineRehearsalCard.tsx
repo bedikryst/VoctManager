@@ -23,15 +23,13 @@ import {
   Music,
   AlignLeft,
 } from "lucide-react";
-import type { AttendanceStatus } from "../../../shared/types";
+import type { AttendanceStatus } from "@/shared/types";
 import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
-import {
-  formatLocalizedDate,
-} from "../../../shared/lib/intl";
-import { Input } from "../../../shared/ui/Input";
-import { Button } from "../../../shared/ui/Button";
-import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Button } from "@/shared/ui/primitives/Button";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 
 interface TimelineRehearsalCardProps {
   event: TimelineEvent;
@@ -109,21 +107,21 @@ export default function TimelineRehearsalCard({
       className="relative sm:pl-16 transition-all duration-300 group"
     >
       <div
-        className={`hidden sm:block absolute left-4 md:left-[27px] top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-[#f4f2ee] z-10 transition-all duration-500 ${isExcusedOrLate ? "bg-orange-500 border-orange-500" : currentMaskedStatus === "PRESENT" ? "bg-emerald-500 border-emerald-500" : "bg-white border-stone-300 group-hover:border-[#002395]"}`}
+        className={`hidden sm:block absolute left-4 md:left-[27px] top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-[#f4f2ee] z-10 transition-all duration-500 ${isExcusedOrLate ? "bg-orange-500 border-orange-500" : currentMaskedStatus === "PRESENT" ? "bg-emerald-500 border-emerald-500" : "bg-white border-stone-300 group-hover:border-brand"}`}
       />
 
       <div
-        className={`bg-white/80 backdrop-blur-xl rounded-2xl relative overflow-hidden transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] border hover:border-[#002395]/30 hover:shadow-[0_8px_25px_rgb(0,0,0,0.04)] w-full flex flex-col ${isExpanded ? "border-[#002395]/30" : "border-stone-200/80"}`}
+        className={`bg-white/80 backdrop-blur-xl rounded-2xl relative overflow-hidden transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] border hover:border-brand/30 hover:shadow-[0_8px_25px_rgb(0,0,0,0.04)] w-full flex flex-col ${isExpanded ? "border-brand/30" : "border-stone-200/80"}`}
       >
         <div className="flex flex-col md:flex-row items-stretch">
           <div
-            className={`w-full md:w-28 p-4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-dashed border-stone-200/80 transition-colors ${currentMaskedStatus === "PRESENT" ? "bg-emerald-50/50" : isExcusedOrLate ? "bg-stone-50" : "bg-[#002395]/5 group-hover:bg-[#002395]/10"}`}
+            className={`w-full md:w-28 p-4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-dashed border-stone-200/80 transition-colors ${currentMaskedStatus === "PRESENT" ? "bg-emerald-50/50" : isExcusedOrLate ? "bg-stone-50" : "bg-brand/5 group-hover:bg-brand/10"}`}
             onClick={() => {
               if (!reportingMode) onToggle();
             }}
           >
             <span
-              className={`text-[10px] font-bold uppercase tracking-widest ${currentMaskedStatus === "PRESENT" ? "text-emerald-600" : isExcusedOrLate ? "text-stone-400" : "text-[#002395]/60"}`}
+              className={`text-[10px] font-bold uppercase tracking-widest ${currentMaskedStatus === "PRESENT" ? "text-emerald-600" : isExcusedOrLate ? "text-stone-400" : "text-brand/60"}`}
             >
               {formatLocalizedDate(
                 event.date_time,
@@ -133,7 +131,7 @@ export default function TimelineRehearsalCard({
               )}
             </span>
             <span
-              className={`text-3xl font-black leading-none my-0.5 ${currentMaskedStatus === "PRESENT" ? "text-emerald-700" : isExcusedOrLate ? "text-stone-500" : "text-[#002395]"}`}
+              className={`text-3xl font-black leading-none my-0.5 ${currentMaskedStatus === "PRESENT" ? "text-emerald-700" : isExcusedOrLate ? "text-stone-500" : "text-brand"}`}
             >
               {formatLocalizedDate(
                 event.date_time,
@@ -182,7 +180,7 @@ export default function TimelineRehearsalCard({
                 icon={
                   <Clock
                     size={12}
-                    className="text-[#002395]/60"
+                    className="text-brand/60"
                     aria-hidden="true"
                   />
                 }
@@ -191,14 +189,14 @@ export default function TimelineRehearsalCard({
                 localTimeClassName="text-[9px] text-stone-400 font-medium normal-case tracking-normal pl-2"
               />
               <span className="flex items-center gap-1.5 truncate max-w-[200px]">
-                <MapPin size={12} className="text-[#002395]/60 flex-shrink-0" />{" "}
+                <MapPin size={12} className="text-brand/60 flex-shrink-0" />{" "}
                 <span className="truncate">
                   {event.location ||
                     t("schedule.rehearsal.no_location", "Brak")}
                 </span>
               </span>
             </div>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 group-hover:text-[#002395] transition-colors">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 group-hover:text-brand transition-colors">
               {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </div>
           </div>
@@ -275,7 +273,7 @@ export default function TimelineRehearsalCard({
                           status: e.target.value as any,
                         })
                       }
-                      className="w-full px-3 py-2.5 text-xs text-stone-800 bg-stone-50 border border-stone-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002395]/20 transition-all shadow-inner font-bold appearance-none"
+                      className="w-full px-3 py-2.5 text-xs text-stone-800 bg-stone-50 border border-stone-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all shadow-inner font-bold appearance-none"
                       disabled={isSubmitting}
                     >
                       <option value="ABSENT">
@@ -404,7 +402,7 @@ export default function TimelineRehearsalCard({
                     </p>
                     <Link
                       to="/panel/materials"
-                      className="bg-white border border-blue-200 text-[#002395] hover:bg-[#002395] hover:text-white px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 group/mat"
+                      className="bg-white border border-blue-200 text-brand hover:bg-brand hover:text-white px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 group/mat"
                     >
                       {t(
                         "schedule.rehearsal.details.materials_button",

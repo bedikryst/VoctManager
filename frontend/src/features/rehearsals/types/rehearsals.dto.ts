@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import type { AttendanceStatus } from "../../../shared/types";
+import type { AttendanceStatus } from "@/shared/types";
 
 export const attendanceUpsertSchema = z.object({
   rehearsal: z.string().uuid(),

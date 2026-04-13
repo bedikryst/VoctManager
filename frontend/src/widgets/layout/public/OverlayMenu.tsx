@@ -158,7 +158,7 @@ export default function OverlayMenu({
               {/* Secondary Navigation (Desktop Only) */}
               <div className="hidden md:flex flex-col gap-12 w-4/12">
                 <motion.div variants={fadeUpVariants} custom={0.2}>
-                  <p className="text-[#002395] text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
+                  <p className="text-brand text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
                     Społeczność
                   </p>
                   <ul className="flex flex-col gap-4 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500">
@@ -195,7 +195,7 @@ export default function OverlayMenu({
                   </ul>
                 </motion.div>
                 <motion.div variants={fadeUpVariants} custom={0.3}>
-                  <p className="text-[#002395] text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
+                  <p className="text-brand text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
                     Biurom / Kontakt
                   </p>
                   <a
@@ -224,7 +224,7 @@ export default function OverlayMenu({
                         onClick={handleLinkClick}
                         className={`group flex items-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium tracking-tight transition-all duration-500 origin-left ${hoveredIndex !== null && hoveredIndex !== i ? "text-stone-700" : "text-stone-300 hover:text-[#fdfbf7]"}`}
                       >
-                        <span className="text-sm font-bold text-[#002395] mr-6 md:mr-10 mb-6 md:mb-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <span className="text-sm font-bold text-brand mr-6 md:mr-10 mb-6 md:mb-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                           0{i + 1}
                         </span>
                         <span

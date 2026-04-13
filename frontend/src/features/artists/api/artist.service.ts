@@ -5,8 +5,8 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import api from "../../../shared/api/api";
-import type { Artist } from "../../../shared/types";
+import api from "@/shared/api/api";
+import type { Artist } from "@/shared/types";
 import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
 
 const BASE_URL = "/api/artists/";

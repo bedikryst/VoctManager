@@ -10,10 +10,10 @@ import { useTranslation } from "react-i18next";
 import { ShieldAlert, Download, Trash2, FileJson } from "lucide-react";
 import axios from "axios";
 
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Button } from "../../../shared/ui/Button";
-import { Input } from "../../../shared/ui/Input";
-import ConfirmModal from "../../../shared/ui/ConfirmModal";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Button } from "@ui/primitives/Button";
+import { Input } from "@ui/primitives/Input";
+import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { useExportData, useDeleteAccount } from "../api/settings.queries";
 import type { ApiErrorResponse } from "../types/settings.dto";
 
@@ -58,7 +58,7 @@ export default function PrivacyTab() {
       <GlassCard>
         <div className="mb-8">
           <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-[#002395]" />
+            <ShieldAlert className="w-5 h-5 text-brand" />
             {t("settings.privacy.title", "Prywatność i dane (RODO)")}
           </h2>
           <p className="text-sm text-stone-500 mt-1">
@@ -125,7 +125,10 @@ export default function PrivacyTab() {
               <span>
                 {t("settings.privacy.modalDescLine1Prefix", "Ta akcja jest")}{" "}
                 <strong>
-                  {t("settings.privacy.modalDescLine1Highlight", "nieodwracalna")}
+                  {t(
+                    "settings.privacy.modalDescLine1Highlight",
+                    "nieodwracalna",
+                  )}
                 </strong>
                 .{" "}
                 {t(

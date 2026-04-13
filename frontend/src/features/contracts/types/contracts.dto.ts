@@ -6,7 +6,7 @@
  * @module panel/contracts/types
  */
 
-import type { Participation, CrewAssignment } from "../../../shared/types";
+import type { Participation, CrewAssignment } from "@/shared/types";
 
 export interface EnrichedParticipation extends Participation {
   artist_name?: string;

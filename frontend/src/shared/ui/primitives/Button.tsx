@@ -1,28 +1,27 @@
 /**
  * @file Button.tsx
  * @description Enterprise-grade button component. Handles multiple variants,
- * sizes, automated loading states, and strictly adheres to WCAG accessibility guidelines.
+ * sizes, and automated loading states whilst strictly adhering to WCAG guidelines.
  * Styled to reflect the elegant, minimalist aesthetic of VoctEnsemble.
- * @module shared/ui/Button
+ * @module shared/ui/primitives/Button
  */
 
 import React, { ButtonHTMLAttributes, forwardRef } from "react";
 import { Loader2 } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "../lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 const buttonVariants = cva(
-  // Base styles: Elegant typography, subtle transitions, strict interaction states
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-[10px] uppercase tracking-[0.15em] font-bold antialiased transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 active:scale-[0.98]",
   {
     variants: {
       variant: {
         primary:
-          "bg-[#002395] text-white shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:bg-[#001766] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)]",
+          "bg-brand text-white shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:bg-brand-dark hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)]",
         secondary:
-          "bg-stone-900 text-white shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:bg-[#002395]",
+          "bg-stone-900 text-white shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:bg-brand",
         outline:
-          "border border-stone-200/80 bg-white/50 text-stone-600 shadow-sm backdrop-blur-sm hover:border-[#002395]/40 hover:text-[#002395]",
+          "border border-stone-200/80 bg-white/50 text-stone-600 shadow-sm backdrop-blur-sm hover:border-brand/40 hover:text-brand",
         danger:
           "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700",
         ghost:
@@ -52,7 +51,7 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   /** Engages the loading state, disabling the button and rendering a spinner */
   isLoading?: boolean;
-  /** Optional React node (typically an SVG/lucide icon) placed before the children */
+  /** Optional React node placed before the children */
   leftIcon?: React.ReactNode;
   /** Optional React node placed after the children */
   rightIcon?: React.ReactNode;
@@ -74,7 +73,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
-    // Derived state to ensure a11y compliance
     const isDisabled = isLoading || disabled;
 
     return (

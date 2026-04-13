@@ -7,11 +7,11 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, UserMinus, ArrowRight } from "lucide-react";
 
-import { formatLocalizedDate } from "../../../shared/lib/intl";
-import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
-import { Badge } from "../../../shared/ui/Badge";
-import { cn } from "../../../shared/lib/utils";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { cn } from "@/shared/lib/utils";
 
 export function NextRehearsalAlert({ rehearsal }: { rehearsal: any }) {
   const { t } = useTranslation();

@@ -15,9 +15,9 @@ import React, {
   type ReactNode,
 } from "react";
 import { isAxiosError } from "axios";
-import api, { type AuthRequestConfig } from "../../shared/api/api";
-import i18n from "../../shared/config/i18n";
-import type { AuthProfile, AuthUser } from "../../shared/auth/auth.types";
+import api, { type AuthRequestConfig } from "@/shared/api/api";
+import i18n from "@/shared/config/i18n";
+import type { AuthProfile, AuthUser } from "@/shared/auth/auth.types";
 
 interface UserIdentityResponse {
   id: string | number;

@@ -17,9 +17,9 @@ import {
   PlayCircle,
 } from "lucide-react";
 
-import ConfirmModal from "../../../shared/ui/ConfirmModal";
-import { Button } from "../../../shared/ui/Button";
-import type { VoiceLineOption } from "../../../shared/types";
+import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import { Button } from "@ui/primitives/Button";
+import type { VoiceLineOption } from "@/shared/types";
 import {
   useTracks,
   useUploadTrack,
@@ -126,7 +126,7 @@ export default function TrackUploadManager({
   return (
     <div className="space-y-10">
       <div className="bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-sm relative">
-        <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] mb-5 flex items-center gap-2 border-b border-stone-200/60 pb-2">
+        <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand mb-5 flex items-center gap-2 border-b border-stone-200/60 pb-2">
           <UploadCloud size={14} />{" "}
           {t("archive.tracks.add_material", "Dodaj materiał ćwiczeniowy")}
         </h4>
@@ -140,7 +140,7 @@ export default function TrackUploadManager({
                 required
                 value={uploadVoicePart}
                 onChange={(event) => setUploadVoicePart(event.target.value)}
-                className="w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold appearance-none"
+                className="w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-bold appearance-none"
                 disabled={uploadMutation.isPending}
               >
                 <option value="">
@@ -170,7 +170,7 @@ export default function TrackUploadManager({
                 accept="audio/*,.mid,.midi"
                 required
                 disabled={uploadMutation.isPending}
-                className="w-full text-sm text-stone-600 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-[#002395] file:text-white hover:file:bg-[#001766] transition-all cursor-pointer bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl"
+                className="w-full text-sm text-stone-600 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-brand file:text-white hover:file:bg-brand-dark transition-all cursor-pointer bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl"
               />
             </div>
           </div>
@@ -209,10 +209,10 @@ export default function TrackUploadManager({
           tracks.map((track) => (
             <div
               key={track.id}
-              className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-[#002395]/30"
+              className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-stone-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-brand/30"
             >
               <div className="flex items-center gap-3">
-                <span className="text-[10px] uppercase tracking-widest font-bold antialiased text-[#002395] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 flex items-center gap-2 w-max">
+                <span className="text-[10px] uppercase tracking-widest font-bold antialiased text-brand bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 flex items-center gap-2 w-max">
                   <PlayCircle size={14} aria-hidden="true" />{" "}
                   {track.voice_part_display || track.voice_part}
                 </span>

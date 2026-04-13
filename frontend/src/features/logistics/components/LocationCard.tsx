@@ -14,10 +14,10 @@ import {
   Briefcase,
 } from "lucide-react";
 import type { LocationDto } from "../types/logistics.dto";
-import type { LocationCategory } from "../../../shared/types";
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Button } from "../../../shared/ui/Button";
-import { useLocalTime } from "../../../shared/lib/hooks/useLocalTime";
+import type { LocationCategory } from "@/shared/types";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import { useLocalTime } from "@/shared/lib/hooks/useLocalTime";
 
 interface LocationCardProps {
   location: LocationDto;
@@ -86,7 +86,7 @@ export const LocationCard = React.memo(
                     <Clock
                       size={11}
                       className={
-                        liveLocalTime ? "text-[#002395]" : "text-stone-400"
+                        liveLocalTime ? "text-brand" : "text-stone-400"
                       }
                     />
                     {liveLocalTime ? (

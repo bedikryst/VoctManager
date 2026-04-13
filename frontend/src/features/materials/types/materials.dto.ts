@@ -10,7 +10,7 @@ import type {
   PieceCasting,
   Project,
   Track,
-} from "../../../shared/types";
+} from "@/shared/types";
 
 export interface EnrichedPiece extends Piece {
   composerData: Composer | null;

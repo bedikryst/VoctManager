@@ -8,14 +8,14 @@
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import api from "../../../shared/api/api";
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import api from "@/shared/api/api";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import type {
   Project,
   Rehearsal,
   Participation,
   Attendance,
-} from "../../../shared/types";
+} from "@/shared/types";
 
 export interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;

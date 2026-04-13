@@ -15,9 +15,9 @@ import {
   artistNavGroups,
   BrandMark,
 } from "../navigation.config";
-import { NotificationCenter } from "../../../../features/notifications/components/NotificationCenter";
-import { isCrew, isManager } from "../../../../shared/auth/rbac";
-import type { AuthUser } from "../../../../shared/auth/auth.types";
+import { NotificationCenter } from "@features/notifications/components/NotificationCenter";
+import { isCrew, isManager } from "@/shared/auth/rbac";
+import type { AuthUser } from "@/shared/auth/auth.types";
 
 interface DesktopSidebarProps {
   user: AuthUser | null;
@@ -127,7 +127,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                     className={({ isActive }) =>
                       `group/link relative flex items-center rounded-xl border px-3 py-2 text-[13px] font-bold tracking-wide transition-all duration-300 ${
                         isActive
-                          ? "border-[#001766]/20 bg-[linear-gradient(135deg,#002395_0%,#0f4bd8_100%)] text-white shadow-md"
+                          ? "border-brand-dark/20 bg-[linear-gradient(135deg,#002395_0%,#0f4bd8_100%)] text-white shadow-md"
                           : "border-transparent text-stone-500 hover:bg-white hover:text-stone-900 hover:shadow-sm"
                       }`
                     }
@@ -143,7 +143,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                             {
                               className: isActive
                                 ? "text-white"
-                                : "text-stone-400 group-hover/link:text-[#002395] transition-colors",
+                                : "text-stone-400 group-hover/link:text-brand transition-colors",
                             },
                           )}
                         </div>
@@ -173,7 +173,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           >
             <div className="flex items-center justify-between rounded-xl border border-stone-200/60 bg-white/90 p-2 shadow-sm">
               <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xs font-bold text-[#002395]">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xs font-bold text-brand">
                   {initials}
                 </div>
                 <div className="min-w-0">
@@ -192,7 +192,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
             <div className="grid grid-cols-2 gap-2">
               <Link
                 to="/panel/settings"
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-500 shadow-sm transition-colors hover:text-[#002395]"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-stone-500 shadow-sm transition-colors hover:text-brand"
               >
                 <Settings size={13} />
                 {t("dashboard.layout.profile_settings", "Ustawienia")}
@@ -215,12 +215,12 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
             <NotificationCenter />
             <Link
               to="/panel/settings"
-              className="text-stone-400 transition-colors hover:text-[#002395]"
+              className="text-stone-400 transition-colors hover:text-brand"
             >
               <Settings size={18} />
             </Link>
             <div className="h-px w-6 bg-stone-200/80" />
-            <div className="flex h-9 w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-xl bg-blue-50 border border-blue-100 text-xs font-bold text-[#002395] shadow-sm transition-transform hover:scale-105">
+            <div className="flex h-9 w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-xl bg-blue-50 border border-blue-100 text-xs font-bold text-brand shadow-sm transition-transform hover:scale-105">
               {initials}
             </div>
           </motion.div>

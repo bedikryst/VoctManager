@@ -11,8 +11,8 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import type { Artist, Participation } from "../../../../shared/types";
-import { queryKeys } from "../../../../shared/lib/queryKeys";
+import type { Artist, Participation } from "@/shared/types";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import {
   useProjectAttendances,
   useCreateAttendance,

@@ -8,7 +8,7 @@
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { Collaborator, CrewAssignment } from "../../../../shared/types";
+import type { Collaborator, CrewAssignment } from "@/shared/types";
 import {
   useCreateCrewAssignment,
   useDeleteCrewAssignment,

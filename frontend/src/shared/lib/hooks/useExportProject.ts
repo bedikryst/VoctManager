@@ -8,7 +8,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import api from "../../api/api";
+import api from "@/shared/api/api";
 
 type ExportStatus = "idle" | "processing" | "success" | "error";
 

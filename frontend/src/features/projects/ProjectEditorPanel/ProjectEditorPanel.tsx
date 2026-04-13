@@ -23,7 +23,7 @@ import {
   Banknote,
 } from "lucide-react";
 
-import type { Project } from "../../../shared/types";
+import type { Project } from "@/shared/types";
 
 import DetailsTab from "./tabs/DetailsTab";
 import MicroCastingTab from "./tabs/MicroCastingTab";
@@ -35,7 +35,7 @@ import BudgetTab from "./tabs/BudgetTab";
 import AttendanceMatrixTab from "./tabs/AttendanceMatrixTab";
 
 import { PROJECT_TABS, ProjectTabId } from "../constants/projectDomain";
-import ConfirmModal from "../../../shared/ui/ConfirmModal";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 
 interface TabDefinition {
   id: ProjectTabId;
@@ -291,7 +291,7 @@ export default function ProjectEditorPanel({
                           onClick={() => handleTabInteraction(tab.id)}
                           className={`flex items-center gap-2 px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex-shrink-0 ${
                             isActive
-                              ? "bg-white text-[#002395] shadow-sm border border-white"
+                              ? "bg-white text-brand shadow-sm border border-white"
                               : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"
                           }`}
                         >

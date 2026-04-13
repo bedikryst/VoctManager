@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { User, Shield, Truck, ShieldAlert, Calendar } from "lucide-react";
 
-import { GlassCard } from "../../../shared/ui/GlassCard";
+import { GlassCard } from "@ui/composites/GlassCard";
 import GeneralTab from "./GeneralTab";
 import SecurityTab from "./SecurityTab";
 import LogisticsTab from "./LogisticsTab";
@@ -68,8 +68,8 @@ export default function SettingsLayout() {
                   onClick={() => setActiveTab(tab.id as TabType)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold antialiased ${
                     activeTab === tab.id
-                      ? "bg-[#002395] text-white shadow-md"
-                      : "text-stone-600 hover:bg-white/50 hover:text-[#002395]"
+                      ? "bg-brand text-white shadow-md"
+                      : "text-stone-600 hover:bg-white/50 hover:text-brand"
                   }`}
                 >
                   {tab.icon}

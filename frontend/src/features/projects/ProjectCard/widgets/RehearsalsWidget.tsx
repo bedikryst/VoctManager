@@ -10,13 +10,13 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar, UserMinus } from "lucide-react";
 
-import type { Project, Rehearsal } from "../../../../shared/types";
+import type { Project, Rehearsal } from "@/shared/types";
 import { useProjectData } from "../../hooks/useProjectData";
-import { GlassCard } from "../../../../shared/ui/GlassCard";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 // Import global formatters and components
-import { formatLocalizedDate } from "../../../../shared/lib/intl";
-import { DualTimeDisplay } from "../../../../shared/ui/DualTimeDisplay";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 
 interface RehearsalsWidgetProps {
   project: Project;
@@ -65,7 +65,7 @@ export default function RehearsalsWidget({
     <GlassCard
       variant="solid"
       onClick={onEdit}
-      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-[#002395]/40 hover:shadow-md" : ""}`}
+      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`}
       role={onEdit ? "button" : "region"}
       aria-label={t(
         "projects.rehearsals.aria_label",
@@ -73,16 +73,16 @@ export default function RehearsalsWidget({
       )}
     >
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
+        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-brand transition-colors">
           <Calendar
             size={16}
-            className="text-[#002395] group-hover:scale-110 transition-transform"
+            className="text-brand group-hover:scale-110 transition-transform"
             aria-hidden="true"
           />
           {t("projects.rehearsals.upcoming", "Najbliższe Próby")}
         </h4>
         {onEdit && (
-          <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-[#002395] opacity-0 group-hover:opacity-100 transition-opacity">
+          <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-brand opacity-0 group-hover:opacity-100 transition-opacity">
             {t("common.actions.edit", "Edytuj")}
           </button>
         )}
@@ -99,7 +99,7 @@ export default function RehearsalsWidget({
             </div>
             <div className="w-full bg-stone-100 rounded-full h-1.5">
               <div
-                className="bg-[#002395] h-1.5 rounded-full transition-all duration-500 ease-out"
+                className="bg-brand h-1.5 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
@@ -122,7 +122,7 @@ export default function RehearsalsWidget({
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-2.5">
                       <div
-                        className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow-sm ${reh.is_mandatory ? "bg-[#002395]" : "bg-orange-400"}`}
+                        className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow-sm ${reh.is_mandatory ? "bg-brand" : "bg-orange-400"}`}
                         aria-hidden="true"
                       />
                       <div className="flex flex-col">

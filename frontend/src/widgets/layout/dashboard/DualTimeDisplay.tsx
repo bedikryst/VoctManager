@@ -1,13 +1,13 @@
 /**
  * @file DualTimeDisplay.tsx
  * @description Enterprise UI Component for dual-timezone time presentation.
- * Automatically handles the display of event timezone vs local user timezone from their profile.
- * @architecture Enterprise SaaS 2026
+ * Automatically handles the display of event timezone vs local user timezone.
+ * @module shared/widgets/DualTimeDisplay
  */
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { formatLocalizedTime } from "../lib/intl";
-import { useAuth } from "../../app/providers/AuthProvider";
+import { formatLocalizedTime } from "@/shared/lib/intl";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export interface DualTimeDisplayProps {
   value: Date | string | number | null | undefined;
@@ -55,7 +55,6 @@ export const DualTimeDisplay: React.FC<DualTimeDisplayProps> = ({
       <span className={primaryTimeClassName}>
         {icon}
         {label && <span>{label}</span>}
-        {/* Czas GŁÓWNY (Wydarzenia) */}
         {formatLocalizedTime(
           value,
           primaryTimeOptions,
@@ -65,8 +64,7 @@ export const DualTimeDisplay: React.FC<DualTimeDisplayProps> = ({
       </span>
       {hasDiffTz && (
         <span className={localTimeClassName}>
-          ({t("common.timezone.local", "Twój czas:")}{" "}
-          {/* Czas LOKALNY (Z profilu użytkownika) */}
+          ({t("common.timezone.local")}{" "}
           {formatLocalizedTime(
             value,
             localTimeOptions,

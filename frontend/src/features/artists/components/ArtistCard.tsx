@@ -19,9 +19,9 @@ import {
   User,
 } from "lucide-react";
 
-import type { Artist } from "../../../shared/types";
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Button } from "../../../shared/ui/Button";
+import type { Artist } from "@/shared/types";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Button } from "@ui/primitives/Button";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -128,7 +128,7 @@ export const ArtistCard = React.memo(
             <div className="flex items-start gap-4 mb-5">
               <div className="relative">
                 <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold tracking-widest text-xs shadow-sm border ${artist.is_active ? "bg-white border-stone-100 text-[#002395]" : "bg-stone-100 border-stone-200 text-stone-400"}`}
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold tracking-widest text-xs shadow-sm border ${artist.is_active ? "bg-white border-stone-100 text-brand" : "bg-stone-100 border-stone-200 text-stone-400"}`}
                 >
                   {initials}
                 </div>
@@ -193,7 +193,7 @@ export const ArtistCard = React.memo(
                 <Mail size={14} className="text-stone-400" aria-hidden="true" />
                 <a
                   href={`mailto:${artist.email}`}
-                  className="hover:text-[#002395] transition-colors truncate"
+                  className="hover:text-brand transition-colors truncate"
                 >
                   {artist.email}
                 </a>
@@ -207,7 +207,7 @@ export const ArtistCard = React.memo(
                 {artist.phone_number ? (
                   <a
                     href={`tel:${artist.phone_number}`}
-                    className="hover:text-[#002395] transition-colors"
+                    className="hover:text-brand transition-colors"
                   >
                     {artist.phone_number}
                   </a>

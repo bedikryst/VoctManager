@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import ArchiveManagement from "../../features/archive/ArchiveManagement";
+import ArchiveManagement from "@features/archive/ArchiveManagement";
 
 export default function ArchivePage(): React.JSX.Element {
   return (

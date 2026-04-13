@@ -37,7 +37,7 @@ export const NotificationCenter: React.FC = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200/80 bg-white/60 text-stone-600 shadow-sm transition-all hover:bg-white hover:text-[#002395] active:scale-95"
+        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200/80 bg-white/60 text-stone-600 shadow-sm transition-all hover:bg-white hover:text-brand active:scale-95"
         aria-label={t("notifications.title", "Powiadomienia")}
       >
         <Bell size={18} strokeWidth={2.5} />

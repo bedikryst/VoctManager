@@ -1,6 +1,6 @@
 // frontend/src/features/notifications/api/notifications.service.ts
 
-import api from "../../../shared/api/api";
+import api from "@/shared/api/api";
 import type {
   NotificationDTO,
   UnreadCountResponse,

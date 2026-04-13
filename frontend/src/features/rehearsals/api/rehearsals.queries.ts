@@ -4,7 +4,7 @@
  */
 
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { RehearsalsService } from "./rehearsals.service";
 import type { AttendanceUpsertDTO } from "../types/rehearsals.dto";
 

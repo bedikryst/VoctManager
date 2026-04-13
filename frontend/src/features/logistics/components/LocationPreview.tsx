@@ -102,11 +102,11 @@ export const LocationPreview = ({
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 bg-stone-100/50 hover:bg-[#002395]/5 hover:text-[#002395] hover:border-[#002395]/30 px-2.5 py-1.5 rounded-lg border border-stone-200/80 transition-all group ${className}`}
+        className={`flex items-center gap-1.5 bg-stone-100/50 hover:bg-brand/5 hover:text-brand hover:border-brand/30 px-2.5 py-1.5 rounded-lg border border-stone-200/80 transition-all group ${className}`}
       >
         <MapPin
           size={12}
-          className="flex-shrink-0 text-stone-400 group-hover:text-[#002395] transition-colors"
+          className="flex-shrink-0 text-stone-400 group-hover:text-brand transition-colors"
         />
         <span className="truncate font-bold antialiased uppercase tracking-widest text-[10px]">
           {location.name}
@@ -121,7 +121,7 @@ export const LocationPreview = ({
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
             whileHover={{ y: -2, transition: { duration: 0.1 } }}
             onClick={openInGoogleMaps}
-            className="absolute z-50 top-full left-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-[#002395]/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col cursor-pointer ring-1 ring-black/5"
+            className="absolute z-50 top-full left-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-brand/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col cursor-pointer ring-1 ring-black/5"
           >
             {/* MAP PREVIEW */}
             {hasCoordinates ? (
@@ -167,7 +167,7 @@ export const LocationPreview = ({
             <div className="p-4 flex flex-col gap-3 relative">
               <div>
                 <div className="flex justify-between items-start">
-                  <p className="text-[8px] font-bold antialiased uppercase tracking-widest text-[#002395] mb-0.5">
+                  <p className="text-[8px] font-bold antialiased uppercase tracking-widest text-brand mb-0.5">
                     {location.category}
                   </p>
                   <ExternalLink size={10} className="text-stone-300" />
@@ -180,7 +180,7 @@ export const LocationPreview = ({
                 </p>
               </div>
 
-              <div className="w-full py-2.5 bg-[#002395]/5 group-hover:bg-[#002395] group-hover:text-white text-[#002395] text-[9px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2">
+              <div className="w-full py-2.5 bg-brand/5 group-hover:bg-brand group-hover:text-white text-brand text-[9px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2">
                 <Navigation size={12} />
                 {t("logistics.preview.get_directions", "Wyznacz trasę")}
               </div>

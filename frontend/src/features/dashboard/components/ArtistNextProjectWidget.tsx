@@ -16,13 +16,13 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Badge } from "../../../shared/ui/Badge";
-import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
-import { formatLocalizedDate } from "../../../shared/lib/intl";
-import { downloadFile } from "../../../shared/lib/downloadFile";
-import api from "../../../shared/api/api";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import { downloadFile } from "@/shared/lib/downloadFile";
+import api from "@/shared/api/api";
 
 export function ArtistNextProjectWidget({ project }: { project: any }) {
   const { t } = useTranslation();

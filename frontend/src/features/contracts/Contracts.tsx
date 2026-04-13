@@ -22,14 +22,14 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import { downloadFile } from "../../shared/lib/downloadFile";
+import { downloadFile } from "@/shared/lib/downloadFile";
 import { useContractsData } from "./hooks/useContractsData";
 import { useBulkUpdateFee } from "./api/contracts.queries";
 
-import { GlassCard } from "../../shared/ui/GlassCard";
-import { Input } from "../../shared/ui/Input";
-import { Button } from "../../shared/ui/Button";
-import { ExportContractButton } from "../../shared/ui/ExportContractButton";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Button } from "@/shared/ui/primitives/Button";
+import { ExportContractButton } from "@/shared/ui/widgets/ExportContractButton";
 import { ContractRow } from "./components/ContractRow";
 
 export default function Contracts(): React.JSX.Element {
@@ -119,8 +119,8 @@ export default function Contracts(): React.JSX.Element {
   if (isLoading && projects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <Loader2 size={32} className="animate-spin text-[#002395]/40" />
-        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
+        <Loader2 size={32} className="animate-spin text-brand/40" />
+        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-brand/60">
           {t("contracts.dashboard.loading", "Wczytywanie rejestrów...")}
         </span>
       </div>
@@ -136,8 +136,8 @@ export default function Contracts(): React.JSX.Element {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-            <Wallet size={12} className="text-[#002395]" aria-hidden="true" />
-            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+            <Wallet size={12} className="text-brand" aria-hidden="true" />
+            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
               {t("contracts.dashboard.subtitle", "Zarządzanie Finansami")}
             </p>
           </div>
@@ -146,7 +146,7 @@ export default function Contracts(): React.JSX.Element {
             style={{ fontFamily: "'Cormorant', serif" }}
           >
             {t("contracts.dashboard.title", "Kadry i")}{" "}
-            <span className="italic text-[#002395] font-bold">
+            <span className="italic text-brand font-bold">
               {t("contracts.dashboard.title_highlight", "Płace")}
             </span>
             .
@@ -164,7 +164,7 @@ export default function Contracts(): React.JSX.Element {
         variant="dark"
         className="flex flex-col md:flex-row md:items-center gap-6"
       >
-        <div className="absolute -top-32 -right-32 w-80 h-80 bg-[#002395] rounded-full blur-[100px] opacity-40 pointer-events-none group-hover:opacity-60 transition-opacity duration-1000"></div>
+        <div className="absolute -top-32 -right-32 w-80 h-80 bg-brand rounded-full blur-[100px] opacity-40 pointer-events-none group-hover:opacity-60 transition-opacity duration-1000"></div>
         <div
           className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{
@@ -231,7 +231,7 @@ export default function Contracts(): React.JSX.Element {
             </div>
             <Wallet
               size={40}
-              className="text-[#002395] mb-5 relative z-10"
+              className="text-brand mb-5 relative z-10"
               aria-hidden="true"
             />
             <h2
@@ -396,11 +396,7 @@ export default function Contracts(): React.JSX.Element {
             <GlassCard variant="solid" className="overflow-hidden">
               <div className="p-5 bg-stone-50/50 border-b border-stone-200/60 flex items-center gap-2.5 relative z-10">
                 <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm">
-                  <Users
-                    size={14}
-                    className="text-[#002395]"
-                    aria-hidden="true"
-                  />
+                  <Users size={14} className="text-brand" aria-hidden="true" />
                 </div>
                 <h3 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-700">
                   {t(

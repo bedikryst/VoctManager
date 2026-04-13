@@ -46,12 +46,12 @@ export function DroppableBucket({
       }
       className={`relative rounded-xl transition-all duration-200 ${
         isOver
-          ? "bg-[#002395]/5 ring-2 ring-[#002395]/20 shadow-inner"
+          ? "bg-brand/5 ring-2 ring-brand/20 shadow-inner"
           : "bg-transparent border border-transparent"
       } ${className}`}
     >
       {isOver && (
-        <div className="absolute inset-0 bg-gradient-to-b from-[#002395]/5 to-transparent rounded-xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand/5 to-transparent rounded-xl pointer-events-none" />
       )}
 
       <div className="relative z-10 h-full flex flex-col">{children}</div>

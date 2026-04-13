@@ -15,7 +15,7 @@ import type {
   VoiceRequirementDTO,
   EnrichedPiece,
 } from "../types/archive.dto";
-import type { Composer } from "../../../shared/types";
+import type { Composer } from "@/shared/types";
 
 export type SubmitAction = "SAVE_AND_ADD" | "SAVE_AND_CLOSE";
 

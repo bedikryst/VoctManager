@@ -16,7 +16,7 @@ import {
   Variants,
   Transition,
 } from "framer-motion";
-import { useAppStore } from "../../../app/store/useAppStore";
+import { useAppStore } from "@/app/store/useAppStore";
 
 interface GlobalNavbarProps {
   menuOpen: boolean;

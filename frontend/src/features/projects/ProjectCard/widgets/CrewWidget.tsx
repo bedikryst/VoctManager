@@ -9,9 +9,9 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Wrench } from "lucide-react";
 
-import type { Project, Collaborator } from "../../../../shared/types";
+import type { Project, Collaborator } from "@/shared/types";
 import { useProjectData } from "../../hooks/useProjectData";
-import { GlassCard } from "../../../../shared/ui/GlassCard";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 interface CrewWidgetProps {
   project: Project;
@@ -35,21 +35,21 @@ export default function CrewWidget({
     <GlassCard
       variant="solid"
       onClick={onEdit}
-      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-[#002395]/40 hover:shadow-md" : ""}`}
+      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`}
       role={onEdit ? "button" : "region"}
       aria-label={t("projects.crew.aria_label", "Zarządzaj ekipą techniczną")}
     >
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
+        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-brand transition-colors">
           <Wrench
             size={16}
-            className="text-[#002395] group-hover:scale-110 transition-transform"
+            className="text-brand group-hover:scale-110 transition-transform"
             aria-hidden="true"
           />
           {t("projects.crew.title", "Ekipa (Crew)")}
         </h4>
         {onEdit && (
-          <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-[#002395] opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
+          <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-brand opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
             {t("common.actions.edit", "Edytuj")}
           </button>
         )}
@@ -80,7 +80,7 @@ export default function CrewWidget({
           })}
 
           {overflowCount > 0 && (
-            <span className="px-2.5 py-1 bg-blue-50 text-[#002395] text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-blue-200 shadow-sm">
+            <span className="px-2.5 py-1 bg-blue-50 text-brand text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-blue-200 shadow-sm">
               +{overflowCount}
             </span>
           )}

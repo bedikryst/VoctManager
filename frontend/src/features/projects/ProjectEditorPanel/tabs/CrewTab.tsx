@@ -13,9 +13,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Wrench, Trash2, Loader2 } from "lucide-react";
 
 import { useCrewAssignments } from "../hooks/useCrewAssignments";
-import { GlassCard } from "../../../../shared/ui/GlassCard";
-import { Button } from "../../../../shared/ui/Button";
-import { Input } from "../../../../shared/ui/Input";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
 
 interface CrewTabProps {
   projectId: string;
@@ -51,7 +51,7 @@ export default function CrewTab({
               required
               value={selectedCrewId}
               onChange={(e) => setSelectedCrewId(e.target.value)}
-              className="w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] appearance-none cursor-pointer font-medium"
+              className="w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] appearance-none cursor-pointer font-medium"
               disabled={isMutating}
             >
               <option value="">

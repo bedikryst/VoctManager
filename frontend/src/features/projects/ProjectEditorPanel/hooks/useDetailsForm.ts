@@ -11,7 +11,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
-import type { Project, RunSheetItem } from "../../../../shared/types";
+import type { Project, RunSheetItem } from "@/shared/types";
 import { useCreateProject, useUpdateProject } from "../../api/project.queries";
 import type {
   ProjectCreateDTO,

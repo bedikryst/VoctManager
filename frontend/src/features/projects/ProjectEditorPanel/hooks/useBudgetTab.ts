@@ -15,7 +15,7 @@ import type {
   Participation,
   CrewAssignment,
   Collaborator,
-} from "../../../../shared/types";
+} from "@/shared/types";
 import {
   useUpdateParticipation,
   useUpdateCrewAssignment,

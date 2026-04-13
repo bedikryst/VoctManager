@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../../app/providers/AuthProvider";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 
 export default function Login(): React.JSX.Element {
@@ -50,13 +50,13 @@ export default function Login(): React.JSX.Element {
 
   return (
     <div
-      className="min-h-screen bg-[#fdfbf7] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-[#002395] selection:text-white"
+      className="min-h-screen bg-[#fdfbf7] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-brand selection:text-white"
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
       <div className="absolute top-8 left-8">
         <Link
           to="/"
-          className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-[#002395] transition-colors"
+          className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-brand transition-colors"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           <span>Powrót na stronę główną</span>
@@ -74,7 +74,7 @@ export default function Login(): React.JSX.Element {
             className="text-4xl md:text-5xl font-medium text-stone-900 mb-2"
             style={{ fontFamily: "'Cormorant', serif" }}
           >
-            Voct<span className="italic text-[#002395]">Manager</span>
+            Voct<span className="italic text-brand">Manager</span>
           </h2>
           <p className="mt-2 text-sm text-stone-500 font-light tracking-wide uppercase">
             Panel Administracyjny & Kadrowy
@@ -95,7 +95,7 @@ export default function Login(): React.JSX.Element {
         <div className="bg-white py-8 px-4 shadow-xl shadow-stone-200/50 sm:rounded-xl border border-stone-100 sm:px-10 relative overflow-hidden">
           {/* Aesthetic Gradient Top Border */}
           <div
-            className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#002395] to-blue-400"
+            className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand to-blue-400"
             aria-hidden="true"
           />
 
@@ -117,7 +117,7 @@ export default function Login(): React.JSX.Element {
                   disabled={isSubmitting}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2.5 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#002395] focus:border-[#002395] sm:text-sm font-medium transition-all disabled:bg-stone-50 disabled:text-stone-400"
+                  className="appearance-none block w-full px-3 py-2.5 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand sm:text-sm font-medium transition-all disabled:bg-stone-50 disabled:text-stone-400"
                   placeholder="np. jan.kowalski@voctensemble.pl"
                 />
               </div>
@@ -140,7 +140,7 @@ export default function Login(): React.JSX.Element {
                   disabled={isSubmitting}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2.5 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#002395] focus:border-[#002395] sm:text-sm font-medium transition-all disabled:bg-stone-50 disabled:text-stone-400"
+                  className="appearance-none block w-full px-3 py-2.5 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand sm:text-sm font-medium transition-all disabled:bg-stone-50 disabled:text-stone-400"
                   placeholder="••••••••"
                 />
               </div>
@@ -175,7 +175,7 @@ export default function Login(): React.JSX.Element {
               <button
                 type="submit"
                 disabled={isSubmitting || !email || !password}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-xs uppercase tracking-widest font-bold text-white bg-stone-900 hover:bg-[#002395] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#002395] transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed group"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-xs uppercase tracking-widest font-bold text-white bg-stone-900 hover:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed group"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">

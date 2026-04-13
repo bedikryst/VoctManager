@@ -19,7 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { useAccountActivation } from "../../features/auth/hooks/useAccountActivation";
+import { useAccountActivation } from "@features/auth/hooks/useAccountActivation";
 
 export default function ActivatePage(): React.JSX.Element {
   const { t } = useTranslation();
@@ -44,10 +44,7 @@ export default function ActivatePage(): React.JSX.Element {
 
   const activationHighlights = [
     {
-      title: t(
-        "auth.activate.features.security.title",
-        "Bezpieczna aktywacja",
-      ),
+      title: t("auth.activate.features.security.title", "Bezpieczna aktywacja"),
       description: t(
         "auth.activate.features.security.desc",
         "Link aktywacyjny jest przypisany do zaproszonego konta i odblokowuje prywatny panel dopiero po ustawieniu hasła.",
@@ -63,10 +60,7 @@ export default function ActivatePage(): React.JSX.Element {
       icon: KeyRound,
     },
     {
-      title: t(
-        "auth.activate.features.workspace.title",
-        "Panel pracy zespołu",
-      ),
+      title: t("auth.activate.features.workspace.title", "Panel pracy zespołu"),
       description: t(
         "auth.activate.features.workspace.desc",
         "VoctManager centralizuje komunikację artystyczną, dane zespołu i logistykę produkcyjną w jednym miejscu.",
@@ -77,7 +71,7 @@ export default function ActivatePage(): React.JSX.Element {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden bg-[#f6f1e8] selection:bg-[#002395] selection:text-white"
+      className="relative min-h-screen overflow-hidden bg-[#f6f1e8] selection:bg-brand selection:text-white"
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
       <div
@@ -89,7 +83,7 @@ export default function ActivatePage(): React.JSX.Element {
         }}
       />
       <div
-        className="pointer-events-none absolute -left-24 top-16 h-64 w-64 rounded-full bg-[#002395]/10 blur-3xl"
+        className="pointer-events-none absolute -left-24 top-16 h-64 w-64 rounded-full bg-brand/10 blur-3xl"
         aria-hidden="true"
       />
       <div
@@ -101,10 +95,12 @@ export default function ActivatePage(): React.JSX.Element {
         <div className="flex items-center justify-between">
           <Link
             to="/"
-            className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] font-medium text-stone-500 transition-colors hover:text-[#002395]"
+            className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] font-medium text-stone-500 transition-colors hover:text-brand"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            <span>{t("auth.activate.back_to_home", "Powrót na stronę główną")}</span>
+            <span>
+              {t("auth.activate.back_to_home", "Powrót na stronę główną")}
+            </span>
           </Link>
 
           <div className="rounded-full border border-white/70 bg-white/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-600 shadow-sm shadow-stone-300/30 backdrop-blur">
@@ -198,7 +194,7 @@ export default function ActivatePage(): React.JSX.Element {
               className="relative overflow-hidden rounded-[28px] border border-stone-200/70 bg-white/90 p-6 shadow-2xl shadow-stone-300/25 backdrop-blur md:p-8"
             >
               <div
-                className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#002395] via-cyan-500 to-stone-900"
+                className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand via-cyan-500 to-stone-900"
                 aria-hidden="true"
               />
 
@@ -225,7 +221,7 @@ export default function ActivatePage(): React.JSX.Element {
                   <div className="mb-6 rounded-2xl border border-stone-200 bg-stone-50/80 p-4">
                     <div className="flex items-start gap-3">
                       <ShieldCheck
-                        className="mt-0.5 h-5 w-5 text-[#002395]"
+                        className="mt-0.5 h-5 w-5 text-brand"
                         aria-hidden="true"
                       />
                       <div>
@@ -271,7 +267,7 @@ export default function ActivatePage(): React.JSX.Element {
                         disabled={isSubmitting || !hasActivationParams}
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
-                        className="block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-900 shadow-sm transition-all placeholder:text-stone-400 focus:border-[#002395] focus:outline-none focus:ring-2 focus:ring-[#002395]/20 disabled:bg-stone-100 disabled:text-stone-400"
+                        className="block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-900 shadow-sm transition-all placeholder:text-stone-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:bg-stone-100 disabled:text-stone-400"
                         placeholder={t(
                           "auth.activate.form.new_password_placeholder",
                           "Utwórz bezpieczne hasło",
@@ -300,7 +296,7 @@ export default function ActivatePage(): React.JSX.Element {
                         onChange={(event) =>
                           setConfirmPassword(event.target.value)
                         }
-                        className="block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-900 shadow-sm transition-all placeholder:text-stone-400 focus:border-[#002395] focus:outline-none focus:ring-2 focus:ring-[#002395]/20 disabled:bg-stone-100 disabled:text-stone-400"
+                        className="block w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-900 shadow-sm transition-all placeholder:text-stone-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:bg-stone-100 disabled:text-stone-400"
                         placeholder={t(
                           "auth.activate.form.confirm_password_placeholder",
                           "Powtórz hasło",
@@ -336,7 +332,7 @@ export default function ActivatePage(): React.JSX.Element {
                         !confirmPassword ||
                         !hasActivationParams
                       }
-                      className="flex w-full items-center justify-center rounded-xl bg-stone-900 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition-colors hover:bg-[#002395] disabled:cursor-not-allowed disabled:bg-stone-300"
+                      className="flex w-full items-center justify-center rounded-xl bg-stone-900 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition-colors hover:bg-brand disabled:cursor-not-allowed disabled:bg-stone-300"
                     >
                       {isSubmitting ? (
                         <span className="flex items-center gap-2">
@@ -403,7 +399,7 @@ export default function ActivatePage(): React.JSX.Element {
                               "Twój login do panelu",
                             )}
                           </p>
-                          <p className="font-mono text-xl font-bold text-[#002395] tracking-tight">
+                          <p className="font-mono text-xl font-bold text-brand tracking-tight">
                             {activatedData.email}
                           </p>
                         </div>
@@ -422,15 +418,21 @@ export default function ActivatePage(): React.JSX.Element {
                     <button
                       type="button"
                       onClick={() => navigate("/login")}
-                      className="flex-1 rounded-xl bg-stone-900 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition-colors hover:bg-[#002395]"
+                      className="flex-1 rounded-xl bg-stone-900 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition-colors hover:bg-brand"
                     >
-                      {t("auth.activate.success.go_to_login", "Przejdź do logowania")}
+                      {t(
+                        "auth.activate.success.go_to_login",
+                        "Przejdź do logowania",
+                      )}
                     </button>
                     <Link
                       to="/"
                       className="flex-1 rounded-xl border border-stone-300 px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition-colors hover:border-stone-900 hover:text-stone-900"
                     >
-                      {t("auth.activate.success.return_home", "Wróć na stronę główną")}
+                      {t(
+                        "auth.activate.success.return_home",
+                        "Wróć na stronę główną",
+                      )}
                     </Link>
                   </div>
                 </div>

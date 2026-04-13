@@ -1,5 +1,5 @@
-import PageTransition from "../../shared/ui/PageTransition";
-import { LocationsManager } from "../../features/logistics/components/LocationsManager";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
+import { LocationsManager } from "@features/logistics/components/LocationsManager";
 
 const LogisticsLocationsPage = () => {
   return (

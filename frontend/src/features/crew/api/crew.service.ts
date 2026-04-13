@@ -3,8 +3,8 @@
  * @description Pure HTTP service for the Crew domain.
  */
 
-import api from "../../../shared/api/api";
-import type { Collaborator } from "../../../shared/types";
+import api from "@/shared/api/api";
+import type { Collaborator } from "@/shared/types";
 import type { CrewWriteDTO } from "../types/crew.dto";
 
 const COLLABORATORS_URL = "/api/collaborators/";

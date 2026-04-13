@@ -4,8 +4,8 @@
  */
 import React from "react";
 import { Activity } from "lucide-react";
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { ProgressBar } from "../../../shared/ui/ProgressBar";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { ProgressBar } from "@/shared/ui/primitives/ProgressBar";
 
 export function TelemetryWidget({
   adminStats,

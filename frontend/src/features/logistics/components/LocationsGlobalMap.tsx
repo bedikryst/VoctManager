@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { MapPin, Clock } from "lucide-react";
 import type { LocationDto } from "../types/logistics.dto";
-import { useLocalTime } from "../../../shared/lib/hooks/useLocalTime";
+import { useLocalTime } from "@/shared/lib/hooks/useLocalTime";
 
 interface LocationsGlobalMapProps {
   locations: LocationDto[];
@@ -51,7 +51,7 @@ const LocationInfo = ({ location }: { location: LocationDto }) => {
 
   return (
     <div className="p-2 min-w-[200px] font-sans">
-      <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-[#002395] mb-1">
+      <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-brand mb-1">
         {t(
           `logistics.categories.${location.category.toLowerCase()}`,
           location.category.replace("_", " "),
@@ -61,7 +61,7 @@ const LocationInfo = ({ location }: { location: LocationDto }) => {
         {location.name}
       </h4>
       <div className="flex items-center gap-1.5 text-xs text-stone-600 mb-2 border-t border-stone-100 pt-2">
-        <Clock size={12} className="text-[#002395]" />
+        <Clock size={12} className="text-brand" />
         <span className="font-medium">
           {liveLocalTime || location.timezone}
         </span>

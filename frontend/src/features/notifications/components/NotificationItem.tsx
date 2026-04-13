@@ -24,8 +24,8 @@ import {
 
 import type { NotificationDTO } from "../types/notifications.dto";
 import { useMarkNotificationRead } from "../api/notifications.queries";
-import { useAuth } from "../../../app/providers/AuthProvider";
-import { isManager } from "../../../shared/auth/rbac";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { isManager } from "@/shared/auth/rbac";
 
 interface NotificationItemProps {
   notification: NotificationDTO;
@@ -86,7 +86,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       };
     }
 
-    const infoPill = "bg-[#002395]/10 text-[#002395] border-[#002395]/20";
+    const infoPill = "bg-brand/10 text-brand border-brand/20";
     const infoReadBg =
       "border-transparent bg-transparent hover:bg-white hover:shadow-sm hover:border-stone-200/60";
 

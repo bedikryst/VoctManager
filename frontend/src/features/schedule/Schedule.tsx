@@ -14,7 +14,7 @@ import { useAuth } from "../../app/providers/AuthProvider";
 import { useScheduleData } from "./hooks/useScheduleData";
 import TimelineProjectCard from "./components/TimelineProjectCard";
 import TimelineRehearsalCard from "./components/TimelineRehearsalCard";
-import { GlassCard } from "../../shared/ui/GlassCard";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 export default function Schedule(): React.JSX.Element {
   const { t } = useTranslation();
@@ -38,8 +38,8 @@ export default function Schedule(): React.JSX.Element {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-            <Calendar size={12} className="text-[#002395]" aria-hidden="true" />
-            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+            <Calendar size={12} className="text-brand" aria-hidden="true" />
+            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
               {t("schedule.dashboard.subtitle", "Osobisty Kalendarz")}
             </p>
           </div>
@@ -48,7 +48,7 @@ export default function Schedule(): React.JSX.Element {
             style={{ fontFamily: "'Cormorant', serif" }}
           >
             {t("schedule.dashboard.title", "Mój")}{" "}
-            <span className="italic text-[#002395]">
+            <span className="italic text-brand">
               {t("schedule.dashboard.title_highlight", "Harmonogram")}
             </span>
             .
@@ -77,7 +77,7 @@ export default function Schedule(): React.JSX.Element {
                 setViewMode(tab.id as "UPCOMING" | "PAST");
                 setExpandedEventId(null);
               }}
-              className={`px-5 py-2 text-[9px] font-bold antialiased uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${viewMode === tab.id ? "bg-white text-[#002395] shadow-sm border border-stone-100" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
+              className={`px-5 py-2 text-[9px] font-bold antialiased uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${viewMode === tab.id ? "bg-white text-brand shadow-sm border border-stone-100" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
             >
               {tab.label}
             </button>
@@ -86,15 +86,12 @@ export default function Schedule(): React.JSX.Element {
       </div>
 
       <div className="relative z-10">
-        <div className="absolute left-[19px] md:left-[31px] top-6 bottom-0 w-0.5 bg-gradient-to-b from-[#002395]/20 via-stone-200/50 to-transparent z-0 hidden sm:block"></div>
+        <div className="absolute left-[19px] md:left-[31px] top-6 bottom-0 w-0.5 bg-gradient-to-b from-brand/20 via-stone-200/50 to-transparent z-0 hidden sm:block"></div>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2
-              size={32}
-              className="animate-spin text-[#002395]/40 mb-4"
-            />
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[#002395]/60">
+            <Loader2 size={32} className="animate-spin text-brand/40 mb-4" />
+            <span className="text-[10px] uppercase font-bold tracking-widest text-brand/60">
               {t("schedule.loading", "Pobieranie grafiku...")}
             </span>
           </div>

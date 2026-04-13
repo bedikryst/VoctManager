@@ -7,9 +7,9 @@
 import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-import { useAuth } from "../providers/AuthProvider";
-import { isManager } from "../../shared/auth/rbac";
-import Preloader from "../../shared/ui/Preloader";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { isManager } from "@/shared/auth/rbac";
+import { Preloader } from "@/shared/ui/kinematics/Preloader";
 
 export default function ManagerRoute(): React.JSX.Element {
   const { user, isLoading } = useAuth();

@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { Collaborator } from "../../../shared/types";
+import type { Collaborator } from "@/shared/types";
 import { useSaveCrewMember } from "../api/crew.queries";
 import type { CrewFormData } from "../types/crew.dto";
 

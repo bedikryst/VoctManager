@@ -40,10 +40,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import type { Piece } from "../../../../shared/types";
-import { GlassCard } from "../../../../shared/ui/GlassCard";
-import { Button } from "../../../../shared/ui/Button";
-import { Input } from "../../../../shared/ui/Input";
+import type { Piece } from "@/shared/types";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
 import { useProgramTab, ProgramItem } from "../hooks/useProgramTab";
 
 interface ProgramTabProps {
@@ -132,8 +132,8 @@ function SortablePieceItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center justify-between bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-xl shadow-sm group relative hover:border-[#002395]/40 hover:shadow-md transition-colors overflow-hidden ${
-        isDragging ? "shadow-lg ring-2 ring-[#002395]/20 scale-[1.02]" : ""
+      className={`flex items-center justify-between bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-xl shadow-sm group relative hover:border-brand/40 hover:shadow-md transition-colors overflow-hidden ${
+        isDragging ? "shadow-lg ring-2 ring-brand/20 scale-[1.02]" : ""
       }`}
     >
       <div
@@ -148,17 +148,17 @@ function SortablePieceItem({
       >
         <GripVertical
           size={16}
-          className="text-stone-300 group-hover:text-[#002395] transition-colors flex-shrink-0"
+          className="text-stone-300 group-hover:text-brand transition-colors flex-shrink-0"
           aria-hidden="true"
         />
-        <span className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 flex items-center justify-center text-[10px] font-bold antialiased text-[#002395] shadow-sm flex-shrink-0">
+        <span className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 flex items-center justify-center text-[10px] font-bold antialiased text-brand shadow-sm flex-shrink-0">
           {index + 1}
         </span>
 
         <div className="flex flex-col min-w-0">
           <p
             className={`text-sm font-bold truncate tracking-tight ${
-              item.is_encore ? "text-[#002395] italic" : "text-stone-800"
+              item.is_encore ? "text-brand italic" : "text-stone-800"
             }`}
           >
             {item.piece_title}
@@ -260,7 +260,7 @@ export default function ProgramTab({
             className="fixed bottom-6 md:bottom-10 left-1/2 z-[200] w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_rgb(0,0,0,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-4 flex items-center justify-between"
           >
             <div className="flex flex-col ml-2">
-              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
+              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
                 {t("projects.program.fab.unsaved", "Niezapisane Zmiany")}
               </span>
               <span className="text-xs text-stone-500">
@@ -300,11 +300,7 @@ export default function ProgramTab({
       <div className="lg:col-span-3">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-stone-200/60 pb-4 mb-5 gap-3">
           <h3 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 flex items-center gap-2.5">
-            <ListOrdered
-              size={16}
-              className="text-[#002395]"
-              aria-hidden="true"
-            />{" "}
+            <ListOrdered size={16} className="text-brand" aria-hidden="true" />{" "}
             {t("projects.program.sections.setlist", "Setlista Wydarzenia")}
           </h3>
           <div className="flex items-center gap-2">
@@ -314,7 +310,7 @@ export default function ProgramTab({
               })}
             </span>
             {totalConcertDurationSeconds > 0 && (
-              <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-[#002395] bg-blue-50/80 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm flex items-center gap-1.5">
+              <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-brand bg-blue-50/80 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm flex items-center gap-1.5">
                 <Clock size={12} aria-hidden="true" />{" "}
                 {formatTotalDuration(totalConcertDurationSeconds, t)}
               </span>
@@ -417,7 +413,7 @@ export default function ProgramTab({
                   className={`flex items-center justify-between p-3.5 border rounded-xl transition-colors ${
                     isAdded
                       ? "bg-stone-50/50 border-stone-200/50 opacity-60"
-                      : "bg-white/60 hover:bg-white border-stone-200/80 shadow-sm hover:border-[#002395]/30"
+                      : "bg-white/60 hover:bg-white border-stone-200/80 shadow-sm hover:border-brand/30"
                   }`}
                 >
                   <div className="flex flex-col min-w-0 pr-3">
@@ -446,7 +442,7 @@ export default function ProgramTab({
                     className={`flex-shrink-0 p-2 rounded-lg transition-all active:scale-90 ${
                       isAdded
                         ? "text-emerald-600 bg-emerald-50 border border-emerald-100"
-                        : "text-white bg-stone-900 hover:bg-[#002395] shadow-sm"
+                        : "text-white bg-stone-900 hover:bg-brand shadow-sm"
                     }`}
                     title={
                       isAdded

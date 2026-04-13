@@ -4,8 +4,8 @@
  * Encapsulates the complex logic of constructing multipart/form-data payloads.
  */
 
-import api from "../../../shared/api/api";
-import type { Piece, Composer, Track } from "../../../shared/types";
+import api from "@/shared/api/api";
+import type { Piece, Composer, Track } from "@/shared/types";
 import type { PieceWriteDTO } from "../types/archive.dto";
 
 const PIECES_URL = "/api/pieces/";

@@ -1,4 +1,4 @@
-import type { Piece } from "../types";
+import type { Piece } from "@/shared/types";
 
 export interface ReferenceRecordingLink {
   platform: "youtube" | "spotify" | "legacy";

@@ -5,7 +5,7 @@
  * @module features/settings/types
  */
 
-import type { AppRole } from "../../../shared/auth/auth.types";
+import type { AppRole } from "@/shared/auth/auth.types";
 
 export interface UserProfileDTO {
   role?: AppRole;

@@ -8,7 +8,7 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import {
   useProjects, // ✅ Dodano import głównego zapytania projektów
   useProjectArtistsDictionary,

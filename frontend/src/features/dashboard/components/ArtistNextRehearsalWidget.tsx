@@ -17,12 +17,12 @@ import {
   Check,
 } from "lucide-react";
 
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Badge } from "../../../shared/ui/Badge";
-import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
-import { formatLocalizedDate } from "../../../shared/lib/intl";
-import { cn } from "../../../shared/lib/utils";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import { cn } from "@/shared/lib/utils";
 import { useUpsertScheduleAttendance } from "../../schedule/api/schedule.queries";
 import { AbsenceReportForm, type AbsenceFormValues } from "./AbsenceReportForm";
 
@@ -132,7 +132,7 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
 
         <div className="flex flex-col gap-2 text-[11px] font-bold text-stone-600 mb-6 relative z-50">
           <span className="flex items-center gap-2">
-            <Calendar size={14} className="text-[#002395]/60" />{" "}
+            <Calendar size={14} className="text-brand/60" />{" "}
             {formatLocalizedDate(
               rehearsal.date,
               { weekday: "long", day: "numeric", month: "long" },
@@ -144,11 +144,7 @@ export function ArtistNextRehearsalWidget({ rehearsal }: { rehearsal: any }) {
             value={rehearsal.date}
             timeZone={rehearsal.data.timezone}
             icon={
-              <Clock
-                size={14}
-                className="text-[#002395]/60"
-                aria-hidden="true"
-              />
+              <Clock size={14} className="text-brand/60" aria-hidden="true" />
             }
             localTimeClassName="text-[10px] text-stone-400 font-medium pl-6"
           />

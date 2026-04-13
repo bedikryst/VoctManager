@@ -22,9 +22,9 @@ import {
 
 import type { EnrichedPiece } from "../types/archive.dto";
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
-import { getReferenceRecordingLinks } from "../../../shared/lib/referenceRecordings";
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Button } from "../../../shared/ui/Button";
+import { getReferenceRecordingLinks } from "@/shared/lib/referenceRecordings";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Button } from "@ui/primitives/Button";
 
 interface PieceCardProps {
   piece: EnrichedPiece;
@@ -88,14 +88,14 @@ export default function PieceCard({
   return (
     <GlassCard
       noPadding
-      className={`transition-all duration-300 ${isExpanded ? "border-[#002395]/30 shadow-[0_10px_30px_rgba(0,35,149,0.05)]" : "hover:border-[#002395]/20 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)]"}`}
+      className={`transition-all duration-300 ${isExpanded ? "border-brand/30 shadow-[0_10px_30px_rgba(0,35,149,0.05)]" : "hover:border-brand/20 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)]"}`}
     >
       <div
         className="p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 cursor-pointer hover:bg-white/40 transition-colors relative z-10"
         onClick={onToggleExpand}
       >
         <div className="flex items-start gap-4 md:gap-5">
-          <div className="w-12 h-12 rounded-2xl bg-white border border-stone-100 flex items-center justify-center flex-shrink-0 text-[#002395] shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-stone-100 flex items-center justify-center flex-shrink-0 text-brand shadow-sm">
             <Music size={20} aria-hidden="true" />
           </div>
           <div>
@@ -153,7 +153,7 @@ export default function PieceCard({
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="hidden md:flex gap-2">
             {piece.sheet_music && (
-              <span className="px-2.5 py-1.5 bg-blue-50 text-[#002395] text-[9px] tracking-widest font-bold antialiased uppercase rounded-lg border border-blue-100 shadow-sm flex items-center gap-1.5">
+              <span className="px-2.5 py-1.5 bg-blue-50 text-brand text-[9px] tracking-widest font-bold antialiased uppercase rounded-lg border border-blue-100 shadow-sm flex items-center gap-1.5">
                 <FileText size={10} /> PDF
               </span>
             )}
@@ -165,11 +165,7 @@ export default function PieceCard({
           </div>
           <div className="text-stone-400 bg-white shadow-sm p-2 rounded-full border border-stone-100 transition-transform duration-300">
             {isExpanded ? (
-              <ChevronUp
-                size={20}
-                className="text-[#002395]"
-                aria-hidden="true"
-              />
+              <ChevronUp size={20} className="text-brand" aria-hidden="true" />
             ) : (
               <ChevronDown size={20} aria-hidden="true" />
             )}
@@ -276,7 +272,7 @@ export default function PieceCard({
                             {piece.voice_requirements.map((requirement) => (
                               <span
                                 key={requirement.id}
-                                className="px-2.5 py-1 bg-white/60 border border-[#002395]/20 text-[#002395] text-[9px] font-bold antialiased uppercase tracking-widest rounded-md shadow-sm"
+                                className="px-2.5 py-1 bg-white/60 border border-brand/20 text-brand text-[9px] font-bold antialiased uppercase tracking-widest rounded-md shadow-sm"
                               >
                                 {(
                                   requirement as { voice_line_display?: string }

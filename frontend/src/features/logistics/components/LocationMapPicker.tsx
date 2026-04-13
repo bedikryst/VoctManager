@@ -18,7 +18,7 @@ import { Search, MapPin, Navigation, Loader2 } from "lucide-react";
 import { useDebounceValue } from "usehooks-ts"; // Modern standard for debouncing
 
 import type { LocationFormValues } from "../types/logistics.dto"; // Synced with Zod schema
-import { Button } from "../../../shared/ui/Button";
+import { Button } from "@/shared/ui/primitives/Button";
 
 interface LocationMapPickerProps {
   onLocationSelect: (locationData: Partial<LocationFormValues>) => void;
@@ -217,7 +217,7 @@ export const LocationMapPicker = ({
     <div className="space-y-4" ref={dropdownRef}>
       <div className="flex flex-col sm:flex-row gap-3 relative">
         <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#002395]/50 z-10">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-brand/50 z-10">
             <Search size={18} />
           </div>
           <input
@@ -229,7 +229,7 @@ export const LocationMapPicker = ({
               "logistics.map.search_placeholder",
               "Wyszukaj globalne lokacje...",
             )}
-            className="w-full pl-10 pr-4 py-3 bg-white/50 border border-stone-200/60 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 backdrop-blur-md transition-all duration-300 relative z-10 font-medium text-sm"
+            className="w-full pl-10 pr-4 py-3 bg-white/50 border border-stone-200/60 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 backdrop-blur-md transition-all duration-300 relative z-10 font-medium text-sm"
           />
 
           {isOpen && suggestions.length > 0 && (
@@ -240,9 +240,9 @@ export const LocationMapPicker = ({
                   <li
                     key={index}
                     onClick={() => handleSelectSuggestion(suggestion)}
-                    className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-[#002395]/5 transition-colors duration-200 text-stone-700 text-sm border-b border-stone-100 last:border-0"
+                    className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-brand/5 transition-colors duration-200 text-stone-700 text-sm border-b border-stone-100 last:border-0"
                   >
-                    <MapPin size={16} className="text-[#002395]/70 shrink-0" />
+                    <MapPin size={16} className="text-brand/70 shrink-0" />
                     <span className="truncate text-stone-900 font-medium">
                       {suggestion.placePrediction.text.text}
                     </span>

@@ -1,14 +1,15 @@
 /**
  * @file SystemModuleCard.tsx
- * @description Standardized generic card for routing to different system modules.
- * Resolves Dashboard code duplication.
- * @architecture Enterprise SaaS 2026
+ * @description Standardised generic card for routing to distinct system modules.
+ * @module shared/ui/widgets/SystemModuleCard
  */
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { GlassCard } from "./GlassCard";
-import { cn } from "../lib/utils";
+import { useTranslation } from "react-i18next";
+import { GlassCard } from "../composites/GlassCard";
+import { cn } from "@/shared/lib/utils";
 
 interface SystemModuleCardProps {
   title: string;
@@ -19,20 +20,22 @@ interface SystemModuleCardProps {
   titleColorClass?: string;
   hoverClass?: string;
   features?: string[];
-  openLabel?: string;
+  openLabelKey?: string;
 }
 
-export function SystemModuleCard({
+export const SystemModuleCard = ({
   title,
   description,
   icon,
   path,
   iconBgClass = "bg-white border-stone-200/60",
-  titleColorClass = "group-hover/module:text-[#002395]",
-  hoverClass = "hover:border-[#002395]/30 hover:shadow-md",
+  titleColorClass = "group-hover/module:text-brand",
+  hoverClass = "hover:border-brand/30 hover:shadow-md",
   features,
-  openLabel = "Otwórz Moduł",
-}: SystemModuleCardProps): React.JSX.Element {
+  openLabelKey = "common.actions.openModule",
+}: SystemModuleCardProps): React.JSX.Element => {
+  const { t } = useTranslation();
+
   return (
     <Link
       to={path}
@@ -71,7 +74,7 @@ export function SystemModuleCard({
           <div className="flex flex-wrap gap-1.5 mb-4">
             {features.map((feature, idx) => (
               <span
-                key={idx}
+                key={`${feature}-${idx}`}
                 className="px-1.5 py-0.5 bg-stone-100 text-stone-500 text-[8px] font-bold uppercase tracking-widest rounded border border-stone-200/40"
               >
                 {feature}
@@ -87,7 +90,7 @@ export function SystemModuleCard({
               titleColorClass,
             )}
           >
-            {openLabel}
+            {t(openLabelKey)}
           </span>
           <ChevronRight
             size={14}
@@ -100,4 +103,4 @@ export function SystemModuleCard({
       </GlassCard>
     </Link>
   );
-}
+};

@@ -6,14 +6,14 @@ import { Plus, Search, Map as MapIcon, LayoutGrid, Globe2 } from "lucide-react";
 
 import { LocationsGlobalMap } from "./LocationsGlobalMap";
 import { useLocationsData } from "../hooks/useLocationsData";
-import { useBodyScrollLock } from "../../../shared/lib/hooks/useBodyScrollLock";
-import ConfirmModal from "../../../shared/ui/ConfirmModal";
-import { Button } from "../../../shared/ui/Button";
-import { Input } from "../../../shared/ui/Input";
-import { GlassCard } from "../../../shared/ui/GlassCard";
+import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { LocationCard } from "./LocationCard";
 import LocationInlineEditor from "./LocationInlineEditor";
-import type { LocationCategory } from "../../../shared/types";
+import type { LocationCategory } from "@/shared/types";
 
 const FILTER_CATEGORIES: {
   value: LocationCategory | "";
@@ -129,8 +129,8 @@ export const LocationsManager = (): React.JSX.Element => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-                <MapIcon size={12} className="text-[#002395]" />
-                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+                <MapIcon size={12} className="text-brand" />
+                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
                   {t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
                 </p>
               </div>
@@ -139,7 +139,7 @@ export const LocationsManager = (): React.JSX.Element => {
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
                 {t("logistics.dashboard.title_prefix", "Baza")}{" "}
-                <span className="italic text-[#002395]">
+                <span className="italic text-brand">
                   {t("logistics.dashboard.title_highlight", "Lokacji")}
                 </span>
                 .
@@ -188,13 +188,13 @@ export const LocationsManager = (): React.JSX.Element => {
         <div className="flex bg-stone-200/50 p-1 rounded-xl border border-stone-200/80 shrink-0">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "grid" ? "bg-white text-[#002395] shadow-sm font-bold" : "text-stone-500 hover:text-stone-700 hover:bg-white/50"}`}
+            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "grid" ? "bg-white text-brand shadow-sm font-bold" : "text-stone-500 hover:text-stone-700 hover:bg-white/50"}`}
           >
             <LayoutGrid size={18} />
           </button>
           <button
             onClick={() => setViewMode("map")}
-            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "map" ? "bg-white text-[#002395] shadow-sm font-bold" : "text-stone-500 hover:text-stone-700 hover:bg-white/50"}`}
+            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "map" ? "bg-white text-brand shadow-sm font-bold" : "text-stone-500 hover:text-stone-700 hover:bg-white/50"}`}
           >
             <Globe2 size={18} />
           </button>
@@ -217,7 +217,7 @@ export const LocationsManager = (): React.JSX.Element => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold antialiased transition-all duration-300 border shrink-0 outline-none
                 ${
                   categoryFilter === cat.value
-                    ? "bg-[#002395] text-white border-[#002395] shadow-[0_8px_16px_rgba(0,35,149,0.2)]"
+                    ? "bg-brand text-white border-brand shadow-[0_8px_16px_rgba(0,35,149,0.2)]"
                     : "bg-white/60 text-stone-600 border-stone-200/60 hover:bg-white hover:border-stone-300 hover:shadow-sm"
                 }`}
             >

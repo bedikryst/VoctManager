@@ -6,7 +6,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { ArchiveService } from "./archive.service";
 import type { PieceWriteDTO } from "../types/archive.dto";
 

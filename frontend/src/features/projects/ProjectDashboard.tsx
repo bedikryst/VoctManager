@@ -17,10 +17,10 @@ import ProjectCard from "./ProjectCard/ProjectCard";
 import ProjectEditorPanel from "./ProjectEditorPanel/ProjectEditorPanel";
 import { DashboardFilterMenu } from "./components/DashboardFilterMenu";
 
-import ConfirmModal from "../../shared/ui/ConfirmModal";
-import { GlassCard } from "../../shared/ui/GlassCard";
-import { Button } from "../../shared/ui/Button";
-import { useBodyScrollLock } from "../../shared/lib/hooks/useBodyScrollLock";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
 
 const MemoizedProjectCard = React.memo(ProjectCard);
 
@@ -58,10 +58,10 @@ export default function ProjectDashboard(): React.JSX.Element {
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
                 <Briefcase
                   size={12}
-                  className="text-[#002395]"
+                  className="text-brand"
                   aria-hidden="true"
                 />
-                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
                   {t("projects.dashboard.header_badge", "Centrum Dowodzenia")}
                 </p>
               </div>
@@ -70,7 +70,7 @@ export default function ProjectDashboard(): React.JSX.Element {
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
                 {t("projects.dashboard.header_title_1", "Wydarzenia i")}{" "}
-                <span className="italic text-[#002395]">
+                <span className="italic text-brand">
                   {t("projects.dashboard.header_title_2", "Produkcja")}
                 </span>
                 .

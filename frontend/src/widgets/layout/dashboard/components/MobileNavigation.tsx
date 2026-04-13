@@ -10,9 +10,9 @@ import {
   artistNavGroups,
   BrandMark,
 } from "../navigation.config";
-import { NotificationCenter } from "../../../../features/notifications/components/NotificationCenter";
-import { isCrew, isManager } from "../../../../shared/auth/rbac";
-import type { AuthUser } from "../../../../shared/auth/auth.types";
+import { NotificationCenter } from "@features/notifications/components/NotificationCenter";
+import { isCrew, isManager } from "@/shared/auth/rbac";
+import type { AuthUser } from "@/shared/auth/auth.types";
 
 interface MobileNavigationProps {
   user: AuthUser | null;
@@ -83,7 +83,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             >
               <div className="relative flex flex-shrink-0 items-center justify-between border-b border-stone-200/60 bg-white/84 p-5 backdrop-blur-xl">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#002395]">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand">
                     {t("dashboard.layout.mobile_nav_title")}
                   </span>
                   <div className="mt-2">
@@ -112,7 +112,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                           end={link.to === "/panel"}
                           onClick={() => setIsOpen(false)}
                           className={({ isActive }) =>
-                            `group flex items-center gap-3 rounded-2xl border px-4 py-3 text-xs font-bold tracking-wide transition-all duration-300 ${isActive ? "border-[#001766]/20 bg-[linear-gradient(135deg,#002395_0%,#0f4bd8_100%)] text-white shadow-[0_16px_34px_rgba(0,35,149,0.28)]" : "border-transparent bg-white/55 text-stone-500 hover:border-stone-200/70 hover:bg-white hover:text-stone-900 hover:shadow-[0_10px_24px_rgba(28,25,23,0.08)]"}`
+                            `group flex items-center gap-3 rounded-2xl border px-4 py-3 text-xs font-bold tracking-wide transition-all duration-300 ${isActive ? "border-brand-dark/20 bg-[linear-gradient(135deg,#002395_0%,#0f4bd8_100%)] text-white shadow-[0_16px_34px_rgba(0,35,149,0.28)]" : "border-transparent bg-white/55 text-stone-500 hover:border-stone-200/70 hover:bg-white hover:text-stone-900 hover:shadow-[0_10px_24px_rgba(28,25,23,0.08)]"}`
                           }
                         >
                           {({ isActive }) => (
@@ -134,7 +134,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
               <div className="flex flex-shrink-0 flex-col gap-3 border-t border-stone-200/60 bg-white/84 p-5 backdrop-blur-xl">
                 <div className="flex items-center gap-3 rounded-[1.35rem] border border-stone-200/70 bg-white p-3 shadow-sm">
-                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-sm font-bold text-[#002395] shadow-sm">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-sm font-bold text-brand shadow-sm">
                     {initials}
                   </div>
                   <div className="min-w-0">
@@ -150,7 +150,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   <Link
                     to="/panel/settings"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-blue-100 hover:bg-blue-50 hover:text-[#002395]"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-blue-100 hover:bg-blue-50 hover:text-brand"
                   >
                     <Settings size={15} />{" "}
                     {t("dashboard.layout.profile_settings")}

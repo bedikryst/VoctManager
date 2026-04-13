@@ -10,7 +10,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ListOrdered, ChevronDown, ChevronUp } from "lucide-react";
-import type { Project } from "../../../../shared/types";
+import type { Project } from "@/shared/types";
 
 interface RunSheetWidgetProps {
   project: Project;
@@ -40,11 +40,7 @@ export default function RunSheetWidget({
         aria-expanded={isOpen}
       >
         <h4 className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-          <ListOrdered
-            size={16}
-            className="text-[#002395]"
-            aria-hidden="true"
-          />{" "}
+          <ListOrdered size={16} className="text-brand" aria-hidden="true" />{" "}
           {t("projects.run_sheet.title", "Harmonogram dnia koncertu")}
         </h4>
         <div className="flex items-center gap-4">
@@ -54,7 +50,7 @@ export default function RunSheetWidget({
                 e.stopPropagation();
                 onEdit();
               }}
-              className="text-[10px] uppercase font-bold antialiased tracking-widest text-[#002395] hover:underline"
+              className="text-[10px] uppercase font-bold antialiased tracking-widest text-brand hover:underline"
             >
               {t("common.actions.edit", "Edytuj")}
             </button>
@@ -84,11 +80,11 @@ export default function RunSheetWidget({
                   {sortedRunSheet.map((item, idx) => (
                     <div key={item.id || idx} className="relative">
                       <div
-                        className="absolute -left-[27px] top-1 w-4 h-4 bg-white border-[3px] border-[#002395] rounded-full shadow-sm"
+                        className="absolute -left-[27px] top-1 w-4 h-4 bg-white border-[3px] border-brand rounded-full shadow-sm"
                         aria-hidden="true"
                       />
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-bold antialiased text-[#002395] bg-blue-50 self-start px-2 py-0.5 rounded-md border border-blue-100/50">
+                        <span className="text-[10px] font-bold antialiased text-brand bg-blue-50 self-start px-2 py-0.5 rounded-md border border-blue-100/50">
                           {item.time}
                         </span>
                         <div>

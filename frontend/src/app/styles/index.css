@@ -7,6 +7,11 @@
 
   --font-serif:
     "Cormorant", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+
+  /* Enterprise Design Tokens (migrated from the old config) */
+  --color-brand: #002395;
+  --color-brand-dark: #001766;
+  --color-brand-light: #e6e9f4;
 }
 
 /* ========================================== */
@@ -18,7 +23,7 @@
   }
 
   body {
-    @apply bg-stone-50 text-stone-900 antialiased selection:bg-[#002395] selection:text-white;
+    @apply bg-stone-50 text-stone-900 antialiased selection:bg-brand selection:text-white;
   }
 }
 
@@ -99,7 +104,7 @@ body.admin-mode [role="button"] {
   cursor: pointer;
 }
 
-/* Protect Tailwind Utility Classes (e.g., cursor-grab in the Program Builder) */
+/* Protect Tailwind Utility Classes */
 body.admin-mode .cursor-grab {
   cursor: grab !important;
 }

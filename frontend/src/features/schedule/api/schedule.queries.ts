@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { ScheduleService } from "./schedule.service";
 import type { ScheduleAttendanceReportDTO } from "../types/schedule.dto";
 

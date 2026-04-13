@@ -17,17 +17,14 @@ import {
   Briefcase,
   Archive,
 } from "lucide-react";
-import { DualTimeDisplay } from "../../shared/ui/DualTimeDisplay";
+import { DualTimeDisplay } from "../../widgets/layout/dashboard/DualTimeDisplay";
 import { useLocationResolver } from "../logistics/hooks/useLocationResolver";
 import { LocationPreview } from "../logistics/components/LocationPreview";
 
 import { useRehearsalsData } from "./hooks/useRehearsalsData";
-import {
-  formatLocalizedDate,
-  formatLocalizedTime,
-} from "../../shared/lib/intl";
-import { GlassCard } from "../../shared/ui/GlassCard";
-import { Button } from "../../shared/ui/Button";
+import { formatLocalizedDate, formatLocalizedTime } from "@/shared/lib/intl";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
 import { ArtistRow } from "./components/ArtistRow";
 
 export default function Rehearsals(): React.JSX.Element {
@@ -96,7 +93,7 @@ export default function Rehearsals(): React.JSX.Element {
   if (isLoading && displayProjects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <Loader2 size={32} className="animate-spin text-[#002395]/40" />
+        <Loader2 size={32} className="animate-spin text-brand/40" />
       </div>
     );
   }
@@ -110,8 +107,8 @@ export default function Rehearsals(): React.JSX.Element {
           transition={{ duration: 0.5 }}
         >
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-            <CheckSquare size={12} className="text-[#002395]" />
-            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+            <CheckSquare size={12} className="text-brand" />
+            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
               {t("rehearsals.dashboard.subtitle", "Moduł Inspektora")}
             </p>
           </div>
@@ -120,7 +117,7 @@ export default function Rehearsals(): React.JSX.Element {
             style={{ fontFamily: "'Cormorant', serif" }}
           >
             {t("rehearsals.dashboard.title", "Dziennik")}{" "}
-            <span className="italic text-[#002395] font-bold">
+            <span className="italic text-brand font-bold">
               {t("rehearsals.dashboard.title_highlight", "Obecności")}
             </span>
             .
@@ -138,7 +135,7 @@ export default function Rehearsals(): React.JSX.Element {
           <div className="flex bg-stone-100/80 p-1 rounded-xl border border-stone-200/60 shadow-sm">
             <button
               onClick={() => setProjectTab("ACTIVE")}
-              className={`px-4 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${projectTab === "ACTIVE" ? "bg-white text-[#002395] shadow-sm border border-stone-200/60" : "text-stone-500 hover:text-stone-800"}`}
+              className={`px-4 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${projectTab === "ACTIVE" ? "bg-white text-brand shadow-sm border border-stone-200/60" : "text-stone-500 hover:text-stone-800"}`}
             >
               {t("rehearsals.tabs.active", "Aktywne")}
             </button>
@@ -168,7 +165,7 @@ export default function Rehearsals(): React.JSX.Element {
                   onClick={() => setSelectedProjectId(String(project.id))}
                   className={`snap-start flex-shrink-0 w-64 p-4 rounded-2xl border text-left transition-all group active:scale-95 ${
                     isSelected
-                      ? "bg-[#002395] border-[#002395] shadow-lg shadow-[#002395]/20"
+                      ? "bg-brand border-brand shadow-lg shadow-brand/20"
                       : "bg-white/60 hover:bg-white border-stone-200 shadow-sm"
                   }`}
                 >
@@ -208,10 +205,10 @@ export default function Rehearsals(): React.JSX.Element {
                 <button
                   key={reh.id}
                   onClick={() => setActiveRehearsalId(String(reh.id))}
-                  className={`flex flex-col items-start p-3.5 min-w-[150px] rounded-2xl border transition-all text-left flex-shrink-0 active:scale-95 ${isSelected ? "bg-white border-[#002395] shadow-[0_10px_25px_rgba(0,35,149,0.1)] ring-1 ring-[#002395]" : "bg-white/50 border-white/80 shadow-sm hover:bg-white"}`}
+                  className={`flex flex-col items-start p-3.5 min-w-[150px] rounded-2xl border transition-all text-left flex-shrink-0 active:scale-95 ${isSelected ? "bg-white border-brand shadow-[0_10px_25px_rgba(0,35,149,0.1)] ring-1 ring-brand" : "bg-white/50 border-white/80 shadow-sm hover:bg-white"}`}
                 >
                   <span
-                    className={`text-[9px] font-bold antialiased uppercase tracking-widest mb-1 ${isSelected ? "text-[#002395]" : "text-stone-400"}`}
+                    className={`text-[9px] font-bold antialiased uppercase tracking-widest mb-1 ${isSelected ? "text-brand" : "text-stone-400"}`}
                   >
                     {formatLocalizedDate(
                       reh.date_time,
@@ -256,7 +253,7 @@ export default function Rehearsals(): React.JSX.Element {
                       className={`px-3 py-1.5 text-[8px] font-bold uppercase tracking-widest rounded border shadow-sm ${
                         activeRehearsal.invited_participations?.length
                           ? "bg-purple-50 text-purple-700 border-purple-100"
-                          : "bg-blue-50 text-[#002395] border-blue-100"
+                          : "bg-blue-50 text-brand border-blue-100"
                       }`}
                     >
                       {activeRehearsal.invited_participations?.length
@@ -372,7 +369,7 @@ export default function Rehearsals(): React.JSX.Element {
                   return (
                     <div key={voiceGroup} className="mb-6 last:mb-0">
                       <div className="bg-stone-100/80 px-4 py-2 border-y border-stone-200/60 sticky top-0 z-10 backdrop-blur-md">
-                        <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
+                        <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
                           {voiceGroup === "S"
                             ? t("rehearsals.voices.sopranos", "Soprany")
                             : voiceGroup === "A"

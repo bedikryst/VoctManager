@@ -10,7 +10,7 @@ import type {
   Project,
   Rehearsal,
   RunSheetItem,
-} from "../../../shared/types";
+} from "@/shared/types";
 
 export type ScheduleViewMode = "UPCOMING" | "PAST";
 

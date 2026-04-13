@@ -18,9 +18,9 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { useAuth } from "../../app/providers/AuthProvider";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
-import { SystemModuleCard } from "../../shared/ui/SystemModuleCard";
+import { SystemModuleCard } from "@/shared/ui/widgets/SystemModuleCard";
 
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
@@ -98,7 +98,7 @@ export default function ArtistDashboard(): React.JSX.Element {
         <Loader2
           size={48}
           strokeWidth={1}
-          className="animate-spin text-[#002395]"
+          className="animate-spin text-brand"
         />
         <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-stone-500">
           {t("dashboard.shared.syncing", "Synchronizacja pulpitu...")}
@@ -124,7 +124,7 @@ export default function ArtistDashboard(): React.JSX.Element {
           <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight flex items-baseline gap-1.5">
             Pulpit
             <span
-              className="italic text-transparent bg-clip-text bg-gradient-to-r from-[#002395] to-blue-500 pr-1 pb-1"
+              className="italic text-transparent bg-clip-text bg-gradient-to-r from-brand to-blue-500 pr-1 pb-1"
               style={{ fontFamily: "'Cormorant', serif", fontSize: "1.15em" }}
             >
               Muzyczny
@@ -136,7 +136,7 @@ export default function ArtistDashboard(): React.JSX.Element {
       {/* HORIZON SECTION (SPOTLIGHT WIDGETS) */}
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles size={14} className="text-[#002395]" aria-hidden="true" />
+          <Sparkles size={14} className="text-brand" aria-hidden="true" />
           <h2 className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
             {t("dashboard.artist.next_challenges", "Na horyzoncie")}
           </h2>
@@ -190,7 +190,7 @@ export default function ArtistDashboard(): React.JSX.Element {
       {/* QUICK ACCESS MODULES */}
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-1 h-4 bg-[#002395] rounded-full" />
+          <div className="w-1 h-4 bg-brand rounded-full" />
           <h3 className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
             {t("dashboard.artist.personal_modules", "Szybki Dostęp")}
           </h3>

@@ -16,9 +16,9 @@ import {
   Mic2,
 } from "lucide-react";
 
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Input } from "../../../shared/ui/Input";
-import { Button } from "../../../shared/ui/Button";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Input } from "@ui/primitives/Input";
+import { Button } from "@ui/primitives/Button";
 import { useGeneralSettings } from "../hooks/useGeneralSettings";
 
 export default function GeneralTab() {
@@ -39,7 +39,7 @@ export default function GeneralTab() {
     return (
       <GlassCard className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-4 text-stone-400">
-          <div className="w-6 h-6 border-2 border-[#002395] border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-bold uppercase tracking-widest">
             {t("common.state.loading", "Wczytywanie...")}
           </p>
@@ -114,14 +114,14 @@ export default function GeneralTab() {
               {t("settings.membership.title", "Profil Artysty")}
             </label>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#002395]/10 flex items-center justify-center text-[#002395]">
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand">
                 <Mic2 className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-xs font-bold text-stone-500 uppercase tracking-tight">
                   {t("settings.membership.voice", "Twój Głos")}
                 </p>
-                <p className="text-sm font-black text-[#002395] antialiased">
+                <p className="text-sm font-black text-brand antialiased">
                   {user.voice_type_display}
                 </p>
               </div>
@@ -138,7 +138,7 @@ export default function GeneralTab() {
             <div className="relative">
               <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
               <select
-                className="w-full text-sm font-medium text-stone-800 rounded-xl py-2.5 pl-11 pr-4 bg-white/50 backdrop-blur-sm border border-stone-200/60 focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all appearance-none cursor-pointer"
+                className="w-full text-sm font-medium text-stone-800 rounded-xl py-2.5 pl-11 pr-4 bg-white/50 backdrop-blur-sm border border-stone-200/60 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all appearance-none cursor-pointer"
                 value={formData.profile.language}
                 onChange={(e) =>
                   handleProfileChange("language", e.target.value)
@@ -159,7 +159,7 @@ export default function GeneralTab() {
             <div className="relative">
               <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
               <select
-                className="w-full text-sm font-medium text-stone-800 rounded-xl py-2.5 pl-11 pr-4 bg-white/50 backdrop-blur-sm border border-stone-200/60 focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all appearance-none cursor-pointer"
+                className="w-full text-sm font-medium text-stone-800 rounded-xl py-2.5 pl-11 pr-4 bg-white/50 backdrop-blur-sm border border-stone-200/60 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all appearance-none cursor-pointer"
                 value={formData.profile.timezone}
                 onChange={(e) =>
                   handleProfileChange("timezone", e.target.value)

@@ -10,7 +10,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
-import type { Project } from "../../../shared/types";
+import type { Project } from "@/shared/types";
 import { useDeleteProject, useProjects } from "../api/project.queries";
 
 import {

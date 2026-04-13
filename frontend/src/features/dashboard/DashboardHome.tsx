@@ -9,12 +9,12 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../app/providers/AuthProvider";
-import { isManager } from "../../shared/auth/rbac";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { isManager } from "@/shared/auth/rbac";
 
 import AdminDashboard from "./AdminDashboard";
 import ArtistDashboard from "./ArtistDashboard";
-import { UserLocalClock } from "../../shared/ui/UserLocalClock";
+import { UserLocalClock } from "@/shared/ui/widgets/UserLocalClock";
 
 export default function DashboardHome(): React.JSX.Element {
   const { user, isLoading } = useAuth();
@@ -27,10 +27,10 @@ export default function DashboardHome(): React.JSX.Element {
         aria-busy="true"
       >
         <div className="relative flex items-center justify-center">
-          <div className="absolute w-16 h-16 border-4 border-[#002395]/20 rounded-full"></div>
-          <div className="w-16 h-16 border-4 border-[#002395] rounded-full border-t-transparent animate-spin"></div>
+          <div className="absolute w-16 h-16 border-4 border-brand/20 rounded-full"></div>
+          <div className="w-16 h-16 border-4 border-brand rounded-full border-t-transparent animate-spin"></div>
         </div>
-        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
+        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-brand/60">
           {t("dashboard.shared.authorizing", "Autoryzacja...")}
         </span>
       </div>

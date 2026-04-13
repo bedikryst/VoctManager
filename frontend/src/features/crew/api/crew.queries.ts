@@ -5,7 +5,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { CrewService } from "./crew.service";
 import type { CrewWriteDTO } from "../types/crew.dto";
 

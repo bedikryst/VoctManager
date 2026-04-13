@@ -28,13 +28,13 @@ import {
   Users,
 } from "lucide-react";
 
-import { getReferenceRecordingLinks } from "../../shared/lib/referenceRecordings";
-import { formatLocalizedDate } from "../../shared/lib/intl";
+import { getReferenceRecordingLinks } from "@/shared/lib/referenceRecordings";
+import { formatLocalizedDate } from "@/shared/lib/intl";
 import { useMaterialsData } from "./hooks/useMaterialsData";
-import { GlassCard } from "../../shared/ui/GlassCard";
-import { Input } from "../../shared/ui/Input";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Input } from "@/shared/ui/primitives/Input";
 import { EducationalAudioPlayer } from "./components/EducationalAudioPlayer";
-import type { PieceCasting } from "../../shared/types";
+import type { PieceCasting } from "@/shared/types";
 
 export default function Materials(): React.JSX.Element {
   const { t } = useTranslation();
@@ -77,11 +77,11 @@ export default function Materials(): React.JSX.Element {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Loader2
-          className="animate-spin text-[#002395]/40"
+          className="animate-spin text-brand/40"
           size={32}
           aria-hidden="true"
         />
-        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#002395]/60">
+        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-brand/60">
           {t("materials.dashboard.syncing", "Synchronizacja biblioteki...")}
         </span>
       </div>
@@ -97,12 +97,8 @@ export default function Materials(): React.JSX.Element {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-            <Headphones
-              size={12}
-              className="text-[#002395]"
-              aria-hidden="true"
-            />
-            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+            <Headphones size={12} className="text-brand" aria-hidden="true" />
+            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
               {t("materials.dashboard.subtitle", "Strefa Artysty")}
             </p>
           </div>
@@ -111,7 +107,7 @@ export default function Materials(): React.JSX.Element {
             style={{ fontFamily: "'Cormorant', serif" }}
           >
             {t("materials.dashboard.title", "Materiały do")}{" "}
-            <span className="italic text-[#002395] font-bold">
+            <span className="italic text-brand font-bold">
               {t("materials.dashboard.title_highlight", "ćwiczeń")}
             </span>
             .
@@ -157,9 +153,7 @@ export default function Materials(): React.JSX.Element {
                   >
                     <Briefcase
                       size={18}
-                      className={
-                        isArchived ? "text-stone-400" : "text-[#002395]"
-                      }
+                      className={isArchived ? "text-stone-400" : "text-brand"}
                       aria-hidden="true"
                     />
                     <div>
@@ -206,7 +200,7 @@ export default function Materials(): React.JSX.Element {
                       <motion.div key={piece.id} layout>
                         <GlassCard
                           noPadding
-                          className={`transition-all duration-300 ${isExpanded ? "border-[#002395]/30 shadow-[0_10px_30px_rgba(0,35,149,0.05)]" : "hover:border-[#002395]/20 shadow-sm hover:shadow-md"} ${isArchived ? "grayscale-[0.5]" : ""}`}
+                          className={`transition-all duration-300 ${isExpanded ? "border-brand/30 shadow-[0_10px_30px_rgba(0,35,149,0.05)]" : "hover:border-brand/20 shadow-sm hover:shadow-md"} ${isArchived ? "grayscale-[0.5]" : ""}`}
                         >
                           <div
                             onClick={() => togglePieceExpand(String(piece.id))}
@@ -214,7 +208,7 @@ export default function Materials(): React.JSX.Element {
                           >
                             <div className="flex items-start sm:items-center gap-4">
                               <div
-                                className={`w-12 h-12 rounded-xl bg-white border border-stone-100 flex items-center justify-center flex-shrink-0 shadow-sm font-bold text-base ${isArchived ? "text-stone-400" : "text-[#002395]"}`}
+                                className={`w-12 h-12 rounded-xl bg-white border border-stone-100 flex items-center justify-center flex-shrink-0 shadow-sm font-bold text-base ${isArchived ? "text-stone-400" : "text-brand"}`}
                               >
                                 {idx + 1}
                               </div>
@@ -234,7 +228,7 @@ export default function Materials(): React.JSX.Element {
                                       )}
                                 </p>
                                 {piece.myCasting && (
-                                  <p className="text-[10px] font-bold antialiased text-[#002395] bg-blue-50/80 px-2 py-0.5 rounded border border-blue-100/50 mt-2 inline-block shadow-sm">
+                                  <p className="text-[10px] font-bold antialiased text-brand bg-blue-50/80 px-2 py-0.5 rounded border border-blue-100/50 mt-2 inline-block shadow-sm">
                                     {t("materials.piece.you_sing", "Śpiewasz:")}{" "}
                                     {piece.myCasting.voice_line_display ||
                                       piece.myCasting.voice_line}
@@ -246,7 +240,7 @@ export default function Materials(): React.JSX.Element {
                             <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-2 sm:mt-0 flex-shrink-0">
                               <div className="flex gap-2">
                                 {!isArchived && piece.sheet_music && (
-                                  <span className="px-2.5 py-1.5 bg-blue-50 text-[#002395] text-[9px] tracking-widest font-bold antialiased uppercase rounded-lg border border-blue-100">
+                                  <span className="px-2.5 py-1.5 bg-blue-50 text-brand text-[9px] tracking-widest font-bold antialiased uppercase rounded-lg border border-blue-100">
                                     {t("materials.piece.pdf_badge", "PDF")}
                                   </span>
                                 )}
@@ -314,7 +308,7 @@ export default function Materials(): React.JSX.Element {
                                           href={piece.sheet_music}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-8 py-3.5 bg-[#002395] hover:bg-[#001766] text-white rounded-xl text-[10px] uppercase tracking-widest font-bold antialiased transition-all shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)] active:scale-95"
+                                          className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-8 py-3.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10px] uppercase tracking-widest font-bold antialiased transition-all shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)] active:scale-95"
                                         >
                                           <Download
                                             size={16}
@@ -361,14 +355,14 @@ export default function Materials(): React.JSX.Element {
                                       {piece.myCasting && (
                                         <div className="bg-blue-50/50 border border-blue-100/50 p-5 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] h-full">
                                           <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-blue-100 text-[#002395] flex-shrink-0 shadow-sm">
+                                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-blue-100 text-brand flex-shrink-0 shadow-sm">
                                               <User
                                                 size={16}
                                                 aria-hidden="true"
                                               />
                                             </div>
                                             <div>
-                                              <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
+                                              <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
                                                 {t(
                                                   "materials.piece.your_guidelines",
                                                   "Twoje wytyczne do utworu",
@@ -428,10 +422,10 @@ export default function Materials(): React.JSX.Element {
                                                         return (
                                                           <li
                                                             key={c.id}
-                                                            className={`text-xs flex items-center gap-1.5 ${isMe ? "text-[#002395] font-bold" : "text-stone-600 font-medium"}`}
+                                                            className={`text-xs flex items-center gap-1.5 ${isMe ? "text-brand font-bold" : "text-stone-600 font-medium"}`}
                                                           >
                                                             {isMe && (
-                                                              <span className="w-1.5 h-1.5 bg-[#002395] rounded-full animate-pulse shadow-sm"></span>
+                                                              <span className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse shadow-sm"></span>
                                                             )}
                                                             {c.artist_name ||
                                                               t(
@@ -504,7 +498,7 @@ export default function Materials(): React.JSX.Element {
                                           <span className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-600">
                                             <AlignLeft
                                               size={16}
-                                              className="text-[#002395]"
+                                              className="text-brand"
                                               aria-hidden="true"
                                             />{" "}
                                             {t(

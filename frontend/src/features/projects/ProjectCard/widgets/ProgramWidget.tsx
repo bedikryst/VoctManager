@@ -9,13 +9,9 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ListOrdered, Music } from "lucide-react";
 
-import type {
-  Project,
-  Piece,
-  VoiceRequirement,
-} from "../../../../shared/types";
+import type { Project, Piece, VoiceRequirement } from "@/shared/types";
 import { useProjectData } from "../../hooks/useProjectData";
-import { GlassCard } from "../../../../shared/ui/GlassCard";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 interface ProgramWidgetProps {
   project: Project;
@@ -67,7 +63,7 @@ export default function ProgramWidget({
     <GlassCard
       variant="solid"
       onClick={onEdit}
-      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-[#002395]/40 hover:shadow-md" : ""}`}
+      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`}
       role={onEdit ? "button" : "region"}
       aria-label={t(
         "projects.program.aria_label",
@@ -75,10 +71,10 @@ export default function ProgramWidget({
       )}
     >
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-[#002395] transition-colors">
+        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-brand transition-colors">
           <ListOrdered
             size={16}
-            className="text-[#002395] group-hover:scale-110 transition-transform"
+            className="text-brand group-hover:scale-110 transition-transform"
             aria-hidden="true"
           />
           {t("projects.program.title", "Program Koncertu")}
@@ -86,7 +82,7 @@ export default function ProgramWidget({
         {onOpenMicroCast && (
           <button
             onClick={handleOpenMicroCast}
-            className="text-[9px] uppercase font-bold antialiased tracking-widest text-[#002395] opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+            className="text-[9px] uppercase font-bold antialiased tracking-widest text-brand opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
           >
             Divisi
           </button>
@@ -174,7 +170,7 @@ export default function ProgramWidget({
 
           <div className="mt-auto border-t border-stone-100 pt-3 text-center flex-shrink-0">
             {totalConcertDurationSeconds > 0 ? (
-              <span className="inline-flex items-center gap-1.5 text-[9px] font-bold antialiased uppercase tracking-widest text-[#002395] bg-blue-50 px-3 py-1.5 rounded-md border border-blue-100">
+              <span className="inline-flex items-center gap-1.5 text-[9px] font-bold antialiased uppercase tracking-widest text-brand bg-blue-50 px-3 py-1.5 rounded-md border border-blue-100">
                 <Music size={12} aria-hidden="true" />{" "}
                 {formatTotalDuration(totalConcertDurationSeconds)}
               </span>

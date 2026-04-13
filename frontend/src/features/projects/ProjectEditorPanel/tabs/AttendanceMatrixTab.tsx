@@ -10,10 +10,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, Check, X, Clock, ShieldAlert, Users } from "lucide-react";
-import {
-  formatLocalizedDate,
-  formatLocalizedTime,
-} from "../../../../shared/lib/intl";
+import { formatLocalizedDate, formatLocalizedTime } from "@/shared/lib/intl";
 import {
   useAttendanceMatrix,
   type AttendanceRecord,
@@ -152,7 +149,7 @@ export default function AttendanceMatrixTab({
       <div className="flex justify-center items-center h-64">
         <Loader2
           size={32}
-          className="animate-spin text-[#002395] opacity-50"
+          className="animate-spin text-brand opacity-50"
           aria-hidden="true"
         />
       </div>
@@ -164,7 +161,7 @@ export default function AttendanceMatrixTab({
       <div className="bg-white border border-stone-200/60 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2 mb-2">
-            <Users className="text-[#002395]" size={20} aria-hidden="true" />
+            <Users className="text-brand" size={20} aria-hidden="true" />
             {t(
               "projects.matrix.header.title",
               "Macierz Obecności i Frekwencji",
@@ -224,7 +221,7 @@ export default function AttendanceMatrixTab({
                   </div>
                 </th>
               ))}
-              <th className="p-4 border-b border-l border-stone-200/80 text-center min-w-[80px] text-[#002395]">
+              <th className="p-4 border-b border-l border-stone-200/80 text-center min-w-[80px] text-brand">
                 {t("projects.matrix.table.rate", "Frekwencja")}
               </th>
             </tr>
@@ -292,7 +289,7 @@ export default function AttendanceMatrixTab({
                       <tr className="hover:bg-blue-50/30 transition-colors group">
                         <td className="p-4 font-medium text-stone-900 sticky left-0 bg-white group-hover:bg-blue-50/30 transition-colors z-10 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-[#002395]">
+                            <span className="text-sm font-bold text-brand">
                               {formatLocalizedDate(reh.date_time, {
                                 weekday: "short",
                                 day: "2-digit",

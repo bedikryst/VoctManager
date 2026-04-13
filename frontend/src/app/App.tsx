@@ -12,33 +12,33 @@ import { AnimatePresence } from "framer-motion";
 import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
-import GlobalNavbar from "../widgets/layout/public/GlobalNavbar";
-import OverlayMenu from "../widgets/layout/public/OverlayMenu";
-import FooterSection from "../widgets/layout/public/FooterSection";
-import PageTransition from "../shared/ui/PageTransition";
-import CustomCursor from "../shared/ui/CustomCursor";
-import NoiseOverlay from "../shared/ui/NoiseOverlay";
-import Preloader from "../shared/ui/Preloader";
+import GlobalNavbar from "@/widgets/layout/public/GlobalNavbar";
+import OverlayMenu from "@/widgets/layout/public/OverlayMenu";
+import FooterSection from "@/widgets/layout/public/FooterSection";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
+import { CustomCursor } from "@/shared/ui/kinematics/CustomCursor";
+import { NoiseOverlay } from "@/shared/ui/kinematics/NoiseOverlay";
+import { Preloader } from "@/shared/ui/kinematics/Preloader";
 import ProtectedRoute from "./router/ProtectedRoute";
 import ManagerRoute from "./router/ManagerRoute";
-import DashboardLayout from "../widgets/layout/dashboard/DashboardLayout";
-import SettingsPage from "../pages/app/SettingsPage";
-import LogisticsLocationsPage from "../pages/app/LogisticsLocationsPage";
+import DashboardLayout from "@/widgets/layout/dashboard/DashboardLayout";
+import SettingsPage from "@pages/app/SettingsPage";
+import LogisticsLocationsPage from "@pages/app/LogisticsLocationsPage";
 
-import Home from "../pages/public/HomePage";
-import Login from "../pages/public/LoginPage";
-import Activate from "../pages/public/ActivatePage";
+import Home from "@pages/public/HomePage";
+import Login from "@pages/public/LoginPage";
+import Activate from "@pages/public/ActivatePage";
 
-import Contracts from "../features/contracts/Contracts";
-import DashboardHome from "../features/dashboard/DashboardHome";
-import Rehearsals from "../features/rehearsals/Rehearsals";
-import Materials from "../features/materials/Materials";
-import Schedule from "../features/schedule/Schedule";
-import ArtistManagement from "../pages/app/ArtistsPage";
-import ProjectManagement from "../features/projects/ProjectDashboard";
-import ArchiveManagement from "../pages/app/ArchivePage";
-import Resources from "../features/resources/Resources";
-import CrewManagement from "../features/crew/CrewManagement";
+import Contracts from "@features/contracts/Contracts";
+import DashboardHome from "@features/dashboard/DashboardHome";
+import Rehearsals from "@features/rehearsals/Rehearsals";
+import Materials from "@features/materials/Materials";
+import Schedule from "@features/schedule/Schedule";
+import ArtistManagement from "@pages/app/ArtistsPage";
+import ProjectManagement from "@features/projects/ProjectDashboard";
+import ArchiveManagement from "@pages/app/ArchivePage";
+import Resources from "@features/resources/Resources";
+import CrewManagement from "@features/crew/CrewManagement";
 
 export default function App(): React.JSX.Element {
   const location = useLocation();

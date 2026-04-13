@@ -4,7 +4,7 @@
  */
 
 import { useQueries } from "@tanstack/react-query";
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { MaterialsService } from "./materials.service";
 
 export const useMaterialsContextData = (userId?: string | number) => {

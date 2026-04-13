@@ -11,7 +11,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@dnd-kit/core";
 import { GripVertical, Pencil, Loader2 } from "lucide-react";
-import type { Artist, PieceCasting } from "../../../../../shared/types";
+import type { Artist, PieceCasting } from "@/shared/types";
 
 interface DraggableArtistProps {
   participationId: string;
@@ -55,8 +55,8 @@ export function DraggableArtist({
       className={`group px-2 py-1.5 text-[10px] font-bold antialiased uppercase tracking-wider rounded-xl flex items-center justify-between gap-2 transition-all 
                 ${
                   isOverlay
-                    ? "bg-[#002395] text-white shadow-2xl scale-105 rotate-2 border border-[#001766]"
-                    : "bg-white border border-stone-200/80 text-stone-700 shadow-sm hover:border-[#002395]/40"
+                    ? "bg-brand text-white shadow-2xl scale-105 rotate-2 border border-brand-dark"
+                    : "bg-white border border-stone-200/80 text-stone-700 shadow-sm hover:border-brand/40"
                 } 
                 ${isDragging && !isOverlay ? "opacity-30" : ""}
             `}
@@ -68,7 +68,7 @@ export function DraggableArtist({
           className={`cursor-grab active:cursor-grabbing p-1 -mr-2 -ml-1 rounded transition-colors ${
             isOverlay
               ? "text-white/70"
-              : "text-stone-300 hover:text-[#002395] hover:bg-stone-100/50"
+              : "text-stone-300 hover:text-brand hover:bg-stone-100/50"
           }`}
           aria-label={t(
             "projects.micro_cast.artist.drag_aria",
@@ -95,7 +95,7 @@ export function DraggableArtist({
               onChange={(e) => setNoteValue(e.target.value)}
               onBlur={handleSaveNote}
               onKeyDown={(e) => e.key === "Enter" && handleSaveNote()}
-              className="w-16 sm:w-20 px-1.5 py-0.5 text-[9px] bg-blue-50 text-[#002395] border border-blue-200 rounded outline-none focus:ring-1 focus:ring-[#002395] ml-1 placeholder-blue-300"
+              className="w-16 sm:w-20 px-1.5 py-0.5 text-[9px] bg-blue-50 text-brand border border-blue-200 rounded outline-none focus:ring-1 focus:ring-brand ml-1 placeholder-blue-300"
               placeholder={t(
                 "projects.micro_cast.artist.note_placeholder",
                 "Notatka...",
@@ -126,7 +126,7 @@ export function DraggableArtist({
           className={`p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
             isTemp
               ? "text-stone-300"
-              : "text-stone-400 hover:text-[#002395] hover:bg-stone-100"
+              : "text-stone-400 hover:text-brand hover:bg-stone-100"
           }`}
           title={t("projects.micro_cast.artist.add_note", "Dodaj notatkę")}
         >

@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { Artist, Attendance } from "../../../shared/types";
+import type { Artist, Attendance } from "@/shared/types";
 import {
   useMarkMissingAttendancesPresent,
   useRehearsalsWorkspaceData,

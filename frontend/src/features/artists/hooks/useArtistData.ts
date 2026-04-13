@@ -10,8 +10,8 @@ import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useArtists, useToggleArtistStatus } from "../api/artist.queries";
-import { useVoiceTypes } from "../../../shared/api/options.queries";
-import type { Artist } from "../../../shared/types";
+import { useVoiceTypes } from "@/shared/api/options.queries";
+import type { Artist } from "@/shared/types";
 
 export const useArtistData = () => {
   const { t } = useTranslation();

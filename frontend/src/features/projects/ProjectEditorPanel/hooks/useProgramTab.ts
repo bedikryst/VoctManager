@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 
-import type { Piece } from "../../../../shared/types";
+import type { Piece } from "@/shared/types";
 import {
   useProjectProgram,
   useCreateProgramItem,

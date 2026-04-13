@@ -1,23 +1,19 @@
 /**
  * @file CustomCursor.tsx
  * @description A high-performance, physics-based custom cursor for the public zone.
- * Utilizes Framer Motion's useMotionValue to bypass React's render cycle
- * during mouse movement, ensuring a strict 60fps fluid animation.
- * @module ui/CustomCursor
+ * @module shared/ui/kinematics/CustomCursor
  */
 
 import React, { useEffect } from "react";
 import { motion, useMotionValue, useSpring, Variants } from "framer-motion";
-import { useCursor } from "../../app/providers/CursorProvider";
+import { useCursor } from "@/app/providers/CursorProvider";
 
-export default function CustomCursor(): React.JSX.Element {
+export const CustomCursor = (): React.JSX.Element => {
   const { cursorType } = useCursor();
 
-  // Initialized off-screen to prevent flickering on mount
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
 
-  // Spring configuration tuned for a fluid, slight trailing effect
   const springConfig = { damping: 22, stiffness: 200, mass: 0.5 };
   const cursorX = useSpring(mouseX, springConfig);
   const cursorY = useSpring(mouseY, springConfig);
@@ -96,4 +92,4 @@ export default function CustomCursor(): React.JSX.Element {
       </motion.div>
     </motion.div>
   );
-}
+};

@@ -10,8 +10,8 @@
 import React, { useRef, useEffect, useState } from "react";
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import { Link } from "react-router-dom";
-import { formatLocalizedTime } from "../../../shared/lib/intl";
-import ElegantHeading from "../../../shared/ui/ElegantHeading";
+import { formatLocalizedTime } from "@/shared/lib/intl";
+import { ElegantHeading } from "@ui/kinematics/ElegantHeading";
 
 // --- Animation Variants ---
 const fadeUpVariants: Variants = {
@@ -134,7 +134,7 @@ export default function FooterSection(): React.JSX.Element {
             <motion.p
               variants={fadeUpVariants}
               custom={0.1}
-              className="text-[#002395] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6"
+              className="text-brand text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-6"
             >
               VII. Mecenat
             </motion.p>
@@ -173,7 +173,7 @@ export default function FooterSection(): React.JSX.Element {
                 to="/wesprzyj"
                 className="group relative inline-flex items-center justify-center px-10 py-5 bg-[#fdfbf7] text-stone-950 overflow-hidden rounded-full transition-transform active:scale-95 w-max"
               >
-                <div className="absolute inset-0 w-full h-full bg-[#002395] rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 ease-[0.16,1,0.3,1] origin-center" />
+                <div className="absolute inset-0 w-full h-full bg-brand rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 ease-[0.16,1,0.3,1] origin-center" />
                 <span className="relative z-10 text-[10px] uppercase tracking-[0.2em] font-bold group-hover:text-white transition-colors duration-500">
                   Wesprzyj Fundację
                 </span>
@@ -203,11 +203,11 @@ export default function FooterSection(): React.JSX.Element {
                 <input
                   type="email"
                   placeholder="Zostaw swój email"
-                  className="w-full bg-transparent border-b border-stone-800 py-4 text-sm text-[#fdfbf7] placeholder-stone-600 focus:outline-none focus:border-[#002395] transition-colors peer"
+                  className="w-full bg-transparent border-b border-stone-800 py-4 text-sm text-[#fdfbf7] placeholder-stone-600 focus:outline-none focus:border-brand transition-colors peer"
                 />
                 <button
                   type="submit"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-stone-600 peer-focus:text-[#002395] group-hover:text-[#fdfbf7] transition-colors"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-stone-600 peer-focus:text-brand group-hover:text-[#fdfbf7] transition-colors"
                 >
                   <span className="text-[9px] uppercase tracking-[0.2em] font-bold">
                     Wyślij

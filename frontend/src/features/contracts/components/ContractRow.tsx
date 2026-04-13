@@ -10,8 +10,8 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { FileText, CheckCircle2 } from "lucide-react";
-import { Input } from "../../../shared/ui/Input";
-import { Button } from "../../../shared/ui/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Button } from "@/shared/ui/primitives/Button";
 import { useUpdateFee } from "../api/contracts.queries";
 
 import type {

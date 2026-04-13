@@ -8,8 +8,8 @@ import {
   Info,
 } from "lucide-react";
 
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Button } from "../../../shared/ui/Button";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Button } from "@ui/primitives/Button";
 import {
   useSettingsData,
   useResetCalendarToken,
@@ -49,7 +49,7 @@ export default function IntegrationsTab() {
     <GlassCard>
       <div className="mb-8">
         <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-          <CalendarDays className="w-5 h-5 text-[#002395]" />
+          <CalendarDays className="w-5 h-5 text-brand" />
           {t("settings.integrations.title", "Integracje i kalendarze")}
         </h2>
         <p className="text-sm text-stone-500 mt-1">
@@ -64,7 +64,7 @@ export default function IntegrationsTab() {
         <div className="p-6 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-4">
           <div className="flex items-start gap-3">
             <div className="mt-1">
-              <Info className="w-5 h-5 text-[#002395]" />
+              <Info className="w-5 h-5 text-brand" />
             </div>
             <div>
               <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider">

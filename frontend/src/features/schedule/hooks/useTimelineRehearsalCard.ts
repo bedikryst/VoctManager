@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
-import type { AttendanceStatus } from "../../../shared/types";
+import type { AttendanceStatus } from "@/shared/types";
 import type { TimelineEvent } from "../types/schedule.dto";
 
 type ReportStatus = Extract<AttendanceStatus, "ABSENT" | "LATE">;

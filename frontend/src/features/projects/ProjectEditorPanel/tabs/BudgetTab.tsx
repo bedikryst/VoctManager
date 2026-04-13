@@ -21,8 +21,8 @@ import {
 } from "lucide-react";
 
 import { useBudgetTab } from "../hooks/useBudgetTab";
-import { GlassCard } from "../../../../shared/ui/GlassCard";
-import { Button } from "../../../../shared/ui/Button";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
 
 interface BudgetTabProps {
   projectId: string;
@@ -69,7 +69,7 @@ export default function BudgetTab({
             className="fixed bottom-6 md:bottom-10 left-1/2 z-[200] w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_rgb(0,0,0,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-4 flex items-center justify-between"
           >
             <div className="flex flex-col ml-2">
-              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
+              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
                 {t("projects.budget.fab.unsaved", "Niezapisane Zmiany")}
               </span>
               <span className="text-xs text-stone-500">
@@ -125,7 +125,7 @@ export default function BudgetTab({
       {/* KPI DASHBOARD */}
       <GlassCard className="p-6 md:p-8">
         <h3 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-6 flex items-center gap-2">
-          <Sparkles size={14} className="text-[#002395]" aria-hidden="true" />
+          <Sparkles size={14} className="text-brand" aria-hidden="true" />
           {t("projects.budget.kpi.calculation", "Kalkulacja")}
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -189,7 +189,7 @@ export default function BudgetTab({
       {enrichedCast.length > 0 ? (
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2 px-1">
-            <Users size={16} className="text-[#002395]" aria-hidden="true" />
+            <Users size={16} className="text-brand" aria-hidden="true" />
             {t("projects.budget.sections.cast", "Obsada Wykonawcza")}
             <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md ml-2">
               {enrichedCast.length} {t("common.people_short", "os.")}
@@ -234,8 +234,8 @@ export default function BudgetTab({
                         onChange={(e) =>
                           handleFeeChange(safeId, e.target.value, "cast")
                         }
-                        className={`w-full px-4 py-2.5 text-sm font-bold text-right text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all !pr-10 ${
-                          isItemDirty ? "!bg-white !border-[#002395]/30" : ""
+                        className={`w-full px-4 py-2.5 text-sm font-bold text-right text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all !pr-10 ${
+                          isItemDirty ? "!bg-white !border-brand/30" : ""
                         }`}
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-stone-400 pointer-events-none">
@@ -271,7 +271,7 @@ export default function BudgetTab({
       {enrichedCrew.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2 px-1">
-            <Wrench size={16} className="text-[#002395]" aria-hidden="true" />
+            <Wrench size={16} className="text-brand" aria-hidden="true" />
             {t("projects.budget.sections.crew", "Ekipa Realizacyjna")}
             <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md ml-2">
               {enrichedCrew.length} {t("common.people_short", "os.")}
@@ -316,8 +316,8 @@ export default function BudgetTab({
                         onChange={(e) =>
                           handleFeeChange(safeId, e.target.value, "crew")
                         }
-                        className={`w-full px-4 py-2.5 text-sm font-bold text-right text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all !pr-10 ${
-                          isItemDirty ? "!bg-white !border-[#002395]/30" : ""
+                        className={`w-full px-4 py-2.5 text-sm font-bold text-right text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all !pr-10 ${
+                          isItemDirty ? "!bg-white !border-brand/30" : ""
                         }`}
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-stone-400 pointer-events-none">

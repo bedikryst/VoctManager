@@ -1,27 +1,22 @@
 /**
  * @file Input.tsx
  * @description Enterprise-grade input field with integrated label and error handling.
- * Optimized for react-hook-form and zod validation.
- * Aesthetics: Ethereal UI (Sacral Minimalism).
- * @module shared/ui/Input
+ * Optimised for react-hook-form and Zod validation schemas.
+ * @module shared/ui/primitives/Input
  */
 
 import React, { InputHTMLAttributes, forwardRef, useId } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "../lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 const inputVariants = cva(
-  // Base: Glassmorphism foundation, subtle transitions, elegant typography
   "w-full rounded-xl text-sm transition-all duration-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
-        /** Ethereal glass effect - default for the choir portal */
         glass:
-          "bg-white/40 backdrop-blur-md border border-stone-200/60 text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] focus:border-[#002395]/40 focus:ring-[#002395]/10",
-        /** High-contrast dark mode for evening concert management */
+          "bg-white/40 backdrop-blur-md border border-stone-200/60 text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] focus:border-brand/40 focus:ring-brand/10",
         dark: "bg-white/5 backdrop-blur-xl border border-white/10 text-white shadow-2xl focus:border-blue-500/50 focus:ring-blue-500/20 hover:bg-white/10",
-        /** Subtle, solid background for dense data tables */
         ghost:
           "bg-transparent border-transparent hover:bg-stone-100 focus:bg-white focus:border-stone-200",
       },
@@ -42,11 +37,11 @@ export interface InputProps
     VariantProps<typeof inputVariants> {
   /** Text label displayed above the input */
   label?: string;
-  /** Error message from validation schema (e.g., zod) */
+  /** Error message derived from validation schema */
   error?: string;
-  /** Optional icon rendered on the left side */
+  /** Optional icon rendered on the left flank */
   leftIcon?: React.ReactNode;
-  /** Optional element (e.g., unit, currency) on the right side */
+  /** Optional element (e.g., unit, currency) on the right flank */
   rightElement?: React.ReactNode;
 }
 
@@ -58,7 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const internalId = useId();
     const inputId = id || internalId;
     const errorId = `${inputId}-error`;
-    const hasError = !!error;
+    const hasError = Boolean(error);
 
     return (
       <div className="flex w-full flex-col gap-1.5">
@@ -77,12 +72,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               className="absolute left-4 flex items-center justify-center text-stone-400"
               aria-hidden="true"
             >
-              {/* Force strokeWidth 1.5 for sacral elegance if it's a lucide icon */}
               {React.isValidElement(leftIcon)
                 ? React.cloneElement(leftIcon as React.ReactElement<any>, {
                     size: 18,
                     strokeWidth: 1.5,
-                    hidden: "true",
                   })
                 : leftIcon}
             </div>
@@ -112,10 +105,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {/* Error message with entrance animation */}
         {hasError && (
           <span
             id={errorId}
+            role="alert"
             className="ml-1 animate-in fade-in slide-in-from-top-1 text-[10px] font-medium text-red-500 duration-300"
           >
             {error}

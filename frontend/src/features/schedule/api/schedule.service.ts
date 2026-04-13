@@ -4,14 +4,14 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import api from "../../../shared/api/api";
+import api from "@/shared/api/api";
 import type {
   Attendance,
   PieceCasting,
   ProgramItem,
   Project,
   Participation,
-} from "../../../shared/types";
+} from "@/shared/types";
 import type {
   ScheduleAttendanceReportDTO,
   EnrichedRehearsal,

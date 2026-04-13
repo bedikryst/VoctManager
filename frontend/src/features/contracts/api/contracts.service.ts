@@ -5,8 +5,8 @@
  * @module panel/contracts/api
  */
 
-import api from "../../../shared/api/api";
-import type { Project } from "../../../shared/types";
+import api from "@/shared/api/api";
+import type { Project } from "@/shared/types";
 import type {
   EnrichedParticipation,
   EnrichedCrewAssignment,

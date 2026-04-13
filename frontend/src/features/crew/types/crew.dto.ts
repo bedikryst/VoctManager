@@ -4,7 +4,7 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import type { CollaboratorSpecialty } from "../../../shared/types";
+import type { CollaboratorSpecialty } from "@/shared/types";
 
 export interface CrewFormData {
   first_name: string;

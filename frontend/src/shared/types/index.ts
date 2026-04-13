@@ -6,7 +6,7 @@
  * @module shared/types
  */
 
-import type { ProjectStatus } from "../../features/projects/constants/projectDomain";
+import type { ProjectStatus } from "@features/projects/constants/projectDomain";
 
 export interface BaseModel {
   id: string;

@@ -3,7 +3,7 @@
  * @description Feature-local schemas and DTOs for the Logistics domain.
  */
 import { z } from "zod";
-import type { LocationCategory } from "../../../shared/types";
+import type { LocationCategory } from "@/shared/types";
 
 const LocationCategoryEnum = z.enum([
   "CONCERT_HALL",

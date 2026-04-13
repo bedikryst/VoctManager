@@ -12,11 +12,11 @@ import {
   ArrowRight,
   Briefcase,
 } from "lucide-react";
-import { formatLocalizedDate } from "../../../shared/lib/intl";
-import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { cn } from "../../../shared/lib/utils";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { cn } from "@/shared/lib/utils";
 
 export function SpotlightProjectCard({
   project,
@@ -41,14 +41,14 @@ export function SpotlightProjectCard({
         <div
           className={cn(
             "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-all duration-300",
-            "bg-white/40 group-hover/project:bg-white/60 group-hover/project:border-[#002395]/30 group-hover/project:shadow-md",
+            "bg-white/40 group-hover/project:bg-white/60 group-hover/project:border-brand/30 group-hover/project:shadow-md",
           )}
         />
 
         <div className="p-6 flex-1 rounded-t-[inherit]">
           <div className="flex items-center gap-2 mb-4">
-            <Calendar size={14} className="text-[#002395]" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 group-hover/project:text-[#002395] transition-colors">
+            <Calendar size={14} className="text-brand" />
+            <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400 group-hover/project:text-brand transition-colors">
               {t("dashboard.admin.spotlight_title", "Wydarzenie Główne")}
             </span>
           </div>
@@ -57,14 +57,14 @@ export function SpotlightProjectCard({
             <div className="flex flex-col h-full justify-between">
               <div>
                 <h2
-                  className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight mb-4 group-hover/project:text-[#002395] transition-colors"
+                  className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight mb-4 group-hover/project:text-brand transition-colors"
                   style={{ fontFamily: "'Cormorant', serif" }}
                 >
                   {project.title}
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-stone-700 mb-6">
                   <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80">
-                    <Calendar size={12} className="text-[#002395]" />
+                    <Calendar size={12} className="text-brand" />
                     {formatLocalizedDate(
                       project.date_time,
                       { day: "numeric", month: "short", year: "numeric" },
@@ -75,7 +75,7 @@ export function SpotlightProjectCard({
                   <DualTimeDisplay
                     value={project.date_time}
                     timeZone={project.timezone}
-                    icon={<Clock size={12} className="text-[#002395]" />}
+                    icon={<Clock size={12} className="text-brand" />}
                     containerClassName="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200/80"
                     primaryTimeClassName="flex items-center gap-1.5 text-[11px] font-bold text-stone-700"
                     localTimeClassName="text-[10px] text-stone-500 font-medium border-l border-stone-200 pl-1.5"
@@ -123,7 +123,7 @@ export function SpotlightProjectCard({
                 </div>
               </div>
 
-              <div className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-stone-900 group-hover/project:bg-[#002395] text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm">
+              <div className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-stone-900 group-hover/project:bg-brand text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm">
                 Otwórz Projekt{" "}
                 <ArrowRight
                   size={14}

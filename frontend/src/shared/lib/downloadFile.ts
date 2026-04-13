@@ -7,7 +7,7 @@
  * @module utils/downloadFile
  */
 
-import api from "../api/api";
+import api from "@/shared/api/api";
 
 export const downloadFile = async (
   url: string,

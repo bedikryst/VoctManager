@@ -4,7 +4,7 @@
  * Strictly mirrors the backend Django DTOs to ensure type safety across the network boundary.
  */
 
-import type { Piece, Composer } from "../../../shared/types";
+import type { Piece, Composer } from "@/shared/types";
 
 export interface VoiceRequirementDTO {
   voice_line: string;

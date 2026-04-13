@@ -3,17 +3,23 @@
  * @description Advanced abstract geometric preloader.
  * Orchestrates an immersive sequence with a glowing aura, expanding
  * resonance waves, and a staggered editorial typography reveal.
- * @module ui/Preloader
+ * @module shared/ui/kinematics/Preloader
  */
 
 import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAppStore } from "../../app/store/useAppStore";
+import { useTranslation } from "react-i18next";
+import { useAppStore } from "@/app/store/useAppStore";
 
-export default function Preloader(): React.JSX.Element {
-  // Expected to return a boolean indicating readiness
-  const isLoaded = useAppStore((state: any) => state.isLoaded);
-  const setIsLoaded = useAppStore((state: any) => state.setIsLoaded);
+interface PreloaderState {
+  isLoaded: boolean;
+  setIsLoaded: (status: boolean) => void;
+}
+
+export const Preloader = (): React.JSX.Element => {
+  const { t } = useTranslation();
+  const isLoaded = useAppStore((state: PreloaderState) => state.isLoaded);
+  const setIsLoaded = useAppStore((state: PreloaderState) => state.setIsLoaded);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,7 +37,7 @@ export default function Preloader(): React.JSX.Element {
             filter: "blur(12px)",
             transition: { duration: 1.2, ease: "easeInOut" },
           }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#fdfbf7] pointer-events-none overflow-hidden"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-stone-50 pointer-events-none overflow-hidden"
         >
           {/* Layer 1: Ambient Glow */}
           <motion.div
@@ -46,7 +52,7 @@ export default function Preloader(): React.JSX.Element {
 
           {/* Layer 2: Resonance Waves */}
           <motion.div
-            className="absolute rounded-full border border-[#002395]/20"
+            className="absolute rounded-full border border-brand/20"
             style={{ width: "80px", height: "80px" }}
             initial={{ scale: 0.1, opacity: 0 }}
             animate={{
@@ -57,7 +63,7 @@ export default function Preloader(): React.JSX.Element {
             transition={{ duration: 4, ease: "easeOut", times: [0, 0.4, 1] }}
           />
           <motion.div
-            className="absolute rounded-full border border-[#002395]/10"
+            className="absolute rounded-full border border-brand/10"
             style={{ width: "120px", height: "120px" }}
             initial={{ scale: 0.1, opacity: 0 }}
             animate={{
@@ -74,7 +80,7 @@ export default function Preloader(): React.JSX.Element {
           />
 
           {/* Layer 3: Choreographed Typography */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden font-serif">
             <motion.div
               initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
               animate={{
@@ -89,9 +95,8 @@ export default function Preloader(): React.JSX.Element {
                 times: [0, 0.5, 1],
               }}
               className="absolute top-[20%] left-[10%] md:left-[15%] text-stone-400 italic text-lg md:text-2xl tracking-wider"
-              style={{ fontFamily: "'Cormorant', serif" }}
             >
-              séquence
+              {t("preloader.sequence", "séquence")}
             </motion.div>
 
             <motion.div
@@ -108,9 +113,8 @@ export default function Preloader(): React.JSX.Element {
                 times: [0, 0.5, 1],
               }}
               className="absolute bottom-[25%] right-[10%] md:right-[20%] text-stone-400 italic text-lg md:text-2xl tracking-wider"
-              style={{ fontFamily: "'Cormorant', serif" }}
             >
-              respiration
+              {t("preloader.respiration", "respiration")}
             </motion.div>
 
             <motion.div
@@ -127,13 +131,12 @@ export default function Preloader(): React.JSX.Element {
                 times: [0, 0.5, 1],
               }}
               className="absolute top-[55%] left-[20%] md:left-[30%] text-stone-500 italic text-xl md:text-3xl tracking-widest"
-              style={{ fontFamily: "'Cormorant', serif" }}
             >
-              résonance
+              {t("preloader.resonance", "résonance")}
             </motion.div>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
-}
+};

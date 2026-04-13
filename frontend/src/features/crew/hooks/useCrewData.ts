@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { Collaborator } from "../../../shared/types";
+import type { Collaborator } from "@/shared/types";
 import { useCrewMembers, useDeleteCrewMember } from "../api/crew.queries";
 
 export const useCrewData = () => {

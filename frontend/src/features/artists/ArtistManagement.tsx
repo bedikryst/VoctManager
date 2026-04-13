@@ -12,12 +12,12 @@ import { useTranslation } from "react-i18next";
 import { UserPlus, Search, Filter, Users, LayoutGrid } from "lucide-react";
 
 import { useArtistData } from "./hooks/useArtistData";
-import ConfirmModal from "../../shared/ui/ConfirmModal";
-import { Button } from "../../shared/ui/Button";
-import { Input } from "../../shared/ui/Input";
-import { GlassCard } from "../../shared/ui/GlassCard";
+import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import { Button } from "@ui/primitives/Button";
+import { Input } from "@ui/primitives/Input";
+import { GlassCard } from "@ui/composites/GlassCard";
 import { VoiceFilterButton } from "./components/VoiceFilterButton";
-import { useBodyScrollLock } from "../../shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
 import ArtistEditorPanel from "./components/ArtistEditorPanel";
 import { ArtistCard } from "./components/ArtistCard";
 
@@ -69,12 +69,8 @@ export default function ArtistManagement(): React.JSX.Element {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-                <Users
-                  size={12}
-                  className="text-[#002395]"
-                  aria-hidden="true"
-                />
-                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+                <Users size={12} className="text-brand" aria-hidden="true" />
+                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
                   {t("artists.dashboard.subtitle", "Zasoby Ludzkie")}
                 </p>
               </div>
@@ -83,7 +79,7 @@ export default function ArtistManagement(): React.JSX.Element {
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
                 {t("artists.dashboard.title_prefix", "Zarządzanie")}{" "}
-                <span className="italic text-[#002395]">
+                <span className="italic text-brand">
                   {t("artists.dashboard.title_highlight", "Zespołem")}
                 </span>
                 .
@@ -158,7 +154,7 @@ export default function ArtistManagement(): React.JSX.Element {
           <select
             value={voiceFilter}
             onChange={(event) => setVoiceFilter(event.target.value)}
-            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] font-bold appearance-none cursor-pointer"
+            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] font-bold appearance-none cursor-pointer"
           >
             <option value="">
               {t("artists.dashboard.all_voices", "Wszystkie głosy")}

@@ -24,14 +24,14 @@ import {
 } from "lucide-react";
 
 import { PROJECT_STATUS } from "../constants/projectDomain";
-import type { Project } from "../../../shared/types";
+import type { Project } from "@/shared/types";
 import { useProjectData } from "../hooks/useProjectData";
 import { useProjectCard } from "./hooks/useProjectCard";
-import { Button } from "../../../shared/ui/Button";
+import { Button } from "@/shared/ui/primitives/Button";
 
 // Importujemy ustandaryzowane mechanizmy z shared
-import { formatLocalizedDate } from "../../../shared/lib/intl";
-import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 
 interface ProjectCardHeaderProps {
   project: Project;
@@ -95,7 +95,7 @@ export default function ProjectCardHeader({
           </div>
 
           <h2
-            className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight mb-4 group-hover:text-[#002395] transition-colors"
+            className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight mb-4 group-hover:text-brand transition-colors"
             style={{ fontFamily: "'Cormorant', serif" }}
           >
             {project.title}
@@ -108,7 +108,7 @@ export default function ProjectCardHeader({
                 <span className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit text-stone-600">
                   <Calendar
                     size={14}
-                    className="text-[#002395]/60"
+                    className="text-brand/60"
                     aria-hidden="true"
                   />
                   {formatLocalizedDate(
@@ -130,7 +130,7 @@ export default function ProjectCardHeader({
                   icon={
                     <Clock
                       size={14}
-                      className="text-[#002395]/60"
+                      className="text-brand/60"
                       aria-hidden="true"
                     />
                   }
@@ -152,7 +152,7 @@ export default function ProjectCardHeader({
               >
                 <MapPin
                   size={14}
-                  className="text-[#002395]/60 flex-shrink-0"
+                  className="text-brand/60 flex-shrink-0"
                   aria-hidden="true"
                 />
                 <span className="underline decoration-stone-300 underline-offset-4 truncate max-w-[200px]">
@@ -281,10 +281,10 @@ export default function ProjectCardHeader({
 
         <div className="space-y-4">
           <div className="flex items-center justify-between group/stat">
-            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-[#002395] transition-colors">
+            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-brand transition-colors">
               <Clock
                 size={14}
-                className="text-stone-400 group-hover/stat:text-[#002395]"
+                className="text-stone-400 group-hover/stat:text-brand"
                 aria-hidden="true"
               />{" "}
               {t("projects.rehearsals.title", "Próby")}
@@ -297,10 +297,10 @@ export default function ProjectCardHeader({
           </div>
 
           <div className="flex items-center justify-between group/stat">
-            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-[#002395] transition-colors">
+            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-brand transition-colors">
               <Users
                 size={14}
-                className="text-stone-400 group-hover/stat:text-[#002395]"
+                className="text-stone-400 group-hover/stat:text-brand"
                 aria-hidden="true"
               />{" "}
               {t("projects.cast.title", "Obsada")}
@@ -312,10 +312,10 @@ export default function ProjectCardHeader({
           </div>
 
           <div className="flex items-center justify-between group/stat">
-            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-[#002395] transition-colors">
+            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-brand transition-colors">
               <Wrench
                 size={14}
-                className="text-stone-400 group-hover/stat:text-[#002395]"
+                className="text-stone-400 group-hover/stat:text-brand"
                 aria-hidden="true"
               />{" "}
               {t("projects.crew.title", "Ekipa")}
@@ -327,7 +327,7 @@ export default function ProjectCardHeader({
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-[#002395] text-[10px] font-bold antialiased uppercase tracking-[0.15em]">
+        <div className="mt-6 flex items-center justify-center gap-2 text-brand text-[10px] font-bold antialiased uppercase tracking-[0.15em]">
           {isExpanded
             ? t("projects.card.collapse", "Zwiń Panel")
             : t("projects.card.expand", "Rozwiń Widgety")}

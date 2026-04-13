@@ -10,11 +10,11 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2, MapPin, Globe } from "lucide-react";
-import { cn } from "../../../shared/lib/utils";
+import { cn } from "@/shared/lib/utils";
 
-import ConfirmModal from "../../../shared/ui/ConfirmModal";
-import { Button } from "../../../shared/ui/Button";
-import { Input } from "../../../shared/ui/Input";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
 import type { LocationDto } from "../types/logistics.dto";
 import { useLocationForm } from "../hooks/useLocationForm";
 import { LocationMapPicker } from "./LocationMapPicker";
@@ -27,7 +27,7 @@ interface LocationInlineEditorProps {
 const STYLE_LABEL =
   "block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 const STYLE_SELECT =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
+  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 
 export default function LocationInlineEditor({
   location,
@@ -69,9 +69,9 @@ export default function LocationInlineEditor({
       transition={{ type: "spring", stiffness: 200, damping: 25 }}
       className="col-span-full overflow-hidden"
     >
-      <div className="bg-white/80 backdrop-blur-2xl border border-[#002395]/20 rounded-3xl shadow-[0_20px_40px_rgba(0,35,149,0.08)] relative my-2 overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-2xl border border-brand/20 rounded-3xl shadow-[0_20px_40px_rgba(0,35,149,0.08)] relative my-2 overflow-hidden">
         {/* Decorative accent */}
-        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#002395] to-sky-400" />
+        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-brand to-sky-400" />
 
         <div className="flex justify-between items-center p-6 md:p-8 border-b border-stone-200/50 bg-white/40">
           <div>
@@ -100,10 +100,10 @@ export default function LocationInlineEditor({
           <form onSubmit={onSubmit} className="space-y-8">
             {/* Google Maps Integration for new entries */}
             {!location?.id && (
-              <div className="space-y-5 bg-[#002395]/5 p-6 rounded-2xl border border-[#002395]/10 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+              <div className="space-y-5 bg-brand/5 p-6 rounded-2xl border border-brand/10 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <Globe size={18} className="text-[#002395]" />
-                  <h4 className="text-[11px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395]">
+                  <Globe size={18} className="text-brand" />
+                  <h4 className="text-[11px] font-bold antialiased uppercase tracking-[0.15em] text-brand">
                     {t(
                       "logistics.editor.section_search",
                       "Globalna Baza Google",
@@ -123,7 +123,7 @@ export default function LocationInlineEditor({
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {/* Column 1: Basic Information */}
               <div className="space-y-6">
-                <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
+                <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
                   {t("logistics.editor.section_basic", "Dane Podstawowe")}
                 </h4>
 
@@ -214,7 +214,7 @@ export default function LocationInlineEditor({
                       {...form.register("formatted_address")}
                       disabled={isSubmitting}
                       className={cn(
-                        "w-full pl-10 pr-4 py-3 bg-white/50 border border-stone-200/60 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all text-sm font-medium",
+                        "w-full pl-10 pr-4 py-3 bg-white/50 border border-stone-200/60 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-sm font-medium",
                         form.formState.errors.formatted_address &&
                           "border-red-500 focus:ring-red-500/20 focus:border-red-500",
                       )}
@@ -237,7 +237,7 @@ export default function LocationInlineEditor({
 
               {/* Column 2: Internal Logistics */}
               <div className="space-y-6">
-                <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
+                <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
                   {t("logistics.editor.section_notes", "Instrukcje Wewnętrzne")}
                 </h4>
 
@@ -252,7 +252,7 @@ export default function LocationInlineEditor({
                     {...form.register("internal_notes")}
                     disabled={isSubmitting}
                     className={cn(
-                      "flex-1 w-full px-4 py-4 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] min-h-[160px] resize-y",
+                      "flex-1 w-full px-4 py-4 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] min-h-[160px] resize-y",
                       form.formState.errors.internal_notes &&
                         "border-red-500 focus:ring-red-500/20 focus:border-red-500",
                     )}

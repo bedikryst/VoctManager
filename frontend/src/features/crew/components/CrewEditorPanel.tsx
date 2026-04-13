@@ -10,10 +10,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2 } from "lucide-react";
 
-import ConfirmModal from "../../../shared/ui/ConfirmModal";
-import { Input } from "../../../shared/ui/Input";
-import { Button } from "../../../shared/ui/Button";
-import type { Collaborator } from "../../../shared/types";
+import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import { Input } from "@ui/primitives/Input";
+import { Button } from "@ui/primitives/Button";
+import type { Collaborator } from "@/shared/types";
 import { useCrewForm } from "../hooks/useCrewForm";
 import type { CrewFormData } from "../types/crew.dto";
 import { SPECIALTY_CHOICES } from "../types/crew.dto";
@@ -28,7 +28,7 @@ interface CrewEditorPanelProps {
 const STYLE_LABEL =
   "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 const STYLE_SELECT =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
+  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 
 export default function CrewEditorPanel({
   isOpen,
@@ -128,7 +128,7 @@ export default function CrewEditorPanel({
                 className="space-y-6 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] relative flex flex-col min-h-full"
               >
                 <div className="flex-1 space-y-5">
-                  <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
+                  <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
                     {t("crew.editor.contact_person", "Osoba Kontaktowa")}
                   </h4>
                   <div className="grid grid-cols-2 gap-5">
@@ -203,7 +203,7 @@ export default function CrewEditorPanel({
                   </div>
 
                   <div className="space-y-5 pt-4 border-t border-stone-200/60">
-                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
+                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
                       {t("crew.editor.business_profile", "Profil Działalności")}
                     </h4>
 

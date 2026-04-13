@@ -1,13 +1,13 @@
 /**
  * @file NoiseOverlay.tsx
- * @description Static grain filter utilizing SVG feTurbulence.
+ * @description Static grain filter utilising SVG feTurbulence.
  * Applied globally to impart an analog film aesthetic to the digital interface.
- * @module ui/NoiseOverlay
+ * @module shared/ui/kinematics/NoiseOverlay
  */
 
 import React from "react";
 
-export default function NoiseOverlay(): React.JSX.Element {
+export const NoiseOverlay = (): React.JSX.Element => {
   return (
     <div
       className="pointer-events-none fixed inset-0 z-[9999] h-full w-full opacity-[0.05] mix-blend-multiply"
@@ -18,4 +18,4 @@ export default function NoiseOverlay(): React.JSX.Element {
       aria-hidden="true"
     />
   );
-}
+};

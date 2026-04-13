@@ -11,7 +11,7 @@ import type {
   RunSheetItem,
   VoiceLine,
   ParticipationStatus,
-} from "../../../shared/types";
+} from "@/shared/types";
 
 import type { ProjectStatus } from "../constants/projectDomain";
 

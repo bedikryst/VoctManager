@@ -154,6 +154,6 @@ export const BrandMark = () => (
     className="text-3xl font-medium text-stone-900 tracking-tight"
     style={{ fontFamily: "'Cormorant', serif" }}
   >
-    Voct<span className="italic text-[#002395]">Manager</span>
+    Voct<span className="italic text-brand">Manager</span>
   </h2>
 );

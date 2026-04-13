@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useLocations, useDeleteLocation } from "../api/logistics.queries";
 import type { LocationDto } from "../types/logistics.dto";
-import type { LocationCategory } from "../../../shared/types";
+import type { LocationCategory } from "@/shared/types";
 
 export const useLocationsData = () => {
   const { t } = useTranslation();

@@ -21,10 +21,10 @@ import {
   Layers,
 } from "lucide-react";
 
-import ConfirmModal from "../../shared/ui/ConfirmModal";
-import { GlassCard } from "../../shared/ui/GlassCard";
-import { Input } from "../../shared/ui/Input";
-import { Button } from "../../shared/ui/Button";
+import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Input } from "@ui/primitives/Input";
+import { Button } from "@ui/primitives/Button";
 
 import PieceCard from "./components/PieceCard";
 import ArchiveEditorPanel from "./components/ArchiveEditorPanel";
@@ -32,7 +32,7 @@ import { useArchiveData } from "./hooks/useArchiveData";
 import type { EnrichedPiece } from "./types/archive.dto";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
 
-import { useBodyScrollLock } from "../../shared/lib/hooks/useBodyScrollLock";
+import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
 import { ARCHIVE_TABS, ArchiveTabId } from "./constants/archiveDomain";
 
 export default function ArchiveManagement(): React.JSX.Element {
@@ -149,12 +149,8 @@ export default function ArchiveManagement(): React.JSX.Element {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-                <Library
-                  size={12}
-                  className="text-[#002395]"
-                  aria-hidden="true"
-                />
-                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+                <Library size={12} className="text-brand" aria-hidden="true" />
+                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
                   {t("archive.dashboard.subtitle")}
                 </p>
               </div>
@@ -163,7 +159,7 @@ export default function ArchiveManagement(): React.JSX.Element {
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
                 {t("archive.dashboard.title")}{" "}
-                <span className="italic text-[#002395] font-bold">
+                <span className="italic text-brand font-bold">
                   {t("archive.dashboard.title_highlight")}
                 </span>
                 .
@@ -186,7 +182,7 @@ export default function ArchiveManagement(): React.JSX.Element {
           variant="dark"
           className="relative group hover:-translate-y-0.5 transition-transform"
         >
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#002395] rounded-full blur-[80px] opacity-40 pointer-events-none transition-transform duration-1000 group-hover:scale-125" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-brand rounded-full blur-[80px] opacity-40 pointer-events-none transition-transform duration-1000 group-hover:scale-125" />
           <div className="relative z-10 flex items-center justify-between">
             <div>
               <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-blue-300 mb-1.5 flex items-center gap-2">
@@ -204,15 +200,15 @@ export default function ArchiveManagement(): React.JSX.Element {
           className="flex items-center justify-between hover:-translate-y-0.5 transition-transform"
         >
           <div>
-            <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-[#002395]/70 mb-1.5">
+            <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-brand/70 mb-1.5">
               {t("archive.dashboard.stats_pdf")}
             </p>
-            <p className="text-3xl font-black text-[#002395] tracking-tight">
+            <p className="text-3xl font-black text-brand tracking-tight">
               {libraryStats.withPdf}
             </p>
           </div>
           <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm">
-            <FileText size={24} className="text-[#002395]" aria-hidden="true" />
+            <FileText size={24} className="text-brand" aria-hidden="true" />
           </div>
         </GlassCard>
 
@@ -256,7 +252,7 @@ export default function ArchiveManagement(): React.JSX.Element {
           <select
             value={composerFilter}
             onChange={(event) => setComposerFilter(event.target.value)}
-            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold appearance-none cursor-pointer"
+            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-bold appearance-none cursor-pointer"
           >
             <option value="">{t("archive.dashboard.filter_composer")}</option>
             {composers.map((composer) => (
@@ -273,7 +269,7 @@ export default function ArchiveManagement(): React.JSX.Element {
           <select
             value={epochFilter}
             onChange={(event) => setEpochFilter(event.target.value)}
-            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold appearance-none cursor-pointer"
+            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-bold appearance-none cursor-pointer"
           >
             <option value="">{t("archive.dashboard.filter_epoch")}</option>
             {epochOptions.map((epoch) => (

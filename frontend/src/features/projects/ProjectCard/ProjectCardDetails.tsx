@@ -9,7 +9,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { AlignLeft, Shirt } from "lucide-react";
-import type { Project } from "../../../shared/types";
+import type { Project } from "@/shared/types";
 
 interface ProjectCardDetailsProps {
   project: Project;
@@ -25,7 +25,7 @@ export default function ProjectCardDetails({
     <>
       <div className="bg-white border border-stone-200/80 rounded-2xl p-5 shadow-sm flex-1 flex flex-col">
         <h4 className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3">
-          <AlignLeft size={16} className="text-[#002395]" aria-hidden="true" />{" "}
+          <AlignLeft size={16} className="text-brand" aria-hidden="true" />{" "}
           {t("projects.details.description_title", "Opis wydarzenia")}
         </h4>
         {project.description ? (
@@ -44,7 +44,7 @@ export default function ProjectCardDetails({
 
       <div className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-sm">
         <h4 className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3">
-          <Shirt size={16} className="text-[#002395]" aria-hidden="true" />{" "}
+          <Shirt size={16} className="text-brand" aria-hidden="true" />{" "}
           {t("projects.details.dress_code_title", "Dress Code")}
         </h4>
         <div className="flex flex-wrap gap-2">

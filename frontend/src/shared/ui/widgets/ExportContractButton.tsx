@@ -1,13 +1,14 @@
 /**
  * @file ExportContractButton.tsx
  * @description Triggers and polls asynchronous background tasks (Celery).
- * Provides real-time visual feedback during PDF/ZIP generation process.
- * @module ui/ExportContractButton
+ * Provides real-time visual feedback during PDF/ZIP generation processes.
+ * @module shared/ui/widgets/ExportContractButton
  */
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useExportProject } from "../lib/hooks/useExportProject";
+import { useTranslation } from "react-i18next";
+import { useExportProject } from "@/shared/lib/hooks/useExportProject";
 import { Loader2, Download, AlertCircle } from "lucide-react";
 
 interface ExportContractButtonProps {
@@ -17,6 +18,7 @@ interface ExportContractButtonProps {
 export const ExportContractButton = ({
   projectId,
 }: ExportContractButtonProps): React.JSX.Element => {
+  const { t } = useTranslation();
   const { startExport, status, downloadUrl, error, reset } = useExportProject();
 
   const handleExport = () => {
@@ -33,9 +35,9 @@ export const ExportContractButton = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             onClick={handleExport}
-            className="bg-stone-900 hover:bg-[#002395] text-white text-[10px] uppercase tracking-widest font-bold py-2.5 px-5 rounded-sm transition-colors shadow-sm"
+            className="bg-stone-900 hover:bg-brand text-white text-[10px] uppercase tracking-widest font-bold py-2.5 px-5 rounded-sm transition-colors shadow-sm"
           >
-            Generuj paczkę ZIP
+            {t("export.actions.generateZip")}
           </motion.button>
         )}
 
@@ -45,10 +47,10 @@ export const ExportContractButton = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="flex items-center space-x-2 px-5 py-2.5 bg-stone-100 border border-stone-200 text-[#002395] font-bold text-[10px] uppercase tracking-widest rounded-sm"
+            className="flex items-center space-x-2 px-5 py-2.5 bg-stone-100 border border-stone-200 text-brand font-bold text-[10px] uppercase tracking-widest rounded-sm"
           >
             <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-            <span>Przetwarzanie w tle...</span>
+            <span>{t("common.status.processingInBackground")}</span>
           </motion.div>
         )}
 
@@ -65,13 +67,14 @@ export const ExportContractButton = ({
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] uppercase tracking-widest font-bold py-2.5 px-5 rounded-sm transition-colors shadow-sm"
             >
-              <Download size={14} aria-hidden="true" /> Pobierz ZIP
+              <Download size={14} aria-hidden="true" />{" "}
+              {t("export.actions.downloadZip")}
             </a>
             <button
               onClick={reset}
               className="text-[10px] uppercase tracking-widest font-bold text-stone-400 hover:text-stone-800 transition-colors"
             >
-              Zamknij
+              {t("common.actions.close")}
             </button>
           </motion.div>
         )}
@@ -85,13 +88,13 @@ export const ExportContractButton = ({
           >
             <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-red-600">
               <AlertCircle size={14} aria-hidden="true" />{" "}
-              {error || "Wystąpił błąd"}
+              {error || t("common.errors.generic")}
             </span>
             <button
               onClick={reset}
               className="px-4 py-2 border border-red-200 text-red-600 rounded-sm text-[10px] uppercase tracking-widest font-bold hover:bg-red-50 transition-colors"
             >
-              Spróbuj ponownie
+              {t("common.actions.retry")}
             </button>
           </motion.div>
         )}

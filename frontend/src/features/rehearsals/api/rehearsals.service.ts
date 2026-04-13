@@ -3,14 +3,14 @@
  * @description Pure HTTP service for the Rehearsals domain.
  */
 
-import api from "../../../shared/api/api";
+import api from "@/shared/api/api";
 import type {
   Artist,
   Attendance,
   Participation,
   Project,
   Rehearsal,
-} from "../../../shared/types";
+} from "@/shared/types";
 import type { AttendanceUpsertDTO } from "../types/rehearsals.dto";
 import type { LocationDto } from "../../logistics/types/logistics.dto";
 

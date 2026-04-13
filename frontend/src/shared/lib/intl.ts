@@ -2,7 +2,7 @@
  * @file intl.ts
  * @description Enterprise-grade internationalization utilities with explicit timezone support.
  */
-import i18n from "../config/i18n";
+import i18n from "@/shared/config/i18n";
 
 type DateInput = Date | string | number | null | undefined;
 

@@ -22,7 +22,7 @@ import type {
   Attendance,
   AttendanceStatus,
   Participation,
-} from "../../../shared/types";
+} from "@/shared/types";
 import {
   useDeleteAttendanceRecord,
   useUpsertAttendanceRecord,
@@ -223,7 +223,7 @@ export const ArtistRow = React.memo(
                       ? "bg-orange-50/50 text-orange-800 border border-orange-200/80 focus:ring-orange-500/20 focus:border-orange-400 placeholder-orange-300"
                       : status === "ABSENT"
                         ? "bg-red-50/50 text-red-800 border border-red-200/80 focus:ring-red-500/20 focus:border-red-400 placeholder-red-300"
-                        : "bg-transparent hover:bg-stone-50 focus:bg-white text-stone-700 border border-transparent hover:border-stone-200 focus:border-[#002395]/40 focus:ring-[#002395]/20 placeholder-stone-300"
+                        : "bg-transparent hover:bg-stone-50 focus:bg-white text-stone-700 border border-transparent hover:border-stone-200 focus:border-brand/40 focus:ring-brand/20 placeholder-stone-300"
                 }`}
               />
               {isSyncing && (

@@ -11,11 +11,11 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Plus, Search, Filter, Wrench } from "lucide-react";
 
-import ConfirmModal from "../../shared/ui/ConfirmModal";
-import { Button } from "../../shared/ui/Button";
-import { Input } from "../../shared/ui/Input";
-import { GlassCard } from "../../shared/ui/GlassCard";
-import { useBodyScrollLock } from "../../shared/lib/hooks/useBodyScrollLock";
+import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import { Button } from "@ui/primitives/Button";
+import { Input } from "@ui/primitives/Input";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { useBodyScrollLock } from "@/shared/lib/hooks/useBodyScrollLock";
 
 import CrewEditorPanel from "./components/CrewEditorPanel";
 import { CrewCard } from "./components/CrewCard";
@@ -66,12 +66,8 @@ export default function CrewManagement(): React.JSX.Element {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-                <Wrench
-                  size={12}
-                  className="text-[#002395]"
-                  aria-hidden="true"
-                />
-                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+                <Wrench size={12} className="text-brand" aria-hidden="true" />
+                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
                   {t("crew.dashboard.subtitle", "Logistyka")}
                 </p>
               </div>
@@ -80,7 +76,7 @@ export default function CrewManagement(): React.JSX.Element {
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
                 {t("crew.dashboard.title", "Ekipa")}{" "}
-                <span className="italic text-[#002395]">
+                <span className="italic text-brand">
                   {t("crew.dashboard.title_highlight", "Techniczna")}
                 </span>
                 .
@@ -117,7 +113,7 @@ export default function CrewManagement(): React.JSX.Element {
           <select
             value={specialtyFilter}
             onChange={(e) => setSpecialtyFilter(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] font-bold appearance-none cursor-pointer"
+            className="w-full pl-11 pr-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] font-bold appearance-none cursor-pointer"
           >
             <option value="">
               {t("crew.dashboard.filter_all", "Wszystkie specjalizacje")}

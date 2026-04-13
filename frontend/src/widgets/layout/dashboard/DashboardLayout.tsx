@@ -9,7 +9,7 @@
 import React, { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 
-import { useAuth } from "../../../app/providers/AuthProvider";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { DesktopSidebar } from "./components/DesktopSidebar";
 import { MobileNavigation } from "./components/MobileNavigation";
 
@@ -28,7 +28,7 @@ export default function DashboardLayout(): React.JSX.Element {
 
   return (
     // Base Layer: Strict background color, full viewport height, and selection colors
-    <div className="relative flex min-h-screen w-full bg-[#f4f2ee] font-sans text-stone-900 antialiased selection:bg-[#002395] selection:text-white">
+    <div className="relative flex min-h-screen w-full bg-[#f4f2ee] font-sans text-stone-900 antialiased selection:bg-brand selection:text-white">
       {/* Ambient Light Decorators (Ethereal UI - "Sacral Stained Glass" effect) */}
       <div
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden"

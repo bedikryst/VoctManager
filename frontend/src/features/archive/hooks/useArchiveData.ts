@@ -13,8 +13,8 @@ import {
   useComposers,
   useDeletePiece,
 } from "../api/archive.queries";
-import { useVoiceLines } from "../../../shared/api/options.queries";
-import type { Piece } from "../../../shared/types";
+import { useVoiceLines } from "@/shared/api/options.queries";
+import type { Piece } from "@/shared/types";
 import { EnrichedPiece } from "../types/archive.dto";
 
 export const useArchiveData = () => {

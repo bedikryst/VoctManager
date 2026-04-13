@@ -21,8 +21,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import type { Artist } from "../../../../shared/types";
-import { Input } from "../../../../shared/ui/Input";
+import type { Artist } from "@/shared/types";
+import { Input } from "@/shared/ui/primitives/Input";
 import { useCastTab } from "../hooks/useCastTab";
 
 interface CastTabProps {
@@ -65,7 +65,7 @@ const ArtistCard = React.memo(
               {artist.first_name} {artist.last_name}
             </p>
             <span
-              className={`text-[8px] font-bold antialiased uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${isAssigned ? "bg-blue-50 text-[#002395] border-blue-100" : "bg-stone-50 text-stone-500 border-stone-200/60"}`}
+              className={`text-[8px] font-bold antialiased uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${isAssigned ? "bg-blue-50 text-brand border-blue-100" : "bg-stone-50 text-stone-500 border-stone-200/60"}`}
             >
               {artist.voice_type_display || artist.voice_type || "?"}
             </span>
@@ -76,7 +76,7 @@ const ArtistCard = React.memo(
               <span className="flex items-center gap-1">
                 <MicVocal
                   size={12}
-                  className="text-[#002395]/40"
+                  className="text-brand/40"
                   aria-hidden="true"
                 />
                 <span>
@@ -91,7 +91,7 @@ const ArtistCard = React.memo(
               <span className="flex items-center gap-1">
                 <BookOpen
                   size={12}
-                  className="text-[#002395]/40"
+                  className="text-brand/40"
                   aria-hidden="true"
                 />
                 <span>
@@ -113,7 +113,7 @@ const ArtistCard = React.memo(
           className={`flex justify-center items-center p-2.5 sm:px-4 sm:py-2.5 rounded-lg text-[9px] uppercase font-bold antialiased tracking-widest transition-all shadow-sm active:scale-95 disabled:opacity-50 flex-shrink-0 ${
             isAssigned
               ? "bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
-              : "bg-stone-900 border border-stone-800 text-white hover:bg-[#002395] hover:border-[#001766]"
+              : "bg-stone-900 border border-stone-800 text-white hover:bg-brand hover:border-brand-dark"
           }`}
           aria-label={
             isAssigned
@@ -177,7 +177,7 @@ export default function CastTab({
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm">
-              <Users size={18} className="text-[#002395]" aria-hidden="true" />
+              <Users size={18} className="text-brand" aria-hidden="true" />
             </div>
             <div>
               <h4 className="text-[12px] font-bold antialiased uppercase tracking-widest text-stone-800">
@@ -222,7 +222,7 @@ export default function CastTab({
           </button>
           <button
             onClick={() => setMobileView("ASSIGNED")}
-            className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mobileView === "ASSIGNED" ? "bg-[#002395] text-white shadow-sm" : "text-stone-500"}`}
+            className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mobileView === "ASSIGNED" ? "bg-brand text-white shadow-sm" : "text-stone-500"}`}
           >
             {t("projects.cast.mobile.assigned", "Obsada")} (
             {participations.length})
@@ -234,7 +234,7 @@ export default function CastTab({
         <div className="flex-1 flex justify-center items-center">
           <Loader2
             size={32}
-            className="animate-spin text-[#002395]/40"
+            className="animate-spin text-brand/40"
             aria-hidden="true"
           />
         </div>
@@ -292,17 +292,17 @@ export default function CastTab({
               className={`flex-col h-full [scrollbar-gutter:stable] ${mobileView === "ASSIGNED" ? "flex" : "hidden md:flex"}`}
             >
               <div className="flex items-center justify-between mb-3 px-2">
-                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395] flex items-center gap-1.5">
+                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand flex items-center gap-1.5">
                   <UserCheck size={14} aria-hidden="true" />{" "}
                   {t("projects.cast.sections.assigned", "Obsada Projektu")}
                 </span>
-                <span className="text-[9px] font-bold antialiased text-[#002395] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
+                <span className="text-[9px] font-bold antialiased text-brand bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
                   {participations.length}
                 </span>
               </div>
 
               <div
-                className={`${STYLE_LIST_CONTAINER} border-[#002395]/20 bg-blue-50/10`}
+                className={`${STYLE_LIST_CONTAINER} border-brand/20 bg-blue-50/10`}
               >
                 {allArtists
                   .filter((a) => assignedIds.has(String(a.id)))

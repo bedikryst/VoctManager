@@ -1,15 +1,9 @@
 import { useTranslation } from "react-i18next";
-import {
-  Utensils,
-  Shirt,
-  Ruler,
-  CheckCircle2,
-  Footprints,
-} from "lucide-react";
+import { Utensils, Shirt, Ruler, CheckCircle2, Footprints } from "lucide-react";
 
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Input } from "../../../shared/ui/Input";
-import { Button } from "../../../shared/ui/Button";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Input } from "@ui/primitives/Input";
+import { Button } from "@ui/primitives/Button";
 import { useLogisticsSettings } from "../hooks/useLogisticsSettings";
 
 export default function LogisticsTab() {
@@ -55,7 +49,7 @@ export default function LogisticsTab() {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-4">
           <h3 className="text-sm font-black text-stone-800 uppercase tracking-wider flex items-center gap-2">
-            <Utensils className="w-4 h-4 text-[#002395]" />
+            <Utensils className="w-4 h-4 text-brand" />
             {t("settings.logistics.sections.catering", "Catering")}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -67,7 +61,7 @@ export default function LogisticsTab() {
                 )}
               </label>
               <select
-                className="w-full text-sm font-medium text-stone-800 rounded-xl py-2.5 px-4 bg-white/50 border border-stone-200/60 focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40"
+                className="w-full text-sm font-medium text-stone-800 rounded-xl py-2.5 px-4 bg-white/50 border border-stone-200/60 focus:ring-2 focus:ring-brand/20 focus:border-brand/40"
                 value={formData.dietary_preference}
                 onChange={(e) =>
                   handleChange("dietary_preference", e.target.value)
@@ -77,7 +71,10 @@ export default function LogisticsTab() {
                   {t("settings.logistics.dietary_options.none", "Brak wymagań")}
                 </option>
                 <option value="vege">
-                  {t("settings.logistics.dietary_options.vege", "Wegetariańska")}
+                  {t(
+                    "settings.logistics.dietary_options.vege",
+                    "Wegetariańska",
+                  )}
                 </option>
                 <option value="vegan">
                   {t("settings.logistics.dietary_options.vegan", "Wegańska")}
@@ -114,7 +111,7 @@ export default function LogisticsTab() {
 
         <div className="space-y-4">
           <h3 className="text-sm font-black text-stone-800 uppercase tracking-wider flex items-center gap-2">
-            <Shirt className="w-4 h-4 text-[#002395]" />
+            <Shirt className="w-4 h-4 text-brand" />
             {t("settings.logistics.sections.measurements", "Wymiary i stroje")}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -127,7 +124,9 @@ export default function LogisticsTab() {
                 value={formData.clothing_size}
                 onChange={(e) => handleChange("clothing_size", e.target.value)}
               >
-                <option value="">{t("common.actions.select", "Wybierz")}</option>
+                <option value="">
+                  {t("common.actions.select", "Wybierz")}
+                </option>
                 <option value="xs">XS</option>
                 <option value="s">S</option>
                 <option value="m">M</option>
@@ -141,7 +140,10 @@ export default function LogisticsTab() {
                 {t("settings.logistics.shoe_size", "Rozmiar buta (EU)")}
               </label>
               <Input
-                placeholder={t("settings.logistics.shoe_size_placeholder", "Np. 42")}
+                placeholder={t(
+                  "settings.logistics.shoe_size_placeholder",
+                  "Np. 42",
+                )}
                 value={formData.shoe_size}
                 onChange={(e) => handleChange("shoe_size", e.target.value)}
                 leftIcon={<Footprints className="w-4 h-4" />}
@@ -153,7 +155,10 @@ export default function LogisticsTab() {
               </label>
               <Input
                 type="number"
-                placeholder={t("settings.logistics.height_placeholder", "Np. 175")}
+                placeholder={t(
+                  "settings.logistics.height_placeholder",
+                  "Np. 175",
+                )}
                 value={formData.height_cm}
                 onChange={(e) => handleChange("height_cm", e.target.value)}
                 leftIcon={<Ruler className="w-4 h-4" />}

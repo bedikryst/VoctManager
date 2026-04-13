@@ -10,9 +10,9 @@ import { useTranslation } from "react-i18next";
 import { KeyRound, ShieldCheck } from "lucide-react";
 import axios from "axios";
 
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Input } from "../../../shared/ui/Input";
-import { Button } from "../../../shared/ui/Button";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Input } from "@ui/primitives/Input";
+import { Button } from "@ui/primitives/Button";
 import { useChangePassword } from "../api/settings.queries";
 import type { ApiErrorResponse } from "../types/settings.dto";
 

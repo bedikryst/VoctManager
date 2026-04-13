@@ -8,9 +8,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../app/providers/AuthProvider";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 import { useSettingsData, useUpdatePreferences } from "../api/settings.queries";
 import { UpdatePreferencesPayload } from "../types/settings.dto";

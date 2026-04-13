@@ -3,7 +3,7 @@
  * @description Pure HTTP service for the Materials domain.
  */
 
-import api from "../../../shared/api/api";
+import api from "@/shared/api/api";
 import type {
   Composer,
   Participation,
@@ -12,7 +12,7 @@ import type {
   ProgramItem,
   Project,
   Track,
-} from "../../../shared/types";
+} from "@/shared/types";
 
 export const MaterialsService = {
   getProjects: async (): Promise<Project[]> => {

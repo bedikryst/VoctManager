@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../app/providers/AuthProvider";
-import { isManager } from "../../shared/auth/rbac";
+import { isManager } from "@/shared/auth/rbac";
 
 interface ResourceFile {
   id: number;
@@ -56,8 +56,13 @@ export default function Resources(): React.JSX.Element {
     () => [
       {
         id: "wardrobe",
-        title: t("resources.categories.wardrobe.title", "Garderoba i Dress Code"),
-        icon: <Shirt size={20} className="text-purple-600" aria-hidden="true" />,
+        title: t(
+          "resources.categories.wardrobe.title",
+          "Garderoba i Dress Code",
+        ),
+        icon: (
+          <Shirt size={20} className="text-purple-600" aria-hidden="true" />
+        ),
         bgColor: "bg-purple-50/50",
         borderColor: "border-purple-200/60",
         iconColor: "text-purple-600",
@@ -92,10 +97,10 @@ export default function Resources(): React.JSX.Element {
           "resources.categories.regulations.title",
           "Regulaminy i Statuty",
         ),
-        icon: <BookOpen size={20} className="text-[#002395]" aria-hidden="true" />,
+        icon: <BookOpen size={20} className="text-brand" aria-hidden="true" />,
         bgColor: "bg-blue-50/50",
         borderColor: "border-blue-200/60",
-        iconColor: "text-[#002395]",
+        iconColor: "text-brand",
         description: t(
           "resources.categories.regulations.description",
           "Oficjalne dokumenty fundacji, zasady współpracy, polityka prywatności oraz regulaminy uczestnictwa w próbach.",
@@ -154,12 +159,8 @@ export default function Resources(): React.JSX.Element {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-                <Archive
-                  size={12}
-                  className="text-[#002395]"
-                  aria-hidden="true"
-                />
-                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-[#002395]/80">
+                <Archive size={12} className="text-brand" aria-hidden="true" />
+                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
                   {t("resources.dashboard.badge", "Baza wiedzy i dokumenty")}
                 </p>
               </div>
@@ -168,7 +169,7 @@ export default function Resources(): React.JSX.Element {
                 style={{ fontFamily: "'Cormorant', serif" }}
               >
                 {t("resources.dashboard.title", "Zasoby")}{" "}
-                <span className="italic text-[#002395]">
+                <span className="italic text-brand">
                   {t("resources.dashboard.title_highlight", "Fundacji")}
                 </span>
                 .
@@ -178,7 +179,7 @@ export default function Resources(): React.JSX.Element {
             {isAdmin && (
               <button
                 onClick={handleAdminAction}
-                className="flex items-center gap-2 bg-[#002395] hover:bg-[#001766] text-white text-[10px] uppercase tracking-widest font-bold antialiased py-3 px-6 rounded-xl transition-all shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)] hover:-translate-y-0.5 active:scale-95"
+                className="flex items-center gap-2 bg-brand hover:bg-brand-dark text-white text-[10px] uppercase tracking-widest font-bold antialiased py-3 px-6 rounded-xl transition-all shadow-[0_4px_14px_rgba(0,35,149,0.3)] hover:shadow-[0_6px_20px_rgba(0,35,149,0.4)] hover:-translate-y-0.5 active:scale-95"
               >
                 <Plus size={16} aria-hidden="true" />{" "}
                 {t("resources.actions.add_category", "Dodaj kategorię")}
@@ -194,11 +195,11 @@ export default function Resources(): React.JSX.Element {
         transition={{ delay: 0.1 }}
         className="bg-blue-50/80 backdrop-blur-md border border-blue-200/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-sm"
       >
-        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100 text-[#002395]">
+        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100 text-brand">
           <Info size={20} aria-hidden="true" />
         </div>
         <div>
-          <h4 className="text-[11px] font-bold antialiased uppercase tracking-widest text-[#002395] mb-1">
+          <h4 className="text-[11px] font-bold antialiased uppercase tracking-widest text-brand mb-1">
             {t("resources.banner.title", "Sekcja poglądowa (wersja demo)")}
           </h4>
           <p className="text-sm text-stone-600 font-medium leading-relaxed">
@@ -226,7 +227,10 @@ export default function Resources(): React.JSX.Element {
               {React.isValidElement(category.icon) &&
                 React.cloneElement(
                   category.icon as React.ReactElement,
-                  { size: 160, strokeWidth: 1 } as React.SVGProps<SVGSVGElement>,
+                  {
+                    size: 160,
+                    strokeWidth: 1,
+                  } as React.SVGProps<SVGSVGElement>,
                 )}
             </div>
 
@@ -252,7 +256,7 @@ export default function Resources(): React.JSX.Element {
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={handleAdminAction}
-                      className="p-2 text-stone-400 hover:text-[#002395] hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-2 text-stone-400 hover:text-brand hover:bg-blue-50 rounded-lg transition-colors"
                       aria-label={t(
                         "resources.actions.edit_category",
                         "Edytuj kategorię",
@@ -278,17 +282,17 @@ export default function Resources(): React.JSX.Element {
                 {category.files.map((file) => (
                   <div
                     key={file.id}
-                    className="group/file flex items-stretch justify-between p-4 bg-white/60 backdrop-blur-sm border border-stone-200/60 rounded-xl hover:bg-white hover:border-[#002395]/30 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
+                    className="group/file flex items-stretch justify-between p-4 bg-white/60 backdrop-blur-sm border border-stone-200/60 rounded-xl hover:bg-white hover:border-brand/30 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
                   >
                     <div className="flex items-start gap-4 overflow-hidden pr-4 flex-1">
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-colors flex-shrink-0 ${category.bgColor} ${category.borderColor} ${category.iconColor} group-hover/file:bg-[#002395] group-hover/file:border-[#001766] group-hover/file:text-white`}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-colors flex-shrink-0 ${category.bgColor} ${category.borderColor} ${category.iconColor} group-hover/file:bg-brand group-hover/file:border-brand-dark group-hover/file:text-white`}
                       >
                         <FileText size={16} aria-hidden="true" />
                       </div>
                       <div className="min-w-0 flex-1 pt-0.5">
                         <p
-                          className="text-sm font-bold text-stone-800 group-hover/file:text-[#002395] transition-colors tracking-tight leading-snug"
+                          className="text-sm font-bold text-stone-800 group-hover/file:text-brand transition-colors tracking-tight leading-snug"
                           title={file.title}
                         >
                           {file.title}
@@ -312,13 +316,16 @@ export default function Resources(): React.JSX.Element {
                             handleAdminAction();
                           }}
                           className="text-stone-300 hover:text-red-600 bg-white p-2.5 rounded-xl border border-stone-200/60 shadow-sm transition-all active:scale-95 opacity-0 group-hover/file:opacity-100"
-                          aria-label={t("resources.actions.delete_file", "Usuń plik")}
+                          aria-label={t(
+                            "resources.actions.delete_file",
+                            "Usuń plik",
+                          )}
                         >
                           <Trash2 size={16} aria-hidden="true" />
                         </button>
                       )}
                       <button
-                        className="text-stone-400 group-hover/file:text-[#002395] bg-white p-2.5 rounded-xl border border-stone-200/60 shadow-sm transition-all active:scale-95"
+                        className="text-stone-400 group-hover/file:text-brand bg-white p-2.5 rounded-xl border border-stone-200/60 shadow-sm transition-all active:scale-95"
                         aria-label={t(
                           "resources.actions.download_file",
                           "Pobierz {{title}}",
@@ -334,7 +341,7 @@ export default function Resources(): React.JSX.Element {
                 {isAdmin && (
                   <button
                     onClick={handleAdminAction}
-                    className="w-full py-3 mt-2 border-2 border-dashed border-stone-300 text-stone-400 hover:text-[#002395] hover:border-[#002395]/40 hover:bg-blue-50/50 rounded-xl text-[10px] uppercase font-bold antialiased tracking-widest transition-all flex items-center justify-center gap-2 active:scale-95"
+                    className="w-full py-3 mt-2 border-2 border-dashed border-stone-300 text-stone-400 hover:text-brand hover:border-brand/40 hover:bg-blue-50/50 rounded-xl text-[10px] uppercase font-bold antialiased tracking-widest transition-all flex items-center justify-center gap-2 active:scale-95"
                   >
                     <Plus size={14} aria-hidden="true" />{" "}
                     {t("resources.actions.add_document", "Dodaj nowy dokument")}

@@ -5,7 +5,7 @@
  * @module features/settings/api
  */
 
-import api from "../../../shared/api/api";
+import api from "@/shared/api/api";
 import {
   UserMeDTO,
   UpdatePreferencesPayload,

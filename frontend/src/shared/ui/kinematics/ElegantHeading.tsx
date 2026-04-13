@@ -3,7 +3,7 @@
  * @description A sophisticated typographic component.
  * Parses strings into independently animatable spans, allowing for
  * complex, staggered hover interactions.
- * @module ui/ElegantHeading
+ * @module shared/ui/kinematics/ElegantHeading
  */
 
 import React from "react";
@@ -14,10 +14,10 @@ interface ElegantHeadingProps {
   className?: string;
 }
 
-export default function ElegantHeading({
+export const ElegantHeading = ({
   text,
   className = "",
-}: ElegantHeadingProps): React.JSX.Element {
+}: ElegantHeadingProps): React.JSX.Element => {
   const letters = text.split("");
 
   const containerVariants: Variants = {
@@ -40,7 +40,7 @@ export default function ElegantHeading({
       y: -2,
       opacity: 0.8,
       skewX: -5,
-      color: "#002395",
+      color: "var(--color-brand)", // Utilising the v4 CSS token
       transition: {
         duration: 0.4,
         ease: [0.16, 1, 0.3, 1] as const,
@@ -50,13 +50,12 @@ export default function ElegantHeading({
 
   return (
     <motion.h2
-      className={`relative inline-block cursor-none ${className}`}
+      className={`relative inline-block cursor-none font-serif ${className}`}
       variants={containerVariants}
-      style={{ fontFamily: "'Cormorant', serif" }}
     >
       {letters.map((letter, index) => (
         <motion.span
-          key={index}
+          key={`${letter}-${index}`}
           variants={letterVariants}
           className="inline-block"
           style={{ whiteSpace: letter === " " ? "pre" : "normal" }}
@@ -66,4 +65,4 @@ export default function ElegantHeading({
       ))}
     </motion.h2>
   );
-}
+};

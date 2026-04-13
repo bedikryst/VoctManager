@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { Artist, VoiceTypeOption } from "../../../shared/types";
+import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useCreateArtist, useUpdateArtist } from "../api/artist.queries";
 import {
   artistFormSchema,

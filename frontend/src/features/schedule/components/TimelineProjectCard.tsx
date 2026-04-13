@@ -20,13 +20,11 @@ import {
   Music,
   Wrench,
 } from "lucide-react";
-import { DualTimeDisplay } from "../../../shared/ui/DualTimeDisplay";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 import SpotifyWidget from "../../projects/ProjectCard/widgets/SpotifyWidget";
-import {
-  formatLocalizedDate,
-} from "../../../shared/lib/intl";
-import type { Project, ProgramItem, PieceCasting } from "../../../shared/types";
-import { Button } from "../../../shared/ui/Button";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import type { Project, ProgramItem, PieceCasting } from "@/shared/types";
+import { Button } from "@/shared/ui/primitives/Button";
 import { useTimelineProjectCard } from "../hooks/useTimelineProjectCard";
 import type { TimelineEvent } from "../types/schedule.dto";
 
@@ -70,13 +68,13 @@ export default function TimelineProjectCard({
       exit={{ opacity: 0, scale: 0.98 }}
       className="relative sm:pl-16 transition-all duration-300 group"
     >
-      <div className="hidden sm:block absolute left-4 md:left-[27px] top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-[#f4f2ee] z-10 bg-[#002395] border-[#002395] shadow-[0_0_10px_rgba(0,35,149,0.5)]" />
+      <div className="hidden sm:block absolute left-4 md:left-[27px] top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-[#f4f2ee] z-10 bg-brand border-brand shadow-[0_0_10px_rgba(0,35,149,0.5)]" />
 
       <div
         className={`rounded-[2rem] relative overflow-hidden transition-all duration-300 bg-[#0a0a0a] text-white shadow-[0_20px_40px_rgba(0,0,0,0.3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] border ${isExpanded ? "border-stone-700" : "border-stone-800 hover:border-stone-700"}`}
       >
         <div
-          className={`absolute -top-32 -right-32 w-80 h-80 bg-[#002395] rounded-full blur-[100px] pointer-events-none transition-all duration-1000 ${isExpanded ? "opacity-60 scale-110" : "opacity-30 group-hover:opacity-50"}`}
+          className={`absolute -top-32 -right-32 w-80 h-80 bg-brand rounded-full blur-[100px] pointer-events-none transition-all duration-1000 ${isExpanded ? "opacity-60 scale-110" : "opacity-30 group-hover:opacity-50"}`}
         ></div>
         <div
           className="absolute inset-0 opacity-[0.03] pointer-events-none"

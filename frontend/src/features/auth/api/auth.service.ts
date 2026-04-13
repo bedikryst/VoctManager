@@ -4,7 +4,7 @@
  * @module features/auth/api
  */
 
-import api, { type AuthRequestConfig } from "../../../shared/api/api";
+import api, { type AuthRequestConfig } from "@/shared/api/api";
 import type {
   ActivateAccountPayload,
   ActivateAccountResponse,

@@ -1,11 +1,8 @@
 /**
  * @file PageTransition.tsx
  * @description Cinematic page transition wrapper for the public zone.
- * Utilizes Framer Motion to create a soft, editorial crossfade and blur effect
- * between route changes.
- * Note: Should NOT be used inside the SaaS Dashboard to preserve snappy navigation.
- * @architecture Enterprise 2026 Standards
- * @author Krystian Bugalski
+ * Utilises Framer Motion to create a soft, editorial crossfade and blur effect.
+ * @module shared/ui/kinematics/PageTransition
  */
 
 import React, { useEffect } from "react";
@@ -15,10 +12,9 @@ interface PageTransitionProps {
   children: React.ReactNode;
 }
 
-export default function PageTransition({
+export const PageTransition = ({
   children,
-}: PageTransitionProps): React.JSX.Element {
-  // Forces viewport to the top of the page upon route initialization
+}: PageTransitionProps): React.JSX.Element => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -29,9 +25,9 @@ export default function PageTransition({
       animate={{ opacity: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, filter: "blur(10px)" }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
-      className="w-full min-h-screen bg-[#fdfbf7]"
+      className="w-full min-h-screen bg-stone-50"
     >
       {children}
     </motion.div>
   );
-}
+};

@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 
-import type { Artist, PieceCasting } from "../../../../shared/types";
+import type { Artist, PieceCasting } from "@/shared/types";
 import {
   useProjectPieceCastings,
   useProjectProgram,

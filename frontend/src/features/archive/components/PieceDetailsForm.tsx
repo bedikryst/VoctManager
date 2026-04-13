@@ -19,10 +19,10 @@ import {
   AlignLeft,
 } from "lucide-react";
 
-import type { Composer, VoiceLineOption } from "../../../shared/types";
+import type { Composer, VoiceLineOption } from "@/shared/types";
 import type { EnrichedPiece } from "../types/archive.dto";
-import { Button } from "../../../shared/ui/Button";
-import { Input } from "../../../shared/ui/Input";
+import { Button } from "@ui/primitives/Button";
+import { Input } from "@ui/primitives/Input";
 import { usePieceForm, SubmitAction } from "../hooks/usePieceForm";
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
 
@@ -38,9 +38,9 @@ interface PieceDetailsFormProps {
 const STYLE_LABEL =
   "block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 const STYLE_SELECT =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
+  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 const STYLE_TEXTAREA =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] resize-none font-medium text-xs leading-relaxed";
+  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] resize-none font-medium text-xs leading-relaxed";
 
 export default function PieceDetailsForm({
   piece,
@@ -91,7 +91,7 @@ export default function PieceDetailsForm({
       <div className="flex-1 space-y-8">
         <div className="space-y-6">
           <div>
-            <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395] mb-2 ml-1">
+            <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-brand mb-2 ml-1">
               {t("archive.form.fields.title", "Tytuł utworu *")}
             </label>
             <Input
@@ -119,7 +119,7 @@ export default function PieceDetailsForm({
                 <button
                   type="button"
                   onClick={() => setIsAddingComposer(!isAddingComposer)}
-                  className="text-[9px] text-[#002395] font-medium antialiased uppercase tracking-widest hover:underline"
+                  className="text-[9px] text-brand font-medium antialiased uppercase tracking-widest hover:underline"
                   disabled={isSubmitting}
                 >
                   {isAddingComposer
@@ -251,7 +251,7 @@ export default function PieceDetailsForm({
                               }));
                               setIsCompDropdownOpen(false);
                             }}
-                            className="px-4 py-3 text-sm font-medium text-stone-800 hover:bg-[#002395] hover:text-white cursor-pointer transition-colors"
+                            className="px-4 py-3 text-sm font-medium text-stone-800 hover:bg-brand hover:text-white cursor-pointer transition-colors"
                           >
                             {composer.last_name} {composer.first_name}{" "}
                             {composer.birth_year ? (
@@ -350,7 +350,7 @@ export default function PieceDetailsForm({
 
         <div className="border-t border-stone-200/60 pt-8 space-y-6">
           <h3 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-800 flex items-center gap-2.5">
-            <Music size={16} className="text-[#002395]" aria-hidden="true" />{" "}
+            <Music size={16} className="text-brand" aria-hidden="true" />{" "}
             {t("archive.form.sections.requirements", "Wymagania wykonawcze")}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -445,7 +445,7 @@ export default function PieceDetailsForm({
                           { voice_line: String(voiceLine.value), quantity: 1 },
                         ])
                       }
-                      className="px-4 py-2 bg-white border border-stone-200/80 text-stone-600 hover:text-[#002395] hover:border-[#002395]/40 hover:bg-blue-50/50 text-[9px] font-medium antialiased uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                      className="px-4 py-2 bg-white border border-stone-200/80 text-stone-600 hover:text-brand hover:border-brand/40 hover:bg-blue-50/50 text-[9px] font-medium antialiased uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
                       disabled={isSubmitting}
                     >
                       <Plus size={12} aria-hidden="true" /> {voiceLine.label}
@@ -461,7 +461,7 @@ export default function PieceDetailsForm({
                     key={`${requirement.voice_line}-${index}`}
                     className="flex justify-between items-center bg-white/80 border border-stone-200/60 px-5 py-3 rounded-xl shadow-sm transition-colors"
                   >
-                    <span className="text-[10px] font-medium antialiased text-[#002395] uppercase tracking-widest">
+                    <span className="text-[10px] font-medium antialiased text-brand uppercase tracking-widest">
                       {voiceLines.find(
                         (voiceLine) =>
                           String(voiceLine.value) === requirement.voice_line,
@@ -518,11 +518,7 @@ export default function PieceDetailsForm({
 
         <div className="border-t border-stone-200/60 pt-8 space-y-6">
           <h3 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-800 flex items-center gap-2.5">
-            <AlignLeft
-              size={16}
-              className="text-[#002395]"
-              aria-hidden="true"
-            />{" "}
+            <AlignLeft size={16} className="text-brand" aria-hidden="true" />{" "}
             {t("archive.form.sections.materials", "Materiały i teksty")}
           </h3>
 
@@ -657,7 +653,7 @@ export default function PieceDetailsForm({
               onChange={(e) =>
                 setSelectedFile(e.target.files ? e.target.files[0] : null)
               }
-              className="w-full mt-1 text-sm text-stone-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-[9px] file:font-medium file:antialiased file:uppercase file:tracking-widest file:bg-white file:text-[#002395] file:shadow-sm hover:file:bg-blue-50 hover:file:text-[#001766] cursor-pointer border border-stone-200/60 rounded-xl bg-white/50 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all"
+              className="w-full mt-1 text-sm text-stone-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-[9px] file:font-medium file:antialiased file:uppercase file:tracking-widest file:bg-white file:text-brand file:shadow-sm hover:file:bg-blue-50 hover:file:text-brand-dark cursor-pointer border border-stone-200/60 rounded-xl bg-white/50 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all"
               disabled={isSubmitting}
             />
           </div>

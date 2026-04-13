@@ -9,7 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArtistService } from "./artist.service";
 import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
-import { queryKeys } from "../../../shared/lib/queryKeys";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 export const useArtists = () => {
   return useQuery({

@@ -1,9 +1,10 @@
 /**
  * @file ProgressBar.tsx
  * @description Highly styled progress indicator for metrics and quotas.
+ * @module shared/ui/primitives/ProgressBar
  */
 import React from "react";
-import { cn } from "../lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 interface ProgressBarProps {
   label: string;
@@ -12,12 +13,12 @@ interface ProgressBarProps {
   colorClass: string;
 }
 
-export function ProgressBar({
+export const ProgressBar = ({
   label,
   value,
   total,
   colorClass,
-}: ProgressBarProps) {
+}: ProgressBarProps): React.JSX.Element => {
   const percentage = total > 0 ? (value / total) * 100 : 0;
 
   return (
@@ -37,4 +38,4 @@ export function ProgressBar({
       </span>
     </div>
   );
-}
+};

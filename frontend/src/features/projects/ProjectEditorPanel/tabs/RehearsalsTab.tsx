@@ -25,15 +25,15 @@ import {
 } from "lucide-react";
 
 import { useRehearsalsTab, TargetType } from "../hooks/useRehearsalsTab";
-import ConfirmModal from "../../../../shared/ui/ConfirmModal";
-import { GlassCard } from "../../../../shared/ui/GlassCard";
-import { Button } from "../../../../shared/ui/Button";
-import { Input } from "../../../../shared/ui/Input";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
 
 // New native IANA timezone helper and global formatters
-import { getAvailableTimezones } from "../../../../shared/lib/timezone";
-import { formatLocalizedDate } from "../../../../shared/lib/intl";
-import { DualTimeDisplay } from "../../../../shared/ui/DualTimeDisplay";
+import { getAvailableTimezones } from "@/shared/lib/timezone";
+import { formatLocalizedDate } from "@/shared/lib/intl";
+import { DualTimeDisplay } from "@/widgets/layout/dashboard/DualTimeDisplay";
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -42,7 +42,7 @@ interface RehearsalsTabProps {
 const STYLE_LABEL =
   "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 const STYLE_GLASS_TEXTAREA =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] resize-none";
+  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] resize-none";
 
 export default function RehearsalsTab({
   projectId,
@@ -82,7 +82,7 @@ export default function RehearsalsTab({
           <div className="flex items-center gap-2.5 border-b border-stone-200/60 pb-3">
             <Clock
               size={16}
-              className={isEditing ? "text-orange-500" : "text-[#002395]"}
+              className={isEditing ? "text-orange-500" : "text-brand"}
               aria-hidden="true"
             />
             <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800">
@@ -119,7 +119,7 @@ export default function RehearsalsTab({
                   setFormData({ ...formData, timezone: e.target.value })
                 }
                 disabled={isSubmitting}
-                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
               >
                 {timezones.map((tz) => (
                   <option key={tz} value={tz}>
@@ -209,7 +209,7 @@ export default function RehearsalsTab({
                   onClick={() => setTargetType(type.id as TargetType)}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-[10px] font-bold antialiased uppercase tracking-widest transition-all active:scale-95 ${
                     targetType === type.id
-                      ? "bg-[#002395] border border-[#001766] text-white shadow-md"
+                      ? "bg-brand border border-brand-dark text-white shadow-md"
                       : "bg-white/80 border border-stone-200/80 text-stone-500 hover:bg-white shadow-sm"
                   }`}
                 >
@@ -311,7 +311,7 @@ export default function RehearsalsTab({
                 onChange={(e) =>
                   setFormData({ ...formData, is_mandatory: e.target.checked })
                 }
-                className="w-4 h-4 text-[#002395] rounded-md cursor-pointer border-stone-300 focus:ring-[#002395]"
+                className="w-4 h-4 text-brand rounded-md cursor-pointer border-stone-300 focus:ring-brand"
                 disabled={isSubmitting}
               />
               <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-700">
@@ -353,11 +353,7 @@ export default function RehearsalsTab({
       {/* SCHEDULED SESSIONS FEED */}
       <div className="space-y-4">
         <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 flex items-center gap-2 mb-5 ml-1">
-          <CheckSquare
-            size={16}
-            className="text-[#002395]"
-            aria-hidden="true"
-          />{" "}
+          <CheckSquare size={16} className="text-brand" aria-hidden="true" />{" "}
           {t("projects.rehearsals.list.title", "Harmonogram Prób")}
         </h4>
 
@@ -383,14 +379,14 @@ export default function RehearsalsTab({
                 className={`flex flex-col md:flex-row justify-between md:items-center p-5 rounded-2xl border shadow-sm transition-all ${
                   isPast
                     ? "border-stone-200/50 bg-stone-50/40 opacity-75"
-                    : "bg-white/80 backdrop-blur-md border-stone-200/80 hover:border-[#002395]/40 hover:shadow-md"
+                    : "bg-white/80 backdrop-blur-md border-stone-200/80 hover:border-brand/40 hover:shadow-md"
                 }`}
               >
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
                     <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                       <span
-                        className={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-[#002395]"}`}
+                        className={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-brand"}`}
                       >
                         <Calendar1 size={14} aria-hidden="true" />
                         {formatLocalizedDate(
@@ -405,7 +401,7 @@ export default function RehearsalsTab({
                         value={reh.date_time}
                         timeZone={reh.timezone}
                         icon={<Clock size={14} aria-hidden="true" />}
-                        containerClassName={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-[#002395]"}`}
+                        containerClassName={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-brand"}`}
                         primaryTimeClassName="flex items-center gap-1.5"
                         localTimeClassName="text-[10px] font-medium normal-case tracking-normal border-l border-current opacity-70 pl-1.5 ml-0.5"
                       />
@@ -453,7 +449,7 @@ export default function RehearsalsTab({
                       <div className="text-xs text-stone-600 flex items-start gap-2">
                         <Target
                           size={14}
-                          className="text-[#002395] flex-shrink-0 mt-0.5"
+                          className="text-brand flex-shrink-0 mt-0.5"
                           aria-hidden="true"
                         />
                         <span className="italic opacity-90">{reh.focus}</span>

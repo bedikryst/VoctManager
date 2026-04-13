@@ -19,11 +19,11 @@ import {
   Save,
 } from "lucide-react";
 
-import { getAvailableTimezones } from "../../../../shared/lib/timezone";
-import type { Project } from "../../../../shared/types";
+import { getAvailableTimezones } from "@/shared/lib/timezone";
+import type { Project } from "@/shared/types";
 import { useDetailsForm } from "../hooks/useDetailsForm";
-import { Input } from "../../../../shared/ui/Input";
-import { Button } from "../../../../shared/ui/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Button } from "@/shared/ui/primitives/Button";
 
 interface DetailsTabProps {
   project: Project | null;
@@ -34,7 +34,7 @@ interface DetailsTabProps {
 const STYLE_LABEL =
   "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 const STYLE_GLASS_TEXTAREA =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-stone-400";
+  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-stone-400";
 
 export default function DetailsTab({
   project,
@@ -68,7 +68,7 @@ export default function DetailsTab({
             className="fixed bottom-6 md:bottom-10 left-1/2 z-[200] w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_rgb(0,0,0,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-4 flex items-center justify-between"
           >
             <div className="flex flex-col ml-2">
-              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
+              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
                 {t("projects.details_tab.fab.unsaved", "Niezapisane Zmiany")}
               </span>
               <span className="text-xs text-stone-500">
@@ -96,7 +96,7 @@ export default function DetailsTab({
 
       <div className="mb-8">
         <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2 mb-2">
-          <Briefcase className="text-[#002395]" size={20} aria-hidden="true" />
+          <Briefcase className="text-brand" size={20} aria-hidden="true" />
           {t("projects.details_tab.header.title", "Szczegóły Wydarzenia")}
         </h2>
       </div>
@@ -106,7 +106,7 @@ export default function DetailsTab({
         <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
           <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
             <span
-              className="w-1.5 h-1.5 rounded-full bg-[#002395]"
+              className="w-1.5 h-1.5 rounded-full bg-brand"
               aria-hidden="true"
             ></span>
             {t("projects.details_tab.sections.title_desc", "Tytuł i Opis")}
@@ -149,7 +149,7 @@ export default function DetailsTab({
                 onChange={(e) =>
                   setFormData({ ...formData, timezone: e.target.value })
                 }
-                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
               >
                 {timezones.map((tz) => (
                   <option key={tz} value={tz}>
@@ -374,7 +374,7 @@ export default function DetailsTab({
                               e.target.value,
                             )
                           }
-                          className="w-full pl-9 pr-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-mono"
+                          className="w-full pl-9 pr-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-mono"
                           placeholder={t(
                             "projects.details_tab.run_sheet.time",
                             "Godz.",
@@ -393,7 +393,7 @@ export default function DetailsTab({
                               e.target.value,
                             )
                           }
-                          className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold"
+                          className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-bold"
                           placeholder={t(
                             "projects.details_tab.run_sheet.title",
                             "Tytuł",
@@ -411,7 +411,7 @@ export default function DetailsTab({
                               e.target.value,
                             )
                           }
-                          className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all italic"
+                          className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all italic"
                           placeholder={t(
                             "projects.details_tab.run_sheet.description",
                             "Opis (opcjonalny)",

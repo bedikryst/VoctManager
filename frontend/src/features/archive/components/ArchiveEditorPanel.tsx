@@ -13,8 +13,8 @@ import { X, FileText, Headphones } from "lucide-react";
 
 import PieceDetailsForm from "./PieceDetailsForm";
 import TrackUploadManager from "./TrackUploadManager";
-import ConfirmModal from "../../../shared/ui/ConfirmModal";
-import type { Composer, VoiceLineOption } from "../../../shared/types";
+import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import type { Composer, VoiceLineOption } from "@/shared/types";
 import type { EnrichedPiece } from "../types/archive.dto";
 import { ArchiveTabId } from "../constants/archiveDomain";
 
@@ -119,14 +119,14 @@ export default function ArchiveEditorPanel({
                 <div className="inline-flex items-center p-1.5 bg-stone-200/40 backdrop-blur-xl border border-stone-200/60 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
                   <button
                     onClick={() => onTabChange("DETAILS")}
-                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === "DETAILS" ? "bg-white text-[#002395] shadow-sm border border-white" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
+                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === "DETAILS" ? "bg-white text-brand shadow-sm border border-white" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
                   >
                     <FileText size={14} aria-hidden="true" />{" "}
                     {t("archive.editor.tabs.details", "Metadane")}
                   </button>
                   <button
                     onClick={() => onTabChange("TRACKS")}
-                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === "TRACKS" ? "bg-white text-[#002395] shadow-sm border border-white" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
+                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === "TRACKS" ? "bg-white text-brand shadow-sm border border-white" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
                   >
                     <Headphones size={14} aria-hidden="true" />{" "}
                     {t("archive.editor.tabs.tracks", "Ścieżki MP3")}

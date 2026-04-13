@@ -11,7 +11,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz"; // ✅ Najnowszy standard stref czasowych
-import type { Artist, Rehearsal } from "../../../../shared/types";
+import type { Artist, Rehearsal } from "@/shared/types";
 import {
   useCreateRehearsal,
   useUpdateRehearsal,

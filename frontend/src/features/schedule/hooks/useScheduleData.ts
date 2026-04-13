@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { AttendanceStatus } from "../../../shared/types";
+import type { AttendanceStatus } from "@/shared/types";
 import {
   useScheduleContextData,
   useUpsertScheduleAttendance,

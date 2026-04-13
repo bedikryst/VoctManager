@@ -2,9 +2,8 @@
  * @file ConfirmModal.tsx
  * @description A high-priority confirmation modal (destructive or warning).
  * Uses a glassmorphism backdrop, portal rendering, and physical spring animations.
- * Fully decoupled from hardcoded texts for i18n support.
- * @architecture Enterprise SaaS 2026
- * @module shared/ui/ConfirmModal
+ * Strictly decoupled from hardcoded texts via i18next.
+ * @module shared/ui/composites/ConfirmModal
  */
 
 import React, { useEffect, useState } from "react";
@@ -20,31 +19,29 @@ export interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isLoading?: boolean;
-  confirmText?: string;
-  cancelText?: string;
+  confirmTextKey?: string;
+  cancelTextKey?: string;
   isDestructive?: boolean;
 }
 
-export default function ConfirmModal({
+export const ConfirmModal = ({
   isOpen,
   title,
   description,
   onConfirm,
   onCancel,
   isLoading = false,
-  confirmText,
-  cancelText,
-  isDestructive = true, // Domyślnie true, aby zachować zgodność z Twoimi starymi przyciskami usuwania
-}: ConfirmModalProps): React.ReactPortal | null {
+  confirmTextKey = "common.actions.delete",
+  cancelTextKey = "common.actions.cancel",
+  isDestructive = true,
+}: ConfirmModalProps): React.ReactPortal | null => {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
-  // Używamy portalu, więc upewniamy się, że renderujemy tylko po stronie klienta
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Blokowanie przewijania strony pod modalem i obsługa Escape
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -115,7 +112,7 @@ export default function ConfirmModal({
                 onClick={onCancel}
                 className="px-4 py-2 text-sm font-bold text-stone-600 hover:bg-stone-200 rounded-xl transition-colors disabled:opacity-50"
               >
-                {cancelText || t("common.actions.cancel", "Anuluj")}
+                {t(cancelTextKey)}
               </button>
               <button
                 disabled={isLoading}
@@ -123,12 +120,10 @@ export default function ConfirmModal({
                 className={`px-4 py-2 text-sm font-bold text-white rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 ${
                   isDestructive
                     ? "bg-red-600 hover:bg-red-700"
-                    : "bg-[#002395] hover:bg-blue-800"
+                    : "bg-brand hover:bg-brand-dark"
                 }`}
               >
-                {isLoading
-                  ? t("common.actions.loading", "Przetwarzanie...")
-                  : confirmText || t("common.actions.delete", "Usuń")}
+                {isLoading ? t("common.actions.processing") : t(confirmTextKey)}
               </button>
             </div>
           </motion.div>
@@ -137,4 +132,4 @@ export default function ConfirmModal({
     </AnimatePresence>,
     document.body,
   );
-}
+};

@@ -12,8 +12,8 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Briefcase, Music, Wrench } from "lucide-react";
 
-import type { Project } from "../../../shared/types";
-import { GlassCard } from "../../../shared/ui/GlassCard";
+import type { Project } from "@/shared/types";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { useUpdateProjectStatus } from "../api/project.queries";
 import { useProjectData } from "../hooks/useProjectData";
 import {
@@ -140,9 +140,9 @@ export default function ProjectCard({
       }}
       className={`relative group ${isDone ? STYLE_DISABLED : ""}`}
     >
-      <GlassCard className="p-0 overflow-hidden transition-all duration-500 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] hover:border-[#002395]/20 hover:-translate-y-0.5">
+      <GlassCard className="p-0 overflow-hidden transition-all duration-500 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] hover:border-brand/20 hover:-translate-y-0.5">
         {!isDone && (
-          <div className="absolute -right-8 -top-8 text-[#002395] opacity-[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-700">
+          <div className="absolute -right-8 -top-8 text-brand opacity-[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-700">
             <Briefcase size={200} strokeWidth={1} aria-hidden="true" />
           </div>
         )}
@@ -167,7 +167,7 @@ export default function ProjectCard({
             >
               <div className="p-5 md:p-8 space-y-10">
                 <div className="space-y-4">
-                  <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-[#002395]">
+                  <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
                     <Music size={14} aria-hidden="true" />
                     {t(
                       "projects.card.artistic_dashboard",

@@ -7,7 +7,7 @@
 
 import type { AxiosResponse } from "axios";
 
-import api from "../../../shared/api/api";
+import api from "@/shared/api/api";
 import type {
   Artist,
   Attendance,
@@ -20,7 +20,7 @@ import type {
   Project,
   Rehearsal,
   VoiceLineOption,
-} from "../../../shared/types";
+} from "@/shared/types";
 import type {
   AttendanceCreateDTO,
   AttendanceUpdateDTO,

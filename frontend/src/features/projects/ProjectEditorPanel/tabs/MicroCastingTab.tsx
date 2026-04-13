@@ -28,10 +28,10 @@ import {
 } from "lucide-react";
 
 import { useMicroCasting } from "../hooks/useMicroCasting";
-import { getPrimaryReferenceRecording } from "../../../../shared/lib/referenceRecordings";
+import { getPrimaryReferenceRecording } from "@/shared/lib/referenceRecordings";
 import { DraggableArtist } from "./components/DraggableArtist";
 import { DroppableBucket } from "./components/DroppableBucket";
-import { GlassCard } from "../../../../shared/ui/GlassCard";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 interface MicroCastingTabProps {
   projectId: string;
@@ -158,7 +158,7 @@ export default function MicroCastingTab({
       <div className="bg-white border border-stone-200/60 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 flex-shrink-0">
         <div>
           <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2 mb-2">
-            <MicVocal className="text-[#002395]" size={20} aria-hidden="true" />
+            <MicVocal className="text-brand" size={20} aria-hidden="true" />
             {t("projects.micro_cast.header.title", "Divisi i Mikro-Casting")}
           </h2>
           <p className="text-sm text-stone-500">
@@ -176,7 +176,7 @@ export default function MicroCastingTab({
           <select
             value={selectedPieceId || ""}
             onChange={(e) => setSelectedPieceId(e.target.value)}
-            className="w-full px-4 py-3 text-sm text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all font-bold appearance-none cursor-pointer"
+            className="w-full px-4 py-3 text-sm text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-bold appearance-none cursor-pointer"
           >
             {program.length === 0 && (
               <option value="">
@@ -230,20 +230,16 @@ export default function MicroCastingTab({
           onDragEnd={handleDragEnd}
         >
           {/* Lewy panel - Baza */}
-          <GlassCard className="lg:col-span-1 p-5 flex flex-col bg-stone-50/50 h-full border-[#002395]/10">
+          <GlassCard className="lg:col-span-1 p-5 flex flex-col bg-stone-50/50 h-full border-brand/10">
             <div className="flex items-center justify-between mb-4 border-b border-stone-200/60 pb-3">
               <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
-                <Users
-                  size={14}
-                  className="text-[#002395]"
-                  aria-hidden="true"
-                />
+                <Users size={14} className="text-brand" aria-hidden="true" />
                 {t(
                   "projects.micro_cast.sections.unassigned",
                   "Nieprzypisani (Baza Osobowa)",
                 )}
               </span>
-              <span className="text-[9px] font-bold antialiased text-[#002395] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+              <span className="text-[9px] font-bold antialiased text-brand bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
                 {unassignedParticipations.length}
               </span>
             </div>
@@ -293,7 +289,7 @@ export default function MicroCastingTab({
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm">
                   <ListOrdered
                     size={18}
-                    className="text-[#002395]"
+                    className="text-brand"
                     aria-hidden="true"
                   />
                 </div>
@@ -347,7 +343,7 @@ export default function MicroCastingTab({
                       key={group.label}
                       className="grid grid-cols-1 md:grid-cols-3 gap-6"
                     >
-                      <h5 className="md:col-span-3 text-[10px] font-bold uppercase tracking-widest text-[#002395] border-b border-stone-200/50 pb-2">
+                      <h5 className="md:col-span-3 text-[10px] font-bold uppercase tracking-widest text-brand border-b border-stone-200/50 pb-2">
                         {group.label}
                       </h5>
                       {voiceLines

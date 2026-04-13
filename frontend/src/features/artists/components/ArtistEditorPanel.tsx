@@ -10,12 +10,12 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2 } from "lucide-react";
-import { cn } from "../../../shared/lib/utils"; // <-- WAŻNE: Dodany import utils
+import { cn } from "@/shared/lib/utils"; // <-- WAŻNE: Dodany import utils
 
-import ConfirmModal from "../../../shared/ui/ConfirmModal";
-import { Button } from "../../../shared/ui/Button";
-import { Input } from "../../../shared/ui/Input";
-import type { Artist, VoiceTypeOption } from "../../../shared/types";
+import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import { Button } from "@ui/primitives/Button";
+import { Input } from "@ui/primitives/Input";
+import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useArtistForm } from "../hooks/useArtistForm";
 
 interface ArtistEditorPanelProps {
@@ -29,7 +29,7 @@ interface ArtistEditorPanelProps {
 const STYLE_LABEL =
   "block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
 const STYLE_SELECT =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002395]/20 focus:border-[#002395]/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
+  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 
 export default function ArtistEditorPanel({
   isOpen,
@@ -128,7 +128,7 @@ export default function ArtistEditorPanel({
               >
                 <div className="flex-1 space-y-8">
                   <div className="space-y-5">
-                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
+                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
                       {t("artists.editor.section_basic", "Dane Podstawowe")}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -241,7 +241,7 @@ export default function ArtistEditorPanel({
                   </div>
 
                   <div className="space-y-5 pt-4">
-                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-[#002395] border-b border-stone-200/60 pb-2">
+                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
                       {t("artists.editor.section_voice", "Profil Wokalny")}
                     </h4>
 
@@ -301,7 +301,7 @@ export default function ArtistEditorPanel({
                             "np. G2",
                           )}
                           disabled={isSubmitting}
-                          className="text-center font-bold text-[#002395]"
+                          className="text-center font-bold text-brand"
                         />
                       </div>
                       <div>
@@ -322,7 +322,7 @@ export default function ArtistEditorPanel({
                             "np. C5",
                           )}
                           disabled={isSubmitting}
-                          className="text-center font-bold text-[#002395]"
+                          className="text-center font-bold text-brand"
                         />
                       </div>
                     </div>
@@ -359,11 +359,11 @@ export default function ArtistEditorPanel({
 
                   {artist?.id && (
                     <div className="pt-6 border-t border-stone-200/60">
-                      <label className="flex items-center gap-4 p-4 border border-stone-200/80 rounded-xl bg-white/50 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer hover:border-[#002395]/40 transition-colors">
+                      <label className="flex items-center gap-4 p-4 border border-stone-200/80 rounded-xl bg-white/50 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer hover:border-brand/40 transition-colors">
                         <input
                           type="checkbox"
                           {...form.register("is_active")}
-                          className="w-5 h-5 text-[#002395] focus:ring-[#002395]/20 border-stone-300 rounded-md cursor-pointer"
+                          className="w-5 h-5 text-brand focus:ring-brand/20 border-stone-300 rounded-md cursor-pointer"
                           disabled={isSubmitting}
                         />
                         <div>

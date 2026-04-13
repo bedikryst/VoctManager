@@ -8,7 +8,7 @@
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PlayCircle, Lock, FastForward } from "lucide-react";
-import type { Track } from "../../../shared/types";
+import type { Track } from "@/shared/types";
 
 interface EducationalAudioPlayerProps {
   track: Track;
@@ -87,7 +87,7 @@ export function EducationalAudioPlayer({
               <button
                 key={rate}
                 onClick={() => changeSpeed(rate)}
-                className={`px-2.5 py-1 text-[9px] font-bold antialiased rounded-md transition-all active:scale-95 ${speed === rate ? "bg-white text-[#002395] shadow-sm border border-stone-200/60" : "text-stone-500 hover:text-stone-800 border border-transparent"}`}
+                className={`px-2.5 py-1 text-[9px] font-bold antialiased rounded-md transition-all active:scale-95 ${speed === rate ? "bg-white text-brand shadow-sm border border-stone-200/60" : "text-stone-500 hover:text-stone-800 border border-transparent"}`}
                 title={t(
                   "materials.player.speed_title",
                   "Ustaw tempo na {{rate}}x",

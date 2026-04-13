@@ -6,7 +6,7 @@
  */
 
 import api from "./api";
-import type { VoiceTypeOption, VoiceLineOption } from "../types";
+import type { VoiceTypeOption, VoiceLineOption } from "@/shared/types";
 
 export const OptionsService = {
   getVoiceTypes: async (): Promise<VoiceTypeOption[]> => {

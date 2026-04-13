@@ -9,9 +9,9 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Edit2, Trash2, Mail, Phone, Briefcase } from "lucide-react";
-import type { Collaborator } from "../../../shared/types";
-import { GlassCard } from "../../../shared/ui/GlassCard";
-import { Button } from "../../../shared/ui/Button";
+import type { Collaborator } from "@/shared/types";
+import { GlassCard } from "@ui/composites/GlassCard";
+import { Button } from "@ui/primitives/Button";
 import { SPECIALTY_CHOICES } from "../types/crew.dto";
 
 interface CrewCardProps {
@@ -52,7 +52,7 @@ export const CrewCard = React.memo(
                   {person.first_name} {person.last_name}
                 </h3>
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  <span className="px-2 py-0.5 text-[8px] font-bold antialiased uppercase tracking-widest rounded-md border shadow-sm bg-blue-50 text-[#002395] border-blue-200">
+                  <span className="px-2 py-0.5 text-[8px] font-bold antialiased uppercase tracking-widest rounded-md border shadow-sm bg-blue-50 text-brand border-blue-200">
                     {getSpecialtyLabel(person.specialty)}
                   </span>
                 </div>
@@ -90,7 +90,7 @@ export const CrewCard = React.memo(
                 {person.email ? (
                   <a
                     href={`mailto:${person.email}`}
-                    className="hover:text-[#002395] transition-colors truncate"
+                    className="hover:text-brand transition-colors truncate"
                   >
                     {person.email}
                   </a>
@@ -109,7 +109,7 @@ export const CrewCard = React.memo(
                 {person.phone_number ? (
                   <a
                     href={`tel:${person.phone_number}`}
-                    className="hover:text-[#002395] transition-colors"
+                    className="hover:text-brand transition-colors"
                   >
                     {person.phone_number}
                   </a>
