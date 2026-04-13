@@ -134,7 +134,8 @@ export const LocationPreview = ({
                   }}
                   disableDefaultUI={true}
                   gestureHandling="none"
-                  mapId={`PREVIEW_${location.id}`}
+                  mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
+                  id={`PREVIEW_${location.id}`}
                   className="w-full h-full"
                 >
                   <AdvancedMarker
@@ -143,12 +144,12 @@ export const LocationPreview = ({
                       lng: Number(location.longitude),
                     }}
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#002395] flex items-center justify-center border-2 border-white shadow-lg">
+                    <div className="flex flex-col items-center gap-0.5 group">
                       <MapPin
-                        className="text-white"
-                        size={14}
-                        fill="currentColor"
+                        className="text-[#2e57dd] transition-transform group-hover:-translate-y-1"
+                        size={24}
                       />
+                      <div className="w-1.5 h-1 rounded-full bg-[#c49a45] blur-[1px] opacity-60" />
                     </div>
                   </AdvancedMarker>
                 </Map>

@@ -275,14 +275,19 @@ export const LocationMapPicker = ({
         <Map
           defaultZoom={12}
           defaultCenter={DEFAULT_CENTER}
-          mapId="VOCTMANAGER_PICKER_MAP"
+          id="VOCTMANAGER_PICKER_MAP"
+          mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
           disableDefaultUI={true}
           onClick={handleMapClick}
           className="w-full h-full"
         >
           <AdvancedMarker position={markerPos}>
-            <div className="w-10 h-10 bg-[#002395]/10 rounded-full flex items-center justify-center animate-pulse border border-[#002395]/20">
-              <MapPin className="text-[#002395] drop-shadow-md" size={24} />
+            <div className="flex flex-col items-center gap-0.5 group">
+              <MapPin
+                className="text-[#2e57dd] transition-transform group-hover:-translate-y-1"
+                size={24}
+              />
+              <div className="w-1.5 h-1 rounded-full bg-[#c49a45] blur-[1px] opacity-60" />
             </div>
           </AdvancedMarker>
         </Map>

@@ -92,7 +92,8 @@ export const LocationsGlobalMap = ({
       <Map
         defaultZoom={6.5}
         defaultCenter={defaultCenter}
-        mapId="VOCTMANAGER_GLOBAL_MAP"
+        id="VOCTMANAGER_GLOBAL_MAP"
+        mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
         disableDefaultUI={true}
         gestureHandling="greedy"
         className="w-full h-full"
@@ -111,10 +112,12 @@ export const LocationsGlobalMap = ({
               }}
               onClick={() => setSelectedLocation(loc)}
             >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform ${selectedLocation?.id === loc.id ? "scale-125 bg-[#002395] text-white shadow-lg" : "bg-white text-[#002395] border border-stone-200 shadow-md hover:scale-110"}`}
-              >
-                <MapPin size={16} />
+              <div className="flex flex-col items-center gap-0.5 group">
+                <MapPin
+                  className="text-[#2e57dd] transition-transform group-hover:-translate-y-1"
+                  size={20}
+                />
+                <div className="w-1.5 h-1 rounded-full bg-[#c49a45] blur-[1px] opacity-60" />
               </div>
             </AdvancedMarker>
           );
