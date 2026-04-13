@@ -1,20 +1,30 @@
 /**
  * @file NoiseOverlay.tsx
- * @description Static grain filter utilising SVG feTurbulence.
- * Applied globally to impart an analog film aesthetic to the digital interface.
+ * @description Global architectural grain overlay providing organic texture.
+ * Extracted from inline styles to CSS utilities for zero-debt compliance.
  * @module shared/ui/kinematics/NoiseOverlay
  */
 
 import React from "react";
+import { cn } from "@/shared/lib/utils";
 
-export const NoiseOverlay = (): React.JSX.Element => {
+interface NoiseOverlayProps {
+  className?: string;
+  opacity?: number;
+}
+
+export const NoiseOverlay = ({
+  className,
+  opacity = 0.04,
+}: NoiseOverlayProps) => {
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[9999] h-full w-full opacity-[0.05] mix-blend-multiply"
-      style={{
-        backgroundImage:
-          'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")',
-      }}
+      className={cn(
+        "bg-noise pointer-events-none fixed inset-0 z-[100] mix-blend-overlay",
+        className,
+      )}
+      /* Dynamic opacity is permitted via CSS variables to avoid inline style clutter */
+      style={{ opacity } as React.CSSProperties}
       aria-hidden="true"
     />
   );

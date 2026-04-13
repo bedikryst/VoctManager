@@ -1,6 +1,7 @@
 /**
  * @file CustomCursor.tsx
  * @description A high-performance, physics-based custom cursor for the public zone.
+ * Restored to full context-awareness whilst mapping hardcoded colours to CSS variables.
  * @module shared/ui/kinematics/CustomCursor
  */
 
@@ -28,43 +29,49 @@ export const CustomCursor = (): React.JSX.Element => {
     return () => window.removeEventListener("mousemove", moveCursor);
   }, [mouseX, mouseY]);
 
+  // Architectural note: We replace hardcoded 'rgba' strings with Tailwind v4 CSS variables
+  // ensuring the Ethereal UI colour palette remains globally cohesive.
   const variants: Variants = {
     default: {
       width: 10,
       height: 10,
-      backgroundColor: "rgba(168, 162, 158, 0.6)",
+      backgroundColor: "var(--color-stone-400)",
+      opacity: 0.6,
       x: "-50%",
       y: "-50%",
       backdropFilter: "blur(0px)",
-      border: "0px solid rgba(168, 162, 158, 0)",
+      border: "0px solid transparent",
     },
     drag: {
       width: 30,
       height: 30,
-      backgroundColor: "rgba(165, 163, 159, 0.2)",
+      backgroundColor: "var(--color-stone-400)",
+      opacity: 0.2,
       backdropFilter: "blur(4px)",
-      border: "1px solid rgba(168, 162, 158, 0.4)",
+      border: "1px solid var(--color-stone-400)",
       x: "-50%",
       y: "-50%",
     },
     pointer: {
       width: 0,
       height: 0,
-      backgroundColor: "rgba(168, 162, 158, 0.6)",
+      backgroundColor: "var(--color-stone-400)",
+      opacity: 0.6,
       x: "-50%",
       y: "-50%",
       backdropFilter: "blur(0px)",
-      border: "0px solid rgba(168, 162, 158, 0)",
+      border: "0px solid transparent",
     },
   };
 
   return (
     <motion.div
-      className="hidden md:block fixed top-0 left-0 z-[9999] pointer-events-none flex items-center justify-center rounded-full overflow-hidden"
+      className="hidden md:flex fixed top-0 left-0 z-[9999] pointer-events-none items-center justify-center rounded-full overflow-hidden"
       style={{ x: cursorX, y: cursorY }}
       variants={variants}
       animate={cursorType}
       transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
+      aria-hidden="true"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.3 }}
@@ -81,7 +88,7 @@ export const CustomCursor = (): React.JSX.Element => {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1"
+          strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         >

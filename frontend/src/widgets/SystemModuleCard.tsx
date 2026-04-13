@@ -8,7 +8,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { GlassCard } from "../composites/GlassCard";
+import { GlassCard } from "../shared/ui/composites/GlassCard";
 import { cn } from "@/shared/lib/utils";
 
 interface SystemModuleCardProps {

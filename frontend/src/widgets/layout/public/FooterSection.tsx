@@ -141,15 +141,15 @@ export default function FooterSection(): React.JSX.Element {
 
             <div className="mb-8">
               <ElegantHeading
-                text="Stań się"
+                title="Stań się"
                 className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-[#fdfbf7]"
               />
               <ElegantHeading
-                text=" częścią"
+                title=" częścią"
                 className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-[#fdfbf7]"
               />
               <ElegantHeading
-                text="harmonii."
+                title="harmonii."
                 className="text-5xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[0.95] block text-stone-500 italic"
               />
             </div>

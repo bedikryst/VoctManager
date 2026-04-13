@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
-import { SystemModuleCard } from "@/shared/ui/widgets/SystemModuleCard";
+import { SystemModuleCard } from "@/widgets/SystemModuleCard";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";

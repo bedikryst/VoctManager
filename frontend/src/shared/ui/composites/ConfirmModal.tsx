@@ -2,7 +2,7 @@
  * @file ConfirmModal.tsx
  * @description A high-priority confirmation modal (destructive or warning).
  * Uses a glassmorphism backdrop, portal rendering, and physical spring animations.
- * Strictly decoupled from hardcoded texts via i18next.
+ * Strictly decoupled from hardcoded texts via i18next and relies on core primitives.
  * @module shared/ui/composites/ConfirmModal
  */
 
@@ -11,6 +11,23 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { cva } from "class-variance-authority";
+import { Button } from "@/shared/ui/primitives/Button";
+
+const iconContainerVariants = cva(
+  "p-3 rounded-full flex-shrink-0 transition-colors duration-300",
+  {
+    variants: {
+      isDestructive: {
+        true: "bg-red-50 text-red-600",
+        false: "bg-amber-50 text-amber-600",
+      },
+    },
+    defaultVariants: {
+      isDestructive: true,
+    },
+  },
+);
 
 export interface ConfirmModalProps {
   isOpen: boolean;
@@ -68,7 +85,7 @@ export const ConfirmModal = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm cursor-none"
             onClick={!isLoading ? onCancel : undefined}
             aria-hidden="true"
           />
@@ -83,13 +100,7 @@ export const ConfirmModal = ({
           >
             <div className="p-6">
               <div className="flex gap-4 items-start">
-                <div
-                  className={`p-3 rounded-full flex-shrink-0 ${
-                    isDestructive
-                      ? "bg-red-50 text-red-600"
-                      : "bg-amber-50 text-amber-600"
-                  }`}
-                >
+                <div className={iconContainerVariants({ isDestructive })}>
                   <AlertTriangle size={24} aria-hidden="true" />
                 </div>
                 <div className="pt-1">
@@ -107,24 +118,17 @@ export const ConfirmModal = ({
             </div>
 
             <div className="bg-stone-50 px-6 py-4 flex justify-end gap-3 border-t border-stone-100">
-              <button
-                disabled={isLoading}
-                onClick={onCancel}
-                className="px-4 py-2 text-sm font-bold text-stone-600 hover:bg-stone-200 rounded-xl transition-colors disabled:opacity-50"
-              >
+              {/* Utilising core primitives for rigorous UI consistency */}
+              <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
                 {t(cancelTextKey)}
-              </button>
-              <button
-                disabled={isLoading}
+              </Button>
+              <Button
+                variant={isDestructive ? "danger" : "primary"}
                 onClick={onConfirm}
-                className={`px-4 py-2 text-sm font-bold text-white rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 ${
-                  isDestructive
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-brand hover:bg-brand-dark"
-                }`}
+                isLoading={isLoading}
               >
-                {isLoading ? t("common.actions.processing") : t(confirmTextKey)}
-              </button>
+                {t(confirmTextKey)}
+              </Button>
             </div>
           </motion.div>
         </div>

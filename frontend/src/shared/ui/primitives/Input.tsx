@@ -72,11 +72,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               className="absolute left-4 flex items-center justify-center text-stone-400"
               aria-hidden="true"
             >
+              {/* Refactored to eliminate 'any' type violation */}
               {React.isValidElement(leftIcon)
-                ? React.cloneElement(leftIcon as React.ReactElement<any>, {
-                    size: 18,
-                    strokeWidth: 1.5,
-                  })
+                ? React.cloneElement(
+                    leftIcon as React.ReactElement<{
+                      size?: number;
+                      strokeWidth?: number;
+                    }>,
+                    { size: 18, strokeWidth: 1.5 },
+                  )
                 : leftIcon}
             </div>
           )}

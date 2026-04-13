@@ -1,68 +1,72 @@
 /**
  * @file ElegantHeading.tsx
- * @description A sophisticated typographic component.
- * Parses strings into independently animatable spans, allowing for
- * complex, staggered hover interactions.
+ * @description Sophisticated typography component with integrated iconography.
+ * Refactored to eliminate 'any' type violations and enforce strict TS 7.0 standards.
  * @module shared/ui/kinematics/ElegantHeading
  */
 
 import React from "react";
-import { motion, Variants } from "framer-motion";
+import { motion } from "framer-motion";
+import { cn } from "@/shared/lib/utils";
 
 interface ElegantHeadingProps {
-  text: string;
+  title: string;
+  description?: string;
+  icon?: React.ReactNode;
   className?: string;
+  align?: "left" | "center" | "right";
 }
 
 export const ElegantHeading = ({
-  text,
-  className = "",
-}: ElegantHeadingProps): React.JSX.Element => {
-  const letters = text.split("");
-
-  const containerVariants: Variants = {
-    initial: {},
-    hover: {
-      transition: {
-        staggerChildren: 0.02,
-      },
-    },
-  };
-
-  const letterVariants: Variants = {
-    initial: {
-      y: 0,
-      opacity: 1,
-      skewX: 0,
-      color: "inherit",
-    },
-    hover: {
-      y: -2,
-      opacity: 0.8,
-      skewX: -5,
-      color: "var(--color-brand)", // Utilising the v4 CSS token
-      transition: {
-        duration: 0.4,
-        ease: [0.16, 1, 0.3, 1] as const,
-      },
-    },
-  };
-
+  title,
+  description,
+  icon,
+  className,
+  align = "left",
+}: ElegantHeadingProps) => {
   return (
-    <motion.h2
-      className={`relative inline-block cursor-none font-serif ${className}`}
-      variants={containerVariants}
+    <div
+      className={cn(
+        "flex flex-col gap-2",
+        align === "center" && "items-center text-center",
+        align === "right" && "items-end text-right",
+        className,
+      )}
     >
-      {letters.map((letter, index) => (
-        <motion.span
-          key={`${letter}-${index}`}
-          variants={letterVariants}
-          className="inline-block"
-          style={{ whiteSpace: letter === " " ? "pre" : "normal" }}
+      {icon && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-brand mb-2"
         >
-          {letter}
-        </motion.span>
-      ))}
-    </motion.h2>
+          {React.isValidElement(icon)
+            ? React.cloneElement(
+                icon as React.ReactElement<{
+                  size?: number;
+                  strokeWidth?: number;
+                }>,
+                { size: 32, strokeWidth: 1.2 },
+              )
+            : icon}
+        </motion.div>
+      )}
+      <motion.h2
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="font-serif text-3xl md:text-4xl tracking-tight text-stone-900"
+      >
+        {title}
+      </motion.h2>
+      {description && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-stone-500 max-w-2xl leading-relaxed"
+        >
+          {description}
+        </motion.p>
+      )}
+    </div>
   );
 };

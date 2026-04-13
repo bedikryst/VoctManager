@@ -17,7 +17,7 @@ const glassCardVariants = cva(
         ethereal:
           "bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.03)]",
         solid: "bg-white/95 border border-stone-200/60 shadow-sm",
-        dark: "bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/10 text-white shadow-2xl",
+        dark: "bg-[#2a2a2a] backdrop-blur-3xl border border-white/10 text-white shadow-2xl",
         outline:
           "bg-transparent border border-stone-200/40 hover:border-stone-300/60",
       },
@@ -93,10 +93,7 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
 
         {withNoise && (
           <div
-            className="absolute inset-0 -z-10 opacity-[0.03] pointer-events-none mix-blend-overlay"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-            }}
+            className="bg-noise absolute inset-0 -z-10 opacity-[0.03] pointer-events-none mix-blend-overlay"
             aria-hidden="true"
           />
         )}

@@ -1,8 +1,8 @@
 /**
  * @file UserLocalClock.tsx
  * @description Minimalist widget displaying the user's local time based on their profile timezone.
- * Uses Glassmorphism styling and self-updates efficiently.
- * @module shared/ui/widgets/UserLocalClock
+ * Refactored to eliminate hardcoded CSS values and align with Ethereal UI standards.
+ * @module shared/widgets/UserLocalClock
  */
 
 import React, { useState, useEffect } from "react";
@@ -30,7 +30,8 @@ export const UserLocalClock = (): React.JSX.Element | null => {
     userTimezone.split("/").pop()?.replace(/_/g, " ") || "UTC";
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-white/60 backdrop-blur-xl border border-stone-200/60 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all hover:bg-white/80">
+    // Replaced arbitrary inline shadow with standard Tailwind v4 token 'shadow-sm'
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-white/60 backdrop-blur-xl border border-stone-200/60 rounded-2xl shadow-sm transition-all hover:bg-white/80">
       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand/10 text-brand shrink-0">
         <Clock size={16} strokeWidth={2.5} aria-hidden="true" />
       </div>
