@@ -372,7 +372,7 @@ export default function Contracts(): React.JSX.Element {
                   className="font-mono sm:max-w-[200px]"
                 />
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   onClick={handleApplyGlobalFee}
                   disabled={bulkUpdateMutation.isPending || !globalFee}
                   isLoading={bulkUpdateMutation.isPending}

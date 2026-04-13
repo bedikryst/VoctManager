@@ -23,6 +23,7 @@ import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { cn } from "@/shared/lib/utils";
 import type { Project } from "@/shared/types";
+import { buttonVariants } from "@/shared/ui/primitives/Button";
 
 export interface SpotlightProjectStats {
   piecesCount: number;
@@ -99,7 +100,7 @@ export function SpotlightProjectCard({
                     />
                   </div>
                   {project.location && (
-                    <div className="flex items-center bg-ethereal-alabaster px-2.5 py-1.5 rounded-lg border border-ethereal-incense/10 shadow-sm z-[100]">
+                    <div className="flex items-center bg-ethereal-alabaster px-0 py-0 z-120">
                       <LocationPreview
                         locationRef={project.location}
                         fallback={t("dashboard.admin.no_location", "TBA")}
@@ -150,10 +151,16 @@ export function SpotlightProjectCard({
                 </div>
               </div>
 
-              <div className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-ethereal-ink group-hover/project:bg-ethereal-gold text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all duration-500 shadow-sm">
+              <div
+                className={cn(
+                  buttonVariants({ variant: "primary", size: "default" }),
+                  "shrink-0 group-hover/project:bg-ethereal-gold", // Graceful contextual override
+                )}
+              >
                 {t("dashboard.admin.open_project", "Otwórz Projekt")}
                 <ArrowRight
                   size={14}
+                  strokeWidth={1.5}
                   className="transform group-hover/project:translate-x-1 transition-transform duration-500"
                 />
               </div>

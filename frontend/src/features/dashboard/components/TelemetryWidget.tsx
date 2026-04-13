@@ -1,8 +1,10 @@
 /**
  * @file TelemetryWidget.tsx
  * @description System KPIs and SATB Readiness visualization.
- * Refactored to Ethereal UI (2026): Alabaster aesthetics and soft-light telemetry.
+ * Refactored to Ethereal UI (2026): Alabaster aesthetics, soft-light telemetry,
+ * and monumental serif typography for primary metrics.
  * @architecture Enterprise SaaS 2026
+ * @module panel/dashboard/components/TelemetryWidget
  */
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -51,7 +53,7 @@ export function TelemetryWidget({
   return (
     <GlassCard
       variant="solid"
-      className="h-full p-6 flex flex-col justify-between overflow-hidden relative border-ethereal-incense/10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
+      className="h-full p-6 flex flex-col justify-between overflow-hidden relative border-ethereal-incense/10 shadow-[0_4px_24px_rgba(0,0,0,0.02)]"
     >
       {/* Soft Gold Epiphany Glow */}
       <div
@@ -60,49 +62,52 @@ export function TelemetryWidget({
       />
 
       <div>
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2 mb-8">
           <Activity
             size={14}
+            strokeWidth={1.5}
             className="text-ethereal-sage"
             aria-hidden="true"
           />
-          <span className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite">
+          <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-ethereal-graphite">
             {t("dashboard.admin.kpi_telemetry", "Telemetria Zespołu")}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-6 mb-8">
           <div className="group/kpi transition-transform duration-500 hover:translate-y-[-2px]">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-ethereal-incense mb-1">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-ethereal-incense mb-1">
               {t("dashboard.admin.kpi_pieces", "Baza Utworów")}
             </p>
-            <p className="text-2xl font-black text-ethereal-ink tracking-tight">
+            {/* Monumental Serif Typography */}
+            <p className="font-serif text-4xl md:text-5xl text-ethereal-ink tracking-tight drop-shadow-sm">
               {adminStats.totalPieces}
             </p>
           </div>
           <div className="group/kpi transition-transform duration-500 hover:translate-y-[-2px]">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-ethereal-incense mb-1">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-ethereal-incense mb-1">
               {t("dashboard.admin.kpi_active_projects", "Aktywne Projekty")}
             </p>
-            <p className="text-2xl font-black text-ethereal-gold tracking-tight">
+            {/* Monumental Serif Typography in Ethereal Gold */}
+            <p className="font-serif text-4xl md:text-5xl text-ethereal-gold tracking-tight drop-shadow-sm">
               {adminStats.activeProjects}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-ethereal-incense/10 pt-4 mt-auto">
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-ethereal-graphite">
+      <div className="border-t border-ethereal-incense/10 pt-5 mt-auto relative z-10">
+        <div className="flex justify-between items-center mb-5">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite">
             {t("dashboard.admin.kpi_readiness", "Gotowość Zespołu")}
           </p>
-          <span className="text-[9px] font-bold text-ethereal-ink bg-ethereal-gold/10 px-2 py-0.5 rounded-full border border-ethereal-gold/20">
+          <span className="text-[9px] font-bold text-ethereal-ink bg-ethereal-gold/10 px-2.5 py-1 rounded-full border border-ethereal-gold/20 shadow-sm">
             {adminStats.satb.Total} {t("common.persons_short", "os.")}
           </span>
         </div>
 
         <div
-          className="space-y-3"
+          className="space-y-3.5"
           role="list"
           aria-label={t(
             "dashboard.admin.satb_distribution",
@@ -117,7 +122,7 @@ export function TelemetryWidget({
                 total={adminStats.satb.Total}
                 colorClass={cn(
                   v.colorClass,
-                  "shadow-[0_0_8px_rgba(0,0,0,0.05)]",
+                  "shadow-[0_0_8px_rgba(0,0,0,0.05)] transition-all duration-500",
                 )}
               />
             </div>

@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 
+import { UserLocalClock } from "@/shared/widgets/utility/UserLocalClock";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
@@ -27,6 +28,8 @@ import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";
 import { TelemetryWidget } from "./components/TelemetryWidget";
 import { SpotlightProjectCard } from "./components/SpotlightProjectCard";
+import { buttonVariants } from "@/shared/ui/primitives/Button";
+import { cn } from "@/shared/lib/utils";
 
 // Kinematics: Importing the centralized conductor components
 import {
@@ -183,13 +186,9 @@ export default function AdminDashboard(): React.JSX.Element {
           </h1>
         </motion.div>
 
-        <Link
-          to="/panel/projects/new"
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-ethereal-marble border border-ethereal-incense/30 hover:border-ethereal-gold text-ethereal-ink hover:text-ethereal-gold text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
-        >
-          <Plus size={14} />{" "}
-          {t("dashboard.admin.btn_new_project", "Nowy Projekt")}
-        </Link>
+        <div className="flex justify-end w-full">
+          <UserLocalClock />
+        </div>
       </header>
 
       {/* TOP NOTIFICATION BAR */}
@@ -198,14 +197,14 @@ export default function AdminDashboard(): React.JSX.Element {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DURATION.base, ease: EASE.buttery }}
-          className="mb-4"
+          className="mb-8"
         >
           <NextRehearsalAlert rehearsal={nextRehearsal} />
         </motion.div>
       )}
 
       {/* KPI & SPOTLIGHT BENTO GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div className="relative z-30 grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <motion.div
           initial="hidden"
           animate="visible"
@@ -230,13 +229,15 @@ export default function AdminDashboard(): React.JSX.Element {
       </div>
 
       {/* SYSTEM MODULES GRID - Using Centralized Kinematics */}
-      <StaggeredBentoContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        {ADMIN_MODULES.map((mod) => (
-          <StaggeredBentoItem key={mod.id} className="h-full">
-            <SystemModuleCard {...mod} />
-          </StaggeredBentoItem>
-        ))}
-      </StaggeredBentoContainer>
+      <div className="relative z-10">
+        <StaggeredBentoContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+          {ADMIN_MODULES.map((mod) => (
+            <StaggeredBentoItem key={mod.id} className="h-full">
+              <SystemModuleCard {...mod} />
+            </StaggeredBentoItem>
+          ))}
+        </StaggeredBentoContainer>
+      </div>
     </div>
   );
 }

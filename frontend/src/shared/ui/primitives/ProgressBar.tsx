@@ -1,7 +1,8 @@
 /**
  * @file ProgressBar.tsx
  * @description Highly styled progress indicator for metrics and quotas.
- * Refactored to eliminate inline style violations using dynamic CSS variables.
+ * Refactored to Ethereal UI (2026): calibrated for Alabaster backgrounds,
+ * incorporating monumental typography and kinetic flow transitions.
  * @module shared/ui/primitives/ProgressBar
  */
 import React from "react";
@@ -23,15 +24,22 @@ export const ProgressBar = ({
   const percentage = total > 0 ? (value / total) * 100 : 0;
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-[10px] font-bold text-stone-400 w-4">{label}</span>
-      <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+    <div className="flex items-center gap-3 group/progress">
+      {/* Voice Label - Crisp and ethereal */}
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite w-5">
+        {label}
+      </span>
+
+      {/* Ethereal Track - A subtle groove in the alabaster surface */}
+      <div className="flex-1 h-1.5 bg-ethereal-incense/15 rounded-full overflow-hidden shadow-inner">
+        {/* Ethereal Fill - Flowing smoothly into place */}
         <div
           className={cn(
-            "h-full rounded-full transition-all duration-500 w-[var(--progress)]",
+            "h-full rounded-full transition-all duration-1000 ease-out w-[var(--progress)]",
+            "relative after:absolute after:inset-0 after:bg-white/20", // Subtle glassy sheen
             colorClass,
           )}
-          // Ephemeral variable injection: bypasses inline-style restrictions elegantly.
+          /* Ephemeral variable injection: bypasses inline-style restrictions elegantly. */
           style={{ "--progress": `${percentage}%` } as React.CSSProperties}
           role="progressbar"
           aria-valuenow={value}
@@ -39,7 +47,9 @@ export const ProgressBar = ({
           aria-valuemax={total}
         />
       </div>
-      <span className="text-[10px] font-bold text-white w-5 text-right">
+
+      {/* Value - Anchored with monumental serif typography */}
+      <span className="text-[11px] font-bold text-ethereal-ink w-5 text-right font-serif tracking-wide">
         {value}
       </span>
     </div>
