@@ -111,8 +111,8 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
             style={{
               background: useMotionTemplate`
                 radial-gradient(
-                  350px circle at ${mouseX}px ${mouseY}px,
-                  rgba(194, 168, 120, 0.08),
+                  150px circle at ${mouseX}px ${mouseY}px,
+                  rgba(194, 168, 120, 0.07),
                   transparent 80%
                 )
               `,

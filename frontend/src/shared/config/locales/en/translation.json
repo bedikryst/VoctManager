@@ -438,7 +438,7 @@
       "kpi_telemetry": "Database Telemetry",
       "modules": {
         "archive_desc": "Central music library database.",
-        "archive_title": "Sheet Music Archive",
+        "archive_title": "Music Archive",
         "artists_desc": "Choir and soloist management.",
         "artists_title": "Artist Database",
         "contracts_desc": "Finances, contracts, and budgeting.",

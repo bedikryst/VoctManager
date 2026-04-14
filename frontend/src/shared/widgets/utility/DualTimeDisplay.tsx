@@ -2,7 +2,8 @@
  * @file DualTimeDisplay.tsx
  * @description Enterprise UI Component for dual-timezone time presentation.
  * Automatically handles the display of event timezone vs local user timezone.
- * Refactored to Strict TS 7.0 and cva-driven Ethereal UI architecture.
+ * Refined for Ethereal UI: Strict baseline alignments and sub-pixel typography.
+ * @architecture Enterprise SaaS 2026
  * @module shared/widgets/utility/DualTimeDisplay
  */
 
@@ -26,11 +27,11 @@ const containerVariants = cva("flex flex-col transition-all duration-300", {
 });
 
 const primaryTimeVariants = cva(
-  "flex items-center gap-2 font-medium text-ethereal-ink tracking-wide",
+  "flex items-baseline gap-2 font-medium text-ethereal-ink tracking-wide",
   {
     variants: {
       typography: {
-        serif: "font-serif text-[1.1em]",
+        serif: "font-serif text-[1.2em]",
         sans: "font-sans text-base tabular-nums",
       },
     },
@@ -40,8 +41,9 @@ const primaryTimeVariants = cva(
   },
 );
 
+// Muted, high-end technical typography for the secondary timezone
 const localTimeVariants = cva(
-  "text-[10px] font-bold text-ethereal-incense uppercase tracking-[0.2em] opacity-80",
+  "text-[9px] font-bold text-ethereal-incense/80 uppercase tracking-[0.25em] flex items-center gap-1.5",
 );
 
 export interface DualTimeDisplayProps extends VariantProps<
@@ -104,19 +106,22 @@ export const DualTimeDisplay = ({
         {icon && (
           <span
             aria-hidden="true"
-            className="text-ethereal-gold/70 shrink-0 flex items-center"
+            className="text-ethereal-gold/80 shrink-0 self-center translate-y-[1px]"
           >
             {icon}
           </span>
         )}
 
         {label && (
-          <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/80 mr-1">
+          <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/70 mr-1 self-center">
             {label}
           </span>
         )}
 
-        <time dateTime={isoDateString} className="whitespace-nowrap">
+        <time
+          dateTime={isoDateString}
+          className="whitespace-nowrap tabular-nums"
+        >
           {formatLocalizedTime(
             value,
             primaryTimeOptions,
@@ -128,6 +133,7 @@ export const DualTimeDisplay = ({
 
       {hasDiffTz && (
         <div className="flex items-center">
+          {/* Invisible spacer matching the icon width to keep strict left-alignment */}
           {icon && (
             <span className="w-5 shrink-0 invisible" aria-hidden="true" />
           )}
@@ -136,14 +142,16 @@ export const DualTimeDisplay = ({
             <span className="sr-only">
               {t("common.time.localAria", "Twój czas lokalny to:")}
             </span>
-            {formatLocalizedTime(
-              value,
-              localTimeOptions,
-              undefined,
-              userTimezone,
-            )}{" "}
-            <span className="font-normal text-ethereal-incense/60">
-              {t("common.time.localSuffix", "(Twój czas)")}
+            <span className="tabular-nums">
+              {formatLocalizedTime(
+                value,
+                localTimeOptions,
+                undefined,
+                userTimezone,
+              )}
+            </span>
+            <span className="font-serif text-[12px] font-bold lowercase tracking-normal text-ethereal-incense/50">
+              {t("common.time.localSuffix", "(twój czas)")}
             </span>
           </time>
         </div>

@@ -87,7 +87,7 @@ export function ArtistNextProjectWidget({
 
   return (
     <GlassCard
-      variant="ethereal"
+      variant="light"
       padding="none"
       glow={true}
       className="flex flex-col h-full relative z-10 !overflow-visible"

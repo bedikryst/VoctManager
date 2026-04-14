@@ -126,7 +126,7 @@ export function ArtistNextRehearsalWidget({
 
   return (
     <GlassCard
-      variant="ethereal"
+      variant="light"
       padding="none"
       glow={true}
       className="flex flex-col h-full transition-all duration-300 relative z-10 !overflow-visible"

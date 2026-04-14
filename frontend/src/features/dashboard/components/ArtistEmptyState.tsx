@@ -56,7 +56,7 @@ export const ArtistEmptyState = (): React.JSX.Element => {
       transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
     >
       <GlassCard
-        variant="ethereal"
+        variant="light"
         padding="lg"
         glow={true}
         isHoverable={true}

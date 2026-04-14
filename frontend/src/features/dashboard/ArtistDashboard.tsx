@@ -1,31 +1,37 @@
 /**
  * @file ArtistDashboard.tsx
- * @description Highly personalized Assistant Dashboard for Artists.
- * Refactored to Enterprise SaaS 2026 High-Density (Bento Grid) standard.
- * Zero Tech-Debt. Purged all legacy tokens. Uses pure Ethereal UI design language.
+ * @description The Artist's Sanctuary.
+ * Synchronized with the Ethereal UI 2026 Admin standards. Zero Lucide vectors.
+ * Kinetic typography, fluid masking, and Roman numeral directives.
  * @module panel/dashboard/ArtistDashboard
  */
 
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Calendar, Music, BookOpen, Sparkles, Activity } from "lucide-react";
 
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
-
-import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
+
 import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { KineticText } from "@/shared/ui/kinematics/KineticText";
 
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
 import { ArtistEmptyState } from "./components/ArtistEmptyState";
+
+const EtherealEasing = [0.16, 1, 0.3, 1] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 15, filter: "blur(8px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 1.2, ease: EtherealEasing, delay: 0.1 },
+  },
+};
 
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -34,47 +40,38 @@ export default function ArtistDashboard(): React.JSX.Element {
   const { isLoading, upNextRehearsal, upNextProject, greeting } =
     useArtistDashboardData(user?.artist_profile_id ?? undefined);
 
-  const ARTIST_MODULES = useMemo(
+  const ARTIST_DIRECTIVES = useMemo(
     () => [
       {
         id: "schedule",
-        icon: <Calendar size={18} className="text-ethereal-gold" />,
-        iconBgClass: "bg-ethereal-gold/10 border-ethereal-gold/20",
-        hoverClass:
-          "hover:border-ethereal-gold/40 hover:shadow-[0_8px_24px_rgba(194,168,120,0.12)]",
-        titleColorClass: "group-hover/module:text-ethereal-gold",
-        title: t("dashboard.artist.module_schedule_title", "Mój Kalendarz"),
+        romanNumeral: "I",
+        accentClass: "bg-ethereal-gold",
+        title: t("dashboard.artist.module_schedule_title", "Harmonogram"),
         description: t(
           "dashboard.artist.module_schedule_desc",
-          "Sprawdź próby, koncerty i zgłoś nieobecność.",
+          "Próby, koncerty i zarządzanie absencją.",
         ),
         path: "/panel/schedule",
       },
       {
         id: "materials",
-        icon: <Music size={18} className="text-ethereal-sage" />,
-        iconBgClass: "bg-ethereal-sage/10 border-ethereal-sage/20",
-        hoverClass:
-          "hover:border-ethereal-sage/40 hover:shadow-[0_8px_24px_rgba(143,154,138,0.12)]",
-        titleColorClass: "group-hover/module:text-ethereal-sage",
-        title: t("dashboard.artist.module_materials_title", "Materiały"),
+        romanNumeral: "II",
+        accentClass: "bg-ethereal-sage",
+        title: t("dashboard.artist.module_materials_title", "Repertuar"),
         description: t(
           "dashboard.artist.module_materials_desc",
-          "Pobierz nuty PDF i ćwicz ze ścieżkami audio.",
+          "Partytury PDF i referencyjne ścieżki audio.",
         ),
         path: "/panel/materials",
       },
       {
         id: "resources",
-        icon: <BookOpen size={18} className="text-ethereal-amethyst" />,
-        iconBgClass: "bg-ethereal-amethyst/10 border-ethereal-amethyst/20",
-        hoverClass:
-          "hover:border-ethereal-amethyst/40 hover:shadow-[0_8px_24px_rgba(140,122,158,0.12)]",
-        titleColorClass: "group-hover/module:text-ethereal-amethyst",
-        title: t("dashboard.artist.module_resources_title", "Baza Wiedzy"),
+        romanNumeral: "III",
+        accentClass: "bg-ethereal-incense",
+        title: t("dashboard.artist.module_resources_title", "Doktryna"),
         description: t(
           "dashboard.artist.module_resources_desc",
-          "Sprawdź wytyczne, dress-code i umowy.",
+          "Wytyczne katedralne, dress-code i logistyka.",
         ),
         path: "/panel/resources",
       },
@@ -84,104 +81,118 @@ export default function ArtistDashboard(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <EtherealLoader
-        message={t("dashboard.shared.syncing", "Synchronizacja pulpitu...")}
-      />
+      <div className="flex h-[60vh] flex-col items-center justify-center">
+        <EtherealLoader
+          message={t("dashboard.shared.syncing", "Strojenie Rezonansu...")}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="animate-fade-in relative cursor-default pb-12 w-full max-w-7xl mx-auto">
-      {/* HEADER SECTION */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="relative flex items-center justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-ethereal-sage z-10" />
-              <div className="absolute w-1.5 h-1.5 rounded-full bg-ethereal-sage animate-ping opacity-75" />
-            </div>
-            <p className="text-[10px] uppercase tracking-widest text-ethereal-graphite font-bold">
-              {greeting} •{" "}
-              {user?.first_name || t("common.artist_generic", "Artysto")}
-            </p>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-ethereal-ink tracking-tight flex items-baseline gap-1.5">
-            {t("dashboard.artist.title_main", "Pulpit")}
-            <span className="italic font-serif text-transparent bg-clip-text bg-gradient-to-r from-ethereal-gold to-ethereal-sage pr-1 pb-1 text-[1.15em]">
-              {t("dashboard.artist.title_sub", "Muzyczny")}
-            </span>
-          </h1>
-        </div>
-      </header>
+    <div className="relative isolate w-full max-w-[1600px] mx-auto px-0 pb-24 md:px-6 lg:px-10">
+      {/* HEADER STRATUM */}
+      <motion.header
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: { transition: { staggerChildren: 0.1 } },
+        }}
+        className="mb-12 flex flex-col px-5 md:px-0"
+      >
+        <motion.div variants={fadeUp} className="mb-4 flex items-center gap-4">
+          <div className="h-[1px] w-12 bg-ethereal-sage/40" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-ethereal-graphite/60">
+            {greeting}
+          </span>
+        </motion.div>
 
-      {/* HORIZON SECTION (SPOTLIGHT WIDGETS) */}
-      <section className="mb-8" aria-labelledby="horizon-heading">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles
-            size={14}
-            className="text-ethereal-gold"
-            aria-hidden="true"
+        <h1 className="font-serif text-3xl leading-[1.1] tracking-tight text-ethereal-ink md:text-5xl md:font-medium flex items-baseline gap-2">
+          {t("dashboard.artist.title_main", "Przestrzeń ")}
+          <KineticText
+            as="span"
+            text={user?.first_name || t("common.artist_generic", "Artysty")}
+            delay={0.2}
+            className="italic text-ethereal-sage/90"
           />
+        </h1>
+      </motion.header>
+
+      {/* CORE HORIZON STRATUM */}
+      <section className="mb-12 px-5 md:px-0" aria-labelledby="horizon-heading">
+        <div className="mb-6 flex items-center gap-4 relative">
           <h2
             id="horizon-heading"
-            className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite"
+            className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite"
           >
-            {t("dashboard.artist.next_challenges", "Na horyzoncie")}
+            {t("dashboard.artist.next_challenges", "Bezpośrednie Wytyczne")}
           </h2>
+          <div className="h-[1px] flex-1 bg-gradient-to-r from-ethereal-incense/20 to-transparent" />
         </div>
 
         {!upNextRehearsal && !upNextProject ? (
           <ArtistEmptyState />
         ) : (
-          <div
-            className={cn(
-              "grid grid-cols-1 gap-4",
-              upNextRehearsal && upNextProject ? "lg:grid-cols-2" : "",
-            )}
-          >
-            {upNextRehearsal && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            {/* Asymmetric weighting: 
+              If both exist, Project gets 7 cols, Rehearsal gets 5 cols 
+            */}
+            {upNextProject && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial="hidden"
+                animate="visible"
+                variants={fadeUp}
+                className={upNextRehearsal ? "lg:col-span-7" : "lg:col-span-12"}
               >
-                <ArtistNextRehearsalWidget rehearsal={upNextRehearsal} />
+                <ArtistNextProjectWidget project={upNextProject} />
               </motion.div>
             )}
 
-            {upNextProject && (
+            {upNextRehearsal && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial="hidden"
+                animate="visible"
+                variants={fadeUp}
+                className={upNextProject ? "lg:col-span-5" : "lg:col-span-12"}
               >
-                <ArtistNextProjectWidget project={upNextProject} />
+                <ArtistNextRehearsalWidget rehearsal={upNextRehearsal} />
               </motion.div>
             )}
           </div>
         )}
       </section>
 
-      {/* QUICK ACCESS MODULES */}
-      <section aria-labelledby="modules-heading">
-        <div className="flex items-center gap-2 mb-3">
-          <div
-            className="w-1 h-4 bg-ethereal-gold rounded-full"
-            aria-hidden="true"
-          />
+      {/* DIRECTIVES DIRECTORY */}
+      <section className="px-5 md:px-0" aria-labelledby="modules-heading">
+        <div className="mb-6 flex items-center gap-4 relative">
+          <div className="h-[1px] flex-1 bg-gradient-to-l from-ethereal-incense/20 to-transparent" />
           <h3
             id="modules-heading"
-            className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite"
+            className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite text-right"
           >
-            {t("dashboard.artist.personal_modules", "Szybki Dostęp")}
+            {t("dashboard.artist.personal_modules", "Katalog Modułów")}
           </h3>
         </div>
 
-        <StaggeredBentoContainer className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {ARTIST_MODULES.map((mod) => (
-            <StaggeredBentoItem key={mod.id} className="h-full">
-              <SystemModuleCard {...mod} />
-            </StaggeredBentoItem>
-          ))}
-        </StaggeredBentoContainer>
+        <nav aria-label={t("dashboard.artist.nav_aria", "Nawigacja artysty")}>
+          <ul className="grid grid-cols-1 gap-4 md:grid-cols-3 md:auto-rows-[180px]">
+            {ARTIST_DIRECTIVES.map((mod, index) => (
+              <motion.li
+                key={mod.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 1,
+                  ease: EtherealEasing,
+                  delay: 0.3 + index * 0.1,
+                }}
+                className="h-full"
+              >
+                <SystemModuleCard {...mod} />
+              </motion.li>
+            ))}
+          </ul>
+        </nav>
       </section>
     </div>
   );

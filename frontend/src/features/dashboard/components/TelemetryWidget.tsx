@@ -1,14 +1,13 @@
 /**
  * @file TelemetryWidget.tsx
- * @description System KPIs and SATB Readiness visualisation.
- * Orchestrates layout and delegates rendering to strict ResonancePillar primitives.
+ * @description Ensemble Resonance and SATB Cohesion visualisation.
+ * Escapes rigid SaaS borders in favor of fluid spatial tension and semantic typography.
  * @architecture Enterprise SaaS 2026
- * @module panel/dashboard/components/TelemetryWidget
  */
 
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Activity } from "lucide-react";
+import { AudioLines } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { ResonancePillar } from "@/shared/ui/kinematics/ResonancePillar";
 
@@ -57,55 +56,69 @@ export function TelemetryWidget({
     <GlassCard
       variant="light"
       withNoise
-      className="flex h-full w-full flex-col justify-between p-8 md:p-10 pb-4 md:pb-5"
+      className="flex h-full w-full flex-col justify-between p-8 md:p-10 pb-4 md:pb-5 isolate"
     >
-      {/* UPPER STRATUM: KPIs */}
-      <div className="relative z-10 flex flex-col">
-        <header className="mb-6 flex items-center gap-3 border-b border-ethereal-incense/15 pb-5">
-          <Activity
-            size={14}
+      {/* UPPER STRATUM: Resonance Metrics */}
+      <section className="relative z-10 flex flex-col">
+        <header className="mb-6 flex items-center gap-3 pb-5 relative">
+          <AudioLines
+            size={16}
             strokeWidth={1.5}
             className="text-ethereal-gold"
             aria-hidden="true"
           />
-          <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite">
-            {t("dashboard.admin.kpi_telemetry", "System Telemetry")}
-          </span>
+          <h2 className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite">
+            {t("dashboard.admin.kpi_telemetry", "Ensemble Resonance")}
+          </h2>
+          {/* Fluid separator instead of border-b */}
+          <div className="absolute bottom-0 left-0 h-[1px] w-full bg-gradient-to-r from-ethereal-incense/20 to-transparent" />
         </header>
 
-        <div className="grid grid-cols-2 gap-6">
-          <article className="group flex cursor-default flex-col gap-2">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
-              {t("dashboard.admin.kpi_pieces", "Repertoire")}
+        <div className="grid grid-cols-2 gap-8 relative">
+          <article className="group flex cursor-default flex-col gap-1">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
+              {t("dashboard.admin.kpi_pieces", "Sacral Repertoire")}
             </h3>
-            <p className="font-serif text-5xl font-medium tracking-tight text-ethereal-ink lg:text-6xl">
+            <p className="font-serif text-5xl font-light tracking-tight text-ethereal-ink lg:text-6xl">
               {stats.totalPieces}
             </p>
           </article>
-          <article className="group flex cursor-default flex-col gap-2 border-l border-ethereal-incense/10 pl-6">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
-              {t("dashboard.admin.kpi_active_projects", "Active Projects")}
+
+          <article className="group flex cursor-default flex-col gap-1 relative pl-8">
+            {/* Fluid vertical separator */}
+            <div className="absolute inset-y-0 left-0 w-[1px] bg-gradient-to-b from-ethereal-incense/15 to-transparent" />
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
+              {t("dashboard.admin.kpi_active_projects", "Active Directives")}
             </h3>
-            <p className="font-serif text-5xl font-medium tracking-tight text-ethereal-gold lg:text-6xl">
+            <p className="font-serif text-5xl font-light tracking-tight text-ethereal-gold lg:text-6xl">
               {stats.activeProjects}
             </p>
           </article>
         </div>
-      </div>
+      </section>
 
-      {/* LOWER STRATUM: SATB Resonance Pillars */}
-      <div className="relative z-10 mt-6 flex flex-col">
-        <div className="mb-11 flex items-baseline justify-between border-t border-ethereal-incense/10 pt-6">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/60">
-            {t("dashboard.admin.kpi_readiness", "Gotowość Głosów")}
+      {/* LOWER STRATUM: SATB Harmonic Cohesion */}
+      <section className="relative z-10 mt-8 flex flex-col">
+        <header className="mb-10 flex items-baseline justify-between pt-4 relative">
+          {/* Soft top gradient line */}
+          <div className="absolute top-0 left-0 h-[1px] w-full bg-gradient-to-r from-ethereal-incense/15 via-ethereal-incense/5 to-transparent" />
+
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-graphite/60">
+            {t("dashboard.admin.kpi_readiness", "Harmonic Cohesion")}
           </h3>
-          <span className="tabular-nums text-[11px] font-medium tracking-widest text-ethereal-ink">
-            {stats.satb.Total}
+          <span
+            className="tabular-nums text-[12px] font-medium tracking-widest text-ethereal-ink"
+            aria-label="Total ensemble voices"
+          >
+            {stats.satb.Total}{" "}
+            <span className="font-serif italic text-ethereal-graphite/50 text-[10px] lowercase tracking-normal">
+              voc.
+            </span>
           </span>
-        </div>
+        </header>
 
         <div
-          className="flex h-24 items-end justify-between px-2"
+          className="flex h-28 items-end justify-between px-2"
           role="list"
           aria-label={t(
             "dashboard.admin.satb_distribution",
@@ -123,7 +136,7 @@ export function TelemetryWidget({
             />
           ))}
         </div>
-      </div>
+      </section>
     </GlassCard>
   );
 }

@@ -1,80 +1,90 @@
 /**
  * @file SystemModuleCard.tsx
- * @description Refined Editorial Card.
- * Indices are now integrated as subtle marginalia to preserve vertical density.
+ * @description Universal Ethereal UI 2026 Navigation Directive.
+ * Replaces generic vectors with sacral typography (Roman Numerals).
+ * Relies exclusively on GlassCard's internal framer-motion glow mechanics.
  * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";
-import { Link } from "react-router-dom";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { cn } from "@/shared/lib/utils";
 
 export interface SystemModuleCardProps {
-  index: number;
+  id: string;
   title: string;
-  icon: React.ElementType;
-  iconBgClass?: string;
   path: string;
+  romanNumeral: string;
+  accentClass: string;
   features?: string[];
+  description?: string; // Used mostly by Artist Dashboard as fallback
 }
 
-export const SystemModuleCard = ({
-  index,
+export function SystemModuleCard({
+  id,
   title,
-  icon: Icon,
-  iconBgClass,
   path,
+  romanNumeral,
+  accentClass,
   features = [],
-}: SystemModuleCardProps): React.JSX.Element => {
-  const formattedIndex = index < 10 ? `0${index}` : index.toString();
-
+  description,
+}: SystemModuleCardProps): React.JSX.Element {
   return (
-    <GlassCard
-      variant="ethereal"
-      padding="none" // Manual padding control for tighter integration
-      className="group relative flex w-full flex-col overflow-hidden transition-all duration-700 ease-[0.16,1,0.3,1] hover:-translate-y-1 hover:border-ethereal-gold/30 hover:bg-white/25 hover:shadow-[0_20px_40px_rgba(194,168,120,0.1)]"
+    <a
+      href={path}
+      className="group block h-full w-full outline-none focus-visible:ring-1 focus-visible:ring-ethereal-gold/50 rounded-[2.5rem]"
+      aria-labelledby={`directive-title-${id}`}
     >
-      {/* BACKGROUND WATERMARK - Scaled down for compactness */}
-      <div
-        className={cn(
-          "absolute -right-4 -top-4 z-0 h-24 w-24 transform opacity-[0.03] transition-transform duration-1000 group-hover:scale-110 group-hover:opacity-[0.07]",
-          iconBgClass,
-        )}
-        aria-hidden="true"
+      {/* GlassCard natively handles the hover proximity light via 'glow=true' 
+        We rely on its hardware-accelerated motion values.
+      */}
+      <GlassCard
+        variant="light"
+        withNoise
+        glow={true}
+        padding="none"
+        className="relative flex h-full min-h-[160px] w-full flex-col justify-between overflow-hidden p-6 transition-all duration-1000 ease-[0.16,1,0.3,1] hover:-translate-y-1"
       >
-        <Icon className="h-full w-full" strokeWidth={0.75} />
-      </div>
-
-      <div className="relative z-10 flex flex-col p-6">
-        {/* TOP ROW: Index & Metadata */}
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-incense/40 transition-colors duration-500 group-hover:text-ethereal-gold">
-            Index // {formattedIndex}
+        {/* Roman Numeral Imprint (Background Layer) */}
+        <div className="pointer-events-none absolute -bottom-6 -right-2 -z-10 select-none opacity-[0.03] mix-blend-overlay transition-all duration-1000 group-hover:opacity-[0.08] group-hover:scale-105">
+          <span className="font-serif text-[8rem] font-light leading-none tracking-tighter text-ethereal-ink md:text-[10rem]">
+            {romanNumeral}
           </span>
-          <div className={cn("h-1 w-1 rounded-full opacity-20", iconBgClass)} />
         </div>
 
-        {/* TITLE - Pseudo-Overlay Link remains for A11y */}
-        <h3 className="mb-2 font-serif text-xl font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold">
-          <Link
-            to={path}
-            className="static outline-none before:absolute before:inset-0 before:z-20 focus-visible:before:ring-2 focus-visible:before:ring-ethereal-gold/40"
+        {/* Top Stratum: Accent line & Features/Description */}
+        <header className="relative z-10 flex flex-col gap-4">
+          <div
+            className={`h-[1px] w-8 transition-all duration-700 group-hover:w-16 ${accentClass}`}
+          />
+
+          {features.length > 0 ? (
+            <ul className="flex flex-col gap-1 text-[9px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/50 transition-colors duration-500 group-hover:text-ethereal-graphite/80">
+              {features.map((feature, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <span
+                    className={`h-1 w-1 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${accentClass}`}
+                  />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-ethereal-graphite/60 leading-relaxed max-w-[80%]">
+              {description}
+            </p>
+          )}
+        </header>
+
+        {/* Bottom Stratum: Title */}
+        <footer className="relative z-10 mt-8">
+          <h3
+            id={`directive-title-${id}`}
+            className="font-serif text-2xl tracking-tight text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold md:text-3xl"
           >
             {title}
-          </Link>
-        </h3>
-
-        {/* FEATURES - High Density Inline List */}
-        {features.length > 0 && (
-          <p className="line-clamp-1 text-[10px] font-bold uppercase tracking-[0.1em] text-ethereal-graphite/40 transition-colors duration-500 group-hover:text-ethereal-graphite/60">
-            {features.join(" • ")}
-          </p>
-        )}
-      </div>
-
-      {/* ACCENT LINE - Kinetic border effect */}
-      <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-gradient-to-r from-ethereal-gold/0 via-ethereal-gold/40 to-ethereal-gold/0 transition-all duration-1000 group-hover:w-full" />
-    </GlassCard>
+          </h3>
+        </footer>
+      </GlassCard>
+    </a>
   );
-};
+}

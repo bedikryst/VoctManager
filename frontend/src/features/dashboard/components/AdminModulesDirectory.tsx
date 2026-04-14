@@ -1,18 +1,28 @@
 /**
  * @file AdminModulesDirectory.tsx
  * @description Centralised routing directory for Mission Control.
- * Encapsulates the module dictionary and renders an asymmetrical bento grid.
- * @module panel/dashboard/components/AdminModulesDirectory
+ * Reinvented for Ethereal UI 2026: Asymmetric Golden Ratio layout.
+ * Delegates entirely to SystemModuleCard for proximity spotlight kinematics.
+ * @architecture Enterprise SaaS 2026
  */
 
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
-import { Music, FileText, Users, Briefcase, Wrench, Map } from "lucide-react";
 import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 
 interface AdminModulesDirectoryProps {
   itemKinematics: Variants;
+}
+
+interface DirectiveConfig {
+  id: string;
+  romanNumeral: string;
+  title: string;
+  features: string[];
+  accentClass: string;
+  path: string;
+  gridClass: string;
 }
 
 export function AdminModulesDirectory({
@@ -20,98 +30,110 @@ export function AdminModulesDirectory({
 }: AdminModulesDirectoryProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  const ADMIN_MODULES = useMemo(
+  const DIRECTIVES: DirectiveConfig[] = useMemo(
     () => [
       {
         id: "projects",
+        romanNumeral: "I",
         title: t("dashboard.admin.modules.projects_title", "Projekty"),
         features: [
           t("dashboard.admin.features.schedules", "Harmonogramy"),
           t("dashboard.admin.features.setlists", "Setlisty"),
         ],
-        icon: Briefcase,
-        iconBgClass: "text-ethereal-gold",
+        accentClass: "bg-ethereal-gold",
         path: "/panel/projects",
-        // Klasy mapujące pozycję w siatce Bento
+        // The Dominant Anchor (Golden Ratio Main Block)
         gridClass: "md:col-span-2 md:row-span-2",
       },
       {
         id: "logistics",
+        romanNumeral: "II",
         title: t("dashboard.admin.modules.logistics_title", "Logistyka"),
         features: [
           t("dashboard.admin.features.locations", "Lokacje"),
           t("dashboard.admin.features.transport", "Transport"),
         ],
-        icon: Map,
-        iconBgClass: "text-ethereal-sage",
+        accentClass: "bg-ethereal-sage",
         path: "/panel/locations",
-        gridClass: "md:col-span-2 md:row-span-2",
+        gridClass: "md:col-span-2 md:row-span-1",
       },
       {
         id: "archive",
+        romanNumeral: "III",
         title: t("dashboard.admin.modules.archive_title", "Archiwum"),
         features: [
           t("dashboard.admin.features.pdf_scores", "Nuty PDF"),
-          t("dashboard.admin.features.audio", "Audio referencyjne"),
+          t("dashboard.admin.features.audio", "Audio ref."),
         ],
-        icon: Music,
-        iconBgClass: "text-ethereal-graphite",
+        accentClass: "bg-ethereal-incense",
         path: "/panel/archive-management",
         gridClass: "md:col-span-1 md:row-span-1",
       },
       {
         id: "artists",
+        romanNumeral: "IV",
         title: t("dashboard.admin.modules.artists_title", "Artyści"),
         features: [
           t("dashboard.admin.features.satb", "SATB"),
           t("dashboard.admin.features.profiles", "Profile"),
         ],
-        icon: Users,
-        iconBgClass: "text-ethereal-amethyst",
+        accentClass: "bg-ethereal-amethyst",
         path: "/panel/artists",
         gridClass: "md:col-span-1 md:row-span-1",
       },
       {
         id: "contracts",
+        romanNumeral: "V",
         title: t("dashboard.admin.modules.contracts_title", "Finanse"),
         features: [
           t("dashboard.admin.features.rates", "Stawki"),
           t("dashboard.admin.features.budget", "Budżet"),
         ],
-        icon: FileText,
-        iconBgClass: "text-ethereal-incense",
+        accentClass: "bg-ethereal-graphite",
         path: "/panel/contracts",
-        gridClass: "md:col-span-1 md:row-span-1",
+        gridClass: "md:col-span-2 md:row-span-1",
       },
       {
         id: "crew",
+        romanNumeral: "VI",
         title: t("dashboard.admin.modules.crew_title", "Technika"),
         features: [
           t("dashboard.admin.features.sound", "Dźwięk & Światło"),
           t("dashboard.admin.features.vendors", "Podwykonawcy"),
         ],
-        icon: Wrench,
-        iconBgClass: "text-ethereal-ink",
+        accentClass: "bg-ethereal-ink",
         path: "/panel/crew",
-        gridClass: "md:col-span-1 md:row-span-1",
+        gridClass: "md:col-span-2 md:row-span-1",
       },
     ],
     [t],
   );
 
   return (
-    <div className="grid grid-cols-1 gap-1 md:grid-cols-4 md:gap-6 xl:gap-8">
-      {ADMIN_MODULES.map((moduleConfig, index) => (
-        <motion.div
-          key={moduleConfig.id}
-          variants={itemKinematics}
-          className={moduleConfig.gridClass}
-        >
-          <div className="h-full w-full">
-            <SystemModuleCard index={index + 1} {...moduleConfig} />
-          </div>
-        </motion.div>
-      ))}
-    </div>
+    <nav
+      aria-label={t(
+        "dashboard.admin.directory_nav_aria",
+        "Główne Moduły Systemu",
+      )}
+    >
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-4 md:auto-rows-[180px]">
+        {DIRECTIVES.map((directive) => (
+          <motion.li
+            key={directive.id}
+            variants={itemKinematics}
+            className={directive.gridClass}
+          >
+            <SystemModuleCard
+              id={directive.id}
+              title={directive.title}
+              path={directive.path}
+              romanNumeral={directive.romanNumeral}
+              accentClass={directive.accentClass}
+              features={directive.features}
+            />
+          </motion.li>
+        ))}
+      </ul>
+    </nav>
   );
 }
