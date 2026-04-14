@@ -43,6 +43,20 @@ const itemKinematics: Variants = {
   },
 };
 
+export const choirOrchestration: Variants = {
+  hidden: { opacity: 0, filter: "blur(10px)", y: 20 },
+  visible: {
+    opacity: 1,
+    filter: "blur(0px)",
+    y: 0,
+    transition: {
+      staggerChildren: 0.15,
+      ease: [0.25, 0.1, 0.25, 1],
+      duration: 0.8,
+    },
+  },
+};
+
 export default function AdminDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();

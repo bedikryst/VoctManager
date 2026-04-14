@@ -35,39 +35,46 @@ export const SystemModuleStrip = ({
       <GlassCard
         variant="ethereal"
         padding="none"
-        className="flex items-center gap-4 p-3 transition-all duration-700 ease-out group-hover:bg-white/50 group-hover:border-ethereal-gold/40 group-hover:shadow-[0_8px_24px_rgba(194,168,120,0.1)]"
+        // Przeniesiono flex i padding głębiej, tutaj zostawiamy tylko efekty wizualne i przejścia
+        className="transition-all duration-700 ease-out group-hover:bg-white/50 group-hover:border-ethereal-gold/40 group-hover:shadow-[0_8px_24px_rgba(194,168,120,0.1)]"
       >
-        {/* Lewa strona: Heraldic Icon */}
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border backdrop-blur-md transition-transform duration-700 group-hover:scale-105",
-            iconBgClass ||
-              "border-ethereal-incense/20 bg-ethereal-incense/10 text-ethereal-incense",
-          )}
-        >
-          {icon}
-        </div>
+        {/* WEWNĘTRZNA WARSTWA LAYOUTU - to rozwiązuje problem flexboxa */}
+        <div className="flex items-center gap-4 p-3">
+          {/* Lewa strona: Heraldic Icon */}
+          <div
+            className={cn(
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border backdrop-blur-md transition-transform duration-700 group-hover:scale-105",
+              iconBgClass ||
+                "border-ethereal-incense/20 bg-ethereal-incense/10 text-ethereal-incense",
+            )}
+          >
+            {icon}
+          </div>
 
-        {/* Prawa strona: Two-line stack */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
-          <h3 className="font-serif text-lg font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold truncate">
-            {title}
-          </h3>
-          {features.length > 0 && (
-            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-ethereal-graphite/50 truncate transition-colors duration-500 group-hover:text-ethereal-graphite/80">
-              {features.join(" • ")}
-            </p>
-          )}
-        </div>
+          {/* Prawa strona: Two-line stack */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+            <h3 className="font-serif text-lg font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold truncate">
+              {title}
+            </h3>
+            {features.length > 0 && (
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-ethereal-graphite/50 truncate transition-colors duration-500 group-hover:text-ethereal-graphite/80">
+                {features.join(" • ")}
+              </p>
+            )}
+          </div>
 
-        <div className="shrink-0 opacity-0 -translate-x-2 transition-all duration-500 group-hover:opacity-100 group-hover:translate-x-0 pr-2">
-          <ArrowRight
-            size={14}
-            strokeWidth={2}
-            className="text-ethereal-gold"
-          />
+          {/* Strzałka nawigacyjna - wjeżdża z lewej przy hoverze */}
+          <div className="shrink-0 opacity-0 -translate-x-2 transition-all duration-500 group-hover:opacity-100 group-hover:translate-x-0 pr-2">
+            <ArrowRight
+              size={14}
+              strokeWidth={2}
+              className="text-ethereal-gold"
+            />
+          </div>
         </div>
       </GlassCard>
     </Link>
   );
 };
+
+SystemModuleStrip.displayName = "SystemModuleStrip";

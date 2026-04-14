@@ -17,7 +17,7 @@ const glassCardVariants = cva(
     variants: {
       variant: {
         ethereal:
-          "bg-white/10 backdrop-blur-[24px] border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_32px_rgba(166,146,121,0.12)]",
+          "bg-white/15 backdrop-blur-[24px] border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_32px_rgba(166,146,121,0.12)]",
         solid:
           "bg-ethereal-marble/95 border border-ethereal-incense/15 shadow-glass-solid",
         dark: "bg-ethereal-ink/80 backdrop-blur-[32px] border border-ethereal-incense/20 text-ethereal-marble shadow-2xl",
