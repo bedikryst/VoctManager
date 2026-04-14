@@ -23,8 +23,8 @@ const SacralBackdrop = (): React.JSX.Element => (
       style={{ transform: "translateZ(0)", willChange: "transform" }}
     >
       {/* LAYER 1: Core Ethereal Glows (Sub-pixel rendering) */}
-      <div className="absolute -left-[5%] -top-[5%] h-[45vw] w-[45vw] rounded-full bg-ethereal-gold/20 blur-[120px] mix-blend-multiply" />
-      <div className="absolute -bottom-[10%] -right-[5%] h-[55vw] w-[55vw] rounded-full bg-ethereal-sage/20 blur-[140px] mix-blend-multiply" />
+      <div className="absolute -left-[5%] -top-[5%] h-[45vw] w-[45vw] rounded-full bg-ethereal-gold/20 blur-[100px] mix-blend-multiply" />
+      <div className="absolute -bottom-[50%] -right-[10%] h-[55vw] w-[55vw] rounded-full bg-ethereal-amethyst/15 blur-[100px] mix-blend-multiply" />
 
       {/* LAYER 2: The Kinematic Stave */}
       <div className="absolute inset-0 flex items-center justify-center z-0">
