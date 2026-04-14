@@ -158,7 +158,7 @@ export function SpotlightProjectCard({
 
           <motion.h2
             variants={textFadeUp}
-            className="mb-6 max-w-2xl font-serif text-5xl leading-[1.05] tracking-tight text-ethereal-ink md:text-[4rem]"
+            className="mb-6 max-w-2xl font-serif text-4xl leading-[1.05] tracking-tight text-ethereal-ink md:text-[3rem]"
           >
             {project.title}
           </motion.h2>

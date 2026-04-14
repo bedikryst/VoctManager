@@ -1,17 +1,18 @@
 /**
  * @file AdminDashboard.tsx
  * @description Refined Mission Control.
- * Fixes: Type assertion removal & Backdrop-filter preservation.
+ * Fixes: Edge-to-edge mobile layout, i18n strict fallbacks & Type assertion removal.
  */
 
 import React from "react";
-import { motion, type Variants, type Transition } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Loader2 } from "lucide-react";
 
 import { UserLocalClock } from "@/shared/widgets/utility/UserLocalClock";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
+
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";
 import { TelemetryWidget } from "./components/TelemetryWidget";
@@ -67,15 +68,10 @@ export default function AdminDashboard(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center space-y-6">
-        <Loader2
-          size={40}
-          strokeWidth={1}
-          className="animate-spin text-ethereal-gold/60"
+      <div className="flex h-[60vh] flex-col items-center justify-center">
+        <EtherealLoader
+          message={t("dashboard.shared.load", "Synchronizacja Aury...")}
         />
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite/40">
-          {t("dashboard.shared.loading", "Harmonizowanie systemów...")}
-        </span>
       </div>
     );
   }
@@ -85,34 +81,36 @@ export default function AdminDashboard(): React.JSX.Element {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="mx-auto w-full max-w-[1600px] px-6 pb-24 lg:px-10"
+      // Mobile: px-0 dla pełnego przylegania do krawędzi. Desktop: przywrócenie marginesów.
+      className="mx-auto w-full max-w-[1600px] px-0 pb-24 md:px-6 lg:px-10"
     >
       {/* HEADER STRATUM */}
       <motion.header
         variants={itemVariants}
-        className="mb-8 flex flex-col gap-8 md:flex-row md:items-end md:justify-between"
+        // Mobile: zachowujemy padding w nagłówku, aby tekst nie dotykał ramki urządzenia.
+        className="mb-8 flex flex-col gap-6 px-5 md:flex-row md:items-end md:justify-between md:px-0"
       >
         <div className="max-w-2xl">
           <div className="mb-4 flex items-center gap-4">
             <div className="h-[1px] w-12 bg-ethereal-gold/30" />
             <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-ethereal-graphite/60">
-              {t("dashboard.admin.role", "Principal Conductor Control")}
+              {t("dashboard.admin.role", "Główny Pulpit Dyrygenta")}
             </span>
           </div>
-          <h1 className="font-serif text-5xl leading-[1.1] tracking-tight text-ethereal-ink md:text-7xl">
+          <h1 className="font-serif text-3xl leading-[1.1] tracking-tight text-ethereal-ink md:text-5xl md:font-medium">
             {t("dashboard.admin.welcome", "Witaj, ")}
             <span className="italic text-ethereal-gold/90">
               {user?.first_name || "Maestro"}
             </span>
           </h1>
         </div>
-        <div className="hidden md:block pb-2">
+        <div className="hidden pb-2 md:block">
           <UserLocalClock />
         </div>
       </motion.header>
 
       {/* CORE BENTO GRID */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-12">
         {nextRehearsal && (
           <motion.div variants={itemVariants} className="lg:col-span-12">
             <NextRehearsalAlert rehearsal={nextRehearsal} />
@@ -136,8 +134,11 @@ export default function AdminDashboard(): React.JSX.Element {
           />
         </motion.div>
 
-        <motion.div variants={itemVariants} className="lg:col-span-12">
-          <div className="mb-5 flex items-center gap-6">
+        <motion.div
+          variants={itemVariants}
+          className="mt-4 lg:col-span-12 md:mt-0"
+        >
+          <div className="mb-5 flex items-center gap-6 px-5 md:px-0">
             <div className="h-[1px] flex-1 bg-ethereal-incense/10" />
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/40">
               {t("dashboard.admin.directory_sub", "06 Modułów")}

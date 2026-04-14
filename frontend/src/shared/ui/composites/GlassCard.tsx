@@ -1,6 +1,7 @@
 /**
  * @file GlassCard.tsx
  * @description High-end structural container providing layered glassmorphism.
+ * Refactored for 'Chiaroscuro' light dynamics and 'Lead Came' micro-borders.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/GlassCard
  */
@@ -11,22 +12,26 @@ import { motion, useMotionValue, useMotionTemplate } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
 
 const glassCardVariants = cva(
-  "group relative isolate overflow-hidden rounded-[2.5rem] transition-all duration-700 ease-out",
+  // Base structural integrity: strictly isolated hardware rendering context
+  "group relative isolate overflow-hidden rounded-[2.5rem] transition-all duration-700 ease-out will-change-transform",
   {
     variants: {
       variant: {
         ethereal:
-          "bg-white/15 backdrop-blur-[24px] border-t border-l border-white/60 border-b border-r border-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_12px_40px_rgba(166,146,121,0.08)]",
+          // Extreme blur, micro ink border, sharp top highlight, and anchoring gravity shadow
+          "bg-white/20 backdrop-blur-[32px] border border-ethereal-ink/10 shadow-[0_24px_60px_-12px_rgba(22,20,18,0.15),inset_0_1px_0_rgba(255,255,255,0.4)]",
         solid:
-          "bg-ethereal-marble/95 border border-ethereal-incense/15 shadow-glass-solid",
-        dark: "bg-ethereal-ink/80 backdrop-blur-[48px] border border-ethereal-incense/20 text-ethereal-marble shadow-2xl",
+          "bg-ethereal-marble border border-ethereal-ink/10 shadow-[0_8px_30px_-4px_rgba(22,20,18,0.1)]",
+        dark: "bg-ethereal-ink/90 backdrop-blur-[48px] border border-ethereal-incense/20 text-ethereal-marble shadow-[0_30px_80px_-15px_rgba(0,0,0,0.5)]",
         outline:
-          "bg-transparent border border-ethereal-incense/30 hover:border-ethereal-gold hover:shadow-[0_4px_24px_rgba(194,168,120,0.15)]",
+          "bg-transparent border border-ethereal-incense/30 transition-colors hover:border-ethereal-gold hover:shadow-[0_8px_32px_rgba(194,168,120,0.15)]",
         light:
-          "bg-white/10 backdrop-blur-[4px] border-t border-l border-white/60 border-b border-r border-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_12px_40px_rgba(166,146,121,0.08)]",
+          // Subtle variance for secondary telemetry widgets
+          "bg-white/10 backdrop-blur-[5px]  border border-ethereal-ink/5 shadow-[0_12px_40px_-8px_rgba(22,20,18,0.08),inset_0_1px_0_rgba(255,255,255,0.3)]",
       },
       isHoverable: {
-        true: "hover:-translate-y-1.5 hover:scale-[1.002] cursor-pointer hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_20px_50px_rgba(166,146,121,0.15)] hover:bg-white/25",
+        // Leverages massive depth translation to convey tactile response
+        true: "hover:-translate-y-2 hover:scale-[1.002] cursor-pointer hover:shadow-[0_40px_80px_-16px_rgba(22,20,18,0.25),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/10 hover:border-ethereal-ink/15",
       },
       padding: {
         none: "p-0",
@@ -68,6 +73,7 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
     },
     ref,
   ) => {
+    // Kinematic vectors for the internal illumination matrix
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
 
@@ -95,14 +101,18 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
         style={props.style}
         {...props}
       >
+        {/*
+          THE KINEMATIC GLOW LAYER
+          Ethereal Gold refractions mapped to mouse coordinates.
+        */}
         {glow && (
           <motion.div
-            className="pointer-events-none absolute -inset-px rounded-[inherit] opacity-0 transition-opacity duration-700 group-hover:opacity-100 z-0"
+            className="pointer-events-none absolute -inset-px z-0 rounded-[inherit] opacity-0 transition-opacity duration-700 group-hover:opacity-100"
             style={{
               background: useMotionTemplate`
                 radial-gradient(
-                  300px circle at ${mouseX}px ${mouseY}px,
-                  rgba(255, 255, 255, 0.4),
+                  350px circle at ${mouseX}px ${mouseY}px,
+                  rgba(194, 168, 120, 0.08),
                   transparent 80%
                 )
               `,
@@ -111,6 +121,7 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
           />
         )}
 
+        {/* DOMAIN BACKGROUND INJECTION (Mix-blend applied for deep texture integration) */}
         {backgroundElement && (
           <div
             className="absolute inset-0 -z-20 overflow-hidden mix-blend-overlay"
@@ -120,13 +131,15 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
           </div>
         )}
 
+        {/* FILM GRAIN (Sacral texture micro-details) */}
         {withNoise && (
           <div
-            className="absolute inset-0 -z-10 bg-noise opacity-[0.03] mix-blend-color-burn pointer-events-none"
+            className="pointer-events-none absolute inset-0 -z-10 bg-noise opacity-[0.03] mix-blend-color-burn"
             aria-hidden="true"
           />
         )}
 
+        {/* CONTENT STRATUM */}
         <div className="relative z-10">{children}</div>
       </div>
     );

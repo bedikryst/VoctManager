@@ -1,7 +1,8 @@
 /**
  * @file UserLocalClock.tsx
  * @description Minimalist chronometer displaying the user's local time.
- * Conforms to Ethereal UI standards: pure glassmorphism, editorial micro-typography, and zero tech-debt.
+ * Conforms to Ethereal UI standards: strict hardware isolation, 'Lead Came' borders,
+ * semantic <time> markup, and mono-spaced typographic rhythm.
  * @module shared/widgets/utility/UserLocalClock
  */
 
@@ -34,7 +35,11 @@ export const UserLocalClock = (): React.JSX.Element | null => {
     userTimezone.split("/").pop()?.replace(/_/g, " ") || fallbackTimezone;
 
   return (
-    <div className="group flex items-center gap-4 rounded-2xl border border-ethereal-incense/15 bg-white/5 px-5 py-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_12px_rgba(166,146,121,0.05)] backdrop-blur-xl transition-colors duration-700 hover:border-ethereal-gold/30 hover:bg-white/10">
+    <div
+      className="group isolate flex items-center gap-4 rounded-2xl border border-ethereal-ink/10 bg-white/[0.03] px-5 py-2.5 shadow-[0_8px_20px_-6px_rgba(22,20,18,0.1),inset_0_1px_0_rgba(255,255,255,0.3)] backdrop-blur-[16px] transition-all duration-700 will-change-transform hover:-translate-y-0.5 hover:border-ethereal-ink/15 hover:bg-white/[0.06] hover:shadow-[0_12px_24px_-8px_rgba(22,20,18,0.15),inset_0_1px_0_rgba(255,255,255,0.5)]"
+      role="timer"
+      aria-live="polite"
+    >
       {/* Iconography: The Silent Escapement */}
       <div className="flex shrink-0 items-center justify-center">
         <Clock
@@ -47,9 +52,13 @@ export const UserLocalClock = (): React.JSX.Element | null => {
 
       {/* Typography: Editorial Chronometrics */}
       <div className="flex min-w-[75px] flex-col">
-        <span className="mb-1 font-serif text-[1.35rem] font-medium leading-none tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold">
+        {/* Semantic <time> with tabular-nums for rigid vertical alignment during ticks */}
+        <time
+          dateTime={time.toISOString()}
+          className="mb-1 tabular-nums font-serif text-[1.35rem] font-medium leading-none tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold"
+        >
           {formattedTime}
-        </span>
+        </time>
         <span className="max-w-[140px] truncate text-[8.5px] font-bold uppercase leading-none tracking-[0.2em] text-ethereal-graphite/70 transition-colors duration-500 group-hover:text-ethereal-graphite">
           {displayZone}{" "}
           <span className="mx-0.5 text-ethereal-gold/40" aria-hidden="true">

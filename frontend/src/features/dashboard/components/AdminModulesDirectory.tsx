@@ -1,7 +1,7 @@
 /**
  * @file AdminModulesDirectory.tsx
  * @description Centralised routing directory for Mission Control.
- * Encapsulates the module dictionary and renders a high-density grid.
+ * Encapsulates the module dictionary and renders an asymmetrical bento grid.
  * @module panel/dashboard/components/AdminModulesDirectory
  */
 
@@ -32,6 +32,8 @@ export function AdminModulesDirectory({
         icon: Briefcase,
         iconBgClass: "text-ethereal-gold",
         path: "/panel/projects",
+        // Klasy mapujące pozycję w siatce Bento
+        gridClass: "md:col-span-2 md:row-span-2",
       },
       {
         id: "logistics",
@@ -43,6 +45,7 @@ export function AdminModulesDirectory({
         icon: Map,
         iconBgClass: "text-ethereal-sage",
         path: "/panel/locations",
+        gridClass: "md:col-span-2 md:row-span-2",
       },
       {
         id: "archive",
@@ -54,6 +57,7 @@ export function AdminModulesDirectory({
         icon: Music,
         iconBgClass: "text-ethereal-graphite",
         path: "/panel/archive-management",
+        gridClass: "md:col-span-1 md:row-span-1",
       },
       {
         id: "artists",
@@ -65,6 +69,7 @@ export function AdminModulesDirectory({
         icon: Users,
         iconBgClass: "text-ethereal-amethyst",
         path: "/panel/artists",
+        gridClass: "md:col-span-1 md:row-span-1",
       },
       {
         id: "contracts",
@@ -76,6 +81,7 @@ export function AdminModulesDirectory({
         icon: FileText,
         iconBgClass: "text-ethereal-incense",
         path: "/panel/contracts",
+        gridClass: "md:col-span-1 md:row-span-1",
       },
       {
         id: "crew",
@@ -87,16 +93,23 @@ export function AdminModulesDirectory({
         icon: Wrench,
         iconBgClass: "text-ethereal-ink",
         path: "/panel/crew",
+        gridClass: "md:col-span-1 md:row-span-1",
       },
     ],
     [t],
   );
 
   return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:gap-6">
+    <div className="grid grid-cols-1 gap-1 md:grid-cols-4 md:gap-6 xl:gap-8">
       {ADMIN_MODULES.map((moduleConfig, index) => (
-        <motion.div key={moduleConfig.id} variants={itemKinematics}>
-          <SystemModuleCard index={index + 1} {...moduleConfig} />
+        <motion.div
+          key={moduleConfig.id}
+          variants={itemKinematics}
+          className={moduleConfig.gridClass}
+        >
+          <div className="h-full w-full">
+            <SystemModuleCard index={index + 1} {...moduleConfig} />
+          </div>
         </motion.div>
       ))}
     </div>
