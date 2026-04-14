@@ -1,75 +1,80 @@
 /**
- * @file SystemModuleStrip.tsx
- * @description Ultra-compact horizontal navigation primitive.
- * Layout: [Icon] | [Title / Features Stack].
+ * @file SystemModuleCard.tsx
+ * @description Refined Editorial Card.
+ * Indices are now integrated as subtle marginalia to preserve vertical density.
  * @architecture Enterprise SaaS 2026
- * @module shared/widgets/domain/SystemModuleStrip
  */
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { cn } from "@/shared/lib/utils";
 
-export interface SystemModuleStripProps {
+export interface SystemModuleCardProps {
+  index: number;
   title: string;
-  icon: React.ReactNode;
+  icon: React.ElementType;
   iconBgClass?: string;
   path: string;
   features?: string[];
 }
 
-export const SystemModuleStrip = ({
+export const SystemModuleCard = ({
+  index,
   title,
-  icon,
+  icon: Icon,
   iconBgClass,
   path,
   features = [],
-}: SystemModuleStripProps): React.JSX.Element => {
+}: SystemModuleCardProps): React.JSX.Element => {
+  const formattedIndex = index < 10 ? `0${index}` : index.toString();
+
   return (
-    <Link
-      to={path}
-      className="outline-none group block w-full rounded-[1.5rem] focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+    <GlassCard
+      variant="ethereal"
+      padding="none" // Manual padding control for tighter integration
+      className="group relative flex w-full flex-col overflow-hidden transition-all duration-700 ease-[0.16,1,0.3,1] hover:-translate-y-1 hover:border-ethereal-gold/30 hover:bg-white/25 hover:shadow-[0_20px_40px_rgba(194,168,120,0.1)]"
     >
-      <GlassCard
-        variant="ethereal"
-        padding="none"
-        className="transition-all duration-700 ease-out group-hover:bg-white/50 group-hover:border-ethereal-gold/40 group-hover:shadow-[0_8px_24px_rgba(194,168,120,0.1)]"
+      {/* BACKGROUND WATERMARK - Scaled down for compactness */}
+      <div
+        className={cn(
+          "absolute -right-4 -top-4 z-0 h-24 w-24 transform opacity-[0.03] transition-transform duration-1000 group-hover:scale-110 group-hover:opacity-[0.07]",
+          iconBgClass,
+        )}
+        aria-hidden="true"
       >
-        <div className="flex items-center pl-6 gap-4 p-3">
-          <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border backdrop-blur-md transition-transform duration-700 group-hover:scale-105",
-              iconBgClass ||
-                "border-ethereal-incense/20 bg-ethereal-incense/10 text-ethereal-incense",
-            )}
-          >
-            {icon}
-          </div>
+        <Icon className="h-full w-full" strokeWidth={0.75} />
+      </div>
 
-          <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
-            <h3 className="font-serif text-lg font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold truncate">
-              {title}
-            </h3>
-            {features.length > 0 && (
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-ethereal-graphite/50 truncate transition-colors duration-500 group-hover:text-ethereal-graphite/80">
-                {features.join(" • ")}
-              </p>
-            )}
-          </div>
-
-          <div className="shrink-0 opacity-0 -translate-x-2 transition-all duration-500 group-hover:opacity-100 group-hover:translate-x-0 pr-2">
-            <ArrowRight
-              size={14}
-              strokeWidth={2}
-              className="text-ethereal-gold"
-            />
-          </div>
+      <div className="relative z-10 flex flex-col p-6">
+        {/* TOP ROW: Index & Metadata */}
+        <div className="mb-4 flex items-center justify-between">
+          <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-incense/40 transition-colors duration-500 group-hover:text-ethereal-gold">
+            Index // {formattedIndex}
+          </span>
+          <div className={cn("h-1 w-1 rounded-full opacity-20", iconBgClass)} />
         </div>
-      </GlassCard>
-    </Link>
+
+        {/* TITLE - Pseudo-Overlay Link remains for A11y */}
+        <h3 className="mb-2 font-serif text-xl font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold">
+          <Link
+            to={path}
+            className="static outline-none before:absolute before:inset-0 before:z-20 focus-visible:before:ring-2 focus-visible:before:ring-ethereal-gold/40"
+          >
+            {title}
+          </Link>
+        </h3>
+
+        {/* FEATURES - High Density Inline List */}
+        {features.length > 0 && (
+          <p className="line-clamp-1 text-[10px] font-bold uppercase tracking-[0.1em] text-ethereal-graphite/40 transition-colors duration-500 group-hover:text-ethereal-graphite/60">
+            {features.join(" • ")}
+          </p>
+        )}
+      </div>
+
+      {/* ACCENT LINE - Kinetic border effect */}
+      <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-gradient-to-r from-ethereal-gold/0 via-ethereal-gold/40 to-ethereal-gold/0 transition-all duration-1000 group-hover:w-full" />
+    </GlassCard>
   );
 };
-
-SystemModuleStrip.displayName = "SystemModuleStrip";

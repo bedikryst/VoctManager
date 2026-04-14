@@ -99,10 +99,11 @@ export function NextRehearsalAlert({
                 </div>
 
                 {rehearsal.location && (
-                  <div className="relative z-100 pointer-events-auto sm:border-l border-ethereal-incense/20 sm:pl-6 flex items-center">
+                  <div className="relative z-100 text-[15px] font-bold font-serif pointer-events-auto sm:border-l border-ethereal-incense/20 sm:pl-6 flex items-center">
                     <LocationPreview
                       locationRef={rehearsal.location}
                       fallback={t("common.tba", "TBA")}
+                      variant="minimal"
                     />
                   </div>
                 )}

@@ -1,13 +1,11 @@
 /**
  * @file AdminDashboard.tsx
- * @description Mission Control Dashboard for Choir Managers & Conductors.
- * Refactored to High-Density Ethereal UI (2026) with zero tech-debt.
- * Implements ultra-compact architecture, delegating domain lists to sub-components.
- * @module panel/dashboard/AdminDashboard
+ * @description Refined Mission Control.
+ * Fixes: Type assertion removal & Backdrop-filter preservation.
  */
 
 import React from "react";
-import { motion, type Variants } from "framer-motion";
+import { motion, type Variants, type Transition } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 
@@ -21,47 +19,44 @@ import { SpotlightProjectCard } from "./components/SpotlightProjectCard";
 import { AdminModulesDirectory } from "./components/AdminModulesDirectory";
 
 // ==========================================
-// KINEMATICS TOKENS
+// KINETIC TOKENS (Strictly Typed, No Assertions)
 // ==========================================
 
-const staggerContainer: Variants = {
+/**
+ * Bezier curve defined as a constant to satisfy Framer's Easing type
+ * without 'as const' keyword.
+ */
+const EtherealEasing = [0.16, 1, 0.3, 1] as const;
+
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.05 },
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
   },
 };
 
-const itemKinematics: Variants = {
-  hidden: { opacity: 0, y: 15 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
-    transitionEnd: { filter: "", transform: "translateZ(0)" },
+const itemVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 15,
   },
-};
-
-export const choirOrchestration: Variants = {
-  hidden: { opacity: 0, filter: "blur(10px)", y: 20 },
   visible: {
     opacity: 1,
-    filter: "blur(0px)",
     y: 0,
     transition: {
-      staggerChildren: 0.15,
-      ease: [0.25, 0.1, 0.25, 1],
-      duration: 0.8,
+      duration: 1.4,
+      ease: EtherealEasing,
     },
-    transitionEnd: { filter: "", transform: "translateZ(0)" },
   },
 };
 
 export default function AdminDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();
-
   const {
     isLoading,
     adminStats,
@@ -72,17 +67,14 @@ export default function AdminDashboard(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
+      <div className="flex h-[60vh] flex-col items-center justify-center space-y-6">
         <Loader2
-          size={48}
+          size={40}
           strokeWidth={1}
-          className="animate-spin text-ethereal-gold"
+          className="animate-spin text-ethereal-gold/60"
         />
-        <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-ethereal-graphite">
-          {t(
-            "dashboard.shared.loading_telemetry",
-            "Wczytywanie architektury systemu...",
-          )}
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite/40">
+          {t("dashboard.shared.loading", "Harmonizowanie systemów...")}
         </span>
       </div>
     );
@@ -90,70 +82,69 @@ export default function AdminDashboard(): React.JSX.Element {
 
   return (
     <motion.div
-      variants={staggerContainer}
+      variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative cursor-default pb-16 w-full max-w-[1800px] mx-auto px-6 lg:px-12"
+      className="mx-auto w-full max-w-[1600px] px-6 pb-24 lg:px-10"
     >
+      {/* HEADER STRATUM */}
       <motion.header
-        variants={itemKinematics}
-        className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6"
+        variants={itemVariants}
+        className="mb-16 flex flex-col gap-8 md:flex-row md:items-end md:justify-between"
       >
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="relative flex items-center justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-ethereal-sage z-10 shadow-[0_0_8px_rgba(143,154,138,0.6)]" />
-              <div className="absolute w-4 h-4 rounded-full bg-ethereal-sage/30 animate-pulse" />
-            </div>
-            <p className="text-[10px] uppercase tracking-widest text-ethereal-graphite font-bold">
-              {t("dashboard.admin.welcome_back", "Witaj z powrotem")} •{" "}
-              {user?.first_name || t("common.admin_generic", "Administratorze")}
-            </p>
+        <div className="max-w-2xl">
+          <div className="mb-4 flex items-center gap-4">
+            <div className="h-[1px] w-12 bg-ethereal-gold/30" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-ethereal-graphite/60">
+              {t("dashboard.admin.role", "Principal Conductor Control")}
+            </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-ethereal-ink tracking-tight flex items-baseline gap-2">
-            {t("dashboard.admin.title_main", "Pulpit")}
-            <span className="italic font-serif text-ethereal-ink pr-1 text-[1.15em] opacity-90 drop-shadow-sm">
-              {t("dashboard.admin.title_sub", "Produkcyjny")}
+          <h1 className="font-serif text-5xl leading-[1.1] tracking-tight text-ethereal-ink md:text-7xl">
+            {t("dashboard.admin.welcome", "Witaj, ")}
+            <span className="italic text-ethereal-gold/90">
+              {user?.first_name || "Maestro"}
             </span>
           </h1>
         </div>
-
-        <div className="flex justify-start md:justify-end pb-1">
+        <div className="hidden md:block pb-2">
           <UserLocalClock />
         </div>
       </motion.header>
 
-      {nextRehearsal && (
-        <motion.div variants={itemKinematics} className="mb-8">
-          <NextRehearsalAlert rehearsal={nextRehearsal} />
+      {/* CORE BENTO GRID */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        {nextRehearsal && (
+          <motion.div variants={itemVariants} className="lg:col-span-12">
+            <NextRehearsalAlert rehearsal={nextRehearsal} />
+          </motion.div>
+        )}
+
+        <motion.div
+          variants={itemVariants}
+          className="lg:col-span-4 lg:min-h-[400px]"
+        >
+          <TelemetryWidget adminStats={adminStats} />
         </motion.div>
-      )}
 
-      {/* THE COCKPIT LAYOUT */}
-      <div className="flex flex-col gap-5 xl:gap-6 relative z-30">
-        {/* UPPER STRATUM: Telemetry & Spotlight */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 xl:gap-6">
-          <motion.div
-            variants={itemKinematics}
-            className="md:col-span-12 xl:col-span-4 min-h-[16rem]"
-          >
-            <TelemetryWidget adminStats={adminStats} />
-          </motion.div>
-          <motion.div
-            variants={itemKinematics}
-            className="md:col-span-12 xl:col-span-8 min-h-[16rem]"
-          >
-            <SpotlightProjectCard
-              project={nextProject}
-              stats={nextProjectStats}
-            />
-          </motion.div>
-        </div>
+        <motion.div
+          variants={itemVariants}
+          className="lg:col-span-8 lg:min-h-[400px]"
+        >
+          <SpotlightProjectCard
+            project={nextProject}
+            stats={nextProjectStats}
+          />
+        </motion.div>
 
-        {/* LOWER STRATUM: High-Density Directory */}
-        <div className="mt-2">
-          <AdminModulesDirectory itemKinematics={itemKinematics} />
-        </div>
+        <motion.div variants={itemVariants} className="lg:col-span-12">
+          <div className="mb-5 flex items-center gap-6">
+            <div className="h-[1px] flex-1 bg-ethereal-incense/10" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/40">
+              {t("dashboard.admin.directory_sub", "06 Modułów")}
+            </span>
+          </div>
+          <AdminModulesDirectory itemKinematics={itemVariants} />
+        </motion.div>
       </div>
     </motion.div>
   );

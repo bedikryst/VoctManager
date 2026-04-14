@@ -1,227 +1,183 @@
 /**
  * @file SpotlightProjectCard.tsx
- * @description Transcendent View for the Main Production Event.
- * Refactored to Ethereal UI Standards (2026): Zero Tech-Debt & Semantic Colour Space.
- * Features a solid foundation reveal on interaction and enriched project telemetry.
+ * @description The cinematic centerpiece. Now deeply integrated with
+ * temporal logic (Intl date formatting) and spatial kinematics (LocationPreview).
  * @architecture Enterprise SaaS 2026
- * @module panel/dashboard/components/SpotlightProjectCard
  */
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Calendar,
-  Clock,
-  ListOrdered,
-  MicVocal,
-  ArrowRight,
-  Briefcase,
-  Users,
-  ClipboardList,
-} from "lucide-react";
-
-import { formatLocalizedDate } from "@/shared/lib/time/intl";
-import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
-import { LocationPreview } from "../../logistics/components/LocationPreview";
+import { motion } from "framer-motion";
+import { Calendar, Users, Music, ArrowUpRight } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { cn } from "@/shared/lib/utils";
-import type { Project } from "@/shared/types";
-import { buttonVariants } from "@/shared/ui/primitives/Button";
+import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 
-export interface SpotlightProjectStats {
+const EtherealEasing = [0.16, 1, 0.3, 1] as const;
+
+export interface ProjectStatsDto {
+  castCount: number;
   piecesCount: number;
-  rehearsalsLeft: number;
+  rehearsalsRemaining: number;
 }
 
 export interface SpotlightProjectCardProps {
-  project: Project | null;
-  stats: SpotlightProjectStats | null;
+  project?: {
+    id: string;
+    title: string;
+    conductor?: string;
+    locationId?: string;
+    locationFallbackName?: string;
+    startDate?: string;
+    status?: "active" | "upcoming" | "archived";
+  };
+  stats?: ProjectStatsDto;
 }
 
 export function SpotlightProjectCard({
   project,
   stats,
 }: SpotlightProjectCardProps): React.JSX.Element {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
-  const castSize = project?.cast?.length ?? 0;
-  const hasRunSheet = project?.run_sheet && project.run_sheet.length > 0;
+  const formattedDate = useMemo(() => {
+    if (!project?.startDate) return null;
+    try {
+      const date = new Date(project.startDate);
+      return new Intl.DateTimeFormat(i18n.language, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(date);
+    } catch {
+      return null;
+    }
+  }, [project?.startDate, i18n.language]);
+
+  if (!project)
+    return (
+      <div className="h-full min-h-[400px] rounded-[2.5rem] bg-ethereal-incense/5 animate-pulse" />
+    );
+
+  const projectStats = stats ?? {
+    castCount: 0,
+    piecesCount: 0,
+    rehearsalsRemaining: 0,
+  };
 
   return (
-    <Link
-      to={project ? `/panel/projects/${project.id}` : "/panel/projects"}
-      className="block h-full outline-none group/project active:scale-[0.99] transition-all duration-500 rounded-[2.5rem] focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ethereal-alabaster"
-      aria-label={
-        project
-          ? project.title
-          : t("dashboard.admin.no_active_events", "Brak aktywnych wydarzeń")
+    <GlassCard
+      variant="ethereal"
+      padding="none"
+      className="group relative flex h-full min-h-[400px] w-full flex-col overflow-hidden transition-all duration-1000 ease-[0.16,1,0.3,1] hover:shadow-[0_32px_64px_rgba(166,146,121,0.15)]"
+      backgroundElement={
+        <div className="absolute -right-20 -top-20 h-[500px] w-[500px] rounded-full bg-ethereal-gold/10 blur-[120px] transition-transform duration-1000 group-hover:scale-110" />
       }
     >
-      <GlassCard
-        variant="light"
-        withNoise
-        padding="none"
-        className={cn(
-          "h-full flex flex-col justify-between !overflow-visible relative z-10 transition-all duration-700 ease-out",
-          "border-white/60 group-hover/project:border-ethereal-gold/40",
-          "group-hover/project:shadow-[0_16px_48px_rgba(194,168,120,0.15)]",
-        )}
-      >
-        {/* Subtle Background Glow Overlay */}
-        <div
-          className={cn(
-            "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-all duration-700 pointer-events-none",
-            "bg-gradient-to-br from-transparent to-transparent group-hover/project:from-ethereal-gold/5 group-hover/project:to-ethereal-sage/5",
-          )}
-          aria-hidden="true"
-        />
-
-        <div className="p-8 flex-1 rounded-t-[inherit]">
-          <div className="flex items-center gap-2 mb-6">
-            <Calendar size={16} className="text-ethereal-gold" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite group-hover/project:text-ethereal-gold transition-colors duration-500">
-              {t("dashboard.admin.spotlight_title", "Wydarzenie Główne")}
-            </span>
+      {/* 1. STATUS BAR */}
+      <div className="relative z-10 flex items-center justify-between px-10 pt-10">
+        <div className="flex items-center gap-4">
+          <div className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ethereal-gold opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-ethereal-gold" />
           </div>
-
-          {project && stats ? (
-            <div className="flex flex-col h-full justify-start relative z-10">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-serif text-ethereal-ink tracking-tight leading-tight mb-6 group-hover/project:text-ethereal-gold transition-colors duration-700">
-                {project.title}
-              </h2>
-
-              <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-ethereal-graphite">
-                <span className="flex items-center gap-2 bg-white/60 backdrop-blur-md px-3 py-2 rounded-xl border border-ethereal-incense/10 shadow-sm transition-colors duration-300 group-hover/project:border-ethereal-gold/30">
-                  <Calendar size={14} className="text-ethereal-gold" />
-                  {formatLocalizedDate(
-                    project.date_time,
-                    { day: "numeric", month: "short", year: "numeric" },
-                    undefined,
-                    project.timezone,
-                  )}
-                </span>
-
-                <div className="bg-white/60 backdrop-blur-md px-3 py-2 rounded-xl border border-ethereal-incense/10 shadow-sm flex items-center transition-colors duration-300 group-hover/project:border-ethereal-gold/30">
-                  <DualTimeDisplay
-                    value={project.date_time}
-                    timeZone={project.timezone}
-                    typography={"sans"}
-                    timeClassName="text-[11px]"
-                    icon={
-                      <Clock size={14} className="text-ethereal-gold mr-2" />
-                    }
-                  />
-                </div>
-
-                {project.location && (
-                  <div className="flex items-center bg-white/60 backdrop-blur-md rounded-xl shadow-sm transition-colors duration-300 group-hover/project:border-ethereal-gold/30">
-                    <LocationPreview
-                      locationRef={project.location}
-                      fallback={t("dashboard.admin.no_location", "TBA")}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 text-center h-full opacity-60">
-              <Briefcase size={32} className="text-ethereal-incense/40 mb-3" />
-              <p className="text-xs font-bold uppercase tracking-widest text-ethereal-graphite">
-                {t(
-                  "dashboard.admin.no_active_events",
-                  "Brak aktywnych wydarzeń",
-                )}
-              </p>
-            </div>
-          )}
+          <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-ethereal-graphite/60">
+            {project.status === "active"
+              ? t("dashboard.admin.spotlight.status_active", "W Produkcji")
+              : t("dashboard.admin.spotlight.status_prep", "W Przygotowaniu")}
+          </span>
         </div>
 
-        {/* Foundation Strip (Rozświetla się na biało przy najechaniu) */}
-        {project && stats && (
-          <div className="mt-auto rounded-b-[inherit] bg-transparent group-hover/project:bg-white/60 border-t border-ethereal-incense/15 group-hover/project:border-transparent transition-all duration-700 p-6 md:p-8">
-            <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
-              <div className="flex flex-wrap gap-x-8 gap-y-4">
-                {/* Metryka 1: Repertuar */}
-                <div className="flex flex-col gap-1.5 cursor-default">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite flex items-center gap-1.5 opacity-80">
-                    <ListOrdered size={12} className="text-ethereal-sage" />{" "}
-                    {t("dashboard.admin.repertoire", "Repertuar")}
-                  </span>
-                  <span className="text-sm font-bold text-ethereal-ink tabular-nums">
-                    {t("dashboard.admin.pieces_count", "{{count}} utworów", {
-                      count: stats.piecesCount,
-                    })}
-                  </span>
-                </div>
+        <button className="flex h-12 w-12 items-center justify-center rounded-full border border-ethereal-incense/20 bg-white/10 backdrop-blur-md transition-all duration-500 hover:scale-110 hover:border-ethereal-gold/40 hover:bg-white/30">
+          <ArrowUpRight
+            size={20}
+            strokeWidth={1.5}
+            className="text-ethereal-ink"
+          />
+        </button>
+      </div>
 
-                {/* Metryka 2: Próby */}
-                <div className="flex flex-col gap-1.5 cursor-default">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite flex items-center gap-1.5 opacity-80">
-                    <MicVocal size={12} className="text-ethereal-amethyst" />{" "}
-                    {t("dashboard.admin.to_concert", "Do koncertu")}
-                  </span>
-                  <span className="text-sm font-bold text-ethereal-ink tabular-nums">
-                    {t("dashboard.admin.rehearsals_left", "{{count}} prób", {
-                      count: stats.rehearsalsLeft,
-                    })}
-                  </span>
-                </div>
-
-                {/* Metryka 3: Obsada (Nowość) */}
-                <div className="flex flex-col gap-1.5 cursor-default">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite flex items-center gap-1.5 opacity-80">
-                    <Users size={12} className="text-ethereal-gold" />{" "}
-                    {t("dashboard.admin.cast_size", "Obsada")}
-                  </span>
-                  <span className="text-sm font-bold text-ethereal-ink tabular-nums">
-                    {t("dashboard.admin.cast_count", "{{count}} artystów", {
-                      count: castSize,
-                    })}
-                  </span>
-                </div>
-
-                {/* Metryka 4: Run-sheet (Nowość) */}
-                <div className="flex flex-col gap-1.5 cursor-default">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite flex items-center gap-1.5 opacity-80">
-                    <ClipboardList
-                      size={12}
-                      className="text-ethereal-incense"
-                    />{" "}
-                    {t("dashboard.admin.run_sheet", "Plan Dnia")}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-sm font-bold tabular-nums transition-colors duration-300",
-                      hasRunSheet
-                        ? "text-ethereal-sage"
-                        : "text-ethereal-graphite/60",
-                    )}
-                  >
-                    {hasRunSheet
-                      ? t("common.ready", "Gotowy")
-                      : t("common.pending", "Oczekuje")}
-                  </span>
-                </div>
+      {/* 2. CORE CONTENT */}
+      <div className="relative z-10 flex flex-1 flex-col justify-center px-10 py-12">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1, ease: EtherealEasing }}
+        >
+          {/* METADATA STRIP: Date & Interactive Location */}
+          <div className="mb-4 flex flex-wrap items-center gap-3 text-ethereal-sage">
+            {formattedDate && (
+              <div className="flex items-center gap-2">
+                <Calendar size={12} className="shrink-0" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                  {formattedDate}
+                </span>
               </div>
+            )}
 
-              <div
-                className={cn(
-                  buttonVariants({ variant: "primary", size: "default" }),
-                  "shrink-0 shadow-lg group-hover/project:bg-ethereal-gold group-hover/project:text-white group-hover/project:border-ethereal-gold group-hover/project:shadow-xl group-hover/project:shadow-ethereal-gold/20",
-                )}
-              >
-                {t("dashboard.admin.open_project", "Otwórz Projekt")}
-                <ArrowRight
-                  size={16}
-                  strokeWidth={2}
-                  className="transform group-hover/project:translate-x-1.5 transition-transform duration-500"
-                />
-              </div>
-            </div>
+            {formattedDate && (
+              <div className="h-1 w-1 rounded-full bg-ethereal-incense/30" />
+            )}
+
+            {/* PORTALED LOCATION PREVIEW (Minimal Variant) */}
+            <LocationPreview
+              locationRef={project.locationId}
+              fallback={project.locationFallbackName || "TBA"}
+              variant="minimal"
+              className="text-[10px] font-bold uppercase tracking-[0.2em]"
+            />
           </div>
-        )}
-      </GlassCard>
-    </Link>
+
+          <h2 className="mb-6 max-w-2xl font-serif text-5xl leading-[1.1] tracking-tight text-ethereal-ink md:text-6xl">
+            {project.title}
+          </h2>
+          <p className="font-serif text-xl italic text-ethereal-graphite opacity-80">
+            {t("common.conductor_prefix", "Maestro")}{" "}
+            {project.conductor || "TBA"}
+          </p>
+        </motion.div>
+      </div>
+
+      {/* 3. ARTIFACT STRATUM (Remains unchanged) */}
+      <div className="relative z-10 grid grid-cols-1 divide-y divide-ethereal-incense/10 border-t border-ethereal-incense/10 bg-white/5 backdrop-blur-sm sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="flex flex-col gap-1 p-8 transition-colors duration-500 hover:bg-white/20">
+          <div className="flex items-center gap-2 text-ethereal-incense">
+            <Users size={14} />
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
+              {t("dashboard.admin.spotlight.cast", "Obsada")}
+            </span>
+          </div>
+          <p className="font-serif text-3xl text-ethereal-ink">
+            {projectStats.castCount}{" "}
+            <span className="text-sm italic opacity-40">voices</span>
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1 p-8 transition-colors duration-500 hover:bg-white/20">
+          <div className="flex items-center gap-2 text-ethereal-incense">
+            <Music size={14} />
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
+              {t("dashboard.admin.spotlight.program", "Repertuar")}
+            </span>
+          </div>
+          <p className="font-serif text-3xl text-ethereal-ink">
+            {projectStats.piecesCount}{" "}
+            <span className="text-sm italic opacity-40">scores</span>
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1 p-8 transition-colors duration-500 hover:bg-white/20">
+          <div className="flex items-center gap-2 text-ethereal-incense">
+            <Calendar size={14} />
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
+              {t("dashboard.admin.spotlight.remaining", "Do Premiery")}
+            </span>
+          </div>
+          <p className="font-serif text-3xl text-ethereal-gold">
+            {projectStats.rehearsalsRemaining}{" "}
+            <span className="text-sm italic opacity-40">rehearsals</span>
+          </p>
+        </div>
+      </div>
+    </GlassCard>
   );
 }

@@ -19,7 +19,7 @@ import {
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
-import { SystemModuleStrip } from "@/shared/widgets/domain/SystemModuleCard";
+import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
@@ -178,7 +178,7 @@ export default function ArtistDashboard(): React.JSX.Element {
         <StaggeredBentoContainer className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {ARTIST_MODULES.map((mod) => (
             <StaggeredBentoItem key={mod.id} className="h-full">
-              <SystemModuleStrip {...mod} />
+              <SystemModuleCard {...mod} />
             </StaggeredBentoItem>
           ))}
         </StaggeredBentoContainer>

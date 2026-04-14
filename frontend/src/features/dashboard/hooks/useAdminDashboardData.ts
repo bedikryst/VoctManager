@@ -1,7 +1,8 @@
 /**
  * @file useAdminDashboardData.ts
- * @description Encapsulates data fetching, telemetric aggregations, and scheduling logic
- * for the Mission Control Dashboard. Computes global KPIs and upcoming event alerts.
+ * @description Encapsulates data fetching, telemetric aggregations, and scheduling logic.
+ * Implements strict Adapter Pattern to map raw API domain to UI DTOs.
+ * @architecture Enterprise SaaS 2026
  * @module panel/dashboard/hooks/useAdminDashboardData
  */
 
@@ -20,6 +21,11 @@ import type {
   ProgramItem,
   Piece,
 } from "@/shared/types";
+
+// UI DTOs imports (assuming they are exported from their respective components,
+// or define them here / in a central DTO file)
+import type { AdminTelemetryStatsDto } from "../components/TelemetryWidget";
+import type { ProjectStatsDto } from "../components/SpotlightProjectCard";
 
 export interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;
@@ -57,17 +63,21 @@ export const useAdminDashboardData = () => {
   });
 
   const isLoading = results.some((q) => q.isLoading);
+  const isError = results.some((q) => q.isError);
 
-  const projects = results[0].data || [];
-  const rehearsals = results[1].data || [];
-  const artists = results[2].data || [];
-  const programItems = results[3].data || [];
-  const pieces = results[4].data || [];
+  // Safe fallback to prevent runtime crashes
+  const projects = results[0].data ?? [];
+  const rehearsals = results[1].data ?? [];
+  const artists = results[2].data ?? [];
+  const programItems = results[3].data ?? [];
+  const pieces = results[4].data ?? [];
 
-  const adminStats = useMemo(() => {
+  // 1. TELEMETRY AGGREGATION
+  const adminStats: AdminTelemetryStatsDto = useMemo(() => {
     const activeProjects = projects.filter(
       (p) => p.status === "ACTIVE" || p.status === "DRAFT",
     ).length;
+
     const totalPieces = pieces.length;
     const activeArtistsList = artists.filter((a) => a.is_active);
 
@@ -86,13 +96,15 @@ export const useAdminDashboardData = () => {
     return { activeProjects, totalPieces, satb };
   }, [projects, pieces, artists]);
 
-  const nextProject = useMemo(() => {
+  // 2. SPOTLIGHT NEXT PROJECT
+  const rawNextProject = useMemo(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
     const upcoming = projects.filter((p) => {
       if (p.status === "DONE" || p.status === "CANC") return false;
       if (!p.date_time) return false;
+
       const projDate = new Date(p.date_time);
       return !isNaN(projDate.getTime()) && projDate >= todayStart;
     });
@@ -100,28 +112,62 @@ export const useAdminDashboardData = () => {
     return (
       upcoming.sort(
         (a, b) =>
-          new Date(a.date_time).getTime() - new Date(b.date_time).getTime(),
-      )[0] || null
+          new Date(a.date_time!).getTime() - new Date(b.date_time!).getTime(),
+      )[0] ?? null
     );
   }, [projects]);
 
-  const nextProjectStats = useMemo(() => {
-    if (!nextProject) return null;
+  const nextProject = useMemo(() => {
+    if (!rawNextProject) return undefined;
+
+    return {
+      id: String(rawNextProject.id),
+      title: rawNextProject.title,
+      conductor:
+        ((rawNextProject as any).conductor_name as string) || undefined,
+      locationId: rawNextProject.location
+        ? String(rawNextProject.location)
+        : undefined,
+      locationFallbackName:
+        ((rawNextProject as any).location_name as string) || undefined,
+      startDate: rawNextProject.date_time,
+      status: rawNextProject.status?.toLowerCase() as
+        | "active"
+        | "upcoming"
+        | "archived",
+    };
+  }, [rawNextProject]);
+
+  // 3. SPOTLIGHT STATS
+  const nextProjectStats: ProjectStatsDto | undefined = useMemo(() => {
+    if (!rawNextProject) return undefined;
+
     const now = new Date();
+
     const piecesCount = programItems.filter(
-      (pi) => String(pi.project) === String(nextProject.id),
+      (pi) => String(pi.project) === String(rawNextProject.id),
     ).length;
-    const rehearsalsLeft = rehearsals.filter((r) => {
-      if (String(r.project) !== String(nextProject.id) || !r.date_time)
+
+    const rehearsalsRemaining = rehearsals.filter((r) => {
+      if (String(r.project) !== String(rawNextProject.id) || !r.date_time)
         return false;
       const rehDate = new Date(r.date_time);
       return !isNaN(rehDate.getTime()) && rehDate > now;
     }).length;
-    return { piecesCount, rehearsalsLeft };
-  }, [nextProject, programItems, rehearsals]);
 
+    // TODO: Determine actual cast count from API if casting logic exists.
+    // Assuming active artists as placeholder, or `rawNextProject.cast_count` if backend provides it.
+    const castCount =
+      (rawNextProject as any).cast_count ??
+      artists.filter((a) => a.is_active).length;
+
+    return { piecesCount, rehearsalsRemaining, castCount };
+  }, [rawNextProject, programItems, rehearsals, artists]);
+
+  // 4. NEXT REHEARSAL ALERT
   const nextRehearsal = useMemo(() => {
     const now = new Date();
+    // Rehearsal stays active up to 2 hours past its start time
     const threshold = new Date(now.getTime() - 2 * 60 * 60 * 1000);
 
     const futureRehearsals = rehearsals
@@ -132,7 +178,7 @@ export const useAdminDashboardData = () => {
       })
       .sort(
         (a, b) =>
-          new Date(a.date_time).getTime() - new Date(b.date_time).getTime(),
+          new Date(a.date_time!).getTime() - new Date(b.date_time!).getTime(),
       );
 
     if (futureRehearsals.length > 0) {
@@ -152,6 +198,7 @@ export const useAdminDashboardData = () => {
 
   return {
     isLoading,
+    isError,
     adminStats,
     nextProject,
     nextProjectStats,

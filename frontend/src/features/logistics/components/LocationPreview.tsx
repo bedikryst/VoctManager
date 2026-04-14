@@ -20,12 +20,14 @@ interface LocationPreviewProps {
   locationRef: string | LocationDto | unknown;
   fallback?: string;
   className?: string;
+  variant?: "badge" | "minimal";
 }
 
 export const LocationPreview = ({
   locationRef,
   fallback,
   className = "",
+  variant = "badge",
 }: LocationPreviewProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { resolveLocation } = useLocationResolver();
@@ -41,14 +43,11 @@ export const LocationPreview = ({
   const displayFallback =
     fallback || t("logistics.preview.unknown_location", "Nieznana lokacja");
 
-  // THE KINEMATIC POSITIONING ENGINE (Portal Math)
   const updatePosition = () => {
     if (!anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    const POPOVER_WIDTH = 288; // w-72 = 18rem = 288px
+    const POPOVER_WIDTH = 288;
     const MARGIN = 16;
-
-    // Zapobiegamy ucieczce mapy poza prawą krawędź ekranu (Auto-Alignment)
     const isRightAligned =
       rect.left + POPOVER_WIDTH > window.innerWidth - MARGIN;
 
@@ -57,14 +56,13 @@ export const LocationPreview = ({
       top: `${rect.bottom + 8}px`,
       left: isRightAligned ? "auto" : `${rect.left}px`,
       right: isRightAligned ? `${window.innerWidth - rect.right}px` : "auto",
-      zIndex: 99999, // Absolutna dominacja portalowa
+      zIndex: 99999,
     });
   };
 
   useEffect(() => {
     if (isOpen) {
       updatePosition();
-      // True w addEventListener gwarantuje wychwycenie scrolla z dowolnego elementu nadrzędnego
       window.addEventListener("scroll", updatePosition, true);
       window.addEventListener("resize", updatePosition);
     }
@@ -133,9 +131,7 @@ export const LocationPreview = ({
         )}
       >
         <MapPin size={12} className="shrink-0" />
-        <span className="truncate text-[10px] font-bold uppercase tracking-widest">
-          {displayFallback}
-        </span>
+        <span className="truncate tracking-widest">{displayFallback}</span>
       </span>
     );
   }
@@ -146,18 +142,22 @@ export const LocationPreview = ({
     !isNaN(Number(location.latitude)) &&
     !isNaN(Number(location.longitude));
 
+  // Variant Styles Architecture
+  const anchorStyles =
+    variant === "badge"
+      ? "rounded-lg border border-ethereal-incense/20 bg-white/5 px-2.5 py-1.5 backdrop-blur-md hover:border-ethereal-gold/40 hover:bg-white/10"
+      : "bg-transparent p-0 hover:text-ethereal-gold transition-colors duration-500";
+
   return (
-    // ZMIANA: Usunięto relative div, kontenerem jest teraz pusty fragment,
-    // ponieważ zakotwiczamy się bezpośrednio do buttona i document.body
     <>
-      {/* THE ANCHOR BADGE */}
       <button
         ref={anchorRef}
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "group flex items-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-white/5 px-2.5 py-1.5 backdrop-blur-md transition-all duration-500 hover:border-ethereal-gold/40 hover:bg-white/10",
+          "group flex items-center gap-1.5 transition-all duration-500",
+          anchorStyles,
           className,
         )}
       >
@@ -165,12 +165,12 @@ export const LocationPreview = ({
           size={12}
           className="shrink-0 text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold"
         />
-        <span className="truncate text-[10px] font-bold uppercase tracking-widest text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold">
+        <span className="truncate tracking-widest text-inherit transition-colors duration-500 group-hover:text-ethereal-gold">
           {location.name}
         </span>
       </button>
 
-      {/* THE ETHEREAL POPOVER (PORTALED to <body>) */}
+      {/* THE ETHEREAL POPOVER (PORTALED) */}
       {typeof document !== "undefined" &&
         createPortal(
           <AnimatePresence>
@@ -188,12 +188,11 @@ export const LocationPreview = ({
                 animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
                 exit={{ opacity: 0, y: -5, scale: 0.95, filter: "blur(4px)" }}
                 transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                // ZMIANA: Usunięto 'absolute left-0 top-full mt-3'. Style aplikuje nasz silnik.
                 className="flex w-72 cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-ethereal-gold/80 bg-white/70 p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_24px_64px_rgba(166,146,121,0.25)] backdrop-blur-[32px]"
                 style={popoverStyle}
                 onClick={openInGoogleMaps}
               >
-                {/* MAP PREVIEW COMPARTMENT */}
+                {/* ... (Wnętrze mapy pozostaje bez zmian, używa Twojego doskonałego kodu) */}
                 <div className="relative z-0 h-32 w-full overflow-hidden rounded-[1.5rem]">
                   {hasCoordinates ? (
                     <div className="group relative h-full w-full grayscale-[0.2] transition-all duration-700 hover:grayscale-0">
@@ -232,16 +231,13 @@ export const LocationPreview = ({
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-white/20">
                       <span className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite/60">
-                        {t(
-                          "logistics.preview.no_map",
-                          "Brak współrzędnych mapy",
-                        )}
+                        {t("logistics.preview.no_map", "Brak współrzędnych")}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* LOCATION DETAILS COMPARTMENT (The Reading Pedestal) */}
+                {/* DETAILS COMPARTMENT */}
                 <div className="group/details relative z-20 mt-1.5 flex flex-col gap-3 rounded-[1.5rem] bg-ethereal-marble/95 p-5 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl">
                   <div>
                     <div className="mb-2 flex items-start justify-between">
@@ -262,8 +258,6 @@ export const LocationPreview = ({
                       {location.formatted_address}
                     </p>
                   </div>
-
-                  {/* ACTION FOOTER */}
                   <div className="mt-2 flex items-center justify-between border-t border-ethereal-incense/15 pt-4 transition-colors duration-700 group-hover/details:border-ethereal-gold/30">
                     <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/70 transition-colors duration-500 group-hover/details:text-ethereal-gold">
                       {t("logistics.preview.get_directions", "Wyznacz trasę")}
@@ -272,7 +266,6 @@ export const LocationPreview = ({
                       size={14}
                       strokeWidth={1.5}
                       className="text-ethereal-incense/50 transition-all duration-700 group-hover/details:translate-x-1 group-hover/details:text-ethereal-gold"
-                      aria-hidden="true"
                     />
                   </div>
                 </div>

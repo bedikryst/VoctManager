@@ -2,16 +2,16 @@
  * @file TelemetryWidget.tsx
  * @description System KPIs and SATB Readiness visualisation.
  * Refactored to Ethereal UI (2026): Alabaster aesthetics, soft-light telemetry,
- * and monumental serif typography for primary metrics. Zero tech-debt.
+ * and monumental serif typography. Introduces 'Resonance Pillars' for SATB.
  * @architecture Enterprise SaaS 2026
  * @module panel/dashboard/components/TelemetryWidget
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Activity } from "lucide-react";
+import { motion } from "framer-motion";
+import { Activity, LucideSunMedium, MusicIcon } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { ProgressBar } from "@/shared/ui/primitives/ProgressBar";
 import { cn } from "@/shared/lib/utils";
 
 export interface VoiceStatsDto {
@@ -32,12 +32,13 @@ export interface TelemetryWidgetProps {
   adminStats?: AdminTelemetryStatsDto;
 }
 
+const EtherealEasing = [0.16, 1, 0.3, 1] as const;
+
 export function TelemetryWidget({
   adminStats,
 }: TelemetryWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  // Fallback state ensures graceful degradation if telemetry is momentarily unavailable.
   const stats = adminStats ?? {
     totalPieces: 0,
     activeProjects: 0,
@@ -46,91 +47,143 @@ export function TelemetryWidget({
 
   /**
    * Semantic Voice Mapping (SATB).
-   * Utilises core Ethereal UI tokens to distinguish vocal registers.
+   * Defines 'Resonance Pillars' colors and bespoke shadows for the ethereal glow.
    */
-  const voices = [
-    { label: "S", val: stats.satb.S, colourClass: "bg-ethereal-gold" },
-    { label: "A", val: stats.satb.A, colourClass: "bg-ethereal-amethyst" },
-    { label: "T", val: stats.satb.T, colourClass: "bg-ethereal-sage" },
-    { label: "B", val: stats.satb.B, colourClass: "bg-ethereal-incense" },
-  ];
+  const voices = useMemo(
+    () => [
+      {
+        label: "S",
+        val: stats.satb.S,
+        color: "bg-ethereal-gold",
+        shadow: "shadow-[0_0_16px_rgba(194,168,120,0.6)]",
+      },
+      {
+        label: "A",
+        val: stats.satb.A,
+        color: "bg-ethereal-amethyst",
+        shadow: "shadow-[0_0_16px_rgba(155,138,164,0.6)]",
+      },
+      {
+        label: "T",
+        val: stats.satb.T,
+        color: "bg-ethereal-sage",
+        shadow: "shadow-[0_0_16px_rgba(143,154,138,0.6)]",
+      },
+      {
+        label: "B",
+        val: stats.satb.B,
+        color: "bg-ethereal-incense",
+        shadow: "shadow-[0_0_16px_rgba(166,146,121,0.6)]",
+      },
+    ],
+    [stats.satb],
+  );
+
+  // Calculate dynamic scale for the equalizer effect
+  const maxVoiceVal = Math.max(...voices.map((v) => v.val), 1);
 
   return (
     <GlassCard
       variant="light"
       withNoise
-      className="h-full p-8 flex flex-col justify-between"
+      className="flex h-full w-full flex-col justify-between p-8 md:p-10"
     >
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-8 border-b border-ethereal-incense/15 pb-4">
+      {/* UPPER STRATUM: KPIs */}
+      <div className="relative z-10 flex flex-col">
+        <header className="mb-8 flex items-center gap-3 border-b border-ethereal-incense/15 pb-5">
           <Activity
-            size={16}
+            size={14}
             strokeWidth={1.5}
-            className="text-ethereal-sage"
+            className="text-ethereal-gold"
             aria-hidden="true"
           />
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite">
+          <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite">
             {t("dashboard.admin.kpi_telemetry", "System Telemetry")}
           </span>
-        </div>
+        </header>
 
-        <div className="grid grid-cols-2 gap-8 mb-10">
-          <div className="flex flex-col gap-1 cursor-default">
-            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-ethereal-incense">
+        <div className="grid grid-cols-2 gap-6">
+          <article className="group flex cursor-default flex-col gap-2">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
               {t("dashboard.admin.kpi_pieces", "Repertoire")}
-            </p>
-            <p className="font-serif text-5xl font-medium text-ethereal-ink tracking-tight">
+            </h3>
+            <p className="font-serif text-5xl font-medium tracking-tight text-ethereal-ink lg:text-6xl">
               {stats.totalPieces}
             </p>
-          </div>
-          <div className="flex flex-col gap-1 cursor-default">
-            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-ethereal-incense">
+          </article>
+          <article className="group flex cursor-default flex-col gap-2 border-l border-ethereal-incense/10 pl-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
               {t("dashboard.admin.kpi_active_projects", "Active Projects")}
-            </p>
-            <p className="font-serif text-5xl font-medium text-ethereal-gold tracking-tight">
+            </h3>
+            <p className="font-serif text-5xl font-medium tracking-tight text-ethereal-gold lg:text-6xl">
               {stats.activeProjects}
             </p>
-          </div>
+          </article>
         </div>
       </div>
 
-      <div className="mt-auto relative z-10">
-        <div className="flex justify-between items-baseline mb-5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-ethereal-graphite">
-            {t("dashboard.admin.kpi_readiness", "Ensemble Readiness")}
-          </p>
-          <span className="text-[11px] font-bold text-ethereal-ink tabular-nums">
-            {stats.satb.Total} {t("common.persons_short", "pax")}
+      {/* LOWER STRATUM: SATB Resonance Pillars */}
+      <div className="relative z-10 mt-12 flex flex-col">
+        <div className="mb-6 flex items-baseline justify-between border-t border-ethereal-incense/10 pt-6">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/60">
+            {t("dashboard.admin.kpi_readiness", "Gotowość Głosów")}
+          </h3>
+          <span className="text-[11px] font-medium tracking-widest text-ethereal-ink tabular-nums">
+            {stats.satb.Total}
           </span>
         </div>
 
+        {/* The Acoustic Equalizer */}
         <div
-          className="space-y-3.5"
+          className="flex h-24 items-end justify-between px-2"
           role="list"
           aria-label={t(
             "dashboard.admin.satb_distribution",
-            "SATB voice distribution",
+            "Dystrybucja Głosów SATB",
           )}
         >
-          {voices.map((v) => (
-            <div key={v.label} className="group/bar flex items-center gap-3">
-              <span className="w-4 text-[11px] font-bold text-ethereal-ink uppercase text-right">
-                {v.label}
-              </span>
-              <div className="flex-1">
-                <ProgressBar
-                  value={v.val}
-                  total={stats.satb.Total || 1} // Prevent division by zero mathematically
-                  colorClass={cn(
-                    v.colourClass,
-                    "h-1.5 transition-all duration-700 ease-out",
-                  )}
-                  aria-hidden="true"
-                  label=""
-                />
+          {voices.map((v, index) => {
+            const heightPercentage = `${(v.val / maxVoiceVal) * 100}%`;
+
+            return (
+              <div
+                key={v.label}
+                className="group relative flex h-full w-12 flex-col items-center justify-end"
+                role="listitem"
+              >
+                {/* Value Tooltip (Appears on hover) */}
+                <span className="absolute -top-6 text-[11px] font-bold text-ethereal-ink opacity-0 transition-opacity duration-500 group-hover:opacity-100 tabular-nums">
+                  {v.val}
+                </span>
+
+                {/* The Track (Background) */}
+                <div className="relative flex h-full w-[2px] flex-col justify-end overflow-visible bg-ethereal-incense/10 rounded-full">
+                  {/* The Pillar (Active Fill with Kinematics) */}
+                  <motion.div
+                    initial={{ height: "0%" }}
+                    animate={{ height: heightPercentage }}
+                    transition={{
+                      duration: 1.8,
+                      delay: 0.4 + index * 0.1, // Staggered entry matching music notation
+                      ease: EtherealEasing,
+                    }}
+                    className={cn(
+                      "w-full rounded-full transition-all duration-700",
+                      v.color,
+                      "group-hover:w-[4px] group-hover:-ml-[1px]", // Subtle expansion on hover
+                      v.shadow, // Applies bespoke glow
+                    )}
+                    aria-hidden="true"
+                  />
+                </div>
+
+                {/* Voice Label */}
+                <span className="mt-3 text-[10px] font-bold text-ethereal-graphite/60 transition-colors duration-500 group-hover:text-ethereal-ink">
+                  {v.label}
+                </span>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </GlassCard>
