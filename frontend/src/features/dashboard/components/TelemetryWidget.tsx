@@ -57,7 +57,7 @@ export function TelemetryWidget({
 
   return (
     <GlassCard
-      variant="ethereal"
+      variant="light"
       withNoise
       className="h-full p-8 flex flex-col justify-between"
     >

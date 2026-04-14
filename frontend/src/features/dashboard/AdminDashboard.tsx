@@ -28,18 +28,18 @@ const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.05 }, // Błyskawiczne, kaskadowe wejście
+    transition: { staggerChildren: 0.05 },
   },
 };
 
 const itemKinematics: Variants = {
-  hidden: { opacity: 0, y: 15, filter: "blur(8px)" },
+  hidden: { opacity: 0, y: 15 },
   visible: {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
     transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
-    transitionEnd: { filter: "", transform: "none" },
+    transitionEnd: { filter: "", transform: "translateZ(0)" },
   },
 };
 
@@ -54,6 +54,7 @@ export const choirOrchestration: Variants = {
       ease: [0.25, 0.1, 0.25, 1],
       duration: 0.8,
     },
+    transitionEnd: { filter: "", transform: "translateZ(0)" },
   },
 };
 

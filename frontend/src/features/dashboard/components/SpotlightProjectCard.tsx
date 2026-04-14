@@ -59,7 +59,7 @@ export function SpotlightProjectCard({
       }
     >
       <GlassCard
-        variant="ethereal"
+        variant="light"
         withNoise
         padding="none"
         className={cn(
@@ -106,6 +106,8 @@ export function SpotlightProjectCard({
                   <DualTimeDisplay
                     value={project.date_time}
                     timeZone={project.timezone}
+                    typography={"sans"}
+                    timeClassName="text-[11px]"
                     icon={
                       <Clock size={14} className="text-ethereal-gold mr-2" />
                     }

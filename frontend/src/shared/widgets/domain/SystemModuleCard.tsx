@@ -35,12 +35,9 @@ export const SystemModuleStrip = ({
       <GlassCard
         variant="ethereal"
         padding="none"
-        // Przeniesiono flex i padding głębiej, tutaj zostawiamy tylko efekty wizualne i przejścia
         className="transition-all duration-700 ease-out group-hover:bg-white/50 group-hover:border-ethereal-gold/40 group-hover:shadow-[0_8px_24px_rgba(194,168,120,0.1)]"
       >
-        {/* WEWNĘTRZNA WARSTWA LAYOUTU - to rozwiązuje problem flexboxa */}
-        <div className="flex items-center gap-4 p-3">
-          {/* Lewa strona: Heraldic Icon */}
+        <div className="flex items-center pl-6 gap-4 p-3">
           <div
             className={cn(
               "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border backdrop-blur-md transition-transform duration-700 group-hover:scale-105",
@@ -51,7 +48,6 @@ export const SystemModuleStrip = ({
             {icon}
           </div>
 
-          {/* Prawa strona: Two-line stack */}
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
             <h3 className="font-serif text-lg font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold truncate">
               {title}
@@ -63,7 +59,6 @@ export const SystemModuleStrip = ({
             )}
           </div>
 
-          {/* Strzałka nawigacyjna - wjeżdża z lewej przy hoverze */}
           <div className="shrink-0 opacity-0 -translate-x-2 transition-all duration-500 group-hover:opacity-100 group-hover:translate-x-0 pr-2">
             <ArrowRight
               size={14}

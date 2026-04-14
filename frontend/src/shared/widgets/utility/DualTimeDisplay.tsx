@@ -6,7 +6,7 @@
  * @module shared/widgets/utility/DualTimeDisplay
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { cva, type VariantProps } from "class-variance-authority";
 import { formatLocalizedTime } from "@/shared/lib/time/intl";
@@ -26,10 +26,22 @@ const containerVariants = cva("flex flex-col transition-all duration-300", {
 });
 
 const primaryTimeVariants = cva(
-  "flex items-center gap-2 font-semibold text-stone-800 tracking-tight",
+  "flex items-center gap-2 font-medium text-ethereal-ink tracking-wide",
+  {
+    variants: {
+      typography: {
+        serif: "font-serif text-[1.1em]",
+        sans: "font-sans text-base tabular-nums",
+      },
+    },
+    defaultVariants: {
+      typography: "serif",
+    },
+  },
 );
+
 const localTimeVariants = cva(
-  "text-[10px] font-bold text-stone-400 uppercase tracking-[0.15em] pl-6 opacity-80",
+  "text-[10px] font-bold text-ethereal-incense uppercase tracking-[0.2em] opacity-80",
 );
 
 export interface DualTimeDisplayProps extends VariantProps<
@@ -39,6 +51,9 @@ export interface DualTimeDisplayProps extends VariantProps<
   timeZone?: string;
   label?: React.ReactNode;
   icon?: React.ReactNode;
+  typography?: VariantProps<typeof primaryTimeVariants>["typography"];
+  className?: string;
+  timeClassName?: string;
 }
 
 export const DualTimeDisplay = ({
@@ -47,9 +62,21 @@ export const DualTimeDisplay = ({
   label,
   icon,
   spacing,
+  typography,
+  className,
+  timeClassName,
 }: DualTimeDisplayProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const { user } = useAuth();
+
+  const isoDateString = useMemo(() => {
+    if (!value) return undefined;
+    try {
+      return new Date(value).toISOString();
+    } catch {
+      return undefined;
+    }
+  }, [value]);
 
   if (!value) return null;
 
@@ -72,28 +99,54 @@ export const DualTimeDisplay = ({
   };
 
   return (
-    <div className={cn(containerVariants({ spacing }))}>
-      <span className={primaryTimeVariants()}>
-        {icon && <span aria-hidden="true">{icon}</span>}
-        {label && <span>{label}</span>}
-        {formatLocalizedTime(
-          value,
-          primaryTimeOptions,
-          undefined,
-          eventTimezone,
+    <div className={cn(containerVariants({ spacing }), className)}>
+      <div className={cn(primaryTimeVariants({ typography }), timeClassName)}>
+        {icon && (
+          <span
+            aria-hidden="true"
+            className="text-ethereal-gold/70 shrink-0 flex items-center"
+          >
+            {icon}
+          </span>
         )}
-      </span>
 
-      {hasDiffTz && (
-        <span className={localTimeVariants()}>
+        {label && (
+          <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/80 mr-1">
+            {label}
+          </span>
+        )}
+
+        <time dateTime={isoDateString} className="whitespace-nowrap">
           {formatLocalizedTime(
             value,
-            localTimeOptions,
+            primaryTimeOptions,
             undefined,
-            userTimezone,
-          )}{" "}
-          {t("common.time.localSuffix", "(Twój czas)")}
-        </span>
+            eventTimezone,
+          )}
+        </time>
+      </div>
+
+      {hasDiffTz && (
+        <div className="flex items-center">
+          {icon && (
+            <span className="w-5 shrink-0 invisible" aria-hidden="true" />
+          )}
+
+          <time dateTime={isoDateString} className={localTimeVariants()}>
+            <span className="sr-only">
+              {t("common.time.localAria", "Twój czas lokalny to:")}
+            </span>
+            {formatLocalizedTime(
+              value,
+              localTimeOptions,
+              undefined,
+              userTimezone,
+            )}{" "}
+            <span className="font-normal text-ethereal-incense/60">
+              {t("common.time.localSuffix", "(Twój czas)")}
+            </span>
+          </time>
+        </div>
       )}
     </div>
   );
