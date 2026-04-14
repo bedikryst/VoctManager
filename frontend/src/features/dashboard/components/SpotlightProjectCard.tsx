@@ -162,17 +162,20 @@ export function SpotlightProjectCard({
           >
             {project.title}
           </motion.h2>
-          {!project.conductor && (
-            <motion.p
-              variants={textFadeUp}
-              className="font-serif text-xl italic text-ethereal-graphite opacity-80"
-            >
-              {t("common.conductor_prefix", "Maestro")}{" "}
-              <span className="font-medium text-ethereal-ink">
-                {project.conductor || t("common.tba", "TBA")}
-              </span>
-            </motion.p>
-          )}
+          {!project.conductor ||
+            (project.conductor.split("(").at(-1) == "Conductor)" && (
+              <motion.p
+                variants={textFadeUp}
+                className="font-serif text-xl italic text-ethereal-graphite opacity-80"
+              >
+                {t("common.conductor_prefix", "Maestro")}{" "}
+                <span className="font-medium text-ethereal-ink">
+                  {/* Removing the (Conductor) part from the name by .split */}
+                  {project.conductor.split("(").at(-2) ||
+                    t("common.tba", "TBA")}{" "}
+                </span>
+              </motion.p>
+            ))}
         </motion.div>
       </div>
 

@@ -135,7 +135,6 @@ export const useAdminDashboardData = () => {
     return {
       id: String(rawNextProject.id),
       title: rawNextProject.title,
-      // ZERO ANY: Korzystamy z nowej struktury DTO
       conductor: rawNextProject.conductor_name || undefined,
       locationId: rawNextProject.location?.id,
       locationFallbackName: rawNextProject.location?.name,
