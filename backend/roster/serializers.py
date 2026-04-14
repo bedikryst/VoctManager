@@ -107,6 +107,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     program = serializers.SerializerMethodField()
     location = LocationSnippetSerializer(read_only=True)
     location_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    conductor_name = serializers.CharField(source='conductor.__str__', read_only=True)
     
     class Meta:
         model = Project

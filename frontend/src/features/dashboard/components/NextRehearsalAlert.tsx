@@ -1,27 +1,34 @@
 /**
  * @file NextRehearsalAlert.tsx
  * @description Refined alert banner with strict spatial isolation.
- * Implements the Pseudo-Overlay Link pattern for pristine A11y compliance.
+ * Upgraded to Ethereal UI 2026: StatusBadge implementation, cinematic typography, and dynamic shaders.
+ * @architecture Enterprise SaaS 2026
  * @module panel/dashboard/components/NextRehearsalAlert
  */
 
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, UserMinus, ArrowRight } from "lucide-react";
+import { UserMinus, ArrowRight } from "lucide-react";
 
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { Badge } from "@/shared/ui/primitives/Badge";
+import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { cn } from "@/shared/lib/utils";
 
 export interface AdminNextRehearsalDto {
+  id?: string | number;
   date_time: string;
   timezone: string;
-  // ZMIANA: Usunięto 'object'. Używamy bezpiecznego rekordu.
-  location?: string | Record<string, unknown>;
+  location?: {
+    id: string;
+    name: string;
+    category?: string;
+    timezone?: string;
+  } | null;
   absent_count?: number;
   projectTitle: string;
 }
@@ -42,97 +49,98 @@ export function NextRehearsalAlert({
         variant="ethereal"
         padding="none"
         className={cn(
-          "group/alert relative z-[60] transition-all duration-500",
+          "group/alert relative z-10 overflow-hidden transition-all duration-700 ease-[0.16,1,0.3,1]",
           "border-ethereal-incense/30",
-          "hover:border-ethereal-incense/60 hover:shadow-[0_12px_40px_rgba(166,146,121,0.2)]",
+          "hover:border-ethereal-incense/60 hover:shadow-[0_16px_48px_rgba(166,146,121,0.15)]",
         )}
+        backgroundElement={
+          <div className="pointer-events-none absolute -left-32 top-0 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-gradient-to-r from-ethereal-sage/15 to-transparent blur-[80px] transition-transform duration-[1500ms] group-hover/alert:translate-x-16 group-hover/alert:scale-110" />
+        }
       >
-        {/*
-          THE PSEUDO-OVERLAY LINK (A11y 2026 Standard)
-          Ten niewidzialny link rozciąga się na całą kartę. Screen readery widzą go jako poprawną nawigację.
-          Można na niego najechać i kliknąć.
-        */}
         <Link
           to="/panel/rehearsals"
-          className="absolute inset-0 z-10 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/50 rounded-[inherit]"
+          className="absolute inset-0 z-10 rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/50"
           aria-label={t(
             "dashboard.admin.aria_open_rehearsal",
             "Otwórz szczegóły najbliższej próby",
           )}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6 p-4">
-          <div className="flex items-center gap-4 pl-4">
-            <div className="relative flex items-center justify-center shrink-0">
-              <div className="w-2 h-2 rounded-full bg-ethereal-sage z-10 shadow-[0_0_8px_rgba(143,154,138,0.6)]" />
-              <div className="absolute w-4 h-4 rounded-full bg-ethereal-sage/30 animate-pulse" />
+        <div className="pointer-events-none relative z-20 flex flex-col justify-between gap-6 p-5 sm:p-7 lg:flex-row lg:items-center">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <StatusBadge
+                variant="upcoming"
+                isPulsing
+                label={t(
+                  "dashboard.admin.next_rehearsal_badge",
+                  "Najbliższa Próba",
+                )}
+              />
+              <h3 className="font-serif text-xl font-medium tracking-tight text-ethereal-ink sm:text-2xl">
+                {rehearsal.projectTitle}
+              </h3>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-incense mb-1 flex items-center gap-2">
-                <AlertCircle size={14} strokeWidth={1.5} aria-hidden="true" />
-                <span className="truncate">
-                  {t(
-                    "dashboard.admin.next_rehearsal_alert",
-                    "Next Rehearsal • {{title}}",
-                    { title: rehearsal.projectTitle },
-                  )}
-                </span>
-              </p>
+            {/* Data Row */}
+            <div className="flex flex-col gap-y-2 gap-x-6 sm:flex-row sm:items-center">
+              <time
+                dateTime={rehearsal.date_time}
+                className="shrink-0 font-serif text-sm font-bold tracking-wide text-ethereal-graphite"
+              >
+                {formatLocalizedDate(
+                  rehearsal.date_time,
+                  { weekday: "long", day: "numeric", month: "long" },
+                  undefined,
+                  rehearsal.timezone,
+                )}
+              </time>
 
-              <div className="flex flex-col sm:flex-row sm:items-center gap-x-6 gap-y-2">
-                <p className="text-sm font-bold text-ethereal-ink font-serif tracking-wide shrink-0">
-                  {formatLocalizedDate(
-                    rehearsal.date_time,
-                    { weekday: "long", day: "numeric", month: "long" },
-                    undefined,
-                    rehearsal.timezone,
-                  )}
-                </p>
+              <div className="shrink-0 text-ethereal-ink">
+                <DualTimeDisplay
+                  value={rehearsal.date_time}
+                  timeZone={rehearsal.timezone}
+                  timeClassName="text-[15px] font-bold"
+                />
+              </div>
 
-                <div className="shrink-0 ">
-                  <DualTimeDisplay
-                    value={rehearsal.date_time}
-                    timeZone={rehearsal.timezone}
-                    timeClassName="text-[15px] font-bold"
+              {/* INTERACTIVE CHILD EXCEPTION (Z-30) */}
+              {rehearsal.location && (
+                <div className="pointer-events-auto relative z-30 flex items-center font-serif text-[15px] font-bold text-ethereal-ink transition-colors hover:text-ethereal-gold sm:border-l sm:border-ethereal-incense/20 sm:pl-6">
+                  <LocationPreview
+                    locationRef={rehearsal.location.id}
+                    fallback={rehearsal.location.name}
+                    variant="minimal"
                   />
                 </div>
-
-                {rehearsal.location && (
-                  <div className="relative z-100 text-[15px] font-bold font-serif pointer-events-auto sm:border-l border-ethereal-incense/20 sm:pl-6 flex items-center">
-                    <LocationPreview
-                      locationRef={rehearsal.location}
-                      fallback={t("common.tba", "TBA")}
-                      variant="minimal"
-                    />
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-4 shrink-0 justify-end md:border-l border-ethereal-incense/10 md:pl-6 pointer-events-none relative z-20">
-            <div className="flex items-center gap-3">
+          {/* RIGHT SIDE: Micro-telemetry & Interaction Cue */}
+          <div className="relative z-20 flex shrink-0 items-center justify-start gap-4 pt-4 lg:justify-end lg:border-l lg:border-ethereal-incense/10 lg:pl-8 lg:pt-0">
+            <div className="flex items-center gap-4">
               {hasAbsences ? (
                 <Badge
                   variant="danger"
                   icon={<UserMinus size={12} aria-hidden="true" />}
                 >
-                  {t("dashboard.admin.absences", "Absences: {{count}}", {
+                  {t("dashboard.admin.absences", "Nieobecności: {{count}}", {
                     count: rehearsal.absent_count,
                   })}
                 </Badge>
               ) : (
                 <Badge variant="success">
-                  {t("dashboard.admin.perfect_attendance", "100% Attendance")}
+                  {t("dashboard.admin.perfect_attendance", "100% Obecności")}
                 </Badge>
               )}
 
-              <div className="w-9 h-9 rounded-full border border-ethereal-incense/20 flex items-center justify-center text-ethereal-graphite group-hover/alert:border-ethereal-incense group-hover/alert:text-ethereal-incense group-hover/alert:bg-white/50 transition-all duration-500 shadow-sm pointer-events-none">
+              {/* Kinetic Arrow */}
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-ethereal-incense/20 bg-white/5 text-ethereal-graphite shadow-sm backdrop-blur-sm transition-all duration-500 group-hover/alert:border-ethereal-gold/40 group-hover/alert:bg-white/30 group-hover/alert:text-ethereal-ink">
                 <ArrowRight
-                  size={14}
+                  size={16}
                   strokeWidth={1.5}
-                  className="transform group-hover/alert:translate-x-0.5 transition-transform duration-500"
+                  className="transform transition-transform duration-500 group-hover/alert:translate-x-1"
                   aria-hidden="true"
                 />
               </div>

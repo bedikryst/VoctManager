@@ -20,7 +20,13 @@ export interface ProjectCreateDTO {
   date_time: string;
   timezone: string;
   call_time?: string | null;
-  location?: string | null;
+
+  // ZMIANA: Wysyłamy ID dyrygenta, a nie string z nazwą. Typ prymitywny 'string'.
+  conductor?: string | null;
+
+  // ZMIANA: Backend oczekuje location_id do zapisu (location jest read-only snippetem)
+  location_id?: string | null;
+
   dress_code_male?: string | null;
   dress_code_female?: string | null;
   spotify_playlist_url?: string | null;
@@ -55,7 +61,7 @@ export interface RehearsalCreateDTO {
   project: string;
   date_time: string;
   timezone: string;
-  location: string;
+  location_id: string;
   focus?: string;
   is_mandatory: boolean;
   invited_participations: string[];
@@ -74,7 +80,7 @@ export interface ProgramItemCreateDTO {
 export type ProgramItemUpdateDTO = Partial<ProgramItemCreateDTO>;
 
 export interface PieceCastingCreateDTO {
-  participation: string; // ✅ WZORZEC ENTERPRISE: Usunięto | number
+  participation: string;
   piece: string;
   voice_line: VoiceLine;
   gives_pitch: boolean;
@@ -84,8 +90,8 @@ export interface PieceCastingCreateDTO {
 export type PieceCastingUpdateDTO = Partial<PieceCastingCreateDTO>;
 
 export interface AttendanceCreateDTO {
-  rehearsal: string; // ✅ WZORZEC ENTERPRISE: Usunięto | number
-  participation: string; // ✅ WZORZEC ENTERPRISE: Usunięto | number
+  rehearsal: string;
+  participation: string;
   status: Attendance["status"];
 }
 

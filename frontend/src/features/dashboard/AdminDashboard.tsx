@@ -90,7 +90,7 @@ export default function AdminDashboard(): React.JSX.Element {
       {/* HEADER STRATUM */}
       <motion.header
         variants={itemVariants}
-        className="mb-16 flex flex-col gap-8 md:flex-row md:items-end md:justify-between"
+        className="mb-8 flex flex-col gap-8 md:flex-row md:items-end md:justify-between"
       >
         <div className="max-w-2xl">
           <div className="mb-4 flex items-center gap-4">

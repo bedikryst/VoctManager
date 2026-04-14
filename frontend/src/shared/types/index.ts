@@ -112,7 +112,13 @@ export interface Project extends BaseModel {
   call_time?: string | null; // DateTime, can be null
   dress_code_male?: string | null;
   dress_code_female?: string | null;
-  location?: string | null;
+  location?: {
+    id: string;
+    name: string;
+    category: string;
+    timezone: string;
+  } | null;
+  conductor_name?: string;
   description?: string | null;
   spotify_playlist_url?: string | null;
   status: ProjectStatus;
@@ -141,7 +147,12 @@ export interface Rehearsal extends BaseModel {
   project: string; // Foreign Key ID
   date_time: string;
   timezone: string;
-  location: string;
+  location?: {
+    id: string;
+    name: string;
+    category: string;
+    timezone: string;
+  } | null;
   focus?: string;
   is_mandatory: boolean;
   invited_participations?: string[];

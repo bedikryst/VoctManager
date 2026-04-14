@@ -90,6 +90,16 @@ class Project(EnterpriseBaseModel):
     )    
     dress_code_male = models.CharField(max_length=100, blank=True, verbose_name=_("Dress Code (Male)"))
     dress_code_female = models.CharField(max_length=100, blank=True, verbose_name=_("Dress Code (Female)"))
+    conductor = models.ForeignKey(
+        'Artist',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='conducted_projects',
+        limit_choices_to={'voice_type': VoiceType.CONDUCTOR},
+        verbose_name=_("Conductor"),
+        help_text=_("The Maestro leading this project.")
+    )
     location = models.ForeignKey(
         'logistics.Location',
         on_delete=models.RESTRICT,

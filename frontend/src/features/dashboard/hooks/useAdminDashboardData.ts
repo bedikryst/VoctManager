@@ -22,8 +22,7 @@ import type {
   Piece,
 } from "@/shared/types";
 
-// UI DTOs imports (assuming they are exported from their respective components,
-// or define them here / in a central DTO file)
+// UI DTOs imports
 import type { AdminTelemetryStatsDto } from "../components/TelemetryWidget";
 import type { ProjectStatsDto } from "../components/SpotlightProjectCard";
 
@@ -35,7 +34,8 @@ export interface EnrichedRehearsal extends Rehearsal {
 export const useAdminDashboardData = () => {
   const { t } = useTranslation();
 
-  const results = useQueries({
+  // Zastosowanie 'combine' dla pełnego bezpieczeństwa typów i uniknięcia błędów indeksowania
+  const { isLoading, isError, data } = useQueries({
     queries: [
       {
         queryKey: projectKeys.projects.all,
@@ -60,17 +60,20 @@ export const useAdminDashboardData = () => {
         queryFn: async () => (await api.get<Piece[]>("/api/pieces/")).data,
       },
     ],
+    combine: (results) => ({
+      isLoading: results.some((q) => q.isPending || q.isLoading),
+      isError: results.some((q) => q.isError),
+      data: {
+        projects: results[0].data ?? [],
+        rehearsals: results[1].data ?? [],
+        artists: results[2].data ?? [],
+        programItems: results[3].data ?? [],
+        pieces: results[4].data ?? [],
+      },
+    }),
   });
 
-  const isLoading = results.some((q) => q.isLoading);
-  const isError = results.some((q) => q.isError);
-
-  // Safe fallback to prevent runtime crashes
-  const projects = results[0].data ?? [];
-  const rehearsals = results[1].data ?? [];
-  const artists = results[2].data ?? [];
-  const programItems = results[3].data ?? [];
-  const pieces = results[4].data ?? [];
+  const { projects, rehearsals, artists, programItems, pieces } = data;
 
   // 1. TELEMETRY AGGREGATION
   const adminStats: AdminTelemetryStatsDto = useMemo(() => {
@@ -81,16 +84,25 @@ export const useAdminDashboardData = () => {
     const totalPieces = pieces.length;
     const activeArtistsList = artists.filter((a) => a.is_active);
 
+    const S = activeArtistsList.filter((a) =>
+      a.voice_type?.startsWith("S"),
+    ).length;
+    const A = activeArtistsList.filter(
+      (a) => a.voice_type?.startsWith("A") || a.voice_type === "MEZ",
+    ).length;
+    const T = activeArtistsList.filter(
+      (a) => a.voice_type?.startsWith("T") || a.voice_type === "CT",
+    ).length;
+    const B = activeArtistsList.filter((a) =>
+      a.voice_type?.startsWith("B"),
+    ).length;
+
     const satb = {
-      S: activeArtistsList.filter((a) => a.voice_type?.startsWith("S")).length,
-      A: activeArtistsList.filter(
-        (a) => a.voice_type?.startsWith("A") || a.voice_type === "MEZ",
-      ).length,
-      T: activeArtistsList.filter(
-        (a) => a.voice_type?.startsWith("T") || a.voice_type === "CT",
-      ).length,
-      B: activeArtistsList.filter((a) => a.voice_type?.startsWith("B")).length,
-      Total: activeArtistsList.length,
+      S,
+      A,
+      T,
+      B,
+      Total: S + A + T + B,
     };
 
     return { activeProjects, totalPieces, satb };
@@ -123,13 +135,10 @@ export const useAdminDashboardData = () => {
     return {
       id: String(rawNextProject.id),
       title: rawNextProject.title,
-      conductor:
-        ((rawNextProject as any).conductor_name as string) || undefined,
-      locationId: rawNextProject.location
-        ? String(rawNextProject.location)
-        : undefined,
-      locationFallbackName:
-        ((rawNextProject as any).location_name as string) || undefined,
+      // ZERO ANY: Korzystamy z nowej struktury DTO
+      conductor: rawNextProject.conductor_name || undefined,
+      locationId: rawNextProject.location?.id,
+      locationFallbackName: rawNextProject.location?.name,
       startDate: rawNextProject.date_time,
       status: rawNextProject.status?.toLowerCase() as
         | "active"
@@ -155,14 +164,11 @@ export const useAdminDashboardData = () => {
       return !isNaN(rehDate.getTime()) && rehDate > now;
     }).length;
 
-    // TODO: Determine actual cast count from API if casting logic exists.
-    // Assuming active artists as placeholder, or `rawNextProject.cast_count` if backend provides it.
-    const castCount =
-      (rawNextProject as any).cast_count ??
-      artists.filter((a) => a.is_active).length;
+    // ZERO ANY: Liczymy artystów na podstawie długości tablicy `cast` zwróconej przez backend
+    const castCount = rawNextProject.cast?.length ?? 0;
 
     return { piecesCount, rehearsalsRemaining, castCount };
-  }, [rawNextProject, programItems, rehearsals, artists]);
+  }, [rawNextProject, programItems, rehearsals]);
 
   // 4. NEXT REHEARSAL ALERT
   const nextRehearsal = useMemo(() => {
