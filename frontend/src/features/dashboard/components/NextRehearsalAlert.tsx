@@ -61,15 +61,11 @@ export function NextRehearsalAlert({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-6 p-4 overflow-visible">
         {/* LEFT SECTION: Icon and Core Data */}
         <div className="flex items-center gap-4 overflow-visible">
-          <div className="relative flex items-center justify-center shrink-0 ml-1">
-            <div
-              className="w-2.5 h-2.5 rounded-full bg-ethereal-incense z-10"
-              aria-hidden="true"
-            />
-            <div
-              className="absolute w-2.5 h-2.5 rounded-full bg-ethereal-incense animate-ping opacity-60"
-              aria-hidden="true"
-            />
+          <div className="relative flex items-center justify-center shrink-0">
+            {/* Core sacral indicator */}
+            <div className="w-2 h-2 rounded-full bg-ethereal-sage z-10 shadow-[0_0_8px_rgba(143,154,138,0.6)]" />
+            {/* Ethereal breathing effect, not a harsh ping */}
+            <div className="absolute w-4 h-4 rounded-full bg-ethereal-sage/30 animate-pulse" />
           </div>
 
           <div className="min-w-0 flex-1 overflow-visible">

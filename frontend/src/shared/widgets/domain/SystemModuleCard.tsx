@@ -1,103 +1,70 @@
 /**
- * @file SystemModuleCard.tsx
- * @description Ethereal UI domain card for routing to distinct SaaS modules.
- * Purged of legacy B2B styles. Implements editorial micro-typography,
- * expanded descriptive space, and pure glassmorphism.
- * @module shared/widgets/domain/SystemModuleCard
+ * @file SystemModuleStrip.tsx
+ * @description Ultra-compact horizontal navigation primitive.
+ * Layout: [Icon] | [Title / Features Stack].
+ * @architecture Enterprise SaaS 2026
+ * @module shared/widgets/domain/SystemModuleStrip
  */
 
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { cn } from "@/shared/lib/utils";
 
-export interface SystemModuleCardProps {
+export interface SystemModuleStripProps {
   title: string;
-  description: string;
   icon: React.ReactNode;
   iconBgClass?: string;
   path: string;
   features?: string[];
-  openLabelKey?: string;
 }
 
-export const SystemModuleCard = ({
+export const SystemModuleStrip = ({
   title,
-  description,
   icon,
   iconBgClass,
   path,
-  features,
-  openLabelKey = "common.actions.openModule",
-}: SystemModuleCardProps): React.JSX.Element => {
-  const { t } = useTranslation();
-
+  features = [],
+}: SystemModuleStripProps): React.JSX.Element => {
   return (
     <Link
       to={path}
-      className="outline-none group block h-full"
-      aria-label={t("common.aria.navigateTo", { destination: title })}
+      className="outline-none group block w-full rounded-[1.5rem] focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
     >
       <GlassCard
         variant="ethereal"
-        className="flex h-full flex-col p-6 md:p-8 transition-colors duration-700 hover:border-white/70"
+        padding="none"
+        className="flex items-center gap-4 p-3 transition-all duration-700 ease-out group-hover:bg-white/50 group-hover:border-ethereal-gold/40 group-hover:shadow-[0_8px_24px_rgba(194,168,120,0.1)]"
       >
-        {/* Header: Heraldic Iconography & Title */}
-        <div className="mb-5 flex items-center gap-4">
-          <div
-            className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border backdrop-blur-md transition-transform duration-700 group-hover:scale-105",
-              iconBgClass ||
-                "border-ethereal-incense/20 bg-ethereal-incense/10 text-ethereal-incense",
-            )}
-          >
-            {icon}
-          </div>
-          <h3 className="font-serif text-[1.65rem] font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold">
+        {/* Lewa strona: Heraldic Icon */}
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border backdrop-blur-md transition-transform duration-700 group-hover:scale-105",
+            iconBgClass ||
+              "border-ethereal-incense/20 bg-ethereal-incense/10 text-ethereal-incense",
+          )}
+        >
+          {icon}
+        </div>
+
+        {/* Prawa strona: Two-line stack */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+          <h3 className="font-serif text-lg font-medium tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold truncate">
             {title}
           </h3>
+          {features.length > 0 && (
+            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-ethereal-graphite/50 truncate transition-colors duration-500 group-hover:text-ethereal-graphite/80">
+              {features.join(" • ")}
+            </p>
+          )}
         </div>
 
-        {/* Description: Expanded Narrative Space */}
-        <div className="flex-grow">
-          <p className="mb-8 text-[13px] font-normal leading-[1.8] text-ethereal-graphite/95">
-            {description}
-          </p>
-        </div>
-
-        {/* Features: Editorial Micro-typography */}
-        {features && features.length > 0 && (
-          <div className="mb-8 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-            {features.map((feature, idx) => (
-              <React.Fragment key={`${feature}-${idx}`}>
-                <span className="text-[9.5px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/70 transition-colors duration-500 group-hover:text-ethereal-ink">
-                  {feature}
-                </span>
-                {idx < features.length - 1 && (
-                  <span
-                    className="text-[10px] text-ethereal-gold/40"
-                    aria-hidden="true"
-                  >
-                    •
-                  </span>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
-
-        {/* Footer Action: The Silent Invitation */}
-        <div className="mt-auto flex items-center justify-between border-t border-ethereal-incense/15 pt-4 transition-colors duration-700 group-hover:border-ethereal-gold/30">
-          <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
-            {t(openLabelKey)}
-          </span>
+        <div className="shrink-0 opacity-0 -translate-x-2 transition-all duration-500 group-hover:opacity-100 group-hover:translate-x-0 pr-2">
           <ArrowRight
-            size={16}
-            strokeWidth={1.5}
-            className="text-ethereal-incense/50 transition-all duration-700 group-hover:translate-x-1 group-hover:text-ethereal-gold"
-            aria-hidden="true"
+            size={14}
+            strokeWidth={2}
+            className="text-ethereal-gold"
           />
         </div>
       </GlassCard>

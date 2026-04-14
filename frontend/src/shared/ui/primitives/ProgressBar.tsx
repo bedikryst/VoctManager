@@ -49,7 +49,7 @@ export const ProgressBar = ({
       </div>
 
       {/* Value - Anchored with monumental serif typography */}
-      <span className="text-[11px] font-bold text-ethereal-ink w-5 text-right font-serif tracking-wide">
+      <span className="text-[11px] font-bold text-ethereal-ink w-5 text-right font-sans tracking-wide">
         {value}
       </span>
     </div>

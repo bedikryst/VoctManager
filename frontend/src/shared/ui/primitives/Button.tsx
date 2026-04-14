@@ -16,7 +16,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-ethereal-ink text-ethereal-marble border border-ethereal-ink shadow-[0_4px_12px_rgba(44,42,40,0.15)] hover:bg-[#201f1d] hover:border-ethereal-gold/60 hover:text-ethereal-gold hover:shadow-[0_8px_20px_rgba(194,168,120,0.25)] disabled:shadow-none",
+          "bg-ethereal-ink text-ethereal-marble border border-ethereal-ink shadow-[0_4px_12px_rgba(44,42,40,0.15)] hover:bg-ethereal-ink/90 hover:border-ethereal-gold/60 hover:text-ethereal-gold hover:shadow-[0_8px_20px_rgba(194,168,120,0.25)] disabled:shadow-none",
         secondary:
           "bg-white/50 backdrop-blur-md border border-ethereal-incense/20 text-ethereal-ink shadow-sm hover:border-ethereal-gold/50 hover:bg-white/80 hover:text-ethereal-gold hover:shadow-[0_6px_16px_rgba(194,168,120,0.15)]",
         outline:
