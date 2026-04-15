@@ -61,7 +61,7 @@ export function TelemetryWidget({
     <GlassCard
       variant="light"
       withNoise
-      className="flex h-full w-full flex-col justify-between p-8 md:p-10 pb-4 md:pb-5 isolate"
+      className="isolate flex h-full w-full flex-col justify-between p-6 md:p-8 xl:p-10 pb-4 md:pb-5 xl:pb-6"
     >
       {/* UPPER STRATUM: Resonance Metrics */}
       <section className="relative z-10 flex flex-col">
@@ -70,7 +70,7 @@ export function TelemetryWidget({
           icon={<AudioLines size={16} strokeWidth={1.5} />}
         />
 
-        <div className="grid grid-cols-2 gap-8 relative">
+        <div className="grid grid-cols-2 gap-2 xl:gap-8 relative">
           <MetricBlock
             label={t("dashboard.admin.kpi_pieces", "Repertuar Sakralny")}
             value={stats.totalPieces}

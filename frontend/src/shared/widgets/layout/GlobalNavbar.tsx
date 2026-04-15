@@ -16,18 +16,25 @@ import { cn } from "@/shared/lib/utils";
 import { useNavbarKinematics } from "@/shared/ui/kinematics/hooks/useNavbarKinematics";
 import { BASE_TRANSITION, EASE } from "@/shared/ui/kinematics/motion-presets";
 
+// Ethereal UI Taxonomy
+import { Typography } from "@/shared/ui/primitives/Typography";
+
 // --- Types & Interfaces ---
 interface GlobalNavbarProps {
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
 }
 
-// Assuming minimal AppStore interface to strictly avoid `any`
 interface AppStoreState {
   isLoaded: boolean;
 }
 
-// Extension of the base transition specific to navbar breathing time
+// Minimal abstractions mapped to theme tokens for Framer animations
+const MAGIC_CONSTANTS = {
+  NAV_WIDTH_MOBILE: 40,
+  NAV_WIDTH_DESKTOP: 105,
+} as const;
+
 const NAV_TRANSITION = { ...BASE_TRANSITION, duration: 1.2 };
 
 export const GlobalNavbar = ({
@@ -36,16 +43,13 @@ export const GlobalNavbar = ({
 }: GlobalNavbarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
 
-  // Strict typing for Zustand store selector
   const isLoaded = useAppStore(
     (state: unknown) => (state as AppStoreState).isLoaded,
   );
 
-  // Injection of the Kinematic Hook (SRP adherence)
   const { navState, isDarkBg, isMobile, isHome, isHidden } =
     useNavbarKinematics();
 
-  // Render halt for protected zones
   if (isHidden) {
     return null;
   }
@@ -133,7 +137,9 @@ export const GlobalNavbar = ({
     top: {
       opacity: 1,
       x: 0,
-      width: isMobile ? 40 : 105,
+      width: isMobile
+        ? MAGIC_CONSTANTS.NAV_WIDTH_MOBILE
+        : MAGIC_CONSTANTS.NAV_WIDTH_DESKTOP,
       marginLeft: isMobile ? "12px" : "20px",
       filter: "blur(0px)",
       pointerEvents: "auto",
@@ -142,7 +148,9 @@ export const GlobalNavbar = ({
     pill: {
       opacity: 1,
       x: 0,
-      width: isMobile ? 40 : 105,
+      width: isMobile
+        ? MAGIC_CONSTANTS.NAV_WIDTH_MOBILE
+        : MAGIC_CONSTANTS.NAV_WIDTH_DESKTOP,
       marginLeft: isMobile ? "12px" : "20px",
       filter: "blur(0px)",
       pointerEvents: "auto",
@@ -152,7 +160,7 @@ export const GlobalNavbar = ({
 
   const isBare = navState === "bare";
   const isPill = navState === "pill";
-  const lineBgClass = isBare && isDarkBg ? "bg-white" : "bg-stone-900";
+  const lineBgClass = isBare && isDarkBg ? "bg-white" : "bg-ethereal-ink";
 
   return (
     <div
@@ -206,45 +214,51 @@ export const GlobalNavbar = ({
         {/* Brand Logotype */}
         <motion.div
           variants={logoVariants}
-          className="flex-1 flex justify-center origin-center mr-5 md:mr-0 text-stone-900"
+          className="flex-1 flex justify-center origin-center mr-5 md:mr-0 text-ethereal-ink"
         >
           <Link
             to="/"
-            style={{
-              fontSize: isMobile
-                ? isPill
-                  ? "0.875rem"
-                  : "1rem"
-                : isPill
-                  ? "1rem"
-                  : "1.5rem",
-              fontFamily: "'Cormorant', serif",
-            }}
-            className="flex items-center italic tracking-widest font-medium transition-all duration-1000 outline-none"
+            className="flex items-center outline-none"
             aria-label={t("common.aria.backToHome", "Back to home")}
           >
-            <span>V</span>
-            <span
+            <Typography
+              as="span"
+              variant="title"
+              color="inherit"
               className={cn(
-                "overflow-hidden flex items-center whitespace-nowrap transition-all duration-1000",
-                isMobile && isPill
-                  ? "max-w-0 opacity-0"
-                  : "max-w-[100px] opacity-100",
+                "flex items-center transition-all duration-1000",
+                isMobile
+                  ? isPill
+                    ? "text-sm"
+                    : "text-base"
+                  : isPill
+                    ? "text-base"
+                    : "text-2xl",
               )}
             >
-              oct
-            </span>
-            <span>E</span>
-            <span
-              className={cn(
-                "overflow-hidden flex items-center whitespace-nowrap transition-all duration-1000",
-                isMobile && isPill
-                  ? "max-w-0 opacity-0"
-                  : "max-w-[100px] opacity-100",
-              )}
-            >
-              nsemble
-            </span>
+              <span>V</span>
+              <span
+                className={cn(
+                  "overflow-hidden flex items-center whitespace-nowrap transition-all duration-1000",
+                  isMobile && isPill
+                    ? "max-w-0 opacity-0"
+                    : "max-w-[100px] opacity-100",
+                )}
+              >
+                oct
+              </span>
+              <span>E</span>
+              <span
+                className={cn(
+                  "overflow-hidden flex items-center whitespace-nowrap transition-all duration-1000",
+                  isMobile && isPill
+                    ? "max-w-0 opacity-0"
+                    : "max-w-[100px] opacity-100",
+                )}
+              >
+                nsemble
+              </span>
+            </Typography>
           </Link>
         </motion.div>
 
@@ -267,8 +281,8 @@ export const GlobalNavbar = ({
                 isBare
                   ? isDarkBg
                     ? "text-white opacity-80 group-hover:opacity-100"
-                    : "text-stone-900 opacity-80 group-hover:opacity-100"
-                  : "text-stone-500 hover:text-stone-900",
+                    : "text-ethereal-ink opacity-80 group-hover:opacity-100"
+                  : "text-ethereal-graphite hover:text-ethereal-ink",
               )}
             >
               <path
@@ -292,14 +306,19 @@ export const GlobalNavbar = ({
                 className={cn(
                   "relative flex items-center justify-center w-full border h-9 md:h-10 rounded-lg md:rounded-xl overflow-hidden transition-all duration-[1.2s]",
                   isPill
-                    ? "bg-stone-900 text-stone-100 border-transparent hover:bg-amber-700 hover:shadow-lg hover:-translate-y-0.5"
-                    : "bg-transparent border-stone-900/30 text-stone-900 hover:bg-stone-900 hover:text-stone-100 hover:border-transparent",
+                    ? "bg-ethereal-ink text-white border-transparent hover:bg-amber-700 hover:shadow-lg hover:-translate-y-0.5"
+                    : "bg-transparent border-ethereal-ink/30 text-ethereal-ink hover:bg-ethereal-ink hover:text-white hover:border-transparent",
                 )}
               >
                 {!isMobile && (
-                  <span className="text-[10px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-colors duration-300">
+                  <Typography
+                    as="span"
+                    variant="eyebrow"
+                    color="inherit"
+                    className="whitespace-nowrap transition-colors duration-300"
+                  >
                     {t("nav.actions.donate", "Wesprzyj")}
-                  </span>
+                  </Typography>
                 )}
                 {isMobile && (
                   <svg

@@ -60,25 +60,25 @@ export default function AdminDashboard(): React.JSX.Element {
       </StaggeredBentoItem>
 
       {/* CORE BENTO GRID */}
-      <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 xl:gap-8 md:grid-cols-12 xl:grid-cols-13">
         {nextRehearsal && (
-          <StaggeredBentoItem className="lg:col-span-12">
+          <StaggeredBentoItem className="col-span-1 md:col-span-12 xl:col-span-13">
             <NextRehearsalAlert rehearsal={nextRehearsal} />
           </StaggeredBentoItem>
         )}
 
-        <StaggeredBentoItem className="lg:col-span-4 lg:min-h-[400px]">
+        <StaggeredBentoItem className="col-span-1 md:col-span-5 lg:min-h-[400px]">
           <TelemetryWidget adminStats={adminStats} />
         </StaggeredBentoItem>
 
-        <StaggeredBentoItem className="lg:col-span-8 lg:min-h-[400px]">
+        <StaggeredBentoItem className="col-span-1 md:col-span-7 xl:col-span-8 lg:min-h-[400px]">
           <SpotlightProjectCard
             project={nextProject}
             stats={nextProjectStats}
           />
         </StaggeredBentoItem>
 
-        <StaggeredBentoItem className="mt-4 lg:col-span-12 md:mt-0">
+        <StaggeredBentoItem className="mt-4 col-span-1 md:col-span-12 xl:col-span-13">
           <SectionHeader
             title={t("dashboard.admin.directory_sub", "06 Modułów")}
             withFluidDivider={false}

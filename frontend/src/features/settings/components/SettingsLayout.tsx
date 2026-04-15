@@ -1,15 +1,21 @@
 /**
  * @file SettingsLayout.tsx
  * @description Main container for user settings, utilizing vertical tabs for navigation.
+ * Upgraded to Ethereal UI 2026: Strict Primitives, Composites, and Kinematic Presets.
+ * @architecture Enterprise SaaS 2026
  * @module features/settings/components
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { User, Shield, Truck, ShieldAlert, Calendar } from "lucide-react";
 
-import { GlassCard } from "@ui/composites/GlassCard";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Typography } from "@/shared/ui/primitives/Typography";
+import { DURATION, EASE } from "@/shared/ui/kinematics/motion-presets";
+import { cn } from "@/shared/lib/utils";
+
 import GeneralTab from "./GeneralTab";
 import SecurityTab from "./SecurityTab";
 import LogisticsTab from "./LogisticsTab";
@@ -23,7 +29,7 @@ type TabType =
   | "privacy"
   | "integrations";
 
-export default function SettingsLayout() {
+export default function SettingsLayout(): React.JSX.Element {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>("general");
 
@@ -31,64 +37,102 @@ export default function SettingsLayout() {
     {
       id: "general",
       label: t("settings.tabs.general", "Ogólne"),
-      icon: <User className="w-4 h-4" />,
+      icon: <User size={18} strokeWidth={1.5} />,
     },
     {
       id: "security",
       label: t("settings.tabs.security", "Bezpieczeństwo"),
-      icon: <Shield className="w-4 h-4" />,
+      icon: <Shield size={18} strokeWidth={1.5} />,
     },
     {
       id: "logistics",
       label: t("settings.tabs.logistics", "Logistyka"),
-      icon: <Truck className="w-4 h-4" />,
+      icon: <Truck size={18} strokeWidth={1.5} />,
     },
     {
       id: "privacy",
       label: t("settings.tabs.privacy", "Prywatność"),
-      icon: <ShieldAlert className="w-4 h-4" />,
+      icon: <ShieldAlert size={18} strokeWidth={1.5} />,
     },
     {
       id: "integrations",
       label: t("settings.tabs.integrations", "Integracje"),
-      icon: <Calendar className="w-4 h-4" />,
+      icon: <Calendar size={18} strokeWidth={1.5} />,
     },
   ] as const;
 
   return (
-    <div className="max-w-6xl mx-auto w-full space-y-6">
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Sidebar Navigation */}
-        <aside className="w-full md:w-64 shrink-0">
-          <GlassCard noPadding className="p-4">
-            <nav className="flex flex-col space-y-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold antialiased ${
-                    activeTab === tab.id
-                      ? "bg-brand text-white shadow-md"
-                      : "text-stone-600 hover:bg-white/50 hover:text-brand"
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
+    <div className="mx-auto w-full max-w-6xl space-y-6">
+      <div className="flex flex-col gap-8 md:flex-row">
+        {/* SIDEBAR NAVIGATION STRATUM */}
+        <aside className="w-full shrink-0 md:w-64">
+          {/* Poprawiony prop padding="sm" */}
+          <GlassCard variant="light" padding="sm">
+            <nav
+              className="flex flex-col space-y-1"
+              aria-label={t("settings.nav.aria", "Menu ustawień")}
+            >
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className={cn(
+                      "group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-500 ease-out outline-none",
+                      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/50",
+                      isActive
+                        ? "bg-white/40 shadow-[0_4px_20px_-4px_rgba(22,20,18,0.05)] border border-ethereal-ink/5"
+                        : "bg-transparent hover:bg-white/20 border border-transparent",
+                    )}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    {/* Ikona dostosowująca kolor do stanu */}
+                    <span
+                      className={cn(
+                        "transition-colors duration-500",
+                        isActive
+                          ? "text-ethereal-gold"
+                          : "text-ethereal-graphite/50 group-hover:text-ethereal-ink/70",
+                      )}
+                      aria-hidden="true"
+                    >
+                      {tab.icon}
+                    </span>
+
+                    {/* Semantyczna, scentralizowana typografia */}
+                    <Typography
+                      variant="body"
+                      color={isActive ? "default" : "muted"}
+                      className={cn(
+                        "transition-colors duration-500",
+                        !isActive && "group-hover:text-ethereal-ink",
+                      )}
+                    >
+                      {tab.label}
+                    </Typography>
+                  </button>
+                );
+              })}
             </nav>
           </GlassCard>
         </aside>
 
-        {/* Main Content Area */}
+        {/* MAIN CONTENT AREA */}
         <main className="flex-1">
+          {/* Używamy naszych scentralizowanych krzywych przejść (EASE.buttery) */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{
+                duration: DURATION.fast,
+                ease: EASE.buttery,
+              }}
+              className="h-full w-full"
             >
               {activeTab === "general" && <GeneralTab />}
               {activeTab === "security" && <SecurityTab />}

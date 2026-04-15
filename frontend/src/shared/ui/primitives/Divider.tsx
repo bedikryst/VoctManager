@@ -18,6 +18,7 @@ const dividerVariants = cva("shrink-0 pointer-events-none", {
         "bg-gradient-to-b from-ethereal-incense/15 to-transparent",
       "gradient-fade":
         "bg-gradient-to-r from-transparent via-ethereal-incense/20 to-transparent",
+      fade: "bg-gradient-to-r from-transparent via-ethereal-incense/20 to-transparent",
     },
     orientation: {
       horizontal: "h-[1px] w-full",

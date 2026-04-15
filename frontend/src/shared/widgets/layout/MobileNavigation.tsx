@@ -23,19 +23,22 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
+// Ethereal UI Taxonomy
+import { Typography } from "@/shared/ui/primitives/Typography";
+import { Divider } from "@/shared/ui/primitives/Divider";
+
 interface MobileNavigationProps {
   user: AuthUser | null;
   logout: () => void;
 }
 
 const mobileNavLinkVariants = cva(
-  "flex items-center gap-3 rounded-2xl px-4 py-3.5 text-[13px] font-bold tracking-wide transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-brand",
+  "flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold",
   {
     variants: {
       isActive: {
-        true: "bg-brand/10 text-brand shadow-sm",
-        false:
-          "bg-transparent text-stone-600 hover:bg-stone-50 hover:text-stone-900",
+        true: "bg-ethereal-gold/10 shadow-sm",
+        false: "bg-transparent hover:bg-white/40",
       },
     },
     defaultVariants: {
@@ -45,12 +48,14 @@ const mobileNavLinkVariants = cva(
 );
 
 const BrandMark = (): React.JSX.Element => (
-  <h2
-    className="text-2xl font-medium text-stone-900 tracking-tight select-none"
-    style={{ fontFamily: "'Cormorant', serif" }}
+  <Typography
+    as="h2"
+    variant="title"
+    color="default"
+    className="text-2xl tracking-tight select-none"
   >
-    Voct<span className="italic text-brand">Manager</span>
-  </h2>
+    Voct<span className="italic text-ethereal-gold">Manager</span>
+  </Typography>
 );
 
 export const MobileNavigation = ({
@@ -60,7 +65,6 @@ export const MobileNavigation = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  // Declarative body scroll locking implementation
   useBodyScrollLock(isOpen);
 
   const isManagerUser = isManager(user);
@@ -88,7 +92,7 @@ export const MobileNavigation = ({
             "dashboard.layout.aria.openMenu",
             "Otwórz menu nawigacyjne",
           )}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-stone-900 text-white shadow-xl shadow-stone-900/20 transition-transform active:scale-95 outline-none focus-visible:ring-4 focus-visible:ring-brand"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-ethereal-ink text-white shadow-xl shadow-ethereal-ink/20 transition-transform active:scale-95 outline-none focus-visible:ring-4 focus-visible:ring-ethereal-gold"
         >
           <Menu size={24} aria-hidden="true" />
         </button>
@@ -105,7 +109,7 @@ export const MobileNavigation = ({
             aria-modal="true"
             role="dialog"
           >
-            <div className="flex h-20 items-center justify-between px-6 border-b border-stone-200/40">
+            <div className="relative flex h-20 items-center justify-between px-6">
               <BrandMark />
               <div className="flex items-center gap-4">
                 <NotificationCenter />
@@ -115,20 +119,23 @@ export const MobileNavigation = ({
                     "dashboard.layout.aria.closeMenu",
                     "Zamknij menu",
                   )}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-100 text-stone-600 transition-colors active:bg-stone-200 outline-none"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-ethereal-incense/10 text-ethereal-graphite transition-colors active:bg-ethereal-incense/20 outline-none"
                 >
                   <X size={20} aria-hidden="true" />
                 </button>
               </div>
+              <Divider position="absolute-bottom" variant="fade" />
             </div>
 
             <nav className="flex-1 overflow-y-auto px-6 py-8">
               <div className="space-y-8">
                 {navGroups.map((group) => (
                   <div key={group.labelKey}>
-                    <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
-                      {t(group.labelKey)}
-                    </p>
+                    <div className="mb-3">
+                      <Typography as="p" variant="eyebrow" color="muted">
+                        {t(group.labelKey)}
+                      </Typography>
+                    </div>
                     <div className="space-y-1">
                       {group.links.map((link) => (
                         <NavLink
@@ -137,7 +144,10 @@ export const MobileNavigation = ({
                           end={link.to === "/panel"}
                           onClick={() => setIsOpen(false)}
                           className={({ isActive }) =>
-                            cn(mobileNavLinkVariants({ isActive }))
+                            cn(
+                              mobileNavLinkVariants({ isActive }),
+                              "group/moblink",
+                            )
                           }
                         >
                           {({ isActive }) => (
@@ -147,12 +157,23 @@ export const MobileNavigation = ({
                                     className: cn(
                                       "flex-shrink-0 transition-colors",
                                       isActive
-                                        ? "text-brand"
-                                        : "text-stone-400",
+                                        ? "text-ethereal-gold"
+                                        : "text-ethereal-graphite/60 group-hover/moblink:text-ethereal-ink",
                                     ),
                                   })
                                 : link.icon}
-                              <span>{t(link.labelKey)}</span>
+                              <Typography
+                                as="span"
+                                variant="label"
+                                color={isActive ? "gold" : "default"}
+                                className={cn(
+                                  isActive && "font-bold",
+                                  !isActive &&
+                                    "group-hover/moblink:text-ethereal-ink",
+                                )}
+                              >
+                                {t(link.labelKey)}
+                              </Typography>
                             </>
                           )}
                         </NavLink>
@@ -163,35 +184,75 @@ export const MobileNavigation = ({
               </div>
             </nav>
 
-            <div className="border-t border-stone-200/50 bg-stone-50/50 px-6 pb-safe pt-6 pb-8">
+            <div className="relative bg-white/40 px-6 pb-safe pt-6 pb-8">
+              <Divider position="absolute-top" variant="fade" />
               <div className="flex items-center gap-4 mb-6">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-brand/10 text-sm font-bold text-brand">
-                  {initials}
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-ethereal-gold/10 border border-ethereal-gold/20">
+                  <Typography
+                    as="span"
+                    variant="label"
+                    color="gold"
+                    className="text-sm font-bold"
+                  >
+                    {initials}
+                  </Typography>
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-stone-800">
+                  <Typography
+                    as="p"
+                    variant="label"
+                    color="default"
+                    className="truncate text-sm font-bold"
+                  >
                     {userFullName || user?.email}
-                  </p>
-                  <p className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400">
+                  </Typography>
+                  <Typography
+                    as="p"
+                    variant="eyebrow"
+                    color="muted"
+                    className="truncate mt-0.5"
+                  >
                     {mobileRoleLabel}
-                  </p>
+                  </Typography>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Link
                   to="/panel/settings"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:border-brand/30 hover:text-brand shadow-sm outline-none"
+                  className="group flex items-center justify-center gap-2 rounded-2xl border border-ethereal-incense/20 bg-white px-4 py-3.5 transition-colors hover:border-ethereal-gold/30 shadow-sm outline-none"
                 >
-                  <Settings size={15} aria-hidden="true" />
-                  {t("dashboard.layout.actions.settings", "Ustawienia")}
+                  <Settings
+                    size={15}
+                    className="text-ethereal-graphite group-hover:text-ethereal-gold"
+                    aria-hidden="true"
+                  />
+                  <Typography
+                    as="span"
+                    variant="eyebrow"
+                    color="muted"
+                    className="group-hover:text-ethereal-gold"
+                  >
+                    {t("dashboard.layout.actions.settings", "Ustawienia")}
+                  </Typography>
                 </Link>
                 <button
                   onClick={logout}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.14em] text-red-600 transition-colors hover:bg-red-100 active:scale-95 shadow-sm outline-none"
+                  className="group flex items-center justify-center gap-2 rounded-2xl border border-red-900/10 bg-red-50 px-4 py-3.5 transition-colors hover:bg-red-100 active:scale-95 shadow-sm outline-none"
                 >
-                  <LogOut size={15} aria-hidden="true" />
-                  {t("dashboard.layout.actions.logout", "Wyloguj")}
+                  <LogOut
+                    size={15}
+                    className="text-red-600"
+                    aria-hidden="true"
+                  />
+                  <Typography
+                    as="span"
+                    variant="eyebrow"
+                    color="default"
+                    className="text-red-600"
+                  >
+                    {t("dashboard.layout.actions.logout", "Wyloguj")}
+                  </Typography>
                 </button>
               </div>
             </div>

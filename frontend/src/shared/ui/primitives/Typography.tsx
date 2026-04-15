@@ -9,15 +9,18 @@ import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 
-const typographyVariants = cva("transition-colors duration-500", {
+export const typographyVariants = cva("transition-colors duration-500", {
   variants: {
     variant: {
       body: "font-sans text-base leading-relaxed",
       eyebrow:
-        "text-[10px] font-bold uppercase tracking-[0.25em] md:tracking-[0.4em]",
-      metric: "font-serif text-4xl font-light tracking-tight lg:text-5xl",
-      metricHuge: "font-serif text-5xl font-light tracking-tight lg:text-6xl",
-      title: "font-serif text-3xl leading-[1.1] tracking-tight md:text-5xl",
+        "text-[10px] font-bold uppercase tracking-[0.2em] xl:tracking-[0.4em]",
+      metric:
+        "font-serif text-3xl font-light tracking-tight lg:text-4xl xl:text-5xl",
+      metricHuge: "font-serif text-5xl font-light tracking-tight xl:text-6xl",
+      title: "font-serif text-4xl leading-[1.1] tracking-tight xl:text-5xl",
+      subtitle: "font-serif text-xl font-medium tracking-tight sm:text-2xl",
+      label: "font-serif text-sm font-semibold tracking-wide",
       unit: "font-serif text-sm italic tracking-normal",
     },
     color: {

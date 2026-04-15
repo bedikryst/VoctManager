@@ -22,19 +22,23 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
 import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKinematics";
 
+// Ethereal UI Taxonomy
+import { Typography } from "@/shared/ui/primitives/Typography";
+import { Divider } from "@/shared/ui/primitives/Divider";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+
 interface DesktopSidebarProps {
   user: AuthUser | null;
   logout: () => void;
 }
 
 const navLinkVariants = cva(
-  "group/link relative flex items-center rounded-xl border px-3 py-2 text-[13px] font-bold tracking-wide transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50",
+  "group/link relative flex items-center rounded-xl border px-3 py-2 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50",
   {
     variants: {
       isActive: {
-        true: "border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-ink shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_2px_8px_rgba(194,168,120,0.15)]",
-        false:
-          "border-transparent text-ethereal-graphite hover:bg-white/40 hover:text-ethereal-ink hover:shadow-sm",
+        true: "border-ethereal-gold/30 bg-ethereal-gold/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_2px_8px_rgba(194,168,120,0.15)]",
+        false: "border-transparent hover:bg-white/40 hover:shadow-sm",
       },
     },
     defaultVariants: {
@@ -44,22 +48,26 @@ const navLinkVariants = cva(
 );
 
 const BrandMark = (): React.JSX.Element => (
-  <h2
-    className="text-3xl font-medium text-ethereal-ink tracking-tight select-none"
-    style={{ fontFamily: "'Cormorant', serif" }}
+  <Typography
+    as="h2"
+    variant="title"
+    color="default"
+    className="tracking-tight select-none"
   >
     Voct<span className="italic text-ethereal-gold">Manager</span>
-  </h2>
+  </Typography>
 );
 
 const BrandIcon = (): React.JSX.Element => (
   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-ethereal-gold/80 to-ethereal-incense shadow-md shadow-ethereal-gold/20 select-none">
-    <span
-      className="text-xl font-bold text-white"
-      style={{ fontFamily: "'Cormorant', serif" }}
+    <Typography
+      as="span"
+      variant="title"
+      color="inherit"
+      className="text-white"
     >
       V
-    </span>
+    </Typography>
   </div>
 );
 
@@ -89,21 +97,19 @@ export const DesktopSidebar = ({
     "U";
 
   return (
-    <motion.aside
+    <GlassCard
+      as={motion.aside}
+      variant="ethereal"
+      glow={false}
+      withNoise={true}
       initial={false}
       animate={{ width: isExpanded ? 280 : 88 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/45 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_8px_32px_rgba(166,146,121,0.08)] backdrop-blur-[16px] transition-shadow hover:shadow-[0_12px_40px_rgba(166,146,121,0.12)]"
+      className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col overflow-hidden rounded-3xl"
       aria-label={t("dashboard.layout.aria.sidebar", "Główna Nawigacja")}
     >
-      {/* Background Noise for Glass Continuity */}
-      <div
-        className="bg-noise absolute inset-0 -z-10 opacity-[0.03] pointer-events-none mix-blend-overlay"
-        aria-hidden="true"
-      />
-
       {/* Top: Brand Section */}
       <div className="relative z-10 flex h-16 flex-shrink-0 items-center justify-center pt-2">
         <AnimatePresence mode="wait">
@@ -146,14 +152,15 @@ export const DesktopSidebar = ({
             <div key={group.labelKey}>
               <div className="mb-1.5 flex h-4 items-center px-2">
                 {isExpanded && (
-                  <motion.p
+                  <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="text-[9px] font-bold uppercase tracking-[0.22em] text-ethereal-incense"
                   >
-                    {t(group.labelKey)}
-                  </motion.p>
+                    <Typography as="p" variant="eyebrow" color="incense">
+                      {t(group.labelKey)}
+                    </Typography>
+                  </motion.div>
                 )}
               </div>
 
@@ -186,7 +193,17 @@ export const DesktopSidebar = ({
                               : "max-w-0 opacity-0",
                           )}
                         >
-                          {t(link.labelKey)}
+                          <Typography
+                            as="span"
+                            variant="label"
+                            color={isActive ? "default" : "muted"}
+                            className={cn(
+                              isActive && "font-bold",
+                              !isActive && "group-hover/link:text-ethereal-ink",
+                            )}
+                          >
+                            {t(link.labelKey)}
+                          </Typography>
                         </div>
                       </>
                     )}
@@ -199,7 +216,9 @@ export const DesktopSidebar = ({
       </nav>
 
       {/* Bottom: User Actions */}
-      <div className="relative z-10 flex flex-shrink-0 flex-col border-t border-ethereal-incense/10 bg-white/30 p-3 transition-all duration-300">
+      <div className="relative z-10 flex flex-shrink-0 flex-col bg-white/30 p-3 transition-all duration-300">
+        <Divider position="absolute-top" variant="fade" />
+
         {isExpanded ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -209,16 +228,30 @@ export const DesktopSidebar = ({
           >
             <div className="flex items-center justify-between rounded-xl border border-white/60 bg-white/60 backdrop-blur-md p-2 shadow-[0_2px_8px_rgba(166,146,121,0.05)]">
               <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-ethereal-gold/10 text-xs font-bold text-ethereal-gold border border-ethereal-gold/20">
-                  {initials}
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-ethereal-gold/10 border border-ethereal-gold/20">
+                  <Typography
+                    as="span"
+                    variant="label"
+                    color="gold"
+                    className="font-bold"
+                  >
+                    {initials}
+                  </Typography>
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-bold text-ethereal-ink">
+                  <Typography
+                    as="p"
+                    variant="label"
+                    color="default"
+                    className="truncate font-bold"
+                  >
                     {userFullName || user?.email}
-                  </p>
-                  <p className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite">
-                    {userRoleLabel}
-                  </p>
+                  </Typography>
+                  <div className="mt-0.5 truncate">
+                    <Typography as="span" variant="eyebrow" color="muted">
+                      {userRoleLabel}
+                    </Typography>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center pr-1 text-ethereal-graphite">
@@ -228,17 +261,39 @@ export const DesktopSidebar = ({
             <div className="grid grid-cols-2 gap-2">
               <Link
                 to="/panel/settings"
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-transparent hover:border-ethereal-incense/20 bg-white/50 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ethereal-graphite shadow-sm transition-all hover:text-ethereal-ink hover:bg-white/80 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
+                className="group flex items-center justify-center gap-1.5 rounded-xl border border-transparent hover:border-ethereal-incense/20 bg-white/50 px-2 py-1.5 shadow-sm transition-all hover:bg-white/80 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
               >
-                <Settings size={13} aria-hidden="true" />
-                {t("dashboard.layout.actions.settings", "Ustawienia")}
+                <Settings
+                  size={13}
+                  className="text-ethereal-graphite group-hover:text-ethereal-ink"
+                  aria-hidden="true"
+                />
+                <Typography
+                  as="span"
+                  variant="eyebrow"
+                  color="muted"
+                  className="group-hover:text-ethereal-ink"
+                >
+                  {t("dashboard.layout.actions.settings", "Ustawienia")}
+                </Typography>
               </Link>
               <button
                 onClick={logout}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-transparent hover:border-ethereal-incense/20 bg-white/50 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ethereal-graphite shadow-sm transition-all hover:text-red-900 hover:bg-red-900/5 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
+                className="group flex items-center justify-center gap-1.5 rounded-xl border border-transparent hover:border-ethereal-incense/20 bg-white/50 px-2 py-1.5 shadow-sm transition-all hover:bg-red-900/5 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
               >
-                <LogOut size={13} aria-hidden="true" />
-                {t("dashboard.layout.actions.logout", "Wyloguj")}
+                <LogOut
+                  size={13}
+                  className="text-ethereal-graphite group-hover:text-red-900"
+                  aria-hidden="true"
+                />
+                <Typography
+                  as="span"
+                  variant="eyebrow"
+                  color="muted"
+                  className="group-hover:text-red-900"
+                >
+                  {t("dashboard.layout.actions.logout", "Wyloguj")}
+                </Typography>
               </button>
             </div>
           </motion.div>
@@ -256,16 +311,22 @@ export const DesktopSidebar = ({
             >
               <Settings size={18} aria-hidden="true" />
             </Link>
-            <div
-              className="h-px w-6 bg-ethereal-incense/20"
-              aria-hidden="true"
-            />
-            <div className="flex h-9 w-9 flex-shrink-0 cursor-default items-center justify-center rounded-xl bg-ethereal-gold/10 border border-ethereal-gold/20 text-xs font-bold text-ethereal-gold shadow-sm transition-transform hover:scale-105">
-              {initials}
+
+            <Divider position="relative" variant="solid" className="w-6" />
+
+            <div className="flex h-9 w-9 flex-shrink-0 cursor-default items-center justify-center rounded-xl bg-ethereal-gold/10 border border-ethereal-gold/20 shadow-sm transition-transform hover:scale-105">
+              <Typography
+                as="span"
+                variant="label"
+                color="gold"
+                className="font-bold"
+              >
+                {initials}
+              </Typography>
             </div>
           </motion.div>
         )}
       </div>
-    </motion.aside>
+    </GlassCard>
   );
 };

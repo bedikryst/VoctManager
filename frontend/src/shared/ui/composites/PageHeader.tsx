@@ -65,7 +65,7 @@ export function PageHeader({
           as="h1"
           variant="title"
           className={cn(
-            isDashboard ? "md:text-5xl" : "md:text-4xl text-3xl",
+            isDashboard ? "xl:text-5xl text-4xl" : "xl:text-3xl text-2xl",
             "font-medium",
           )}
         >

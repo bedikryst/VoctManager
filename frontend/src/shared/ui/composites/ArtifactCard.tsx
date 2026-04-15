@@ -2,6 +2,7 @@
  * @file ArtifactCard.tsx
  * @description The cinematic centerpiece composite. Domain-agnostic.
  * Features semantic overlay links, group-hover kinematics, and precise artifact stratums.
+ * Refactored to eliminate strict typograhic layout violations.
  * @architecture Enterprise SaaS 2026
  */
 
@@ -15,6 +16,7 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { KineticText } from "@/shared/ui/kinematics/KineticText";
+import { Typography } from "@/shared/ui/primitives/Typography";
 
 const EtherealEasing = [0.16, 1, 0.3, 1] as const;
 
@@ -71,7 +73,7 @@ export function ArtifactCard({
     <GlassCard
       variant="light"
       padding="none"
-      className="group relative isolate flex h-full min-h-[400px] w-full flex-col overflow-hidden transition-all duration-[1200ms] ease-[0.16,1,0.3,1] hover:shadow-[0_40px_100px_rgba(166,146,121,0.2)]"
+      className="group flex h-full min-h-[400px] w-full flex-col transition-all duration-[1200ms] ease-[0.16,1,0.3,1] hover:shadow-[0_40px_100px_rgba(166,146,121,0.2)]"
       backgroundElement={
         <div className="pointer-events-none absolute -right-32 -top-32 h-[800px] w-[800px] rounded-full bg-gradient-to-br from-ethereal-gold/15 via-ethereal-incense/5 to-transparent blur-[160px] transition-transform duration-[3000ms] ease-out group-hover:scale-[1.3] group-hover:translate-x-10" />
       }
@@ -104,8 +106,9 @@ export function ArtifactCard({
           <motion.div
             initial="hidden"
             animate="visible"
-            className="mb-4 flex flex-wrap items-center gap-4 text-ethereal-sage"
+            className="mb-4 flex flex-wrap items-center gap-4"
           >
+            {/* Oczyszczono z surowych klas tekstu - zakładamy, że slot dostarczy Primitives */}
             {metadataSlot}
           </motion.div>
         )}
@@ -114,7 +117,7 @@ export function ArtifactCard({
           as="h2"
           text={title}
           delay={0.2}
-          className="mb-6 max-w-2xl font-serif text-3xl leading-[1.05] tracking-tight text-ethereal-ink md:text-[3rem]"
+          className="mb-6 max-w-2xl font-serif text-3xl leading-[1.05] tracking-tight text-ethereal-ink xl:text-4xl"
         />
 
         {subtitleSlot && (
@@ -129,8 +132,8 @@ export function ArtifactCard({
       </div>
 
       {/* 4. ARTIFACT STRATUM (Metrics via MetricBlock) */}
-      <div className="relative z-10 grid h-full grid-cols-1 overflow-hidden sm:grid-cols-3 pointer-events-none">
-        <Divider variant="gradient-fade" position="absolute-top" />
+      <div className="relative z-10 grid h-auto md:h-full grid-cols-1 overflow-hidden sm:grid-cols-3 pointer-events-none">
+        <Divider variant="fade" position="absolute-top" />
 
         {metrics.map((metric, index) => (
           <div key={metric.id} className="relative">
@@ -143,7 +146,6 @@ export function ArtifactCard({
               interactiveMode="glass"
               className="h-full"
             />
-            {/* Fluid separator for all but the last metric (hidden on mobile) */}
             {index < metrics.length - 1 && (
               <Divider
                 variant="gradient-bottom"

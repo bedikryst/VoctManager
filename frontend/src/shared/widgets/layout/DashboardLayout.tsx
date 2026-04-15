@@ -41,7 +41,7 @@ export const DashboardLayout = (): React.JSX.Element => {
 
       {/* Layer 2: Main Dynamic Content */}
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pb-12 pt-24 transition-all duration-300 sm:px-6 md:pl-[var(--sidebar-width)] md:pr-8 md:pt-8 lg:pr-12"
+        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-8 pb-4 transition-all duration-300 sm:px-6 md:pl-[var(--sidebar-width)] md:pr-8 md:pt-8 lg:pr-12"
         id="main-content"
       >
         <div className="mx-auto flex h-full w-full max-w-7xl flex-col">
