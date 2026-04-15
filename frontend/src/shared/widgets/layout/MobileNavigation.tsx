@@ -1,7 +1,8 @@
 /**
  * @file MobileNavigation.tsx
  * @description Enterprise SaaS Mobile Off-canvas Navigation.
- * Refactored for extreme spatial elegance and Ethereal UI compliance.
+ * Architecturally pure implementation of Ethereal UI.
+ * Fixed: Framer Motion variant propagation & Chiaroscuro light-theme contrast.
  * @module shared/widgets/layout/MobileNavigation
  */
 
@@ -15,17 +16,25 @@ import { cva } from "class-variance-authority";
 import {
   ADMIN_NAV_GROUPS as adminNavGroups,
   ARTIST_NAV_GROUPS as artistNavGroups,
-} from "../../config/navigation/dashboard.config";
+} from "@/shared/config/navigation/dashboard.config";
 import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
 import { isCrew, isManager } from "@/shared/auth/rbac";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
-// Ethereal UI Taxonomy
+// Ethereal UI Taxonomy strictly enforced
 import { Heading, Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Button } from "@/shared/ui/primitives/Button";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+
+// Centralized Kinematics - Single source of truth for motion (open/closed lifecycle)
+import {
+  MENU_PANEL_VARIANTS,
+  STAGGERED_REVEAL_VARIANTS,
+  FADE_UP_VARIANTS,
+} from "@/shared/ui/kinematics/motion-presets";
 
 interface MobileNavigationProps {
   user: AuthUser | null;
@@ -33,12 +42,12 @@ interface MobileNavigationProps {
 }
 
 const mobileNavLinkVariants = cva(
-  "flex items-center gap-3.5 rounded-xl px-3 py-2.5 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold",
+  "group/moblink relative flex items-center gap-4 rounded-[14px] px-3.5 py-3 transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
   {
     variants: {
       isActive: {
-        true: "bg-ethereal-gold/10 shadow-[var(--shadow-ethereal-inset)]",
-        false: "bg-transparent hover:bg-white/40",
+        true: "bg-ethereal-gold/10 border border-ethereal-gold/30 shadow-[var(--shadow-ethereal-inset)]",
+        false: "border border-transparent hover:bg-white/40",
       },
     },
     defaultVariants: {
@@ -51,15 +60,10 @@ const BrandMark = (): React.JSX.Element => (
   <Heading
     as="h2"
     size="xl"
-    color="default"
-    className="select-none flex items-center"
+    className="select-none flex items-center tracking-tight"
   >
     <span>Voct</span>
-    <Heading
-      as="span"
-      color="gold"
-      className="italic ml-[2px]"
-    >
+    <Heading as="span" color="gold" className="italic ml-[2px]">
       Manager
     </Heading>
   </Heading>
@@ -79,6 +83,7 @@ export const MobileNavigation = ({
   const userFullName = [user?.first_name, user?.last_name]
     .filter(Boolean)
     .join(" ");
+
   const mobileRoleLabel = isManagerUser
     ? t("dashboard.layout.roles.admin")
     : isCrew(user)
@@ -91,30 +96,37 @@ export const MobileNavigation = ({
 
   return (
     <>
-      {/* Floating Trigger */}
+      {/* Floating Trigger - Integrated with Chiaroscuro */}
       <div className="fixed bottom-6 right-6 z-[70] md:hidden">
-        <button
+        <GlassCard
+          as="button"
+          variant="dark"
+          padding="none"
           onClick={() => setIsOpen(true)}
           aria-label={t("dashboard.layout.aria.openMenu")}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-ethereal-ink text-white shadow-lg shadow-ethereal-ink/20 transition-transform active:scale-95 outline-none focus-visible:ring-4 focus-visible:ring-ethereal-gold"
+          className="flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95 outline-none focus-visible:ring-4 focus-visible:ring-ethereal-gold shadow-[var(--shadow-ethereal-deep)]"
         >
-          <Menu size={20} aria-hidden="true" />
-        </button>
+          <Menu size={22} color="white" aria-hidden="true" />
+        </GlassCard>
       </div>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-[80] flex flex-col bg-white/95 backdrop-blur-3xl md:hidden overflow-hidden"
+          <GlassCard
+            as={motion.div}
+            variant="ethereal"
+            withNoise={true}
+            padding="none"
+            variants={MENU_PANEL_VARIANTS}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            className="fixed inset-0 z-[80] flex flex-col md:hidden overflow-hidden rounded-none border-none overscroll-none"
             aria-modal="true"
             role="dialog"
           >
-            {/* Header */}
-            <div className="relative flex h-16 flex-shrink-0 items-center justify-between px-5">
+            {/* Header Stratum */}
+            <div className="relative flex h-[72px] flex-shrink-0 items-center justify-between px-5 pt-safe">
               <BrandMark />
               <div className="flex items-center gap-3">
                 <NotificationCenter />
@@ -123,66 +135,77 @@ export const MobileNavigation = ({
                   size="icon"
                   onClick={() => setIsOpen(false)}
                   aria-label={t("dashboard.layout.aria.closeMenu")}
+                  className="text-ethereal-graphite hover:text-ethereal-ink"
                 >
-                  <X size={20} aria-hidden="true" />
+                  <X size={24} aria-hidden="true" />
                 </Button>
               </div>
-              <Divider position="absolute-bottom" variant="fade" />
+              <Divider
+                position="absolute-bottom"
+                variant="fade"
+                className="opacity-40"
+              />
             </div>
 
-            {/* Navigation Body */}
-            <nav className="flex-1 overflow-y-auto px-4 py-5">
-              <div className="space-y-6">
-                {navGroups.map((group) => (
-                  <div key={group.labelKey}>
-                    <div className="mb-2 px-1">
-                      <Eyebrow as="p" color="muted">
+            {/* Navigation Matrix - Inheriting purely from `open`/`closed` parent */}
+            <nav className="flex-1 overflow-y-auto px-4 py-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="space-y-8">
+                {navGroups.map((group, groupIndex) => (
+                  <div key={group.labelKey} className="flex flex-col">
+                    <motion.div
+                      variants={FADE_UP_VARIANTS}
+                      custom={0.2 + groupIndex * 0.1}
+                      className="mb-3 px-2"
+                    >
+                      <Eyebrow as="p" color="incense">
                         {t(group.labelKey)}
                       </Eyebrow>
-                    </div>
-                    <div className="space-y-0.5">
-                      {group.links.map((link) => (
-                        <NavLink
-                          key={link.to}
-                          to={link.to}
-                          end={link.to === "/panel"}
-                          onClick={() => setIsOpen(false)}
-                          className={({ isActive }) =>
-                            cn(
-                              mobileNavLinkVariants({ isActive }),
-                              "group/moblink",
-                            )
-                          }
-                        >
-                          {({ isActive }) => {
-                            // TypeScript safety for extracting className from the icon element
-                            const iconProps = React.isValidElement(link.icon)
-                              ? (link.icon.props as { className?: string })
-                              : {};
+                    </motion.div>
 
-                            return (
+                    <div className="space-y-1.5">
+                      {group.links.map((link, linkIndex) => (
+                        <motion.div
+                          key={link.to}
+                          variants={STAGGERED_REVEAL_VARIANTS}
+                          custom={linkIndex + groupIndex * 3}
+                        >
+                          <NavLink
+                            to={link.to}
+                            end={link.to === "/panel"}
+                            onClick={() => setIsOpen(false)}
+                            className={({ isActive }) =>
+                              cn(mobileNavLinkVariants({ isActive }))
+                            }
+                          >
+                            {({ isActive }) => (
                               <>
                                 <div
                                   className={cn(
-                                    "flex w-7 flex-shrink-0 items-center justify-center transition-colors duration-300",
+                                    "flex w-6 flex-shrink-0 items-center justify-center transition-colors duration-500",
                                     isActive
-                                      ? "text-ethereal-gold drop-shadow-sm"
-                                      : "text-ethereal-graphite/60 group-hover/link:text-ethereal-gold",
+                                      ? "text-ethereal-gold"
+                                      : "text-ethereal-graphite/50 group-hover/moblink:text-ethereal-gold/80",
                                   )}
                                 >
-                                  {/* Ikona natywnie odziedziczy kolor (currentColor) z powyższego diva */}
-                                  {link.icon}
+                                  {React.cloneElement(
+                                    link.icon as React.ReactElement,
+                                    {
+                                      size: 20,
+                                      strokeWidth: isActive ? 2.5 : 2,
+                                    },
+                                  )}
                                 </div>
                                 <Label
                                   as="span"
-                                  color={isActive ? "default" : "muted"}
+                                  weight={isActive ? "semibold" : "medium"}
+                                  color={isActive ? "gold" : "muted"}
                                 >
                                   {t(link.labelKey)}
                                 </Label>
                               </>
-                            );
-                          }}
-                        </NavLink>
+                            )}
+                          </NavLink>
+                        </motion.div>
                       ))}
                     </div>
                   </div>
@@ -190,53 +213,69 @@ export const MobileNavigation = ({
               </div>
             </nav>
 
-            {/* Footer User Area */}
-            <div className="relative bg-white/50 px-4 pb-safe pt-5 pb-6">
-              <Divider position="absolute-top" variant="fade" />
+            {/* Footer Telemetry Area - Corrected to contrast against Ethereal Glass */}
+            <motion.div
+              variants={FADE_UP_VARIANTS}
+              custom={0.8}
+              className="relative bg-white/30 px-5 pb-safe pt-6 pb-8 backdrop-blur-md"
+            >
+              <Divider
+                position="absolute-top"
+                variant="fade"
+                className="opacity-30"
+              />
 
-              <div className="flex items-center gap-3.5 mb-5 px-1">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-ethereal-gold/10 border border-ethereal-gold/20">
-                  <Label as="span" color="gold">
+              <div className="flex items-center gap-4 mb-6 px-1">
+                <div className="flex h-[46px] w-[46px] flex-shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-ethereal-gold/20 to-transparent border border-ethereal-gold/30 shadow-[var(--shadow-ethereal-soft)]">
+                  <Label as="span" color="gold" weight="bold" size="lg">
                     {initials}
                   </Label>
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <Label
                     as="p"
                     color="default"
-                    className="truncate"
+                    weight="semibold"
+                    className="truncate text-ethereal-ink"
                   >
                     {userFullName || user?.email}
                   </Label>
                   <Eyebrow
                     as="p"
-                    color="muted"
-                    className="truncate mt-0.5"
+                    color="incense"
+                    size="xs"
+                    className="truncate mt-0.5 opacity-90"
                   >
                     {mobileRoleLabel}
                   </Eyebrow>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   asChild
                   variant="secondary"
                   size="sm"
                   onClick={() => setIsOpen(false)}
+                  className="w-full justify-center"
                 >
                   <Link to="/panel/settings">
-                    <Settings size={14} />
+                    <Settings size={16} className="mr-2" />
                     {t("dashboard.layout.actions.settings")}
                   </Link>
                 </Button>
-                <Button variant="destructive" size="sm" onClick={logout}>
-                  <LogOut size={14} />
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={logout}
+                  className="w-full justify-center"
+                >
+                  <LogOut size={16} className="mr-2" />
                   {t("dashboard.layout.actions.logout")}
                 </Button>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </GlassCard>
         )}
       </AnimatePresence>
     </>

@@ -2,6 +2,7 @@
  * @file EtherealBackground.tsx
  * @description Persistent ambient layer with Oculus Vignette and Kinematic Stave.
  * Implements "Compositor Freezing" to release GPU memory post-animation.
+ * Features a subtle, historically accurate C-Clef for sacral minimalism.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/kinematics/EtherealBackground
  */
@@ -9,6 +10,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/app/store/useAppStore";
+import { VocalClefShadow } from "@/shared/ui/kinematics/VocalClefShadow";
 
 export const EtherealBackground = React.memo((): React.JSX.Element => {
   const isAuraStabilized = useAppStore((state) => state.isAuraStabilized);
@@ -21,7 +23,7 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
     >
       <div
         className="absolute inset-0"
-        // Hardware acceleration barrier. Release when stabilized.
+        // Hardware acceleration barrier. Release compositor when stabilised.
         style={{
           transform: "translateZ(0)",
           willChange: isAuraStabilized ? "auto" : "transform",
@@ -34,27 +36,30 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
         <div className="absolute -left-[5%] -top-[5%] z-[2] h-[45vw] w-[45vw] rounded-full bg-ethereal-gold/20 blur-[100px] mix-blend-multiply" />
         <div className="absolute -bottom-[50%] -right-[10%] z-[2] h-[55vw] w-[55vw] rounded-full bg-ethereal-amethyst/15 blur-[100px] mix-blend-multiply" />
 
-        {/* LAYER 2: The Kinematic Stave */}
+        {/* LAYER 2: The Kinematic Stave & Clef */}
         <div className="absolute inset-0 z-[3] flex items-center justify-center">
           <motion.div
-            className="flex h-[300vh] w-[300vw] -rotate-[8deg] flex-col justify-center"
-            // If already stabilized (e.g., page refresh or navigation), skip to "visible" instantly
+            className="relative flex h-[300vh] w-[300vw] -rotate-[8deg] flex-col justify-center"
+            // If already stabilised (e.g., page refresh or navigation), skip to "visible" instantly
             initial={isAuraStabilized ? "visible" : "hidden"}
             animate="visible"
             variants={{
               hidden: {},
               visible: { transition: { staggerChildren: 0.15 } },
             }}
-            // Trigger Zustand to freeze GPU usage after the 8s + staggering delay
+            // Trigger Zustand to freeze GPU usage after the orchestration completes
             onAnimationComplete={() => {
               if (!isAuraStabilized) stabilizeAura();
             }}
           >
+            {/* The Historical Watermark */}
+            <VocalClefShadow />
+
             {[1, 2, 3, 4, 5].map((_, index) => (
               <motion.div
                 key={`stave-line-${index}`}
                 className="mb-[50px] h-[1px] w-full bg-gradient-to-r from-transparent via-ethereal-incense/80 to-transparent shadow-[0_0_8px_rgba(194,168,120,0.35)] last:mb-0"
-                // FREEZE THE COMPOSITOR: Switch from rendering properties to auto when done
+                // FREEZE THE COMPOSITOR: Switch from rendering properties to auto when complete
                 style={{
                   willChange: isAuraStabilized ? "auto" : "width, opacity",
                 }}
