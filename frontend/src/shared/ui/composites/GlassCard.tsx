@@ -2,7 +2,7 @@
  * @file GlassCard.tsx
  * @description High-end structural container providing layered glassmorphism.
  * Refactored for 'Chiaroscuro' light dynamics, Strict Generic Polymorphism,
- * and Framer Motion integration.
+ * and Framer Motion integration. Zero hook-thrashing guaranteed.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/GlassCard
  */
@@ -81,8 +81,18 @@ const GlassCardInner = (
     ...rest
   } = props;
 
+  // Strict Top-Level Hooks Enforced
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+
+  // The template is safely hoisted out of the conditional rendering block
+  const backgroundTemplate = useMotionTemplate`
+    radial-gradient(
+      150px circle at ${mouseX}px ${mouseY}px,
+      rgba(194, 168, 120, 0.07),
+      transparent 80%
+    )
+  `;
 
   const handleMouseMove = (event: MouseEvent<HTMLElement>) => {
     if (onMouseMove) {
@@ -112,15 +122,7 @@ const GlassCardInner = (
       {glow && (
         <motion.div
           className="pointer-events-none absolute -inset-px z-0 rounded-[inherit] opacity-0 transition-opacity duration-700 group-hover:opacity-100"
-          style={{
-            background: useMotionTemplate`
-              radial-gradient(
-                150px circle at ${mouseX}px ${mouseY}px,
-                rgba(194, 168, 120, 0.07),
-                transparent 80%
-              )
-            `,
-          }}
+          style={{ background: backgroundTemplate }}
           aria-hidden="true"
         />
       )}
