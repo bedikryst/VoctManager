@@ -23,7 +23,7 @@ import { cn } from "@/shared/lib/utils";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 // Ethereal UI Taxonomy
-import { Typography } from "@/shared/ui/primitives/Typography";
+import { Heading, Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Button } from "@/shared/ui/primitives/Button";
 
@@ -48,22 +48,21 @@ const mobileNavLinkVariants = cva(
 );
 
 const BrandMark = (): React.JSX.Element => (
-  <Typography
+  <Heading
     as="h2"
-    variant="title"
+    size="xl"
     color="default"
-    className="text-xl tracking-tight select-none flex items-center"
+    className="select-none flex items-center"
   >
     <span>Voct</span>
-    <Typography
+    <Heading
       as="span"
-      variant="title"
       color="gold"
       className="italic ml-[2px]"
     >
       Manager
-    </Typography>
-  </Typography>
+    </Heading>
+  </Heading>
 );
 
 export const MobileNavigation = ({
@@ -137,9 +136,9 @@ export const MobileNavigation = ({
                 {navGroups.map((group) => (
                   <div key={group.labelKey}>
                     <div className="mb-2 px-1">
-                      <Typography as="p" variant="eyebrow" color="muted">
+                      <Eyebrow as="p" color="muted">
                         {t(group.labelKey)}
-                      </Typography>
+                      </Eyebrow>
                     </div>
                     <div className="space-y-0.5">
                       {group.links.map((link) => (
@@ -174,17 +173,12 @@ export const MobileNavigation = ({
                                   {/* Ikona natywnie odziedziczy kolor (currentColor) z powyższego diva */}
                                   {link.icon}
                                 </div>
-                                <Typography
+                                <Label
                                   as="span"
-                                  variant="label"
                                   color={isActive ? "default" : "muted"}
-                                  className={cn(
-                                    !isActive &&
-                                      "group-hover/moblink:text-ethereal-ink",
-                                  )}
                                 >
                                   {t(link.labelKey)}
-                                </Typography>
+                                </Label>
                               </>
                             );
                           }}
@@ -202,27 +196,25 @@ export const MobileNavigation = ({
 
               <div className="flex items-center gap-3.5 mb-5 px-1">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-ethereal-gold/10 border border-ethereal-gold/20">
-                  <Typography as="span" variant="label" color="gold">
+                  <Label as="span" color="gold">
                     {initials}
-                  </Typography>
+                  </Label>
                 </div>
                 <div className="min-w-0">
-                  <Typography
+                  <Label
                     as="p"
-                    variant="label"
                     color="default"
                     className="truncate"
                   >
                     {userFullName || user?.email}
-                  </Typography>
-                  <Typography
+                  </Label>
+                  <Eyebrow
                     as="p"
-                    variant="eyebrow"
                     color="muted"
                     className="truncate mt-0.5"
                   >
                     {mobileRoleLabel}
-                  </Typography>
+                  </Eyebrow>
                 </div>
               </div>
 

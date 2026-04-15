@@ -6,7 +6,7 @@
 
 import React from "react";
 import { cn } from "@/shared/lib/utils";
-import { Typography } from "@/shared/ui/primitives/Typography";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 
 export interface SectionHeaderProps extends React.HTMLAttributes<HTMLElement> {
@@ -32,9 +32,9 @@ export function SectionHeader({
           {icon}
         </div>
       )}
-      <Typography as="h2" variant="eyebrow" color="muted">
+      <Eyebrow as="h2" color="muted">
         {title}
-      </Typography>
+      </Eyebrow>
 
       {withFluidDivider && (
         <Divider variant="gradient-right" position="absolute-bottom" />

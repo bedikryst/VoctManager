@@ -15,7 +15,7 @@ import {
   type ArtifactMetric,
 } from "@/shared/ui/composites/ArtifactCard";
 import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
-import { Typography } from "@/shared/ui/primitives/Typography";
+import { Eyebrow, Unit } from "@/shared/ui/primitives/typography";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 
 export interface ProjectStatsDto {
@@ -130,9 +130,9 @@ export function SpotlightProjectCard({
     <>
       <motion.div variants={fadeUpVariant} className="flex items-center gap-2">
         <Calendar size={13} strokeWidth={1.5} className="shrink-0 opacity-70" />
-        <Typography variant="eyebrow" className="text-inherit">
+        <Eyebrow color="default" weight="medium">
           {formattedDate}
-        </Typography>
+        </Eyebrow>
       </motion.div>
       <motion.div
         variants={fadeUpVariant}
@@ -146,7 +146,7 @@ export function SpotlightProjectCard({
           locationRef={project.locationId}
           fallback={project.locationFallbackName || "TBA"}
           variant="minimal"
-          className="text-[10px] font-bold uppercase tracking-[0.25em] transition-colors duration-500 hover:text-ethereal-gold"
+          className="text-[10px] font-medium uppercase tracking-[0.25em] transition-colors duration-500 hover:text-ethereal-gold"
         />
       </motion.div>
     </>

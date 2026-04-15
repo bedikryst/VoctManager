@@ -1,8 +1,7 @@
 /**
  * @file DesktopSidebar.tsx
- * @description Enterprise SaaS Collapsible Sidebar (High-Density Mode).
- * Flawlessly adheres to Ethereal UI taxonomy, Strict TS 7.0, and layout kinematics.
- * @module shared/widgets/layout/DesktopSidebar
+ * @description Refactored Enterprise Sidebar.
+ * ZERO raw CSS for text/dividers. Adheres to A11y 2026.
  */
 
 import React from "react";
@@ -17,10 +16,11 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
 import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKinematics";
 
-// Ethereal UI Primitives & Composites
-import { Typography } from "@/shared/ui/primitives/Typography";
+// Ethereal UI Primitives
+import { Heading, Text, Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Divider } from "@/shared/ui/primitives/Divider";
 
 interface DesktopSidebarProps {
   user: AuthUser | null;
@@ -34,13 +34,13 @@ interface IconProps {
 }
 
 const navLinkVariants = cva(
-  "group/link relative flex items-center transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+  "group/link relative flex items-center transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50",
   {
     variants: {
       isActive: {
         true: "border-ethereal-gold/30 bg-ethereal-gold/10 shadow-[var(--shadow-ethereal-inset)] text-ethereal-gold",
         false:
-          "border-transparent text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-white/40",
+          "border-transparent text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-white/10",
       },
       isExpanded: {
         true: "w-full rounded-[10px] border px-3 h-9 justify-start",
@@ -71,7 +71,6 @@ export const DesktopSidebar = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
             className="fixed inset-0 z-[50] bg-ethereal-ink/5 backdrop-blur-[2px] pointer-events-none hidden md:block"
             aria-hidden="true"
           />
@@ -89,9 +88,11 @@ export const DesktopSidebar = ({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         padding="none"
+        aria-expanded={isExpanded}
         className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col rounded-[24px] border-white/30 shadow-[var(--shadow-ethereal-deep)] will-change-[width] overflow-hidden"
       >
         <div className="flex flex-col h-full w-full">
+          {/* LOGO STRATUM */}
           <div className="relative flex h-20 flex-shrink-0 items-center justify-center pt-2">
             <AnimatePresence mode="wait">
               {isExpanded ? (
@@ -100,58 +101,50 @@ export const DesktopSidebar = ({
                   initial={{ opacity: 0, filter: "blur(2px)" }}
                   animate={{ opacity: 1, filter: "blur(0px)" }}
                   exit={{ opacity: 0, filter: "blur(2px)" }}
-                  transition={{ duration: 0.2 }}
                   className="flex items-center select-none"
                 >
-                  <Typography
-                    variant="title"
-                    className="text-[22px] tracking-tight flex items-baseline gap-[2px]"
-                  >
+                  <Heading size="2xl">
                     Voct
-                    <Typography
+                    <Text
                       as="span"
-                      variant="emphasis"
+                      weight="medium"
                       color="gold"
-                      className="text-lg"
+                      size="lg"
                     >
                       Manager
-                    </Typography>
-                  </Typography>
+                    </Text>
+                  </Heading>
                 </motion.div>
               ) : (
                 <motion.div
                   key="compact"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
                   className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-gradient-to-br from-ethereal-gold to-ethereal-ink shadow-md select-none"
                 >
-                  <Typography
-                    variant="subtitle"
-                    color="inherit"
-                    className="text-white/70"
+                  <Heading
+                    color="white"
+                    size="lg"
+                    weight="medium"
                   >
                     V
-                  </Typography>
+                  </Heading>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
+          {/* NAV STRATUM */}
           <div className="flex-1 min-h-0 w-full">
             <nav
+              aria-label={t("dashboard.layout.nav.main_menu")}
               className={cn(
-                "h-full overflow-y-auto overflow-x-hidden transition-all duration-300 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full flex flex-col",
+                "h-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col",
                 isExpanded ? "px-4 py-2" : "px-0 py-4 items-center",
               )}
             >
               <div
                 className={cn(
-                  "w-full transition-all duration-300",
-                  isExpanded
-                    ? "space-y-5"
-                    : "flex flex-col items-center space-y-4",
+                  "w-full transition-all",
+                  isExpanded ? "space-y-5" : "space-y-4",
                 )}
               >
                 {navGroups.map((group) => (
@@ -164,30 +157,13 @@ export const DesktopSidebar = ({
                         : "flex flex-col items-center space-y-3",
                     )}
                   >
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                          animate={{
-                            opacity: 0.6,
-                            height: 20,
-                            marginBottom: 4,
-                          }}
-                          exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="px-2 overflow-hidden whitespace-nowrap flex items-center"
-                        >
-                          <Typography
-                            as="span"
-                            variant="eyebrow"
-                            color="incense"
-                            className="tracking-widest font-sans"
-                          >
-                            {t(group.labelKey)}
-                          </Typography>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {isExpanded && (
+                      <div className="px-2 mb-1">
+                        <Eyebrow color="incense" size="xs">
+                          {t(group.labelKey)}
+                        </Eyebrow>
+                      </div>
+                    )}
 
                     <div
                       className={cn(
@@ -209,11 +185,8 @@ export const DesktopSidebar = ({
                             <>
                               <div
                                 className={cn(
-                                  "flex flex-shrink-0 items-center justify-center transition-colors duration-300",
+                                  "flex flex-shrink-0 items-center justify-center",
                                   isExpanded ? "w-6" : "w-10 h-6",
-                                  isActive
-                                    ? "text-ethereal-gold"
-                                    : "currentColor",
                                 )}
                               >
                                 {React.cloneElement(
@@ -225,42 +198,17 @@ export const DesktopSidebar = ({
                                 )}
                               </div>
 
-                              <AnimatePresence>
-                                {isExpanded && (
-                                  <motion.div
-                                    initial={{
-                                      opacity: 0,
-                                      width: 0,
-                                      marginLeft: 0,
-                                    }}
-                                    animate={{
-                                      opacity: 1,
-                                      width: "auto",
-                                      marginLeft: 10,
-                                    }}
-                                    exit={{
-                                      opacity: 0,
-                                      width: 0,
-                                      marginLeft: 0,
-                                    }}
-                                    transition={{ duration: 0.2 }}
-                                    className="overflow-hidden whitespace-nowrap flex items-center"
+                              {isExpanded && (
+                                <div className="ml-[10px] overflow-hidden whitespace-nowrap">
+                                  <Label
+                                    weight="medium"
+                                    size="base"
+                                    color={isActive ? "default" : "muted"}
                                   >
-                                    <Typography
-                                      as="span"
-                                      variant="label"
-                                      color={isActive ? "default" : "muted"}
-                                      className={cn(
-                                        "font-sans font-medium tracking-wide text-[13px]",
-                                        !isActive &&
-                                          "group-hover/link:text-ethereal-ink",
-                                      )}
-                                    >
-                                      {t(link.labelKey)}
-                                    </Typography>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
+                                    {t(link.labelKey)}
+                                  </Label>
+                                </div>
+                              )}
                             </>
                           )}
                         </NavLink>
@@ -272,19 +220,24 @@ export const DesktopSidebar = ({
             </nav>
           </div>
 
-          {/* User Actions Stratum - Czysta forma */}
+          {/* USER ACTIONS STRATUM */}
           <div
             className={cn(
-              "mt-auto flex-shrink-0 z-10 w-full transition-all duration-300 relative",
-              "before:absolute before:top-0 before:left-5 before:right-5 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent",
+              "mt-auto flex-shrink-0 z-10 w-full",
               isExpanded
                 ? "px-5 pb-5 pt-5"
                 : "px-0 pb-6 pt-5 flex flex-col items-center",
             )}
           >
+            <Divider
+              variant="fade"
+              position="absolute-top"
+              className="opacity-50"
+            />
+
             <div
               className={cn(
-                "flex transition-all duration-300 w-full",
+                "flex w-full",
                 isExpanded ? "flex-col gap-4" : "flex-col items-center gap-5",
               )}
             >
@@ -296,50 +249,37 @@ export const DesktopSidebar = ({
               >
                 {!isExpanded && <NotificationCenter />}
 
-                <div
-                  className={cn(
-                    "flex flex-shrink-0 items-center justify-center rounded-[12px] transition-transform hover:scale-105",
-                    "bg-gradient-to-br from-ethereal-gold/10 to-transparent border border-ethereal-gold/20 shadow-[var(--shadow-ethereal-soft)]",
-                    isExpanded ? "h-10 w-10" : "h-10 w-10",
-                  )}
-                >
-                  <Typography
-                    variant="label"
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px] bg-gradient-to-br from-ethereal-gold/10 to-transparent border border-ethereal-gold/20 shadow-[var(--shadow-ethereal-soft)]">
+                  <Label
                     color="gold"
-                    className="font-semibold text-xs"
+                    size="sm"
+                    weight="semibold"
                   >
                     {initials}
-                  </Typography>
+                  </Label>
                 </div>
 
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex-1 min-w-0 flex items-center justify-between overflow-hidden"
-                    >
-                      <div className="min-w-0 pr-2">
-                        <Typography
-                          variant="label"
-                          className="truncate block font-medium text-[13px] leading-tight text-ethereal-ink font-sans"
-                        >
-                          {userFullName}
-                        </Typography>
-                        <Typography
-                          variant="eyebrow"
-                          color="incense"
-                          className="truncate block mt-1 tracking-widest opacity-80 font-sans"
-                        >
-                          {roleLabel}
-                        </Typography>
-                      </div>
-                      <NotificationCenter />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {isExpanded && (
+                  <div className="flex-1 min-w-0 flex items-center justify-between overflow-hidden">
+                    <div className="min-w-0 pr-2">
+                      <Label
+                        size="base"
+                        weight="medium"
+                        className="truncate block"
+                      >
+                        {userFullName}
+                      </Label>
+                      <Eyebrow
+                        color="incense"
+                        size="xs"
+                        className="truncate block mt-1 opacity-80"
+                      >
+                        {roleLabel}
+                      </Eyebrow>
+                    </div>
+                    <NotificationCenter />
+                  </div>
+                )}
               </div>
 
               <div
@@ -353,9 +293,8 @@ export const DesktopSidebar = ({
                 <Button
                   asChild
                   variant="ghost"
-                  size="sm"
                   className={cn(
-                    "flex items-center rounded-[10px] text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-white/40 transition-colors",
+                    "rounded-[10px] text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-white/10 transition-colors",
                     isExpanded
                       ? "flex-1 justify-start gap-2.5 h-9 px-2"
                       : "w-10 h-10 p-0 justify-center",
@@ -366,36 +305,22 @@ export const DesktopSidebar = ({
                     aria-label={t("dashboard.layout.actions.settings")}
                   >
                     <Settings size={16} strokeWidth={2} />
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: "auto" }}
-                          exit={{ opacity: 0, width: 0 }}
-                          className="overflow-hidden whitespace-nowrap"
-                        >
-                          <Typography
-                            as="span"
-                            variant="label"
-                            className="text-[12px] font-medium pointer-events-none tracking-wide font-sans"
-                          >
-                            {t("dashboard.layout.actions.settings")}
-                          </Typography>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {isExpanded && (
+                      <Label size="sm" weight="medium">
+                        {t("dashboard.layout.actions.settings")}
+                      </Label>
+                    )}
                   </Link>
                 </Button>
 
                 <Button
                   variant="ghost"
-                  size="sm"
                   onClick={logout}
-                  className={cn(
-                    "flex items-center justify-center rounded-[10px] text-ethereal-graphite/50 hover:text-red-600 hover:bg-red-500/10 transition-colors",
-                    isExpanded ? "w-9 h-9 p-0 flex-shrink-0" : "w-10 h-10 p-0",
-                  )}
                   aria-label={t("dashboard.layout.actions.logout")}
+                  className={cn(
+                    "rounded-[10px] text-ethereal-graphite/50 hover:text-red-600 hover:bg-red-500/10",
+                    isExpanded ? "w-9 h-9 p-0" : "w-10 h-10 p-0",
+                  )}
                 >
                   <LogOut size={16} strokeWidth={2.5} />
                 </Button>

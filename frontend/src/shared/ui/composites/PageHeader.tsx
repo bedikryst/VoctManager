@@ -8,7 +8,7 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
-import { Typography } from "@/shared/ui/primitives/Typography";
+import { Eyebrow, Heading } from "@/shared/ui/primitives/typography";
 
 const pageHeaderVariants = cva(
   "flex flex-col gap-6 md:flex-row md:items-end justify-between w-full",
@@ -55,19 +55,16 @@ export function PageHeader({
               className="h-[1px] w-12 shrink-0 bg-ethereal-gold/30"
               aria-hidden="true"
             />
-            <Typography variant="eyebrow" color="muted">
+            <Eyebrow color="muted">
               {roleText}
-            </Typography>
+            </Eyebrow>
           </div>
         )}
 
-        <Typography
+        <Heading
           as="h1"
-          variant="title"
-          className={cn(
-            isDashboard ? "xl:text-5xl text-4xl" : "xl:text-3xl text-2xl",
-            "font-medium",
-          )}
+          size={isDashboard ? "huge" : "3xl"}
+          weight="medium"
         >
           {title}{" "}
           {titleHighlight && (
@@ -75,7 +72,7 @@ export function PageHeader({
               {titleHighlight}
             </span>
           )}
-        </Typography>
+        </Heading>
       </div>
 
       {rightContent && (

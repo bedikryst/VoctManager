@@ -16,7 +16,6 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { KineticText } from "@/shared/ui/kinematics/KineticText";
-import { Typography } from "@/shared/ui/primitives/Typography";
 
 const EtherealEasing = [0.16, 1, 0.3, 1] as const;
 

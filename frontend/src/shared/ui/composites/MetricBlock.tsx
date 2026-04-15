@@ -7,7 +7,7 @@
 
 import React from "react";
 import { cn } from "@/shared/lib/utils";
-import { Typography } from "@/shared/ui/primitives/Typography";
+import { Eyebrow, Metric, Text, Unit } from "@/shared/ui/primitives/typography";
 
 export interface MetricBlockProps extends React.HTMLAttributes<HTMLElement> {
   label: string;
@@ -32,7 +32,7 @@ export function MetricBlock({
 
   const glassClasses =
     interactiveMode === "glass"
-      ? "p-8 transition-colors duration-700 hover:bg-white/30 backdrop-blur-sm"
+      ? "p-8 transition-colors duration-700 group-hover:bg-white/30 backdrop-blur-sm"
       : "group flex cursor-default flex-col gap-1";
 
   return (
@@ -48,7 +48,7 @@ export function MetricBlock({
             : "text-ethereal-incense/60",
           isGold
             ? "group-hover:text-ethereal-gold hover:text-ethereal-gold"
-            : "group-hover:text-ethereal-ink hover:text-ethereal-ink",
+            : "group-hover:text-ethereal-ink/75 hover:text-ethereal-ink/75",
         )}
       >
         {icon &&
@@ -60,19 +60,15 @@ export function MetricBlock({
             }>,
             { size: 14, strokeWidth: 1.5 },
           )}
-        <Typography variant="eyebrow" color="inherit">
-          {label}
-        </Typography>
+        <Eyebrow color="inherit">{label}</Eyebrow>
       </div>
 
       <p className="flex items-baseline gap-2">
-        <Typography variant="metric" color={isGold ? "gold" : "default"}>
-          {value}
-        </Typography>
+        <Metric color={isGold ? "gold" : "default"}>{value}</Metric>
         {unit && (
-          <Typography variant="unit" color={isGold ? "gold" : "muted"}>
+          <Unit size="sm" color={isGold ? "gold" : "muted"}>
             {unit}
-          </Typography>
+          </Unit>
         )}
       </p>
     </article>

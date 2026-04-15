@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { User, Shield, Truck, ShieldAlert, Calendar } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Typography } from "@/shared/ui/primitives/Typography";
+import { Text } from "@/shared/ui/primitives/typography";
 import { DURATION, EASE } from "@/shared/ui/kinematics/motion-presets";
 import { cn } from "@/shared/lib/utils";
 
@@ -102,8 +102,7 @@ export default function SettingsLayout(): React.JSX.Element {
                     </span>
 
                     {/* Semantyczna, scentralizowana typografia */}
-                    <Typography
-                      variant="body"
+                    <Text
                       color={isActive ? "default" : "muted"}
                       className={cn(
                         "transition-colors duration-500",
@@ -111,7 +110,7 @@ export default function SettingsLayout(): React.JSX.Element {
                       )}
                     >
                       {tab.label}
-                    </Typography>
+                    </Text>
                   </button>
                 );
               })}

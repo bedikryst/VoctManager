@@ -20,13 +20,8 @@ export interface ProjectCreateDTO {
   date_time: string;
   timezone: string;
   call_time?: string | null;
-
-  // ZMIANA: Wysyłamy ID dyrygenta, a nie string z nazwą. Typ prymitywny 'string'.
   conductor?: string | null;
-
-  // ZMIANA: Backend oczekuje location_id do zapisu (location jest read-only snippetem)
   location_id?: string | null;
-
   dress_code_male?: string | null;
   dress_code_female?: string | null;
   spotify_playlist_url?: string | null;

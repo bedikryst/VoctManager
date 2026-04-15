@@ -12,7 +12,7 @@ import { AudioLines, Library, Zap } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
-import { Typography } from "@/shared/ui/primitives/Typography";
+import { Eyebrow, Text, Unit } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { ResonancePillar } from "@/shared/ui/kinematics/ResonancePillar";
 
@@ -103,23 +103,18 @@ export function TelemetryWidget({
             className="opacity-50"
           />
 
-          <Typography variant="eyebrow" color="muted">
+          <Eyebrow color="muted">
             {t("dashboard.admin.kpi_readiness", "Spójność Harmoniczna")}
-          </Typography>
+          </Eyebrow>
 
           <div
             className="flex items-baseline gap-1"
             aria-label="Total ensemble voices"
           >
-            <Typography
-              variant="body"
-              className="tabular-nums font-regular tracking-widest text-[14px]"
-            >
-              {stats.satb.Total}
-            </Typography>
-            <Typography variant="unit" color="muted">
+            <Text className="tabular-nums">{stats.satb.Total}</Text>
+            <Unit size="sm" color="muted">
               voc.
-            </Typography>
+            </Unit>
           </div>
         </header>
 

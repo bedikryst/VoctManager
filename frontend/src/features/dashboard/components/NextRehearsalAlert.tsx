@@ -17,10 +17,7 @@ import { LocationPreview } from "../../logistics/components/LocationPreview";
 
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
-import {
-  Typography,
-  typographyVariants,
-} from "@/shared/ui/primitives/Typography";
+import { Label, Heading } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { KineticActionCue } from "@/shared/ui/kinematics/KineticActionCue";
@@ -85,14 +82,14 @@ export function NextRehearsalAlert({
                   "Next Rehearsal",
                 )}
               />
-              <Typography
+              <Heading
                 as="h3"
-                variant="subtitle"
+                size="xl" // roughly subtitle
                 color="default"
                 className="line-clamp-2"
               >
                 {rehearsal.projectTitle}
-              </Typography>
+              </Heading>
             </div>
 
             {/* KINEMATIC DATA ROW */}
@@ -100,24 +97,20 @@ export function NextRehearsalAlert({
               {/* Date & Time Cluster */}
               <div className="flex flex-row flex-wrap items-center gap-x-4 gap-y-1">
                 <time dateTime={rehearsal.date_time} className="shrink-0">
-                  <Typography as="span" variant="label" color="muted">
+                  <Label as="span" color="muted">
                     {formatLocalizedDate(
                       rehearsal.date_time,
                       { weekday: "long", day: "numeric", month: "long" },
                       undefined,
                       rehearsal.timezone,
                     )}
-                  </Typography>
+                  </Label>
                 </time>
 
                 <div className="shrink-0">
                   <DualTimeDisplay
                     value={rehearsal.date_time}
                     timeZone={rehearsal.timezone}
-                    timeClassName={typographyVariants({
-                      variant: "label",
-                      color: "default",
-                    })}
                   />
                 </div>
               </div>
