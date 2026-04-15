@@ -103,14 +103,14 @@ export const DesktopSidebar = ({
     <GlassCard
       as={motion.aside}
       variant="ethereal"
-      glow={false}
+      glow={true}
       withNoise={true}
       initial={false}
       animate={{ width: isExpanded ? 280 : 88 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      transition={{ type: "spring", stiffness: 350, damping: 35 }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col overflow-hidden rounded-3xl"
+      className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col overflow-hidden rounded-3xl border-white/10 shadow-[20px_0_50px_rgba(0,0,0,0.1)]"
       aria-label={t("dashboard.layout.aria.sidebar")}
     >
       {/* Top: Brand Section */}
@@ -141,7 +141,7 @@ export const DesktopSidebar = ({
       </div>
 
       {/* Middle: Navigation Area */}
-      <nav className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden px-4 py-1 [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_bottom,transparent_0%,black_5%,black_95%,transparent_100%)]">
+      <nav className="relative z-10 flex-1 overflow-y-auto px-4 py-1 [mask-image:linear-gradient(to_bottom,transparent_0%,black_5%,black_95%,transparent_100%)]">
         <div className="space-y-4 py-2">
           {navGroups.map((group) => (
             <div key={group.labelKey}>
@@ -219,19 +219,19 @@ export const DesktopSidebar = ({
       </nav>
 
       {/* Bottom: User Actions */}
-      <div className="relative z-10 flex flex-shrink-0 flex-col bg-white/30 p-3 transition-all duration-300">
+      <div className="relative z-10 flex flex-shrink-0 flex-col p-3 transition-all duration-300 bg-ethereal-ink/5 backdrop-blur-md">
         <Divider position="absolute-top" variant="fade" />
 
         {isExpanded ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             className="flex flex-col gap-2.5"
           >
-            <div className="flex items-center justify-between rounded-xl border border-white/60 bg-white/60 backdrop-blur-md p-2 shadow-[var(--shadow-ethereal-soft)]">
-              <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-ethereal-gold/10 border border-ethereal-gold/20">
+            {/* Użytkownik jako "Artifact" - ciemniejsze tło dla kontrastu na nakładce */}
+            <div className="flex items-center justify-between rounded-xl border border-ethereal-gold/10 bg-ethereal-ink/40 p-2 shadow-lg">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-ethereal-gold/20 border border-ethereal-gold/30">
                   <Typography as="span" variant="label" color="gold">
                     {initials}
                   </Typography>
@@ -241,20 +241,16 @@ export const DesktopSidebar = ({
                     as="p"
                     variant="label"
                     color="default"
-                    className="truncate"
+                    className="truncate text-white/90"
                   >
                     {userFullName || user?.email}
                   </Typography>
-                  <div className="mt-0.5 truncate">
-                    <Typography as="span" variant="eyebrow" color="muted">
-                      {userRoleLabel}
-                    </Typography>
-                  </div>
+                  <Typography as="span" variant="eyebrow" color="muted">
+                    {userRoleLabel}
+                  </Typography>
                 </div>
               </div>
-              <div className="flex items-center pr-1 text-ethereal-graphite">
-                <NotificationCenter />
-              </div>
+              <NotificationCenter />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -262,25 +258,16 @@ export const DesktopSidebar = ({
                 asChild
                 variant="ghost"
                 size="sm"
-                className="w-full gap-1.5"
+                className="bg-white/5 hover:bg-white/10 text-white/70"
               >
-                <Link
-                  to="/panel/settings"
-                  aria-label={t("dashboard.layout.actions.settings")}
-                >
-                  {/* Pozwalamy <Button> kontrolować kolor najechania dla children */}
+                <Link to="/panel/settings">
                   <Settings size={14} />
                   <Typography as="span" variant="eyebrow" color="inherit">
                     {t("dashboard.layout.actions.settings")}
                   </Typography>
                 </Link>
               </Button>
-              <Button
-                onClick={logout}
-                variant="destructive"
-                size="sm"
-                className="w-full gap-1.5"
-              >
+              <Button onClick={logout} variant="destructive" size="sm">
                 <LogOut size={14} />
                 <Typography as="span" variant="eyebrow" color="inherit">
                   {t("dashboard.layout.actions.logout")}
@@ -292,22 +279,10 @@ export const DesktopSidebar = ({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center gap-3 py-1"
+            className="flex flex-col items-center gap-4 py-2"
           >
             <NotificationCenter />
-
-            <Button asChild variant="icon" size="icon">
-              <Link
-                to="/panel/settings"
-                aria-label={t("dashboard.layout.actions.settings")}
-              >
-                <Settings size={18} />
-              </Link>
-            </Button>
-
-            <Divider position="relative" variant="solid" className="w-6" />
-
-            <div className="flex h-9 w-9 flex-shrink-0 cursor-default items-center justify-center rounded-xl bg-ethereal-gold/10 border border-ethereal-gold/20 shadow-sm transition-transform hover:scale-105">
+            <div className="h-9 w-9 rounded-xl border border-ethereal-gold/20 bg-ethereal-gold/5 flex items-center justify-center">
               <Typography as="span" variant="label" color="gold">
                 {initials}
               </Typography>
