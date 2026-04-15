@@ -52,9 +52,9 @@ export function StatusBadge({
       {/* Subtle background light sweep */}
       {isPulsing && variant !== "archived" && (
         <motion.div
-          className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
           animate={{ x: ["-200%", "200%"] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
           aria-hidden="true"
         />
       )}

@@ -17,7 +17,12 @@ import { cn } from "@/shared/lib/utils";
 import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKinematics";
 
 // Ethereal UI Primitives
-import { Heading, Text, Eyebrow, Label } from "@/shared/ui/primitives/typography";
+import {
+  Heading,
+  Text,
+  Eyebrow,
+  Label,
+} from "@/shared/ui/primitives/typography";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Divider } from "@/shared/ui/primitives/Divider";
@@ -105,12 +110,7 @@ export const DesktopSidebar = ({
                 >
                   <Heading size="2xl">
                     Voct
-                    <Text
-                      as="span"
-                      weight="medium"
-                      color="gold"
-                      size="lg"
-                    >
+                    <Text as="span" weight="medium" color="gold" size="lg">
                       Manager
                     </Text>
                   </Heading>
@@ -118,13 +118,9 @@ export const DesktopSidebar = ({
               ) : (
                 <motion.div
                   key="compact"
-                  className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-gradient-to-br from-ethereal-gold to-ethereal-ink shadow-md select-none"
+                  className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-gradient-to-br from-ethereal-gold to-ethereal-ink/90 shadow-md select-none"
                 >
-                  <Heading
-                    color="white"
-                    size="lg"
-                    weight="medium"
-                  >
+                  <Heading color="white" size="3xl" weight="medium">
                     V
                   </Heading>
                 </motion.div>
@@ -250,11 +246,7 @@ export const DesktopSidebar = ({
                 {!isExpanded && <NotificationCenter />}
 
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px] bg-gradient-to-br from-ethereal-gold/10 to-transparent border border-ethereal-gold/20 shadow-[var(--shadow-ethereal-soft)]">
-                  <Label
-                    color="gold"
-                    size="sm"
-                    weight="semibold"
-                  >
+                  <Label color="gold" size="sm" weight="semibold">
                     {initials}
                   </Label>
                 </div>

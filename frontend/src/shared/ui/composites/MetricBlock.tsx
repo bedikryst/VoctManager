@@ -32,7 +32,7 @@ export function MetricBlock({
 
   const glassClasses =
     interactiveMode === "glass"
-      ? "p-8 transition-colors duration-700 group-hover:bg-white/30 backdrop-blur-sm"
+      ? "p-8 transition-colors duration-700 group-hover:bg-white/40 backdrop-blur-sm"
       : "group flex cursor-default flex-col gap-1";
 
   return (
