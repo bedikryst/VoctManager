@@ -1,14 +1,19 @@
 /**
  * @file TelemetryWidget.tsx
  * @description Ensemble Resonance and SATB Cohesion visualisation.
- * Escapes rigid SaaS borders in favor of fluid spatial tension and semantic typography.
+ * Refactored using Ethereal UI Primitives & Composites.
  * @architecture Enterprise SaaS 2026
  */
 
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AudioLines } from "lucide-react";
+import { AudioLines, Library, Zap } from "lucide-react";
+
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
+import { Typography } from "@/shared/ui/primitives/Typography";
+import { Divider } from "@/shared/ui/primitives/Divider";
 import { ResonancePillar } from "@/shared/ui/kinematics/ResonancePillar";
 
 export interface VoiceStatsDto {
@@ -60,61 +65,62 @@ export function TelemetryWidget({
     >
       {/* UPPER STRATUM: Resonance Metrics */}
       <section className="relative z-10 flex flex-col">
-        <header className="mb-6 flex items-center gap-3 pb-5 relative">
-          <AudioLines
-            size={16}
-            strokeWidth={1.5}
-            className="text-ethereal-gold"
-            aria-hidden="true"
-          />
-          <h2 className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite">
-            {t("dashboard.admin.kpi_telemetry", "Ensemble Resonance")}
-          </h2>
-          {/* Fluid separator instead of border-b */}
-          <div className="absolute bottom-0 left-0 h-[1px] w-full bg-gradient-to-r from-ethereal-incense/20 to-transparent" />
-        </header>
+        <SectionHeader
+          title={t("dashboard.admin.kpi_telemetry", "Telemetria Bazy")}
+          icon={<AudioLines size={16} strokeWidth={1.5} />}
+        />
 
         <div className="grid grid-cols-2 gap-8 relative">
-          <article className="group flex cursor-default flex-col gap-1">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
-              {t("dashboard.admin.kpi_pieces", "Repertuar Sakralny")}
-            </h3>
-            <p className="font-serif text-5xl font-light tracking-tight text-ethereal-ink lg:text-6xl">
-              {stats.totalPieces}
-            </p>
-          </article>
+          <MetricBlock
+            label={t("dashboard.admin.kpi_pieces", "Repertuar Sakralny")}
+            value={stats.totalPieces}
+          />
 
-          <article className="group flex cursor-default flex-col gap-1 relative pl-8">
-            {/* Fluid vertical separator */}
-            <div className="absolute inset-y-0 left-0 w-[1px] bg-gradient-to-b from-ethereal-incense/15 to-transparent" />
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
-              {t("dashboard.admin.kpi_active_projects", "Aktywne Dyrektywy")}
-            </h3>
-            <p className="font-serif text-5xl font-light tracking-tight text-ethereal-gold lg:text-6xl">
-              {stats.activeProjects}
-            </p>
-          </article>
+          <div className="relative pl-8">
+            <Divider
+              variant="gradient-bottom"
+              orientation="vertical"
+              position="absolute-left"
+            />
+            <MetricBlock
+              label={t(
+                "dashboard.admin.kpi_active_projects",
+                "Aktywne Dyrektywy",
+              )}
+              value={stats.activeProjects}
+              accentColor="gold"
+            />
+          </div>
         </div>
       </section>
 
       {/* LOWER STRATUM: SATB Harmonic Cohesion */}
       <section className="relative z-10 mt-8 flex flex-col">
         <header className="mb-10 flex items-baseline justify-between pt-4 relative">
-          {/* Soft top gradient line */}
-          <div className="absolute top-0 left-0 h-[1px] w-full bg-gradient-to-r from-ethereal-incense/15 via-ethereal-incense/5 to-transparent" />
+          <Divider
+            variant="gradient-right"
+            position="absolute-top"
+            className="opacity-50"
+          />
 
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-graphite/60">
+          <Typography variant="eyebrow" color="muted">
             {t("dashboard.admin.kpi_readiness", "Spójność Harmoniczna")}
-          </h3>
-          <span
-            className="tabular-nums text-[12px] font-medium tracking-widest text-ethereal-ink"
+          </Typography>
+
+          <div
+            className="flex items-baseline gap-1"
             aria-label="Total ensemble voices"
           >
-            {stats.satb.Total}{" "}
-            <span className="font-serif italic text-ethereal-graphite/50 text-[10px] lowercase tracking-normal">
+            <Typography
+              variant="body"
+              className="tabular-nums font-regular tracking-widest text-[14px]"
+            >
+              {stats.satb.Total}
+            </Typography>
+            <Typography variant="unit" color="muted">
               voc.
-            </span>
-          </span>
+            </Typography>
+          </div>
         </header>
 
         <div

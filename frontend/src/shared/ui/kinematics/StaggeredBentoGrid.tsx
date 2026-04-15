@@ -11,6 +11,7 @@ import {
   BENTO_CONTAINER_VARIANTS,
   BENTO_ITEM_VARIANTS,
 } from "./motion-presets";
+import { cn } from "@/shared/lib/utils";
 
 export interface StaggeredBentoGridProps {
   children: ReactNode;
@@ -26,7 +27,7 @@ export function StaggeredBentoContainer({
       variants={BENTO_CONTAINER_VARIANTS}
       initial="hidden"
       animate="visible"
-      className={className}
+      className={cn(className)}
     >
       {children}
     </motion.div>
@@ -38,7 +39,7 @@ export function StaggeredBentoItem({
   className,
 }: StaggeredBentoGridProps): React.JSX.Element {
   return (
-    <motion.div variants={BENTO_ITEM_VARIANTS} className={className}>
+    <motion.div variants={BENTO_ITEM_VARIANTS} className={cn(className)}>
       {children}
     </motion.div>
   );

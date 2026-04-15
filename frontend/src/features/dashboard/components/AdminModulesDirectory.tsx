@@ -1,23 +1,21 @@
 /**
  * @file AdminModulesDirectory.tsx
  * @description Centralised routing directory for Mission Control.
- * Evaluates i18n keys from the global navigation configuration.
+ * Kinematics are fully encapsulated: Container orchestrates the stagger, Items execute the motion.
  * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { motion, type Variants } from "framer-motion";
+import { motion } from "framer-motion";
 import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 import { ADMIN_BENTO_DIRECTIVES } from "@/shared/config/navigation/dashboard.config";
+import {
+  BENTO_CONTAINER_VARIANTS,
+  BENTO_ITEM_VARIANTS,
+} from "@/shared/ui/kinematics/motion-presets";
 
-interface AdminModulesDirectoryProps {
-  itemKinematics: Variants;
-}
-
-export function AdminModulesDirectory({
-  itemKinematics,
-}: AdminModulesDirectoryProps): React.JSX.Element {
+export function AdminModulesDirectory(): React.JSX.Element {
   const { t } = useTranslation();
 
   return (
@@ -27,11 +25,16 @@ export function AdminModulesDirectory({
         "Główne Moduły Systemu",
       )}
     >
-      <ul className="grid grid-cols-1 gap-4 md:grid-cols-4 md:auto-rows-[180px]">
+      <motion.ul
+        variants={BENTO_CONTAINER_VARIANTS}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 gap-4 md:grid-cols-4 md:auto-rows-[180px]"
+      >
         {ADMIN_BENTO_DIRECTIVES.map((directive) => (
           <motion.li
             key={directive.id}
-            variants={itemKinematics}
+            variants={BENTO_ITEM_VARIANTS}
             className={directive.gridClass}
           >
             <SystemModuleCard
@@ -39,7 +42,6 @@ export function AdminModulesDirectory({
               path={directive.path}
               romanNumeral={directive.romanNumeral}
               accentClass={directive.accentClass}
-              // Translation evaluation happens here:
               title={t(directive.titleKey, directive.defaultTitle)}
               features={directive.features.map((feat) =>
                 t(feat.labelKey, feat.defaultLabel),
@@ -47,7 +49,7 @@ export function AdminModulesDirectory({
             />
           </motion.li>
         ))}
-      </ul>
+      </motion.ul>
     </nav>
   );
 }
