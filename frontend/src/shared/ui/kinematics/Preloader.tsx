@@ -96,7 +96,7 @@ export const Preloader = (): React.JSX.Element => {
               }}
               className="absolute top-[20%] left-[10%] md:left-[15%] text-stone-400 italic text-lg md:text-2xl tracking-wider"
             >
-              {t("preloader.sequence", "séquence")}
+              {t("preloader.sequence", "Sekwencja")}
             </motion.div>
 
             <motion.div
@@ -114,7 +114,7 @@ export const Preloader = (): React.JSX.Element => {
               }}
               className="absolute bottom-[25%] right-[10%] md:right-[20%] text-stone-400 italic text-lg md:text-2xl tracking-wider"
             >
-              {t("preloader.respiration", "respiration")}
+              {t("preloader.respiration", "Oddech")}
             </motion.div>
 
             <motion.div
@@ -132,7 +132,7 @@ export const Preloader = (): React.JSX.Element => {
               }}
               className="absolute top-[55%] left-[20%] md:left-[30%] text-stone-500 italic text-xl md:text-3xl tracking-widest"
             >
-              {t("preloader.resonance", "résonance")}
+              {t("preloader.resonance", "Rezonans")}
             </motion.div>
           </div>
         </motion.div>

@@ -1,14 +1,13 @@
 /**
  * @file UserLocalClock.tsx
- * @description Enterprise Precision Chronometer.
+ * @description Astral Chronometer for Ethereal UI 2026.
+ * Zero-box paradigm. Pure typography with an expanding kinetic dimension for seconds.
  * Resolves V8 event-loop drift via recursive delta timeouts.
- * Fixes critical A11y aria-live spam. Hardware-accelerated colon escapement.
  * @architecture Enterprise SaaS 2026
  * @module shared/widgets/utility/UserLocalClock
  */
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Clock } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -17,7 +16,6 @@ export const UserLocalClock = (): React.JSX.Element | null => {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  // State holds precise Date object
   const [time, setTime] = useState<Date>(new Date());
 
   const fallbackTimezone = t("common.timezones.defaultFallback", "UTC");
@@ -30,7 +28,6 @@ export const UserLocalClock = (): React.JSX.Element | null => {
     const syncClock = () => {
       const now = new Date();
       setTime(now);
-      // Calculate exact milliseconds until the next full second to prevent JS event-loop drift
       const msToNextSecond = 1000 - now.getMilliseconds();
       timeoutId = setTimeout(syncClock, msToNextSecond);
     };
@@ -39,11 +36,12 @@ export const UserLocalClock = (): React.JSX.Element | null => {
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // 2. MEMOIZED FORMATTERS
-  const { hours, minutes, date, displayZone } = useMemo(() => {
+  // 2. ASTRAL FORMATTERS
+  const { hours, minutes, seconds, date, displayZone } = useMemo(() => {
     return {
       hours: formatInTimeZone(time, userTimezone, "HH"),
       minutes: formatInTimeZone(time, userTimezone, "mm"),
+      seconds: formatInTimeZone(time, userTimezone, "ss"),
       date: formatInTimeZone(time, userTimezone, "dd.MM.yyyy"),
       displayZone:
         userTimezone.split("/").pop()?.replace(/_/g, " ") || fallbackTimezone,
@@ -53,46 +51,63 @@ export const UserLocalClock = (): React.JSX.Element | null => {
   if (!user) return null;
 
   return (
-    <div
-      className="group isolate flex cursor-default items-center gap-4 rounded-2xl border border-ethereal-ink/5 bg-white/40 px-5 py-2.5 shadow-[0_8px_20px_-6px_rgba(22,20,18,0.05),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-[24px] transition-all duration-700 will-change-transform hover:-translate-y-0.5 hover:border-ethereal-gold/30 hover:bg-white/60 hover:shadow-[0_12px_24px_-8px_rgba(194,168,120,0.15),inset_0_1px_0_rgba(255,255,255,1)]"
-      // Removed aria-live="polite". Real screen readers will read this correctly on focus.
-      role="group"
+    <article
+      className="group relative flex cursor-default flex-col items-end outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 focus-visible:ring-offset-8 focus-visible:ring-offset-transparent"
+      role="timer"
       aria-label={t("common.time.clock_aria", "Zegar lokalny użytkownika")}
+      tabIndex={0}
     >
-      {/* Iconography */}
-      <div className="flex shrink-0 items-center justify-center">
-        <Clock
-          size={16}
-          strokeWidth={1.5}
-          className="text-ethereal-incense transition-colors duration-500 group-hover:text-ethereal-gold"
+      {/* UPPER STRATUM: The Marginalia (Tempo & Location) */}
+      <div className="mb-1.5 flex items-center gap-3 pr-1 opacity-50 transition-all duration-700 ease-[0.16,1,0.3,1] group-hover:opacity-100 group-hover:-translate-y-0.5">
+        <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-ethereal-graphite">
+          {displayZone}
+        </span>
+        {/* Sacral Golden Thread */}
+        <span
+          className="h-[1px] w-6 bg-gradient-to-r from-transparent via-ethereal-gold/50 to-transparent"
           aria-hidden="true"
         />
-      </div>
-
-      {/* Typography: Editorial Chronometrics */}
-      <div className="flex min-w-[75px] flex-col justify-center">
-        <time
-          dateTime={time.toISOString()}
-          className="mb-0.5 flex tabular-nums font-serif text-[1.35rem] font-medium leading-none tracking-wide text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold"
-        >
-          <span>{hours}</span>
-          <span
-            className="opacity-100 transition-opacity duration-1000 animate-pulse text-ethereal-incense/50 group-hover:text-ethereal-gold/50"
-            aria-hidden="true"
-          >
-            :
-          </span>
-          <span>{minutes}</span>
-        </time>
-
-        <span className="max-w-[140px] truncate text-[8.5px] font-bold uppercase leading-none tracking-[0.2em] text-ethereal-graphite/60 transition-colors duration-500 group-hover:text-ethereal-graphite/90">
-          {displayZone}{" "}
-          <span className="mx-0.5 text-ethereal-incense/40" aria-hidden="true">
-            •
-          </span>{" "}
+        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/80">
           {date}
         </span>
       </div>
-    </div>
+
+      {/* CORE STRATUM: Deconstructed Chronometry */}
+      <time
+        dateTime={time.toISOString()}
+        className="flex items-center text-ethereal-ink transition-transform duration-700 ease-[0.16,1,0.3,1] group-hover:-translate-y-0.5"
+      >
+        {/* Hours: Massive, Editorial Serif */}
+        <span className="font-serif text-[2.25rem] font-thin leading-none tracking-tighter sm:text-[3rem]">
+          {hours}
+        </span>
+
+        {/* Separator: The Celestial Orb */}
+        <span className="relative mx-3 flex h-full items-center justify-center">
+          <span
+            className="absolute h-1.5 w-1.5 rounded-full bg-ethereal-gold/80 shadow-[0_0_12px_rgba(194,168,120,0.6)] transition-all duration-1000 animate-pulse group-hover:bg-ethereal-gold group-hover:shadow-[0_0_16px_rgba(194,168,120,0.9)] group-hover:scale-110"
+            aria-hidden="true"
+          />
+        </span>
+
+        {/* Minutes: Tabular, Sharp, Slightly Transparent */}
+        <span className="font-sans text-[1.75rem] font-light leading-none tracking-normal tabular-nums text-ethereal-graphite/70 sm:text-[2rem]">
+          {minutes}
+        </span>
+
+        {/* KINEMATIC DIMENSION: Seconds Reveal */}
+        {/* Hides completely by default. Expands flawlessly via Framer-like bezier transitions on CSS */}
+        <span
+          className="flex items-end overflow-hidden opacity-0 transition-all duration-[800ms] ease-[0.16,1,0.3,1] max-w-0 group-hover:max-w-[4rem] group-hover:opacity-100 group-hover:ml-2"
+          aria-hidden="true"
+        >
+          <span className="font-serif text-[1.2rem] font-light leading-none tabular-nums text-ethereal-gold/70 pb-[3px]">
+            {seconds}
+          </span>
+        </span>
+      </time>
+    </article>
   );
 };
+
+UserLocalClock.displayName = "UserLocalClock";

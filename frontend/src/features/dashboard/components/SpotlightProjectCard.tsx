@@ -186,22 +186,19 @@ export function SpotlightProjectCard({
           delay={0.2}
           className="mb-6 max-w-2xl font-serif text-3xl leading-[1.05] tracking-tight text-ethereal-ink md:text-[3rem]"
         />
-
-        {!project.conductor ||
-          (project.conductor.split("(").at(-1) === "Conductor)" && (
-            <motion.p
-              variants={fadeUpVariant}
-              initial="hidden"
-              animate="visible"
-              className="font-serif text-xl italic text-ethereal-graphite opacity-80"
-            >
-              {t("common.conductor_prefix", "Maestro")}{" "}
-              <span className="font-medium text-ethereal-ink">
-                {project.conductor.split("(").at(-2) ||
-                  t("common.tba", "TBA")}{" "}
-              </span>
-            </motion.p>
-          ))}
+        {project.conductor && (
+          <motion.p
+            variants={fadeUpVariant}
+            initial="hidden"
+            animate="visible"
+            className="font-serif text-xl italic text-ethereal-graphite opacity-80"
+          >
+            {t("common.conductor_prefix", "Maestro")}{" "}
+            <span className="font-medium text-ethereal-ink">
+              {project.conductor || t("common.tba", "TBA")}{" "}
+            </span>
+          </motion.p>
+        )}
       </div>
 
       {/* 3. ARTIFACT STRATUM (Metrics) */}

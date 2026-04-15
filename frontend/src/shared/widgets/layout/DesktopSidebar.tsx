@@ -96,7 +96,7 @@ export const DesktopSidebar = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/45 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_8px_32px_rgba(166,146,121,0.08)] backdrop-blur-[16px] transition-shadow hover:shadow-[0_12px_40px_rgba(166,146,121,0.12)]"
-      aria-label={t("dashboard.layout.aria.sidebar", "Main Navigation")}
+      aria-label={t("dashboard.layout.aria.sidebar", "Główna Nawigacja")}
     >
       {/* Background Noise for Glass Continuity */}
       <div

@@ -191,6 +191,7 @@
       "email": "E-mail *",
       "first_name": "Imię *",
       "language": "Język wiadomości *",
+      "language_edit_disabled": "Język jest zarządzany indywidualnie przez artystę w ustawieniach konta.",
       "last_name": "Nazwisko *",
       "loading": "Ładowanie...",
       "no_rating": "— Brak oceny —",
@@ -286,11 +287,24 @@
       },
       "title_1": "Aktywuj swój",
       "title_2": "panel artysty"
+    },
+    "login": {
+      "back_to_lobby": "Powrót do przedsionka",
+      "email_label": "Adres e-mail",
+      "email_placeholder": "np. jan.kowalski@voctensemble.pl",
+      "error_default": "Autoryzacja nie powiodła się.",
+      "footer_security": "Zabezpieczone przez JWT Auth • 2026",
+      "password_label": "Klucz dostępu",
+      "password_placeholder": "••••••••",
+      "submit_button": "Autoryzuj dostęp",
+      "submitting": "Autoryzacja...",
+      "subtitle": "Panel Administracyjny & Kadrowy"
     }
   },
   "common": {
     "actions": {
       "cancel": "Anuluj",
+      "close": "Zamknij",
       "close_panel": "Zamknij panel (ESC)",
       "confirmDelete": "Tak, usuń konto",
       "delete": "Usuń",
@@ -299,30 +313,53 @@
       "discard": "Odrzuć zmiany",
       "download": "Pobierz",
       "edit": "Edytuj",
-      "loading": "Przetwarzanie...",
+      "retry": "Spróbuj ponownie",
       "save": "Zapisz",
       "select": "Wybierz"
     },
+    "archive": "Archiwizuj",
+    "aria": {
+      "backToHome": "Wróć do strony głównej"
+    },
+    "artist_generic": "Artysty",
     "cancel": "Anuluj",
+    "conductor_prefix": "Maestro",
     "currency": "PLN",
+    "edit": "Edytuj",
+    "error_occurred": "Wystąpił błąd",
+    "error_saving": "Błąd podczas zapisywania",
     "errors": {
       "database_error": "Wystąpił problem z połączeniem z bazą danych.",
       "generation_error": "Błąd generowania",
+      "generic": "Wystąpił błąd",
       "save_error": "Błąd zapisu",
       "save_problem": "Wystąpił problem podczas zapisywania danych.",
       "server_error": "Błąd serwera",
       "server_problem": "Wystąpił problem z serwerem."
     },
-    "loading": "Wczytywanie...",
     "locale": "pl-PL",
     "people_short": "os.",
+    "rightsReserved": "Wszelkie prawa zastrzeżone",
+    "save_changes": "Zapisz Zmiany",
+    "send": "Wyślij",
     "state": {
       "loading": "Wczytywanie...",
       "saved": "Zapisano"
     },
-    "timezone": {
-      "local": "Czas Lokalny"
-    }
+    "status": {
+      "processingInBackground": "Przetwarzanie w tle..."
+    },
+    "tba": "TBA",
+    "time": {
+      "clock_aria": "Zegar lokalny użytkownika",
+      "localAria": "Twój czas lokalny to:",
+      "localSuffix": "(twój czas)"
+    },
+    "timezones": {
+      "defaultFallback": "UTC"
+    },
+    "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie edytora spowoduje ich utratę.",
+    "unsaved_title": "Masz niezapisane zmiany!"
   },
   "contracts": {
     "dashboard": {
@@ -440,47 +477,102 @@
       "absences_few": "{{count}} zgłoszone nieobecności",
       "absences_many": "{{count}} zgłoszonych nieobecności",
       "absences_other": "{{count}} zgłoszonych nieobecności",
-      "btn_new_project": "Nowy projekt",
+      "aria_open_project": "Otwórz szczegóły dyrektywy: {{title}}",
+      "aria_open_rehearsal": "Otwórz szczegóły najbliższej próby",
+      "directory_nav_aria": "Główne Moduły Systemu",
+      "directory_sub": "06 Modułów",
+      "features": {
+        "audio": "Audio ref.",
+        "budget": "Budżet",
+        "locations": "Lokacje",
+        "pdf_scores": "Nuty PDF",
+        "profiles": "Profile",
+        "rates": "Stawki",
+        "satb": "SATB",
+        "schedules": "Harmonogramy",
+        "setlists": "Setlisty",
+        "sound": "Dźwięk & Światło",
+        "transport": "Transport",
+        "vendors": "Podwykonawcy"
+      },
+      "kpi_active_projects": "Aktywne Dyrektywy",
+      "kpi_pieces": "Repertuar Sakralny",
+      "kpi_readiness": "Spójność Harmoniczna",
       "kpi_telemetry": "Telemetria Bazy",
       "modules": {
-        "archive_desc": "Centralna baza biblioteki muzycznej.",
         "archive_title": "Archiwum Nut",
-        "artists_desc": "Zarządzanie chórem i solistami.",
         "artists_title": "Baza Artystów",
-        "contracts_desc": "Finanse, umowy i budżetowanie.",
         "contracts_title": "Kadry i Płace",
-        "crew_desc": "Logistyka i reżyseria wydarzeń.",
         "crew_title": "Ekipa Techniczna",
-        "projects_desc": "Centrum dowodzenia produkcją.",
+        "logistics_title": "Logistyka",
         "projects_title": "Zarządzanie Projektami"
       },
-      "next_rehearsal_alert": "Najbliższa Próba: {{title}}",
-      "spotlight_title": "Pulpit Produkcyjny",
-      "unknown_project": "Nieznany projekt",
-      "welcome_back": "Witaj z powrotem"
+      "next_rehearsal_badge": "Najbliższa Próba",
+      "perfect_attendance": "100% Obecności",
+      "role": "Główny Pulpit Dyrygenta",
+      "satb_distribution": "Dystrybucja Głosów SATB",
+      "spotlight": {
+        "cast": "Obsada",
+        "program": "Repertuar",
+        "remaining": "Do Premiery",
+        "status_active": "W Produkcji",
+        "status_prep": "W Przygotowaniu"
+      },
+      "unknown_project": "Nieznany projekt"
     },
     "artist": {
-      "download_error": "Błąd pobierania harmonogramu",
-      "download_runsheet": "Harmonogram (Call sheet)",
-      "download_success": "Pobrano harmonogram pomyślnie",
-      "downloading_runsheet": "Generowanie harmonogramu...",
+      "absence_status": "Status absencji",
+      "badge_absence_reported": "Zgłoszono absencję",
+      "badge_concert": "Wydarzenie Główne",
+      "badge_confirmed": "Potwierdzona",
+      "badge_late": "Spóźnienie",
+      "badge_rehearsal": "Próba",
+      "btn_confirm_presence": "Potwierdź Obecność",
+      "btn_download_runsheet": "Harmonogram (PDF)",
+      "btn_edit_report": "Edytuj zgłoszenie",
+      "btn_materials": "Nuty i Audio",
+      "btn_report_issue": "Zgłoś problem",
       "empty_events_desc": "Odpocznij, twój muzyczny kalendarz jest obecnie pusty.",
       "empty_events_title": "Brak nadchodzących wydarzeń",
       "general_work": "Praca bieżąca",
+      "greeting_afternoon": "Dobrego popołudnia",
       "greeting_evening": "Dobry wieczór",
       "greeting_morning": "Dzień dobry",
       "greeting_night": "Dobrej nocy",
+      "label_call_time": "Zbiórka: ",
       "module_materials_desc": "Twoje osobiste repozytorium. Pobierz nuty PDF i ćwicz z dedykowanymi ścieżkami audio.",
       "module_materials_title": "Materiały",
       "module_resources_desc": "Sprawdź wytyczne dyrygenta, obowiązujący dress-code oraz regulaminy i umowy.",
       "module_resources_title": "Baza Wiedzy",
       "module_schedule_desc": "Sprawdź próby, koncerty i w prosty sposób zgłoś swoją nieobecność inspektorowi.",
       "module_schedule_title": "Mój Kalendarz",
+      "nav_aria": "Nawigacja artysty",
       "next_challenges": "Na horyzoncie",
-      "open_module": "Otwórz Moduł",
-      "personal_modules": "Moduły Osobiste"
+      "note_dashboard_confirm": "Obecność potwierdzona z Dashboardu",
+      "notes_placeholder": "Powód / Uwagi...",
+      "personal_modules": "Moduły Osobiste",
+      "status_absent": "Nie będę",
+      "status_late": "Spóźnię się",
+      "title_main": "Przestrzeń ",
+      "toast_confirm_success": "Obecność potwierdzona!",
+      "toast_confirming": "Potwierdzanie obecności...",
+      "toast_download_error": "Błąd pobierania harmonogramu",
+      "toast_download_success": "Pobrano harmonogram pomyślnie",
+      "toast_downloading_runsheet": "Generowanie harmonogramu...",
+      "toast_report_success": "Zgłoszenie zostało wysłane",
+      "toast_saving_report": "Zapisywanie zgłoszenia...",
+      "validation_notes_min": "Proszę podać powód/uwagi (min. 3 znaki)."
     },
     "layout": {
+      "actions": {
+        "logout": "Wyloguj",
+        "settings": "Ustawienia"
+      },
+      "aria": {
+        "closeMenu": "Zamknij menu",
+        "openMenu": "Otwórz menu nawigacyjne",
+        "sidebar": "Główna Nawigacja"
+      },
       "groups": {
         "artist_zone": "Strefa Artysty",
         "data_admin": "Bazy Danych",
@@ -490,7 +582,6 @@
         "production": "Produkcja"
       },
       "links": {
-        "accommodation": "Zakwaterowanie",
         "admin_dashboard": "Pulpit Główny",
         "archive": "Archiwum Nut",
         "artist_dashboard": "Pulpit Artysty",
@@ -504,34 +595,121 @@
         "resources": "Zasoby i Wiedza",
         "schedule": "Mój Kalendarz"
       },
-      "logout": "Wyloguj się",
-      "mobile_nav_title": "Nawigacja",
-      "profile_settings": "Ustawienia profilu",
       "roles": {
         "admin": "Administrator",
         "artist": "Artysta",
-        "crew": "Obsługa Techniczna",
-        "management": "Zarząd"
+        "crew": "Obsługa Techniczna"
       }
     },
     "shared": {
       "authorizing": "Autoryzacja...",
-      "loading_telemetry": "Wczytywanie telemetrii...",
+      "load": "Synchronizacja Aury...",
       "syncing": "Synchronizacja pulpitu..."
     }
   },
+  "export": {
+    "actions": {
+      "downloadZip": "Pobierz archiwum ZIP",
+      "generateZip": "Generuj archiwum ZIP"
+    },
+    "aria": {
+      "downloadReadyFile": "Pobierz gotowy plik"
+    }
+  },
+  "footer": {
+    "actions": {
+      "scrollToTop": "Przewiń do góry",
+      "support": "Wesprzyj Fundację"
+    },
+    "aria": {
+      "region": "Stopka strony"
+    },
+    "credits": "Kod i Design:",
+    "links": {
+      "about": "O nas",
+      "contact": "Kontakt",
+      "foundation": "Fundacja",
+      "socials": "Społeczność"
+    },
+    "newsletter": {
+      "aria": "Wpisz adres email do newslettera",
+      "button": "Wyślij",
+      "placeholder": "Zostaw swój email",
+      "submit": "Zapisz się",
+      "title": "Biuletyn Artystyczny"
+    },
+    "patronage": {
+      "chapter": "VII. Mecenat",
+      "description": "Tworzymy pomost między sztuką a odbiorcą. Wesprzyj działania naszej fundacji i pomóż nam przywracać muzyce jej pierwotną siłę dotykania serc.",
+      "heading1": "Stań się",
+      "heading2": " częścią",
+      "heading3": "harmonii."
+    },
+    "status": {
+      "inactive": "Fundacja Nieaktywna",
+      "location": "Kraków, PL"
+    }
+  },
   "logistics": {
-    "add_location": "Dodaj lokalizację",
     "autocomplete": {
       "placeholder": "Zacznij wpisywać nazwę miejsca..."
     },
-    "empty_state": "Brak lokalizacji w bazie.",
-    "empty_state_sub": "Wyszukaj powyżej, aby dodać pierwsze miejsce z Google Maps.",
-    "locations": {
-      "title": "Baza Lokalizacji"
+    "categories": {
+      "airport": "Lotnisko",
+      "concert_hall": "Sala Koncertowa",
+      "hotel": "Hotel",
+      "other": "Inne",
+      "rehearsal_room": "Sala Prób",
+      "transit": "Stacja / Dworzec",
+      "workspace": "Prywatna Przestrzeń"
     },
-    "search_google": "Szukaj w Google Maps...",
-    "select_category": "Wybierz kategorię"
+    "dashboard": {
+      "add_location": "Dodaj Miejsce",
+      "archive_desc": "Lokacja zniknie z głównej bazy operacyjnej, ale zostanie zachowana dla projektów historycznych.",
+      "archive_title": "Zarchiwizować lokację?",
+      "empty_desc": "Zmień filtry lub dodaj nowe miejsce korzystając z integracji Google Maps.",
+      "empty_title": "Brak wyników",
+      "search_placeholder": "Szukaj lokacji po nazwie lub adresie...",
+      "subtitle": "Moduł Logistyczny",
+      "sync_error": "Błąd synchronizacji lokacji z bazą.",
+      "title_highlight": "Lokacji",
+      "title_prefix": "Baza"
+    },
+    "editor": {
+      "address": "Oficjalny Adres *",
+      "category": "Klasyfikacja *",
+      "internal_notes": "Notatki dla Zespołu (Opcjonalnie)",
+      "name": "Nazwa Wyświetlana *",
+      "notes_placeholder": "np. Wejście dla artystów znajduje się od strony parkingu. Kod do bramy: 1234#.",
+      "placeholder_address": "np. ul. Jasna 5, 00-013 Warszawa",
+      "placeholder_name": "np. Filharmonia Narodowa - Sala Kameralna",
+      "search_hint": "Wyszukaj miejsce na mapie, aby automatycznie uzupełnić dane, koordynaty i strefę czasową. Pozwoli to na inteligentne zarządzanie czasem w projektach.",
+      "section_basic": "Dane Podstawowe",
+      "section_notes": "Instrukcje Wewnętrzne",
+      "section_search": "Globalna Baza Google",
+      "submit": "Dodaj do Bazy",
+      "title_edit": "Edycja Lokacji",
+      "title_new": "Nowa Lokacja"
+    },
+    "map": {
+      "locate_me": "Moja Lokalizacja",
+      "search_placeholder": "Wyszukaj globalne lokacje..."
+    },
+    "preview": {
+      "default_category": "Lokacja",
+      "get_directions": "Wyznacz trasę",
+      "no_map": "Brak współrzędnych",
+      "unknown_location": "Nieznana lokacja"
+    },
+    "toast": {
+      "archive_error": "Nie udało się zarchiwizować lokacji.",
+      "archived_success": "Lokacja zarchiwizowana pomyślnie.",
+      "archiving": "Dezaktywacja lokacji...",
+      "create_success": "Dodano!",
+      "creating": "Tworzenie...",
+      "update_success": "Zaktualizowano!",
+      "updating": "Aktualizacja..."
+    }
   },
   "materials": {
     "dashboard": {
@@ -578,6 +756,39 @@
       "event": "Wydarzenie:"
     }
   },
+  "nav": {
+    "actions": {
+      "donate": "Wesprzyj Nas"
+    },
+    "aria": {
+      "accessPanel": "Dostęp do Panelu Klienta",
+      "openMenu": "Otwórz Menu Nawigacji"
+    },
+    "overlay": {
+      "actions": {
+        "close": "Zamknij menu"
+      },
+      "aria": {
+        "mainMenu": "Główne Menu Nawigacji",
+        "primaryLinks": "Główna Nawigacja"
+      },
+      "links": {
+        "about": "O nas",
+        "foundation": "Fundacja",
+        "home": "Strona główna",
+        "repertoire": "Repertuar",
+        "support": "Wsparcie"
+      },
+      "sections": {
+        "community": "Społeczność",
+        "contact": "Biurom / Kontakt"
+      },
+      "status": {
+        "active": "Status: Aktywna",
+        "location": "Kraków, PL — Fundacja VoctEnsemble"
+      }
+    }
+  },
   "notifications": {
     "changed": "Zmiany:",
     "crew_role": "Przypisana rola: {{role}}",
@@ -586,6 +797,11 @@
     "mark_all_read": "Oznacz wszystkie jako przeczytane",
     "title": "Powiadomienia",
     "unread": "nieprzeczytane"
+  },
+  "preloader": {
+    "resonance": "Rezonans",
+    "respiration": "Oddech",
+    "sequence": "Sekwencja"
   },
   "projects": {
     "actions": {
@@ -1267,6 +1483,11 @@
       "logistics": "Logistyka",
       "privacy": "Prywatność",
       "security": "Bezpieczeństwo"
+    }
+  },
+  "shared": {
+    "loader": {
+      "authorizing": "Synchronizacja nut..."
     }
   }
 }

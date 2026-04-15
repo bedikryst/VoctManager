@@ -22,7 +22,7 @@ export function EtherealLoader({
   const { t } = useTranslation();
   const defaultMessage = t(
     "shared.loader.authorizing",
-    "Synchronizing Aura...",
+    "Synchronizacja nut...",
   );
 
   return (

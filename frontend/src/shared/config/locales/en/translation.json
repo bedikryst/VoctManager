@@ -188,9 +188,10 @@
       "active_access_desc": "Unchecking will block login access.",
       "active_access_title": "Active platform access",
       "create_artist": "Create Artist",
-      "email": "E-mail *",
+      "email": "Email *",
       "first_name": "First Name *",
       "language": "Message Language *",
+      "language_edit_disabled": "Language is managed individually by the artist in their account settings.",
       "last_name": "Last Name *",
       "loading": "Loading...",
       "no_rating": "— No rating —",
@@ -211,10 +212,12 @@
       "title_new": "New Artist",
       "unsaved_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
       "unsaved_title": "You have unsaved changes!",
-      "voice_type": "Voice Type *"
+      "voice_type": "Voice Type *",
+      "stars_count_few": "{{count}} stars",
+      "stars_count_many": "{{count}} stars"
     },
     "filters": {
-      "all": "Tutti",
+      "all": "All",
       "altos": "Altos",
       "basses": "Basses",
       "sopranos": "Sopranos",
@@ -284,11 +287,24 @@
       },
       "title_1": "Activate your",
       "title_2": "artist panel"
+    },
+    "login": {
+      "back_to_lobby": "Back to lobby",
+      "email_label": "Email address",
+      "email_placeholder": "e.g. john.doe@voctensemble.pl",
+      "error_default": "Authorization failed.",
+      "footer_security": "Secured by JWT Auth • 2026",
+      "password_label": "Access key",
+      "password_placeholder": "••••••••",
+      "submit_button": "Authorize access",
+      "submitting": "Authorizing...",
+      "subtitle": "Administration & HR Panel"
     }
   },
   "common": {
     "actions": {
       "cancel": "Cancel",
+      "close": "common.actions.close",
       "close_panel": "Close panel (ESC)",
       "confirmDelete": "Yes, Delete Account",
       "delete": "Delete",
@@ -297,30 +313,53 @@
       "discard": "Discard changes",
       "download": "Download",
       "edit": "Edit",
-      "loading": "Processing...",
+      "retry": "common.actions.retry",
       "save": "Save",
       "select": "Select"
     },
+    "archive": "Archive",
+    "aria": {
+      "backToHome": "Return to homepage"
+    },
+    "artist_generic": "Artist's",
     "cancel": "Cancel",
+    "conductor_prefix": "Maestro",
     "currency": "PLN",
+    "edit": "Edit",
+    "error_occurred": "An error occurred",
+    "error_saving": "Error saving",
     "errors": {
       "database_error": "A database connection problem occurred.",
       "generation_error": "Generation error",
+      "generic": "common.errors.generic",
       "save_error": "Save error",
       "save_problem": "A problem occurred while saving data.",
       "server_error": "Server error",
       "server_problem": "A problem occurred with the server."
     },
-    "loading": "Loading data...",
     "locale": "en-US",
     "people_short": "ppl.",
+    "rightsReserved": "common.rightsReserved",
+    "save_changes": "Save Changes",
+    "send": "Send",
     "state": {
       "loading": "Loading...",
       "saved": "Saved"
     },
-    "timezone": {
-      "local": "Twój czas:"
-    }
+    "status": {
+      "processingInBackground": "common.status.processingInBackground"
+    },
+    "tba": "TBA",
+    "time": {
+      "clock_aria": "User's local clock",
+      "localAria": "Your local time is:",
+      "localSuffix": "(your time)"
+    },
+    "timezones": {
+      "defaultFallback": "UTC"
+    },
+    "unsaved_desc": "You have unsaved changes in the form. Closing the editor will result in their loss.",
+    "unsaved_title": "You have unsaved changes!"
   },
   "contracts": {
     "dashboard": {
@@ -370,7 +409,9 @@
       "pdf_error": "Generation error: {{message}}",
       "pdf_generating": "Generating PDF for {{name}}...",
       "pdf_success": "Document generated successfully.",
-      "save_error": "Failed to save compensation for: {{name}}."
+      "save_error": "Failed to save compensation for: {{name}}.",
+      "bulk_success_few": "Updated {{count}} contracts.",
+      "bulk_success_many": "Updated {{count}} contracts."
     }
   },
   "crew": {
@@ -407,7 +448,7 @@
       "confirm_exit_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
       "confirm_exit_title": "You have unsaved changes!",
       "contact_person": "Contact Person",
-      "email": "E-mail",
+      "email": "Email",
       "first_name": "First Name *",
       "last_name": "Last Name *",
       "phone": "Phone",
@@ -434,47 +475,104 @@
     "admin": {
       "absences_one": "{{count}} absence reported",
       "absences_other": "{{count}} absences reported",
-      "btn_new_project": "New Project",
+      "aria_open_project": "Open directive details: {{title}}",
+      "aria_open_rehearsal": "Open next rehearsal details",
+      "directory_nav_aria": "Main System Modules",
+      "directory_sub": "06 Modules",
+      "features": {
+        "audio": "Ref. Audio",
+        "budget": "Budget",
+        "locations": "Locations",
+        "pdf_scores": "PDF Scores",
+        "profiles": "Profiles",
+        "rates": "Rates",
+        "satb": "SATB",
+        "schedules": "Schedules",
+        "setlists": "Setlists",
+        "sound": "Sound & Light",
+        "transport": "Transport",
+        "vendors": "Vendors"
+      },
+      "kpi_active_projects": "Active Directives",
+      "kpi_pieces": "Sacral Repertoire",
+      "kpi_readiness": "Harmonic Cohesion",
       "kpi_telemetry": "Database Telemetry",
       "modules": {
-        "archive_desc": "Central music library database.",
         "archive_title": "Music Archive",
-        "artists_desc": "Choir and soloist management.",
         "artists_title": "Artist Database",
-        "contracts_desc": "Finances, contracts, and budgeting.",
         "contracts_title": "HR & Payroll",
-        "crew_desc": "Event logistics and directing.",
         "crew_title": "Technical Crew",
-        "projects_desc": "Production command center.",
+        "logistics_title": "Logistics",
         "projects_title": "Project Management"
       },
-      "next_rehearsal_alert": "Next Rehearsal: {{title}}",
-      "spotlight_title": "Production Dashboard",
+      "next_rehearsal_badge": "Next Rehearsal",
+      "perfect_attendance": "100% Attendance",
+      "role": "Conductor's Main Dashboard",
+      "satb_distribution": "SATB Voice Distribution",
+      "spotlight": {
+        "cast": "Cast",
+        "program": "Repertoire",
+        "remaining": "Until Premiere",
+        "status_active": "In Production",
+        "status_prep": "In Preparation"
+      },
       "unknown_project": "Unknown project",
-      "welcome_back": "Welcome back"
+      "absences_few": "{{count}} reported absences",
+      "absences_many": "{{count}} reported absences"
     },
     "artist": {
-      "download_error": "Failed to download the schedule",
-      "download_runsheet": "Schedule (Call sheet)",
-      "download_success": "Schedule downloaded successfully",
-      "downloading_runsheet": "Generating schedule...",
+      "absence_status": "Absence status",
+      "badge_absence_reported": "Absence reported",
+      "badge_concert": "Main Event",
+      "badge_confirmed": "Confirmed",
+      "badge_late": "Late",
+      "badge_rehearsal": "Rehearsal",
+      "btn_confirm_presence": "Confirm Presence",
+      "btn_download_runsheet": "Schedule (PDF)",
+      "btn_edit_report": "Edit report",
+      "btn_materials": "Scores and Audio",
+      "btn_report_issue": "Report an issue",
       "empty_events_desc": "Take a rest, your musical calendar is currently empty.",
       "empty_events_title": "No upcoming events",
       "general_work": "General work",
+      "greeting_afternoon": "Good afternoon",
       "greeting_evening": "Good evening",
       "greeting_morning": "Good morning",
       "greeting_night": "Good night",
+      "label_call_time": "Call time: ",
       "module_materials_desc": "Your personal repository. Download PDF scores and practice with dedicated audio tracks.",
       "module_materials_title": "Materials",
       "module_resources_desc": "Check conductor guidelines, current dress code, and contracts/regulations.",
       "module_resources_title": "Knowledge Base",
       "module_schedule_desc": "Check rehearsals, concerts, and easily report your absence to the inspector.",
       "module_schedule_title": "My Calendar",
+      "nav_aria": "Artist navigation",
       "next_challenges": "On the horizon",
-      "open_module": "Open Module",
-      "personal_modules": "Personal Modules"
+      "note_dashboard_confirm": "Presence confirmed from Dashboard",
+      "notes_placeholder": "Reason / Notes...",
+      "personal_modules": "Personal Modules",
+      "status_absent": "I will be absent",
+      "status_late": "I will be late",
+      "title_main": "Space ",
+      "toast_confirm_success": "Presence confirmed!",
+      "toast_confirming": "Confirming presence...",
+      "toast_download_error": "Error downloading schedule",
+      "toast_download_success": "Schedule downloaded successfully",
+      "toast_downloading_runsheet": "Generating schedule...",
+      "toast_report_success": "Report submitted",
+      "toast_saving_report": "Saving report...",
+      "validation_notes_min": "Please provide a reason/notes (min. 3 characters)."
     },
     "layout": {
+      "actions": {
+        "logout": "Log out",
+        "settings": "Settings"
+      },
+      "aria": {
+        "closeMenu": "Close menu",
+        "openMenu": "Open navigation menu",
+        "sidebar": "Main Navigation"
+      },
       "groups": {
         "artist_zone": "Artist Zone",
         "data_admin": "Databases",
@@ -484,7 +582,6 @@
         "production": "Production"
       },
       "links": {
-        "accommodation": "Accommodation",
         "admin_dashboard": "Admin Dashboard",
         "archive": "Music Archive",
         "artist_dashboard": "Artist Dashboard",
@@ -498,34 +595,121 @@
         "resources": "Knowledge Base",
         "schedule": "My Schedule"
       },
-      "logout": "Log Out",
-      "mobile_nav_title": "Navigation",
-      "profile_settings": "Profile Settings",
       "roles": {
         "admin": "Administrator",
         "artist": "Artist",
-        "crew": "Crew",
-        "management": "Management"
+        "crew": "Crew"
       }
     },
     "shared": {
       "authorizing": "Authorizing...",
-      "loading_telemetry": "Loading telemetry...",
+      "load": "Syncing Aura...",
       "syncing": "Syncing dashboard..."
     }
   },
+  "export": {
+    "actions": {
+      "downloadZip": "export.actions.downloadZip",
+      "generateZip": "export.actions.generateZip"
+    },
+    "aria": {
+      "downloadReadyFile": "export.aria.downloadReadyFile"
+    }
+  },
+  "footer": {
+    "actions": {
+      "scrollToTop": "Scroll to top",
+      "support": "Support the Foundation"
+    },
+    "aria": {
+      "region": "Site Footer"
+    },
+    "credits": "Code & Design by",
+    "links": {
+      "about": "About us",
+      "contact": "Contact",
+      "foundation": "Foundation",
+      "socials": "Community"
+    },
+    "newsletter": {
+      "aria": "Enter email address for newsletter",
+      "button": "Send",
+      "placeholder": "Leave your email",
+      "submit": "Subscribe",
+      "title": "Artistic Newsletter"
+    },
+    "patronage": {
+      "chapter": "VII. Patronage",
+      "description": "We create a bridge between art and the audience. Support the activities of our foundation and help us restore music's original power to touch hearts.",
+      "heading1": "Become",
+      "heading2": " a part",
+      "heading3": "of harmony."
+    },
+    "status": {
+      "inactive": "Foundation Inactive",
+      "location": "Krakow, PL"
+    }
+  },
   "logistics": {
-    "add_location": "Add Location",
     "autocomplete": {
       "placeholder": "Type a venue, hotel, or address..."
     },
-    "empty_state": "Your global locations database is empty.",
-    "empty_state_sub": "Add your first concert hall or hotel to begin.",
-    "locations": {
-      "title": "Global Locations"
+    "categories": {
+      "airport": "Airport",
+      "concert_hall": "Concert Hall",
+      "hotel": "Hotel",
+      "other": "Other",
+      "rehearsal_room": "Rehearsal Room",
+      "transit": "Station / Transit",
+      "workspace": "Private Space"
     },
-    "search_google": "2. Search Google Maps",
-    "select_category": "1. Select Category"
+    "dashboard": {
+      "add_location": "Add Location",
+      "archive_desc": "The location will disappear from the main operational database but will be retained for historical projects.",
+      "archive_title": "Archive location?",
+      "empty_desc": "Change filters or add a new place using Google Maps integration.",
+      "empty_title": "No results",
+      "search_placeholder": "Search location by name or address...",
+      "subtitle": "Logistics Module",
+      "sync_error": "Error syncing locations with the database.",
+      "title_highlight": "Locations",
+      "title_prefix": "Database"
+    },
+    "editor": {
+      "address": "Official Address *",
+      "category": "Classification *",
+      "internal_notes": "Team Notes (Optional)",
+      "name": "Display Name *",
+      "notes_placeholder": "e.g. Artist entrance is from the parking lot. Gate code: 1234#.",
+      "placeholder_address": "e.g. 5 Jasna St, 00-013 Warsaw",
+      "placeholder_name": "e.g. National Philharmonic - Chamber Hall",
+      "search_hint": "Search for a place on the map to automatically populate data, coordinates, and timezone. This will allow for smart time management in projects.",
+      "section_basic": "Basic Data",
+      "section_notes": "Internal Instructions",
+      "section_search": "Google Global Database",
+      "submit": "Add to Database",
+      "title_edit": "Edit Location",
+      "title_new": "New Location"
+    },
+    "map": {
+      "locate_me": "My Location",
+      "search_placeholder": "Search global locations..."
+    },
+    "preview": {
+      "default_category": "Location",
+      "get_directions": "Get directions",
+      "no_map": "No coordinates",
+      "unknown_location": "Unknown location"
+    },
+    "toast": {
+      "archive_error": "Failed to archive location.",
+      "archived_success": "Location archived successfully.",
+      "archiving": "Deactivating location...",
+      "create_success": "Added!",
+      "creating": "Creating...",
+      "update_success": "Updated!",
+      "updating": "Updating..."
+    }
   },
   "materials": {
     "dashboard": {
@@ -572,6 +756,39 @@
       "event": "Event:"
     }
   },
+  "nav": {
+    "actions": {
+      "donate": "Support Us"
+    },
+    "aria": {
+      "accessPanel": "Access Client Panel",
+      "openMenu": "Open Navigation Menu"
+    },
+    "overlay": {
+      "actions": {
+        "close": "Close menu"
+      },
+      "aria": {
+        "mainMenu": "Main Navigation Menu",
+        "primaryLinks": "Primary Navigation"
+      },
+      "links": {
+        "about": "nav.overlay.links.about",
+        "foundation": "nav.overlay.links.foundation",
+        "home": "nav.overlay.links.home",
+        "repertoire": "nav.overlay.links.repertoire",
+        "support": "nav.overlay.links.support"
+      },
+      "sections": {
+        "community": "Community",
+        "contact": "Offices / Contact"
+      },
+      "status": {
+        "active": "Status: Active",
+        "location": "Krakow, PL — VoctEnsemble Foundation"
+      }
+    }
+  },
   "notifications": {
     "changed": "Changed:",
     "crew_role": "Assigned Role: {{role}}",
@@ -580,6 +797,11 @@
     "mark_all_read": "Mark all as read",
     "title": "Notifications",
     "unread": "Unread"
+  },
+  "preloader": {
+    "resonance": "résonance",
+    "respiration": "respiration",
+    "sequence": "séquence"
   },
   "projects": {
     "actions": {
@@ -684,7 +906,9 @@
         "assigned_count_one": "{{count}} assigned",
         "assigned_count_other": "{{count}} assigned",
         "remove_title": "Remove from technical crew",
-        "title": "Crew Members"
+        "title": "Crew Members",
+        "assigned_count_few": "{{count}} people assigned",
+        "assigned_count_many": "{{count}} people assigned"
       },
       "title": "Crew",
       "toast": {
@@ -863,7 +1087,9 @@
       "badges": {
         "encore": "ENCORE",
         "tracks_count_one": "{{count}} track",
-        "tracks_count_other": "{{count}} tracks"
+        "tracks_count_other": "{{count}} tracks",
+        "tracks_count_few": "{{count}} tracks",
+        "tracks_count_many": "{{count}} tracks"
       },
       "duration_unknown": "Duration unknown",
       "empty": {
@@ -904,7 +1130,9 @@
         "save_order_success": "Order saved successfully",
         "saving_order": "Saving new order..."
       },
-      "unfulfilled": "Unfulfilled"
+      "unfulfilled": "Unfulfilled",
+      "and_more_few": "and {{count}} more...",
+      "and_more_many": "and {{count}} more..."
     },
     "rehearsals": {
       "absences_reported": "Reported absences:",
@@ -948,7 +1176,9 @@
         "invited_one": "1 invited",
         "invited_other": "{{count}} invited",
         "optional": "Optional",
-        "tutti": "TUTTI"
+        "tutti": "TUTTI",
+        "invited_few": "{{count}} invited",
+        "invited_many": "{{count}} invited"
       },
       "title": "Rehearsals",
       "toast": {
@@ -1004,7 +1234,9 @@
       "title": "Attendance",
       "title_highlight": "Logbook",
       "tutti": "Tutti (Full Ensemble)",
-      "tutti_badge": "Tutti Rehearsal"
+      "tutti_badge": "Tutti Rehearsal",
+      "bulk_fill_few": "Fill {{count}} missing",
+      "bulk_fill_many": "Fill {{count}} missing"
     },
     "row": {
       "minutes_placeholder": "How many min?",
@@ -1251,6 +1483,11 @@
       "logistics": "Logistics",
       "privacy": "Privacy",
       "security": "Security"
+    }
+  },
+  "shared": {
+    "loader": {
+      "authorizing": "Synchronizing Aura..."
     }
   }
 }

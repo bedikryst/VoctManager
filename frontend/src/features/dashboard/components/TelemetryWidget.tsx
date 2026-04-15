@@ -77,7 +77,7 @@ export function TelemetryWidget({
         <div className="grid grid-cols-2 gap-8 relative">
           <article className="group flex cursor-default flex-col gap-1">
             <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
-              {t("dashboard.admin.kpi_pieces", "Sacral Repertoire")}
+              {t("dashboard.admin.kpi_pieces", "Repertuar Sakralny")}
             </h3>
             <p className="font-serif text-5xl font-light tracking-tight text-ethereal-ink lg:text-6xl">
               {stats.totalPieces}
@@ -88,7 +88,7 @@ export function TelemetryWidget({
             {/* Fluid vertical separator */}
             <div className="absolute inset-y-0 left-0 w-[1px] bg-gradient-to-b from-ethereal-incense/15 to-transparent" />
             <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold">
-              {t("dashboard.admin.kpi_active_projects", "Active Directives")}
+              {t("dashboard.admin.kpi_active_projects", "Aktywne Dyrektywy")}
             </h3>
             <p className="font-serif text-5xl font-light tracking-tight text-ethereal-gold lg:text-6xl">
               {stats.activeProjects}
@@ -104,7 +104,7 @@ export function TelemetryWidget({
           <div className="absolute top-0 left-0 h-[1px] w-full bg-gradient-to-r from-ethereal-incense/15 via-ethereal-incense/5 to-transparent" />
 
           <h3 className="text-[10px] font-bold uppercase tracking-[0.25em] text-ethereal-graphite/60">
-            {t("dashboard.admin.kpi_readiness", "Harmonic Cohesion")}
+            {t("dashboard.admin.kpi_readiness", "Spójność Harmoniczna")}
           </h3>
           <span
             className="tabular-nums text-[12px] font-medium tracking-widest text-ethereal-ink"

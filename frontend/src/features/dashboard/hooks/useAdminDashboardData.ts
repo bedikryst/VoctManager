@@ -25,6 +25,7 @@ import type {
 // UI DTOs imports
 import type { AdminTelemetryStatsDto } from "../components/TelemetryWidget";
 import type { ProjectStatsDto } from "../components/SpotlightProjectCard";
+import { parseConductorName } from "../utils/conductorParser";
 
 export interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;
@@ -135,7 +136,7 @@ export const useAdminDashboardData = () => {
     return {
       id: String(rawNextProject.id),
       title: rawNextProject.title,
-      conductor: rawNextProject.conductor_name || undefined,
+      conductor: parseConductorName(rawNextProject.conductor_name) || undefined,
       locationId: rawNextProject.location?.id,
       locationFallbackName: rawNextProject.location?.name,
       startDate: rawNextProject.date_time,
@@ -201,6 +202,15 @@ export const useAdminDashboardData = () => {
     return null;
   }, [rehearsals, projects, t]);
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 5) return t("dashboard.artist.greeting_night", "Dobrej nocy");
+    if (hour < 12) return t("dashboard.artist.greeting_morning", "Dzień dobry");
+    if (hour < 18)
+      return t("dashboard.artist.greeting_afternoon", "Dobrego popołudnia");
+    return t("dashboard.artist.greeting_evening", "Dobry wieczór");
+  }, [t]);
+
   return {
     isLoading,
     isError,
@@ -208,5 +218,6 @@ export const useAdminDashboardData = () => {
     nextProject,
     nextProjectStats,
     nextRehearsal,
+    greeting,
   };
 };

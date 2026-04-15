@@ -50,7 +50,7 @@ export function ResonancePillar({
       className="group relative flex h-full w-12 flex-col items-center justify-end"
       role="listitem"
     >
-      <span className="absolute -top-6 text-[11px] font-bold text-ethereal-ink opacity-0 transition-opacity duration-500 group-hover:opacity-100 tabular-nums">
+      <span className="absolute -top-6 text-[11px] font-regular text-ethereal-ink opacity-0 transition-opacity duration-500 group-hover:opacity-100 tabular-nums">
         {value}
       </span>
 
@@ -68,7 +68,7 @@ export function ResonancePillar({
         />
       </div>
 
-      <span className="mt-3 text-[10px] font-bold text-ethereal-graphite/60 transition-colors duration-500 group-hover:text-ethereal-ink">
+      <span className="mt-3 text-[12px] font-medium text-ethereal-graphite/60 transition-colors duration-500 group-hover:text-ethereal-ink">
         {label}
       </span>
     </div>

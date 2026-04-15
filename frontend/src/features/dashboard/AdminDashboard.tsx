@@ -64,6 +64,7 @@ export default function AdminDashboard(): React.JSX.Element {
     nextProject,
     nextProjectStats,
     nextRehearsal,
+    greeting,
   } = useAdminDashboardData();
 
   if (isLoading) {
@@ -98,7 +99,7 @@ export default function AdminDashboard(): React.JSX.Element {
             </span>
           </div>
           <h1 className="font-serif text-3xl leading-[1.1] tracking-tight text-ethereal-ink md:text-5xl md:font-medium">
-            {t("dashboard.admin.welcome", "Witaj, ")}
+            {greeting}{" "}
             <span className="italic text-ethereal-gold/90">
               {user?.first_name || "Maestro"}
             </span>

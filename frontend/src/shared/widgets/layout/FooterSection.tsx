@@ -59,7 +59,7 @@ export const FooterSection = (): React.JSX.Element => {
     <footer
       ref={footerRef}
       className="relative bg-stone-950 text-[#fdfbf7] pt-32 md:pt-48 pb-6 overflow-hidden selection:bg-[#fdfbf7] selection:text-stone-950"
-      aria-label={t("footer.aria.region", "Site Footer")}
+      aria-label={t("footer.aria.region", "Stopka strony")}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-0 relative z-10">
         {/* The Final Thread (Architectural Grid Line & Return Button) */}
@@ -78,7 +78,7 @@ export const FooterSection = (): React.JSX.Element => {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true, amount: 1 }}
             transition={{ delay: 0.5, duration: 1 }}
-            aria-label={t("footer.actions.scrollToTop", "Scroll to top")}
+            aria-label={t("footer.actions.scrollToTop", "Przewiń do góry")}
             className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-16 h-16 rounded-full border border-stone-800 bg-stone-950 flex items-center justify-center group hover:border-[#fdfbf7] transition-colors duration-500 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#fdfbf7]"
           >
             <div className="w-1 h-1 bg-stone-500 rounded-full group-hover:bg-[#fdfbf7] group-hover:-translate-y-2 transition-all duration-300" />
@@ -289,7 +289,7 @@ export const FooterSection = (): React.JSX.Element => {
               {t("common.rightsReserved")}
             </p>
             <p className="mt-2 sm:mt-0">
-              {t("footer.credits", "Code & Design by")}{" "}
+              {t("footer.credits", "Kod i Design:")}{" "}
               <a
                 href="https://github.com/bedikryst"
                 target="_blank"

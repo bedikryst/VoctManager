@@ -139,7 +139,8 @@ export const useArtistDashboardData = (artistId?: string | number) => {
     const hour = new Date().getHours();
     if (hour < 5) return t("dashboard.artist.greeting_night", "Dobrej nocy");
     if (hour < 12) return t("dashboard.artist.greeting_morning", "Dzień dobry");
-    if (hour < 18) return t("dashboard.artist.greeting_morning", "Dzień dobry");
+    if (hour < 18)
+      return t("dashboard.artist.greeting_afternoon", "Dobrego popołudnia");
     return t("dashboard.artist.greeting_evening", "Dobry wieczór");
   }, [t]);
 

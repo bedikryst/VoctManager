@@ -1,12 +1,12 @@
 /**
  * @file SystemModuleCard.tsx
  * @description Universal Ethereal UI 2026 Navigation Directive.
- * Replaces generic vectors with sacral typography (Roman Numerals).
- * Relies exclusively on GlassCard's internal framer-motion glow mechanics.
+ * Upgraded to strict SPA routing with react-router-dom Link.
  * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";
+import { Link } from "react-router-dom";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 export interface SystemModuleCardProps {
@@ -16,7 +16,7 @@ export interface SystemModuleCardProps {
   romanNumeral: string;
   accentClass: string;
   features?: string[];
-  description?: string; // Used mostly by Artist Dashboard as fallback
+  description?: string;
 }
 
 export function SystemModuleCard({
@@ -29,14 +29,11 @@ export function SystemModuleCard({
   description,
 }: SystemModuleCardProps): React.JSX.Element {
   return (
-    <a
-      href={path}
+    <Link
+      to={path}
       className="group block h-full w-full outline-none focus-visible:ring-1 focus-visible:ring-ethereal-gold/50 rounded-[2.5rem]"
       aria-labelledby={`directive-title-${id}`}
     >
-      {/* GlassCard natively handles the hover proximity light via 'glow=true' 
-        We rely on its hardware-accelerated motion values.
-      */}
       <GlassCard
         variant="light"
         withNoise
@@ -44,17 +41,21 @@ export function SystemModuleCard({
         padding="none"
         className="relative flex h-full min-h-[160px] w-full flex-col justify-between overflow-hidden p-6 transition-all duration-1000 ease-[0.16,1,0.3,1] hover:-translate-y-1"
       >
-        {/* Roman Numeral Imprint (Background Layer) */}
-        <div className="pointer-events-none absolute -bottom-6 -right-2 -z-10 select-none opacity-[0.03] mix-blend-overlay transition-all duration-1000 group-hover:opacity-[0.08] group-hover:scale-105">
+        {/* Roman Numeral Imprint */}
+        <div
+          className="pointer-events-none absolute -bottom-6 -right-2 -z-10 select-none opacity-[0.03] mix-blend-overlay transition-all duration-1000 group-hover:scale-105 group-hover:opacity-[0.08]"
+          aria-hidden="true"
+        >
           <span className="font-serif text-[8rem] font-light leading-none tracking-tighter text-ethereal-ink md:text-[10rem]">
             {romanNumeral}
           </span>
         </div>
 
-        {/* Top Stratum: Accent line & Features/Description */}
+        {/* Top Stratum */}
         <header className="relative z-10 flex flex-col gap-4">
           <div
             className={`h-[1px] w-8 transition-all duration-700 group-hover:w-16 ${accentClass}`}
+            aria-hidden="true"
           />
 
           {features.length > 0 ? (
@@ -63,19 +64,20 @@ export function SystemModuleCard({
                 <li key={idx} className="flex items-center gap-2">
                   <span
                     className={`h-1 w-1 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${accentClass}`}
+                    aria-hidden="true"
                   />
                   {feature}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-ethereal-graphite/60 leading-relaxed max-w-[80%]">
+            <p className="max-w-[80%] text-[10px] font-medium leading-relaxed tracking-[0.1em] text-ethereal-graphite/60 uppercase">
               {description}
             </p>
           )}
         </header>
 
-        {/* Bottom Stratum: Title */}
+        {/* Bottom Stratum */}
         <footer className="relative z-10 mt-8">
           <h3
             id={`directive-title-${id}`}
@@ -85,6 +87,6 @@ export function SystemModuleCard({
           </h3>
         </footer>
       </GlassCard>
-    </a>
+    </Link>
   );
 }

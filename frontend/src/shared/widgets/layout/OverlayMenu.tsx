@@ -70,7 +70,7 @@ export const OverlayMenu = ({
           className="fixed inset-0 z-[999] bg-stone-950 text-[#fdfbf7] flex flex-col justify-between overflow-hidden overscroll-none touch-none"
           aria-modal="true"
           role="dialog"
-          aria-label={t("nav.overlay.aria.mainMenu", "Main Navigation Menu")}
+          aria-label={t("nav.overlay.aria.mainMenu", "Główne Menu Nawigacji")}
         >
           {/* Background Layers: Contextual Image Reveal & Grid Overlay */}
           <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-stone-950">
@@ -116,7 +116,7 @@ export const OverlayMenu = ({
                 to="/"
                 onClick={handleLinkClick}
                 className="text-sm font-medium tracking-[0.2em] uppercase italic hover:opacity-70 transition-opacity font-cormorant outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                aria-label={t("common.aria.backToHome", "Return to homepage")}
+                aria-label={t("common.aria.backToHome", "Wróć do strony głównej")}
               >
                 VoctEnsemble
               </Link>
@@ -124,7 +124,7 @@ export const OverlayMenu = ({
               <button
                 onClick={() => setIsOpen(false)}
                 className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500 hover:text-[#fdfbf7] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand p-1"
-                aria-label={t("nav.overlay.actions.close", "Close menu")}
+                aria-label={t("nav.overlay.actions.close", "Zamknij menu")}
               >
                 <span className="overflow-hidden relative pb-1">
                   {t("nav.overlay.actions.close", "Zamknij")}

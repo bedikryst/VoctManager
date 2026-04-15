@@ -191,6 +191,7 @@
       "email": "E-mail *",
       "first_name": "Prénom *",
       "language": "Langue des messages *",
+      "language_edit_disabled": "La langue est gérée individuellement par l'artiste dans les paramètres de son compte.",
       "last_name": "Nom *",
       "loading": "Chargement...",
       "no_rating": "— Aucune évaluation —",
@@ -212,10 +213,11 @@
       "title_new": "Nouvel artiste",
       "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera.",
       "unsaved_title": "Vous avez des modifications non enregistrées !",
-      "voice_type": "Type de voix *"
+      "voice_type": "Type de voix *",
+      "stars_count_few": "{{count}} étoiles"
     },
     "filters": {
-      "all": "Tutti",
+      "all": "Tous",
       "altos": "Altos",
       "basses": "Basses",
       "sopranos": "Sopranos",
@@ -285,11 +287,24 @@
       },
       "title_1": "Activez votre",
       "title_2": "panneau artiste"
+    },
+    "login": {
+      "back_to_lobby": "Retour à l'accueil",
+      "email_label": "Adresse e-mail",
+      "email_placeholder": "ex. jean.dupont@voctensemble.pl",
+      "error_default": "L'autorisation a échoué.",
+      "footer_security": "Sécurisé par JWT Auth • 2026",
+      "password_label": "Clé d'accès",
+      "password_placeholder": "••••••••",
+      "submit_button": "Autoriser l'accès",
+      "submitting": "Autorisation en cours...",
+      "subtitle": "Panneau d'administration et RH"
     }
   },
   "common": {
     "actions": {
       "cancel": "Annuler",
+      "close": "Fermer",
       "close_panel": "Fermer le panneau (ESC)",
       "confirmDelete": "Oui, supprimer le compte",
       "delete": "Supprimer",
@@ -298,30 +313,53 @@
       "discard": "Ignorer les modifications",
       "download": "Télécharger",
       "edit": "Modifier",
-      "loading": "Traitement...",
+      "retry": "Réessayer",
       "save": "Enregistrer",
       "select": "Sélectionner"
     },
+    "archive": "Archiver",
+    "aria": {
+      "backToHome": "Retour à l'accueil"
+    },
+    "artist_generic": "De l'artiste",
     "cancel": "Annuler",
+    "conductor_prefix": "Maestro",
     "currency": "PLN",
+    "edit": "Modifier",
+    "error_occurred": "Une erreur est survenue",
+    "error_saving": "Erreur lors de l'enregistrement",
     "errors": {
       "database_error": "Un problème de connexion à la base de données est survenu.",
       "generation_error": "Erreur de génération",
+      "generic": "Une erreur est survenue",
       "save_error": "Erreur d'enregistrement",
       "save_problem": "Un problème est survenu lors de l'enregistrement des données.",
       "server_error": "Erreur serveur",
       "server_problem": "Un problème est survenu avec le serveur."
     },
-    "loading": "Chargement...",
     "locale": "fr-FR",
     "people_short": "pers.",
+    "rightsReserved": "Tous droits réservés",
+    "save_changes": "Enregistrer les modifications",
+    "send": "Envoyer",
     "state": {
       "loading": "Chargement...",
       "saved": "Enregistré"
     },
-    "timezone": {
-      "local": "Heure locale"
-    }
+    "status": {
+      "processingInBackground": "Traitement en arrière-plan..."
+    },
+    "tba": "À déterminer",
+    "time": {
+      "clock_aria": "Horloge locale de l'utilisateur",
+      "localAria": "Votre heure locale est :",
+      "localSuffix": "(votre heure)"
+    },
+    "timezones": {
+      "defaultFallback": "UTC"
+    },
+    "unsaved_desc": "Vous avez des modifications non enregistrées. Fermer l'éditeur entraînera leur perte.",
+    "unsaved_title": "Modifications non enregistrées !"
   },
   "contracts": {
     "dashboard": {
@@ -372,7 +410,8 @@
       "pdf_error": "Erreur de génération : {{message}}",
       "pdf_generating": "Génération du PDF pour {{name}}...",
       "pdf_success": "Document généré avec succès.",
-      "save_error": "Impossible d'enregistrer la rémunération pour : {{name}}."
+      "save_error": "Impossible d'enregistrer la rémunération pour : {{name}}.",
+      "bulk_success_few": "{{count}} contrats mis à jour."
     }
   },
   "crew": {
@@ -437,47 +476,103 @@
       "absences_one": "{{count}} absence signalée",
       "absences_many": "{{count}} absences signalées",
       "absences_other": "{{count}} absences signalées",
-      "btn_new_project": "Nouveau projet",
+      "aria_open_project": "Ouvrir les détails de la directive : {{title}}",
+      "aria_open_rehearsal": "Ouvrir les détails de la prochaine répétition",
+      "directory_nav_aria": "Modules principaux du système",
+      "directory_sub": "06 Modules",
+      "features": {
+        "audio": "Audio de réf.",
+        "budget": "Budget",
+        "locations": "Lieux",
+        "pdf_scores": "Partitions PDF",
+        "profiles": "Profils",
+        "rates": "Tarifs",
+        "satb": "SATB",
+        "schedules": "Plannings",
+        "setlists": "Setlists",
+        "sound": "Son & Lumière",
+        "transport": "Transport",
+        "vendors": "Fournisseurs"
+      },
+      "kpi_active_projects": "Directives actives",
+      "kpi_pieces": "Répertoire sacré",
+      "kpi_readiness": "Cohérence harmonique",
       "kpi_telemetry": "Télémétrie de la base",
       "modules": {
-        "archive_desc": "Base centrale de la bibliothèque musicale.",
         "archive_title": "Archive des partitions",
-        "artists_desc": "Gestion du chœur et des solistes.",
         "artists_title": "Base artistes",
-        "contracts_desc": "Finances, contrats et budgétisation.",
         "contracts_title": "RH & Paie",
-        "crew_desc": "Logistique et régie des événements.",
         "crew_title": "Équipe technique",
-        "projects_desc": "Centre de commandement de la production.",
+        "logistics_title": "Logistique",
         "projects_title": "Gestion de projets"
       },
-      "next_rehearsal_alert": "Prochaine répétition : {{title}}",
-      "spotlight_title": "Tableau de bord de production",
+      "next_rehearsal_badge": "Prochaine répétition",
+      "perfect_attendance": "100% de présence",
+      "role": "Tableau de bord principal du chef d'orchestre",
+      "satb_distribution": "Distribution vocale SATB",
+      "spotlight": {
+        "cast": "Distribution",
+        "program": "Répertoire",
+        "remaining": "Avant la première",
+        "status_active": "En production",
+        "status_prep": "En préparation"
+      },
       "unknown_project": "Projet inconnu",
-      "welcome_back": "Bienvenue"
+      "absences_few": "{{count}} absences signalées"
     },
     "artist": {
-      "download_error": "Erreur lors du téléchargement du planning",
-      "download_runsheet": "Planning (Call sheet)",
-      "download_success": "Planning téléchargé avec succès",
-      "downloading_runsheet": "Génération du planning...",
+      "absence_status": "Statut d'absence",
+      "badge_absence_reported": "Absence signalée",
+      "badge_concert": "Événement principal",
+      "badge_confirmed": "Confirmé",
+      "badge_late": "En retard",
+      "badge_rehearsal": "Répétition",
+      "btn_confirm_presence": "Confirmer la présence",
+      "btn_download_runsheet": "Planning (PDF)",
+      "btn_edit_report": "Modifier le signalement",
+      "btn_materials": "Partitions et audio",
+      "btn_report_issue": "Signaler un problème",
       "empty_events_desc": "Reposez-vous, votre calendrier musical est actuellement vide.",
       "empty_events_title": "Aucun événement à venir",
       "general_work": "Travail général",
+      "greeting_afternoon": "Bon après-midi",
       "greeting_evening": "Bonsoir",
       "greeting_morning": "Bonjour",
       "greeting_night": "Bonne nuit",
+      "label_call_time": "Convocation : ",
       "module_materials_desc": "Votre espace personnel. Téléchargez les partitions PDF et travaillez avec des pistes audio dédiées.",
       "module_materials_title": "Supports",
       "module_resources_desc": "Consultez les consignes du chef, le dress code en vigueur et les contrats/règlements.",
       "module_resources_title": "Base de connaissances",
       "module_schedule_desc": "Consultez les répétitions, les concerts et signalez facilement votre absence à l'inspecteur.",
       "module_schedule_title": "Mon calendrier",
+      "nav_aria": "Navigation de l'artiste",
       "next_challenges": "À l'horizon",
-      "open_module": "Ouvrir le module",
-      "personal_modules": "Modules personnels"
+      "note_dashboard_confirm": "Présence confirmée depuis le tableau de bord",
+      "notes_placeholder": "Raison / Notes...",
+      "personal_modules": "Modules personnels",
+      "status_absent": "Je serai absent",
+      "status_late": "Je serai en retard",
+      "title_main": "Espace ",
+      "toast_confirm_success": "Présence confirmée !",
+      "toast_confirming": "Confirmation de la présence...",
+      "toast_download_error": "Erreur de téléchargement du planning",
+      "toast_download_success": "Planning téléchargé avec succès",
+      "toast_downloading_runsheet": "Génération du planning...",
+      "toast_report_success": "Signalement envoyé",
+      "toast_saving_report": "Enregistrement du signalement...",
+      "validation_notes_min": "Veuillez fournir une raison/notes (min. 3 caractères)."
     },
     "layout": {
+      "actions": {
+        "logout": "Déconnexion",
+        "settings": "Paramètres"
+      },
+      "aria": {
+        "closeMenu": "Fermer le menu",
+        "openMenu": "Ouvrir le menu de navigation",
+        "sidebar": "Navigation principale"
+      },
       "groups": {
         "artist_zone": "Zone Artiste",
         "data_admin": "Bases de Données",
@@ -487,7 +582,6 @@
         "production": "Production"
       },
       "links": {
-        "accommodation": "Hébergement",
         "admin_dashboard": "Tableau de bord Admin",
         "archive": "Archives Musicales",
         "artist_dashboard": "Tableau de bord Artiste",
@@ -501,34 +595,121 @@
         "resources": "Ressources",
         "schedule": "Mon Calendrier"
       },
-      "logout": "Se déconnecter",
-      "mobile_nav_title": "Navigation",
-      "profile_settings": "Paramètres du profil",
       "roles": {
         "admin": "Administrateur",
         "artist": "Artiste",
-        "crew": "Équipe technique",
-        "management": "Direction"
+        "crew": "Équipe technique"
       }
     },
     "shared": {
       "authorizing": "Autorisation...",
-      "loading_telemetry": "Chargement de la télémétrie...",
+      "load": "Synchronisation Aura...",
       "syncing": "Synchronisation du tableau de bord..."
     }
   },
+  "export": {
+    "actions": {
+      "downloadZip": "Télécharger l'archive ZIP",
+      "generateZip": "Générer l'archive ZIP"
+    },
+    "aria": {
+      "downloadReadyFile": "Télécharger le fichier prêt"
+    }
+  },
+  "footer": {
+    "actions": {
+      "scrollToTop": "Faire défiler vers le haut",
+      "support": "Soutenir la fondation"
+    },
+    "aria": {
+      "region": "Pied de page"
+    },
+    "credits": "Code et design :",
+    "links": {
+      "about": "À propos",
+      "contact": "Contact",
+      "foundation": "Fondation",
+      "socials": "Communauté"
+    },
+    "newsletter": {
+      "aria": "Saisir l'adresse e-mail pour la newsletter",
+      "button": "Envoyer",
+      "placeholder": "Laissez votre e-mail",
+      "submit": "S'abonner",
+      "title": "Newsletter artistique"
+    },
+    "patronage": {
+      "chapter": "VII. Mécénat",
+      "description": "Nous créons un pont entre l'art et le public. Soutenez les activités de notre fondation et aidez-nous à redonner à la musique son pouvoir originel de toucher les cœurs.",
+      "heading1": "Devenez",
+      "heading2": " partie",
+      "heading3": "de l'harmonie."
+    },
+    "status": {
+      "inactive": "Fondation inactive",
+      "location": "Cracovie, PL"
+    }
+  },
   "logistics": {
-    "add_location": "Ajouter un lieu",
     "autocomplete": {
       "placeholder": "Rechercher une adresse, un hôtel..."
     },
-    "empty_state": "Aucun lieu dans la base.",
-    "empty_state_sub": "Recherchez ci-dessus pour ajouter votre premier lieu depuis Google Maps.",
-    "locations": {
-      "title": "Base de Lieux"
+    "categories": {
+      "airport": "Aéroport",
+      "concert_hall": "Salle de concert",
+      "hotel": "Hôtel",
+      "other": "Autre",
+      "rehearsal_room": "Salle de répétition",
+      "transit": "Station / Gare",
+      "workspace": "Espace privé"
     },
-    "search_google": "Rechercher sur Google Maps...",
-    "select_category": "Sélectionnez une catégorie"
+    "dashboard": {
+      "add_location": "Ajouter un lieu",
+      "archive_desc": "Le lieu disparaîtra de la base de données opérationnelle principale mais sera conservé pour les projets historiques.",
+      "archive_title": "Archiver le lieu ?",
+      "empty_desc": "Modifiez les filtres ou ajoutez un nouveau lieu en utilisant l'intégration Google Maps.",
+      "empty_title": "Aucun résultat",
+      "search_placeholder": "Rechercher un lieu par nom ou adresse...",
+      "subtitle": "Module Logistique",
+      "sync_error": "Erreur de synchronisation des lieux avec la base de données.",
+      "title_highlight": "Lieux",
+      "title_prefix": "Base de données"
+    },
+    "editor": {
+      "address": "Adresse officielle *",
+      "category": "Classification *",
+      "internal_notes": "Notes de l'équipe (Optionnel)",
+      "name": "Nom d'affichage *",
+      "notes_placeholder": "ex. L'entrée des artistes se fait par le parking. Code du portail : 1234#.",
+      "placeholder_address": "ex. 5 rue Jasna, 00-013 Varsovie",
+      "placeholder_name": "ex. Philharmonie nationale - Salle de chambre",
+      "search_hint": "Recherchez un lieu sur la carte pour remplir automatiquement les données, les coordonnées et le fuseau horaire. Cela permettra une gestion intelligente du temps dans les projets.",
+      "section_basic": "Données de base",
+      "section_notes": "Instructions internes",
+      "section_search": "Base de données globale Google",
+      "submit": "Ajouter à la base de données",
+      "title_edit": "Modifier le lieu",
+      "title_new": "Nouveau lieu"
+    },
+    "map": {
+      "locate_me": "Ma position",
+      "search_placeholder": "Rechercher des lieux globaux..."
+    },
+    "preview": {
+      "default_category": "Lieu",
+      "get_directions": "Itinéraire",
+      "no_map": "Aucune coordonnée",
+      "unknown_location": "Lieu inconnu"
+    },
+    "toast": {
+      "archive_error": "Échec de l'archivage du lieu.",
+      "archived_success": "Lieu archivé avec succès.",
+      "archiving": "Désactivation du lieu...",
+      "create_success": "Ajouté !",
+      "creating": "Création...",
+      "update_success": "Mis à jour !",
+      "updating": "Mise à jour..."
+    }
   },
   "materials": {
     "dashboard": {
@@ -575,6 +756,39 @@
       "event": "Événement :"
     }
   },
+  "nav": {
+    "actions": {
+      "donate": "Soutenez-nous"
+    },
+    "aria": {
+      "accessPanel": "Accès au panneau client",
+      "openMenu": "Ouvrir le menu de navigation"
+    },
+    "overlay": {
+      "actions": {
+        "close": "Fermer le menu"
+      },
+      "aria": {
+        "mainMenu": "Menu de navigation principal",
+        "primaryLinks": "Navigation principale"
+      },
+      "links": {
+        "about": "À propos",
+        "foundation": "Fondation",
+        "home": "Accueil",
+        "repertoire": "Répertoire",
+        "support": "Soutien"
+      },
+      "sections": {
+        "community": "Communauté",
+        "contact": "Bureaux / Contact"
+      },
+      "status": {
+        "active": "Statut : Actif",
+        "location": "Cracovie, PL — Fondation VoctEnsemble"
+      }
+    }
+  },
   "notifications": {
     "changed": "Changements :",
     "crew_role": "Rôle assigné : {{role}}",
@@ -583,6 +797,11 @@
     "mark_all_read": "Marquer tout comme lu",
     "title": "Notifications",
     "unread": "Non lues"
+  },
+  "preloader": {
+    "resonance": "Résonance",
+    "respiration": "Respiration",
+    "sequence": "Séquence"
   },
   "projects": {
     "actions": {
@@ -688,7 +907,8 @@
         "assigned_count_many": "{{count}} personnes assignées",
         "assigned_count_other": "{{count}} personnes assignées",
         "remove_title": "Retirer de l'équipe technique",
-        "title": "Membres de l'équipe"
+        "title": "Membres de l'équipe",
+        "assigned_count_few": "{{count}} personnes assignées"
       },
       "title": "Équipe",
       "toast": {
@@ -869,7 +1089,8 @@
         "encore": "BIS",
         "tracks_count_one": "{{count}} piste",
         "tracks_count_many": "{{count}} pistes",
-        "tracks_count_other": "{{count}} pistes"
+        "tracks_count_other": "{{count}} pistes",
+        "tracks_count_few": "{{count}} pistes"
       },
       "duration_unknown": "Durée inconnue",
       "empty": {
@@ -910,7 +1131,8 @@
         "save_order_success": "Ordre enregistré avec succès",
         "saving_order": "Enregistrement du nouvel ordre..."
       },
-      "unfulfilled": "Non couvert"
+      "unfulfilled": "Non couvert",
+      "and_more_few": "et {{count}} de plus..."
     },
     "rehearsals": {
       "absences_reported": "Absences signalées :",
@@ -955,7 +1177,8 @@
         "invited_many": "{{count}} invités",
         "invited_other": "{{count}} invités",
         "optional": "Optionnel",
-        "tutti": "TUTTI"
+        "tutti": "TUTTI",
+        "invited_few": "{{count}} invités"
       },
       "title": "Répétitions",
       "toast": {
@@ -1012,7 +1235,8 @@
       "title": "Journal des",
       "title_highlight": "présences",
       "tutti": "Tutti (ensemble complet)",
-      "tutti_badge": "Répétition tutti"
+      "tutti_badge": "Répétition tutti",
+      "bulk_fill_few": "Remplir {{count}} manquants"
     },
     "row": {
       "minutes_placeholder": "Combien de min ?",
@@ -1259,6 +1483,11 @@
       "logistics": "Logistique",
       "privacy": "Confidentialité",
       "security": "Sécurité"
+    }
+  },
+  "shared": {
+    "loader": {
+      "authorizing": "Synchronisation des partitions..."
     }
   }
 }

@@ -175,7 +175,7 @@ export const GlobalNavbar = ({
           <button
             onClick={() => setMenuOpen(true)}
             className="group flex flex-col space-y-1.5 p-3 pl-0 hover:opacity-50 active:scale-95 transition-all duration-500 outline-none"
-            aria-label={t("nav.aria.openMenu", "Open Navigation Menu")}
+            aria-label={t("nav.aria.openMenu", "Otwórz Menu Nawigacji")}
             aria-expanded={menuOpen}
           >
             <span
@@ -253,7 +253,7 @@ export const GlobalNavbar = ({
           <Link
             to="/panel"
             className="group active:scale-90 transition-colors duration-500 flex items-center outline-none"
-            aria-label={t("nav.aria.accessPanel", "Access Client Panel")}
+            aria-label={t("nav.aria.accessPanel", "Dostęp do Panelu Klienta")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -286,7 +286,7 @@ export const GlobalNavbar = ({
             <Link
               to="/wesprzyj"
               className="group active:scale-95 transition-transform flex w-full outline-none"
-              aria-label={t("nav.actions.donate", "Support Us")}
+              aria-label={t("nav.actions.donate", "Wesprzyj Nas")}
             >
               <div
                 className={cn(

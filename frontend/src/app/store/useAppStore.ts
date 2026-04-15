@@ -15,6 +15,9 @@ export interface AppState {
 
   isLoaded: boolean;
   setIsLoaded: (status: boolean) => void;
+
+  isAuraStabilized: boolean;
+  stabilizeAura: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -24,4 +27,7 @@ export const useAppStore = create<AppState>((set) => ({
   isSidebarExpanded: false,
   setSidebarExpanded: (expanded: boolean) =>
     set({ isSidebarExpanded: expanded }),
+
+  isAuraStabilized: false,
+  stabilizeAura: () => set({ isAuraStabilized: true }),
 }));
