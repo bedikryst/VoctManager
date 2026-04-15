@@ -63,7 +63,7 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
                   visible: {
                     width: "100%",
                     opacity: 1,
-                    transition: { duration: 8, ease: [0.16, 1, 0.3, 1] },
+                    transition: { duration: 10, ease: [0.16, 1, 0.3, 1] },
                   },
                 }}
               />

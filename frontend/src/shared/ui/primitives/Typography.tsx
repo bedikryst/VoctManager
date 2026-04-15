@@ -22,6 +22,7 @@ export const typographyVariants = cva("transition-colors duration-500", {
       subtitle: "font-serif text-xl font-medium tracking-tight sm:text-2xl",
       label: "font-serif text-sm font-semibold tracking-wide",
       unit: "font-serif text-sm italic tracking-normal",
+      emphasis: "font-serif italic tracking-wide",
     },
     color: {
       default: "text-ethereal-ink",
