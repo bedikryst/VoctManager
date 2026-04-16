@@ -28,8 +28,8 @@ export const typographyVariants = cva("transition-colors duration-500", {
       xl: "text-xl",
       "2xl": "text-[22px]",
       "3xl": "text-3xl",
-      "4xl": "text-4xl",
-      huge: "text-5xl xl:text-6xl",
+      "4xl": "text-3xl lg:text-4xl",
+      huge: "text-3xl lg:text-5xl xl:text-6xl",
     },
     weight: {
       light: "font-light",

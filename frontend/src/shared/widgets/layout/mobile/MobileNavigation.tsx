@@ -41,7 +41,11 @@ export const MobileNavigation = ({ user, logout }: MobileNavigationProps) => {
     <LayoutGroup>
       <AnimatePresence>
         {!isOpen ? (
-          <MobileNavTrigger key="trigger" onOpen={handleOpen} />
+          <MobileNavTrigger
+            key="trigger"
+            onOpen={handleOpen}
+            aura={navigationAura}
+          />
         ) : (
           <MobileNavSheet
             key="sheet"

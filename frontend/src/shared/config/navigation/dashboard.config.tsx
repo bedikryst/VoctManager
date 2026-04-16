@@ -35,6 +35,7 @@ export interface NavLinkItem {
   readonly labelKey: string;
   // Crucial paradigm shift: We store the reference, not the instance.
   readonly icon: LucideIcon;
+  readonly isPinned: boolean;
 }
 
 export interface NavGroup {
@@ -70,6 +71,7 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
         to: "/panel",
         icon: LayoutDashboard,
         labelKey: t("dashboard.layout.links.admin_dashboard"),
+        isPinned: true,
       },
     ],
   },
@@ -80,11 +82,13 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
         to: "/panel/projects",
         icon: Briefcase,
         labelKey: t("dashboard.layout.links.projects"),
+        isPinned: true,
       },
       {
         to: "/panel/rehearsals",
         icon: CalendarCheck,
         labelKey: t("dashboard.layout.links.attendance"),
+        isPinned: true,
       },
     ],
   },
@@ -95,6 +99,7 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
         to: "/panel/locations",
         icon: MapPin,
         labelKey: t("dashboard.layout.links.locations"),
+        isPinned: false,
       },
     ],
   },
@@ -105,21 +110,25 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
         to: "/panel/artists",
         icon: Users,
         labelKey: t("dashboard.layout.links.artists"),
+        isPinned: false,
       },
       {
         to: "/panel/crew",
         icon: Wrench,
         labelKey: t("dashboard.layout.links.crew"),
+        isPinned: false,
       },
       {
         to: "/panel/contracts",
         icon: FileText,
         labelKey: t("dashboard.layout.links.contracts"),
+        isPinned: false,
       },
       {
         to: "/panel/archive-management",
         icon: Music,
         labelKey: t("dashboard.layout.links.archive"),
+        isPinned: true,
       },
     ],
   },
@@ -130,16 +139,19 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
         to: "/panel/schedule",
         icon: Calendar,
         labelKey: t("dashboard.layout.links.schedule"),
+        isPinned: false,
       },
       {
         to: "/panel/materials",
         icon: Headphones,
         labelKey: t("dashboard.layout.links.materials"),
+        isPinned: false,
       },
       {
         to: "/panel/resources",
         icon: FolderOpen,
         labelKey: t("dashboard.layout.links.resources"),
+        isPinned: false,
       },
     ],
   },
@@ -153,6 +165,7 @@ export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
         to: "/panel",
         icon: LayoutDashboard,
         labelKey: t("dashboard.layout.links.artist_dashboard"),
+        isPinned: true,
       },
     ],
   },
@@ -163,16 +176,19 @@ export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
         to: "/panel/schedule",
         icon: Calendar,
         labelKey: t("dashboard.layout.links.schedule"),
+        isPinned: true,
       },
       {
         to: "/panel/materials",
         icon: Headphones,
         labelKey: t("dashboard.layout.links.materials"),
+        isPinned: true,
       },
       {
         to: "/panel/resources",
         icon: FolderOpen,
         labelKey: t("dashboard.layout.links.resources"),
+        isPinned: true,
       },
     ],
   },

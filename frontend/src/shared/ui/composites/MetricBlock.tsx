@@ -32,7 +32,7 @@ export function MetricBlock({
 
   const glassClasses =
     interactiveMode === "glass"
-      ? "p-8 transition-colors duration-700 group-hover:bg-white/40 backdrop-blur-sm"
+      ? "p-5 md:p-6 lg:p-8 transition-colors duration-700 group-hover:bg-white/40 backdrop-blur-sm "
       : "group flex cursor-default flex-col gap-1";
 
   return (
@@ -42,7 +42,7 @@ export function MetricBlock({
     >
       <div
         className={cn(
-          "flex items-center gap-2 transition-colors duration-500",
+          "flex items-center gap-1 md:gap-2 transition-colors duration-500",
           interactiveMode === "glass"
             ? "text-ethereal-incense/70"
             : "text-ethereal-incense/60",

@@ -107,7 +107,6 @@ export function ArtifactCard({
             animate="visible"
             className="mb-4 flex flex-wrap items-center gap-4"
           >
-            {/* Oczyszczono z surowych klas tekstu - zakładamy, że slot dostarczy Primitives */}
             {metadataSlot}
           </motion.div>
         )}
@@ -116,7 +115,7 @@ export function ArtifactCard({
           as="h2"
           text={title}
           delay={0.2}
-          className="mb-6 max-w-2xl font-serif text-3xl leading-[1.05] tracking-tight text-ethereal-ink xl:text-4xl"
+          className="mb-6 max-w-2xl font-serif text-2xl lg:text-3xl leading-[1.05] tracking-tight text-ethereal-ink xl:text-4xl"
         />
 
         {subtitleSlot && (
@@ -131,7 +130,7 @@ export function ArtifactCard({
       </div>
 
       {/* 4. ARTIFACT STRATUM (Metrics via MetricBlock) */}
-      <div className="relative z-10 grid h-auto md:h-full grid-cols-1 overflow-hidden sm:grid-cols-3 pointer-events-none">
+      <div className="relative z-10 grid h-auto md:h-full grid-cols-3 overflow-hidden pointer-events-none">
         <Divider variant="fade" position="absolute-top" />
 
         {metrics.map((metric, index) => (
