@@ -11,7 +11,7 @@ import { Outlet } from "react-router-dom";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { DesktopSidebar } from "./DesktopSidebar";
-import { MobileNavigation } from "./MobileNavigation";
+import { MobileNavigation } from "./mobile/MobileNavigation";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 
 export const DashboardLayout = (): React.JSX.Element => {
