@@ -128,12 +128,12 @@ export const MobileNavSheet = ({
 
             {/* Header */}
             <header className="flex items-center justify-between px-8 pb-4 shrink-0">
-              <Heading as="span" size="lg" className="tracking-tight">
+              <Heading as="span" size="2xl">
                 <span className="font-medium">Voct</span>
                 <Text
                   as="span"
                   color="gold"
-                  size="2xl"
+                  size="huge"
                   className="italic ml-0.5"
                 >
                   Manager
@@ -154,10 +154,10 @@ export const MobileNavSheet = ({
               className="flex-1 min-h-0 overflow-y-auto px-6 touch-pan-y overscroll-contain no-scrollbar"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
-              <nav className="flex flex-col gap-8 py-6 pb-12">
+              <nav className="flex flex-col gap-4 py-6 pb-12">
                 {aura.navGroups.map((group) => (
                   <section key={group.labelKey}>
-                    <Eyebrow className="mb-4 pl-4 opacity-60 tracking-[0.2em] uppercase">
+                    <Eyebrow className="mb-4 pl-4 tracking-[0.2em] uppercase">
                       {aura.t(group.labelKey)}
                     </Eyebrow>
                     <ul className="space-y-2 list-none p-0 m-0">
@@ -206,7 +206,7 @@ export const MobileNavSheet = ({
             </div>
 
             {/* Identity & Context Footer */}
-            <footer className="mt-auto px-8 pt-6 pb-safe-offset-8 bg-white/40 backdrop-blur-xl border-t border-white/30 shrink-0">
+            <footer className="mt-auto px-8 py-6 bg-white/50 border-t border-white/5 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col overflow-hidden pr-4">
                   <Label className="text-lg leading-tight mb-0.5 truncate">
