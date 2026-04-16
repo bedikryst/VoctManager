@@ -3,16 +3,18 @@
  * @description Enterprise SaaS Gestural Command Centre.
  * Engineered with explicit hardware-accelerated height kinematics
  * and strict drag-delegation. Zero Layout Projection warping.
+ * Integrates popstate management for native-like Android back-button behavior.
  * @module shared/widgets/layout/MobileNavigation
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { NavLink } from "react-router-dom";
 import {
   AnimatePresence,
   motion,
   useDragControls,
   type Transition,
+  PanInfo,
 } from "framer-motion";
 import { Menu, X, Settings, LogOut } from "lucide-react";
 import { cva } from "class-variance-authority";
@@ -72,7 +74,7 @@ const BrandMark = React.memo(() => (
       weight="normal"
       color="gold"
       size="2xl"
-      className="italic ml-[0.5] pb-[2.5px]"
+      className="italic ml-[0.5px] pb-[2.5px]"
     >
       Manager
     </Text>
@@ -87,7 +89,7 @@ export const MobileNavigation = ({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Dedykowany kontroler przeciągania
+  // Dedicated controller for native-like swipe-to-dismiss
   const dragControls = useDragControls();
 
   const { navGroups, userFullName, roleLabel, initials, t } =
@@ -95,18 +97,55 @@ export const MobileNavigation = ({
 
   useBodyScrollLock(isOpen);
 
+  // Close menu handler with history manipulation for native feel
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  const handleOpen = useCallback(() => {
+    setIsOpen(true);
+    // Push state to handle Android hardware back button elegantly
+    window.history.pushState({ navigationOpen: true }, "");
+  }, []);
+
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setIsOpen(false);
+        handleClose();
+      }
+    };
+
+    const handlePopState = () => {
+      // If user presses hardware back button, close the menu instead of navigating back
+      if (isOpen) {
+        handleClose();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [isOpen, handleClose]);
+
+  const handleDragEnd = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      // Swipe threshold for dismissal (velocity or distance)
+      if (info.offset.y > 80 || info.velocity.y > 400) {
+        handleClose();
+        // Pop the state manually if closed via drag
+        if (window.history.state?.navigationOpen) {
+          window.history.back();
+        }
+      }
+    },
+    [handleClose],
+  );
 
   return (
     <>
@@ -119,25 +158,24 @@ export const MobileNavigation = ({
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-[60] bg-ethereal-ink/20 backdrop-blur-md md:hidden"
             aria-hidden="true"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              handleClose();
+              if (window.history.state?.navigationOpen) window.history.back();
+            }}
           />
         )}
       </AnimatePresence>
 
-      <div
-        className="fixed bottom-5 left-0 right-0 z-[70] px-4 pb-safe flex justify-center pointer-events-none md:hidden"
-        style={{ perspective: "1000px" }}
-      >
+      <div className="fixed bottom-5 left-0 right-0 z-[70] px-4 pb-safe flex justify-center pointer-events-none md:hidden [perspective:1000px]">
         <GlassCard
           ref={containerRef}
           as={motion.nav}
           variant="ethereal"
-          animationEngine="framer" // Blokada konfliktu z natywnym CSS
+          animationEngine="framer"
           withNoise={true}
           glow={isOpen}
           padding="none"
           initial={false}
-          // PRZYWRÓCONA KONTROLA WYSOKOŚCI
           animate={{
             height: isOpen ? "auto" : 72,
             borderRadius: isOpen ? 32 : 36,
@@ -145,16 +183,13 @@ export const MobileNavigation = ({
           transition={KINETIC_SPRING}
           drag={isOpen ? "y" : false}
           dragControls={dragControls}
-          dragListener={false} // Zablokowanie scroll-hijacking
+          dragListener={false}
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.1}
-          onDragEnd={(_, info) => {
-            if (info.offset.y > 80 || info.velocity.y > 400) setIsOpen(false);
-          }}
-          // Optymalizacja GPU + wymuszenie warstwy
+          onDragEnd={handleDragEnd}
           className="pointer-events-auto relative w-full overflow-hidden border border-white/60 shadow-[var(--shadow-ethereal-deep)] transform-gpu origin-bottom will-change-[height,transform]"
         >
-          {/* Stan zwinięty - Nagłówek */}
+          {/* Collapsed State: Header */}
           <motion.div
             animate={{
               opacity: isOpen ? 0 : 1,
@@ -177,7 +212,7 @@ export const MobileNavigation = ({
             </div>
 
             <button
-              onClick={() => setIsOpen(true)}
+              onClick={handleOpen}
               className="group flex flex-1 items-center justify-center gap-3 h-full px-4 transition-colors outline-none"
               aria-expanded={isOpen}
               aria-controls="mobile-navigation-content"
@@ -194,7 +229,7 @@ export const MobileNavigation = ({
             </div>
           </motion.div>
 
-          {/* Stan rozwinięty - Zawartość menu */}
+          {/* Expanded State: Menu Content */}
           <motion.div
             id="mobile-navigation-content"
             animate={{
@@ -206,7 +241,7 @@ export const MobileNavigation = ({
             className="relative flex flex-col w-full max-h-[80dvh]"
             aria-hidden={!isOpen}
           >
-            {/* Uchwyt do przeciągania - przyjmuje gest drag Controls */}
+            {/* Drag Handle Component */}
             <div
               className="w-full flex justify-center pt-4 pb-2 cursor-grab active:cursor-grabbing touch-none"
               onPointerDown={(e) => dragControls.start(e)}
@@ -217,15 +252,19 @@ export const MobileNavigation = ({
             <header className="flex flex-shrink-0 items-center justify-between px-6 pt-2 pb-6">
               <BrandMark />
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  handleClose();
+                  if (window.history.state?.navigationOpen)
+                    window.history.back();
+                }}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-ethereal-graphite/5 hover:bg-ethereal-graphite/10 text-ethereal-graphite transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
-                aria-label={t("navigation.mobile.close", "Zamknij nawigację")}
+                aria-label={t("navigation.mobile.close", "Close Navigation")}
               >
                 <X size={20} strokeWidth={2} />
               </button>
             </header>
 
-            {/* Kontener linków - bezpiecznie scrollowalny */}
+            {/* Scrollable Links Container */}
             <div className="flex-1 overflow-y-auto px-5 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-contain">
               <div className="flex flex-col gap-6">
                 {navGroups.map((group) => (
@@ -248,7 +287,11 @@ export const MobileNavigation = ({
                             <NavLink
                               to={link.to}
                               end={link.to === "/panel"}
-                              onClick={() => setIsOpen(false)}
+                              onClick={() => {
+                                handleClose();
+                                if (window.history.state?.navigationOpen)
+                                  window.history.back();
+                              }}
                               className={({ isActive }) =>
                                 cn(mobileNavLinkVariants({ isActive }))
                               }
@@ -319,15 +362,19 @@ export const MobileNavigation = ({
                 <div className="flex gap-2 flex-shrink-0">
                   <NavLink
                     to="/panel/settings"
-                    onClick={() => setIsOpen(false)}
-                    aria-label={t("navigation.mobile.settings", "Ustawienia")}
+                    onClick={() => {
+                      handleClose();
+                      if (window.history.state?.navigationOpen)
+                        window.history.back();
+                    }}
+                    aria-label={t("navigation.mobile.settings", "Settings")}
                     className="flex h-11 w-11 items-center justify-center rounded-[1.15rem] bg-ethereal-gold/10 border border-ethereal-gold/20 shadow-[var(--shadow-ethereal-subtle)] text-ethereal-graphite hover:text-ethereal-gold transition-all outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 active:scale-95"
                   >
                     <Settings size={18} strokeWidth={2} />
                   </NavLink>
                   <button
                     onClick={logout}
-                    aria-label={t("navigation.mobile.logout", "Wyloguj")}
+                    aria-label={t("navigation.mobile.logout", "Log out")}
                     className="flex h-11 w-11 items-center justify-center rounded-[1.15rem] bg-ethereal-ink/5 hover:bg-red-50/80 border border-transparent hover:border-red-100 text-ethereal-graphite hover:text-red-500 transition-all outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 active:scale-95"
                   >
                     <LogOut size={18} strokeWidth={2} />
