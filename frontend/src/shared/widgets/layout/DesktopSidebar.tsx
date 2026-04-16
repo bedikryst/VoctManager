@@ -116,9 +116,9 @@ export const DesktopSidebar = ({
               className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
               aria-hidden={!isExpanded}
             >
-              <Heading size="2xl">
+              <Heading size="4xl">
                 Voct
-                <Text as="span" weight="medium" color="gold" size="lg">
+                <Text as="span" weight="light" color="gold" size="3xl">
                   Manager
                 </Text>
               </Heading>

@@ -1,18 +1,18 @@
 /**
  * @file MobileNavigation.tsx
  * @description Enterprise SaaS Gestural Command Centre.
- * Engineered with pure Explicit Height Kinematics (zero Layout Projection warping)
- * and uncompromising strict TypeScript 7.0 protocols.
+ * Engineered with explicit hardware-accelerated height kinematics
+ * and strict drag-delegation. Zero Layout Projection warping.
  * @module shared/widgets/layout/MobileNavigation
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import {
   AnimatePresence,
   motion,
+  useDragControls,
   type Transition,
-  type PanInfo,
 } from "framer-motion";
 import { Menu, X, Settings, LogOut } from "lucide-react";
 import { cva } from "class-variance-authority";
@@ -39,9 +39,10 @@ interface MobileNavigationProps {
 
 const KINETIC_SPRING: Transition = {
   type: "spring",
-  stiffness: 280,
-  damping: 30,
+  stiffness: 320,
+  damping: 28,
   mass: 0.8,
+  restDelta: 0.001,
 };
 
 const mobileNavLinkVariants = cva(
@@ -86,13 +87,14 @@ export const MobileNavigation = ({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // The custom hook delegates the appropriate RBAC navigation matrix
+  // Dedykowany kontroler przeciągania
+  const dragControls = useDragControls();
+
   const { navGroups, userFullName, roleLabel, initials, t } =
     useNavigationAura(user);
 
   useBodyScrollLock(isOpen);
 
-  // A11y: Trap focus and handle escape key natively
   useEffect(() => {
     if (!isOpen) return;
 
@@ -106,26 +108,16 @@ export const MobileNavigation = ({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  const handleDragEnd = useCallback(
-    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      // Dismiss threshold based on precise velocity or physical offset kinematics
-      if (info.offset.y > 80 || info.velocity.y > 400) {
-        setIsOpen(false);
-      }
-    },
-    [],
-  );
-
   return (
     <>
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-[60] bg-ethereal-ink/15 md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[60] bg-ethereal-ink/20 backdrop-blur-md md:hidden"
             aria-hidden="true"
             onClick={() => setIsOpen(false)}
           />
@@ -134,36 +126,40 @@ export const MobileNavigation = ({
 
       <div
         className="fixed bottom-5 left-0 right-0 z-[70] px-4 pb-safe flex justify-center pointer-events-none md:hidden"
-        // Semantic demarcation for assistive technologies
-        role={isOpen ? "dialog" : "navigation"}
-        aria-modal={isOpen ? "true" : "false"}
-        aria-label={t("navigation.mobile.label", "Nawigacja mobilna")}
+        style={{ perspective: "1000px" }}
       >
         <GlassCard
           ref={containerRef}
           as={motion.nav}
           variant="ethereal"
+          animationEngine="framer" // Blokada konfliktu z natywnym CSS
           withNoise={true}
           glow={isOpen}
           padding="none"
           initial={false}
+          // PRZYWRÓCONA KONTROLA WYSOKOŚCI
           animate={{
             height: isOpen ? "auto" : 72,
             borderRadius: isOpen ? 32 : 36,
           }}
           transition={KINETIC_SPRING}
           drag={isOpen ? "y" : false}
+          dragControls={dragControls}
+          dragListener={false} // Zablokowanie scroll-hijacking
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.1}
-          onDragEnd={handleDragEnd}
-          className="pointer-events-auto relative w-full overflow-hidden border border-white/60 shadow-[var(--shadow-ethereal-deep)] origin-bottom"
+          onDragEnd={(_, info) => {
+            if (info.offset.y > 80 || info.velocity.y > 400) setIsOpen(false);
+          }}
+          // Optymalizacja GPU + wymuszenie warstwy
+          className="pointer-events-auto relative w-full overflow-hidden border border-white/60 shadow-[var(--shadow-ethereal-deep)] transform-gpu origin-bottom will-change-[height,transform]"
         >
-          {/* Collapsed State Header */}
+          {/* Stan zwinięty - Nagłówek */}
           <motion.div
             animate={{
               opacity: isOpen ? 0 : 1,
-              pointerEvents: isOpen ? "none" : "auto",
               y: isOpen ? -10 : 0,
+              pointerEvents: isOpen ? "none" : "auto",
             }}
             transition={{ duration: 0.2 }}
             className="absolute inset-0 flex items-center justify-between h-[72px] px-3 z-10"
@@ -198,21 +194,24 @@ export const MobileNavigation = ({
             </div>
           </motion.div>
 
-          {/* Expanded State Content */}
+          {/* Stan rozwinięty - Zawartość menu */}
           <motion.div
             id="mobile-navigation-content"
             animate={{
               opacity: isOpen ? 1 : 0,
-              pointerEvents: isOpen ? "auto" : "none",
               y: isOpen ? 0 : 20,
+              pointerEvents: isOpen ? "auto" : "none",
             }}
-            transition={{ duration: 0.3, delay: isOpen ? 0.05 : 0 }}
-            className="relative flex flex-col w-full max-h-[75dvh]"
+            transition={{ duration: 0.35, delay: isOpen ? 0.05 : 0 }}
+            className="relative flex flex-col w-full max-h-[80dvh]"
             aria-hidden={!isOpen}
           >
-            {/* Tactile Drag Handle */}
-            <div className="w-full flex justify-center pt-4 pb-2 cursor-grab active:cursor-grabbing">
-              <div className="w-10 h-1.5 rounded-full bg-ethereal-graphite/15 shadow-inner" />
+            {/* Uchwyt do przeciągania - przyjmuje gest drag Controls */}
+            <div
+              className="w-full flex justify-center pt-4 pb-2 cursor-grab active:cursor-grabbing touch-none"
+              onPointerDown={(e) => dragControls.start(e)}
+            >
+              <div className="w-10 h-1.5 rounded-full bg-ethereal-graphite/20 shadow-inner" />
             </div>
 
             <header className="flex flex-shrink-0 items-center justify-between px-6 pt-2 pb-6">
@@ -226,8 +225,9 @@ export const MobileNavigation = ({
               </button>
             </header>
 
+            {/* Kontener linków - bezpiecznie scrollowalny */}
             <div className="flex-1 overflow-y-auto px-5 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-contain">
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-6">
                 {navGroups.map((group) => (
                   <section key={group.labelKey} className="flex flex-col">
                     <Eyebrow
@@ -235,13 +235,12 @@ export const MobileNavigation = ({
                       weight="semibold"
                       color="incense"
                       size="sm"
-                      className="mb-1 pl-4 tracking-[0.25em] uppercase"
+                      className="mb-2 pl-4 tracking-[0.25em] uppercase"
                     >
                       {t(group.labelKey)}
                     </Eyebrow>
-                    <ul className="space-y-0.5 m-0 p-0 list-none">
+                    <ul className="space-y-1 m-0 p-0 list-none">
                       {group.links.map((link) => {
-                        // Strict reference execution. Requires config to provide pure references (e.g., icon: Menu)
                         const IconComponent = link.icon as React.ElementType;
 
                         return (
@@ -304,7 +303,7 @@ export const MobileNavigation = ({
                   <Label
                     as="p"
                     weight="medium"
-                    className="truncate text-base text-ethereal-ink leading-none mb-1"
+                    className="truncate text-base text-ethereal-ink leading-none mb-1.5"
                   >
                     {userFullName}
                   </Label>
@@ -322,7 +321,7 @@ export const MobileNavigation = ({
                     to="/panel/settings"
                     onClick={() => setIsOpen(false)}
                     aria-label={t("navigation.mobile.settings", "Ustawienia")}
-                    className="flex h-11 w-11 items-center justify-center rounded-[1.15rem] bg-ethereal-gold/30 border border-ethereal-ink/5 shadow-[var(--shadow-ethereal-subtle)] text-ethereal-graphite hover:text-ethereal-gold transition-all outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 active:scale-95"
+                    className="flex h-11 w-11 items-center justify-center rounded-[1.15rem] bg-ethereal-gold/10 border border-ethereal-gold/20 shadow-[var(--shadow-ethereal-subtle)] text-ethereal-graphite hover:text-ethereal-gold transition-all outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 active:scale-95"
                   >
                     <Settings size={18} strokeWidth={2} />
                   </NavLink>

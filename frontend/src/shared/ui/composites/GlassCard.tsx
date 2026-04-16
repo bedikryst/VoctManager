@@ -20,7 +20,7 @@ import { cn } from "@/shared/lib/utils";
 
 const glassCardVariants = cva(
   // Base structural integrity: strictly isolated hardware rendering context
-  "group relative isolate overflow-hidden rounded-[2.5rem] transition-all duration-700 ease-out will-change-transform",
+  "group relative isolate overflow-hidden rounded-[2.5rem] will-change-transform transform-gpu",
   {
     variants: {
       variant: {
@@ -43,11 +43,17 @@ const glassCardVariants = cva(
         md: "p-6 md:p-8",
         lg: "p-8 md:p-12",
       },
+      // NEW: Separation of animation engines
+      animationEngine: {
+        css: "transition-all duration-700 ease-out",
+        framer: "transition-none", // Surrenders styling control to Framer Motion
+      },
     },
     defaultVariants: {
       variant: "ethereal",
       padding: "md",
       isHoverable: true,
+      animationEngine: "css",
     },
   },
 );
@@ -60,7 +66,7 @@ export type GlassCardProps<C extends ElementType> = {
 } & VariantProps<typeof glassCardVariants> &
   Omit<
     ComponentPropsWithoutRef<C>,
-    "as" | "variant" | "padding" | "isHoverable"
+    "as" | "variant" | "padding" | "isHoverable" | "animationEngine"
   >;
 
 const GlassCardInner = (
@@ -75,6 +81,7 @@ const GlassCardInner = (
     isHoverable,
     withNoise = false,
     backgroundElement,
+    animationEngine,
     className,
     onMouseMove,
     as: Component = "div",
@@ -85,7 +92,6 @@ const GlassCardInner = (
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // The template is safely hoisted out of the conditional rendering block
   const backgroundTemplate = useMotionTemplate`
     radial-gradient(
       150px circle at ${mouseX}px ${mouseY}px,
@@ -114,6 +120,7 @@ const GlassCardInner = (
           variant,
           padding,
           isHoverable,
+          animationEngine,
           className,
         }),
       )}

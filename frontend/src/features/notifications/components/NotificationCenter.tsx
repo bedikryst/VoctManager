@@ -138,7 +138,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                       />
                     </div>
                     <Heading
-                      size="lg"
+                      size="xl"
                       className="leading-tight text-ethereal-ink"
                     >
                       {t("notifications.title")}
@@ -231,13 +231,17 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                       />
                     </div>
                     <Heading
-                      size="sm"
+                      size="lg"
                       color="default"
                       className="opacity-80 text-center"
                     >
                       {t("notifications.empty_title")}
                     </Heading>
-                    <Text size="xs" color="muted" className="mt-1 text-center">
+                    <Text
+                      size="base"
+                      color="muted"
+                      className="mt-1 text-center"
+                    >
                       {t("notifications.empty_subtitle")}
                     </Text>
                   </motion.div>
