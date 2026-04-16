@@ -1,9 +1,11 @@
 /**
  * @file useBodyScrollLock.ts
- * @description Enterprise-grade hook for managing global scroll locks.
- * Safely disables body scrolling when modals or side-panels are active.
- * Automatically calculates and compensates for scrollbar width to prevent UI layout shift.
- * @module hooks/useBodyScrollLock
+ * @description Spatial-aware scroll locking mechanism.
+ * Implements cross-browser body scroll lock while preserving nested scrolling capabilities
+ * via 'data-scroll-lock-ignore' attribute delegation.
+ * Supports both tactile (touchmove) and desktop testing (wheel) scenarios seamlessly.
+ * @module shared/lib/dom
+ * @architecture Enterprise SaaS 2026
  */
 
 import { useLayoutEffect } from "react";
@@ -12,26 +14,56 @@ export const useBodyScrollLock = (isLocked: boolean): void => {
   useLayoutEffect(() => {
     if (!isLocked) return;
 
-    // Cache original styles to ensure safe restoration
-    const originalOverflow = window.getComputedStyle(document.body).overflow;
-    const originalPaddingRight = window.getComputedStyle(
-      document.body,
-    ).paddingRight;
+    const body = document.body;
+    const root = document.documentElement;
 
-    // Calculate scrollbar width to prevent layout shifting
-    const scrollbarWidth =
-      window.innerWidth - document.documentElement.clientWidth;
+    // Cache original spatial styles
+    const originalStyle = window.getComputedStyle(body);
+    const originalOverflow = originalStyle.overflow;
+    const originalPaddingRight = originalStyle.paddingRight;
 
-    // Apply lock and padding compensation
-    document.body.style.overflow = "hidden";
+    // Calculate scrollbar width to prevent UI layout shift on desktops
+    const scrollbarWidth = window.innerWidth - root.clientWidth;
+
+    // Apply visual lock
+    body.style.overflow = "hidden";
+
     if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `calc(${originalPaddingRight} + ${scrollbarWidth}px)`;
+      body.style.paddingRight = `calc(${originalPaddingRight} + ${scrollbarWidth}px)`;
     }
 
-    // Cleanup function executes on unmount or when dependencies change
+    /**
+     * Intercepts both touchmove and wheel globally, delegating permission
+     * based on spatial attributes (data-scroll-lock-ignore="true").
+     */
+    const handleScrollEvent = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+
+      // Traverse DOM to find if any spatial parent has the bypass flag
+      const isIgnored = target?.closest('[data-scroll-lock-ignore="true"]');
+
+      if (isIgnored) {
+        // Nested container is marked as spatially scrollable. Native kinematics take over.
+        return;
+      }
+
+      // Block scrolling for non-marked elements
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+    };
+
+    // Non-passive listeners are strictly required to reliably prevent default scroll events
+    const eventOptions = { passive: false };
+    document.addEventListener("touchmove", handleScrollEvent, eventOptions);
+    document.addEventListener("wheel", handleScrollEvent, eventOptions);
+
     return () => {
-      document.body.style.overflow = originalOverflow;
-      document.body.style.paddingRight = originalPaddingRight;
+      // Restore exact spatial state
+      body.style.overflow = originalOverflow;
+      body.style.paddingRight = originalPaddingRight;
+      document.removeEventListener("touchmove", handleScrollEvent);
+      document.removeEventListener("wheel", handleScrollEvent);
     };
   }, [isLocked]);
 };

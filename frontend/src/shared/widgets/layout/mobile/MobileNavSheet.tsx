@@ -34,10 +34,11 @@ import { mobileNavLinkVariants } from "./MobileNavigation.styles";
  * Snappy but fluid interactions based on 2026 Spatial UX guidelines.
  */
 const KINEMATICS = {
-  SPRING: { type: "spring", stiffness: 450, damping: 35, mass: 0.8 },
-  SWIPE_THRESHOLD: 100,
-  VELOCITY_THRESHOLD: 400,
-  DRAG_ELASTICITY: 0.05,
+  SHEET_SPRING: { type: "spring", stiffness: 350, damping: 40, mass: 1 },
+  STAGGER_CHILDREN: 0.04,
+  SWIPE_THRESHOLD: 120,
+  VELOCITY_THRESHOLD: 500,
+  DRAG_ELASTICITY: 0.1,
 } as const;
 
 interface MobileNavSheetProps {
@@ -52,12 +53,10 @@ export const MobileNavSheet = ({
   aura,
 }: MobileNavSheetProps): React.JSX.Element => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollableRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
 
-  // 1:1 Gestural mapping values
   const y = useMotionValue(0);
-  // Backdrop opacity fades out linearly as the sheet is dragged down (0 to 300px)
-  const backdropOpacity = useTransform(y, [0, 300], [1, 0]);
 
   useFocusTrap(containerRef, true);
 
@@ -99,7 +98,7 @@ export const MobileNavSheet = ({
           "Rozszerszona nawigacja mobilna",
         )}
         className="fixed bottom-0 left-0 right-0 z-(--z-nav-sheet) max-h-[92dvh] h-full outline-none md:hidden overflow-hidden flex flex-col justify-end will-change-transform pt-12"
-        style={{ y }}
+        style={{ y, touchAction: "auto" }}
         drag="y"
         dragControls={dragControls}
         dragListener={false}
@@ -109,7 +108,7 @@ export const MobileNavSheet = ({
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
-        transition={KINEMATICS.SPRING}
+        transition={KINEMATICS.SHEET_SPRING}
       >
         <GlassCard
           variant="solid"
@@ -145,7 +144,16 @@ export const MobileNavSheet = ({
           </header>
 
           {/* Scrollable Navigation Area */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 touch-pan-y overscroll-contain no-scrollbar">
+          <div
+            ref={scrollableRef}
+            data-scroll-lock-ignore="true"
+            className="flex-1 min-h-0 overflow-y-auto px-6 touch-pan-y overscroll-contain no-scrollbar"
+            style={{ WebkitOverflowScrolling: "touch" }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+          >
             <nav className="flex flex-col gap-8 py-6 pb-12">
               {aura.navGroups.map((group) => (
                 <section key={group.labelKey}>
