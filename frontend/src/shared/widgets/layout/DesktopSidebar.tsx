@@ -33,12 +33,6 @@ interface DesktopSidebarProps {
   logout: () => void;
 }
 
-interface IconProps {
-  size?: number | string;
-  className?: string;
-  strokeWidth?: number | string;
-}
-
 // Strictly typed transitions for TypeScript 7.0 inference
 const KINETIC_TRANSITION: Transition = {
   type: "spring",
@@ -160,14 +154,17 @@ export const DesktopSidebar = ({
                   <motion.div
                     initial={false}
                     animate={{
-                      height: isExpanded ? 20 : 0,
+                      height: isExpanded ? 24 : 0,
                       opacity: isExpanded ? 1 : 0,
                     }}
                     className="relative w-full overflow-hidden mb-1"
                     aria-hidden={!isExpanded}
                   >
-                    <div className="absolute left-[12px] top-0 whitespace-nowrap">
-                      <Eyebrow color="incense" size="xs">
+                    <div className="absolute left-[16px] top-1 whitespace-nowrap">
+                      <Eyebrow
+                        color="incense"
+                        className="text-[0.65rem] tracking-[0.25em] font-semibold opacity-70 uppercase"
+                      >
                         {t(group.labelKey)}
                       </Eyebrow>
                     </div>
@@ -175,47 +172,61 @@ export const DesktopSidebar = ({
 
                   {/* Nav Links Node */}
                   <div className="flex flex-col space-y-1 w-full">
-                    {group.links.map((link) => (
-                      <NavLink
-                        key={link.to}
-                        to={link.to}
-                        end={link.to === "/panel"}
-                        className={({ isActive }) =>
-                          cn(navLinkVariants({ isActive }))
-                        }
-                        aria-label={!isExpanded ? t(link.labelKey) : undefined}
-                      >
-                        {({ isActive }) => (
-                          <>
-                            <div className="absolute left-0 top-0 bottom-0 w-[56px] flex flex-shrink-0 items-center justify-center">
-                              {React.cloneElement(
-                                link.icon as React.ReactElement<IconProps>,
-                                {
-                                  size: 18,
-                                  strokeWidth: isActive ? 2.5 : 2,
-                                },
-                              )}
-                            </div>
+                    {group.links.map((link) => {
+                      // Pure Reference Ingestion
+                      const IconComponent = link.icon as React.ElementType;
 
-                            <motion.div
-                              initial={false}
-                              animate={{ opacity: isExpanded ? 1 : 0 }}
-                              transition={CONTENT_FADE_TRANSITION}
-                              className="absolute left-[56px] right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
-                              aria-hidden={!isExpanded}
-                            >
-                              <Label
-                                weight="medium"
-                                size="base"
-                                color={isActive ? "default" : "muted"}
+                      return (
+                        <NavLink
+                          key={link.to}
+                          to={link.to}
+                          end={link.to === "/panel"}
+                          className={({ isActive }) =>
+                            cn(navLinkVariants({ isActive }))
+                          }
+                          aria-label={
+                            !isExpanded ? t(link.labelKey) : undefined
+                          }
+                        >
+                          {({ isActive }) => (
+                            <>
+                              {/* The Absolute 56px Anchor Zone */}
+                              <div className="absolute left-0 top-0 bottom-0 w-[56px] flex flex-shrink-0 items-center justify-center transition-transform duration-300 ease-out group-active/desklink:scale-95">
+                                <IconComponent
+                                  size={18}
+                                  strokeWidth={isActive ? 2.5 : 1.5}
+                                  className={cn(
+                                    "transition-colors duration-300",
+                                    isActive
+                                      ? "text-ethereal-gold"
+                                      : "text-ethereal-graphite/70 group-hover/desklink:text-ethereal-ink",
+                                  )}
+                                />
+                              </div>
+
+                              <motion.div
+                                initial={false}
+                                animate={{
+                                  opacity: isExpanded ? 1 : 0,
+                                  x: isExpanded ? 0 : -4,
+                                }}
+                                transition={CONTENT_FADE_TRANSITION}
+                                className="absolute left-[56px] right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
+                                aria-hidden={!isExpanded}
                               >
-                                {t(link.labelKey)}
-                              </Label>
-                            </motion.div>
-                          </>
-                        )}
-                      </NavLink>
-                    ))}
+                                <Label
+                                  weight="medium"
+                                  size="base"
+                                  color={isActive ? "default" : "muted"}
+                                >
+                                  {t(link.labelKey)}
+                                </Label>
+                              </motion.div>
+                            </>
+                          )}
+                        </NavLink>
+                      );
+                    })}
                   </div>
                 </div>
               ))}

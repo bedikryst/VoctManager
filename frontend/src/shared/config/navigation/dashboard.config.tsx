@@ -1,12 +1,12 @@
 /**
  * @file dashboard.config.tsx
- * @description Centralized navigation schema for the authenticated Dashboard.
- * Implements RBAC-ready structures, i18next marking, and Bento Grid kinematics.
+ * @description Centralised navigation schema for the authenticated Dashboard.
+ * Implements strict RBAC structures, i18next extraction marking, and pure component references
+ * to ensure zero Layout Projection warping and flawless React rendering cycles.
  * @module shared/config/navigation/dashboard
  * @architecture Enterprise SaaS 2026
  */
 
-import React from "react";
 import {
   Briefcase,
   Calendar,
@@ -19,52 +19,48 @@ import {
   Users,
   Wrench,
   MapPin,
+  type LucideIcon,
 } from "lucide-react";
 
-// Marker for i18next-parser to extract keys (and optionally default values)
-const t = (key: string, defaultValue?: string): string => key;
+// Marker for i18next-parser to extract keys (and optionally default values).
+// This remains a pure utility function.
+const t = (key: string, _defaultValue?: string): string => key;
+
+// ----------------------------------------------------------------------
+// 1. CORE INTERFACES (Strict TypeScript 7.0 Protocols)
+// ----------------------------------------------------------------------
 
 export interface NavLinkItem {
-  to: string;
-  labelKey: string;
-  icon: React.ReactElement<{ className?: string; size?: number }>;
+  readonly to: string;
+  readonly labelKey: string;
+  // Crucial paradigm shift: We store the reference, not the instance.
+  readonly icon: LucideIcon;
 }
 
 export interface NavGroup {
-  labelKey: string;
-  links: NavLinkItem[];
+  readonly labelKey: string;
+  readonly links: readonly NavLinkItem[];
 }
 
 export interface BentoDirectiveFeature {
-  labelKey: string;
-  defaultLabel: string;
+  readonly labelKey: string;
+  readonly defaultLabel: string;
 }
 
 export interface BentoDirective {
-  id: string;
-  romanNumeral: string;
-  titleKey: string;
-  defaultTitle: string;
-  features: BentoDirectiveFeature[];
-  accentClass: string;
-  path: string;
-  gridClass: string;
+  readonly id: string;
+  readonly romanNumeral: string;
+  readonly titleKey: string;
+  readonly defaultTitle: string;
+  readonly features: readonly BentoDirectiveFeature[];
+  readonly accentClass: string;
+  readonly path: string;
+  readonly gridClass: string;
 }
 
 // ----------------------------------------------------------------------
-// 1. STANDARD NAVIGATION (Sidebar / Navbar)
+// 2. STANDARD NAVIGATION (Sidebar / Mobile Command Centre)
 // ----------------------------------------------------------------------
-
-export interface NavLinkItem {
-  to: string;
-  labelKey: string;
-  icon: React.ReactElement<{ className?: string; size?: number }>;
-}
-
-export interface NavGroup {
-  labelKey: string;
-  links: NavLinkItem[];
-}
 
 export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
   {
@@ -72,7 +68,7 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
     links: [
       {
         to: "/panel",
-        icon: <LayoutDashboard size={18} />,
+        icon: LayoutDashboard,
         labelKey: t("dashboard.layout.links.admin_dashboard"),
       },
     ],
@@ -82,12 +78,12 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
     links: [
       {
         to: "/panel/projects",
-        icon: <Briefcase size={18} />,
+        icon: Briefcase,
         labelKey: t("dashboard.layout.links.projects"),
       },
       {
         to: "/panel/rehearsals",
-        icon: <CalendarCheck size={18} />,
+        icon: CalendarCheck,
         labelKey: t("dashboard.layout.links.attendance"),
       },
     ],
@@ -97,7 +93,7 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
     links: [
       {
         to: "/panel/locations",
-        icon: <MapPin size={18} />,
+        icon: MapPin,
         labelKey: t("dashboard.layout.links.locations"),
       },
     ],
@@ -107,22 +103,22 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
     links: [
       {
         to: "/panel/artists",
-        icon: <Users size={18} />,
+        icon: Users,
         labelKey: t("dashboard.layout.links.artists"),
       },
       {
         to: "/panel/crew",
-        icon: <Wrench size={18} />,
+        icon: Wrench,
         labelKey: t("dashboard.layout.links.crew"),
       },
       {
         to: "/panel/contracts",
-        icon: <FileText size={18} />,
+        icon: FileText,
         labelKey: t("dashboard.layout.links.contracts"),
       },
       {
         to: "/panel/archive-management",
-        icon: <Music size={18} />,
+        icon: Music,
         labelKey: t("dashboard.layout.links.archive"),
       },
     ],
@@ -132,17 +128,17 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
     links: [
       {
         to: "/panel/schedule",
-        icon: <Calendar size={18} />,
+        icon: Calendar,
         labelKey: t("dashboard.layout.links.schedule"),
       },
       {
         to: "/panel/materials",
-        icon: <Headphones size={18} />,
+        icon: Headphones,
         labelKey: t("dashboard.layout.links.materials"),
       },
       {
         to: "/panel/resources",
-        icon: <FolderOpen size={18} />,
+        icon: FolderOpen,
         labelKey: t("dashboard.layout.links.resources"),
       },
     ],
@@ -155,7 +151,7 @@ export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
     links: [
       {
         to: "/panel",
-        icon: <LayoutDashboard size={18} />,
+        icon: LayoutDashboard,
         labelKey: t("dashboard.layout.links.artist_dashboard"),
       },
     ],
@@ -165,17 +161,17 @@ export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
     links: [
       {
         to: "/panel/schedule",
-        icon: <Calendar size={18} />,
+        icon: Calendar,
         labelKey: t("dashboard.layout.links.schedule"),
       },
       {
         to: "/panel/materials",
-        icon: <Headphones size={18} />,
+        icon: Headphones,
         labelKey: t("dashboard.layout.links.materials"),
       },
       {
         to: "/panel/resources",
-        icon: <FolderOpen size={18} />,
+        icon: FolderOpen,
         labelKey: t("dashboard.layout.links.resources"),
       },
     ],
@@ -183,7 +179,7 @@ export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
 ] as const;
 
 // ----------------------------------------------------------------------
-// 2. DASHBOARD BENTO DIRECTIVES (Admin Home)
+// 3. DASHBOARD BENTO DIRECTIVES (Admin Home Matrix)
 // ----------------------------------------------------------------------
 
 export const ADMIN_BENTO_DIRECTIVES: readonly BentoDirective[] = [
