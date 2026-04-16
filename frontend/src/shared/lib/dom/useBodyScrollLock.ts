@@ -35,12 +35,19 @@ export const useBodyScrollLock = (isLocked: boolean): void => {
     /**
      * Intercepts both touchmove and wheel globally, delegating permission
      * based on spatial attributes (data-scroll-lock-ignore="true").
+     * Safely handles non-Element targets (like text nodes).
      */
     const handleScrollEvent = (event: Event) => {
-      const target = event.target as HTMLElement | null;
+      const target = event.target as Node | null;
+
+      // Spatial routing: Ignore non-element nodes safely
+      if (!target || target.nodeType !== Node.ELEMENT_NODE) {
+        return;
+      }
 
       // Traverse DOM to find if any spatial parent has the bypass flag
-      const isIgnored = target?.closest('[data-scroll-lock-ignore="true"]');
+      const element = target as Element;
+      const isIgnored = element.closest('[data-scroll-lock-ignore="true"]');
 
       if (isIgnored) {
         // Nested container is marked as spatially scrollable. Native kinematics take over.
