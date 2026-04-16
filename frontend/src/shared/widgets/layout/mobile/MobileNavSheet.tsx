@@ -1,14 +1,21 @@
 /**
  * @file MobileNavSheet.tsx
  * @description Spatial expanded state of navigation.
- * Implements hardware-accelerated scroll masking, spring physics, and strict A11y.
+ * Implements hardware-accelerated scroll masking, fluid spring physics,
+ * 1:1 gesture mapping, and strict A11y standards.
  * @module shared/widgets/layout/mobile
  * @architecture Enterprise SaaS 2026
  */
 
 import React, { useRef } from "react";
-import { motion, PanInfo, useDragControls } from "framer-motion";
-import { useNavigate, NavLink } from "react-router-dom";
+import {
+  motion,
+  PanInfo,
+  useDragControls,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
+import { NavLink } from "react-router-dom";
 import { X, Settings, LogOut } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -21,22 +28,17 @@ import {
 import { useNavigationAura } from "../hooks/useNavigationAura";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { mobileNavLinkVariants } from "./MobileNavigation.styles";
-import type { Transition } from "framer-motion";
 
-const sheetTransition: Transition = {
-  type: "spring",
-  stiffness: 400,
-  damping: 35,
-  mass: 0.8,
-};
-
-const sheetKinematics = {
-  // Removed explicit scales to prevent raster distortion (squishing)
-  initial: { opacity: 0, y: "100%" },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: "100%" },
-  transition: sheetTransition,
-};
+/**
+ * Enterprise standard physics constants for UI components.
+ * Snappy but fluid interactions based on 2026 Spatial UX guidelines.
+ */
+const KINEMATICS = {
+  SPRING: { type: "spring", stiffness: 450, damping: 35, mass: 0.8 },
+  SWIPE_THRESHOLD: 100,
+  VELOCITY_THRESHOLD: 400,
+  DRAG_ELASTICITY: 0.05,
+} as const;
 
 interface MobileNavSheetProps {
   readonly onClose: () => void;
@@ -49,37 +51,40 @@ export const MobileNavSheet = ({
   logout,
   aura,
 }: MobileNavSheetProps): React.JSX.Element => {
-  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
 
-  // A11y: Strict focus boundary projection
+  // 1:1 Gestural mapping values
+  const y = useMotionValue(0);
+  // Backdrop opacity fades out linearly as the sheet is dragged down (0 to 300px)
+  const backdropOpacity = useTransform(y, [0, 300], [1, 0]);
+
   useFocusTrap(containerRef, true);
 
+  /**
+   * Validates tactile intent based on velocity and displacement.
+   */
   const handleDragEnd = (
     _: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo,
   ) => {
-    // Gestural intent validation
-    if (info.offset.y > 100 || info.velocity.y > 500) {
+    if (
+      info.offset.y > KINEMATICS.SWIPE_THRESHOLD ||
+      info.velocity.y > KINEMATICS.VELOCITY_THRESHOLD
+    ) {
       onClose();
     }
   };
 
-  const handleNavigation = (to: string) => {
-    onClose();
-    navigate(to); // Relies on React 19 View Transitions for fluid routing
-  };
-
   return (
     <>
-      {/* 1. Ethereal Backdrop */}
+      {/* 1. Ethereal Backdrop with spatial responsiveness */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-0 z-(--z-nav-sheet) bg-ethereal-ink/20 backdrop-blur-md md:hidden will-change-transform"
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed inset-0 z-[calc(var(--z-nav-sheet)-1)] bg-ethereal-ink/30 backdrop-blur-md md:hidden"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -91,24 +96,29 @@ export const MobileNavSheet = ({
         aria-modal="true"
         aria-label={aura.t(
           "nav.sheet.accessibility_label",
-          "Expanded Navigation",
+          "Rozszerszona nawigacja mobilna",
         )}
-        className="fixed bottom-0 left-0 right-0 z-(--z-nav-sheet) h-[90dvh] outline-none md:hidden overflow-hidden flex flex-col justify-end will-change-transform"
-        onDragEnd={handleDragEnd}
+        className="fixed bottom-0 left-0 right-0 z-(--z-nav-sheet) max-h-[92dvh] h-full outline-none md:hidden overflow-hidden flex flex-col justify-end will-change-transform pt-12"
+        style={{ y }}
         drag="y"
         dragControls={dragControls}
-        dragListener={false} // Enforces interaction ONLY via the tactile handle
+        dragListener={false}
         dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={0.05}
-        {...sheetKinematics}
+        dragElastic={KINEMATICS.DRAG_ELASTICITY}
+        onDragEnd={handleDragEnd}
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={KINEMATICS.SPRING}
       >
         <GlassCard
-          variant="ethereal"
+          variant="solid"
           padding="none"
           withNoise={true}
-          className="flex flex-col w-full h-full overflow-hidden rounded-t-[2.5rem] border-t border-white/40 shadow-[0_-8px_40px_rgba(0,0,0,0.12)]"
+          isHoverable={false}
+          className="flex flex-col w-full h-full overflow-hidden rounded-t-[2.5rem] border-t border-white/40 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] bg-white/70"
         >
-          {/* Tactile Grab Handle for Spatial Awareness */}
+          {/* Tactile Grab Handle */}
           <div
             className="w-full flex justify-center py-5 cursor-grab active:cursor-grabbing touch-none shrink-0"
             onPointerDown={(e) => dragControls.start(e)}
@@ -117,6 +127,7 @@ export const MobileNavSheet = ({
             <div className="w-12 h-1.5 rounded-full bg-ethereal-graphite/30" />
           </div>
 
+          {/* Header */}
           <header className="flex items-center justify-between px-8 pb-4 shrink-0">
             <Heading as="span" size="lg" className="tracking-tight">
               <span className="font-medium">Voct</span>
@@ -127,18 +138,14 @@ export const MobileNavSheet = ({
             <button
               onClick={onClose}
               aria-label={aura.t("common.actions.close", "Close navigation")}
-              className="p-2 rounded-full bg-ethereal-graphite/5 hover:bg-ethereal-graphite/10 transition-colors active:scale-90 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full bg-ethereal-graphite/5 hover:bg-ethereal-graphite/10 transition-colors active:scale-90 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
             >
               <X size={22} className="text-ethereal-graphite/80" />
             </button>
           </header>
 
-          <div
-            className="flex-1 min-h-0 overflow-y-auto px-6 touch-pan-y overscroll-contain no-scrollbar"
-            onPointerDownCapture={(e) => e.stopPropagation()}
-            onTouchStartCapture={(e) => e.stopPropagation()}
-            onWheelCapture={(e) => e.stopPropagation()}
-          >
+          {/* Scrollable Navigation Area */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 touch-pan-y overscroll-contain no-scrollbar">
             <nav className="flex flex-col gap-8 py-6 pb-12">
               {aura.navGroups.map((group) => (
                 <section key={group.labelKey}>
@@ -152,10 +159,7 @@ export const MobileNavSheet = ({
                         <li key={link.to}>
                           <NavLink
                             to={link.to}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleNavigation(link.to);
-                            }}
+                            onClick={onClose}
                             className={({ isActive }) =>
                               cn(mobileNavLinkVariants({ isActive }))
                             }
@@ -207,17 +211,18 @@ export const MobileNavSheet = ({
 
               {/* Contextual Action Cluster */}
               <div className="flex gap-3 shrink-0">
-                <button
-                  onClick={() => handleNavigation("/panel/settings")}
+                <NavLink
+                  to="/panel/settings"
+                  onClick={onClose}
                   aria-label={aura.t("nav.settings", "Settings")}
-                  className="p-3 rounded-[1.25rem] bg-ethereal-gold/10 border border-ethereal-gold/20 text-ethereal-gold hover:bg-ethereal-gold/20 transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-[1.25rem] bg-ethereal-gold/10 border border-ethereal-gold/20 text-ethereal-gold hover:bg-ethereal-gold/20 transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
                 >
                   <Settings size={20} strokeWidth={2} />
-                </button>
+                </NavLink>
                 <button
                   onClick={logout}
                   aria-label={aura.t("auth.logout", "Log out")}
-                  className="p-3 rounded-[1.25rem] bg-ethereal-crimson/10 border border-ethereal-crimson/20 text-ethereal-crimson hover:bg-ethereal-crimson/20 transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-crimson"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-[1.25rem] bg-ethereal-crimson/10 border border-ethereal-crimson/20 text-ethereal-crimson hover:bg-ethereal-crimson/20 transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-crimson"
                 >
                   <LogOut size={20} strokeWidth={2} />
                 </button>
