@@ -57,7 +57,7 @@ export const MobileNavSheet = ({
   useFocusTrap(containerRef, true);
 
   const handleDragEnd = (
-    event: MouseEvent | TouchEvent | PointerEvent,
+    _: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo,
   ) => {
     // Gestural intent validation
@@ -106,7 +106,7 @@ export const MobileNavSheet = ({
           variant="ethereal"
           padding="none"
           withNoise={true}
-          className="flex flex-col w-full h-full rounded-t-[2.5rem] border-t border-white/40 shadow-[0_-8px_40px_rgba(0,0,0,0.12)]"
+          className="flex flex-col w-full h-full overflow-hidden rounded-t-[2.5rem] border-t border-white/40 shadow-[0_-8px_40px_rgba(0,0,0,0.12)]"
         >
           {/* Tactile Grab Handle for Spatial Awareness */}
           <div
@@ -133,13 +133,11 @@ export const MobileNavSheet = ({
             </button>
           </header>
 
-          {/* Scrollable Navigation Area 
-            FIX: min-h-0 prevents flexbox from infinitely expanding
-            FIX: onPointerDown stopPropagation prevents Framer from stealing scroll intent
-          */}
           <div
-            className="flex-1 min-h-0 overflow-y-auto px-6 overscroll-contain no-scrollbar"
-            onPointerDown={(e) => e.stopPropagation()}
+            className="flex-1 min-h-0 overflow-y-auto px-6 touch-pan-y overscroll-contain no-scrollbar"
+            onPointerDownCapture={(e) => e.stopPropagation()}
+            onTouchStartCapture={(e) => e.stopPropagation()}
+            onWheelCapture={(e) => e.stopPropagation()}
           >
             <nav className="flex flex-col gap-8 py-6 pb-12">
               {aura.navGroups.map((group) => (
