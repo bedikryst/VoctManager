@@ -39,6 +39,13 @@
     0 12px 40px rgba(166, 146, 121, 0.15);
   --shadow-glass-solid: 0 4px 16px rgba(166, 146, 121, 0.04);
   --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
+
+  /* =========================================
+     SPATIAL & LAYOUT TOKENS 
+     ========================================= */
+
+  --spacing-nav-dock: 3rem;
+  --spacing-sheet-expanded: 85dvh;
 }
 
 /* ========================================== */
@@ -48,6 +55,11 @@
   :root {
     color-scheme: light;
     --sidebar-width: 120px;
+
+    --z-nav-dock: 70;
+    --z-nav-sheet: 80;
+    --z-focus-trap: 90;
+    --z-toast: 100;
   }
 
   body {

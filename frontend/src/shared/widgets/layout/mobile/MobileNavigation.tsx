@@ -5,13 +5,13 @@
  */
 
 import React, { useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, LayoutGroup } from "framer-motion";
 import { useNavigationAura } from "../hooks/useNavigationAura";
 import { MobileNavSheet } from "./MobileNavSheet";
 import { MobileNavTrigger } from "./MobileNavTrigger";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { hapticsService } from "@/shared/lib/hardware/hapticsService";
-import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher"; // <--- Import nowego hooka
+import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
 import type { AuthUser } from "@/shared/auth/auth.types";
 
 interface MobileNavigationProps {
@@ -19,10 +19,7 @@ interface MobileNavigationProps {
   readonly logout: () => void;
 }
 
-export const MobileNavigation = ({
-  user,
-  logout,
-}: MobileNavigationProps): React.JSX.Element => {
+export const MobileNavigation = ({ user, logout }: MobileNavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigationAura = useNavigationAura(user);
 
@@ -41,22 +38,19 @@ export const MobileNavigation = ({
   useCloseWatcher(isOpen, handleClose);
 
   return (
-    <>
-      <AnimatePresence mode="wait">
-        {!isOpen && (
-          <MobileNavTrigger onOpen={handleOpen} aura={navigationAura} />
-        )}
-      </AnimatePresence>
-
+    <LayoutGroup>
       <AnimatePresence>
-        {isOpen && (
+        {!isOpen ? (
+          <MobileNavTrigger key="trigger" onOpen={handleOpen} />
+        ) : (
           <MobileNavSheet
+            key="sheet"
             onClose={handleClose}
             aura={navigationAura}
             logout={logout}
           />
         )}
       </AnimatePresence>
-    </>
+    </LayoutGroup>
   );
 };
