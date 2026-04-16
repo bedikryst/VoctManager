@@ -1,14 +1,13 @@
 /**
  * @file MobileNavigation.tsx
- * @description Enterprise SaaS Gestural Command Centre.
- * Engineered with explicit hardware-accelerated height kinematics
- * and strict drag-delegation. Zero Layout Projection warping.
- * Integrates popstate management for native-like Android back-button behavior.
+ * @description Enterprise SaaS Gestural Command Centre - 2026 Edition.
+ * Engineered with pure hardware-accelerated transforms and projection-stable kinematics.
+ * Implements CloseWatcher API for native-like Android/Mobile back-button handling.
  * @module shared/widgets/layout/MobileNavigation
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   AnimatePresence,
   motion,
@@ -41,9 +40,9 @@ interface MobileNavigationProps {
 
 const KINETIC_SPRING: Transition = {
   type: "spring",
-  stiffness: 320,
-  damping: 28,
-  mass: 0.8,
+  stiffness: 350,
+  damping: 32,
+  mass: 1,
   restDelta: 0.001,
 };
 
@@ -62,25 +61,30 @@ const mobileNavLinkVariants = cva(
   },
 );
 
-const BrandMark = React.memo(() => (
-  <Heading
-    as="span"
-    size="lg"
-    className="tracking-tight select-none pt-0.5 flex items-center"
-  >
-    <span className="font-medium text-ethereal-ink">Voct</span>
-    <Text
+/**
+ * BrandMark - Optimized for 2026 React Compiler.
+ * Wrapped in motion.div with layout="position" to prevent distortion during parent scaling.
+ */
+const BrandMark = () => (
+  <motion.div layout="position" className="flex items-center">
+    <Heading
       as="span"
-      weight="normal"
-      color="gold"
-      size="2xl"
-      className="italic ml-[0.5px] pb-[2.5px]"
+      size="lg"
+      className="tracking-tight select-none pt-0.5 flex items-center"
     >
-      Manager
-    </Text>
-  </Heading>
-));
-BrandMark.displayName = "BrandMark";
+      <span className="font-medium text-ethereal-ink">Voct</span>
+      <Text
+        as="span"
+        weight="normal"
+        color="gold"
+        size="2xl"
+        className="italic ml-[0.5px] pb-[2.5px]"
+      >
+        Manager
+      </Text>
+    </Heading>
+  </motion.div>
+);
 
 export const MobileNavigation = ({
   user,
@@ -88,8 +92,7 @@ export const MobileNavigation = ({
 }: MobileNavigationProps): React.JSX.Element => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Dedicated controller for native-like swipe-to-dismiss
+  const navigate = useNavigate();
   const dragControls = useDragControls();
 
   const { navGroups, userFullName, roleLabel, initials, t } =
@@ -97,76 +100,77 @@ export const MobileNavigation = ({
 
   useBodyScrollLock(isOpen);
 
-  // Close menu handler with history manipulation for native feel
+  // Micro-haptics for premium feel
+  const triggerHaptic = useCallback((pattern: number = 10) => {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }, []);
+
   const handleClose = useCallback(() => {
     setIsOpen(false);
-  }, []);
+    triggerHaptic(8);
+  }, [triggerHaptic]);
 
   const handleOpen = useCallback(() => {
     setIsOpen(true);
-    // Push state to handle Android hardware back button elegantly
-    window.history.pushState({ navigationOpen: true }, "");
-  }, []);
+    triggerHaptic(12);
+  }, [triggerHaptic]);
 
+  // Native hardware back button / ESC key handling (2026 Web Standard)
   useEffect(() => {
     if (!isOpen) return;
 
+    // Use CloseWatcher API if available (Chrome 120+)
+    // @ts-expect-error CloseWatcher is a modern Web API
+    if (typeof window.CloseWatcher !== "undefined") {
+      // @ts-expect-error watcher
+      const watcher = new window.CloseWatcher();
+      watcher.onclose = handleClose;
+      return () => watcher.destroy();
+    }
+
+    // Fallback for older browsers
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleClose();
-      }
+      if (e.key === "Escape") handleClose();
     };
-
-    const handlePopState = () => {
-      // If user presses hardware back button, close the menu instead of navigating back
-      if (isOpen) {
-        handleClose();
-      }
-    };
-
     document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("popstate", handlePopState);
-    };
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, handleClose]);
 
   const handleDragEnd = useCallback(
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      // Swipe threshold for dismissal (velocity or distance)
-      if (info.offset.y > 80 || info.velocity.y > 400) {
+      if (info.offset.y > 100 || info.velocity.y > 500) {
         handleClose();
-        // Pop the state manually if closed via drag
-        if (window.history.state?.navigationOpen) {
-          window.history.back();
-        }
       }
     },
     [handleClose],
   );
 
+  // Programmatic navigation to prevent race conditions with the closing animation
+  const handleNavigation = useCallback(
+    (to: string) => {
+      handleClose();
+      // Allow the menu to start closing before the router swaps the view
+      setTimeout(() => navigate(to), 100);
+    },
+    [handleClose, navigate],
+  );
+
   return (
     <>
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[60] bg-ethereal-ink/20 backdrop-blur-md md:hidden"
-            aria-hidden="true"
-            onClick={() => {
-              handleClose();
-              if (window.history.state?.navigationOpen) window.history.back();
-            }}
+            transition={{ duration: 0.35 }}
+            className="fixed inset-0 z-[60] bg-ethereal-ink/30 backdrop-blur-md md:hidden"
+            onClick={handleClose}
           />
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-5 left-0 right-0 z-[70] px-4 pb-safe flex justify-center pointer-events-none md:hidden [perspective:1000px]">
+      <div className="fixed bottom-5 left-0 right-0 z-[70] px-4 pb-safe flex justify-center pointer-events-none md:hidden [perspective:1200px]">
         <GlassCard
           ref={containerRef}
           as={motion.nav}
@@ -175,122 +179,117 @@ export const MobileNavigation = ({
           withNoise={true}
           glow={isOpen}
           padding="none"
-          initial={false}
+          // We use absolute DVH to prevent layout thrashing
           animate={{
-            height: isOpen ? "auto" : 72,
-            borderRadius: isOpen ? 32 : 36,
+            height: isOpen ? "78dvh" : "72px",
+            borderRadius: isOpen ? "32px" : "36px",
+            y: 0,
           }}
           transition={KINETIC_SPRING}
           drag={isOpen ? "y" : false}
           dragControls={dragControls}
           dragListener={false}
           dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.1}
+          dragElastic={0.08}
           onDragEnd={handleDragEnd}
           className="pointer-events-auto relative w-full overflow-hidden border border-white/60 shadow-[var(--shadow-ethereal-deep)] transform-gpu origin-bottom will-change-[height,transform]"
         >
-          {/* Collapsed State: Header */}
-          <motion.div
-            animate={{
-              opacity: isOpen ? 0 : 1,
-              y: isOpen ? -10 : 0,
-              pointerEvents: isOpen ? "none" : "auto",
-            }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 flex items-center justify-between h-[72px] px-3 z-10"
-            aria-hidden={isOpen}
-          >
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ethereal-gold/15 to-transparent border border-ethereal-gold/20 shadow-sm">
-              <Label
-                as="span"
-                color="gold"
-                weight="bold"
-                className="tracking-widest"
+          {/* Collapsed State: Optimized Header */}
+          <AnimatePresence mode="popLayout">
+            {!isOpen && (
+              <motion.div
+                key="collapsed-header"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute inset-0 flex items-center justify-between h-[72px] px-3 z-20"
               >
-                {initials}
-              </Label>
-            </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-ethereal-gold/15 to-transparent border border-ethereal-gold/20">
+                  <Label
+                    as="span"
+                    color="gold"
+                    weight="bold"
+                    className="tracking-widest"
+                  >
+                    {initials}
+                  </Label>
+                </div>
 
-            <button
-              onClick={handleOpen}
-              className="group flex flex-1 items-center justify-center gap-3 h-full px-4 transition-colors outline-none"
-              aria-expanded={isOpen}
-              aria-controls="mobile-navigation-content"
-            >
-              <Menu
-                className="text-ethereal-graphite/70 group-hover:text-ethereal-gold transition-colors duration-300"
-                size={22}
-              />
-              <BrandMark />
-            </button>
+                <button
+                  onClick={handleOpen}
+                  className="flex flex-1 items-center justify-center gap-3 h-full px-4 outline-none"
+                >
+                  <Menu className="text-ethereal-graphite/70" size={22} />
+                  <BrandMark />
+                </button>
 
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center">
-              <NotificationCenter />
-            </div>
-          </motion.div>
+                <div className="flex h-12 w-12 items-center justify-center">
+                  <NotificationCenter />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Expanded State: Menu Content */}
           <motion.div
-            id="mobile-navigation-content"
-            animate={{
-              opacity: isOpen ? 1 : 0,
-              y: isOpen ? 0 : 20,
-              pointerEvents: isOpen ? "auto" : "none",
-            }}
-            transition={{ duration: 0.35, delay: isOpen ? 0.05 : 0 }}
-            className="relative flex flex-col w-full max-h-[80dvh]"
-            aria-hidden={!isOpen}
+            initial={false}
+            animate={{ opacity: isOpen ? 1 : 0 }}
+            className={cn(
+              "relative flex flex-col w-full h-full pt-4 transition-opacity",
+              !isOpen && "pointer-events-none",
+            )}
           >
-            {/* Drag Handle Component */}
+            {/* Drag Handle - Tactile Area */}
             <div
-              className="w-full flex justify-center pt-4 pb-2 cursor-grab active:cursor-grabbing touch-none"
+              className="w-full flex justify-center pb-2 cursor-grab active:cursor-grabbing touch-none"
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="w-10 h-1.5 rounded-full bg-ethereal-graphite/20 shadow-inner" />
             </div>
 
-            <header className="flex flex-shrink-0 items-center justify-between px-6 pt-2 pb-6">
+            <header className="flex items-center justify-between px-6 pt-2 pb-4">
               <BrandMark />
               <button
-                onClick={() => {
-                  handleClose();
-                  if (window.history.state?.navigationOpen)
-                    window.history.back();
-                }}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-ethereal-graphite/5 hover:bg-ethereal-graphite/10 text-ethereal-graphite transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
-                aria-label={t("navigation.mobile.close", "Close Navigation")}
+                onClick={handleClose}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-ethereal-graphite/5 text-ethereal-graphite"
               >
-                <X size={20} strokeWidth={2} />
+                <X size={20} />
               </button>
             </header>
 
-            {/* Scrollable Links Container */}
-            <div className="flex-1 overflow-y-auto px-5 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-contain">
-              <div className="flex flex-col gap-6">
+            {/* Scrollable Area with Fade Masking */}
+            <div
+              className="flex-1 overflow-y-auto px-5 pb-8 overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={{
+                maskImage:
+                  "linear-gradient(to bottom, transparent, black 20px, black calc(100% - 20px), transparent)",
+              }}
+            >
+              <div className="flex flex-col gap-6 py-4">
                 {navGroups.map((group) => (
                   <section key={group.labelKey} className="flex flex-col">
-                    <Eyebrow
-                      as="h3"
-                      weight="semibold"
-                      color="incense"
-                      size="sm"
-                      className="mb-2 pl-4 tracking-[0.25em] uppercase"
-                    >
-                      {t(group.labelKey)}
-                    </Eyebrow>
-                    <ul className="space-y-1 m-0 p-0 list-none">
+                    <motion.div layout="position">
+                      <Eyebrow
+                        as="h3"
+                        weight="semibold"
+                        color="incense"
+                        size="sm"
+                        className="mb-3 pl-4 tracking-[0.25em] uppercase opacity-60"
+                      >
+                        {t(group.labelKey)}
+                      </Eyebrow>
+                    </motion.div>
+
+                    <ul className="space-y-1.5 m-0 p-0 list-none">
                       {group.links.map((link) => {
                         const IconComponent = link.icon as React.ElementType;
-
                         return (
                           <li key={link.to}>
                             <NavLink
                               to={link.to}
-                              end={link.to === "/panel"}
-                              onClick={() => {
-                                handleClose();
-                                if (window.history.state?.navigationOpen)
-                                  window.history.back();
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleNavigation(link.to);
                               }}
                               className={({ isActive }) =>
                                 cn(mobileNavLinkVariants({ isActive }))
@@ -298,31 +297,33 @@ export const MobileNavigation = ({
                             >
                               {({ isActive }) => (
                                 <>
-                                  <div
+                                  <motion.div
+                                    layout="position"
                                     className={cn(
-                                      "flex w-8 flex-shrink-0 items-center justify-center transition-colors duration-300 ease-out",
+                                      "flex w-8 items-center justify-center",
                                       isActive
                                         ? "text-ethereal-gold"
-                                        : "text-ethereal-graphite/70 group-hover/moblink:text-ethereal-ink",
+                                        : "text-ethereal-graphite/70",
                                     )}
                                   >
                                     <IconComponent
                                       size={20}
                                       strokeWidth={isActive ? 2.5 : 1.5}
                                     />
-                                  </div>
-                                  <Text
-                                    as="span"
-                                    weight={isActive ? "medium" : "normal"}
-                                    className={cn(
-                                      "leading-none tracking-wide transition-colors duration-300",
-                                      isActive
-                                        ? "text-ethereal-gold"
-                                        : "text-ethereal-graphite/80 group-hover/moblink:text-ethereal-ink",
-                                    )}
-                                  >
-                                    {t(link.labelKey)}
-                                  </Text>
+                                  </motion.div>
+                                  <motion.div layout="position">
+                                    <Text
+                                      as="span"
+                                      weight={isActive ? "medium" : "normal"}
+                                      className={
+                                        isActive
+                                          ? "text-ethereal-gold"
+                                          : "text-ethereal-graphite/80"
+                                      }
+                                    >
+                                      {t(link.labelKey)}
+                                    </Text>
+                                  </motion.div>
                                 </>
                               )}
                             </NavLink>
@@ -335,51 +336,45 @@ export const MobileNavigation = ({
               </div>
             </div>
 
-            <footer className="flex-shrink-0 w-full bg-gradient-to-t from-white/95 to-white/60 backdrop-blur-xl relative pb-4 pt-2 rounded-b-[32px]">
+            {/* Footer - Fixed at bottom of the expanded sheet */}
+            <footer className="mt-auto px-7 pt-2 pb-6 bg-gradient-to-t from-white/80 to-transparent backdrop-blur-sm rounded-b-[32px] relative">
               <Divider
                 position="absolute-top"
                 variant="fade"
-                className="opacity-40"
+                className="opacity-30"
               />
-              <div className="px-7 pt-4 flex items-center justify-between gap-4">
-                <div className="flex flex-col min-w-0">
+              <div className="flex items-center justify-between gap-4 pt-4">
+                <motion.div layout="position" className="flex flex-col min-w-0">
                   <Label
                     as="p"
                     weight="medium"
-                    className="truncate text-base text-ethereal-ink leading-none mb-1.5"
+                    className="truncate text-base text-ethereal-ink leading-none mb-1"
                   >
                     {userFullName}
                   </Label>
                   <Eyebrow
                     as="p"
                     color="incense"
-                    className="truncate opacity-70 leading-none text-[0.7rem] tracking-wider uppercase"
+                    className="truncate opacity-60 text-[0.7rem] tracking-widest uppercase"
                   >
                     {roleLabel}
                   </Eyebrow>
-                </div>
+                </motion.div>
 
-                <div className="flex gap-2 flex-shrink-0">
-                  <NavLink
-                    to="/panel/settings"
-                    onClick={() => {
-                      handleClose();
-                      if (window.history.state?.navigationOpen)
-                        window.history.back();
-                    }}
-                    aria-label={t("navigation.mobile.settings", "Settings")}
-                    className="flex h-11 w-11 items-center justify-center rounded-[1.15rem] bg-ethereal-gold/10 border border-ethereal-gold/20 shadow-[var(--shadow-ethereal-subtle)] text-ethereal-graphite hover:text-ethereal-gold transition-all outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 active:scale-95"
+                <motion.div layout="position" className="flex gap-2">
+                  <button
+                    onClick={() => handleNavigation("/panel/settings")}
+                    className="flex h-11 w-11 items-center justify-center rounded-[1.15rem] bg-ethereal-gold/10 border border-ethereal-gold/20 text-ethereal-graphite"
                   >
-                    <Settings size={18} strokeWidth={2} />
-                  </NavLink>
+                    <Settings size={18} />
+                  </button>
                   <button
                     onClick={logout}
-                    aria-label={t("navigation.mobile.logout", "Log out")}
-                    className="flex h-11 w-11 items-center justify-center rounded-[1.15rem] bg-ethereal-ink/5 hover:bg-red-50/80 border border-transparent hover:border-red-100 text-ethereal-graphite hover:text-red-500 transition-all outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 active:scale-95"
+                    className="flex h-11 w-11 items-center justify-center rounded-[1.15rem] bg-red-50 text-red-500 border border-red-100"
                   >
-                    <LogOut size={18} strokeWidth={2} />
+                    <LogOut size={18} />
                   </button>
-                </div>
+                </motion.div>
               </div>
             </footer>
           </motion.div>
