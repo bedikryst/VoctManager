@@ -271,10 +271,6 @@ export const DesktopSidebar = ({
               </motion.div>
             </div>
 
-            {/* Hardware-Accelerated Flex-Wrap Actions.
-                Expands horizontally to 100%, collapses to 56px, forcing icons to wrap vertically 
-                smoothly without causing React Reconciler layout thrashing.
-            */}
             <div
               style={{ width: isExpanded ? "100%" : "56px" }}
               className="flex flex-wrap gap-2 transition-[width] duration-300 ease-out overflow-hidden"
