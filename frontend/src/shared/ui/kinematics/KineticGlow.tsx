@@ -12,7 +12,7 @@ const glowVariants = cva(
   {
     variants: {
       variant: {
-        sage: "bg-gradient-to-r from-ethereal-sage/15 to-transparent",
+        sage: "bg-gradient-to-r from-ethereal-sage/50 to-transparent",
         gold: "bg-gradient-to-r from-ethereal-gold/10 to-transparent",
         incense: "bg-gradient-to-r from-ethereal-incense/15 to-transparent",
       },

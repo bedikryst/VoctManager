@@ -49,7 +49,7 @@ export function KineticText({
       y: 0,
       filter: "blur(0px)",
       transition: {
-        duration: 1.4,
+        duration: 0.8,
         ease: EtherealEasing,
       },
     },

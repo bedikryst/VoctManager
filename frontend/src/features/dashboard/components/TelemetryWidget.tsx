@@ -15,6 +15,7 @@ import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Eyebrow, Text, Unit } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { ResonancePillar } from "@/shared/ui/kinematics/ResonancePillar";
+import { KineticGlow } from "@/shared/ui/kinematics/KineticGlow";
 
 export interface VoiceStatsDto {
   S: number;

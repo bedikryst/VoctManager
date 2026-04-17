@@ -46,10 +46,10 @@ const CONTENT_FADE_TRANSITION: Transition = {
   ease: [0.25, 0.1, 0.25, 1],
 };
 
-// CVA is now simplified to handle background/border colors only.
-// Dimension shifts are entirely managed by the parent Sidebar mask.
+// CVA injected with the missing architectural grouping: 'group/desklink'
+// All state-based colors are defined at the root level and allowed to cascade.
 const navLinkVariants = cva(
-  "relative block h-10 w-full rounded-[12px] transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
+  "group/desklink relative block h-10 w-full rounded-[12px] transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
   {
     variants: {
       isActive: {
@@ -79,7 +79,7 @@ export const DesktopSidebar = ({
         {isExpanded && (
           <motion.div
             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(2px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(1px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.4 }}
             className="fixed inset-0 z-[50] bg-ethereal-ink/5 pointer-events-none hidden md:block"
@@ -195,12 +195,8 @@ export const DesktopSidebar = ({
                                 <IconComponent
                                   size={18}
                                   strokeWidth={isActive ? 2.5 : 1.5}
-                                  className={cn(
-                                    "transition-colors duration-300",
-                                    isActive
-                                      ? "text-ethereal-gold"
-                                      : "text-ethereal-graphite/70 group-hover/desklink:text-ethereal-ink",
-                                  )}
+                                  // Relies on currentColor inherited natively from the NavLink container
+                                  className="transition-all duration-300"
                                 />
                               </div>
 
@@ -215,9 +211,10 @@ export const DesktopSidebar = ({
                                 aria-hidden={!isExpanded}
                               >
                                 <Label
-                                  weight="medium"
+                                  weight={isActive ? "semibold" : "medium"}
                                   size="base"
-                                  color={isActive ? "default" : "muted"}
+                                  color="inherit" // Architecturally vital: inherits from NavLink root
+                                  className="transition-all duration-300"
                                 >
                                   {t(link.labelKey)}
                                 </Label>
@@ -286,7 +283,7 @@ export const DesktopSidebar = ({
 
                 <motion.div
                   layout
-                  className="relative flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] transition-colors"
+                  className="relative flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] transition-all duration-300"
                 >
                   <NotificationCenter />
                 </motion.div>
@@ -303,10 +300,14 @@ export const DesktopSidebar = ({
                   <Link
                     to="/panel/settings"
                     aria-label={t("dashboard.layout.actions.settings")}
-                    className="relative block h-[40px] w-full rounded-[12px] hover:bg-white/10 text-ethereal-graphite/60 hover:text-ethereal-ink transition-colors overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+                    className="group/settings relative block h-[40px] w-full rounded-[12px] hover:bg-white/10 text-ethereal-graphite/60 hover:text-ethereal-ink transition-all duration-300 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
                   >
-                    <div className="absolute left-0 top-0 bottom-0 w-[56px] flex items-center justify-center">
-                      <Settings size={18} strokeWidth={2} />
+                    <div className="absolute left-0 top-0 bottom-0 w-[56px] flex items-center justify-center transition-transform duration-300 ease-out group-active/settings:scale-95">
+                      <Settings
+                        size={18}
+                        strokeWidth={2}
+                        className="transition-all duration-300"
+                      />
                     </div>
                     <motion.div
                       initial={false}
@@ -315,7 +316,12 @@ export const DesktopSidebar = ({
                       className="absolute left-[56px] right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
                       aria-hidden={!isExpanded}
                     >
-                      <Label size="sm" weight="medium" color="inherit">
+                      <Label
+                        size="sm"
+                        weight="medium"
+                        color="inherit"
+                        className="transition-colors duration-300"
+                      >
                         {t("dashboard.layout.actions.settings")}
                       </Label>
                     </motion.div>
@@ -326,9 +332,15 @@ export const DesktopSidebar = ({
                   layout
                   onClick={logout}
                   aria-label={t("dashboard.layout.actions.logout")}
-                  className="relative flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] hover:bg-red-500/10 text-ethereal-graphite/50 hover:text-red-600 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+                  className="group/logout relative flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] hover:bg-red-500/10 text-ethereal-graphite/50 hover:text-red-600 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
                 >
-                  <LogOut size={18} strokeWidth={2.5} />
+                  <div className="transition-transform duration-300 ease-out group-active/logout:scale-95">
+                    <LogOut
+                      size={18}
+                      strokeWidth={2.5}
+                      className="transition-all duration-300"
+                    />
+                  </div>
                 </motion.button>
               </motion.div>
             </motion.div>

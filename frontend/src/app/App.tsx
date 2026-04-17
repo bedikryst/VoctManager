@@ -2,13 +2,13 @@
  * @file App.tsx
  * @description Main application routing, global layout orchestrator, and notification registry.
  * Dynamically resolves rendering trees based on active routes (Public vs. Secure Zones).
+ * Implements Persistent App Shell architecture for the Dashboard.
  * @architecture Enterprise 2026 Standards
  * @module core/App
  */
 
 import React, { useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
 import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
@@ -63,56 +63,54 @@ export default function App(): React.JSX.Element {
         <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
       )}
 
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route
-            path="/"
-            element={
-              <PageTransition>
-                <Home />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <PageTransition>
-                <Login />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/activate"
-            element={
-              <PageTransition>
-                <Activate />
-              </PageTransition>
-            }
-          />
+      <Routes location={location}>
+        <Route
+          path="/"
+          element={
+            <PageTransition>
+              <Home />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <PageTransition>
+              <Login />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/activate"
+          element={
+            <PageTransition>
+              <Activate />
+            </PageTransition>
+          }
+        />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/panel" element={<DashboardLayout />}>
-              <Route index element={<DashboardHome />} />
-              <Route element={<ManagerRoute />}>
-                <Route path="contracts" element={<Contracts />} />
-                <Route path="rehearsals" element={<Rehearsals />} />
-                <Route path="artists" element={<ArtistManagement />} />
-                <Route path="projects" element={<ProjectManagement />} />
-                <Route
-                  path="archive-management"
-                  element={<ArchiveManagement />}
-                />
-                <Route path="crew" element={<CrewManagement />} />
-                <Route path="locations" element={<LogisticsLocationsPage />} />
-              </Route>
-              <Route path="resources" element={<Resources />} />
-              <Route path="materials" element={<Materials />} />
-              <Route path="schedule" element={<Schedule />} />
-              <Route path="settings" element={<SettingsPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/panel" element={<DashboardLayout />}>
+            <Route index element={<DashboardHome />} />
+            <Route element={<ManagerRoute />}>
+              <Route path="contracts" element={<Contracts />} />
+              <Route path="rehearsals" element={<Rehearsals />} />
+              <Route path="artists" element={<ArtistManagement />} />
+              <Route path="projects" element={<ProjectManagement />} />
+              <Route
+                path="archive-management"
+                element={<ArchiveManagement />}
+              />
+              <Route path="crew" element={<CrewManagement />} />
+              <Route path="locations" element={<LogisticsLocationsPage />} />
             </Route>
+            <Route path="resources" element={<Resources />} />
+            <Route path="materials" element={<Materials />} />
+            <Route path="schedule" element={<Schedule />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
-        </Routes>
-      </AnimatePresence>
+        </Route>
+      </Routes>
 
       {shouldShowGlobalComponents && <FooterSection />}
       {shouldShowGlobalComponents && (

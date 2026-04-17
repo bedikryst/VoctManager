@@ -26,20 +26,45 @@ const containerVariants = cva("flex flex-col transition-all duration-300", {
   },
 });
 
-const primaryTimeVariants = cva(
-  "flex items-baseline gap-2 font-medium text-ethereal-ink tracking-wide",
-  {
-    variants: {
-      typography: {
-        serif: "font-serif text-[1.2em]",
-        sans: "font-sans text-base tabular-nums",
-      },
+const primaryTimeVariants = cva("flex items-baseline gap-2 tracking-wide", {
+  variants: {
+    typography: {
+      serif: "font-serif",
+      sans: "font-sans",
     },
-    defaultVariants: {
-      typography: "serif",
+    color: {
+      muted: "text-ethereal-graphite/60",
+      default: "text-ethereal-ink",
+      gold: "text-ethereal-gold",
+      incense: "text-ethereal-incense/60",
+    },
+    size: {
+      xs: "text-[10px]",
+      sm: "text-xs",
+      base: "text-sm", // Standard 2026 high-density UI
+      md: "text-base",
+      lg: "text-lg",
+      xl: "text-xl",
+      "2xl": "text-[22px]",
+      "3xl": "text-3xl",
+      "4xl": "text-3xl lg:text-4xl",
+      huge: "text-3xl lg:text-5xl xl:text-6xl",
+    },
+    weight: {
+      light: "font-light",
+      normal: "font-normal",
+      medium: "font-medium",
+      semibold: "font-semibold",
+      bold: "font-bold",
     },
   },
-);
+  defaultVariants: {
+    typography: "serif",
+    color: "default",
+    size: "base",
+    weight: "normal",
+  },
+});
 
 // Muted, high-end technical typography for the secondary timezone
 const localTimeVariants = cva(
@@ -54,6 +79,9 @@ export interface DualTimeDisplayProps extends VariantProps<
   label?: React.ReactNode;
   icon?: React.ReactNode;
   typography?: VariantProps<typeof primaryTimeVariants>["typography"];
+  color?: VariantProps<typeof primaryTimeVariants>["color"];
+  size?: VariantProps<typeof primaryTimeVariants>["size"];
+  weight?: VariantProps<typeof primaryTimeVariants>["weight"];
   className?: string;
   timeClassName?: string;
 }
@@ -65,6 +93,9 @@ export const DualTimeDisplay = ({
   icon,
   spacing,
   typography,
+  color,
+  size,
+  weight,
   className,
   timeClassName,
 }: DualTimeDisplayProps): React.JSX.Element | null => {
@@ -102,7 +133,12 @@ export const DualTimeDisplay = ({
 
   return (
     <div className={cn(containerVariants({ spacing }), className)}>
-      <div className={cn(primaryTimeVariants({ typography }), timeClassName)}>
+      <div
+        className={cn(
+          primaryTimeVariants({ typography, color, size, weight }),
+          timeClassName,
+        )}
+      >
         {icon && (
           <span
             aria-hidden="true"

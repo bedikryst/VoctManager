@@ -107,10 +107,14 @@ export function NextRehearsalAlert({
                   </Label>
                 </time>
 
-                <div className="shrink-0">
+                <div className="shrink-0 mt-1">
                   <DualTimeDisplay
                     value={rehearsal.date_time}
                     timeZone={rehearsal.timezone}
+                    typography={"sans"}
+                    color={"muted"}
+                    size={"sm"}
+                    weight={"medium"}
                   />
                 </div>
               </div>
