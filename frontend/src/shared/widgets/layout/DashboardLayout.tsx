@@ -27,24 +27,12 @@ export const DashboardLayout = (): React.JSX.Element => {
 
   return (
     <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
-      {/* Accessibility Focus Anchor */}
-      <a
-        href="#main-content"
-        className="sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:not-sr-only focus:rounded-full focus:bg-ethereal-ink focus:px-4 focus:py-2 focus:text-ethereal-marble focus:outline-none focus:ring-2 focus:ring-ethereal-gold"
-      >
-        Przejdź do głównej treści
-      </a>
-
-      {/* STRATUM 0: Isolated Persistent Background */}
       <EtherealBackground />
-
-      {/* STRATUM 1: Navigation Overlay (Persistent) */}
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
 
-      {/* STRATUM 2: Main Dynamic Content */}
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-8 pb-4 transition-all duration-300 sm:px-6 md:pl-[var(--sidebar-width)] md:pr-8 md:pt-8 lg:pr-12"
+        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-8 pb-4 sm:px-6 md:pl-[104px] md:pr-8 md:pt-8 lg:pr-12"
         id="main-content"
       >
         <div className="mx-auto flex h-full w-full max-w-7xl flex-col relative">

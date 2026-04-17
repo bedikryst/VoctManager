@@ -1,8 +1,10 @@
 /**
  * @file DesktopSidebar.tsx
- * @description Master Ethereal Sidebar.
- * Achieves 120fps kinematics via Absolute Anchors and GPU mask clipping.
+ * @description Master Ethereal Sidebar - Fluid Overlay Edition.
+ * Achieves 120fps kinematics via Absolute Anchors and GPU clip-path masking.
+ * Implements "Floating Pill" design to prevent edge-bleeding during hardware clipping.
  * ZERO layout thrashing. Strict adherence to Ethereal UI Taxonomy.
+ * @module shared/widgets/layout/DesktopSidebar
  */
 
 import React from "react";
@@ -18,7 +20,6 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
 import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKinematics";
 
-// Ethereal UI Primitives
 import {
   Heading,
   Text,
@@ -33,7 +34,6 @@ interface DesktopSidebarProps {
   logout: () => void;
 }
 
-// Strictly typed transitions for TypeScript 7.0 inference
 const KINETIC_TRANSITION: Transition = {
   type: "spring",
   stiffness: 400,
@@ -46,14 +46,14 @@ const CONTENT_FADE_TRANSITION: Transition = {
   ease: [0.25, 0.1, 0.25, 1],
 };
 
-// CVA injected with the missing architectural grouping: 'group/desklink'
-// All state-based colors are defined at the root level and allowed to cascade.
+// Removed absolute w-full. Width is now dynamically injected via inline styles
+// to create the "Floating Pill" effect, ensuring it never touches the clip-path edge.
 const navLinkVariants = cva(
-  "group/desklink relative block h-10 w-full rounded-[12px] transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
+  "group/desklink relative block h-10 rounded-[12px] transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
   {
     variants: {
       isActive: {
-        true: "bg-ethereal-gold/10 border border-ethereal-gold/30 shadow-[var(--shadow-ethereal-inset)] text-ethereal-gold",
+        true: "bg-ethereal-gold/15 border border-ethereal-gold/30 shadow-[var(--shadow-ethereal-inset)] text-ethereal-gold",
         false:
           "border border-transparent text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-white/10",
       },
@@ -75,14 +75,15 @@ export const DesktopSidebar = ({
 
   return (
     <>
+      {/* Overlay Backdrop: Dimming the content behind the sidebar without squeezing the layout */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(1px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="fixed inset-0 z-[50] bg-ethereal-ink/5 pointer-events-none hidden md:block"
+            className="fixed inset-0 z-[30] backdrop-blur-[2px] pointer-events-none hidden md:block"
             aria-hidden="true"
           />
         )}
@@ -94,26 +95,41 @@ export const DesktopSidebar = ({
         glow={true}
         withNoise={true}
         initial={false}
-        // Mathematics of the mask: 88px (compact) = 16px left padding + 56px icon anchor + 16px right padding.
-        animate={{ width: isExpanded ? 280 : 88 }}
+        animate={{
+          clipPath: isExpanded
+            ? "inset(0px 0% 0px 0px round 2.5rem)"
+            : "inset(0px calc(100% - 88px) 0px 0px round 2.5rem)",
+        }}
         transition={KINETIC_TRANSITION}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         padding="none"
         aria-expanded={isExpanded}
-        className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col rounded-[24px] border-white/30 shadow-[var(--shadow-ethereal-deep)] will-change-[width] overflow-hidden"
+        className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col w-[280px] border-white/30 shadow-[var(--shadow-ethereal-deep)] will-change-[clip-path]"
       >
-        <div className="flex flex-col h-full w-full p-4 relative">
-          {/* LOGO STRATUM */}
-          <div className="relative flex h-16 w-full flex-shrink-0 items-center justify-center overflow-hidden mb-4">
+        <div className="flex flex-col h-full w-[280px] p-4 relative">
+          {/* STRATUM: LOGO */}
+          <div className="relative flex h-16 w-full flex-shrink-0 items-center overflow-hidden mb-4 pl-2">
             <motion.div
               initial={false}
               animate={{
-                opacity: isExpanded ? 1 : 0,
-                scale: isExpanded ? 1 : 0.95,
+                opacity: isExpanded ? 0 : 1,
+                scale: isExpanded ? 0.9 : 1,
               }}
               transition={CONTENT_FADE_TRANSITION}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+              className="absolute flex items-center justify-center pointer-events-none select-none w-10 h-10 rounded-[12px] bg-gradient-to-br from-ethereal-gold to-ethereal-ink/90 shadow-md"
+              aria-hidden={isExpanded}
+            >
+              <Heading color="white" size="3xl" weight="medium">
+                V
+              </Heading>
+            </motion.div>
+
+            <motion.div
+              initial={false}
+              animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -20 }}
+              transition={CONTENT_FADE_TRANSITION}
+              className="absolute left-[56px] flex items-center pointer-events-none select-none"
               aria-hidden={!isExpanded}
             >
               <Heading size="4xl">
@@ -123,26 +139,9 @@ export const DesktopSidebar = ({
                 </Text>
               </Heading>
             </motion.div>
-
-            <motion.div
-              initial={false}
-              animate={{
-                opacity: isExpanded ? 0 : 1,
-                scale: isExpanded ? 0.9 : 1,
-              }}
-              transition={CONTENT_FADE_TRANSITION}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-              aria-hidden={isExpanded}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-gradient-to-br from-ethereal-gold to-ethereal-ink/90 shadow-md">
-                <Heading color="white" size="3xl" weight="medium">
-                  V
-                </Heading>
-              </div>
-            </motion.div>
           </div>
 
-          {/* NAV STRATUM */}
+          {/* STRATUM: NAVIGATION */}
           <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <nav
               aria-label={t("dashboard.layout.nav.main_menu")}
@@ -150,7 +149,6 @@ export const DesktopSidebar = ({
             >
               {navGroups.map((group) => (
                 <div key={group.labelKey} className="w-full relative">
-                  {/* Group Eyebrow */}
                   <motion.div
                     initial={false}
                     animate={{
@@ -162,27 +160,29 @@ export const DesktopSidebar = ({
                   >
                     <div className="absolute left-[16px] top-1 whitespace-nowrap">
                       <Eyebrow
-                        color="incense"
-                        className="text-[0.65rem] tracking-[0.25em] font-semibold opacity-70 uppercase"
+                        color="muted"
+                        className="tracking-[0.25em] uppercase"
                       >
                         {t(group.labelKey)}
                       </Eyebrow>
                     </div>
                   </motion.div>
 
-                  {/* Nav Links Node */}
                   <div className="flex flex-col space-y-1 w-full">
                     {group.links.map((link) => {
-                      // Pure Reference Ingestion
                       const IconComponent = link.icon as React.ElementType;
-
                       return (
                         <NavLink
                           key={link.to}
                           to={link.to}
                           end={link.to === "/panel"}
+                          // Floating Pill transition logic:
+                          style={{ width: isExpanded ? "100%" : "56px" }}
                           className={({ isActive }) =>
-                            cn(navLinkVariants({ isActive }))
+                            cn(
+                              navLinkVariants({ isActive }),
+                              "transition-[width] duration-300 ease-out will-change-[width]",
+                            )
                           }
                           aria-label={
                             !isExpanded ? t(link.labelKey) : undefined
@@ -190,16 +190,13 @@ export const DesktopSidebar = ({
                         >
                           {({ isActive }) => (
                             <>
-                              {/* The Absolute 56px Anchor Zone */}
                               <div className="absolute left-0 top-0 bottom-0 w-[56px] flex flex-shrink-0 items-center justify-center transition-transform duration-300 ease-out group-active/desklink:scale-95">
                                 <IconComponent
                                   size={18}
                                   strokeWidth={isActive ? 2.5 : 1.5}
-                                  // Relies on currentColor inherited natively from the NavLink container
                                   className="transition-all duration-300"
                                 />
                               </div>
-
                               <motion.div
                                 initial={false}
                                 animate={{
@@ -213,7 +210,7 @@ export const DesktopSidebar = ({
                                 <Label
                                   weight={isActive ? "semibold" : "medium"}
                                   size="base"
-                                  color="inherit" // Architecturally vital: inherits from NavLink root
+                                  color="inherit"
                                   className="transition-all duration-300"
                                 >
                                   {t(link.labelKey)}
@@ -230,120 +227,94 @@ export const DesktopSidebar = ({
             </nav>
           </div>
 
-          {/* USER ACTIONS STRATUM */}
-          <div className="mt-auto flex-shrink-0 z-10 w-full relative pt-4">
+          {/* STRATUM: USER ACTIONS */}
+          <div className="mt-auto flex-shrink-0 z-10 w-full relative pt-4 flex flex-col gap-3">
             <Divider
               variant="fade"
               position="absolute-top"
               className="opacity-50"
             />
 
-            <motion.div layout className="flex flex-col gap-2 w-full">
+            {/* Profile Block Pill */}
+            <div
+              style={{ width: isExpanded ? "100%" : "56px" }}
+              className="relative flex h-[48px] rounded-[14px] bg-white/5 border border-white/10 overflow-hidden shadow-[var(--shadow-ethereal-soft)] transition-[width] duration-300 ease-out"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-[56px] flex items-center justify-center flex-shrink-0">
+                <div className="flex h-[32px] w-[32px] items-center justify-center rounded-[10px] bg-gradient-to-br from-ethereal-gold/20 to-transparent border border-ethereal-gold/30">
+                  <Label color="gold" size="sm" weight="semibold">
+                    {initials}
+                  </Label>
+                </div>
+              </div>
               <motion.div
-                layout
-                className={cn(
-                  "flex gap-2",
-                  isExpanded ? "flex-row items-center" : "flex-col",
-                )}
+                initial={false}
+                animate={{ opacity: isExpanded ? 1 : 0 }}
+                transition={CONTENT_FADE_TRANSITION}
+                className="absolute left-[56px] right-2 top-0 bottom-0 flex flex-col justify-center whitespace-nowrap overflow-hidden"
+                aria-hidden={!isExpanded}
               >
-                <motion.div
-                  layout="position"
-                  className="relative mt-1 flex h-[48px] flex-1 min-w-0 rounded-[14px] bg-white/5 border border-white/10 overflow-hidden shadow-[var(--shadow-ethereal-soft)]"
+                <Label
+                  size="sm"
+                  weight="medium"
+                  className="truncate block leading-tight text-ethereal-ink"
                 >
-                  <div className="absolute left-0 top-0 bottom-0 w-[56px] flex items-center justify-center flex-shrink-0">
-                    <div className="flex h-[32px] w-[32px] items-center justify-center rounded-[10px] bg-gradient-to-br from-ethereal-gold/20 to-transparent border border-ethereal-gold/30">
-                      <Label color="gold" size="sm" weight="semibold">
-                        {initials}
-                      </Label>
-                    </div>
-                  </div>
-                  <motion.div
-                    initial={false}
-                    animate={{ opacity: isExpanded ? 1 : 0 }}
-                    transition={CONTENT_FADE_TRANSITION}
-                    className="absolute left-[56px] right-2 top-0 bottom-0 flex flex-col justify-center whitespace-nowrap overflow-hidden min-w-0"
-                    aria-hidden={!isExpanded}
-                  >
-                    <Label
-                      size="sm"
-                      weight="medium"
-                      className="truncate block leading-tight text-ethereal-ink"
-                    >
-                      {userFullName}
-                    </Label>
-                    <Eyebrow
-                      color="incense"
-                      size="xs"
-                      className="truncate block opacity-80 leading-tight mt-0.5"
-                    >
-                      {roleLabel}
-                    </Eyebrow>
-                  </motion.div>
-                </motion.div>
-
-                <motion.div
-                  layout
-                  className="relative flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] transition-all duration-300"
+                  {userFullName}
+                </Label>
+                <Eyebrow
+                  color="incense"
+                  size="xs"
+                  className="truncate block opacity-80 leading-tight mt-0.5"
                 >
-                  <NotificationCenter />
-                </motion.div>
+                  {roleLabel}
+                </Eyebrow>
               </motion.div>
+            </div>
 
-              <motion.div
-                layout
-                className={cn(
-                  "flex gap-2",
-                  isExpanded ? "flex-row items-center" : "flex-col",
-                )}
+            {/* Hardware-Accelerated Flex-Wrap Actions.
+                Expands horizontally to 100%, collapses to 56px, forcing icons to wrap vertically 
+                smoothly without causing React Reconciler layout thrashing.
+            */}
+            <div
+              style={{ width: isExpanded ? "100%" : "56px" }}
+              className="flex flex-wrap gap-2 transition-[width] duration-300 ease-out overflow-hidden"
+            >
+              <Link
+                to="/panel/settings"
+                aria-label={t("dashboard.layout.actions.settings")}
+                className="group/settings relative block h-[40px] flex-1 min-w-[56px] rounded-[12px] hover:bg-white/10 text-ethereal-graphite/60 hover:text-ethereal-ink transition-colors duration-300 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
               >
-                <motion.div layout className="flex-1">
-                  <Link
-                    to="/panel/settings"
-                    aria-label={t("dashboard.layout.actions.settings")}
-                    className="group/settings relative block h-[40px] w-full rounded-[12px] hover:bg-white/10 text-ethereal-graphite/60 hover:text-ethereal-ink transition-all duration-300 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-[56px] flex items-center justify-center transition-transform duration-300 ease-out group-active/settings:scale-95">
-                      <Settings
-                        size={18}
-                        strokeWidth={2}
-                        className="transition-all duration-300"
-                      />
-                    </div>
-                    <motion.div
-                      initial={false}
-                      animate={{ opacity: isExpanded ? 1 : 0 }}
-                      transition={CONTENT_FADE_TRANSITION}
-                      className="absolute left-[56px] right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
-                      aria-hidden={!isExpanded}
-                    >
-                      <Label
-                        size="sm"
-                        weight="medium"
-                        color="inherit"
-                        className="transition-colors duration-300"
-                      >
-                        {t("dashboard.layout.actions.settings")}
-                      </Label>
-                    </motion.div>
-                  </Link>
-                </motion.div>
-
-                <motion.button
-                  layout
-                  onClick={logout}
-                  aria-label={t("dashboard.layout.actions.logout")}
-                  className="group/logout relative flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] hover:bg-red-500/10 text-ethereal-graphite/50 hover:text-red-600 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+                <div className="absolute left-0 top-0 bottom-0 w-[56px] flex items-center justify-center transition-transform duration-300 ease-out group-active/settings:scale-95">
+                  <Settings size={18} strokeWidth={2} />
+                </div>
+                <motion.div
+                  initial={false}
+                  animate={{ opacity: isExpanded ? 1 : 0 }}
+                  transition={CONTENT_FADE_TRANSITION}
+                  className="absolute left-[56px] right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
+                  aria-hidden={!isExpanded}
                 >
-                  <div className="transition-transform duration-300 ease-out group-active/logout:scale-95">
-                    <LogOut
-                      size={18}
-                      strokeWidth={2.5}
-                      className="transition-all duration-300"
-                    />
-                  </div>
-                </motion.button>
-              </motion.div>
-            </motion.div>
+                  <Label size="sm" weight="medium" color="inherit">
+                    {t("dashboard.layout.actions.settings")}
+                  </Label>
+                </motion.div>
+              </Link>
+
+              {/* RECOVERED NOTIFICATIONS */}
+              <div className="flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] transition-all duration-300">
+                <NotificationCenter />
+              </div>
+
+              <button
+                onClick={logout}
+                aria-label={t("dashboard.layout.actions.logout")}
+                className="group/logout relative flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] hover:bg-red-500/10 text-ethereal-graphite/50 hover:text-red-600 transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+              >
+                <div className="transition-transform duration-300 ease-out group-active/logout:scale-95">
+                  <LogOut size={18} strokeWidth={2.5} />
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       </GlassCard>
