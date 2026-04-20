@@ -23,7 +23,8 @@ export interface ProjectFormData {
   timezone: string;
   date_time: string;
   call_time: string;
-  location: string;
+  location_id: string | null;
+  conductor: string | null;
   dress_code_male: string;
   dress_code_female: string;
   spotify_playlist_url: string;
@@ -62,7 +63,8 @@ export const useDetailsForm = (
     timezone: project?.timezone || "Europe/Warsaw", // Domyślnie dla nowych projektów
     date_time: toZonedInputString(project?.date_time, project?.timezone),
     call_time: toZonedInputString(project?.call_time, project?.timezone),
-    location: project?.location || "",
+    location_id: project?.location?.id || null,
+    conductor: project?.conductor_name || null,
     dress_code_male: project?.dress_code_male || "",
     dress_code_female: project?.dress_code_female || "",
     spotify_playlist_url: project?.spotify_playlist_url || "",
@@ -84,7 +86,8 @@ export const useDetailsForm = (
       timezone: source.timezone || "Europe/Warsaw",
       date_time: toZonedInputString(source.date_time, source.timezone),
       call_time: toZonedInputString(source.call_time, source.timezone),
-      location: source.location || "",
+      location_id: project?.location?.id || null,
+      conductor: project?.conductor_name || null,
       dress_code_male: source.dress_code_male || "",
       dress_code_female: source.dress_code_female || "",
       spotify_playlist_url: source.spotify_playlist_url || "",
@@ -122,7 +125,8 @@ export const useDetailsForm = (
         toZonedInputString(baseline.date_time, baselineTimezone) ||
       formData.call_time !==
         toZonedInputString(baseline.call_time, baselineTimezone) ||
-      formData.location !== (baseline.location || "") ||
+      formData.location_id !== (baseline.location?.id || null) ||
+      formData.conductor !== (baseline.conductor_name || null) ||
       formData.dress_code_male !== (baseline.dress_code_male || "") ||
       formData.dress_code_female !== (baseline.dress_code_female || "") ||
       formData.spotify_playlist_url !== (baseline.spotify_playlist_url || "") ||
@@ -220,7 +224,8 @@ export const useDetailsForm = (
         timezone: formData.timezone,
         date_time: absoluteDateTime,
         call_time: absoluteCallTime,
-        location: formData.location || "",
+        location_id: formData.location_id,
+        conductor: formData.conductor,
         dress_code_male: formData.dress_code_male || "",
         dress_code_female: formData.dress_code_female || "",
         spotify_playlist_url: formData.spotify_playlist_url || "",

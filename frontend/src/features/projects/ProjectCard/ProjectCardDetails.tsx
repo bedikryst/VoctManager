@@ -1,14 +1,6 @@
-/**
- * @file ProjectCardDetails.tsx
- * @description Renders the descriptive content and dress code requirements for a project.
- * Strictly presentational component. Relies entirely on passed props and flexbox models.
- * @architecture Enterprise SaaS 2026
- * @module panel/projects/ProjectCard/components/ProjectCardDetails
- */
-
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { AlignLeft, Shirt } from "lucide-react";
+import { AlignLeft, Shirt, MapPin, UserRound } from "lucide-react";
 import type { Project } from "@/shared/types";
 
 interface ProjectCardDetailsProps {
@@ -22,7 +14,47 @@ export default function ProjectCardDetails({
   const hasDressCode = project.dress_code_female || project.dress_code_male;
 
   return (
-    <>
+    <div className="flex flex-col gap-4 h-full">
+      {/* Sekcja Lokalizacji i Dyrygenta */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {project.location && (
+          <div className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-sm flex items-start gap-3">
+            <MapPin
+              size={18}
+              className="text-brand mt-0.5 shrink-0"
+              aria-hidden="true"
+            />
+            <div>
+              <span className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1">
+                {t("projects.details.location_title", "Miejsce")}
+              </span>
+              <span className="text-sm font-medium text-stone-800 block">
+                {project.location.name}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {project.conductor_name && (
+          <div className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-sm flex items-start gap-3">
+            <UserRound
+              size={18}
+              className="text-brand mt-0.5 shrink-0"
+              aria-hidden="true"
+            />
+            <div>
+              <span className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1">
+                {t("projects.details.conductor_title", "Dyrygent")}
+              </span>
+              <span className="text-sm font-medium text-stone-800 block">
+                {project.conductor_name}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Sekcja Opisu */}
       <div className="bg-white border border-stone-200/80 rounded-2xl p-5 shadow-sm flex-1 flex flex-col">
         <h4 className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3">
           <AlignLeft size={16} className="text-brand" aria-hidden="true" />{" "}
@@ -42,6 +74,7 @@ export default function ProjectCardDetails({
         )}
       </div>
 
+      {/* Sekcja Dress Code */}
       <div className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-sm">
         <h4 className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3">
           <Shirt size={16} className="text-brand" aria-hidden="true" />{" "}
@@ -76,6 +109,6 @@ export default function ProjectCardDetails({
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

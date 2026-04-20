@@ -59,8 +59,8 @@ export default function ProjectCardHeader({
 
   // Poprawiony standardowy link do Google Maps
   const googleMapsUrl = useMemo(() => {
-    return project.location
-      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.location)}`
+    return project.location?.name
+      ? `https://maps.google.com/?q=${encodeURIComponent(project.location.name)}`
       : null;
   }, [project.location]);
 
@@ -134,17 +134,19 @@ export default function ProjectCardHeader({
                       aria-hidden="true"
                     />
                   }
-                  containerClassName="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit text-stone-700"
-                  primaryTimeClassName="flex items-center gap-1.5"
-                  localTimeClassName="text-[10px] text-stone-400 font-medium normal-case tracking-normal border-l border-stone-200/60 pl-2"
+                  className="bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit"
+                  typography="sans"
+                  size="sm"
+                  weight="bold"
+                  color="default"
                 />
               </div>
             )}
 
             {/* SEKCJA LOKALIZACJI */}
-            {googleMapsUrl && (
+            {project.location && (
               <a
-                href={googleMapsUrl}
+                href={googleMapsUrl || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 hover:bg-stone-100 transition-colors w-fit mt-1 lg:mt-0"
@@ -156,9 +158,21 @@ export default function ProjectCardHeader({
                   aria-hidden="true"
                 />
                 <span className="underline decoration-stone-300 underline-offset-4 truncate max-w-[200px]">
-                  {project.location}
+                  {project.location.name}
                 </span>
               </a>
+            )}
+
+            {/* SEKCJA DYRYGENTA */}
+            {project.conductor_name && (
+              <div className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit mt-1 lg:mt-0">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
+                  {t("projects.roles.maestro", "Maestro:")}
+                </span>
+                <span className="text-xs font-medium text-stone-700">
+                  {project.conductor_name}
+                </span>
+              </div>
             )}
 
             {/* SEKCJA CALL TIME */}
@@ -166,11 +180,13 @@ export default function ProjectCardHeader({
               <DualTimeDisplay
                 value={project.call_time}
                 timeZone={project.timezone}
-                label={`${t("projects.call_time", "Call Time:")} `}
+                label={t("projects.call_time", "Call Time:")}
                 icon={<Clock size={14} aria-hidden="true" />}
-                containerClassName="flex items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 w-fit mt-1 lg:mt-0"
-                primaryTimeClassName="flex items-center gap-1.5 text-orange-600 whitespace-nowrap"
-                localTimeClassName="text-[10px] text-orange-500/70 font-medium normal-case tracking-normal border-l border-orange-200 pl-2"
+                className="bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 w-fit mt-1 lg:mt-0"
+                typography="sans"
+                size="sm"
+                weight="bold"
+                timeClassName="text-orange-600"
               />
             )}
           </div>
@@ -210,7 +226,7 @@ export default function ProjectCardHeader({
         </div>
       </div>
 
-      {/* PRAWA STRONA KARTY (Bez zmian) */}
+      {/* PRAWA STRONA KARTY */}
       <div className="w-full lg:w-72 flex-shrink-0 bg-stone-50/50 rounded-2xl border border-stone-200/50 p-5 flex flex-col justify-center relative overflow-hidden">
         <div
           className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3 pointer-events-none"

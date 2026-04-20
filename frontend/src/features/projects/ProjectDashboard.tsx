@@ -29,6 +29,7 @@ import { Text } from "@/shared/ui/primitives/typography/Text";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 
 const MemoizedProjectCard = React.memo(ProjectCard);
 

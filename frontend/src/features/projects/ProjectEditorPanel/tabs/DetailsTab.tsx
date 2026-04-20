@@ -24,6 +24,7 @@ import type { Project } from "@/shared/types";
 import { useDetailsForm } from "../hooks/useDetailsForm";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
+import { useLocationsData } from "@/features/logistics/hooks/useLocationsData";
 
 interface DetailsTabProps {
   project: Project | null;
@@ -54,6 +55,9 @@ export default function DetailsTab({
     handleSubmit,
   } = useDetailsForm(project, onSuccess, onDirtyStateChange);
   const timezones = getAvailableTimezones();
+
+  const { displayLocations, isLoading: isLocationsLoading } =
+    useLocationsData();
 
   return (
     <div className="max-w-4xl mx-auto pb-24 relative">
@@ -102,7 +106,6 @@ export default function DetailsTab({
       </div>
 
       <form id="details-form" onSubmit={handleSubmit} className="space-y-8">
-        {/* Metadane Główne */}
         <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
           <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
             <span
@@ -139,6 +142,7 @@ export default function DetailsTab({
                 }
               />
             </div>
+
             <div className="md:col-span-1">
               <label className={STYLE_LABEL}>
                 {t("projects.details_tab.fields.timezone", "Strefa Czasowa *")}
@@ -153,11 +157,12 @@ export default function DetailsTab({
               >
                 {timezones.map((tz) => (
                   <option key={tz} value={tz}>
-                    {tz.replace(/_/g, " ")}{" "}
+                    {tz.replace(/_/g, " ")}
                   </option>
                 ))}
               </select>
             </div>
+
             <div>
               <label className={STYLE_LABEL}>
                 {t(
@@ -165,12 +170,50 @@ export default function DetailsTab({
                   "Lokalizacja / Miejsce",
                 )}
               </label>
+              <select
+                value={formData.location_id || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    location_id: e.target.value || null,
+                  })
+                }
+                disabled={isLocationsLoading}
+                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] disabled:opacity-50"
+              >
+                <option value="">
+                  {isLocationsLoading
+                    ? t("common.loading", "Ładowanie...")
+                    : t(
+                        "common.select_location",
+                        "--- Wybierz zapisaną lokalizację ---",
+                      )}
+                </option>
+                {displayLocations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}{" "}
+                    {loc.formatted_address
+                      ? `- ${loc.formatted_address.split(",")[0]}`
+                      : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={STYLE_LABEL}>
+                {t("projects.details_tab.fields.conductor", "Dyrygent")}
+              </label>
               <Input
                 type="text"
-                value={formData.location || ""}
+                value={formData.conductor || ""}
                 onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
+                  setFormData({
+                    ...formData,
+                    conductor: e.target.value || null,
+                  })
                 }
+                placeholder="Imię i nazwisko dyrygenta"
               />
             </div>
           </div>
