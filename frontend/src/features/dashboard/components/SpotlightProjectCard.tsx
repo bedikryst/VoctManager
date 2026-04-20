@@ -15,7 +15,12 @@ import {
   type ArtifactMetric,
 } from "@/shared/ui/composites/ArtifactCard";
 import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
-import { Eyebrow, Unit } from "@/shared/ui/primitives/typography";
+import {
+  Eyebrow,
+  Unit,
+  Emphasis,
+  Text,
+} from "@/shared/ui/primitives/typography";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 
 export interface ProjectStatsDto {
@@ -153,10 +158,12 @@ export function SpotlightProjectCard({
   );
 
   const SubtitleSlot = project.conductor ? (
-    <p className="font-serif text-xl italic text-ethereal-graphite opacity-80">
+    <Emphasis size="2xl" color="muted">
       {t("common.conductor_prefix", "Maestro")}{" "}
-      <span className="font-medium text-ethereal-ink">{project.conductor}</span>
-    </p>
+      <Emphasis size="2xl" color="default" weight="bold">
+        {project.conductor}
+      </Emphasis>
+    </Emphasis>
   ) : null;
 
   return (

@@ -16,6 +16,7 @@ import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
 import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { KineticText } from "@/shared/ui/kinematics/KineticText";
+import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
@@ -102,12 +103,12 @@ export default function ArtistDashboard(): React.JSX.Element {
       >
         <motion.div variants={fadeUp} className="mb-4 flex items-center gap-4">
           <div className="h-[1px] w-12 bg-ethereal-sage/40" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-ethereal-graphite/60">
+          <Eyebrow color="muted">
             {greeting}
-          </span>
+          </Eyebrow>
         </motion.div>
 
-        <h1 className="font-serif text-3xl leading-[1.1] tracking-tight text-ethereal-ink md:text-5xl md:font-medium flex items-baseline gap-2">
+        <Heading as="h1" size="huge" weight="medium" className="flex items-baseline gap-2">
           {t("dashboard.artist.title_main", "Przestrzeń ")}
           <KineticText
             as="span"
@@ -115,18 +116,19 @@ export default function ArtistDashboard(): React.JSX.Element {
             delay={0.2}
             className="italic text-ethereal-sage/90"
           />
-        </h1>
+        </Heading>
       </motion.header>
 
       {/* CORE HORIZON STRATUM */}
       <section className="mb-12 px-5 md:px-0" aria-labelledby="horizon-heading">
         <div className="mb-6 flex items-center gap-4 relative">
-          <h2
+          <Eyebrow
+            as="h2"
             id="horizon-heading"
-            className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite"
+            color="graphite"
           >
             {t("dashboard.artist.next_challenges", "Bezpośrednie Wytyczne")}
-          </h2>
+          </Eyebrow>
           <div className="h-[1px] flex-1 bg-gradient-to-r from-ethereal-incense/20 to-transparent" />
         </div>
 
@@ -166,12 +168,14 @@ export default function ArtistDashboard(): React.JSX.Element {
       <section className="px-5 md:px-0" aria-labelledby="modules-heading">
         <div className="mb-6 flex items-center gap-4 relative">
           <div className="h-[1px] flex-1 bg-gradient-to-l from-ethereal-incense/20 to-transparent" />
-          <h3
+          <Eyebrow
+            as="h3"
             id="modules-heading"
-            className="text-[9px] font-bold uppercase tracking-[0.3em] text-ethereal-graphite text-right"
+            color="graphite"
+            className="text-right"
           >
             {t("dashboard.artist.personal_modules", "Katalog Modułów")}
-          </h3>
+          </Eyebrow>
         </div>
 
         <nav aria-label={t("dashboard.artist.nav_aria", "Nawigacja artysty")}>

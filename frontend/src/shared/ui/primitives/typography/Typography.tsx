@@ -18,8 +18,10 @@ export const typographyVariants = cva("transition-colors duration-500", {
       metric: "font-serif font-light tracking-tight",
       emphasis: "font-serif italic tracking-wide",
       unit: "font-serif italic tracking-normal",
+      caption: "font-sans leading-snug",
     },
     size: {
+      caption: "text-[11px]",
       xs: "text-[10px]",
       sm: "text-xs",
       base: "text-sm", // Standard 2026 high-density UI
@@ -29,6 +31,8 @@ export const typographyVariants = cva("transition-colors duration-500", {
       "2xl": "text-[22px]",
       "3xl": "text-3xl",
       "4xl": "text-3xl lg:text-4xl",
+      "5xl": "text-4xl lg:text-5xl",
+      "6xl": "text-5xl lg:text-6xl",
       huge: "text-3xl lg:text-5xl xl:text-6xl",
     },
     weight: {
@@ -37,14 +41,33 @@ export const typographyVariants = cva("transition-colors duration-500", {
       medium: "font-medium",
       semibold: "font-semibold",
       bold: "font-bold",
+      black: "font-black",
     },
     color: {
       default: "text-ethereal-ink",
-      gold: "text-ethereal-gold",
-      incense: "text-ethereal-incense/60",
       muted: "text-ethereal-graphite/60",
+      gold: "text-ethereal-gold",
+      sage: "text-ethereal-sage",
+      amethyst: "text-ethereal-amethyst",
+      incense: "text-ethereal-incense",
+      "incense-muted": "text-ethereal-incense/60",
+      graphite: "text-ethereal-graphite",
+      crimson: "text-ethereal-crimson",
+      "crimson-light": "text-ethereal-crimson-light",
+      alabaster: "text-ethereal-alabaster",
+      parchment: "text-ethereal-parchment",
+      marble: "text-ethereal-marble",
       white: "text-white",
       inherit: "text-inherit",
+    },
+    align: {
+      left: "text-left",
+      center: "text-center",
+      right: "text-right",
+      justify: "text-justify",
+    },
+    truncate: {
+      true: "truncate",
     },
   },
 });
@@ -64,6 +87,8 @@ export const TypographyBase = React.forwardRef<HTMLElement, TypographyProps>(
       size,
       weight,
       color,
+      align,
+      truncate,
       as: Component = "span",
       ...props
     },
@@ -73,7 +98,7 @@ export const TypographyBase = React.forwardRef<HTMLElement, TypographyProps>(
       <Component
         ref={ref}
         className={cn(
-          typographyVariants({ variant, size, weight, color }),
+          typographyVariants({ variant, size, weight, color, align, truncate }),
           className,
         )}
         {...props}

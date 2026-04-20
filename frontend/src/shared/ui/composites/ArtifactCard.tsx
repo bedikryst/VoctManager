@@ -72,7 +72,7 @@ export function ArtifactCard({
     <GlassCard
       variant="light"
       padding="none"
-      className="group flex h-full min-h-[400px] w-full flex-col transition-all duration-[1200ms] ease-[0.16,1,0.3,1] hover:shadow-[0_40px_100px_rgba(166,146,121,0.2)]"
+      className="group flex h-full min-h-[400px] w-full flex-col transition-all duration-[1200ms] ease-[0.16,1,0.3,1] hover:shadow-glass-ethereal-hover"
       backgroundElement={
         <div className="pointer-events-none absolute -right-32 -top-32 h-[800px] w-[800px] rounded-full bg-gradient-to-br from-ethereal-gold/15 via-ethereal-incense/5 to-transparent blur-[160px] transition-transform duration-[3000ms] ease-out group-hover:scale-[1.3] group-hover:translate-x-10" />
       }
@@ -88,7 +88,7 @@ export function ArtifactCard({
       <header className="relative z-10 flex items-center justify-between px-10 pt-10 pointer-events-none">
         <div className="pointer-events-auto">{statusBadgeSlot}</div>
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-ethereal-incense/10 bg-white/5 backdrop-blur-md transition-all duration-700 group-hover:scale-110 group-hover:border-ethereal-gold/40 group-hover:bg-white/40 group-hover:shadow-[0_0_30px_rgba(194,168,120,0.3)]"
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-ethereal-incense/10 bg-glass-surface/20 backdrop-blur-md transition-all duration-700 group-hover:scale-110 group-hover:border-ethereal-gold/40 group-hover:bg-glass-surface group-hover:shadow-glass-outline-hover"
           aria-hidden="true"
         >
           <ArrowUpRight

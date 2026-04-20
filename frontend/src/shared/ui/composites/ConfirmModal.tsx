@@ -13,6 +13,7 @@ import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cva } from "class-variance-authority";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 const iconContainerVariants = cva(
@@ -20,8 +21,8 @@ const iconContainerVariants = cva(
   {
     variants: {
       isDestructive: {
-        true: "bg-red-50 text-red-600",
-        false: "bg-amber-50 text-amber-600",
+        true: "bg-ethereal-crimson/10 text-ethereal-crimson",
+        false: "bg-ethereal-gold/10 text-ethereal-gold",
       },
     },
     defaultVariants: {
@@ -85,7 +86,7 @@ export const ConfirmModal = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm cursor-none"
+            className="absolute inset-0 bg-ethereal-ink/40 backdrop-blur-sm cursor-none"
             onClick={!isLoading ? onCancel : undefined}
             aria-hidden="true"
           />
@@ -93,7 +94,7 @@ export const ConfirmModal = ({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-stone-200 flex flex-col"
+            className="relative w-full max-w-md bg-ethereal-marble rounded-2xl shadow-glass-solid overflow-hidden border border-ethereal-incense/20 flex flex-col"
             role="dialog"
             aria-modal="true"
             aria-labelledby="confirm-modal-title"
@@ -104,20 +105,22 @@ export const ConfirmModal = ({
                   <AlertTriangle size={24} aria-hidden="true" />
                 </div>
                 <div className="pt-1">
-                  <h3
+                  <Heading
+                    as="h3"
                     id="confirm-modal-title"
-                    className="text-lg font-bold text-stone-900"
+                    size="lg"
+                    weight="bold"
                   >
                     {title}
-                  </h3>
-                  <div className="text-sm text-stone-500 mt-2 leading-relaxed">
+                  </Heading>
+                  <Text className="mt-2" color="muted">
                     {description}
-                  </div>
+                  </Text>
                 </div>
               </div>
             </div>
 
-            <div className="bg-stone-50 px-6 py-4 flex justify-end gap-3 border-t border-stone-100">
+            <div className="bg-ethereal-alabaster px-6 py-4 flex justify-end gap-3 border-t border-ethereal-incense/10">
               {/* Utilising core primitives for rigorous UI consistency */}
               <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
                 {t(cancelTextKey)}

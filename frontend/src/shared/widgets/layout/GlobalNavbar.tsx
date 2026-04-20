@@ -13,6 +13,7 @@ import { motion, type Variants } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/app/store/useAppStore";
 import { cn } from "@/shared/lib/utils";
+import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { useNavbarKinematics } from "@/shared/ui/kinematics/hooks/useNavbarKinematics";
 import { BASE_TRANSITION, EASE } from "@/shared/ui/kinematics/motion-presets";
 
@@ -152,7 +153,7 @@ export const GlobalNavbar = ({
 
   const isBare = navState === "bare";
   const isPill = navState === "pill";
-  const lineBgClass = isBare && isDarkBg ? "bg-white" : "bg-stone-900";
+  const lineBgClass = isBare && isDarkBg ? "bg-white" : "bg-ethereal-ink";
 
   return (
     <div
@@ -206,45 +207,36 @@ export const GlobalNavbar = ({
         {/* Brand Logotype */}
         <motion.div
           variants={logoVariants}
-          className="flex-1 flex justify-center origin-center mr-5 md:mr-0 text-stone-900"
+          className="flex-1 flex justify-center origin-center mr-5 md:mr-0 text-ethereal-ink"
         >
           <Link
             to="/"
-            style={{
-              fontSize: isMobile
-                ? isPill
-                  ? "0.875rem"
-                  : "1rem"
-                : isPill
-                  ? "1rem"
-                  : "1.5rem",
-              fontFamily: "'Cormorant', serif",
-            }}
-            className="flex items-center italic tracking-widest font-medium transition-all duration-1000 outline-none"
+            className="flex items-center outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
             aria-label={t("common.aria.backToHome", "Back to home")}
           >
-            <span>V</span>
-            <span
-              className={cn(
-                "overflow-hidden flex items-center whitespace-nowrap transition-all duration-1000",
-                isMobile && isPill
-                  ? "max-w-0 opacity-0"
-                  : "max-w-[100px] opacity-100",
-              )}
-            >
-              oct
-            </span>
-            <span>E</span>
-            <span
-              className={cn(
-                "overflow-hidden flex items-center whitespace-nowrap transition-all duration-1000",
-                isMobile && isPill
-                  ? "max-w-0 opacity-0"
-                  : "max-w-[100px] opacity-100",
-              )}
-            >
-              nsemble
-            </span>
+            <Heading as="span" size={isMobile ? (isPill ? "md" : "lg") : (isPill ? "lg" : "2xl")} weight="medium">
+              V<Text
+                as="span"
+                color="inherit"
+                size={isMobile ? (isPill ? "md" : "lg") : (isPill ? "lg" : "2xl")}
+                className={cn(
+                  "overflow-hidden inline-flex items-center whitespace-nowrap transition-all duration-1000",
+                  isMobile && isPill ? "max-w-0 opacity-0" : "max-w-[100px] opacity-100"
+                )}
+              >
+                oct
+              </Text>E<Text
+                as="span"
+                color="inherit"
+                size={isMobile ? (isPill ? "md" : "lg") : (isPill ? "lg" : "2xl")}
+                className={cn(
+                  "overflow-hidden inline-flex items-center whitespace-nowrap transition-all duration-1000",
+                  isMobile && isPill ? "max-w-0 opacity-0" : "max-w-[100px] opacity-100"
+                )}
+              >
+                nsemble
+              </Text>
+            </Heading>
           </Link>
         </motion.div>
 
@@ -267,8 +259,8 @@ export const GlobalNavbar = ({
                 isBare
                   ? isDarkBg
                     ? "text-white opacity-80 group-hover:opacity-100"
-                    : "text-stone-900 opacity-80 group-hover:opacity-100"
-                  : "text-stone-500 hover:text-stone-900",
+                    : "text-ethereal-ink opacity-80 group-hover:opacity-100"
+                  : "text-ethereal-graphite hover:text-ethereal-ink",
               )}
             >
               <path
@@ -285,21 +277,21 @@ export const GlobalNavbar = ({
           >
             <Link
               to="/wesprzyj"
-              className="group active:scale-95 transition-transform flex w-full outline-none"
+              className="group active:scale-95 transition-transform flex w-full outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
               aria-label={t("nav.actions.donate", "Wesprzyj Nas")}
             >
               <div
                 className={cn(
                   "relative flex items-center justify-center w-full border h-9 md:h-10 rounded-lg md:rounded-xl overflow-hidden transition-all duration-[1.2s]",
                   isPill
-                    ? "bg-stone-900 text-stone-100 border-transparent hover:bg-amber-700 hover:shadow-lg hover:-translate-y-0.5"
-                    : "bg-transparent border-stone-900/30 text-stone-900 hover:bg-stone-900 hover:text-stone-100 hover:border-transparent",
+                    ? "bg-ethereal-ink text-ethereal-alabaster border-transparent hover:bg-ethereal-gold hover:shadow-lg hover:-translate-y-0.5"
+                    : "bg-transparent border-ethereal-ink/30 text-ethereal-ink hover:bg-ethereal-ink hover:text-ethereal-alabaster hover:border-transparent",
                 )}
               >
                 {!isMobile && (
-                  <span className="text-[10px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-colors duration-300">
+                  <Eyebrow color="inherit" className="tracking-[0.2em] whitespace-nowrap transition-colors duration-300 px-3">
                     {t("nav.actions.donate", "Wesprzyj")}
-                  </span>
+                  </Eyebrow>
                 )}
                 {isMobile && (
                   <svg

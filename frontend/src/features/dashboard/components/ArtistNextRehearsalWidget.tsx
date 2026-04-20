@@ -21,6 +21,7 @@ import {
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
+import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -174,12 +175,12 @@ export function ArtistNextRehearsalWidget({
           )}
         </div>
 
-        <h3 className="text-2xl md:text-3xl font-bold font-serif tracking-tight mb-5 leading-tight text-ethereal-ink">
+        <Heading as="h3" size="3xl" weight="bold" className="mb-5 leading-tight relative z-50">
           {rehearsal.title}
-        </h3>
+        </Heading>
 
-        <div className="flex flex-col gap-3 text-xs font-medium text-ethereal-graphite mb-2 relative z-50">
-          <span className="flex items-center gap-2">
+        <div className="flex flex-col gap-3 mb-2 relative z-50">
+          <Text as="span" size="sm" weight="medium" color="graphite" className="flex items-center gap-2">
             <Calendar size={14} className="text-ethereal-sage/70" />{" "}
             {formatLocalizedDate(
               rehearsal.date,
@@ -187,7 +188,7 @@ export function ArtistNextRehearsalWidget({
               undefined,
               rehearsal.data.timezone,
             )}
-          </span>
+          </Text>
           <DualTimeDisplay
             value={rehearsal.date}
             timeZone={rehearsal.data.timezone}

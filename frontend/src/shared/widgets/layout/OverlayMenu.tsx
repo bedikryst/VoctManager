@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cva } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
+import { Heading, Text, Eyebrow, Caption } from "@/shared/ui/primitives/typography";
 import { MAIN_PUBLIC_LINKS } from "@/shared/config/navigation/public.config";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import {
@@ -29,12 +30,12 @@ interface OverlayMenuProps {
 
 // --- Ethereal UI Variants (CVA) ---
 const linkTextVariants = cva(
-  "group flex items-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium tracking-tight transition-all duration-500 origin-left outline-none focus-visible:ring-2 focus-visible:ring-brand",
+  "group flex items-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium tracking-tight transition-all duration-500 origin-left outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold",
   {
     variants: {
       status: {
-        active: "text-stone-300 hover:text-[#fdfbf7]",
-        muted: "text-stone-700",
+        active: "text-ethereal-marble hover:text-white",
+        muted: "text-ethereal-graphite",
       },
     },
     defaultVariants: {
@@ -67,13 +68,13 @@ export const OverlayMenu = ({
           animate="open"
           exit="closed"
           data-lenis-prevent="true"
-          className="fixed inset-0 z-[999] bg-stone-950 text-[#fdfbf7] flex flex-col justify-between overflow-hidden overscroll-none touch-none"
+          className="fixed inset-0 z-[999] bg-ethereal-ink text-ethereal-marble flex flex-col justify-between overflow-hidden overscroll-none touch-none"
           aria-modal="true"
           role="dialog"
           aria-label={t("nav.overlay.aria.mainMenu", "Główne Menu Nawigacji")}
         >
           {/* Background Layers: Contextual Image Reveal & Grid Overlay */}
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-stone-950">
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-ethereal-ink">
             {MAIN_PUBLIC_LINKS.map((link, i) => (
               <div
                 key={`bg-${i}`}
@@ -100,8 +101,8 @@ export const OverlayMenu = ({
             aria-hidden="true"
           >
             <div className="w-full max-w-7xl h-full relative">
-              <div className="absolute top-0 bottom-0 left-[41.666667%] w-[1px] bg-stone-800" />
-              <div className="absolute top-0 bottom-0 left-[58.333333%] w-[1px] bg-stone-800" />
+              <div className="absolute top-0 bottom-0 left-[41.666667%] w-[1px] bg-ethereal-incense/20" />
+              <div className="absolute top-0 bottom-0 left-[58.333333%] w-[1px] bg-ethereal-incense/20" />
             </div>
           </div>
 
@@ -109,26 +110,28 @@ export const OverlayMenu = ({
           <motion.div
             variants={FADE_UP_VARIANTS}
             custom={0.4}
-            className="w-full flex justify-center border-b border-stone-800/50 py-6 px-6 relative z-10"
+            className="w-full flex justify-center border-b border-ethereal-incense/20 py-6 px-6 relative z-10"
           >
             <div className="w-full max-w-7xl flex justify-between items-center">
               <Link
                 to="/"
                 onClick={handleLinkClick}
-                className="text-sm font-medium tracking-[0.2em] uppercase italic hover:opacity-70 transition-opacity font-cormorant outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
                 aria-label={t("common.aria.backToHome", "Wróć do strony głównej")}
               >
-                VoctEnsemble
+                <Heading as="span" size="xl" color="gold" weight="medium">
+                  Voct<Text as="span" weight="light" color="inherit">Ensemble</Text>
+                </Heading>
               </Link>
 
               <button
                 onClick={() => setIsOpen(false)}
-                className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-500 hover:text-[#fdfbf7] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand p-1"
+                className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-ethereal-graphite hover:text-ethereal-marble transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold p-1"
                 aria-label={t("nav.overlay.actions.close", "Zamknij menu")}
               >
                 <span className="overflow-hidden relative pb-1">
                   {t("nav.overlay.actions.close", "Zamknij")}
-                  <span className="absolute bottom-0 left-0 w-full h-px bg-[#fdfbf7] origin-right scale-x-0 transition-transform duration-500 group-hover:scale-x-100" />
+                  <span className="absolute bottom-0 left-0 w-full h-px bg-ethereal-marble origin-right scale-x-0 transition-transform duration-500 group-hover:scale-x-100" />
                 </span>
                 <span
                   className="text-lg font-normal leading-none mb-[2px] group-hover:rotate-90 transition-transform duration-500"
@@ -146,17 +149,17 @@ export const OverlayMenu = ({
               {/* Secondary Navigation (Desktop Only) */}
               <div className="hidden md:flex flex-col gap-12 w-4/12">
                 <motion.div variants={FADE_UP_VARIANTS} custom={0.6}>
-                  <p className="text-brand text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
+                  <Eyebrow color="gold" className="tracking-[0.3em] mb-6">
                     {t("nav.overlay.sections.community", "Społeczność")}
-                  </p>
-                  <ul className="flex flex-col gap-4 text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500">
+                  </Eyebrow>
+                  <ul className="flex flex-col gap-4 text-[10px] uppercase tracking-[0.2em] font-medium text-ethereal-graphite">
                     {["Instagram", "Facebook", "YouTube"].map((social) => (
                       <li key={social}>
                         <a
                           href={`https://${social.toLowerCase()}.com/${social === "YouTube" ? "@voctensemble-nb7gh" : "voctensemble"}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="hover:text-[#fdfbf7] transition-colors outline-none focus-visible:text-[#fdfbf7]"
+                          className="hover:text-ethereal-marble transition-colors outline-none focus-visible:text-ethereal-marble"
                         >
                           {social}
                         </a>
@@ -165,12 +168,12 @@ export const OverlayMenu = ({
                   </ul>
                 </motion.div>
                 <motion.div variants={FADE_UP_VARIANTS} custom={0.7}>
-                  <p className="text-brand text-[9px] font-bold uppercase tracking-[0.3em] mb-6">
+                  <Eyebrow color="gold" className="tracking-[0.3em] mb-6">
                     {t("nav.overlay.sections.contact", "Biurom / Kontakt")}
-                  </p>
+                  </Eyebrow>
                   <a
                     href="mailto:kontakt@voctensemble.pl"
-                    className="text-[10px] uppercase tracking-[0.2em] font-medium text-stone-500 hover:text-[#fdfbf7] transition-colors outline-none focus-visible:text-[#fdfbf7]"
+                    className="text-[10px] uppercase tracking-[0.2em] font-medium text-ethereal-graphite hover:text-ethereal-marble transition-colors outline-none focus-visible:text-ethereal-marble"
                   >
                     kontakt@voctensemble.pl
                   </a>
@@ -207,15 +210,12 @@ export const OverlayMenu = ({
                             }),
                           )}
                         >
-                          <span
-                            className="text-sm font-bold text-brand mr-6 md:mr-10 mb-6 md:mb-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                            aria-hidden="true"
-                          >
+                          <Text as="span" color="gold" weight="bold" size="sm" className="mr-6 md:mr-10 mb-6 md:mb-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true">
                             0{i + 1}
-                          </span>
-                          <span className="group-hover:translate-x-4 group-hover:italic transition-all duration-500 font-sans group-hover:font-cormorant">
+                          </Text>
+                          <Text as="span" size="huge" color="inherit" className="group-hover:translate-x-4 group-hover:italic transition-all duration-500 font-sans group-hover:font-serif">
                             {t(link.labelKey)}
-                          </span>
+                          </Text>
                         </Link>
                       </motion.div>
                     </div>
@@ -229,24 +229,24 @@ export const OverlayMenu = ({
           <motion.div
             variants={FADE_UP_VARIANTS}
             custom={0.9}
-            className="w-full flex justify-center border-t border-stone-800/50 py-6 px-6 relative z-10 backdrop-blur-sm"
+            className="w-full flex justify-center border-t border-ethereal-incense/20 py-6 px-6 relative z-10 backdrop-blur-sm"
           >
-            <div className="w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center text-[8px] md:text-[9px] uppercase tracking-[0.2em] text-stone-600">
-              <p>
+            <div className="w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center">
+              <Caption color="muted" weight="medium" className="uppercase tracking-[0.2em]">
                 {t(
                   "nav.overlay.status.location",
                   "Kraków, PL — Fundacja VoctEnsemble",
                 )}
-              </p>
+              </Caption>
 
               <div className="mt-4 sm:mt-0 flex items-center gap-3">
                 <div className="relative flex h-2 w-2" aria-hidden="true">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-900 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ethereal-sage opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-ethereal-sage" />
                 </div>
-                <p className="font-bold text-stone-500">
+                <Caption color="graphite" weight="bold" className="uppercase tracking-[0.2em]">
                   {t("nav.overlay.status.active", "Status: Aktywna")}
-                </p>
+                </Caption>
               </div>
             </div>
           </motion.div>

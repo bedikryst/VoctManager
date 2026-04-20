@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { Feather } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Heading, Text } from "@/shared/ui/primitives/typography";
 
 /**
  * Background element creating an organic, breathing sound-wave effect.
@@ -78,19 +79,19 @@ export const ArtistEmptyState = (): React.JSX.Element => {
             />
           </div>
 
-          <h3 className="text-ethereal-ink text-xl md:text-2xl font-serif font-medium tracking-tight mb-2">
+          <Heading as="h3" size="2xl" weight="medium" className="mb-2">
             {t(
               "dashboard.artist.empty_events_title",
               "Brak nadchodzących wydarzeń",
             )}
-          </h3>
+          </Heading>
 
-          <p className="text-ethereal-graphite text-sm max-w-md leading-relaxed">
+          <Text color="graphite" size="sm" className="max-w-md leading-relaxed">
             {t(
               "dashboard.artist.empty_events_desc",
               "Odpocznij. Twój muzyczny kalendarz jest obecnie pusty, a aura została w pełni zharmonizowana. Czas na regenerację głosu.",
             )}
-          </p>
+          </Text>
         </motion.div>
       </GlassCard>
     </motion.div>

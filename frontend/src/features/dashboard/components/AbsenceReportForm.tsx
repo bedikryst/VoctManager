@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 // Ethereal UI Primitives - delegacja zarządzania wariantami poprzez CVA
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
+import { Caption } from "@/shared/ui/primitives/typography";
 import type { AttendanceStatus } from "@/shared/types";
 
 // Dynamiczny schemat Zod pozwalający na wstrzyknięcie funkcji translacji
@@ -72,7 +73,7 @@ export function AbsenceReportForm({
           */}
           <select
             {...register("status")}
-            className="w-1/3 px-3 py-2 text-xs font-bold text-stone-800 bg-white border border-stone-200/80 rounded-lg outline-none focus:ring-2 focus:ring-brand/20 appearance-none shadow-sm cursor-pointer"
+            className="w-1/3 px-3 py-2 text-xs font-bold text-ethereal-ink bg-ethereal-marble border border-ethereal-incense/20 rounded-lg outline-none focus:ring-2 focus:ring-ethereal-gold/20 appearance-none shadow-glass-solid cursor-pointer"
             aria-label={t("dashboard.artist.absence_status", "Status absencji")}
           >
             <option value="ABSENT">
@@ -98,12 +99,14 @@ export function AbsenceReportForm({
         </div>
 
         {errors.notes && (
-          <span
-            className="text-[10px] font-bold text-red-500 pl-1"
+          <Caption
+            weight="bold"
+            color="crimson"
+            className="pl-1"
             role="alert"
           >
             {errors.notes.message}
-          </span>
+          </Caption>
         )}
       </div>
 

@@ -8,7 +8,7 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
-import { Eyebrow, Heading } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Heading, Emphasis } from "@/shared/ui/primitives/typography";
 
 const pageHeaderVariants = cva(
   "flex flex-col gap-6 md:flex-row md:items-end justify-between w-full",
@@ -68,9 +68,7 @@ export function PageHeader({
         >
           {title}{" "}
           {titleHighlight && (
-            <span className="italic text-ethereal-gold/90">
-              {titleHighlight}
-            </span>
+            <Emphasis>{titleHighlight}</Emphasis>
           )}
         </Heading>
       </div>

@@ -144,12 +144,12 @@ export const MobileNavSheet = ({
 
             <header className="flex items-center justify-between px-8 pb-6 shrink-0 relative z-10">
               <Heading as="span" size="3xl" className="tracking-tight">
-                <span className="font-light text-ethereal-graphite">Voct</span>
+                <Text as="span" weight="light" color="graphite">Voct</Text>
                 <Text
                   as="span"
                   color="gold"
                   size="3xl"
-                  className="italic font-medium ml-1"
+                  className="italic ml-1"
                 >
                   Manager
                 </Text>

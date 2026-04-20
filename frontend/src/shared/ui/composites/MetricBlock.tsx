@@ -63,14 +63,14 @@ export function MetricBlock({
         <Eyebrow color="inherit">{label}</Eyebrow>
       </div>
 
-      <p className="flex items-baseline gap-2">
+      <div className="flex items-baseline gap-2">
         <Metric color={isGold ? "gold" : "default"}>{value}</Metric>
         {unit && (
           <Unit size="sm" color={isGold ? "gold" : "muted"}>
             {unit}
           </Unit>
         )}
-      </p>
+      </div>
     </article>
   );
 }

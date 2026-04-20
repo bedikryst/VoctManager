@@ -21,6 +21,7 @@ import {
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
+import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -106,12 +107,12 @@ export function ArtistNextProjectWidget({
           {t("dashboard.artist.badge_concert", "Wydarzenie Główne")}
         </Badge>
 
-        <h3 className="text-2xl md:text-3xl font-bold font-serif tracking-tight mb-5 leading-tight text-ethereal-ink">
+        <Heading as="h3" size="3xl" weight="bold" className="mb-5 leading-tight text-ethereal-ink">
           {project.title}
-        </h3>
+        </Heading>
 
-        <div className="flex flex-col gap-3 text-xs font-medium text-ethereal-graphite mb-2">
-          <span className="flex items-center gap-2">
+        <div className="flex flex-col gap-3 mb-2">
+          <Text as="span" size="sm" weight="medium" color="graphite" className="flex items-center gap-2">
             <Calendar size={14} className="text-ethereal-gold" />{" "}
             {formatLocalizedDate(
               project.date,
@@ -119,7 +120,7 @@ export function ArtistNextProjectWidget({
               undefined,
               project.data.timezone,
             )}
-          </span>
+          </Text>
 
           {project.data.call_time && (
             <DualTimeDisplay

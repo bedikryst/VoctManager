@@ -5,7 +5,6 @@
      TYPOGRAPHY TOKENS (High-End 2026)
      ========================================= */
   --font-sans: "Outfit", "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
-
   --font-serif:
     "Cormorant Garamond", "Cinzel", "Cormorant", ui-serif, Georgia, serif;
 
@@ -44,11 +43,16 @@
   --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
 
   /* =========================================
-     SPATIAL & LAYOUT TOKENS 
+     SPATIAL, LAYOUT & Z-INDEX TOKENS 
      ========================================= */
-
   --spacing-nav-dock: 3rem;
   --spacing-sheet-expanded: 85dvh;
+  --spacing-sidebar: 120px;
+
+  --z-nav-dock: 70;
+  --z-nav-sheet: 80;
+  --z-focus-trap: 90;
+  --z-toast: 100;
 }
 
 /* ========================================== */
@@ -57,43 +61,15 @@
 @layer base {
   :root {
     color-scheme: light;
-    --sidebar-width: 120px;
-
-    --z-nav-dock: 70;
-    --z-nav-sheet: 80;
-    --z-focus-trap: 90;
-    --z-toast: 100;
-  }
-
-  @layer utilities {
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    /* Elegance-focused scrollbar for 2026 */
-    .ethereal-scroll::-webkit-scrollbar {
-      width: 3px;
-    }
-    .ethereal-scroll::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .ethereal-scroll::-webkit-scrollbar-thumb {
-      background: var(--ethereal-gold-muted, rgba(194, 168, 120, 0.2));
-      border-radius: 10px;
-    }
   }
 
   body {
     background-color: var(--color-ethereal-alabaster);
     background-attachment: fixed;
 
+    /* Zaawansowane funkcje typograficzne dla chórów (np. ligatury do starych fontów) */
     font-variant-ligatures: common-ligatures contextual;
     -webkit-font-variant-ligatures: common-ligatures contextual;
-
     font-feature-settings:
       "liga" 1,
       "clig" 1,
@@ -109,7 +85,30 @@
   }
 }
 
-/* Utrzymujemy to jako utility na wypadek specyficznych kart */
+/* ========================================== */
+/* CUSTOM UTILITIES (V4 Syntax)               */
+/* ========================================== */
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility ethereal-scroll {
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-ethereal-gold) 20%, transparent);
+    border-radius: 10px;
+  }
+}
+
 @utility bg-noise {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
@@ -140,12 +139,7 @@ html {
 /* ========================================== */
 /* PUBLIC ZONE & ADMIN ZONE CURSORS           */
 /* ========================================== */
-body:not(.admin-mode),
-body:not(.admin-mode) a,
-body:not(.admin-mode) button,
-body:not(.admin-mode) input,
-body:not(.admin-mode) textarea,
-body:not(.admin-mode) select {
+body:not(.admin-mode) * {
   cursor: none !important;
 }
 
@@ -153,34 +147,40 @@ body:not(.admin-mode) select {
 .force-no-cursor * {
   cursor: none !important;
 }
+
 body.admin-mode {
-  cursor: default;
-}
-body.admin-mode h1,
-body.admin-mode h2,
-body.admin-mode h3,
-body.admin-mode h4,
-body.admin-mode h5,
-body.admin-mode h6,
-body.admin-mode p,
-body.admin-mode label {
-  cursor: default;
-}
-body.admin-mode input,
-body.admin-mode textarea {
-  cursor: text !important;
-}
-body.admin-mode a,
-body.admin-mode button,
-body.admin-mode [role="button"] {
-  cursor: pointer;
-}
-body.admin-mode .cursor-grab {
-  cursor: grab !important;
-}
-body.admin-mode .cursor-grabbing {
-  cursor: grabbing !important;
-}
-body.admin-mode .cursor-not-allowed {
-  cursor: not-allowed !important;
+  &,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  label {
+    cursor: default;
+  }
+
+  input,
+  textarea {
+    cursor: text !important;
+  }
+
+  a,
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  .cursor-grab {
+    cursor: grab !important;
+  }
+
+  .cursor-grabbing {
+    cursor: grabbing !important;
+  }
+
+  .cursor-not-allowed {
+    cursor: not-allowed !important;
+  }
 }

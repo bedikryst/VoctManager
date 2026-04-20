@@ -8,6 +8,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 
 export interface SystemModuleCardProps {
   id: string;
@@ -46,9 +47,9 @@ export function SystemModuleCard({
           className="pointer-events-none absolute -bottom-6 -right-2 -z-10 select-none opacity-[0.03] mix-blend-overlay transition-all duration-1000 group-hover:scale-105 group-hover:opacity-[0.08]"
           aria-hidden="true"
         >
-          <span className="font-serif text-[8rem] font-light leading-none tracking-tighter text-ethereal-ink md:text-[10rem]">
+          <Heading as="span" weight="light" className="text-[8rem] leading-none tracking-tighter md:text-[10rem]">
             {romanNumeral}
-          </span>
+          </Heading>
         </div>
 
         {/* Top Stratum */}
@@ -59,32 +60,36 @@ export function SystemModuleCard({
           />
 
           {features.length > 0 ? (
-            <ul className="flex flex-col gap-1 text-[9px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/50 transition-colors duration-500 group-hover:text-ethereal-graphite/80">
+            <ul className="flex flex-col gap-1">
               {features.map((feature, idx) => (
                 <li key={idx} className="flex items-center gap-2">
                   <span
                     className={`h-1 w-1 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${accentClass}`}
                     aria-hidden="true"
                   />
-                  {feature}
+                  <Eyebrow as="span" color="graphite" className="opacity-50 transition-opacity duration-500 group-hover:opacity-80">
+                    {feature}
+                  </Eyebrow>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="max-w-[80%] text-[10px] font-medium leading-relaxed tracking-[0.1em] text-ethereal-graphite/60 uppercase">
+            <Eyebrow as="p" color="graphite" className="max-w-[80%] opacity-60 leading-relaxed">
               {description}
-            </p>
+            </Eyebrow>
           )}
         </header>
 
         {/* Bottom Stratum */}
         <footer className="relative z-10 mt-8">
-          <h3
+          <Heading
+            as="h3"
             id={`directive-title-${id}`}
-            className="font-serif text-2xl tracking-tight text-ethereal-ink transition-colors duration-500 group-hover:text-ethereal-gold md:text-3xl"
+            size="2xl"
+            className="transition-colors duration-500 group-hover:text-ethereal-gold md:text-3xl"
           >
             {title}
-          </h3>
+          </Heading>
         </footer>
       </GlassCard>
     </Link>
