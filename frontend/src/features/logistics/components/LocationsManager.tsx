@@ -13,6 +13,7 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { LocationCard } from "./LocationCard";
 import LocationInlineEditor from "./LocationInlineEditor";
+import { Heading, Text, Eyebrow, Caption } from "@/shared/ui/primitives/typography";
 import type { LocationCategory } from "@/shared/types";
 
 const FILTER_CATEGORIES: {
@@ -128,22 +129,19 @@ export const LocationsManager = (): React.JSX.Element => {
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-                <MapIcon size={12} className="text-brand" />
-                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-glass-surface backdrop-blur-md border border-glass-border shadow-sm mb-4">
+                <MapIcon size={12} className="text-ethereal-gold" />
+                <Caption color="gold" weight="bold" className="uppercase tracking-widest antialiased">
                   {t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
-                </p>
+                </Caption>
               </div>
-              <h1
-                className="text-3xl md:text-4xl font-medium text-stone-900 leading-tight tracking-tight"
-                style={{ fontFamily: "'Cormorant', serif" }}
-              >
+              <Heading as="h1" size="4xl" weight="medium" className="leading-tight tracking-tight">
                 {t("logistics.dashboard.title_prefix", "Baza")}{" "}
-                <span className="italic text-brand">
+                <Text as="span" color="gold" size="inherit" className="italic">
                   {t("logistics.dashboard.title_highlight", "Lokacji")}
-                </span>
+                </Text>
                 .
-              </h1>
+              </Heading>
             </div>
 
             <Button
@@ -185,16 +183,16 @@ export const LocationsManager = (): React.JSX.Element => {
           />
         </div>
 
-        <div className="flex bg-stone-200/50 p-1 rounded-xl border border-stone-200/80 shrink-0">
+        <div className="flex bg-ethereal-alabaster/50 p-1 rounded-xl border border-ethereal-incense/20 shrink-0">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "grid" ? "bg-white text-brand shadow-sm font-bold" : "text-stone-500 hover:text-stone-700 hover:bg-white/50"}`}
+            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "grid" ? "bg-white text-ethereal-gold shadow-sm font-bold" : "text-ethereal-graphite hover:text-ethereal-ink hover:bg-white/50"}`}
           >
             <LayoutGrid size={18} />
           </button>
           <button
             onClick={() => setViewMode("map")}
-            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "map" ? "bg-white text-brand shadow-sm font-bold" : "text-stone-500 hover:text-stone-700 hover:bg-white/50"}`}
+            className={`p-2 rounded-lg transition-all flex items-center justify-center ${viewMode === "map" ? "bg-white text-ethereal-gold shadow-sm font-bold" : "text-ethereal-graphite hover:text-ethereal-ink hover:bg-white/50"}`}
           >
             <Globe2 size={18} />
           </button>
@@ -217,8 +215,8 @@ export const LocationsManager = (): React.JSX.Element => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold antialiased transition-all duration-300 border shrink-0 outline-none
                 ${
                   categoryFilter === cat.value
-                    ? "bg-brand text-white border-brand shadow-[0_8px_16px_rgba(0,35,149,0.2)]"
-                    : "bg-white/60 text-stone-600 border-stone-200/60 hover:bg-white hover:border-stone-300 hover:shadow-sm"
+                    ? "bg-ethereal-gold text-white border-ethereal-gold shadow-[0_8px_16px_rgba(194,168,120,0.2)]"
+                    : "bg-white/60 text-ethereal-graphite border-ethereal-incense/20 hover:bg-white hover:border-ethereal-incense/40 hover:shadow-sm"
                 }`}
             >
               {t(cat.labelKey, cat.fallback)}
@@ -226,7 +224,7 @@ export const LocationsManager = (): React.JSX.Element => {
                 className={`px-2 py-0.5 rounded-md text-[10px] shadow-inner ${
                   categoryFilter === cat.value
                     ? "bg-white/20 text-white"
-                    : "bg-stone-100/80 text-stone-500 border border-stone-200/50"
+                    : "bg-ethereal-alabaster/80 text-ethereal-graphite border border-ethereal-incense/20"
                 }`}
               >
                 {count}
@@ -290,14 +288,14 @@ export const LocationsManager = (): React.JSX.Element => {
               groupedLocations.map(([category, locs]) => (
                 <div key={category} className="w-full relative">
                   {/* Nagłówek Sekcji */}
-                  <div className="flex items-center gap-3 mb-5 border-b border-stone-200/60 pb-3">
-                    <h2 className="text-lg font-bold text-stone-800 tracking-tight">
+                  <div className="flex items-center gap-3 mb-5 border-b border-ethereal-incense/20 pb-3">
+                    <Heading as="h2" size="xl" weight="bold" className="tracking-tight text-ethereal-ink">
                       {t(
                         `logistics.categories.${category.toLowerCase()}`,
                         category.replace("_", " "),
                       )}
-                    </h2>
-                    <span className="px-2 py-0.5 rounded-md bg-stone-100 border border-stone-200 text-stone-500 text-[10px] font-bold">
+                    </Heading>
+                    <span className="px-2 py-0.5 rounded-md bg-ethereal-alabaster border border-ethereal-incense/20 text-ethereal-graphite text-[10px] font-bold">
                       {locs.length}
                     </span>
                   </div>
@@ -342,17 +340,17 @@ export const LocationsManager = (): React.JSX.Element => {
                 <GlassCard className="p-16 flex flex-col items-center justify-center text-center">
                   <MapIcon
                     size={48}
-                    className="text-stone-300 mb-4 opacity-50"
+                    className="text-ethereal-incense mb-4 opacity-50"
                   />
-                  <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">
+                  <Caption color="muted" weight="bold" className="uppercase tracking-widest mb-2">
                     {t("logistics.dashboard.empty_title", "Brak wyników")}
-                  </span>
-                  <span className="text-xs text-stone-400 max-w-sm">
+                  </Caption>
+                  <Text as="span" size="sm" color="graphite" className="max-w-sm">
                     {t(
                       "logistics.dashboard.empty_desc",
                       "Zmień filtry lub dodaj nowe miejsce korzystając z integracji Google Maps.",
                     )}
-                  </span>
+                  </Text>
                 </GlassCard>
               </motion.div>
             )}

@@ -19,7 +19,7 @@ import {
   Check,
 } from "lucide-react";
 
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { EventCard } from "@/shared/ui/composites/EventCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
@@ -126,104 +126,91 @@ export function ArtistNextRehearsalWidget({
   };
 
   return (
-    <GlassCard
-      variant="light"
-      padding="none"
-      glow={true}
-      className="flex flex-col h-full transition-all duration-300 relative z-10 !overflow-visible"
-    >
-      {/* Subtelne zabarwienie tła uzależnione od statusu (zamiast emerald/orange używamy sage/incense) */}
-      <div
-        className={cn(
-          "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-colors duration-500",
-          isPresent
-            ? "bg-ethereal-sage/5"
-            : isExcusedOrLate
-              ? "bg-ethereal-incense/5"
-              : "bg-transparent",
-        )}
-        aria-hidden="true"
-      />
-
-      <div className="p-6 md:p-8 flex-1 rounded-t-[inherit]">
-        <div className="flex items-center justify-between mb-4">
+    <EventCard
+      theme="sage"
+      backgroundElement={
+        <div
+          className={cn(
+            "absolute inset-0 rounded-[inherit] overflow-hidden -z-10 transition-colors duration-500",
+            isPresent
+              ? "bg-ethereal-sage/5"
+              : isExcusedOrLate
+                ? "bg-ethereal-incense/5"
+                : "bg-transparent",
+          )}
+          aria-hidden="true"
+        />
+      }
+      badgesSlot={
+        <>
           <Badge variant="outline">
             <Clock size={10} className="mr-1.5" />
             {t("dashboard.artist.badge_rehearsal", "Próba")}
           </Badge>
 
-          {isPresent && (
-            <Badge variant="outline">
-              <CheckCircle2 size={10} className="mr-1.5" />
-              {t("dashboard.artist.badge_confirmed", "Potwierdzona")}
-            </Badge>
-          )}
-          {(currentStatus === "ABSENT" || currentStatus === "EXCUSED") && (
-            <Badge variant="outline">
-              <XCircle size={10} className="mr-1.5" />
-              {t(
-                "dashboard.artist.badge_absence_reported",
-                "Zgłoszono absencję",
-              )}
-            </Badge>
-          )}
-          {currentStatus === "LATE" && (
-            <Badge variant="outline">
-              <AlertCircle size={10} className="mr-1.5" />
-              {t("dashboard.artist.badge_late", "Spóźnienie")}
-            </Badge>
-          )}
-        </div>
-
-        <Heading as="h3" size="3xl" weight="bold" className="mb-5 leading-tight relative z-50">
-          {rehearsal.title}
-        </Heading>
-
-        <div className="flex flex-col gap-3 mb-2 relative z-50">
           <div className="flex items-center gap-2">
-            <Calendar size={13} strokeWidth={1.5} className="shrink-0 opacity-70 text-ethereal-sage" />
-            <Eyebrow color="default" weight="medium">
-              {formatLocalizedDate(
-                rehearsal.date,
-                { weekday: "long", day: "numeric", month: "long" },
-                undefined,
-                rehearsal.data.timezone,
-              )}
-            </Eyebrow>
+            {isPresent && (
+              <Badge variant="outline">
+                <CheckCircle2 size={10} className="mr-1.5" />
+                {t("dashboard.artist.badge_confirmed", "Potwierdzona")}
+              </Badge>
+            )}
+            {(currentStatus === "ABSENT" || currentStatus === "EXCUSED") && (
+              <Badge variant="outline">
+                <XCircle size={10} className="mr-1.5" />
+                {t(
+                  "dashboard.artist.badge_absence_reported",
+                  "Zgłoszono absencję",
+                )}
+              </Badge>
+            )}
+            {currentStatus === "LATE" && (
+              <Badge variant="outline">
+                <AlertCircle size={10} className="mr-1.5" />
+                {t("dashboard.artist.badge_late", "Spóźnienie")}
+              </Badge>
+            )}
           </div>
-          <DualTimeDisplay
-            value={rehearsal.date}
-            timeZone={rehearsal.data.timezone}
-            icon={
-              <Clock
-                size={13}
-                strokeWidth={1.5}
-                className="shrink-0 opacity-70 text-ethereal-sage"
-                aria-hidden="true"
-              />
-            }
-            typography="sans"
-            color="default"
-            size="xs"
-            weight="medium"
+        </>
+      }
+      title={rehearsal.title}
+      dateSlot={formatLocalizedDate(
+        rehearsal.date,
+        { weekday: "long", day: "numeric", month: "long" },
+        undefined,
+        rehearsal.data.timezone,
+      )}
+      timeSlot={
+        <DualTimeDisplay
+          value={rehearsal.date}
+          timeZone={rehearsal.data.timezone}
+          icon={
+            <Clock
+              size={13}
+              strokeWidth={1.5}
+              className="shrink-0 opacity-70 text-ethereal-sage"
+              aria-hidden="true"
+            />
+          }
+          typography="sans"
+          color="default"
+          size="xs"
+          weight="medium"
+        />
+      }
+      locationSlot={
+        rehearsal.data.location ? (
+          <LocationPreview
+            locationRef={rehearsal.data.location}
+            fallback={t("common.tba", "TBA")}
+            variant="minimal"
+            className="text-[10px] font-medium uppercase tracking-[0.25em] transition-colors duration-500 hover:text-ethereal-sage"
           />
-          {rehearsal.data.location && (
-            <div className="flex items-center gap-2 pl-0.5 z-[100]">
-              <LocationPreview
-                locationRef={rehearsal.data.location}
-                fallback={t("common.tba", "TBA")}
-                variant="minimal"
-                className="text-[10px] font-medium uppercase tracking-[0.25em] transition-colors duration-500 hover:text-ethereal-sage"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Dolny pasek akcji / Formularz */}
-      <div className="border-t border-ethereal-incense/10 bg-ethereal-alabaster/40 p-4 rounded-b-[inherit]">
-        {!reportingRehearsal ? (
-          <div className="flex flex-col sm:flex-row gap-2 relative z-10">
+        ) : undefined
+      }
+      actionSlot={
+        !reportingRehearsal ? (
+          <>
             {!isPresent && (
               <button
                 onClick={handleConfirmPresence}
@@ -251,8 +238,11 @@ export function ArtistNextRehearsalWidget({
                 ? t("dashboard.artist.btn_edit_report", "Edytuj zgłoszenie")
                 : t("dashboard.artist.btn_report_issue", "Zgłoś problem")}
             </button>
-          </div>
-        ) : (
+          </>
+        ) : undefined
+      }
+      footerSlot={
+        reportingRehearsal ? (
           <AnimatePresence>
             <motion.div
               initial={{ height: 0, opacity: 0 }}
@@ -260,16 +250,14 @@ export function ArtistNextRehearsalWidget({
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="pt-2">
-                <AbsenceReportForm
-                  onSubmit={onSubmitAbsence}
-                  onCancel={() => setReportingRehearsal(false)}
-                />
-              </div>
+              <AbsenceReportForm
+                onSubmit={onSubmitAbsence}
+                onCancel={() => setReportingRehearsal(false)}
+              />
             </motion.div>
           </AnimatePresence>
-        )}
-      </div>
-    </GlassCard>
+        ) : undefined
+      }
+    />
   );
 }

@@ -119,7 +119,7 @@ export const LocationAutocomplete = ({
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/50 z-10">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ethereal-graphite/50 z-10">
         <Search size={18} />
       </div>
       <input
@@ -137,20 +137,20 @@ export const LocationAutocomplete = ({
             "Wyszukaj globalne lokacje...",
           )
         }
-        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 backdrop-blur-md transition-all duration-300"
+        className="w-full pl-10 pr-4 py-3 bg-white/40 border border-ethereal-gold/20 rounded-xl text-ethereal-ink placeholder-ethereal-graphite/60 focus:outline-none focus:ring-2 focus:ring-ethereal-gold/40 backdrop-blur-md transition-all duration-300"
       />
 
       {isOpen && suggestions.length > 0 && (
-        <ul className="absolute z-50 w-full mt-2 py-2 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+        <ul className="absolute z-50 w-full mt-2 py-2 bg-ethereal-ink/90 backdrop-blur-xl border border-ethereal-incense/20 rounded-xl overflow-hidden shadow-2xl">
           {suggestions.map((suggestion, index) => {
             if (!suggestion.placePrediction) return null;
             return (
               <li
                 key={index}
                 onClick={() => handleSelect(suggestion)}
-                className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors duration-200 text-white/90 text-sm"
+                className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors duration-200 text-ethereal-marble text-sm"
               >
-                <MapPin size={16} className="text-white/50 shrink-0" />
+                <MapPin size={16} className="text-ethereal-gold/60 shrink-0" />
                 <span className="truncate">
                   {suggestion.placePrediction.text.text}
                 </span>

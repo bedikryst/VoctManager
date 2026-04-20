@@ -6,11 +6,12 @@
  * @module panel/dashboard/ArtistDashboard
  */
 
-import React, { useMemo } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
+import { ARTIST_BENTO_DIRECTIVES } from "@/shared/config/navigation/dashboard.config";
 
 import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -33,45 +34,6 @@ export default function ArtistDashboard(): React.JSX.Element {
   const { isLoading, upNextRehearsal, upNextProject, greeting } =
     useArtistDashboardData(user?.artist_profile_id ?? undefined);
 
-  const ARTIST_DIRECTIVES = useMemo(
-    () => [
-      {
-        id: "schedule",
-        romanNumeral: "I",
-        accentClass: "bg-ethereal-gold",
-        title: t("dashboard.artist.module_schedule_title", "Harmonogram"),
-        description: t(
-          "dashboard.artist.module_schedule_desc",
-          "Próby, koncerty i zarządzanie absencją.",
-        ),
-        path: "/panel/schedule",
-      },
-      {
-        id: "materials",
-        romanNumeral: "II",
-        accentClass: "bg-ethereal-sage",
-        title: t("dashboard.artist.module_materials_title", "Repertuar"),
-        description: t(
-          "dashboard.artist.module_materials_desc",
-          "Partytury PDF i referencyjne ścieżki audio.",
-        ),
-        path: "/panel/materials",
-      },
-      {
-        id: "resources",
-        romanNumeral: "III",
-        accentClass: "bg-ethereal-incense",
-        title: t("dashboard.artist.module_resources_title", "Doktryna"),
-        description: t(
-          "dashboard.artist.module_resources_desc",
-          "Wytyczne katedralne, dress-code i logistyka.",
-        ),
-        path: "/panel/resources",
-      },
-    ],
-    [t],
-  );
-
   if (isLoading) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center">
@@ -90,17 +52,19 @@ export default function ArtistDashboard(): React.JSX.Element {
           size="dashboard"
           roleText={t("dashboard.artist.title_main", "Przestrzeń chórzysty")}
           title={greeting}
-          titleHighlight={user?.first_name || t("common.artist_generic", "Artysty")}
+          titleHighlight={
+            user?.first_name || t("common.artist_generic", "Artysty")
+          }
           rightContent={<UserLocalClock />}
         />
       </StaggeredBentoItem>
 
       {/* CORE BENTO GRID */}
       <div className="grid grid-cols-1 gap-4 xl:gap-8 lg:grid-cols-12 xl:grid-cols-13">
-        {(!upNextRehearsal && !upNextProject) && (
+        {!upNextRehearsal && !upNextProject && (
           <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
             <SectionHeader
-              title={t("dashboard.artist.next_challenges", "Bezpośrednie Wytyczne")}
+              title={t("dashboard.artist.next_challenges", "Na horyzoncie")}
               className="px-5 md:px-0"
             />
             <ArtistEmptyState />
@@ -110,20 +74,35 @@ export default function ArtistDashboard(): React.JSX.Element {
         {(upNextRehearsal || upNextProject) && (
           <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
             <SectionHeader
-              title={t("dashboard.artist.next_challenges", "Bezpośrednie Wytyczne")}
+              title={t(
+                "dashboard.artist.next_challenges",
+                "Bezpośrednie Wytyczne",
+              )}
               className="px-5 md:px-0"
             />
           </StaggeredBentoItem>
         )}
 
         {upNextProject && (
-          <StaggeredBentoItem className={upNextRehearsal ? "col-span-1 md:col-span-7 xl:col-span-8 lg:min-h-[400px]" : "col-span-1 md:col-span-12 xl:col-span-13"}>
+          <StaggeredBentoItem
+            className={
+              upNextRehearsal
+                ? "col-span-1 md:col-span-7 xl:col-span-8"
+                : "col-span-1 md:col-span-12 xl:col-span-13"
+            }
+          >
             <ArtistNextProjectWidget project={upNextProject} />
           </StaggeredBentoItem>
         )}
 
         {upNextRehearsal && (
-          <StaggeredBentoItem className={upNextProject ? "col-span-1 md:col-span-5 xl:col-span-5 lg:min-h-[400px]" : "col-span-1 md:col-span-12 xl:col-span-13"}>
+          <StaggeredBentoItem
+            className={
+              upNextProject
+                ? "col-span-1 md:col-span-5 xl:col-span-5"
+                : "col-span-1 md:col-span-12 xl:col-span-13"
+            }
+          >
             <ArtistNextRehearsalWidget rehearsal={upNextRehearsal} />
           </StaggeredBentoItem>
         )}
@@ -137,9 +116,18 @@ export default function ArtistDashboard(): React.JSX.Element {
           />
           <nav aria-label={t("dashboard.artist.nav_aria", "Nawigacja artysty")}>
             <ul className="grid grid-cols-1 gap-4 md:grid-cols-3 md:auto-rows-[180px]">
-              {ARTIST_DIRECTIVES.map((mod) => (
-                <li key={mod.id} className="h-full">
-                  <SystemModuleCard {...mod} />
+              {ARTIST_BENTO_DIRECTIVES.map((directive) => (
+                <li key={directive.id} className={directive.gridClass}>
+                  <SystemModuleCard
+                    id={directive.id}
+                    path={directive.path}
+                    romanNumeral={directive.romanNumeral}
+                    accentClass={directive.accentClass}
+                    title={t(directive.titleKey, directive.defaultTitle)}
+                    features={directive.features.map((feat) =>
+                      t(feat.labelKey, feat.defaultLabel)
+                    )}
+                  />
                 </li>
               ))}
             </ul>

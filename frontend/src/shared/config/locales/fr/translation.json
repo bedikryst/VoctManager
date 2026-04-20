@@ -532,14 +532,27 @@
       "btn_edit_report": "Modifier le signalement",
       "btn_materials": "Partitions et audio",
       "btn_report_issue": "Signaler un problème",
-      "empty_events_desc": "Reposez-vous, votre calendrier musical est actuellement vide.",
+      "empty_events_desc": "Reposez-vous. Votre calendrier musical est actuellement vide et votre aura a été entièrement harmonisée. Le temps de régénérer votre voix.",
       "empty_events_title": "Aucun événement à venir",
+      "features": {
+        "events": "Répétitions & Concerts",
+        "absences": "Signaler une absence",
+        "pdf_scores": "Partitions PDF",
+        "audio_tracks": "Pistes audio",
+        "dress_code": "Code vestimentaire",
+        "logistics": "Logistique"
+      },
       "general_work": "Travail général",
       "greeting_afternoon": "Bon après-midi",
       "greeting_evening": "Bonsoir",
       "greeting_morning": "Bonjour",
       "greeting_night": "Bonne nuit",
       "label_call_time": "Convocation : ",
+      "modules": {
+        "schedule_title": "Planning",
+        "materials_title": "Répertoire",
+        "resources_title": "Connaissances"
+      },
       "module_materials_desc": "Votre espace personnel. Téléchargez les partitions PDF et travaillez avec des pistes audio dédiées.",
       "module_materials_title": "Supports",
       "module_resources_desc": "Consultez les consignes du chef, le dress code en vigueur et les contrats/règlements.",

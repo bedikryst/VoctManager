@@ -314,3 +314,66 @@ export const ADMIN_BENTO_DIRECTIVES: readonly BentoDirective[] = [
     gridClass: "md:col-span-2 md:row-span-1",
   },
 ];
+
+export const ARTIST_BENTO_DIRECTIVES: readonly BentoDirective[] = [
+  {
+    id: "schedule",
+    romanNumeral: "I",
+    titleKey: t("dashboard.artist.modules.schedule_title", "Harmonogram"),
+    defaultTitle: "Harmonogram",
+    features: [
+      {
+        labelKey: t("dashboard.artist.features.events", "Próby i Koncerty"),
+        defaultLabel: "Próby i Koncerty",
+      },
+      {
+        labelKey: t(
+          "dashboard.artist.features.absences",
+          "Zgłaszanie Absencji",
+        ),
+        defaultLabel: "Zgłaszanie Absencji",
+      },
+    ],
+    accentClass: "bg-ethereal-gold",
+    path: "/panel/schedule",
+    gridClass: "md:col-span-1 md:row-span-1",
+  },
+  {
+    id: "materials",
+    romanNumeral: "II",
+    titleKey: t("dashboard.artist.modules.materials_title", "Repertuar"),
+    defaultTitle: "Repertuar",
+    features: [
+      {
+        labelKey: t("dashboard.artist.features.pdf_scores", "Partytury PDF"),
+        defaultLabel: "Partytury PDF",
+      },
+      {
+        labelKey: t("dashboard.artist.features.audio_tracks", "Ścieżki Audio"),
+        defaultLabel: "Ścieżki Audio",
+      },
+    ],
+    accentClass: "bg-ethereal-sage",
+    path: "/panel/materials",
+    gridClass: "md:col-span-1 md:row-span-1",
+  },
+  {
+    id: "resources",
+    romanNumeral: "III",
+    titleKey: t("dashboard.artist.modules.resources_title", "Materiały"),
+    defaultTitle: "Doktryna",
+    features: [
+      {
+        labelKey: t("dashboard.artist.features.dress_code", "Dress-code"),
+        defaultLabel: "Dress-code",
+      },
+      {
+        labelKey: t("dashboard.artist.features.logistics", "Logistyka"),
+        defaultLabel: "Logistyka",
+      },
+    ],
+    accentClass: "bg-ethereal-incense",
+    path: "/panel/resources",
+    gridClass: "md:col-span-1 md:row-span-1",
+  },
+];

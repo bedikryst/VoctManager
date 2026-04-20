@@ -17,7 +17,15 @@ import ProjectCard from "./ProjectCard/ProjectCard";
 import ProjectEditorPanel from "./ProjectEditorPanel/ProjectEditorPanel";
 import { DashboardFilterMenu } from "./components/DashboardFilterMenu";
 
-import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import {
+  StaggeredBentoContainer,
+  StaggeredBentoItem,
+} from "@/shared/ui/kinematics/StaggeredBentoGrid";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { Eyebrow } from "@/shared/ui/primitives/typography/Eyebrow";
+import { Text } from "@/shared/ui/primitives/typography/Text";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
@@ -46,36 +54,13 @@ export default function ProjectDashboard(): React.JSX.Element {
   useBodyScrollLock(isPanelOpen || projectToDelete !== null);
 
   return (
-    <div className="space-y-6 animate-fade-in relative cursor-default pb-24 max-w-6xl mx-auto px-4 sm:px-0">
-      <header className="relative pt-6 mb-10">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-                <Briefcase
-                  size={12}
-                  className="text-brand"
-                  aria-hidden="true"
-                />
-                <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
-                  {t("projects.dashboard.header_badge", "Centrum Dowodzenia")}
-                </p>
-              </div>
-              <h1
-                className="text-4xl md:text-5xl font-medium text-stone-900 leading-tight tracking-tight"
-                style={{ fontFamily: "'Cormorant', serif" }}
-              >
-                {t("projects.dashboard.header_title_1", "Wydarzenia i")}{" "}
-                <span className="italic text-brand">
-                  {t("projects.dashboard.header_title_2", "Produkcja")}
-                </span>
-                .
-              </h1>
-            </div>
+    <PageTransition>
+      <div className="space-y-6 relative cursor-default pb-24 max-w-6xl mx-auto px-4 sm:px-0">
+        <PageHeader
+          roleText={t("projects.dashboard.header_badge", "Centrum Dowodzenia")}
+          title={t("projects.dashboard.header_title_1", "Wydarzenia i")}
+          titleHighlight={t("projects.dashboard.header_title_2", "Produkcja")}
+          rightContent={
             <Button
               variant="primary"
               onClick={() => openPanel(null)}
@@ -83,79 +68,74 @@ export default function ProjectDashboard(): React.JSX.Element {
             >
               {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
             </Button>
-          </div>
-        </motion.div>
-      </header>
+          }
+          size="dashboard"
+        />
 
-      <DashboardFilterMenu
-        currentFilter={listFilter}
-        onFilterChange={setListFilter}
-      />
+        <DashboardFilterMenu
+          currentFilter={listFilter}
+          onFilterChange={setListFilter}
+        />
 
-      <div className="grid grid-cols-1 gap-6">
-        {isLoading ? (
-          <div className="animate-pulse space-y-4">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-48 bg-stone-100/50 rounded-[2rem] w-full border border-white/50"
-              ></div>
-            ))}
-          </div>
-        ) : filteredProjects.length > 0 ? (
-          filteredProjects.map((project, idx) => (
-            <MemoizedProjectCard
-              key={project.id}
-              project={project}
-              index={idx}
-              onEdit={openPanel}
-              onDelete={setProjectToDelete}
-            />
-          ))
-        ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <GlassCard className="p-16 flex flex-col items-center justify-center text-center">
-              <Layers
-                size={48}
-                className="mb-4 text-stone-300 opacity-50"
-                aria-hidden="true"
-              />
-              <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">
-                {t(
-                  "projects.dashboard.empty_title",
-                  "Brak projektów w tym widoku",
-                )}
-              </span>
-              <span className="text-xs text-stone-400 max-w-sm">
-                {t(
-                  "projects.dashboard.empty_desc",
-                  'Rozpocznij planowanie nowego wydarzenia, klikając przycisk "Nowy Projekt" powyżej.',
-                )}
-              </span>
-            </GlassCard>
-          </motion.div>
-        )}
+        <StaggeredBentoContainer className="grid grid-cols-1 gap-6">
+          {isLoading ? (
+            <EtherealLoader className="h-64" />
+          ) : filteredProjects.length > 0 ? (
+            filteredProjects.map((project, idx) => (
+              <StaggeredBentoItem key={project.id}>
+                <MemoizedProjectCard
+                  project={project}
+                  index={idx}
+                  onEdit={openPanel}
+                  onDelete={setProjectToDelete}
+                />
+              </StaggeredBentoItem>
+            ))
+          ) : (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <GlassCard className="p-16 flex flex-col items-center justify-center text-center">
+                <Layers
+                  size={48}
+                  className="mb-4 text-ethereal-graphite opacity-50"
+                  aria-hidden="true"
+                />
+                <Eyebrow color="muted" className="mb-2">
+                  {t(
+                    "projects.dashboard.empty_title",
+                    "Brak projektów w tym widoku",
+                  )}
+                </Eyebrow>
+                <Text className="max-w-sm">
+                  {t(
+                    "projects.dashboard.empty_desc",
+                    'Rozpocznij planowanie nowego wydarzenia, klikając przycisk "Nowy Projekt" powyżej.',
+                  )}
+                </Text>
+              </GlassCard>
+            </motion.div>
+          )}
+        </StaggeredBentoContainer>
+
+        <ProjectEditorPanel
+          isOpen={isPanelOpen}
+          onClose={closePanel}
+          project={editingProject}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
+        <ConfirmModal
+          isOpen={!!projectToDelete}
+          title={t("projects.dashboard.delete_modal_title", "Usunąć projekt?")}
+          description={t(
+            "projects.dashboard.delete_modal_desc",
+            "Ta akcja jest nieodwracalna. Spowoduje usunięcie wszystkich powiązanych prób, przypisań ekipy i obsady dla tego projektu.",
+          )}
+          onConfirm={executeDelete}
+          onCancel={() => setProjectToDelete(null)}
+          isLoading={isDeleting}
+        />
       </div>
-
-      <ProjectEditorPanel
-        isOpen={isPanelOpen}
-        onClose={closePanel}
-        project={editingProject}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      <ConfirmModal
-        isOpen={!!projectToDelete}
-        title={t("projects.dashboard.delete_modal_title", "Usunąć projekt?")}
-        description={t(
-          "projects.dashboard.delete_modal_desc",
-          "Ta akcja jest nieodwracalna. Spowoduje usunięcie wszystkich powiązanych prób, przypisań ekipy i obsady dla tego projektu.",
-        )}
-        onConfirm={executeDelete}
-        onCancel={() => setProjectToDelete(null)}
-        isLoading={isDeleting}
-      />
-    </div>
+    </PageTransition>
   );
 }

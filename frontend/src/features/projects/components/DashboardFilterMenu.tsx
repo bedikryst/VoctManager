@@ -9,6 +9,8 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Eyebrow } from "@/shared/ui/primitives/typography";
+
 export type FilterStatus = "ACTIVE" | "DONE" | "ALL";
 
 interface FilterOption {
@@ -54,13 +56,15 @@ export const DashboardFilterMenu: React.FC<DashboardFilterMenuProps> = ({
               role="tab"
               aria-selected={isActive}
               onClick={() => onFilterChange(filter.id)}
-              className={`px-5 py-2 text-[9px] font-bold antialiased uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${
+              className={`px-5 py-2 rounded-lg transition-all whitespace-nowrap ${
                 isActive
                   ? "bg-white text-brand shadow-sm border border-stone-100"
                   : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"
               }`}
             >
-              {filter.label}
+              <Eyebrow color={isActive ? "default" : "muted"}>
+                {filter.label}
+              </Eyebrow>
             </button>
           );
         })}

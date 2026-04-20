@@ -532,14 +532,27 @@
       "btn_edit_report": "Edit report",
       "btn_materials": "Scores and Audio",
       "btn_report_issue": "Report an issue",
-      "empty_events_desc": "Take a rest, your musical calendar is currently empty.",
+      "empty_events_desc": "Rest. Your musical calendar is currently empty, and your aura has been fully harmonized. Time to regenerate your voice.",
       "empty_events_title": "No upcoming events",
+      "features": {
+        "events": "Rehearsals & Concerts",
+        "absences": "Report Absence",
+        "pdf_scores": "PDF Scores",
+        "audio_tracks": "Audio Tracks",
+        "dress_code": "Dress-code",
+        "logistics": "Logistics"
+      },
       "general_work": "General work",
       "greeting_afternoon": "Good afternoon",
       "greeting_evening": "Good evening",
       "greeting_morning": "Good morning",
       "greeting_night": "Good night",
       "label_call_time": "Call time: ",
+      "modules": {
+        "schedule_title": "Schedule",
+        "materials_title": "Repertoire",
+        "resources_title": "Knowledge"
+      },
       "module_materials_desc": "Your personal repository. Download PDF scores and practice with dedicated audio tracks.",
       "module_materials_title": "Materials",
       "module_resources_desc": "Check conductor guidelines, current dress code, and contracts/regulations.",

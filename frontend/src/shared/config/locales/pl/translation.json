@@ -532,14 +532,27 @@
       "btn_edit_report": "Edytuj zgłoszenie",
       "btn_materials": "Nuty i Audio",
       "btn_report_issue": "Zgłoś problem",
-      "empty_events_desc": "Odpocznij, twój muzyczny kalendarz jest obecnie pusty.",
+      "empty_events_desc": "Odpocznij. Twój muzyczny kalendarz jest obecnie pusty, a aura została w pełni zharmonizowana. Czas na regenerację głosu.",
       "empty_events_title": "Brak nadchodzących wydarzeń",
+      "features": {
+        "events": "Próby i Koncerty",
+        "absences": "Zgłaszanie Absencji",
+        "pdf_scores": "Partytury PDF",
+        "audio_tracks": "Ścieżki Audio",
+        "dress_code": "Dress-code",
+        "logistics": "Logistyka"
+      },
       "general_work": "Praca bieżąca",
       "greeting_afternoon": "Dobrego popołudnia",
       "greeting_evening": "Dobry wieczór",
       "greeting_morning": "Dzień dobry",
       "greeting_night": "Dobrej nocy",
       "label_call_time": "Zbiórka: ",
+      "modules": {
+        "schedule_title": "Harmonogram",
+        "materials_title": "Repertuar",
+        "resources_title": "Materiały"
+      },
       "module_materials_desc": "Twoje osobiste repozytorium. Pobierz nuty PDF i ćwicz z dedykowanymi ścieżkami audio.",
       "module_materials_title": "Materiały",
       "module_resources_desc": "Sprawdź wytyczne dyrygenta, obowiązujący dress-code oraz regulaminy i umowy.",

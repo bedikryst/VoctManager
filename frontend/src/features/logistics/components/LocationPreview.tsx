@@ -14,6 +14,7 @@ import { MapPin, Navigation, ExternalLink } from "lucide-react";
 import { Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useLocationResolver } from "../hooks/useLocationResolver";
 import type { LocationDto } from "../types/logistics.dto";
+import { Heading, Text, Eyebrow, Caption } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 interface LocationPreviewProps {
@@ -124,15 +125,19 @@ export const LocationPreview = ({
 
   if (!location) {
     return (
-      <span
+      <Text
+        as="span"
+        size="sm"
+        weight="medium"
+        color="graphite"
         className={cn(
-          "flex items-center gap-1.5 text-ethereal-graphite/60",
+          "flex items-center gap-1.5 opacity-60",
           className,
         )}
       >
         <MapPin size={12} className="shrink-0" />
         <span className="truncate tracking-widest">{displayFallback}</span>
-      </span>
+      </Text>
     );
   }
 
@@ -165,9 +170,14 @@ export const LocationPreview = ({
           size={12}
           className="shrink-0 text-ethereal-incense/60 transition-colors duration-500 group-hover:text-ethereal-gold"
         />
-        <span className="truncate tracking-widest text-inherit transition-colors duration-500 group-hover:text-ethereal-gold">
+        <Text
+          as="span"
+          size="sm"
+          weight="medium"
+          className="truncate tracking-widest text-inherit transition-colors duration-500 group-hover:text-ethereal-gold"
+        >
           {location.name}
-        </span>
+        </Text>
       </button>
 
       {/* THE ETHEREAL POPOVER (PORTALED) */}
@@ -230,38 +240,38 @@ export const LocationPreview = ({
                     </div>
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-white/20">
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite/60">
+                      <Eyebrow as="span" color="graphite" className="opacity-60">
                         {t("logistics.preview.no_map", "Brak współrzędnych")}
-                      </span>
+                      </Eyebrow>
                     </div>
                   )}
                 </div>
 
                 {/* DETAILS COMPARTMENT */}
-                <div className="group/details relative z-20 mt-1.5 flex flex-col gap-3 rounded-[1.5rem] bg-ethereal-marble/95 p-5 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+                <div className="group/details relative z-20 mt-1.5 flex flex-col gap-3 rounded-[1.5rem] bg-ethereal-marble/95 p-5 shadow-glass-solid backdrop-blur-xl">
                   <div>
                     <div className="mb-2 flex items-start justify-between">
-                      <p className="text-[8.5px] font-bold uppercase tracking-[0.2em] text-ethereal-sage">
+                      <Caption color="sage" weight="bold" className="uppercase tracking-[0.2em]">
                         {location.category ||
                           t("logistics.preview.default_category", "Lokacja")}
-                      </p>
+                      </Caption>
                       <ExternalLink
                         size={12}
                         strokeWidth={1.5}
                         className="text-ethereal-incense/40 transition-colors duration-500 group-hover/details:text-ethereal-gold"
                       />
                     </div>
-                    <h4 className="font-serif text-xl font-medium leading-tight tracking-wide text-ethereal-ink">
+                    <Heading as="h4" size="xl" weight="medium" className="leading-tight">
                       {location.name}
-                    </h4>
-                    <p className="mt-2 line-clamp-2 text-[11px] font-light leading-relaxed text-ethereal-graphite">
+                    </Heading>
+                    <Caption color="graphite" className="mt-2 line-clamp-2 leading-relaxed">
                       {location.formatted_address}
-                    </p>
+                    </Caption>
                   </div>
                   <div className="mt-2 flex items-center justify-between border-t border-ethereal-incense/15 pt-4 transition-colors duration-700 group-hover/details:border-ethereal-gold/30">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-ethereal-incense/70 transition-colors duration-500 group-hover/details:text-ethereal-gold">
+                    <Caption color="incense-muted" weight="bold" className="uppercase tracking-[0.25em] transition-colors duration-500 group-hover/details:text-ethereal-gold">
                       {t("logistics.preview.get_directions", "Wyznacz trasę")}
-                    </span>
+                    </Caption>
                     <Navigation
                       size={14}
                       strokeWidth={1.5}
