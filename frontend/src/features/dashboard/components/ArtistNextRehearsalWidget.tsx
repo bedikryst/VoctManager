@@ -21,7 +21,7 @@ import {
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Heading, Text } from "@/shared/ui/primitives/typography";
+import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -180,31 +180,40 @@ export function ArtistNextRehearsalWidget({
         </Heading>
 
         <div className="flex flex-col gap-3 mb-2 relative z-50">
-          <Text as="span" size="sm" weight="medium" color="graphite" className="flex items-center gap-2">
-            <Calendar size={14} className="text-ethereal-sage/70" />{" "}
-            {formatLocalizedDate(
-              rehearsal.date,
-              { weekday: "long", day: "numeric", month: "long" },
-              undefined,
-              rehearsal.data.timezone,
-            )}
-          </Text>
+          <div className="flex items-center gap-2">
+            <Calendar size={13} strokeWidth={1.5} className="shrink-0 opacity-70 text-ethereal-sage" />
+            <Eyebrow color="default" weight="medium">
+              {formatLocalizedDate(
+                rehearsal.date,
+                { weekday: "long", day: "numeric", month: "long" },
+                undefined,
+                rehearsal.data.timezone,
+              )}
+            </Eyebrow>
+          </div>
           <DualTimeDisplay
             value={rehearsal.date}
             timeZone={rehearsal.data.timezone}
             icon={
               <Clock
-                size={14}
-                className="text-ethereal-sage/70"
+                size={13}
+                strokeWidth={1.5}
+                className="shrink-0 opacity-70 text-ethereal-sage"
                 aria-hidden="true"
               />
             }
+            typography="sans"
+            color="default"
+            size="xs"
+            weight="medium"
           />
           {rehearsal.data.location && (
             <div className="flex items-center gap-2 pl-0.5 z-[100]">
               <LocationPreview
                 locationRef={rehearsal.data.location}
                 fallback={t("common.tba", "TBA")}
+                variant="minimal"
+                className="text-[10px] font-medium uppercase tracking-[0.25em] transition-colors duration-500 hover:text-ethereal-sage"
               />
             </div>
           )}

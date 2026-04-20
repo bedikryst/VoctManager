@@ -21,7 +21,7 @@ import {
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Heading, Text } from "@/shared/ui/primitives/typography";
+import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -112,15 +112,17 @@ export function ArtistNextProjectWidget({
         </Heading>
 
         <div className="flex flex-col gap-3 mb-2">
-          <Text as="span" size="sm" weight="medium" color="graphite" className="flex items-center gap-2">
-            <Calendar size={14} className="text-ethereal-gold" />{" "}
-            {formatLocalizedDate(
-              project.date,
-              { weekday: "long", day: "numeric", month: "long" },
-              undefined,
-              project.data.timezone,
-            )}
-          </Text>
+          <div className="flex items-center gap-2">
+            <Calendar size={13} strokeWidth={1.5} className="shrink-0 opacity-70 text-ethereal-gold" />
+            <Eyebrow color="default" weight="medium">
+              {formatLocalizedDate(
+                project.date,
+                { weekday: "long", day: "numeric", month: "long" },
+                undefined,
+                project.data.timezone,
+              )}
+            </Eyebrow>
+          </div>
 
           {project.data.call_time && (
             <DualTimeDisplay
@@ -129,19 +131,26 @@ export function ArtistNextProjectWidget({
               label={t("dashboard.artist.label_call_time", "Zbiórka: ")}
               icon={
                 <Clock
-                  size={14}
-                  className="text-ethereal-gold"
+                  size={13}
+                  strokeWidth={1.5}
+                  className="shrink-0 opacity-70 text-ethereal-gold"
                   aria-hidden="true"
                 />
               }
+              typography="sans"
+              color="default"
+              size="xs"
+              weight="medium"
             />
           )}
 
           {project.data.location && (
-            <div className="flex items-center gap-2 text-ethereal-graphite pl-0.5 z-[100]">
+            <div className="flex items-center gap-2 pl-0.5 z-[100]">
               <LocationPreview
                 locationRef={project.data.location}
                 fallback={t("common.tba", "TBA")}
+                variant="minimal"
+                className="text-[10px] font-medium uppercase tracking-[0.25em] transition-colors duration-500 hover:text-ethereal-gold"
               />
             </div>
           )}
