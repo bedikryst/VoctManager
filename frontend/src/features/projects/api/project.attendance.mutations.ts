@@ -6,6 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import type { Attendance } from "@/shared/types";
 
@@ -56,6 +57,7 @@ export const useCreateAttendance = (projectId: string) => {
       return { optimisticId, previousAttendances };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousAttendances) {
         queryClient.setQueryData(
           projectKeys.attendances.byProject(projectId),
@@ -113,6 +115,7 @@ export const useUpdateAttendance = (projectId: string) => {
       return { previousAttendances };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousAttendances) {
         queryClient.setQueryData(
           projectKeys.attendances.byProject(projectId),
@@ -162,6 +165,7 @@ export const useDeleteAttendance = (projectId: string) => {
       return { previousAttendances };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousAttendances) {
         queryClient.setQueryData(
           projectKeys.attendances.byProject(projectId),

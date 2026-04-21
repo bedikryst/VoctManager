@@ -6,6 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import type { ProgramItem } from "@/shared/types";
 
@@ -53,6 +54,7 @@ export const useCreateProgramItem = (projectId: string) => {
       return { optimisticId, previousProgramItems };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousProgramItems) {
         queryClient.setQueryData(
           projectKeys.program.byProject(projectId),
@@ -111,6 +113,7 @@ export const useUpdateProgramItem = (projectId: string) => {
       return { previousProgramItems };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousProgramItems) {
         queryClient.setQueryData(
           projectKeys.program.byProject(projectId),
@@ -159,6 +162,7 @@ export const useDeleteProgramItem = (projectId: string) => {
       return { previousProgramItems };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousProgramItems) {
         queryClient.setQueryData(
           projectKeys.program.byProject(projectId),

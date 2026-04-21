@@ -122,6 +122,11 @@ const FOCUSABLE_PANEL_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
+const ScrollLockGuard = () => {
+  useBodyScrollLock(true);
+  return null;
+};
+
 export const ProjectEditorPanel = ({
   isOpen,
   onClose,
@@ -140,8 +145,6 @@ export const ProjectEditorPanel = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [pendingTabId, setPendingTabId] =
     useState<PendingNavigationTarget>(null);
-
-  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     setMounted(true);
@@ -375,6 +378,7 @@ export const ProjectEditorPanel = ({
           key="editor-panel-root"
           className="fixed inset-0 z-(--z-nav-sheet) flex justify-end"
         >
+          <ScrollLockGuard />
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -6,6 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import type { PieceCasting } from "@/shared/types";
 
@@ -55,6 +56,7 @@ export const useCreatePieceCasting = (projectId: string) => {
       return { optimisticId, previousPieceCastings };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousPieceCastings) {
         queryClient.setQueryData(
           projectKeys.pieceCastings.byProject(projectId),
@@ -115,6 +117,7 @@ export const useUpdatePieceCasting = (projectId: string) => {
       return { previousPieceCastings };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousPieceCastings) {
         queryClient.setQueryData(
           projectKeys.pieceCastings.byProject(projectId),
@@ -167,6 +170,7 @@ export const useDeletePieceCasting = (projectId: string) => {
       return { previousPieceCastings };
     },
     onError: (_error, _variables, context) => {
+      toast.error("Operation unsuccessful. Please verify your connection and try again.");
       if (context?.previousPieceCastings) {
         queryClient.setQueryData(
           projectKeys.pieceCastings.byProject(projectId),
