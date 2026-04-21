@@ -7,12 +7,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { archiveKeys } from "@/features/archive/api/archive.queries";
-import { artistKeys } from "@/features/artists/api/artist.queries";
-import { crewKeys } from "@/features/crew/api/crew.queries";
-import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
-import { OPTIONS_QUERY_KEYS } from "@/shared/api/options.queries";
-
 import { ProjectService } from "./project.service";
 import { projectKeys } from "./project.query-keys";
 import {
@@ -32,7 +26,7 @@ export const useProjects = (enabled = true) =>
 
 export const useProjectArtistsDictionary = (enabled = true) =>
   useQuery({
-    queryKey: artistKeys.artists.all,
+    queryKey: projectKeys.dictionaries.artists,
     queryFn: ProjectService.getArtistsDictionary,
     staleTime: STATIC_DICTIONARY_STALE_TIME,
     enabled,
@@ -40,7 +34,7 @@ export const useProjectArtistsDictionary = (enabled = true) =>
 
 export const useProjectPiecesDictionary = (enabled = true) =>
   useQuery({
-    queryKey: archiveKeys.pieces.all,
+    queryKey: projectKeys.dictionaries.pieces,
     queryFn: ProjectService.getPiecesDictionary,
     staleTime: STATIC_DICTIONARY_STALE_TIME,
     enabled,
@@ -48,7 +42,7 @@ export const useProjectPiecesDictionary = (enabled = true) =>
 
 export const useProjectCollaboratorsDictionary = (enabled = true) =>
   useQuery({
-    queryKey: crewKeys.collaborators.all,
+    queryKey: projectKeys.dictionaries.collaborators,
     queryFn: ProjectService.getCollaboratorsDictionary,
     staleTime: STATIC_DICTIONARY_STALE_TIME,
     enabled,
@@ -56,7 +50,7 @@ export const useProjectCollaboratorsDictionary = (enabled = true) =>
 
 export const useProjectVoiceLinesDictionary = (enabled = true) =>
   useQuery({
-    queryKey: OPTIONS_QUERY_KEYS.voiceLines,
+    queryKey: projectKeys.dictionaries.voiceLines,
     queryFn: ProjectService.getVoiceLinesDictionary,
     staleTime: STATIC_DICTIONARY_STALE_TIME,
     enabled,
@@ -73,7 +67,7 @@ export const useProjectParticipations = (projectId: string | undefined) =>
 
 export const useProjectRehearsals = (projectId: string | undefined) =>
   useQuery({
-    queryKey: rehearsalKeys.rehearsals.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.rehearsals.byProject(projectId ?? "pending"),
     queryFn: () =>
       ProjectService.getRehearsalsByProject(getRequiredProjectId(projectId)),
     staleTime: PROJECT_RELATION_STALE_TIME,
@@ -111,7 +105,7 @@ export const useProjectPieceCastings = (projectId: string | undefined) =>
 
 export const useProjectAttendances = (projectId: string | undefined) =>
   useQuery({
-    queryKey: rehearsalKeys.attendances.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.attendances.byProject(projectId ?? "pending"),
     queryFn: () =>
       ProjectService.getAttendancesByProject(getRequiredProjectId(projectId)),
     staleTime: FAST_CHANGING_STALE_TIME,

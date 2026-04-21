@@ -50,6 +50,19 @@ const ARTISTS_BASE_URL = "/api/artists/";
 const COLLABORATORS_BASE_URL = "/api/collaborators/";
 const VOICE_LINES_BASE_URL = "/api/options/voice-lines/";
 
+const buildListUrl = (
+  baseUrl: string,
+  params: Record<string, string | number>,
+): string => {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    searchParams.set(key, String(value));
+  });
+
+  return `${baseUrl}?${searchParams.toString()}`;
+};
+
 export type ProjectReportEndpoint =
   | "export_call_sheet"
   | "export_zaiks"
@@ -113,7 +126,7 @@ export const ProjectService = {
     projectId: string | number,
   ): Promise<Participation[]> => {
     const response = await api.get<Participation[]>(
-      `${PARTICIPATIONS_BASE_URL}?project=${projectId}`,
+      buildListUrl(PARTICIPATIONS_BASE_URL, { project: projectId }),
     );
     return response.data;
   },
@@ -147,7 +160,7 @@ export const ProjectService = {
     projectId: string | number,
   ): Promise<Rehearsal[]> => {
     const response = await api.get<Rehearsal[]>(
-      `${REHEARSALS_BASE_URL}?project=${projectId}`,
+      buildListUrl(REHEARSALS_BASE_URL, { project: projectId }),
     );
     return response.data;
   },
@@ -176,7 +189,7 @@ export const ProjectService = {
     projectId: string | number,
   ): Promise<CrewAssignment[]> => {
     const response = await api.get<CrewAssignment[]>(
-      `${CREW_ASSIGNMENTS_BASE_URL}?project=${projectId}`,
+      buildListUrl(CREW_ASSIGNMENTS_BASE_URL, { project: projectId }),
     );
     return response.data;
   },
@@ -210,7 +223,7 @@ export const ProjectService = {
     projectId: string | number,
   ): Promise<ProgramItem[]> => {
     const response = await api.get<ProgramItem[]>(
-      `${PROGRAM_ITEMS_BASE_URL}?project=${projectId}`,
+      buildListUrl(PROGRAM_ITEMS_BASE_URL, { project: projectId }),
     );
     return [...response.data].sort((a, b) => a.order - b.order);
   },
@@ -241,7 +254,9 @@ export const ProjectService = {
     projectId: string | number,
   ): Promise<PieceCasting[]> => {
     const response = await api.get<PieceCasting[]>(
-      `${PIECE_CASTINGS_BASE_URL}?participation__project=${projectId}`,
+      buildListUrl(PIECE_CASTINGS_BASE_URL, {
+        participation__project: projectId,
+      }),
     );
     return response.data;
   },
@@ -275,7 +290,7 @@ export const ProjectService = {
     projectId: string | number,
   ): Promise<Attendance[]> => {
     const response = await api.get<Attendance[]>(
-      `${ATTENDANCES_BASE_URL}?rehearsal__project=${projectId}`,
+      buildListUrl(ATTENDANCES_BASE_URL, { rehearsal__project: projectId }),
     );
     return response.data;
   },
