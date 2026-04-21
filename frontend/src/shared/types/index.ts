@@ -105,6 +105,17 @@ export interface RunSheetItem {
   details?: string;
 }
 
+export interface LocationSnippet {
+  id: string;
+  name: string;
+  category: LocationCategory | string;
+  timezone: string;
+  formatted_address?: string | null;
+  google_place_id?: string | null;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+}
+
 export interface Project extends BaseModel {
   title: string;
   date_time: string;
@@ -112,13 +123,9 @@ export interface Project extends BaseModel {
   call_time?: string | null; // DateTime, can be null
   dress_code_male?: string | null;
   dress_code_female?: string | null;
-  location?: {
-    id: string;
-    name: string;
-    category: string;
-    timezone: string;
-  } | null;
-  conductor_name?: string;
+  location?: string | LocationSnippet | null;
+  conductor?: string | Artist | null;
+  conductor_name?: string | null;
   description?: string | null;
   spotify_playlist_url?: string | null;
   status: ProjectStatus;
@@ -147,12 +154,7 @@ export interface Rehearsal extends BaseModel {
   project: string; // Foreign Key ID
   date_time: string;
   timezone: string;
-  location?: {
-    id: string;
-    name: string;
-    category: string;
-    timezone: string;
-  } | null;
+  location?: string | LocationSnippet | null;
   focus?: string;
   is_mandatory: boolean;
   invited_participations?: string[];
@@ -164,7 +166,7 @@ export interface Attendance extends BaseModel {
   participation: string; // Foreign Key ID
   status: AttendanceStatus | null;
   minutes_late?: number | null; // Numeric, can be null
-  excuse_note?: string;
+  excuse_note?: string | null;
 }
 
 export interface Collaborator extends BaseModel {

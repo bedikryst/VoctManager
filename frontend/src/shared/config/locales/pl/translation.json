@@ -1002,9 +1002,25 @@
     },
     "editor": {
       "archive_badge": "Archiwum",
-      "new_project": "Kreator Nowego Wydarzenia",
-      "unsaved_changes_desc": "Masz niezapisane zmiany w tej zakładce. Czy na pewno chcesz opuścić ten widok? Niezapisane dane zostaną utracone.",
-      "unsaved_changes_title": "Niezapisane zmiany"
+      "new_project": "Kreator nowego wydarzenia",
+      "unsaved_changes_desc": "Masz niezapisane zmiany w tej zakładce. Opuszczenie widoku spowoduje utratę lokalnych danych.",
+      "unsaved_changes_title": "Niezapisane zmiany",
+      "workspace": "Przestrzeń projektu",
+      "new_project_title": "Nowy projekt",
+      "workspace_description": "Zarządzaj szczegółami projektu, próbami, obsadą i logistyką w jednym kontekście roboczym.",
+      "create_description": "Najpierw zapisz podstawowe dane wydarzenia, a następnie przejdź do kolejnych zakładek operacyjnych.",
+      "active_tab": "Aktywna zakładka",
+      "tabs_aria": "Zakładki panelu projektu",
+      "tabs": {
+        "details": "Szczegóły",
+        "rehearsals": "Próby",
+        "matrix": "Frekwencja",
+        "cast": "Obsada",
+        "program": "Program",
+        "micro_cast": "Mikro-obsada",
+        "crew": "Ekipa",
+        "budget": "Budżet"
+      }
     },
     "exports": {
       "call_sheet": "Pobierz Call Sheet",

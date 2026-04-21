@@ -6,7 +6,7 @@
  * @module shared/ui/composites/ConfirmModal
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useEffectEvent, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
@@ -40,6 +40,8 @@ export interface ConfirmModalProps {
   isLoading?: boolean;
   confirmTextKey?: string;
   cancelTextKey?: string;
+  confirmText?: string;
+  cancelText?: string;
   isDestructive?: boolean;
 }
 
@@ -52,10 +54,14 @@ export const ConfirmModal = ({
   isLoading = false,
   confirmTextKey = "common.actions.delete",
   cancelTextKey = "common.actions.cancel",
+  confirmText,
+  cancelText,
   isDestructive = true,
 }: ConfirmModalProps): React.ReactPortal | null => {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
+  const titleId = useId();
+  const descriptionId = useId();
 
   useBodyScrollLock(isOpen);
 
@@ -63,25 +69,33 @@ export const ConfirmModal = ({
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const handleEscape = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key === "Escape" && !isLoading) {
+      onCancel();
+    }
+  });
 
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isLoading) onCancel();
-    };
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
 
     window.addEventListener("keydown", handleEscape);
+
     return () => {
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen, isLoading, onCancel]);
+  }, [handleEscape, isOpen]);
 
   if (!mounted) return null;
+
+  const resolvedConfirmText = confirmText ?? t(confirmTextKey);
+  const resolvedCancelText = cancelText ?? t(cancelTextKey);
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-focus-trap flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -97,7 +111,8 @@ export const ConfirmModal = ({
             className="relative w-full max-w-md bg-ethereal-marble rounded-2xl shadow-glass-solid overflow-hidden border border-ethereal-incense/20 flex flex-col"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="confirm-modal-title"
+            aria-labelledby={titleId}
+            aria-describedby={descriptionId}
           >
             <div className="p-6">
               <div className="flex gap-4 items-start">
@@ -107,13 +122,13 @@ export const ConfirmModal = ({
                 <div className="pt-1">
                   <Heading
                     as="h3"
-                    id="confirm-modal-title"
+                    id={titleId}
                     size="lg"
                     weight="bold"
                   >
                     {title}
                   </Heading>
-                  <Text className="mt-2" color="muted">
+                  <Text id={descriptionId} className="mt-2" color="muted">
                     {description}
                   </Text>
                 </div>
@@ -121,16 +136,15 @@ export const ConfirmModal = ({
             </div>
 
             <div className="bg-ethereal-alabaster px-6 py-4 flex justify-end gap-3 border-t border-ethereal-incense/10">
-              {/* Utilising core primitives for rigorous UI consistency */}
               <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
-                {t(cancelTextKey)}
+                {resolvedCancelText}
               </Button>
               <Button
-                variant={isDestructive ? "danger" : "primary"}
+                variant={isDestructive ? "destructive" : "primary"}
                 onClick={onConfirm}
                 isLoading={isLoading}
               >
-                {t(confirmTextKey)}
+                {resolvedConfirmText}
               </Button>
             </div>
           </motion.div>

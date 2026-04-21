@@ -83,7 +83,10 @@ export interface DualTimeDisplayProps extends VariantProps<
   size?: VariantProps<typeof primaryTimeVariants>["size"];
   weight?: VariantProps<typeof primaryTimeVariants>["weight"];
   className?: string;
+  containerClassName?: string;
   timeClassName?: string;
+  primaryTimeClassName?: string;
+  localTimeClassName?: string;
 }
 
 export const DualTimeDisplay = ({
@@ -97,7 +100,10 @@ export const DualTimeDisplay = ({
   size,
   weight,
   className,
+  containerClassName,
   timeClassName,
+  primaryTimeClassName,
+  localTimeClassName,
 }: DualTimeDisplayProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -132,11 +138,18 @@ export const DualTimeDisplay = ({
   };
 
   return (
-    <div className={cn(containerVariants({ spacing }), className)}>
+    <div
+      className={cn(
+        containerVariants({ spacing }),
+        className,
+        containerClassName,
+      )}
+    >
       <div
         className={cn(
           primaryTimeVariants({ typography, color, size, weight }),
           timeClassName,
+          primaryTimeClassName,
         )}
       >
         {icon && (
@@ -174,7 +187,10 @@ export const DualTimeDisplay = ({
             <span className="w-5 shrink-0 invisible" aria-hidden="true" />
           )}
 
-          <time dateTime={isoDateString} className={localTimeVariants()}>
+          <time
+            dateTime={isoDateString}
+            className={cn(localTimeVariants(), localTimeClassName)}
+          >
             <span className="sr-only">
               {t("common.time.localAria", "Twój czas lokalny to:")}
             </span>

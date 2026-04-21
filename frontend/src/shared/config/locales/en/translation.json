@@ -1002,9 +1002,25 @@
     },
     "editor": {
       "archive_badge": "Archive",
-      "new_project": "New Event Creator",
-      "unsaved_changes_desc": "You have unsaved changes in this tab. Are you sure you want to leave? Unsaved data will be lost.",
-      "unsaved_changes_title": "Unsaved changes"
+      "new_project": "New event creator",
+      "unsaved_changes_desc": "You have unsaved changes in this tab. Leaving the view will discard local data.",
+      "unsaved_changes_title": "Unsaved changes",
+      "workspace": "Project workspace",
+      "new_project_title": "New project",
+      "workspace_description": "Manage project details, rehearsals, casting, and logistics in one operational workspace.",
+      "create_description": "Save the core event details first, then continue to the operational tabs.",
+      "active_tab": "Active tab",
+      "tabs_aria": "Project editor tabs",
+      "tabs": {
+        "details": "Details",
+        "rehearsals": "Rehearsals",
+        "matrix": "Attendance",
+        "cast": "Cast",
+        "program": "Program",
+        "micro_cast": "Micro-casting",
+        "crew": "Crew",
+        "budget": "Budget"
+      }
     },
     "exports": {
       "call_sheet": "Download Call Sheet",

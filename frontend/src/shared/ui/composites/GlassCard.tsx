@@ -81,7 +81,7 @@ const GlassCardInner = <C extends ElementType = "div">(
     onPointerMove,
     ...rest
   }: GlassCardProps<C>,
-  ref: React.ForwardedRef<any>,
+  ref: React.ForwardedRef<HTMLDivElement>,
 ) => {
   const Component = as || "div";
 
@@ -99,9 +99,12 @@ const GlassCardInner = <C extends ElementType = "div">(
 
   const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
     if (onPointerMove) {
-      (onPointerMove as any)(event);
+      const forwardedPointerMove = onPointerMove as unknown as (
+        pointerEvent: PointerEvent<HTMLElement>
+      ) => void;
+      forwardedPointerMove(event);
     }
-    // Only calculate hardware coordinates if pointer is mouse/pen and glow is requested
+
     if (!glow || event.pointerType === "touch") return;
 
     const { left, top } = event.currentTarget.getBoundingClientRect();

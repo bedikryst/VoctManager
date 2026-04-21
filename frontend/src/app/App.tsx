@@ -35,7 +35,7 @@ import Rehearsals from "@features/rehearsals/Rehearsals";
 import Materials from "@features/materials/Materials";
 import Schedule from "@features/schedule/Schedule";
 import ArtistManagement from "@pages/app/ArtistsPage";
-import ProjectManagement from "@features/projects/ProjectDashboard";
+import { ProjectDashboard } from "@features/projects/ProjectDashboard";
 import ArchiveManagement from "@pages/app/ArchivePage";
 import Resources from "@features/resources/Resources";
 import CrewManagement from "@features/crew/CrewManagement";
@@ -96,7 +96,7 @@ export default function App(): React.JSX.Element {
               <Route path="contracts" element={<Contracts />} />
               <Route path="rehearsals" element={<Rehearsals />} />
               <Route path="artists" element={<ArtistManagement />} />
-              <Route path="projects" element={<ProjectManagement />} />
+              <Route path="projects" element={<ProjectDashboard />} />
               <Route
                 path="archive-management"
                 element={<ArchiveManagement />}

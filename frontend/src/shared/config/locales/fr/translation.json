@@ -1003,8 +1003,24 @@
     "editor": {
       "archive_badge": "Archive",
       "new_project": "Créateur de nouvel événement",
-      "unsaved_changes_desc": "Vous avez des modifications non enregistrées dans cet onglet. Voulez-vous vraiment quitter ? Les données non enregistrées seront perdues.",
-      "unsaved_changes_title": "Modifications non enregistrées"
+      "unsaved_changes_desc": "Vous avez des modifications non enregistrées dans cet onglet. Quitter la vue supprimera les données locales.",
+      "unsaved_changes_title": "Modifications non enregistrées",
+      "workspace": "Espace projet",
+      "new_project_title": "Nouveau projet",
+      "workspace_description": "Gérez les détails du projet, les répétitions, la distribution et la logistique dans un seul espace opérationnel.",
+      "create_description": "Enregistrez d’abord les informations principales de l’événement, puis poursuivez dans les onglets opérationnels.",
+      "active_tab": "Onglet actif",
+      "tabs_aria": "Onglets de l’éditeur de projet",
+      "tabs": {
+        "details": "Détails",
+        "rehearsals": "Répétitions",
+        "matrix": "Présences",
+        "cast": "Distribution",
+        "program": "Programme",
+        "micro_cast": "Micro-casting",
+        "crew": "Équipe",
+        "budget": "Budget"
+      }
     },
     "exports": {
       "call_sheet": "Télécharger le Call Sheet",
