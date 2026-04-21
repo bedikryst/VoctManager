@@ -24,6 +24,9 @@ interface LocationMapPickerProps {
   onLocationSelect: (locationData: Partial<LocationFormValues>) => void;
 }
 
+const isNodeTarget = (value: EventTarget | null): value is Node =>
+  value instanceof Node;
+
 const DEFAULT_CENTER: google.maps.LatLngLiteral = {
   lat: 52.2297,
   lng: 21.0122,
@@ -202,9 +205,14 @@ export const LocationMapPicker = ({
    */
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target;
+      if (!isNodeTarget(target)) {
+        return;
+      }
+
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
+        !dropdownRef.current.contains(target)
       ) {
         setIsOpen(false);
       }

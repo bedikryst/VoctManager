@@ -3,12 +3,15 @@ import { useTranslation } from "react-i18next";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Search, MapPin } from "lucide-react";
 import { useDebounceValue } from "usehooks-ts";
-import { LocationDto } from "../types/logistics.dto";
+import type { LocationDto } from "../types/logistics.dto";
 
 interface LocationAutocompleteProps {
   onLocationSelect: (locationData: Partial<LocationDto>) => void;
   placeholder?: string;
 }
+
+const isNodeTarget = (value: EventTarget | null): value is Node =>
+  value instanceof Node;
 
 export const LocationAutocomplete = ({
   onLocationSelect,
@@ -106,9 +109,14 @@ export const LocationAutocomplete = ({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target;
+      if (!isNodeTarget(target)) {
+        return;
+      }
+
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(target)
       ) {
         setIsOpen(false);
       }

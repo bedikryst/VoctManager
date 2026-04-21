@@ -13,16 +13,68 @@ import { useTranslation } from "react-i18next";
 import { MapPin, Navigation, ExternalLink } from "lucide-react";
 import { Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useLocationResolver } from "../hooks/useLocationResolver";
-import type { LocationDto } from "../types/logistics.dto";
+import type {
+  LocationDto,
+  LocationReference,
+  LocationReferenceDto,
+} from "../types/logistics.dto";
 import { Heading, Text, Eyebrow, Caption } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 interface LocationPreviewProps {
-  locationRef: string | LocationDto | unknown;
+  locationRef: LocationReference | null | undefined;
   fallback?: string;
   className?: string;
   variant?: "badge" | "minimal";
 }
+
+type ResolvedLocationPreview = LocationDto | LocationReferenceDto;
+
+interface NormalizedLocationPreview {
+  id: string;
+  name: string;
+  category: string | null;
+  formattedAddress: string | null;
+  googlePlaceId: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+const isNodeTarget = (value: EventTarget | null): value is Node =>
+  value instanceof Node;
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const parseCoordinate = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+};
+
+const normalizeLocation = (
+  location: ResolvedLocationPreview,
+  fallbackLabel: string,
+): NormalizedLocationPreview => ({
+  id: location.id,
+  name: isNonEmptyString(location.name) ? location.name : fallbackLabel,
+  category: isNonEmptyString(location.category) ? location.category : null,
+  formattedAddress: isNonEmptyString(location.formatted_address)
+    ? location.formatted_address
+    : null,
+  googlePlaceId: isNonEmptyString(location.google_place_id)
+    ? location.google_place_id
+    : null,
+  latitude: parseCoordinate(location.latitude),
+  longitude: parseCoordinate(location.longitude),
+});
 
 export const LocationPreview = ({
   locationRef,
@@ -43,6 +95,9 @@ export const LocationPreview = ({
 
   const displayFallback =
     fallback || t("logistics.preview.unknown_location", "Nieznana lokacja");
+  const normalizedLocation = location
+    ? normalizeLocation(location, displayFallback)
+    : null;
 
   const updatePosition = () => {
     if (!anchorRef.current) return;
@@ -75,7 +130,11 @@ export const LocationPreview = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node;
+      const target = event.target;
+      if (!isNodeTarget(target)) {
+        return;
+      }
+
       if (
         anchorRef.current &&
         !anchorRef.current.contains(target) &&
@@ -104,26 +163,31 @@ export const LocationPreview = ({
 
   const openInGoogleMaps = (e: React.BaseSyntheticEvent) => {
     e.stopPropagation();
-    if (!location) return;
+    if (!normalizedLocation) return;
 
-    const { latitude, longitude, google_place_id, name, formatted_address } =
-      location;
+    const {
+      latitude,
+      longitude,
+      googlePlaceId,
+      name,
+      formattedAddress,
+    } = normalizedLocation;
     const baseUrl = "https://www.google.com/maps/search/?api=1";
     let url = baseUrl;
 
-    if (google_place_id) {
-      url += `&query=${encodeURIComponent(name)}&query_place_id=${google_place_id}`;
+    if (googlePlaceId) {
+      url += `&query=${encodeURIComponent(name)}&query_place_id=${googlePlaceId}`;
     } else if (latitude && longitude) {
       url += `&query=${latitude},${longitude}`;
     } else {
-      const query = encodeURIComponent(`${name} ${formatted_address || ""}`);
+      const query = encodeURIComponent(`${name} ${formattedAddress || ""}`);
       url += `&query=${query}`;
     }
 
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  if (!location) {
+  if (!normalizedLocation) {
     return (
       <Text
         as="span"
@@ -142,10 +206,8 @@ export const LocationPreview = ({
   }
 
   const hasCoordinates =
-    location.latitude !== null &&
-    location.longitude !== null &&
-    !isNaN(Number(location.latitude)) &&
-    !isNaN(Number(location.longitude));
+    normalizedLocation?.latitude !== null &&
+    normalizedLocation?.longitude !== null;
 
   // Variant Styles Architecture
   const anchorStyles =
@@ -156,6 +218,7 @@ export const LocationPreview = ({
   return (
     <>
       <button
+        type="button"
         ref={anchorRef}
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={handleMouseEnter}
@@ -176,7 +239,7 @@ export const LocationPreview = ({
           weight="medium"
           className="truncate tracking-widest text-inherit transition-colors duration-500 group-hover:text-ethereal-gold"
         >
-          {location.name}
+          {normalizedLocation?.name ?? displayFallback}
         </Text>
       </button>
 
@@ -209,21 +272,21 @@ export const LocationPreview = ({
                       <Map
                         defaultZoom={15}
                         defaultCenter={{
-                          lat: Number(location.latitude),
-                          lng: Number(location.longitude),
+                          lat: normalizedLocation?.latitude ?? 0,
+                          lng: normalizedLocation?.longitude ?? 0,
                         }}
                         disableDefaultUI={true}
                         gestureHandling="none"
                         mapId={
                           import.meta.env.VITE_GOOGLE_MAP_ID || "DEMO_MAP_ID"
                         }
-                        id={`PREVIEW_${location.id}`}
+                        id={`PREVIEW_${normalizedLocation?.id ?? "UNKNOWN"}`}
                         className="h-full w-full"
                       >
                         <AdvancedMarker
                           position={{
-                            lat: Number(location.latitude),
-                            lng: Number(location.longitude),
+                            lat: normalizedLocation?.latitude ?? 0,
+                            lng: normalizedLocation?.longitude ?? 0,
                           }}
                         >
                           <div className="group flex flex-col items-center gap-0.5">
@@ -252,7 +315,7 @@ export const LocationPreview = ({
                   <div>
                     <div className="mb-2 flex items-start justify-between">
                       <Caption color="sage" weight="bold" className="uppercase tracking-[0.2em]">
-                        {location.category ||
+                        {normalizedLocation?.category ||
                           t("logistics.preview.default_category", "Lokacja")}
                       </Caption>
                       <ExternalLink
@@ -262,10 +325,10 @@ export const LocationPreview = ({
                       />
                     </div>
                     <Heading as="h4" size="xl" weight="medium" className="leading-tight">
-                      {location.name}
+                      {normalizedLocation?.name ?? displayFallback}
                     </Heading>
                     <Caption color="graphite" className="mt-2 line-clamp-2 leading-relaxed">
-                      {location.formatted_address}
+                      {normalizedLocation?.formattedAddress}
                     </Caption>
                   </div>
                   <div className="mt-2 flex items-center justify-between border-t border-ethereal-incense/15 pt-4 transition-colors duration-700 group-hover/details:border-ethereal-gold/30">

@@ -25,6 +25,9 @@ interface LocationInlineEditorProps {
   onClose: () => void;
 }
 
+const getValidationMessage = (message: unknown): string | null =>
+  typeof message === "string" && message.trim().length > 0 ? message : null;
+
 const STYLE_LABEL =
   "block mb-2 ml-1";
 const STYLE_SELECT =
@@ -170,9 +173,9 @@ export default function LocationInlineEditor({
                       {t("logistics.categories.other", "Inne")}
                     </option>
                   </select>
-                  {form.formState.errors.category && (
+                  {getValidationMessage(form.formState.errors.category?.message) && (
                     <p className="text-red-500 text-xs mt-1.5 ml-1">
-                      {t(form.formState.errors.category.message as string)}
+                      {t(getValidationMessage(form.formState.errors.category?.message) ?? "")}
                     </p>
                   )}
                 </div>
@@ -195,9 +198,9 @@ export default function LocationInlineEditor({
                       "np. Filharmonia Narodowa - Sala Kameralna",
                     )}
                   />
-                  {form.formState.errors.name && (
+                  {getValidationMessage(form.formState.errors.name?.message) && (
                     <Caption color="crimson" className="mt-1.5 ml-1 block">
-                      {t(form.formState.errors.name.message as string)}
+                      {t(getValidationMessage(form.formState.errors.name?.message) ?? "")}
                     </Caption>
                   )}
                 </div>
@@ -225,11 +228,12 @@ export default function LocationInlineEditor({
                       )}
                     />
                   </div>
-                  {form.formState.errors.formatted_address && (
+                  {getValidationMessage(form.formState.errors.formatted_address?.message) && (
                     <Caption color="crimson" className="mt-1.5 ml-1 block">
                       {t(
-                        form.formState.errors.formatted_address
-                          .message as string,
+                        getValidationMessage(
+                          form.formState.errors.formatted_address?.message,
+                        ) ?? "",
                       )}
                     </Caption>
                   )}
@@ -262,10 +266,12 @@ export default function LocationInlineEditor({
                       "np. Wejście dla artystów znajduje się od strony parkingu. Kod do bramy: 1234#.",
                     )}
                   />
-                  {form.formState.errors.internal_notes && (
+                  {getValidationMessage(form.formState.errors.internal_notes?.message) && (
                     <Caption color="crimson" className="mt-1.5 ml-1 block">
                       {t(
-                        form.formState.errors.internal_notes.message as string,
+                        getValidationMessage(
+                          form.formState.errors.internal_notes?.message,
+                        ) ?? "",
                       )}
                     </Caption>
                   )}

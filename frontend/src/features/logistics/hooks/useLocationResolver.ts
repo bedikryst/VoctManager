@@ -7,7 +7,19 @@
 
 import { useMemo, useCallback } from "react";
 import { useLocations } from "../api/logistics.queries";
-import type { LocationDto } from "../types/logistics.dto";
+import type {
+  LocationDto,
+  LocationReference,
+  LocationReferenceDto,
+} from "../types/logistics.dto";
+
+const isLocationReferenceObject = (
+  value: LocationReference | unknown,
+): value is LocationDto | LocationReferenceDto =>
+  typeof value === "object" &&
+  value !== null &&
+  "id" in value &&
+  typeof value.id === "string";
 
 export const useLocationResolver = () => {
   const { data: locations = [] } = useLocations();
@@ -19,13 +31,17 @@ export const useLocationResolver = () => {
   }, [locations]);
 
   const resolveLocation = useCallback(
-    (locationRef: any): LocationDto | null => {
+    (
+      locationRef: LocationReference | null | undefined,
+    ): LocationDto | LocationReferenceDto | null => {
       if (!locationRef) return null;
 
-      const id = typeof locationRef === "object" ? locationRef.id : locationRef;
-      return (
-        locationMap.get(String(id)) ||
-        (typeof locationRef === "object" ? locationRef : null)
+      const id = isLocationReferenceObject(locationRef)
+        ? locationRef.id
+        : locationRef;
+
+      return locationMap.get(String(id)) || (
+        isLocationReferenceObject(locationRef) ? locationRef : null
       );
     },
     [locationMap],
@@ -33,7 +49,7 @@ export const useLocationResolver = () => {
 
   const getLocationName = useCallback(
     (
-      locationRef: string | LocationDto | unknown,
+      locationRef: LocationReference | null | undefined,
       fallback = "Brak lok.",
     ): string => {
       const resolved = resolveLocation(locationRef);

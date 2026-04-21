@@ -27,6 +27,8 @@ export const locationFormSchema = z.object({
 
 export type LocationFormValues = z.infer<typeof locationFormSchema>;
 
+export type LocationCreateDto = LocationFormValues;
+
 export interface LocationDto extends LocationFormValues {
   id: string;
   timezone: string;
@@ -34,6 +36,19 @@ export interface LocationDto extends LocationFormValues {
   created_at: string;
   updated_at: string;
 }
+
+export interface LocationReferenceDto {
+  id: string;
+  name?: string;
+  category?: LocationCategory | string;
+  timezone?: string;
+  formatted_address?: string | null;
+  google_place_id?: string | null;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+}
+
+export type LocationReference = string | LocationDto | LocationReferenceDto;
 
 export interface LocationUpdateDto extends Partial<LocationFormValues> {
   is_active?: boolean;

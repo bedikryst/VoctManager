@@ -102,7 +102,7 @@ export const LocationsManager = (): React.JSX.Element => {
 
   // Architektura Smart Grouping - kategoryzacja wizualna
   const groupedLocations = useMemo(() => {
-    const groups = {} as Record<string, typeof displayLocations>;
+    const groups: Record<string, typeof displayLocations> = {};
 
     // Inicjalizacja pustych tablic w ustalonej kolejności (aby zachować stały layout)
     FILTER_CATEGORIES.forEach((cat) => {
