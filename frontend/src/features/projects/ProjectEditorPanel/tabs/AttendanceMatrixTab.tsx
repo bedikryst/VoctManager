@@ -1,19 +1,20 @@
 /**
  * @file AttendanceMatrixTab.tsx
- * @description Advanced Attendance Matrix for Directors and Choir Inspectors.
- * Delegates caching and mutation execution to useAttendanceMatrix.
- * Uses aggressive UI memoization to prevent cascading structural re-renders.
+ * @description Advanced attendance matrix for directors and managers.
+ * Delegates caching and mutation execution to useAttendanceMatrix and keeps location labels type-safe.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/AttendanceMatrixTab
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, Check, X, Clock, ShieldAlert, Users } from "lucide-react";
+import { Check, Clock, Loader2, ShieldAlert, Users, X } from "lucide-react";
+
 import {
   formatLocalizedDate,
   formatLocalizedTime,
 } from "@/shared/lib/time/intl";
+import { getLocationLabel } from "../../lib/projectPresentation";
 import {
   useAttendanceMatrix,
   type AttendanceRecord,
@@ -40,9 +41,9 @@ const STATUS_DEF: Record<
       "bg-stone-50 hover:bg-stone-100 text-stone-200 border border-stone-200/60",
     icon: (
       <span
-        className="w-1.5 h-1.5 rounded-full bg-stone-300"
+        className="h-1.5 w-1.5 rounded-full bg-stone-300"
         aria-hidden="true"
-      ></span>
+      />
     ),
   },
   PRESENT: {
@@ -76,9 +77,8 @@ const STATUS_DEF: Record<
 };
 
 type StatusKey = NonNullable<AttendanceStatus> | "null";
-const isStatusKey = (key: string): key is StatusKey => {
-  return key in STATUS_DEF;
-};
+
+const isStatusKey = (key: string): key is StatusKey => key in STATUS_DEF;
 
 const MatrixCell = React.memo(
   ({
@@ -92,25 +92,23 @@ const MatrixCell = React.memo(
     participationId: string;
     record: AttendanceRecord | undefined;
     onToggle: (
-      rId: string,
-      pId: string,
-      rec: AttendanceRecord | undefined,
+      rehearsalId: string,
+      participationId: string,
+      record: AttendanceRecord | undefined,
     ) => void;
     isMutating: boolean;
   }) => {
     const { t } = useTranslation();
     const currentStatus = record?.status || null;
     const rawKey = String(currentStatus);
-    const config = isStatusKey(rawKey)
-      ? STATUS_DEF[rawKey]
-      : STATUS_DEF["null"];
+    const config = isStatusKey(rawKey) ? STATUS_DEF[rawKey] : STATUS_DEF.null;
 
     return (
-      <td className="p-1 border-b border-l border-stone-200/60 text-center relative group">
+      <td className="relative border-b border-l border-stone-200/60 p-1 text-center group">
         <button
           onClick={() => onToggle(rehearsalId, participationId, record)}
           disabled={isMutating}
-          className={`w-7 h-7 mx-auto rounded-md flex items-center justify-center transition-all duration-200 active:scale-90 disabled:opacity-50 disabled:active:scale-100 ${config.color}`}
+          className={`mx-auto flex h-7 w-7 items-center justify-center rounded-md transition-all duration-200 active:scale-90 disabled:opacity-50 disabled:active:scale-100 ${config.color}`}
           title={t(config.labelKey, config.defaultLabel)}
           aria-label={t(config.labelKey, config.defaultLabel)}
         >
@@ -127,16 +125,16 @@ const MatrixCell = React.memo(
       </td>
     );
   },
-  (prevProps, nextProps) =>
-    prevProps.record?.status === nextProps.record?.status &&
-    prevProps.isMutating === nextProps.isMutating,
+  (previousProps, nextProps) =>
+    previousProps.record?.status === nextProps.record?.status &&
+    previousProps.isMutating === nextProps.isMutating,
 );
 
 MatrixCell.displayName = "MatrixCell";
 
-export default function AttendanceMatrixTab({
+export const AttendanceMatrixTab = ({
   projectId,
-}: AttendanceMatrixTabProps): React.JSX.Element {
+}: AttendanceMatrixTabProps): React.JSX.Element => {
   const { t } = useTranslation();
   const {
     isLoading,
@@ -149,7 +147,7 @@ export default function AttendanceMatrixTab({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <Loader2
           size={32}
           className="animate-spin text-brand opacity-50"
@@ -160,10 +158,10 @@ export default function AttendanceMatrixTab({
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-24">
-      <div className="bg-white border border-stone-200/60 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="mx-auto max-w-7xl space-y-6 pb-24">
+      <div className="flex flex-col justify-between gap-6 rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm md:flex-row md:items-center">
         <div>
-          <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2 mb-2">
+          <h2 className="mb-2 flex items-center gap-2 text-xl font-bold tracking-tight text-stone-900">
             <Users className="text-brand" size={20} aria-hidden="true" />
             {t(
               "projects.matrix.header.title",
@@ -178,17 +176,17 @@ export default function AttendanceMatrixTab({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3 bg-stone-50 p-3 rounded-xl border border-stone-100">
-          <div className="w-full text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-1">
+        <div className="flex flex-wrap gap-3 rounded-xl border border-stone-100 bg-stone-50 p-3">
+          <div className="mb-1 w-full text-[9px] font-bold uppercase tracking-widest text-stone-400">
             {t("projects.matrix.legend.title", "Status frekwencji")}
           </div>
           {Object.entries(STATUS_DEF).map(([key, config]) => (
             <div
               key={key}
-              className="flex items-center gap-1.5 text-xs text-stone-600 font-medium"
+              className="flex items-center gap-1.5 text-xs font-medium text-stone-600"
             >
               <div
-                className={`w-4 h-4 rounded-md flex items-center justify-center ${config.color}`}
+                className={`flex h-4 w-4 items-center justify-center rounded-md ${config.color}`}
                 aria-hidden="true"
               >
                 {config.icon}
@@ -199,32 +197,32 @@ export default function AttendanceMatrixTab({
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200/80 rounded-2xl shadow-sm overflow-x-auto scrollbar-hide">
-        <table className="w-full text-sm text-left border-collapse min-w-[800px]">
-          <thead className="bg-stone-50/80 text-[10px] font-bold uppercase tracking-widest text-stone-500 sticky top-0 z-10 backdrop-blur-xl">
+      <div className="overflow-x-auto rounded-2xl border border-stone-200/80 bg-white shadow-sm scrollbar-hide">
+        <table className="min-w-[800px] w-full border-collapse text-left text-sm">
+          <thead className="sticky top-0 z-10 bg-stone-50/80 text-[10px] font-bold uppercase tracking-widest text-stone-500 backdrop-blur-xl">
             <tr>
-              <th className="p-4 border-b border-stone-200/80 min-w-[220px] sticky left-0 bg-stone-50/95 backdrop-blur-xl z-20 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
+              <th className="sticky left-0 z-20 min-w-[220px] border-b border-stone-200/80 bg-stone-50/95 p-4 shadow-[1px_0_0_rgba(0,0,0,0.05)] backdrop-blur-xl">
                 {t("projects.matrix.table.rehearsal_date", "Próba / Data")}
               </th>
-              {enrichedParticipations.map((part) => (
+              {enrichedParticipations.map((participation) => (
                 <th
-                  key={part.id}
-                  className="p-4 border-b border-l border-stone-200/80 text-center min-w-[60px]"
+                  key={participation.id}
+                  className="min-w-[60px] border-b border-l border-stone-200/80 p-4 text-center"
                 >
                   <div className="flex flex-col items-center gap-1">
                     <span
-                      className="truncate max-w-[80px] font-bold text-stone-700"
-                      title={part.artistData.last_name}
+                      className="max-w-[80px] truncate font-bold text-stone-700"
+                      title={participation.artistData.last_name}
                     >
-                      {part.artistData.last_name}
+                      {participation.artistData.last_name}
                     </span>
                     <span className="text-[9px] text-stone-400">
-                      {part.artistData.first_name}
+                      {participation.artistData.first_name}
                     </span>
                   </div>
                 </th>
               ))}
-              <th className="p-4 border-b border-l border-stone-200/80 text-center min-w-[80px] text-brand">
+              <th className="min-w-[80px] border-b border-l border-stone-200/80 p-4 text-center text-brand">
                 {t("projects.matrix.table.rate", "Frekwencja")}
               </th>
             </tr>
@@ -234,7 +232,7 @@ export default function AttendanceMatrixTab({
               <tr>
                 <td
                   colSpan={enrichedParticipations.length + 2}
-                  className="py-12 text-center text-stone-400 italic text-sm"
+                  className="py-12 text-center text-sm italic text-stone-400"
                 >
                   {t(
                     "projects.matrix.empty.rehearsals",
@@ -249,7 +247,7 @@ export default function AttendanceMatrixTab({
                 <tr>
                   <td
                     colSpan={projectRehearsals.length + 2}
-                    className="py-12 text-center text-stone-400 italic text-sm"
+                    className="py-12 text-center text-sm italic text-stone-400"
                   >
                     {t(
                       "projects.matrix.empty.cast",
@@ -259,27 +257,34 @@ export default function AttendanceMatrixTab({
                 </tr>
               )}
 
-            {projectRehearsals.map((reh) => {
+            {projectRehearsals.map((rehearsal) => {
               let presentCount = 0;
               let totalAssigned = 0;
+              const rehearsalLocationLabel = getLocationLabel(rehearsal.location);
 
               return (
-                <React.Fragment key={reh.id}>
+                <React.Fragment key={rehearsal.id}>
                   {(() => {
-                    enrichedParticipations.forEach((part) => {
+                    enrichedParticipations.forEach((participation) => {
                       const isInvited =
-                        reh.invited_participations?.length === 0 ||
-                        reh.invited_participations?.includes(String(part.id));
-                      if (!isInvited) return;
+                        rehearsal.invited_participations?.length === 0 ||
+                        rehearsal.invited_participations?.includes(
+                          String(participation.id),
+                        );
 
-                      totalAssigned++;
-                      const cellKey = `${reh.id}-${part.id}`;
+                      if (!isInvited) {
+                        return;
+                      }
+
+                      totalAssigned += 1;
+
+                      const cellKey = `${rehearsal.id}-${participation.id}`;
                       const record = attendanceMap.get(cellKey);
                       if (
                         record?.status === "PRESENT" ||
                         record?.status === "LATE"
                       ) {
-                        presentCount++;
+                        presentCount += 1;
                       }
                     });
 
@@ -289,64 +294,65 @@ export default function AttendanceMatrixTab({
                         : 0;
 
                     return (
-                      <tr className="hover:bg-blue-50/30 transition-colors group">
-                        <td className="p-4 font-medium text-stone-900 sticky left-0 bg-white group-hover:bg-blue-50/30 transition-colors z-10 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
+                      <tr className="group transition-colors hover:bg-blue-50/30">
+                        <td className="sticky left-0 z-10 bg-white p-4 font-medium text-stone-900 shadow-[1px_0_0_rgba(0,0,0,0.05)] transition-colors group-hover:bg-blue-50/30">
                           <div className="flex flex-col">
                             <span className="text-sm font-bold text-brand">
-                              {formatLocalizedDate(reh.date_time, {
+                              {formatLocalizedDate(rehearsal.date_time, {
                                 weekday: "short",
                                 day: "2-digit",
                                 month: "short",
                               })}{" "}
-                              {formatLocalizedTime(reh.date_time, {
+                              {formatLocalizedTime(rehearsal.date_time, {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
                             </span>
-                            <span className="text-[10px] text-stone-400 font-medium truncate max-w-[200px]">
-                              {reh.location} {reh.focus && `• ${reh.focus}`}
+                            <span className="max-w-[200px] truncate text-[10px] font-medium text-stone-400">
+                              {rehearsalLocationLabel}
+                              {rehearsal.focus ? ` • ${rehearsal.focus}` : ""}
                             </span>
                           </div>
                         </td>
 
-                        {enrichedParticipations.map((part) => {
+                        {enrichedParticipations.map((participation) => {
                           const isInvited =
-                            reh.invited_participations?.length === 0 ||
-                            reh.invited_participations?.includes(
-                              String(part.id),
+                            rehearsal.invited_participations?.length === 0 ||
+                            rehearsal.invited_participations?.includes(
+                              String(participation.id),
                             );
 
                           if (!isInvited) {
                             return (
                               <td
-                                key={`empty-${reh.id}-${part.id}`}
-                                className="p-1 border-b border-l border-stone-200/60 bg-stone-50/50"
+                                key={`empty-${rehearsal.id}-${participation.id}`}
+                                className="border-b border-l border-stone-200/60 bg-stone-50/50 p-1"
                               >
                                 <div
-                                  className="w-full h-full flex items-center justify-center opacity-20"
+                                  className="flex h-full w-full items-center justify-center opacity-20"
                                   title={t(
                                     "projects.matrix.not_invited",
                                     "Nie dotyczy",
                                   )}
                                 >
                                   <div
-                                    className="w-6 h-px bg-stone-400 rotate-45"
+                                    className="h-px w-6 rotate-45 bg-stone-400"
                                     aria-hidden="true"
-                                  ></div>
+                                  />
                                 </div>
                               </td>
                             );
                           }
 
-                          const cellKey = `${reh.id}-${part.id}`;
+                          const cellKey = `${rehearsal.id}-${participation.id}`;
                           const record = attendanceMap.get(cellKey);
                           const isMutating = mutatingCells.has(cellKey);
 
                           return (
                             <MatrixCell
                               key={cellKey}
-                              rehearsalId={reh.id}
-                              participationId={part.id}
+                              rehearsalId={rehearsal.id}
+                              participationId={participation.id}
                               record={record}
                               onToggle={handleToggleStatus}
                               isMutating={isMutating}
@@ -354,14 +360,14 @@ export default function AttendanceMatrixTab({
                           );
                         })}
 
-                        <td className="p-4 border-b border-l border-stone-200/60 text-center">
+                        <td className="border-b border-l border-stone-200/60 p-4 text-center">
                           <span
-                            className={`text-[10px] font-bold antialiased tracking-widest px-2.5 py-1.5 rounded-lg border ${
+                            className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold tracking-widest ${
                               attendanceRate >= 80
-                                ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                                ? "border-emerald-100 bg-emerald-50 text-emerald-700"
                                 : attendanceRate >= 50
-                                  ? "bg-orange-50 border-orange-100 text-orange-700"
-                                  : "bg-red-50 border-red-100 text-red-700"
+                                  ? "border-orange-100 bg-orange-50 text-orange-700"
+                                  : "border-red-100 bg-red-50 text-red-700"
                             }`}
                           >
                             {attendanceRate}%
@@ -378,4 +384,4 @@ export default function AttendanceMatrixTab({
       </div>
     </div>
   );
-}
+};

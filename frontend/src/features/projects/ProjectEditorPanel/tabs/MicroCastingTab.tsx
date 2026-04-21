@@ -37,9 +37,9 @@ interface MicroCastingTabProps {
   projectId: string;
 }
 
-export default function MicroCastingTab({
+export const MicroCastingTab = ({
   projectId,
-}: MicroCastingTabProps): React.JSX.Element {
+}: MicroCastingTabProps): React.JSX.Element => {
   const { t } = useTranslation();
 
   const VOICE_GROUPS = [
@@ -405,4 +405,4 @@ export default function MicroCastingTab({
       </div>
     </div>
   );
-}
+};

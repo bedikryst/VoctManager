@@ -1,7 +1,7 @@
 /**
  * @file RehearsalsWidget.tsx
  * @description Dashboard widget displaying upcoming rehearsals, progress, and absence alerts.
- * Implements context-aware timezone formatting.
+ * Implements typed timezone-aware ordering and status summaries.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/widgets/RehearsalsWidget
  */
@@ -13,10 +13,16 @@ import { Calendar, UserMinus } from "lucide-react";
 import type { Project, Rehearsal } from "@/shared/types";
 import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-
-// Import global formatters and components
+import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import {
+  compareProjectDateAsc,
+  isFutureProjectDate,
+  isPastProjectDate,
+} from "../../lib/projectPresentation";
 
 interface RehearsalsWidgetProps {
   project: Project;
@@ -27,36 +33,41 @@ interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;
 }
 
-export default function RehearsalsWidget({
+export const RehearsalsWidget = ({
   project,
   onEdit,
-}: RehearsalsWidgetProps): React.JSX.Element {
+}: RehearsalsWidgetProps): React.JSX.Element => {
   const { t } = useTranslation();
   const {
     rehearsals: projectRehearsals,
     participations: projectParticipations,
   } = useProjectData(String(project.id));
 
-  const sortedRehearsals = useMemo<EnrichedRehearsal[]>(() => {
-    return [...projectRehearsals].sort(
-      (a, b) =>
-        new Date(a.date_time).getTime() - new Date(b.date_time).getTime(),
-    );
-  }, [projectRehearsals]);
+  const sortedRehearsals = useMemo<EnrichedRehearsal[]>(
+    () =>
+      [...projectRehearsals].sort((left, right) =>
+        compareProjectDateAsc(left.date_time, right.date_time),
+      ),
+    [projectRehearsals],
+  );
 
-  const pastRehearsals = useMemo<EnrichedRehearsal[]>(() => {
-    const now = new Date();
-    return sortedRehearsals.filter((r) => new Date(r.date_time) < now);
-  }, [sortedRehearsals]);
+  const pastRehearsals = useMemo<EnrichedRehearsal[]>(
+    () =>
+      sortedRehearsals.filter((rehearsal) =>
+        isPastProjectDate(rehearsal.date_time),
+      ),
+    [sortedRehearsals],
+  );
 
-  const upcomingRehearsals = useMemo<EnrichedRehearsal[]>(() => {
-    const now = new Date();
-    return sortedRehearsals
-      .filter((r) => new Date(r.date_time) >= now)
-      .slice(0, 3);
-  }, [sortedRehearsals]);
+  const upcomingRehearsals = useMemo<EnrichedRehearsal[]>(
+    () =>
+      sortedRehearsals
+        .filter((rehearsal) => isFutureProjectDate(rehearsal.date_time))
+        .slice(0, 3),
+    [sortedRehearsals],
+  );
 
-  const progressPercentage: number =
+  const progressPercentage =
     sortedRehearsals.length > 0
       ? (pastRehearsals.length / sortedRehearsals.length) * 100
       : 0;
@@ -65,122 +76,147 @@ export default function RehearsalsWidget({
     <GlassCard
       variant="solid"
       onClick={onEdit}
-      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`}
+      className={`flex min-h-[220px] flex-col justify-between p-5 transition-all ${
+        onEdit ? "cursor-pointer hover:border-ethereal-gold/30" : ""
+      }`}
       role={onEdit ? "button" : "region"}
       aria-label={t(
         "projects.rehearsals.aria_label",
         "Zarządzaj próbami projektu",
       )}
     >
-      <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-brand transition-colors">
-          <Calendar
-            size={16}
-            className="text-brand group-hover:scale-110 transition-transform"
-            aria-hidden="true"
-          />
-          {t("projects.rehearsals.upcoming", "Najbliższe Próby")}
-        </h4>
-        {onEdit && (
-          <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-brand opacity-0 group-hover:opacity-100 transition-opacity">
-            {t("common.actions.edit", "Edytuj")}
-          </button>
-        )}
-      </div>
+      <SectionHeader
+        title={t("projects.rehearsals.upcoming", "Najbliższe Próby")}
+        icon={<Calendar size={16} aria-hidden="true" />}
+        className="mb-0 pb-3"
+      />
 
       {sortedRehearsals.length > 0 ? (
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
           <div className="mb-4">
-            <div className="flex justify-between text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-2">
-              <span>{t("projects.rehearsals.progress", "Postęp")}</span>
-              <span>
+            <div className="mb-2 flex justify-between">
+              <Caption
+                color="muted"
+                weight="bold"
+                className="uppercase tracking-[0.16em]"
+              >
+                {t("projects.rehearsals.progress", "Postęp")}
+              </Caption>
+              <Caption color="muted" weight="bold">
                 {pastRehearsals.length} / {sortedRehearsals.length}
-              </span>
+              </Caption>
             </div>
-            <div className="w-full bg-stone-100 rounded-full h-1.5">
+            <div className="h-1.5 w-full rounded-full bg-ethereal-incense/10">
               <div
-                className="bg-brand h-1.5 rounded-full transition-all duration-500 ease-out"
+                className="h-1.5 rounded-full bg-ethereal-gold transition-all duration-500 ease-out"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
           </div>
 
-          <ul className="space-y-3 flex-1 mt-2">
-            {upcomingRehearsals.map((reh, index) => {
-              const invitedCount: number =
-                reh.invited_participations?.length || 0;
-              const isTutti: boolean =
+          <ul className="mt-2 flex-1 space-y-3">
+            {upcomingRehearsals.map((rehearsal, index) => {
+              const invitedCount = rehearsal.invited_participations?.length || 0;
+              const isTutti =
                 invitedCount === 0 ||
                 invitedCount === projectParticipations.length;
-              const absences = reh.absent_count || 0;
+              const absences = rehearsal.absent_count || 0;
 
               return (
                 <li
-                  key={reh.id || `reh-${index}`}
-                  className="text-[11px] text-stone-600 flex flex-col gap-1 border-b border-stone-50 last:border-0 pb-2 last:pb-0"
+                  key={rehearsal.id || `reh-${index}`}
+                  className="border-b border-ethereal-incense/10 pb-3 last:border-0 last:pb-0"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-2.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
                       <div
-                        className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 shadow-sm ${reh.is_mandatory ? "bg-brand" : "bg-orange-400"}`}
+                        className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                          rehearsal.is_mandatory
+                            ? "bg-ethereal-gold"
+                            : "bg-ethereal-crimson"
+                        }`}
                         aria-hidden="true"
                       />
-                      <div className="flex flex-col">
-                        {/* Zmodyfikowana struktura czasu dla Widgetu */}
-                        <span className="flex flex-wrap items-center gap-1">
-                          <strong className="text-stone-800 flex items-center gap-1">
+
+                      <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Text as="span" size="sm" weight="medium">
                             {formatLocalizedDate(
-                              reh.date_time,
+                              rehearsal.date_time,
                               { day: "numeric", month: "short" },
                               undefined,
-                              reh.timezone,
+                              rehearsal.timezone,
                             )}
-                            <span className="text-stone-300 font-normal mx-0.5">
-                              •
-                            </span>
-                            <DualTimeDisplay
-                              value={reh.date_time}
-                              timeZone={reh.timezone}
-                              containerClassName="inline-flex items-center gap-1"
-                              primaryTimeClassName="inline-flex items-center gap-1"
-                              localTimeClassName="text-[9px] text-stone-400 font-medium normal-case tracking-normal pl-1"
-                            />
-                          </strong>
-                          <span className="text-stone-400 ml-1">
-                            ({reh.location})
-                          </span>
-                        </span>
+                          </Text>
+                          <Caption color="muted">•</Caption>
+                          <DualTimeDisplay
+                            value={rehearsal.date_time}
+                            timeZone={rehearsal.timezone}
+                            containerClassName="inline-flex items-center gap-1"
+                            primaryTimeClassName="inline-flex items-center gap-1 text-sm font-medium text-ethereal-ink"
+                            localTimeClassName="pl-1 text-[10px] font-medium normal-case tracking-normal text-ethereal-graphite"
+                          />
+                        </div>
 
-                        {reh.focus && (
-                          <span className="text-[10px] text-stone-500 italic line-clamp-1 mt-0.5">
-                            {reh.focus}
-                          </span>
+                        {rehearsal.location && (
+                          <LocationPreview
+                            locationRef={rehearsal.location}
+                            variant="minimal"
+                            className="max-w-[240px] justify-start"
+                          />
+                        )}
+
+                        {rehearsal.focus?.trim() && (
+                          <Text color="graphite" className="text-pretty italic">
+                            {rehearsal.focus}
+                          </Text>
                         )}
 
                         {absences > 0 && (
-                          <span className="flex items-center gap-1 text-[9px] font-bold antialiased uppercase tracking-widest text-red-500 mt-1">
-                            <UserMinus size={10} aria-hidden="true" />{" "}
-                            {t(
-                              "projects.rehearsals.absences_reported",
-                              "Zgłoszono braki:",
-                            )}{" "}
-                            {absences}
-                          </span>
+                          <div className="mt-1 flex items-center gap-1 text-ethereal-crimson">
+                            <UserMinus size={10} aria-hidden="true" />
+                            <Caption
+                              color="crimson"
+                              weight="bold"
+                              className="uppercase tracking-[0.16em]"
+                            >
+                              {t(
+                                "projects.rehearsals.absences_reported",
+                                "Zgłoszono braki:",
+                              )}{" "}
+                              {absences}
+                            </Caption>
+                          </div>
                         )}
                       </div>
                     </div>
+
                     <div className="flex flex-col items-end gap-1">
-                      <span
-                        className={`text-[8px] uppercase tracking-widest font-bold antialiased px-1.5 py-0.5 rounded ${isTutti ? "bg-emerald-50 text-emerald-700" : "bg-purple-50 text-purple-700"}`}
+                      <div
+                        className={`rounded-full px-2 py-1 ${
+                          isTutti
+                            ? "bg-ethereal-sage/15 text-ethereal-sage"
+                            : "bg-ethereal-amethyst/10 text-ethereal-amethyst"
+                        }`}
                       >
-                        {isTutti
-                          ? t("projects.rehearsals.tutti", "TUTTI")
-                          : t("projects.rehearsals.sectional", "SEKCYJNA")}
-                      </span>
-                      {!reh.is_mandatory && (
-                        <span className="text-[8px] text-orange-600 font-bold antialiased uppercase tracking-widest">
+                        <Caption
+                          weight="bold"
+                          color="inherit"
+                          className="uppercase tracking-[0.16em]"
+                        >
+                          {isTutti
+                            ? t("projects.rehearsals.tutti", "TUTTI")
+                            : t("projects.rehearsals.sectional", "SEKCYJNA")}
+                        </Caption>
+                      </div>
+                      {!rehearsal.is_mandatory && (
+                        <Caption
+                          color="crimson"
+                          weight="bold"
+                          className="uppercase tracking-[0.16em]"
+                        >
                           {t("projects.rehearsals.optional", "Opcjonalna")}
-                        </span>
+                        </Caption>
                       )}
                     </div>
                   </div>
@@ -190,13 +226,13 @@ export default function RehearsalsWidget({
           </ul>
         </div>
       ) : (
-        <p className="text-xs text-stone-400 italic flex-1 flex items-center justify-center py-4">
-          {t(
-            "projects.rehearsals.empty.no_rehearsals",
-            "Brak zaplanowanych prób.",
-          )}
-        </p>
+        <Text
+          color="muted"
+          className="flex flex-1 items-center justify-center py-4"
+        >
+          {t("projects.rehearsals.empty.no_rehearsals", "Brak zaplanowanych prób.")}
+        </Text>
       )}
     </GlassCard>
   );
-}
+};

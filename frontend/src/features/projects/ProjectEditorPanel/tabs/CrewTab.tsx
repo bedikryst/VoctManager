@@ -21,9 +21,9 @@ interface CrewTabProps {
   projectId: string;
 }
 
-export default function CrewTab({
+export const CrewTab = ({
   projectId,
-}: CrewTabProps): React.JSX.Element | null {
+}: CrewTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const {
     isLoading,
@@ -184,4 +184,4 @@ export default function CrewTab({
       </GlassCard>
     </div>
   );
-}
+};

@@ -1,20 +1,19 @@
 /**
  * @file ProjectDashboard.tsx
- * @description Master Controller for the Event & Production Management module.
- * Completely eliminates legacy Context API. Child components fetch their own data
- * instantly via React Query structural sharing.
+ * @description Master controller for the Project operations dashboard.
+ * Keeps the page shell declarative and delegates data orchestration to feature hooks.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectDashboard
  */
 
-import React from "react";
+import React, { memo, useDeferredValue } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Plus, Briefcase, Layers } from "lucide-react";
+import { Layers, Plus } from "lucide-react";
 
 import { useProjectDashboard } from "./hooks/useProjectDashboard";
-import ProjectCard from "./ProjectCard/ProjectCard";
-import ProjectEditorPanel from "./ProjectEditorPanel/ProjectEditorPanel";
+import { ProjectCard } from "./ProjectCard/ProjectCard";
+import { ProjectEditorPanel } from "./ProjectEditorPanel/ProjectEditorPanel";
 import { DashboardFilterMenu } from "./components/DashboardFilterMenu";
 
 import {
@@ -31,9 +30,9 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 
-const MemoizedProjectCard = React.memo(ProjectCard);
+const MemoizedProjectCard = memo(ProjectCard);
 
-export default function ProjectDashboard(): React.JSX.Element {
+export const ProjectDashboard = (): React.JSX.Element => {
   const { t } = useTranslation();
   const {
     isLoading,
@@ -49,14 +48,17 @@ export default function ProjectDashboard(): React.JSX.Element {
     isDeleting,
     openPanel,
     closePanel,
+    handleProjectPersisted,
     executeDelete,
   } = useProjectDashboard();
 
-  useBodyScrollLock(isPanelOpen || projectToDelete !== null);
+  const deferredProjects = useDeferredValue(filteredProjects);
+
+  useBodyScrollLock(isPanelOpen);
 
   return (
     <PageTransition>
-      <div className="space-y-6 relative cursor-default pb-24 max-w-6xl mx-auto px-4 sm:px-0">
+      <div className="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-24 sm:px-0">
         <PageHeader
           roleText={t("projects.dashboard.header_badge", "Centrum Dowodzenia")}
           title={t("projects.dashboard.header_title_1", "Wydarzenia i")}
@@ -73,6 +75,17 @@ export default function ProjectDashboard(): React.JSX.Element {
           size="dashboard"
         />
 
+        <div className="md:hidden">
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={() => openPanel(null)}
+            leftIcon={<Plus size={16} aria-hidden="true" />}
+          >
+            {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
+          </Button>
+        </div>
+
         <DashboardFilterMenu
           currentFilter={listFilter}
           onFilterChange={setListFilter}
@@ -80,40 +93,59 @@ export default function ProjectDashboard(): React.JSX.Element {
 
         <StaggeredBentoContainer className="grid grid-cols-1 gap-6">
           {isLoading ? (
-            <EtherealLoader className="h-64" />
-          ) : filteredProjects.length > 0 ? (
-            filteredProjects.map((project, idx) => (
+            <StaggeredBentoItem>
+              <EtherealLoader className="h-64" />
+            </StaggeredBentoItem>
+          ) : deferredProjects.length > 0 ? (
+            deferredProjects.map((project, index) => (
               <StaggeredBentoItem key={project.id}>
                 <MemoizedProjectCard
                   project={project}
-                  index={idx}
+                  index={index}
                   onEdit={openPanel}
                   onDelete={setProjectToDelete}
                 />
               </StaggeredBentoItem>
             ))
           ) : (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <GlassCard className="p-16 flex flex-col items-center justify-center text-center">
-                <Layers
-                  size={48}
-                  className="mb-4 text-ethereal-graphite opacity-50"
-                  aria-hidden="true"
-                />
-                <Eyebrow color="muted" className="mb-2">
-                  {t(
-                    "projects.dashboard.empty_title",
-                    "Brak projektów w tym widoku",
-                  )}
-                </Eyebrow>
-                <Text className="max-w-sm">
-                  {t(
-                    "projects.dashboard.empty_desc",
-                    'Rozpocznij planowanie nowego wydarzenia, klikając przycisk "Nowy Projekt" powyżej.',
-                  )}
-                </Text>
-              </GlassCard>
-            </motion.div>
+            <StaggeredBentoItem>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <GlassCard
+                  variant="light"
+                  padding="lg"
+                  isHoverable={false}
+                  className="flex flex-col items-center justify-center gap-4 text-center"
+                >
+                  <div
+                    className="rounded-full border border-ethereal-incense/15 bg-ethereal-alabaster/70 p-4 text-ethereal-graphite/55"
+                    aria-hidden="true"
+                  >
+                    <Layers size={32} />
+                  </div>
+                  <div className="space-y-2">
+                    <Eyebrow color="muted">
+                      {t(
+                        "projects.dashboard.empty_title",
+                        "Brak projektów w tym widoku",
+                      )}
+                    </Eyebrow>
+                    <Text className="mx-auto max-w-md" color="graphite">
+                      {t(
+                        "projects.dashboard.empty_desc",
+                        "Rozpocznij planowanie nowego wydarzenia, korzystając z akcji tworzenia projektu.",
+                      )}
+                    </Text>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    onClick={() => openPanel(null)}
+                    leftIcon={<Plus size={16} aria-hidden="true" />}
+                  >
+                    {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
+                  </Button>
+                </GlassCard>
+              </motion.div>
+            </StaggeredBentoItem>
           )}
         </StaggeredBentoContainer>
 
@@ -123,14 +155,15 @@ export default function ProjectDashboard(): React.JSX.Element {
           project={editingProject}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          onProjectPersisted={handleProjectPersisted}
         />
 
         <ConfirmModal
-          isOpen={!!projectToDelete}
+          isOpen={projectToDelete !== null}
           title={t("projects.dashboard.delete_modal_title", "Usunąć projekt?")}
           description={t(
             "projects.dashboard.delete_modal_desc",
-            "Ta akcja jest nieodwracalna. Spowoduje usunięcie wszystkich powiązanych prób, przypisań ekipy i obsady dla tego projektu.",
+            "Ta akcja jest nieodwracalna i usunie również powiązane próby, obsadę oraz przypisania ekipy.",
           )}
           onConfirm={executeDelete}
           onCancel={() => setProjectToDelete(null)}
@@ -139,4 +172,4 @@ export default function ProjectDashboard(): React.JSX.Element {
       </div>
     </PageTransition>
   );
-}
+};

@@ -31,6 +31,43 @@ export interface ProjectFormData {
   description: string;
 }
 
+const normalizeRunSheetItem = (
+  item: RunSheetItem,
+  fallbackId: string,
+): RunSheetItem => ({
+  ...item,
+  id: item.id ? String(item.id) : fallbackId,
+  time: typeof item.time === "string" ? item.time : "",
+  title: typeof item.title === "string" ? item.title : "",
+  description: typeof item.description === "string" ? item.description : "",
+});
+
+const getProjectLocationId = (project: Project | null | undefined): string | null => {
+  if (!project?.location) {
+    return null;
+  }
+
+  if (typeof project.location === "string") {
+    return project.location;
+  }
+
+  return project.location.id;
+};
+
+const getProjectConductorId = (
+  project: Project | null | undefined,
+): string | null => {
+  if (!project?.conductor) {
+    return null;
+  }
+
+  if (typeof project.conductor === "string") {
+    return project.conductor;
+  }
+
+  return project.conductor.id;
+};
+
 const toZonedInputString = (
   dateString?: string | null,
   timezone: string = "Europe/Warsaw",
@@ -60,11 +97,11 @@ export const useDetailsForm = (
 
   const [formData, setFormData] = useState<ProjectFormData>({
     title: project?.title || "",
-    timezone: project?.timezone || "Europe/Warsaw", // Domyślnie dla nowych projektów
+    timezone: project?.timezone || "Europe/Warsaw",
     date_time: toZonedInputString(project?.date_time, project?.timezone),
     call_time: toZonedInputString(project?.call_time, project?.timezone),
-    location_id: project?.location?.id || null,
-    conductor: project?.conductor_name || null,
+    location_id: getProjectLocationId(project),
+    conductor: getProjectConductorId(project),
     dress_code_male: project?.dress_code_male || "",
     dress_code_female: project?.dress_code_female || "",
     spotify_playlist_url: project?.spotify_playlist_url || "",
@@ -73,10 +110,12 @@ export const useDetailsForm = (
 
   const [runSheet, setRunSheet] = useState<RunSheetItem[]>(() => {
     const initialSheet = project?.run_sheet || [];
-    return initialSheet.map((item, index) => ({
-      ...item,
-      id: item.id ? String(item.id) : `runsheet-init-${index}-${Date.now()}`,
-    }));
+    return initialSheet.map((item, index) =>
+      normalizeRunSheetItem(
+        item,
+        `runsheet-init-${index}-${Date.now()}`,
+      ),
+    );
   });
 
   const resetFormToProject = useCallback((source: Project) => {
@@ -86,18 +125,20 @@ export const useDetailsForm = (
       timezone: source.timezone || "Europe/Warsaw",
       date_time: toZonedInputString(source.date_time, source.timezone),
       call_time: toZonedInputString(source.call_time, source.timezone),
-      location_id: project?.location?.id || null,
-      conductor: project?.conductor_name || null,
+      location_id: getProjectLocationId(source),
+      conductor: getProjectConductorId(source),
       dress_code_male: source.dress_code_male || "",
       dress_code_female: source.dress_code_female || "",
       spotify_playlist_url: source.spotify_playlist_url || "",
       description: source.description || "",
     });
     setRunSheet(
-      (source.run_sheet || []).map((item, index) => ({
-        ...item,
-        id: item.id ? String(item.id) : `runsheet-init-${index}-${Date.now()}`,
-      })),
+      (source.run_sheet || []).map((item, index) =>
+        normalizeRunSheetItem(
+          item,
+          `runsheet-init-${index}-${Date.now()}`,
+        ),
+      ),
     );
   }, []);
 
@@ -125,21 +166,21 @@ export const useDetailsForm = (
         toZonedInputString(baseline.date_time, baselineTimezone) ||
       formData.call_time !==
         toZonedInputString(baseline.call_time, baselineTimezone) ||
-      formData.location_id !== (baseline.location?.id || null) ||
-      formData.conductor !== (baseline.conductor_name || null) ||
+      formData.location_id !== getProjectLocationId(baseline) ||
+      formData.conductor !== getProjectConductorId(baseline) ||
       formData.dress_code_male !== (baseline.dress_code_male || "") ||
       formData.dress_code_female !== (baseline.dress_code_female || "") ||
       formData.spotify_playlist_url !== (baseline.spotify_playlist_url || "") ||
       formData.description !== (baseline.description || "");
 
     const cleanLocalRunSheet = runSheet.map((item) => ({
-      time: item.time,
-      title: item.title,
+      time: item.time || "",
+      title: item.title || "",
       description: item.description || "",
     }));
     const cleanBaselineRunSheet = (baseline.run_sheet || []).map((item) => ({
-      time: item.time,
-      title: item.title,
+      time: item.time || "",
+      title: item.title || "",
       description: item.description || "",
     }));
 
@@ -174,7 +215,12 @@ export const useDetailsForm = (
     (id: string, field: keyof RunSheetItem, value: string) => {
       setRunSheet((prev) =>
         prev.map((item) =>
-          String(item.id) === id ? { ...item, [field]: value } : item,
+          String(item.id) === id
+            ? normalizeRunSheetItem(
+                { ...item, [field]: value },
+                String(item.id),
+              )
+            : item,
         ),
       );
     },
@@ -195,8 +241,8 @@ export const useDetailsForm = (
 
     try {
       const sanitizedRunSheet = sortedRunSheet.map((item) => ({
-        time: item.time,
-        title: item.title,
+        time: item.time || "",
+        title: item.title || "",
         description: item.description || "",
       }));
 

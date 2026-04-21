@@ -154,9 +154,9 @@ const ArtistCard = React.memo(
 );
 
 ArtistCard.displayName = "ArtistCard";
-export default function CastTab({
+export const CastTab = ({
   projectId,
-}: CastTabProps): React.JSX.Element | null {
+}: CastTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const {
     participations,
@@ -340,4 +340,4 @@ export default function CastTab({
       )}
     </div>
   );
-}
+};

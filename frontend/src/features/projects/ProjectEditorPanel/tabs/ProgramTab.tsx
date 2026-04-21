@@ -44,7 +44,10 @@ import type { Piece } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { useProgramTab, ProgramItem } from "../hooks/useProgramTab";
+import {
+  useProgramTab,
+  type ProgramTabItem,
+} from "../hooks/useProgramTab";
 
 interface ProgramTabProps {
   projectId: string;
@@ -105,10 +108,10 @@ function SortablePieceItem({
   onDelete,
   t,
 }: {
-  item: ProgramItem;
+  item: ProgramTabItem;
   index: number;
   pieceObj?: Piece;
-  onToggleEncore: (i: ProgramItem) => void;
+  onToggleEncore: (item: ProgramTabItem) => void;
   onDelete: (id: string) => void;
   t: TFunction;
 }) {
@@ -215,10 +218,10 @@ function SortablePieceItem({
   );
 }
 
-export default function ProgramTab({
+export const ProgramTab = ({
   projectId,
   onDirtyStateChange,
-}: ProgramTabProps): React.JSX.Element | null {
+}: ProgramTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const {
     programItems,
@@ -478,4 +481,4 @@ export default function ProgramTab({
       </GlassCard>
     </div>
   );
-}
+};

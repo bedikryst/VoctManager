@@ -9,10 +9,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { DragEndEvent } from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 
-import type { Piece } from "@/shared/types";
+import type { Piece, ProgramItem as ProjectProgramItem } from "@/shared/types";
 import {
   useProjectProgram,
   useCreateProgramItem,
@@ -21,7 +21,7 @@ import {
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
 
-export interface ProgramItem {
+export interface ProgramTabItem {
   id: string;
   order: number;
   piece: string;
@@ -29,6 +29,24 @@ export interface ProgramItem {
   piece_title: string;
   is_encore: boolean;
 }
+
+const normalizeProgramItem = (
+  item: ProjectProgramItem,
+  pieces: Piece[],
+): ProgramTabItem => {
+  const pieceId = String(item.piece_id ?? item.piece);
+  const matchedPiece = pieces.find((piece) => String(piece.id) === pieceId);
+
+  return {
+    id: String(item.id),
+    order: item.order,
+    piece: String(item.piece),
+    piece_id: item.piece_id ? String(item.piece_id) : undefined,
+    piece_title:
+      item.piece_title ?? item.title ?? matchedPiece?.title ?? "Untitled piece",
+    is_encore: item.is_encore,
+  };
+};
 
 export const useProgramTab = (
   projectId: string,
@@ -41,20 +59,26 @@ export const useProgramTab = (
   const updateProgramMutation = useUpdateProgramItem(projectId);
   const deleteProgramMutation = useDeleteProgramItem(projectId);
 
-  const [programItems, setProgramItems] = useState<ProgramItem[]>([]);
+  const [programItems, setProgramItems] = useState<ProgramTabItem[]>([]);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { data: fetchedProgram, isLoading } = useProjectProgram(projectId);
 
   useEffect(() => {
-    if (fetchedProgram) setProgramItems(fetchedProgram as ProgramItem[]);
-  }, [fetchedProgram]);
+    if (fetchedProgram) {
+      setProgramItems(
+        fetchedProgram.map((item) => normalizeProgramItem(item, pieces)),
+      );
+    }
+  }, [fetchedProgram, pieces]);
 
   const isDirty = useMemo(() => {
     if (!fetchedProgram) return false;
     const currentOrderIds = programItems.map((item) => item.id).join(",");
-    const originalOrderIds = fetchedProgram.map((item) => item.id).join(",");
+    const originalOrderIds = fetchedProgram
+      .map((item) => String(item.id))
+      .join(",");
     return currentOrderIds !== originalOrderIds;
   }, [programItems, fetchedProgram]);
 
@@ -98,14 +122,19 @@ export const useProgramTab = (
     );
 
     try {
-      const safeTimeOrder = Math.floor(Date.now() / 10) % 100000000;
-      await createProgramMutation.mutateAsync({
-        title: targetPiece.title,
-        project: projectId,
-        piece: pieceId,
-        order: safeTimeOrder,
-        is_encore: false,
-      });
+    const nextOrder =
+      programItems.reduce(
+        (highestOrder, item) => Math.max(highestOrder, item.order),
+        0,
+      ) + 1;
+
+    await createProgramMutation.mutateAsync({
+      title: targetPiece.title,
+      project: projectId,
+      piece: pieceId,
+      order: nextOrder,
+      is_encore: false,
+    });
       toast.success(
         t("projects.program.toast.add_success", "Dodano do setlisty"),
         { id: toastId },
@@ -121,7 +150,7 @@ export const useProgramTab = (
     }
   };
 
-  const handleToggleEncore = async (item: ProgramItem): Promise<void> => {
+  const handleToggleEncore = async (item: ProgramTabItem): Promise<void> => {
     try {
       await updateProgramMutation.mutateAsync({
         id: item.id,
@@ -171,13 +200,20 @@ export const useProgramTab = (
       setProgramItems((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
+        if (oldIndex < 0 || newIndex < 0) {
+          return items;
+        }
         return arrayMove(items, oldIndex, newIndex);
       });
     }
   };
 
   const handleCancel = () => {
-    if (fetchedProgram) setProgramItems(fetchedProgram as ProgramItem[]);
+    if (fetchedProgram) {
+      setProgramItems(
+        fetchedProgram.map((item) => normalizeProgramItem(item, pieces)),
+      );
+    }
   };
 
   const handleSaveChanges = async (): Promise<void> => {
@@ -189,12 +225,11 @@ export const useProgramTab = (
     );
 
     try {
-      const baseSaveOrder = Math.floor(Date.now() / 10) % 100000000;
       await Promise.all(
         programItems.map((item, index) =>
           updateProgramMutation.mutateAsync({
             id: item.id,
-            data: { order: baseSaveOrder + index },
+            data: { order: index + 1 },
           }),
         ),
       );
@@ -214,7 +249,7 @@ export const useProgramTab = (
           "Serwer odrzucił część zmian.",
         ),
       });
-      handleCancel(); // Wycofaj zmiany na froncie w razie błędu
+      handleCancel();
     } finally {
       setIsSaving(false);
     }

@@ -1,114 +1,168 @@
+/**
+ * @file ProjectCardDetails.tsx
+ * @description Production metadata panel for project logistics.
+ * @architecture Enterprise SaaS 2026
+ * @module panel/projects/ProjectCard/ProjectCardDetails
+ */
+
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { AlignLeft, Shirt, MapPin, UserRound } from "lucide-react";
+import { AlignLeft, MapPin, Shirt, UserRound } from "lucide-react";
+
 import type { Project } from "@/shared/types";
+import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import {
+  Caption,
+  Eyebrow,
+  Text,
+} from "@/shared/ui/primitives/typography";
 
 interface ProjectCardDetailsProps {
   project: Project;
 }
 
+interface DetailArtifactProps {
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}
+
+const DetailArtifact = ({
+  label,
+  icon,
+  children,
+}: DetailArtifactProps): React.JSX.Element => (
+  <GlassCard
+    variant="light"
+    padding="sm"
+    isHoverable={false}
+    className="h-full border-ethereal-incense/15"
+  >
+    <div className="mb-3 flex items-center gap-2 text-ethereal-incense/70">
+      <div className="text-ethereal-gold" aria-hidden="true">
+        {icon}
+      </div>
+      <Eyebrow color="muted">{label}</Eyebrow>
+    </div>
+    {children}
+  </GlassCard>
+);
+
 export default function ProjectCardDetails({
   project,
 }: ProjectCardDetailsProps): React.JSX.Element {
   const { t } = useTranslation();
-  const hasDressCode = project.dress_code_female || project.dress_code_male;
+  const hasDressCode = Boolean(
+    project.dress_code_female || project.dress_code_male,
+  );
+  const conductorName =
+    project.conductor_name?.trim() ||
+    (project.conductor && typeof project.conductor === "object"
+      ? `${project.conductor.first_name} ${project.conductor.last_name}`.trim()
+      : null);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      {/* Sekcja Lokalizacji i Dyrygenta */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex h-full flex-col gap-6">
+      <SectionHeader
+        title={t("projects.details.section_title", "Detale produkcyjne")}
+        icon={<AlignLeft size={16} aria-hidden="true" />}
+        className="mb-0 pb-4"
+      />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {project.location && (
-          <div className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-sm flex items-start gap-3">
-            <MapPin
-              size={18}
-              className="text-brand mt-0.5 shrink-0"
-              aria-hidden="true"
+          <DetailArtifact
+            label={t("projects.details.location_title", "Miejsce")}
+            icon={<MapPin size={16} aria-hidden="true" />}
+          >
+            <LocationPreview
+              locationRef={project.location}
+              variant="minimal"
+              className="max-w-full justify-start"
             />
-            <div>
-              <span className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1">
-                {t("projects.details.location_title", "Miejsce")}
-              </span>
-              <span className="text-sm font-medium text-stone-800 block">
-                {project.location.name}
-              </span>
-            </div>
-          </div>
+          </DetailArtifact>
         )}
 
-        {project.conductor_name && (
-          <div className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-sm flex items-start gap-3">
-            <UserRound
-              size={18}
-              className="text-brand mt-0.5 shrink-0"
-              aria-hidden="true"
-            />
-            <div>
-              <span className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1">
-                {t("projects.details.conductor_title", "Dyrygent")}
-              </span>
-              <span className="text-sm font-medium text-stone-800 block">
-                {project.conductor_name}
-              </span>
-            </div>
-          </div>
+        {conductorName && (
+          <DetailArtifact
+            label={t("projects.details.conductor_title", "Dyrygent")}
+            icon={<UserRound size={16} aria-hidden="true" />}
+          >
+            <Text weight="medium">{conductorName}</Text>
+          </DetailArtifact>
         )}
       </div>
 
-      {/* Sekcja Opisu */}
-      <div className="bg-white border border-stone-200/80 rounded-2xl p-5 shadow-sm flex-1 flex flex-col">
-        <h4 className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3">
-          <AlignLeft size={16} className="text-brand" aria-hidden="true" />{" "}
-          {t("projects.details.description_title", "Opis wydarzenia")}
-        </h4>
-        {project.description ? (
-          <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">
+      <GlassCard
+        variant="light"
+        padding="md"
+        isHoverable={false}
+        className="flex-1 border-ethereal-incense/15"
+      >
+        <SectionHeader
+          title={t("projects.details.description_title", "Opis wydarzenia")}
+          icon={<AlignLeft size={16} aria-hidden="true" />}
+          className="mb-0 pb-4"
+        />
+        {project.description?.trim() ? (
+          <Text className="whitespace-pre-wrap text-pretty text-ethereal-graphite">
             {project.description}
-          </p>
+          </Text>
         ) : (
-          <p className="text-xs text-stone-400 italic">
+          <Text color="muted">
             {t(
               "projects.details.no_description",
               "Nie ma żadnych dodatkowych uwag do tego wydarzenia.",
             )}
-          </p>
+          </Text>
         )}
-      </div>
+      </GlassCard>
 
-      {/* Sekcja Dress Code */}
-      <div className="bg-white border border-stone-200/80 rounded-2xl p-4 shadow-sm">
-        <h4 className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-3">
-          <Shirt size={16} className="text-brand" aria-hidden="true" />{" "}
-          {t("projects.details.dress_code_title", "Dress Code")}
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {project.dress_code_female && (
-            <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-              <span className="text-stone-400 font-medium">
-                {t("projects.details.dress_code_female", "Panie:")}
-              </span>
-              <span className="text-stone-800">
-                {project.dress_code_female}
-              </span>
-            </div>
-          )}
-          {project.dress_code_male && (
-            <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-              <span className="text-stone-400 font-medium">
-                {t("projects.details.dress_code_male", "Panowie:")}
-              </span>
-              <span className="text-stone-800">{project.dress_code_male}</span>
-            </div>
-          )}
-          {!hasDressCode && (
-            <div className="text-xs text-stone-400 italic py-1">
-              {t(
-                "projects.details.no_dress_code",
-                "Nie ma wymagań co do ubioru.",
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      <GlassCard
+        variant="light"
+        padding="md"
+        isHoverable={false}
+        className="border-ethereal-incense/15"
+      >
+        <SectionHeader
+          title={t("projects.details.dress_code_title", "Dress Code")}
+          icon={<Shirt size={16} aria-hidden="true" />}
+          className="mb-0 pb-4"
+        />
+        {hasDressCode ? (
+          <div className="flex flex-wrap gap-3">
+            {project.dress_code_female && (
+              <div className="rounded-[1.25rem] border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
+                <Caption color="muted" weight="bold" className="block uppercase tracking-[0.16em]">
+                  {t("projects.details.dress_code_female", "Panie")}
+                </Caption>
+                <Text weight="medium" className="mt-1">
+                  {project.dress_code_female}
+                </Text>
+              </div>
+            )}
+            {project.dress_code_male && (
+              <div className="rounded-[1.25rem] border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
+                <Caption color="muted" weight="bold" className="block uppercase tracking-[0.16em]">
+                  {t("projects.details.dress_code_male", "Panowie")}
+                </Caption>
+                <Text weight="medium" className="mt-1">
+                  {project.dress_code_male}
+                </Text>
+              </div>
+            )}
+          </div>
+        ) : (
+          <Text color="muted">
+            {t(
+              "projects.details.no_dress_code",
+              "Nie ma wymagań co do ubioru.",
+            )}
+          </Text>
+        )}
+      </GlassCard>
     </div>
   );
 }

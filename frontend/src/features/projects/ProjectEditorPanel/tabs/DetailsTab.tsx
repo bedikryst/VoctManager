@@ -6,7 +6,7 @@
  * @module panel/projects/ProjectEditorPanel/tabs/DetailsTab
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -22,6 +22,7 @@ import {
 import { getAvailableTimezones } from "@/shared/lib/time/timezone";
 import type { Project } from "@/shared/types";
 import { useDetailsForm } from "../hooks/useDetailsForm";
+import { useProjectArtistsDictionary } from "../../api/project.queries";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useLocationsData } from "@/features/logistics/hooks/useLocationsData";
@@ -37,11 +38,11 @@ const STYLE_LABEL =
 const STYLE_GLASS_TEXTAREA =
   "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-stone-400";
 
-export default function DetailsTab({
+export const DetailsTab = ({
   project,
   onSuccess,
   onDirtyStateChange,
-}: DetailsTabProps): React.JSX.Element {
+}: DetailsTabProps): React.JSX.Element => {
   const { t } = useTranslation();
   const {
     formData,
@@ -58,6 +59,12 @@ export default function DetailsTab({
 
   const { displayLocations, isLoading: isLocationsLoading } =
     useLocationsData();
+  const { data: artists = [], isLoading: isArtistsLoading } =
+    useProjectArtistsDictionary();
+  const conductors = useMemo(
+    () => artists.filter((artist) => artist.voice_type === "DIR"),
+    [artists],
+  );
 
   return (
     <div className="max-w-4xl mx-auto pb-24 relative">
@@ -204,8 +211,7 @@ export default function DetailsTab({
               <label className={STYLE_LABEL}>
                 {t("projects.details_tab.fields.conductor", "Dyrygent")}
               </label>
-              <Input
-                type="text"
+              <select
                 value={formData.conductor || ""}
                 onChange={(e) =>
                   setFormData({
@@ -213,8 +219,23 @@ export default function DetailsTab({
                     conductor: e.target.value || null,
                   })
                 }
-                placeholder="Imię i nazwisko dyrygenta"
-              />
+                disabled={isArtistsLoading}
+                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] disabled:opacity-50"
+              >
+                <option value="">
+                  {isArtistsLoading
+                    ? t("common.loading", "Ładowanie...")
+                    : t(
+                        "projects.details_tab.fields.conductor_placeholder",
+                        "--- Wybierz dyrygenta ---",
+                      )}
+                </option>
+                {conductors.map((conductor) => (
+                  <option key={conductor.id} value={conductor.id}>
+                    {`${conductor.first_name} ${conductor.last_name}`.trim()}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -479,4 +500,4 @@ export default function DetailsTab({
       </form>
     </div>
   );
-}
+};

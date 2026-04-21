@@ -1,40 +1,44 @@
 /**
  * @file useRehearsalsTab.ts
  * @description Encapsulates mutation logic and state management for rehearsal scheduling.
- * Employs rapid Set lookups for audience targeting and synchronizes with Project domain queries.
- * Now fully supports CRUD lifecycle with Enterprise Contextual Timezones.
+ * Uses explicit location relations and timezone-safe payload construction.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/hooks/useRehearsalsTab
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { formatInTimeZone, fromZonedTime } from "date-fns-tz"; // ✅ Najnowszy standard stref czasowych
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+
 import type { Artist, Rehearsal } from "@/shared/types";
+import { useLocations } from "@/features/logistics/api/logistics.queries";
 import {
   useCreateRehearsal,
-  useUpdateRehearsal,
   useDeleteRehearsal,
+  useUpdateRehearsal,
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
+import { compareProjectDateAsc } from "../../lib/projectPresentation";
 
 export interface RehearsalFormData {
   date_time: string;
-  timezone: string; // ✅ WZORZEC ENTERPRISE: Kontekst strefy czasowej wydarzenia
-  location: string;
+  timezone: string;
+  location_id: string;
   focus: string;
   is_mandatory: boolean;
 }
 
 export type TargetType = "TUTTI" | "SECTIONAL" | "CUSTOM";
 
-// Funkcja pomocnicza: Absolute UTC -> Zoned Local String (do inputu)
 const toZonedInputString = (
   dateString?: string | null,
   timezone: string = "Europe/Warsaw",
 ): string => {
-  if (!dateString) return "";
+  if (!dateString) {
+    return "";
+  }
+
   try {
     return formatInTimeZone(
       new Date(dateString),
@@ -46,6 +50,14 @@ const toZonedInputString = (
   }
 };
 
+const getLocationId = (location: Rehearsal["location"]): string => {
+  if (!location) {
+    return "";
+  }
+
+  return typeof location === "string" ? location : location.id;
+};
+
 export const useRehearsalsTab = (projectId: string) => {
   const { t } = useTranslation();
   const {
@@ -53,14 +65,14 @@ export const useRehearsalsTab = (projectId: string) => {
     artists,
     participations,
     rehearsals,
-    isLoading: isContextLoading,
+    isLoading: isProjectContextLoading,
   } = useProjectData(projectId);
+  const { data: locations = [], isLoading: isLocationsLoading } = useLocations();
 
   const createRehearsalMutation = useCreateRehearsal(projectId);
   const updateRehearsalMutation = useUpdateRehearsal(projectId);
   const deleteRehearsalMutation = useDeleteRehearsal(projectId);
 
-  // --- STATE ---
   const [editingRehearsalId, setEditingRehearsalId] = useState<string | null>(
     null,
   );
@@ -73,7 +85,7 @@ export const useRehearsalsTab = (projectId: string) => {
   const [formData, setFormData] = useState<RehearsalFormData>({
     date_time: "",
     timezone: defaultTimezone,
-    location: "",
+    location_id: "",
     focus: "",
     is_mandatory: true,
   });
@@ -82,17 +94,14 @@ export const useRehearsalsTab = (projectId: string) => {
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [customParticipants, setCustomParticipants] = useState<string[]>([]);
 
-  // --- COMPUTED DATA ---
   const projectRehearsals = useMemo<Rehearsal[]>(
     () =>
       [...rehearsals]
         .filter((rehearsal) => String(rehearsal.project) === String(projectId))
-        .sort(
-          (left, right) =>
-            new Date(left.date_time).getTime() -
-            new Date(right.date_time).getTime(),
+        .sort((left, right) =>
+          compareProjectDateAsc(left.date_time, right.date_time),
         ),
-    [rehearsals, projectId],
+    [projectId, rehearsals],
   );
 
   const projectParticipations = useMemo(
@@ -105,99 +114,131 @@ export const useRehearsalsTab = (projectId: string) => {
 
   const artistMap = useMemo<Map<string, Artist>>(() => {
     const map = new Map<string, Artist>();
-    artists.forEach((artist) => map.set(String(artist.id), artist));
+
+    artists.forEach((artist) => {
+      map.set(String(artist.id), artist);
+    });
+
     return map;
   }, [artists]);
 
-  // --- LOGIC ---
+  const locationMap = useMemo(
+    () => new Map(locations.map((location) => [String(location.id), location])),
+    [locations],
+  );
+
   const resolveInvitedParticipants = useCallback((): string[] => {
     if (targetType === "TUTTI") {
       return projectParticipations.map((participation) =>
         String(participation.id),
       );
     }
+
     if (targetType === "SECTIONAL") {
       return projectParticipations
         .filter((participation) => {
           const artist = artistMap.get(String(participation.artist));
-          if (!artist || !artist.voice_type) return false;
+
+          if (!artist?.voice_type) {
+            return false;
+          }
+
           return selectedSections.some((section) =>
-            artist.voice_type?.startsWith(section),
+            artist.voice_type.startsWith(section),
           );
         })
         .map((participation) => String(participation.id));
     }
+
     return customParticipants;
   }, [
-    targetType,
-    projectParticipations,
     artistMap,
-    selectedSections,
     customParticipants,
+    projectParticipations,
+    selectedSections,
+    targetType,
   ]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setEditingRehearsalId(null);
     setFormData({
       date_time: "",
       timezone: project?.timezone || "Europe/Warsaw",
-      location: "",
+      location_id: "",
       focus: "",
       is_mandatory: true,
     });
     setTargetType("TUTTI");
     setSelectedSections([]);
     setCustomParticipants([]);
-  };
+  }, [project?.timezone]);
 
-  const handleEditClick = (rehearsal: Rehearsal) => {
-    setEditingRehearsalId(String(rehearsal.id));
+  const handleEditClick = useCallback(
+    (rehearsal: Rehearsal) => {
+      const locationId = getLocationId(rehearsal.location);
+      const resolvedLocation = locationMap.get(locationId);
+      const rehearsalTimezone =
+        resolvedLocation?.timezone ||
+        rehearsal.timezone ||
+        project?.timezone ||
+        "Europe/Warsaw";
 
-    const rehearsalTimezone =
-      rehearsal.timezone || project?.timezone || "Europe/Warsaw";
+      setEditingRehearsalId(String(rehearsal.id));
+      setFormData({
+        date_time: toZonedInputString(rehearsal.date_time, rehearsalTimezone),
+        timezone: rehearsalTimezone,
+        location_id: locationId,
+        focus: rehearsal.focus || "",
+        is_mandatory: rehearsal.is_mandatory ?? true,
+      });
 
-    setFormData({
-      date_time: toZonedInputString(rehearsal.date_time, rehearsalTimezone),
-      timezone: rehearsalTimezone,
-      location: rehearsal.location || "",
-      focus: rehearsal.focus || "",
-      is_mandatory: rehearsal.is_mandatory ?? true,
-    });
+      const invitedIds = rehearsal.invited_participations?.map(String) || [];
 
-    const invitedIds = rehearsal.invited_participations?.map(String) || [];
-    if (
-      invitedIds.length === 0 ||
-      invitedIds.length === projectParticipations.length
-    ) {
-      setTargetType("TUTTI");
-      setCustomParticipants([]);
-    } else {
-      setTargetType("CUSTOM");
-      setCustomParticipants(invitedIds);
-    }
-  };
+      if (
+        invitedIds.length === 0 ||
+        invitedIds.length === projectParticipations.length
+      ) {
+        setTargetType("TUTTI");
+        setCustomParticipants([]);
+      } else {
+        setTargetType("CUSTOM");
+        setCustomParticipants(invitedIds);
+      }
+    },
+    [locationMap, project?.timezone, projectParticipations.length],
+  );
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     resetForm();
-  };
+  }, [resetForm]);
 
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     event.preventDefault();
 
-    const invitedParticipants = resolveInvitedParticipants();
-    if (invitedParticipants.length === 0) {
+    if (!formData.location_id) {
       toast.warning(
         t(
-          "projects.rehearsals.toast.select_target",
-          "Wybierz przynajmniej jedną osobę lub sekcję na próbę!",
+          "projects.rehearsals.toast.select_location",
+          "Wybierz lokalizację próby przed zapisem.",
         ),
       );
       return;
     }
 
-    const isEditing = !!editingRehearsalId;
+    const invitedParticipants = resolveInvitedParticipants();
+    if (invitedParticipants.length === 0) {
+      toast.warning(
+        t(
+          "projects.rehearsals.toast.select_target",
+          "Wybierz przynajmniej jedną osobę lub sekcję na próbę.",
+        ),
+      );
+      return;
+    }
+
+    const isEditing = editingRehearsalId !== null;
     const toastId = toast.loading(
       isEditing
         ? t("projects.rehearsals.toast.updating", "Aktualizowanie próby...")
@@ -214,14 +255,16 @@ export const useRehearsalsTab = (projectId: string) => {
       ).toISOString();
 
       const payload = {
-        ...formData,
         project: projectId,
         date_time: absoluteDateTime,
         timezone: formData.timezone,
+        location_id: formData.location_id,
+        focus: formData.focus,
+        is_mandatory: formData.is_mandatory,
         invited_participations: invitedParticipants,
       };
 
-      if (isEditing) {
+      if (isEditing && editingRehearsalId) {
         await updateRehearsalMutation.mutateAsync({
           id: editingRehearsalId,
           data: payload,
@@ -244,7 +287,7 @@ export const useRehearsalsTab = (projectId: string) => {
             ),
         { id: toastId },
       );
-    } catch (error: unknown) {
+    } catch {
       toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: t(
@@ -255,24 +298,31 @@ export const useRehearsalsTab = (projectId: string) => {
     }
   };
 
-  const handleDeleteClick = (id: string): void => setRehearsalToDelete(id);
+  const handleDeleteClick = useCallback((id: string): void => {
+    setRehearsalToDelete(id);
+  }, []);
 
-  const executeDelete = async (): Promise<void> => {
-    if (!rehearsalToDelete) return;
+  const executeDelete = useCallback(async (): Promise<void> => {
+    if (!rehearsalToDelete) {
+      return;
+    }
+
     const toastId = toast.loading(
       t("projects.rehearsals.toast.removing", "Usuwanie próby..."),
     );
 
     try {
       await deleteRehearsalMutation.mutateAsync(rehearsalToDelete);
+
       if (editingRehearsalId === rehearsalToDelete) {
         resetForm();
       }
+
       toast.success(
         t("projects.rehearsals.toast.remove_success", "Próba została usunięta"),
         { id: toastId },
       );
-    } catch (error: unknown) {
+    } catch {
       toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
         description: t(
@@ -283,29 +333,35 @@ export const useRehearsalsTab = (projectId: string) => {
     } finally {
       setRehearsalToDelete(null);
     }
-  };
+  }, [
+    deleteRehearsalMutation,
+    editingRehearsalId,
+    rehearsalToDelete,
+    resetForm,
+    t,
+  ]);
 
-  const toggleSection = (section: string): void => {
-    setSelectedSections((previous) =>
-      previous.includes(section)
-        ? previous.filter((value) => value !== section)
-        : [...previous, section],
+  const toggleSection = useCallback((section: string): void => {
+    setSelectedSections((previousSections) =>
+      previousSections.includes(section)
+        ? previousSections.filter((value) => value !== section)
+        : [...previousSections, section],
     );
-  };
+  }, []);
 
-  const toggleCustomParticipant = (id: string): void => {
-    setCustomParticipants((previous) =>
-      previous.includes(id)
-        ? previous.filter((value) => value !== id)
-        : [...previous, id],
+  const toggleCustomParticipant = useCallback((id: string): void => {
+    setCustomParticipants((previousParticipants) =>
+      previousParticipants.includes(id)
+        ? previousParticipants.filter((value) => value !== id)
+        : [...previousParticipants, id],
     );
-  };
+  }, []);
 
   return {
-    isLoading: isContextLoading,
+    isLoading: isProjectContextLoading || isLocationsLoading,
     isSubmitting:
       createRehearsalMutation.isPending || updateRehearsalMutation.isPending,
-    isEditing: !!editingRehearsalId,
+    isEditing: editingRehearsalId !== null,
     rehearsalToDelete,
     setRehearsalToDelete,
     isDeleting: deleteRehearsalMutation.isPending,
@@ -318,6 +374,7 @@ export const useRehearsalsTab = (projectId: string) => {
     projectRehearsals,
     projectParticipations,
     artistMap,
+    locations,
     handleSubmit,
     handleEditClick,
     handleCancelEdit,

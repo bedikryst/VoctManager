@@ -29,10 +29,10 @@ interface BudgetTabProps {
   onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
-export default function BudgetTab({
+export const BudgetTab = ({
   projectId,
   onDirtyStateChange,
-}: BudgetTabProps): React.JSX.Element | null {
+}: BudgetTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const {
     isLoading,
@@ -340,4 +340,4 @@ export default function BudgetTab({
       )}
     </div>
   );
-}
+};

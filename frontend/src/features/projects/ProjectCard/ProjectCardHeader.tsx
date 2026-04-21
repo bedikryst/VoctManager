@@ -1,116 +1,178 @@
 /**
  * @file ProjectCardHeader.tsx
  * @description Renders the compact, scannable header for a project card.
- * Integrates dual-timezone presentation layer for traveling artists.
+ * Integrates dual-timezone presentation and high-level project telemetry.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/ProjectCardHeader
  */
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  MapPin,
+  AlignLeft,
+  Calendar,
   ChevronDown,
   ChevronUp,
   Clock,
-  FileText,
   Download,
-  AlignLeft,
   Edit2,
+  FileText,
+  MapPin,
   Trash2,
-  Wrench,
+  UserRound,
   Users,
-  Calendar,
+  Wrench,
 } from "lucide-react";
 
 import { PROJECT_STATUS } from "../constants/projectDomain";
 import type { Project } from "@/shared/types";
-import { useProjectData } from "../hooks/useProjectData";
+import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { useProjectCard } from "./hooks/useProjectCard";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Button } from "@/shared/ui/primitives/Button";
-
-// Importujemy ustandaryzowane mechanizmy z shared
+import {
+  Caption,
+  Eyebrow,
+  Heading,
+  Text,
+} from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { getArtistDisplayName } from "../lib/projectPresentation";
+
+interface ProjectCardDashboardData {
+  isLoading: boolean;
+  rehearsalsTotal: number;
+  rehearsalsUpcoming: number;
+  castTotal: number;
+  crewTotal: number;
+}
 
 interface ProjectCardHeaderProps {
   project: Project;
   isExpanded: boolean;
+  dashboardData: ProjectCardDashboardData;
   onToggle: () => void;
-  onStatusToggle: (e: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
+  onStatusToggle: (event: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export default function ProjectCardHeader({
+interface HeaderMetaCardProps {
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
+}
+
+const HeaderMetaCard = ({
+  label,
+  icon,
+  children,
+  onClick,
+}: HeaderMetaCardProps): React.JSX.Element => (
+  <div
+    className="min-w-[180px] rounded-[1.5rem] border border-ethereal-incense/15 bg-ethereal-alabaster/55 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm"
+    onClick={onClick}
+  >
+    <div className="mb-2 flex items-center gap-2 text-ethereal-incense/70">
+      <div className="shrink-0 text-ethereal-gold" aria-hidden="true">
+        {icon}
+      </div>
+      <Eyebrow color="muted">{label}</Eyebrow>
+    </div>
+    {children}
+  </div>
+);
+
+export const ProjectCardHeader = ({
   project,
   isExpanded,
+  dashboardData,
   onToggle,
   onStatusToggle,
   onEdit,
   onDelete,
-}: ProjectCardHeaderProps): React.JSX.Element {
+}: ProjectCardHeaderProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { downloadReport, isDownloading } = useProjectCard(String(project.id));
-  const { rehearsals, participations, crewAssignments, isLoading } =
-    useProjectData(String(project.id));
 
   const isDone = project.status === PROJECT_STATUS.DONE;
+  const conductorName = useMemo(
+    () => getArtistDisplayName(project.conductor, project.conductor_name),
+    [project.conductor, project.conductor_name],
+  );
 
-  // Poprawiony standardowy link do Google Maps
-  const googleMapsUrl = useMemo(() => {
-    return project.location?.name
-      ? `https://maps.google.com/?q=${encodeURIComponent(project.location.name)}`
-      : null;
-  }, [project.location]);
-
-  const stats = useMemo(() => {
-    const now = new Date();
-    const upcomingRehearsals = rehearsals.filter(
-      (r) => r.date_time && new Date(r.date_time) > now,
-    ).length;
-    return {
-      rehearsalsTotal: rehearsals.length,
-      rehearsalsUpcoming: upcomingRehearsals,
-      castTotal: participations.length,
-      crewTotal: crewAssignments.length,
-    };
-  }, [rehearsals, participations, crewAssignments]);
+  const handleHeaderKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onToggle();
+      }
+    },
+    [onToggle],
+  );
 
   return (
     <div
-      className="p-6 md:p-8 flex flex-col lg:flex-row gap-8 justify-between cursor-pointer"
+      className="flex cursor-pointer flex-col gap-8 p-6 md:p-8 lg:flex-row lg:items-stretch lg:justify-between"
       onClick={onToggle}
+      onKeyDown={handleHeaderKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-expanded={isExpanded}
+      aria-label={t(
+        "projects.card.toggle",
+        "Przełącz widok szczegółów projektu",
+      )}
     >
-      <div className="flex-1 flex flex-col justify-between">
+      <div className="flex flex-1 flex-col justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span
-              className={`px-3 py-1 rounded-lg text-[9px] font-bold antialiased uppercase tracking-widest border shadow-sm ${isDone ? "bg-stone-100 text-stone-600 border-stone-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}
+          <div className="mb-5 flex flex-wrap items-center gap-3">
+            <div
+              className={`inline-flex items-center rounded-full border px-3 py-1.5 ${
+                isDone
+                  ? "border-ethereal-incense/20 bg-ethereal-parchment text-ethereal-graphite"
+                  : "border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-gold"
+              }`}
             >
-              {isDone
-                ? t("projects.badge_done", "Zrealizowano")
-                : t("projects.badge_active", "W przygotowaniu")}
-            </span>
+              <Eyebrow color="inherit">
+                {isDone
+                  ? t("projects.badge_done", "Zrealizowano")
+                  : t("projects.badge_active", "W przygotowaniu")}
+              </Eyebrow>
+            </div>
+            <Caption color="incense-muted">
+              {t("projects.card.status_production", "Status Produkcji")}
+            </Caption>
           </div>
 
-          <h2
-            className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight leading-tight mb-4 group-hover:text-brand transition-colors"
-            style={{ fontFamily: "'Cormorant', serif" }}
+          <Heading
+            as="h2"
+            size="4xl"
+            weight="medium"
+            className="mb-3 max-w-4xl leading-tight"
           >
             {project.title}
-          </h2>
+          </Heading>
 
-          <div className="flex flex-wrap items-start gap-4 text-xs font-bold text-stone-500 uppercase tracking-widest mb-6">
-            {/* SEKCJA CZASU I DATY */}
+          <Text color="graphite" className="mb-6 max-w-2xl">
+            {project.description?.trim()
+              ? project.description
+              : t(
+                  "projects.card.header_fallback_description",
+                  "Scalony pulpit operacyjny dla harmonogramu, programu, obsady i produkcji.",
+                )}
+          </Text>
+
+          <div className="mb-6 flex flex-wrap items-start gap-3">
             {project.date_time && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit text-stone-600">
-                  <Calendar
-                    size={14}
-                    className="text-brand/60"
-                    aria-hidden="true"
-                  />
+              <HeaderMetaCard
+                label={t("projects.details.date_title", "Termin")}
+                icon={<Calendar size={14} aria-hidden="true" />}
+              >
+                <Text weight="medium">
                   {formatLocalizedDate(
                     project.date_time,
                     {
@@ -122,81 +184,88 @@ export default function ProjectCardHeader({
                     undefined,
                     project.timezone,
                   )}
-                </span>
+                </Text>
+              </HeaderMetaCard>
+            )}
 
+            {project.date_time && (
+              <HeaderMetaCard
+                label={t("projects.details.time_title", "Czas lokalny")}
+                icon={<Clock size={14} aria-hidden="true" />}
+              >
                 <DualTimeDisplay
                   value={project.date_time}
                   timeZone={project.timezone}
                   icon={
                     <Clock
                       size={14}
-                      className="text-brand/60"
+                      className="text-ethereal-gold"
                       aria-hidden="true"
                     />
                   }
-                  className="bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit"
+                  className="border-none bg-transparent p-0"
                   typography="sans"
                   size="sm"
                   weight="bold"
                   color="default"
                 />
-              </div>
+              </HeaderMetaCard>
             )}
 
-            {/* SEKCJA LOKALIZACJI */}
             {project.location && (
-              <a
-                href={googleMapsUrl || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 hover:bg-stone-100 transition-colors w-fit mt-1 lg:mt-0"
-                onClick={(e) => e.stopPropagation()}
+              <HeaderMetaCard
+                label={t("projects.details.location_title", "Miejsce")}
+                icon={<MapPin size={14} aria-hidden="true" />}
+                onClick={(event) => event.stopPropagation()}
               >
-                <MapPin
-                  size={14}
-                  className="text-brand/60 flex-shrink-0"
-                  aria-hidden="true"
+                <LocationPreview
+                  locationRef={project.location}
+                  variant="minimal"
+                  className="max-w-[240px] justify-start"
                 />
-                <span className="underline decoration-stone-300 underline-offset-4 truncate max-w-[200px]">
-                  {project.location.name}
-                </span>
-              </a>
+              </HeaderMetaCard>
             )}
 
-            {/* SEKCJA DYRYGENTA */}
-            {project.conductor_name && (
-              <div className="flex items-center gap-1.5 bg-stone-50/80 px-3 py-1.5 rounded-lg border border-stone-200/60 w-fit mt-1 lg:mt-0">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
-                  {t("projects.roles.maestro", "Maestro:")}
-                </span>
-                <span className="text-xs font-medium text-stone-700">
-                  {project.conductor_name}
-                </span>
-              </div>
+            {conductorName && (
+              <HeaderMetaCard
+                label={t("projects.roles.maestro", "Maestro")}
+                icon={<UserRound size={14} aria-hidden="true" />}
+              >
+                <Text weight="medium">{conductorName}</Text>
+              </HeaderMetaCard>
             )}
 
-            {/* SEKCJA CALL TIME */}
             {project.call_time && (
-              <DualTimeDisplay
-                value={project.call_time}
-                timeZone={project.timezone}
-                label={t("projects.call_time", "Call Time:")}
+              <HeaderMetaCard
+                label={t("projects.call_time", "Call Time")}
                 icon={<Clock size={14} aria-hidden="true" />}
-                className="bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 w-fit mt-1 lg:mt-0"
-                typography="sans"
-                size="sm"
-                weight="bold"
-                timeClassName="text-orange-600"
-              />
+              >
+                <DualTimeDisplay
+                  value={project.call_time}
+                  timeZone={project.timezone}
+                  icon={
+                    <Clock
+                      size={14}
+                      className="text-ethereal-gold"
+                      aria-hidden="true"
+                    />
+                  }
+                  className="border-none bg-transparent p-0"
+                  typography="sans"
+                  size="sm"
+                  weight="bold"
+                  timeClassName="text-ethereal-gold"
+                />
+              </HeaderMetaCard>
             )}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-stone-100">
+        <div className="flex flex-wrap items-center gap-3 border-t border-ethereal-incense/15 pt-6">
           <Button
             variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={(event) => {
+              event.stopPropagation();
               onEdit();
             }}
             leftIcon={<Edit2 size={14} aria-hidden="true" />}
@@ -205,43 +274,55 @@ export default function ProjectCardHeader({
           </Button>
           <Button
             variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={(event) => {
+              event.stopPropagation();
               onDelete();
             }}
             leftIcon={<Trash2 size={14} aria-hidden="true" />}
-            className="!border-red-200 !text-red-600 hover:!bg-red-50 hover:!border-red-300"
+            className="!border-ethereal-crimson/20 !text-ethereal-crimson hover:!border-ethereal-crimson/35 hover:!bg-ethereal-crimson-light/20"
           >
             {t("common.actions.delete", "Usuń")}
           </Button>
           <Button
             variant="outline"
             onClick={onStatusToggle}
-            className="ml-auto !text-stone-500 hover:!bg-stone-100"
+            className="ml-auto"
           >
             {isDone
-              ? t("projects.actions.mark_active", "Oznacz jako Aktywny")
+              ? t("projects.actions.mark_active", "Oznacz jako aktywny")
               : t("projects.actions.mark_done", "Zakończ projekt")}
           </Button>
         </div>
       </div>
 
-      {/* PRAWA STRONA KARTY */}
-      <div className="w-full lg:w-72 flex-shrink-0 bg-stone-50/50 rounded-2xl border border-stone-200/50 p-5 flex flex-col justify-center relative overflow-hidden">
+      <GlassCard
+        variant="light"
+        padding="md"
+        isHoverable={false}
+        className="relative w-full flex-shrink-0 border-ethereal-incense/15 lg:w-80"
+      >
         <div
-          className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3 pointer-events-none"
+          className="pointer-events-none absolute right-0 top-0 h-36 w-36 -translate-y-1/2 translate-x-1/3 rounded-full bg-ethereal-gold/10 blur-3xl"
           aria-hidden="true"
-        ></div>
+        />
 
-        <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-400 mb-4 border-b border-stone-200/60 pb-2 flex justify-between items-center">
-          {t("projects.card.status_production", "Status Produkcji")}
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <Eyebrow color="muted">
+              {t("projects.card.status_production", "Status Produkcji")}
+            </Eyebrow>
+            <Heading as="h3" size="xl" weight="medium" className="mt-2">
+              {t("projects.card.snapshot", "Snapshot")}
+            </Heading>
+          </div>
+
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               disabled={isDownloading !== null}
               isLoading={isDownloading === "CALL_SHEET"}
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 downloadReport(
                   "export_call_sheet",
                   `CallSheet_${project.title}.pdf`,
@@ -253,15 +334,15 @@ export default function ProjectCardHeader({
                   <FileText size={10} aria-hidden="true" />
                 ) : undefined
               }
-              className="!p-1.5 border-transparent shadow-none"
+              className="!border-transparent !p-1.5 shadow-none"
               title={t("projects.exports.call_sheet", "Pobierz Call Sheet")}
             />
             <Button
               variant="outline"
               disabled={isDownloading !== null}
               isLoading={isDownloading === "ZAIKS"}
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 downloadReport(
                   "export_zaiks",
                   `ZAiKS_${project.title}.csv`,
@@ -273,15 +354,15 @@ export default function ProjectCardHeader({
                   <Download size={10} aria-hidden="true" />
                 ) : undefined
               }
-              className="!p-1.5 border-transparent shadow-none"
+              className="!border-transparent !p-1.5 shadow-none"
               title={t("projects.exports.zaiks", "Pobierz ZAiKS")}
             />
             <Button
               variant="outline"
               disabled={isDownloading !== null}
               isLoading={isDownloading === "DTP"}
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 downloadReport("export_dtp", `DTP_${project.title}.txt`, "DTP");
               }}
               leftIcon={
@@ -289,71 +370,58 @@ export default function ProjectCardHeader({
                   <AlignLeft size={10} aria-hidden="true" />
                 ) : undefined
               }
-              className="!p-1.5 border-transparent shadow-none"
+              className="!border-transparent !p-1.5 shadow-none"
               title={t("projects.exports.dtp", "Pobierz notkę do DTP")}
             />
           </div>
-        </h4>
+        </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between group/stat">
-            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-brand transition-colors">
-              <Clock
-                size={14}
-                className="text-stone-400 group-hover/stat:text-brand"
-                aria-hidden="true"
-              />{" "}
-              {t("projects.rehearsals.title", "Próby")}
-            </span>
-            <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
-              {isLoading
+        <div className="space-y-5">
+          <MetricBlock
+            label={t("projects.rehearsals.title", "Próby")}
+            value={
+              dashboardData.isLoading
                 ? "-"
-                : `${stats.rehearsalsTotal - stats.rehearsalsUpcoming} / ${stats.rehearsalsTotal}`}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between group/stat">
-            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-brand transition-colors">
-              <Users
-                size={14}
-                className="text-stone-400 group-hover/stat:text-brand"
-                aria-hidden="true"
-              />{" "}
-              {t("projects.cast.title", "Obsada")}
-            </span>
-            <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
-              {isLoading ? "-" : stats.castTotal}{" "}
-              {t("common.people_short", "os.")}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between group/stat">
-            <span className="flex items-center gap-2 text-xs font-bold text-stone-600 group-hover/stat:text-brand transition-colors">
-              <Wrench
-                size={14}
-                className="text-stone-400 group-hover/stat:text-brand"
-                aria-hidden="true"
-              />{" "}
-              {t("projects.crew.title", "Ekipa")}
-            </span>
-            <span className="text-xs font-black text-stone-800 bg-white px-2 py-1 rounded-md border border-stone-200/80 shadow-sm">
-              {isLoading ? "-" : stats.crewTotal}{" "}
-              {t("common.people_short", "os.")}
-            </span>
-          </div>
+                : `${dashboardData.rehearsalsTotal - dashboardData.rehearsalsUpcoming} / ${dashboardData.rehearsalsTotal}`
+            }
+            icon={<Clock aria-hidden="true" />}
+            interactiveMode="glass"
+          />
+          <MetricBlock
+            label={t("projects.cast.title", "Obsada")}
+            value={dashboardData.isLoading ? "-" : dashboardData.castTotal}
+            unit={t("common.people_short", "os.")}
+            icon={<Users aria-hidden="true" />}
+            interactiveMode="glass"
+          />
+          <MetricBlock
+            label={t("projects.crew.title", "Ekipa")}
+            value={dashboardData.isLoading ? "-" : dashboardData.crewTotal}
+            unit={t("common.people_short", "os.")}
+            icon={<Wrench aria-hidden="true" />}
+            interactiveMode="glass"
+          />
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-brand text-[10px] font-bold antialiased uppercase tracking-[0.15em]">
-          {isExpanded
-            ? t("projects.card.collapse", "Zwiń Panel")
-            : t("projects.card.expand", "Rozwiń Widgety")}
-          {isExpanded ? (
-            <ChevronUp size={16} aria-hidden="true" />
-          ) : (
-            <ChevronDown size={16} aria-hidden="true" />
-          )}
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <Caption
+            color="gold"
+            weight="bold"
+            className="uppercase tracking-[0.18em]"
+          >
+            {isExpanded
+              ? t("projects.card.collapse", "Zwiń panel")
+              : t("projects.card.expand", "Rozwiń widgety")}
+          </Caption>
+          <div className="text-ethereal-gold" aria-hidden="true">
+            {isExpanded ? (
+              <ChevronUp size={16} aria-hidden="true" />
+            ) : (
+              <ChevronDown size={16} aria-hidden="true" />
+            )}
+          </div>
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
-}
+};

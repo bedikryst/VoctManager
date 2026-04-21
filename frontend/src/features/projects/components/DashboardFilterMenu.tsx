@@ -1,7 +1,7 @@
 /**
  * @file DashboardFilterMenu.tsx
- * @description Navigation pill menu for filtering projects by status.
- * Extracted to prevent UI bloat in the main dashboard controller.
+ * @description Segmented filter control for project lifecycle views.
+ * Aligns dashboard filtering with shared glass and typography primitives.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/components/DashboardFilterMenu
  */
@@ -9,66 +9,76 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
+import { PROJECT_FILTER, type ProjectFilterId } from "../constants/projectDomain";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
-export type FilterStatus = "ACTIVE" | "DONE" | "ALL";
-
 interface FilterOption {
-  id: FilterStatus;
+  id: ProjectFilterId;
   label: string;
 }
 
 interface DashboardFilterMenuProps {
-  currentFilter: FilterStatus;
-  onFilterChange: (filter: FilterStatus) => void;
+  currentFilter: ProjectFilterId;
+  onFilterChange: (filter: ProjectFilterId) => void;
 }
 
-export const DashboardFilterMenu: React.FC<DashboardFilterMenuProps> = ({
+export const DashboardFilterMenu = ({
   currentFilter,
   onFilterChange,
-}) => {
+}: DashboardFilterMenuProps): React.JSX.Element => {
   const { t } = useTranslation();
 
   const filterOptions = useMemo<FilterOption[]>(
     () => [
-      { id: "ACTIVE", label: t("projects.filters.active", "W przygotowaniu") },
-      { id: "DONE", label: t("projects.filters.done", "Archiwum") },
-      { id: "ALL", label: t("projects.filters.all", "Wszystkie") },
+      {
+        id: PROJECT_FILTER.ACTIVE,
+        label: t("projects.filters.active", "W przygotowaniu"),
+      },
+      {
+        id: PROJECT_FILTER.DONE,
+        label: t("projects.filters.done", "Archiwum"),
+      },
+      {
+        id: PROJECT_FILTER.ALL,
+        label: t("projects.filters.all", "Wszystkie"),
+      },
     ],
     [t],
   );
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+    <GlassCard
+      variant="light"
+      padding="sm"
+      isHoverable={false}
+      className="overflow-hidden"
+    >
       <div
-        className="inline-flex items-center p-1.5 bg-white/60 backdrop-blur-xl border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-xl overflow-x-auto max-w-full scrollbar-hide"
         role="tablist"
-        aria-label={t(
-          "projects.filters.aria_label",
-          "Filtry statusu projektów",
-        )}
+        aria-label={t("projects.filters.aria_label", "Filtry statusu projektów")}
+        className="flex max-w-full gap-2 overflow-x-auto no-scrollbar"
       >
         {filterOptions.map((filter) => {
           const isActive = currentFilter === filter.id;
+
           return (
-            <button
+            <Button
               key={filter.id}
+              type="button"
               role="tab"
               aria-selected={isActive}
+              variant={isActive ? "primary" : "ghost"}
+              size="sm"
               onClick={() => onFilterChange(filter.id)}
-              className={`px-5 py-2 rounded-lg transition-all whitespace-nowrap ${
-                isActive
-                  ? "bg-white text-brand shadow-sm border border-stone-100"
-                  : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"
-              }`}
+              className="shrink-0"
             >
-              <Eyebrow color={isActive ? "default" : "muted"}>
-                {filter.label}
-              </Eyebrow>
-            </button>
+              <Eyebrow color="inherit">{filter.label}</Eyebrow>
+            </Button>
           );
         })}
       </div>
-    </div>
+    </GlassCard>
   );
 };

@@ -1,52 +1,51 @@
 /**
  * @file RehearsalsTab.tsx
- * @description Orchestrates rehearsal scheduling and advanced audience targeting.
- * Uses Hybrid JIT Fetching via useProjectData to resolve relational models rapidly.
- * Fully decoupled from hardcoded strings for complete i18n support.
+ * @description Orchestrates rehearsal scheduling and targeted participation selection.
+ * Uses typed location relations and shared primitives for the project editor workspace.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/RehearsalsTab
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  MapPin,
-  Trash2,
-  Target,
+  Calendar1,
   CheckSquare,
   Clock,
-  Users,
-  MicVocal,
-  UserCheck,
-  Calendar1,
-  Loader2,
   Edit2,
+  MapPin,
+  MicVocal,
+  Target,
+  Trash2,
+  UserCheck,
+  Users,
 } from "lucide-react";
 
-import { useRehearsalsTab, TargetType } from "../hooks/useRehearsalsTab";
+import { useRehearsalsTab, type TargetType } from "../hooks/useRehearsalsTab";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-
-// New native IANA timezone helper and global formatters
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { getAvailableTimezones } from "@/shared/lib/time/timezone";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { getLocationLabel, isPastProjectDate } from "../../lib/projectPresentation";
 
 interface RehearsalsTabProps {
   projectId: string;
 }
 
 const STYLE_LABEL =
-  "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
+  "mb-2 ml-1 block text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite/75";
 const STYLE_GLASS_TEXTAREA =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] resize-none";
+  "w-full resize-none rounded-xl border border-ethereal-incense/20 bg-white/60 px-4 py-3 text-sm text-ethereal-ink shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all focus:border-ethereal-gold/40 focus:outline-none focus:ring-2 focus:ring-ethereal-gold/20";
 
-export default function RehearsalsTab({
+export const RehearsalsTab = ({
   projectId,
-}: RehearsalsTabProps): React.JSX.Element | null {
+}: RehearsalsTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const timezones = getAvailableTimezones();
 
@@ -66,6 +65,7 @@ export default function RehearsalsTab({
     projectRehearsals,
     projectParticipations,
     artistMap,
+    locations,
     handleSubmit,
     handleEditClick,
     handleCancelEdit,
@@ -76,76 +76,94 @@ export default function RehearsalsTab({
   } = useRehearsalsTab(projectId);
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
+    <div className="mx-auto max-w-4xl space-y-8 pb-12">
       <form onSubmit={handleSubmit}>
-        <GlassCard className="p-6 md:p-8 flex flex-col gap-6">
-          <div className="flex items-center gap-2.5 border-b border-stone-200/60 pb-3">
+        <GlassCard className="flex flex-col gap-6 p-6 md:p-8" isHoverable={false}>
+          <div className="flex items-center gap-2.5 border-b border-ethereal-incense/10 pb-3">
             <Clock
               size={16}
-              className={isEditing ? "text-orange-500" : "text-brand"}
+              className={isEditing ? "text-ethereal-crimson" : "text-ethereal-gold"}
               aria-hidden="true"
             />
-            <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-ethereal-ink">
               {isEditing
                 ? t("projects.rehearsals.form.title_edit", "Edytuj próbę")
                 : t("projects.rehearsals.form.title", "Zaplanuj nową próbę")}
-            </h4>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1 w-full">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="w-full md:col-span-1">
               <label className={STYLE_LABEL}>
-                {t("projects.rehearsals.form.date_time", "Data i Godzina *")}
+                {t("projects.rehearsals.form.date_time", "Data i godzina *")}
               </label>
               <Input
                 type="datetime-local"
                 required
-                value={formData.date_time || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, date_time: e.target.value })
+                value={formData.date_time}
+                onChange={(event) =>
+                  setFormData({ ...formData, date_time: event.target.value })
                 }
                 disabled={isSubmitting}
               />
             </div>
 
-            <div className="md:col-span-1 w-full">
+            <div className="w-full md:col-span-1">
               <label className={STYLE_LABEL}>
-                {t("projects.rehearsals.form.timezone", "Strefa Czasowa *")}
+                {t("projects.rehearsals.form.timezone", "Strefa czasowa *")}
               </label>
               <select
                 required
                 value={formData.timezone}
-                onChange={(e) =>
-                  setFormData({ ...formData, timezone: e.target.value })
+                onChange={(event) =>
+                  setFormData({ ...formData, timezone: event.target.value })
                 }
                 disabled={isSubmitting}
-                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                className="w-full rounded-xl border border-ethereal-incense/20 bg-white px-3 py-[9px] text-sm text-ethereal-ink shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all focus:border-ethereal-gold/40 focus:outline-none focus:ring-2 focus:ring-ethereal-gold/20"
               >
-                {timezones.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz.replace(/_/g, " ")}
+                {timezones.map((timezone) => (
+                  <option key={timezone} value={timezone}>
+                    {timezone.replace(/_/g, " ")}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div className="md:col-span-1 w-full">
+            <div className="w-full md:col-span-1">
               <label className={STYLE_LABEL}>
-                {t("projects.rehearsals.form.location", "Lokalizacja (Sala) *")}
+                {t("projects.rehearsals.form.location", "Lokalizacja *")}
               </label>
-              <Input
-                type="text"
+              <select
                 required
-                value={formData.location || ""}
-                placeholder={t(
-                  "projects.rehearsals.form.location_placeholder",
-                  "np. Sala 102, Akademia",
-                )}
-                onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
-                }
+                value={formData.location_id}
+                onChange={(event) => {
+                  const nextLocationId = event.target.value;
+                  const selectedLocation =
+                    locations.find(
+                      (location) => String(location.id) === nextLocationId,
+                    ) ?? null;
+
+                  setFormData({
+                    ...formData,
+                    location_id: nextLocationId,
+                    timezone: selectedLocation?.timezone ?? formData.timezone,
+                  });
+                }}
                 disabled={isSubmitting}
-              />
+                className="w-full rounded-xl border border-ethereal-incense/20 bg-white px-3 py-[9px] text-sm text-ethereal-ink shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] transition-all focus:border-ethereal-gold/40 focus:outline-none focus:ring-2 focus:ring-ethereal-gold/20"
+              >
+                <option value="">
+                  {t(
+                    "projects.rehearsals.form.location_placeholder",
+                    "Wybierz lokalizację",
+                  )}
+                </option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -153,44 +171,41 @@ export default function RehearsalsTab({
             <label className={STYLE_LABEL}>
               {t(
                 "projects.rehearsals.form.focus",
-                "Plan Próby / Repertuar (Focus)",
+                "Plan próby / repertuar (Focus)",
               )}
             </label>
             <textarea
               rows={2}
-              value={formData.focus || ""}
+              value={formData.focus}
               placeholder={t(
                 "projects.rehearsals.form.focus_placeholder",
-                "np. Requiem cz. 1-3...",
+                "np. Requiem cz. 1-3",
               )}
-              onChange={(e) =>
-                setFormData({ ...formData, focus: e.target.value })
+              onChange={(event) =>
+                setFormData({ ...formData, focus: event.target.value })
               }
               className={STYLE_GLASS_TEXTAREA}
               disabled={isSubmitting}
             />
           </div>
 
-          <div className="bg-white/60 border border-stone-200/60 rounded-2xl p-5 shadow-sm overflow-hidden">
-            <label className="block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 mb-4 ml-1">
+          <div className="overflow-hidden rounded-2xl border border-ethereal-incense/20 bg-white/60 p-5 shadow-sm">
+            <label className="mb-4 ml-1 block text-[10px] font-bold uppercase tracking-widest text-ethereal-ink">
               {t("projects.rehearsals.form.who", "Kto jest wezwany na próbę?")}
             </label>
 
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row">
               {[
                 {
                   id: "TUTTI",
-                  label: t(
-                    "projects.rehearsals.form.type_tutti",
-                    "Tutti (Wszyscy)",
-                  ),
+                  label: t("projects.rehearsals.form.type_tutti", "Tutti"),
                   icon: <Users size={14} aria-hidden="true" />,
                 },
                 {
                   id: "SECTIONAL",
                   label: t(
                     "projects.rehearsals.form.type_sectional",
-                    "Próba Sekcyjna",
+                    "Próba sekcyjna",
                   ),
                   icon: <MicVocal size={14} aria-hidden="true" />,
                 },
@@ -203,18 +218,16 @@ export default function RehearsalsTab({
                   icon: <UserCheck size={14} aria-hidden="true" />,
                 },
               ].map((type) => (
-                <button
+                <Button
                   key={type.id}
                   type="button"
+                  variant={targetType === type.id ? "primary" : "secondary"}
                   onClick={() => setTargetType(type.id as TargetType)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-[10px] font-bold antialiased uppercase tracking-widest transition-all active:scale-95 ${
-                    targetType === type.id
-                      ? "bg-brand border border-brand-dark text-white shadow-md"
-                      : "bg-white/80 border border-stone-200/80 text-stone-500 hover:bg-white shadow-sm"
-                  }`}
+                  className="flex-1"
+                  leftIcon={type.icon}
                 >
-                  {type.icon} {type.label}
-                </button>
+                  {type.label}
+                </Button>
               ))}
             </div>
 
@@ -225,15 +238,12 @@ export default function RehearsalsTab({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="flex flex-wrap gap-2 pt-4 border-t border-stone-200/60 overflow-hidden"
+                  className="flex flex-wrap gap-2 overflow-hidden border-t border-ethereal-incense/10 pt-4"
                 >
                   {[
                     {
                       id: "S",
-                      label: t(
-                        "projects.rehearsals.voices.sopranos",
-                        "Soprany",
-                      ),
+                      label: t("projects.rehearsals.voices.sopranos", "Soprany"),
                     },
                     {
                       id: "A",
@@ -247,19 +257,19 @@ export default function RehearsalsTab({
                       id: "B",
                       label: t("projects.rehearsals.voices.basses", "Basy"),
                     },
-                  ].map((sec) => (
-                    <button
-                      key={sec.id}
+                  ].map((section) => (
+                    <Button
+                      key={section.id}
                       type="button"
-                      onClick={() => toggleSection(sec.id)}
-                      className={`px-5 py-2.5 rounded-xl border text-[10px] antialiased uppercase tracking-widest font-bold transition-all active:scale-95 ${
-                        selectedSections.includes(sec.id)
-                          ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm"
-                          : "bg-white/60 border-stone-200/80 text-stone-500 hover:border-stone-300 hover:bg-white"
-                      }`}
+                      variant={
+                        selectedSections.includes(section.id)
+                          ? "primary"
+                          : "secondary"
+                      }
+                      onClick={() => toggleSection(section.id)}
                     >
-                      {sec.label}
-                    </button>
+                      {section.label}
+                    </Button>
                   ))}
                 </motion.div>
               )}
@@ -270,32 +280,38 @@ export default function RehearsalsTab({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="grid grid-cols-2 md:grid-cols-3 gap-2.5 pt-4 border-t border-stone-200/60 max-h-[160px] overflow-y-auto scrollbar-hide"
+                  className="grid max-h-[200px] grid-cols-1 gap-2.5 overflow-y-auto border-t border-ethereal-incense/10 pt-4 sm:grid-cols-2 md:grid-cols-3 no-scrollbar"
                 >
-                  {projectParticipations.map((p) => {
-                    const artist = artistMap.get(String(p.artist));
-                    if (!artist) return null;
+                  {projectParticipations.map((participation) => {
+                    const artist = artistMap.get(String(participation.artist));
+                    if (!artist) {
+                      return null;
+                    }
 
                     const isSelected = customParticipants.includes(
-                      String(p.id),
+                      String(participation.id),
                     );
+
                     return (
-                      <div
-                        key={p.id}
-                        onClick={() => toggleCustomParticipant(String(p.id))}
-                        className={`cursor-pointer px-4 py-2.5 rounded-xl border text-xs flex items-center justify-between transition-all active:scale-95 ${
+                      <button
+                        key={participation.id}
+                        type="button"
+                        onClick={() =>
+                          toggleCustomParticipant(String(participation.id))
+                        }
+                        className={`flex items-center justify-between rounded-xl border px-4 py-2.5 text-left text-xs transition-all active:scale-95 ${
                           isSelected
-                            ? "bg-emerald-50 border-emerald-300 text-emerald-700 font-bold shadow-sm"
-                            : "bg-white/60 border-stone-200/80 text-stone-600 hover:bg-white"
+                            ? "border-ethereal-gold/35 bg-ethereal-gold/10 text-ethereal-ink shadow-sm"
+                            : "border-ethereal-incense/20 bg-white/60 text-ethereal-graphite hover:bg-white"
                         }`}
                       >
-                        <span className="truncate tracking-tight font-bold">
+                        <span className="truncate font-bold tracking-tight">
                           {artist.first_name} {artist.last_name}
                         </span>
-                        <span className="text-[8px] antialiased font-bold uppercase tracking-widest opacity-60 ml-2">
+                        <span className="ml-2 text-[8px] font-bold uppercase tracking-widest opacity-60">
                           {artist.voice_type_display || artist.voice_type || ""}
                         </span>
-                      </div>
+                      </button>
                     );
                   })}
                 </motion.div>
@@ -303,18 +319,21 @@ export default function RehearsalsTab({
             </AnimatePresence>
           </div>
 
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pt-3">
-            <label className="flex items-center gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-white/50 transition-colors">
+          <div className="flex flex-col items-start justify-between gap-5 pt-3 md:flex-row md:items-center">
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-white/50">
               <input
                 type="checkbox"
-                checked={formData.is_mandatory || false}
-                onChange={(e) =>
-                  setFormData({ ...formData, is_mandatory: e.target.checked })
+                checked={formData.is_mandatory}
+                onChange={(event) =>
+                  setFormData({
+                    ...formData,
+                    is_mandatory: event.target.checked,
+                  })
                 }
-                className="w-4 h-4 text-brand rounded-md cursor-pointer border-stone-300 focus:ring-brand"
+                className="h-4 w-4 cursor-pointer rounded-md border-ethereal-incense/40 text-ethereal-gold focus:ring-ethereal-gold"
                 disabled={isSubmitting}
               />
-              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-700">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-ethereal-ink">
                 {t(
                   "projects.rehearsals.form.mandatory",
                   "Obecność obowiązkowa dla wezwanych",
@@ -322,7 +341,7 @@ export default function RehearsalsTab({
               </span>
             </label>
 
-            <div className="flex gap-2 w-full md:w-auto">
+            <div className="flex w-full gap-2 md:w-auto">
               {isEditing && (
                 <Button
                   type="button"
@@ -350,158 +369,170 @@ export default function RehearsalsTab({
         </GlassCard>
       </form>
 
-      {/* SCHEDULED SESSIONS FEED */}
       <div className="space-y-4">
-        <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 flex items-center gap-2 mb-5 ml-1">
-          <CheckSquare size={16} className="text-brand" aria-hidden="true" />{" "}
-          {t("projects.rehearsals.list.title", "Harmonogram Prób")}
-        </h4>
+        <div className="mb-5 ml-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-ethereal-ink">
+          <CheckSquare size={16} className="text-ethereal-gold" aria-hidden="true" />
+          {t("projects.rehearsals.list.title", "Harmonogram prób")}
+        </div>
 
         {isLoading ? (
-          <div className="flex justify-center p-8">
-            <Loader2
-              size={24}
-              className="animate-spin text-stone-400"
-              aria-hidden="true"
-            />
-          </div>
+          <EtherealLoader className="h-48" />
         ) : projectRehearsals.length > 0 ? (
-          projectRehearsals.map((reh) => {
-            const isPast = new Date(reh.date_time) < new Date();
-            const invitedCount = reh.invited_participations?.length || 0;
+          projectRehearsals.map((rehearsal) => {
+            const isPast = isPastProjectDate(rehearsal.date_time);
+            const invitedCount = rehearsal.invited_participations?.length || 0;
             const isTutti =
               invitedCount === 0 ||
               invitedCount === projectParticipations.length;
+            const locationLabel = getLocationLabel(rehearsal.location);
 
             return (
-              <div
-                key={reh.id}
-                className={`flex flex-col md:flex-row justify-between md:items-center p-5 rounded-2xl border shadow-sm transition-all ${
-                  isPast
-                    ? "border-stone-200/50 bg-stone-50/40 opacity-75"
-                    : "bg-white/80 backdrop-blur-md border-stone-200/80 hover:border-brand/40 hover:shadow-md"
-                }`}
+              <GlassCard
+                key={rehearsal.id}
+                variant="light"
+                padding="md"
+                isHoverable={false}
+                className={isPast ? "opacity-75" : ""}
               >
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                      <span
-                        className={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-brand"}`}
-                      >
-                        <Calendar1 size={14} aria-hidden="true" />
-                        {formatLocalizedDate(
-                          reh.date_time,
-                          { day: "numeric", month: "short" },
-                          undefined,
-                          reh.timezone,
-                        )}
-                      </span>
-
-                      <DualTimeDisplay
-                        value={reh.date_time}
-                        timeZone={reh.timezone}
-                        icon={<Clock size={14} aria-hidden="true" />}
-                        containerClassName={`px-3 py-1.5 rounded-lg border font-bold text-[13px] tracking-tight shadow-sm w-fit flex items-center gap-1.5 ${isPast ? "bg-white/50 border-stone-200 text-stone-500" : "bg-blue-50 border-blue-100 text-brand"}`}
-                        primaryTimeClassName="flex items-center gap-1.5"
-                        localTimeClassName="text-[10px] font-medium normal-case tracking-normal border-l border-current opacity-70 pl-1.5 ml-0.5"
-                      />
-                    </div>
-
-                    {isPast && (
-                      <span className="px-2.5 py-1 bg-stone-200/60 text-stone-600 text-[8px] antialiased uppercase tracking-widest font-bold rounded-md h-fit">
-                        {t("projects.rehearsals.status.finished", "Zakończona")}
-                      </span>
-                    )}
-
-                    <span
-                      className={`px-2.5 py-1 border text-[8px] antialiased uppercase tracking-widest font-bold rounded-md shadow-sm h-fit ${
-                        isTutti
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-purple-50 text-purple-700 border-purple-200"
-                      }`}
-                    >
-                      {isTutti
-                        ? t("projects.rehearsals.status.tutti", "TUTTI")
-                        : t(
-                            "projects.rehearsals.status.invited",
-                            "Wezwanych: {{count}}",
-                            { count: invitedCount },
+                <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+                  <div className="flex-1">
+                    <div className="mb-3 flex flex-wrap items-center gap-3">
+                      <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
+                        <div
+                          className={`flex w-fit items-center gap-1.5 rounded-lg border px-3 py-1.5 font-bold tracking-tight shadow-sm ${
+                            isPast
+                              ? "border-ethereal-incense/20 bg-white/50 text-ethereal-graphite"
+                              : "border-ethereal-gold/20 bg-ethereal-gold/10 text-ethereal-ink"
+                          }`}
+                        >
+                          <Calendar1 size={14} aria-hidden="true" />
+                          {formatLocalizedDate(
+                            rehearsal.date_time,
+                            { day: "numeric", month: "short" },
+                            undefined,
+                            rehearsal.timezone,
                           )}
-                    </span>
+                        </div>
 
-                    {!reh.is_mandatory && (
-                      <span className="px-2.5 py-1 bg-orange-50 text-orange-600 border border-orange-200 shadow-sm text-[8px] antialiased uppercase tracking-widest font-bold rounded-md h-fit">
-                        {t("projects.rehearsals.status.optional", "Opcjonalna")}
-                      </span>
-                    )}
-                  </div>
+                        <DualTimeDisplay
+                          value={rehearsal.date_time}
+                          timeZone={rehearsal.timezone}
+                          icon={<Clock size={14} aria-hidden="true" />}
+                          containerClassName={`rounded-lg border px-3 py-1.5 shadow-sm ${
+                            isPast
+                              ? "border-ethereal-incense/20 bg-white/50 text-ethereal-graphite"
+                              : "border-ethereal-gold/20 bg-ethereal-gold/10 text-ethereal-ink"
+                          }`}
+                          primaryTimeClassName="flex items-center gap-1.5 text-sm font-semibold"
+                          localTimeClassName="ml-1 border-l border-current pl-1.5 text-[10px] font-medium normal-case tracking-normal opacity-70"
+                        />
+                      </div>
 
-                  <div className="space-y-2 mt-3 md:mt-0">
-                    <div className="text-xs font-bold text-stone-700 flex items-center gap-2">
-                      <MapPin
-                        size={14}
-                        className="text-stone-400"
-                        aria-hidden="true"
-                      />{" "}
-                      {reh.location}
+                      {isPast && (
+                        <div className="rounded-md bg-ethereal-parchment px-2.5 py-1 text-stone-600">
+                          <span className="text-[8px] font-bold uppercase tracking-widest">
+                            {t("projects.rehearsals.status.finished", "Zakończona")}
+                          </span>
+                        </div>
+                      )}
+
+                      <div
+                        className={`rounded-md px-2.5 py-1 shadow-sm ${
+                          isTutti
+                            ? "bg-ethereal-sage/15 text-ethereal-sage"
+                            : "bg-ethereal-amethyst/10 text-ethereal-amethyst"
+                        }`}
+                      >
+                        <span className="text-[8px] font-bold uppercase tracking-widest">
+                          {isTutti
+                            ? t("projects.rehearsals.status.tutti", "TUTTI")
+                            : t(
+                                "projects.rehearsals.status.invited",
+                                "Wezwanych: {{count}}",
+                                { count: invitedCount },
+                              )}
+                        </span>
+                      </div>
+
+                      {!rehearsal.is_mandatory && (
+                        <div className="rounded-md border border-ethereal-crimson/20 bg-ethereal-crimson-light/20 px-2.5 py-1 text-ethereal-crimson shadow-sm">
+                          <span className="text-[8px] font-bold uppercase tracking-widest">
+                            {t("projects.rehearsals.status.optional", "Opcjonalna")}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    {reh.focus && (
-                      <div className="text-xs text-stone-600 flex items-start gap-2">
-                        <Target
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-ethereal-ink">
+                        <MapPin
                           size={14}
-                          className="text-brand flex-shrink-0 mt-0.5"
+                          className="text-ethereal-incense/60"
                           aria-hidden="true"
                         />
-                        <span className="italic opacity-90">{reh.focus}</span>
+                        {rehearsal.location ? (
+                          <LocationPreview
+                            locationRef={rehearsal.location}
+                            variant="minimal"
+                            fallback={locationLabel || undefined}
+                          />
+                        ) : (
+                          <span>{t("common.labels.not_available", "Brak danych")}</span>
+                        )}
                       </div>
-                    )}
+                      {rehearsal.focus && (
+                        <div className="flex items-start gap-2 text-xs text-ethereal-graphite">
+                          <Target
+                            size={14}
+                            className="mt-0.5 flex-shrink-0 text-ethereal-gold"
+                            aria-hidden="true"
+                          />
+                          <span className="italic opacity-90">{rehearsal.focus}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-end gap-1 border-t border-ethereal-incense/10 pt-4 md:mt-0 md:ml-4 md:border-t-0 md:pt-0">
+                    <Button
+                      type="button"
+                      variant="icon"
+                      size="icon"
+                      onClick={() => handleEditClick(rehearsal)}
+                      title={t("projects.rehearsals.actions.edit", "Edytuj próbę")}
+                    >
+                      <Edit2 size={16} aria-hidden="true" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="icon"
+                      size="icon"
+                      onClick={() => handleDeleteClick(rehearsal.id)}
+                      title={t("projects.rehearsals.actions.delete", "Usuń próbę")}
+                      className="text-ethereal-crimson hover:bg-ethereal-crimson-light/20 hover:text-ethereal-crimson"
+                    >
+                      <Trash2 size={16} aria-hidden="true" />
+                    </Button>
                   </div>
                 </div>
-
-                <div className="mt-5 md:mt-0 md:ml-4 flex items-center justify-end gap-1 border-t md:border-t-0 border-stone-200/50 pt-4 md:pt-0">
-                  <button
-                    onClick={() => handleEditClick(reh)}
-                    className="text-stone-400 hover:text-blue-500 p-2.5 rounded-xl bg-white border border-transparent hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm active:scale-95"
-                    title={t(
-                      "projects.rehearsals.actions.edit",
-                      "Edytuj próbę",
-                    )}
-                  >
-                    <Edit2 size={16} aria-hidden="true" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(reh.id)}
-                    className="text-stone-400 hover:text-red-500 p-2.5 rounded-xl bg-white border border-transparent hover:border-red-200 hover:bg-red-50 transition-all shadow-sm active:scale-95"
-                    title={t(
-                      "projects.rehearsals.actions.delete",
-                      "Usuń próbę",
-                    )}
-                  >
-                    <Trash2 size={16} aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
+              </GlassCard>
             );
           })
         ) : (
-          <GlassCard className="p-10 text-center text-stone-400 flex flex-col items-center">
-            <Calendar1
-              size={32}
-              className="mb-3 opacity-30"
-              aria-hidden="true"
-            />
-            <p className="text-[10px] font-bold antialiased uppercase tracking-widest">
-              {t(
-                "projects.rehearsals.empty.no_rehearsals",
-                "Brak zaplanowanych prób",
-              )}
-            </p>
+          <GlassCard
+            className="flex flex-col items-center p-10 text-center"
+            isHoverable={false}
+          >
+            <Calendar1 size={32} className="mb-3 opacity-30" aria-hidden="true" />
+            <div className="text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite">
+              {t("projects.rehearsals.empty.no_rehearsals", "Brak zaplanowanych prób")}
+            </div>
           </GlassCard>
         )}
       </div>
 
       <ConfirmModal
-        isOpen={!!rehearsalToDelete}
+        isOpen={rehearsalToDelete !== null}
         title={t("projects.rehearsals.modal.delete_title", "Usunąć tę próbę?")}
         description={t(
           "projects.rehearsals.modal.delete_desc",
@@ -515,4 +546,4 @@ export default function RehearsalsTab({
       />
     </div>
   );
-}
+};

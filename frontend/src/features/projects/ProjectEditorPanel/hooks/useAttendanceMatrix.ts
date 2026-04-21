@@ -12,7 +12,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
-import type { Artist, Participation } from "@/shared/types";
+import type { Artist, Attendance, Participation } from "@/shared/types";
+import { compareProjectDateAsc } from "../../lib/projectPresentation";
 import {
   useProjectAttendances,
   useCreateAttendance,
@@ -42,6 +43,13 @@ export const STATUS_CYCLE: AttendanceStatus[] = [
   "EXCUSED",
 ];
 
+const toAttendanceRecord = (attendance: Attendance): AttendanceRecord => ({
+  id: String(attendance.id),
+  rehearsal: String(attendance.rehearsal),
+  participation: String(attendance.participation),
+  status: attendance.status,
+});
+
 export const useAttendanceMatrix = (projectId: string) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -64,21 +72,13 @@ export const useAttendanceMatrix = (projectId: string) => {
   const [mutatingCells, setMutatingCells] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const normalized = (fetchedAttendances as any[]).map((a) => ({
-      ...a,
-      id: String(a.id),
-      rehearsal: String(a.rehearsal),
-      participation: String(a.participation),
-    })) as AttendanceRecord[];
-    setAttendances(normalized);
+    setAttendances(fetchedAttendances.map(toAttendanceRecord));
   }, [fetchedAttendances]);
 
   const projectRehearsals = useMemo(
     () =>
-      [...rehearsals].sort(
-        (left, right) =>
-          new Date(left.date_time).getTime() -
-          new Date(right.date_time).getTime(),
+      [...rehearsals].sort((left, right) =>
+        compareProjectDateAsc(left.date_time, right.date_time),
       ),
     [rehearsals],
   );
@@ -180,7 +180,6 @@ export const useAttendanceMatrix = (projectId: string) => {
             participation: participationId,
             status: nextStatus,
           });
-          // Podmiana z temp-ID na ID z bazy danych
           updateStateAndCache((previous) =>
             previous.map((a) =>
               a.id === tempId ? { ...a, id: String(createdAttendance.id) } : a,

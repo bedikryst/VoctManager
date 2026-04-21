@@ -26,47 +26,52 @@ import {
 import { ProjectService } from "../api/project.service";
 
 export function useProjectData(projectId: string | undefined) {
-  const projectsQuery = useProjects();
+  const isEnabled = typeof projectId === "string" && projectId.length > 0;
+
+  const projectsQuery = useProjects(isEnabled);
   const participationsQuery = useProjectParticipations(projectId);
   const rehearsalsQuery = useProjectRehearsals(projectId);
   const crewAssignmentsQuery = useProjectCrewAssignments(projectId);
   const pieceCastingsQuery = useProjectPieceCastings(projectId);
-  const artistsQuery = useProjectArtistsDictionary();
-  const collaboratorsQuery = useProjectCollaboratorsDictionary();
-  const piecesQuery = useProjectPiecesDictionary();
+  const artistsQuery = useProjectArtistsDictionary(isEnabled);
+  const collaboratorsQuery = useProjectCollaboratorsDictionary(isEnabled);
+  const piecesQuery = useProjectPiecesDictionary(isEnabled);
 
   const isLoading =
-    projectsQuery.isLoading ||
-    participationsQuery.isLoading ||
-    rehearsalsQuery.isLoading ||
-    crewAssignmentsQuery.isLoading ||
-    pieceCastingsQuery.isLoading ||
-    artistsQuery.isLoading ||
-    collaboratorsQuery.isLoading ||
-    piecesQuery.isLoading;
+    isEnabled &&
+    (projectsQuery.isLoading ||
+      participationsQuery.isLoading ||
+      rehearsalsQuery.isLoading ||
+      crewAssignmentsQuery.isLoading ||
+      pieceCastingsQuery.isLoading ||
+      artistsQuery.isLoading ||
+      collaboratorsQuery.isLoading ||
+      piecesQuery.isLoading);
 
   const isError =
-    projectsQuery.isError ||
-    participationsQuery.isError ||
-    rehearsalsQuery.isError ||
-    crewAssignmentsQuery.isError ||
-    pieceCastingsQuery.isError ||
-    artistsQuery.isError ||
-    collaboratorsQuery.isError ||
-    piecesQuery.isError;
+    isEnabled &&
+    (projectsQuery.isError ||
+      participationsQuery.isError ||
+      rehearsalsQuery.isError ||
+      crewAssignmentsQuery.isError ||
+      pieceCastingsQuery.isError ||
+      artistsQuery.isError ||
+      collaboratorsQuery.isError ||
+      piecesQuery.isError);
 
   const project =
-    projectsQuery.data?.find((p) => String(p.id) === String(projectId)) || null;
+    projectsQuery.data?.find((candidate) => String(candidate.id) === String(projectId)) ??
+    null;
 
   return {
-    project, // ✅ Teraz TypeScript i nasz hook prób poprawnie go rozpoznają
-    participations: participationsQuery.data || [],
-    rehearsals: rehearsalsQuery.data || [],
-    crewAssignments: crewAssignmentsQuery.data || [],
-    pieceCastings: pieceCastingsQuery.data || [],
-    artists: artistsQuery.data || [],
-    crew: collaboratorsQuery.data || [],
-    pieces: piecesQuery.data || [],
+    project,
+    participations: participationsQuery.data ?? [],
+    rehearsals: rehearsalsQuery.data ?? [],
+    crewAssignments: crewAssignmentsQuery.data ?? [],
+    pieceCastings: pieceCastingsQuery.data ?? [],
+    artists: artistsQuery.data ?? [],
+    crew: collaboratorsQuery.data ?? [],
+    pieces: piecesQuery.data ?? [],
     isLoading,
     isError,
   };

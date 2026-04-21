@@ -1,41 +1,56 @@
 /**
  * @file ProjectEditorPanel.tsx
- * @description Slide-over modal orchestrator for deep project editing and logistics.
- * Implements guarded tab navigation to prevent accidental data loss of dirty forms.
- * Provides a fluid tab routing system utilizing AnimatePresence for cinematic cross-fades.
+ * @description Slide-over workspace for deep project editing.
+ * Guards tab navigation when local form state is dirty and keeps the panel aligned with shared UI primitives.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel
  */
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  X,
+  Banknote,
   Briefcase,
   Calendar1,
   Grid,
-  Users,
   ListOrdered,
   MicVocal,
+  Users,
   Wrench,
-  Banknote,
+  X,
 } from "lucide-react";
 
 import type { Project } from "@/shared/types";
-
-import DetailsTab from "./tabs/DetailsTab";
-import MicroCastingTab from "./tabs/MicroCastingTab";
-import RehearsalsTab from "./tabs/RehearsalsTab";
-import CastTab from "./tabs/CastTab";
-import ProgramTab from "./tabs/ProgramTab";
-import CrewTab from "./tabs/CrewTab";
-import BudgetTab from "./tabs/BudgetTab";
-import AttendanceMatrixTab from "./tabs/AttendanceMatrixTab";
-
-import { PROJECT_TABS, ProjectTabId } from "../constants/projectDomain";
+import { cn } from "@/shared/lib/utils";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+
+import {
+  PROJECT_STATUS,
+  PROJECT_TABS,
+  type ProjectTabId,
+} from "../constants/projectDomain";
+import { DetailsTab } from "./tabs/DetailsTab";
+import { MicroCastingTab } from "./tabs/MicroCastingTab";
+import { RehearsalsTab } from "./tabs/RehearsalsTab";
+import { CastTab } from "./tabs/CastTab";
+import { ProgramTab } from "./tabs/ProgramTab";
+import { CrewTab } from "./tabs/CrewTab";
+import { BudgetTab } from "./tabs/BudgetTab";
+import { AttendanceMatrixTab } from "./tabs/AttendanceMatrixTab";
 
 interface TabDefinition {
   id: ProjectTabId;
@@ -47,42 +62,42 @@ const TAB_CONFIG: TabDefinition[] = [
   {
     id: PROJECT_TABS.DETAILS,
     icon: <Briefcase size={14} aria-hidden="true" />,
-    labelKey: "projects.tabs.details",
+    labelKey: "projects.editor.tabs.details",
   },
   {
     id: PROJECT_TABS.REHEARSALS,
     icon: <Calendar1 size={14} aria-hidden="true" />,
-    labelKey: "projects.tabs.rehearsals",
+    labelKey: "projects.editor.tabs.rehearsals",
   },
   {
     id: PROJECT_TABS.MATRIX,
     icon: <Grid size={14} aria-hidden="true" />,
-    labelKey: "projects.tabs.matrix",
+    labelKey: "projects.editor.tabs.matrix",
   },
   {
     id: PROJECT_TABS.CAST,
     icon: <Users size={14} aria-hidden="true" />,
-    labelKey: "projects.tabs.cast",
+    labelKey: "projects.editor.tabs.cast",
   },
   {
     id: PROJECT_TABS.PROGRAM,
     icon: <ListOrdered size={14} aria-hidden="true" />,
-    labelKey: "projects.tabs.program",
+    labelKey: "projects.editor.tabs.program",
   },
   {
     id: PROJECT_TABS.MICRO_CAST,
     icon: <MicVocal size={14} aria-hidden="true" />,
-    labelKey: "projects.tabs.micro_cast",
+    labelKey: "projects.editor.tabs.micro_cast",
   },
   {
     id: PROJECT_TABS.CREW,
     icon: <Wrench size={14} aria-hidden="true" />,
-    labelKey: "projects.tabs.crew",
+    labelKey: "projects.editor.tabs.crew",
   },
   {
     id: PROJECT_TABS.BUDGET,
     icon: <Banknote size={14} aria-hidden="true" />,
-    labelKey: "projects.tabs.budget",
+    labelKey: "projects.editor.tabs.budget",
   },
 ];
 
@@ -92,39 +107,135 @@ interface ProjectEditorPanelProps {
   project: Project | null;
   activeTab: ProjectTabId;
   onTabChange: (tabId: ProjectTabId) => void;
+  onProjectPersisted?: (project: Project) => void;
 }
 
-export default function ProjectEditorPanel({
+const CLOSE_PANEL_SENTINEL = "CLOSE_PANEL" as const;
+type PendingNavigationTarget = ProjectTabId | typeof CLOSE_PANEL_SENTINEL | null;
+
+const FOCUSABLE_PANEL_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+export const ProjectEditorPanel = ({
   isOpen,
   onClose,
   project,
   activeTab,
   onTabChange,
-}: ProjectEditorPanelProps): React.ReactPortal | null {
+  onProjectPersisted,
+}: ProjectEditorPanelProps): React.ReactPortal | null => {
   const { t } = useTranslation();
+  const panelTitleId = useId();
+  const panelDescriptionId = useId();
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
   const [mounted, setMounted] = useState<boolean>(false);
-
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
-  const [pendingTabId, setPendingTabId] = useState<
-    ProjectTabId | "CLOSE_PANEL" | null
-  >(null);
+  const [pendingTabId, setPendingTabId] =
+    useState<PendingNavigationTarget>(null);
+
+  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Keyboard accessibility and guarded close
+  const effectiveActiveTab = project ? activeTab : PROJECT_TABS.DETAILS;
+
+  const handleCloseAttempt = useCallback(() => {
+    if (hasUnsavedChanges) {
+      setPendingTabId(CLOSE_PANEL_SENTINEL);
+      return;
+    }
+
+    onClose();
+  }, [hasUnsavedChanges, onClose]);
+
+  const handleEscape = useEffectEvent(() => {
+    handleCloseAttempt();
+  });
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        handleCloseAttempt();
+    if (!isOpen) {
+      const previouslyFocusedElement = previouslyFocusedElementRef.current;
+      if (previouslyFocusedElement?.isConnected) {
+        previouslyFocusedElement.focus();
+      }
+      previouslyFocusedElementRef.current = null;
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    previouslyFocusedElementRef.current =
+      activeElement instanceof HTMLElement ? activeElement : null;
+
+    window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleEscape();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const panelElement = panelRef.current;
+      if (!panelElement) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        panelElement.querySelectorAll<HTMLElement>(FOCUSABLE_PANEL_SELECTOR),
+      ).filter(
+        (element) => element.offsetParent !== null && element.tabIndex >= 0,
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        closeButtonRef.current?.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+        return;
+      }
+
+      if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
-    if (isOpen) window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, hasUnsavedChanges]);
 
-  // Reset dirty state when panel closes
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleEscape, isOpen]);
+
   useEffect(() => {
     if (!isOpen) {
       setHasUnsavedChanges(false);
@@ -132,51 +243,95 @@ export default function ProjectEditorPanel({
     }
   }, [isOpen]);
 
-  const handleTabInteraction = (targetTabId: ProjectTabId) => {
-    if (activeTab === targetTabId) return;
+  const handleTabInteraction = useCallback(
+    (targetTabId: ProjectTabId) => {
+      if (effectiveActiveTab === targetTabId) {
+        return;
+      }
 
-    if (hasUnsavedChanges) {
-      setPendingTabId(targetTabId);
-    } else {
+      if (hasUnsavedChanges) {
+        setPendingTabId(targetTabId);
+        return;
+      }
+
       onTabChange(targetTabId);
-    }
-  };
+    },
+    [effectiveActiveTab, hasUnsavedChanges, onTabChange],
+  );
 
-  const handleCloseAttempt = () => {
-    if (hasUnsavedChanges) {
-      setPendingTabId("CLOSE_PANEL");
-    } else {
-      onClose();
-    }
-  };
+  const handleTabKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>, currentTabId: ProjectTabId) => {
+      const currentIndex = TAB_CONFIG.findIndex((tab) => tab.id === currentTabId);
+      if (currentIndex < 0) {
+        return;
+      }
 
-  const confirmNavigation = () => {
+      const lastIndex = TAB_CONFIG.length - 1;
+      const nextIndexByKey: Partial<Record<string, number>> = {
+        ArrowRight: currentIndex === lastIndex ? 0 : currentIndex + 1,
+        ArrowDown: currentIndex === lastIndex ? 0 : currentIndex + 1,
+        ArrowLeft: currentIndex === 0 ? lastIndex : currentIndex - 1,
+        ArrowUp: currentIndex === 0 ? lastIndex : currentIndex - 1,
+        Home: 0,
+        End: lastIndex,
+      };
+      const nextIndex = nextIndexByKey[event.key];
+
+      if (nextIndex === undefined) {
+        return;
+      }
+
+      event.preventDefault();
+      const nextTab = TAB_CONFIG[nextIndex];
+      handleTabInteraction(nextTab.id);
+
+      if (!hasUnsavedChanges) {
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById(`project-editor-tab-${nextTab.id.toLowerCase()}`)
+            ?.focus();
+        });
+      }
+    },
+    [handleTabInteraction, hasUnsavedChanges],
+  );
+
+  const confirmNavigation = useCallback(() => {
     setHasUnsavedChanges(false);
-    if (pendingTabId === "CLOSE_PANEL") {
+
+    if (pendingTabId === CLOSE_PANEL_SENTINEL) {
       setPendingTabId(null);
       onClose();
-    } else if (pendingTabId !== null) {
+      return;
+    }
+
+    if (pendingTabId !== null) {
       onTabChange(pendingTabId);
       setPendingTabId(null);
     }
-  };
+  }, [onClose, onTabChange, pendingTabId]);
 
-  const cancelNavigation = () => {
+  const cancelNavigation = useCallback(() => {
     setPendingTabId(null);
-  };
+  }, []);
+
+  const activeTabDefinition = useMemo(
+    () => TAB_CONFIG.find((tab) => tab.id === effectiveActiveTab) ?? null,
+    [effectiveActiveTab],
+  );
 
   const renderActiveTab = useCallback(() => {
-    // Restrict access to other tabs if creating a new project
-    if (!project && activeTab !== PROJECT_TABS.DETAILS) {
-      return null;
-    }
-
-    switch (activeTab) {
+    switch (effectiveActiveTab) {
       case PROJECT_TABS.DETAILS:
         return (
           <DetailsTab
             project={project}
-            onSuccess={() => setHasUnsavedChanges(false)}
+            onSuccess={(persistedProject) => {
+              setHasUnsavedChanges(false);
+              if (persistedProject) {
+                onProjectPersisted?.(persistedProject);
+              }
+            }}
             onDirtyStateChange={setHasUnsavedChanges}
           />
         );
@@ -207,111 +362,166 @@ export default function ProjectEditorPanel({
       default:
         return null;
     }
-  }, [activeTab, project]);
+  }, [effectiveActiveTab, onProjectPersisted, project]);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return null;
+  }
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div
           key="editor-panel-root"
-          className="fixed inset-0 z-[100] flex justify-end"
+          className="fixed inset-0 z-(--z-nav-sheet) flex justify-end"
         >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.25 }}
             onClick={handleCloseAttempt}
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-ethereal-ink/35 backdrop-blur-md"
             aria-hidden="true"
           />
+
           <motion.div
-            initial={{ x: "100%", opacity: 0.5 }}
+            ref={panelRef}
+            initial={{ x: "100%", opacity: 0.6 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "100%", opacity: 0.5 }}
+            exit={{ x: "100%", opacity: 0.6 }}
             transition={{
               type: "spring",
               damping: 30,
               stiffness: 250,
-              mass: 1.5,
+              mass: 1.2,
             }}
-            className="relative w-full md:w-[90vw] lg:w-[85vw] max-w-[1600px] h-full bg-[#f8f7f4] shadow-[-20px_0_50px_rgba(0,0,0,0.15)] flex flex-col border-l border-white/60 overflow-hidden"
+            className="relative h-full w-full md:w-[90vw] lg:w-[85vw] max-w-[1600px] p-0 md:p-4"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="panel-title"
+            aria-labelledby={panelTitleId}
+            aria-describedby={panelDescriptionId}
           >
-            <div className="flex-shrink-0 bg-[#f8f7f4]/95 backdrop-blur-2xl z-20 px-6 md:px-10 pt-8 pb-4">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-4">
-                  <h3
-                    id="panel-title"
-                    className="font-serif text-3xl md:text-4xl font-bold text-stone-900 tracking-tight"
+            <GlassCard
+              variant="solid"
+              padding="none"
+              isHoverable={false}
+              className="flex h-full w-full flex-col overflow-hidden rounded-none md:rounded-[2rem] border-ethereal-incense/20"
+            >
+              <div className="relative flex-shrink-0 border-b border-ethereal-incense/10 bg-ethereal-marble/90 px-6 pb-5 pt-8 backdrop-blur-2xl md:px-10">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="max-w-4xl space-y-3">
+                    <Eyebrow color="muted">
+                      {project
+                        ? t("projects.editor.workspace")
+                        : t("projects.editor.new_project")}
+                    </Eyebrow>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Heading
+                        as="h2"
+                        id={panelTitleId}
+                        size="4xl"
+                        weight="medium"
+                      >
+                        {project
+                          ? project.title
+                          : t("projects.editor.new_project_title")}
+                      </Heading>
+                      {project?.status === PROJECT_STATUS.DONE && (
+                        <div className="rounded-full border border-ethereal-incense/20 bg-ethereal-parchment px-3 py-1.5 text-ethereal-graphite">
+                          <Eyebrow color="inherit">
+                            {t("projects.editor.archive_badge")}
+                          </Eyebrow>
+                        </div>
+                      )}
+                    </div>
+                    <Text
+                      id={panelDescriptionId}
+                      color="muted"
+                      className="max-w-3xl"
+                    >
+                      {project
+                        ? t("projects.editor.workspace_description")
+                        : t("projects.editor.create_description")}
+                    </Text>
+                    {project && activeTabDefinition && (
+                      <Text color="graphite" size="sm">
+                        {t("projects.editor.active_tab")}:{" "}
+                        {t(activeTabDefinition.labelKey)}
+                      </Text>
+                    )}
+                  </div>
+
+                  <Button
+                    ref={closeButtonRef}
+                    type="button"
+                    variant="icon"
+                    size="icon"
+                    onClick={handleCloseAttempt}
+                    aria-label={t(
+                      "common.actions.close_panel",
+                      "Zamknij panel (ESC)",
+                    )}
+                    className="shrink-0"
                   >
-                    {project
-                      ? project.title
-                      : t(
-                          "projects.editor.new_project",
-                          "Kreator Nowego Wydarzenia",
-                        )}
-                  </h3>
-                  {project?.status === "DONE" && (
-                    <span className="px-2.5 py-1 bg-stone-200/50 text-stone-600 text-[9px] uppercase tracking-widest font-bold antialiased rounded-md border border-stone-200">
-                      {t("projects.editor.archive_badge", "Archiwum")}
-                    </span>
-                  )}
+                    <X size={20} aria-hidden="true" />
+                  </Button>
                 </div>
-                <button
-                  onClick={handleCloseAttempt}
-                  className="text-stone-400 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200/60 shadow-sm transition-all p-3 rounded-2xl active:scale-95 group"
-                  aria-label={t(
-                    "common.actions.close_panel",
-                    "Zamknij panel (ESC)",
-                  )}
-                >
-                  <X
-                    size={20}
-                    className="group-hover:rotate-90 transition-transform duration-300"
-                    aria-hidden="true"
-                  />
-                </button>
+
+                {project && (
+                  <GlassCard
+                    variant="light"
+                    padding="sm"
+                    isHoverable={false}
+                    className="mt-6 overflow-hidden"
+                  >
+                    <div
+                      data-scroll-lock-ignore="true"
+                      role="tablist"
+                      aria-label={t("projects.editor.tabs_aria")}
+                      className="flex gap-2 overflow-x-auto no-scrollbar"
+                    >
+                      {TAB_CONFIG.map((tab) => {
+                        const isActive = activeTab === tab.id;
+
+                        return (
+                          <Button
+                            key={tab.id}
+                            id={`project-editor-tab-${tab.id.toLowerCase()}`}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            aria-controls={`project-editor-panel-${tab.id.toLowerCase()}`}
+                            tabIndex={isActive ? 0 : -1}
+                            variant={isActive ? "primary" : "ghost"}
+                            size="sm"
+                            onClick={() => handleTabInteraction(tab.id)}
+                            onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
+                            className={cn("shrink-0", isActive && "shadow-sm")}
+                            leftIcon={tab.icon}
+                          >
+                            {t(tab.labelKey)}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </GlassCard>
+                )}
               </div>
 
-              {project && (
-                <div className="relative">
-                  <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-[#f8f7f4] to-transparent pointer-events-none z-10" />
-                  <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#f8f7f4] to-transparent pointer-events-none z-10" />
-                  <div className="flex overflow-x-auto scrollbar-hide gap-2 p-1.5 bg-stone-200/40 border border-stone-200/60 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-                    {TAB_CONFIG.map((tab) => {
-                      const isActive = activeTab === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => handleTabInteraction(tab.id)}
-                          className={`flex items-center gap-2 px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex-shrink-0 ${
-                            isActive
-                              ? "bg-white text-brand shadow-sm border border-white"
-                              : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"
-                          }`}
-                        >
-                          {tab.icon} {t(tab.labelKey)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-hide bg-gradient-to-b from-transparent to-stone-50/50">
-              <div className="p-4 md:px-10 md:pb-10 pt-2 min-h-full">
+              <div
+                data-scroll-lock-ignore="true"
+                className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pb-10 pt-4 md:px-10"
+              >
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 15 }}
+                    key={effectiveActiveTab}
+                    id={`project-editor-panel-${effectiveActiveTab.toLowerCase()}`}
+                    role="tabpanel"
+                    aria-labelledby={`project-editor-tab-${effectiveActiveTab.toLowerCase()}`}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
+                    exit={{ opacity: 0, y: -12 }}
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                     className="w-full"
                   >
@@ -319,19 +529,15 @@ export default function ProjectEditorPanel({
                   </motion.div>
                 </AnimatePresence>
               </div>
-            </div>
+            </GlassCard>
           </motion.div>
         </div>
       )}
 
-      {/* Unsaved Changes Guard Modal */}
       <ConfirmModal
         isOpen={pendingTabId !== null}
-        title={t("projects.editor.unsaved_changes_title", "Niezapisane zmiany")}
-        description={t(
-          "projects.editor.unsaved_changes_desc",
-          "Masz niezapisane zmiany w tej zakładce. Czy na pewno chcesz opuścić ten widok? Niezapisane dane zostaną utracone.",
-        )}
+        title={t("projects.editor.unsaved_changes_title")}
+        description={t("projects.editor.unsaved_changes_desc")}
         onConfirm={confirmNavigation}
         onCancel={cancelNavigation}
         confirmText={t("common.actions.discard", "Odrzuć zmiany")}
@@ -341,4 +547,4 @@ export default function ProjectEditorPanel({
     </AnimatePresence>,
     document.body,
   );
-}
+};
