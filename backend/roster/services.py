@@ -144,7 +144,7 @@ class ProjectManagementService:
     def create_project_with_creator(user: User, dto: ProjectCreateDTO) -> Project:
         with transaction.atomic():
             # 1. Extract and map data, explicitly excluding location_id from the dump
-            create_data = dto.model_dump(exclude={'location_id'})
+            create_data = dto.model_dump(exclude={'location_id', 'conductor'})
             
             # 2. Resolve Domain Logistics
             location, resolved_timezone = resolve_location_and_timezone(dto.location_id, dto.timezone)
@@ -152,6 +152,7 @@ class ProjectManagementService:
             # 3. Inject resolved data
             create_data['location'] = location
             create_data['timezone'] = resolved_timezone
+            create_data['conductor_id'] = dto.conductor
 
             project = Project.objects.create(**create_data)
 
@@ -169,13 +170,16 @@ class ProjectManagementService:
     def update_project(project: Project, dto: ProjectUpdateDTO) -> Project:
         FIELD_NAMES = {
             "title": "Title", "date_time": "Date", "location_id": "Location",
-            "call_time": "Call-time", "status": "Status", 
+            "call_time": "Call-time", "status": "Status", "conductor": "Conductor",
             "dress_code_male": "Dress Code", "dress_code_female": "Dress Code"
         }
         changes = []
 
         # Exclude location_id to handle it manually via the helper
-        update_data = dto.model_dump(exclude={'location_id'}, exclude_unset=True)
+        update_data = dto.model_dump(
+            exclude={'location_id', 'conductor'},
+            exclude_unset=True,
+        )
 
         with transaction.atomic():
             # Resolve location and timezone if location_id was provided in the update DTO
@@ -189,6 +193,11 @@ class ProjectManagementService:
                 
                 if project.location_id != location.id if location else None:
                     changes.append("Location")
+
+            if 'conductor' in dto.model_fields_set:
+                if project.conductor_id != dto.conductor:
+                    changes.append("Conductor")
+                update_data['conductor_id'] = dto.conductor
 
             for attr, value in update_data.items():
                 old_value = getattr(project, attr)

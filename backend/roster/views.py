@@ -118,7 +118,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        base_qs = Project.objects.prefetch_related('participations__artist', 'program_items__piece')
+        base_qs = Project.objects.select_related('conductor', 'location').prefetch_related(
+            'participations__artist',
+            'program_items__piece',
+        )
         
         if _is_manager(user): 
             return base_qs.all()

@@ -46,6 +46,7 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     date_time: datetime
     timezone: str = 'Europe/Warsaw'
     call_time: Optional[datetime] = None
+    conductor: Optional[UUID] = None
     location_id: Optional[UUID] = None
     description: str = Field(default='')
     dress_code_male: str = Field(default='', max_length=100)
@@ -61,6 +62,7 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     date_time: Optional[datetime] = None
     timezone: Optional[str] = None
     call_time: Optional[datetime] = None
+    conductor: Optional[UUID] = None
     location_id: Optional[UUID] = None
     description: Optional[str] = None
     dress_code_male: Optional[str] = Field(None, max_length=100)
