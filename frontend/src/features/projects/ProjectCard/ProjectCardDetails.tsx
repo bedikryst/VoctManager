@@ -50,7 +50,7 @@ const DetailArtifact = ({
   </GlassCard>
 );
 
-export default function ProjectCardDetails({
+export function ProjectCardDetails({
   project,
 }: ProjectCardDetailsProps): React.JSX.Element {
   const { t } = useTranslation();
@@ -134,24 +134,34 @@ export default function ProjectCardDetails({
         {hasDressCode ? (
           <div className="flex flex-wrap gap-3">
             {project.dress_code_female && (
-              <div className="rounded-[1.25rem] border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
+              <GlassCard
+                variant="light"
+                padding="sm"
+                isHoverable={false}
+                className="border-ethereal-incense/15"
+              >
                 <Caption color="muted" weight="bold" className="block uppercase tracking-[0.16em]">
                   {t("projects.details.dress_code_female", "Panie")}
                 </Caption>
                 <Text weight="medium" className="mt-1">
                   {project.dress_code_female}
                 </Text>
-              </div>
+              </GlassCard>
             )}
             {project.dress_code_male && (
-              <div className="rounded-[1.25rem] border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
+              <GlassCard
+                variant="light"
+                padding="sm"
+                isHoverable={false}
+                className="border-ethereal-incense/15"
+              >
                 <Caption color="muted" weight="bold" className="block uppercase tracking-[0.16em]">
                   {t("projects.details.dress_code_male", "Panowie")}
                 </Caption>
                 <Text weight="medium" className="mt-1">
                   {project.dress_code_male}
                 </Text>
-              </div>
+              </GlassCard>
             )}
           </div>
         ) : (

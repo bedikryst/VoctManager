@@ -5,20 +5,26 @@
  * @module panel/projects/ProjectCard/widgets/CrewWidget
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Wrench } from "lucide-react";
 
 import type { Project, Collaborator } from "@/shared/types";
 import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Button } from "@/shared/ui/primitives/Button";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 
 interface CrewWidgetProps {
   project: Project;
   onEdit?: () => void;
 }
 
-export default function CrewWidget({
+const DISPLAY_LIMIT = 9;
+
+export function CrewWidget({
   project,
   onEdit,
 }: CrewWidgetProps): React.JSX.Element {
@@ -27,75 +33,88 @@ export default function CrewWidget({
     String(project.id),
   );
 
-  const displayLimit = 9;
-  const visibleCrew = projectCrew.slice(0, displayLimit);
-  const overflowCount = projectCrew.length - displayLimit;
+  const crewMap = useMemo<Map<string, Collaborator>>(
+    () =>
+      new Map(
+        crew.map((collaborator) => [String(collaborator.id), collaborator]),
+      ),
+    [crew],
+  );
+  const visibleCrew = projectCrew.slice(0, DISPLAY_LIMIT);
+  const overflowCount = projectCrew.length - DISPLAY_LIMIT;
 
   return (
     <GlassCard
       variant="solid"
+      padding="md"
+      isHoverable={Boolean(onEdit)}
       onClick={onEdit}
-      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`}
+      className="flex min-h-56 flex-col justify-between"
       role={onEdit ? "button" : "region"}
       aria-label={t("projects.crew.aria_label", "Zarządzaj ekipą techniczną")}
     >
-      <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-brand transition-colors">
-          <Wrench
-            size={16}
-            className="text-brand group-hover:scale-110 transition-transform"
-            aria-hidden="true"
-          />
-          {t("projects.crew.title", "Ekipa (Crew)")}
-        </h4>
+      <div className="mb-4 flex items-start justify-between gap-3 border-b border-ethereal-incense/10 pb-4">
+        <SectionHeader
+          title={t("projects.crew.title", "Ekipa")}
+          icon={<Wrench size={16} aria-hidden="true" />}
+          className="mb-0 pb-0"
+        />
         {onEdit && (
-          <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-brand opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit();
+            }}
+            className="opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+          >
             {t("common.actions.edit", "Edytuj")}
-          </button>
+          </Button>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col justify-center items-center py-2">
-        <div className="flex flex-wrap justify-center gap-2 mb-2">
+      <div className="flex flex-1 flex-col items-center justify-center py-2">
+        <div className="mb-2 flex flex-wrap justify-center gap-2">
           {visibleCrew.map((assign, index) => {
-            const person: Collaborator | undefined = crew?.find(
-              (c) => String(c.id) === String(assign.collaborator),
-            );
+            const person = crewMap.get(String(assign.collaborator));
             if (!person) return null;
 
             const roleLabel: string =
               assign.role_description || person.specialty.substring(0, 4);
 
             return (
-              <span
+              <Badge
                 key={assign.id || `crew-${index}`}
-                className="px-2.5 py-1 bg-stone-50 text-stone-700 text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-stone-200 shadow-sm flex items-center gap-1"
+                variant="neutral"
               >
-                {person.first_name} {person.last_name.charAt(0)}.
-                <span className="text-stone-400 lowercase tracking-normal">
-                  ({roleLabel})
-                </span>
-              </span>
+                {person.first_name} {person.last_name.charAt(0)}. ({roleLabel})
+              </Badge>
             );
           })}
 
           {overflowCount > 0 && (
-            <span className="px-2.5 py-1 bg-blue-50 text-brand text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-blue-200 shadow-sm">
+            <Badge variant="brand">
               +{overflowCount}
-            </span>
+            </Badge>
           )}
 
           {projectCrew.length === 0 && (
-            <span className="text-xs text-stone-400 italic">
+            <Text color="muted" className="italic">
               {t("projects.crew.empty", "Brak przypisanej ekipy.")}
-            </span>
+            </Text>
           )}
         </div>
       </div>
 
-      <div className="text-center text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mt-auto border-t border-stone-100 pt-3">
+      <Caption
+        color="muted"
+        weight="bold"
+        className="mt-auto border-t border-ethereal-incense/10 pt-3 text-center uppercase tracking-[0.16em]"
+      >
         {t("projects.crew.employed", "Zatrudnionych:")} {projectCrew.length}
-      </div>
+      </Caption>
     </GlassCard>
   );
 }

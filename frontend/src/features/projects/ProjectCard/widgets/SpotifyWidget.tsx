@@ -9,6 +9,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Music, ExternalLink } from "lucide-react";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { Text } from "@/shared/ui/primitives/typography";
 
 interface SpotifyWidgetProps {
   /** The raw Spotify URL provided by the user/API */
@@ -19,14 +23,35 @@ interface SpotifyWidgetProps {
 
 const getSpotifyEmbedUrl = (url?: string | null): string | null => {
   if (!url) return null;
-  const playlistIdMatch = url.match(/playlist\/([a-zA-Z0-9]+)/);
-  if (playlistIdMatch && playlistIdMatch[1]) {
-    return `https://open.spotify.com/embed/playlist/${playlistIdMatch[1]}?utm_source=generator`;
+
+  try {
+    const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
+    const spotifyUrl = new URL(normalizedUrl);
+    if (spotifyUrl.hostname !== "open.spotify.com") {
+      return null;
+    }
+
+    const [, resourceType = "", resourceId = ""] =
+      spotifyUrl.pathname.split("/");
+    const supportedResourceTypes = new Set([
+      "album",
+      "episode",
+      "playlist",
+      "show",
+      "track",
+    ]);
+
+    if (!supportedResourceTypes.has(resourceType) || !resourceId) {
+      return null;
+    }
+
+    return `https://open.spotify.com/embed/${resourceType}/${resourceId}?utm_source=generator`;
+  } catch {
+    return null;
   }
-  return null;
 };
 
-export default function SpotifyWidget({
+export function SpotifyWidget({
   playlistUrl,
   theme = "light",
 }: SpotifyWidgetProps): React.JSX.Element {
@@ -34,24 +59,19 @@ export default function SpotifyWidget({
   const embedUrl = getSpotifyEmbedUrl(playlistUrl);
 
   const isDark = theme === "dark";
-  const containerStyle = isDark
-    ? "bg-white/5 border border-white/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4"
-    : "bg-white border border-stone-200/80 rounded-2xl p-5 shadow-sm flex flex-col gap-4";
-
-  const headerStyle = isDark
-    ? "flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-400 flex-shrink-0"
-    : "flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 flex-shrink-0";
-
-  const buttonStyle = isDark
-    ? "flex items-center justify-center gap-2 w-full py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-colors border border-emerald-500/20"
-    : "flex items-center justify-center gap-2 w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-colors border border-emerald-200/50";
 
   return (
-    <div className={containerStyle}>
-      <h4 className={headerStyle}>
-        <Music size={16} className="text-emerald-500" aria-hidden="true" />{" "}
-        {t("projects.spotify.title", "Referencje do odsłuchu")}
-      </h4>
+    <GlassCard
+      variant={isDark ? "dark" : "solid"}
+      padding="md"
+      isHoverable={false}
+      className="flex flex-col gap-4"
+    >
+      <SectionHeader
+        title={t("projects.spotify.title", "Referencje do odsłuchu")}
+        icon={<Music size={16} aria-hidden="true" />}
+        className="mb-0 pb-0"
+      />
 
       {embedUrl ? (
         <div className="flex flex-col gap-3">
@@ -67,27 +87,28 @@ export default function SpotifyWidget({
               border: "none",
               background: "transparent",
             }}
-            className="rounded-xl shadow-sm block"
+            className="block rounded-xl shadow-sm"
           />
-          <a
-            href={playlistUrl || undefined}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonStyle}
-          >
-            <ExternalLink size={14} aria-hidden="true" />{" "}
-            {t("projects.spotify.open_app", "Otwórz w aplikacji")}
-          </a>
+          <Button asChild variant="secondary" fullWidth>
+            <a
+              href={playlistUrl || undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink size={14} aria-hidden="true" />
+              {t("projects.spotify.open_app", "Otwórz w aplikacji")}
+            </a>
+          </Button>
         </div>
       ) : (
         <div
-          className={`h-[152px] flex items-center justify-center border border-dashed rounded-xl ${isDark ? "border-white/10 bg-white/5 text-stone-500" : "border-stone-200 bg-stone-50/50 text-stone-400"}`}
+          className="flex h-40 items-center justify-center rounded-xl border border-dashed border-ethereal-incense/20 bg-ethereal-alabaster/45"
         >
-          <p className="text-xs italic">
+          <Text color="muted" className="italic">
             {t("projects.spotify.empty", "Brak przypisanej playlisty.")}
-          </p>
+          </Text>
         </div>
       )}
-    </div>
+    </GlassCard>
   );
 }

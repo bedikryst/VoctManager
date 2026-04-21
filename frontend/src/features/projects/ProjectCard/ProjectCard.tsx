@@ -24,14 +24,14 @@ import {
 } from "../constants/projectDomain";
 
 import { ProjectCardHeader } from "./ProjectCardHeader";
-import ProjectCardDetails from "./ProjectCardDetails";
-import SpotifyWidget from "./widgets/SpotifyWidget";
-import RunSheetWidget from "./widgets/RunSheetWidget";
+import { ProjectCardDetails } from "./ProjectCardDetails";
+import { SpotifyWidget } from "./widgets/SpotifyWidget";
+import { RunSheetWidget } from "./widgets/RunSheetWidget";
 import { RehearsalsWidget } from "./widgets/RehearsalsWidget";
-import CastWidget from "./widgets/CastWidget";
-import ProgramWidget from "./widgets/ProgramWidget";
-import CrewWidget from "./widgets/CrewWidget";
-import BudgetWidget from "./widgets/BudgetWidget";
+import { CastWidget } from "./widgets/CastWidget";
+import { ProgramWidget } from "./widgets/ProgramWidget";
+import { CrewWidget } from "./widgets/CrewWidget";
+import { BudgetWidget } from "./widgets/BudgetWidget";
 import { isFutureProjectDate } from "../lib/projectPresentation";
 
 const STYLE_DISABLED =

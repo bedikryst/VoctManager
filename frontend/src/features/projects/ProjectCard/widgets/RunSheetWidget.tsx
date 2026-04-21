@@ -11,13 +11,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ListOrdered, ChevronDown, ChevronUp } from "lucide-react";
 import type { Project } from "@/shared/types";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Button } from "@/shared/ui/primitives/Button";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { Text } from "@/shared/ui/primitives/typography";
 
 interface RunSheetWidgetProps {
   project: Project;
   onEdit?: () => void;
 }
 
-export default function RunSheetWidget({
+export function RunSheetWidget({
   project,
   onEdit,
 }: RunSheetWidgetProps): React.JSX.Element {
@@ -32,30 +37,45 @@ export default function RunSheetWidget({
   const hasRunSheet = sortedRunSheet.length > 0;
 
   return (
-    <div className="bg-white border border-stone-200/80 rounded-2xl shadow-sm overflow-hidden">
+    <GlassCard
+      variant="solid"
+      padding="none"
+      isHoverable={false}
+      className="overflow-hidden"
+    >
       <div
-        className="flex items-center justify-between p-5 cursor-pointer hover:bg-stone-50/50 transition-colors"
+        className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-ethereal-alabaster/45"
         onClick={() => setIsOpen(!isOpen)}
         role="button"
         aria-expanded={isOpen}
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setIsOpen((previousState) => !previousState);
+          }
+        }}
       >
-        <h4 className="flex items-center gap-2.5 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-          <ListOrdered size={16} className="text-brand" aria-hidden="true" />{" "}
-          {t("projects.run_sheet.title", "Harmonogram dnia koncertu")}
-        </h4>
+        <SectionHeader
+          title={t("projects.run_sheet.title", "Harmonogram dnia koncertu")}
+          icon={<ListOrdered size={16} aria-hidden="true" />}
+          className="mb-0 pb-0"
+        />
         <div className="flex items-center gap-4">
           {onEdit && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
               }}
-              className="text-[10px] uppercase font-bold antialiased tracking-widest text-brand hover:underline"
             >
               {t("common.actions.edit", "Edytuj")}
-            </button>
+            </Button>
           )}
-          <div className="text-stone-400 bg-stone-100 p-1.5 rounded-full">
+          <div className="rounded-full bg-ethereal-incense/10 p-1.5 text-ethereal-graphite">
             {isOpen ? (
               <ChevronUp size={16} aria-hidden="true" />
             ) : (
@@ -72,29 +92,33 @@ export default function RunSheetWidget({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-stone-100"
+            className="border-t border-ethereal-incense/10"
           >
-            <div className="p-5 bg-stone-50/30">
+            <div className="bg-ethereal-alabaster/35 p-5">
               {hasRunSheet ? (
-                <div className="relative pl-5 border-l-2 border-stone-200 space-y-5 ml-2">
+                <div className="relative ml-2 space-y-5 border-l-2 border-ethereal-incense/15 pl-5">
                   {sortedRunSheet.map((item, idx) => (
                     <div key={item.id || idx} className="relative">
                       <div
-                        className="absolute -left-[27px] top-1 w-4 h-4 bg-white border-[3px] border-brand rounded-full shadow-sm"
+                        className="absolute -left-7 top-1 h-4 w-4 rounded-full border-4 border-ethereal-gold bg-ethereal-marble shadow-sm"
                         aria-hidden="true"
                       />
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-bold antialiased text-brand bg-blue-50 self-start px-2 py-0.5 rounded-md border border-blue-100/50">
+                        <Badge variant="brand" className="self-start">
                           {item.time}
-                        </span>
+                        </Badge>
                         <div>
-                          <p className="text-sm font-bold text-stone-800">
+                          <Text weight="medium">
                             {item.title}
-                          </p>
+                          </Text>
                           {item.description && (
-                            <p className="text-xs text-stone-500 italic mt-1 leading-relaxed">
+                            <Text
+                              color="graphite"
+                              size="sm"
+                              className="mt-1 italic"
+                            >
                               {item.description}
-                            </p>
+                            </Text>
                           )}
                         </div>
                       </div>
@@ -102,24 +126,24 @@ export default function RunSheetWidget({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 bg-white/50 rounded-xl border border-dashed border-stone-200">
+                <div className="rounded-xl border border-dashed border-ethereal-incense/20 bg-ethereal-marble/50 py-6 text-center">
                   <ListOrdered
                     size={24}
-                    className="mx-auto mb-2 text-stone-300"
+                    className="mx-auto mb-2 text-ethereal-incense/45"
                     aria-hidden="true"
                   />
-                  <p className="text-xs text-stone-400 font-medium">
+                  <Text color="muted" size="sm">
                     {t(
                       "projects.run_sheet.empty",
                       "Brak harmonogramu dostępnego dla tego wydarzenia.",
                     )}
-                  </p>
+                  </Text>
                 </div>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </GlassCard>
   );
 }

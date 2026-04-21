@@ -75,10 +75,10 @@ export const RehearsalsWidget = ({
   return (
     <GlassCard
       variant="solid"
+      padding="md"
+      isHoverable={Boolean(onEdit)}
       onClick={onEdit}
-      className={`flex min-h-[220px] flex-col justify-between p-5 transition-all ${
-        onEdit ? "cursor-pointer hover:border-ethereal-gold/30" : ""
-      }`}
+      className="flex min-h-56 flex-col justify-between"
       role={onEdit ? "button" : "region"}
       aria-label={t(
         "projects.rehearsals.aria_label",
@@ -154,7 +154,7 @@ export const RehearsalsWidget = ({
                             timeZone={rehearsal.timezone}
                             containerClassName="inline-flex items-center gap-1"
                             primaryTimeClassName="inline-flex items-center gap-1 text-sm font-medium text-ethereal-ink"
-                            localTimeClassName="pl-1 text-[10px] font-medium normal-case tracking-normal text-ethereal-graphite"
+                            localTimeClassName="pl-1 text-xs font-medium normal-case tracking-normal text-ethereal-graphite"
                           />
                         </div>
 
@@ -162,7 +162,7 @@ export const RehearsalsWidget = ({
                           <LocationPreview
                             locationRef={rehearsal.location}
                             variant="minimal"
-                            className="max-w-[240px] justify-start"
+                            className="max-w-60 justify-start"
                           />
                         )}
 

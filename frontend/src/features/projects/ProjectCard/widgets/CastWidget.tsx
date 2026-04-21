@@ -5,20 +5,26 @@
  * @module panel/projects/ProjectCard/widgets/CastWidget
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
 
 import type { Project, Artist } from "@/shared/types";
 import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Button } from "@/shared/ui/primitives/Button";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 
 interface CastWidgetProps {
   project: Project;
   onEdit?: () => void;
 }
 
-export default function CastWidget({
+const DISPLAY_LIMIT = 9;
+
+export function CastWidget({
   project,
   onEdit,
 }: CastWidgetProps): React.JSX.Element {
@@ -27,70 +33,83 @@ export default function CastWidget({
     String(project.id),
   );
 
-  const displayLimit = 9;
-  const visibleParticipations = projectParticipations.slice(0, displayLimit);
-  const overflowCount = projectParticipations.length - displayLimit;
+  const artistMap = useMemo<Map<string, Artist>>(
+    () => new Map(artists.map((artist) => [String(artist.id), artist])),
+    [artists],
+  );
+  const visibleParticipations = projectParticipations.slice(0, DISPLAY_LIMIT);
+  const overflowCount = projectParticipations.length - DISPLAY_LIMIT;
 
   return (
     <GlassCard
       variant="solid"
+      padding="md"
+      isHoverable={Boolean(onEdit)}
       onClick={onEdit}
-      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`}
+      className="flex min-h-56 flex-col justify-between"
       role={onEdit ? "button" : "region"}
       aria-label={t("projects.cast.aria_label", "Zarządzaj obsadą wokalną")}
     >
-      <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-brand transition-colors">
-          <Users
-            size={16}
-            className="text-brand group-hover:scale-110 transition-transform"
-            aria-hidden="true"
-          />
-          {t("projects.cast.title", "Obsada wokalna")}
-        </h4>
+      <div className="mb-4 flex items-start justify-between gap-3 border-b border-ethereal-incense/10 pb-4">
+        <SectionHeader
+          title={t("projects.cast.title", "Obsada wokalna")}
+          icon={<Users size={16} aria-hidden="true" />}
+          className="mb-0 pb-0"
+        />
         {onEdit && (
-          <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-brand opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit();
+            }}
+            className="opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+          >
             {t("common.actions.edit", "Edytuj")}
-          </button>
+          </Button>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col justify-center items-center py-2">
-        <div className="flex flex-wrap justify-center gap-2 mb-2">
+      <div className="flex flex-1 flex-col items-center justify-center py-2">
+        <div className="mb-2 flex flex-wrap justify-center gap-2">
           {visibleParticipations.map((part, index) => {
-            const artist: Artist | undefined = artists?.find(
-              (a) => String(a.id) === String(part.artist),
-            );
+            const artist = artistMap.get(String(part.artist));
             if (!artist) return null;
 
             return (
-              <span
+              <Badge
                 key={part.id || `cast-${index}`}
-                className="px-2.5 py-1 bg-stone-50 text-stone-700 text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-stone-200 shadow-sm"
+                variant="neutral"
               >
                 {artist.first_name} {artist.last_name.charAt(0)}.
-              </span>
+              </Badge>
             );
           })}
 
           {overflowCount > 0 && (
-            <span className="px-2.5 py-1 bg-blue-50 text-brand text-[10px] font-bold antialiased uppercase tracking-widest rounded-md border border-blue-200 shadow-sm">
+            <Badge variant="brand">
               +{overflowCount}
-            </span>
+            </Badge>
           )}
 
           {projectParticipations.length === 0 && (
-            <span className="text-xs text-stone-400 italic">
+            <Text color="muted" className="italic">
               {t("projects.cast.empty", "Brak obsady wokalnej.")}
-            </span>
+            </Text>
           )}
         </div>
       </div>
 
-      <div className="text-center text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 mt-auto border-t border-stone-100 pt-3">
+      <Caption
+        color="muted"
+        weight="bold"
+        className="mt-auto border-t border-ethereal-incense/10 pt-3 text-center uppercase tracking-[0.16em]"
+      >
         {t("projects.cast.employed", "Zatrudnionych:")}{" "}
         {projectParticipations.length}
-      </div>
+      </Caption>
     </GlassCard>
   );
 }

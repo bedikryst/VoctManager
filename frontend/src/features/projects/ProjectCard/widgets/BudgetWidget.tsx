@@ -12,13 +12,16 @@ import { Banknote } from "lucide-react";
 import type { Project } from "@/shared/types";
 import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { Button } from "@/shared/ui/primitives/Button";
 
 interface BudgetWidgetProps {
   project: Project;
   onEdit?: () => void;
 }
 
-export default function BudgetWidget({
+export function BudgetWidget({
   project,
   onEdit,
 }: BudgetWidgetProps): React.JSX.Element | null {
@@ -39,43 +42,57 @@ export default function BudgetWidget({
 
     return totalArtistsCost + totalCrewCost;
   }, [participations, crewAssignments]);
+  const formattedBudget = useMemo(
+    () =>
+      new Intl.NumberFormat(t("common.locale", "pl-PL"), {
+        maximumFractionDigits: 0,
+      }).format(totalBudget),
+    [t, totalBudget],
+  );
 
   return (
     <GlassCard
       variant="solid"
+      padding="md"
+      isHoverable={Boolean(onEdit)}
       onClick={onEdit}
-      className={`p-5 flex flex-col justify-between transition-all group min-h-[220px] ${onEdit ? "cursor-pointer hover:border-brand/40 hover:shadow-md" : ""}`}
+      className="flex min-h-56 flex-col justify-between"
       role={onEdit ? "button" : "region"}
       aria-label={t(
         "projects.budget.aria_label",
         "Zarządzaj budżetem projektu",
       )}
     >
-      <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-        <h4 className="flex items-center gap-2 text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 group-hover:text-brand transition-colors">
-          <Banknote
-            size={16}
-            className="text-brand group-hover:scale-110 transition-transform"
-            aria-hidden="true"
-          />
-          {t("projects.budget.title", "Kosztorys")}
-        </h4>
+      <div className="mb-4 flex items-start justify-between gap-3 border-b border-ethereal-incense/10 pb-4">
+        <SectionHeader
+          title={t("projects.budget.title", "Kosztorys")}
+          icon={<Banknote size={16} aria-hidden="true" />}
+          className="mb-0 pb-0"
+        />
         {onEdit && (
-          <button className="text-[9px] uppercase font-bold antialiased tracking-widest text-brand opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit();
+            }}
+            className="opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+          >
             {t("common.actions.edit", "Edytuj")}
-          </button>
+          </Button>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col justify-center items-center py-4">
-        <div className="text-4xl font-bold text-brand mb-2 tracking-tight">
-          {totalBudget.toLocaleString(t("common.locale", "pl-PL"))}{" "}
-          {t("common.currency", "PLN")}
-        </div>
-        <div className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">
-          {t("projects.budget.estimated_cost", "Przewidywany Koszt")}
-        </div>
-      </div>
+      <MetricBlock
+        label={t("projects.budget.estimated_cost", "Przewidywany koszt")}
+        value={formattedBudget}
+        unit={t("common.currency", "PLN")}
+        icon={<Banknote aria-hidden="true" />}
+        accentColor="gold"
+        className="flex-1 items-center justify-center text-center"
+      />
     </GlassCard>
   );
 }

@@ -72,8 +72,11 @@ const HeaderMetaCard = ({
   children,
   onClick,
 }: HeaderMetaCardProps): React.JSX.Element => (
-  <div
-    className="min-w-[180px] rounded-[1.5rem] border border-ethereal-incense/15 bg-ethereal-alabaster/55 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm"
+  <GlassCard
+    variant="light"
+    padding="sm"
+    isHoverable={false}
+    className="min-w-44 border-ethereal-incense/15"
     onClick={onClick}
   >
     <div className="mb-2 flex items-center gap-2 text-ethereal-incense/70">
@@ -83,7 +86,7 @@ const HeaderMetaCard = ({
       <Eyebrow color="muted">{label}</Eyebrow>
     </div>
     {children}
-  </div>
+  </GlassCard>
 );
 
 export const ProjectCardHeader = ({
@@ -221,7 +224,7 @@ export const ProjectCardHeader = ({
                 <LocationPreview
                   locationRef={project.location}
                   variant="minimal"
-                  className="max-w-[240px] justify-start"
+                  className="max-w-60 justify-start"
                 />
               </HeaderMetaCard>
             )}
@@ -301,11 +304,6 @@ export const ProjectCardHeader = ({
         isHoverable={false}
         className="relative w-full flex-shrink-0 border-ethereal-incense/15 lg:w-80"
       >
-        <div
-          className="pointer-events-none absolute right-0 top-0 h-36 w-36 -translate-y-1/2 translate-x-1/3 rounded-full bg-ethereal-gold/10 blur-3xl"
-          aria-hidden="true"
-        />
-
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <Eyebrow color="muted">
