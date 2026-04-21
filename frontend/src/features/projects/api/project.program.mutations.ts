@@ -14,6 +14,7 @@ import { projectKeys } from "./project.query-keys";
 import {
   buildOptimisticId,
   removeEntityById,
+  replaceOptimisticEntity,
   replaceEntityById,
 } from "./project.query-utils";
 import {
@@ -62,13 +63,13 @@ export const useCreateProgramItem = (projectId: string) => {
     onSuccess: (programItem, _variables, context) => {
       queryClient.setQueryData<ProgramItem[]>(
         projectKeys.program.byProject(projectId),
-        (currentProgramItems = []) =>
+        (currentProgramItems) =>
           sortProgramItems(
-            replaceEntityById(
+            replaceOptimisticEntity(
               currentProgramItems,
-              context?.optimisticId ?? "",
+              context?.optimisticId,
               programItem,
-            ) ?? [...currentProgramItems, programItem],
+            ),
           ),
       );
     },

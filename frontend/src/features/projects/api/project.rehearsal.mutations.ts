@@ -7,13 +7,14 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import type { Rehearsal } from "@/shared/types";
 
 import { ProjectService } from "./project.service";
+import { projectKeys } from "./project.query-keys";
 import {
   buildOptimisticId,
   removeEntityById,
+  replaceOptimisticEntity,
   replaceEntityById,
 } from "./project.query-utils";
 import {
@@ -33,7 +34,7 @@ export const useCreateRehearsal = (projectId: string) => {
       ProjectService.createRehearsal(data),
     onMutate: async (data) => {
       const optimisticId = buildOptimisticId("rehearsal");
-      const queryKey = rehearsalKeys.rehearsals.byProject(projectId);
+      const queryKey = projectKeys.rehearsals.byProject(projectId);
 
       await queryClient.cancelQueries({ queryKey });
 
@@ -53,27 +54,27 @@ export const useCreateRehearsal = (projectId: string) => {
     onError: (_error, _variables, context) => {
       if (context?.previousRehearsals) {
         queryClient.setQueryData(
-          rehearsalKeys.rehearsals.byProject(projectId),
+          projectKeys.rehearsals.byProject(projectId),
           context.previousRehearsals,
         );
       }
     },
     onSuccess: (rehearsal, _variables, context) => {
       queryClient.setQueryData<Rehearsal[]>(
-        rehearsalKeys.rehearsals.byProject(projectId),
-        (currentRehearsals = []) =>
+        projectKeys.rehearsals.byProject(projectId),
+        (currentRehearsals) =>
           sortRehearsals(
-            replaceEntityById(
+            replaceOptimisticEntity(
               currentRehearsals,
-              context?.optimisticId ?? "",
+              context?.optimisticId,
               rehearsal,
-            ) ?? [...currentRehearsals, rehearsal],
+            ),
           ),
       );
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
+        queryKey: projectKeys.rehearsals.byProject(projectId),
       });
     },
   });
@@ -86,7 +87,7 @@ export const useUpdateRehearsal = (projectId: string) => {
     mutationFn: ({ id, data }: { id: string; data: RehearsalUpdateDTO }) =>
       ProjectService.updateRehearsal(id, data),
     onMutate: async (variables) => {
-      const queryKey = rehearsalKeys.rehearsals.byProject(projectId);
+      const queryKey = projectKeys.rehearsals.byProject(projectId);
 
       await queryClient.cancelQueries({ queryKey });
 
@@ -109,14 +110,14 @@ export const useUpdateRehearsal = (projectId: string) => {
     onError: (_error, _variables, context) => {
       if (context?.previousRehearsals) {
         queryClient.setQueryData(
-          rehearsalKeys.rehearsals.byProject(projectId),
+          projectKeys.rehearsals.byProject(projectId),
           context.previousRehearsals,
         );
       }
     },
     onSuccess: (rehearsal, variables) => {
       queryClient.setQueryData<Rehearsal[]>(
-        rehearsalKeys.rehearsals.byProject(projectId),
+        projectKeys.rehearsals.byProject(projectId),
         (currentRehearsals = []) =>
           sortRehearsals(
             replaceEntityById(currentRehearsals, variables.id, rehearsal) ??
@@ -126,7 +127,7 @@ export const useUpdateRehearsal = (projectId: string) => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
+        queryKey: projectKeys.rehearsals.byProject(projectId),
       });
     },
   });
@@ -138,7 +139,7 @@ export const useDeleteRehearsal = (projectId: string) => {
   return useMutation({
     mutationFn: (id: string) => ProjectService.deleteRehearsal(id),
     onMutate: async (id) => {
-      const queryKey = rehearsalKeys.rehearsals.byProject(projectId);
+      const queryKey = projectKeys.rehearsals.byProject(projectId);
 
       await queryClient.cancelQueries({ queryKey });
 
@@ -154,14 +155,14 @@ export const useDeleteRehearsal = (projectId: string) => {
     onError: (_error, _variables, context) => {
       if (context?.previousRehearsals) {
         queryClient.setQueryData(
-          rehearsalKeys.rehearsals.byProject(projectId),
+          projectKeys.rehearsals.byProject(projectId),
           context.previousRehearsals,
         );
       }
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
+        queryKey: projectKeys.rehearsals.byProject(projectId),
       });
     },
   });

@@ -14,6 +14,7 @@ import { projectKeys } from "./project.query-keys";
 import {
   buildOptimisticId,
   removeEntityById,
+  replaceOptimisticEntity,
   replaceEntityById,
 } from "./project.query-utils";
 import { buildOptimisticPieceCasting } from "./project.optimistic";
@@ -64,12 +65,12 @@ export const useCreatePieceCasting = (projectId: string) => {
     onSuccess: (pieceCasting, _variables, context) => {
       queryClient.setQueryData<PieceCasting[]>(
         projectKeys.pieceCastings.byProject(projectId),
-        (currentPieceCastings = []) =>
-          replaceEntityById(
+        (currentPieceCastings) =>
+          replaceOptimisticEntity(
             currentPieceCastings,
-            context?.optimisticId ?? "",
+            context?.optimisticId,
             pieceCasting,
-          ) ?? [...currentPieceCastings, pieceCasting],
+          ),
       );
     },
     onSettled: () => {

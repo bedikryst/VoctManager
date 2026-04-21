@@ -7,13 +7,14 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import type { Attendance } from "@/shared/types";
 
 import { ProjectService } from "./project.service";
+import { projectKeys } from "./project.query-keys";
 import {
   buildOptimisticId,
   removeEntityById,
+  replaceOptimisticEntity,
   replaceEntityById,
 } from "./project.query-utils";
 import { buildOptimisticAttendance } from "./project.optimistic";
@@ -30,7 +31,7 @@ export const useCreateAttendance = (projectId: string) => {
       ProjectService.createAttendance(data),
     onMutate: async (data) => {
       const optimisticId = buildOptimisticId("attendance");
-      const queryKey = rehearsalKeys.attendances.byProject(projectId);
+      const queryKey = projectKeys.attendances.byProject(projectId);
 
       await queryClient.cancelQueries({ queryKey });
 
@@ -57,28 +58,28 @@ export const useCreateAttendance = (projectId: string) => {
     onError: (_error, _variables, context) => {
       if (context?.previousAttendances) {
         queryClient.setQueryData(
-          rehearsalKeys.attendances.byProject(projectId),
+          projectKeys.attendances.byProject(projectId),
           context.previousAttendances,
         );
       }
     },
     onSuccess: (attendance, _variables, context) => {
       queryClient.setQueryData<Attendance[]>(
-        rehearsalKeys.attendances.byProject(projectId),
-        (currentAttendances = []) =>
-          replaceEntityById(
+        projectKeys.attendances.byProject(projectId),
+        (currentAttendances) =>
+          replaceOptimisticEntity(
             currentAttendances,
-            context?.optimisticId ?? "",
+            context?.optimisticId,
             attendance,
-          ) ?? [...currentAttendances, attendance],
+          ),
       );
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.attendances.byProject(projectId),
+        queryKey: projectKeys.attendances.byProject(projectId),
       });
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
+        queryKey: projectKeys.rehearsals.byProject(projectId),
       });
     },
   });
@@ -91,7 +92,7 @@ export const useUpdateAttendance = (projectId: string) => {
     mutationFn: ({ id, data }: { id: string; data: AttendanceUpdateDTO }) =>
       ProjectService.updateAttendance(id, data),
     onMutate: async (variables) => {
-      const queryKey = rehearsalKeys.attendances.byProject(projectId);
+      const queryKey = projectKeys.attendances.byProject(projectId);
 
       await queryClient.cancelQueries({ queryKey });
 
@@ -114,14 +115,14 @@ export const useUpdateAttendance = (projectId: string) => {
     onError: (_error, _variables, context) => {
       if (context?.previousAttendances) {
         queryClient.setQueryData(
-          rehearsalKeys.attendances.byProject(projectId),
+          projectKeys.attendances.byProject(projectId),
           context.previousAttendances,
         );
       }
     },
     onSuccess: (attendance, variables) => {
       queryClient.setQueryData<Attendance[]>(
-        rehearsalKeys.attendances.byProject(projectId),
+        projectKeys.attendances.byProject(projectId),
         (currentAttendances = []) =>
           replaceEntityById(currentAttendances, variables.id, attendance) ??
           currentAttendances,
@@ -129,10 +130,10 @@ export const useUpdateAttendance = (projectId: string) => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.attendances.byProject(projectId),
+        queryKey: projectKeys.attendances.byProject(projectId),
       });
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
+        queryKey: projectKeys.rehearsals.byProject(projectId),
       });
     },
   });
@@ -144,7 +145,7 @@ export const useDeleteAttendance = (projectId: string) => {
   return useMutation({
     mutationFn: (id: string) => ProjectService.deleteAttendance(id),
     onMutate: async (id) => {
-      const queryKey = rehearsalKeys.attendances.byProject(projectId);
+      const queryKey = projectKeys.attendances.byProject(projectId);
 
       await queryClient.cancelQueries({ queryKey });
 
@@ -163,17 +164,17 @@ export const useDeleteAttendance = (projectId: string) => {
     onError: (_error, _variables, context) => {
       if (context?.previousAttendances) {
         queryClient.setQueryData(
-          rehearsalKeys.attendances.byProject(projectId),
+          projectKeys.attendances.byProject(projectId),
           context.previousAttendances,
         );
       }
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.attendances.byProject(projectId),
+        queryKey: projectKeys.attendances.byProject(projectId),
       });
       queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.rehearsals.byProject(projectId),
+        queryKey: projectKeys.rehearsals.byProject(projectId),
       });
     },
   });

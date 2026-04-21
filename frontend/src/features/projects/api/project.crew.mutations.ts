@@ -14,6 +14,7 @@ import { projectKeys } from "./project.query-keys";
 import {
   buildOptimisticId,
   removeEntityById,
+  replaceOptimisticEntity,
   replaceEntityById,
 } from "./project.query-utils";
 import { buildOptimisticCrewAssignment } from "./project.optimistic";
@@ -58,12 +59,12 @@ export const useCreateCrewAssignment = (projectId: string) => {
     onSuccess: (assignment, _variables, context) => {
       queryClient.setQueryData<CrewAssignment[]>(
         projectKeys.crewAssignments.byProject(projectId),
-        (currentCrewAssignments = []) =>
-          replaceEntityById(
+        (currentCrewAssignments) =>
+          replaceOptimisticEntity(
             currentCrewAssignments,
-            context?.optimisticId ?? "",
+            context?.optimisticId,
             assignment,
-          ) ?? [...currentCrewAssignments, assignment],
+          ),
       );
     },
     onSettled: () => {

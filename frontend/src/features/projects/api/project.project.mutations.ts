@@ -14,6 +14,7 @@ import { projectKeys } from "./project.query-keys";
 import {
   buildOptimisticId,
   removeEntityById,
+  replaceOptimisticEntity,
   replaceEntityById,
 } from "./project.query-utils";
 import { buildOptimisticProject } from "./project.optimistic";
@@ -57,23 +58,12 @@ export const useCreateProject = () => {
     onSuccess: (project, _variables, context) => {
       queryClient.setQueryData<Project[]>(
         projectKeys.projects.all,
-        (currentProjects = []) => {
-          const optimisticId = context?.optimisticId;
-          const hasOptimisticProject = optimisticId
-            ? currentProjects.some(
-                (currentProject) => String(currentProject.id) === optimisticId,
-              )
-            : false;
-
-          if (hasOptimisticProject && optimisticId) {
-            return (
-              replaceEntityById(currentProjects, optimisticId, project) ??
-              currentProjects
-            );
-          }
-
-          return [project, ...currentProjects];
-        },
+        (currentProjects) =>
+          replaceOptimisticEntity(
+            currentProjects,
+            context?.optimisticId,
+            project,
+          ),
       );
       queryClient.setQueryData(projectKeys.projects.details(project.id), project);
     },

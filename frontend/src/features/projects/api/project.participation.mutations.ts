@@ -14,6 +14,7 @@ import { projectKeys } from "./project.query-keys";
 import {
   buildOptimisticId,
   removeEntityById,
+  replaceOptimisticEntity,
   replaceEntityById,
 } from "./project.query-utils";
 import { buildOptimisticParticipation } from "./project.optimistic";
@@ -58,12 +59,12 @@ export const useCreateParticipation = (projectId: string) => {
     onSuccess: (participation, _variables, context) => {
       queryClient.setQueryData<Participation[]>(
         projectKeys.participations.byProject(projectId),
-        (currentParticipations = []) =>
-          replaceEntityById(
+        (currentParticipations) =>
+          replaceOptimisticEntity(
             currentParticipations,
-            context?.optimisticId ?? "",
+            context?.optimisticId,
             participation,
-          ) ?? [...currentParticipations, participation],
+          ),
       );
     },
     onSettled: () => {
