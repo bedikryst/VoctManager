@@ -6,14 +6,21 @@
  * @module panel/projects/hooks/useProjectData
  */
 
-import { QueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 
-import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
-import { projectKeys } from "@/features/projects/api/project.queries";
-import { artistKeys } from "@/features/artists/api/artist.queries";
-import { archiveKeys } from "@/features/archive/api/archive.queries";
+import type {
+  Artist,
+  Collaborator,
+  CrewAssignment,
+  Participation,
+  Piece,
+  PieceCasting,
+  Project,
+  Rehearsal,
+} from "@/shared/types";
 
 import {
+  projectKeys,
   useProjects,
   useProjectArtistsDictionary,
   useProjectCollaboratorsDictionary,
@@ -24,8 +31,27 @@ import {
   useProjectRehearsals,
 } from "../api/project.queries";
 import { ProjectService } from "../api/project.service";
+import {
+  PROJECT_RELATION_STALE_TIME,
+  STATIC_DICTIONARY_STALE_TIME,
+} from "../api/project.query-utils";
 
-export function useProjectData(projectId: string | undefined) {
+export interface ProjectDataResult {
+  project: Project | null;
+  participations: Participation[];
+  rehearsals: Rehearsal[];
+  crewAssignments: CrewAssignment[];
+  pieceCastings: PieceCasting[];
+  artists: Artist[];
+  crew: Collaborator[];
+  pieces: Piece[];
+  isLoading: boolean;
+  isError: boolean;
+}
+
+export function useProjectData(
+  projectId: string | undefined,
+): ProjectDataResult {
   const isEnabled = typeof projectId === "string" && projectId.length > 0;
 
   const projectsQuery = useProjects(isEnabled);
@@ -60,7 +86,9 @@ export function useProjectData(projectId: string | undefined) {
       piecesQuery.isError);
 
   const project =
-    projectsQuery.data?.find((candidate) => String(candidate.id) === String(projectId)) ??
+    projectsQuery.data?.find(
+      (candidate) => String(candidate.id) === String(projectId),
+    ) ??
     null;
 
   return {
@@ -80,34 +108,31 @@ export function useProjectData(projectId: string | undefined) {
 export const prefetchProjectData = (
   queryClient: QueryClient,
   projectId: string,
-) => {
-  queryClient.prefetchQuery({
-    queryKey: projectKeys.participations.byProject(projectId),
-    queryFn: () => ProjectService.getParticipationsByProject(projectId),
-    staleTime: 1000 * 60 * 5,
-  });
-
-  queryClient.prefetchQuery({
-    queryKey: rehearsalKeys.rehearsals.byProject(projectId),
-    queryFn: () => ProjectService.getRehearsalsByProject(projectId),
-    staleTime: 1000 * 60 * 5,
-  });
-
-  queryClient.prefetchQuery({
-    queryKey: projectKeys.crewAssignments.byProject(projectId),
-    queryFn: () => ProjectService.getCrewAssignmentsByProject(projectId),
-    staleTime: 1000 * 60 * 5,
-  });
-
-  queryClient.prefetchQuery({
-    queryKey: artistKeys.artists.all,
-    queryFn: ProjectService.getArtistsDictionary,
-    staleTime: Infinity,
-  });
-
-  queryClient.prefetchQuery({
-    queryKey: archiveKeys.pieces.all,
-    queryFn: ProjectService.getPiecesDictionary,
-    staleTime: Infinity,
-  });
-};
+): Promise<void> =>
+  Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: projectKeys.participations.byProject(projectId),
+      queryFn: () => ProjectService.getParticipationsByProject(projectId),
+      staleTime: PROJECT_RELATION_STALE_TIME,
+    }),
+    queryClient.prefetchQuery({
+      queryKey: projectKeys.rehearsals.byProject(projectId),
+      queryFn: () => ProjectService.getRehearsalsByProject(projectId),
+      staleTime: PROJECT_RELATION_STALE_TIME,
+    }),
+    queryClient.prefetchQuery({
+      queryKey: projectKeys.crewAssignments.byProject(projectId),
+      queryFn: () => ProjectService.getCrewAssignmentsByProject(projectId),
+      staleTime: PROJECT_RELATION_STALE_TIME,
+    }),
+    queryClient.prefetchQuery({
+      queryKey: projectKeys.dictionaries.artists,
+      queryFn: ProjectService.getArtistsDictionary,
+      staleTime: STATIC_DICTIONARY_STALE_TIME,
+    }),
+    queryClient.prefetchQuery({
+      queryKey: projectKeys.dictionaries.pieces,
+      queryFn: ProjectService.getPiecesDictionary,
+      staleTime: STATIC_DICTIONARY_STALE_TIME,
+    }),
+  ]).then(() => undefined);
