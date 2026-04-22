@@ -6,9 +6,9 @@
  * @module panel/projects/ProjectEditorPanel/hooks/useMicroCasting
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
-import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 
 import type {
@@ -20,14 +20,16 @@ import type {
   VoiceLineOption,
 } from "@/shared/types";
 import {
+  useCreatePieceCasting,
+  useDeletePieceCasting,
+  useProjectArtistsDictionary,
+  useProjectParticipations,
   useProjectPieceCastings,
+  useProjectPiecesDictionary,
   useProjectProgram,
   useProjectVoiceLinesDictionary,
-  useCreatePieceCasting,
   useUpdatePieceCasting,
-  useDeletePieceCasting,
 } from "../../api/project.queries";
-import { useProjectData } from "../../hooks/useProjectData";
 
 export type PieceCastingStatus = "FREE" | "OK" | "DEFICIT";
 
@@ -36,7 +38,7 @@ export interface UseMicroCastingResult {
   voiceLines: VoiceLineOption[];
   pieces: Piece[];
   selectedPieceId: string | null;
-  setSelectedPieceId: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedPieceId: Dispatch<SetStateAction<string | null>>;
   localCastings: PieceCasting[];
   activeDragId: string | null;
   artistMap: Map<string, Artist>;
@@ -49,10 +51,13 @@ export interface UseMicroCastingResult {
 
 export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const { t } = useTranslation();
-  const { artists, pieces, participations } = useProjectData(projectId);
-  const { data: voiceLines = [] } = useProjectVoiceLinesDictionary();
-  const { data: program = [] } = useProjectProgram(projectId);
-  const { data: pieceCastings = [] } = useProjectPieceCastings(projectId);
+
+  const { data: artists } = useProjectArtistsDictionary();
+  const { data: pieces } = useProjectPiecesDictionary();
+  const { data: participations } = useProjectParticipations(projectId);
+  const { data: voiceLines } = useProjectVoiceLinesDictionary();
+  const { data: program } = useProjectProgram(projectId);
+  const { data: pieceCastings } = useProjectPieceCastings(projectId);
 
   const createMutation = useCreatePieceCasting(projectId);
   const updateMutation = useUpdatePieceCasting(projectId);
@@ -61,6 +66,11 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const [localCastings, setLocalCastings] = useState<PieceCasting[]>([]);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  const artistDictionary = useMemo(
+    () => new Map(artists.map((artist) => [String(artist.id), artist])),
+    [artists],
+  );
 
   const projectParticipations = useMemo(
     () =>
@@ -72,22 +82,29 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
 
   const artistMap = useMemo(() => {
     const map = new Map<string, Artist>();
+
     projectParticipations.forEach((participation) => {
-      const artist = artists.find(
-        (candidate) => String(candidate.id) === String(participation.artist),
-      );
-      if (artist) map.set(String(participation.id), artist);
+      const artist = artistDictionary.get(String(participation.artist));
+
+      if (artist) {
+        map.set(String(participation.id), artist);
+      }
     });
+
     return map;
-  }, [projectParticipations, artists]);
+  }, [artistDictionary, projectParticipations]);
 
   useEffect(() => {
-    if (program.length > 0 && !selectedPieceId)
+    if (program.length > 0 && !selectedPieceId) {
       setSelectedPieceId(String(program[0].piece));
+    }
   }, [program, selectedPieceId]);
 
   const globalCastingsForPiece = useMemo(() => {
-    if (!selectedPieceId) return [];
+    if (!selectedPieceId) {
+      return [];
+    }
+
     return pieceCastings.filter(
       (casting) =>
         String(casting.piece) === String(selectedPieceId) &&
@@ -96,20 +113,19 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
             String(participation.id) === String(casting.participation),
         ),
     );
-  }, [pieceCastings, selectedPieceId, projectParticipations]);
+  }, [pieceCastings, projectParticipations, selectedPieceId]);
 
   useEffect(() => {
     setLocalCastings(globalCastingsForPiece);
   }, [globalCastingsForPiece]);
 
-  const pieceStatuses = useMemo(() => {
+  const pieceStatuses = useMemo<Record<string, PieceCastingStatus>>(() => {
     const statuses: Record<string, PieceCastingStatus> = {};
+
     program.forEach((item) => {
       const pieceId = String(item.piece);
-      const piece = pieces.find(
-        (candidate) => String(candidate.id) === pieceId,
-      );
-      const requirements = piece?.voice_requirements || [];
+      const piece = pieces.find((candidate) => String(candidate.id) === pieceId);
+      const requirements = piece?.voice_requirements ?? [];
 
       if (requirements.length === 0) {
         statuses[pieceId] = "FREE";
@@ -117,25 +133,31 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
       }
 
       let missing = 0;
+
       requirements.forEach((requirement) => {
         const assigned = pieceCastings.filter(
           (casting) =>
             String(casting.piece) === pieceId &&
             casting.voice_line === requirement.voice_line,
         ).length;
-        if (assigned < requirement.quantity)
+
+        if (assigned < requirement.quantity) {
           missing += requirement.quantity - assigned;
+        }
       });
+
       statuses[pieceId] = missing > 0 ? "DEFICIT" : "OK";
     });
+
     return statuses;
-  }, [program, pieces, pieceCastings]);
+  }, [pieceCastings, pieces, program]);
 
   const handleUpdateNote = async (
     castingId: string,
     newNote: string,
   ): Promise<void> => {
     const previousCastings = [...localCastings];
+
     setLocalCastings((previous) =>
       previous.map((casting) =>
         String(casting.id) === castingId
@@ -149,24 +171,29 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
         id: castingId,
         data: { notes: newNote },
       });
-    } catch (error: unknown) {
+    } catch {
       setLocalCastings(previousCastings);
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
         description: t(
           "projects.micro_cast.toast.note_error",
-          "Nie udało się zaktualizować notatki.",
+          "Nie udaĹ‚o siÄ™ zaktualizowaÄ‡ notatki.",
         ),
       });
     }
   };
 
-  const handleDragStart = (event: DragStartEvent) =>
+  const handleDragStart = (event: DragStartEvent): void => {
     setActiveDragId(String(event.active.id));
+  };
 
   const handleDragEnd = async (event: DragEndEvent): Promise<void> => {
     setActiveDragId(null);
-    const { over, active } = event;
-    if (!over) return;
+
+    const { active, over } = event;
+
+    if (!over || !selectedPieceId) {
+      return;
+    }
 
     const participationId = String(active.id);
     const targetVoiceLineId = String(over.id);
@@ -177,9 +204,13 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     if (
       targetVoiceLineId !== "UNASSIGNED" &&
       existingCasting?.voice_line === targetVoiceLineId
-    )
+    ) {
       return;
-    if (targetVoiceLineId === "UNASSIGNED" && !existingCasting) return;
+    }
+
+    if (targetVoiceLineId === "UNASSIGNED" && !existingCasting) {
+      return;
+    }
 
     const previousCastings = [...localCastings];
     let nextCastings = [...localCastings];
@@ -190,6 +221,7 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
       );
     } else {
       const targetVoiceLine = targetVoiceLineId as PieceCasting["voice_line"];
+
       if (existingCasting) {
         nextCastings = nextCastings.map((casting) =>
           String(casting.participation) === participationId
@@ -197,48 +229,57 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
             : casting,
         );
       } else {
-        nextCastings.push({
+        const optimisticCasting: PieceCasting = {
           id: `temp-${Date.now()}`,
           participation: participationId,
-          piece: selectedPieceId as string,
+          piece: selectedPieceId,
           voice_line: targetVoiceLine,
           gives_pitch: false,
-        } as PieceCasting);
+        };
+
+        nextCastings.push(optimisticCasting);
       }
     }
+
     setLocalCastings(nextCastings);
 
     try {
       if (targetVoiceLineId === "UNASSIGNED") {
-        if (existingCasting?.id)
+        if (existingCasting?.id) {
           await deleteMutation.mutateAsync(String(existingCasting.id));
-      } else {
-        const targetVoiceLine = targetVoiceLineId as PieceCasting["voice_line"];
-        if (
-          existingCasting?.id &&
-          !String(existingCasting.id).startsWith("temp-")
-        ) {
-          await updateMutation.mutateAsync({
-            id: String(existingCasting.id),
-            data: { voice_line: targetVoiceLine },
-          });
-        } else {
-          await createMutation.mutateAsync({
-            participation: participationId,
-            piece: selectedPieceId as string,
-            voice_line: targetVoiceLine,
-            gives_pitch: false,
-          });
         }
+
+        return;
       }
-    } catch (error: unknown) {
+
+      const targetVoiceLine = targetVoiceLineId as PieceCasting["voice_line"];
+
+      if (
+        existingCasting?.id &&
+        !String(existingCasting.id).startsWith("temp-")
+      ) {
+        await updateMutation.mutateAsync({
+          id: String(existingCasting.id),
+          data: { voice_line: targetVoiceLine },
+        });
+
+        return;
+      }
+
+      await createMutation.mutateAsync({
+        participation: participationId,
+        piece: selectedPieceId,
+        voice_line: targetVoiceLine,
+        gives_pitch: false,
+      });
+    } catch {
       setLocalCastings(previousCastings);
       toast.error(
-        t("projects.micro_cast.toast.sync_error", "Błąd synchronizacji"),
+        t("projects.micro_cast.toast.sync_error", "BĹ‚Ä…d synchronizacji"),
         {
           description: t(
             "projects.micro_cast.toast.sync_error_desc",
-            "Nie udało się zaktualizować obsady.",
+            "Nie udaĹ‚o siÄ™ zaktualizowaÄ‡ obsady.",
           ),
         },
       );

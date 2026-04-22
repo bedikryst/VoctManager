@@ -6,7 +6,12 @@
  * @module panel/projects/ProjectEditorPanel/hooks/useCastTab
  */
 
-import { useState, useMemo } from "react";
+import {
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
@@ -14,19 +19,19 @@ import type { Artist, Participation } from "@/shared/types";
 import {
   useCreateParticipation,
   useDeleteParticipation,
+  useProjectArtistsDictionary,
+  useProjectParticipations,
   useUpdateParticipation,
 } from "../../api/project.queries";
-import { useProjectData } from "../../hooks/useProjectData";
 import type { CastTabMobileView } from "../types";
 
 export interface UseCastTabResult {
   participations: Participation[];
-  isFetching: boolean;
   searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  setSearchQuery: Dispatch<SetStateAction<string>>;
   processingId: string | null;
   mobileView: CastTabMobileView;
-  setMobileView: React.Dispatch<React.SetStateAction<CastTabMobileView>>;
+  setMobileView: Dispatch<SetStateAction<CastTabMobileView>>;
   allArtists: Artist[];
   assignedIds: Set<string>;
   toggleCasting: (
@@ -38,24 +43,24 @@ export interface UseCastTabResult {
 
 export const useCastTab = (projectId: string): UseCastTabResult => {
   const { t } = useTranslation();
-  const { artists, participations, isLoading } = useProjectData(projectId);
+
+  const { data: artists } = useProjectArtistsDictionary();
+  const { data: participations } = useProjectParticipations(projectId);
 
   const createParticipationMutation = useCreateParticipation(projectId);
   const updateParticipationMutation = useUpdateParticipation(projectId);
   const deleteParticipationMutation = useDeleteParticipation(projectId);
 
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<CastTabMobileView>("AVAILABLE");
 
   const allArtists = useMemo(() => {
-    if (!artists || artists.length === 0) return [];
+    let filteredArtists = artists.filter((artist) => artist.is_active !== false);
 
-    let activeArtists = artists.filter((artist) => artist.is_active !== false);
-
-    if (searchQuery.trim() !== "") {
+    if (searchQuery.trim()) {
       const normalizedQuery = searchQuery.toLowerCase();
-      activeArtists = activeArtists.filter(
+      filteredArtists = filteredArtists.filter(
         (artist) =>
           artist.first_name.toLowerCase().includes(normalizedQuery) ||
           artist.last_name.toLowerCase().includes(normalizedQuery) ||
@@ -63,20 +68,21 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
       );
     }
 
-    return activeArtists.sort((left, right) => {
+    return [...filteredArtists].sort((left, right) => {
       const voiceCompare = (left.voice_type || "").localeCompare(
         right.voice_type || "",
       );
-      if (voiceCompare !== 0) return voiceCompare;
+
+      if (voiceCompare !== 0) {
+        return voiceCompare;
+      }
+
       return left.last_name.localeCompare(right.last_name);
     });
   }, [artists, searchQuery]);
 
   const assignedIds = useMemo(
-    () =>
-      new Set(
-        participations.map((participation) => String(participation.artist)),
-      ),
+    () => new Set(participations.map((participation) => String(participation.artist))),
     [participations],
   );
 
@@ -91,7 +97,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     try {
       if (isCurrentlyCasted && participationId) {
         await deleteParticipationMutation.mutateAsync(String(participationId));
-        toast.success(t("projects.cast.toast.removed", "Usunięto z obsady"));
+        toast.success(t("projects.cast.toast.removed", "UsuniÄ™to z obsady"));
       } else {
         const existingDeclined = participations.find(
           (participation) =>
@@ -111,13 +117,14 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
             status: "INV",
           });
         }
+
         toast.success(t("projects.cast.toast.added", "Dodano do obsady"));
       }
-    } catch (error: unknown) {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+    } catch {
+      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
         description: t(
           "common.errors.database_error",
-          "Wystąpił problem z połączeniem z bazą danych.",
+          "WystÄ…piĹ‚ problem z poĹ‚Ä…czeniem z bazÄ… danych.",
         ),
       });
     } finally {
@@ -127,7 +134,6 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
 
   return {
     participations,
-    isFetching: isLoading,
     searchQuery,
     setSearchQuery,
     processingId,

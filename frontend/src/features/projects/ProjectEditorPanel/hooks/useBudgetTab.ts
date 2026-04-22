@@ -6,17 +6,21 @@
  * @module panel/projects/ProjectEditorPanel/hooks/useBudgetTab
  */
 
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import {
-  useUpdateParticipation,
+  useProjectArtistsDictionary,
+  useProjectCollaboratorsDictionary,
+  useProjectCrewAssignments,
+  useProjectParticipations,
   useUpdateCrewAssignment,
+  useUpdateParticipation,
 } from "../../api/project.queries";
-import { useProjectData } from "../../hooks/useProjectData";
+
 import type {
-  EnrichedCrewAssignmentAssignment,
+  EnrichedCrewAssignment,
   EnrichedParticipation,
   FeeMutation,
 } from "../types";
@@ -29,11 +33,10 @@ export interface BudgetKpi {
 }
 
 export interface UseBudgetTabResult {
-  isLoading: boolean;
   isSaving: boolean;
   isDirty: boolean;
   enrichedCast: EnrichedParticipation[];
-  enrichedCrew: EnrichedCrewAssignmentAssignment[];
+  enrichedCrew: EnrichedCrewAssignment[];
   dirtyFees: Record<string, FeeMutation>;
   kpi: BudgetKpi;
   handleFeeChange: (id: string, value: string, type: "cast" | "crew") => void;
@@ -46,92 +49,100 @@ export const useBudgetTab = (
   onDirtyStateChange?: (isDirty: boolean) => void,
 ): UseBudgetTabResult => {
   const { t } = useTranslation();
-  const { participations, crewAssignments, artists, crew, isLoading } =
-    useProjectData(projectId);
+
+  const { data: participations } = useProjectParticipations(projectId);
+  const { data: crewAssignments } = useProjectCrewAssignments(projectId);
+  const { data: artists } = useProjectArtistsDictionary();
+  const { data: collaborators } = useProjectCollaboratorsDictionary();
 
   const updateParticipationMutation = useUpdateParticipation(projectId);
   const updateCrewAssignmentMutation = useUpdateCrewAssignment(projectId);
 
   const [dirtyFees, setDirtyFees] = useState<Record<string, FeeMutation>>({});
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const isDirty = useMemo(() => Object.keys(dirtyFees).length > 0, [dirtyFees]);
 
   useEffect(() => {
-    if (onDirtyStateChange) {
-      onDirtyStateChange(isDirty);
-    }
+    onDirtyStateChange?.(isDirty);
   }, [isDirty, onDirtyStateChange]);
 
-  const handleFeeChange = (
-    id: string,
-    value: string,
-    type: "cast" | "crew",
-  ) => {
-    setDirtyFees((previous) => ({ ...previous, [id]: { type, value } }));
-  };
-
-  const handleReset = () => {
-    setDirtyFees({});
-  };
-
-  const enrichedCast = useMemo(() => {
-    return participations
-      .filter((p) => p.status === "CON" || p.status === "INV")
-      .map((participation) => ({
-        ...participation,
-        artistData: artists.find(
-          (a) => String(a.id) === String(participation.artist),
+  const enrichedCast = useMemo<EnrichedParticipation[]>(
+    () =>
+      participations
+        .filter(
+          (participation) =>
+            participation.status === "CON" || participation.status === "INV",
+        )
+        .map((participation) => ({
+          ...participation,
+          artistData: artists.find(
+            (artist) => String(artist.id) === String(participation.artist),
+          ),
+        }))
+        .filter(
+          (participation): participation is EnrichedParticipation =>
+            participation.artistData !== undefined,
+        )
+        .sort((left, right) =>
+          left.artistData.last_name.localeCompare(right.artistData.last_name),
         ),
-      }))
-      .filter((p): p is EnrichedParticipation => p.artistData !== undefined)
-      .sort((left, right) =>
-        left.artistData.last_name.localeCompare(right.artistData.last_name),
-      );
-  }, [participations, artists]);
+    [artists, participations],
+  );
 
-  const enrichedCrew = useMemo(() => {
-    return crewAssignments
-      .map((assignment) => ({
-        ...assignment,
-        crewData: crew.find(
-          (c) => String(c.id) === String(assignment.collaborator),
+  const enrichedCrew = useMemo<EnrichedCrewAssignment[]>(
+    () =>
+      crewAssignments
+        .map((assignment) => ({
+          ...assignment,
+          crewData: collaborators.find(
+            (collaborator) =>
+              String(collaborator.id) === String(assignment.collaborator),
+          ),
+        }))
+        .filter(
+          (assignment): assignment is EnrichedCrewAssignment =>
+            assignment.crewData !== undefined,
+        )
+        .sort((left, right) =>
+          left.crewData.last_name.localeCompare(right.crewData.last_name),
         ),
-      }))
-      .filter(
-        (assignment): assignment is EnrichedCrewAssignment =>
-          assignment.crewData !== undefined,
-      )
-      .sort((left, right) =>
-        left.crewData.last_name.localeCompare(right.crewData.last_name),
-      );
-  }, [crewAssignments, crew]);
+    [collaborators, crewAssignments],
+  );
 
-  const kpi = useMemo(() => {
+  const kpi = useMemo<BudgetKpi>(() => {
     let castTotal = 0;
     let crewTotal = 0;
     let missingCount = 0;
 
     enrichedCast.forEach((participation) => {
-      const currentValue = dirtyFees[String(participation.id)]
-        ? dirtyFees[String(participation.id)].value
-        : participation.fee !== null && participation.fee !== undefined
+      const currentValue =
+        dirtyFees[String(participation.id)]?.value ??
+        (participation.fee !== null && participation.fee !== undefined
           ? String(participation.fee)
-          : "";
+          : "");
 
-      if (!currentValue) missingCount++;
-      else castTotal += parseFloat(currentValue) || 0;
+      if (!currentValue) {
+        missingCount += 1;
+        return;
+      }
+
+      castTotal += Number.parseFloat(currentValue) || 0;
     });
 
     enrichedCrew.forEach((assignment) => {
-      const currentValue = dirtyFees[String(assignment.id)]
-        ? dirtyFees[String(assignment.id)].value
-        : assignment.fee !== null && assignment.fee !== undefined
+      const currentValue =
+        dirtyFees[String(assignment.id)]?.value ??
+        (assignment.fee !== null && assignment.fee !== undefined
           ? String(assignment.fee)
-          : "";
+          : "");
 
-      if (!currentValue) missingCount++;
-      else crewTotal += parseFloat(currentValue) || 0;
+      if (!currentValue) {
+        missingCount += 1;
+        return;
+      }
+
+      crewTotal += Number.parseFloat(currentValue) || 0;
     });
 
     return {
@@ -140,53 +151,66 @@ export const useBudgetTab = (
       missingCount,
       grandTotal: castTotal + crewTotal,
     };
-  }, [enrichedCast, enrichedCrew, dirtyFees]);
+  }, [dirtyFees, enrichedCast, enrichedCrew]);
 
-  const handleBulkSave = async () => {
-    if (!isDirty) return;
+  const handleFeeChange = (
+    id: string,
+    value: string,
+    type: "cast" | "crew",
+  ): void => {
+    setDirtyFees((previous) => ({ ...previous, [id]: { type, value } }));
+  };
+
+  const handleReset = (): void => {
+    setDirtyFees({});
+  };
+
+  const handleBulkSave = async (): Promise<void> => {
+    if (!isDirty) {
+      return;
+    }
 
     setIsSaving(true);
+
     const toastId = toast.loading(
-      t("projects.budget.toast.saving", "Zapisywanie budżetu..."),
+      t("projects.budget.toast.saving", "Zapisywanie budĹĽetu..."),
     );
 
     try {
-      const mutationIds = Object.keys(dirtyFees);
-
       await Promise.all(
-        mutationIds.map((id) => {
-          const mutation = dirtyFees[id];
+        Object.entries(dirtyFees).map(([id, mutation]) => {
           const numericValue =
-            mutation.value === "" ? null : parseFloat(mutation.value);
+            mutation.value === "" ? null : Number.parseFloat(mutation.value);
 
           if (mutation.type === "cast") {
             return updateParticipationMutation.mutateAsync({
               id,
               data: { fee: numericValue },
             });
-          } else {
-            return updateCrewAssignmentMutation.mutateAsync({
-              id,
-              data: { fee: numericValue },
-            });
           }
+
+          return updateCrewAssignmentMutation.mutateAsync({
+            id,
+            data: { fee: numericValue },
+          });
         }),
       );
 
       setDirtyFees({});
+
       toast.success(
         t(
           "projects.budget.toast.save_success",
-          "Zapisano stawki i przeliczono budżet",
+          "Zapisano stawki i przeliczono budĹĽet",
         ),
         { id: toastId },
       );
-    } catch (error: unknown) {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+    } catch {
+      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
         id: toastId,
         description: t(
           "projects.budget.toast.save_error_desc",
-          "Nie udało się zapisać wszystkich stawek.",
+          "Nie udaĹ‚o siÄ™ zapisaÄ‡ wszystkich stawek.",
         ),
       });
     } finally {
@@ -195,7 +219,6 @@ export const useBudgetTab = (
   };
 
   return {
-    isLoading,
     isSaving,
     isDirty,
     enrichedCast,

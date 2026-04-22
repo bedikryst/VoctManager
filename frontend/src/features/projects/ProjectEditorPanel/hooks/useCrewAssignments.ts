@@ -5,27 +5,34 @@
  * @module panel/projects/ProjectEditorPanel/hooks/useCrewAssignments
  */
 
-import { useState, useMemo } from "react";
+import {
+  useMemo,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+
 import type { Collaborator, CrewAssignment } from "@/shared/types";
 import {
   useCreateCrewAssignment,
   useDeleteCrewAssignment,
+  useProjectCollaboratorsDictionary,
+  useProjectCrewAssignments,
 } from "../../api/project.queries";
-import { useProjectData } from "../../hooks/useProjectData";
 
 export interface UseCrewAssignmentsResult {
-  isLoading: boolean;
   isMutating: boolean;
   selectedCrewId: string;
-  setSelectedCrewId: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedCrewId: Dispatch<SetStateAction<string>>;
   roleDesc: string;
-  setRoleDesc: React.Dispatch<React.SetStateAction<string>>;
+  setRoleDesc: Dispatch<SetStateAction<string>>;
   availableCrew: Collaborator[];
   projectAssignments: CrewAssignment[];
   crewMap: Map<string, Collaborator>;
-  handleAssign: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  handleAssign: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   handleRemove: (id: string) => Promise<void>;
 }
 
@@ -33,13 +40,15 @@ export const useCrewAssignments = (
   projectId: string,
 ): UseCrewAssignmentsResult => {
   const { t } = useTranslation();
-  const { crew, crewAssignments, isLoading } = useProjectData(projectId);
+
+  const { data: collaborators } = useProjectCollaboratorsDictionary();
+  const { data: crewAssignments } = useProjectCrewAssignments(projectId);
 
   const createCrewAssignmentMutation = useCreateCrewAssignment(projectId);
   const deleteCrewAssignmentMutation = useDeleteCrewAssignment(projectId);
 
-  const [selectedCrewId, setSelectedCrewId] = useState<string>("");
-  const [roleDesc, setRoleDesc] = useState<string>("");
+  const [selectedCrewId, setSelectedCrewId] = useState("");
+  const [roleDesc, setRoleDesc] = useState("");
 
   const projectAssignments = useMemo<CrewAssignment[]>(
     () =>
@@ -49,7 +58,7 @@ export const useCrewAssignments = (
     [crewAssignments, projectId],
   );
 
-  const assignedCrewIds = useMemo<Set<string>>(
+  const assignedCrewIds = useMemo(
     () =>
       new Set(
         projectAssignments.map((assignment) => String(assignment.collaborator)),
@@ -57,33 +66,36 @@ export const useCrewAssignments = (
     [projectAssignments],
   );
 
-  const availableCrew = useMemo<Collaborator[]>(() => {
-    if (!crew || crew.length === 0) {
-      return [];
-    }
-    return crew.filter(
-      (collaborator) => !assignedCrewIds.has(String(collaborator.id)),
-    );
-  }, [crew, assignedCrewIds]);
+  const availableCrew = useMemo(
+    () =>
+      collaborators.filter(
+        (collaborator) => !assignedCrewIds.has(String(collaborator.id)),
+      ),
+    [assignedCrewIds, collaborators],
+  );
 
-  const crewMap = useMemo<Map<string, Collaborator>>(() => {
-    const map = new Map<string, Collaborator>();
-    crew.forEach((collaborator) =>
-      map.set(String(collaborator.id), collaborator),
-    );
-    return map;
-  }, [crew]);
+  const crewMap = useMemo(
+    () =>
+      new Map(
+        collaborators.map((collaborator) => [
+          String(collaborator.id),
+          collaborator,
+        ]),
+      ),
+    [collaborators],
+  );
 
   const handleAssign = async (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     event.preventDefault();
+
     if (!selectedCrewId) {
       return;
     }
 
     const toastId = toast.loading(
-      t("projects.crew.toast.assigning", "Przypisywanie członka ekipy..."),
+      t("projects.crew.toast.assigning", "Przypisywanie czĹ‚onka ekipy..."),
     );
 
     try {
@@ -99,16 +111,16 @@ export const useCrewAssignments = (
       toast.success(
         t(
           "projects.crew.toast.assign_success",
-          "Członek ekipy przypisany pomyślnie",
+          "CzĹ‚onek ekipy przypisany pomyĹ›lnie",
         ),
         { id: toastId },
       );
     } catch {
-      toast.error(t("projects.crew.toast.assign_error", "Błąd przypisania"), {
+      toast.error(t("projects.crew.toast.assign_error", "BĹ‚Ä…d przypisania"), {
         id: toastId,
         description: t(
           "projects.crew.toast.assign_error_desc",
-          "Nie udało się przypisać członka ekipy do projektu.",
+          "Nie udaĹ‚o siÄ™ przypisaÄ‡ czĹ‚onka ekipy do projektu.",
         ),
       });
     }
@@ -116,7 +128,7 @@ export const useCrewAssignments = (
 
   const handleRemove = async (id: string): Promise<void> => {
     const toastId = toast.loading(
-      t("projects.crew.toast.removing", "Usuwanie członka ekipy..."),
+      t("projects.crew.toast.removing", "Usuwanie czĹ‚onka ekipy..."),
     );
 
     try {
@@ -124,23 +136,22 @@ export const useCrewAssignments = (
       toast.success(
         t(
           "projects.crew.toast.remove_success",
-          "Usunięto przypisanie z projektu",
+          "UsuniÄ™to przypisanie z projektu",
         ),
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
+      toast.error(t("common.actions.delete_error", "BĹ‚Ä…d usuwania"), {
         id: toastId,
         description: t(
           "projects.crew.toast.remove_error_desc",
-          "Nie udało się odpiąć członka ekipy z projektu.",
+          "Nie udaĹ‚o siÄ™ odpiÄ…Ä‡ czĹ‚onka ekipy z projektu.",
         ),
       });
     }
   };
 
   return {
-    isLoading,
     isMutating:
       createCrewAssignmentMutation.isPending ||
       deleteCrewAssignmentMutation.isPending,

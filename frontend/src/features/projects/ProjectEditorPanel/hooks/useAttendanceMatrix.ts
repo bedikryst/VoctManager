@@ -6,7 +6,7 @@
  * @module panel/projects/ProjectEditorPanel/hooks/useAttendanceMatrix
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -15,12 +15,14 @@ import type { Artist, Attendance, Participation } from "@/shared/types";
 import { compareProjectDateAsc } from "../../lib/projectPresentation";
 import {
   projectKeys,
-  useProjectAttendances,
   useCreateAttendance,
-  useUpdateAttendance,
   useDeleteAttendance,
+  useProjectArtistsDictionary,
+  useProjectAttendances,
+  useProjectParticipations,
+  useProjectRehearsals,
+  useUpdateAttendance,
 } from "../../api/project.queries";
-import { useProjectData } from "../../hooks/useProjectData";
 
 export type AttendanceStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED" | null;
 
@@ -50,8 +52,14 @@ const toAttendanceRecord = (attendance: Attendance): AttendanceRecord => ({
   status: attendance.status,
 });
 
+const toAttendanceEntity = (attendance: AttendanceRecord): Attendance => ({
+  id: attendance.id,
+  rehearsal: attendance.rehearsal,
+  participation: attendance.participation,
+  status: attendance.status,
+});
+
 export interface UseAttendanceMatrixResult {
-  isLoading: boolean;
   projectRehearsals: import("@/shared/types").Rehearsal[];
   enrichedParticipations: EnrichedParticipation[];
   attendanceMap: Map<string, AttendanceRecord>;
@@ -69,20 +77,15 @@ export const useAttendanceMatrix = (
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const {
-    rehearsals,
-    participations,
-    artists,
-    isLoading: isProjectDataLoading,
-  } = useProjectData(projectId);
-  const { data: fetchedAttendances = [], isLoading: isLoadingAttendances } =
-    useProjectAttendances(projectId);
+  const { data: rehearsals } = useProjectRehearsals(projectId);
+  const { data: participations } = useProjectParticipations(projectId);
+  const { data: artists } = useProjectArtistsDictionary();
+  const { data: fetchedAttendances } = useProjectAttendances(projectId);
 
   const createMutation = useCreateAttendance(projectId);
   const updateMutation = useUpdateAttendance(projectId);
   const deleteMutation = useDeleteAttendance(projectId);
 
-  const isLoading = isProjectDataLoading || isLoadingAttendances;
   const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
   const [mutatingCells, setMutatingCells] = useState<Set<string>>(new Set());
 
@@ -98,30 +101,35 @@ export const useAttendanceMatrix = (
     [rehearsals],
   );
 
-  const enrichedParticipations = useMemo<EnrichedParticipation[]>(() => {
-    if (!artists || artists.length === 0) return [];
-
-    return participations
-      .map((participation) => ({
-        ...participation,
-        artistData: artists.find(
-          (artist) => String(artist.id) === String(participation.artist),
+  const enrichedParticipations = useMemo<EnrichedParticipation[]>(
+    () =>
+      participations
+        .map((participation) => ({
+          ...participation,
+          artistData: artists.find(
+            (artist) => String(artist.id) === String(participation.artist),
+          ),
+        }))
+        .filter(
+          (participation): participation is EnrichedParticipation =>
+            participation.artistData !== undefined,
+        )
+        .sort((left, right) =>
+          left.artistData.last_name.localeCompare(right.artistData.last_name),
         ),
-      }))
-      .filter((p): p is EnrichedParticipation => p.artistData !== undefined)
-      .sort((left, right) =>
-        left.artistData.last_name.localeCompare(right.artistData.last_name),
-      );
-  }, [participations, artists]);
+    [artists, participations],
+  );
 
   const attendanceMap = useMemo(() => {
     const map = new Map<string, AttendanceRecord>();
-    attendances.forEach((attendance) =>
+
+    attendances.forEach((attendance) => {
       map.set(
         `${attendance.rehearsal}-${attendance.participation}`,
         attendance,
-      ),
-    );
+      );
+    });
+
     return map;
   }, [attendances]);
 
@@ -130,42 +138,53 @@ export const useAttendanceMatrix = (
       rehearsalId: string,
       participationId: string,
       currentRecord: AttendanceRecord | undefined,
-    ) => {
+    ): Promise<void> => {
       const cellKey = `${rehearsalId}-${participationId}`;
 
       setMutatingCells((previous) => {
-        if (previous.has(cellKey)) return previous;
+        if (previous.has(cellKey)) {
+          return previous;
+        }
+
         const next = new Set(previous);
         next.add(cellKey);
         return next;
       });
 
-      const currentStatus = currentRecord?.status || null;
+      const currentStatus = currentRecord?.status ?? null;
       const currentIndex = STATUS_CYCLE.indexOf(currentStatus);
       const nextStatus = STATUS_CYCLE[(currentIndex + 1) % STATUS_CYCLE.length];
-
-      const tempId = currentRecord?.id || `temp-${Date.now()}`;
+      const tempId = currentRecord?.id ?? `temp-${Date.now()}`;
       const attendanceQueryKey = projectKeys.attendances.byProject(projectId);
 
       const updateStateAndCache = (
         updater: (previous: AttendanceRecord[]) => AttendanceRecord[],
-      ) => {
+      ): void => {
         setAttendances((previous) => {
           const nextState = updater(previous);
-          queryClient.setQueryData(attendanceQueryKey, nextState);
+
+          queryClient.setQueryData<Attendance[]>(
+            attendanceQueryKey,
+            nextState.map(toAttendanceEntity),
+          );
+
           return nextState;
         });
       };
 
-      // OPTIMISTIC UPDATE
       updateStateAndCache((previous) => {
         const filtered = previous.filter(
-          (a) =>
+          (attendance) =>
             !(
-              a.rehearsal === rehearsalId && a.participation === participationId
+              attendance.rehearsal === rehearsalId &&
+              attendance.participation === participationId
             ),
         );
-        if (nextStatus === null) return filtered;
+
+        if (nextStatus === null) {
+          return filtered;
+        }
+
         return [
           ...filtered,
           {
@@ -181,10 +200,10 @@ export const useAttendanceMatrix = (
         if (
           nextStatus === null &&
           currentRecord?.id &&
-          !currentRecord.id.startsWith("temp")
+          !currentRecord.id.startsWith("temp-")
         ) {
           await deleteMutation.mutateAsync(currentRecord.id);
-        } else if (currentRecord?.id && !currentRecord.id.startsWith("temp")) {
+        } else if (currentRecord?.id && !currentRecord.id.startsWith("temp-")) {
           await updateMutation.mutateAsync({
             id: currentRecord.id,
             data: { status: nextStatus },
@@ -195,9 +214,12 @@ export const useAttendanceMatrix = (
             participation: participationId,
             status: nextStatus,
           });
+
           updateStateAndCache((previous) =>
-            previous.map((a) =>
-              a.id === tempId ? { ...a, id: String(createdAttendance.id) } : a,
+            previous.map((attendance) =>
+              attendance.id === tempId
+                ? { ...attendance, id: String(createdAttendance.id) }
+                : attendance,
             ),
           );
         }
@@ -205,23 +227,22 @@ export const useAttendanceMatrix = (
         await queryClient.invalidateQueries({
           queryKey: projectKeys.rehearsals.byProject(projectId),
         });
-      } catch (error: unknown) {
+      } catch {
         toast.error(
           t(
             "projects.matrix.toast.save_error",
-            "Nie udało się zapisać zmiany.",
+            "Nie udaĹ‚o siÄ™ zapisaÄ‡ zmiany.",
           ),
           {
             description: t(
               "projects.matrix.toast.save_error_desc",
-              "Sprawdź połączenie i spróbuj ponownie.",
+              "SprawdĹş poĹ‚Ä…czenie i sprĂłbuj ponownie.",
             ),
           },
         );
 
-        // ROLLBACK STATE ON ERROR
         updateStateAndCache((previous) => {
-          const filtered = previous.filter((a) => a.id !== tempId);
+          const filtered = previous.filter((attendance) => attendance.id !== tempId);
           return currentRecord ? [...filtered, currentRecord] : filtered;
         });
       } finally {
@@ -232,11 +253,10 @@ export const useAttendanceMatrix = (
         });
       }
     },
-    [projectId, queryClient, t, createMutation, updateMutation, deleteMutation],
+    [createMutation, deleteMutation, projectId, queryClient, t, updateMutation],
   );
 
   return {
-    isLoading,
     projectRehearsals,
     enrichedParticipations,
     attendanceMap,

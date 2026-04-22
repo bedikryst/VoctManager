@@ -6,7 +6,14 @@
  * @module panel/projects/ProjectEditorPanel/hooks/useRehearsalsTab
  */
 
-import { useCallback, useMemo, useState } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
@@ -21,30 +28,32 @@ import { useLocations } from "@/features/logistics/api/logistics.queries";
 import {
   useCreateRehearsal,
   useDeleteRehearsal,
+  useProjectArtistsDictionary,
+  useProjectParticipations,
+  useProjectRehearsals,
+  useProjects,
   useUpdateRehearsal,
 } from "../../api/project.queries";
-import { useProjectData } from "../../hooks/useProjectData";
 import { compareProjectDateAsc } from "../../lib/projectPresentation";
 import type { RehearsalFormData, RehearsalTargetType } from "../types";
 
 export interface UseRehearsalsTabResult {
-  isLoading: boolean;
   isSubmitting: boolean;
   isEditing: boolean;
   rehearsalToDelete: string | null;
-  setRehearsalToDelete: React.Dispatch<React.SetStateAction<string | null>>;
+  setRehearsalToDelete: Dispatch<SetStateAction<string | null>>;
   isDeleting: boolean;
   formData: RehearsalFormData;
-  setFormData: React.Dispatch<React.SetStateAction<RehearsalFormData>>;
+  setFormData: Dispatch<SetStateAction<RehearsalFormData>>;
   targetType: RehearsalTargetType;
-  setTargetType: React.Dispatch<React.SetStateAction<RehearsalTargetType>>;
+  setTargetType: Dispatch<SetStateAction<RehearsalTargetType>>;
   selectedSections: string[];
   customParticipants: string[];
   projectRehearsals: Rehearsal[];
   projectParticipations: Participation[];
   artistMap: Map<string, Artist>;
   locations: Location[];
-  handleSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  handleSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   handleEditClick: (rehearsal: Rehearsal) => void;
   handleCancelEdit: () => void;
   handleDeleteClick: (id: string) => void;
@@ -55,7 +64,7 @@ export interface UseRehearsalsTabResult {
 
 const toZonedInputString = (
   dateString?: string | null,
-  timezone: string = "Europe/Warsaw",
+  timezone = "Europe/Warsaw",
 ): string => {
   if (!dateString) {
     return "";
@@ -80,18 +89,19 @@ const getLocationId = (location: Rehearsal["location"]): string => {
   return typeof location === "string" ? location : location.id;
 };
 
-export const useRehearsalsTab = (
-  projectId: string,
-): UseRehearsalsTabResult => {
+export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   const { t } = useTranslation();
-  const {
-    project,
-    artists,
-    participations,
-    rehearsals,
-    isLoading: isProjectContextLoading,
-  } = useProjectData(projectId);
-  const { data: locations = [], isLoading: isLocationsLoading } = useLocations();
+
+  const { data: projects } = useProjects();
+  const { data: artists } = useProjectArtistsDictionary();
+  const { data: participations } = useProjectParticipations(projectId);
+  const { data: rehearsals } = useProjectRehearsals(projectId);
+  const { data: locationsData } = useLocations();
+
+  const project =
+    projects.find((candidate) => String(candidate.id) === String(projectId)) ??
+    null;
+  const locations = locationsData ?? [];
 
   const createRehearsalMutation = useCreateRehearsal(projectId);
   const updateRehearsalMutation = useUpdateRehearsal(projectId);
@@ -104,11 +114,9 @@ export const useRehearsalsTab = (
     null,
   );
 
-  const defaultTimezone = project?.timezone || "Europe/Warsaw";
-
   const [formData, setFormData] = useState<RehearsalFormData>({
     date_time: "",
-    timezone: defaultTimezone,
+    timezone: project?.timezone || "Europe/Warsaw",
     location_id: "",
     focus: "",
     is_mandatory: true,
@@ -120,15 +128,13 @@ export const useRehearsalsTab = (
 
   const projectRehearsals = useMemo<Rehearsal[]>(
     () =>
-      [...rehearsals]
-        .filter((rehearsal) => String(rehearsal.project) === String(projectId))
-        .sort((left, right) =>
-          compareProjectDateAsc(left.date_time, right.date_time),
-        ),
-    [projectId, rehearsals],
+      [...rehearsals].sort((left, right) =>
+        compareProjectDateAsc(left.date_time, right.date_time),
+      ),
+    [rehearsals],
   );
 
-  const projectParticipations = useMemo(
+  const projectParticipations = useMemo<Participation[]>(
     () =>
       participations.filter(
         (participation) => String(participation.project) === String(projectId),
@@ -136,15 +142,10 @@ export const useRehearsalsTab = (
     [participations, projectId],
   );
 
-  const artistMap = useMemo<Map<string, Artist>>(() => {
-    const map = new Map<string, Artist>();
-
-    artists.forEach((artist) => {
-      map.set(String(artist.id), artist);
-    });
-
-    return map;
-  }, [artists]);
+  const artistMap = useMemo(
+    () => new Map(artists.map((artist) => [String(artist.id), artist])),
+    [artists],
+  );
 
   const locationMap = useMemo(
     () => new Map(locations.map((location) => [String(location.id), location])),
@@ -198,7 +199,7 @@ export const useRehearsalsTab = (
   }, [project?.timezone]);
 
   const handleEditClick = useCallback(
-    (rehearsal: Rehearsal) => {
+    (rehearsal: Rehearsal): void => {
       const locationId = getLocationId(rehearsal.location);
       const resolvedLocation = locationMap.get(locationId);
       const rehearsalTimezone =
@@ -224,20 +225,21 @@ export const useRehearsalsTab = (
       ) {
         setTargetType("TUTTI");
         setCustomParticipants([]);
-      } else {
-        setTargetType("CUSTOM");
-        setCustomParticipants(invitedIds);
+        return;
       }
+
+      setTargetType("CUSTOM");
+      setCustomParticipants(invitedIds);
     },
     [locationMap, project?.timezone, projectParticipations.length],
   );
 
-  const handleCancelEdit = useCallback(() => {
+  const handleCancelEdit = useCallback((): void => {
     resetForm();
   }, [resetForm]);
 
   const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     event.preventDefault();
 
@@ -245,18 +247,19 @@ export const useRehearsalsTab = (
       toast.warning(
         t(
           "projects.rehearsals.toast.select_location",
-          "Wybierz lokalizację próby przed zapisem.",
+          "Wybierz lokalizacjÄ™ prĂłby przed zapisem.",
         ),
       );
       return;
     }
 
     const invitedParticipants = resolveInvitedParticipants();
+
     if (invitedParticipants.length === 0) {
       toast.warning(
         t(
           "projects.rehearsals.toast.select_target",
-          "Wybierz przynajmniej jedną osobę lub sekcję na próbę.",
+          "Wybierz przynajmniej jednÄ… osobÄ™ lub sekcjÄ™ na prĂłbÄ™.",
         ),
       );
       return;
@@ -265,10 +268,10 @@ export const useRehearsalsTab = (
     const isEditing = editingRehearsalId !== null;
     const toastId = toast.loading(
       isEditing
-        ? t("projects.rehearsals.toast.updating", "Aktualizowanie próby...")
+        ? t("projects.rehearsals.toast.updating", "Aktualizowanie prĂłby...")
         : t(
             "projects.rehearsals.toast.saving",
-            "Zapisywanie próby w kalendarzu...",
+            "Zapisywanie prĂłby w kalendarzu...",
           ),
     );
 
@@ -303,20 +306,20 @@ export const useRehearsalsTab = (
         isEditing
           ? t(
               "projects.rehearsals.toast.update_success",
-              "Próba zaktualizowana pomyślnie",
+              "PrĂłba zaktualizowana pomyĹ›lnie",
             )
           : t(
               "projects.rehearsals.toast.save_success",
-              "Próba zapisana pomyślnie",
+              "PrĂłba zapisana pomyĹ›lnie",
             ),
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
         id: toastId,
         description: t(
           "projects.rehearsals.toast.save_error_desc",
-          "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie.",
+          "WystÄ…piĹ‚ problem z zapisem do bazy. SprawdĹş formularz i poĹ‚Ä…czenie.",
         ),
       });
     }
@@ -332,7 +335,7 @@ export const useRehearsalsTab = (
     }
 
     const toastId = toast.loading(
-      t("projects.rehearsals.toast.removing", "Usuwanie próby..."),
+      t("projects.rehearsals.toast.removing", "Usuwanie prĂłby..."),
     );
 
     try {
@@ -343,15 +346,15 @@ export const useRehearsalsTab = (
       }
 
       toast.success(
-        t("projects.rehearsals.toast.remove_success", "Próba została usunięta"),
+        t("projects.rehearsals.toast.remove_success", "PrĂłba zostaĹ‚a usuniÄ™ta"),
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
+      toast.error(t("common.actions.delete_error", "BĹ‚Ä…d usuwania"), {
         id: toastId,
         description: t(
           "projects.rehearsals.toast.remove_error_desc",
-          "Nie udało się usunąć próby. Serwer odrzucił żądanie.",
+          "Nie udaĹ‚o siÄ™ usunÄ…Ä‡ prĂłby. Serwer odrzuciĹ‚ ĹĽÄ…danie.",
         ),
       });
     } finally {
@@ -382,7 +385,6 @@ export const useRehearsalsTab = (
   }, []);
 
   return {
-    isLoading: isProjectContextLoading || isLocationsLoading,
     isSubmitting:
       createRehearsalMutation.isPending || updateRehearsalMutation.isPending,
     isEditing: editingRehearsalId !== null,

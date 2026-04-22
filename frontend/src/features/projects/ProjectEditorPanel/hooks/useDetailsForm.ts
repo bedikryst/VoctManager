@@ -7,12 +7,25 @@
  * @module panel/projects/ProjectEditorPanel/hooks/useDetailsForm
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+
 import type { Project, RunSheetItem } from "@/shared/types";
-import { useCreateProject, useUpdateProject } from "../../api/project.queries";
+import {
+  useCreateProject,
+  useProjects,
+  useUpdateProject,
+} from "../../api/project.queries";
 import type {
   ProjectCreateDTO,
   ProjectUpdateDTO,
@@ -21,7 +34,7 @@ import type { ProjectFormData } from "../types";
 
 export interface UseDetailsFormResult {
   formData: ProjectFormData;
-  setFormData: React.Dispatch<React.SetStateAction<ProjectFormData>>;
+  setFormData: Dispatch<SetStateAction<ProjectFormData>>;
   sortedRunSheet: RunSheetItem[];
   isDirty: boolean;
   isSubmitting: boolean;
@@ -32,7 +45,7 @@ export interface UseDetailsFormResult {
     value: string,
   ) => void;
   handleRemoveRunSheetItem: (id: string) => void;
-  handleSubmit: (event: React.FormEvent) => Promise<void>;
+  handleSubmit: (event: FormEvent) => Promise<void>;
 }
 
 const normalizeRunSheetItem = (
@@ -46,16 +59,16 @@ const normalizeRunSheetItem = (
   description: typeof item.description === "string" ? item.description : "",
 });
 
-const getProjectLocationId = (project: Project | null | undefined): string | null => {
+const getProjectLocationId = (
+  project: Project | null | undefined,
+): string | null => {
   if (!project?.location) {
     return null;
   }
 
-  if (typeof project.location === "string") {
-    return project.location;
-  }
-
-  return project.location.id;
+  return typeof project.location === "string"
+    ? project.location
+    : project.location.id;
 };
 
 const getProjectConductorId = (
@@ -65,18 +78,19 @@ const getProjectConductorId = (
     return null;
   }
 
-  if (typeof project.conductor === "string") {
-    return project.conductor;
-  }
-
-  return project.conductor.id;
+  return typeof project.conductor === "string"
+    ? project.conductor
+    : project.conductor.id;
 };
 
 const toZonedInputString = (
   dateString?: string | null,
-  timezone: string = "Europe/Warsaw",
+  timezone = "Europe/Warsaw",
 ): string => {
-  if (!dateString) return "";
+  if (!dateString) {
+    return "";
+  }
+
   try {
     return formatInTimeZone(
       new Date(dateString),
@@ -89,11 +103,23 @@ const toZonedInputString = (
 };
 
 export const useDetailsForm = (
-  project: Project | null,
+  projectId: string | undefined,
   onSuccess: (updatedProject?: Project) => void,
   onDirtyStateChange?: (isDirty: boolean) => void,
 ): UseDetailsFormResult => {
   const { t } = useTranslation();
+
+  const { data: projects } = useProjects(Boolean(projectId));
+
+  const project = useMemo(
+    () =>
+      projectId
+        ? projects.find((candidate) => String(candidate.id) === String(projectId)) ??
+          null
+        : null,
+    [projectId, projects],
+  );
+
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
 
@@ -112,15 +138,11 @@ export const useDetailsForm = (
     description: project?.description || "",
   });
 
-  const [runSheet, setRunSheet] = useState<RunSheetItem[]>(() => {
-    const initialSheet = project?.run_sheet || [];
-    return initialSheet.map((item, index) =>
-      normalizeRunSheetItem(
-        item,
-        `runsheet-init-${index}-${Date.now()}`,
-      ),
-    );
-  });
+  const [runSheet, setRunSheet] = useState<RunSheetItem[]>(() =>
+    (project?.run_sheet || []).map((item, index) =>
+      normalizeRunSheetItem(item, `runsheet-init-${index}-${Date.now()}`),
+    ),
+  );
 
   const resetFormToProject = useCallback((source: Project) => {
     setBaseline(source);
@@ -138,10 +160,7 @@ export const useDetailsForm = (
     });
     setRunSheet(
       (source.run_sheet || []).map((item, index) =>
-        normalizeRunSheetItem(
-          item,
-          `runsheet-init-${index}-${Date.now()}`,
-        ),
+        normalizeRunSheetItem(item, `runsheet-init-${index}-${Date.now()}`),
       ),
     );
   }, []);
@@ -150,7 +169,7 @@ export const useDetailsForm = (
     if (project && String(project.id) !== String(baseline?.id)) {
       resetFormToProject(project);
     }
-  }, [project?.id, baseline?.id, resetFormToProject]);
+  }, [baseline?.id, project, resetFormToProject]);
 
   const isDirty = useMemo(() => {
     if (!baseline) {
@@ -182,6 +201,7 @@ export const useDetailsForm = (
       title: item.title || "",
       description: item.description || "",
     }));
+
     const cleanBaselineRunSheet = (baseline.run_sheet || []).map((item) => ({
       time: item.time || "",
       title: item.title || "",
@@ -193,37 +213,35 @@ export const useDetailsForm = (
       JSON.stringify(cleanBaselineRunSheet);
 
     return basicFieldsChanged || runSheetChanged;
-  }, [formData, baseline, runSheet]);
+  }, [baseline, formData, runSheet]);
 
   useEffect(() => {
-    if (onDirtyStateChange) {
-      onDirtyStateChange(isDirty);
-    }
+    onDirtyStateChange?.(isDirty);
   }, [isDirty, onDirtyStateChange]);
 
-  const sortedRunSheet = useMemo(() => {
-    return [...runSheet].sort((a, b) => a.time.localeCompare(b.time));
-  }, [runSheet]);
+  const sortedRunSheet = useMemo(
+    () => [...runSheet].sort((left, right) => left.time.localeCompare(right.time)),
+    [runSheet],
+  );
 
-  const handleAddRunSheetItem = useCallback(() => {
-    const newItem: RunSheetItem = {
-      id: `temp-${Date.now()}`,
-      time: "12:00",
-      title: "",
-      description: "",
-    };
-    setRunSheet((prev) => [...prev, newItem]);
+  const handleAddRunSheetItem = useCallback((): void => {
+    setRunSheet((previous) => [
+      ...previous,
+      {
+        id: `temp-${Date.now()}`,
+        time: "12:00",
+        title: "",
+        description: "",
+      },
+    ]);
   }, []);
 
   const handleUpdateRunSheetItem = useCallback(
-    (id: string, field: keyof RunSheetItem, value: string) => {
-      setRunSheet((prev) =>
-        prev.map((item) =>
+    (id: string, field: keyof RunSheetItem, value: string): void => {
+      setRunSheet((previous) =>
+        previous.map((item) =>
           String(item.id) === id
-            ? normalizeRunSheetItem(
-                { ...item, [field]: value },
-                String(item.id),
-              )
+            ? normalizeRunSheetItem({ ...item, [field]: value }, String(item.id))
             : item,
         ),
       );
@@ -231,16 +249,21 @@ export const useDetailsForm = (
     [],
   );
 
-  const handleRemoveRunSheetItem = useCallback((id: string) => {
-    setRunSheet((prev) => prev.filter((item) => String(item.id) !== id));
+  const handleRemoveRunSheetItem = useCallback((id: string): void => {
+    setRunSheet((previous) =>
+      previous.filter((item) => String(item.id) !== id),
+    );
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isDirty) return;
+  const handleSubmit = async (event: FormEvent): Promise<void> => {
+    event.preventDefault();
+
+    if (!isDirty) {
+      return;
+    }
 
     const toastId = toast.loading(
-      t("projects.details.toast.saving", "Zapisywanie szczegółów projektu..."),
+      t("projects.details.toast.saving", "Zapisywanie szczegĂłĹ‚Ăłw projektu..."),
     );
 
     try {
@@ -269,7 +292,7 @@ export const useDetailsForm = (
         ? fromZonedTime(safeCallTimeStr, formData.timezone).toISOString()
         : null;
 
-      const payload: ProjectCreateDTO | ProjectUpdateDTO = {
+      const payload = {
         title: formData.title,
         timezone: formData.timezone,
         date_time: absoluteDateTime,
@@ -284,10 +307,12 @@ export const useDetailsForm = (
       };
 
       if (baseline?.id) {
+        const updatePayload: ProjectUpdateDTO = payload;
         const updatedProject = await updateProjectMutation.mutateAsync({
           id: String(baseline.id),
-          data: payload as ProjectUpdateDTO,
+          data: updatePayload,
         });
+
         toast.success(
           t(
             "projects.details.toast.update_success",
@@ -295,37 +320,40 @@ export const useDetailsForm = (
           ),
           { id: toastId },
         );
+
         resetFormToProject(updatedProject);
         onSuccess(updatedProject);
-      } else {
-        const createdProject = await createProjectMutation.mutateAsync(
-          payload as ProjectCreateDTO,
-        );
-        toast.success(
-          t(
-            "projects.details.toast.create_success",
-            "Utworzono nowy projekt z harmonogramem",
-          ),
-          { id: toastId },
-        );
-        resetFormToProject(createdProject);
-        onSuccess(createdProject);
+        return;
       }
+
+      const createPayload: ProjectCreateDTO = payload;
+      const createdProject = await createProjectMutation.mutateAsync(createPayload);
+
+      toast.success(
+        t(
+          "projects.details.toast.create_success",
+          "Utworzono nowy projekt z harmonogramem",
+        ),
+        { id: toastId },
+      );
+
+      resetFormToProject(createdProject);
+      onSuccess(createdProject);
     } catch (error: unknown) {
       const isAxiosError = (
-        err: unknown,
-      ): err is { response?: { data?: Record<string, string[]> } } =>
-        typeof err === "object" && err !== null && "response" in err;
+        value: unknown,
+      ): value is { response?: { data?: Record<string, string[]> } } =>
+        typeof value === "object" && value !== null && "response" in value;
 
       const errorMessage =
         isAxiosError(error) && error.response?.data
           ? Object.values(error.response.data).flat().join(" | ")
           : t(
               "common.errors.save_problem",
-              "Wystąpił problem podczas zapisywania danych.",
+              "WystÄ…piĹ‚ problem podczas zapisywania danych.",
             );
 
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
         id: toastId,
         description: errorMessage,
       });

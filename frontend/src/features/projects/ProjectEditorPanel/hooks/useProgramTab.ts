@@ -6,29 +6,34 @@
  * @module panel/projects/ProjectEditorPanel/hooks/useProgramTab
  */
 
-import { useState, useEffect, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
-import type { Piece, ProgramItem as ProjectProgramItem } from "@/shared/types";
+import type { Piece, ProgramItem } from "@/shared/types";
 import {
-  useProjectProgram,
   useCreateProgramItem,
-  useUpdateProgramItem,
   useDeleteProgramItem,
+  useProjectPiecesDictionary,
+  useProjectProgram,
+  useUpdateProgramItem,
 } from "../../api/project.queries";
-import { useProjectData } from "../../hooks/useProjectData";
 import type { ProgramTabItem } from "../types";
 
 export interface UseProgramTabResult {
   programItems: ProgramTabItem[];
-  isLoading: boolean;
   isSaving: boolean;
   isDirty: boolean;
   searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  setSearchQuery: Dispatch<SetStateAction<string>>;
   totalConcertDurationSeconds: number;
   addedPieceIds: string[];
   filteredPieces: Piece[];
@@ -42,7 +47,7 @@ export interface UseProgramTabResult {
 }
 
 const normalizeProgramItem = (
-  item: ProjectProgramItem,
+  item: ProgramItem,
   pieces: Piece[],
 ): ProgramTabItem => {
   const pieceId = String(item.piece_id ?? item.piece);
@@ -64,98 +69,101 @@ export const useProgramTab = (
   onDirtyStateChange?: (isDirty: boolean) => void,
 ): UseProgramTabResult => {
   const { t } = useTranslation();
-  const { pieces } = useProjectData(projectId);
+
+  const { data: pieces } = useProjectPiecesDictionary();
+  const { data: fetchedProgram } = useProjectProgram(projectId);
 
   const createProgramMutation = useCreateProgramItem(projectId);
   const updateProgramMutation = useUpdateProgramItem(projectId);
   const deleteProgramMutation = useDeleteProgramItem(projectId);
 
   const [programItems, setProgramItems] = useState<ProgramTabItem[]>([]);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-
-  const { data: fetchedProgram, isLoading } = useProjectProgram(projectId);
+  const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (fetchedProgram) {
-      setProgramItems(
-        fetchedProgram.map((item) => normalizeProgramItem(item, pieces)),
-      );
-    }
+    setProgramItems(
+      fetchedProgram.map((programItem) => normalizeProgramItem(programItem, pieces)),
+    );
   }, [fetchedProgram, pieces]);
 
   const isDirty = useMemo(() => {
-    if (!fetchedProgram) return false;
     const currentOrderIds = programItems.map((item) => item.id).join(",");
-    const originalOrderIds = fetchedProgram
-      .map((item) => String(item.id))
-      .join(",");
+    const originalOrderIds = fetchedProgram.map((item) => String(item.id)).join(",");
     return currentOrderIds !== originalOrderIds;
-  }, [programItems, fetchedProgram]);
+  }, [fetchedProgram, programItems]);
 
   useEffect(() => {
-    if (onDirtyStateChange) {
-      onDirtyStateChange(isDirty);
-    }
+    onDirtyStateChange?.(isDirty);
   }, [isDirty, onDirtyStateChange]);
 
-  const totalConcertDurationSeconds = useMemo<number>(() => {
-    return programItems.reduce((sum, item) => {
-      const pieceId = item.piece_id || item.piece;
-      const piece = pieces.find(
-        (candidate) => String(candidate.id) === pieceId,
-      );
-      return sum + (piece?.estimated_duration || 0);
-    }, 0);
-  }, [programItems, pieces]);
+  const totalConcertDurationSeconds = useMemo(
+    () =>
+      programItems.reduce((sum, item) => {
+        const pieceId = item.piece_id ?? item.piece;
+        const piece = pieces.find((candidate) => String(candidate.id) === pieceId);
+        return sum + (piece?.estimated_duration || 0);
+      }, 0),
+    [pieces, programItems],
+  );
 
-  const addedPieceIds = useMemo<string[]>(
+  const addedPieceIds = useMemo(
     () => programItems.map((item) => item.piece_id || item.piece),
     [programItems],
   );
 
-  const filteredPieces = useMemo<Piece[]>(() => {
-    if (!searchQuery) return pieces;
+  const filteredPieces = useMemo(() => {
+    if (!searchQuery) {
+      return pieces;
+    }
+
     const normalizedQuery = searchQuery.toLowerCase();
+
     return pieces.filter((piece) =>
       piece.title.toLowerCase().includes(normalizedQuery),
     );
   }, [pieces, searchQuery]);
 
   const handleAddPiece = async (pieceId: string): Promise<void> => {
-    if (addedPieceIds.includes(pieceId)) return;
+    if (addedPieceIds.includes(pieceId)) {
+      return;
+    }
 
-    const targetPiece = pieces.find((p) => String(p.id) === pieceId);
-    if (!targetPiece) return;
+    const targetPiece = pieces.find((piece) => String(piece.id) === pieceId);
+
+    if (!targetPiece) {
+      return;
+    }
 
     const toastId = toast.loading(
       t("projects.program.toast.adding", "Dodawanie utworu..."),
     );
 
     try {
-    const nextOrder =
-      programItems.reduce(
-        (highestOrder, item) => Math.max(highestOrder, item.order),
-        0,
-      ) + 1;
+      const nextOrder =
+        programItems.reduce(
+          (highestOrder, item) => Math.max(highestOrder, item.order),
+          0,
+        ) + 1;
 
-    await createProgramMutation.mutateAsync({
-      title: targetPiece.title,
-      project: projectId,
-      piece: pieceId,
-      order: nextOrder,
-      is_encore: false,
-    });
+      await createProgramMutation.mutateAsync({
+        title: targetPiece.title,
+        project: projectId,
+        piece: pieceId,
+        order: nextOrder,
+        is_encore: false,
+      });
+
       toast.success(
         t("projects.program.toast.add_success", "Dodano do setlisty"),
         { id: toastId },
       );
-    } catch (error: unknown) {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+    } catch {
+      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
         id: toastId,
         description: t(
           "projects.program.toast.add_error",
-          "Nie powiodło się dodanie utworu.",
+          "Nie powiodĹ‚o siÄ™ dodanie utworu.",
         ),
       });
     }
@@ -167,17 +175,18 @@ export const useProgramTab = (
         id: item.id,
         data: { is_encore: !item.is_encore },
       });
+
       toast.success(
         t(
           "projects.program.toast.encore_toggled",
-          "Status BIS został zaktualizowany",
+          "Status BIS zostaĹ‚ zaktualizowany",
         ),
       );
-    } catch (error: unknown) {
+    } catch {
       toast.error(
         t(
           "projects.program.toast.encore_error",
-          "Błąd połączenia. Nie udało się zmienić statusu BIS.",
+          "BĹ‚Ä…d poĹ‚Ä…czenia. Nie udaĹ‚o siÄ™ zmieniÄ‡ statusu BIS.",
         ),
       );
     }
@@ -190,49 +199,56 @@ export const useProgramTab = (
 
     try {
       await deleteProgramMutation.mutateAsync(itemId);
+
       toast.success(
-        t("projects.program.toast.remove_success", "Usunięto z programu"),
+        t("projects.program.toast.remove_success", "UsuniÄ™to z programu"),
         { id: toastId },
       );
-    } catch (error: unknown) {
-      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
+    } catch {
+      toast.error(t("common.actions.delete_error", "BĹ‚Ä…d usuwania"), {
         id: toastId,
         description: t(
           "common.errors.server_problem",
-          "Wystąpił problem z serwerem.",
+          "WystÄ…piĹ‚ problem z serwerem.",
         ),
       });
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent): void => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setProgramItems((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        if (oldIndex < 0 || newIndex < 0) {
-          return items;
-        }
-        return arrayMove(items, oldIndex, newIndex);
-      });
+
+    if (!over || active.id === over.id) {
+      return;
     }
+
+    setProgramItems((items) => {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+
+      if (oldIndex < 0 || newIndex < 0) {
+        return items;
+      }
+
+      return arrayMove(items, oldIndex, newIndex);
+    });
   };
 
-  const handleCancel = () => {
-    if (fetchedProgram) {
-      setProgramItems(
-        fetchedProgram.map((item) => normalizeProgramItem(item, pieces)),
-      );
-    }
+  const handleCancel = (): void => {
+    setProgramItems(
+      fetchedProgram.map((programItem) => normalizeProgramItem(programItem, pieces)),
+    );
   };
 
   const handleSaveChanges = async (): Promise<void> => {
-    if (!isDirty) return;
+    if (!isDirty) {
+      return;
+    }
 
     setIsSaving(true);
+
     const toastId = toast.loading(
-      t("projects.program.toast.saving_order", "Zapisywanie nowego układu..."),
+      t("projects.program.toast.saving_order", "Zapisywanie nowego ukĹ‚adu..."),
     );
 
     try {
@@ -248,18 +264,19 @@ export const useProgramTab = (
       toast.success(
         t(
           "projects.program.toast.save_order_success",
-          "Układ zapisany pomyślnie",
+          "UkĹ‚ad zapisany pomyĹ›lnie",
         ),
         { id: toastId },
       );
-    } catch (error: unknown) {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+    } catch {
+      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
         id: toastId,
         description: t(
           "projects.program.toast.save_order_error",
-          "Serwer odrzucił część zmian.",
+          "Serwer odrzuciĹ‚ czÄ™Ĺ›Ä‡ zmian.",
         ),
       });
+
       handleCancel();
     } finally {
       setIsSaving(false);
@@ -268,7 +285,6 @@ export const useProgramTab = (
 
   return {
     programItems,
-    isLoading,
     isSaving,
     isDirty,
     searchQuery,
