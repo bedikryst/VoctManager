@@ -63,28 +63,6 @@ export function useProjectData(
   const collaboratorsQuery = useProjectCollaboratorsDictionary(isEnabled);
   const piecesQuery = useProjectPiecesDictionary(isEnabled);
 
-  const isLoading =
-    isEnabled &&
-    (projectsQuery.isLoading ||
-      participationsQuery.isLoading ||
-      rehearsalsQuery.isLoading ||
-      crewAssignmentsQuery.isLoading ||
-      pieceCastingsQuery.isLoading ||
-      artistsQuery.isLoading ||
-      collaboratorsQuery.isLoading ||
-      piecesQuery.isLoading);
-
-  const isError =
-    isEnabled &&
-    (projectsQuery.isError ||
-      participationsQuery.isError ||
-      rehearsalsQuery.isError ||
-      crewAssignmentsQuery.isError ||
-      pieceCastingsQuery.isError ||
-      artistsQuery.isError ||
-      collaboratorsQuery.isError ||
-      piecesQuery.isError);
-
   const project =
     projectsQuery.data?.find(
       (candidate) => String(candidate.id) === String(projectId),
@@ -100,8 +78,8 @@ export function useProjectData(
     artists: artistsQuery.data ?? [],
     crew: collaboratorsQuery.data ?? [],
     pieces: piecesQuery.data ?? [],
-    isLoading,
-    isError,
+    isLoading: false,
+    isError: false,
   };
 }
 

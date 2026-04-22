@@ -10,7 +10,6 @@ import {
   startTransition,
   useCallback,
   useEffect,
-  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -23,7 +22,7 @@ import { useLocations } from "@/features/logistics/api/logistics.queries";
 import type { LocationDto } from "@/features/logistics/types/logistics.dto";
 import {
   useDeleteProject,
-  useProjectArtistsDictionary,
+  useProjectArtistsMap,
   useProjects,
 } from "../api/project.queries";
 
@@ -37,7 +36,6 @@ import {
 import { compareProjectDateDesc } from "../lib/projectPresentation";
 
 interface UseProjectDashboardReturn {
-  isLoading: boolean;
   filteredProjects: Project[];
   listFilter: ProjectFilterId;
   setListFilter: (filter: ProjectFilterId) => void;
@@ -69,9 +67,7 @@ const isArtistReference = (value: Project["conductor"]): value is Artist =>
 const isLocationReference = (
   value: Project["location"],
 ): value is Exclude<Project["location"], string | null> =>
-  typeof value === "object" &&
-  value !== null &&
-  isNonEmptyString(value.id);
+  typeof value === "object" && value !== null && isNonEmptyString(value.id);
 
 const buildArtistDisplayName = (
   artist: Artist | null | undefined,
@@ -138,7 +134,9 @@ const resolveProjectConductor = (
   };
 };
 
-const isArchiveStatus = (status: Project["status"] | null | undefined): boolean =>
+const isArchiveStatus = (
+  status: Project["status"] | null | undefined,
+): boolean =>
   status === PROJECT_STATUS.DONE || status === PROJECT_STATUS.CANCELLED;
 
 export const useProjectDashboard = (): UseProjectDashboardReturn => {
@@ -156,12 +154,15 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
 
   const deleteProjectMutation = useDeleteProject();
 
-  const projectsQuery = useProjects();
-  const artistsQuery = useProjectArtistsDictionary();
-  const locationsQuery = useLocations();
+  // Suspense Queries
+  const { data: rawProjects } = useProjects();
+  const { data: artistMap } = useProjectArtistsMap();
+  const locationsQuery = useLocations(); // Zostawione jako useQuery (jeśli logistyka nie jest zmigrowana)
 
   const editingProjectRef = useRef<Project | null>(null);
-  const panelResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const panelResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     editingProjectRef.current = editingProject;
@@ -175,13 +176,6 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
     };
   }, []);
 
-  const artistMap = useMemo(
-    () =>
-      new Map(
-        (artistsQuery.data ?? []).map((artist) => [String(artist.id), artist]),
-      ),
-    [artistsQuery.data],
-  );
   const locationMap = useMemo(
     () =>
       new Map(
@@ -193,13 +187,9 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
     [locationsQuery.data],
   );
 
-  const isLoading =
-    projectsQuery.isLoading || artistsQuery.isLoading || locationsQuery.isLoading;
-  const isError =
-    projectsQuery.isError || artistsQuery.isError || locationsQuery.isError;
   const projects = useMemo(
     () =>
-      (projectsQuery.data ?? []).map((project) => {
+      rawProjects.map((project) => {
         const location = resolveProjectLocation(project, locationMap);
         const conductor = resolveProjectConductor(project, artistMap);
 
@@ -209,23 +199,8 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
           ...conductor,
         };
       }),
-    [artistMap, locationMap, projectsQuery.data],
+    [artistMap, locationMap, rawProjects],
   );
-
-  const notifySyncError = useEffectEvent(() => {
-    toast.error(t("projects.toast.sync_error_title", "Błąd synchronizacji"), {
-      description: t(
-        "projects.toast.sync_error_desc",
-        "Nie udało się pobrać listy projektów.",
-      ),
-    });
-  });
-
-  useEffect(() => {
-    if (isError) {
-      notifySyncError();
-    }
-  }, [isError, notifySyncError]);
 
   const filteredProjects = useMemo<Project[]>(
     () =>
@@ -328,7 +303,6 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
   }, [closePanel, deleteProjectMutation, projectToDelete, t]);
 
   return {
-    isLoading,
     filteredProjects,
     listFilter,
     setListFilter,

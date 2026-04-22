@@ -5,7 +5,21 @@
  * @module features/projects/api
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+import type {
+  Artist,
+  Attendance,
+  Collaborator,
+  CrewAssignment,
+  Participation,
+  Piece,
+  PieceCasting,
+  ProgramItem,
+  Project,
+  Rehearsal,
+  VoiceLineOption,
+} from "@/shared/types";
 
 import { ProjectService } from "./project.service";
 import { projectKeys } from "./project.query-keys";
@@ -13,101 +27,148 @@ import {
   FAST_CHANGING_STALE_TIME,
   PROJECT_RELATION_STALE_TIME,
   STATIC_DICTIONARY_STALE_TIME,
-  getRequiredProjectId,
 } from "./project.query-utils";
 
+const DISABLED_QUERY_STALE_TIME = Number.POSITIVE_INFINITY;
+
+const getDisabledListQueryConfig = <TData,>() => ({
+  queryFn: async (): Promise<TData[]> => [],
+  staleTime: DISABLED_QUERY_STALE_TIME,
+  initialData: [] as TData[],
+  initialDataUpdatedAt: 0,
+});
+
 export const useProjects = (enabled = true) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.projects.all,
-    queryFn: ProjectService.getAll,
-    staleTime: PROJECT_RELATION_STALE_TIME,
-    enabled,
+    ...(enabled
+      ? {
+          queryFn: ProjectService.getAll,
+          staleTime: PROJECT_RELATION_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<Project>()),
   });
 
 export const useProjectArtistsDictionary = (enabled = true) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.dictionaries.artists,
-    queryFn: ProjectService.getArtistsDictionary,
-    staleTime: STATIC_DICTIONARY_STALE_TIME,
-    enabled,
+    ...(enabled
+      ? {
+          queryFn: ProjectService.getArtistsDictionary,
+          staleTime: STATIC_DICTIONARY_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<Artist>()),
+  });
+
+export const useProjectArtistsMap = (enabled = true) =>
+  useSuspenseQuery({
+    queryKey: projectKeys.dictionaries.artists,
+    ...(enabled
+      ? {
+          queryFn: ProjectService.getArtistsDictionary,
+          staleTime: STATIC_DICTIONARY_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<Artist>()),
+    select: (artists) =>
+      new Map(artists.map((artist) => [String(artist.id), artist])),
   });
 
 export const useProjectPiecesDictionary = (enabled = true) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.dictionaries.pieces,
-    queryFn: ProjectService.getPiecesDictionary,
-    staleTime: STATIC_DICTIONARY_STALE_TIME,
-    enabled,
+    ...(enabled
+      ? {
+          queryFn: ProjectService.getPiecesDictionary,
+          staleTime: STATIC_DICTIONARY_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<Piece>()),
   });
 
 export const useProjectCollaboratorsDictionary = (enabled = true) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.dictionaries.collaborators,
-    queryFn: ProjectService.getCollaboratorsDictionary,
-    staleTime: STATIC_DICTIONARY_STALE_TIME,
-    enabled,
+    ...(enabled
+      ? {
+          queryFn: ProjectService.getCollaboratorsDictionary,
+          staleTime: STATIC_DICTIONARY_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<Collaborator>()),
   });
 
 export const useProjectVoiceLinesDictionary = (enabled = true) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.dictionaries.voiceLines,
-    queryFn: ProjectService.getVoiceLinesDictionary,
-    staleTime: STATIC_DICTIONARY_STALE_TIME,
-    enabled,
+    ...(enabled
+      ? {
+          queryFn: ProjectService.getVoiceLinesDictionary,
+          staleTime: STATIC_DICTIONARY_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<VoiceLineOption>()),
   });
 
 export const useProjectParticipations = (projectId: string | undefined) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.participations.byProject(projectId ?? "pending"),
-    queryFn: () =>
-      ProjectService.getParticipationsByProject(getRequiredProjectId(projectId)),
-    staleTime: PROJECT_RELATION_STALE_TIME,
-    enabled: !!projectId,
+    ...(projectId
+      ? {
+          queryFn: () => ProjectService.getParticipationsByProject(projectId),
+          staleTime: PROJECT_RELATION_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<Participation>()),
   });
 
 export const useProjectRehearsals = (projectId: string | undefined) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.rehearsals.byProject(projectId ?? "pending"),
-    queryFn: () =>
-      ProjectService.getRehearsalsByProject(getRequiredProjectId(projectId)),
-    staleTime: PROJECT_RELATION_STALE_TIME,
-    enabled: !!projectId,
+    ...(projectId
+      ? {
+          queryFn: () => ProjectService.getRehearsalsByProject(projectId),
+          staleTime: PROJECT_RELATION_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<Rehearsal>()),
   });
 
 export const useProjectCrewAssignments = (projectId: string | undefined) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.crewAssignments.byProject(projectId ?? "pending"),
-    queryFn: () =>
-      ProjectService.getCrewAssignmentsByProject(
-        getRequiredProjectId(projectId),
-      ),
-    staleTime: PROJECT_RELATION_STALE_TIME,
-    enabled: !!projectId,
+    ...(projectId
+      ? {
+          queryFn: () =>
+            ProjectService.getCrewAssignmentsByProject(projectId),
+          staleTime: PROJECT_RELATION_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<CrewAssignment>()),
   });
 
 export const useProjectProgram = (projectId: string | undefined) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.program.byProject(projectId ?? "pending"),
-    queryFn: () =>
-      ProjectService.getProgramByProject(getRequiredProjectId(projectId)),
-    staleTime: FAST_CHANGING_STALE_TIME,
-    enabled: !!projectId,
+    ...(projectId
+      ? {
+          queryFn: () => ProjectService.getProgramByProject(projectId),
+          staleTime: FAST_CHANGING_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<ProgramItem>()),
   });
 
 export const useProjectPieceCastings = (projectId: string | undefined) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.pieceCastings.byProject(projectId ?? "pending"),
-    queryFn: () =>
-      ProjectService.getPieceCastingsByProject(getRequiredProjectId(projectId)),
-    staleTime: FAST_CHANGING_STALE_TIME,
-    enabled: !!projectId,
+    ...(projectId
+      ? {
+          queryFn: () => ProjectService.getPieceCastingsByProject(projectId),
+          staleTime: FAST_CHANGING_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<PieceCasting>()),
   });
 
 export const useProjectAttendances = (projectId: string | undefined) =>
-  useQuery({
+  useSuspenseQuery({
     queryKey: projectKeys.attendances.byProject(projectId ?? "pending"),
-    queryFn: () =>
-      ProjectService.getAttendancesByProject(getRequiredProjectId(projectId)),
-    staleTime: FAST_CHANGING_STALE_TIME,
-    enabled: !!projectId,
+    ...(projectId
+      ? {
+          queryFn: () => ProjectService.getAttendancesByProject(projectId),
+          staleTime: FAST_CHANGING_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<Attendance>()),
   });

@@ -6,7 +6,7 @@
  * @module panel/projects/ProjectDashboard
  */
 
-import React, { memo, useDeferredValue } from "react";
+import React, { memo, useDeferredValue, Suspense } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Layers, Plus } from "lucide-react";
@@ -28,14 +28,85 @@ import { Text } from "@/shared/ui/primitives/typography/Text";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import type { Project } from "@/shared/types";
 
 const MemoizedProjectCard = memo(ProjectCard);
+
+const DashboardGrid = ({
+  filteredProjects,
+  openPanel,
+  setProjectToDelete,
+}: {
+  filteredProjects: Project[];
+  openPanel: (project?: Project | null) => void;
+  setProjectToDelete: (id: string | null) => void;
+}) => {
+  const { t } = useTranslation();
+  const deferredProjects = useDeferredValue(filteredProjects);
+
+  if (deferredProjects.length === 0) {
+    return (
+      <StaggeredBentoItem>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <GlassCard
+            variant="light"
+            padding="lg"
+            isHoverable={false}
+            className="flex flex-col items-center justify-center gap-4 text-center"
+          >
+            <div
+              className="rounded-full border border-ethereal-incense/15 bg-ethereal-alabaster/70 p-4 text-ethereal-graphite/55"
+              aria-hidden="true"
+            >
+              <Layers size={32} />
+            </div>
+            <div className="space-y-2">
+              <Eyebrow color="muted">
+                {t(
+                  "projects.dashboard.empty_title",
+                  "Brak projektów w tym widoku",
+                )}
+              </Eyebrow>
+              <Text className="mx-auto max-w-md" color="graphite">
+                {t(
+                  "projects.dashboard.empty_desc",
+                  "Rozpocznij planowanie nowego wydarzenia, korzystając z akcji tworzenia projektu.",
+                )}
+              </Text>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={() => openPanel(null)}
+              leftIcon={<Plus size={16} aria-hidden="true" />}
+            >
+              {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
+            </Button>
+          </GlassCard>
+        </motion.div>
+      </StaggeredBentoItem>
+    );
+  }
+
+  return (
+    <>
+      {deferredProjects.map((project, index) => (
+        <StaggeredBentoItem key={project.id}>
+          <MemoizedProjectCard
+            project={project}
+            index={index}
+            onEdit={openPanel}
+            onDelete={setProjectToDelete}
+          />
+        </StaggeredBentoItem>
+      ))}
+    </>
+  );
+};
 
 export const ProjectDashboard = (): React.JSX.Element => {
   const { t } = useTranslation();
   const {
-    isLoading,
-    filteredProjects,
+    filteredProjects, // wyciągnięto isLoading
     listFilter,
     setListFilter,
     isPanelOpen,
@@ -50,8 +121,6 @@ export const ProjectDashboard = (): React.JSX.Element => {
     handleProjectPersisted,
     executeDelete,
   } = useProjectDashboard();
-
-  const deferredProjects = useDeferredValue(filteredProjects);
 
   return (
     <PageTransition>
@@ -89,61 +158,19 @@ export const ProjectDashboard = (): React.JSX.Element => {
         />
 
         <StaggeredBentoContainer className="grid grid-cols-1 gap-6">
-          {isLoading ? (
-            <StaggeredBentoItem>
-              <EtherealLoader className="h-64" />
-            </StaggeredBentoItem>
-          ) : deferredProjects.length > 0 ? (
-            deferredProjects.map((project, index) => (
-              <StaggeredBentoItem key={project.id}>
-                <MemoizedProjectCard
-                  project={project}
-                  index={index}
-                  onEdit={openPanel}
-                  onDelete={setProjectToDelete}
-                />
+          <Suspense
+            fallback={
+              <StaggeredBentoItem>
+                <EtherealLoader className="h-64" />
               </StaggeredBentoItem>
-            ))
-          ) : (
-            <StaggeredBentoItem>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <GlassCard
-                  variant="light"
-                  padding="lg"
-                  isHoverable={false}
-                  className="flex flex-col items-center justify-center gap-4 text-center"
-                >
-                  <div
-                    className="rounded-full border border-ethereal-incense/15 bg-ethereal-alabaster/70 p-4 text-ethereal-graphite/55"
-                    aria-hidden="true"
-                  >
-                    <Layers size={32} />
-                  </div>
-                  <div className="space-y-2">
-                    <Eyebrow color="muted">
-                      {t(
-                        "projects.dashboard.empty_title",
-                        "Brak projektów w tym widoku",
-                      )}
-                    </Eyebrow>
-                    <Text className="mx-auto max-w-md" color="graphite">
-                      {t(
-                        "projects.dashboard.empty_desc",
-                        "Rozpocznij planowanie nowego wydarzenia, korzystając z akcji tworzenia projektu.",
-                      )}
-                    </Text>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    onClick={() => openPanel(null)}
-                    leftIcon={<Plus size={16} aria-hidden="true" />}
-                  >
-                    {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
-                  </Button>
-                </GlassCard>
-              </motion.div>
-            </StaggeredBentoItem>
-          )}
+            }
+          >
+            <DashboardGrid
+              filteredProjects={filteredProjects}
+              openPanel={openPanel}
+              setProjectToDelete={setProjectToDelete}
+            />
+          </Suspense>
         </StaggeredBentoContainer>
 
         <ProjectEditorPanel
