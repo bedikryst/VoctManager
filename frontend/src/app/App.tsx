@@ -40,6 +40,8 @@ import ArchiveManagement from "@pages/app/ArchivePage";
 import Resources from "@features/resources/Resources";
 import CrewManagement from "@features/crew/CrewManagement";
 
+import { CSRFProvider } from "@/app/providers/CSRFProvider";
+
 export default function App(): React.JSX.Element {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
@@ -51,76 +53,78 @@ export default function App(): React.JSX.Element {
   const shouldShowGlobalComponents: boolean = !isPanelRoute && !isAuthRoute;
 
   return (
-    <APIProvider
-      apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
-      onLoad={() => console.log("Maps API Core Initialized")}
-      solutionChannel="GMP_visgl_reactgooglemaps_v1_0"
-      version="weekly"
-      libraries={["places", "geocoding"]}
-    >
-      {shouldShowGlobalComponents && <Preloader />}
-      {shouldShowGlobalComponents && (
-        <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-      )}
+    <CSRFProvider>
+      <APIProvider
+        apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
+        onLoad={() => console.log("Maps API Core Initialized")}
+        solutionChannel="GMP_visgl_reactgooglemaps_v1_0"
+        version="weekly"
+        libraries={["places", "geocoding"]}
+      >
+        {shouldShowGlobalComponents && <Preloader />}
+        {shouldShowGlobalComponents && (
+          <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+        )}
 
-      <Routes location={location}>
-        <Route
-          path="/"
-          element={
-            <PageTransition>
-              <Home />
-            </PageTransition>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <PageTransition>
-              <Login />
-            </PageTransition>
-          }
-        />
-        <Route
-          path="/activate"
-          element={
-            <PageTransition>
-              <Activate />
-            </PageTransition>
-          }
-        />
+        <Routes location={location}>
+          <Route
+            path="/"
+            element={
+              <PageTransition>
+                <Home />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <PageTransition>
+                <Login />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/activate"
+            element={
+              <PageTransition>
+                <Activate />
+              </PageTransition>
+            }
+          />
 
-        <Route element={<ProtectedRoute />}>
-          <Route path="/panel" element={<DashboardLayout />}>
-            <Route index element={<DashboardHome />} />
-            <Route element={<ManagerRoute />}>
-              <Route path="contracts" element={<Contracts />} />
-              <Route path="rehearsals" element={<Rehearsals />} />
-              <Route path="artists" element={<ArtistManagement />} />
-              <Route path="projects" element={<ProjectDashboard />} />
-              <Route
-                path="archive-management"
-                element={<ArchiveManagement />}
-              />
-              <Route path="crew" element={<CrewManagement />} />
-              <Route path="locations" element={<LogisticsLocationsPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/panel" element={<DashboardLayout />}>
+              <Route index element={<DashboardHome />} />
+              <Route element={<ManagerRoute />}>
+                <Route path="contracts" element={<Contracts />} />
+                <Route path="rehearsals" element={<Rehearsals />} />
+                <Route path="artists" element={<ArtistManagement />} />
+                <Route path="projects" element={<ProjectDashboard />} />
+                <Route
+                  path="archive-management"
+                  element={<ArchiveManagement />}
+                />
+                <Route path="crew" element={<CrewManagement />} />
+                <Route path="locations" element={<LogisticsLocationsPage />} />
+              </Route>
+              <Route path="resources" element={<Resources />} />
+              <Route path="materials" element={<Materials />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
-            <Route path="resources" element={<Resources />} />
-            <Route path="materials" element={<Materials />} />
-            <Route path="schedule" element={<Schedule />} />
-            <Route path="settings" element={<SettingsPage />} />
           </Route>
-        </Route>
-      </Routes>
+        </Routes>
 
-      {shouldShowGlobalComponents && <FooterSection />}
-      {shouldShowGlobalComponents && (
-        <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
-      )}
+        {shouldShowGlobalComponents && <FooterSection />}
+        {shouldShowGlobalComponents && (
+          <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
+        )}
 
-      {shouldShowGlobalComponents && <NoiseOverlay />}
-      {shouldShowGlobalComponents && <CustomCursor />}
+        {shouldShowGlobalComponents && <NoiseOverlay />}
+        {shouldShowGlobalComponents && <CustomCursor />}
 
-      <Toaster position="top-right" richColors closeButton duration={4000} />
-    </APIProvider>
+        <Toaster position="top-right" richColors closeButton duration={4000} />
+      </APIProvider>
+    </CSRFProvider>
   );
 }

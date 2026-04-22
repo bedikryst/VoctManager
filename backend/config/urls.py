@@ -22,6 +22,7 @@ from roster.views import ArtistViewSet, CollaboratorViewSet, CrewAssignmentViewS
 from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet, PieceVoiceRequirementViewSet
 from core.views import (
     ActivateAccountView,
+    CSRFCookieView,
     CurrentUserRetrieveUpdateView, 
     ChangePasswordView, 
     ChangeEmailRequestView,
@@ -60,6 +61,7 @@ urlpatterns = [
     # Django Admin Panel
     path('admin/', admin.site.urls),
     
+    path('api/csrf/', CSRFCookieView.as_view(), name='csrf-cookie'),
     # Auto-generated REST API routes
     path('api/', include(router.urls)),
 

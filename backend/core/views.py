@@ -28,10 +28,24 @@ from .dtos import (
 from .services import UserIdentityService, UserPreferencesService
 from .exceptions import InvalidCredentialsException, EmailAlreadyInUseException
 from .models import UserProfile
+from django.middleware.csrf import get_token
 
 User = get_user_model()
 
+class CSRFCookieView(views.APIView):
+    """
+    GET /api/v1/csrf/
+    Ensures a CSRF cookie is set in the client browser for future mutative requests.
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = ()
 
+    @extend_schema(responses={204: None})
+    def get(self, request, *args, **kwargs):
+        # get_token forces Django to set the CSRF cookie in the response headers
+        get_token(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
 class ActivateAccountView(views.APIView):
     """
     POST /api/v1/auth/activate/
