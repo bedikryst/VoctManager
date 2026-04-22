@@ -273,32 +273,69 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             Q(invited_participations__isnull=True) | Q(invited_participations__artist__user=user)
         ).distinct()
 
+    @staticmethod
+    def _build_create_dto_payload(validated_data):
+        return {
+            "project_id": validated_data["project"].id,
+            "date_time": validated_data["date_time"],
+            "timezone": validated_data["timezone"],
+            "location_id": validated_data.get("location").id if validated_data.get("location") else None,
+            "focus": validated_data.get("focus", ""),
+            "is_mandatory": validated_data.get("is_mandatory", True),
+        }
+
+    @staticmethod
+    def _build_update_dto_payload(validated_data):
+        payload = {}
+
+        if "date_time" in validated_data:
+            payload["date_time"] = validated_data["date_time"]
+
+        if "timezone" in validated_data:
+            payload["timezone"] = validated_data["timezone"]
+
+        if "location" in validated_data:
+            payload["location_id"] = (
+                validated_data["location"].id if validated_data["location"] else None
+            )
+
+        if "focus" in validated_data:
+            payload["focus"] = validated_data["focus"]
+
+        if "is_mandatory" in validated_data:
+            payload["is_mandatory"] = validated_data["is_mandatory"]
+
+        return payload
+
     def create(self, request, *args, **kwargs) -> Response:
-        # 1. Validate Domain Data via Pydantic
+        # 1. Validate HTTP payload and relational references via DRF
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # 2. Validate Domain Data via Pydantic
         try:
-            dto = RehearsalCreateDTO(**request.data)
+            dto = RehearsalCreateDTO(**self._build_create_dto_payload(serializer.validated_data))
         except ValidationError as e:
             return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Validate Many-To-Many DB Relations via DRF
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        # 3. Extract validated Many-To-Many relations
         invited = serializer.validated_data.get('invited_participations', None)
 
-        # 3. Delegate to Strict Service Layer
+        # 4. Delegate to Strict Service Layer
         rehearsal = RehearsalOperationsService.schedule_rehearsal(dto=dto, invited_participations=invited)
         return Response(self.get_serializer(rehearsal).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs) -> Response:
         rehearsal = self.get_object()
-        
-        try:
-            dto = RehearsalUpdateDTO(**request.data)
-        except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
-            
+
         serializer = self.get_serializer(rehearsal, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+
+        try:
+            dto = RehearsalUpdateDTO(**self._build_update_dto_payload(serializer.validated_data))
+        except ValidationError as e:
+            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+
         invited = serializer.validated_data.get('invited_participations', None)
         
         updated_rehearsal = RehearsalOperationsService.update_rehearsal(

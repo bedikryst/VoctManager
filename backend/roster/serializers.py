@@ -14,6 +14,7 @@ from .models import (
     Artist, Collaborator, CrewAssignment, Project, Participation, 
     ProgramItem, Rehearsal, Attendance, ProjectPieceCasting
 )
+from logistics.models import Location
 from core.serializers import UserProfileSerializer
 
 # --- 1. ARTIST SERIALIZERS ---
@@ -161,11 +162,47 @@ class RehearsalSerializer(serializers.ModelSerializer):
     """
     absent_count = serializers.IntegerField(read_only=True, default=0)
     location = LocationSnippetSerializer(read_only=True)
-    location_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    project_id = serializers.PrimaryKeyRelatedField(
+        source='project',
+        queryset=Project.objects.all(),
+        write_only=True,
+        required=False,
+    )
+    location_id = serializers.PrimaryKeyRelatedField(
+        source='location',
+        queryset=Location.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Rehearsal
-        fields = '__all__'
+        fields = (
+            'id',
+            'created_at',
+            'updated_at',
+            'is_deleted',
+            'project',
+            'project_id',
+            'date_time',
+            'timezone',
+            'location',
+            'location_id',
+            'focus',
+            'is_mandatory',
+            'invited_participations',
+            'absent_count',
+        )
+        read_only_fields = (
+            'id',
+            'created_at',
+            'updated_at',
+            'is_deleted',
+            'project',
+            'location',
+            'absent_count',
+        )
 
     def validate_timezone(self, value: str) -> str:
         """
@@ -177,6 +214,16 @@ class RehearsalSerializer(serializers.ModelSerializer):
                 f"Timezone '{value}' is not recognized by the server's tzdata."
             )
         return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        if self.instance is None and 'project' not in attrs:
+            raise serializers.ValidationError({
+                'project_id': ['This field is required.']
+            })
+
+        return attrs
 
 # --- 4. RELATIONAL & JUNCTION SERIALIZERS ---
 
