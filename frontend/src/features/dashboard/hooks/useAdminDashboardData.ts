@@ -35,7 +35,6 @@ export interface EnrichedRehearsal extends Rehearsal {
 export const useAdminDashboardData = () => {
   const { t } = useTranslation();
 
-  // Zastosowanie 'combine' dla pełnego bezpieczeństwa typów i uniknięcia błędów indeksowania
   const { isLoading, isError, data } = useQueries({
     queries: [
       {
@@ -151,23 +150,11 @@ export const useAdminDashboardData = () => {
   const nextProjectStats: ProjectStatsDto | undefined = useMemo(() => {
     if (!rawNextProject) return undefined;
 
-    const now = new Date();
-
-    const piecesCount = programItems.filter(
-      (pi) => String(pi.project) === String(rawNextProject.id),
-    ).length;
-
-    const rehearsalsRemaining = rehearsals.filter((r) => {
-      if (String(r.project) !== String(rawNextProject.id) || !r.date_time)
-        return false;
-      const rehDate = new Date(r.date_time);
-      return !isNaN(rehDate.getTime()) && rehDate > now;
-    }).length;
-
-    // ZERO ANY: Liczymy artystów na podstawie długości tablicy `cast` zwróconej przez backend
-    const castCount = rawNextProject.cast?.length ?? 0;
-
-    return { piecesCount, rehearsalsRemaining, castCount };
+    return {
+      rehearsalsRemaining: rawNextProject.rehearsals_upcoming ?? 0,
+      castCount: rawNextProject.cast_total ?? 0,
+      piecesCount: rawNextProject.pieces_total ?? 0,
+    };
   }, [rawNextProject, programItems, rehearsals]);
 
   // 4. NEXT REHEARSAL ALERT

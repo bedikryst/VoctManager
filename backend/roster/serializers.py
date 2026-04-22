@@ -109,6 +109,11 @@ class ProjectSerializer(serializers.ModelSerializer):
     location = LocationSnippetSerializer(read_only=True)
     location_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     conductor_name = serializers.CharField(source='conductor.__str__', read_only=True)
+    rehearsals_total = serializers.IntegerField(read_only=True, default=0)
+    rehearsals_upcoming = serializers.IntegerField(read_only=True, default=0)
+    cast_total = serializers.IntegerField(read_only=True, default=0)
+    crew_total = serializers.IntegerField(read_only=True, default=0)
+    pieces_total = serializers.IntegerField(read_only=True, default=0)
     
     class Meta:
         model = Project

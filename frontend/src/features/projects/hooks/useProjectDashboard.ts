@@ -157,7 +157,7 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
   // Suspense Queries
   const { data: rawProjects } = useProjects();
   const { data: artistMap } = useProjectArtistsMap();
-  const locationsQuery = useLocations(); // Zostawione jako useQuery (jeśli logistyka nie jest zmigrowana)
+  const { data: locationsData } = useLocations();
 
   const editingProjectRef = useRef<Project | null>(null);
   const panelResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -178,13 +178,8 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
 
   const locationMap = useMemo(
     () =>
-      new Map(
-        (locationsQuery.data ?? []).map((location) => [
-          String(location.id),
-          location,
-        ]),
-      ),
-    [locationsQuery.data],
+      new Map(locationsData.map((location) => [String(location.id), location])),
+    [locationsData],
   );
 
   const projects = useMemo(

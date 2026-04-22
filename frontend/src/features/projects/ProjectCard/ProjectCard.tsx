@@ -63,30 +63,27 @@ export const ProjectCard = ({
   const updateProjectStatusMutation = useUpdateProjectStatus();
 
   const isDone = project.status === PROJECT_STATUS.DONE;
-  const shouldFetch = isExpanded || index < 3;
+  const shouldFetch = isExpanded;
 
   const projectData = useProjectData(
     shouldFetch ? String(project.id) : undefined,
   );
 
   const dashboardData = useMemo<ProjectCardDashboardData>(() => {
-    const upcomingRehearsals = projectData.rehearsals.filter((rehearsal) =>
-      isFutureProjectDate(rehearsal.date_time),
-    ).length;
-
     return {
-      isLoading: !shouldFetch || projectData.isLoading,
-      rehearsalsTotal: projectData.rehearsals.length,
-      rehearsalsUpcoming: upcomingRehearsals,
-      castTotal: projectData.participations.length,
-      crewTotal: projectData.crewAssignments.length,
+      isLoading: shouldFetch && projectData.isLoading,
+      rehearsalsTotal: project.rehearsals_total ?? 0,
+      rehearsalsUpcoming: project.rehearsals_upcoming ?? 0,
+      castTotal: project.cast_total ?? 0,
+      crewTotal: project.crew_total ?? 0,
     };
   }, [
     shouldFetch,
-    projectData.crewAssignments.length,
     projectData.isLoading,
-    projectData.participations.length,
-    projectData.rehearsals,
+    project.rehearsals_total,
+    project.rehearsals_upcoming,
+    project.cast_total,
+    project.crew_total,
   ]);
 
   const toggleLifecycleStatus = async (

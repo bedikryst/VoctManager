@@ -17,14 +17,13 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from pydantic import ValidationError
+from django.utils import timezone
 
 from core.constants import VoiceLine
-# Enterprise RBAC Imports
 from core.permissions import IsManager, IsManagerOrReadOnly, IsOwnerOrManager
 
 from .infrastructure.document_generator import DocumentGenerator
 
-# Pydantic DTOs & Services
 from .dtos import (
     ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, 
     ProjectCreateDTO, ProjectUpdateDTO, 
@@ -118,9 +117,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        now = timezone.now()
+        
         base_qs = Project.objects.select_related('conductor', 'location').prefetch_related(
             'participations__artist',
             'program_items__piece',
+        ).annotate(
+            rehearsals_total=Count('rehearsals', distinct=True),
+            rehearsals_upcoming=Count(
+                'rehearsals', 
+                filter=Q(rehearsals__date_time__gt=now), 
+                distinct=True
+            ),
+            cast_total=Count(
+                'participations', 
+                filter=Q(participations__is_deleted=False), 
+                distinct=True
+            ),
+            pieces_total=Count('program_items', distinct=True),
+            crew_total=Count('crew_assignments', distinct=True)
         )
         
         if _is_manager(user): 

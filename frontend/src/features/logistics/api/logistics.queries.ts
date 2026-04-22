@@ -3,7 +3,11 @@
  * @description React Query hooks for the Logistics module.
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useSuspenseQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { logisticsService } from "./logistics.service";
 import type {
   LocationCreateDto,
@@ -16,10 +20,10 @@ export const logisticsQueryKeys = {
 };
 
 export const useLocations = () => {
-  return useQuery({
+  return useSuspenseQuery({
     queryKey: logisticsQueryKeys.lists(),
     queryFn: logisticsService.getLocations,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -27,7 +31,8 @@ export const useCreateLocation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: LocationCreateDto) => logisticsService.createLocation(data),
+    mutationFn: (data: LocationCreateDto) =>
+      logisticsService.createLocation(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: logisticsQueryKeys.lists() });
     },

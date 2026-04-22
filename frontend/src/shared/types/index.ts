@@ -138,6 +138,11 @@ export interface Project extends BaseModel {
     voice_type: VoiceType;
     voice_type_display: string;
   }>;
+  rehearsals_total?: number;
+  rehearsals_upcoming?: number;
+  cast_total?: number;
+  crew_total?: number;
+  pieces_total?: number;
 }
 
 export interface Participation extends BaseModel {

@@ -32,9 +32,7 @@ export const sortRehearsals = (rehearsals: Rehearsal[]): Rehearsal[] =>
     compareProjectDateAsc(left.date_time, right.date_time),
   );
 
-export const sortProgramItems = (
-  programItems: ProgramItem[],
-): ProgramItem[] =>
+export const sortProgramItems = (programItems: ProgramItem[]): ProgramItem[] =>
   [...programItems].sort((left, right) => left.order - right.order);
 
 export const buildOptimisticProject = (
@@ -57,6 +55,10 @@ export const buildOptimisticProject = (
   program: [],
   cast: [],
   status: PROJECT_STATUS.DRAFT,
+  rehearsals_total: 0,
+  rehearsals_upcoming: 0,
+  cast_total: 0,
+  crew_total: 0,
 });
 
 export const buildOptimisticRehearsal = (
