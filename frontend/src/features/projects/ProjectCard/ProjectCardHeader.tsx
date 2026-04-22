@@ -42,7 +42,6 @@ import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { getArtistDisplayName } from "../lib/projectPresentation";
 
 interface ProjectCardDashboardData {
-  isLoading: boolean;
   rehearsalsTotal: number;
   rehearsalsUpcoming: number;
   castTotal: number;
@@ -377,24 +376,20 @@ export const ProjectCardHeader = ({
         <div className="space-y-5">
           <MetricBlock
             label={t("projects.rehearsals.title", "Próby")}
-            value={
-              dashboardData.isLoading
-                ? "-"
-                : `${dashboardData.rehearsalsTotal - dashboardData.rehearsalsUpcoming} / ${dashboardData.rehearsalsTotal}`
-            }
+            value={`${dashboardData.rehearsalsTotal - dashboardData.rehearsalsUpcoming} / ${dashboardData.rehearsalsTotal}`}
             icon={<Clock aria-hidden="true" />}
             interactiveMode="glass"
           />
           <MetricBlock
             label={t("projects.cast.title", "Obsada")}
-            value={dashboardData.isLoading ? "-" : dashboardData.castTotal}
+            value={dashboardData.castTotal}
             unit={t("common.people_short", "os.")}
             icon={<Users aria-hidden="true" />}
             interactiveMode="glass"
           />
           <MetricBlock
             label={t("projects.crew.title", "Ekipa")}
-            value={dashboardData.isLoading ? "-" : dashboardData.crewTotal}
+            value={dashboardData.crewTotal}
             unit={t("common.people_short", "os.")}
             icon={<Wrench aria-hidden="true" />}
             interactiveMode="glass"

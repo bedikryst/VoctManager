@@ -10,11 +10,14 @@ import { useTranslation } from "react-i18next";
 import { Banknote } from "lucide-react";
 
 import type { Project } from "@/shared/types";
-import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Button } from "@/shared/ui/primitives/Button";
+import {
+  useProjectCrewAssignments,
+  useProjectParticipations,
+} from "../../api/project.read.queries";
 
 interface BudgetWidgetProps {
   project: Project;
@@ -26,7 +29,9 @@ export function BudgetWidget({
   onEdit,
 }: BudgetWidgetProps): React.JSX.Element | null {
   const { t } = useTranslation();
-  const { participations, crewAssignments } = useProjectData(
+
+  const { data: participations } = useProjectParticipations(String(project.id));
+  const { data: crewAssignments } = useProjectCrewAssignments(
     String(project.id),
   );
 

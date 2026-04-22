@@ -11,7 +11,10 @@ import { useTranslation } from "react-i18next";
 import { Calendar, UserMinus } from "lucide-react";
 
 import type { Project, Rehearsal } from "@/shared/types";
-import { useProjectData } from "../../hooks/useProjectData";
+import {
+  useProjectRehearsals,
+  useProjectParticipations,
+} from "../../api/project.read.queries";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
@@ -38,11 +41,10 @@ export const RehearsalsWidget = ({
   onEdit,
 }: RehearsalsWidgetProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const {
-    rehearsals: projectRehearsals,
-    participations: projectParticipations,
-  } = useProjectData(String(project.id));
-
+  const { data: projectRehearsals } = useProjectRehearsals(String(project.id));
+  const { data: projectParticipations } = useProjectParticipations(
+    String(project.id),
+  );
   const sortedRehearsals = useMemo<EnrichedRehearsal[]>(
     () =>
       [...projectRehearsals].sort((left, right) =>
@@ -116,7 +118,8 @@ export const RehearsalsWidget = ({
 
           <ul className="mt-2 flex-1 space-y-3">
             {upcomingRehearsals.map((rehearsal, index) => {
-              const invitedCount = rehearsal.invited_participations?.length || 0;
+              const invitedCount =
+                rehearsal.invited_participations?.length || 0;
               const isTutti =
                 invitedCount === 0 ||
                 invitedCount === projectParticipations.length;
@@ -230,7 +233,10 @@ export const RehearsalsWidget = ({
           color="muted"
           className="flex flex-1 items-center justify-center py-4"
         >
-          {t("projects.rehearsals.empty.no_rehearsals", "Brak zaplanowanych prób.")}
+          {t(
+            "projects.rehearsals.empty.no_rehearsals",
+            "Brak zaplanowanych prób.",
+          )}
         </Text>
       )}
     </GlassCard>

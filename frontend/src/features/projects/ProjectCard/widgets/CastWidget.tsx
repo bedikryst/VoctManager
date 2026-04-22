@@ -10,12 +10,15 @@ import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
 
 import type { Project, Artist } from "@/shared/types";
-import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
+import {
+  useProjectParticipations,
+  useProjectArtistsMap,
+} from "../../api/project.read.queries";
 
 interface CastWidgetProps {
   project: Project;
@@ -29,14 +32,12 @@ export function CastWidget({
   onEdit,
 }: CastWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
-  const { participations: projectParticipations, artists } = useProjectData(
+
+  const { data: artistMap } = useProjectArtistsMap();
+  const { data: projectParticipations } = useProjectParticipations(
     String(project.id),
   );
 
-  const artistMap = useMemo<Map<string, Artist>>(
-    () => new Map(artists.map((artist) => [String(artist.id), artist])),
-    [artists],
-  );
   const visibleParticipations = projectParticipations.slice(0, DISPLAY_LIMIT);
   const overflowCount = projectParticipations.length - DISPLAY_LIMIT;
 
@@ -79,20 +80,13 @@ export function CastWidget({
             if (!artist) return null;
 
             return (
-              <Badge
-                key={part.id || `cast-${index}`}
-                variant="neutral"
-              >
+              <Badge key={part.id || `cast-${index}`} variant="neutral">
                 {artist.first_name} {artist.last_name.charAt(0)}.
               </Badge>
             );
           })}
 
-          {overflowCount > 0 && (
-            <Badge variant="brand">
-              +{overflowCount}
-            </Badge>
-          )}
+          {overflowCount > 0 && <Badge variant="brand">+{overflowCount}</Badge>}
 
           {projectParticipations.length === 0 && (
             <Text color="muted" className="italic">

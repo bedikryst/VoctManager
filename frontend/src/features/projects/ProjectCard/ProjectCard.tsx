@@ -16,7 +16,8 @@ import type { Project } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { useUpdateProjectStatus } from "../api/project.queries";
-import { useProjectData } from "../hooks/useProjectData";
+import { Suspense } from "react";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import {
   PROJECT_STATUS,
   PROJECT_TABS,
@@ -63,23 +64,16 @@ export const ProjectCard = ({
   const updateProjectStatusMutation = useUpdateProjectStatus();
 
   const isDone = project.status === PROJECT_STATUS.DONE;
-  const shouldFetch = isExpanded;
-
-  const projectData = useProjectData(
-    shouldFetch ? String(project.id) : undefined,
-  );
 
   const dashboardData = useMemo<ProjectCardDashboardData>(() => {
     return {
-      isLoading: shouldFetch && projectData.isLoading,
+      isLoading: false,
       rehearsalsTotal: project.rehearsals_total ?? 0,
       rehearsalsUpcoming: project.rehearsals_upcoming ?? 0,
       castTotal: project.cast_total ?? 0,
       crewTotal: project.crew_total ?? 0,
     };
   }, [
-    shouldFetch,
-    projectData.isLoading,
     project.rehearsals_total,
     project.rehearsals_upcoming,
     project.cast_total,
@@ -206,76 +200,84 @@ export const ProjectCard = ({
               exit={{ height: 0, opacity: 0 }}
               className="relative z-0 overflow-hidden border-t border-ethereal-incense/15 bg-ethereal-alabaster/40"
             >
-              <div className="space-y-10 p-6 md:p-8">
-                <div className="space-y-4">
-                  <SectionHeader
-                    title={t(
-                      "projects.card.artistic_dashboard",
-                      "Pulpit Artystyczny",
-                    )}
-                    icon={<Music size={16} aria-hidden="true" />}
-                    className="mb-0 pb-4"
-                  />
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="lg:col-span-2">
-                      <RehearsalsWidget
-                        project={project}
-                        onEdit={handleEditRehearsals}
-                      />
+              <Suspense
+                fallback={
+                  <div className="flex min-h-[400px] items-center justify-center p-8">
+                    <EtherealLoader />
+                  </div>
+                }
+              >
+                <div className="space-y-10 p-6 md:p-8">
+                  <div className="space-y-4">
+                    <SectionHeader
+                      title={t(
+                        "projects.card.artistic_dashboard",
+                        "Pulpit Artystyczny",
+                      )}
+                      icon={<Music size={16} aria-hidden="true" />}
+                      className="mb-0 pb-4"
+                    />
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                      <div className="lg:col-span-2">
+                        <RehearsalsWidget
+                          project={project}
+                          onEdit={handleEditRehearsals}
+                        />
+                      </div>
+                      <div className="lg:col-span-1">
+                        <ProgramWidget
+                          project={project}
+                          onEdit={handleEditProgram}
+                          onOpenMicroCast={handleEditMicroCast}
+                        />
+                      </div>
+                      <div className="lg:col-span-2">
+                        <CastWidget project={project} onEdit={handleEditCast} />
+                      </div>
+                      <div className="lg:col-span-1">
+                        <SpotifyWidget
+                          playlistUrl={project.spotify_playlist_url}
+                        />
+                      </div>
                     </div>
-                    <div className="lg:col-span-1">
-                      <ProgramWidget
-                        project={project}
-                        onEdit={handleEditProgram}
-                        onOpenMicroCast={handleEditMicroCast}
-                      />
+                  </div>
+
+                  <div className="space-y-4 border-t border-ethereal-incense/15 pt-6">
+                    <SectionHeader
+                      title={t(
+                        "projects.card.logistics_dashboard",
+                        "Logistyka i Produkcja",
+                      )}
+                      icon={<Wrench size={16} aria-hidden="true" />}
+                      className="mb-0 pb-4"
+                    />
+
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                      <div className="flex h-full flex-col">
+                        <RunSheetWidget
+                          project={project}
+                          onEdit={handleEditDetails}
+                        />
+                      </div>
+                      <div className="flex h-full flex-col gap-6">
+                        <ProjectCardDetails project={project} />
+                      </div>
                     </div>
-                    <div className="lg:col-span-2">
-                      <CastWidget project={project} onEdit={handleEditCast} />
-                    </div>
-                    <div className="lg:col-span-1">
-                      <SpotifyWidget
-                        playlistUrl={project.spotify_playlist_url}
-                      />
+
+                    <div className="grid grid-cols-1 gap-6 pt-4 lg:grid-cols-3">
+                      <div className="lg:col-span-2">
+                        <BudgetWidget
+                          project={project}
+                          onEdit={handleEditBudget}
+                        />
+                      </div>
+                      <div className="lg:col-span-1">
+                        <CrewWidget project={project} onEdit={handleEditCrew} />
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="space-y-4 border-t border-ethereal-incense/15 pt-6">
-                  <SectionHeader
-                    title={t(
-                      "projects.card.logistics_dashboard",
-                      "Logistyka i Produkcja",
-                    )}
-                    icon={<Wrench size={16} aria-hidden="true" />}
-                    className="mb-0 pb-4"
-                  />
-
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <div className="flex h-full flex-col">
-                      <RunSheetWidget
-                        project={project}
-                        onEdit={handleEditDetails}
-                      />
-                    </div>
-                    <div className="flex h-full flex-col gap-6">
-                      <ProjectCardDetails project={project} />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6 pt-4 lg:grid-cols-3">
-                    <div className="lg:col-span-2">
-                      <BudgetWidget
-                        project={project}
-                        onEdit={handleEditBudget}
-                      />
-                    </div>
-                    <div className="lg:col-span-1">
-                      <CrewWidget project={project} onEdit={handleEditCrew} />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </Suspense>
             </motion.div>
           )}
         </AnimatePresence>

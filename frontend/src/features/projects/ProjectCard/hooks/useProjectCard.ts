@@ -5,28 +5,27 @@
  * @module panel/projects/ProjectCard/hooks/useProjectCard
  */
 
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import type { ProjectReportEndpoint } from "../../api/project.service";
-import { ProjectService } from "../../api/project.service";
+import {
+  ProjectService,
+  type ProjectReportEndpoint,
+} from "../../api/project.service";
 
 export function useProjectCard(projectId: string) {
   const { t } = useTranslation();
-  const [isDownloading, setIsDownloading] = useState<string | null>(null);
-
-  const downloadReport = async (
-    endpoint: ProjectReportEndpoint,
-    defaultFilename: string,
-    loaderKey: string,
-  ) => {
-    setIsDownloading(loaderKey);
-    const toastId = toast.loading(
-      t("projects.card.generating_doc", "Generowanie dokumentu..."),
-    );
-
-    try {
+  const downloadMutation = useMutation({
+    mutationFn: async ({
+      endpoint,
+      defaultFilename,
+      loaderKey,
+    }: {
+      endpoint: ProjectReportEndpoint;
+      defaultFilename: string;
+      loaderKey: string;
+    }) => {
       const response = await ProjectService.downloadReport(projectId, endpoint);
       const disposition = response.headers["content-disposition"];
       let filename = defaultFilename;
@@ -53,15 +52,16 @@ export function useProjectCard(projectId: string) {
 
       link.remove();
       window.URL.revokeObjectURL(url);
-
+    },
+    onSuccess: () => {
       toast.success(
         t(
           "projects.card.download_success",
           "Dokument został pomyślnie pobrany.",
         ),
-        { id: toastId },
       );
-    } catch (error) {
+    },
+    onError: (error) => {
       const message =
         error instanceof Error
           ? error.message
@@ -70,13 +70,30 @@ export function useProjectCard(projectId: string) {
               "Nie udało się wygenerować dokumentu.",
             );
       toast.error(t("common.errors.generation_error", "Błąd generowania"), {
-        id: toastId,
         description: message,
       });
-    } finally {
-      setIsDownloading(null);
-    }
+    },
+  });
+
+  const downloadReport = (
+    endpoint: ProjectReportEndpoint,
+    defaultFilename: string,
+    loaderKey: string,
+  ) => {
+    toast.loading(
+      t("projects.card.generating_doc", "Generowanie dokumentu..."),
+      { id: loaderKey },
+    );
+    downloadMutation.mutate(
+      { endpoint, defaultFilename, loaderKey },
+      { onSettled: () => toast.dismiss(loaderKey) },
+    );
   };
 
-  return { downloadReport, isDownloading };
+  return {
+    downloadReport,
+    isDownloading: downloadMutation.isPending
+      ? downloadMutation.variables?.loaderKey
+      : null,
+  };
 }

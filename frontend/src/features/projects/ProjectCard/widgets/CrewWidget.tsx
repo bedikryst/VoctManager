@@ -10,12 +10,15 @@ import { useTranslation } from "react-i18next";
 import { Wrench } from "lucide-react";
 
 import type { Project, Collaborator } from "@/shared/types";
-import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
+import {
+  useProjectCollaboratorsDictionary,
+  useProjectCrewAssignments,
+} from "../../api/project.read.queries";
 
 interface CrewWidgetProps {
   project: Project;
@@ -29,16 +32,15 @@ export function CrewWidget({
   onEdit,
 }: CrewWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
-  const { crewAssignments: projectCrew, crew } = useProjectData(
-    String(project.id),
-  );
+  const { data: projectCrew } = useProjectCrewAssignments(String(project.id));
+  const { data: crewList } = useProjectCollaboratorsDictionary();
 
   const crewMap = useMemo<Map<string, Collaborator>>(
     () =>
       new Map(
-        crew.map((collaborator) => [String(collaborator.id), collaborator]),
+        crewList.map((collaborator) => [String(collaborator.id), collaborator]),
       ),
-    [crew],
+    [crewList],
   );
   const visibleCrew = projectCrew.slice(0, DISPLAY_LIMIT);
   const overflowCount = projectCrew.length - DISPLAY_LIMIT;
@@ -85,20 +87,13 @@ export function CrewWidget({
               assign.role_description || person.specialty.substring(0, 4);
 
             return (
-              <Badge
-                key={assign.id || `crew-${index}`}
-                variant="neutral"
-              >
+              <Badge key={assign.id || `crew-${index}`} variant="neutral">
                 {person.first_name} {person.last_name.charAt(0)}. ({roleLabel})
               </Badge>
             );
           })}
 
-          {overflowCount > 0 && (
-            <Badge variant="brand">
-              +{overflowCount}
-            </Badge>
-          )}
+          {overflowCount > 0 && <Badge variant="brand">+{overflowCount}</Badge>}
 
           {projectCrew.length === 0 && (
             <Text color="muted" className="italic">

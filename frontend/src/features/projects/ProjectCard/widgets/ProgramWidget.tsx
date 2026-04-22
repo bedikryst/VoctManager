@@ -10,12 +10,16 @@ import { useTranslation } from "react-i18next";
 import { ListOrdered, Music } from "lucide-react";
 
 import type { Project, Piece, VoiceRequirement } from "@/shared/types";
-import { useProjectData } from "../../hooks/useProjectData";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
+import {
+  useProjectPiecesDictionary,
+  useProjectPieceCastings,
+  useProjectParticipations,
+} from "../../api/project.read.queries";
 
 interface ProgramWidgetProps {
   project: Project;
@@ -29,21 +33,32 @@ export function ProgramWidget({
   onOpenMicroCast,
 }: ProgramWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
-  const {
-    pieces,
-    pieceCastings,
-    participations: projectParticipations,
-  } = useProjectData(String(project.id));
+
+  const { data: piecesList } = useProjectPiecesDictionary();
+  const { data: pieceCastings } = useProjectPieceCastings(String(project.id));
+  const { data: projectParticipations } = useProjectParticipations(
+    String(project.id),
+  );
+
+  const piecesMap = useMemo<Map<string, Piece>>(
+    () => new Map(piecesList.map((piece) => [String(piece.id), piece])),
+    [piecesList],
+  );
+
+  const participationIds = useMemo<Set<string>>(
+    () => new Set(projectParticipations.map((p) => String(p.id))),
+    [projectParticipations],
+  );
 
   const totalConcertDurationSeconds = useMemo<number>(() => {
     return (
       project.program?.reduce((sum, item) => {
         const pieceId = item.piece_id || item.piece;
-        const pieceObj = pieces?.find((p) => String(p.id) === String(pieceId));
+        const pieceObj = piecesMap.get(String(pieceId));
         return sum + (pieceObj?.estimated_duration || 0);
       }, 0) || 0
     );
-  }, [project.program, pieces]);
+  }, [project.program, piecesMap]);
 
   const formatTotalDuration = (totalSeconds: number): string | null => {
     if (!totalSeconds || totalSeconds === 0) return null;
@@ -103,15 +118,12 @@ export function ProgramWidget({
               .slice(0, 5)
               .map((item, index) => {
                 const pieceId = item.piece_id || item.piece;
-                const pieceObj: Piece | undefined = pieces?.find(
-                  (p) => String(p.id) === String(pieceId),
-                );
+                const pieceObj = piecesMap.get(String(pieceId));
                 const requirements: VoiceRequirement[] =
                   pieceObj?.voice_requirements || [];
                 const safeCastings = pieceCastings || [];
 
-                let statusVariant: "success" | "danger" | "neutral" =
-                  "neutral";
+                let statusVariant: "success" | "danger" | "neutral" = "neutral";
                 let statusText = t("projects.program.no_reqs", "Brak wymagań");
 
                 if (requirements.length > 0) {
@@ -121,9 +133,7 @@ export function ProgramWidget({
                       (c) =>
                         String(c.piece) === String(pieceId) &&
                         c.voice_line === req.voice_line &&
-                        projectParticipations.some(
-                          (p) => String(p.id) === String(c.participation),
-                        ),
+                        participationIds.has(String(c.participation)),
                     ).length;
 
                     if (assignedCount < req.quantity) {
@@ -165,9 +175,7 @@ export function ProgramWidget({
                       </Text>{" "}
                       {item.piece_title || pieceObj?.title}
                     </Text>
-                    <Badge variant={statusVariant}>
-                      {statusText}
-                    </Badge>
+                    <Badge variant={statusVariant}>{statusText}</Badge>
                   </li>
                 );
               })}
@@ -179,9 +187,9 @@ export function ProgramWidget({
                   weight="bold"
                   className="uppercase tracking-[0.16em]"
                 >
-                {t("projects.program.and_more", "...i {{count}} więcej", {
-                  count: project.program.length - 5,
-                })}
+                  {t("projects.program.and_more", "...i {{count}} więcej", {
+                    count: project.program.length - 5,
+                  })}
                 </Caption>
               </li>
             )}

@@ -13,11 +13,7 @@ import type { Project } from "@/shared/types";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
-import {
-  Caption,
-  Eyebrow,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface ProjectCardDetailsProps {
   project: Project;
@@ -140,7 +136,11 @@ export function ProjectCardDetails({
                 isHoverable={false}
                 className="border-ethereal-incense/15"
               >
-                <Caption color="muted" weight="bold" className="block uppercase tracking-[0.16em]">
+                <Caption
+                  color="muted"
+                  weight="bold"
+                  className="block uppercase tracking-[0.16em]"
+                >
                   {t("projects.details.dress_code_female", "Panie")}
                 </Caption>
                 <Text weight="medium" className="mt-1">
@@ -155,7 +155,11 @@ export function ProjectCardDetails({
                 isHoverable={false}
                 className="border-ethereal-incense/15"
               >
-                <Caption color="muted" weight="bold" className="block uppercase tracking-[0.16em]">
+                <Caption
+                  color="muted"
+                  weight="bold"
+                  className="block uppercase tracking-[0.16em]"
+                >
                   {t("projects.details.dress_code_male", "Panowie")}
                 </Caption>
                 <Text weight="medium" className="mt-1">
