@@ -83,7 +83,18 @@ The UI must feel like a living, breathing sacred space.
 
 ---
 
-## 6. Tailwind v4 Theme Tokens & Custom Utilities (STRICT MAPPING)
+## 6. Form Primitives (Ethereal Inputs)
+
+All interactive forms MUST use the specialized primitives that enforce the design system's glassmorphism and validation states.
+
+- **`Select`**: For all dropdown choices.
+  - _Props:_ `label` (optional Eyebrow), `error` (validation message), `leftIcon` (optional Lucide icon), `variant` (`glass` | `solid` | `ghost`).
+  - _Usage:_ Wrap `<option>` tags inside. Use `variant="glass"` (default) for floating cards.
+- **`Textarea`**: For multi-line text input.
+  - _Props:_ `label`, `error`, `variant` (`glass` | `solid` | `ghost`).
+  - _Feature:_ Supports automatic `resize-y`.
+
+---
 
 When you need to apply utility classes via `className` (e.g., adjusting margins, grid properties, or passing overrides), you MUST strictly adhere to the custom "Ethereal" theme defined in `frontend/src/app/styles/index.css`.
 
