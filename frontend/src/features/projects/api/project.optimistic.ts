@@ -64,13 +64,13 @@ export const buildOptimisticRehearsal = (
   optimisticId: string,
 ): Rehearsal => ({
   id: optimisticId,
-  project: data.project,
+  project: data.project_id,
   date_time: data.date_time,
   timezone: data.timezone,
-  location: data.location_id,
+  location: data.location_id ?? null,
   focus: data.focus ?? "",
   is_mandatory: data.is_mandatory,
-  invited_participations: data.invited_participations,
+  invited_participations: data.invited_participations ?? [],
   absent_count: 0,
 });
 

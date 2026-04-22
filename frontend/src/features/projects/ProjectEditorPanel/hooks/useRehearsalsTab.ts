@@ -282,7 +282,6 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       ).toISOString();
 
       const payload = {
-        project: projectId,
         date_time: absoluteDateTime,
         timezone: formData.timezone,
         location_id: formData.location_id,
@@ -297,7 +296,10 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
           data: payload,
         });
       } else {
-        await createRehearsalMutation.mutateAsync(payload);
+        await createRehearsalMutation.mutateAsync({
+          ...payload,
+          project_id: projectId,
+        });
       }
 
       resetForm();

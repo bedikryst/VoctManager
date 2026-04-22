@@ -53,16 +53,23 @@ export interface CrewAssignmentCreateDTO {
 export type CrewAssignmentUpdateDTO = Partial<CrewAssignmentCreateDTO>;
 
 export interface RehearsalCreateDTO {
-  project: string;
+  project_id: string;
   date_time: string;
   timezone: string;
-  location_id: string;
+  location_id?: string | null;
   focus?: string;
   is_mandatory: boolean;
-  invited_participations: string[];
+  invited_participations?: string[];
 }
 
-export type RehearsalUpdateDTO = Partial<RehearsalCreateDTO>;
+export interface RehearsalUpdateDTO {
+  date_time?: string;
+  timezone?: string;
+  location_id?: string | null;
+  focus?: string;
+  is_mandatory?: boolean;
+  invited_participations?: string[];
+}
 
 export interface ProgramItemCreateDTO {
   title: string;

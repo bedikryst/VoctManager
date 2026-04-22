@@ -13,6 +13,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useTranslation } from "react-i18next";
@@ -20,12 +21,14 @@ import { toast } from "sonner";
 
 import type { Piece, ProgramItem } from "@/shared/types";
 import {
+  projectKeys,
   useCreateProgramItem,
   useDeleteProgramItem,
   useProjectPiecesDictionary,
   useProjectProgram,
   useUpdateProgramItem,
 } from "../../api/project.queries";
+import { ProjectService } from "../../api/project.service";
 import type { ProgramTabItem } from "../types";
 
 export interface UseProgramTabResult {
@@ -69,6 +72,7 @@ export const useProgramTab = (
   onDirtyStateChange?: (isDirty: boolean) => void,
 ): UseProgramTabResult => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const { data: pieces } = useProjectPiecesDictionary();
   const { data: fetchedProgram } = useProjectProgram(projectId);
@@ -251,15 +255,93 @@ export const useProgramTab = (
       t("projects.program.toast.saving_order", "Zapisywanie nowego ukĹ‚adu..."),
     );
 
-    try {
-      await Promise.all(
-        programItems.map((item, index) =>
-          updateProgramMutation.mutateAsync({
-            id: item.id,
-            data: { order: index + 1 },
-          }),
-        ),
+    const persistOrders = async (
+      items: ProgramTabItem[],
+      targetOrderById: Map<string, number>,
+      tempOrderBase: number,
+    ): Promise<void> => {
+      for (const [index, item] of items.entries()) {
+        await ProjectService.updateProgramItem(item.id, {
+          order: tempOrderBase + index,
+        });
+      }
+
+      const sortedByTargetOrder = [...items].sort(
+        (left, right) =>
+          (targetOrderById.get(left.id) ?? 0) - (targetOrderById.get(right.id) ?? 0),
       );
+
+      for (const item of sortedByTargetOrder) {
+        const targetOrder = targetOrderById.get(item.id);
+
+        if (targetOrder === undefined) {
+          continue;
+        }
+
+        await ProjectService.updateProgramItem(item.id, { order: targetOrder });
+      }
+    };
+
+    try {
+      const reorderedItems = programItems.map((item, index) => ({
+        ...item,
+        order: index + 1,
+      }));
+
+      const originalById = new Map(
+        fetchedProgram.map((programItem) => [String(programItem.id), programItem]),
+      );
+      const targetOrderById = new Map(
+        reorderedItems.map((item) => [item.id, item.order]),
+      );
+      const changedItems = reorderedItems.filter((item) => {
+        const originalItem = originalById.get(item.id);
+        return originalItem && originalItem.order !== item.order;
+      });
+
+      if (changedItems.length === 0) {
+        setIsSaving(false);
+        toast.dismiss(toastId);
+        return;
+      }
+
+      const originalOrderById = new Map(
+        changedItems.map((item) => [
+          item.id,
+          originalById.get(item.id)?.order ?? item.order,
+        ]),
+      );
+      const maxKnownOrder = Math.max(
+        0,
+        ...fetchedProgram.map((programItem) => programItem.order),
+        ...reorderedItems.map((item) => item.order),
+      );
+      const tempOrderBase = maxKnownOrder + changedItems.length + 1;
+
+      await persistOrders(changedItems, targetOrderById, tempOrderBase);
+
+      const nextProgram = fetchedProgram
+        .map((programItem) => ({
+          ...programItem,
+          order:
+            targetOrderById.get(String(programItem.id)) ?? programItem.order,
+        }))
+        .sort((left, right) => left.order - right.order);
+
+      queryClient.setQueryData<ProgramItem[]>(
+        projectKeys.program.byProject(projectId),
+        nextProgram,
+      );
+      setProgramItems(
+        reorderedItems.map((programItem) => normalizeProgramItem(programItem, pieces)),
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: projectKeys.program.byProject(projectId),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: projectKeys.program.all,
+      });
 
       toast.success(
         t(
@@ -269,6 +351,45 @@ export const useProgramTab = (
         { id: toastId },
       );
     } catch {
+      const reorderedItems = programItems.map((item, index) => ({
+        ...item,
+        order: index + 1,
+      }));
+      const originalById = new Map(
+        fetchedProgram.map((programItem) => [String(programItem.id), programItem]),
+      );
+      const changedItems = reorderedItems.filter((item) => {
+        const originalItem = originalById.get(item.id);
+        return originalItem && originalItem.order !== item.order;
+      });
+      const originalOrderById = new Map(
+        changedItems.map((item) => [
+          item.id,
+          originalById.get(item.id)?.order ?? item.order,
+        ]),
+      );
+      const maxKnownOrder = Math.max(
+        0,
+        ...fetchedProgram.map((programItem) => programItem.order),
+        ...reorderedItems.map((item) => item.order),
+      );
+
+      try {
+        await persistOrders(
+          changedItems,
+          originalOrderById,
+          maxKnownOrder + changedItems.length * 2 + 1,
+        );
+      } catch {
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: projectKeys.program.byProject(projectId),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: projectKeys.program.all,
+      });
+
       toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
         id: toastId,
         description: t(
