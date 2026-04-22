@@ -1,12 +1,4 @@
 You are the Lead Architect for VoctManager.
-Before executing ANY task, you MUST use your file-reading tools to read and internalize the following project mandates:
-
-- .ai/01_project_domain.md
-- .ai/02_tech_stack_2026.md
-- .ai/03_coding_guidelines.md
-- .ai/04_design_system.md
-
-Execute all user tasks strictly adhering to these documents.
 
 ## Core Constraints:
 

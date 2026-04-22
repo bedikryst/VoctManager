@@ -34,9 +34,11 @@ export function DraggableArtist({
   onUpdateNote,
 }: DraggableArtistProps): React.JSX.Element {
   const { t } = useTranslation();
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const draggable = useDraggable({
     id: participationId,
+    disabled: isOverlay,
   });
+  const { attributes, listeners, setNodeRef, isDragging } = draggable;
 
   const voiceTypeInitial = artist.voice_type_display?.substring(0, 1) || "?";
 
@@ -55,7 +57,7 @@ export function DraggableArtist({
   };
 
   return (
-    <div ref={setNodeRef}>
+    <div ref={isOverlay ? undefined : setNodeRef} className="w-fit max-w-full">
       <GlassCard
         variant={isOverlay ? "solid" : "light"}
         padding="none"

@@ -8,6 +8,7 @@
  */
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
   DndContext,
@@ -415,29 +416,32 @@ export const MicroCastingTab = ({
             </div>
           </GlassCard>
 
-          <DragOverlay
-            dropAnimation={{
-              duration: 200,
-              easing: "cubic-bezier(0.18, 0.67, 0.38, 1)",
-            }}
-          >
-            {(() => {
-              if (!activeDragId) return null;
-              const dragArtist = artistMap.get(activeDragId);
-              if (!dragArtist) return null;
+          {createPortal(
+            <DragOverlay
+              dropAnimation={{
+                duration: 200,
+                easing: "cubic-bezier(0.18, 0.67, 0.38, 1)",
+              }}
+            >
+              {(() => {
+                if (!activeDragId) return null;
+                const dragArtist = artistMap.get(activeDragId);
+                if (!dragArtist) return null;
 
-              return (
-                <DraggableArtist
-                  participationId={activeDragId}
-                  artist={dragArtist}
-                  isOverlay={true}
-                  casting={localCastings.find(
-                    (c) => String(c.participation) === activeDragId,
-                  )}
-                />
-              );
-            })()}
-          </DragOverlay>
+                return (
+                  <DraggableArtist
+                    participationId={activeDragId}
+                    artist={dragArtist}
+                    isOverlay={true}
+                    casting={localCastings.find(
+                      (c) => String(c.participation) === activeDragId,
+                    )}
+                  />
+                );
+              })()}
+            </DragOverlay>,
+            document.body,
+          )}
         </DndContext>
       </div>
     </div>
