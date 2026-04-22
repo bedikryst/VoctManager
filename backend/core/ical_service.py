@@ -78,7 +78,7 @@ class ICalGeneratorService:
 
             lines.extend([
                 "BEGIN:VEVENT",
-                f"UID:rehearsal_{reh.id}@voctmanager.com",
+                f"UID:rehearsal_{reh.id}@voctensemble.com",
                 f"DTSTAMP:{now_utc}",
                 f"DTSTART:{start_time.strftime('%Y%m%dT%H%M%SZ')}",
                 f"DTEND:{end_time.strftime('%Y%m%dT%H%M%SZ')}",
@@ -107,7 +107,7 @@ class ICalGeneratorService:
 
             lines.extend([
                 "BEGIN:VEVENT",
-                f"UID:project_{proj.id}@voctmanager.com",
+                f"UID:project_{proj.id}@voctensemble.com",
                 f"DTSTAMP:{now_utc}",
                 f"DTSTART:{start_time.strftime('%Y%m%dT%H%M%SZ')}",
                 f"DTEND:{end_time.strftime('%Y%m%dT%H%M%SZ')}",

@@ -182,6 +182,13 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# --- COOKIE SECURITY & CSRF DEFAULTS ---
+# These ensure the SPA can read the CSRF token and cookies aren't leaked cross-site
+CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_DOMAIN = env('CSRF_COOKIE_DOMAIN', default='.voctensemble.com')
+
 # --- CELERY & REDIS ---
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://redis:6379/0')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://redis:6379/0')
@@ -254,12 +261,6 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_SSL_REDIRECT = True
-
-# --- COOKIE SECURITY & CSRF DEFAULTS ---
-# These ensure the SPA can read the CSRF token and cookies aren't leaked cross-site
-CSRF_COOKIE_HTTPONLY = False
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
 
 
 # ==========================================
