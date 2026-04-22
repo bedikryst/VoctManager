@@ -10,12 +10,18 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Wrench, Trash2, Loader2 } from "lucide-react";
+import { Plus, Wrench, Trash2 } from "lucide-react";
 
 import { useCrewAssignments } from "../hooks/useCrewAssignments";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
+import { Select } from "@/shared/ui/primitives/Select";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import {
+  Eyebrow,
+  Text,
+} from "@/shared/ui/primitives/typography";
 
 interface CrewTabProps {
   projectId: string;
@@ -40,18 +46,20 @@ export const CrewTab = ({
   } = useCrewAssignments(projectId);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+    <div className="mx-auto max-w-4xl space-y-8 pb-12">
       <form onSubmit={handleAssign}>
-        <GlassCard className="p-6 flex flex-col md:flex-row gap-5 items-end">
-          <div className="flex-1 w-full">
-            <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">
-              {t("projects.crew.form.hire_label", "Zatrudnij z bazy")}
-            </label>
-            <select
+        <GlassCard
+          variant="ethereal"
+          padding="md"
+          isHoverable={false}
+          className="flex flex-col items-end gap-5 md:flex-row"
+        >
+          <div className="w-full flex-1">
+            <Select
+              label={t("projects.crew.form.hire_label", "Zatrudnij z bazy")}
               required
               value={selectedCrewId}
-              onChange={(e) => setSelectedCrewId(e.target.value)}
-              className="w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] appearance-none cursor-pointer font-medium"
+              onChange={(event) => setSelectedCrewId(event.target.value)}
               disabled={isMutating}
             >
               <option value="">
@@ -60,28 +68,29 @@ export const CrewTab = ({
                   "— Wybierz współpracownika —",
                 )}
               </option>
-              {availableCrew.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.first_name} {c.last_name} ({c.specialty})
+              {availableCrew.map((collaborator) => (
+                <option key={collaborator.id} value={collaborator.id}>
+                  {collaborator.first_name} {collaborator.last_name} (
+                  {collaborator.specialty})
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
-          <div className="flex-1 w-full">
-            <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">
-              {t("projects.crew.form.role_label", "Rola na tym koncercie")}
-            </label>
+          <div className="w-full flex-1">
             <Input
+              label={t(
+                "projects.crew.form.role_label",
+                "Rola na tym koncercie",
+              )}
               type="text"
               value={roleDesc}
-              onChange={(e) => setRoleDesc(e.target.value)}
+              onChange={(event) => setRoleDesc(event.target.value)}
               placeholder={t(
                 "projects.crew.form.role_placeholder",
                 "np. Akustyk FOH",
               )}
               disabled={isMutating}
-              className="font-medium"
             />
           </div>
 
@@ -93,40 +102,50 @@ export const CrewTab = ({
             leftIcon={
               !isMutating ? <Plus size={14} aria-hidden="true" /> : undefined
             }
-            className="w-full md:w-auto h-[46px] px-8"
+            className="w-full md:w-auto"
           >
             {t("projects.crew.form.submit", "Przypisz")}
           </Button>
         </GlassCard>
       </form>
 
-      <GlassCard className="p-0 overflow-hidden">
-        <div className="p-5 bg-white/40 border-b border-stone-200/60 flex items-center justify-between relative z-10">
+      <GlassCard
+        variant="ethereal"
+        padding="none"
+        isHoverable={false}
+        className="overflow-hidden"
+      >
+        <div className="relative z-10 flex items-center justify-between border-b border-ethereal-incense/20 bg-ethereal-parchment/40 p-5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center border border-stone-200 shadow-sm">
-              <Wrench size={14} className="text-stone-600" aria-hidden="true" />
-            </div>
-            <h4 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-700">
+            <GlassCard
+              variant="light"
+              padding="none"
+              isHoverable={false}
+              className="flex h-8 w-8 items-center justify-center"
+            >
+              <Wrench
+                size={14}
+                className="text-ethereal-graphite"
+                aria-hidden="true"
+              />
+            </GlassCard>
+            <Eyebrow color="default">
               {t("projects.crew.list.title", "Skład Ekipy (Crew)")}
-            </h4>
+            </Eyebrow>
           </div>
-          <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">
+          <Eyebrow color="muted">
             {t("projects.crew.list.assigned_count", "Przypisano: {{count}}", {
               count: projectAssignments.length,
             })}
-          </span>
+          </Eyebrow>
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center items-center py-10">
-            <Loader2
-              size={24}
-              className="animate-spin text-stone-300"
-              aria-hidden="true"
-            />
+          <div className="flex items-center justify-center py-10">
+            <EtherealLoader />
           </div>
         ) : (
-          <div className="divide-y divide-stone-100/50 max-h-[500px] overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+          <div className="ethereal-scroll max-h-125 divide-y divide-ethereal-incense/10 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
             <AnimatePresence initial={false}>
               {projectAssignments.length > 0 ? (
                 projectAssignments.map((assignment) => {
@@ -141,42 +160,50 @@ export const CrewTab = ({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="p-5 flex items-center justify-between hover:bg-white/50 transition-colors"
+                      className="flex items-center justify-between p-5 transition-colors hover:bg-ethereal-marble/50"
                     >
                       <div className="flex flex-col gap-0.5">
-                        <p className="font-bold text-stone-900 text-sm tracking-tight">
+                        <Text size="sm" weight="bold">
                           {person.first_name} {person.last_name}
-                        </p>
-                        <p className="text-[9px] font-bold antialiased uppercase text-stone-400 tracking-widest">
+                        </Text>
+                        <Eyebrow color="muted">
                           {assignment.role_description || person.specialty}{" "}
                           {person.company_name && `(${person.company_name})`}
-                        </p>
+                        </Eyebrow>
                       </div>
-                      <button
+                      <Button
+                        type="button"
+                        variant="icon"
+                        size="icon"
                         onClick={() => handleRemove(String(assignment.id))}
-                        className="p-2.5 text-stone-400 hover:text-red-600 bg-white border border-transparent hover:border-red-200 shadow-sm rounded-xl hover:bg-red-50 transition-all active:scale-95 disabled:opacity-50"
                         disabled={isMutating}
                         title={t(
                           "projects.crew.list.remove_title",
                           "Usuń z ekipy technicznej",
                         )}
+                        aria-label={t(
+                          "projects.crew.list.remove_title",
+                          "Usuń z ekipy technicznej",
+                        )}
                       >
                         <Trash2 size={16} aria-hidden="true" />
-                      </button>
+                      </Button>
                     </motion.div>
                   );
                 })
               ) : (
-                <motion.p
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-[11px] text-stone-400 italic p-8 text-center"
+                  className="p-8 text-center"
                 >
-                  {t(
-                    "projects.crew.empty",
-                    "Brak przypisanej ekipy technicznej.",
-                  )}
-                </motion.p>
+                  <Text size="xs" color="muted" className="italic">
+                    {t(
+                      "projects.crew.empty",
+                      "Brak przypisanej ekipy technicznej.",
+                    )}
+                  </Text>
+                </motion.div>
               )}
             </AnimatePresence>
           </div>

@@ -11,7 +11,14 @@ import { useTranslation } from "react-i18next";
 import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 
-import type { Artist, PieceCasting } from "@/shared/types";
+import type {
+  Artist,
+  Participation,
+  Piece,
+  PieceCasting,
+  ProgramItem,
+  VoiceLineOption,
+} from "@/shared/types";
 import {
   useProjectPieceCastings,
   useProjectProgram,
@@ -22,7 +29,25 @@ import {
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
 
-export const useMicroCasting = (projectId: string) => {
+export type PieceCastingStatus = "FREE" | "OK" | "DEFICIT";
+
+export interface UseMicroCastingResult {
+  program: ProgramItem[];
+  voiceLines: VoiceLineOption[];
+  pieces: Piece[];
+  selectedPieceId: string | null;
+  setSelectedPieceId: React.Dispatch<React.SetStateAction<string | null>>;
+  localCastings: PieceCasting[];
+  activeDragId: string | null;
+  artistMap: Map<string, Artist>;
+  pieceStatuses: Record<string, PieceCastingStatus>;
+  projectParticipations: Participation[];
+  handleUpdateNote: (castingId: string, newNote: string) => Promise<void>;
+  handleDragStart: (event: DragStartEvent) => void;
+  handleDragEnd: (event: DragEndEvent) => Promise<void>;
+}
+
+export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const { t } = useTranslation();
   const { artists, pieces, participations } = useProjectData(projectId);
   const { data: voiceLines = [] } = useProjectVoiceLinesDictionary();
@@ -78,7 +103,7 @@ export const useMicroCasting = (projectId: string) => {
   }, [globalCastingsForPiece]);
 
   const pieceStatuses = useMemo(() => {
-    const statuses: Record<string, "FREE" | "OK" | "DEFICIT"> = {};
+    const statuses: Record<string, PieceCastingStatus> = {};
     program.forEach((item) => {
       const pieceId = String(item.piece);
       const piece = pieces.find(

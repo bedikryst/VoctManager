@@ -25,6 +25,11 @@ import { useDetailsForm } from "../hooks/useDetailsForm";
 import { useProjectArtistsDictionary } from "../../api/project.queries";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Select } from "@/shared/ui/primitives/Select";
+import { Textarea } from "@/shared/ui/primitives/Textarea";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { useLocationsData } from "@/features/logistics/hooks/useLocationsData";
 
 interface DetailsTabProps {
@@ -32,11 +37,6 @@ interface DetailsTabProps {
   onSuccess: (updatedProject?: Project) => void;
   onDirtyStateChange?: (isDirty: boolean) => void;
 }
-
-const STYLE_LABEL =
-  "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
-const STYLE_GLASS_TEXTAREA =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-stone-400";
 
 export const DetailsTab = ({
   project,
@@ -67,7 +67,7 @@ export const DetailsTab = ({
   );
 
   return (
-    <div className="max-w-4xl mx-auto pb-24 relative">
+    <div className="relative mx-auto max-w-4xl pb-24">
       <AnimatePresence>
         {isDirty && (
           <motion.div
@@ -76,315 +76,301 @@ export const DetailsTab = ({
             animate={{ y: 0, opacity: 1, x: "-50%" }}
             exit={{ y: 100, opacity: 0, x: "-50%" }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 md:bottom-10 left-1/2 z-[200] w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_rgb(0,0,0,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-4 flex items-center justify-between"
+            className="fixed bottom-6 left-1/2 z-(--z-toast) w-[90%] max-w-md md:bottom-10"
           >
-            <div className="flex flex-col ml-2">
-              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
-                {t("projects.details_tab.fab.unsaved", "Niezapisane Zmiany")}
-              </span>
-              <span className="text-xs text-stone-500">
-                {t(
-                  "projects.details_tab.fab.description",
-                  "Zmodyfikowałeś ustawienia projektu.",
-                )}
-              </span>
-            </div>
-
-            <Button
-              form="details-form"
-              type="submit"
-              variant="primary"
-              disabled={isSubmitting}
-              isLoading={isSubmitting}
-              leftIcon={<Save size={16} aria-hidden="true" />}
-              className="shadow-sm"
+            <GlassCard
+              variant="solid"
+              padding="sm"
+              isHoverable={false}
+              className="flex items-center justify-between gap-4 rounded-2xl"
             >
-              {t("projects.details_tab.fab.save", "Zapisz Zmiany")}
-            </Button>
+              <div className="ml-2 flex flex-col">
+                <Eyebrow color="gold">
+                  {t("projects.details_tab.fab.unsaved", "Niezapisane Zmiany")}
+                </Eyebrow>
+                <Text size="xs" color="muted">
+                  {t(
+                    "projects.details_tab.fab.description",
+                    "Zmodyfikowałeś ustawienia projektu.",
+                  )}
+                </Text>
+              </div>
+
+              <Button
+                form="details-form"
+                type="submit"
+                variant="primary"
+                disabled={isSubmitting}
+                isLoading={isSubmitting}
+                leftIcon={<Save size={16} aria-hidden="true" />}
+              >
+                {t("projects.details_tab.fab.save", "Zapisz Zmiany")}
+              </Button>
+            </GlassCard>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2 mb-2">
-          <Briefcase className="text-brand" size={20} aria-hidden="true" />
+      <div className="mb-8 flex items-center gap-3">
+        <Briefcase
+          className="text-ethereal-gold"
+          size={22}
+          aria-hidden="true"
+        />
+        <Heading as="h2" size="xl" weight="medium">
           {t("projects.details_tab.header.title", "Szczegóły Wydarzenia")}
-        </h2>
+        </Heading>
       </div>
 
       <form id="details-form" onSubmit={handleSubmit} className="space-y-8">
-        <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
-          <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-brand"
-              aria-hidden="true"
-            ></span>
-            {t("projects.details_tab.sections.title_desc", "Tytuł i Opis")}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <GlassCard variant="ethereal" padding="md" isHoverable={false}>
+          <SectionHeader
+            title={t(
+              "projects.details_tab.sections.title_desc",
+              "Tytuł i Opis",
+            )}
+          />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className={STYLE_LABEL}>
-                {t("projects.details_tab.fields.title", "Tytuł Projektu *")}
-              </label>
               <Input
+                label={t(
+                  "projects.details_tab.fields.title",
+                  "Tytuł Projektu *",
+                )}
                 type="text"
                 required
                 value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
+                onChange={(event) =>
+                  setFormData({ ...formData, title: event.target.value })
                 }
               />
             </div>
 
-            <div>
-              <label className={STYLE_LABEL}>
-                {t("projects.details_tab.fields.date_time", "Data i Czas *")}
-              </label>
-              <Input
-                type="datetime-local"
-                required
-                value={formData.date_time}
-                onChange={(e) =>
-                  setFormData({ ...formData, date_time: e.target.value })
-                }
-              />
-            </div>
+            <Input
+              label={t(
+                "projects.details_tab.fields.date_time",
+                "Data i Czas *",
+              )}
+              type="datetime-local"
+              required
+              value={formData.date_time}
+              onChange={(event) =>
+                setFormData({ ...formData, date_time: event.target.value })
+              }
+            />
 
-            <div className="md:col-span-1">
-              <label className={STYLE_LABEL}>
-                {t("projects.details_tab.fields.timezone", "Strefa Czasowa *")}
-              </label>
-              <select
-                required
-                value={formData.timezone}
-                onChange={(e) =>
-                  setFormData({ ...formData, timezone: e.target.value })
-                }
-                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
-              >
-                {timezones.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={STYLE_LABEL}>
-                {t(
-                  "projects.details_tab.fields.location",
-                  "Lokalizacja / Miejsce",
-                )}
-              </label>
-              <select
-                value={formData.location_id || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    location_id: e.target.value || null,
-                  })
-                }
-                disabled={isLocationsLoading}
-                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] disabled:opacity-50"
-              >
-                <option value="">
-                  {isLocationsLoading
-                    ? t("common.loading", "Ładowanie...")
-                    : t(
-                        "common.select_location",
-                        "--- Wybierz zapisaną lokalizację ---",
-                      )}
+            <Select
+              label={t(
+                "projects.details_tab.fields.timezone",
+                "Strefa Czasowa *",
+              )}
+              required
+              value={formData.timezone}
+              onChange={(event) =>
+                setFormData({ ...formData, timezone: event.target.value })
+              }
+            >
+              {timezones.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz.replace(/_/g, " ")}
                 </option>
-                {displayLocations.map((loc) => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.name}{" "}
-                    {loc.formatted_address
-                      ? `- ${loc.formatted_address.split(",")[0]}`
-                      : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
+              ))}
+            </Select>
 
-            <div>
-              <label className={STYLE_LABEL}>
-                {t("projects.details_tab.fields.conductor", "Dyrygent")}
-              </label>
-              <select
-                value={formData.conductor || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    conductor: e.target.value || null,
-                  })
-                }
-                disabled={isArtistsLoading}
-                className="w-full px-3 py-[9px] text-sm bg-white border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all text-stone-800 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] disabled:opacity-50"
-              >
-                <option value="">
-                  {isArtistsLoading
-                    ? t("common.loading", "Ładowanie...")
-                    : t(
-                        "projects.details_tab.fields.conductor_placeholder",
-                        "--- Wybierz dyrygenta ---",
-                      )}
+            <Select
+              label={t(
+                "projects.details_tab.fields.location",
+                "Lokalizacja / Miejsce",
+              )}
+              value={formData.location_id || ""}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  location_id: event.target.value || null,
+                })
+              }
+              disabled={isLocationsLoading}
+            >
+              <option value="">
+                {isLocationsLoading
+                  ? t("common.loading", "Ładowanie...")
+                  : t(
+                      "common.select_location",
+                      "--- Wybierz zapisaną lokalizację ---",
+                    )}
+              </option>
+              {displayLocations.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name}
+                  {loc.formatted_address
+                    ? ` - ${loc.formatted_address.split(",")[0]}`
+                    : ""}
                 </option>
-                {conductors.map((conductor) => (
-                  <option key={conductor.id} value={conductor.id}>
-                    {`${conductor.first_name} ${conductor.last_name}`.trim()}
-                  </option>
-                ))}
-              </select>
-            </div>
+              ))}
+            </Select>
+
+            <Select
+              label={t("projects.details_tab.fields.conductor", "Dyrygent")}
+              value={formData.conductor || ""}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  conductor: event.target.value || null,
+                })
+              }
+              disabled={isArtistsLoading}
+            >
+              <option value="">
+                {isArtistsLoading
+                  ? t("common.loading", "Ładowanie...")
+                  : t(
+                      "projects.details_tab.fields.conductor_placeholder",
+                      "--- Wybierz dyrygenta ---",
+                    )}
+              </option>
+              {conductors.map((conductor) => (
+                <option key={conductor.id} value={conductor.id}>
+                  {`${conductor.first_name} ${conductor.last_name}`.trim()}
+                </option>
+              ))}
+            </Select>
           </div>
-        </div>
+        </GlassCard>
 
-        {/* Logistyka */}
-        <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
-          <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-500"
-              aria-hidden="true"
-            ></span>
-            {t(
+        <GlassCard variant="ethereal" padding="md" isHoverable={false}>
+          <SectionHeader
+            title={t(
               "projects.details_tab.sections.logistics",
               "Zbiórka i Dress Code",
             )}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className={STYLE_LABEL}>
-                {t(
-                  "projects.details_tab.fields.call_time",
-                  "Zbiórka (Call Time)",
-                )}
-              </label>
-              <Input
-                type="datetime-local"
-                value={formData.call_time || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, call_time: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className={STYLE_LABEL}>
-                {t(
-                  "projects.details_tab.fields.dress_code_female",
-                  "Opcjonalnie: Panie",
-                )}
-              </label>
-              <Input
-                type="text"
-                value={formData.dress_code_female || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    dress_code_female: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label className={STYLE_LABEL}>
-                {t(
-                  "projects.details_tab.fields.dress_code_male",
-                  "Opcjonalnie: Panowie",
-                )}
-              </label>
-              <Input
-                type="text"
-                value={formData.dress_code_male || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, dress_code_male: e.target.value })
-                }
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Notatki */}
-        <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
-          <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-orange-400"
-              aria-hidden="true"
-            ></span>
-            {t("projects.details_tab.sections.notes", "Notatki Produkcyjne")}
-          </h3>
-          <div>
-            <label className={STYLE_LABEL}>
-              {t("projects.details_tab.fields.description", "Opis wydarzenia")}
-            </label>
-            <textarea
-              rows={4}
-              value={formData.description || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              className={STYLE_GLASS_TEXTAREA}
-              placeholder={t(
-                "projects.details_tab.placeholders.description",
-                "np. Proszę o punktualność...",
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Referencje */}
-        <div className="bg-[#1DB954]/5 border border-[#1DB954]/20 rounded-2xl p-6 md:p-8 shadow-sm">
-          <h3 className="text-sm font-bold text-stone-800 mb-6 flex items-center gap-2">
-            <PlayCircle
-              className="text-[#1DB954]"
-              size={16}
-              aria-hidden="true"
-            />
-            {t(
-              "projects.details_tab.sections.references",
-              "Referencje Muzyczne",
-            )}
-          </h3>
-          <div>
-            <label className={STYLE_LABEL}>
-              {t("projects.details_tab.fields.spotify", "Playlista (Spotify)")}
-            </label>
+          />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <Input
-              type="url"
-              value={formData.spotify_playlist_url || ""}
-              onChange={(e) =>
+              label={t(
+                "projects.details_tab.fields.call_time",
+                "Zbiórka (Call Time)",
+              )}
+              type="datetime-local"
+              value={formData.call_time || ""}
+              onChange={(event) =>
+                setFormData({ ...formData, call_time: event.target.value })
+              }
+            />
+            <Input
+              label={t(
+                "projects.details_tab.fields.dress_code_female",
+                "Opcjonalnie: Panie",
+              )}
+              type="text"
+              value={formData.dress_code_female || ""}
+              onChange={(event) =>
                 setFormData({
                   ...formData,
-                  spotify_playlist_url: e.target.value,
+                  dress_code_female: event.target.value,
                 })
               }
-              placeholder={t(
-                "projects.details_tab.placeholders.spotify",
-                "Wklej link do playlisty z referencjami...",
+            />
+            <Input
+              label={t(
+                "projects.details_tab.fields.dress_code_male",
+                "Opcjonalnie: Panowie",
               )}
+              type="text"
+              value={formData.dress_code_male || ""}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  dress_code_male: event.target.value,
+                })
+              }
             />
           </div>
-        </div>
+        </GlassCard>
 
-        {/* Harmonogram (Run Sheet) */}
-        <div className="bg-white/40 border border-stone-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-purple-500"
-                aria-hidden="true"
-              ></span>
+        <GlassCard variant="ethereal" padding="md" isHoverable={false}>
+          <SectionHeader
+            title={t(
+              "projects.details_tab.sections.notes",
+              "Notatki Produkcyjne",
+            )}
+          />
+          <Textarea
+            label={t(
+              "projects.details_tab.fields.description",
+              "Opis wydarzenia",
+            )}
+            rows={4}
+            value={formData.description || ""}
+            onChange={(event) =>
+              setFormData({ ...formData, description: event.target.value })
+            }
+            placeholder={t(
+              "projects.details_tab.placeholders.description",
+              "np. Proszę o punktualność...",
+            )}
+          />
+        </GlassCard>
+
+        <GlassCard
+          variant="outline"
+          padding="md"
+          isHoverable={false}
+          className="border-ethereal-sage/30 bg-ethereal-sage/5"
+        >
+          <div className="mb-6 flex items-center gap-3">
+            <PlayCircle
+              className="text-ethereal-sage"
+              size={18}
+              aria-hidden="true"
+            />
+            <Eyebrow color="sage">
               {t(
-                "projects.details_tab.sections.run_sheet",
-                "Harmonogram Dnia Koncertu",
+                "projects.details_tab.sections.references",
+                "Referencje Muzyczne",
               )}
-            </h3>
+            </Eyebrow>
+          </div>
+          <Input
+            label={t(
+              "projects.details_tab.fields.spotify",
+              "Playlista (Spotify)",
+            )}
+            type="url"
+            value={formData.spotify_playlist_url || ""}
+            onChange={(event) =>
+              setFormData({
+                ...formData,
+                spotify_playlist_url: event.target.value,
+              })
+            }
+            placeholder={t(
+              "projects.details_tab.placeholders.spotify",
+              "Wklej link do playlisty z referencjami...",
+            )}
+          />
+        </GlassCard>
+
+        <GlassCard variant="ethereal" padding="md" isHoverable={false}>
+          <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-3">
+              <ListOrdered
+                className="text-ethereal-amethyst"
+                size={18}
+                aria-hidden="true"
+              />
+              <Eyebrow color="amethyst">
+                {t(
+                  "projects.details_tab.sections.run_sheet",
+                  "Harmonogram Dnia Koncertu",
+                )}
+              </Eyebrow>
+            </div>
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={handleAddRunSheetItem}
               leftIcon={<Plus size={14} aria-hidden="true" />}
-              className="text-xs"
             >
               {t(
                 "projects.details_tab.buttons.add_run_sheet",
@@ -395,19 +381,24 @@ export const DetailsTab = ({
 
           <div className="space-y-3">
             {sortedRunSheet.length === 0 ? (
-              <div className="text-center py-10 bg-stone-50/50 rounded-xl border border-dashed border-stone-200 flex flex-col items-center">
+              <GlassCard
+                variant="light"
+                padding="md"
+                isHoverable={false}
+                className="flex flex-col items-center border-dashed text-center"
+              >
                 <ListOrdered
                   size={24}
-                  className="text-stone-300 mb-2"
+                  className="mb-2 text-ethereal-graphite/40"
                   aria-hidden="true"
                 />
-                <p className="text-xs text-stone-500">
+                <Text size="xs" color="muted">
                   {t(
                     "projects.details_tab.empty.run_sheet",
                     "Brak punktów harmonogramu. Dodaj pierwszy!",
                   )}
-                </p>
-              </div>
+                </Text>
+              </GlassCard>
             ) : (
               <AnimatePresence initial={false}>
                 {sortedRunSheet.map((item) => {
@@ -419,84 +410,91 @@ export const DetailsTab = ({
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                      className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-white p-3 rounded-xl border border-stone-200/60 shadow-sm"
                     >
-                      <div className="flex-shrink-0 w-full md:w-32 relative">
-                        <Clock
-                          size={14}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
-                          aria-hidden="true"
-                        />
-                        <input
-                          type="time"
-                          required
-                          value={item.time}
-                          onChange={(e) =>
-                            handleUpdateRunSheetItem(
-                              safeId,
-                              "time",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full pl-9 pr-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-mono"
-                          placeholder={t(
-                            "projects.details_tab.run_sheet.time",
-                            "Godz.",
-                          )}
-                        />
-                      </div>
-                      <div className="flex-1 w-full relative">
-                        <input
-                          type="text"
-                          required
-                          value={item.title}
-                          onChange={(e) =>
-                            handleUpdateRunSheetItem(
-                              safeId,
-                              "title",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-bold"
-                          placeholder={t(
-                            "projects.details_tab.run_sheet.title",
-                            "Tytuł",
-                          )}
-                        />
-                      </div>
-                      <div className="flex-1 w-full">
-                        <input
-                          type="text"
-                          value={item.description || ""}
-                          onChange={(e) =>
-                            handleUpdateRunSheetItem(
-                              safeId,
-                              "description",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all italic"
-                          placeholder={t(
-                            "projects.details_tab.run_sheet.description",
-                            "Opis (opcjonalny)",
-                          )}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveRunSheetItem(safeId)}
-                        className="p-2.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 self-end md:self-auto"
-                        aria-label={t("common.actions.delete", "Usuń")}
+                      <GlassCard
+                        variant="solid"
+                        padding="sm"
+                        isHoverable={false}
+                        className="flex flex-col items-start gap-3 md:flex-row md:items-center"
                       >
-                        <Trash2 size={16} aria-hidden="true" />
-                      </button>
+                        <div className="relative w-full shrink-0 md:w-32">
+                          <Clock
+                            size={14}
+                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ethereal-graphite/60"
+                            aria-hidden="true"
+                          />
+                          <Input
+                            type="time"
+                            required
+                            value={item.time}
+                            onChange={(event) =>
+                              handleUpdateRunSheetItem(
+                                safeId,
+                                "time",
+                                event.target.value,
+                              )
+                            }
+                            className="pl-9 font-mono"
+                            placeholder={t(
+                              "projects.details_tab.run_sheet.time",
+                              "Godz.",
+                            )}
+                          />
+                        </div>
+                        <div className="flex-1 w-full">
+                          <Input
+                            type="text"
+                            required
+                            value={item.title}
+                            onChange={(event) =>
+                              handleUpdateRunSheetItem(
+                                safeId,
+                                "title",
+                                event.target.value,
+                              )
+                            }
+                            placeholder={t(
+                              "projects.details_tab.run_sheet.title",
+                              "Tytuł",
+                            )}
+                          />
+                        </div>
+                        <div className="flex-1 w-full">
+                          <Input
+                            type="text"
+                            value={item.description || ""}
+                            onChange={(event) =>
+                              handleUpdateRunSheetItem(
+                                safeId,
+                                "description",
+                                event.target.value,
+                              )
+                            }
+                            className="italic"
+                            placeholder={t(
+                              "projects.details_tab.run_sheet.description",
+                              "Opis (opcjonalny)",
+                            )}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="icon"
+                          size="icon"
+                          onClick={() => handleRemoveRunSheetItem(safeId)}
+                          aria-label={t("common.actions.delete", "Usuń")}
+                          className="self-end md:self-auto"
+                        >
+                          <Trash2 size={16} aria-hidden="true" />
+                        </Button>
+                      </GlassCard>
                     </motion.div>
                   );
                 })}
               </AnimatePresence>
             )}
           </div>
-        </div>
+        </GlassCard>
       </form>
     </div>
   );

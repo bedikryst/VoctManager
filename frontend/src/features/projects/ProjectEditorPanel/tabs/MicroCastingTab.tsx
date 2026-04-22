@@ -32,6 +32,13 @@ import { getPrimaryReferenceRecording } from "@/features/archive/constants/refer
 import { DraggableArtist } from "./components/DraggableArtist";
 import { DroppableBucket } from "./components/DroppableBucket";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Select } from "@/shared/ui/primitives/Select";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import {
+  Eyebrow,
+  Heading,
+  Text,
+} from "@/shared/ui/primitives/typography";
 
 interface MicroCastingTabProps {
   projectId: string;
@@ -98,31 +105,27 @@ export const MicroCastingTab = ({
 
     return (
       <DroppableBucket key={bucketId} id={bucketId} title={title}>
-        <div className="flex items-center justify-between mb-3 border-b border-stone-200/50 pb-2">
-          <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
-            {title}
-          </span>
+        <div className="mb-3 flex items-center justify-between border-b border-ethereal-incense/20 pb-2">
+          <Eyebrow color="muted">{title}</Eyebrow>
           <div className="flex gap-1.5">
-            <span className="text-[9px] font-bold antialiased text-stone-500 bg-white px-2 py-0.5 rounded-md border border-stone-200 shadow-sm">
-              {bucketCastings.length}
-            </span>
+            <Badge variant="neutral">{bucketCastings.length}</Badge>
             {requirementCount !== null && deficit !== null && deficit > 0 && (
-              <span
-                className="text-[9px] font-bold antialiased text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md shadow-sm"
+              <Badge
+                variant="danger"
                 title={t("projects.micro_cast.status.deficit", "Braki: ")}
               >
                 -{deficit}
-              </span>
+              </Badge>
             )}
             {requirementCount !== null && deficit !== null && deficit <= 0 && (
-              <span className="text-[9px] font-bold antialiased text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md shadow-sm">
-                <CheckCircle2 size={12} aria-hidden="true" />
-              </span>
+              <Badge variant="success" icon={<CheckCircle2 size={12} />}>
+                {""}
+              </Badge>
             )}
           </div>
         </div>
 
-        <div className="space-y-2 min-h-[60px]">
+        <div className="min-h-15 space-y-2">
           {bucketCastings.map((casting) => {
             const artist = artistMap.get(String(casting.participation));
             if (!artist) return null;
@@ -137,15 +140,15 @@ export const MicroCastingTab = ({
             );
           })}
           {bucketCastings.length === 0 && (
-            <div className="text-center py-4 border-2 border-dashed border-stone-200/60 rounded-xl bg-stone-50/50 opacity-60">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
+            <div className="rounded-xl border-2 border-dashed border-ethereal-incense/20 bg-ethereal-parchment/40 py-4 text-center opacity-60">
+              <Eyebrow color="muted">
                 {requirementCount === null
                   ? t(
                       "projects.micro_cast.empty.section",
                       "Brak przypisań w tej sekcji",
                     )
                   : t("projects.micro_cast.status.free", "Wolny Wakat")}
-              </span>
+              </Eyebrow>
             </div>
           )}
         </div>
@@ -154,29 +157,40 @@ export const MicroCastingTab = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-24 h-full flex flex-col">
-      <div className="bg-white border border-stone-200/60 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 flex-shrink-0">
-        <div>
-          <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2 mb-2">
-            <MicVocal className="text-brand" size={20} aria-hidden="true" />
-            {t("projects.micro_cast.header.title", "Divisi i Mikro-Casting")}
-          </h2>
-          <p className="text-sm text-stone-500">
+    <div className="mx-auto flex h-full max-w-7xl flex-col space-y-6 pb-24">
+      <GlassCard
+        variant="ethereal"
+        padding="md"
+        isHoverable={false}
+        className="flex shrink-0 flex-col justify-between gap-6 md:flex-row md:items-center"
+      >
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <MicVocal
+              className="text-ethereal-gold"
+              size={20}
+              aria-hidden="true"
+            />
+            <Heading as="h2" size="xl" weight="medium">
+              {t("projects.micro_cast.header.title", "Divisi i Mikro-Casting")}
+            </Heading>
+          </div>
+          <Text size="sm" color="muted">
             {t(
               "projects.micro_cast.header.subtitle",
               "Przeciągaj wokalistów między sekcjami w ramach wybranego utworu.",
             )}
-          </p>
+          </Text>
         </div>
 
-        <div className="flex-1 max-w-md">
-          <label className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1">
-            {t("projects.micro_cast.select_piece", "Wybierz utwór do castingu")}
-          </label>
-          <select
+        <div className="max-w-md flex-1">
+          <Select
+            label={t(
+              "projects.micro_cast.select_piece",
+              "Wybierz utwór do castingu",
+            )}
             value={selectedPieceId || ""}
-            onChange={(e) => setSelectedPieceId(e.target.value)}
-            className="w-full px-4 py-3 text-sm text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all font-bold appearance-none cursor-pointer"
+            onChange={(event) => setSelectedPieceId(event.target.value)}
           >
             {program.length === 0 && (
               <option value="">
@@ -196,15 +210,13 @@ export const MicroCastingTab = ({
                     const piece = pieces.find(
                       (p) => String(p.id) === String(item.piece),
                     );
-
                     const status = pieceStatuses[String(item.piece)];
 
-                    // Zamiast emotikon, nadajemy odpowiednią klasę koloru Tailwind
-                    let optionColorClass = "text-stone-500"; // FREE (Brak wymagań)
+                    let optionColorClass = "text-ethereal-graphite";
                     if (status === "OK")
-                      optionColorClass = "text-emerald-600 font-bold";
+                      optionColorClass = "font-bold text-ethereal-sage";
                     if (status === "DEFICIT")
-                      optionColorClass = "text-red-600 font-bold";
+                      optionColorClass = "font-bold text-ethereal-crimson";
 
                     return (
                       <option
@@ -212,36 +224,43 @@ export const MicroCastingTab = ({
                         value={item.piece}
                         className={optionColorClass}
                       >
-                        {/* Wyświetlamy po prostu kolejny numer z map() zamiast długiego timestampu */}
                         {index + 1}. {item.piece_title || piece?.title}
                       </option>
                     );
                   })}
               </optgroup>
             )}
-          </select>
+          </Select>
         </div>
-      </div>
+      </GlassCard>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-0">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-4">
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          {/* Lewy panel - Baza */}
-          <GlassCard className="lg:col-span-1 p-5 flex flex-col bg-stone-50/50 h-full border-brand/10">
-            <div className="flex items-center justify-between mb-4 border-b border-stone-200/60 pb-3">
-              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
-                <Users size={14} className="text-brand" aria-hidden="true" />
-                {t(
-                  "projects.micro_cast.sections.unassigned",
-                  "Nieprzypisani (Baza Osobowa)",
-                )}
-              </span>
-              <span className="text-[9px] font-bold antialiased text-brand bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-                {unassignedParticipations.length}
-              </span>
+          <GlassCard
+            variant="ethereal"
+            padding="md"
+            isHoverable={false}
+            className="flex h-full flex-col border-ethereal-gold/20 bg-ethereal-parchment/30 lg:col-span-1"
+          >
+            <div className="mb-4 flex items-center justify-between border-b border-ethereal-incense/20 pb-3">
+              <div className="flex items-center gap-1.5">
+                <Users
+                  size={14}
+                  className="text-ethereal-gold"
+                  aria-hidden="true"
+                />
+                <Eyebrow color="muted">
+                  {t(
+                    "projects.micro_cast.sections.unassigned",
+                    "Nieprzypisani (Baza Osobowa)",
+                  )}
+                </Eyebrow>
+              </div>
+              <Badge variant="warning">{unassignedParticipations.length}</Badge>
             </div>
 
             <DroppableBucket
@@ -250,7 +269,7 @@ export const MicroCastingTab = ({
                 "projects.micro_cast.sections.unassigned",
                 "Nieprzypisani",
               )}
-              className="flex-1 overflow-y-auto [scrollbar-gutter:stable] pr-2 -mr-2"
+              className="ethereal-scroll -mr-2 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]"
             >
               <div className="space-y-2">
                 {unassignedParticipations.map((part) => {
@@ -265,44 +284,54 @@ export const MicroCastingTab = ({
                   );
                 })}
                 {unassignedParticipations.length === 0 && (
-                  <div className="text-center py-8 opacity-50">
+                  <div className="py-8 text-center opacity-60">
                     <CheckCircle2
                       size={32}
-                      className="mx-auto mb-2 text-emerald-500"
+                      className="mx-auto mb-2 text-ethereal-sage"
                       aria-hidden="true"
                     />
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">
+                    <Eyebrow color="muted">
                       {t(
                         "projects.micro_cast.empty.unassigned",
                         "Wszyscy zostali przypisani do ról w tym utworze.",
                       )}
-                    </p>
+                    </Eyebrow>
                   </div>
                 )}
               </div>
             </DroppableBucket>
           </GlassCard>
 
-          <GlassCard className="lg:col-span-3 p-6 flex flex-col h-full bg-white/40">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-200/60">
+          <GlassCard
+            variant="ethereal"
+            padding="md"
+            isHoverable={false}
+            className="flex h-full flex-col lg:col-span-3"
+          >
+            <div className="mb-6 flex items-center justify-between border-b border-ethereal-incense/20 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm">
+                <GlassCard
+                  variant="light"
+                  padding="none"
+                  isHoverable={false}
+                  className="flex h-10 w-10 items-center justify-center"
+                >
                   <ListOrdered
                     size={18}
-                    className="text-brand"
+                    className="text-ethereal-gold"
                     aria-hidden="true"
                   />
-                </div>
+                </GlassCard>
                 <div>
-                  <h4 className="text-sm font-bold text-stone-900">
+                  <Text size="sm" weight="bold">
                     {selectedPiece?.title ||
                       t("projects.micro_cast.empty.pieces", "Brak utworu")}
-                  </h4>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+                  </Text>
+                  <Eyebrow color="muted">
                     {selectedPiece?.composer_full_name ||
                       selectedPiece?.composer_name ||
                       ""}
-                  </p>
+                  </Eyebrow>
                 </div>
               </div>
 
@@ -311,41 +340,50 @@ export const MicroCastingTab = ({
                   href={referenceUrl.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#1DB954] text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors border border-[#1DB954]/20 shadow-sm"
+                  className="flex items-center gap-2 rounded-lg border border-ethereal-sage/30 bg-ethereal-sage/10 px-4 py-2 text-ethereal-sage shadow-glass-ethereal transition-colors hover:bg-ethereal-sage/20"
                 >
                   <PlayCircleIcon size={14} aria-hidden="true" />
-                  <span className="hidden sm:inline">
+                  <Eyebrow color="inherit" className="hidden sm:inline">
                     {t(
                       "projects.micro_cast.buttons.play_reference",
                       "Odtwórz: {{platform}}",
                       { platform: referenceUrl.label },
                     )}
-                  </span>
+                  </Eyebrow>
                 </a>
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable] pr-2 -mr-2">
+            <div className="ethereal-scroll -mr-2 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
               {requirements.length === 0 ? (
                 <div className="space-y-8">
-                  <div className="flex items-center gap-2 text-orange-600 bg-orange-50 p-4 rounded-xl border border-orange-100 mb-6">
-                    <AlertCircle size={16} aria-hidden="true" />
-                    <span className="text-xs font-medium">
+                  <GlassCard
+                    variant="outline"
+                    padding="sm"
+                    isHoverable={false}
+                    className="mb-6 flex items-center gap-2 border-ethereal-gold/30 bg-ethereal-gold/10"
+                  >
+                    <AlertCircle
+                      size={16}
+                      className="text-ethereal-gold"
+                      aria-hidden="true"
+                    />
+                    <Text size="xs" color="graphite" weight="medium">
                       {t(
                         "projects.micro_cast.empty.no_requirements",
                         "Brak zdefiniowanych wymagań głosowych dla tego utworu w bazie repertuarowej. Używamy trybu dowolnego przypisania (Divisi).",
                       )}
-                    </span>
-                  </div>
+                    </Text>
+                  </GlassCard>
 
                   {VOICE_GROUPS.map((group) => (
                     <div
                       key={group.label}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                      className="grid grid-cols-1 gap-6 md:grid-cols-3"
                     >
-                      <h5 className="md:col-span-3 text-[10px] font-bold uppercase tracking-widest text-brand border-b border-stone-200/50 pb-2">
-                        {group.label}
-                      </h5>
+                      <div className="border-b border-ethereal-incense/20 pb-2 md:col-span-3">
+                        <Eyebrow color="gold">{group.label}</Eyebrow>
+                      </div>
                       {voiceLines
                         .filter((vl) =>
                           String(vl.value).startsWith(group.filter),
@@ -361,7 +399,7 @@ export const MicroCastingTab = ({
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
                   {requirements.map((req) => {
                     const displayLabel = (
                       req as typeof req & { voice_line_display?: string }
@@ -377,7 +415,6 @@ export const MicroCastingTab = ({
             </div>
           </GlassCard>
 
-          {/* Drag Overlay */}
           <DragOverlay
             dropAnimation={{
               duration: 200,

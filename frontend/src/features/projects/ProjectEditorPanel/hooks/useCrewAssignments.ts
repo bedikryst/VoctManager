@@ -15,7 +15,23 @@ import {
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
 
-export const useCrewAssignments = (projectId: string) => {
+export interface UseCrewAssignmentsResult {
+  isLoading: boolean;
+  isMutating: boolean;
+  selectedCrewId: string;
+  setSelectedCrewId: React.Dispatch<React.SetStateAction<string>>;
+  roleDesc: string;
+  setRoleDesc: React.Dispatch<React.SetStateAction<string>>;
+  availableCrew: Collaborator[];
+  projectAssignments: CrewAssignment[];
+  crewMap: Map<string, Collaborator>;
+  handleAssign: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  handleRemove: (id: string) => Promise<void>;
+}
+
+export const useCrewAssignments = (
+  projectId: string,
+): UseCrewAssignmentsResult => {
   const { t } = useTranslation();
   const { crew, crewAssignments, isLoading } = useProjectData(projectId);
 

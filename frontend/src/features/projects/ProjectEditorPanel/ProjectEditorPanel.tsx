@@ -9,7 +9,6 @@
 import React, {
   useCallback,
   useEffect,
-  useEffectEvent,
   useId,
   useMemo,
   useRef,
@@ -111,7 +110,10 @@ interface ProjectEditorPanelProps {
 }
 
 const CLOSE_PANEL_SENTINEL = "CLOSE_PANEL" as const;
-type PendingNavigationTarget = ProjectTabId | typeof CLOSE_PANEL_SENTINEL | null;
+type PendingNavigationTarget =
+  | ProjectTabId
+  | typeof CLOSE_PANEL_SENTINEL
+  | null;
 
 const FOCUSABLE_PANEL_SELECTOR = [
   "a[href]",
@@ -161,9 +163,9 @@ export const ProjectEditorPanel = ({
     onClose();
   }, [hasUnsavedChanges, onClose]);
 
-  const handleEscape = useEffectEvent(() => {
+  const handleEscape = useCallback(() => {
     handleCloseAttempt();
-  });
+  }, [handleCloseAttempt]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -263,8 +265,13 @@ export const ProjectEditorPanel = ({
   );
 
   const handleTabKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, currentTabId: ProjectTabId) => {
-      const currentIndex = TAB_CONFIG.findIndex((tab) => tab.id === currentTabId);
+    (
+      event: React.KeyboardEvent<HTMLButtonElement>,
+      currentTabId: ProjectTabId,
+    ) => {
+      const currentIndex = TAB_CONFIG.findIndex(
+        (tab) => tab.id === currentTabId,
+      );
       if (currentIndex < 0) {
         return;
       }
@@ -500,7 +507,9 @@ export const ProjectEditorPanel = ({
                             variant={isActive ? "primary" : "ghost"}
                             size="sm"
                             onClick={() => handleTabInteraction(tab.id)}
-                            onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
+                            onKeyDown={(event) =>
+                              handleTabKeyDown(event, tab.id)
+                            }
                             className={cn("shrink-0", isActive && "shadow-sm")}
                             leftIcon={tab.icon}
                           >

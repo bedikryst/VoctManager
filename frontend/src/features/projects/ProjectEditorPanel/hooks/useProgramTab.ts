@@ -20,14 +20,25 @@ import {
   useDeleteProgramItem,
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
+import type { ProgramTabItem } from "../types";
 
-export interface ProgramTabItem {
-  id: string;
-  order: number;
-  piece: string;
-  piece_id?: string;
-  piece_title: string;
-  is_encore: boolean;
+export interface UseProgramTabResult {
+  programItems: ProgramTabItem[];
+  isLoading: boolean;
+  isSaving: boolean;
+  isDirty: boolean;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  totalConcertDurationSeconds: number;
+  addedPieceIds: string[];
+  filteredPieces: Piece[];
+  pieces: Piece[];
+  handleAddPiece: (pieceId: string) => Promise<void>;
+  handleToggleEncore: (item: ProgramTabItem) => Promise<void>;
+  handleDeleteItem: (itemId: string) => Promise<void>;
+  handleDragEnd: (event: DragEndEvent) => void;
+  handleCancel: () => void;
+  handleSaveChanges: () => Promise<void>;
 }
 
 const normalizeProgramItem = (
@@ -51,7 +62,7 @@ const normalizeProgramItem = (
 export const useProgramTab = (
   projectId: string,
   onDirtyStateChange?: (isDirty: boolean) => void,
-) => {
+): UseProgramTabResult => {
   const { t } = useTranslation();
   const { pieces } = useProjectData(projectId);
 

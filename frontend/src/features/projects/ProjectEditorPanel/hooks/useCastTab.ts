@@ -10,14 +10,33 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
+import type { Artist, Participation } from "@/shared/types";
 import {
   useCreateParticipation,
   useDeleteParticipation,
   useUpdateParticipation,
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
+import type { CastTabMobileView } from "../types";
 
-export const useCastTab = (projectId: string) => {
+export interface UseCastTabResult {
+  participations: Participation[];
+  isFetching: boolean;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  processingId: string | null;
+  mobileView: CastTabMobileView;
+  setMobileView: React.Dispatch<React.SetStateAction<CastTabMobileView>>;
+  allArtists: Artist[];
+  assignedIds: Set<string>;
+  toggleCasting: (
+    artistId: string | number,
+    isCurrentlyCasted: boolean,
+    participationId?: string | number,
+  ) => Promise<void>;
+}
+
+export const useCastTab = (projectId: string): UseCastTabResult => {
   const { t } = useTranslation();
   const { artists, participations, isLoading } = useProjectData(projectId);
 
@@ -27,9 +46,7 @@ export const useCastTab = (projectId: string) => {
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [mobileView, setMobileView] = useState<"AVAILABLE" | "ASSIGNED">(
-    "AVAILABLE",
-  );
+  const [mobileView, setMobileView] = useState<CastTabMobileView>("AVAILABLE");
 
   const allArtists = useMemo(() => {
     if (!artists || artists.length === 0) return [];

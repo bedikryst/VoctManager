@@ -13,7 +13,6 @@ import {
   MicVocal,
   BookOpen,
   Users,
-  Loader2,
   Search,
   UserCheck,
   UserPlus,
@@ -23,14 +22,19 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import type { Artist } from "@/shared/types";
 import { Input } from "@/shared/ui/primitives/Input";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import {
+  Eyebrow,
+  Text,
+} from "@/shared/ui/primitives/typography";
 import { useCastTab } from "../hooks/useCastTab";
 
 interface CastTabProps {
   projectId: string;
 }
-
-const STYLE_LIST_CONTAINER =
-  "flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] bg-white/40 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-2";
 
 interface ArtistCardProps {
   artist: Artist;
@@ -57,92 +61,85 @@ const ArtistCard = React.memo(
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
         layout="position"
-        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-stone-200/60 rounded-xl mb-2 shadow-sm gap-4"
+        className="mb-2"
       >
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2.5">
-            <p className="font-bold text-sm tracking-tight text-stone-900">
-              {artist.first_name} {artist.last_name}
-            </p>
-            <span
-              className={`text-[8px] font-bold antialiased uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${isAssigned ? "bg-blue-50 text-brand border-blue-100" : "bg-stone-50 text-stone-500 border-stone-200/60"}`}
-            >
-              {artist.voice_type_display || artist.voice_type || "?"}
-            </span>
-          </div>
+        <GlassCard
+          variant="solid"
+          padding="sm"
+          isHoverable={false}
+          className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+        >
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2.5">
+              <Text weight="bold" size="sm">
+                {artist.first_name} {artist.last_name}
+              </Text>
+              <Badge variant={isAssigned ? "warning" : "neutral"}>
+                {artist.voice_type_display || artist.voice_type || "?"}
+              </Badge>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400">
-            {(artist.vocal_range_bottom || artist.vocal_range_top) && (
-              <span className="flex items-center gap-1">
-                <MicVocal
-                  size={12}
-                  className="text-brand/40"
-                  aria-hidden="true"
-                />
-                <span>
-                  <strong className="text-stone-600">
+            <div className="flex flex-wrap items-center gap-3">
+              {(artist.vocal_range_bottom || artist.vocal_range_top) && (
+                <div className="flex items-center gap-1">
+                  <MicVocal
+                    size={12}
+                    className="text-ethereal-gold/60"
+                    aria-hidden="true"
+                  />
+                  <Eyebrow color="muted">
                     {artist.vocal_range_bottom || "?"} -{" "}
                     {artist.vocal_range_top || "?"}
-                  </strong>
-                </span>
-              </span>
-            )}
-            {artist.sight_reading_skill && (
-              <span className="flex items-center gap-1">
-                <BookOpen
-                  size={12}
-                  className="text-brand/40"
-                  aria-hidden="true"
-                />
-                <span>
-                  {t("projects.cast.card.a_vista", "A vista:")}{" "}
-                  <strong className="text-stone-600">
+                  </Eyebrow>
+                </div>
+              )}
+              {artist.sight_reading_skill && (
+                <div className="flex items-center gap-1">
+                  <BookOpen
+                    size={12}
+                    className="text-ethereal-gold/60"
+                    aria-hidden="true"
+                  />
+                  <Eyebrow color="muted">
+                    {t("projects.cast.card.a_vista", "A vista:")}{" "}
                     {artist.sight_reading_skill}/5
-                  </strong>
-                </span>
-              </span>
-            )}
+                  </Eyebrow>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <button
-          disabled={isProcessing}
-          onClick={() =>
-            onToggle(String(artist.id), isAssigned, participationId)
-          }
-          className={`flex justify-center items-center p-2.5 sm:px-4 sm:py-2.5 rounded-lg text-[9px] uppercase font-bold antialiased tracking-widest transition-all shadow-sm active:scale-95 disabled:opacity-50 flex-shrink-0 ${
-            isAssigned
-              ? "bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
-              : "bg-stone-900 border border-stone-800 text-white hover:bg-brand hover:border-brand-dark"
-          }`}
-          aria-label={
-            isAssigned
-              ? t("projects.cast.card.remove_aria", "Usuń z obsady", {
-                  name: artist.first_name,
-                })
-              : t("projects.cast.card.add_aria", "Dodaj do obsady", {
-                  name: artist.first_name,
-                })
-          }
-        >
-          {isProcessing ? (
-            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-          ) : isAssigned ? (
-            <>
-              <Trash2 size={14} className="sm:mr-1.5" aria-hidden="true" />{" "}
-              <span className="hidden sm:inline">
-                {t("projects.cast.card.remove", "Usuń")}
-              </span>
-            </>
-          ) : (
-            <>
-              <UserPlus size={14} className="sm:mr-1.5" aria-hidden="true" />{" "}
-              <span className="hidden sm:inline">
-                {t("projects.cast.card.add", "Dodaj")}
-              </span>
-            </>
-          )}
-        </button>
+          <Button
+            type="button"
+            variant={isAssigned ? "destructive" : "primary"}
+            size="sm"
+            disabled={isProcessing}
+            isLoading={isProcessing}
+            onClick={() =>
+              onToggle(String(artist.id), isAssigned, participationId)
+            }
+            leftIcon={
+              isAssigned ? (
+                <Trash2 size={14} aria-hidden="true" />
+              ) : (
+                <UserPlus size={14} aria-hidden="true" />
+              )
+            }
+            aria-label={
+              isAssigned
+                ? t("projects.cast.card.remove_aria", "Usuń z obsady", {
+                    name: artist.first_name,
+                  })
+                : t("projects.cast.card.add_aria", "Dodaj do obsady", {
+                    name: artist.first_name,
+                  })
+            }
+          >
+            {isAssigned
+              ? t("projects.cast.card.remove", "Usuń")
+              : t("projects.cast.card.add", "Dodaj")}
+          </Button>
+        </GlassCard>
       </motion.div>
     );
   },
@@ -154,6 +151,7 @@ const ArtistCard = React.memo(
 );
 
 ArtistCard.displayName = "ArtistCard";
+
 export const CastTab = ({
   projectId,
 }: CastTabProps): React.JSX.Element | null => {
@@ -171,24 +169,37 @@ export const CastTab = ({
     toggleCasting,
   } = useCastTab(projectId);
 
+  const unassignedCount = allArtists.filter(
+    (artist) => !assignedIds.has(String(artist.id)),
+  ).length;
+
   return (
-    <div className="max-w-6xl mx-auto flex flex-col h-[80vh]">
-      <div className="mb-6 space-y-4 flex-shrink-0">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="mx-auto flex h-[calc(100vh-16rem)] max-w-6xl flex-col">
+      <div className="mb-6 flex shrink-0 flex-col gap-4">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm">
-              <Users size={18} className="text-brand" aria-hidden="true" />
-            </div>
+            <GlassCard
+              variant="light"
+              padding="sm"
+              isHoverable={false}
+              className="flex h-10 w-10 items-center justify-center"
+            >
+              <Users
+                size={18}
+                className="text-ethereal-gold"
+                aria-hidden="true"
+              />
+            </GlassCard>
             <div>
-              <h4 className="text-[12px] font-bold antialiased uppercase tracking-widest text-stone-800">
+              <Eyebrow color="default">
                 {t("projects.cast.header.title", "Casting Główny")}
-              </h4>
-              <p className="text-[10px] text-stone-500 font-medium">
+              </Eyebrow>
+              <Text size="xs" color="muted">
                 {t(
                   "projects.cast.header.subtitle",
                   "Zarządzaj wokalistami. Ustawienie [scrollbar-gutter] neutralizuje skoki układu.",
                 )}
-              </p>
+              </Text>
             </div>
           </div>
 
@@ -200,11 +211,10 @@ export const CastTab = ({
                 "Szukaj artysty...",
               )}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               leftIcon={
                 <Search
                   size={16}
-                  className="text-stone-400"
                   aria-hidden="true"
                 />
               }
@@ -212,55 +222,65 @@ export const CastTab = ({
           </div>
         </div>
 
-        <div className="md:hidden flex bg-white/60 p-1 rounded-xl border border-stone-200/60 shadow-sm">
-          <button
+        <GlassCard
+          variant="light"
+          padding="none"
+          isHoverable={false}
+          className="flex overflow-hidden p-1 md:hidden"
+        >
+          <Button
+            type="button"
+            variant={mobileView === "AVAILABLE" ? "primary" : "ghost"}
+            size="sm"
+            fullWidth
             onClick={() => setMobileView("AVAILABLE")}
-            className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mobileView === "AVAILABLE" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500"}`}
+            className="rounded-lg"
           >
-            {t("projects.cast.mobile.available", "Baza")} (
-            {allArtists.filter((a) => !assignedIds.has(String(a.id))).length})
-          </button>
-          <button
+            {t("projects.cast.mobile.available", "Baza")} ({unassignedCount})
+          </Button>
+          <Button
+            type="button"
+            variant={mobileView === "ASSIGNED" ? "primary" : "ghost"}
+            size="sm"
+            fullWidth
             onClick={() => setMobileView("ASSIGNED")}
-            className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mobileView === "ASSIGNED" ? "bg-brand text-white shadow-sm" : "text-stone-500"}`}
+            className="rounded-lg"
           >
             {t("projects.cast.mobile.assigned", "Obsada")} (
             {participations.length})
-          </button>
-        </div>
+          </Button>
+        </GlassCard>
       </div>
 
       {isFetching ? (
-        <div className="flex-1 flex justify-center items-center">
-          <Loader2
-            size={32}
-            className="animate-spin text-brand/40"
-            aria-hidden="true"
-          />
+        <div className="flex flex-1 items-center justify-center">
+          <EtherealLoader />
         </div>
       ) : (
         <AnimatePresence mode="popLayout" initial={false}>
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 overflow-hidden pb-8">
+          <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden pb-8 md:grid-cols-2 md:gap-8">
             <motion.div
               key="available-list"
               layoutId="available-list-container"
-              className={`flex-col h-full [scrollbar-gutter:stable] ${mobileView === "AVAILABLE" ? "flex" : "hidden md:flex"}`}
+              className={`h-full flex-col [scrollbar-gutter:stable] ${
+                mobileView === "AVAILABLE" ? "flex" : "hidden md:flex"
+              }`}
             >
-              <div className="flex items-center justify-between mb-3 px-2">
-                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500">
+              <div className="mb-3 flex items-center justify-between px-2">
+                <Eyebrow color="muted">
                   {t("projects.cast.sections.available", "Baza Artystów")}
-                </span>
-                <span className="text-[9px] font-bold antialiased text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md">
-                  {
-                    allArtists.filter((a) => !assignedIds.has(String(a.id)))
-                      .length
-                  }
-                </span>
+                </Eyebrow>
+                <Badge variant="neutral">{unassignedCount}</Badge>
               </div>
 
-              <div className={STYLE_LIST_CONTAINER}>
+              <GlassCard
+                variant="light"
+                padding="sm"
+                isHoverable={false}
+                className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
+              >
                 {allArtists
-                  .filter((a) => !assignedIds.has(String(a.id)))
+                  .filter((artist) => !assignedIds.has(String(artist.id)))
                   .map((artist) => (
                     <ArtistCard
                       key={artist.id}
@@ -270,42 +290,50 @@ export const CastTab = ({
                       onToggle={toggleCasting}
                     />
                   ))}
-                {allArtists.filter((a) => !assignedIds.has(String(a.id)))
-                  .length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center opacity-60 p-6">
+                {unassignedCount === 0 && (
+                  <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-60">
                     <Users
                       size={24}
-                      className="text-stone-400 mb-2"
+                      className="mb-2 text-ethereal-graphite/40"
                       aria-hidden="true"
                     />
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">
+                    <Eyebrow color="muted">
                       {t("projects.cast.empty_available", "Brak dostępnych")}
-                    </p>
+                    </Eyebrow>
                   </div>
                 )}
-              </div>
+              </GlassCard>
             </motion.div>
 
             <motion.div
               key="assigned-list"
               layoutId="assigned-list-container"
-              className={`flex-col h-full [scrollbar-gutter:stable] ${mobileView === "ASSIGNED" ? "flex" : "hidden md:flex"}`}
+              className={`h-full flex-col [scrollbar-gutter:stable] ${
+                mobileView === "ASSIGNED" ? "flex" : "hidden md:flex"
+              }`}
             >
-              <div className="flex items-center justify-between mb-3 px-2">
-                <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand flex items-center gap-1.5">
-                  <UserCheck size={14} aria-hidden="true" />{" "}
-                  {t("projects.cast.sections.assigned", "Obsada Projektu")}
-                </span>
-                <span className="text-[9px] font-bold antialiased text-brand bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
-                  {participations.length}
-                </span>
+              <div className="mb-3 flex items-center justify-between px-2">
+                <div className="flex items-center gap-1.5">
+                  <UserCheck
+                    size={14}
+                    className="text-ethereal-gold"
+                    aria-hidden="true"
+                  />
+                  <Eyebrow color="gold">
+                    {t("projects.cast.sections.assigned", "Obsada Projektu")}
+                  </Eyebrow>
+                </div>
+                <Badge variant="warning">{participations.length}</Badge>
               </div>
 
-              <div
-                className={`${STYLE_LIST_CONTAINER} border-brand/20 bg-blue-50/10`}
+              <GlassCard
+                variant="light"
+                padding="sm"
+                isHoverable={false}
+                className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden border-ethereal-gold/20 bg-ethereal-gold/5 [scrollbar-gutter:stable]"
               >
                 {allArtists
-                  .filter((a) => assignedIds.has(String(a.id)))
+                  .filter((artist) => assignedIds.has(String(artist.id)))
                   .map((artist) => {
                     const participation = participations.find(
                       (p) => String(p.artist) === String(artist.id),
@@ -322,18 +350,18 @@ export const CastTab = ({
                     );
                   })}
                 {participations.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center opacity-60 p-6">
+                  <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-60">
                     <UserCheck
                       size={24}
-                      className="text-stone-400 mb-2"
+                      className="mb-2 text-ethereal-graphite/40"
                       aria-hidden="true"
                     />
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-stone-500">
+                    <Eyebrow color="muted">
                       {t("projects.cast.empty_assigned", "Obsada jest pusta")}
-                    </p>
+                    </Eyebrow>
                   </div>
                 )}
-              </div>
+              </GlassCard>
             </motion.div>
           </div>
         </AnimatePresence>

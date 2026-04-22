@@ -20,28 +20,34 @@ import {
   type AttendanceRecord,
   type AttendanceStatus,
 } from "../hooks/useAttendanceMatrix";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import {
+  Eyebrow,
+  Heading,
+  Text,
+} from "@/shared/ui/primitives/typography";
 
 interface AttendanceMatrixTabProps {
   projectId: string;
 }
 
-const STATUS_DEF: Record<
-  NonNullable<AttendanceStatus> | "null",
-  {
-    labelKey: string;
-    defaultLabel: string;
-    color: string;
-    icon: React.ReactNode;
-  }
-> = {
+interface StatusDefinition {
+  labelKey: string;
+  defaultLabel: string;
+  swatchClass: string;
+  icon: React.ReactNode;
+}
+
+const STATUS_DEF: Record<NonNullable<AttendanceStatus> | "null", StatusDefinition> = {
   null: {
     labelKey: "projects.matrix.status.none",
     defaultLabel: "Brak wpisu",
-    color:
-      "bg-stone-50 hover:bg-stone-100 text-stone-200 border border-stone-200/60",
+    swatchClass:
+      "bg-ethereal-parchment/50 hover:bg-ethereal-parchment text-ethereal-graphite/40 border border-ethereal-incense/20",
     icon: (
       <span
-        className="h-1.5 w-1.5 rounded-full bg-stone-300"
+        className="h-1.5 w-1.5 rounded-full bg-ethereal-graphite/30"
         aria-hidden="true"
       />
     ),
@@ -49,29 +55,29 @@ const STATUS_DEF: Record<
   PRESENT: {
     labelKey: "projects.matrix.status.present",
     defaultLabel: "Obecny",
-    color:
-      "bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_2px_10px_rgba(16,185,129,0.3)]",
+    swatchClass:
+      "bg-ethereal-sage hover:bg-ethereal-sage/90 text-white shadow-glass-ethereal",
     icon: <Check size={14} strokeWidth={3} aria-hidden="true" />,
   },
   LATE: {
     labelKey: "projects.matrix.status.late",
     defaultLabel: "Spóźnienie",
-    color:
-      "bg-orange-400 hover:bg-orange-500 text-white shadow-[0_2px_10px_rgba(251,146,60,0.3)]",
+    swatchClass:
+      "bg-ethereal-gold hover:bg-ethereal-gold/90 text-white shadow-glass-ethereal",
     icon: <Clock size={14} strokeWidth={3} aria-hidden="true" />,
   },
   ABSENT: {
     labelKey: "projects.matrix.status.absent",
     defaultLabel: "Nieobecny",
-    color:
-      "bg-red-500 hover:bg-red-600 text-white shadow-[0_2px_10px_rgba(239,68,68,0.3)]",
+    swatchClass:
+      "bg-ethereal-crimson hover:bg-ethereal-crimson/90 text-white shadow-glass-ethereal",
     icon: <X size={14} strokeWidth={3} aria-hidden="true" />,
   },
   EXCUSED: {
     labelKey: "projects.matrix.status.excused",
     defaultLabel: "Zwolniony",
-    color:
-      "bg-purple-500 hover:bg-purple-600 text-white shadow-[0_2px_10px_rgba(168,85,247,0.3)]",
+    swatchClass:
+      "bg-ethereal-amethyst hover:bg-ethereal-amethyst/90 text-white shadow-glass-ethereal",
     icon: <ShieldAlert size={14} strokeWidth={3} aria-hidden="true" />,
   },
 };
@@ -80,6 +86,18 @@ type StatusKey = NonNullable<AttendanceStatus> | "null";
 
 const isStatusKey = (key: string): key is StatusKey => key in STATUS_DEF;
 
+interface MatrixCellProps {
+  rehearsalId: string;
+  participationId: string;
+  record: AttendanceRecord | undefined;
+  onToggle: (
+    rehearsalId: string,
+    participationId: string,
+    record: AttendanceRecord | undefined,
+  ) => void;
+  isMutating: boolean;
+}
+
 const MatrixCell = React.memo(
   ({
     rehearsalId,
@@ -87,28 +105,18 @@ const MatrixCell = React.memo(
     record,
     onToggle,
     isMutating,
-  }: {
-    rehearsalId: string;
-    participationId: string;
-    record: AttendanceRecord | undefined;
-    onToggle: (
-      rehearsalId: string,
-      participationId: string,
-      record: AttendanceRecord | undefined,
-    ) => void;
-    isMutating: boolean;
-  }) => {
+  }: MatrixCellProps) => {
     const { t } = useTranslation();
     const currentStatus = record?.status || null;
     const rawKey = String(currentStatus);
     const config = isStatusKey(rawKey) ? STATUS_DEF[rawKey] : STATUS_DEF.null;
 
     return (
-      <td className="relative border-b border-l border-stone-200/60 p-1 text-center group">
+      <td className="group relative border-b border-l border-ethereal-incense/20 p-1 text-center">
         <button
           onClick={() => onToggle(rehearsalId, participationId, record)}
           disabled={isMutating}
-          className={`mx-auto flex h-7 w-7 items-center justify-center rounded-md transition-all duration-200 active:scale-90 disabled:opacity-50 disabled:active:scale-100 ${config.color}`}
+          className={`mx-auto flex h-7 w-7 items-center justify-center rounded-md transition-all duration-200 active:scale-90 disabled:opacity-50 disabled:active:scale-100 ${config.swatchClass}`}
           title={t(config.labelKey, config.defaultLabel)}
           aria-label={t(config.labelKey, config.defaultLabel)}
         >
@@ -148,96 +156,130 @@ export const AttendanceMatrixTab = ({
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2
-          size={32}
-          className="animate-spin text-brand opacity-50"
-          aria-hidden="true"
-        />
+        <EtherealLoader />
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-24">
-      <div className="flex flex-col justify-between gap-6 rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm md:flex-row md:items-center">
-        <div>
-          <h2 className="mb-2 flex items-center gap-2 text-xl font-bold tracking-tight text-stone-900">
-            <Users className="text-brand" size={20} aria-hidden="true" />
-            {t(
-              "projects.matrix.header.title",
-              "Macierz Obecności i Frekwencji",
-            )}
-          </h2>
-          <p className="text-sm text-stone-500">
+      <GlassCard
+        variant="ethereal"
+        padding="md"
+        isHoverable={false}
+        className="flex flex-col justify-between gap-6 md:flex-row md:items-center"
+      >
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <Users
+              className="text-ethereal-gold"
+              size={20}
+              aria-hidden="true"
+            />
+            <Heading as="h2" size="xl" weight="medium">
+              {t(
+                "projects.matrix.header.title",
+                "Macierz Obecności i Frekwencji",
+              )}
+            </Heading>
+          </div>
+          <Text size="sm" color="muted">
             {t(
               "projects.matrix.header.subtitle",
               "Szybkie oznaczanie frekwencji na próbach. Zarządzaj statusem klikając w kafelki pod nazwiskiem.",
             )}
-          </p>
+          </Text>
         </div>
 
-        <div className="flex flex-wrap gap-3 rounded-xl border border-stone-100 bg-stone-50 p-3">
-          <div className="mb-1 w-full text-[9px] font-bold uppercase tracking-widest text-stone-400">
-            {t("projects.matrix.legend.title", "Status frekwencji")}
+        <GlassCard
+          variant="light"
+          padding="sm"
+          isHoverable={false}
+          className="flex flex-wrap gap-3"
+        >
+          <div className="mb-1 w-full">
+            <Eyebrow color="muted">
+              {t("projects.matrix.legend.title", "Status frekwencji")}
+            </Eyebrow>
           </div>
           {Object.entries(STATUS_DEF).map(([key, config]) => (
             <div
               key={key}
-              className="flex items-center gap-1.5 text-xs font-medium text-stone-600"
+              className="flex items-center gap-1.5"
             >
               <div
-                className={`flex h-4 w-4 items-center justify-center rounded-md ${config.color}`}
+                className={`flex h-4 w-4 items-center justify-center rounded-md ${config.swatchClass}`}
                 aria-hidden="true"
               >
                 {config.icon}
               </div>
-              {t(config.labelKey, config.defaultLabel)}
+              <Text size="xs" color="graphite" weight="medium">
+                {t(config.labelKey, config.defaultLabel)}
+              </Text>
             </div>
           ))}
-        </div>
-      </div>
+        </GlassCard>
+      </GlassCard>
 
-      <div className="overflow-x-auto rounded-2xl border border-stone-200/80 bg-white shadow-sm scrollbar-hide">
-        <table className="min-w-[800px] w-full border-collapse text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-stone-50/80 text-[10px] font-bold uppercase tracking-widest text-stone-500 backdrop-blur-xl">
+      <GlassCard
+        variant="solid"
+        padding="none"
+        isHoverable={false}
+        className="overflow-x-auto no-scrollbar"
+      >
+        <table className="w-full min-w-200 border-collapse text-left text-sm">
+          <thead className="sticky top-0 z-10 bg-ethereal-parchment/80 backdrop-blur-ethereal">
             <tr>
-              <th className="sticky left-0 z-20 min-w-[220px] border-b border-stone-200/80 bg-stone-50/95 p-4 shadow-[1px_0_0_rgba(0,0,0,0.05)] backdrop-blur-xl">
-                {t("projects.matrix.table.rehearsal_date", "Próba / Data")}
+              <th className="sticky left-0 z-20 min-w-55 border-b border-ethereal-incense/20 bg-ethereal-parchment/95 p-4 backdrop-blur-ethereal">
+                <Eyebrow color="muted">
+                  {t(
+                    "projects.matrix.table.rehearsal_date",
+                    "Próba / Data",
+                  )}
+                </Eyebrow>
               </th>
               {enrichedParticipations.map((participation) => (
                 <th
                   key={participation.id}
-                  className="min-w-[60px] border-b border-l border-stone-200/80 p-4 text-center"
+                  className="min-w-15 border-b border-l border-ethereal-incense/20 p-4 text-center"
                 >
                   <div className="flex flex-col items-center gap-1">
-                    <span
-                      className="max-w-[80px] truncate font-bold text-stone-700"
+                    <Text
+                      size="xs"
+                      weight="bold"
+                      color="graphite"
+                      truncate
+                      className="max-w-20"
                       title={participation.artistData.last_name}
                     >
                       {participation.artistData.last_name}
-                    </span>
-                    <span className="text-[9px] text-stone-400">
+                    </Text>
+                    <Text size="xs" color="muted">
                       {participation.artistData.first_name}
-                    </span>
+                    </Text>
                   </div>
                 </th>
               ))}
-              <th className="min-w-[80px] border-b border-l border-stone-200/80 p-4 text-center text-brand">
-                {t("projects.matrix.table.rate", "Frekwencja")}
+              <th className="min-w-20 border-b border-l border-ethereal-incense/20 p-4 text-center">
+                <Eyebrow color="gold">
+                  {t("projects.matrix.table.rate", "Frekwencja")}
+                </Eyebrow>
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
+          <tbody className="divide-y divide-ethereal-incense/10">
             {projectRehearsals.length === 0 && (
               <tr>
                 <td
                   colSpan={enrichedParticipations.length + 2}
-                  className="py-12 text-center text-sm italic text-stone-400"
+                  className="py-12 text-center"
                 >
-                  {t(
-                    "projects.matrix.empty.rehearsals",
-                    "Brak zaplanowanych prób w tym projekcie.",
-                  )}
+                  <Text size="sm" color="muted" className="italic">
+                    {t(
+                      "projects.matrix.empty.rehearsals",
+                      "Brak zaplanowanych prób w tym projekcie.",
+                    )}
+                  </Text>
                 </td>
               </tr>
             )}
@@ -247,12 +289,14 @@ export const AttendanceMatrixTab = ({
                 <tr>
                   <td
                     colSpan={projectRehearsals.length + 2}
-                    className="py-12 text-center text-sm italic text-stone-400"
+                    className="py-12 text-center"
                   >
-                    {t(
-                      "projects.matrix.empty.cast",
-                      "Brak obsady przypisanej do projektu.",
-                    )}
+                    <Text size="sm" color="muted" className="italic">
+                      {t(
+                        "projects.matrix.empty.cast",
+                        "Brak obsady przypisanej do projektu.",
+                      )}
+                    </Text>
                   </td>
                 </tr>
               )}
@@ -262,126 +306,129 @@ export const AttendanceMatrixTab = ({
               let totalAssigned = 0;
               const rehearsalLocationLabel = getLocationLabel(rehearsal.location);
 
+              enrichedParticipations.forEach((participation) => {
+                const isInvited =
+                  rehearsal.invited_participations?.length === 0 ||
+                  rehearsal.invited_participations?.includes(
+                    String(participation.id),
+                  );
+
+                if (!isInvited) {
+                  return;
+                }
+
+                totalAssigned += 1;
+
+                const cellKey = `${rehearsal.id}-${participation.id}`;
+                const record = attendanceMap.get(cellKey);
+                if (
+                  record?.status === "PRESENT" ||
+                  record?.status === "LATE"
+                ) {
+                  presentCount += 1;
+                }
+              });
+
+              const attendanceRate =
+                totalAssigned > 0
+                  ? Math.round((presentCount / totalAssigned) * 100)
+                  : 0;
+
+              const rateClass =
+                attendanceRate >= 80
+                  ? "border-ethereal-sage/30 bg-ethereal-sage/10 text-ethereal-sage"
+                  : attendanceRate >= 50
+                    ? "border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-gold"
+                    : "border-ethereal-crimson/30 bg-ethereal-crimson-light/20 text-ethereal-crimson";
+
               return (
-                <React.Fragment key={rehearsal.id}>
-                  {(() => {
-                    enrichedParticipations.forEach((participation) => {
-                      const isInvited =
-                        rehearsal.invited_participations?.length === 0 ||
-                        rehearsal.invited_participations?.includes(
-                          String(participation.id),
-                        );
+                <tr
+                  key={rehearsal.id}
+                  className="group transition-colors hover:bg-ethereal-gold/5"
+                >
+                  <td className="sticky left-0 z-10 bg-ethereal-marble p-4 transition-colors group-hover:bg-ethereal-gold/5">
+                    <div className="flex flex-col gap-0.5">
+                      <Text size="sm" weight="bold" color="gold">
+                        {formatLocalizedDate(rehearsal.date_time, {
+                          weekday: "short",
+                          day: "2-digit",
+                          month: "short",
+                        })}{" "}
+                        {formatLocalizedTime(rehearsal.date_time, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </Text>
+                      <Text
+                        size="xs"
+                        color="muted"
+                        truncate
+                        className="max-w-50"
+                      >
+                        {rehearsalLocationLabel}
+                        {rehearsal.focus ? ` • ${rehearsal.focus}` : ""}
+                      </Text>
+                    </div>
+                  </td>
 
-                      if (!isInvited) {
-                        return;
-                      }
+                  {enrichedParticipations.map((participation) => {
+                    const isInvited =
+                      rehearsal.invited_participations?.length === 0 ||
+                      rehearsal.invited_participations?.includes(
+                        String(participation.id),
+                      );
 
-                      totalAssigned += 1;
-
-                      const cellKey = `${rehearsal.id}-${participation.id}`;
-                      const record = attendanceMap.get(cellKey);
-                      if (
-                        record?.status === "PRESENT" ||
-                        record?.status === "LATE"
-                      ) {
-                        presentCount += 1;
-                      }
-                    });
-
-                    const attendanceRate =
-                      totalAssigned > 0
-                        ? Math.round((presentCount / totalAssigned) * 100)
-                        : 0;
-
-                    return (
-                      <tr className="group transition-colors hover:bg-blue-50/30">
-                        <td className="sticky left-0 z-10 bg-white p-4 font-medium text-stone-900 shadow-[1px_0_0_rgba(0,0,0,0.05)] transition-colors group-hover:bg-blue-50/30">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-brand">
-                              {formatLocalizedDate(rehearsal.date_time, {
-                                weekday: "short",
-                                day: "2-digit",
-                                month: "short",
-                              })}{" "}
-                              {formatLocalizedTime(rehearsal.date_time, {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                            <span className="max-w-[200px] truncate text-[10px] font-medium text-stone-400">
-                              {rehearsalLocationLabel}
-                              {rehearsal.focus ? ` • ${rehearsal.focus}` : ""}
-                            </span>
+                    if (!isInvited) {
+                      return (
+                        <td
+                          key={`empty-${rehearsal.id}-${participation.id}`}
+                          className="border-b border-l border-ethereal-incense/20 bg-ethereal-parchment/40 p-1"
+                        >
+                          <div
+                            className="flex h-full w-full items-center justify-center opacity-20"
+                            title={t(
+                              "projects.matrix.not_invited",
+                              "Nie dotyczy",
+                            )}
+                          >
+                            <div
+                              className="h-px w-6 rotate-45 bg-ethereal-graphite/40"
+                              aria-hidden="true"
+                            />
                           </div>
                         </td>
+                      );
+                    }
 
-                        {enrichedParticipations.map((participation) => {
-                          const isInvited =
-                            rehearsal.invited_participations?.length === 0 ||
-                            rehearsal.invited_participations?.includes(
-                              String(participation.id),
-                            );
+                    const cellKey = `${rehearsal.id}-${participation.id}`;
+                    const record = attendanceMap.get(cellKey);
+                    const isMutating = mutatingCells.has(cellKey);
 
-                          if (!isInvited) {
-                            return (
-                              <td
-                                key={`empty-${rehearsal.id}-${participation.id}`}
-                                className="border-b border-l border-stone-200/60 bg-stone-50/50 p-1"
-                              >
-                                <div
-                                  className="flex h-full w-full items-center justify-center opacity-20"
-                                  title={t(
-                                    "projects.matrix.not_invited",
-                                    "Nie dotyczy",
-                                  )}
-                                >
-                                  <div
-                                    className="h-px w-6 rotate-45 bg-stone-400"
-                                    aria-hidden="true"
-                                  />
-                                </div>
-                              </td>
-                            );
-                          }
-
-                          const cellKey = `${rehearsal.id}-${participation.id}`;
-                          const record = attendanceMap.get(cellKey);
-                          const isMutating = mutatingCells.has(cellKey);
-
-                          return (
-                            <MatrixCell
-                              key={cellKey}
-                              rehearsalId={rehearsal.id}
-                              participationId={participation.id}
-                              record={record}
-                              onToggle={handleToggleStatus}
-                              isMutating={isMutating}
-                            />
-                          );
-                        })}
-
-                        <td className="border-b border-l border-stone-200/60 p-4 text-center">
-                          <span
-                            className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold tracking-widest ${
-                              attendanceRate >= 80
-                                ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                                : attendanceRate >= 50
-                                  ? "border-orange-100 bg-orange-50 text-orange-700"
-                                  : "border-red-100 bg-red-50 text-red-700"
-                            }`}
-                          >
-                            {attendanceRate}%
-                          </span>
-                        </td>
-                      </tr>
+                    return (
+                      <MatrixCell
+                        key={cellKey}
+                        rehearsalId={rehearsal.id}
+                        participationId={participation.id}
+                        record={record}
+                        onToggle={handleToggleStatus}
+                        isMutating={isMutating}
+                      />
                     );
-                  })()}
-                </React.Fragment>
+                  })}
+
+                  <td className="border-b border-l border-ethereal-incense/20 p-4 text-center">
+                    <span
+                      className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold tracking-widest ${rateClass}`}
+                    >
+                      {attendanceRate}%
+                    </span>
+                  </td>
+                </tr>
               );
             })}
           </tbody>
         </table>
-      </div>
+      </GlassCard>
     </div>
   );
 };

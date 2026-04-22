@@ -15,7 +15,6 @@ import {
   ListOrdered,
   GripVertical,
   Trash2,
-  Loader2,
   Save,
   Search,
   Plus,
@@ -23,6 +22,7 @@ import {
   Star,
   Clock,
   Music,
+  MicVocal,
 } from "lucide-react";
 import {
   DndContext,
@@ -44,10 +44,11 @@ import type { Piece } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import {
-  useProgramTab,
-  type ProgramTabItem,
-} from "../hooks/useProgramTab";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { useProgramTab } from "../hooks/useProgramTab";
+import type { ProgramTabItem } from "../types";
 
 interface ProgramTabProps {
   projectId: string;
@@ -100,6 +101,15 @@ const formatPieceDuration = (
   return `${minStr} ${secStr}`.trim();
 };
 
+interface SortablePieceItemProps {
+  item: ProgramTabItem;
+  index: number;
+  pieceObj?: Piece;
+  onToggleEncore: (item: ProgramTabItem) => void;
+  onDelete: (id: string) => void;
+  t: TFunction;
+}
+
 function SortablePieceItem({
   item,
   index,
@@ -107,14 +117,7 @@ function SortablePieceItem({
   onToggleEncore,
   onDelete,
   t,
-}: {
-  item: ProgramTabItem;
-  index: number;
-  pieceObj?: Piece;
-  onToggleEncore: (item: ProgramTabItem) => void;
-  onDelete: (id: string) => void;
-  t: TFunction;
-}) {
+}: SortablePieceItemProps): React.JSX.Element {
   const safeId = item.id || `program-item-${item.piece}-${index}`;
   const {
     attributes,
@@ -132,88 +135,107 @@ function SortablePieceItem({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`flex items-center justify-between bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-xl shadow-sm group relative hover:border-brand/40 hover:shadow-md transition-colors overflow-hidden ${
-        isDragging ? "shadow-lg ring-2 ring-brand/20 scale-[1.02]" : ""
-      }`}
-    >
-      <div
-        {...attributes}
-        {...listeners}
-        className="flex items-center gap-4 w-full p-4 pr-4 cursor-grab active:cursor-grabbing outline-none"
-        aria-label={t(
-          "projects.program.actions.drag_aria",
-          "Przeciągnij utwór {{title}}",
-          { title: item.piece_title },
-        )}
+    <div ref={setNodeRef} style={style}>
+      <GlassCard
+        variant="solid"
+        padding="none"
+        isHoverable={false}
+        className={`group relative flex items-center justify-between overflow-hidden transition-colors hover:border-ethereal-gold/40 ${
+          isDragging
+            ? "shadow-glass-ethereal-hover ring-2 ring-ethereal-gold/30 scale-[1.02]"
+            : ""
+        }`}
       >
-        <GripVertical
-          size={16}
-          className="text-stone-300 group-hover:text-brand transition-colors flex-shrink-0"
-          aria-hidden="true"
-        />
-        <span className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 flex items-center justify-center text-[10px] font-bold antialiased text-brand shadow-sm flex-shrink-0">
-          {index + 1}
-        </span>
-
-        <div className="flex flex-col min-w-0">
-          <p
-            className={`text-sm font-bold truncate tracking-tight ${
-              item.is_encore ? "text-brand italic" : "text-stone-800"
-            }`}
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex w-full cursor-grab items-center gap-4 p-4 outline-none active:cursor-grabbing"
+          aria-label={t(
+            "projects.program.actions.drag_aria",
+            "Przeciągnij utwór {{title}}",
+            { title: item.piece_title },
+          )}
+        >
+          <GripVertical
+            size={16}
+            className="shrink-0 text-ethereal-graphite/30 transition-colors group-hover:text-ethereal-gold"
+            aria-hidden="true"
+          />
+          <GlassCard
+            variant="light"
+            padding="none"
+            isHoverable={false}
+            className="flex h-8 w-8 shrink-0 items-center justify-center"
           >
-            {item.piece_title}
-          </p>
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            {pieceObj?.voicing && (
-              <span className="text-[8px] font-bold antialiased text-stone-500 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded-md border border-stone-200/60">
-                🎤 {pieceObj.voicing}
-              </span>
-            )}
-            {pieceObj?.estimated_duration && (
-              <span className="text-[8px] font-bold antialiased text-stone-500 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded-md border border-stone-200/60 flex items-center gap-1.5">
-                <Clock size={10} aria-hidden="true" />{" "}
-                {formatPieceDuration(pieceObj.estimated_duration, t)}
-              </span>
-            )}
+            <Text size="xs" weight="bold" color="gold">
+              {index + 1}
+            </Text>
+          </GlassCard>
+
+          <div className="flex min-w-0 flex-col">
+            <Text
+              size="sm"
+              weight="bold"
+              color={item.is_encore ? "gold" : "default"}
+              truncate
+              className={item.is_encore ? "italic" : ""}
+            >
+              {item.piece_title}
+            </Text>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              {pieceObj?.voicing && (
+                <Badge variant="neutral" icon={<MicVocal size={10} />}>
+                  {pieceObj.voicing}
+                </Badge>
+              )}
+              {pieceObj?.estimated_duration && (
+                <Badge variant="neutral" icon={<Clock size={10} />}>
+                  {formatPieceDuration(pieceObj.estimated_duration, t)}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-1.5 flex-shrink-0 border-l border-stone-100/80 pl-4 pr-4 relative z-10 self-stretch bg-white/30 backdrop-blur-sm">
-        <button
-          onClick={() => onToggleEncore(item)}
-          title={
-            item.is_encore
-              ? t("projects.program.actions.remove_encore", "Usuń jako BIS")
-              : t("projects.program.actions.add_encore", "Oznacz jako BIS")
-          }
-          className={`p-2.5 rounded-lg transition-colors flex items-center gap-1.5 text-[9px] font-bold antialiased uppercase tracking-widest ${
-            item.is_encore
-              ? "bg-amber-50 text-amber-600 border border-amber-200 shadow-sm"
-              : "text-stone-400 hover:text-amber-500 hover:bg-stone-50 border border-transparent active:scale-95"
-          }`}
-        >
-          <Star
-            size={14}
-            className={item.is_encore ? "fill-amber-500" : ""}
-            aria-hidden="true"
-          />{" "}
-          {item.is_encore && t("projects.program.badges.encore", "BIS")}
-        </button>
-        <button
-          onClick={() => onDelete(safeId)}
-          title={t(
-            "projects.program.actions.remove_from_program",
-            "Usuń z programu",
-          )}
-          className="p-2.5 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100 active:scale-95"
-        >
-          <Trash2 size={16} aria-hidden="true" />
-        </button>
-      </div>
+        <div className="relative z-10 flex shrink-0 items-center gap-1.5 self-stretch border-l border-ethereal-incense/20 bg-ethereal-marble/50 px-4 backdrop-blur-sm">
+          <Button
+            type="button"
+            variant={item.is_encore ? "secondary" : "icon"}
+            size="sm"
+            onClick={() => onToggleEncore(item)}
+            leftIcon={
+              <Star
+                size={14}
+                className={item.is_encore ? "fill-ethereal-gold" : ""}
+                aria-hidden="true"
+              />
+            }
+            title={
+              item.is_encore
+                ? t("projects.program.actions.remove_encore", "Usuń jako BIS")
+                : t("projects.program.actions.add_encore", "Oznacz jako BIS")
+            }
+          >
+            {item.is_encore ? t("projects.program.badges.encore", "BIS") : ""}
+          </Button>
+          <Button
+            type="button"
+            variant="icon"
+            size="icon"
+            onClick={() => onDelete(safeId)}
+            title={t(
+              "projects.program.actions.remove_from_program",
+              "Usuń z programu",
+            )}
+            aria-label={t(
+              "projects.program.actions.remove_from_program",
+              "Usuń z programu",
+            )}
+          >
+            <Trash2 size={16} aria-hidden="true" />
+          </Button>
+        </div>
+      </GlassCard>
     </div>
   );
 }
@@ -250,8 +272,7 @@ export const ProgramTab = ({
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 relative pb-24 max-w-6xl mx-auto">
-      {/* FLOATING ACTION BAR (FAB) */}
+    <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-8 pb-24 lg:grid-cols-5">
       <AnimatePresence>
         {isDirty && (
           <motion.div
@@ -260,73 +281,85 @@ export const ProgramTab = ({
             animate={{ y: 0, opacity: 1, x: "-50%" }}
             exit={{ y: 100, opacity: 0, x: "-50%" }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 md:bottom-10 left-1/2 z-[200] w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_rgb(0,0,0,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-4 flex items-center justify-between"
+            className="fixed bottom-6 left-1/2 z-(--z-toast) w-[90%] max-w-md md:bottom-10"
           >
-            <div className="flex flex-col ml-2">
-              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
-                {t("projects.program.fab.unsaved", "Niezapisane Zmiany")}
-              </span>
-              <span className="text-xs text-stone-500">
-                {t(
-                  "projects.program.fab.description",
-                  "Zmodyfikowałeś kolejność programu.",
-                )}
-              </span>
-            </div>
+            <GlassCard
+              variant="solid"
+              padding="sm"
+              isHoverable={false}
+              className="flex items-center justify-between gap-4 rounded-2xl"
+            >
+              <div className="ml-2 flex flex-col">
+                <Eyebrow color="gold">
+                  {t("projects.program.fab.unsaved", "Niezapisane Zmiany")}
+                </Eyebrow>
+                <Text size="xs" color="muted">
+                  {t(
+                    "projects.program.fab.description",
+                    "Zmodyfikowałeś kolejność programu.",
+                  )}
+                </Text>
+              </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isSaving}
-                className="!border-transparent hover:!bg-stone-100 !text-stone-500 hover:!text-stone-800"
-              >
-                {t("common.actions.cancel", "Anuluj")}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSaveChanges}
-                disabled={isSaving}
-                isLoading={isSaving}
-                leftIcon={
-                  !isSaving ? <Save size={16} aria-hidden="true" /> : undefined
-                }
-              >
-                {t("common.actions.save", "Zapisz")}
-              </Button>
-            </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                >
+                  {t("common.actions.cancel", "Anuluj")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleSaveChanges}
+                  disabled={isSaving}
+                  isLoading={isSaving}
+                  leftIcon={
+                    !isSaving ? (
+                      <Save size={16} aria-hidden="true" />
+                    ) : undefined
+                  }
+                >
+                  {t("common.actions.save", "Zapisz")}
+                </Button>
+              </div>
+            </GlassCard>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ACTIVE SETLIST COLUMN */}
       <div className="lg:col-span-3">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-stone-200/60 pb-4 mb-5 gap-3">
-          <h3 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 flex items-center gap-2.5">
-            <ListOrdered size={16} className="text-brand" aria-hidden="true" />{" "}
-            {t("projects.program.sections.setlist", "Setlista Wydarzenia")}
-          </h3>
+        <div className="mb-5 flex flex-col justify-between gap-3 border-b border-ethereal-incense/20 pb-4 sm:flex-row sm:items-end">
+          <div className="flex items-center gap-2.5">
+            <ListOrdered
+              size={16}
+              className="text-ethereal-gold"
+              aria-hidden="true"
+            />
+            <Eyebrow color="default">
+              {t("projects.program.sections.setlist", "Setlista Wydarzenia")}
+            </Eyebrow>
+          </div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 bg-white/80 px-3 py-1.5 rounded-lg border border-stone-200/60 shadow-sm">
+            <Badge variant="neutral">
               {t("projects.program.badges.tracks_count", "Utworów: {{count}}", {
                 count: programItems.length,
               })}
-            </span>
+            </Badge>
             {totalConcertDurationSeconds > 0 && (
-              <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-brand bg-blue-50/80 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm flex items-center gap-1.5">
-                <Clock size={12} aria-hidden="true" />{" "}
+              <Badge variant="warning" icon={<Clock size={12} />}>
                 {formatTotalDuration(totalConcertDurationSeconds, t)}
-              </span>
+              </Badge>
             )}
           </div>
         </div>
 
         {isLoading ? (
           <div className="flex justify-center p-12">
-            <Loader2
-              className="animate-spin text-stone-400"
-              aria-hidden="true"
-            />
+            <EtherealLoader />
           </div>
         ) : programItems.length > 0 ? (
           <DndContext
@@ -364,32 +397,43 @@ export const ProgramTab = ({
             </SortableContext>
           </DndContext>
         ) : (
-          <GlassCard className="p-10 text-center flex flex-col items-center justify-center">
+          <GlassCard
+            variant="ethereal"
+            padding="lg"
+            isHoverable={false}
+            className="flex flex-col items-center justify-center text-center"
+          >
             <Music
               size={32}
-              className="text-stone-300 mb-3 opacity-50"
+              className="mb-3 text-ethereal-graphite/30"
               aria-hidden="true"
             />
-            <p className="text-[10px] font-bold antialiased text-stone-500 uppercase tracking-widest mb-1">
+            <Eyebrow color="muted">
               {t("projects.program.empty.setlist_title", "Setlista jest pusta")}
-            </p>
-            <p className="text-xs text-stone-400 max-w-xs leading-relaxed">
+            </Eyebrow>
+            <Text size="xs" color="muted" className="mt-1 max-w-xs">
               {t(
                 "projects.program.empty.setlist_desc",
                 "Wybierz kompozycje z bazy po prawej stronie, aby zbudować program koncertu.",
               )}
-            </p>
+            </Text>
           </GlassCard>
         )}
       </div>
 
-      {/* DATABASE SEARCH COLUMN */}
-      <GlassCard className="lg:col-span-2 p-6 h-[600px] flex flex-col">
-        <h3 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-800 mb-5 flex items-center gap-2">
-          {t("projects.program.sections.database", "Baza Kompozycji")}
-        </h3>
+      <GlassCard
+        variant="ethereal"
+        padding="md"
+        isHoverable={false}
+        className="flex h-[calc(100vh-18rem)] flex-col lg:col-span-2"
+      >
+        <div className="mb-5 flex items-center gap-2">
+          <Eyebrow color="default">
+            {t("projects.program.sections.database", "Baza Kompozycji")}
+          </Eyebrow>
+        </div>
 
-        <div className="mb-5 flex-shrink-0">
+        <div className="mb-5 shrink-0">
           <Input
             type="text"
             placeholder={t(
@@ -397,56 +441,53 @@ export const ProgramTab = ({
               "Szukaj utworu...",
             )}
             value={searchQuery || ""}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            leftIcon={
-              <Search size={16} className="text-stone-400" aria-hidden="true" />
-            }
+            onChange={(event) => setSearchQuery(event.target.value)}
+            leftIcon={<Search size={16} aria-hidden="true" />}
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide">
+        <div className="ethereal-scroll flex-1 space-y-2 overflow-y-auto pr-2">
           {filteredPieces.length > 0 ? (
             filteredPieces.map((piece, index) => {
               const safePieceId = piece.id || `db-piece-${index}`;
               const isAdded = addedPieceIds.includes(String(piece.id));
 
               return (
-                <div
+                <GlassCard
                   key={safePieceId}
-                  className={`flex items-center justify-between p-3.5 border rounded-xl transition-colors ${
-                    isAdded
-                      ? "bg-stone-50/50 border-stone-200/50 opacity-60"
-                      : "bg-white/60 hover:bg-white border-stone-200/80 shadow-sm hover:border-brand/30"
+                  variant={isAdded ? "light" : "solid"}
+                  padding="sm"
+                  isHoverable={false}
+                  className={`flex items-center justify-between transition-colors ${
+                    isAdded ? "opacity-60" : "hover:border-ethereal-gold/30"
                   }`}
                 >
-                  <div className="flex flex-col min-w-0 pr-3">
-                    <span
-                      className={`text-sm font-bold truncate tracking-tight ${
-                        isAdded
-                          ? "text-stone-500 line-through"
-                          : "text-stone-800"
-                      }`}
+                  <div className="flex min-w-0 flex-col pr-3">
+                    <Text
+                      size="sm"
+                      weight="bold"
+                      color={isAdded ? "muted" : "default"}
+                      truncate
+                      className={isAdded ? "line-through" : ""}
                     >
                       {piece.title}
-                    </span>
+                    </Text>
                     {(piece.estimated_duration || piece.voicing) && (
-                      <span className="text-[8px] font-bold antialiased text-stone-400 uppercase tracking-widest mt-1 truncate">
+                      <Eyebrow color="muted" className="mt-1 truncate">
                         {piece.estimated_duration
                           ? `${formatPieceDuration(piece.estimated_duration, t)} `
                           : ""}
                         {piece.voicing ? `| ${piece.voicing}` : ""}
-                      </span>
+                      </Eyebrow>
                     )}
                   </div>
 
-                  <button
+                  <Button
+                    type="button"
+                    variant={isAdded ? "secondary" : "primary"}
+                    size="icon"
                     disabled={isAdded}
                     onClick={() => handleAddPiece(String(piece.id))}
-                    className={`flex-shrink-0 p-2 rounded-lg transition-all active:scale-90 ${
-                      isAdded
-                        ? "text-emerald-600 bg-emerald-50 border border-emerald-100"
-                        : "text-white bg-stone-900 hover:bg-brand shadow-sm"
-                    }`}
                     title={
                       isAdded
                         ? t(
@@ -455,26 +496,30 @@ export const ProgramTab = ({
                           )
                         : t("projects.program.actions.add", "Dodaj do programu")
                     }
+                    aria-label={t(
+                      "projects.program.actions.add",
+                      "Dodaj do programu",
+                    )}
                   >
                     {isAdded ? (
                       <CheckCircle2 size={16} aria-hidden="true" />
                     ) : (
                       <Plus size={16} aria-hidden="true" />
                     )}
-                  </button>
-                </div>
+                  </Button>
+                </GlassCard>
               );
             })
           ) : (
-            <div className="text-center py-12 text-stone-400 flex flex-col items-center">
+            <div className="flex flex-col items-center py-12 text-center">
               <Search
                 size={28}
-                className="mb-3 opacity-30"
+                className="mb-3 text-ethereal-graphite/30"
                 aria-hidden="true"
               />
-              <span className="text-[10px] uppercase font-bold antialiased tracking-widest">
+              <Eyebrow color="muted">
                 {t("projects.program.empty.no_results", "Brak wyników")}
-              </span>
+              </Eyebrow>
             </div>
           )}
         </div>

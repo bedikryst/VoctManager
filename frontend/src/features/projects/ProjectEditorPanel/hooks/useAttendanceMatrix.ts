@@ -50,7 +50,22 @@ const toAttendanceRecord = (attendance: Attendance): AttendanceRecord => ({
   status: attendance.status,
 });
 
-export const useAttendanceMatrix = (projectId: string) => {
+export interface UseAttendanceMatrixResult {
+  isLoading: boolean;
+  projectRehearsals: import("@/shared/types").Rehearsal[];
+  enrichedParticipations: EnrichedParticipation[];
+  attendanceMap: Map<string, AttendanceRecord>;
+  mutatingCells: Set<string>;
+  handleToggleStatus: (
+    rehearsalId: string,
+    participationId: string,
+    currentRecord: AttendanceRecord | undefined,
+  ) => Promise<void>;
+}
+
+export const useAttendanceMatrix = (
+  projectId: string,
+): UseAttendanceMatrixResult => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 

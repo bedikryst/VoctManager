@@ -17,18 +17,22 @@ import type {
   ProjectCreateDTO,
   ProjectUpdateDTO,
 } from "../../types/project.dto";
+import type { ProjectFormData } from "../types";
 
-export interface ProjectFormData {
-  title: string;
-  timezone: string;
-  date_time: string;
-  call_time: string;
-  location_id: string | null;
-  conductor: string | null;
-  dress_code_male: string;
-  dress_code_female: string;
-  spotify_playlist_url: string;
-  description: string;
+export interface UseDetailsFormResult {
+  formData: ProjectFormData;
+  setFormData: React.Dispatch<React.SetStateAction<ProjectFormData>>;
+  sortedRunSheet: RunSheetItem[];
+  isDirty: boolean;
+  isSubmitting: boolean;
+  handleAddRunSheetItem: () => void;
+  handleUpdateRunSheetItem: (
+    id: string,
+    field: keyof RunSheetItem,
+    value: string,
+  ) => void;
+  handleRemoveRunSheetItem: (id: string) => void;
+  handleSubmit: (event: React.FormEvent) => Promise<void>;
 }
 
 const normalizeRunSheetItem = (
@@ -88,7 +92,7 @@ export const useDetailsForm = (
   project: Project | null,
   onSuccess: (updatedProject?: Project) => void,
   onDirtyStateChange?: (isDirty: boolean) => void,
-) => {
+): UseDetailsFormResult => {
   const { t } = useTranslation();
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();

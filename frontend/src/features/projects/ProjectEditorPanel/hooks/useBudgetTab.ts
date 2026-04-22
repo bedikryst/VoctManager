@@ -10,27 +10,41 @@ import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
-import type {
-  Artist,
-  Participation,
-  CrewAssignment,
-  Collaborator,
-} from "@/shared/types";
 import {
   useUpdateParticipation,
   useUpdateCrewAssignment,
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
+import type {
+  EnrichedCrewAssignmentAssignment,
+  EnrichedParticipation,
+  FeeMutation,
+} from "../types";
 
-type FeeMutation = { type: "cast" | "crew"; value: string };
+export interface BudgetKpi {
+  castTotal: number;
+  crewTotal: number;
+  missingCount: number;
+  grandTotal: number;
+}
 
-type EnrichedParticipation = Participation & { artistData: Artist };
-type EnrichedCrew = CrewAssignment & { crewData: Collaborator };
+export interface UseBudgetTabResult {
+  isLoading: boolean;
+  isSaving: boolean;
+  isDirty: boolean;
+  enrichedCast: EnrichedParticipation[];
+  enrichedCrew: EnrichedCrewAssignmentAssignment[];
+  dirtyFees: Record<string, FeeMutation>;
+  kpi: BudgetKpi;
+  handleFeeChange: (id: string, value: string, type: "cast" | "crew") => void;
+  handleReset: () => void;
+  handleBulkSave: () => Promise<void>;
+}
 
 export const useBudgetTab = (
   projectId: string,
   onDirtyStateChange?: (isDirty: boolean) => void,
-) => {
+): UseBudgetTabResult => {
   const { t } = useTranslation();
   const { participations, crewAssignments, artists, crew, isLoading } =
     useProjectData(projectId);
@@ -85,7 +99,7 @@ export const useBudgetTab = (
         ),
       }))
       .filter(
-        (assignment): assignment is EnrichedCrew =>
+        (assignment): assignment is EnrichedCrewAssignment =>
           assignment.crewData !== undefined,
       )
       .sort((left, right) =>

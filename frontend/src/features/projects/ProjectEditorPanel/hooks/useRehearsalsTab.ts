@@ -11,7 +11,12 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
-import type { Artist, Rehearsal } from "@/shared/types";
+import type {
+  Artist,
+  Location,
+  Participation,
+  Rehearsal,
+} from "@/shared/types";
 import { useLocations } from "@/features/logistics/api/logistics.queries";
 import {
   useCreateRehearsal,
@@ -20,16 +25,33 @@ import {
 } from "../../api/project.queries";
 import { useProjectData } from "../../hooks/useProjectData";
 import { compareProjectDateAsc } from "../../lib/projectPresentation";
+import type { RehearsalFormData, RehearsalTargetType } from "../types";
 
-export interface RehearsalFormData {
-  date_time: string;
-  timezone: string;
-  location_id: string;
-  focus: string;
-  is_mandatory: boolean;
+export interface UseRehearsalsTabResult {
+  isLoading: boolean;
+  isSubmitting: boolean;
+  isEditing: boolean;
+  rehearsalToDelete: string | null;
+  setRehearsalToDelete: React.Dispatch<React.SetStateAction<string | null>>;
+  isDeleting: boolean;
+  formData: RehearsalFormData;
+  setFormData: React.Dispatch<React.SetStateAction<RehearsalFormData>>;
+  targetType: RehearsalTargetType;
+  setTargetType: React.Dispatch<React.SetStateAction<RehearsalTargetType>>;
+  selectedSections: string[];
+  customParticipants: string[];
+  projectRehearsals: Rehearsal[];
+  projectParticipations: Participation[];
+  artistMap: Map<string, Artist>;
+  locations: Location[];
+  handleSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  handleEditClick: (rehearsal: Rehearsal) => void;
+  handleCancelEdit: () => void;
+  handleDeleteClick: (id: string) => void;
+  executeDelete: () => Promise<void>;
+  toggleSection: (section: string) => void;
+  toggleCustomParticipant: (id: string) => void;
 }
-
-export type TargetType = "TUTTI" | "SECTIONAL" | "CUSTOM";
 
 const toZonedInputString = (
   dateString?: string | null,
@@ -58,7 +80,9 @@ const getLocationId = (location: Rehearsal["location"]): string => {
   return typeof location === "string" ? location : location.id;
 };
 
-export const useRehearsalsTab = (projectId: string) => {
+export const useRehearsalsTab = (
+  projectId: string,
+): UseRehearsalsTabResult => {
   const { t } = useTranslation();
   const {
     project,
@@ -90,7 +114,7 @@ export const useRehearsalsTab = (projectId: string) => {
     is_mandatory: true,
   });
 
-  const [targetType, setTargetType] = useState<TargetType>("TUTTI");
+  const [targetType, setTargetType] = useState<RehearsalTargetType>("TUTTI");
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [customParticipants, setCustomParticipants] = useState<string[]>([]);
 
