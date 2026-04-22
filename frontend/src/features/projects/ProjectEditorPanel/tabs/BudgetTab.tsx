@@ -25,7 +25,6 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import {
   Eyebrow,
   Heading,
@@ -45,7 +44,6 @@ export const BudgetTab = ({
 }: BudgetTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const {
-    isLoading,
     isSaving,
     isDirty,
     enrichedCast,
@@ -56,14 +54,6 @@ export const BudgetTab = ({
     handleReset,
     handleBulkSave,
   } = useBudgetTab(projectId, onDirtyStateChange);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center p-12">
-        <EtherealLoader />
-      </div>
-    );
-  }
 
   return (
     <div className="relative mx-auto max-w-4xl space-y-8 pb-24">

@@ -25,11 +25,7 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import {
-  Eyebrow,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { useCastTab } from "../hooks/useCastTab";
 
 interface CastTabProps {
@@ -158,7 +154,6 @@ export const CastTab = ({
   const { t } = useTranslation();
   const {
     participations,
-    isFetching,
     searchQuery,
     setSearchQuery,
     processingId,
@@ -212,12 +207,7 @@ export const CastTab = ({
               )}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              leftIcon={
-                <Search
-                  size={16}
-                  aria-hidden="true"
-                />
-              }
+              leftIcon={<Search size={16} aria-hidden="true" />}
             />
           </div>
         </div>
@@ -252,120 +242,114 @@ export const CastTab = ({
         </GlassCard>
       </div>
 
-      {isFetching ? (
-        <div className="flex flex-1 items-center justify-center">
-          <EtherealLoader />
-        </div>
-      ) : (
-        <AnimatePresence mode="popLayout" initial={false}>
-          <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden pb-8 md:grid-cols-2 md:gap-8">
-            <motion.div
-              key="available-list"
-              layoutId="available-list-container"
-              className={`h-full flex-col [scrollbar-gutter:stable] ${
-                mobileView === "AVAILABLE" ? "flex" : "hidden md:flex"
-              }`}
-            >
-              <div className="mb-3 flex items-center justify-between px-2">
-                <Eyebrow color="muted">
-                  {t("projects.cast.sections.available", "Baza Artystów")}
-                </Eyebrow>
-                <Badge variant="neutral">{unassignedCount}</Badge>
-              </div>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden pb-8 md:grid-cols-2 md:gap-8">
+          <motion.div
+            key="available-list"
+            layoutId="available-list-container"
+            className={`h-full flex-col [scrollbar-gutter:stable] ${
+              mobileView === "AVAILABLE" ? "flex" : "hidden md:flex"
+            }`}
+          >
+            <div className="mb-3 flex items-center justify-between px-2">
+              <Eyebrow color="muted">
+                {t("projects.cast.sections.available", "Baza Artystów")}
+              </Eyebrow>
+              <Badge variant="neutral">{unassignedCount}</Badge>
+            </div>
 
-              <GlassCard
-                variant="light"
-                padding="sm"
-                isHoverable={false}
-                className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
-              >
-                {allArtists
-                  .filter((artist) => !assignedIds.has(String(artist.id)))
-                  .map((artist) => (
+            <GlassCard
+              variant="light"
+              padding="sm"
+              isHoverable={false}
+              className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
+            >
+              {allArtists
+                .filter((artist) => !assignedIds.has(String(artist.id)))
+                .map((artist) => (
+                  <ArtistCard
+                    key={artist.id}
+                    artist={artist}
+                    isAssigned={false}
+                    isProcessing={processingId === String(artist.id)}
+                    onToggle={toggleCasting}
+                  />
+                ))}
+              {unassignedCount === 0 && (
+                <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-60">
+                  <Users
+                    size={24}
+                    className="mb-2 text-ethereal-graphite/40"
+                    aria-hidden="true"
+                  />
+                  <Eyebrow color="muted">
+                    {t("projects.cast.empty_available", "Brak dostępnych")}
+                  </Eyebrow>
+                </div>
+              )}
+            </GlassCard>
+          </motion.div>
+
+          <motion.div
+            key="assigned-list"
+            layoutId="assigned-list-container"
+            className={`h-full flex-col [scrollbar-gutter:stable] ${
+              mobileView === "ASSIGNED" ? "flex" : "hidden md:flex"
+            }`}
+          >
+            <div className="mb-3 flex items-center justify-between px-2">
+              <div className="flex items-center gap-1.5">
+                <UserCheck
+                  size={14}
+                  className="text-ethereal-gold"
+                  aria-hidden="true"
+                />
+                <Eyebrow color="gold">
+                  {t("projects.cast.sections.assigned", "Obsada Projektu")}
+                </Eyebrow>
+              </div>
+              <Badge variant="warning">{participations.length}</Badge>
+            </div>
+
+            <GlassCard
+              variant="light"
+              padding="sm"
+              isHoverable={false}
+              className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden border-ethereal-gold/20 bg-ethereal-gold/5 [scrollbar-gutter:stable]"
+            >
+              {allArtists
+                .filter((artist) => assignedIds.has(String(artist.id)))
+                .map((artist) => {
+                  const participation = participations.find(
+                    (p) => String(p.artist) === String(artist.id),
+                  );
+                  return (
                     <ArtistCard
                       key={artist.id}
                       artist={artist}
-                      isAssigned={false}
+                      isAssigned={true}
+                      participationId={participation?.id}
                       isProcessing={processingId === String(artist.id)}
                       onToggle={toggleCasting}
                     />
-                  ))}
-                {unassignedCount === 0 && (
-                  <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-60">
-                    <Users
-                      size={24}
-                      className="mb-2 text-ethereal-graphite/40"
-                      aria-hidden="true"
-                    />
-                    <Eyebrow color="muted">
-                      {t("projects.cast.empty_available", "Brak dostępnych")}
-                    </Eyebrow>
-                  </div>
-                )}
-              </GlassCard>
-            </motion.div>
-
-            <motion.div
-              key="assigned-list"
-              layoutId="assigned-list-container"
-              className={`h-full flex-col [scrollbar-gutter:stable] ${
-                mobileView === "ASSIGNED" ? "flex" : "hidden md:flex"
-              }`}
-            >
-              <div className="mb-3 flex items-center justify-between px-2">
-                <div className="flex items-center gap-1.5">
+                  );
+                })}
+              {participations.length === 0 && (
+                <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-60">
                   <UserCheck
-                    size={14}
-                    className="text-ethereal-gold"
+                    size={24}
+                    className="mb-2 text-ethereal-graphite/40"
                     aria-hidden="true"
                   />
-                  <Eyebrow color="gold">
-                    {t("projects.cast.sections.assigned", "Obsada Projektu")}
+                  <Eyebrow color="muted">
+                    {t("projects.cast.empty_assigned", "Obsada jest pusta")}
                   </Eyebrow>
                 </div>
-                <Badge variant="warning">{participations.length}</Badge>
-              </div>
-
-              <GlassCard
-                variant="light"
-                padding="sm"
-                isHoverable={false}
-                className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden border-ethereal-gold/20 bg-ethereal-gold/5 [scrollbar-gutter:stable]"
-              >
-                {allArtists
-                  .filter((artist) => assignedIds.has(String(artist.id)))
-                  .map((artist) => {
-                    const participation = participations.find(
-                      (p) => String(p.artist) === String(artist.id),
-                    );
-                    return (
-                      <ArtistCard
-                        key={artist.id}
-                        artist={artist}
-                        isAssigned={true}
-                        participationId={participation?.id}
-                        isProcessing={processingId === String(artist.id)}
-                        onToggle={toggleCasting}
-                      />
-                    );
-                  })}
-                {participations.length === 0 && (
-                  <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-60">
-                    <UserCheck
-                      size={24}
-                      className="mb-2 text-ethereal-graphite/40"
-                      aria-hidden="true"
-                    />
-                    <Eyebrow color="muted">
-                      {t("projects.cast.empty_assigned", "Obsada jest pusta")}
-                    </Eyebrow>
-                  </div>
-                )}
-              </GlassCard>
-            </motion.div>
-          </div>
-        </AnimatePresence>
-      )}
+              )}
+            </GlassCard>
+          </motion.div>
+        </div>
+      </AnimatePresence>
     </div>
   );
 };

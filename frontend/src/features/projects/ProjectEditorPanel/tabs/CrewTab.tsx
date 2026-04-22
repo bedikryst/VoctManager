@@ -17,11 +17,7 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import {
-  Eyebrow,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface CrewTabProps {
   projectId: string;
@@ -32,7 +28,6 @@ export const CrewTab = ({
 }: CrewTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const {
-    isLoading,
     isMutating,
     selectedCrewId,
     setSelectedCrewId,
@@ -140,74 +135,68 @@ export const CrewTab = ({
           </Eyebrow>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <EtherealLoader />
-          </div>
-        ) : (
-          <div className="ethereal-scroll max-h-125 divide-y divide-ethereal-incense/10 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
-            <AnimatePresence initial={false}>
-              {projectAssignments.length > 0 ? (
-                projectAssignments.map((assignment) => {
-                  const person = crewMap.get(String(assignment.collaborator));
-                  if (!person) return null;
+        <div className="ethereal-scroll max-h-125 divide-y divide-ethereal-incense/10 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+          <AnimatePresence initial={false}>
+            {projectAssignments.length > 0 ? (
+              projectAssignments.map((assignment) => {
+                const person = crewMap.get(String(assignment.collaborator));
+                if (!person) return null;
 
-                  return (
-                    <motion.div
-                      key={assignment.id}
-                      layout
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex items-center justify-between p-5 transition-colors hover:bg-ethereal-marble/50"
+                return (
+                  <motion.div
+                    key={assignment.id}
+                    layout
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center justify-between p-5 transition-colors hover:bg-ethereal-marble/50"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <Text size="sm" weight="bold">
+                        {person.first_name} {person.last_name}
+                      </Text>
+                      <Eyebrow color="muted">
+                        {assignment.role_description || person.specialty}{" "}
+                        {person.company_name && `(${person.company_name})`}
+                      </Eyebrow>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="icon"
+                      size="icon"
+                      onClick={() => handleRemove(String(assignment.id))}
+                      disabled={isMutating}
+                      title={t(
+                        "projects.crew.list.remove_title",
+                        "Usuń z ekipy technicznej",
+                      )}
+                      aria-label={t(
+                        "projects.crew.list.remove_title",
+                        "Usuń z ekipy technicznej",
+                      )}
                     >
-                      <div className="flex flex-col gap-0.5">
-                        <Text size="sm" weight="bold">
-                          {person.first_name} {person.last_name}
-                        </Text>
-                        <Eyebrow color="muted">
-                          {assignment.role_description || person.specialty}{" "}
-                          {person.company_name && `(${person.company_name})`}
-                        </Eyebrow>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="icon"
-                        size="icon"
-                        onClick={() => handleRemove(String(assignment.id))}
-                        disabled={isMutating}
-                        title={t(
-                          "projects.crew.list.remove_title",
-                          "Usuń z ekipy technicznej",
-                        )}
-                        aria-label={t(
-                          "projects.crew.list.remove_title",
-                          "Usuń z ekipy technicznej",
-                        )}
-                      >
-                        <Trash2 size={16} aria-hidden="true" />
-                      </Button>
-                    </motion.div>
-                  );
-                })
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="p-8 text-center"
-                >
-                  <Text size="xs" color="muted" className="italic">
-                    {t(
-                      "projects.crew.empty",
-                      "Brak przypisanej ekipy technicznej.",
-                    )}
-                  </Text>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+                      <Trash2 size={16} aria-hidden="true" />
+                    </Button>
+                  </motion.div>
+                );
+              })
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-8 text-center"
+              >
+                <Text size="xs" color="muted" className="italic">
+                  {t(
+                    "projects.crew.empty",
+                    "Brak przypisanej ekipy technicznej.",
+                  )}
+                </Text>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </GlassCard>
     </div>
   );

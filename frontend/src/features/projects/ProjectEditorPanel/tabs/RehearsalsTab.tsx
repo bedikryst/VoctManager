@@ -31,12 +31,11 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { getAvailableTimezones } from "@/shared/lib/time/timezone";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import {
   getLocationLabel,
   isPastProjectDate,
@@ -53,7 +52,6 @@ export const RehearsalsTab = ({
   const timezones = getAvailableTimezones();
 
   const {
-    isLoading,
     isSubmitting,
     isEditing,
     rehearsalToDelete,
@@ -381,11 +379,7 @@ export const RehearsalsTab = ({
           </Eyebrow>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center p-12">
-            <EtherealLoader />
-          </div>
-        ) : projectRehearsals.length > 0 ? (
+        {projectRehearsals.length > 0 ? (
           projectRehearsals.map((rehearsal) => {
             const isPast = isPastProjectDate(rehearsal.date_time);
             const invitedCount = rehearsal.invited_participations?.length || 0;

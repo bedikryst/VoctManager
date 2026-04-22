@@ -21,7 +21,6 @@ import {
   type AttendanceStatus,
 } from "../hooks/useAttendanceMatrix";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import {
   Eyebrow,
   Heading,
@@ -145,21 +144,12 @@ export const AttendanceMatrixTab = ({
 }: AttendanceMatrixTabProps): React.JSX.Element => {
   const { t } = useTranslation();
   const {
-    isLoading,
     projectRehearsals,
     enrichedParticipations,
     attendanceMap,
     mutatingCells,
     handleToggleStatus,
   } = useAttendanceMatrix(projectId);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <EtherealLoader />
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-24">
@@ -308,8 +298,9 @@ export const AttendanceMatrixTab = ({
 
               enrichedParticipations.forEach((participation) => {
                 const isInvited =
-                  rehearsal.invited_participations?.length === 0 ||
-                  rehearsal.invited_participations?.includes(
+                  !rehearsal.invited_participations ||
+                  rehearsal.invited_participations.length === 0 ||
+                  rehearsal.invited_participations.includes(
                     String(participation.id),
                   );
 
@@ -373,8 +364,9 @@ export const AttendanceMatrixTab = ({
 
                   {enrichedParticipations.map((participation) => {
                     const isInvited =
-                      rehearsal.invited_participations?.length === 0 ||
-                      rehearsal.invited_participations?.includes(
+                      !rehearsal.invited_participations ||
+                      rehearsal.invited_participations.length === 0 ||
+                      rehearsal.invited_participations.includes(
                         String(participation.id),
                       );
 

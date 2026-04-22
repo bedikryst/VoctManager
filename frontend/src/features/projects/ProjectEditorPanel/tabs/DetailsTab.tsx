@@ -19,6 +19,7 @@ import {
   Save,
 } from "lucide-react";
 
+import { useLocations } from "@/features/logistics/api/logistics.queries";
 import { getAvailableTimezones } from "@/shared/lib/time/timezone";
 import type { Project } from "@/shared/types";
 import { useDetailsForm } from "../hooks/useDetailsForm";
@@ -30,7 +31,6 @@ import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
-import { useLocationsData } from "@/features/logistics/hooks/useLocationsData";
 
 interface DetailsTabProps {
   project: Project | null;
@@ -54,13 +54,13 @@ export const DetailsTab = ({
     handleUpdateRunSheetItem,
     handleRemoveRunSheetItem,
     handleSubmit,
-  } = useDetailsForm(project, onSuccess, onDirtyStateChange);
+  } = useDetailsForm(project?.id, onSuccess, onDirtyStateChange);
   const timezones = getAvailableTimezones();
 
-  const { displayLocations, isLoading: isLocationsLoading } =
-    useLocationsData();
-  const { data: artists = [], isLoading: isArtistsLoading } =
-    useProjectArtistsDictionary();
+  const { data: locationsData } = useLocations();
+  const { data: artists } = useProjectArtistsDictionary();
+
+  const displayLocations = locationsData ?? [];
   const conductors = useMemo(
     () => artists.filter((artist) => artist.voice_type === "DIR"),
     [artists],
@@ -91,7 +91,7 @@ export const DetailsTab = ({
                 <Text size="xs" color="muted">
                   {t(
                     "projects.details_tab.fab.description",
-                    "Zmodyfikowałeś ustawienia projektu.",
+                    "ZmodyfikowaĹ‚eĹ› ustawienia projektu.",
                   )}
                 </Text>
               </div>
@@ -118,7 +118,7 @@ export const DetailsTab = ({
           aria-hidden="true"
         />
         <Heading as="h2" size="xl" weight="medium">
-          {t("projects.details_tab.header.title", "Szczegóły Wydarzenia")}
+          {t("projects.details_tab.header.title", "SzczegĂłĹ‚y Wydarzenia")}
         </Heading>
       </div>
 
@@ -127,7 +127,7 @@ export const DetailsTab = ({
           <SectionHeader
             title={t(
               "projects.details_tab.sections.title_desc",
-              "Tytuł i Opis",
+              "TytuĹ‚ i Opis",
             )}
           />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -135,7 +135,7 @@ export const DetailsTab = ({
               <Input
                 label={t(
                   "projects.details_tab.fields.title",
-                  "Tytuł Projektu *",
+                  "TytuĹ‚ Projektu *",
                 )}
                 type="text"
                 required
@@ -170,9 +170,9 @@ export const DetailsTab = ({
                 setFormData({ ...formData, timezone: event.target.value })
               }
             >
-              {timezones.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz.replace(/_/g, " ")}
+              {timezones.map((timezone) => (
+                <option key={timezone} value={timezone}>
+                  {timezone.replace(/_/g, " ")}
                 </option>
               ))}
             </Select>
@@ -189,21 +189,18 @@ export const DetailsTab = ({
                   location_id: event.target.value || null,
                 })
               }
-              disabled={isLocationsLoading}
             >
               <option value="">
-                {isLocationsLoading
-                  ? t("common.loading", "Ładowanie...")
-                  : t(
-                      "common.select_location",
-                      "--- Wybierz zapisaną lokalizację ---",
-                    )}
+                {t(
+                  "common.select_location",
+                  "--- Wybierz zapisanÄ… lokalizacjÄ™ ---",
+                )}
               </option>
-              {displayLocations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                  {loc.formatted_address
-                    ? ` - ${loc.formatted_address.split(",")[0]}`
+              {displayLocations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                  {location.formatted_address
+                    ? ` - ${location.formatted_address.split(",")[0]}`
                     : ""}
                 </option>
               ))}
@@ -218,15 +215,12 @@ export const DetailsTab = ({
                   conductor: event.target.value || null,
                 })
               }
-              disabled={isArtistsLoading}
             >
               <option value="">
-                {isArtistsLoading
-                  ? t("common.loading", "Ładowanie...")
-                  : t(
-                      "projects.details_tab.fields.conductor_placeholder",
-                      "--- Wybierz dyrygenta ---",
-                    )}
+                {t(
+                  "projects.details_tab.fields.conductor_placeholder",
+                  "--- Wybierz dyrygenta ---",
+                )}
               </option>
               {conductors.map((conductor) => (
                 <option key={conductor.id} value={conductor.id}>
@@ -241,14 +235,14 @@ export const DetailsTab = ({
           <SectionHeader
             title={t(
               "projects.details_tab.sections.logistics",
-              "Zbiórka i Dress Code",
+              "ZbiĂłrka i Dress Code",
             )}
           />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <Input
               label={t(
                 "projects.details_tab.fields.call_time",
-                "Zbiórka (Call Time)",
+                "ZbiĂłrka (Call Time)",
               )}
               type="datetime-local"
               value={formData.call_time || ""}
@@ -306,7 +300,7 @@ export const DetailsTab = ({
             }
             placeholder={t(
               "projects.details_tab.placeholders.description",
-              "np. Proszę o punktualność...",
+              "np. ProszÄ™ o punktualnoĹ›Ä‡...",
             )}
           />
         </GlassCard>
@@ -395,7 +389,7 @@ export const DetailsTab = ({
                 <Text size="xs" color="muted">
                   {t(
                     "projects.details_tab.empty.run_sheet",
-                    "Brak punktów harmonogramu. Dodaj pierwszy!",
+                    "Brak punktĂłw harmonogramu. Dodaj pierwszy!",
                   )}
                 </Text>
               </GlassCard>
@@ -441,7 +435,7 @@ export const DetailsTab = ({
                             )}
                           />
                         </div>
-                        <div className="flex-1 w-full">
+                        <div className="w-full flex-1">
                           <Input
                             type="text"
                             required
@@ -455,11 +449,11 @@ export const DetailsTab = ({
                             }
                             placeholder={t(
                               "projects.details_tab.run_sheet.title",
-                              "Tytuł",
+                              "TytuĹ‚",
                             )}
                           />
                         </div>
-                        <div className="flex-1 w-full">
+                        <div className="w-full flex-1">
                           <Input
                             type="text"
                             value={item.description || ""}
@@ -482,7 +476,7 @@ export const DetailsTab = ({
                           variant="icon"
                           size="icon"
                           onClick={() => handleRemoveRunSheetItem(safeId)}
-                          aria-label={t("common.actions.delete", "Usuń")}
+                          aria-label={t("common.actions.delete", "UsuĹ„")}
                           className="self-end md:self-auto"
                         >
                           <Trash2 size={16} aria-hidden="true" />

@@ -9,6 +9,7 @@
 import React, { useCallback, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
@@ -32,6 +33,9 @@ import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
+
+import { projectKeys } from "../api/project.queries";
+import { ProjectService } from "../api/project.service";
 
 import {
   PROJECT_STATUS,
@@ -120,6 +124,7 @@ export const ProjectEditorPanel = ({
   onProjectPersisted,
 }: ProjectEditorPanelProps): React.ReactElement => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [pendingTabId, setPendingTabId] =
     useState<PendingNavigationTarget>(null);
@@ -129,6 +134,64 @@ export const ProjectEditorPanel = ({
   useFocusTrap(containerRef, isOpen);
 
   const effectiveActiveTab = project ? activeTab : PROJECT_TABS.DETAILS;
+
+  const handleTabPrefetch = useCallback(
+    (tabId: ProjectTabId) => {
+      if (!project?.id) return;
+
+      switch (tabId) {
+        case PROJECT_TABS.REHEARSALS:
+          queryClient.prefetchQuery({
+            queryKey: projectKeys.rehearsals.byProject(project.id),
+            queryFn: () =>
+              ProjectService.getRehearsalsByProject(project.id as string),
+          });
+          break;
+        case PROJECT_TABS.CAST:
+        case PROJECT_TABS.MATRIX:
+          queryClient.prefetchQuery({
+            queryKey: projectKeys.participations.byProject(project.id),
+            queryFn: () =>
+              ProjectService.getParticipationsByProject(project.id as string),
+          });
+          break;
+        case PROJECT_TABS.CREW:
+          queryClient.prefetchQuery({
+            queryKey: projectKeys.crewAssignments.byProject(project.id),
+            queryFn: () =>
+              ProjectService.getCrewAssignmentsByProject(project.id as string),
+          });
+          queryClient.prefetchQuery({
+            queryKey: projectKeys.dictionaries.collaborators,
+            queryFn: ProjectService.getCollaboratorsDictionary,
+          });
+          break;
+        case PROJECT_TABS.MICRO_CAST:
+          queryClient.prefetchQuery({
+            queryKey: projectKeys.pieceCastings.byProject(project.id),
+            queryFn: () =>
+              ProjectService.getPieceCastingsByProject(project.id as string),
+          });
+          queryClient.prefetchQuery({
+            queryKey: projectKeys.dictionaries.pieces,
+            queryFn: ProjectService.getPiecesDictionary,
+          });
+          break;
+        case PROJECT_TABS.PROGRAM:
+          queryClient.prefetchQuery({
+            queryKey: projectKeys.program.byProject(project.id),
+            queryFn: () =>
+              ProjectService.getProgramByProject(project.id as string),
+          });
+          queryClient.prefetchQuery({
+            queryKey: projectKeys.dictionaries.pieces,
+            queryFn: ProjectService.getPiecesDictionary,
+          });
+          break;
+      }
+    },
+    [project?.id, queryClient],
+  );
 
   const handleCloseAttempt = useCallback(() => {
     if (hasUnsavedChanges) {
@@ -318,122 +381,124 @@ export const ProjectEditorPanel = ({
                 className="h-full w-full rounded-none md:rounded-[2rem] border-ethereal-incense/20"
               >
                 <div className="flex h-full flex-col">
-                <div className="relative flex-shrink-0 border-b border-ethereal-incense/10 bg-ethereal-marble/90 px-6 pb-5 pt-8 backdrop-blur-2xl md:px-10">
-                  <div className="flex items-start justify-between gap-6">
-                    <div className="max-w-4xl space-y-3">
-                      <Eyebrow color="muted">
-                        {project
-                          ? t("projects.editor.workspace")
-                          : t("projects.editor.new_project")}
-                      </Eyebrow>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <Heading as="h2" size="4xl" weight="medium">
+                  <div className="relative flex-shrink-0 border-b border-ethereal-incense/10 bg-ethereal-marble/90 px-6 pb-5 pt-8 backdrop-blur-2xl md:px-10">
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="max-w-4xl space-y-3">
+                        <Eyebrow color="muted">
                           {project
-                            ? project.title
-                            : t("projects.editor.new_project_title")}
-                        </Heading>
-                        {project?.status === PROJECT_STATUS.DONE && (
-                          <div className="rounded-full border border-ethereal-incense/20 bg-ethereal-parchment px-3 py-1.5 text-ethereal-graphite">
-                            <Eyebrow color="inherit">
-                              {t("projects.editor.archive_badge")}
-                            </Eyebrow>
-                          </div>
+                            ? t("projects.editor.workspace")
+                            : t("projects.editor.new_project")}
+                        </Eyebrow>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Heading as="h2" size="4xl" weight="medium">
+                            {project
+                              ? project.title
+                              : t("projects.editor.new_project_title")}
+                          </Heading>
+                          {project?.status === PROJECT_STATUS.DONE && (
+                            <div className="rounded-full border border-ethereal-incense/20 bg-ethereal-parchment px-3 py-1.5 text-ethereal-graphite">
+                              <Eyebrow color="inherit">
+                                {t("projects.editor.archive_badge")}
+                              </Eyebrow>
+                            </div>
+                          )}
+                        </div>
+                        <Text color="muted" className="max-w-3xl">
+                          {project
+                            ? t("projects.editor.workspace_description")
+                            : t("projects.editor.create_description")}
+                        </Text>
+                        {project && activeTabDefinition && (
+                          <Text color="graphite" size="sm">
+                            {t("projects.editor.active_tab")}:{" "}
+                            {t(activeTabDefinition.labelKey)}
+                          </Text>
                         )}
                       </div>
-                      <Text color="muted" className="max-w-3xl">
-                        {project
-                          ? t("projects.editor.workspace_description")
-                          : t("projects.editor.create_description")}
-                      </Text>
-                      {project && activeTabDefinition && (
-                        <Text color="graphite" size="sm">
-                          {t("projects.editor.active_tab")}:{" "}
-                          {t(activeTabDefinition.labelKey)}
-                        </Text>
-                      )}
+
+                      <Button
+                        type="button"
+                        variant="icon"
+                        size="icon"
+                        onClick={handleCloseAttempt}
+                        aria-label={t(
+                          "common.actions.close_panel",
+                          "Zamknij panel (ESC)",
+                        )}
+                        className="shrink-0"
+                      >
+                        <X size={20} aria-hidden="true" />
+                      </Button>
                     </div>
 
-                    <Button
-                      type="button"
-                      variant="icon"
-                      size="icon"
-                      onClick={handleCloseAttempt}
-                      aria-label={t(
-                        "common.actions.close_panel",
-                        "Zamknij panel (ESC)",
-                      )}
-                      className="shrink-0"
-                    >
-                      <X size={20} aria-hidden="true" />
-                    </Button>
+                    {project && (
+                      <GlassCard
+                        variant="light"
+                        padding="sm"
+                        isHoverable={false}
+                        className="mt-6 overflow-hidden"
+                      >
+                        <div
+                          data-scroll-lock-ignore="true"
+                          role="tablist"
+                          aria-label={t("projects.editor.tabs_aria")}
+                          className="flex gap-2 overflow-x-auto touch-pan-x overscroll-contain no-scrollbar"
+                        >
+                          {TAB_CONFIG.map((tab) => {
+                            const isActive = activeTab === tab.id;
+
+                            return (
+                              <Button
+                                key={tab.id}
+                                id={`project-editor-tab-${tab.id.toLowerCase()}`}
+                                type="button"
+                                role="tab"
+                                aria-selected={isActive}
+                                aria-controls={`project-editor-panel-${tab.id.toLowerCase()}`}
+                                tabIndex={isActive ? 0 : -1}
+                                variant={isActive ? "primary" : "ghost"}
+                                size="sm"
+                                onClick={() => handleTabInteraction(tab.id)}
+                                onKeyDown={(event) =>
+                                  handleTabKeyDown(event, tab.id)
+                                }
+                                onMouseEnter={() => handleTabPrefetch(tab.id)}
+                                onFocus={() => handleTabPrefetch(tab.id)}
+                                className={cn(
+                                  "shrink-0",
+                                  isActive && "shadow-sm",
+                                )}
+                                leftIcon={tab.icon}
+                              >
+                                {t(tab.labelKey)}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </GlassCard>
+                    )}
                   </div>
 
-                  {project && (
-                    <GlassCard
-                      variant="light"
-                      padding="sm"
-                      isHoverable={false}
-                      className="mt-6 overflow-hidden"
-                    >
-                      <div
-                        data-scroll-lock-ignore="true"
-                        role="tablist"
-                        aria-label={t("projects.editor.tabs_aria")}
-                        className="flex gap-2 overflow-x-auto touch-pan-x overscroll-contain no-scrollbar"
+                  <div
+                    data-scroll-lock-ignore="true"
+                    className="ethereal-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pb-10 pt-4 md:px-10"
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={effectiveActiveTab}
+                        id={`project-editor-panel-${effectiveActiveTab.toLowerCase()}`}
+                        role="tabpanel"
+                        aria-labelledby={`project-editor-tab-${effectiveActiveTab.toLowerCase()}`}
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -12 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="w-full"
                       >
-                        {TAB_CONFIG.map((tab) => {
-                          const isActive = activeTab === tab.id;
-
-                          return (
-                            <Button
-                              key={tab.id}
-                              id={`project-editor-tab-${tab.id.toLowerCase()}`}
-                              type="button"
-                              role="tab"
-                              aria-selected={isActive}
-                              aria-controls={`project-editor-panel-${tab.id.toLowerCase()}`}
-                              tabIndex={isActive ? 0 : -1}
-                              variant={isActive ? "primary" : "ghost"}
-                              size="sm"
-                              onClick={() => handleTabInteraction(tab.id)}
-                              onKeyDown={(event) =>
-                                handleTabKeyDown(event, tab.id)
-                              }
-                              className={cn(
-                                "shrink-0",
-                                isActive && "shadow-sm",
-                              )}
-                              leftIcon={tab.icon}
-                            >
-                              {t(tab.labelKey)}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </GlassCard>
-                  )}
-                </div>
-
-                <div
-                  data-scroll-lock-ignore="true"
-                  className="ethereal-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pb-10 pt-4 md:px-10"
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={effectiveActiveTab}
-                      id={`project-editor-panel-${effectiveActiveTab.toLowerCase()}`}
-                      role="tabpanel"
-                      aria-labelledby={`project-editor-tab-${effectiveActiveTab.toLowerCase()}`}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -12 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="w-full"
-                    >
-                      {renderActiveTab()}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
+                        {renderActiveTab()}
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
                 </div>
               </GlassCard>
             </motion.div>

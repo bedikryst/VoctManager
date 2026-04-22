@@ -45,7 +45,6 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { useProgramTab } from "../hooks/useProgramTab";
 import type { ProgramTabItem } from "../types";
@@ -247,7 +246,6 @@ export const ProgramTab = ({
   const { t } = useTranslation();
   const {
     programItems,
-    isLoading,
     isSaving,
     isDirty,
     searchQuery,
@@ -357,11 +355,7 @@ export const ProgramTab = ({
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center p-12">
-            <EtherealLoader />
-          </div>
-        ) : programItems.length > 0 ? (
+        {programItems.length > 0 ? (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
