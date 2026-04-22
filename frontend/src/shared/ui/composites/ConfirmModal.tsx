@@ -95,7 +95,7 @@ export const ConfirmModal = ({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-focus-trap flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-(--z-focus-trap) flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -120,12 +120,7 @@ export const ConfirmModal = ({
                   <AlertTriangle size={24} aria-hidden="true" />
                 </div>
                 <div className="pt-1">
-                  <Heading
-                    as="h3"
-                    id={titleId}
-                    size="lg"
-                    weight="bold"
-                  >
+                  <Heading as="h3" id={titleId} size="lg" weight="bold">
                     {title}
                   </Heading>
                   <Text id={descriptionId} className="mt-2" color="muted">
