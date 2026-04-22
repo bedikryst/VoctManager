@@ -11,7 +11,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2,
   Banknote,
   Users,
   Wrench,
@@ -21,8 +20,19 @@ import {
 } from "lucide-react";
 
 import { useBudgetTab } from "../hooks/useBudgetTab";
+import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import {
+  Eyebrow,
+  Heading,
+  Text,
+  Metric,
+  Unit,
+} from "@/shared/ui/primitives/typography";
 
 interface BudgetTabProps {
   projectId: string;
@@ -50,13 +60,13 @@ export const BudgetTab = ({
   if (isLoading) {
     return (
       <div className="flex justify-center p-12">
-        <Loader2 className="animate-spin text-stone-400" aria-hidden="true" />
+        <EtherealLoader />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-24 relative space-y-8">
+    <div className="relative mx-auto max-w-4xl space-y-8 pb-24">
       {/* FLOATING ACTION BAR (FAB) */}
       <AnimatePresence>
         {isDirty && (
@@ -66,121 +76,146 @@ export const BudgetTab = ({
             animate={{ y: 0, opacity: 1, x: "-50%" }}
             exit={{ y: 100, opacity: 0, x: "-50%" }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 md:bottom-10 left-1/2 z-[200] w-[90%] max-w-md bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_20px_40px_rgb(0,0,0,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-2xl p-4 flex items-center justify-between"
+            className="fixed bottom-6 left-1/2 z-(--z-toast) w-[90%] max-w-md md:bottom-10"
           >
-            <div className="flex flex-col ml-2">
-              <span className="text-[10px] font-bold antialiased uppercase tracking-widest text-brand">
-                {t("projects.budget.fab.unsaved", "Niezapisane Zmiany")}
-              </span>
-              <span className="text-xs text-stone-500">
-                {t(
-                  "projects.budget.fab.description",
-                  "Wprowadziłeś zmiany w stawkach.",
-                )}
-              </span>
-            </div>
+            <GlassCard
+              variant="solid"
+              padding="sm"
+              isHoverable={false}
+              className="flex items-center justify-between gap-4 rounded-2xl"
+            >
+              <div className="ml-2 flex flex-col">
+                <Eyebrow color="gold">
+                  {t("projects.budget.fab.unsaved", "Niezapisane Zmiany")}
+                </Eyebrow>
+                <Text size="xs" color="muted">
+                  {t(
+                    "projects.budget.fab.description",
+                    "Wprowadziłeś zmiany w stawkach.",
+                  )}
+                </Text>
+              </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                disabled={isSaving}
-                className="!border-transparent hover:!bg-stone-100 !text-stone-500 hover:!text-stone-800"
-              >
-                {t("common.actions.cancel", "Anuluj")}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleBulkSave}
-                disabled={isSaving}
-                isLoading={isSaving}
-                leftIcon={
-                  !isSaving ? <Save size={16} aria-hidden="true" /> : undefined
-                }
-              >
-                {t("common.actions.save", "Zapisz")}
-              </Button>
-            </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={handleReset}
+                  disabled={isSaving}
+                >
+                  {t("common.actions.cancel", "Anuluj")}
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleBulkSave}
+                  disabled={isSaving}
+                  isLoading={isSaving}
+                  leftIcon={
+                    !isSaving ? (
+                      <Save size={16} aria-hidden="true" />
+                    ) : undefined
+                  }
+                >
+                  {t("common.actions.save", "Zapisz")}
+                </Button>
+              </div>
+            </GlassCard>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="flex items-center gap-3 border-b border-stone-200/60 pb-6">
-        <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm flex-shrink-0">
+      <div className="flex items-center gap-3 border-b border-ethereal-incense/20 pb-6">
+        <GlassCard
+          variant="light"
+          padding="none"
+          isHoverable={false}
+          className="flex h-10 w-10 shrink-0 items-center justify-center border-ethereal-sage/30 bg-ethereal-sage/10 text-ethereal-sage"
+        >
           <Banknote size={20} aria-hidden="true" />
-        </div>
+        </GlassCard>
         <div>
-          <h2 className="text-xl font-bold text-stone-900 tracking-tight">
+          <Heading as="h2" size="xl" weight="medium">
             {t("projects.budget.sections.estimated", "Szacowany Budżet")}
-          </h2>
-          <p className="text-sm text-stone-500">
+          </Heading>
+          <Text size="sm" color="muted">
             {t(
               "projects.budget.sections.description",
               "Zarządzaj kosztami osobowymi",
             )}
-          </p>
+          </Text>
         </div>
       </div>
 
       {/* KPI DASHBOARD */}
-      <GlassCard className="p-6 md:p-8">
-        <h3 className="text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-6 flex items-center gap-2">
-          <Sparkles size={14} className="text-brand" aria-hidden="true" />
-          {t("projects.budget.kpi.calculation", "Kalkulacja")}
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
+        <div className="mb-6 flex items-center gap-2">
+          <Sparkles
+            size={14}
+            className="text-ethereal-gold"
+            aria-hidden="true"
+          />
+          <Eyebrow color="muted">
+            {t("projects.budget.kpi.calculation", "Kalkulacja")}
+          </Eyebrow>
+        </div>
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">
+            <Eyebrow color="muted" className="mb-1">
               {t("projects.budget.kpi.cast_fees", "Stawki (Obsada)")}
-            </span>
-            <span className="text-2xl font-bold text-stone-800 tracking-tight">
-              {kpi.castTotal.toLocaleString("pl-PL")}{" "}
-              <span className="text-sm text-stone-400 font-medium">
-                {t("common.currency", "PLN")}
-              </span>
-            </span>
+            </Eyebrow>
+            <div className="flex items-baseline gap-1.5">
+              <Metric>{kpi.castTotal.toLocaleString("pl-PL")}</Metric>
+              <Unit>{t("common.currency", "PLN")}</Unit>
+            </div>
           </div>
-          <div className="flex flex-col border-l border-stone-100 pl-6">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">
+          <div className="flex flex-col border-l border-ethereal-incense/10 pl-6">
+            <Eyebrow color="muted" className="mb-1">
               {t("projects.budget.kpi.crew_fees", "Stawki (Ekipa)")}
-            </span>
-            <span className="text-2xl font-bold text-stone-800 tracking-tight">
-              {kpi.crewTotal.toLocaleString("pl-PL")}{" "}
-              <span className="text-sm text-stone-400 font-medium">
-                {t("common.currency", "PLN")}
-              </span>
-            </span>
+            </Eyebrow>
+            <div className="flex items-baseline gap-1.5">
+              <Metric>{kpi.crewTotal.toLocaleString("pl-PL")}</Metric>
+              <Unit>{t("common.currency", "PLN")}</Unit>
+            </div>
           </div>
-          <div className="flex flex-col border-l border-stone-100 pl-6">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1 flex items-center gap-1.5">
-              {t("projects.budget.kpi.missing", "Braki")}{" "}
+          <div className="flex flex-col border-l border-ethereal-incense/10 pl-6">
+            <div className="mb-1 flex items-center gap-1.5">
+              <Eyebrow color="muted">
+                {t("projects.budget.kpi.missing", "Braki")}
+              </Eyebrow>
               {kpi.missingCount > 0 && (
                 <AlertCircle
                   size={12}
-                  className="text-orange-500"
+                  className="text-ethereal-crimson"
                   aria-hidden="true"
                 />
               )}
-            </span>
-            <span
-              className={`text-2xl font-bold tracking-tight ${kpi.missingCount > 0 ? "text-orange-600" : "text-stone-800"}`}
-            >
-              {kpi.missingCount}{" "}
-              <span className="text-[10px] uppercase text-stone-400 font-bold tracking-widest">
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <Metric
+                className={
+                  kpi.missingCount > 0
+                    ? "text-ethereal-crimson"
+                    : "text-ethereal-graphite"
+                }
+              >
+                {kpi.missingCount}
+              </Metric>
+              <Unit>
                 {t("projects.budget.kpi.missing_desc", "poz. bez stawki")}
-              </span>
-            </span>
+              </Unit>
+            </div>
           </div>
-          <div className="flex flex-col border-l border-stone-100 pl-6 bg-emerald-50/50 -my-4 -mr-4 py-4 pr-4 rounded-r-2xl">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-1">
+          <div className="flex flex-col rounded-r-2xl border-l border-ethereal-incense/10 bg-ethereal-sage/5 -my-4 -mr-4 py-4 pl-6 pr-4">
+            <Eyebrow color="sage" className="mb-1">
               {t("projects.budget.kpi.total", "Suma Kosztów")}
-            </span>
-            <span className="text-3xl font-bold text-emerald-700 tracking-tight">
-              {kpi.grandTotal.toLocaleString("pl-PL")}{" "}
-              <span className="text-sm text-emerald-600/70 font-medium">
+            </Eyebrow>
+            <div className="flex items-baseline gap-1.5">
+              <Metric className="text-ethereal-sage">
+                {kpi.grandTotal.toLocaleString("pl-PL")}
+              </Metric>
+              <Unit className="text-ethereal-sage/70">
                 {t("common.currency", "PLN")}
-              </span>
-            </span>
+              </Unit>
+            </div>
           </div>
         </div>
       </GlassCard>
@@ -188,15 +223,26 @@ export const BudgetTab = ({
       {/* CAST SECTION */}
       {enrichedCast.length > 0 ? (
         <div className="space-y-4">
-          <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2 px-1">
-            <Users size={16} className="text-brand" aria-hidden="true" />
-            {t("projects.budget.sections.cast", "Obsada Wykonawcza")}
-            <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md ml-2">
+          <div className="flex items-center gap-2 px-1">
+            <Users
+              size={16}
+              className="text-ethereal-gold"
+              aria-hidden="true"
+            />
+            <Text weight="bold">
+              {t("projects.budget.sections.cast", "Obsada Wykonawcza")}
+            </Text>
+            <Badge variant="neutral" className="ml-2">
               {enrichedCast.length} {t("common.people_short", "os.")}
-            </span>
-          </h3>
-          <div className="bg-white/60 border border-stone-200/60 rounded-2xl shadow-sm overflow-hidden">
-            <div className="divide-y divide-stone-100">
+            </Badge>
+          </div>
+          <GlassCard
+            variant="light"
+            padding="none"
+            isHoverable={false}
+            className="overflow-hidden"
+          >
+            <div className="divide-y divide-ethereal-incense/10">
               {enrichedCast.map((participation) => {
                 const safeId = String(participation.id);
                 const isItemDirty = !!dirtyFees[safeId];
@@ -210,21 +256,24 @@ export const BudgetTab = ({
                 return (
                   <div
                     key={participation.id}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 transition-colors ${
-                      isItemDirty ? "bg-blue-50/30" : "hover:bg-stone-50/50"
-                    }`}
+                    className={cn(
+                      "flex flex-col justify-between gap-4 p-4 transition-colors sm:flex-row sm:items-center",
+                      isItemDirty
+                        ? "bg-ethereal-gold/5"
+                        : "hover:bg-ethereal-marble/50",
+                    )}
                   >
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-stone-800">
+                      <Text size="sm" weight="bold">
                         {participation.artistData.first_name}{" "}
                         {participation.artistData.last_name}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mt-0.5">
+                      </Text>
+                      <Eyebrow color="muted" className="mt-0.5">
                         {participation.artistData.voice_type}
-                      </span>
+                      </Eyebrow>
                     </div>
-                    <div className="relative w-full sm:w-48 flex-shrink-0">
-                      <input
+                    <div className="relative w-full shrink-0 sm:w-48">
+                      <Input
                         type="number"
                         placeholder={t(
                           "projects.budget.input_placeholder",
@@ -234,18 +283,20 @@ export const BudgetTab = ({
                         onChange={(e) =>
                           handleFeeChange(safeId, e.target.value, "cast")
                         }
-                        className={`w-full px-4 py-2.5 text-sm font-bold text-right text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all !pr-10 ${
-                          isItemDirty ? "!bg-white !border-brand/30" : ""
-                        }`}
+                        className={cn(
+                          "pr-12 text-right font-bold",
+                          isItemDirty &&
+                            "!border-ethereal-gold/40 !bg-white/90",
+                        )}
                       />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-stone-400 pointer-events-none">
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/40">
                         {t("common.currency", "PLN")}
                       </span>
                       {currentValue === "" && (
-                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full hidden sm:block">
-                          <span className="bg-orange-100 text-orange-600 text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
+                        <div className="absolute -left-3 top-1/2 hidden -translate-x-full -translate-y-1/2 sm:block">
+                          <Badge variant="danger">
                             {t("projects.budget.missing_fee", "Brak stawki")}
-                          </span>
+                          </Badge>
                         </div>
                       )}
                     </div>
@@ -253,32 +304,52 @@ export const BudgetTab = ({
                 );
               })}
             </div>
-          </div>
+          </GlassCard>
         </div>
       ) : (
-        <div className="text-center py-8 bg-stone-50/50 rounded-2xl border border-dashed border-stone-200 flex flex-col items-center">
-          <Users size={24} className="text-stone-300 mb-2" aria-hidden="true" />
-          <p className="text-[11px] uppercase tracking-widest font-bold antialiased text-stone-500">
+        <GlassCard
+          variant="light"
+          padding="lg"
+          isHoverable={false}
+          className="flex flex-col items-center border-dashed text-center"
+        >
+          <Users
+            size={24}
+            className="mb-2 text-ethereal-graphite/40"
+            aria-hidden="true"
+          />
+          <Eyebrow color="muted">
             {t(
               "projects.budget.empty.cast",
               "Brak obsady przypisanej do projektu.",
             )}
-          </p>
-        </div>
+          </Eyebrow>
+        </GlassCard>
       )}
 
       {/* CREW SECTION */}
       {enrichedCrew.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2 px-1">
-            <Wrench size={16} className="text-brand" aria-hidden="true" />
-            {t("projects.budget.sections.crew", "Ekipa Realizacyjna")}
-            <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md ml-2">
+          <div className="flex items-center gap-2 px-1">
+            <Wrench
+              size={16}
+              className="text-ethereal-gold"
+              aria-hidden="true"
+            />
+            <Text weight="bold">
+              {t("projects.budget.sections.crew", "Ekipa Realizacyjna")}
+            </Text>
+            <Badge variant="neutral" className="ml-2">
               {enrichedCrew.length} {t("common.people_short", "os.")}
-            </span>
-          </h3>
-          <div className="bg-white/60 border border-stone-200/60 rounded-2xl shadow-sm overflow-hidden">
-            <div className="divide-y divide-stone-100">
+            </Badge>
+          </div>
+          <GlassCard
+            variant="light"
+            padding="none"
+            isHoverable={false}
+            className="overflow-hidden"
+          >
+            <div className="divide-y divide-ethereal-incense/10">
               {enrichedCrew.map((assignment) => {
                 const safeId = String(assignment.id);
                 const isItemDirty = !!dirtyFees[safeId];
@@ -291,22 +362,25 @@ export const BudgetTab = ({
                 return (
                   <div
                     key={assignment.id}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 transition-colors ${
-                      isItemDirty ? "bg-blue-50/30" : "hover:bg-stone-50/50"
-                    }`}
+                    className={cn(
+                      "flex flex-col justify-between gap-4 p-4 transition-colors sm:flex-row sm:items-center",
+                      isItemDirty
+                        ? "bg-ethereal-gold/5"
+                        : "hover:bg-ethereal-marble/50",
+                    )}
                   >
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-stone-800">
+                      <Text size="sm" weight="bold">
                         {assignment.crewData.first_name}{" "}
                         {assignment.crewData.last_name}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mt-0.5">
+                      </Text>
+                      <Eyebrow color="muted" className="mt-0.5">
                         {assignment.role_description ||
                           assignment.crewData.specialty}
-                      </span>
+                      </Eyebrow>
                     </div>
-                    <div className="relative w-full sm:w-48 flex-shrink-0">
-                      <input
+                    <div className="relative w-full shrink-0 sm:w-48">
+                      <Input
                         type="number"
                         placeholder={t(
                           "projects.budget.input_placeholder",
@@ -316,18 +390,20 @@ export const BudgetTab = ({
                         onChange={(e) =>
                           handleFeeChange(safeId, e.target.value, "crew")
                         }
-                        className={`w-full px-4 py-2.5 text-sm font-bold text-right text-stone-800 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all !pr-10 ${
-                          isItemDirty ? "!bg-white !border-brand/30" : ""
-                        }`}
+                        className={cn(
+                          "pr-12 text-right font-bold",
+                          isItemDirty &&
+                            "!border-ethereal-gold/40 !bg-white/90",
+                        )}
                       />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-stone-400 pointer-events-none">
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/40">
                         {t("common.currency", "PLN")}
                       </span>
                       {currentValue === "" && (
-                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full hidden sm:block">
-                          <span className="bg-orange-100 text-orange-600 text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
+                        <div className="absolute -left-3 top-1/2 hidden -translate-x-full -translate-y-1/2 sm:block">
+                          <Badge variant="danger">
                             {t("projects.budget.missing_fee", "Brak stawki")}
-                          </span>
+                          </Badge>
                         </div>
                       )}
                     </div>
@@ -335,7 +411,7 @@ export const BudgetTab = ({
                 );
               })}
             </div>
-          </div>
+          </GlassCard>
         </div>
       )}
     </div>

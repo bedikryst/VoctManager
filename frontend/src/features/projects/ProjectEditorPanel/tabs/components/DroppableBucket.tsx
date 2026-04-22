@@ -9,6 +9,7 @@
 import React from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/shared/lib/utils";
 
 export interface DroppableBucketProps {
   id: string;
@@ -44,17 +45,19 @@ export function DroppableBucket({
             )
           : t("projects.micro_cast.bucket.aria", "Sekcja upuszczania")
       }
-      className={`relative rounded-xl transition-all duration-200 ${
+      className={cn(
+        "relative rounded-xl transition-all duration-200",
         isOver
-          ? "bg-brand/5 ring-2 ring-brand/20 shadow-inner"
-          : "bg-transparent border border-transparent"
-      } ${className}`}
+          ? "bg-ethereal-gold/5 ring-2 ring-ethereal-gold/20 shadow-inner"
+          : "border border-transparent bg-transparent",
+        className,
+      )}
     >
       {isOver && (
-        <div className="absolute inset-0 bg-gradient-to-b from-brand/5 to-transparent rounded-xl pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-b from-ethereal-gold/5 to-transparent" />
       )}
 
-      <div className="relative z-10 h-full flex flex-col">{children}</div>
+      <div className="relative z-10 flex h-full flex-col">{children}</div>
     </div>
   );
 }

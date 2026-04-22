@@ -11,7 +11,12 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@dnd-kit/core";
 import { GripVertical, Pencil, Loader2 } from "lucide-react";
+
 import type { Artist, PieceCasting } from "@/shared/types";
+import { cn } from "@/shared/lib/utils";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface DraggableArtistProps {
   participationId: string;
@@ -50,93 +55,113 @@ export function DraggableArtist({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      className={`group px-2 py-1.5 text-[10px] font-bold antialiased uppercase tracking-wider rounded-xl flex items-center justify-between gap-2 transition-all 
-                ${
-                  isOverlay
-                    ? "bg-brand text-white shadow-2xl scale-105 rotate-2 border border-brand-dark"
-                    : "bg-white border border-stone-200/80 text-stone-700 shadow-sm hover:border-brand/40"
-                } 
-                ${isDragging && !isOverlay ? "opacity-30" : ""}
-            `}
-    >
-      <div className="flex items-center gap-1.5 overflow-hidden flex-1">
-        <div
-          {...listeners}
-          {...attributes}
-          className={`cursor-grab active:cursor-grabbing p-1 -mr-2 -ml-1 rounded transition-colors ${
-            isOverlay
-              ? "text-white/70"
-              : "text-stone-300 hover:text-brand hover:bg-stone-100/50"
-          }`}
-          aria-label={t(
-            "projects.micro_cast.artist.drag_aria",
-            "Przeciągnij {{name}}",
-            { name: artist.first_name },
-          )}
-        >
-          <GripVertical size={14} aria-hidden="true" />
+    <div ref={setNodeRef}>
+      <GlassCard
+        variant={isOverlay ? "solid" : "light"}
+        padding="none"
+        isHoverable={false}
+        className={cn(
+          "group flex items-center justify-between gap-2 px-2 py-1.5 transition-all",
+          isOverlay
+            ? "scale-105 rotate-2 border-ethereal-gold/50 shadow-glass-ethereal ring-2 ring-ethereal-gold/20"
+            : "hover:border-ethereal-gold/40",
+          isDragging && !isOverlay ? "opacity-30" : "",
+        )}
+      >
+        <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
+          <div
+            {...listeners}
+            {...attributes}
+            className={cn(
+              "cursor-grab p-1 -ml-1 rounded transition-colors active:cursor-grabbing",
+              isOverlay
+                ? "text-ethereal-gold"
+                : "text-ethereal-graphite/40 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
+            )}
+            aria-label={t(
+              "projects.micro_cast.artist.drag_aria",
+              "Przeciągnij {{name}}",
+              { name: artist.first_name },
+            )}
+          >
+            <GripVertical size={14} aria-hidden="true" />
+          </div>
+
+          <div className="flex shrink-0 max-w-[100px] items-center gap-1 sm:max-w-[140px]">
+            <Eyebrow color={isOverlay ? "gold" : "muted"} className="shrink-0">
+              ({voiceTypeInitial})
+            </Eyebrow>
+            <Text
+              size="xs"
+              weight="bold"
+              truncate
+              className={
+                isOverlay ? "text-ethereal-ink" : "text-ethereal-graphite"
+              }
+            >
+              {artist.first_name} {artist.last_name}
+            </Text>
+          </div>
+
+          {casting &&
+            !isOverlay &&
+            (isEditing ? (
+              <input
+                autoFocus
+                value={noteValue}
+                onChange={(e) => setNoteValue(e.target.value)}
+                onBlur={handleSaveNote}
+                onKeyDown={(e) => e.key === "Enter" && handleSaveNote()}
+                className="ml-1 w-16 sm:w-20 rounded border border-ethereal-sage/30 bg-ethereal-sage/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-ethereal-sage outline-none placeholder:text-ethereal-sage/40 focus:border-ethereal-sage/60 focus:ring-1 focus:ring-ethereal-sage/40"
+                placeholder={t(
+                  "projects.micro_cast.artist.note_placeholder",
+                  "Notatka...",
+                )}
+              />
+            ) : casting.notes ? (
+              <button
+                onClick={() => !isTemp && setIsEditing(true)}
+                disabled={isTemp}
+                className={cn(
+                  "ml-1 max-w-[60px] truncate rounded border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest transition-colors sm:max-w-[80px]",
+                  isTemp
+                    ? "border-ethereal-incense/20 bg-ethereal-parchment/50 text-ethereal-graphite/40"
+                    : "border-ethereal-sage/30 bg-ethereal-sage/10 text-ethereal-sage hover:bg-ethereal-sage/20",
+                )}
+                title={casting.notes}
+              >
+                {casting.notes}
+              </button>
+            ) : null)}
         </div>
 
-        <span className="truncate max-w-[100px] sm:max-w-[140px] flex-shrink-0">
-          <span className={isOverlay ? "text-white/80" : "text-stone-400"}>
-            ({voiceTypeInitial})
-          </span>{" "}
-          {artist.first_name} {artist.last_name}
-        </span>
-
-        {casting &&
-          !isOverlay &&
-          (isEditing ? (
-            <input
-              autoFocus
-              value={noteValue}
-              onChange={(e) => setNoteValue(e.target.value)}
-              onBlur={handleSaveNote}
-              onKeyDown={(e) => e.key === "Enter" && handleSaveNote()}
-              className="w-16 sm:w-20 px-1.5 py-0.5 text-[9px] bg-blue-50 text-brand border border-blue-200 rounded outline-none focus:ring-1 focus:ring-brand ml-1 placeholder-blue-300"
-              placeholder={t(
-                "projects.micro_cast.artist.note_placeholder",
-                "Notatka...",
-              )}
-            />
-          ) : casting.notes ? (
-            <button
-              onClick={() => !isTemp && setIsEditing(true)}
-              disabled={isTemp}
-              className={`ml-1 px-1.5 py-0.5 rounded text-[8px] font-bold truncate max-w-[60px] sm:max-w-[80px] transition-colors
-                                ${
-                                  isTemp
-                                    ? "bg-stone-100 text-stone-400"
-                                    : "bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200"
-                                }
-                            `}
-              title={casting.notes}
-            >
-              {casting.notes}
-            </button>
-          ) : null)}
-      </div>
-
-      {casting && !casting.notes && !isEditing && !isOverlay && (
-        <button
-          onClick={() => setIsEditing(true)}
-          disabled={isTemp}
-          className={`p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
-            isTemp
-              ? "text-stone-300"
-              : "text-stone-400 hover:text-brand hover:bg-stone-100"
-          }`}
-          title={t("projects.micro_cast.artist.add_note", "Dodaj notatkę")}
-        >
-          {isTemp ? (
-            <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-          ) : (
-            <Pencil size={12} aria-hidden="true" />
-          )}
-        </button>
-      )}
+        {casting && !casting.notes && !isEditing && !isOverlay && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsEditing(true)}
+            disabled={isTemp}
+            className={cn(
+              "h-5 w-5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100",
+              isTemp
+                ? "text-ethereal-graphite/30"
+                : "text-ethereal-graphite/60 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
+            )}
+            title={t("projects.micro_cast.artist.add_note", "Dodaj notatkę")}
+            aria-label={t(
+              "projects.micro_cast.artist.add_note",
+              "Dodaj notatkę",
+            )}
+          >
+            {isTemp ? (
+              <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Pencil size={12} aria-hidden="true" />
+            )}
+          </Button>
+        )}
+      </GlassCard>
     </div>
   );
 }
