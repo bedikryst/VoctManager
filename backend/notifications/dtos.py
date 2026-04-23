@@ -103,3 +103,10 @@ class NotificationPreferenceUpdateDTO(BaseModel):
     email_enabled: Optional[bool] = Field(None, description="Toggle Email delivery.")
     push_enabled: Optional[bool] = Field(None, description="Toggle Push delivery.")
     sms_enabled: Optional[bool] = Field(None, description="Toggle SMS delivery.")
+
+
+class ManagerActionMetadata(EnterpriseBaseDTO):
+    project_name: str
+    artist_name: str
+    action_details: str  # np. "Accepted", "Declined", "Updated excuse note"
+    rehearsal_date: Optional[str] = None

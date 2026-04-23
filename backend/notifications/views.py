@@ -6,14 +6,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
-from .models import Notification
+from .models import Notification, NotificationPreference
 from .serializers import (
     NotificationSerializer,
     PushDeviceRegisterSerializer,
     NotificationPreferenceUpdateSerializer
 )
 from .dtos import PushDeviceRegisterDTO, NotificationPreferenceUpdateDTO
-from .services import PushDispatcherService, NotificationPreferenceService
+from .services import NotificationPreferenceService
+from .push_service import PushDispatcherService
 
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -94,7 +95,19 @@ class NotificationPreferenceAPIView(views.APIView):
     Bound exclusively to the currently authenticated user.
     """
     permission_classes = [IsAuthenticated]
-
+    
+    def get(self, request: Request) -> Response:
+        """Returns the current user's notification preferences in a structured format."""
+        prefs = NotificationPreference.objects.filter(user=request.user)
+        data = {
+            p.notification_type: {
+                "email": p.email_enabled,
+                "push": p.push_enabled,
+                "sms": p.sms_enabled
+            } for p in prefs
+        }
+        return Response(data)
+    
     def patch(self, request: Request) -> Response:
         """Updates specific notification channels based on notification_type."""
         serializer = NotificationPreferenceUpdateSerializer(data=request.data)

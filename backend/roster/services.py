@@ -25,6 +25,7 @@ from notifications.tasks import send_notification_task, send_bulk_notifications_
 from notifications.email_tasks import send_transactional_email_task
 from notifications.models import NotificationType, NotificationLevel
 from notifications.dtos import (
+    ManagerActionMetadata,
     ProjectInvitationMetadata, 
     ProjectUpdatedMetadata,
     RehearsalScheduledMetadata,
@@ -309,6 +310,22 @@ class ProjectManagementService:
         logger.info(f"Bulk fee updated to {dto.new_fee} for project {dto.project_id} ({count} participants affected).")
         return count
 
+class ManagerNotificationHelper:
+    @staticmethod
+    def notify_managers(notification_type: str, metadata: dict, level: str = NotificationLevel.INFO):
+        """Utility method to send notifications to all Managers and Admins in the system."""
+        manager_ids = User.objects.filter(
+            profile__role__in=['MANAGER', 'ADMIN'],
+            is_active=True
+        ).values_list('id', flat=True)
+        
+        if manager_ids:
+            send_bulk_notifications_task.delay(
+                recipient_ids=[str(uid) for uid in manager_ids],
+                notification_type=notification_type,
+                level=level,
+                metadata=metadata
+            )
 
 class RehearsalOperationsService:
     def schedule_rehearsal(dto: RehearsalCreateDTO, invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
@@ -437,12 +454,26 @@ class RehearsalOperationsService:
         if not dto.is_manager and participation.artist.user_id != dto.requesting_user_id:
             raise AttendanceValidationException("Can only record self-attendance unless you are a Manager.")
 
+
         with transaction.atomic():
             attendance, created = Attendance.objects.update_or_create(
                 rehearsal=rehearsal,
                 participation=participation,
                 defaults={'status': dto.status, 'minutes_late': dto.minutes_late, 'excuse_note': dto.excuse_note}
             )
+
+            if not dto.is_manager:
+                metadata = ManagerActionMetadata(
+                    project_name=attendance.rehearsal.project.title,
+                    artist_name=f"{attendance.participation.artist.first_name} {attendance.participation.artist.last_name}",
+                    action_details=f"Status: {dto.status}. Note: {dto.excuse_note or 'No note'}",
+                    rehearsal_date=attendance.rehearsal.date_time.strftime("%Y-%m-%d %H:%M")
+                ).model_dump(mode="json")
+                
+                transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
+                    notification_type=NotificationType.ATTENDANCE_SUBMITTED,
+                    metadata=metadata
+                ))
             
             if dto.is_manager and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
                 notif_type = NotificationType.ABSENCE_APPROVED if dto.status == 'EXCUSED' else NotificationType.ABSENCE_REJECTED
@@ -457,6 +488,26 @@ class RehearsalOperationsService:
                 
         return attendance
 
+class ParticipationService:
+    @staticmethod
+    def update_status_by_artist(participation: Participation, new_status: str) -> Participation:
+        with transaction.atomic():
+            old_status = participation.status
+            participation.status = new_status
+            participation.save(update_fields=['status', 'updated_at'])
+            
+            metadata = ManagerActionMetadata(
+                project_name=participation.project.title,
+                artist_name=f"{participation.artist.first_name} {participation.artist.last_name}",
+                action_details=f"Changed status from {old_status} to {new_status}"
+            ).model_dump(mode="json")
+            
+            transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
+                notification_type=NotificationType.PARTICIPATION_RESPONSE,
+                metadata=metadata,
+                level=NotificationLevel.WARNING if new_status == 'DECLINED' else NotificationLevel.INFO
+            ))
+        return participation
 
 class CastingAndCrewService:
     @staticmethod

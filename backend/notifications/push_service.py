@@ -5,6 +5,7 @@ from firebase_admin.exceptions import FirebaseError
 from django.utils import translation
 from django.contrib.auth import get_user_model
 from .models import PushDevice
+from .dtos import PushDeviceRegisterDTO
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -75,3 +76,33 @@ class PushDispatcherService:
         except FirebaseError as e:
             logger.error(f"[PushService] Fatal FCM infrastructure error during multicast: {e}", exc_info=True)
             raise
+
+    @classmethod
+    def register_device(cls, dto: PushDeviceRegisterDTO) -> None:
+        """
+        Registers or reactivates a push notification token for the user.
+        Updates device_type if the same token is re-registered under a different platform.
+        """
+        PushDevice.objects.update_or_create(
+            registration_token=dto.registration_token,
+            defaults={
+                'user_id': dto.user_id,
+                'device_type': dto.device_type,
+                'is_active': True,
+                'is_deleted': False
+            }
+        )
+        logger.info(f"[PushService] Device token registered for UID:{dto.user_id}")
+
+    @classmethod
+    def unregister_device(cls, user_id: str, token: str) -> None:
+        """
+        Hard or soft deletes the device token explicitly requested by the client (e.g., on logout).
+        """
+        deleted_count, _ = PushDevice.objects.filter(
+            user_id=user_id,
+            registration_token=token
+        ).delete()
+        
+        if deleted_count > 0:
+            logger.info(f"[PushService] Device token unregistered for UID:{user_id}")

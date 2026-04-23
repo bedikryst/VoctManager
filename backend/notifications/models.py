@@ -47,6 +47,10 @@ class NotificationType(models.TextChoices):
     # --- SYSTEM ---
     SYSTEM_ALERT = 'SYSTEM_ALERT', _('System Maintenance or Alert')
 
+    # --- MANAGER ALERTS ---
+    PARTICIPATION_RESPONSE = 'PARTICIPATION_RESPONSE', _('Artist Project Response')
+    ATTENDANCE_SUBMITTED = 'ATTENDANCE_SUBMITTED', _('Artist Attendance Info')
+
 class Notification(EnterpriseBaseModel):
     """
     Enterprise notification model for user-specific alerts.
