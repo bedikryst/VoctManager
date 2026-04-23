@@ -24,6 +24,8 @@ from .models import NotificationLevel
 logger = logging.getLogger(__name__)
 
 
+# --- 1. CORE NOTIFICATION PROVISIONING ---
+
 @shared_task(
     name="notifications.send_notification",
     bind=True,
@@ -40,9 +42,8 @@ def send_notification_task(
     metadata: Optional[Dict[str, Any]] = None
 ) -> None:
     """
-    Background worker that acts as the entry boundary for the Notification domain.
-    Rehydrates primitive queue payloads into strictly validated DTOs before 
-    delegating to the domain service.
+    Entry boundary. Rehydrates payloads into strictly validated DTOs and delegates to service.
+    (This remains largely unchanged, as NotificationService.create_notification will now call the router via on_commit).
     """
     try:
         dto = NotificationCreateDTO(
@@ -51,13 +52,63 @@ def send_notification_task(
             level=level,
             metadata=metadata or {}
         )
-        
         NotificationService.create_notification(dto=dto)
-        
     except Exception as exc:
         logger.error(f"[Task] send_notification failed for UID:{recipient_id}. Retrying... Reason: {exc}")
         raise self.retry(exc=exc)
 
+# --- 2. MULTI-CHANNEL ROUTING ---
+
+@shared_task(name="notifications.route_notification")
+def route_notification_task(
+    recipient_id: str, 
+    notification_type: str, 
+    metadata: Dict[str, Any]
+) -> None:
+    """
+    Evaluates DB preferences and dynamically spawns isolated transport tasks.
+    Invoked strictly after Notification DB transaction commits.
+    """
+    from .router import NotificationRouter
+    NotificationRouter.route(
+        recipient_id=recipient_id, 
+        notification_type=notification_type, 
+        metadata=metadata
+    )
+
+# --- 3. PUSH TRANSPORT ---
+
+@shared_task(
+    name="notifications.send_push_notification",
+    bind=True,
+    autoretry_for=(Exception,),
+    max_retries=3,
+    retry_backoff=True,
+    retry_jitter=True
+)
+def send_push_notification_task(
+    self, 
+    recipient_id: str, 
+    notification_type: str, 
+    metadata: Dict[str, Any]
+) -> None:
+    """
+    Isolated background task for FCM interactions.
+    Includes automatic retries for temporary Firebase API downtime.
+    """
+    try:
+        from .push_service import PushDispatcherService
+        PushDispatcherService.dispatch_to_user(
+            recipient_id=recipient_id,
+            title_key=f"PUSH_TITLE_{notification_type}",
+            body_key=f"PUSH_BODY_{notification_type}",
+            metadata=metadata
+        )
+    except Exception as exc:
+        logger.error(f"[Task] FCM transport failed for UID:{recipient_id}. Retrying... Reason: {exc}")
+        raise self.retry(exc=exc)
+
+# --- 4. FAN-OUT ORCHESTRATION ---
 
 @shared_task(name="notifications.send_bulk_notifications")
 def send_bulk_notifications_task(
@@ -67,7 +118,9 @@ def send_bulk_notifications_task(
     metadata: Optional[Dict[str, Any]] = None
 ) -> None:
     """
-    Highly optimized Fan-Out orchestrator for broadcast events (e.g., full choir updates).
+    Optimized Fan-Out orchestrator for broadcast events.
+    Maintains compatibility with the new routing flow automatically because it delegates
+    to send_notification_task, which triggers the DB transaction and subsequent routing.
     """
     if not recipient_ids:
         logger.warning("[Task] send_bulk_notifications invoked with an empty recipient list. Aborting.")

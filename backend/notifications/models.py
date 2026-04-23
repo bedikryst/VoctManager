@@ -102,3 +102,96 @@ class Notification(EnterpriseBaseModel):
 
     def __str__(self) -> str:
         return f"[{self.level}] {self.notification_type} for {self.recipient.email}"
+    
+
+class DeviceType(models.TextChoices):
+    """
+    Categorization of push target platforms for payload optimization.
+    """
+    WEB = 'WEB', _('Web Browser')
+    IOS = 'IOS', _('Apple iOS')
+    ANDROID = 'ANDROID', _('Google Android')
+
+
+class PushDevice(EnterpriseBaseModel):
+    """
+    Enterprise registry of user devices authorized to receive Push notifications.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='push_devices',
+        db_index=True,
+        help_text=_("The user entity owning this device.")
+    )
+    registration_token = models.TextField(
+        unique=True,
+        help_text=_("The FCM or APNs device token provided by the client infrastructure.")
+    )
+    device_type = models.CharField(
+        max_length=10,
+        choices=DeviceType.choices,
+        default=DeviceType.WEB,
+        help_text=_("Hardware/Software platform of the registered device.")
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text=_("Indicates whether the token is currently valid. Invalidated automatically by delivery failures.")
+    )
+
+    class Meta:
+        db_table = 'notifications_push_device'
+        verbose_name = _('Push Device')
+        verbose_name_plural = _('Push Devices')
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+        ]
+
+    def __str__(self) -> str:
+        return f"Device [{self.device_type}] for {self.user.email}"
+
+
+class NotificationPreference(EnterpriseBaseModel):
+    """
+    Granular user preferences mapping business events to delivery channels.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notification_preferences',
+        db_index=True,
+        help_text=_("The user defining these preferences.")
+    )
+    notification_type = models.CharField(
+        max_length=50,
+        choices=NotificationType.choices,
+        help_text=_("The specific business event category this preference applies to.")
+    )
+    email_enabled = models.BooleanField(
+        default=True,
+        help_text=_("Delivery authorization for Email channel.")
+    )
+    push_enabled = models.BooleanField(
+        default=True,
+        help_text=_("Delivery authorization for Push channel.")
+    )
+    sms_enabled = models.BooleanField(
+        default=False,
+        help_text=_("Delivery authorization for SMS channel.")
+    )
+
+    class Meta:
+        db_table = 'notifications_preference'
+        verbose_name = _('Notification Preference')
+        verbose_name_plural = _('Notification Preferences')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'notification_type'],
+                condition=models.Q(is_deleted=False),
+                name='unique_active_user_preference_per_type'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"Preferences [{self.notification_type}] for {self.user.email}"

@@ -269,3 +269,8 @@ if not DEBUG:
 # ==========================================
 # Google Maps Platform (Logistics, Geocoding, Time Zones)
 GOOGLE_MAPS_BACKEND_KEY = env("GOOGLE_MAPS_BACKEND_KEY", default=None)
+
+FIREBASE_CREDENTIALS_PATH = os.getenv('FIREBASE_CREDENTIALS_PATH')
+NOTIFICATIONS_PUSH_ENABLED = True
+NOTIFICATIONS_EMAIL_ENABLED = True
+NOTIFICATIONS_SMS_ENABLED = False

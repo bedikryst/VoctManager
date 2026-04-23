@@ -20,7 +20,7 @@ from django.db import transaction
 
 from .models import Notification
 from .dtos import NotificationCreateDTO
-from .email_tasks import send_transactional_email_task
+from .tasks import route_notification_task
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +48,11 @@ class NotificationService:
                     metadata=metadata_payload
                 )
             
-                transaction.on_commit(lambda: send_transactional_email_task.delay(
-                    recipient_id=str(dto.recipient_id), 
-                    notification_type=dto.notification_type,
-                    template_name="system_notification",
-                    metadata=notification.metadata
-                ))
+                transaction.on_commit(lambda: route_notification_task.delay(
+                recipient_id=str(dto.recipient_id), 
+                notification_type=dto.notification_type,
+                metadata=notification.metadata
+            ))
             
             logger.info(f"[NotificationService] Provisioned [{dto.notification_type}] for UID:{dto.recipient_id}")
             return notification

@@ -68,3 +68,4 @@ gemini.md
 .prettierignore
 
 .continue/
+.secrets/

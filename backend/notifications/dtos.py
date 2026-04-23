@@ -84,3 +84,22 @@ class NotificationCreateDTO(EnterpriseBaseDTO):
     notification_type: str = Field(..., max_length=50)
     level: str = Field(..., max_length=20)
     metadata: NotificationMetadataPayload = Field(default_factory=dict)
+
+class PushDeviceRegisterDTO(BaseModel):
+    """DTO for incoming device token registration requests."""
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    user_id: UUID
+    registration_token: str = Field(..., min_length=10, description="The client-provided push token.")
+    device_type: str = Field(default="WEB", description="Platform identifier.")
+
+
+class NotificationPreferenceUpdateDTO(BaseModel):
+    """DTO for granular mutation of user notification preferences."""
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    user_id: UUID
+    notification_type: str = Field(..., description="Target business event category.")
+    email_enabled: Optional[bool] = Field(None, description="Toggle Email delivery.")
+    push_enabled: Optional[bool] = Field(None, description="Toggle Push delivery.")
+    sms_enabled: Optional[bool] = Field(None, description="Toggle SMS delivery.")
