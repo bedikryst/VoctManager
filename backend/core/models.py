@@ -106,7 +106,7 @@ class UserProfile(EnterpriseBaseModel):
     )
     timezone = models.CharField(
         max_length=63,
-        default='UTC',
+        default='Europe/Warsaw',
         help_text=_("Local timezone for this entity. Critical for UI rendering and iCal feeds.")
     )
 

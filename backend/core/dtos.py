@@ -19,7 +19,7 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     last_name: str = Field(..., min_length=1, max_length=150)
     phone_number: Optional[str] = Field(None, max_length=32)
     language: str = Field(default='en', max_length=10)
-    timezone: str = Field(default='UTC', max_length=63)
+    timezone: str = Field(default='Europe/Warsaw', max_length=63)
     
     dietary_preference: str = Field(default='none', max_length=15)
     dietary_notes: str = Field(default='')

@@ -80,7 +80,7 @@ class NotificationCreateDTO(EnterpriseBaseDTO):
     Data Transfer Object strictly typing the payload for notification creation.
     Guarantees structural integrity before passing to Celery and Service layers.
     """
-    recipient_id: UUID
+    recipient_id: Union[int, str, UUID]
     notification_type: str = Field(..., max_length=50)
     level: str = Field(..., max_length=20)
     metadata: NotificationMetadataPayload = Field(default_factory=dict)

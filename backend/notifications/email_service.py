@@ -65,9 +65,32 @@ class EmailDispatcherService:
     """
 
     @classmethod
+    def dispatch(
+        cls, 
+        recipient_email: str, 
+        subject: str, 
+        template_name: str, 
+        context: Dict[str, Any],
+        fallback_language: str = 'en',
+        email_type: str = EmailType.CRITICAL_SECURITY
+    ) -> None:
+        """
+        Synchronous dispatch interface for direct email operations.
+        Enforces contextual internationalization.
+        """
+        with translation.override(fallback_language):
+            cls._dispatch_core(
+                recipient_email=recipient_email,
+                subject=subject,
+                template_name=template_name,
+                context=context,
+                email_type=email_type
+            )
+
+    @classmethod
     def dispatch_from_notification(
         cls, 
-        recipient_id: str, 
+        recipient_id: str,
         notification_type: str, 
         template_name: str, 
         metadata: Dict[str, Any],
