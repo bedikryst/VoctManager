@@ -15,9 +15,7 @@ import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Text } from "@/shared/ui/primitives/typography";
 
 interface SpotifyWidgetProps {
-  /** The raw Spotify URL provided by the user/API */
   playlistUrl?: string | null;
-  /** Adaptive theming for cross-module usage */
   theme?: "light" | "dark";
 }
 
@@ -27,6 +25,7 @@ const getSpotifyEmbedUrl = (url?: string | null): string | null => {
   try {
     const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
     const spotifyUrl = new URL(normalizedUrl);
+
     if (spotifyUrl.hostname !== "open.spotify.com") {
       return null;
     }
@@ -57,7 +56,6 @@ export function SpotifyWidget({
 }: SpotifyWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
   const embedUrl = getSpotifyEmbedUrl(playlistUrl);
-
   const isDark = theme === "dark";
 
   return (

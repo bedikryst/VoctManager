@@ -169,7 +169,7 @@ export const CastTab = ({
   ).length;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-16rem)] max-w-6xl flex-col">
+    <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col">
       <div className="mb-6 flex shrink-0 flex-col gap-4">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div className="flex items-center gap-3">
@@ -243,11 +243,11 @@ export const CastTab = ({
       </div>
 
       <AnimatePresence mode="popLayout" initial={false}>
-        <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden pb-8 md:grid-cols-2 md:gap-8">
+        <div className="grid flex-1 min-h-0 w-full grid-cols-1 gap-6 overflow-hidden pb-8 md:grid-cols-2 md:gap-8">
           <motion.div
             key="available-list"
             layoutId="available-list-container"
-            className={`h-full flex-col [scrollbar-gutter:stable] ${
+            className={`h-full flex-1 min-h-0 flex-col [scrollbar-gutter:stable] ${
               mobileView === "AVAILABLE" ? "flex" : "hidden md:flex"
             }`}
           >
@@ -262,7 +262,7 @@ export const CastTab = ({
               variant="light"
               padding="sm"
               isHoverable={false}
-              className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
+              className="ethereal-scroll flex flex-col min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
             >
               {allArtists
                 .filter((artist) => !assignedIds.has(String(artist.id)))
@@ -276,7 +276,7 @@ export const CastTab = ({
                   />
                 ))}
               {unassignedCount === 0 && (
-                <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-60">
+                <div className="flex h-full min-h-0 flex-col items-center justify-center p-6 text-center opacity-60">
                   <Users
                     size={24}
                     className="mb-2 text-ethereal-graphite/40"
@@ -293,7 +293,7 @@ export const CastTab = ({
           <motion.div
             key="assigned-list"
             layoutId="assigned-list-container"
-            className={`h-full flex-col [scrollbar-gutter:stable] ${
+            className={`flex-col flex-1 min-h-0 h-full [scrollbar-gutter:stable] ${
               mobileView === "ASSIGNED" ? "flex" : "hidden md:flex"
             }`}
           >
@@ -315,7 +315,7 @@ export const CastTab = ({
               variant="light"
               padding="sm"
               isHoverable={false}
-              className="ethereal-scroll flex-1 overflow-y-auto overflow-x-hidden border-ethereal-gold/20 bg-ethereal-gold/5 [scrollbar-gutter:stable]"
+              className="ethereal-scroll flex-1 flex-col min-h-0 overflow-y-auto overflow-x-hidden border-ethereal-gold/20 bg-ethereal-gold/5 [scrollbar-gutter:stable]"
             >
               {allArtists
                 .filter((artist) => assignedIds.has(String(artist.id)))

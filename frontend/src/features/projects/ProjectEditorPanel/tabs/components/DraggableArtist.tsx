@@ -26,7 +26,7 @@ interface DraggableArtistProps {
   onUpdateNote?: (id: string, note: string) => void;
 }
 
-export function DraggableArtist({
+export const DraggableArtist = React.memo(function DraggableArtist({
   participationId,
   artist,
   isOverlay = false,
@@ -166,4 +166,4 @@ export function DraggableArtist({
       </GlassCard>
     </div>
   );
-}
+});

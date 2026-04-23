@@ -1,25 +1,21 @@
 /**
  * @file ProgramWidget.tsx
- * @description Dashboard widget displaying the concert program and casting fulfillment status.
+ * @description Dashboard widget displaying the concert program. Render-only component.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectCard/widgets/ProgramWidget
  */
 
-import React, { useMemo } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { ListOrdered, Music } from "lucide-react";
 
-import type { Project, Piece, VoiceRequirement } from "@/shared/types";
+import type { Project } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
-import {
-  useProjectPiecesDictionary,
-  useProjectPieceCastings,
-  useProjectParticipations,
-} from "../../api/project.read.queries";
+import { useProgramFulfillment } from "../hooks/useProgramFulfillment";
 
 interface ProgramWidgetProps {
   project: Project;
@@ -33,43 +29,8 @@ export function ProgramWidget({
   onOpenMicroCast,
 }: ProgramWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
-
-  const { data: piecesList } = useProjectPiecesDictionary();
-  const { data: pieceCastings } = useProjectPieceCastings(String(project.id));
-  const { data: projectParticipations } = useProjectParticipations(
-    String(project.id),
-  );
-
-  const piecesMap = useMemo<Map<string, Piece>>(
-    () => new Map(piecesList.map((piece) => [String(piece.id), piece])),
-    [piecesList],
-  );
-
-  const participationIds = useMemo<Set<string>>(
-    () => new Set(projectParticipations.map((p) => String(p.id))),
-    [projectParticipations],
-  );
-
-  const totalConcertDurationSeconds = useMemo<number>(() => {
-    return (
-      project.program?.reduce((sum, item) => {
-        const pieceId = item.piece_id || item.piece;
-        const pieceObj = piecesMap.get(String(pieceId));
-        return sum + (pieceObj?.estimated_duration || 0);
-      }, 0) || 0
-    );
-  }, [project.program, piecesMap]);
-
-  const formatTotalDuration = (totalSeconds: number): string | null => {
-    if (!totalSeconds || totalSeconds === 0) return null;
-    const minutes = Math.floor(totalSeconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const remainingMins = minutes % 60;
-
-    if (hours > 0)
-      return `~ ${hours}h ${remainingMins} ${t("projects.program.music_time_min", "min muzyki")}`;
-    return `~ ${minutes} ${t("projects.program.music_time_min", "min muzyki")}`;
-  };
+  const { enrichedProgram, formattedDuration, hasDuration } =
+    useProgramFulfillment(project);
 
   const handleOpenMicroCast = (
     e: React.MouseEvent<HTMLButtonElement>,
@@ -110,77 +71,36 @@ export function ProgramWidget({
         )}
       </div>
 
-      {project.program && project.program.length > 0 ? (
+      {enrichedProgram.length > 0 ? (
         <div className="flex h-full flex-col justify-between">
           <ul className="mb-3 flex-1 space-y-2">
-            {[...project.program]
-              .sort((a, b) => a.order - b.order)
-              .slice(0, 5)
-              .map((item, index) => {
-                const pieceId = item.piece_id || item.piece;
-                const pieceObj = piecesMap.get(String(pieceId));
-                const requirements: VoiceRequirement[] =
-                  pieceObj?.voice_requirements || [];
-                const safeCastings = pieceCastings || [];
-
-                let statusVariant: "success" | "danger" | "neutral" = "neutral";
-                let statusText = t("projects.program.no_reqs", "Brak wymagań");
-
-                if (requirements.length > 0) {
-                  let missingTotal = 0;
-                  requirements.forEach((req) => {
-                    const assignedCount = safeCastings.filter(
-                      (c) =>
-                        String(c.piece) === String(pieceId) &&
-                        c.voice_line === req.voice_line &&
-                        participationIds.has(String(c.participation)),
-                    ).length;
-
-                    if (assignedCount < req.quantity) {
-                      missingTotal += req.quantity - assignedCount;
-                    }
-                  });
-
-                  if (missingTotal > 0) {
-                    statusVariant = "danger";
-                    statusText = t(
-                      "projects.program.unfulfilled",
-                      "Nieobsadzony",
-                    );
-                  } else {
-                    statusVariant = "success";
-                    statusText = t("projects.program.fulfilled", "Obsadzony");
-                  }
-                }
-
-                return (
-                  <li
-                    key={item.id || `program-item-${item.piece}-${index}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-ethereal-incense/10 bg-ethereal-alabaster/60 px-3 py-2"
+            {enrichedProgram.slice(0, 5).map((item, index) => (
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-ethereal-incense/10 bg-ethereal-alabaster/60 px-3 py-2"
+              >
+                <Text
+                  as="span"
+                  size="sm"
+                  weight="medium"
+                  className="min-w-0 truncate pr-2"
+                >
+                  <Text
+                    as="span"
+                    size="sm"
+                    weight="medium"
+                    color="muted"
+                    className="inline-block w-4"
                   >
-                    <Text
-                      as="span"
-                      size="sm"
-                      weight="medium"
-                      className="min-w-0 truncate pr-2"
-                    >
-                      <Text
-                        as="span"
-                        size="sm"
-                        weight="medium"
-                        color="muted"
-                        className="inline-block w-4"
-                      >
-                        {index + 1}.
-                      </Text>{" "}
-                      {item.piece_title || pieceObj?.title}
-                    </Text>
-                    <Badge variant={statusVariant}>{statusText}</Badge>
-                  </li>
-                );
-              })}
+                    {index + 1}.
+                  </Text>{" "}
+                  {item.title}
+                </Text>
+                <Badge variant={item.statusVariant}>{item.statusText}</Badge>
+              </li>
+            ))}
 
-            {project.program.length > 5 && (
+            {enrichedProgram.length > 5 && (
               <li className="pt-2 text-center">
                 <Caption
                   color="muted"
@@ -188,7 +108,7 @@ export function ProgramWidget({
                   className="uppercase tracking-[0.16em]"
                 >
                   {t("projects.program.and_more", "...i {{count}} więcej", {
-                    count: project.program.length - 5,
+                    count: enrichedProgram.length - 5,
                   })}
                 </Caption>
               </li>
@@ -196,12 +116,12 @@ export function ProgramWidget({
           </ul>
 
           <div className="mt-auto flex-shrink-0 border-t border-ethereal-incense/10 pt-3 text-center">
-            {totalConcertDurationSeconds > 0 ? (
+            {hasDuration ? (
               <Badge
                 variant="brand"
                 icon={<Music size={12} aria-hidden="true" />}
               >
-                {formatTotalDuration(totalConcertDurationSeconds)}
+                {formattedDuration}
               </Badge>
             ) : (
               <Caption

@@ -361,7 +361,7 @@ export const ProjectEditorPanel = ({
                 stiffness: 250,
                 mass: 1.2,
               }}
-              className="fixed top-0 bottom-0 right-0 z-[var(--z-nav-sheet)] flex justify-end w-full md:w-[90vw] lg:w-[85vw] max-w-[1600px] p-0 md:p-4 focus:outline-none"
+              className="fixed top-0 bottom-0 right-0 z-(--z-nav-sheet) flex justify-end w-full max-w-[1600px] p-0 md:p-4 focus:outline-none"
             >
               <h2 id="project-editor-title" className="sr-only">
                 {project
@@ -481,7 +481,7 @@ export const ProjectEditorPanel = ({
 
                   <div
                     data-scroll-lock-ignore="true"
-                    className="ethereal-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pb-10 pt-4 md:px-10"
+                    className="ethereal-scroll flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pt-4 md:px-10"
                   >
                     <AnimatePresence mode="wait">
                       <motion.div
@@ -493,7 +493,7 @@ export const ProjectEditorPanel = ({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -12 }}
                         transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="w-full"
+                        className="flex-col flex-1 min-h-0 w-full h-full"
                       >
                         {renderActiveTab()}
                       </motion.div>
