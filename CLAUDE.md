@@ -15,7 +15,7 @@ Tech Stack: React 19, Tailwind CSS v4, TypeScript, Django 6.0, FSD (Feature-Slic
 - **ALWAYS** use our predefined Ethereal tokens from `app/styles/index.css`:
   - **Colors**: `ethereal-alabaster`, `ethereal-parchment`, `ethereal-marble`, `ethereal-gold`, `ethereal-sage`, `ethereal-amethyst`, `ethereal-incense`, `ethereal-ink`, `ethereal-graphite`, `ethereal-crimson`.
   - **Z-Index**: `z-nav-dock` (70), `z-nav-sheet` (80), `z-focus-trap` (90), `z-toast` (100).
-  - **Utilities**: `ethereal-scroll`, `no-scrollbar`, `bg-noise`.
+  - **Utilities**: `no-scrollbar`, `bg-noise`.
   - **Shadows**: `shadow-glass-ethereal`, `shadow-glass-ethereal-hover`, `shadow-glass-solid`.
 
 ## 3. ARCHITECTURE & CODE PURITY (FSD)

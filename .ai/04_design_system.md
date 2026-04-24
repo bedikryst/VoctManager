@@ -119,6 +119,5 @@ When you need to apply utility classes via `className` (e.g., adjusting margins,
 
 **4. Custom Behaviors:**
 
-- **`ethereal-scroll`**: Apply to scrollable containers for elegant, golden-tinted thin scrollbars.
 - **`no-scrollbar`**: Apply to completely hide scrollbars while retaining scroll functionality.
 - **`bg-noise`**: Apply to inject the SVG fractal noise texture into a container.
