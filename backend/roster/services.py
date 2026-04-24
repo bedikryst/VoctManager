@@ -369,7 +369,8 @@ class RehearsalOperationsService:
                 metadata = RehearsalScheduledMetadata(
                     rehearsal_id=rehearsal.id,
                     project_id=rehearsal.project_id,
-                    project_name=rehearsal.project.title
+                    project_name=rehearsal.project.title,
+                    message=f"A new rehearsal has been scheduled for the project '{rehearsal.project.title}'."
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(
@@ -398,13 +399,25 @@ class RehearsalOperationsService:
                 update_data['location'] = location
                 update_data['timezone'] = resolved_timezone
                 
-                if rehearsal.location_id != location.id if location else None:
-                    changes.append("Location")
+                if rehearsal.location_id != (location.id if location else None):
+                    old_loc = rehearsal.location.name if rehearsal.location else "None"
+                    new_loc = location.name if location else "None"
+                    changes.append(f"Location: {old_loc} ➔ {new_loc}")
+
+            from datetime import datetime, date, time
+            def fmt(v):
+                if isinstance(v, datetime): return v.strftime('%d.%m.%Y %H:%M')
+                if isinstance(v, date): return v.strftime('%d.%m.%Y')
+                if isinstance(v, time): return v.strftime('%H:%M')
+                if v is None: return "None"
+                return str(v)
 
             for attr, value in update_data.items():
+                if attr in ['location', 'timezone']: continue
                 old_value = getattr(rehearsal, attr)
                 if old_value != value:
-                    changes.append(FIELD_NAMES.get(attr, attr))
+                    field_name = FIELD_NAMES.get(attr, attr.title())
+                    changes.append(f"{field_name}: {fmt(old_value)} ➔ {fmt(value)}")
                 setattr(rehearsal, attr, value)
                 
             rehearsal.save()
@@ -422,7 +435,8 @@ class RehearsalOperationsService:
                 metadata = RehearsalUpdatedMetadata(
                     rehearsal_id=rehearsal.id,
                     project_name=rehearsal.project.title,
-                    changes=changes
+                    changes=changes,
+                    message=f"Details for a rehearsal in the project '{rehearsal.project.title}' have been updated."
                 ).model_dump(mode="json")
                 
                 level = NotificationLevel.URGENT if "Date / Time" in changes else (NotificationLevel.WARNING if changes else NotificationLevel.INFO)
@@ -487,7 +501,8 @@ class RehearsalOperationsService:
                     project_name=attendance.rehearsal.project.title,
                     artist_name=f"{attendance.participation.artist.first_name} {attendance.participation.artist.last_name}",
                     action_details=f"Status: {dto.status}. Note: {dto.excuse_note or 'No note'}",
-                    rehearsal_date=attendance.rehearsal.date_time.strftime("%Y-%m-%d %H:%M")
+                    rehearsal_date=attendance.rehearsal.date_time.strftime("%Y-%m-%d %H:%M"),
+                    message="An artist has submitted an attendance update."
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
@@ -497,10 +512,12 @@ class RehearsalOperationsService:
             
             if dto.is_manager and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
                 notif_type = NotificationType.ABSENCE_APPROVED if dto.status == 'EXCUSED' else NotificationType.ABSENCE_REJECTED
+                status_text = "approved" if dto.status == 'EXCUSED' else "rejected"
                 metadata = AbsenceStatusMetadata(
                     rehearsal_id=rehearsal.id,
                     project_name=rehearsal.project.title,
-                    rehearsal_date=rehearsal.date_time.strftime("%Y-%m-%d %H:%M")
+                    rehearsal_date=rehearsal.date_time.strftime("%Y-%m-%d %H:%M"),
+                    message=f"Your absence request for the rehearsal on {rehearsal.date_time.strftime('%Y-%m-%d')} has been {status_text}."
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_notification_task.delay(
@@ -523,7 +540,8 @@ class ParticipationService:
             metadata = ManagerActionMetadata(
                 project_name=participation.project.title,
                 artist_name=f"{participation.artist.first_name} {participation.artist.last_name}",
-                action_details=f"Changed status from {old_status} to {new_status}"
+                action_details=f"Changed status from {old_status} to {new_status}",
+                message="An artist has updated their participation status."
             ).model_dump(mode="json")
             
             transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
@@ -544,7 +562,8 @@ class CastingAndCrewService:
                 metadata = PieceCastingMetadata(
                     piece_id=casting.piece_id,
                     piece_title=casting.piece.title,
-                    voice_line=casting.voice_line
+                    voice_line=casting.get_voice_line_display() or casting.voice_line,
+                    message=f"You have been cast in the piece '{casting.piece.title}'."
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_notification_task.delay(
@@ -557,17 +576,31 @@ class CastingAndCrewService:
 
     @staticmethod
     def update_piece_casting(casting: ProjectPieceCasting, validated_data: Dict[str, Any]) -> ProjectPieceCasting:
+        changes = []
         with transaction.atomic():
             for attr, value in validated_data.items():
+                old_value = getattr(casting, attr)
+                if old_value != value:
+                    field_name = attr.replace('_', ' ').title()
+                    if attr == 'voice_line':
+                        from roster.models import VoiceLine
+                        voice_map = dict(VoiceLine.choices)
+                        old_display = voice_map.get(old_value, old_value) if old_value else 'None'
+                        new_display = voice_map.get(value, value) if value else 'None'
+                        changes.append(f"{field_name}: {old_display} ➔ {new_display}")
+                    else:
+                        changes.append(f"{field_name}: {old_value or 'None'} ➔ {value or 'None'}")
                 setattr(casting, attr, value)
             casting.save()
             
             user_id = casting.participation.artist.user_id
-            if user_id:
+            if user_id and changes:
                 metadata = PieceCastingMetadata(
                     piece_id=casting.piece_id,
                     piece_title=casting.piece.title,
-                    voice_line=casting.voice_line
+                    voice_line=casting.get_voice_line_display() or casting.voice_line,
+                    changes=changes,
+                    message=f"Your casting in the piece '{casting.piece.title}' has been updated."
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_notification_task.delay(

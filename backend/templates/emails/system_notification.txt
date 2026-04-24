@@ -9,12 +9,17 @@ VOCTMANAGER
 
 {% if metadata.message %}{{ metadata.message }}
 {% endif %}
+{% if metadata.inviter_name %}
+{% blocktranslate trimmed with project_name=metadata.project_name %}You have been invited to participate in the concert "{{ project_name }}".{% endblocktranslate %}
+{% endif %}
 
 {% if metadata.inviter_name %}{% translate "Invited by:" %} {{ metadata.inviter_name }}
 {% endif %}
 {% if metadata.date_range %}{% translate "Date:" %} {{ metadata.date_range }}
 {% endif %}
 {% if metadata.location %}{% translate "Location:" %} {{ metadata.location }}
+{% endif %}
+{% if metadata.description %}{% translate "Description:" %} {{ metadata.description }}
 {% endif %}
 {% if metadata.voice_line %}{% translate "Voice part:" %} {{ metadata.voice_line }}
 {% endif %}

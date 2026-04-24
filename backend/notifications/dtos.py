@@ -37,11 +37,13 @@ class RehearsalScheduledMetadata(EnterpriseBaseDTO):
     rehearsal_id: UUID
     project_id: UUID
     project_name: str
+    message: Optional[str] = None
 
 class RehearsalUpdatedMetadata(EnterpriseBaseDTO):
     rehearsal_id: UUID
     project_name: str
     changes: List[str]
+    message: Optional[str] = None
 
 class RehearsalCancelledMetadata(EnterpriseBaseDTO):
     project_name: str
@@ -60,11 +62,13 @@ class CrewAssignedMetadata(EnterpriseBaseDTO):
     project_id: UUID
     project_name: str
     role: str
+    message: Optional[str] = None
 
 class AbsenceStatusMetadata(EnterpriseBaseDTO):
     rehearsal_id: UUID
     project_name: str
     rehearsal_date: str
+    message: Optional[str] = None
 
 
 class ManagerActionMetadata(EnterpriseBaseDTO):
@@ -72,6 +76,7 @@ class ManagerActionMetadata(EnterpriseBaseDTO):
     artist_name: str
     action_details: str  # np. "Accepted", "Declined", "Updated excuse note"
     rehearsal_date: Optional[str] = None
+    message: Optional[str] = None
 
 # Polymorphic Payload Definition
 NotificationMetadataPayload = Union[
