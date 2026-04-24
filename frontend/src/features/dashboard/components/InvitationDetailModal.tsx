@@ -53,10 +53,7 @@ const StatusSection = ({
   return (
     <>
       <tr>
-        <td
-          colSpan={4}
-          className={`border-y px-4 py-2 ${sectionBg}`}
-        >
+        <td colSpan={4} className={`border-y px-4 py-2 ${sectionBg}`}>
           <div className="flex items-center gap-2">
             <span
               className={
@@ -103,7 +100,9 @@ const StatusSection = ({
                 </Text>
               </a>
             ) : (
-              <Text size="sm" color="muted">—</Text>
+              <Text size="sm" color="muted">
+                —
+              </Text>
             )}
           </td>
           <td className="px-4 py-2.5">
@@ -119,7 +118,9 @@ const StatusSection = ({
                 </Text>
               </a>
             ) : (
-              <Text size="sm" color="muted">—</Text>
+              <Text size="sm" color="muted">
+                —
+              </Text>
             )}
           </td>
         </tr>
@@ -160,7 +161,7 @@ export const InvitationDetailModal = ({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-(--z-focus-trap) flex items-center justify-center p-4 md:p-8">
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 md:p-8">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -185,7 +186,11 @@ export const InvitationDetailModal = ({
             <div className="flex shrink-0 items-center justify-between border-b border-ethereal-incense/15 bg-ethereal-alabaster/60 px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-ethereal-gold/20 bg-ethereal-gold/10">
-                  <Users size={16} className="text-ethereal-gold" aria-hidden="true" />
+                  <Users
+                    size={16}
+                    className="text-ethereal-gold"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div>
                   <Heading id={titleId} as="h2" size="lg" weight="bold">
@@ -212,25 +217,35 @@ export const InvitationDetailModal = ({
               </Button>
             </div>
 
-            {/* BODY */}
-            <div className="ethereal-scroll min-h-0 flex-1 overflow-y-auto">
+            {/* BODY - ADDED overscroll-contain and pointer-events-auto */}
+            <div className=" min-h-0 flex-1 overflow-y-auto overscroll-contain pointer-events-auto">
               {isLoading ? (
                 <div className="flex h-48 items-center justify-center">
                   <EtherealLoader
-                    message={t("dashboard.admin.inv_loading", "Ładowanie listy...")}
+                    message={t(
+                      "dashboard.admin.inv_loading",
+                      "Ładowanie listy...",
+                    )}
                   />
                 </div>
               ) : isEmpty ? (
                 <div className="flex h-48 flex-col items-center justify-center gap-2 opacity-60">
-                  <UserCheck size={28} className="text-ethereal-graphite/40" aria-hidden="true" />
+                  <UserCheck
+                    size={28}
+                    className="text-ethereal-graphite/40"
+                    aria-hidden="true"
+                  />
                   <Eyebrow color="muted">
-                    {t("dashboard.admin.inv_empty", "Brak uczestników do wyświetlenia")}
+                    {t(
+                      "dashboard.admin.inv_empty",
+                      "Brak uczestników do wyświetlenia",
+                    )}
                   </Eyebrow>
                 </div>
               ) : (
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="sticky top-0 bg-ethereal-marble/95 backdrop-blur-sm">
+                    <tr className="sticky top-0 bg-ethereal-marble/95 backdrop-blur-sm shadow-[0_1px_0_rgba(0,0,0,0.05)] z-10">
                       <th scope="col" className="px-4 py-3 w-[30%]">
                         <Eyebrow color="muted">
                           {t("dashboard.admin.inv_col_concert", "Koncert")}
@@ -254,7 +269,7 @@ export const InvitationDetailModal = ({
                     </tr>
                   </thead>
 
-                  <tbody>
+                  <tbody className="relative z-0">
                     <StatusSection
                       rows={groups.declined}
                       labelKey="dashboard.admin.inv_section_declined"

@@ -83,8 +83,30 @@
 
     @apply text-ethereal-ink font-sans antialiased selection:bg-ethereal-gold/20 selection:text-ethereal-ink;
   }
-}
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(
+        in srgb,
+        var(--color-ethereal-gold) 20%,
+        transparent
+      )
+      transparent;
+  }
 
+  *::-webkit-scrollbar {
+    width: 2px;
+    height: 2px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-ethereal-gold) 20%, transparent);
+    border-radius: 10px;
+  }
+}
 /* ========================================== */
 /* CUSTOM UTILITIES (V4 Syntax)               */
 /* ========================================== */
@@ -94,19 +116,6 @@
   }
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-@utility ethereal-scroll {
-  &::-webkit-scrollbar {
-    width: 2px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--color-ethereal-gold) 20%, transparent);
-    border-radius: 10px;
-  }
 }
 
 @utility bg-noise {
