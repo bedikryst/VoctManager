@@ -14,6 +14,7 @@ import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 import { archiveKeys } from "@/features/archive/api/archive.queries";
+import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
 import type {
   Project,
   Artist,
@@ -25,6 +26,7 @@ import type {
 // UI DTOs imports
 import type { AdminTelemetryStatsDto } from "../components/TelemetryWidget";
 import type { ProjectStatsDto } from "../components/SpotlightProjectCard";
+import type { InvitationStatsDto } from "../components/InvitationStatusWidget";
 import { parseConductorName } from "../utils/conductorParser";
 
 export interface EnrichedRehearsal extends Rehearsal {
@@ -108,7 +110,19 @@ export const useAdminDashboardData = () => {
     return { activeProjects, totalPieces, satb };
   }, [projects, pieces, artists]);
 
-  // 2. SPOTLIGHT NEXT PROJECT
+  // 2. INVITATION STATUS AGGREGATION (non-archived projects only)
+  const invitationStats: InvitationStatsDto = useMemo(() => {
+    const nonArchivedProjects = projects.filter(
+      (p) => p.status !== PROJECT_STATUS.DONE && p.status !== PROJECT_STATUS.CANCELLED,
+    );
+    return {
+      confirmed: nonArchivedProjects.reduce((sum, p) => sum + (p.cast_confirmed ?? 0), 0),
+      pending: nonArchivedProjects.reduce((sum, p) => sum + (p.cast_pending ?? 0), 0),
+      declined: nonArchivedProjects.reduce((sum, p) => sum + (p.cast_declined ?? 0), 0),
+    };
+  }, [projects]);
+
+  // 3. SPOTLIGHT NEXT PROJECT
   const rawNextProject = useMemo(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -146,7 +160,7 @@ export const useAdminDashboardData = () => {
     };
   }, [rawNextProject]);
 
-  // 3. SPOTLIGHT STATS
+  // 4. SPOTLIGHT STATS
   const nextProjectStats: ProjectStatsDto | undefined = useMemo(() => {
     if (!rawNextProject) return undefined;
 
@@ -157,7 +171,7 @@ export const useAdminDashboardData = () => {
     };
   }, [rawNextProject, programItems, rehearsals]);
 
-  // 4. NEXT REHEARSAL ALERT
+  // 5. NEXT REHEARSAL ALERT
   const nextRehearsal = useMemo(() => {
     const now = new Date();
     // Rehearsal stays active up to 2 hours past its start time
@@ -202,6 +216,7 @@ export const useAdminDashboardData = () => {
     isLoading,
     isError,
     adminStats,
+    invitationStats,
     nextProject,
     nextProjectStats,
     nextRehearsal,

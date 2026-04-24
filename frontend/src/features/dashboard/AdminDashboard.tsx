@@ -22,6 +22,7 @@ import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";
 import { TelemetryWidget } from "./components/TelemetryWidget";
 import { SpotlightProjectCard } from "./components/SpotlightProjectCard";
+import { InvitationStatusWidget } from "./components/InvitationStatusWidget";
 import { AdminModulesDirectory } from "./components/AdminModulesDirectory";
 
 export default function AdminDashboard(): React.JSX.Element {
@@ -30,6 +31,7 @@ export default function AdminDashboard(): React.JSX.Element {
   const {
     isLoading,
     adminStats,
+    invitationStats,
     nextProject,
     nextProjectStats,
     nextRehearsal,
@@ -47,7 +49,7 @@ export default function AdminDashboard(): React.JSX.Element {
   }
 
   return (
-    <StaggeredBentoContainer className="mx-auto w-full max-w-[1600px] px-0 pb-24 md:px-6 lg:px-10">
+    <StaggeredBentoContainer className="mx-auto w-full max-w-400 px-0 pb-24 md:px-6 lg:px-10">
       {/* HEADER STRATUM */}
       <StaggeredBentoItem>
         <PageHeader
@@ -67,15 +69,19 @@ export default function AdminDashboard(): React.JSX.Element {
           </StaggeredBentoItem>
         )}
 
-        <StaggeredBentoItem className="col-span-1 md:col-span-5 lg:min-h-[400px]">
+        <StaggeredBentoItem className="col-span-1 md:col-span-5 lg:min-h-100">
           <TelemetryWidget adminStats={adminStats} />
         </StaggeredBentoItem>
 
-        <StaggeredBentoItem className="col-span-1 md:col-span-7 xl:col-span-8 lg:min-h-[400px]">
+        <StaggeredBentoItem className="col-span-1 md:col-span-7 xl:col-span-8 lg:min-h-100">
           <SpotlightProjectCard
             project={nextProject}
             stats={nextProjectStats}
           />
+        </StaggeredBentoItem>
+
+        <StaggeredBentoItem className="col-span-1 md:col-span-12 xl:col-span-13">
+          <InvitationStatusWidget stats={invitationStats} />
         </StaggeredBentoItem>
 
         <StaggeredBentoItem className="mt-4 col-span-1 md:col-span-12 xl:col-span-13">

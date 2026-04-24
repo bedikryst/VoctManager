@@ -15,6 +15,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
+import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 
 export const DashboardLayout = (): React.JSX.Element => {
   const { user, logout } = useAuth();
@@ -30,7 +31,6 @@ export const DashboardLayout = (): React.JSX.Element => {
       <EtherealBackground />
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
-
       <main
         className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-8 pb-4 sm:px-6 md:pl-[104px] md:pr-8 md:pt-8 lg:pr-12"
         id="main-content"
@@ -50,6 +50,7 @@ export const DashboardLayout = (): React.JSX.Element => {
           </AnimatePresence>
         </div>
       </main>
+      <ProjectInvitationToasts />;
     </div>
   );
 };

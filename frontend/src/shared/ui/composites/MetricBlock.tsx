@@ -14,7 +14,7 @@ export interface MetricBlockProps extends React.HTMLAttributes<HTMLElement> {
   value: string | number;
   unit?: string;
   icon?: React.ReactNode;
-  accentColor?: "default" | "gold";
+  accentColor?: "default" | "gold" | "crimson";
   interactiveMode?: "glass" | "minimal";
 }
 
@@ -29,6 +29,7 @@ export function MetricBlock({
   ...props
 }: MetricBlockProps): React.JSX.Element {
   const isGold = accentColor === "gold";
+  const isCrimson = accentColor === "crimson";
 
   const glassClasses =
     interactiveMode === "glass"
@@ -46,9 +47,9 @@ export function MetricBlock({
           interactiveMode === "glass"
             ? "text-ethereal-incense/70"
             : "text-ethereal-incense/60",
-          isGold
-            ? "group-hover:text-ethereal-gold hover:text-ethereal-gold"
-            : "group-hover:text-ethereal-ink/75 hover:text-ethereal-ink/75",
+          isGold && "group-hover:text-ethereal-gold hover:text-ethereal-gold",
+          isCrimson && "group-hover:text-ethereal-crimson hover:text-ethereal-crimson",
+          !isGold && !isCrimson && "group-hover:text-ethereal-ink/75 hover:text-ethereal-ink/75",
         )}
       >
         {icon &&
@@ -64,9 +65,9 @@ export function MetricBlock({
       </div>
 
       <div className="flex items-baseline gap-2">
-        <Metric color={isGold ? "gold" : "default"}>{value}</Metric>
+        <Metric color={isGold ? "gold" : isCrimson ? "crimson" : "default"}>{value}</Metric>
         {unit && (
-          <Unit size="sm" color={isGold ? "gold" : "muted"}>
+          <Unit size="sm" color={isGold ? "gold" : isCrimson ? "crimson" : "muted"}>
             {unit}
           </Unit>
         )}
