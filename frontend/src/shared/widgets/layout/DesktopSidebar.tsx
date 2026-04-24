@@ -1,12 +1,3 @@
-/**
- * @file DesktopSidebar.tsx
- * @description Master Ethereal Sidebar - Fluid Overlay Edition.
- * Achieves 120fps kinematics via Absolute Anchors and GPU clip-path masking.
- * Implements "Floating Pill" design to prevent edge-bleeding during hardware clipping.
- * ZERO layout thrashing. Strict adherence to Ethereal UI Taxonomy.
- * @module shared/widgets/layout/DesktopSidebar
- */
-
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +13,6 @@ import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKin
 
 import {
   Heading,
-  Text,
   Eyebrow,
   Label,
 } from "@/shared/ui/primitives/typography";
@@ -46,14 +36,12 @@ const CONTENT_FADE_TRANSITION: Transition = {
   ease: [0.25, 0.1, 0.25, 1],
 };
 
-// Removed absolute w-full. Width is now dynamically injected via inline styles
-// to create the "Floating Pill" effect, ensuring it never touches the clip-path edge.
 const navLinkVariants = cva(
-  "group/desklink relative block h-10 rounded-[12px] transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
+  "group/desklink relative block h-10 rounded-xl transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
   {
     variants: {
       isActive: {
-        true: "bg-ethereal-gold/15 border border-ethereal-gold/30 shadow-[var(--shadow-ethereal-inset)] text-ethereal-gold",
+        true: "bg-ethereal-gold/15 border border-ethereal-gold/30 shadow-(--shadow-ethereal-inset) text-ethereal-gold",
         false:
           "border border-transparent text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-white/10",
       },
@@ -75,15 +63,16 @@ export const DesktopSidebar = ({
 
   return (
     <>
-      {/* Overlay Backdrop: Dimming the content behind the sidebar without squeezing the layout */}
+      {/* Overlay Backdrop: subtle dim only — no backdrop-blur to avoid full-viewport
+          GPU repaint on every hover. A composited opacity transition costs nothing. */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="fixed inset-0 z-[30] backdrop-blur-[2px] pointer-events-none hidden md:block"
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-30 bg-ethereal-ink/6 pointer-events-none hidden md:block"
             aria-hidden="true"
           />
         )}
@@ -105,11 +94,11 @@ export const DesktopSidebar = ({
         onMouseLeave={handleMouseLeave}
         padding="none"
         aria-expanded={isExpanded}
-        className="fixed bottom-4 left-4 top-4 z-[60] hidden md:flex flex-col w-[280px] border-white/30 shadow-[var(--shadow-ethereal-deep)] will-change-[clip-path]"
+        className="fixed bottom-4 left-4 top-4 z-60 hidden md:flex flex-col w-70 border-white/30 shadow-(--shadow-ethereal-deep) will-change-[clip-path]"
       >
-        <div className="flex flex-col h-full w-[280px] p-4 relative">
+        <div className="flex flex-col h-full w-70 p-4 relative">
           {/* STRATUM: LOGO */}
-          <div className="relative flex h-16 w-full flex-shrink-0 items-start overflow-hidden mb-4">
+          <div className="relative flex h-16 w-full shrink-0 items-start overflow-hidden mb-4">
             <motion.img
               src="/monogram_V.png"
               initial={false}
@@ -127,7 +116,7 @@ export const DesktopSidebar = ({
                 x: isExpanded ? 0 : 20,
               }}
               transition={CONTENT_FADE_TRANSITION}
-              className="absolute left-[36px] top-5 flex items-center pointer-events-none select-none"
+              className="absolute left-9 top-5 flex items-center pointer-events-none select-none"
               aria-hidden={!isExpanded}
             >
               <Heading size="4xl">
@@ -162,7 +151,7 @@ export const DesktopSidebar = ({
                     className="relative w-full overflow-hidden mb-1"
                     aria-hidden={!isExpanded}
                   >
-                    <div className="absolute left-[16px] top-1 whitespace-nowrap">
+                    <div className="absolute left-4 top-1 whitespace-nowrap">
                       <Eyebrow
                         color="muted"
                         className="tracking-[0.25em] uppercase"
@@ -180,7 +169,6 @@ export const DesktopSidebar = ({
                           key={link.to}
                           to={link.to}
                           end={link.to === "/panel"}
-                          // Floating Pill transition logic:
                           style={{ width: isExpanded ? "100%" : "56px" }}
                           className={({ isActive }) =>
                             cn(
@@ -194,7 +182,7 @@ export const DesktopSidebar = ({
                         >
                           {({ isActive }) => (
                             <>
-                              <div className="absolute left-0 top-0 bottom-0 w-[56px] flex flex-shrink-0 items-center justify-center transition-transform duration-300 ease-out group-active/desklink:scale-95">
+                              <div className="absolute left-0 top-0 bottom-0 w-14 flex shrink-0 items-center justify-center transition-transform duration-300 ease-out group-active/desklink:scale-95">
                                 <IconComponent
                                   size={18}
                                   strokeWidth={isActive ? 2.5 : 1.5}
@@ -208,7 +196,7 @@ export const DesktopSidebar = ({
                                   x: isExpanded ? 0 : -4,
                                 }}
                                 transition={CONTENT_FADE_TRANSITION}
-                                className="absolute left-[56px] right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
+                                className="absolute left-14 right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
                                 aria-hidden={!isExpanded}
                               >
                                 <Label
@@ -232,7 +220,7 @@ export const DesktopSidebar = ({
           </div>
 
           {/* STRATUM: USER ACTIONS */}
-          <div className="mt-auto flex-shrink-0 z-10 w-full relative pt-4 flex flex-col gap-3">
+          <div className="mt-auto shrink-0 z-10 w-full relative pt-4 flex flex-col gap-3">
             <Divider
               variant="fade"
               position="absolute-top"
@@ -242,10 +230,10 @@ export const DesktopSidebar = ({
             {/* Profile Block Pill */}
             <div
               style={{ width: isExpanded ? "100%" : "56px" }}
-              className="relative flex h-[48px] rounded-[14px] bg-white/5 border border-white/10 overflow-hidden shadow-[var(--shadow-ethereal-soft)] transition-[width] duration-300 ease-out"
+              className="relative flex h-12 rounded-[14px] bg-white/5 border border-white/10 overflow-hidden shadow-(--shadow-ethereal-soft) transition-[width] duration-300 ease-out"
             >
-              <div className="absolute left-0 top-0 bottom-0 w-[56px] flex items-center justify-center flex-shrink-0">
-                <div className="flex h-[32px] w-[32px] items-center justify-center rounded-[10px] bg-gradient-to-br from-ethereal-gold/20 to-transparent border border-ethereal-gold/30">
+              <div className="absolute left-0 top-0 bottom-0 w-14 flex items-center justify-center shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-linear-to-br from-ethereal-gold/20 to-transparent border border-ethereal-gold/30">
                   <Label color="gold" size="sm" weight="semibold">
                     {initials}
                   </Label>
@@ -255,7 +243,7 @@ export const DesktopSidebar = ({
                 initial={false}
                 animate={{ opacity: isExpanded ? 1 : 0 }}
                 transition={CONTENT_FADE_TRANSITION}
-                className="absolute left-[56px] right-2 top-0 bottom-0 flex flex-col justify-center whitespace-nowrap overflow-hidden"
+                className="absolute left-14 right-2 top-0 bottom-0 flex flex-col justify-center whitespace-nowrap overflow-hidden"
                 aria-hidden={!isExpanded}
               >
                 <Label
@@ -282,16 +270,16 @@ export const DesktopSidebar = ({
               <Link
                 to="/panel/settings"
                 aria-label={t("dashboard.layout.actions.settings")}
-                className="group/settings relative block h-[40px] flex-1 min-w-[56px] rounded-[12px] hover:bg-white/10 text-ethereal-graphite/60 hover:text-ethereal-ink transition-colors duration-300 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+                className="group/settings relative block h-10 flex-1 min-w-14 rounded-xl hover:bg-white/10 text-ethereal-graphite/60 hover:text-ethereal-ink transition-colors duration-300 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
               >
-                <div className="absolute left-0 top-0 bottom-0 w-[56px] flex items-center justify-center transition-transform duration-300 ease-out group-active/settings:scale-95">
+                <div className="absolute left-0 top-0 bottom-0 w-14 flex items-center justify-center transition-transform duration-300 ease-out group-active/settings:scale-95">
                   <Settings size={18} strokeWidth={2} />
                 </div>
                 <motion.div
                   initial={false}
                   animate={{ opacity: isExpanded ? 1 : 0 }}
                   transition={CONTENT_FADE_TRANSITION}
-                  className="absolute left-[56px] right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
+                  className="absolute left-14 right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
                   aria-hidden={!isExpanded}
                 >
                   <Label size="sm" weight="medium" color="inherit">
@@ -300,15 +288,14 @@ export const DesktopSidebar = ({
                 </motion.div>
               </Link>
 
-              {/* RECOVERED NOTIFICATIONS */}
-              <div className="flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] transition-all duration-300">
+              <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded-xl transition-all duration-300">
                 <NotificationCenter />
               </div>
 
               <button
                 onClick={logout}
                 aria-label={t("dashboard.layout.actions.logout")}
-                className="group/logout relative flex h-[40px] w-[56px] flex-shrink-0 items-center justify-center rounded-[12px] hover:bg-red-500/10 text-ethereal-graphite/50 hover:text-red-600 transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+                className="group/logout relative flex h-10 w-14 shrink-0 items-center justify-center rounded-xl hover:bg-red-500/10 text-ethereal-graphite/50 hover:text-red-600 transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
               >
                 <div className="transition-transform duration-300 ease-out group-active/logout:scale-95">
                   <LogOut size={18} strokeWidth={2.5} />

@@ -1,88 +1,92 @@
-/**
- * @file useSidebarKinematics.ts
- * @description Master kinetic controller for the Ethereal Sidebar.
- * Achieves 120fps by directly mutating CSS variables mapped to the GPU,
- * bypassing React's reconciliation cycle for macro-layout shifts.
- * @module shared/ui/kinematics/hooks/useSidebarKinematics
- */
-
 import { useCallback, useRef, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-// Standard architectural constants extracted from magic numbers
-const KINEMATIC_CONSTANTS = {
-  HOVER_DELAY_MS: 180,
-  COMPACT_WIDTH_PX: 88,
-  EXPANDED_WIDTH_PX: 280,
-} as const;
+// Expand delay: prevents accidental hover expansion while moving the mouse.
+// The sidebar is immediately clickable in collapsed state; it only expands
+// after deliberate sustained hover (intent confirmation pattern).
+const HOVER_ENTER_DELAY_MS = 1700;
+const HOVER_LEAVE_DELAY_MS = 380;
+const COMPACT_WIDTH_PX = 88;
+const EXPANDED_WIDTH_PX = 280;
 
 export const useSidebarKinematics = () => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const location = useLocation();
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const isHoveredRef = useRef<boolean>(false);
+  const expandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /**
-   * Mutates the root CSS variable directly to prevent React tree re-renders.
-   * This ensures the main DashboardLayout content shifts at 120fps via CSS transitions.
-   */
   const syncLayoutVariable = useCallback((expanded: boolean) => {
-    const width = expanded
-      ? KINEMATIC_CONSTANTS.EXPANDED_WIDTH_PX
-      : KINEMATIC_CONSTANTS.COMPACT_WIDTH_PX;
-
-    document.documentElement.style.setProperty("--sidebar-width", `${width}px`);
+    document.documentElement.style.setProperty(
+      "--sidebar-width",
+      `${expanded ? EXPANDED_WIDTH_PX : COMPACT_WIDTH_PX}px`,
+    );
   }, []);
 
-  const clearKinematicTimeout = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+  const clearExpandTimer = useCallback(() => {
+    if (expandTimerRef.current) {
+      clearTimeout(expandTimerRef.current);
+      expandTimerRef.current = null;
+    }
+  }, []);
+
+  const clearCollapseTimer = useCallback(() => {
+    if (collapseTimerRef.current) {
+      clearTimeout(collapseTimerRef.current);
+      collapseTimerRef.current = null;
     }
   }, []);
 
   const handleMouseEnter = useCallback(() => {
     isHoveredRef.current = true;
-    clearKinematicTimeout();
-    setIsExpanded(true);
-    syncLayoutVariable(true);
-  }, [clearKinematicTimeout, syncLayoutVariable]);
+    clearCollapseTimer();
+
+    // Schedule expansion only after sustained hover — icons remain clickable
+    // immediately in the collapsed pill, this just delays the visual expansion
+    // until the user's intent is clear (not an accidental pass-through).
+    expandTimerRef.current = setTimeout(() => {
+      if (isHoveredRef.current) {
+        setIsExpanded(true);
+        syncLayoutVariable(true);
+      }
+    }, HOVER_ENTER_DELAY_MS);
+  }, [clearCollapseTimer, syncLayoutVariable]);
 
   const handleMouseLeave = useCallback(() => {
     isHoveredRef.current = false;
-    clearKinematicTimeout();
+    clearExpandTimer(); // Cancel any pending expansion
 
-    timeoutRef.current = setTimeout(() => {
+    collapseTimerRef.current = setTimeout(() => {
       if (!isHoveredRef.current) {
         setIsExpanded(false);
         syncLayoutVariable(false);
       }
-    }, KINEMATIC_CONSTANTS.HOVER_DELAY_MS);
-  }, [clearKinematicTimeout, syncLayoutVariable]);
+    }, HOVER_LEAVE_DELAY_MS);
+  }, [clearExpandTimer, syncLayoutVariable]);
 
-  // Synchronize route changes to immediately collapse the sidebar
-  // Prevents the "stuck" UI pattern when navigating swiftly
+  // Collapse immediately on route change to prevent "stuck open" sidebar
   useEffect(() => {
     if (!isHoveredRef.current && isExpanded) {
-      clearKinematicTimeout();
+      clearExpandTimer();
+      clearCollapseTimer();
       setIsExpanded(false);
       syncLayoutVariable(false);
     }
   }, [
     location.pathname,
-    clearKinematicTimeout,
+    clearExpandTimer,
+    clearCollapseTimer,
     syncLayoutVariable,
     isExpanded,
   ]);
 
-  // Clean up kinematic listeners on unmount
   useEffect(() => {
-    return () => clearKinematicTimeout();
-  }, [clearKinematicTimeout]);
+    return () => {
+      clearExpandTimer();
+      clearCollapseTimer();
+    };
+  }, [clearExpandTimer, clearCollapseTimer]);
 
-  return {
-    isExpanded,
-    handleMouseEnter,
-    handleMouseLeave,
-  };
+  return { isExpanded, handleMouseEnter, handleMouseLeave };
 };

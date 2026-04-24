@@ -58,15 +58,16 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
             {[1, 2, 3, 4, 5].map((_, index) => (
               <motion.div
                 key={`stave-line-${index}`}
-                className="mb-[50px] h-[1px] w-full bg-gradient-to-r from-transparent via-ethereal-incense/80 to-transparent shadow-[0_0_8px_rgba(194,168,120,0.35)] last:mb-0"
-                // FREEZE THE COMPOSITOR: Switch from rendering properties to auto when complete
+                className="mb-[50px] h-[1px] w-full bg-gradient-to-r from-transparent via-ethereal-incense/80 to-transparent shadow-[0_0_8px_rgba(194,168,120,0.35)] last:mb-0 origin-left"
+                // scaleX is GPU-composited (no layout/paint cost), unlike width animation.
+                // FREEZE THE COMPOSITOR: Switch willChange to auto when stabilised.
                 style={{
-                  willChange: isAuraStabilized ? "auto" : "width, opacity",
+                  willChange: isAuraStabilized ? "auto" : "transform, opacity",
                 }}
                 variants={{
-                  hidden: { width: "0%", opacity: 0 },
+                  hidden: { scaleX: 0, opacity: 0 },
                   visible: {
-                    width: "100%",
+                    scaleX: 1,
                     opacity: 1,
                     transition: { duration: 10, ease: [0.16, 1, 0.3, 1] },
                   },
@@ -77,7 +78,7 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
         </div>
 
         {/* LAYER 3: Micro-noise (Film Grain) */}
-        <div className="absolute inset-0 z-[4] bg-noise opacity-[0.025] mix-blend-overlay" />
+        <div className="absolute inset-0 z-4 bg-noise opacity-[0.025] mix-blend-overlay" />
       </div>
     </div>
   );
