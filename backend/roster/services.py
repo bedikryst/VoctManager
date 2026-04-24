@@ -24,6 +24,7 @@ from core.models import UserProfile
 from notifications.tasks import send_notification_task, send_bulk_notifications_task
 from notifications.email_tasks import send_transactional_email_task
 from notifications.models import NotificationType, NotificationLevel
+from notifications.services import NotificationRecipientPolicy
 from notifications.dtos import (
     ManagerActionMetadata,
     ProjectInvitationMetadata, 
@@ -43,7 +44,7 @@ from .models import (
 )
 from logistics.models import Location
 from .dtos import RehearsalCreateDTO, RehearsalUpdateDTO, ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectUpdateDTO, ProjectCreateDTO
-from .exceptions import ArtistProvisioningException, AttendanceValidationException, ParticipationException
+from .exceptions import ArtistProvisioningException, AttendanceValidationException, ParticipationException, CastingValidationException
 from typing import Tuple
 
 logger = logging.getLogger(__name__)
@@ -220,9 +221,9 @@ class ProjectManagementService:
                 
             project.save()
 
-            qs = Participation.objects.filter(project=project, is_deleted=False).select_related('artist')
-            recipient_ids = [str(p.artist.user_id) for p in qs if p.artist.user_id]
-            
+            qs = Participation.objects.filter(project=project, is_deleted=False)
+            recipient_ids = NotificationRecipientPolicy.from_participations(qs)
+
             if recipient_ids and changes:
                 unique_changes = list(set(changes))
                 metadata = ProjectUpdatedMetadata(
@@ -363,8 +364,8 @@ class RehearsalOperationsService:
                 rehearsal.invited_participations.set(invited_participations)
 
             qs = invited_participations if invited_participations else Participation.objects.filter(project=rehearsal.project, is_deleted=False)
-            recipient_ids = [str(p.artist.user_id) for p in qs if p.artist.user_id]
-            
+            recipient_ids = NotificationRecipientPolicy.from_participations(qs)
+
             if recipient_ids:
                 metadata = RehearsalScheduledMetadata(
                     rehearsal_id=rehearsal.id,
@@ -428,9 +429,9 @@ class RehearsalOperationsService:
             qs = rehearsal.invited_participations.all()
             if not qs.exists():
                 qs = Participation.objects.filter(project=rehearsal.project, is_deleted=False)
-                
-            recipient_ids = [str(p.artist.user_id) for p in qs if p.artist.user_id]
-            
+
+            recipient_ids = NotificationRecipientPolicy.from_participations(qs)
+
             if recipient_ids and changes:
                 metadata = RehearsalUpdatedMetadata(
                     rehearsal_id=rehearsal.id,
@@ -454,8 +455,8 @@ class RehearsalOperationsService:
         qs = rehearsal.invited_participations.all()
         if not qs.exists():
             qs = Participation.objects.filter(project=rehearsal.project, is_deleted=False)
-            
-        recipient_ids = [str(p.artist.user_id) for p in qs if p.artist.user_id]
+
+        recipient_ids = NotificationRecipientPolicy.from_participations(qs)
         project_name = rehearsal.project.title
         
         with transaction.atomic():
@@ -554,6 +555,14 @@ class ParticipationService:
 class CastingAndCrewService:
     @staticmethod
     def assign_piece_casting(validated_data: Dict[str, Any]) -> ProjectPieceCasting:
+        participation = validated_data.get('participation')
+        if participation and participation.status != Participation.Status.CONFIRMED:
+            raise CastingValidationException(
+                f"Cannot assign artist to a voice line: participation status is "
+                f"'{participation.status}', expected '{Participation.Status.CONFIRMED}'. "
+                f"Only confirmed (CON) participants may be cast."
+            )
+
         with transaction.atomic():
             casting = ProjectPieceCasting.objects.create(**validated_data)
             user_id = casting.participation.artist.user_id

@@ -33,7 +33,7 @@ from .services import ArtistHRService, ProjectManagementService, RehearsalOperat
 
 # Models & Exceptions
 from .models import Artist, CrewAssignment, Project, Participation, ProgramItem, Rehearsal, Attendance, VoiceType, ProjectPieceCasting, Collaborator
-from .exceptions import ArtistProvisioningException, AttendanceValidationException
+from .exceptions import ArtistProvisioningException, AttendanceValidationException, CastingValidationException
 
 # Serializers
 from .serializers import (
@@ -119,19 +119,31 @@ class ProjectViewSet(viewsets.ModelViewSet):
         user = self.request.user
         now = timezone.now()
         
+        _active_parts = Q(participations__is_deleted=False)
         base_qs = Project.objects.select_related('conductor', 'location').prefetch_related(
             'participations__artist',
             'program_items__piece',
         ).annotate(
             rehearsals_total=Count('rehearsals', distinct=True),
             rehearsals_upcoming=Count(
-                'rehearsals', 
-                filter=Q(rehearsals__date_time__gt=now), 
+                'rehearsals',
+                filter=Q(rehearsals__date_time__gt=now),
                 distinct=True
             ),
-            cast_total=Count(
-                'participations', 
-                filter=Q(participations__is_deleted=False), 
+            cast_total=Count('participations', filter=_active_parts, distinct=True),
+            cast_confirmed=Count(
+                'participations',
+                filter=_active_parts & Q(participations__status='CON'),
+                distinct=True
+            ),
+            cast_pending=Count(
+                'participations',
+                filter=_active_parts & Q(participations__status='INV'),
+                distinct=True
+            ),
+            cast_declined=Count(
+                'participations',
+                filter=_active_parts & Q(participations__status='DEC'),
                 distinct=True
             ),
             pieces_total=Count('program_items', distinct=True),
@@ -407,7 +419,10 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        casting = CastingAndCrewService.assign_piece_casting(serializer.validated_data)
+        try:
+            casting = CastingAndCrewService.assign_piece_casting(serializer.validated_data)
+        except CastingValidationException as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         return Response(self.get_serializer(casting).data, status=status.HTTP_201_CREATED)
 
     def perform_update(self, serializer) -> None:

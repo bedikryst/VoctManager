@@ -141,6 +141,9 @@ export interface Project extends BaseModel {
   rehearsals_total?: number;
   rehearsals_upcoming?: number;
   cast_total?: number;
+  cast_confirmed?: number;
+  cast_pending?: number;
+  cast_declined?: number;
   crew_total?: number;
   pieces_total?: number;
 }

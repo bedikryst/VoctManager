@@ -65,6 +65,28 @@ class NotificationService:
             logger.error(f"[NotificationService] Provisioning failed for UID:{dto.recipient_id}. Reason: {e}", exc_info=True)
             return None
         
+class NotificationRecipientPolicy:
+    """
+    Enforces the business rule that mass project notifications are delivered
+    exclusively to participants with CON (Confirmed) status.
+    Accepts either a Django QuerySet or a plain list of Participation objects.
+    """
+
+    @staticmethod
+    def from_participations(participations, *, confirmed_only: bool = True) -> list[str]:
+        from django.db.models import QuerySet
+        if confirmed_only:
+            if isinstance(participations, QuerySet):
+                participations = participations.filter(status='CON').select_related('artist')
+            else:
+                participations = [p for p in participations if getattr(p, 'status', None) == 'CON']
+        return [
+            str(p.artist.user_id)
+            for p in participations
+            if p.artist_id and p.artist.user_id
+        ]
+
+
 class NotificationPreferenceService:
     """
     Service layer for managing user delivery channel preferences.

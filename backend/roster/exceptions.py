@@ -24,3 +24,7 @@ class ParticipationException(RosterDomainException):
 class ProjectException(RosterDomainException):
     """Raised for invalid project lifecycle operations."""
     pass
+
+class CastingValidationException(RosterDomainException):
+    """Raised when a piece casting assignment violates domain rules (e.g., non-confirmed participation)."""
+    pass

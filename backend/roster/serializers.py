@@ -112,6 +112,9 @@ class ProjectSerializer(serializers.ModelSerializer):
     rehearsals_total = serializers.IntegerField(read_only=True, default=0)
     rehearsals_upcoming = serializers.IntegerField(read_only=True, default=0)
     cast_total = serializers.IntegerField(read_only=True, default=0)
+    cast_confirmed = serializers.IntegerField(read_only=True, default=0)
+    cast_pending = serializers.IntegerField(read_only=True, default=0)
+    cast_declined = serializers.IntegerField(read_only=True, default=0)
     crew_total = serializers.IntegerField(read_only=True, default=0)
     pieces_total = serializers.IntegerField(read_only=True, default=0)
     
