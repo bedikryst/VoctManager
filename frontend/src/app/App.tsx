@@ -124,7 +124,6 @@ export default function App(): React.JSX.Element {
         {shouldShowGlobalComponents && <NoiseOverlay />}
         {shouldShowGlobalComponents && <CustomCursor />}
 
-        <ProjectInvitationToasts />
         <Toaster position="top-right" richColors closeButton duration={4000} />
       </APIProvider>
     </CSRFProvider>

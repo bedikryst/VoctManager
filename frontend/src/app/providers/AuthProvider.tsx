@@ -141,6 +141,9 @@ export const AuthProvider = ({
       await api.post("/api/token/", { email, password });
       setUser(await buildAuthUser());
 
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
+
       return { success: true };
     } catch (error: unknown) {
       const errorMessage =
@@ -162,6 +165,7 @@ export const AuthProvider = ({
       console.error("Logout process encountered an error:", error);
     } finally {
       setUser(null);
+      queryClient.clear();
       window.location.href = "/login";
     }
   };
