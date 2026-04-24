@@ -5,6 +5,7 @@
  */
 
 import { useMemo } from "react";
+import { compareAsc, parseISO } from "date-fns";
 import { useMaterialsContextData } from "../api/materials.queries";
 import type {
   EnrichedPiece,
@@ -117,9 +118,9 @@ export const useMaterialsData = (
       if (left.project.status === "DONE" && right.project.status !== "DONE")
         return 1;
 
-      return (
-        new Date(left.project.date_time).getTime() -
-        new Date(right.project.date_time).getTime()
+      return compareAsc(
+        parseISO(left.project.date_time),
+        parseISO(right.project.date_time),
       );
     });
   }, [
