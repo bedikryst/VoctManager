@@ -273,7 +273,7 @@ export const TimelineRehearsalCard = ({
                       <Check size={14} aria-hidden="true" />
                     ) : undefined
                   }
-                  className="flex-1 md:flex-none bg-ethereal-sage! hover:bg-ethereal-sage/80! border-ethereal-sage/30!"
+                  className="flex-1 md:flex-none bg-ethereal-sage border-ethereal-sage hover:bg-ethereal-sage/80"
                 >
                   <span className="hidden md:inline">
                     {t("schedule.rehearsal.action.confirm_short", "Potwierdź")}

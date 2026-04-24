@@ -1,22 +1,13 @@
-/**
- * @file TimelineProjectCard.tsx
- * @description Isolated component for rendering a Project/Concert on the Artist Timeline.
- * Completely strictly typed, ensuring zero 'any' usage for Data transformations.
- * @module panel/schedule/cards/TimelineProjectCard
- */
-
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
-  MapPin,
   Clock,
   ChevronDown,
   ChevronUp,
   Shirt,
   Download,
   Users,
-  Loader2,
   Music,
   Wrench,
 } from "lucide-react";
@@ -25,8 +16,13 @@ import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget"
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { Project, ProgramItem, PieceCasting } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { useTimelineProjectCard } from "../hooks/useTimelineProjectCard";
 import type { TimelineEvent } from "../types/schedule.dto";
+import { cn } from "@/shared/lib/utils";
 
 interface TimelineProjectCardProps {
   event: TimelineEvent;
@@ -35,12 +31,45 @@ interface TimelineProjectCardProps {
   artistId?: string | number;
 }
 
-export default function TimelineProjectCard({
+interface PopulatedParticipation {
+  artist: string;
+  artist_name?: string;
+}
+
+interface PopulatedPieceCasting extends Omit<PieceCasting, "participation"> {
+  participation: string | PopulatedParticipation;
+}
+
+const resolveParticipationArtistId = (
+  casting: PopulatedPieceCasting,
+): string | undefined => {
+  if (
+    typeof casting.participation === "object" &&
+    casting.participation !== null
+  ) {
+    return casting.participation.artist;
+  }
+  return undefined;
+};
+
+const resolveParticipationArtistName = (
+  casting: PopulatedPieceCasting,
+): string | undefined => {
+  if (
+    typeof casting.participation === "object" &&
+    casting.participation !== null
+  ) {
+    return casting.participation.artist_name;
+  }
+  return undefined;
+};
+
+export const TimelineProjectCard = ({
   event,
   isExpanded,
   onToggle,
   artistId,
-}: TimelineProjectCardProps): React.JSX.Element {
+}: TimelineProjectCardProps): React.JSX.Element => {
   const { t } = useTranslation();
   const proj = event.rawObj as Project;
   const combinedDressCode = [proj.dress_code_female, proj.dress_code_male]
@@ -60,6 +89,8 @@ export default function TimelineProjectCard({
     handleDownloadCallSheet,
   } = useTimelineProjectCard(proj.id, proj.title, isExpanded);
 
+  const populatedCastings = castings as PopulatedPieceCasting[];
+
   return (
     <motion.div
       layout
@@ -68,96 +99,99 @@ export default function TimelineProjectCard({
       exit={{ opacity: 0, scale: 0.98 }}
       className="relative sm:pl-16 transition-all duration-300 group"
     >
-      <div className="hidden sm:block absolute left-4 md:left-[27px] top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-[#f4f2ee] z-10 bg-brand border-brand shadow-[0_0_10px_rgba(0,35,149,0.5)]" />
+      <div className="hidden sm:block absolute left-4 md:left-6.75 top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-ethereal-parchment z-10 bg-ethereal-amethyst border-ethereal-amethyst shadow-glass-solid" />
 
-      <div
-        className={`rounded-[2rem] relative overflow-hidden transition-all duration-300 bg-[#0a0a0a] text-white shadow-[0_20px_40px_rgba(0,0,0,0.3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] border ${isExpanded ? "border-stone-700" : "border-stone-800 hover:border-stone-700"}`}
+      <GlassCard
+        variant="dark"
+        glow={true}
+        withNoise={true}
+        padding="none"
+        isHoverable={false}
+        className={cn(
+          "transition-all duration-300",
+          isExpanded
+            ? "border-ethereal-incense/30"
+            : "hover:border-ethereal-incense/20",
+        )}
       >
         <div
-          className={`absolute -top-32 -right-32 w-80 h-80 bg-brand rounded-full blur-[100px] pointer-events-none transition-all duration-1000 ${isExpanded ? "opacity-60 scale-110" : "opacity-30 group-hover:opacity-50"}`}
-        ></div>
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-            backgroundSize: "24px 24px",
-          }}
-        ></div>
-
-        <div
-          className="p-5 md:p-6 lg:p-8 flex flex-col md:flex-row md:items-start justify-between gap-5 cursor-pointer relative z-10 hover:bg-white/5 transition-colors"
+          className="p-5 md:p-6 lg:p-8 flex flex-col md:flex-row md:items-start justify-between gap-5 cursor-pointer relative z-10 hover:bg-ethereal-marble/5 transition-colors"
           onClick={onToggle}
         >
           <div className="flex flex-col sm:flex-row sm:items-start gap-4 md:gap-6">
-            <div className="w-16 h-16 rounded-2xl border flex flex-col items-center justify-center flex-shrink-0 shadow-sm bg-white/10 border-white/20 text-blue-100 backdrop-blur-md">
-              <span className="text-[9px] font-bold uppercase tracking-widest">
+            <div className="w-16 h-16 rounded-2xl border flex flex-col items-center justify-center flex-shrink-0 shadow-glass-ethereal bg-ethereal-marble/10 border-ethereal-incense/20 backdrop-blur-md">
+              <Eyebrow as="span" color="parchment">
                 {formatLocalizedDate(
                   event.date_time,
                   { month: "short" },
                   undefined,
                   proj.timezone,
                 )}
-              </span>
-              <span className="text-2xl font-black leading-none my-0.5">
+              </Eyebrow>
+              <Heading
+                as="span"
+                size="2xl"
+                weight="black"
+                color="white"
+                className="leading-none my-0.5"
+              >
                 {formatLocalizedDate(
                   event.date_time,
                   { day: "numeric" },
                   undefined,
                   proj.timezone,
                 )}
-              </span>
+              </Heading>
             </div>
 
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="px-2.5 py-1 text-[8px] font-bold uppercase tracking-widest bg-blue-500 text-white border border-blue-400 rounded-md shadow-[0_0_10px_rgba(59,130,246,0.3)]">
+                <Eyebrow
+                  as="span"
+                  color="amethyst"
+                  className="px-2.5 py-1 bg-ethereal-amethyst/20 border border-ethereal-amethyst/40 rounded-md shadow-glass-ethereal"
+                >
                   {t("schedule.card.project_badge", "Koncert / Wydarzenie")}
-                </span>
+                </Eyebrow>
               </div>
-              <h3
-                className="text-xl md:text-3xl font-bold tracking-tight text-white mb-3"
-                style={{ fontFamily: "'Cormorant', serif" }}
-              >
+              <Heading as="h3" size="3xl" weight="bold" color="marble" className="mb-3">
                 {event.title}
-              </h3>
+              </Heading>
 
-              <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
+              <div className="flex flex-wrap items-center gap-2">
                 {proj.call_time && (
                   <DualTimeDisplay
                     value={proj.call_time}
                     timeZone={proj.timezone}
                     label={t("schedule.card.call_time", "Zbiórka: ")}
                     icon={<Clock size={12} aria-hidden="true" />}
-                    containerClassName="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-300 border border-orange-500/30"
+                    containerClassName="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ethereal-incense/20 text-ethereal-incense border border-ethereal-incense/30"
                     primaryTimeClassName="flex items-center gap-1.5"
-                    localTimeClassName="text-[9px] text-orange-300/70 border-l border-orange-500/30 pl-1.5"
+                    localTimeClassName="text-[9px] text-ethereal-incense/70 border-l border-ethereal-incense/30 pl-1.5"
                   />
                 )}
                 {combinedDressCode && (
-                  <span
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 max-w-[200px] truncate"
+                  <Eyebrow
+                    as="span"
+                    color="amethyst"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ethereal-amethyst/10 border border-ethereal-amethyst/20 max-w-52 truncate"
                     title={combinedDressCode}
                   >
-                    <Shirt size={12} aria-hidden="true" /> {combinedDressCode}
-                  </span>
+                    <Shirt size={12} aria-hidden="true" />
+                    {combinedDressCode}
+                  </Eyebrow>
                 )}
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-blue-200 truncate max-w-[200px]">
-                  <MapPin
-                    size={12}
-                    className="flex-shrink-0"
-                    aria-hidden="true"
-                  />{" "}
-                  <span className="truncate">
-                    {event.location ||
-                      t("schedule.card.no_location", "Brak lok.")}
-                  </span>
-                </span>
+                <LocationPreview
+                  locationRef={event.location}
+                  fallback={t("schedule.card.no_location", "Brak lok.")}
+                  variant="badge"
+                  className="text-ethereal-marble/70"
+                />
               </div>
             </div>
           </div>
 
-          <div className="bg-white/10 border border-white/10 text-white shadow-sm p-2 rounded-full transition-transform duration-300 relative z-10 self-end md:self-auto flex-shrink-0">
+          <div className="bg-ethereal-marble/10 border border-ethereal-incense/15 text-ethereal-marble shadow-glass-ethereal p-2 rounded-full transition-transform duration-300 relative z-10 self-end md:self-auto flex-shrink-0">
             {isExpanded ? (
               <ChevronUp size={20} aria-hidden="true" />
             ) : (
@@ -172,24 +206,36 @@ export default function TimelineProjectCard({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-t border-white/10 bg-black/20 relative z-0"
+              className="border-t border-ethereal-incense/10 bg-ethereal-ink/20 relative z-0"
             >
               <div className="p-5 md:p-8 pb-0">
-                <div className="flex flex-wrap gap-3 p-1.5 bg-white/5 border border-white/10 rounded-2xl w-max mb-6">
-                  <button
+                <div className="flex flex-wrap gap-2 p-1.5 bg-ethereal-marble/5 border border-ethereal-incense/10 rounded-2xl w-max mb-6">
+                  <Button
+                    variant={activeSubTab === "LOGISTICS" ? "outline" : "ghost"}
+                    size="sm"
                     onClick={() => setActiveSubTab("LOGISTICS")}
-                    className={`flex items-center gap-2 px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] transition-all rounded-xl ${activeSubTab === "LOGISTICS" ? "bg-blue-500/20 text-blue-300 shadow-sm border border-blue-500/30" : "text-stone-400 hover:text-stone-200 border border-transparent"}`}
+                    leftIcon={<Wrench size={14} aria-hidden="true" />}
+                    className={
+                      activeSubTab === "LOGISTICS"
+                        ? "border-ethereal-amethyst/30 text-ethereal-amethyst bg-ethereal-amethyst/10"
+                        : "text-ethereal-marble/50 hover:text-ethereal-marble"
+                    }
                   >
-                    <Wrench size={14} aria-hidden="true" />{" "}
                     {t("schedule.card.tab.logistics", "Logistyka & Plan")}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant={activeSubTab === "SETLIST" ? "outline" : "ghost"}
+                    size="sm"
                     onClick={() => setActiveSubTab("SETLIST")}
-                    className={`flex items-center gap-2 px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] transition-all rounded-xl ${activeSubTab === "SETLIST" ? "bg-emerald-500/20 text-emerald-300 shadow-sm border border-emerald-500/30" : "text-stone-400 hover:text-stone-200 border border-transparent"}`}
+                    leftIcon={<Music size={14} aria-hidden="true" />}
+                    className={
+                      activeSubTab === "SETLIST"
+                        ? "border-ethereal-sage/30 text-ethereal-sage bg-ethereal-sage/10"
+                        : "text-ethereal-marble/50 hover:text-ethereal-marble"
+                    }
                   >
-                    <Music size={14} aria-hidden="true" />{" "}
                     {t("schedule.card.tab.setlist", "Repertuar & Divisi")}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -198,59 +244,67 @@ export default function TimelineProjectCard({
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="space-y-6">
                       {(proj.dress_code_female || proj.dress_code_male) && (
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                          <p className="text-[9px] font-bold uppercase tracking-widest text-stone-400 mb-3 flex items-center gap-2">
-                            <Shirt size={14} aria-hidden="true" />{" "}
+                        <div className="bg-ethereal-marble/5 border border-ethereal-incense/10 rounded-2xl p-5">
+                          <Eyebrow
+                            color="muted"
+                            className="mb-3 flex items-center gap-2"
+                          >
+                            <Shirt size={14} aria-hidden="true" />
                             {t(
                               "schedule.card.dress_code_title",
                               "Szczegóły ubioru",
                             )}
-                          </p>
+                          </Eyebrow>
                           {proj.dress_code_female && (
-                            <p className="text-sm text-stone-300 mb-1.5">
-                              <span className="text-stone-500 mr-2">
+                            <Text as="p" size="sm" color="parchment" className="mb-1.5">
+                              <Text as="span" color="graphite" className="mr-2">
                                 {t("schedule.card.dress_code_women", "Panie:")}
-                              </span>{" "}
+                              </Text>
                               {proj.dress_code_female}
-                            </p>
+                            </Text>
                           )}
                           {proj.dress_code_male && (
-                            <p className="text-sm text-stone-300">
-                              <span className="text-stone-500 mr-2">
+                            <Text as="p" size="sm" color="parchment">
+                              <Text as="span" color="graphite" className="mr-2">
                                 {t("schedule.card.dress_code_men", "Panowie:")}
-                              </span>{" "}
+                              </Text>
                               {proj.dress_code_male}
-                            </p>
+                            </Text>
                           )}
                         </div>
                       )}
 
                       {proj.description ? (
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                          <p className="text-sm text-stone-300 leading-relaxed whitespace-pre-wrap font-serif">
+                        <div className="bg-ethereal-marble/5 border border-ethereal-incense/10 rounded-2xl p-5">
+                          <Text
+                            size="sm"
+                            color="parchment"
+                            className="leading-relaxed whitespace-pre-wrap font-serif"
+                          >
                             {proj.description}
-                          </p>
+                          </Text>
                         </div>
                       ) : (
-                        <p className="text-sm text-stone-500 italic mt-2">
+                        <Text size="sm" color="graphite" className="italic mt-2">
                           {t(
                             "schedule.card.no_notes",
                             "Brak dodatkowych notatek produkcyjnych.",
                           )}
-                        </p>
+                        </Text>
                       )}
                     </div>
 
                     <div>
                       <div className="flex justify-between items-center mb-4">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-stone-400">
+                        <Eyebrow color="muted">
                           {t(
                             "schedule.card.run_sheet_title",
                             "Harmonogram Dnia",
                           )}
-                        </p>
+                        </Eyebrow>
                         <Button
-                          variant="primary"
+                          variant="outline"
+                          size="sm"
                           onClick={handleDownloadCallSheet}
                           disabled={isDownloading}
                           isLoading={isDownloading}
@@ -259,7 +313,7 @@ export default function TimelineProjectCard({
                               <Download size={12} aria-hidden="true" />
                             ) : undefined
                           }
-                          className="!px-3 !py-1.5 !rounded-lg !text-[9px] !bg-blue-600/20 hover:!bg-blue-600/40 !text-blue-300 !border-blue-500/30"
+                          className="border-ethereal-amethyst/30 text-ethereal-amethyst hover:bg-ethereal-amethyst/10"
                         >
                           {t(
                             "schedule.card.download_call_sheet",
@@ -269,7 +323,7 @@ export default function TimelineProjectCard({
                       </div>
 
                       {event.run_sheet && event.run_sheet.length > 0 ? (
-                        <div className="relative pl-5 border-l border-white/10 space-y-5 ml-2 mt-6">
+                        <div className="relative pl-5 border-l border-ethereal-incense/10 space-y-5 ml-2 mt-6">
                           {[...event.run_sheet]
                             .sort((a, b) => a.time.localeCompare(b.time))
                             .map((item, idx) => (
@@ -277,19 +331,27 @@ export default function TimelineProjectCard({
                                 key={item.id || idx}
                                 className="relative group/run"
                               >
-                                <div className="absolute -left-[25px] top-1.5 w-3 h-3 bg-[#0a0a0a] border-2 border-blue-400 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.5)] group-hover/run:scale-125 transition-transform"></div>
+                                <div className="absolute -left-6.25 top-1.5 w-3 h-3 bg-ethereal-ink border-2 border-ethereal-amethyst rounded-full shadow-glass-solid group-hover/run:scale-125 transition-transform" />
                                 <div className="flex flex-col gap-1.5">
-                                  <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 self-start px-2 py-0.5 rounded border border-blue-500/20 shadow-sm">
+                                  <Eyebrow
+                                    as="span"
+                                    color="amethyst"
+                                    className="bg-ethereal-amethyst/10 self-start px-2 py-0.5 rounded border border-ethereal-amethyst/20"
+                                  >
                                     {item.time}
-                                  </span>
-                                  <div className="bg-white/5 p-4 rounded-xl border border-white/10 hover:bg-white/10 transition-colors shadow-sm">
-                                    <p className="text-sm font-bold text-white">
+                                  </Eyebrow>
+                                  <div className="bg-ethereal-marble/5 p-4 rounded-xl border border-ethereal-incense/10 hover:bg-ethereal-marble/10 transition-colors shadow-glass-ethereal">
+                                    <Text weight="bold" color="marble">
                                       {item.title}
-                                    </p>
+                                    </Text>
                                     {item.description && (
-                                      <p className="text-xs text-stone-400 mt-1.5 leading-relaxed">
+                                      <Text
+                                        size="sm"
+                                        color="graphite"
+                                        className="mt-1.5 leading-relaxed"
+                                      >
                                         {item.description}
-                                      </p>
+                                      </Text>
                                     )}
                                   </div>
                                 </div>
@@ -297,12 +359,12 @@ export default function TimelineProjectCard({
                             ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-stone-500 italic mt-6">
+                        <Text size="sm" color="graphite" className="italic mt-6">
                           {t(
                             "schedule.card.no_run_sheet",
                             "Harmonogram dnia nie został jeszcze opublikowany przez menedżera.",
                           )}
-                        </p>
+                        </Text>
                       )}
                     </div>
                   </div>
@@ -317,32 +379,27 @@ export default function TimelineProjectCard({
                           theme="dark"
                         />
                       ) : (
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center flex flex-col items-center justify-center h-full min-h-[150px]">
+                        <div className="bg-ethereal-marble/5 border border-ethereal-incense/10 rounded-2xl p-5 text-center flex flex-col items-center justify-center h-full min-h-37.5">
                           <Music
                             size={24}
-                            className="text-stone-600 mb-2 opacity-50"
+                            className="text-ethereal-graphite/40 mb-2"
                             aria-hidden="true"
                           />
-                          <p className="text-xs text-stone-500 italic">
+                          <Text size="sm" color="graphite" className="italic">
                             {t(
                               "schedule.card.no_spotify",
                               "Brak playlisty referencyjnej.",
                             )}
-                          </p>
+                          </Text>
                         </div>
                       )}
                     </div>
 
                     <div className="xl:col-span-3 space-y-4">
                       {isProgramLoading ? (
-                        <div className="flex justify-center py-10">
-                          <Loader2
-                            className="animate-spin text-emerald-400"
-                            aria-hidden="true"
-                          />
-                        </div>
+                        <EtherealLoader fullHeight={false} />
                       ) : programItems.length > 0 ? (
-                        programItems
+                        [...programItems]
                           .sort(
                             (a: ProgramItem, b: ProgramItem) =>
                               a.order - b.order,
@@ -354,26 +411,41 @@ export default function TimelineProjectCard({
                             return (
                               <div
                                 key={pi.id}
-                                className={`bg-white/5 border rounded-2xl overflow-hidden transition-all ${isPieceExpanded ? "border-emerald-500/30" : "border-white/10 hover:border-white/20"}`}
+                                className={cn(
+                                  "bg-ethereal-marble/5 border rounded-2xl overflow-hidden transition-all",
+                                  isPieceExpanded
+                                    ? "border-ethereal-sage/30"
+                                    : "border-ethereal-incense/10 hover:border-ethereal-incense/20",
+                                )}
                               >
                                 <div
                                   onClick={() =>
                                     setExpandedPieceId(
-                                      isPieceExpanded ? null : String(pi.piece),
+                                      isPieceExpanded
+                                        ? null
+                                        : String(pi.piece),
                                     )
                                   }
-                                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/10 transition-colors"
+                                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-ethereal-marble/5 transition-colors"
                                 >
                                   <div className="flex items-center gap-4">
-                                    <span className="text-emerald-500 font-black text-lg opacity-50 w-6 text-center">
+                                    <Eyebrow
+                                      as="span"
+                                      color="sage"
+                                      className="opacity-50 w-6 text-center"
+                                    >
                                       {idx + 1}.
-                                    </span>
+                                    </Eyebrow>
                                     <div>
-                                      <p className="font-bold text-white text-base">
+                                      <Text weight="bold" color="marble" size="md">
                                         {pi.piece_title}
-                                      </p>
-                                      <p className="text-xs text-stone-400 flex items-center gap-1.5 mt-0.5">
-                                        <Users size={12} aria-hidden="true" />{" "}
+                                      </Text>
+                                      <Text
+                                        size="sm"
+                                        color="graphite"
+                                        className="flex items-center gap-1.5 mt-0.5"
+                                      >
+                                        <Users size={12} aria-hidden="true" />
                                         {isPieceExpanded
                                           ? t(
                                               "schedule.card.hide_cast",
@@ -383,19 +455,19 @@ export default function TimelineProjectCard({
                                               "schedule.card.expand_cast",
                                               "Rozwiń obsadę (divisi)",
                                             )}
-                                      </p>
+                                      </Text>
                                     </div>
                                   </div>
                                   {isPieceExpanded ? (
                                     <ChevronUp
                                       size={18}
-                                      className="text-emerald-500"
+                                      className="text-ethereal-sage"
                                       aria-hidden="true"
                                     />
                                   ) : (
                                     <ChevronDown
                                       size={18}
-                                      className="text-stone-500"
+                                      className="text-ethereal-graphite/50"
                                       aria-hidden="true"
                                     />
                                   )}
@@ -407,82 +479,107 @@ export default function TimelineProjectCard({
                                       initial={{ height: 0 }}
                                       animate={{ height: "auto" }}
                                       exit={{ height: 0 }}
-                                      className="overflow-hidden bg-black/40 border-t border-white/5"
+                                      className="overflow-hidden bg-ethereal-ink/40 border-t border-ethereal-incense/5"
                                     >
                                       <div className="p-4 md:p-6">
                                         {isCastingsLoading ? (
-                                          <div className="flex justify-center py-4">
-                                            <Loader2
-                                              size={16}
-                                              className="animate-spin text-stone-500"
-                                              aria-hidden="true"
-                                            />
-                                          </div>
-                                        ) : castings.length > 0 ? (
+                                          <EtherealLoader fullHeight={false} />
+                                        ) : populatedCastings.length > 0 ? (
                                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                                             {Object.entries(
-                                              castings.reduce(
-                                                (
-                                                  acc: Record<
-                                                    string,
-                                                    PieceCasting[]
-                                                  >,
-                                                  c: PieceCasting,
-                                                ) => {
-                                                  const vl =
-                                                    c.voice_line_display ||
-                                                    c.voice_line ||
-                                                    "Inne";
-                                                  if (!acc[vl]) acc[vl] = [];
-                                                  acc[vl].push(c);
-                                                  return acc;
-                                                },
-                                                {},
-                                              ),
+                                              populatedCastings.reduce<
+                                                Record<
+                                                  string,
+                                                  PopulatedPieceCasting[]
+                                                >
+                                              >((acc, c) => {
+                                                const vl =
+                                                  c.voice_line_display ||
+                                                  c.voice_line ||
+                                                  "Inne";
+                                                if (!acc[vl]) acc[vl] = [];
+                                                acc[vl].push(c);
+                                                return acc;
+                                              }, {}),
                                             ).map(([vl, groupCastings]) => (
                                               <div
                                                 key={vl}
                                                 className="space-y-3"
                                               >
-                                                <h5 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest border-b border-white/10 pb-1.5 mb-2">
+                                                <Eyebrow
+                                                  as="h5"
+                                                  color="sage"
+                                                  className="border-b border-ethereal-incense/10 pb-1.5 mb-2"
+                                                >
                                                   {vl}
-                                                </h5>
+                                                </Eyebrow>
                                                 <ul className="space-y-2">
                                                   {groupCastings.map(
-                                                    (c: PieceCasting) => {
+                                                    (c: PopulatedPieceCasting) => {
+                                                      const participationArtistId =
+                                                        resolveParticipationArtistId(
+                                                          c,
+                                                        );
                                                       const isMe =
                                                         String(c.artist_id) ===
                                                           String(artistId) ||
-                                                        (c as any).participation
-                                                          ?.artist ===
-                                                          String(artistId); // Safe fallback to nested object if populated
+                                                        participationArtistId ===
+                                                          String(artistId);
+                                                      const displayName =
+                                                        c.artist_name ||
+                                                        resolveParticipationArtistName(
+                                                          c,
+                                                        ) ||
+                                                        t(
+                                                          "schedule.card.unknown_artist",
+                                                          "Artysta",
+                                                        );
 
                                                       return (
                                                         <li
                                                           key={c.id}
-                                                          className={`text-xs flex flex-col gap-1 ${isMe ? "text-white font-bold bg-white/10 p-2 rounded-lg border border-white/10 shadow-sm" : "text-stone-400"}`}
+                                                          className={cn(
+                                                            "flex flex-col gap-1",
+                                                            isMe &&
+                                                              "bg-ethereal-marble/10 p-2 rounded-lg border border-ethereal-incense/10",
+                                                          )}
                                                         >
-                                                          <span className="flex items-center gap-1.5">
+                                                          <Text
+                                                            as="span"
+                                                            size="sm"
+                                                            color={
+                                                              isMe
+                                                                ? "marble"
+                                                                : "graphite"
+                                                            }
+                                                            weight={
+                                                              isMe
+                                                                ? "bold"
+                                                                : "normal"
+                                                            }
+                                                            className="flex items-center gap-1.5"
+                                                          >
                                                             {isMe && (
-                                                              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
+                                                              <span
+                                                                className="w-2 h-2 bg-ethereal-sage rounded-full animate-pulse shadow-glass-ethereal shrink-0"
+                                                                aria-hidden="true"
+                                                              />
                                                             )}
-                                                            {c.artist_name ||
-                                                              (c as any)
-                                                                .participation
-                                                                ?.artist_name ||
-                                                              t(
-                                                                "schedule.card.unknown_artist",
-                                                                "Artysta",
-                                                              )}
-                                                          </span>
+                                                            {displayName}
+                                                          </Text>
                                                           {c.notes && (
-                                                            <span className="text-[9px] text-amber-400 italic bg-amber-500/10 px-1.5 py-0.5 rounded w-max">
+                                                            <Text
+                                                              as="span"
+                                                              size="xs"
+                                                              color="gold"
+                                                              className="italic bg-ethereal-gold/10 px-1.5 py-0.5 rounded w-max"
+                                                            >
                                                               {t(
                                                                 "schedule.card.note_label",
                                                                 "Notatka:",
                                                               )}{" "}
                                                               {c.notes}
-                                                            </span>
+                                                            </Text>
                                                           )}
                                                         </li>
                                                       );
@@ -493,12 +590,16 @@ export default function TimelineProjectCard({
                                             ))}
                                           </div>
                                         ) : (
-                                          <p className="text-xs text-stone-500 italic text-center py-4">
+                                          <Text
+                                            size="sm"
+                                            color="graphite"
+                                            className="italic text-center py-4"
+                                          >
                                             {t(
                                               "schedule.card.no_divisi",
                                               "Brak szczegółowego podziału (divisi) dla tego utworu.",
                                             )}
-                                          </p>
+                                          </Text>
                                         )}
                                       </div>
                                     </motion.div>
@@ -508,12 +609,16 @@ export default function TimelineProjectCard({
                             );
                           })
                       ) : (
-                        <p className="text-sm text-stone-500 text-center py-6">
+                        <Text
+                          size="sm"
+                          color="graphite"
+                          className="text-center py-6"
+                        >
                           {t(
                             "schedule.card.no_program",
                             "Repertuar nie został jeszcze ustalony.",
                           )}
-                        </p>
+                        </Text>
                       )}
                     </div>
                   </div>
@@ -522,7 +627,9 @@ export default function TimelineProjectCard({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </GlassCard>
     </motion.div>
   );
-}
+};
+
+export default TimelineProjectCard;

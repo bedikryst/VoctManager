@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-query";
 
 import type { Attendance } from "@/shared/types";
-import { artistKeys } from "@/features/artists/api/artist.queries";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { ScheduleService } from "./schedule.service";
