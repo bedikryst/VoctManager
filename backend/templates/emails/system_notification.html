@@ -3,15 +3,20 @@
 
 {% block content %}
 
-<p class="overline" style="font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
-   text-transform: uppercase; color: #c9a764; margin-bottom: 14px;
-   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+<!-- ════════════════════════════════════════
+     I. HEADLINE
+     ════════════════════════════════════════ -->
+
+<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          font-size: 9px; font-weight: 700; letter-spacing: 0.5em; text-transform: uppercase;
+          color: #c9a764; margin: 0 0 18px 0; text-align: center;">
   VoctManager
 </p>
 
 <h1 style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-            font-size: 28px; font-weight: 400; color: #111827;
-            line-height: 1.3; margin-bottom: 28px;">
+           font-size: 38px; font-weight: 400; line-height: 1.15; letter-spacing: 0.01em;
+           color: #111827; margin: 0 0 12px 0; text-align: center;">
   {% if metadata.project_name %}
     {{ metadata.project_name }}
   {% elif metadata.piece_title %}
@@ -23,8 +28,28 @@
   {% endif %}
 </h1>
 
-<p style="font-size: 15px; color: #4b5563; margin-bottom: 24px; line-height: 1.7;
-           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+          color: #c9bfb4; margin: 0 0 44px 0; text-align: center;">
+  {% translate "Notification from your workspace" %}
+</p>
+
+
+<!-- Thin rule -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 44px 0;">
+  <tr>
+    <td style="border-top: 1px solid #ede8df; font-size: 0; line-height: 0;">&nbsp;</td>
+  </tr>
+</table>
+
+
+<!-- ════════════════════════════════════════
+     II. BODY
+     ════════════════════════════════════════ -->
+
+<p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+          font-size: 21px; font-style: italic; color: #374151;
+          margin: 0 0 28px 0; text-align: center; line-height: 1.4;">
   {% if first_name %}
     {% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}
   {% else %}
@@ -33,128 +58,199 @@
 </p>
 
 {% if metadata.message %}
-<p style="font-size: 15px; color: #4b5563; margin-bottom: 24px; line-height: 1.7;
-           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          font-size: 15px; color: #4b5563; margin: 0 0 28px 0; line-height: 1.9; text-align: center;">
   {{ metadata.message }}
 </p>
 {% endif %}
 
-<!-- Invitation / project details card -->
+
+<!-- ════════════════════════════════════════
+     III. INFO CARDS
+     ════════════════════════════════════════ -->
+
+<!-- Invitation / project details -->
 {% if metadata.inviter_name or metadata.date_range or metadata.location %}
-<div class="info-card" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
-     border-left: 3px solid #c9a764; padding: 18px 22px; margin: 0 0 28px 0;">
-  {% if metadata.inviter_name %}
-  <p style="font-size: 14px; color: #4b5563; margin: 0 0 8px 0; line-height: 1.5;
-             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <span class="info-label" style="font-weight: 600; color: #111827;">{% translate "Invited by:" %}</span>
-    &nbsp;{{ metadata.inviter_name }}
-  </p>
-  {% endif %}
-  {% if metadata.date_range %}
-  <p style="font-size: 14px; color: #4b5563; margin: 0 0 8px 0; line-height: 1.5;
-             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <span class="info-label" style="font-weight: 600; color: #111827;">{% translate "Date:" %}</span>
-    &nbsp;{{ metadata.date_range }}
-  </p>
-  {% endif %}
-  {% if metadata.location %}
-  <p style="font-size: 14px; color: #4b5563; margin: 0; line-height: 1.5;
-             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <span class="info-label" style="font-weight: 600; color: #111827;">{% translate "Location:" %}</span>
-    &nbsp;{{ metadata.location }}
-  </p>
-  {% endif %}
-</div>
-{% endif %}
-
-<!-- Casting details -->
-{% if metadata.voice_line %}
-<div class="info-card" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
-     border-left: 3px solid #c9a764; padding: 18px 22px; margin: 0 0 28px 0;">
-  <p style="font-size: 14px; color: #4b5563; margin: 0; line-height: 1.5;
-             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <span class="info-label" style="font-weight: 600; color: #111827;">{% translate "Voice part:" %}</span>
-    &nbsp;{{ metadata.voice_line }}
-  </p>
-</div>
-{% endif %}
-
-<!-- Manager action details (artist name, action, rehearsal date) -->
-{% if metadata.artist_name %}
-<div class="info-card" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
-     border-left: 3px solid #c9a764; padding: 18px 22px; margin: 0 0 28px 0;">
-  {% if metadata.action_details %}
-  <p style="font-size: 14px; color: #4b5563; margin: 0 0 8px 0; line-height: 1.5;
-             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <span class="info-label" style="font-weight: 600; color: #111827;">{% translate "Details:" %}</span>
-    &nbsp;{{ metadata.action_details }}
-  </p>
-  {% endif %}
-  {% if metadata.rehearsal_date %}
-  <p style="font-size: 14px; color: #4b5563; margin: 0; line-height: 1.5;
-             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <span class="info-label" style="font-weight: 600; color: #111827;">{% translate "Rehearsal:" %}</span>
-    &nbsp;{{ metadata.rehearsal_date }}
-  </p>
-  {% endif %}
-</div>
-{% endif %}
-
-<!-- Absence details -->
-{% if metadata.rehearsal_date and not metadata.artist_name %}
-<div class="info-card" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
-     border-left: 3px solid #c9a764; padding: 18px 22px; margin: 0 0 28px 0;">
-  <p style="font-size: 14px; color: #4b5563; margin: 0; line-height: 1.5;
-             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <span class="info-label" style="font-weight: 600; color: #111827;">{% translate "Rehearsal date:" %}</span>
-    &nbsp;{{ metadata.rehearsal_date }}
-  </p>
-</div>
-{% endif %}
-
-<!-- Changes list -->
-{% if metadata.changes %}
-<div style="margin: 0 0 28px 0;">
-  <p style="font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-             color: #9ca3af; margin: 0 0 10px 0;
-             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    {% translate "Changes" %}
-  </p>
-  {% for change in metadata.changes %}
-  <span class="change-pill" style="display: inline-block; background-color: #f3f0ea;
-        border: 1px solid #e8e3d8; padding: 4px 12px; font-size: 11px; font-weight: 600;
-        letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280;
-        margin: 0 4px 6px 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    {{ change }}
-  </span>
-  {% endfor %}
-</div>
-{% endif %}
-
-<!-- CTA -->
-<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 36px;">
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 14px 0;">
   <tr>
-    <td align="center">
+    <td bgcolor="#faf9f7" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
+                                  border-left: 2px solid #c9a764; padding: 14px 18px 14px 20px;">
+      {% if metadata.inviter_name %}
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px; color: #4b5563; margin: 0 0 6px 0; line-height: 1.5;">
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                     font-size: 9px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: 0.14em; color: #c9a764;">{% translate "Invited by:" %}</span>
+        &ensp;{{ metadata.inviter_name }}
+      </p>
+      {% endif %}
+      {% if metadata.date_range %}
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px; color: #4b5563; margin: 0 0 6px 0; line-height: 1.5;">
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                     font-size: 9px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: 0.14em; color: #c9a764;">{% translate "Date:" %}</span>
+        &ensp;{{ metadata.date_range }}
+      </p>
+      {% endif %}
+      {% if metadata.location %}
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px; color: #4b5563; margin: 0; line-height: 1.5;">
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                     font-size: 9px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: 0.14em; color: #c9a764;">{% translate "Location:" %}</span>
+        &ensp;{{ metadata.location }}
+      </p>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<!-- Voice / casting -->
+{% if metadata.voice_line %}
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 14px 0;">
+  <tr>
+    <td bgcolor="#faf9f7" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
+                                  border-left: 2px solid #c9a764; padding: 14px 18px 14px 20px;">
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px; color: #4b5563; margin: 0; line-height: 1.5;">
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                     font-size: 9px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: 0.14em; color: #c9a764;">{% translate "Voice part:" %}</span>
+        &ensp;{{ metadata.voice_line }}
+      </p>
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<!-- Manager action details -->
+{% if metadata.artist_name %}
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 14px 0;">
+  <tr>
+    <td bgcolor="#faf9f7" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
+                                  border-left: 2px solid #c9a764; padding: 14px 18px 14px 20px;">
+      {% if metadata.action_details %}
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px; color: #4b5563; margin: 0 0 6px 0; line-height: 1.5;">
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                     font-size: 9px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: 0.14em; color: #c9a764;">{% translate "Details:" %}</span>
+        &ensp;{{ metadata.action_details }}
+      </p>
+      {% endif %}
+      {% if metadata.rehearsal_date %}
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px; color: #4b5563; margin: 0; line-height: 1.5;">
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                     font-size: 9px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: 0.14em; color: #c9a764;">{% translate "Rehearsal:" %}</span>
+        &ensp;{{ metadata.rehearsal_date }}
+      </p>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<!-- Absence / standalone rehearsal date -->
+{% if metadata.rehearsal_date and not metadata.artist_name %}
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 14px 0;">
+  <tr>
+    <td bgcolor="#faf9f7" style="background-color: #faf9f7; border: 1px solid #e8e3d8;
+                                  border-left: 2px solid #c9a764; padding: 14px 18px 14px 20px;">
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 13px; color: #4b5563; margin: 0; line-height: 1.5;">
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                     font-size: 9px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: 0.14em; color: #c9a764;">{% translate "Rehearsal date:" %}</span>
+        &ensp;{{ metadata.rehearsal_date }}
+      </p>
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<!-- Changes pills -->
+{% if metadata.changes %}
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 28px 0;">
+  <tr>
+    <td>
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+                color: #9ca3af; margin: 0 0 10px 0;">
+        {% translate "Changes" %}
+      </p>
+      {% for change in metadata.changes %}
+      <span style="display: inline-block; background-color: #f3f0ea; border: 1px solid #e8e3d8;
+                   padding: 4px 12px;
+                   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                   font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+                   color: #6b7280; margin: 0 4px 6px 0;">
+        {{ change }}
+      </span>
+      {% endfor %}
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+
+<!-- ════════════════════════════════════════
+     IV. CTA
+     ════════════════════════════════════════ -->
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 44px 0;">
+  <tr>
+    <td bgcolor="#faf8f4" style="background-color: #faf8f4; border: 1px solid #e8e3d8;
+                                 padding: 40px 32px; text-align: center;">
+
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 9px; font-weight: 700; letter-spacing: 0.42em; text-transform: uppercase;
+                color: #c9bfb4; margin: 0 0 24px 0;">
+        {% translate "Your workspace" %}
+      </p>
+
       <a href="{{ site_url }}/panel"
-         class="btn"
-         style="display: inline-block; background-color: #111827; color: #ffffff;
-                text-decoration: none; padding: 16px 40px; border-radius: 3px;
-                font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
-                text-transform: uppercase;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-        {% translate "Open VoctManager" %}
+         style="display: inline-block; background-color: #111827; color: #c9a764;
+                text-decoration: none; padding: 20px 52px;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 11px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;">
+        {% translate "Open VoctManager" %} &rarr;
       </a>
+
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 11px; color: #c9bfb4; margin: 20px 0 0 0; letter-spacing: 0.04em;">
+        {% translate "View the full details in your workspace" %}
+      </p>
+
     </td>
   </tr>
 </table>
 
-<hr class="divider" style="border: 0; border-top: 1px solid #e8e3d8; margin: 0 0 24px 0;" />
 
-<p style="font-size: 14px; color: #9ca3af; margin: 0; line-height: 1.7;
-           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-  {% translate "Musically yours," %}<br />
-  <strong style="color: #111827; font-size: 14px;">{% translate "The VoctEnsemble Team" %}</strong>
+<!-- ════════════════════════════════════════
+     V. CLOSING
+     ════════════════════════════════════════ -->
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 44px 0;">
+  <tr>
+    <td style="border-top: 1px solid #ede8df; font-size: 0; line-height: 0;">&nbsp;</td>
+  </tr>
+</table>
+
+<p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+          font-size: 18px; font-style: italic; color: #4b5563;
+          margin: 0 0 12px 0; text-align: center; line-height: 1.5;">
+  {% translate "With warmest regards," %}
 </p>
+
+<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          font-size: 9px; font-weight: 700; letter-spacing: 0.48em; text-transform: uppercase;
+          color: #111827; margin: 0; text-align: center;">
+  {% translate "The VoctEnsemble Team" %}
+</p>
+
 
 {% endblock %}

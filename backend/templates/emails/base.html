@@ -10,236 +10,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="x-apple-disable-message-reformatting" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <title></title>
     <style>
-      /* ── Reset ── */
-      body, p, h1, h2, h3, h4, h5, h6 { margin: 0; padding: 0; }
-      img { border: 0; outline: none; text-decoration: none;
-            -ms-interpolation-mode: bicubic; max-width: 100%; }
+      /* Reset & Base */
+      body, p, h1, h2, h3 { margin: 0; padding: 0; }
+      img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; max-width: 100%; display: block; }
       body {
         margin: 0; padding: 0; width: 100% !important;
         -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;
-        background-color: #f5f3ef;
+        background-color: #f8f6f2; 
       }
 
-      /* ── Container ── */
+      /* Container */
       .email-container { max-width: 600px; margin: 0 auto; }
 
-      /* ── Typography ── */
-      h1, h2, h3 {
-        font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-        color: #111827;
-        font-weight: 400;
-        line-height: 1.3;
-      }
-      p, li, td, a, span {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                     Helvetica, Arial, sans-serif;
-        font-size: 15px;
-        line-height: 1.7;
-        color: #4b5563;
-      }
-      a { color: #111827; }
+      /* Typography Fallbacks */
+      .serif { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important; }
+      .sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; }
 
-      /* ── Layout helpers ── */
-      .content-cell { padding: 48px 52px; }
-      .overline {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: #9ca3af;
-        margin-bottom: 14px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                     Helvetica, Arial, sans-serif;
-      }
-      .divider {
-        border: 0;
-        border-top: 1px solid #e8e3d8;
-        margin: 32px 0;
+      /* Buttons & Interaction */
+      .btn:hover { background-color: #1f2937 !important; border-color: #1f2937 !important; }
+
+      /* Mobile Adjustments */
+      @media only screen and (max-width: 600px) {
+        .content-cell { padding: 44px 28px !important; }
+        .logo-cell { padding: 24px 0 !important; }
+        .logo-img { height: 120px !important; }
+        .outer-cell { padding: 32px 10px !important; }
       }
 
-      /* ── CTA Button ── */
-      .btn {
-        display: inline-block;
-        background-color: #111827;
-        color: #ffffff !important;
-        text-decoration: none;
-        padding: 15px 36px;
-        border-radius: 3px;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                     Helvetica, Arial, sans-serif;
-      }
-
-      /* ── Cards ── */
-      .info-card {
-        background-color: #faf9f7;
-        border: 1px solid #e8e3d8;
-        border-left: 3px solid #c9a764;
-        padding: 18px 22px;
-        margin: 24px 0;
-      }
-      .info-card p {
-        font-size: 14px;
-        margin: 0 0 6px 0;
-        line-height: 1.5;
-      }
-      .info-card p:last-child { margin: 0; }
-      .info-label {
-        font-weight: 600;
-        color: #111827;
-        font-size: 14px;
-      }
-      .security-card {
-        background-color: #fffbeb;
-        border: 1px solid #fde68a;
-        border-left: 3px solid #f59e0b;
-        padding: 18px 22px;
-        margin: 24px 0;
-      }
-      .danger-card {
-        background-color: #fff1f2;
-        border: 1px solid #fecdd3;
-        border-left: 3px solid #f43f5e;
-        padding: 18px 22px;
-        margin: 24px 0;
-      }
-
-      /* ── Change pills ── */
-      .change-pill {
-        display: inline-block;
-        background-color: #f3f0ea;
-        border: 1px solid #e8e3d8;
-        padding: 3px 10px;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #6b7280;
-        margin: 2px 3px 2px 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                     Helvetica, Arial, sans-serif;
-      }
-
-      /* ── Footer ── */
-      .email-footer {
-        background-color: #f5f3ef;
-        padding: 28px 52px;
-        text-align: center;
-      }
-      .email-footer p {
-        font-size: 12px;
-        color: #9ca3af;
-        margin: 0 0 4px 0;
-      }
-
-      /* ── Dark mode ── */
+      /* Dark Mode Strategy */
       @media (prefers-color-scheme: dark) {
         body, .email-outer { background-color: #0f172a !important; }
-        .email-body        { background-color: #1e293b !important; }
-        .logo-cell         { background-color: #1e293b !important; }
-        .hairline-cell     { background-color: #1e293b !important; }
-        .content-cell      { background-color: #1e293b !important; }
-        .email-footer      { background-color: #0f172a !important; }
-        h1, h2, h3         { color: #f1f5f9 !important; }
-        p, li, td, span    { color: #94a3b8 !important; }
-        .info-label        { color: #f1f5f9 !important; }
-        .overline          { color: #64748b !important; }
-        .info-card {
-          background-color: #1e3a5f !important;
-          border-color: #334155 !important;
-        }
-        .security-card {
-          background-color: #2d2600 !important;
-          border-color: #854d0e !important;
-        }
-        .divider           { border-top-color: #334155 !important; }
-        .btn {
-          background-color: #f1f5f9 !important;
-          color: #0f172a !important;
-        }
-        .email-footer p    { color: #475569 !important; }
+        .email-container { background-color: #1e293b !important; border-color: #334155 !important; }
+        .content-cell { background-color: #1e293b !important; }
+        .logo-cell { background-color: #1e293b !important; border-bottom-color: #334155 !important; }
+        .email-footer { background-color: #0f172a !important; border-top-color: #334155 !important; }
+        h1, h2, h3, .info-label { color: #f1f5f9 !important; }
+        p, li, td, span { color: #94a3b8 !important; }
+        .divider { border-top-color: #334155 !important; }
+        .btn { background-color: #c9a764 !important; color: #0f172a !important; border-color: #c9a764 !important; }
+        .footer-text { color: #475569 !important; }
+        u + .body .email-outer { background-color: #0f172a !important; }
       }
+
+      /* Fix dla Gmail Desktop */
+      u + .body .email-outer { background-color: #f8f6f2 !important; }
     </style>
   </head>
-  <body>
-    <div class="email-outer" style="background-color: #f5f3ef; padding: 40px 16px;">
-      <table
-        border="0" cellpadding="0" cellspacing="0"
-        class="email-container"
-        width="600"
-        align="center"
-        style="max-width: 600px; width: 100%;"
-      >
-
-        <!-- ── Gold accent bar ── -->
-        <tr>
-          <td style="background-color: #c9a764; height: 4px; font-size: 0; line-height: 0; mso-line-height-rule: exactly;">&nbsp;</td>
-        </tr>
-
-        <!-- ── Logo ── -->
-        <tr>
-          <td
-            class="logo-cell"
-            align="center"
-            style="background-color: #ffffff; padding: 0px 0px 0px;"
+  <body class="body" style="margin: 0; padding: 0 !important; mso-line-height-rule: exactly; background-color: #f8f6f2;">
+    
+    <table class="email-outer" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f8f6f2" style="background-color: #f8f6f2;">
+      <tr>
+        <td class="outer-cell" align="center" valign="top" bgcolor="#f8f6f2" style="padding: 60px 16px; background-color: #f8f6f2;">
+          
+          <table
+            role="presentation" border="0" cellpadding="0" cellspacing="0"
+            class="email-container"
+            width="600"
+            style="max-width: 600px; width: 100%; margin: 0 auto; background-color: #ffffff; border: 1px solid #e8e3d8; border-radius: 4px; border-collapse: separate; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.09);"
           >
-            {% if logo_url %}
-              <img
-                src="{{ logo_url }}"
-                alt="VoctEnsemble"
-                height="200"
-                style="height: 200px; width: auto; display: block; margin: 0 auto;"
-              />
-            {% else %}
-              <!-- LOGO PLACEHOLDER — replace with <img src="..."> when ready -->
-              <p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-                         font-size: 21px; font-weight: 400; letter-spacing: 0.28em;
-                         color: #111827; margin: 0; text-align: center;
-                         text-transform: uppercase;">
-                VOCT<span style="color: #c9a764;">&middot;</span>ENSEMBLE
-              </p>
-            {% endif %}
-          </td>
-        </tr>
 
-        <!-- ── Hairline under logo ── -->
-        <tr>
-          <td
-            class="hairline-cell"
-            style="background-color: #ffffff; padding: 0 52px;"
-          >
-            <div style="border-top: 1px solid #e8e3d8; font-size: 0; line-height: 0;">&nbsp;</div>
-          </td>
-        </tr>
+            <tr>
+              <td style="background-color: #c9a764; height: 3px; font-size: 0; line-height: 0;">&nbsp;</td>
+            </tr>
 
-        <!-- ── Main content ── -->
-        <tr>
-          <td class="content-cell email-body" style="background-color: #ffffff; padding: 48px 52px;">
-            {% block content %}{% endblock %}
-          </td>
-        </tr>
+            <tr>
+              <td
+                class="logo-cell"
+                align="center"
+                style="background-color: #ffffff; padding: 40px 0; border-bottom: 1px solid #f0ede7;"
+              >
+                {% if logo_url %}
+                  <img
+                    src="{{ logo_url }}"
+                    alt="VoctEnsemble"
+                    height="160"
+                    class="logo-img"
+                    style="height: 160px; width: auto; max-width: 100%; display: block; margin: 0 auto;"
+                  />
+                {% else %}
+                  <div style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+                              font-size: 22px; font-weight: 400; letter-spacing: 0.4em;
+                              color: #111827; margin: 0; text-transform: uppercase; text-align: center;">
+                    VOCT<span style="color: #c9a764;">&middot;</span>ENSEMBLE
+                  </div>
+                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                              font-size: 7px; font-weight: 700; letter-spacing: 0.6em;
+                              color: #c9bfb4; text-transform: uppercase; margin: 10px 0 0 0; text-align: center;">
+                    M A N A G E R
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
 
-        <!-- ── Footer ── -->
-        <tr>
-          <td class="email-footer" style="background-color: #f5f3ef; padding: 28px 52px; text-align: center;">
-            {% load i18n %}
-            <p style="font-size: 12px; color: #9ca3af; margin: 0 0 4px 0;
-                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-              VoctManager &copy; {% now "Y" %} VoctEnsemble.
-            </p>
-            <p style="font-size: 12px; color: #b8a99a; margin: 0;
-                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-              {% translate "Automatically generated. Please do not reply to this message." %}
-            </p>
-          </td>
-        </tr>
+            <tr>
+              <td class="content-cell" style="background-color: #ffffff; padding: 60px 64px;">
+                {% block content %}{% endblock %}
+              </td>
+            </tr>
 
-      </table>
-    </div>
-  </body>
+            <tr>
+              <td class="email-footer" style="background-color: #faf9f7; padding: 36px 64px; text-align: center; border-top: 1px solid #ede8df;">
+                {% load i18n %}
+
+                <p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                           font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+                           color: #c9bfb4; margin: 0 0 6px 0; line-height: 1.6;">
+                  VoctManager &middot; {% now "Y" %}
+                </p>
+                <p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                           font-size: 10px; color: #ddd8d1; margin: 0; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.1em;">
+                  {% translate "Automatically generated. Please do not reply." %}
+                </p>
+              </td>
+            </tr>
+
+          </table>
+          <table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+            <tr>
+              <td style="padding: 24px 20px; color: #b8a99a; font-family: sans-serif; font-size: 10px; line-height: 1.5; text-align: center;">
+                {% load i18n %}
+                <p style="margin: 0;">{% translate "You are receiving this because you are a member of the VoctEnsemble artist network." %}</p>
+              </td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+    </table>
+    </body>
 </html>

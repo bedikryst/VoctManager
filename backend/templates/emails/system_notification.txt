@@ -23,9 +23,11 @@ VOCTMANAGER
 {% if metadata.rehearsal_date %}{% translate "Rehearsal:" %} {{ metadata.rehearsal_date }}
 {% endif %}
 
-{% if metadata.changes %}{% translate "Changes:" %}
-{% for change in metadata.changes %}  - {{ change }}
-{% endfor %}{% endif %}
+{% if metadata.changes %}
+{% translate "Changes:" %}
+{% for change in metadata.changes %}
+  → {{ change }}{% endfor %}
+{% endif %}
 
 -----------------------------------------
 {% translate "Open VoctManager:" %} {{ site_url }}/panel

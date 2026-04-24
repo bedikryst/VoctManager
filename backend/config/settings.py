@@ -154,7 +154,7 @@ REST_FRAMEWORK = {
 }
 
 # --- SWAGGER / OPENAPI SETTINGS ---
-EMAIL_LOGO_URL = "https://raw.githubusercontent.com/bedikryst/VoctManager/5f0aaeb2cef6d3846f35aeec68c6a3b34cc6ca89/docs/assets/logo_Voct.png"
+EMAIL_LOGO_URL = "https://raw.githubusercontent.com/bedikryst/VoctManager/8555d59c255bdf4f9e24351ec9e98bb4171c222b/docs/assets/monogram_V.png"
 SPECTACULAR_SETTINGS = {
     'TITLE': 'VoctManager API',
     'DESCRIPTION': 'Enterprise API for VoctEnsemble a cappella octet.',

@@ -1,36 +1,32 @@
 {% load i18n %}
-{% translate "VOCTMANAGER INVITATION" %}
+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+        VOCTMANAGER / EXCLUSIVE INVITATION
+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 
-{% translate "Activate your artist profile" %}
-=========================================
-
-{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+{% if first_name %}{% blocktranslate trimmed %}Dear {{ first_name }},{% endblocktranslate %}{% else %}{% translate "Dear Artist," %}{% endif %}
 
 {% blocktranslate trimmed %}
-Your exclusive access to VoctManager has been prepared. Complete the final
-activation step to set your secure password and enter the operational
-workspace used for our projects and rehearsals.
+We are honored to invite you to our digital workspace.
+Your profile has been meticulously prepared. Please
+complete the final activation step to establish your secure
+credentials and step into the operational heart of our ensemble.
 {% endblocktranslate %}
 
-— {% translate "Security Notice:" %} —
-{% blocktranslate trimmed %}
-This activation link is unique to your account. For your security, it will
-expire automatically. Please do not share it with anyone.
-{% endblocktranslate %}
 
-{% translate "ACTIVATE ACCOUNT NOW:" %}
+— {% translate "ACTIVATE YOUR PROFILE" %} —
 {{ activation_link }}
 
------------------------------------------
-{% blocktranslate trimmed %}
-If the button does not work, securely copy and paste this link into your browser:
-{% endblocktranslate %}
-{{ activation_link }}
 
------------------------------------------
+. . . . . . . . . . . . . . . . . . . . . . . . . .
+
+{% translate "FOR YOUR SECURITY" %}
 {% blocktranslate trimmed %}
-If you did not expect this message, contact the VoctEnsemble administration team.
+This unique access key will expire automatically.
+Please ensure it remains confidential and do not share it.
 {% endblocktranslate %}
 
-{% translate "Musically yours," %}
+. . . . . . . . . . . . . . . . . . . . . . . . . .
+
+
+{% translate "With warmest regards," %}
 {% translate "The VoctEnsemble Team" %}

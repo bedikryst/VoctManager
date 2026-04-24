@@ -53,6 +53,7 @@ class PieceCastingMetadata(EnterpriseBaseDTO):
     piece_title: str
     voice_line: Optional[str] = None
     message: Optional[str] = None
+    changes: Optional[List[str]] = None
 
 # --- HR & Logistics ---
 class CrewAssignedMetadata(EnterpriseBaseDTO):

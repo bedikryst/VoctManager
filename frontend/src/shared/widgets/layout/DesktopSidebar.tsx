@@ -109,34 +109,38 @@ export const DesktopSidebar = ({
       >
         <div className="flex flex-col h-full w-[280px] p-4 relative">
           {/* STRATUM: LOGO */}
-          <div className="relative flex h-16 w-full flex-shrink-0 items-center overflow-hidden mb-4 pl-2">
-            <motion.div
+          <div className="relative flex h-16 w-full flex-shrink-0 items-start overflow-hidden mb-4">
+            <motion.img
+              src="/monogram_V.png"
               initial={false}
               animate={{
                 opacity: isExpanded ? 0 : 1,
-                scale: isExpanded ? 0.9 : 1,
+                scale: isExpanded ? 0 : 1,
               }}
-              transition={CONTENT_FADE_TRANSITION}
-              className="absolute flex items-center justify-center pointer-events-none select-none w-10 h-10 rounded-[12px] bg-gradient-to-br from-ethereal-gold to-ethereal-ink/90 shadow-md"
-              aria-hidden={isExpanded}
-            >
-              <Heading color="white" size="3xl" weight="medium">
-                V
-              </Heading>
-            </motion.div>
+              className="absolute left-3.5 top-2 h-14 object-contain"
+            />
 
             <motion.div
               initial={false}
-              animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -20 }}
+              animate={{
+                opacity: isExpanded ? 1 : 0,
+                x: isExpanded ? 0 : 20,
+              }}
               transition={CONTENT_FADE_TRANSITION}
-              className="absolute left-[56px] flex items-center pointer-events-none select-none"
+              className="absolute left-[36px] top-5 flex items-center pointer-events-none select-none"
               aria-hidden={!isExpanded}
             >
               <Heading size="4xl">
                 Voct
-                <Text as="span" weight="light" color="gold" size="3xl">
+                <Heading
+                  as="span"
+                  weight="light"
+                  color="gold"
+                  size="4xl"
+                  className="italic"
+                >
                   Manager
-                </Text>
+                </Heading>
               </Heading>
             </motion.div>
           </div>

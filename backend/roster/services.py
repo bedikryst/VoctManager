@@ -192,18 +192,30 @@ class ProjectManagementService:
                 update_data['location'] = location
                 update_data['timezone'] = resolved_timezone
                 
-                if project.location_id != location.id if location else None:
-                    changes.append("Location")
+                if project.location_id != (location.id if location else None):
+                    old_loc = project.location.name if project.location else "None"
+                    new_loc = location.name if location else "None"
+                    changes.append(f"Location: {old_loc} ➔ {new_loc}")
 
             if 'conductor' in dto.model_fields_set:
                 if project.conductor_id != dto.conductor:
-                    changes.append("Conductor")
+                    changes.append("Conductor updated")
                 update_data['conductor_id'] = dto.conductor
 
+            from datetime import datetime, date, time
+            def fmt(v):
+                if isinstance(v, datetime): return v.strftime('%d.%m.%Y %H:%M')
+                if isinstance(v, date): return v.strftime('%d.%m.%Y')
+                if isinstance(v, time): return v.strftime('%H:%M')
+                if v is None: return "None"
+                return str(v)
+
             for attr, value in update_data.items():
+                if attr in ['location', 'timezone']: continue
                 old_value = getattr(project, attr)
                 if old_value != value:
-                    changes.append(FIELD_NAMES.get(attr, attr))
+                    field_name = FIELD_NAMES.get(attr, attr.title())
+                    changes.append(f"{field_name}: {fmt(old_value)} ➔ {fmt(value)}")
                 setattr(project, attr, value)
                 
             project.save()

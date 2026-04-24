@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VoctManager 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-09 18:18+0000\n"
+"POT-Creation-Date: 2026-04-24 09:58+0000\n"
 "PO-Revision-Date: 2026-04-09 17:15+0100\n"
 "Last-Translator: Krystian Bugalski\n"
 "Language-Team: Polish\n"
@@ -18,198 +18,198 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
 
-#: archive/models.py:17
+#: archive/models.py:35
 #, python-format
 msgid "File size must be under %(size)s MB. Current: %(current)s MB"
 msgstr ""
 "Rozmiar pliku musi być mniejszy niż %(size)s MB. Aktualny: %(current)s MB"
 
-#: archive/models.py:23 roster/models.py:40 roster/models.py:221
+#: archive/models.py:46 roster/models.py:43 roster/models.py:258
 msgid "First Name"
 msgstr "Imię"
 
-#: archive/models.py:24 roster/models.py:41 roster/models.py:222
+#: archive/models.py:47 roster/models.py:44 roster/models.py:259
 msgid "Last Name"
 msgstr "Nazwisko"
 
-#: archive/models.py:25
+#: archive/models.py:48
 msgid "e.g. 1885"
 msgstr "np. 1885"
 
-#: archive/models.py:25
+#: archive/models.py:48
 msgid "Birth Year"
 msgstr "Rok urodzenia"
 
-#: archive/models.py:26
+#: archive/models.py:49
 msgid "Death Year"
 msgstr "Rok śmierci"
 
-#: archive/models.py:29 archive/models.py:55
+#: archive/models.py:52 archive/models.py:88
 msgid "Composer"
 msgstr "Kompozytor"
 
-#: archive/models.py:30
+#: archive/models.py:53
 msgid "Composers"
 msgstr "Kompozytorzy"
 
-#: archive/models.py:40
+#: archive/models.py:64
 msgid "Medieval"
 msgstr "Średniowiecze"
 
-#: archive/models.py:41
+#: archive/models.py:65
 msgid "Renaissance"
 msgstr "Renesans"
 
-#: archive/models.py:42
+#: archive/models.py:66
 msgid "Baroque"
 msgstr "Barok"
 
-#: archive/models.py:43
+#: archive/models.py:67
 msgid "Classical"
 msgstr "Klasycyzm"
 
-#: archive/models.py:44
+#: archive/models.py:68
 msgid "Romantic"
 msgstr "Romantyzm"
 
-#: archive/models.py:45
+#: archive/models.py:69
 msgid "20th Century"
 msgstr "XX Wiek"
 
-#: archive/models.py:46
+#: archive/models.py:70
 msgid "Contemporary"
 msgstr "Muzyka współczesna"
 
-#: archive/models.py:47
+#: archive/models.py:71
 msgid "Popular Music"
 msgstr "Muzyka rozrywkowa"
 
-#: archive/models.py:48
+#: archive/models.py:72
 msgid "Folk / Traditional"
 msgstr "Folk / Tradycyjna"
 
-#: archive/models.py:49 roster/models.py:219
+#: archive/models.py:73 logistics/models.py:15 roster/models.py:256
 msgid "Other"
 msgstr "Inne"
 
-#: archive/models.py:52
+#: archive/models.py:81
 msgid "Title"
 msgstr "Tytuł"
 
-#: archive/models.py:57
+#: archive/models.py:90
 msgid "Arranger"
 msgstr "Aranżer"
 
-#: archive/models.py:58
+#: archive/models.py:91
 msgid "e.g. Latin, English"
 msgstr "np. łacina, polski"
 
-#: archive/models.py:58
+#: archive/models.py:91
 msgid "Language"
 msgstr "Język"
 
-#: archive/models.py:59
+#: archive/models.py:92
 msgid "Duration in seconds"
 msgstr "Czas trwania w sekundach"
 
-#: archive/models.py:59
+#: archive/models.py:92
 msgid "Estimated Duration"
 msgstr "Szacowany czas trwania"
 
-#: archive/models.py:60
+#: archive/models.py:93
 msgid "e.g. SSAATTBB"
 msgstr "np. SSAATTBB"
 
-#: archive/models.py:60
+#: archive/models.py:93
 msgid "Voicing"
 msgstr "Obsada głosowa"
 
-#: archive/models.py:61
+#: archive/models.py:94
 msgid "Notes / Description"
 msgstr "Notatki / Opis"
 
-#: archive/models.py:64
+#: archive/models.py:102
 msgid "Sheet Music (PDF)"
 msgstr "Nuty (PDF)"
 
-#: archive/models.py:66
+#: archive/models.py:105
 msgid "Original language text"
 msgstr "Tekst w języku oryginalnym"
 
-#: archive/models.py:66
+#: archive/models.py:105
 msgid "Lyrics (Original)"
 msgstr "Słowa (Oryginał)"
 
-#: archive/models.py:67
+#: archive/models.py:106
 msgid "Translated text"
 msgstr "Tekst przetłumaczony"
 
-#: archive/models.py:67
+#: archive/models.py:106
 msgid "Lyrics (Translation)"
 msgstr "Słowa (Tłumaczenie)"
 
-#: archive/models.py:68
+#: archive/models.py:107
 msgid "YouTube URL"
 msgstr "Link YouTube"
 
-#: archive/models.py:68
+#: archive/models.py:107
 msgid "Recording (YouTube)"
 msgstr "Nagranie (YouTube)"
 
-#: archive/models.py:69
+#: archive/models.py:108
 msgid "Spotify URL"
 msgstr "Link Spotify"
 
-#: archive/models.py:69
+#: archive/models.py:108
 msgid "Recording (Spotify)"
 msgstr "Nagranie (Spotify)"
 
-#: archive/models.py:71
+#: archive/models.py:110
 msgid "Year of Composition"
 msgstr "Rok kompozycji"
 
-#: archive/models.py:72
+#: archive/models.py:111
 msgid "Epoch"
 msgstr "Epoka"
 
-#: archive/models.py:75 archive/models.py:91 archive/models.py:113
-#: roster/models.py:106 roster/models.py:152
+#: archive/models.py:114 archive/models.py:138 archive/models.py:167
+#: roster/models.py:131 roster/models.py:177
 msgid "Piece"
 msgstr "Utwór"
 
-#: archive/models.py:76
+#: archive/models.py:115
 msgid "Pieces"
 msgstr "Utwory"
 
-#: archive/models.py:92
+#: archive/models.py:140
 msgid "Voice Line"
 msgstr "Linia melodyczna"
 
-#: archive/models.py:93
+#: archive/models.py:141
 msgid "Required Singers"
 msgstr "Wymagana liczba osób"
 
-#: archive/models.py:96
+#: archive/models.py:144
 msgid "Voice Requirement"
 msgstr "Wymagania głosowe"
 
-#: archive/models.py:97
+#: archive/models.py:145
 msgid "Voice Requirements"
 msgstr "Wymagania głosowe"
 
-#: archive/models.py:114
+#: archive/models.py:169
 msgid "Melody Line"
 msgstr "Partia głosu"
 
-#: archive/models.py:115
+#: archive/models.py:174
 msgid "Audio File (MIDI/MP3)"
 msgstr "Plik audio (MIDI/MP3)"
 
-#: archive/models.py:118
+#: archive/models.py:178
 msgid "Audio Track"
 msgstr "Ścieżka audio"
 
-#: archive/models.py:119
+#: archive/models.py:179
 msgid "Audio Tracks"
 msgstr "Ścieżki audio"
 
@@ -305,7 +305,19 @@ msgstr "Bezglutenowa"
 msgid "Bez laktozy"
 msgstr "Bezlaktosowa"
 
-#: core/ical_service.py:74 roster/models.py:176 roster/models.py:195
+#: core/constants.py:46
+msgid "Manager / Conductor"
+msgstr "Menedżer / Dyrygent"
+
+#: core/constants.py:47
+msgid "Artist / Singer"
+msgstr "Artysta / Śpiewak"
+
+#: core/constants.py:48
+msgid "Crew / Collaborator"
+msgstr "Obsługa / Współpracownik"
+
+#: core/ical_service.py:74 roster/models.py:213 roster/models.py:232
 msgid "Rehearsal"
 msgstr "Próba"
 
@@ -317,8 +329,8 @@ msgstr "Brak"
 msgid "Focus"
 msgstr "Temat próby"
 
-#: core/ical_service.py:77 roster/models.py:92 roster/models.py:129
-#: roster/models.py:166 roster/models.py:250
+#: core/ical_service.py:77 roster/models.py:117 roster/models.py:154
+#: roster/models.py:191 roster/models.py:287
 msgid "Project"
 msgstr "Projekt"
 
@@ -326,11 +338,11 @@ msgstr "Projekt"
 msgid "Concert"
 msgstr "Koncert"
 
-#: core/ical_service.py:100 roster/models.py:83
+#: core/ical_service.py:100 roster/models.py:91
 msgid "Dress Code (Male)"
 msgstr "Strój (Mężczyźni)"
 
-#: core/ical_service.py:101 roster/models.py:84
+#: core/ical_service.py:101 roster/models.py:92
 msgid "Dress Code (Female)"
 msgstr "Strój (Kobiety)"
 
@@ -342,60 +354,188 @@ msgstr "Angielski"
 msgid "Polish"
 msgstr "Polski"
 
-#: core/models.py:95
-msgid "The core authentication user linked to this profile."
-msgstr "Główne konto użytkownika powiązane z tym profilem."
+#: core/models.py:90
+msgid ""
+"The core authentication user linked to this profile. Cascades on hard delete."
+msgstr ""
+"Główne konto użytkownika powiązane z tym profilem. Kaskadowe usuwanie przy "
+"twardym skasowaniu."
 
-#: core/models.py:102
+#: core/models.py:97
 msgid "International format phone number."
 msgstr "Numer telefonu w formacie międzynarodowym."
 
-#: core/models.py:110
+#: core/models.py:105
 msgid "User preferred UI language."
 msgstr "Preferowany język interfejsu użytkownika."
 
-#: core/models.py:116
+#: core/models.py:110
 msgid ""
-"Critical for rendering rehearsal/project times correctly across regions."
+"Local timezone for this entity. Critical for UI rendering and iCal feeds."
 msgstr ""
-"Kluczowe dla prawidłowego wyświetlania czasu prób i projektów w różnych "
-"strefach czasowych."
+"Lokalna strefa czasowa dla tego podmiotu. Kluczowa dla renderowania UI i "
+"kanałów iCal."
 
-#: core/models.py:123
+#: core/models.py:117
 msgid "Primary dietary requirement for catering."
 msgstr "Główne wymagania dietetyczne dla cateringu."
 
-#: core/models.py:127
+#: core/models.py:121
 msgid "Specific allergies or custom dietary instructions."
 msgstr "Konkretne alergie lub instrukcje dietetyczne."
 
-#: core/models.py:133
+#: core/models.py:127
 msgid "Standard touring or uniform shirt size."
 msgstr "Standardowy rozmiar koszuli/munduru."
 
-#: core/models.py:138
+#: core/models.py:132
 msgid "European shoe size format (e.g., 42, 42.5)."
 msgstr "Europejski format rozmiaru obuwia (np. 42, 42.5)."
 
-#: core/models.py:143
+#: core/models.py:137
 msgid "Height in centimeters. Crucial for stage risers positioning."
 msgstr "Wzrost w centymetrach. Istotny dla ustawienia na podestach."
 
-#: core/models.py:151
+#: core/models.py:145
 msgid "Secret token for iCal feed subscription."
 msgstr "Prywatny token subskrypcji kalendarza iCal."
 
-#: core/models.py:156
+#: core/models.py:150
 msgid "Determines if the user receives non-critical operational emails."
 msgstr ""
+"Określa, czy użytkownik otrzymuje niekrytyczne wiadomości operacyjne."
 
-#: core/models.py:161
+#: core/models.py:158
+msgid "Business role defining application access level."
+msgstr "Rola biznesowa definiująca poziom dostępu do aplikacji."
+
+#: core/models.py:177
 msgid "User Profile"
 msgstr "Profil użytkownika"
 
-#: core/models.py:162
+#: core/models.py:178
 msgid "User Profiles"
 msgstr "Profile użytkowników"
+
+#: logistics/models.py:9
+msgid "Concert Hall"
+msgstr "Sala koncertowa"
+
+#: logistics/models.py:10
+msgid "Rehearsal Room"
+msgstr "Sala prób"
+
+#: logistics/models.py:11
+msgid "Hotel"
+msgstr "Hotel"
+
+#: logistics/models.py:12
+msgid "Airport"
+msgstr "Lotnisko"
+
+#: logistics/models.py:13
+msgid "Transit Station"
+msgstr "Stacja przesiadkowa"
+
+#: logistics/models.py:14
+msgid "Private Workspace"
+msgstr "Prywatna przestrzeń robocza"
+
+#: logistics/models.py:31
+msgid ""
+"Internal display name, e.g., 'National Philharmonic' or 'Conductor's Room'"
+msgstr ""
+"Wewnętrzna nazwa wyświetlana, np. 'Filharmonia Narodowa' lub 'Pokój "
+"dyrygenta'"
+
+#: logistics/models.py:44
+msgid ""
+"Unique identifier from Google Places API. Null for private/custom locations."
+msgstr ""
+"Unikalny identyfikator z Google Places API. Brak dla prywatnych/własnych "
+"lokalizacji."
+
+#: logistics/models.py:47
+msgid "Full official address or precise custom description."
+msgstr "Pełny oficjalny adres lub precyzyjny opis niestandardowy."
+
+#: logistics/models.py:68
+msgid ""
+"IANA timezone string, e.g., 'Europe/Warsaw'. Updated via external service."
+msgstr ""
+"Ciąg strefy czasowej IANA, np. 'Europe/Warsaw'. Aktualizowany przez usługę "
+"zewnętrzną."
+
+#: logistics/models.py:72
+msgid ""
+"Internal logistics instructions, e.g., 'Gate code: 1234', 'Backstage "
+"entrance'."
+msgstr ""
+"Wewnętrzne instrukcje logistyczne, np. 'Kod bramy: 1234', 'Wejście od kulis'."
+
+#: logistics/models.py:78
+msgid ""
+"Designates whether this location is available for new projects. Use instead "
+"of deletion."
+msgstr ""
+"Określa, czy ta lokalizacja jest dostępna dla nowych projektów. Używaj "
+"zamiast usuwania."
+
+#: notifications/email_service.py:44
+msgid "You have a new project invitation"
+msgstr "Masz nowe zaproszenie do projektu"
+
+#: notifications/email_service.py:45 notifications/models.py:23
+msgid "Project Details Updated"
+msgstr "Zaktualizowano szczegóły projektu"
+
+#: notifications/email_service.py:46 notifications/models.py:24
+msgid "Project Cancelled"
+msgstr "Projekt został odwołany"
+
+#: notifications/email_service.py:47 notifications/models.py:28
+msgid "New Rehearsal Scheduled"
+msgstr "Zaplanowano nową próbę"
+
+#: notifications/email_service.py:48
+msgid "Rehearsal Schedule Changed"
+msgstr "Zmieniono harmonogram prób"
+
+#: notifications/email_service.py:49 notifications/models.py:30
+msgid "Rehearsal Cancelled"
+msgstr "Próba została odwołana"
+
+#: notifications/email_service.py:50
+msgid "New Sheet Music Available"
+msgstr "Dostępne nowe nuty"
+
+#: notifications/email_service.py:51
+msgid "You have been cast in a piece"
+msgstr "Zostałeś/aś obsadzony/a w utworze"
+
+#: notifications/email_service.py:52
+msgid "Your Casting Has Been Updated"
+msgstr "Twoja obsada została zaktualizowana"
+
+#: notifications/email_service.py:53
+msgid "Your Absence Has Been Approved"
+msgstr "Twoja nieobecność została zatwierdzona"
+
+#: notifications/email_service.py:54
+msgid "Your Absence Has Been Rejected"
+msgstr "Twoja nieobecność została odrzucona"
+
+#: notifications/email_service.py:55
+msgid "Artist Response to Project"
+msgstr "Odpowiedź artysty na projekt"
+
+#: notifications/email_service.py:56
+msgid "Attendance Submitted"
+msgstr "Przesłano listę obecności"
+
+#: notifications/email_service.py:66
+msgid "New update from VoctManager"
+msgstr "Nowa aktualizacja od VoctManager"
 
 #: notifications/models.py:12
 msgid "Information"
@@ -413,29 +553,13 @@ msgstr "Pilne"
 msgid "Project Invitation"
 msgstr "Zaproszenie do projektu"
 
-#: notifications/models.py:23
-msgid "Project Details Updated"
-msgstr "Zaktualizowano szczegóły projektu"
-
-#: notifications/models.py:24
-msgid "Project Cancelled"
-msgstr "Projekt został odwołany"
-
 #: notifications/models.py:25
 msgid "Upcoming Project Reminder"
 msgstr "Przypomnienie o nadchodzącym projekcie"
 
-#: notifications/models.py:28
-msgid "New Rehearsal Scheduled"
-msgstr "Zaplanowano nową próbę"
-
 #: notifications/models.py:29
 msgid "Rehearsal Time/Location Changed"
 msgstr "Zmiana czasu lub miejsca próby"
-
-#: notifications/models.py:30
-msgid "Rehearsal Cancelled"
-msgstr "Próba została odwołana"
 
 #: notifications/models.py:31
 msgid "Upcoming Rehearsal Reminder"
@@ -452,10 +576,6 @@ msgstr "Zmiana obsady utworu"
 #: notifications/models.py:36
 msgid "New Sheet Music or Audio Track"
 msgstr "Nowe nuty lub ścieżka audio"
-
-#: notifications/models.py:39
-msgid "Assigned to Crew Role"
-msgstr "Przypisano rolę techniczną"
 
 #: notifications/models.py:40
 msgid "Contract Ready for Review"
@@ -477,385 +597,494 @@ msgstr "Odrzucono prośbę o nieobecność"
 msgid "System Maintenance or Alert"
 msgstr "Komunikat systemowy"
 
-#: notifications/models.py:61
+#: notifications/models.py:51
+msgid "Artist Project Response"
+msgstr "Odpowiedź artysty na projekt"
+
+#: notifications/models.py:52
+msgid "Artist Attendance Info"
+msgstr "Informacja o obecności artysty"
+
+#: notifications/models.py:65
 msgid "The user receiving the notification."
 msgstr "Użytkownik otrzymujący powiadomienie."
 
-#: notifications/models.py:67
+#: notifications/models.py:71
 msgid "Categorization key for frontend routing and icon selection."
 msgstr "Klucz kategorii dla interfejsu."
 
-#: notifications/models.py:73
+#: notifications/models.py:77
 msgid "Urgency level dictating frontend presentation."
 msgstr "Poziom ważności powiadomienia."
 
-#: notifications/models.py:78
+#: notifications/models.py:82
 msgid "Indicates whether the recipient has viewed this notification."
 msgstr "Status przeczytania powiadomienia."
 
-#: notifications/models.py:83
+#: notifications/models.py:87
 msgid "Timestamp of when the notification was marked as read."
 msgstr "Czas przeczytania powiadomienia."
 
-#: notifications/models.py:88
+#: notifications/models.py:92
 msgid ""
 "Contextual payload. E.g., {'project_id': 'uuid', 'piece_title': 'Requiem', "
 "'voice_type': 'Soprano 1'}."
 msgstr "Metadane powiadomienia."
 
-#: notifications/models.py:94
+#: notifications/models.py:98
 msgid "Notification"
 msgstr "Powiadomienie"
 
-#: notifications/models.py:95
+#: notifications/models.py:99
 msgid "Notifications"
 msgstr "Powiadomienia"
 
-#: roster/models.py:20
+#: notifications/models.py:115
+msgid "Web Browser"
+msgstr "Przeglądarka internetowa"
+
+#: notifications/models.py:116
+msgid "Apple iOS"
+msgstr "Apple iOS"
+
+#: notifications/models.py:117
+msgid "Google Android"
+msgstr "Google Android"
+
+#: notifications/models.py:129
+msgid "The user entity owning this device."
+msgstr "Użytkownik będący właścicielem tego urządzenia."
+
+#: notifications/models.py:133
+msgid "The FCM or APNs device token provided by the client infrastructure."
+msgstr "Token urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta."
+
+#: notifications/models.py:139
+msgid "Hardware/Software platform of the registered device."
+msgstr "Platforma sprzętowa/programowa zarejestrowanego urządzenia."
+
+#: notifications/models.py:144
+msgid ""
+"Indicates whether the token is currently valid. Invalidated automatically by "
+"delivery failures."
+msgstr ""
+"Określa, czy token jest obecnie ważny. Unieważniany automatycznie przy "
+"błędach dostarczenia."
+
+#: notifications/models.py:149
+msgid "Push Device"
+msgstr "Urządzenie Push"
+
+#: notifications/models.py:150
+msgid "Push Devices"
+msgstr "Urządzenia Push"
+
+#: notifications/models.py:168
+msgid "The user defining these preferences."
+msgstr "Użytkownik definiujący te preferencje."
+
+#: notifications/models.py:173
+msgid "The specific business event category this preference applies to."
+msgstr "Konkretna kategoria zdarzeń biznesowych, której dotyczy ta preferencja."
+
+#: notifications/models.py:177
+msgid "Delivery authorization for Email channel."
+msgstr "Autoryzacja dostarczania dla kanału E-mail."
+
+#: notifications/models.py:181
+msgid "Delivery authorization for Push channel."
+msgstr "Autoryzacja dostarczania dla kanału Push."
+
+#: notifications/models.py:185
+msgid "Delivery authorization for SMS channel."
+msgstr "Autoryzacja dostarczania dla kanału SMS."
+
+#: notifications/models.py:190
+msgid "Notification Preference"
+msgstr "Preferencja powiadomień"
+
+#: notifications/models.py:191
+msgid "Notification Preferences"
+msgstr "Preferencje powiadomień"
+
+#: roster/models.py:23
 msgid "Soprano"
 msgstr "Sopran"
 
-#: roster/models.py:21
+#: roster/models.py:24
 msgid "Mezzo-Soprano"
 msgstr "Mezzosopran"
 
-#: roster/models.py:22
+#: roster/models.py:25
 msgid "Alto"
 msgstr "Alt"
 
-#: roster/models.py:23
+#: roster/models.py:26
 msgid "Countertenor"
 msgstr "Kontratenor"
 
-#: roster/models.py:24
+#: roster/models.py:27
 msgid "Tenor"
 msgstr "Tenor"
 
-#: roster/models.py:25
+#: roster/models.py:28
 msgid "Baritone"
 msgstr "Baryton"
 
-#: roster/models.py:26
+#: roster/models.py:29
 msgid "Bass"
 msgstr "Bas"
 
-#: roster/models.py:27
+#: roster/models.py:30 roster/models.py:100
 msgid "Conductor"
 msgstr "Dyrygent"
 
-#: roster/models.py:37
+#: roster/models.py:40
 msgid "Account"
 msgstr "Konto"
 
-#: roster/models.py:38
+#: roster/models.py:41
 msgid ""
 "Linked authentication identity. SET_NULL preserves historical HR data if "
 "account is deleted."
 msgstr "Powiązana tożsamość użytkownika."
 
-#: roster/models.py:44 roster/models.py:223
+#: roster/models.py:47 roster/models.py:260
 msgid "Email"
 msgstr "E-mail"
 
-#: roster/models.py:46 roster/models.py:224
+#: roster/models.py:49 roster/models.py:261
 msgid "Phone"
 msgstr "Telefon"
 
-#: roster/models.py:47
+#: roster/models.py:50
 msgid "Voice Type"
 msgstr "Rodzaj głosu"
 
-#: roster/models.py:48
+#: roster/models.py:51
 msgid "Is Active"
 msgstr "Aktywny"
 
-#: roster/models.py:52
+#: roster/models.py:55
 msgid "Sight Reading Skill (1-5)"
 msgstr "Umiejętność czytania nut (1-5)"
 
-#: roster/models.py:54
+#: roster/models.py:57
 msgid "e.g. G2"
 msgstr "np. G2"
 
-#: roster/models.py:54
+#: roster/models.py:57
 msgid "Range (Bottom)"
 msgstr "Skala (Dół)"
 
-#: roster/models.py:55
+#: roster/models.py:58
 msgid "e.g. C5"
 msgstr "np. C5"
 
-#: roster/models.py:55
+#: roster/models.py:58
 msgid "Range (Top)"
 msgstr "Skala (Góra)"
 
-#: roster/models.py:58 roster/models.py:128
+#: roster/models.py:61 roster/models.py:153
 msgid "Artist"
 msgstr "Artysta"
 
-#: roster/models.py:59
+#: roster/models.py:62
 msgid "Artists"
 msgstr "Artyści"
 
-#: roster/models.py:75
+#: roster/models.py:78
 msgid "Draft / Planned"
 msgstr "Szkic / Planowany"
 
-#: roster/models.py:76
+#: roster/models.py:79
 msgid "Active / In Prep"
 msgstr "Aktywny / W przygotowaniu"
 
-#: roster/models.py:77
+#: roster/models.py:80
 msgid "Completed"
 msgstr "Zakończony"
 
-#: roster/models.py:78
+#: roster/models.py:81
 msgid "Cancelled"
 msgstr "Odwołany"
 
-#: roster/models.py:80
+#: roster/models.py:83
 msgid "Project Title"
 msgstr "Tytuł projektu"
 
-#: roster/models.py:81
+#: roster/models.py:84
 msgid "Event Date & Time"
 msgstr "Data i godzina wydarzenia"
 
-#: roster/models.py:82
+#: roster/models.py:85
 msgid "Call time for performers"
 msgstr "Godzina zbiórki dla wykonawców"
 
-#: roster/models.py:82
+#: roster/models.py:85
 msgid "Call Time"
 msgstr "Zbiórka"
 
-#: roster/models.py:85
-msgid "Location"
-msgstr "Miejsce"
+#: roster/models.py:89
+msgid ""
+"Local timezone for this project's primary location. Critical for UI "
+"rendering and iCal feeds."
+msgstr ""
+"Lokalna strefa czasowa dla głównej lokalizacji projektu. Kluczowa dla "
+"renderowania UI i kanałów iCal."
 
-#: roster/models.py:86
+#: roster/models.py:101
+msgid "The Maestro leading this project."
+msgstr "Maestro prowadzący ten projekt."
+
+#: roster/models.py:109
+msgid "Primary location for the project. Dictates the default timezone."
+msgstr "Główna lokalizacja projektu. Narzuca domyślną strefę czasową."
+
+#: roster/models.py:111
 msgid "Description"
 msgstr "Opis"
 
-#: roster/models.py:87 roster/models.py:130 roster/models.py:197
-#: roster/models.py:252
+#: roster/models.py:112 roster/models.py:155 roster/models.py:234
+#: roster/models.py:289
 msgid "Status"
 msgstr "Status"
 
-#: roster/models.py:88
+#: roster/models.py:113
 msgid "Run-sheet"
 msgstr "Harmonogram minutowy"
 
-#: roster/models.py:89
+#: roster/models.py:114
 msgid "Spotify playlist URL"
 msgstr "Link do playlisty Spotify"
 
-#: roster/models.py:89
+#: roster/models.py:114
 msgid "Spotify Playlist"
 msgstr "Playlista Spotify"
 
-#: roster/models.py:93
+#: roster/models.py:118
 msgid "Projects"
 msgstr "Projekty"
 
-#: roster/models.py:107
+#: roster/models.py:132
 msgid "Order (1, 2, 3...)"
 msgstr "Kolejność"
 
-#: roster/models.py:108
+#: roster/models.py:133
 msgid "Is Encore?"
 msgstr "Bis?"
 
-#: roster/models.py:112
+#: roster/models.py:137
 msgid "Program Item"
 msgstr "Punkt programu"
 
-#: roster/models.py:113
+#: roster/models.py:138
 msgid "Concert Program (Setlist)"
 msgstr "Program koncertu"
 
-#: roster/models.py:124
+#: roster/models.py:149
 msgid "Invited"
 msgstr "Zaproszony"
 
-#: roster/models.py:125 roster/models.py:247
+#: roster/models.py:150 roster/models.py:284
 msgid "Confirmed"
 msgstr "Potwierdzony"
 
-#: roster/models.py:126
+#: roster/models.py:151
 msgid "Declined"
 msgstr "Odrzucony"
 
-#: roster/models.py:131 roster/models.py:253
+#: roster/models.py:156 roster/models.py:290
 msgid "Fee"
 msgstr "Honorarium"
 
-#: roster/models.py:134
+#: roster/models.py:159
 msgid "Participation"
 msgstr "Udział"
 
-#: roster/models.py:135
+#: roster/models.py:160
 msgid "Participations"
 msgstr "Uczestnictwo"
 
-#: roster/models.py:151 roster/models.py:196
+#: roster/models.py:176 roster/models.py:233
 msgid "Participant"
 msgstr "Uczestnik"
 
-#: roster/models.py:153
+#: roster/models.py:178
 msgid "Voice Line (Divisi)"
 msgstr "Głos (Divisi)"
 
-#: roster/models.py:154
+#: roster/models.py:179
 msgid "Gives Pitch (Tuning Fork)"
 msgstr "Podaje ton (Kamerton)"
 
-#: roster/models.py:155
+#: roster/models.py:180
 msgid "Notes"
 msgstr "Uwagi"
 
-#: roster/models.py:158
+#: roster/models.py:183
 msgid "Piece Casting"
 msgstr "Obsada utworu"
 
-#: roster/models.py:159
+#: roster/models.py:184
 msgid "Piece Castings"
 msgstr "Obsady utworów"
 
-#: roster/models.py:167
+#: roster/models.py:192
 msgid "Date & Time"
 msgstr "Data i godzina"
 
-#: roster/models.py:168
-msgid "Rehearsal Venue"
-msgstr "Miejsce próby"
+#: roster/models.py:196
+msgid ""
+"Local timezone for this specific rehearsal. Essential for tours crossing "
+"multiple timezones."
+msgstr ""
+"Lokalna strefa czasowa dla tej konkretnej próby. Istotna przy trasach "
+"koncertowych przez wiele stref czasowych."
 
-#: roster/models.py:169
+#: roster/models.py:204
+msgid ""
+"Specific location for this rehearsal. Overrides project default if needed."
+msgstr ""
+"Konkretne miejsce tej próby. Nadpisuje domyślne miejsce projektu w razie "
+"potrzeby."
+
+#: roster/models.py:206
 msgid "Rehearsal Focus"
 msgstr "Temat próby"
 
-#: roster/models.py:170
+#: roster/models.py:207
 msgid "Is Mandatory"
 msgstr "Obowiązkowa"
 
-#: roster/models.py:172
+#: roster/models.py:209
 msgid "Invited Singers"
 msgstr "Zaproszeni śpiewacy"
 
-#: roster/models.py:177
+#: roster/models.py:214
 msgid "Rehearsals"
 msgstr "Próby"
 
-#: roster/models.py:189
+#: roster/models.py:226
 msgid "Present"
 msgstr "Obecny"
 
-#: roster/models.py:190
+#: roster/models.py:227
 msgid "Late"
 msgstr "Spóźniony"
 
-#: roster/models.py:191
+#: roster/models.py:228
 msgid "Absent"
 msgstr "Nieobecny"
 
-#: roster/models.py:192
+#: roster/models.py:229
 msgid "Excused"
 msgstr "Usprawiedliwiony"
 
-#: roster/models.py:198
+#: roster/models.py:235
 msgid "Minutes Late"
 msgstr "Minuty spóźnienia"
 
-#: roster/models.py:199
+#: roster/models.py:236
 msgid "Excuse Note"
 msgstr "Usprawiedliwienie"
 
-#: roster/models.py:202
+#: roster/models.py:239
 msgid "Attendance"
 msgstr "Obecność"
 
-#: roster/models.py:203
+#: roster/models.py:240
 msgid "Attendances"
 msgstr "Lista obecności"
 
-#: roster/models.py:214
+#: roster/models.py:251
 msgid "Sound Engineering"
 msgstr "Nagłośnienie"
 
-#: roster/models.py:215
+#: roster/models.py:252
 msgid "Lighting Design"
 msgstr "Oświetlenie"
 
-#: roster/models.py:216
+#: roster/models.py:253
 msgid "Visual Arts"
 msgstr "Oprawa wizualna"
 
-#: roster/models.py:217
+#: roster/models.py:254
 msgid "Instrumentalist"
 msgstr "Instrumentalista"
 
-#: roster/models.py:218
+#: roster/models.py:255
 msgid "Logistics"
 msgstr "Logistyka"
 
-#: roster/models.py:225
+#: roster/models.py:262
 msgid "Company / Brand"
 msgstr "Firma / Marka"
 
-#: roster/models.py:226
+#: roster/models.py:263
 msgid "Specialty"
 msgstr "Specjalizacja"
 
-#: roster/models.py:229
+#: roster/models.py:266
 msgid "Collaborator (Crew)"
 msgstr "Współpracownik (Obsługa)"
 
-#: roster/models.py:230
+#: roster/models.py:267
 msgid "Collaborators"
 msgstr "Współpracownicy"
 
-#: roster/models.py:246
+#: roster/models.py:283
 msgid "Tentatively Booked"
 msgstr "Wstępnie zarezerwowany"
 
-#: roster/models.py:249
+#: roster/models.py:286
 msgid "Collaborator"
 msgstr "Współpracownik"
 
-#: roster/models.py:251
+#: roster/models.py:288
 msgid "Role Description"
 msgstr "Opis roli"
 
-#: roster/models.py:256
+#: roster/models.py:293
 msgid "Crew Assignment"
 msgstr "Przypisanie obsługi"
 
-#: roster/models.py:257
+#: roster/models.py:294
 msgid "Crew Assignments"
 msgstr "Obsługa techniczna"
 
-#: templates/emails/account_activation.html:6
+#: templates/emails/account_activation.html:9
 msgid "VoctManager Invitation"
 msgstr "Zaproszenie do VoctManager"
 
-#: templates/emails/account_activation.html:10
+#: templates/emails/account_activation.html:15
 #: templates/emails/account_activation.txt:4
 msgid "Activate your artist profile"
 msgstr "Aktywuj swój profil artysty"
 
-#: templates/emails/account_activation.html:15
-#: templates/emails/account_activation.txt:8
+#: templates/emails/account_activation.html:21
+#: templates/emails/account_activation.txt:7
+#: templates/emails/account_deleted.html:21
+#: templates/emails/account_deleted.txt:7
+#: templates/emails/password_changed.html:21
+#: templates/emails/password_changed.txt:7
+#: templates/emails/system_notification.html:29
+#: templates/emails/system_notification.txt:8
 #, python-format
 msgid "Hello %(first_name)s,"
 msgstr "Witaj %(first_name)s,"
 
-#: templates/emails/account_activation.html:17
-#: templates/emails/account_activation.txt:10
+#: templates/emails/account_activation.html:23
+#: templates/emails/account_activation.txt:7
+#: templates/emails/password_changed.html:23
+#: templates/emails/password_changed.txt:7
+#: templates/emails/system_notification.html:31
+#: templates/emails/system_notification.txt:8
 msgid "Hello,"
 msgstr "Witaj"
 
-#: templates/emails/account_activation.html:22
-#: templates/emails/account_activation.txt:13
+#: templates/emails/account_activation.html:29
+#: templates/emails/account_activation.txt:9
 msgid ""
 "Your exclusive access to VoctManager has been prepared. Complete the final "
 "activation step to set your secure password and enter the operational "
@@ -865,25 +1094,26 @@ msgstr ""
 "proces aktywacji, aby ustawić bezpieczne hasło i uzyskać dostęp do panelu "
 "operacyjnego, w którym zarządzamy naszymi projektami i próbami."
 
-#: templates/emails/account_activation.html:29
-#: templates/emails/account_activation.txt:17
+#: templates/emails/account_activation.html:41
+#: templates/emails/account_activation.txt:15
 msgid "Security Notice:"
 msgstr "Informacja o bezpieczeństwie:"
 
-#: templates/emails/account_activation.html:30
-#: templates/emails/account_activation.txt:17
+#: templates/emails/account_activation.html:42
+#: templates/emails/account_activation.txt:16
 msgid ""
 "This activation link is unique to your account. For your security, it will "
 "expire automatically. Please do not share it with anyone."
 msgstr ""
-"Ten link aktywacyjny jest przypisany wyłącznie do Twojego konta. Ze względów bezpieczeństwa wygaśnie on automatycznie."
-"Prosimy nie udostępniać go nikomu."
+"Ten link aktywacyjny jest przypisany wyłącznie do Twojego konta. Ze względów "
+"bezpieczeństwa wygaśnie on automatycznie. Prosimy nie udostępniać go nikomu."
 
-#: templates/emails/account_activation.html:40
+#: templates/emails/account_activation.html:60
 msgid "Activate Account"
 msgstr "Aktywuj Konto"
 
-#: templates/emails/account_activation.html:49
+#: templates/emails/account_activation.html:70
+#: templates/emails/account_activation.txt:25
 msgid ""
 "If the button does not work, securely copy and paste this link into your "
 "browser:"
@@ -891,15 +1121,29 @@ msgstr ""
 "Jeśli przycisk nie działa, bezpiecznie skopiuj i wklej poniższy link do "
 "przeglądarki:"
 
-#: templates/emails/account_activation.html:58
-#: templates/emails/account_activation.txt:29
-#: templates/emails/welcome_email.html:58 templates/emails/welcome_email.txt:12
+#: templates/emails/account_activation.html:81
+#: templates/emails/account_activation.txt:35
+#: templates/emails/account_deleted.html:49
+#: templates/emails/account_deleted.txt:19
+#: templates/emails/password_changed.html:56
+#: templates/emails/password_changed.txt:19
+#: templates/emails/system_notification.html:156
+#: templates/emails/system_notification.txt:33
+#: templates/emails/welcome_email.html:126
+#: templates/emails/welcome_email.txt:34
 msgid "Musically yours,"
 msgstr "Z muzycznym pozdrowieniem,"
 
-#: templates/emails/account_activation.html:59
-#: templates/emails/account_activation.txt:30
-#: templates/emails/welcome_email.html:59 templates/emails/welcome_email.txt:13
+#: templates/emails/account_activation.html:82
+#: templates/emails/account_activation.txt:36
+#: templates/emails/account_deleted.html:50
+#: templates/emails/account_deleted.txt:20
+#: templates/emails/password_changed.html:57
+#: templates/emails/password_changed.txt:20
+#: templates/emails/system_notification.html:157
+#: templates/emails/system_notification.txt:34
+#: templates/emails/welcome_email.html:127
+#: templates/emails/welcome_email.txt:35
 msgid "The VoctEnsemble Team"
 msgstr "Zespół VoctEnsemble"
 
@@ -911,7 +1155,7 @@ msgstr "Zaproszenie do VoctManager"
 msgid "ACTIVATE ACCOUNT NOW:"
 msgstr "AKTYWUJ KONTO TERAZ:"
 
-#: templates/emails/account_activation.txt:25
+#: templates/emails/account_activation.txt:31
 msgid ""
 "If you did not expect this message, contact the VoctEnsemble administration "
 "team."
@@ -919,15 +1163,227 @@ msgstr ""
 "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z zespołem "
 "administracyjnym VoctEnsemble."
 
-#: templates/emails/welcome_email.html:3 templates/emails/welcome_email.txt:2
+# ── account_activation (nowy szablon) ─────────────────────────────────────
+
+#: templates/emails/account_activation.html:7
+msgid "Overture"
+msgstr "Uwertura"
+
+#: templates/emails/account_activation.html:12
+msgid "Welcome to VoctManager"
+msgstr "Witamy w VoctManager"
+
+#: templates/emails/account_activation.html:18
+msgid "Your profile awaits"
+msgstr "Twój profil oczekuje"
+
+#: templates/emails/account_activation.html:25
+#, python-format
+msgid "Dear %(first_name)s,"
+msgstr "Drogi %(first_name)s,"
+
+#: templates/emails/account_activation.html:28
+msgid "Dear Artist,"
+msgstr "Drogi Artysto,"
+
+#: templates/emails/account_activation.html:32
+msgid ""
+"Your place within VoctEnsemble is ready. We have prepared your private "
+"workspace &mdash; where repertoire, rehearsal schedules, and artistic "
+"collaboration come together in one place."
+msgstr ""
+"Twoje miejsce w VoctEnsemble jest gotowe. Przygotowaliśmy Twój prywatny "
+"obszar roboczy — gdzie repertuar, harmonogramy prób i współpraca artystyczna "
+"łączą się w jednym miejscu."
+
+#: templates/emails/account_activation.html:39
+msgid "One final step remains before the music begins."
+msgstr "Jeden ostatni krok dzieli Cię od muzyki."
+
+#: templates/emails/account_activation.html:46
+msgid "Complete your activation"
+msgstr "Dokończ aktywację"
+
+#: templates/emails/account_activation.html:51
+msgid "Activate Profile"
+msgstr "Aktywuj Profil"
+
+#: templates/emails/account_activation.html:57
+msgid "This invitation expires automatically"
+msgstr "To zaproszenie wygasa automatycznie"
+
+#: templates/emails/account_activation.html:66
+msgid "For your security"
+msgstr "Dla Twojego bezpieczeństwa"
+
+#: templates/emails/account_activation.html:68
+msgid ""
+"This unique access key will expire automatically. Please ensure it remains "
+"confidential and do not share it."
+msgstr ""
+"Ten unikalny klucz dostępu wygaśnie automatycznie. Zachowaj go w tajemnicy "
+"i nie udostępniaj go nikomu."
+
+#: templates/emails/account_activation.html:74
+msgid "Link not working?"
+msgstr "Link nie działa?"
+
+#: templates/emails/account_activation.html:76
+msgid "Use this fallback link"
+msgstr "Użyj alternatywnego linku"
+
+#: templates/emails/account_activation.html:84
+msgid "With warmest regards,"
+msgstr "Z serdecznymi pozdrowieniami,"
+
+#: templates/emails/account_deleted.html:9
+#: templates/emails/account_deleted.txt:2
+msgid "Account Closure"
+msgstr "Zamknięcie konta"
+
+#: templates/emails/account_deleted.html:15
+#: templates/emails/account_deleted.txt:4
+msgid "Your VoctManager account has been closed"
+msgstr "Twoje konto VoctManager zostało zamknięte"
+
+#: templates/emails/account_deleted.html:27
+#: templates/emails/account_deleted.txt:10
+msgid "We have successfully processed your account deletion request."
+msgstr "Pomyślnie przetworzyliśmy Twoje żądanie usunięcia konta."
+
+#: templates/emails/account_deleted.html:32
+#: templates/emails/account_deleted.txt:12
+msgid ""
+"All personal data associated with your account has been permanently removed "
+"from our systems in compliance with our privacy policy."
+msgstr ""
+"Wszystkie dane osobowe powiązane z Twoim kontem zostały trwale usunięte z "
+"naszych systemów zgodnie z naszą polityką prywatności."
+
+#: templates/emails/account_deleted.html:39
+#: templates/emails/account_deleted.txt:15
+msgid ""
+"It has been our honour to have you as part of the VoctEnsemble community."
+msgstr "Było dla nas zaszczytem mieć Cię w społeczności VoctEnsemble."
+
+#: templates/emails/account_deleted.html:44
+#: templates/emails/account_deleted.txt:17
+msgid "This confirmation was sent to:"
+msgstr "To potwierdzenie zostało wysłane na adres:"
+
+#: templates/emails/base.html:237
+msgid "Automatically generated. Please do not reply to this message."
+msgstr ""
+"Wiadomość generowana automatycznie. Prosimy nie odpowiadać na tę wiadomość."
+
+#: templates/emails/password_changed.html:9
+#: templates/emails/password_changed.txt:2
+msgid "Security Notice"
+msgstr "Informacja o bezpieczeństwie"
+
+#: templates/emails/password_changed.html:15
+#: templates/emails/password_changed.txt:4
+msgid "Your password has been changed"
+msgstr "Twoje hasło zostało zmienione"
+
+#: templates/emails/password_changed.html:29
+#: templates/emails/password_changed.txt:9
+msgid ""
+"We are writing to confirm that your VoctManager password was recently "
+"changed."
+msgstr ""
+"Piszemy, aby potwierdzić, że hasło do Twojego konta VoctManager zostało "
+"niedawno zmienione."
+
+#: templates/emails/password_changed.html:34
+#: templates/emails/password_changed.txt:11
+msgid "If you made this change, no further action is required."
+msgstr ""
+"Jeśli to Ty dokonałeś/aś tej zmiany, nie musisz podejmować żadnych działań."
+
+#: templates/emails/password_changed.html:42
+#: templates/emails/password_changed.txt:13
+msgid "Did not make this change?"
+msgstr "Nie dokonywałeś/aś tej zmiany?"
+
+#: templates/emails/password_changed.html:43
+#: templates/emails/password_changed.txt:14
+msgid ""
+"If you did not make this change, please contact our administration team "
+"immediately to secure your account."
+msgstr ""
+"Jeśli nie dokonałeś/aś tej zmiany, natychmiast skontaktuj się z naszym "
+"zespołem administracyjnym, aby zabezpieczyć konto."
+
+#: templates/emails/password_changed.html:51
+#: templates/emails/password_changed.txt:17
+msgid "This security alert was sent to:"
+msgstr "Ten alert bezpieczeństwa został wysłany na adres:"
+
+#: templates/emails/system_notification.html:22
+#: templates/emails/system_notification.txt:4
+msgid "New notification"
+msgstr "Nowe powiadomienie"
+
+#: templates/emails/system_notification.html:49
+#: templates/emails/system_notification.txt:13
+msgid "Invited by:"
+msgstr "Zaprasza:"
+
+#: templates/emails/system_notification.html:56
+#: templates/emails/system_notification.txt:15
+msgid "Date:"
+msgstr "Termin:"
+
+#: templates/emails/system_notification.html:63
+#: templates/emails/system_notification.txt:17
+msgid "Location:"
+msgstr "Miejsce:"
+
+#: templates/emails/system_notification.html:76
+#: templates/emails/system_notification.txt:19
+msgid "Voice part:"
+msgstr "Głos:"
+
+#: templates/emails/system_notification.html:89
+#: templates/emails/system_notification.txt:21
+msgid "Details:"
+msgstr "Szczegóły:"
+
+#: templates/emails/system_notification.html:96
+#: templates/emails/system_notification.txt:23
+msgid "Rehearsal:"
+msgstr "Próba:"
+
+#: templates/emails/system_notification.html:109
+msgid "Rehearsal date:"
+msgstr "Data próby:"
+
+#: templates/emails/system_notification.html:121
+msgid "Changes"
+msgstr "Zmiany"
+
+#: templates/emails/system_notification.html:146
+msgid "Open VoctManager"
+msgstr "Otwórz VoctManager"
+
+#: templates/emails/system_notification.txt:26
+msgid "Changes:"
+msgstr "Zmiany:"
+
+#: templates/emails/system_notification.txt:31
+msgid "Open VoctManager:"
+msgstr "Otwórz VoctManager:"
+
+#: templates/emails/welcome_email.html:9 templates/emails/welcome_email.txt:2
+msgid "Welcome"
+msgstr "Witamy"
+
+#: templates/emails/welcome_email.html:15 templates/emails/welcome_email.txt:4
 msgid "Welcome to VoctEnsemble"
 msgstr "Witaj w VoctEnsemble"
 
-#: templates/emails/welcome_email.html:45
-msgid "Access Your Dashboard"
-msgstr "Przejdź do panelu"
-
-#: templates/emails/welcome_email.txt:4
+#: templates/emails/welcome_email.html:20 templates/emails/welcome_email.txt:7
 msgid ""
 "We are thrilled to welcome you to VoctManager — the digital heart of our "
 "artistic operations. This platform was designed to streamline our creative "
@@ -939,7 +1395,7 @@ msgstr ""
 "nasz proces twórczy — od zarządzania repertuarem po logistykę koncertową — "
 "tak, abyś mógł/mogła skupić się wyłącznie na muzyce."
 
-#: templates/emails/welcome_email.txt:6
+#: templates/emails/welcome_email.html:30 templates/emails/welcome_email.txt:14
 msgid ""
 "Your profile has been successfully provisioned. You can now log in to view "
 "your upcoming projects, access sheet music, and review rehearsal schedules."
@@ -947,11 +1403,45 @@ msgstr ""
 "Twój profil został pomyślnie utworzony. Możesz teraz zalogować się, aby "
 "sprawdzić nadchodzące projekty, pobrać nuty oraz przejrzeć harmonogram prób."
 
-#: templates/emails/welcome_email.txt:8
-msgid "Access Your Dashboard here:"
-msgstr "Uzyskaj dostęp do swojego panelu tutaj:"
+#: templates/emails/welcome_email.html:47
+msgid "Projects &amp; Repertoire"
+msgstr "Projekty i repertuar"
 
-#: templates/emails/welcome_email.txt:10
+#: templates/emails/welcome_email.html:51 templates/emails/welcome_email.txt:20
+msgid ""
+"View your upcoming projects, concert programmes, and casting assignments."
+msgstr ""
+"Przeglądaj nadchodzące projekty, programy koncertów i przypisania obsadowe."
+
+#: templates/emails/welcome_email.html:67 templates/emails/welcome_email.txt:22
+msgid "Sheet Music"
+msgstr "Nuty"
+
+#: templates/emails/welcome_email.html:71 templates/emails/welcome_email.txt:23
+msgid ""
+"Access your digital score library — scores and audio materials, organised by "
+"project."
+msgstr ""
+"Korzystaj z cyfrowej biblioteki nut — partytury i materiały audio, "
+"posegregowane według projektów."
+
+#: templates/emails/welcome_email.html:87 templates/emails/welcome_email.txt:25
+msgid "Rehearsal Schedule"
+msgstr "Harmonogram prób"
+
+#: templates/emails/welcome_email.html:91 templates/emails/welcome_email.txt:26
+msgid ""
+"Stay up to date with rehearsal times, locations, and any last-minute changes."
+msgstr ""
+"Bądź na bieżąco z godzinami prób, miejscami i wszelkimi zmianami w ostatniej "
+"chwili."
+
+#: templates/emails/welcome_email.html:111
+msgid "Access Your Dashboard"
+msgstr "Przejdź do panelu"
+
+#: templates/emails/welcome_email.html:121
+#: templates/emails/welcome_email.txt:32
 msgid ""
 "If you experience any issues logging in, please reach out to the "
 "administration team."
@@ -959,141 +1449,28 @@ msgstr ""
 "W razie problemów z logowaniem, prosimy o kontakt z zespołem "
 "administracyjnym."
 
-#: templates/emails/base.html
-msgid "Automatically generated. Please do not reply to this message."
-msgstr "Wiadomość generowana automatycznie. Prosimy nie odpowiadać na tę wiadomość."
-
-#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
-msgid "Welcome"
-msgstr "Witamy"
-
-#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
-msgid "Projects &amp; Repertoire"
-msgstr "Projekty i repertuar"
-
-#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+#: templates/emails/welcome_email.txt:19
 msgid "Projects & Repertoire"
 msgstr "Projekty i repertuar"
 
-#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
-msgid "View your upcoming projects, concert programmes, and casting assignments."
-msgstr "Przeglądaj nadchodzące projekty, programy koncertów i przypisania obsadowe."
+#: templates/emails/welcome_email.txt:28
+msgid "Access Your Dashboard here:"
+msgstr "Uzyskaj dostęp do swojego panelu tutaj:"
 
-#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
-msgid "Sheet Music"
-msgstr "Nuty"
+#~ msgid ""
+#~ "Critical for rendering rehearsal/project times correctly across regions."
+#~ msgstr ""
+#~ "Kluczowe dla prawidłowego wyświetlania czasu prób i projektów w różnych "
+#~ "strefach czasowych."
 
-#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
-msgid "Access your digital score library — scores and audio materials, organised by project."
-msgstr "Korzystaj z cyfrowej biblioteki nut — partytury i materiały audio, posegregowane według projektów."
+#~ msgid "Assigned to Crew Role"
+#~ msgstr "Przypisano rolę techniczną"
 
-#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
-msgid "Rehearsal Schedule"
-msgstr "Harmonogram prób"
+#~ msgid "Location"
+#~ msgstr "Miejsce"
 
-#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
-msgid "Stay up to date with rehearsal times, locations, and any last-minute changes."
-msgstr "Bądź na bieżąco z godzinami prób, miejscami i wszelkimi zmianami w ostatniej chwili."
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "New notification"
-msgstr "Nowe powiadomienie"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Invited by:"
-msgstr "Zaprasza:"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Date:"
-msgstr "Termin:"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Location:"
-msgstr "Miejsce:"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Voice part:"
-msgstr "Głos:"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Details:"
-msgstr "Szczegóły:"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Rehearsal:"
-msgstr "Próba:"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Rehearsal date:"
-msgstr "Data próby:"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Changes"
-msgstr "Zmiany"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Changes:"
-msgstr "Zmiany:"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Open VoctManager"
-msgstr "Otwórz VoctManager"
-
-#: templates/emails/system_notification.html templates/emails/system_notification.txt
-msgid "Open VoctManager:"
-msgstr "Otwórz VoctManager:"
-
-#: templates/emails/password_changed.html templates/emails/password_changed.txt
-msgid "Security Notice"
-msgstr "Informacja o bezpieczeństwie"
-
-#: templates/emails/password_changed.html templates/emails/password_changed.txt
-msgid "Your password has been changed"
-msgstr "Twoje hasło zostało zmienione"
-
-#: templates/emails/password_changed.html templates/emails/password_changed.txt
-msgid "We are writing to confirm that your VoctManager password was recently changed."
-msgstr "Piszemy, aby potwierdzić, że hasło do Twojego konta VoctManager zostało niedawno zmienione."
-
-#: templates/emails/password_changed.html templates/emails/password_changed.txt
-msgid "If you made this change, no further action is required."
-msgstr "Jeśli to Ty dokonałeś/aś tej zmiany, nie musisz podejmować żadnych działań."
-
-#: templates/emails/password_changed.html templates/emails/password_changed.txt
-msgid "Did not make this change?"
-msgstr "Nie dokonywałeś/aś tej zmiany?"
-
-#: templates/emails/password_changed.html templates/emails/password_changed.txt
-msgid "If you did not make this change, please contact our administration team immediately to secure your account."
-msgstr "Jeśli nie dokonałeś/aś tej zmiany, natychmiast skontaktuj się z naszym zespołem administracyjnym, aby zabezpieczyć konto."
-
-#: templates/emails/password_changed.html templates/emails/password_changed.txt
-msgid "This security alert was sent to:"
-msgstr "Ten alert bezpieczeństwa został wysłany na adres:"
-
-#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
-msgid "Account Closure"
-msgstr "Zamknięcie konta"
-
-#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
-msgid "Your VoctManager account has been closed"
-msgstr "Twoje konto VoctManager zostało zamknięte"
-
-#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
-msgid "We have successfully processed your account deletion request."
-msgstr "Pomyślnie przetworzyliśmy Twoje żądanie usunięcia konta."
-
-#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
-msgid "All personal data associated with your account has been permanently removed from our systems in compliance with our privacy policy."
-msgstr "Wszystkie dane osobowe powiązane z Twoim kontem zostały trwale usunięte z naszych systemów zgodnie z naszą polityką prywatności."
-
-#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
-msgid "It has been our honour to have you as part of the VoctEnsemble community."
-msgstr "Było dla nas zaszczytem mieć Cię w społeczności VoctEnsemble."
-
-#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
-msgid "This confirmation was sent to:"
-msgstr "To potwierdzenie zostało wysłane na adres:"
+#~ msgid "Rehearsal Venue"
+#~ msgstr "Miejsce próby"
 
 #~ msgid "Toggle flag for receiving non-critical system updates via email."
 #~ msgstr "Otrzymywanie powiadomień systemowych drogą mailową."
