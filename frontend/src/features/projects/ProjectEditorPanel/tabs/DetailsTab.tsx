@@ -193,7 +193,7 @@ export const DetailsTab = ({
               <option value="">
                 {t(
                   "common.select_location",
-                  "--- Wybierz zapisanÄ… lokalizacjÄ™ ---",
+                  "--- Wybierz zapisaną lokalizację ---",
                 )}
               </option>
               {displayLocations.map((location) => (

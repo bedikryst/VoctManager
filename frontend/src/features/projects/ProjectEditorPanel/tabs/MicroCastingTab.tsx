@@ -66,6 +66,7 @@ export const MicroCastingTab = ({
     localCastings,
     activeDragId,
     artistMap,
+    participationStatusMap,
     pieceStatuses,
     projectParticipations,
     handleUpdateNote,
@@ -135,6 +136,7 @@ export const MicroCastingTab = ({
                 key={casting.id}
                 participationId={String(casting.participation)}
                 artist={artist}
+                participationStatus={participationStatusMap.get(String(casting.participation))}
                 casting={casting}
                 onUpdateNote={handleUpdateNote}
               />
@@ -291,6 +293,7 @@ export const MicroCastingTab = ({
                           key={part.id}
                           participationId={String(part.id)}
                           artist={artist}
+                          participationStatus={participationStatusMap.get(String(part.id))}
                         />
                       );
                     })}

@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useDraggable } from "@dnd-kit/core";
 import { GripVertical, Pencil, Loader2 } from "lucide-react";
 
-import type { Artist, PieceCasting } from "@/shared/types";
+import type { Artist, ParticipationStatus, PieceCasting } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -21,6 +21,7 @@ import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 interface DraggableArtistProps {
   participationId: string;
   artist: Artist;
+  participationStatus?: ParticipationStatus;
   isOverlay?: boolean;
   casting?: PieceCasting;
   onUpdateNote?: (id: string, note: string) => void;
@@ -29,14 +30,18 @@ interface DraggableArtistProps {
 export const DraggableArtist = React.memo(function DraggableArtist({
   participationId,
   artist,
+  participationStatus,
   isOverlay = false,
   casting,
   onUpdateNote,
 }: DraggableArtistProps): React.JSX.Element {
   const { t } = useTranslation();
+
+  const isBlocked = !isOverlay && !!participationStatus && participationStatus !== "CON";
+
   const draggable = useDraggable({
     id: participationId,
-    disabled: isOverlay,
+    disabled: isOverlay || isBlocked,
   });
   const { attributes, listeners, setNodeRef, isDragging } = draggable;
 
@@ -68,17 +73,23 @@ export const DraggableArtist = React.memo(function DraggableArtist({
             ? "scale-105 rotate-2 border-ethereal-gold/50 shadow-glass-ethereal ring-2 ring-ethereal-gold/20"
             : "hover:border-ethereal-gold/40",
           isDragging && !isOverlay ? "opacity-30" : "",
+          participationStatus === "DEC" && !isOverlay
+            ? "border-ethereal-crimson/30 bg-ethereal-crimson/5"
+            : "",
+          participationStatus === "INV" && !isOverlay ? "opacity-60" : "",
         )}
       >
         <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
           <div
-            {...listeners}
+            {...(isBlocked ? {} : listeners)}
             {...attributes}
             className={cn(
-              "cursor-grab p-1 -ml-1 rounded transition-colors active:cursor-grabbing",
-              isOverlay
-                ? "text-ethereal-gold"
-                : "text-ethereal-graphite/40 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
+              "p-1 -ml-1 rounded transition-colors",
+              isBlocked
+                ? "cursor-not-allowed text-ethereal-graphite/25"
+                : isOverlay
+                  ? "cursor-grab text-ethereal-gold active:cursor-grabbing"
+                  : "cursor-grab text-ethereal-graphite/40 hover:bg-ethereal-gold/10 hover:text-ethereal-gold active:cursor-grabbing",
             )}
             aria-label={t(
               "projects.micro_cast.artist.drag_aria",
@@ -89,7 +100,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
             <GripVertical size={14} aria-hidden="true" />
           </div>
 
-          <div className="flex shrink-0 max-w-[100px] items-center gap-1 sm:max-w-[140px]">
+          <div className="flex shrink-0 max-w-25 items-center gap-1 sm:max-w-35">
             <Eyebrow color={isOverlay ? "gold" : "muted"} className="shrink-0">
               ({voiceTypeInitial})
             </Eyebrow>
@@ -97,9 +108,13 @@ export const DraggableArtist = React.memo(function DraggableArtist({
               size="xs"
               weight="bold"
               truncate
-              className={
-                isOverlay ? "text-ethereal-ink" : "text-ethereal-graphite"
-              }
+              className={cn(
+                isOverlay
+                  ? "text-ethereal-ink"
+                  : participationStatus === "DEC"
+                    ? "text-ethereal-crimson"
+                    : "text-ethereal-graphite",
+              )}
             >
               {artist.first_name} {artist.last_name}
             </Text>
@@ -125,7 +140,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
                 onClick={() => !isTemp && setIsEditing(true)}
                 disabled={isTemp}
                 className={cn(
-                  "ml-1 max-w-[60px] truncate rounded border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest transition-colors sm:max-w-[80px]",
+                  "ml-1 max-w-15 truncate rounded border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest transition-colors sm:max-w-20",
                   isTemp
                     ? "border-ethereal-incense/20 bg-ethereal-parchment/50 text-ethereal-graphite/40"
                     : "border-ethereal-sage/30 bg-ethereal-sage/10 text-ethereal-sage hover:bg-ethereal-sage/20",

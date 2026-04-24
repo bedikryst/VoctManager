@@ -20,12 +20,13 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import type { Artist } from "@/shared/types";
+import type { Artist, ParticipationStatus } from "@/shared/types";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { cn } from "@/shared/lib/utils";
 import { useCastTab } from "../hooks/useCastTab";
 
 interface CastTabProps {
@@ -36,6 +37,7 @@ interface ArtistCardProps {
   artist: Artist;
   isAssigned: boolean;
   participationId?: string;
+  participationStatus?: ParticipationStatus;
   isProcessing: boolean;
   onToggle: (artistId: string, isAssigned: boolean, partId?: string) => void;
 }
@@ -45,10 +47,14 @@ const ArtistCard = React.memo(
     artist,
     isAssigned,
     participationId,
+    participationStatus,
     isProcessing,
     onToggle,
   }: ArtistCardProps) => {
     const { t } = useTranslation();
+
+    const isDeclined = isAssigned && participationStatus === "DEC";
+    const isPending = isAssigned && participationStatus === "INV";
 
     return (
       <motion.div
@@ -63,14 +69,18 @@ const ArtistCard = React.memo(
           variant="solid"
           padding="sm"
           isHoverable={false}
-          className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+          className={cn(
+            "flex flex-col justify-between gap-4 sm:flex-row sm:items-center",
+            isDeclined && "border-ethereal-crimson/30 bg-ethereal-crimson/5",
+            isPending && "opacity-70",
+          )}
         >
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2.5">
               <Text weight="bold" size="sm">
                 {artist.first_name} {artist.last_name}
               </Text>
-              <Badge variant={isAssigned ? "warning" : "neutral"}>
+              <Badge variant={isDeclined ? "danger" : isAssigned ? "warning" : "neutral"}>
                 {artist.voice_type_display || artist.voice_type || "?"}
               </Badge>
             </div>
@@ -143,7 +153,8 @@ const ArtistCard = React.memo(
     prevProps.artist.id === nextProps.artist.id &&
     prevProps.isAssigned === nextProps.isAssigned &&
     prevProps.isProcessing === nextProps.isProcessing &&
-    prevProps.participationId === nextProps.participationId,
+    prevProps.participationId === nextProps.participationId &&
+    prevProps.participationStatus === nextProps.participationStatus,
 );
 
 ArtistCard.displayName = "ArtistCard";
@@ -329,6 +340,7 @@ export const CastTab = ({
                       artist={artist}
                       isAssigned={true}
                       participationId={participation?.id}
+                      participationStatus={participation?.status}
                       isProcessing={processingId === String(artist.id)}
                       onToggle={toggleCasting}
                     />

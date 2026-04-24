@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import type {
   Artist,
   Participation,
+  ParticipationStatus,
   Piece,
   PieceCasting,
   ProgramItem,
@@ -42,6 +43,7 @@ export interface UseMicroCastingResult {
   localCastings: PieceCasting[];
   activeDragId: string | null;
   artistMap: Map<string, Artist>;
+  participationStatusMap: Map<string, ParticipationStatus>;
   pieceStatuses: Record<string, PieceCastingStatus>;
   projectParticipations: Participation[];
   handleUpdateNote: (castingId: string, newNote: string) => Promise<void>;
@@ -93,6 +95,14 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
 
     return map;
   }, [artistDictionary, projectParticipations]);
+
+  const participationStatusMap = useMemo(() => {
+    const map = new Map<string, ParticipationStatus>();
+    projectParticipations.forEach((participation) => {
+      map.set(String(participation.id), participation.status);
+    });
+    return map;
+  }, [projectParticipations]);
 
   useEffect(() => {
     if (program.length > 0 && !selectedPieceId) {
@@ -196,6 +206,13 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     }
 
     const participationId = String(active.id);
+
+    const draggedParticipation = projectParticipations.find(
+      (p) => String(p.id) === participationId,
+    );
+    if (draggedParticipation && draggedParticipation.status !== "CON") {
+      return;
+    }
     const targetVoiceLineId = String(over.id);
     const existingCasting = localCastings.find(
       (casting) => String(casting.participation) === participationId,
@@ -295,6 +312,7 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     localCastings,
     activeDragId,
     artistMap,
+    participationStatusMap,
     pieceStatuses,
     projectParticipations,
     handleUpdateNote,
