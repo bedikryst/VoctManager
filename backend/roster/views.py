@@ -24,11 +24,13 @@ from core.permissions import IsManager, IsManagerOrReadOnly, IsOwnerOrManager
 
 from .infrastructure.document_generator import DocumentGenerator
 
+from .dashboard_serializers import ParticipationMaterialsSerializer
 from .dtos import (
-    ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, 
-    ProjectCreateDTO, ProjectUpdateDTO, 
+    ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO,
+    ProjectCreateDTO, ProjectUpdateDTO,
     RehearsalCreateDTO, RehearsalUpdateDTO
 )
+from .queries import get_artist_materials_queryset
 from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService, CastingAndCrewService, ParticipationService
 
 # Models & Exceptions
@@ -244,6 +246,22 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance) -> None:
         ProjectManagementService.delete_participation(instance)
 
+    @action(detail=False, methods=['get'], url_path='materials-dashboard')
+    def materials_dashboard(self, request) -> Response:
+        """
+        Read-only materials tree for the authenticated artist.
+        Returns all active participations with the full project → program → piece
+        hierarchy, including tracks and castings, resolved in a fixed number of
+        SQL queries via pre-fetched to_attr lists.
+        """
+        queryset = get_artist_materials_queryset(request.user)
+        serializer = ParticipationMaterialsSerializer(
+            queryset,
+            many=True,
+            context={'request': request},
+        )
+        return Response(serializer.data)
+
     @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsManager])
     def bulk_fee(self, request) -> Response:
         try:
@@ -275,6 +293,8 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         updated_participation = ParticipationService.update_status_by_artist(participation, new_status)
         
         return Response(self.get_serializer(updated_participation).data, status=status.HTTP_200_OK)
+    
+    
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     serializer_class = AttendanceSerializer
