@@ -152,6 +152,17 @@ export const ProjectService = {
     return response.data;
   },
 
+  updateParticipationStatus: async (
+    id: string,
+    status: "CON" | "DEC"
+  ): Promise<Participation> => {
+    const response = await api.patch<Participation>(
+      `${PARTICIPATIONS_BASE_URL}${id}/status/`,
+      { status }
+    );
+    return response.data;
+  },
+
   deleteParticipation: async (id: string | number): Promise<void> => {
     await api.delete(`${PARTICIPATIONS_BASE_URL}${id}/`);
   },

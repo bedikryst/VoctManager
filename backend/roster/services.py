@@ -284,9 +284,17 @@ class ProjectManagementService:
 
             # 3. Dispatch Notification
             if participation.artist.user_id:
+                location_name = participation.project.location.name if participation.project.location else "TBD"
+                inviter_name = f"{participation.project.conductor.first_name} {participation.project.conductor.last_name}" if participation.project.conductor else "Zarząd VoctManager"
+                
                 metadata = ProjectInvitationMetadata(
                     project_id=participation.project_id,
                     project_name=participation.project.title,
+                    participation_id=participation.id,
+                    inviter_name=inviter_name,
+                    date_range=participation.project.date_time.strftime("%Y-%m-%d %H:%M"),
+                    location=location_name,
+                    description=participation.project.description or "Brak opisu",
                     message=message
                 ).model_dump(mode="json")
                 
@@ -444,7 +452,7 @@ class RehearsalOperationsService:
     def record_attendance(dto: AttendanceRecordDTO) -> Attendance:
         try:
             participation = Participation.objects.select_related('artist').get(id=dto.participation_id, is_deleted=False)
-            rehearsal = Rehearsal.objects.prefetch_related('invited_participations').get(id=dto.rehearsal_id, is_deleted=False)
+            rehearsal = Rehearsal.objects.select_related('project').prefetch_related('invited_participations').get(id=dto.rehearsal_id, is_deleted=False)
         except (Participation.DoesNotExist, Rehearsal.DoesNotExist):
             raise AttendanceValidationException("Record not found.")
 
@@ -477,7 +485,11 @@ class RehearsalOperationsService:
             
             if dto.is_manager and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
                 notif_type = NotificationType.ABSENCE_APPROVED if dto.status == 'EXCUSED' else NotificationType.ABSENCE_REJECTED
-                metadata = AbsenceStatusMetadata(rehearsal_id=rehearsal.id).model_dump(mode="json")
+                metadata = AbsenceStatusMetadata(
+                    rehearsal_id=rehearsal.id,
+                    project_name=rehearsal.project.title,
+                    rehearsal_date=rehearsal.date_time.strftime("%Y-%m-%d %H:%M")
+                ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_notification_task.delay(
                     recipient_id=str(participation.artist.user_id),
@@ -577,7 +589,12 @@ class CastingAndCrewService:
 
     @staticmethod
     def assign_crew(validated_data: Dict[str, Any]) -> CrewAssignment:
+        """
+        Assigns a collaborator to a crew role within a project.
+        NOTE: By design (2026 Business Rules), Crew members do not possess UserProfiles 
+        and are excluded from the automated notification system.
+        """
         with transaction.atomic():
             assignment = CrewAssignment.objects.create(**validated_data)
-            # Notification logic placeholder for crew
+            
         return assignment

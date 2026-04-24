@@ -15,6 +15,7 @@ import React, {
   type ReactNode,
 } from "react";
 import { isAxiosError } from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import api, { type AuthRequestConfig } from "@/shared/api/api";
 import i18n from "@/shared/config/i18n";
 import type { AuthProfile, AuthUser } from "@/shared/auth/auth.types";
@@ -96,6 +97,7 @@ export const AuthProvider = ({
 }): React.JSX.Element => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const userLang = user?.profile?.language;

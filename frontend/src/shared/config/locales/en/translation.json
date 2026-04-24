@@ -532,7 +532,7 @@
       "btn_edit_report": "Edit report",
       "btn_materials": "Scores and Audio",
       "btn_report_issue": "Report an issue",
-      "empty_events_desc": "Rest. Your musical calendar is currently empty, and your aura has been fully harmonized. Time to regenerate your voice.",
+      "empty_events_desc": "Rest. Your musical calendar is currently empty. Time to regenerate your voice.",
       "empty_events_title": "No upcoming events",
       "features": {
         "events": "Rehearsals & Concerts",
@@ -616,7 +616,7 @@
     },
     "shared": {
       "authorizing": "Authorizing...",
-      "load": "Syncing Aura...",
+      "load": "Syncing...",
       "syncing": "Syncing dashboard..."
     }
   },
@@ -809,7 +809,36 @@
     "empty_title": "All caught up!",
     "mark_all_read": "Mark all as read",
     "title": "Notifications",
-    "unread": "Unread"
+    "unread": "Unread",
+    "types": {
+      "PROJECT_INVITATION": "Project Invitation",
+      "PROJECT_UPDATED": "Project Updated",
+      "PROJECT_CANCELLED": "Project Cancelled",
+      "PROJECT_REMINDER": "Project Reminder",
+      "REHEARSAL_SCHEDULED": "Rehearsal Scheduled",
+      "REHEARSAL_UPDATED": "Rehearsal Updated",
+      "REHEARSAL_CANCELLED": "Rehearsal Cancelled",
+      "REHEARSAL_REMINDER": "Rehearsal Reminder",
+      "PIECE_CASTING_ASSIGNED": "Casting Assigned",
+      "PIECE_CASTING_UPDATED": "Casting Updated",
+      "MATERIAL_UPLOADED": "New Material",
+      "CREW_ASSIGNED": "Crew Assigned",
+      "CONTRACT_ISSUED": "Contract Ready",
+      "ABSENCE_REQUESTED": "Absence Requested",
+      "ABSENCE_APPROVED": "Absence Approved",
+      "ABSENCE_REJECTED": "Absence Rejected",
+      "SYSTEM_ALERT": "System Alert",
+      "PARTICIPATION_RESPONSE": "Artist Response",
+      "ATTENDANCE_SUBMITTED": "Attendance Submitted"
+    },
+    "invitation_toast": {
+      "title": "New project invitation",
+      "invites": "Invited by: {{name}}",
+      "status_updated": "Participation status updated",
+      "status_error": "Error updating participation status",
+      "accept": "Accept",
+      "decline": "Decline"
+    }
   },
   "preloader": {
     "resonance": "résonance",
@@ -1516,7 +1545,7 @@
   },
   "shared": {
     "loader": {
-      "authorizing": "Synchronizing Aura..."
+      "authorizing": "Synchronizing..."
     }
   }
 }

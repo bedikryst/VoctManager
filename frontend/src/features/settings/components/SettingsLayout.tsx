@@ -9,7 +9,8 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { User, Shield, Truck, ShieldAlert, Calendar } from "lucide-react";
+import { User, Shield, Truck, ShieldAlert, Calendar, Bell } from "lucide-react";
+import { NotificationsTab } from "@/features/notifications/components/NotificationsTab";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Text } from "@/shared/ui/primitives/typography";
@@ -27,7 +28,8 @@ type TabType =
   | "security"
   | "logistics"
   | "privacy"
-  | "integrations";
+  | "integrations"
+  | "notifications";
 
 export default function SettingsLayout(): React.JSX.Element {
   const { t } = useTranslation();
@@ -58,6 +60,11 @@ export default function SettingsLayout(): React.JSX.Element {
       id: "integrations",
       label: t("settings.tabs.integrations", "Integracje"),
       icon: <Calendar size={18} strokeWidth={1.5} />,
+    },
+    {
+      id: "notifications",
+      label: t("settings.tabs.notifications", "Powiadomienia"),
+      icon: <Bell size={18} strokeWidth={1.5} />,
     },
   ] as const;
 
@@ -138,6 +145,7 @@ export default function SettingsLayout(): React.JSX.Element {
               {activeTab === "logistics" && <LogisticsTab />}
               {activeTab === "privacy" && <PrivacyTab />}
               {activeTab === "integrations" && <IntegrationsTab />}
+              {activeTab === "notifications" && <NotificationsTab />}
             </motion.div>
           </AnimatePresence>
         </main>

@@ -29,7 +29,7 @@ from .dtos import (
     ProjectCreateDTO, ProjectUpdateDTO, 
     RehearsalCreateDTO, RehearsalUpdateDTO
 )
-from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService, CastingAndCrewService
+from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService, CastingAndCrewService, ParticipationService
 
 # Models & Exceptions
 from .models import Artist, CrewAssignment, Project, Participation, ProgramItem, Rehearsal, Attendance, VoiceType, ProjectPieceCasting, Collaborator
@@ -242,6 +242,27 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         updated_count = ProjectManagementService.update_project_bulk_fee(dto)
         return Response({"detail": f"Successfully updated {updated_count} records.", "updated_count": updated_count}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['patch'], url_path='status', permission_classes=[permissions.IsAuthenticated])
+    def update_status(self, request, pk=None) -> Response:
+        """
+        Endpoint for artists to update their own participation status (e.g., Accept/Decline invitation).
+        Managers can update any status.
+        """
+        participation = self.get_object()
+        
+        if not _is_manager(request.user) and participation.artist.user_id != request.user.id:
+            return Response(
+                {"detail": "You do not have permission to modify this participation status."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        new_status = request.data.get('status')
+        if not new_status:
+            return Response({"error": "The 'status' field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_participation = ParticipationService.update_status_by_artist(participation, new_status)
+        
+        return Response(self.get_serializer(updated_participation).data, status=status.HTTP_200_OK)
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     serializer_class = AttendanceSerializer

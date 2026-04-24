@@ -32,7 +32,7 @@ export default function DashboardHome(): React.JSX.Element {
           className="absolute inset-0 flex items-center justify-center z-50"
         >
           <EtherealLoader
-            message={t("dashboard.shared.authorizing", "Synchronizing Aura...")}
+            message={t("dashboard.shared.authorizing", "Synchronizing...")}
           />
         </motion.div>
       ) : (

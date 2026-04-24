@@ -19,6 +19,7 @@ import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { CustomCursor } from "@/shared/ui/kinematics/CustomCursor";
 import { NoiseOverlay } from "@/shared/ui/kinematics/NoiseOverlay";
 import { Preloader } from "@/shared/ui/kinematics/Preloader";
+import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import ProtectedRoute from "./router/ProtectedRoute";
 import ManagerRoute from "./router/ManagerRoute";
 import { DashboardLayout } from "@/shared/widgets/layout/DashboardLayout";
@@ -123,6 +124,7 @@ export default function App(): React.JSX.Element {
         {shouldShowGlobalComponents && <NoiseOverlay />}
         {shouldShowGlobalComponents && <CustomCursor />}
 
+        <ProjectInvitationToasts />
         <Toaster position="top-right" richColors closeButton duration={4000} />
       </APIProvider>
     </CSRFProvider>

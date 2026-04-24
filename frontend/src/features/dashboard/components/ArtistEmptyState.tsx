@@ -88,7 +88,7 @@ export const ArtistEmptyState = (): React.JSX.Element => {
           <Text color="graphite" size="sm" className="max-w-md leading-relaxed">
             {t(
               "dashboard.artist.empty_events_desc",
-              "Odpocznij. Twój muzyczny kalendarz jest obecnie pusty, a aura została w pełni zharmonizowana. Czas na regenerację głosu.",
+              "Odpocznij. Twój muzyczny kalendarz jest obecnie pusty. Czas na regenerację głosu.",
             )}
           </Text>
         </motion.div>

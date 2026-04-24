@@ -809,7 +809,36 @@
     "empty_title": "Wszystko przeczytane",
     "mark_all_read": "Oznacz wszystkie jako przeczytane",
     "title": "Powiadomienia",
-    "unread": "nieprzeczytane"
+    "unread": "nieprzeczytane",
+    "types": {
+      "PROJECT_INVITATION": "Zaproszenie do projektu",
+      "PROJECT_UPDATED": "Projekt zaktualizowany",
+      "PROJECT_CANCELLED": "Projekt anulowany",
+      "PROJECT_REMINDER": "Przypomnienie o projekcie",
+      "REHEARSAL_SCHEDULED": "Próba zaplanowana",
+      "REHEARSAL_UPDATED": "Próba zaktualizowana",
+      "REHEARSAL_CANCELLED": "Próba odwołana",
+      "REHEARSAL_REMINDER": "Przypomnienie o próbie",
+      "PIECE_CASTING_ASSIGNED": "Obsada przypisana",
+      "PIECE_CASTING_UPDATED": "Obsada zaktualizowana",
+      "MATERIAL_UPLOADED": "Nowy materiał",
+      "CREW_ASSIGNED": "Obsada techniczna przypisana",
+      "CONTRACT_ISSUED": "Kontrakt gotowy",
+      "ABSENCE_REQUESTED": "Zgłoszenie nieobecności",
+      "ABSENCE_APPROVED": "Nieobecność zatwierdzona",
+      "ABSENCE_REJECTED": "Nieobecność odrzucona",
+      "SYSTEM_ALERT": "Alert systemowy",
+      "PARTICIPATION_RESPONSE": "Odpowiedź artysty",
+      "ATTENDANCE_SUBMITTED": "Obecność zgłoszona"
+    },
+    "invitation_toast": {
+      "title": "Nowe zaproszenie do projektu",
+      "invites": "Zaprasza: {{name}}",
+      "status_updated": "Zaktualizowano status uczestnictwa",
+      "status_error": "Wystąpił błąd podczas aktualizacji statusu",
+      "accept": "Akceptuj",
+      "decline": "Odrzuć"
+    }
   },
   "preloader": {
     "resonance": "Rezonans",

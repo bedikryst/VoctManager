@@ -532,7 +532,7 @@
       "btn_edit_report": "Modifier le signalement",
       "btn_materials": "Partitions et audio",
       "btn_report_issue": "Signaler un problème",
-      "empty_events_desc": "Reposez-vous. Votre calendrier musical est actuellement vide et votre aura a été entièrement harmonisée. Le temps de régénérer votre voix.",
+      "empty_events_desc": "Reposez-vous. Votre calendrier musical est actuellement vide. Le temps de régénérer votre voix.",
       "empty_events_title": "Aucun événement à venir",
       "features": {
         "events": "Répétitions & Concerts",
@@ -616,7 +616,7 @@
     },
     "shared": {
       "authorizing": "Autorisation...",
-      "load": "Synchronisation Aura...",
+      "load": "Synchronisation...",
       "syncing": "Synchronisation du tableau de bord..."
     }
   },
@@ -809,7 +809,36 @@
     "empty_title": "À jour !",
     "mark_all_read": "Marquer tout comme lu",
     "title": "Notifications",
-    "unread": "Non lues"
+    "unread": "Non lues",
+    "types": {
+      "PROJECT_INVITATION": "Invitation au projet",
+      "PROJECT_UPDATED": "Projet mis à jour",
+      "PROJECT_CANCELLED": "Projet annulé",
+      "PROJECT_REMINDER": "Rappel de projet",
+      "REHEARSAL_SCHEDULED": "Répétition planifiée",
+      "REHEARSAL_UPDATED": "Répétition modifiée",
+      "REHEARSAL_CANCELLED": "Répétition annulée",
+      "REHEARSAL_REMINDER": "Rappel de répétition",
+      "PIECE_CASTING_ASSIGNED": "Distribution attribuée",
+      "PIECE_CASTING_UPDATED": "Distribution mise à jour",
+      "MATERIAL_UPLOADED": "Nouveau matériel",
+      "CREW_ASSIGNED": "Équipe assignée",
+      "CONTRACT_ISSUED": "Contrat disponible",
+      "ABSENCE_REQUESTED": "Absence demandée",
+      "ABSENCE_APPROVED": "Absence approuvée",
+      "ABSENCE_REJECTED": "Absence refusée",
+      "SYSTEM_ALERT": "Alerte système",
+      "PARTICIPATION_RESPONSE": "Réponse d'artiste",
+      "ATTENDANCE_SUBMITTED": "Présence enregistrée"
+    },
+    "invitation_toast": {
+      "title": "Nouvelle invitation au projet",
+      "invites": "Invité par : {{name}}",
+      "status_updated": "Statut de participation mis à jour",
+      "status_error": "Erreur lors de la mise à jour du statut",
+      "accept": "Accepter",
+      "decline": "Refuser"
+    }
   },
   "preloader": {
     "resonance": "Résonance",
