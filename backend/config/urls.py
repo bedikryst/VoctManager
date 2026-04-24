@@ -31,7 +31,7 @@ from core.views import (
     ResetCalendarTokenView,
     CalendarFeedView
 )
-from notifications.views import NotificationViewSet
+from notifications.views import NotificationViewSet, NotificationPreferenceAPIView
 __author__ = "Krystian Bugalski"
 
 # Initialize the REST Framework Router
@@ -62,6 +62,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     path('api/csrf/', CSRFCookieView.as_view(), name='csrf-cookie'),
+
+    # --- System & Notifications Specific Routes ---
+    # These must be evaluated before the router to prevent 'preferences' from being interpreted as a primary key.
+    path('api/notifications/preferences/', NotificationPreferenceAPIView.as_view(), name='notification-preferences'),
+    path('api/notifications/preferences/<str:notification_type>/', NotificationPreferenceAPIView.as_view(), name='notification-preferences-detail'),
+
     # Auto-generated REST API routes
     path('api/', include(router.urls)),
 

@@ -2,35 +2,129 @@
 {% load i18n %}
 
 {% block content %}
-<h1 style="margin-bottom: 24px">
-  {% trans "Welcome to VoctEnsemble" %}{% if first_name %}, {{ first_name }}{% endif %}.
+
+<p class="overline" style="font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+   text-transform: uppercase; color: #c9a764; margin-bottom: 14px;
+   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  {% translate "Welcome" %}
+</p>
+
+<h1 style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+            font-size: 30px; font-weight: 400; color: #111827;
+            line-height: 1.3; margin-bottom: 28px;">
+  {% translate "Welcome to VoctEnsemble" %}{% if first_name %}, {{ first_name }}{% endif %}.
 </h1>
 
-<p style="margin-bottom: 16px">
-  {% trans "We are thrilled to welcome you to VoctManager — the digital heart of our artistic operations. This platform was designed to streamline our creative process, from repertoire management to concert logistics, ensuring you can focus entirely on the music." %}
+<p style="font-size: 15px; color: #4b5563; margin-bottom: 16px; line-height: 1.7;
+           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  {% blocktranslate trimmed %}
+  We are thrilled to welcome you to VoctManager — the digital heart of our
+  artistic operations. This platform was designed to streamline our creative
+  process, from repertoire management to concert logistics, ensuring you can
+  focus entirely on the music.
+  {% endblocktranslate %}
 </p>
 
-<p style="margin-bottom: 32px">
-  {% trans "Your profile has been successfully provisioned. You can now log in to view your upcoming projects, access sheet music, and review rehearsal schedules." %}
+<p style="font-size: 15px; color: #4b5563; margin-bottom: 32px; line-height: 1.7;
+           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  {% blocktranslate trimmed %}
+  Your profile has been successfully provisioned. You can now log in to view
+  your upcoming projects, access sheet music, and review rehearsal schedules.
+  {% endblocktranslate %}
 </p>
 
-<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 40px">
+<!-- Feature highlights -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+  <tr>
+    <td style="padding: 0 0 12px 0;">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0"
+             style="background-color: #faf9f7; border: 1px solid #e8e3d8; border-left: 3px solid #c9a764; padding: 14px 18px;">
+        <tr>
+          <td style="vertical-align: top; padding: 14px 18px;">
+            <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+                       text-transform: uppercase; color: #c9a764; margin: 0 0 4px 0;
+                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              {% translate "Projects &amp; Repertoire" %}
+            </p>
+            <p style="font-size: 14px; color: #4b5563; margin: 0; line-height: 1.6;
+                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              {% translate "View your upcoming projects, concert programmes, and casting assignments." %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 12px 0;">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="background-color: #faf9f7; border: 1px solid #e8e3d8;
+                     border-left: 3px solid #c9a764; padding: 14px 18px; vertical-align: top;">
+            <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+                       text-transform: uppercase; color: #c9a764; margin: 0 0 4px 0;
+                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              {% translate "Sheet Music" %}
+            </p>
+            <p style="font-size: 14px; color: #4b5563; margin: 0; line-height: 1.6;
+                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              {% translate "Access your digital score library — scores and audio materials, organised by project." %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0;">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="background-color: #faf9f7; border: 1px solid #e8e3d8;
+                     border-left: 3px solid #c9a764; padding: 14px 18px; vertical-align: top;">
+            <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+                       text-transform: uppercase; color: #c9a764; margin: 0 0 4px 0;
+                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              {% translate "Rehearsal Schedule" %}
+            </p>
+            <p style="font-size: 14px; color: #4b5563; margin: 0; line-height: 1.6;
+                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              {% translate "Stay up to date with rehearsal times, locations, and any last-minute changes." %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- CTA -->
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 36px;">
   <tr>
     <td align="center">
-      <a href="{{ frontend_url|default:'https://voctensemble.com/login' }}" class="btn" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 4px; font-size: 14px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;">
-        {% trans "Access Your Dashboard" %}
+      <a href="{{ frontend_url|default:'https://voctensemble.com/login' }}"
+         class="btn"
+         style="display: inline-block; background-color: #111827; color: #ffffff;
+                text-decoration: none; padding: 16px 40px; border-radius: 3px;
+                font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
+                text-transform: uppercase;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        {% translate "Access Your Dashboard" %}
       </a>
     </td>
   </tr>
 </table>
 
-<div class="divider"></div>
+<hr class="divider" style="border: 0; border-top: 1px solid #e8e3d8; margin: 0 0 24px 0;" />
 
-<p style="margin-bottom: 8px; color: #6b7280; font-size: 14px">
-  {% trans "If you experience any issues logging in, please reach out to the administration team." %}
+<p style="font-size: 13px; color: #9ca3af; margin-bottom: 20px; line-height: 1.6;
+           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  {% translate "If you experience any issues logging in, please reach out to the administration team." %}
 </p>
-<p style="margin-bottom: 0; color: #6b7280; font-size: 14px">
-  {% trans "Musically yours," %}<br />
-  <strong style="color: #4b5563">{% trans "The VoctEnsemble Team" %}</strong>
+
+<p style="font-size: 14px; color: #9ca3af; margin: 0; line-height: 1.7;
+           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  {% translate "Musically yours," %}<br />
+  <strong style="color: #111827; font-size: 14px;">{% translate "The VoctEnsemble Team" %}</strong>
 </p>
+
 {% endblock %}

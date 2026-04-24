@@ -4,21 +4,27 @@
 {% translate "Activate your artist profile" %}
 =========================================
 
-{% if first_name %}
-{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}
-{% else %}
-{% translate "Hello," %}
-{% endif %}
+{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
 
 {% blocktranslate trimmed %}
-Your exclusive access to VoctManager has been prepared. Complete the final activation step to set your secure password and enter the operational workspace used for our projects and rehearsals.
+Your exclusive access to VoctManager has been prepared. Complete the final
+activation step to set your secure password and enter the operational
+workspace used for our projects and rehearsals.
 {% endblocktranslate %}
 
-{% translate "Security Notice:" %} {% blocktranslate trimmed %}
-This activation link is unique to your account. For your security, it will expire automatically. Please do not share it with anyone.
+— {% translate "Security Notice:" %} —
+{% blocktranslate trimmed %}
+This activation link is unique to your account. For your security, it will
+expire automatically. Please do not share it with anyone.
 {% endblocktranslate %}
 
-{% translate "ACTIVATE ACCOUNT NOW:" %} 
+{% translate "ACTIVATE ACCOUNT NOW:" %}
+{{ activation_link }}
+
+-----------------------------------------
+{% blocktranslate trimmed %}
+If the button does not work, securely copy and paste this link into your browser:
+{% endblocktranslate %}
 {{ activation_link }}
 
 -----------------------------------------

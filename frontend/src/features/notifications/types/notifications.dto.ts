@@ -19,7 +19,9 @@ export type NotificationType =
   | "ABSENCE_REQUESTED"
   | "ABSENCE_APPROVED"
   | "ABSENCE_REJECTED"
-  | "SYSTEM_ALERT";
+  | "SYSTEM_ALERT"
+  | "PARTICIPATION_RESPONSE"
+  | "ATTENDANCE_SUBMITTED";
 
 // ==========================================
 // STRICT METADATA PAYLOADS
@@ -28,6 +30,11 @@ export type NotificationType =
 export interface ProjectInvitationMetadata {
   project_id: string;
   project_name: string;
+  participation_id: string;
+  inviter_name: string;
+  date_range: string;
+  location: string;
+  description: string;
   message?: string;
 }
 
@@ -62,6 +69,12 @@ export interface PieceCastingMetadata {
   message?: string;
 }
 
+export interface MaterialUploadedMetadata {
+  piece_id: string;
+  piece_title: string;
+  message?: string;
+}
+
 export interface CrewAssignedMetadata {
   project_id: string;
   project_name: string;
@@ -70,11 +83,17 @@ export interface CrewAssignedMetadata {
 
 export interface AbsenceStatusMetadata {
   rehearsal_id: string;
+  project_name?: string;
+  rehearsal_date?: string;
 }
 
-/** * Fallback for types that are defined in NotificationType but do not
- * have a strict strict metadata schema implemented yet.
- */
+export interface ManagerActionMetadata {
+  project_name: string;
+  artist_name: string;
+  action_details: string;
+  rehearsal_date?: string;
+}
+
 export type DefaultMetadata = Record<string, unknown>;
 
 // ==========================================
@@ -89,10 +108,6 @@ export interface BaseNotification {
   created_at: string;
 }
 
-/**
- * Enterprise DTO utilizing Discriminated Unions.
- * This guarantees type safety in React components based on the notification_type.
- */
 export type NotificationDTO = BaseNotification &
   (
     | {
@@ -116,6 +131,7 @@ export type NotificationDTO = BaseNotification &
         notification_type: "PIECE_CASTING_ASSIGNED" | "PIECE_CASTING_UPDATED";
         metadata: PieceCastingMetadata;
       }
+    | { notification_type: "MATERIAL_UPLOADED"; metadata: MaterialUploadedMetadata }
     | { notification_type: "CREW_ASSIGNED"; metadata: CrewAssignedMetadata }
     | {
         notification_type:
@@ -124,13 +140,15 @@ export type NotificationDTO = BaseNotification &
           | "ABSENCE_REQUESTED";
         metadata: AbsenceStatusMetadata;
       }
-    // Types that currently don't have distinct strictly typed payloads yet
+    | {
+        notification_type: "PARTICIPATION_RESPONSE" | "ATTENDANCE_SUBMITTED";
+        metadata: ManagerActionMetadata;
+      }
     | {
         notification_type:
           | "PROJECT_CANCELLED"
           | "PROJECT_REMINDER"
           | "REHEARSAL_REMINDER"
-          | "MATERIAL_UPLOADED"
           | "CONTRACT_ISSUED"
           | "SYSTEM_ALERT";
         metadata: DefaultMetadata;

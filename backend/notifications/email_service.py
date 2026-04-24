@@ -42,10 +42,18 @@ class NotificationTemplateRegistry:
     """
     SUBJECTS = {
         'PROJECT_INVITATION': _('You have a new project invitation'),
+        'PROJECT_UPDATED': _('Project Details Updated'),
+        'PROJECT_CANCELLED': _('Project Cancelled'),
         'REHEARSAL_SCHEDULED': _('New Rehearsal Scheduled'),
         'REHEARSAL_UPDATED': _('Rehearsal Schedule Changed'),
+        'REHEARSAL_CANCELLED': _('Rehearsal Cancelled'),
         'MATERIAL_UPLOADED': _('New Sheet Music Available'),
         'PIECE_CASTING_ASSIGNED': _('You have been cast in a piece'),
+        'PIECE_CASTING_UPDATED': _('Your Casting Has Been Updated'),
+        'ABSENCE_APPROVED': _('Your Absence Has Been Approved'),
+        'ABSENCE_REJECTED': _('Your Absence Has Been Rejected'),
+        'PARTICIPATION_RESPONSE': _('Artist Response to Project'),
+        'ATTENDANCE_SUBMITTED': _('Attendance Submitted'),
     }
 
     @classmethod
@@ -127,7 +135,8 @@ class EmailDispatcherService:
                     "first_name": user.first_name,
                     "notification_type": notification_type,
                     "metadata": metadata,
-                    "lang": resolved_language
+                    "lang": resolved_language,
+                    "site_url": getattr(settings, 'SITE_URL', 'https://voctensemble.com/panel'),
                 }
                 
                 # 5. Delegate execution to core transport layer
@@ -159,8 +168,12 @@ class EmailDispatcherService:
         Compiles templates and delegates execution to the configured ESP (Anymail).
         """
         try:
-            html_content = render_to_string(f"emails/{template_name}.html", context)
-            text_content = render_to_string(f"emails/{template_name}.txt", context)
+            full_context = {
+                'logo_url': getattr(settings, 'EMAIL_LOGO_URL', ''),
+                **context,
+            }
+            html_content = render_to_string(f"emails/{template_name}.html", full_context)
+            text_content = render_to_string(f"emails/{template_name}.txt", full_context)
 
             msg = EmailMultiAlternatives(
                 subject=subject,

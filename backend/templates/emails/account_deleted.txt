@@ -1,0 +1,20 @@
+{% load i18n %}
+VOCTMANAGER — {% translate "Account Closure" %}
+
+{% translate "Your VoctManager account has been closed" %}
+=========================================
+
+{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}
+
+{% endif %}
+{% translate "We have successfully processed your account deletion request." %}
+
+{% translate "All personal data associated with your account has been permanently removed from our systems in compliance with our privacy policy." %}
+
+-----------------------------------------
+{% translate "It has been our honour to have you as part of the VoctEnsemble community." %}
+
+{% translate "This confirmation was sent to:" %} {{ user_email }}
+
+{% translate "Musically yours," %}
+{% translate "The VoctEnsemble Team" %}

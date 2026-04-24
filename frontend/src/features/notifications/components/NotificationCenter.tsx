@@ -25,6 +25,8 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { cn } from "@/shared/lib/utils";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+
 interface NotificationCenterProps {
   className?: string;
 }
@@ -45,11 +47,12 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   className,
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  const { data: unreadCount = 0 } = useUnreadNotificationCount();
-  const { data: notifications = [], isLoading } = useNotifications();
+  const { data: unreadCount = 0 } = useUnreadNotificationCount(!!user);
+  const { data: notifications = [], isLoading } = useNotifications(!!user);
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
 
   useEffect(() => {

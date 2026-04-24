@@ -36,7 +36,7 @@ class NotificationType(models.TextChoices):
     MATERIAL_UPLOADED = 'MATERIAL_UPLOADED', _('New Sheet Music or Audio Track')
 
     # --- LOGISTICS & HR ---
-    CREW_ASSIGNED = 'CREW_ASSIGNED', _('Assigned to Crew Role')
+    # ---  CREW_ASSIGNED = 'CREW_ASSIGNED', _('Assigned to Crew Role')
     CONTRACT_ISSUED = 'CONTRACT_ISSUED', _('Contract Ready for Review')
 
     # --- ATTENDANCE & HR ---

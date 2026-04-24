@@ -1,11 +1,3 @@
-/**
- * @file NotificationItem.tsx
- * @description Renders a single notification row with dynamic icons and styling.
- * Implements Enterprise Deep-Linking to route users directly to the affected entities.
- * Fully strictly typed using Discriminated Unions to prevent metadata access violations.
- * @architecture Enterprise SaaS 2026
- */
-
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +12,7 @@ import {
   XCircle,
   Headphones,
   ChevronRight,
+  ClipboardCheck,
 } from "lucide-react";
 
 import type { NotificationDTO } from "../types/notifications.dto";
@@ -99,12 +92,28 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           pillClass: infoPill,
           readBg: infoReadBg,
         };
+      case "PROJECT_UPDATED":
+        return {
+          icon: Briefcase,
+          color: "text-amber-600",
+          bg: "bg-amber-50 border-amber-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
+        };
       case "REHEARSAL_SCHEDULED":
       case "REHEARSAL_UPDATED":
         return {
           icon: Calendar,
           color: "text-emerald-600",
           bg: "bg-emerald-50 border-emerald-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
+        };
+      case "REHEARSAL_CANCELLED":
+        return {
+          icon: Calendar,
+          color: "text-orange-500",
+          bg: "bg-orange-50 border-orange-100",
           pillClass: infoPill,
           readBg: infoReadBg,
         };
@@ -149,6 +158,30 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           pillClass: infoPill,
           readBg: infoReadBg,
         };
+      case "PARTICIPATION_RESPONSE":
+        return {
+          icon: UserCheck,
+          color: "text-amber-600",
+          bg: "bg-amber-50 border-amber-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
+        };
+      case "ATTENDANCE_SUBMITTED":
+        return {
+          icon: ClipboardCheck,
+          color: "text-teal-600",
+          bg: "bg-teal-50 border-teal-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
+        };
+      case "SYSTEM_ALERT":
+        return {
+          icon: AlertTriangle,
+          color: "text-slate-600",
+          bg: "bg-slate-50 border-slate-200",
+          pillClass: infoPill,
+          readBg: infoReadBg,
+        };
       default:
         return {
           icon: Info,
@@ -170,6 +203,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       return navigate(
         isAdmin ? "/panel/archive-management" : "/panel/materials",
       );
+    }
+
+    if (type === "ATTENDANCE_SUBMITTED") {
+      return navigate(isAdmin ? "/panel/rehearsals" : "/panel/schedule");
+    }
+
+    if (type === "PARTICIPATION_RESPONSE") {
+      return navigate(isAdmin ? "/panel/projects" : "/panel/schedule");
     }
 
     if (type.includes("REHEARSAL") || type.includes("ABSENCE")) {
@@ -199,6 +240,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   let pieceTitle: string | undefined;
   let message: string | undefined;
   let changes: string[] | undefined;
+  let subLabel: string | undefined;
 
   switch (notification.notification_type) {
     case "PROJECT_INVITATION":
@@ -226,6 +268,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       pieceTitle = notification.metadata.piece_title;
       message = notification.metadata.message;
       break;
+    case "MATERIAL_UPLOADED":
+      pieceTitle = notification.metadata.piece_title;
+      break;
     case "CREW_ASSIGNED":
       projectName = notification.metadata.project_name;
       message = t("notifications.crew_role", {
@@ -235,7 +280,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       break;
     case "ABSENCE_APPROVED":
     case "ABSENCE_REJECTED":
-    case "ABSENCE_REQUESTED":
+      projectName = notification.metadata.project_name;
+      subLabel = notification.metadata.rehearsal_date;
+      break;
+    case "PARTICIPATION_RESPONSE":
+    case "ATTENDANCE_SUBMITTED":
+      projectName = notification.metadata.project_name;
+      subLabel = notification.metadata.artist_name;
+      message = notification.metadata.action_details;
       break;
   }
 
@@ -251,7 +303,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       )}
 
       <div
-        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white shadow-sm transition-transform group-hover:scale-105 ${color}`}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm transition-transform group-hover:scale-105 ${color}`}
       >
         <Icon size={18} strokeWidth={2.5} />
       </div>
@@ -277,7 +329,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           {pieceTitle && (
             <span className="font-semibold text-stone-800">{pieceTitle}</span>
           )}
-          {message && (projectName || pieceTitle ? ` - ${message}` : message)}
+          {subLabel && (
+            <span className="text-stone-500"> · {subLabel}</span>
+          )}
+          {message && (projectName || pieceTitle ? ` — ${message}` : message)}
         </div>
 
         {changes && changes.length > 0 && (
@@ -288,7 +343,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             {changes.map((change, idx) => (
               <span
                 key={idx}
-                className={`px-1.5 py-0.5 rounded-[4px] border text-[9px] font-bold uppercase tracking-widest shadow-sm ${pillClass}`}
+                className={`px-1.5 py-0.5 rounded-sm border text-[9px] font-bold uppercase tracking-widest shadow-sm ${pillClass}`}
               >
                 {change}
               </span>

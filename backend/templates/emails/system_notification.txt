@@ -1,0 +1,34 @@
+{% load i18n %}
+VOCTMANAGER
+
+{% if metadata.project_name %}{{ metadata.project_name }}{% elif metadata.piece_title %}{{ metadata.piece_title }}{% elif metadata.artist_name %}{{ metadata.artist_name }}{% else %}{% translate "New notification" %}{% endif %}
+
+=========================================
+
+{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+
+{% if metadata.message %}{{ metadata.message }}
+{% endif %}
+
+{% if metadata.inviter_name %}{% translate "Invited by:" %} {{ metadata.inviter_name }}
+{% endif %}
+{% if metadata.date_range %}{% translate "Date:" %} {{ metadata.date_range }}
+{% endif %}
+{% if metadata.location %}{% translate "Location:" %} {{ metadata.location }}
+{% endif %}
+{% if metadata.voice_line %}{% translate "Voice part:" %} {{ metadata.voice_line }}
+{% endif %}
+{% if metadata.action_details %}{% translate "Details:" %} {{ metadata.action_details }}
+{% endif %}
+{% if metadata.rehearsal_date %}{% translate "Rehearsal:" %} {{ metadata.rehearsal_date }}
+{% endif %}
+
+{% if metadata.changes %}{% translate "Changes:" %}
+{% for change in metadata.changes %}  - {{ change }}
+{% endfor %}{% endif %}
+
+-----------------------------------------
+{% translate "Open VoctManager:" %} {{ site_url }}/panel
+
+{% translate "Musically yours," %}
+{% translate "The VoctEnsemble Team" %}

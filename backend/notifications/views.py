@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
-from .models import Notification, NotificationPreference
+from .models import Notification, NotificationPreference, NotificationType
+from core.constants import AppRole
 from .serializers import (
     NotificationSerializer,
     PushDeviceRegisterSerializer,
@@ -98,19 +99,55 @@ class NotificationPreferenceAPIView(views.APIView):
     
     def get(self, request: Request) -> Response:
         """Returns the current user's notification preferences in a structured format."""
-        prefs = NotificationPreference.objects.filter(user=request.user)
-        data = {
-            p.notification_type: {
-                "email": p.email_enabled,
-                "push": p.push_enabled,
-                "sms": p.sms_enabled
-            } for p in prefs
+        user_role = getattr(request.user.profile, 'role', None) if hasattr(request.user, 'profile') else None
+        is_manager = (user_role == AppRole.MANAGER) or request.user.is_staff
+
+        MANAGER_ONLY = {
+            NotificationType.PARTICIPATION_RESPONSE.value,
+            NotificationType.ATTENDANCE_SUBMITTED.value,
+            NotificationType.ABSENCE_REQUESTED.value,
         }
+
+        DEFAULT_EMAIL_TRUE = {
+            NotificationType.PROJECT_INVITATION.value,
+            NotificationType.PROJECT_CANCELLED.value,
+            NotificationType.REHEARSAL_SCHEDULED.value,
+            NotificationType.REHEARSAL_UPDATED.value,
+            NotificationType.REHEARSAL_CANCELLED.value,
+        }
+
+        DEFAULT_PUSH_FALSE = {
+            NotificationType.PIECE_CASTING_ASSIGNED.value,
+            NotificationType.CONTRACT_ISSUED.value,
+        }
+
+        prefs = {p.notification_type: p for p in NotificationPreference.objects.filter(user=request.user)}
+        data = []
+        for choice in NotificationType:
+            if choice.value in MANAGER_ONLY and not is_manager:
+                continue
+
+            pref = prefs.get(choice.value)
+            
+            default_email = choice.value in DEFAULT_EMAIL_TRUE
+            default_push = choice.value not in DEFAULT_PUSH_FALSE
+
+            data.append({
+                "notification_type": choice.value,
+                "label": str(choice.label),
+                "email_enabled": pref.email_enabled if pref else default_email,
+                "push_enabled": pref.push_enabled if pref else default_push,
+                "sms_enabled": pref.sms_enabled if pref else False,
+            })
         return Response(data)
     
-    def patch(self, request: Request) -> Response:
+    def patch(self, request: Request, notification_type: str = None) -> Response:
         """Updates specific notification channels based on notification_type."""
-        serializer = NotificationPreferenceUpdateSerializer(data=request.data)
+        data = request.data.copy()
+        if notification_type and 'notification_type' not in data:
+            data['notification_type'] = notification_type
+
+        serializer = NotificationPreferenceUpdateSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         
         dto = NotificationPreferenceUpdateDTO(

@@ -19,6 +19,11 @@ class EnterpriseBaseDTO(BaseModel):
 class ProjectInvitationMetadata(EnterpriseBaseDTO):
     project_id: UUID
     project_name: str
+    participation_id: UUID
+    inviter_name: str
+    date_range: str
+    location: str
+    description: str
     message: Optional[str] = None
 
 class ProjectUpdatedMetadata(EnterpriseBaseDTO):
@@ -57,6 +62,15 @@ class CrewAssignedMetadata(EnterpriseBaseDTO):
 
 class AbsenceStatusMetadata(EnterpriseBaseDTO):
     rehearsal_id: UUID
+    project_name: str
+    rehearsal_date: str
+
+
+class ManagerActionMetadata(EnterpriseBaseDTO):
+    project_name: str
+    artist_name: str
+    action_details: str  # np. "Accepted", "Declined", "Updated excuse note"
+    rehearsal_date: Optional[str] = None
 
 # Polymorphic Payload Definition
 NotificationMetadataPayload = Union[
@@ -68,6 +82,7 @@ NotificationMetadataPayload = Union[
     PieceCastingMetadata,
     CrewAssignedMetadata,
     AbsenceStatusMetadata,
+    ManagerActionMetadata,
     Dict[str, Any] # Enterprise fallback for manual custom alerts
 ]
 
@@ -89,7 +104,7 @@ class PushDeviceRegisterDTO(BaseModel):
     """DTO for incoming device token registration requests."""
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    user_id: UUID
+    user_id: Union[int, str, UUID]
     registration_token: str = Field(..., min_length=10, description="The client-provided push token.")
     device_type: str = Field(default="WEB", description="Platform identifier.")
 
@@ -98,15 +113,9 @@ class NotificationPreferenceUpdateDTO(BaseModel):
     """DTO for granular mutation of user notification preferences."""
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    user_id: UUID
+    user_id: Union[int, str, UUID]
     notification_type: str = Field(..., description="Target business event category.")
     email_enabled: Optional[bool] = Field(None, description="Toggle Email delivery.")
     push_enabled: Optional[bool] = Field(None, description="Toggle Push delivery.")
     sms_enabled: Optional[bool] = Field(None, description="Toggle SMS delivery.")
 
-
-class ManagerActionMetadata(EnterpriseBaseDTO):
-    project_name: str
-    artist_name: str
-    action_details: str  # np. "Accepted", "Declined", "Updated excuse note"
-    rehearsal_date: Optional[str] = None

@@ -1,13 +1,35 @@
 {% load i18n %}
-{% trans "Welcome to VoctEnsemble" %}{% if first_name %}, {{ first_name }}{% endif %}.
+VOCTENSEMBLE — {% translate "Welcome" %}
 
-{% trans "We are thrilled to welcome you to VoctManager — the digital heart of our artistic operations. This platform was designed to streamline our creative process, from repertoire management to concert logistics, ensuring you can focus entirely on the music." %}
+{% translate "Welcome to VoctEnsemble" %}{% if first_name %}, {{ first_name }}{% endif %}.
+=========================================
 
-{% trans "Your profile has been successfully provisioned. You can now log in to view your upcoming projects, access sheet music, and review rehearsal schedules." %}
+{% blocktranslate trimmed %}
+We are thrilled to welcome you to VoctManager — the digital heart of our
+artistic operations. This platform was designed to streamline our creative
+process, from repertoire management to concert logistics, ensuring you can
+focus entirely on the music.
+{% endblocktranslate %}
 
-{% trans "Access Your Dashboard here:" %} {{ frontend_url|default:'https://voctensemble.com/login' }}
+{% blocktranslate trimmed %}
+Your profile has been successfully provisioned. You can now log in to view
+your upcoming projects, access sheet music, and review rehearsal schedules.
+{% endblocktranslate %}
 
-{% trans "If you experience any issues logging in, please reach out to the administration team." %}
+[ {% translate "Projects & Repertoire" %} ]
+{% translate "View your upcoming projects, concert programmes, and casting assignments." %}
 
-{% trans "Musically yours," %}
-{% trans "The VoctEnsemble Team" %}
+[ {% translate "Sheet Music" %} ]
+{% translate "Access your digital score library — scores and audio materials, organised by project." %}
+
+[ {% translate "Rehearsal Schedule" %} ]
+{% translate "Stay up to date with rehearsal times, locations, and any last-minute changes." %}
+
+{% translate "Access Your Dashboard here:" %}
+{{ frontend_url|default:'https://voctensemble.com/login' }}
+
+-----------------------------------------
+{% translate "If you experience any issues logging in, please reach out to the administration team." %}
+
+{% translate "Musically yours," %}
+{% translate "The VoctEnsemble Team" %}

@@ -959,5 +959,141 @@ msgstr ""
 "W razie problemów z logowaniem, prosimy o kontakt z zespołem "
 "administracyjnym."
 
+#: templates/emails/base.html
+msgid "Automatically generated. Please do not reply to this message."
+msgstr "Wiadomość generowana automatycznie. Prosimy nie odpowiadać na tę wiadomość."
+
+#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+msgid "Welcome"
+msgstr "Witamy"
+
+#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+msgid "Projects &amp; Repertoire"
+msgstr "Projekty i repertuar"
+
+#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+msgid "Projects & Repertoire"
+msgstr "Projekty i repertuar"
+
+#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+msgid "View your upcoming projects, concert programmes, and casting assignments."
+msgstr "Przeglądaj nadchodzące projekty, programy koncertów i przypisania obsadowe."
+
+#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+msgid "Sheet Music"
+msgstr "Nuty"
+
+#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+msgid "Access your digital score library — scores and audio materials, organised by project."
+msgstr "Korzystaj z cyfrowej biblioteki nut — partytury i materiały audio, posegregowane według projektów."
+
+#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+msgid "Rehearsal Schedule"
+msgstr "Harmonogram prób"
+
+#: templates/emails/welcome_email.html templates/emails/welcome_email.txt
+msgid "Stay up to date with rehearsal times, locations, and any last-minute changes."
+msgstr "Bądź na bieżąco z godzinami prób, miejscami i wszelkimi zmianami w ostatniej chwili."
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "New notification"
+msgstr "Nowe powiadomienie"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Invited by:"
+msgstr "Zaprasza:"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Date:"
+msgstr "Termin:"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Location:"
+msgstr "Miejsce:"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Voice part:"
+msgstr "Głos:"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Details:"
+msgstr "Szczegóły:"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Rehearsal:"
+msgstr "Próba:"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Rehearsal date:"
+msgstr "Data próby:"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Changes"
+msgstr "Zmiany"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Changes:"
+msgstr "Zmiany:"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Open VoctManager"
+msgstr "Otwórz VoctManager"
+
+#: templates/emails/system_notification.html templates/emails/system_notification.txt
+msgid "Open VoctManager:"
+msgstr "Otwórz VoctManager:"
+
+#: templates/emails/password_changed.html templates/emails/password_changed.txt
+msgid "Security Notice"
+msgstr "Informacja o bezpieczeństwie"
+
+#: templates/emails/password_changed.html templates/emails/password_changed.txt
+msgid "Your password has been changed"
+msgstr "Twoje hasło zostało zmienione"
+
+#: templates/emails/password_changed.html templates/emails/password_changed.txt
+msgid "We are writing to confirm that your VoctManager password was recently changed."
+msgstr "Piszemy, aby potwierdzić, że hasło do Twojego konta VoctManager zostało niedawno zmienione."
+
+#: templates/emails/password_changed.html templates/emails/password_changed.txt
+msgid "If you made this change, no further action is required."
+msgstr "Jeśli to Ty dokonałeś/aś tej zmiany, nie musisz podejmować żadnych działań."
+
+#: templates/emails/password_changed.html templates/emails/password_changed.txt
+msgid "Did not make this change?"
+msgstr "Nie dokonywałeś/aś tej zmiany?"
+
+#: templates/emails/password_changed.html templates/emails/password_changed.txt
+msgid "If you did not make this change, please contact our administration team immediately to secure your account."
+msgstr "Jeśli nie dokonałeś/aś tej zmiany, natychmiast skontaktuj się z naszym zespołem administracyjnym, aby zabezpieczyć konto."
+
+#: templates/emails/password_changed.html templates/emails/password_changed.txt
+msgid "This security alert was sent to:"
+msgstr "Ten alert bezpieczeństwa został wysłany na adres:"
+
+#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
+msgid "Account Closure"
+msgstr "Zamknięcie konta"
+
+#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
+msgid "Your VoctManager account has been closed"
+msgstr "Twoje konto VoctManager zostało zamknięte"
+
+#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
+msgid "We have successfully processed your account deletion request."
+msgstr "Pomyślnie przetworzyliśmy Twoje żądanie usunięcia konta."
+
+#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
+msgid "All personal data associated with your account has been permanently removed from our systems in compliance with our privacy policy."
+msgstr "Wszystkie dane osobowe powiązane z Twoim kontem zostały trwale usunięte z naszych systemów zgodnie z naszą polityką prywatności."
+
+#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
+msgid "It has been our honour to have you as part of the VoctEnsemble community."
+msgstr "Było dla nas zaszczytem mieć Cię w społeczności VoctEnsemble."
+
+#: templates/emails/account_deleted.html templates/emails/account_deleted.txt
+msgid "This confirmation was sent to:"
+msgstr "To potwierdzenie zostało wysłane na adres:"
+
 #~ msgid "Toggle flag for receiving non-critical system updates via email."
 #~ msgstr "Otrzymywanie powiadomień systemowych drogą mailową."
