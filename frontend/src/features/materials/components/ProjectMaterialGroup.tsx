@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Briefcase, Clock } from "lucide-react";
+
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { PieceMaterialCard } from "./PieceMaterialCard";
@@ -22,10 +23,13 @@ export const ProjectMaterialGroup = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
       className="space-y-5"
     >
       <div
-        className={`flex items-center gap-3 border-b border-ethereal-marble pb-3 ml-2 ${isArchived ? "opacity-70" : ""}`}
+        className={`flex items-center gap-3 border-b border-ethereal-marble pb-3 ml-2 transition-opacity ${
+          isArchived ? "opacity-70" : "opacity-100"
+        }`}
       >
         <Briefcase
           size={18}
@@ -52,11 +56,11 @@ export const ProjectMaterialGroup = ({
             {isArchived && (
               <Eyebrow
                 color="muted"
-                className="bg-ethereal-marble px-2 py-0.5 rounded"
+                className="bg-ethereal-marble px-2 py-0.5 rounded shadow-glass-solid"
               >
                 {t(
                   "materials.project.archived_badge",
-                  "Projekt Zarchiwizowany"
+                  "Projekt Zarchiwizowany",
                 )}
               </Eyebrow>
             )}
@@ -64,14 +68,16 @@ export const ProjectMaterialGroup = ({
         </div>
       </div>
 
-      {group.pieces.map((piece, idx) => (
-        <PieceMaterialCard
-          key={piece.id}
-          piece={piece}
-          index={idx}
-          isArchived={isArchived}
-        />
-      ))}
+      <div className="flex flex-col gap-4">
+        {group.pieces.map((piece, idx) => (
+          <PieceMaterialCard
+            key={piece.id}
+            piece={piece}
+            index={idx}
+            isArchived={isArchived}
+          />
+        ))}
+      </div>
     </motion.div>
   );
 };

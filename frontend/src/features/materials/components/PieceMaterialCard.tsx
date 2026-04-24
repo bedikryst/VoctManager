@@ -11,8 +11,14 @@ import {
   User,
   Headphones,
 } from "lucide-react";
+
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Heading, Text, Eyebrow, Emphasis } from "@/shared/ui/primitives/typography";
+import {
+  Heading,
+  Text,
+  Eyebrow,
+  Emphasis,
+} from "@/shared/ui/primitives/typography";
 import { getReferenceRecordingLinks } from "@/features/archive/constants/referenceRecordings";
 import { EducationalAudioPlayer } from "./EducationalAudioPlayer";
 import { PieceDivisiRoster } from "./PieceDivisiRoster";
@@ -47,18 +53,25 @@ export const PieceMaterialCard = ({
       <GlassCard
         padding="none"
         variant={isArchived ? "dark" : "ethereal"}
-        className={`transition-all duration-300 ${isExpanded ? "border-ethereal-amethyst shadow-glass-ethereal" : "hover:shadow-glass-ethereal-hover"} ${isArchived ? "grayscale-[0.5]" : ""}`}
+        className={`transition-all duration-300 overflow-hidden ${
+          isExpanded
+            ? "border-ethereal-amethyst shadow-glass-ethereal"
+            : "hover:shadow-glass-ethereal-hover"
+        } ${isArchived ? "grayscale opacity-80" : ""}`}
       >
-        <div
+        <button
           onClick={() => setIsExpanded((prev) => !prev)}
-          className="p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-white/10 transition-colors"
+          className="w-full p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left hover:bg-ethereal-marble/20 transition-colors focus:outline-none"
+          aria-expanded={isExpanded}
         >
           <div className="flex items-start sm:items-center gap-4">
             <div
-              className={`w-12 h-12 rounded-xl bg-ethereal-alabaster flex items-center justify-center flex-shrink-0 shadow-glass-solid ${isArchived ? "text-ethereal-graphite" : "text-ethereal-ink"}`}
+              className={`w-12 h-12 rounded-xl bg-ethereal-alabaster flex items-center justify-center flex-shrink-0 shadow-glass-solid ${
+                isArchived ? "text-ethereal-graphite" : "text-ethereal-ink"
+              }`}
             >
               <Heading size="3xl" weight="medium">
-                {index + 1}
+                {String(index + 1)}
               </Heading>
             </div>
             <div>
@@ -71,7 +84,7 @@ export const PieceMaterialCard = ({
                   : t("materials.piece.traditional", "Tradycyjny / Nieznany")}
               </Eyebrow>
               {piece.myCasting && (
-                <div className="mt-2 inline-block bg-ethereal-sage/10 px-2 py-0.5 rounded border border-ethereal-sage/20">
+                <div className="mt-2 inline-flex bg-ethereal-sage/10 px-2 py-0.5 rounded border border-ethereal-sage/20">
                   <Eyebrow color="default" className="text-ethereal-incense">
                     {t("materials.piece.you_sing", "Śpiewasz:")}{" "}
                     {piece.myCasting.voice_line_display ||
@@ -100,7 +113,11 @@ export const PieceMaterialCard = ({
               )}
               {isArchived && (
                 <div className="px-2.5 py-1.5 bg-ethereal-marble/40 rounded-lg border border-ethereal-marble flex items-center gap-1.5">
-                  <Lock size={12} className="text-ethereal-graphite" />
+                  <Lock
+                    size={12}
+                    className="text-ethereal-graphite"
+                    aria-hidden="true"
+                  />
                   <Eyebrow color="muted">
                     {t("materials.piece.locked_badge", "Chronione")}
                   </Eyebrow>
@@ -116,14 +133,15 @@ export const PieceMaterialCard = ({
               )}
             </div>
           </div>
-        </div>
+        </button>
 
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {isExpanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className="bg-ethereal-parchment/30 border-t border-ethereal-marble overflow-hidden"
             >
               {isArchived ? (
@@ -138,13 +156,13 @@ export const PieceMaterialCard = ({
                   <Eyebrow color="muted" className="mb-2">
                     {t(
                       "materials.piece.access_locked_title",
-                      "Dostęp Zablokowany"
+                      "Dostęp Zablokowany",
                     )}
                   </Eyebrow>
                   <Text className="text-ethereal-graphite max-w-md">
                     {t(
                       "materials.piece.access_locked_desc",
-                      "Projekt został zakończony. Materiały ćwiczeniowe oraz partytury nie są już dostępne ze względu na ochronę własności intelektualnej i aranżacji dyrygenta."
+                      "Projekt został zakończony. Materiały ćwiczeniowe oraz partytury nie są już dostępne ze względu na ochronę własności intelektualnej i aranżacji dyrygenta.",
                     )}
                   </Text>
                 </div>
@@ -156,17 +174,17 @@ export const PieceMaterialCard = ({
                         href={piece.sheet_music}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-8 py-3.5 bg-ethereal-sage hover:opacity-90 rounded-xl transition-all shadow-glass-solid active:scale-95"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-8 py-3.5 bg-ethereal-sage hover:bg-ethereal-sage/90 rounded-xl transition-all shadow-glass-solid active:scale-95"
                       >
                         <Download
                           size={16}
                           className="text-white"
                           aria-hidden="true"
-                        />{" "}
-                        <Eyebrow className="text-white">
+                        />
+                        <Eyebrow color="default" className="text-white">
                           {t(
                             "materials.piece.download_pdf",
-                            "Pobierz Partyturę (PDF)"
+                            "Pobierz Partyturę (PDF)",
                           )}
                         </Eyebrow>
                       </a>
@@ -176,7 +194,7 @@ export const PieceMaterialCard = ({
                           size={16}
                           className="text-ethereal-graphite"
                           aria-hidden="true"
-                        />{" "}
+                        />
                         <Eyebrow color="muted">
                           {t("materials.piece.no_pdf", "Nuty niedostępne")}
                         </Eyebrow>
@@ -188,17 +206,17 @@ export const PieceMaterialCard = ({
                         href={referenceLinks[0].url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl transition-all border shadow-glass-solid bg-ethereal-alabaster hover:bg-ethereal-marble/50 active:scale-95"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl transition-all border border-ethereal-marble shadow-glass-solid bg-ethereal-alabaster hover:bg-ethereal-marble/50 active:scale-95"
                       >
                         <Youtube
                           size={16}
                           className="text-ethereal-crimson"
                           aria-hidden="true"
-                        />{" "}
+                        />
                         <Eyebrow color="default">
                           {t(
                             "materials.piece.listen_reference",
-                            "Posłuchaj Referencji"
+                            "Posłuchaj Referencji",
                           )}
                         </Eyebrow>
                       </a>
@@ -222,7 +240,7 @@ export const PieceMaterialCard = ({
                             >
                               {t(
                                 "materials.piece.your_guidelines",
-                                "Twoje wytyczne do utworu"
+                                "Twoje wytyczne do utworu",
                               )}
                             </Eyebrow>
                             <Text>
@@ -237,14 +255,14 @@ export const PieceMaterialCard = ({
                         {piece.myCasting.notes ? (
                           <div className="bg-ethereal-marble/40 p-3 rounded-lg border border-ethereal-marble/60">
                             <Text className="italic text-ethereal-graphite">
-                              "{piece.myCasting.notes}"
+                              &quot;{piece.myCasting.notes}&quot;
                             </Text>
                           </div>
                         ) : (
                           <Text className="italic text-ethereal-graphite opacity-80">
                             {t(
                               "materials.piece.no_notes",
-                              "Dyrygent nie dodał specjalnych uwag."
+                              "Dyrygent nie dodał specjalnych uwag.",
                             )}
                           </Text>
                         )}
@@ -264,11 +282,11 @@ export const PieceMaterialCard = ({
                           size={14}
                           className="text-ethereal-gold"
                           aria-hidden="true"
-                        />{" "}
+                        />
                         <Eyebrow color="muted">
                           {t(
                             "materials.piece.practice_tracks",
-                            "Ścieżki Ćwiczeniowe (Midi / MP3)"
+                            "Ścieżki Ćwiczeniowe (Midi / MP3)",
                           )}
                         </Eyebrow>
                       </div>

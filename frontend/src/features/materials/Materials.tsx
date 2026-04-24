@@ -2,16 +2,16 @@
  * @file Materials.tsx
  * @description Master view for the Artist Rehearsal Materials Module.
  * Facilitates access to sheet music, isolated audio tracks, and casting assignments.
- * @module panel/materials/Materials
+ * @module features/materials/Materials
  */
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../app/providers/AuthProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Search, Music } from "lucide-react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
 import { useMaterialsData } from "./hooks/useMaterialsData";
 import { ProjectMaterialGroup } from "./components/ProjectMaterialGroup";
 
@@ -19,6 +19,7 @@ import { ProjectMaterialGroup } from "./components/ProjectMaterialGroup";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Input } from "@/shared/ui/primitives/Input";
 
@@ -58,12 +59,12 @@ export const Materials = (): React.JSX.Element => {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in relative cursor-default pb-24 max-w-5xl mx-auto px-4 sm:px-0">
+    <PageTransition>
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="pt-6 mb-8"
+        className="pt-6 mb-8 space-y-8 relative cursor-default pb-24 max-w-5xl mx-auto px-4 sm:px-0"
       >
         <PageHeader
           roleText={t("materials.dashboard.subtitle", "Strefa Artysty")}
@@ -102,6 +103,7 @@ export const Materials = (): React.JSX.Element => {
               key="empty-state"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
               <GlassCard
                 variant="ethereal"
@@ -129,6 +131,6 @@ export const Materials = (): React.JSX.Element => {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </PageTransition>
   );
 };

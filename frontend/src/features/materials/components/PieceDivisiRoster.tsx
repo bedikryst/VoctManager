@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
+
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import type { PieceCasting } from "@/shared/types";
@@ -26,19 +27,24 @@ export const PieceDivisiRoster = ({
       acc[vl].push(c);
       return acc;
     },
-    {}
+    {},
   );
 
   return (
     <GlassCard variant="ethereal" className="h-full">
       <div className="flex items-center gap-1.5 border-b border-ethereal-marble pb-2 mb-3">
-        <Users size={14} className="text-ethereal-graphite" aria-hidden="true" />{" "}
+        <Users
+          size={14}
+          className="text-ethereal-graphite"
+          aria-hidden="true"
+        />
         <Eyebrow color="muted">
           {t("materials.piece.cast_divisi", "Obsada utworu (Divisi)")}
         </Eyebrow>
       </div>
+
       {allCastings.length > 0 ? (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-h-[160px] overflow-y-auto pr-2 scrollbar-hide">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-h-[160px] overflow-y-auto pr-2 no-scrollbar">
           {Object.entries(divisiGroups).map(([vl, groupCastings]) => (
             <div key={vl} className="space-y-1.5">
               <Eyebrow color="muted">{vl}</Eyebrow>
@@ -48,7 +54,10 @@ export const PieceDivisiRoster = ({
                   return (
                     <li key={c.id} className="flex items-center gap-1.5">
                       {isMe && (
-                        <div className="w-1.5 h-1.5 bg-ethereal-gold rounded-full animate-pulse shadow-sm"></div>
+                        <div
+                          className="w-1.5 h-1.5 bg-ethereal-gold rounded-full animate-pulse shadow-glass-solid"
+                          aria-hidden="true"
+                        />
                       )}
                       <Text
                         className={
@@ -71,7 +80,7 @@ export const PieceDivisiRoster = ({
         <Text className="italic text-ethereal-graphite opacity-80">
           {t(
             "materials.piece.no_divisi",
-            "Brak zdefiniowanego podziału głosów."
+            "Brak zdefiniowanego podziału głosów.",
           )}
         </Text>
       )}
