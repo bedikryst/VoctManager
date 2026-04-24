@@ -6,10 +6,10 @@ import { Briefcase, Clock } from "lucide-react";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { PieceMaterialCard } from "./PieceMaterialCard";
-import type { ProjectMaterialGroup as GroupType } from "../types/materials.dto";
+import type { MaterialsDashboardGroup } from "../types/materials.dto";
 
 interface ProjectMaterialGroupProps {
-  group: GroupType;
+  group: MaterialsDashboardGroup;
 }
 
 export const ProjectMaterialGroup = ({
@@ -69,11 +69,12 @@ export const ProjectMaterialGroup = ({
       </div>
 
       <div className="flex flex-col gap-4">
-        {group.pieces.map((piece, idx) => (
+        {group.program.map((item) => (
           <PieceMaterialCard
-            key={piece.id}
-            piece={piece}
-            index={idx}
+            key={item.piece.id}
+            piece={item.piece}
+            order={item.order}
+            isEncored={item.is_encore}
             isArchived={isArchived}
           />
         ))}

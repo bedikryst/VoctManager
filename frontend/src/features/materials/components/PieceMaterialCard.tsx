@@ -10,6 +10,7 @@ import {
   ChevronUp,
   User,
   Headphones,
+  Music2,
 } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -23,28 +24,34 @@ import { getReferenceRecordingLinks } from "@/features/archive/constants/referen
 import { EducationalAudioPlayer } from "./EducationalAudioPlayer";
 import { PieceDivisiRoster } from "./PieceDivisiRoster";
 import { PieceLyricsViewer } from "./PieceLyricsViewer";
-import type { EnrichedPiece } from "../types/materials.dto";
+import type { MaterialsPiece } from "../types/materials.dto";
 
 interface PieceMaterialCardProps {
-  piece: EnrichedPiece;
-  index: number;
+  piece: MaterialsPiece;
+  order: number;
+  isEncored: boolean;
   isArchived: boolean;
 }
 
 export const PieceMaterialCard = ({
   piece,
-  index,
+  order,
+  isEncored,
   isArchived,
 }: PieceMaterialCardProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
-  const referenceLinks = getReferenceRecordingLinks(piece);
+  const referenceLinks = getReferenceRecordingLinks({
+    reference_recording: undefined,
+    reference_recording_youtube: piece.reference_recording_youtube || undefined,
+    reference_recording_spotify: piece.reference_recording_spotify || undefined,
+  });
 
   const handleAudioPlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
     const target = e.currentTarget;
-    document.querySelectorAll("audio").forEach((audioEl) => {
-      if (audioEl !== target) audioEl.pause();
+    document.querySelectorAll("audio").forEach((el) => {
+      if (el !== target) el.pause();
     });
   };
 
@@ -71,7 +78,7 @@ export const PieceMaterialCard = ({
               }`}
             >
               <Heading size="3xl" weight="medium">
-                {String(index + 1)}
+                {String(order)}
               </Heading>
             </div>
             <div>
@@ -79,16 +86,16 @@ export const PieceMaterialCard = ({
                 {piece.title}
               </Heading>
               <Eyebrow color="muted" className="mt-1">
-                {piece.composerData
-                  ? `${piece.composerData.first_name || ""} ${piece.composerData.last_name}`
+                {piece.composer
+                  ? `${piece.composer.first_name || ""} ${piece.composer.last_name}`.trim()
                   : t("materials.piece.traditional", "Tradycyjny / Nieznany")}
               </Eyebrow>
-              {piece.myCasting && (
+              {piece.my_casting && (
                 <div className="mt-2 inline-flex bg-ethereal-sage/10 px-2 py-0.5 rounded border border-ethereal-sage/20">
                   <Eyebrow color="default" className="text-ethereal-incense">
                     {t("materials.piece.you_sing", "Śpiewasz:")}{" "}
-                    {piece.myCasting.voice_line_display ||
-                      piece.myCasting.voice_line}
+                    {piece.my_casting.voice_line_display ||
+                      piece.my_casting.voice_line}
                   </Eyebrow>
                 </div>
               )}
@@ -97,6 +104,13 @@ export const PieceMaterialCard = ({
 
           <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-2 sm:mt-0 flex-shrink-0">
             <div className="flex gap-2">
+              {isEncored && (
+                <div className="px-2.5 py-1.5 bg-ethereal-amethyst/10 rounded-lg border border-ethereal-amethyst/20">
+                  <Eyebrow className="text-ethereal-amethyst">
+                    {t("materials.piece.encore_badge", "Bis")}
+                  </Eyebrow>
+                </div>
+              )}
               {!isArchived && piece.sheet_music && (
                 <div className="px-2.5 py-1.5 bg-ethereal-sage/10 rounded-lg border border-ethereal-sage/20">
                   <Eyebrow className="text-ethereal-incense">
@@ -208,11 +222,19 @@ export const PieceMaterialCard = ({
                         rel="noopener noreferrer"
                         className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl transition-all border border-ethereal-marble shadow-glass-solid bg-ethereal-alabaster hover:bg-ethereal-marble/50 active:scale-95"
                       >
-                        <Youtube
-                          size={16}
-                          className="text-ethereal-crimson"
-                          aria-hidden="true"
-                        />
+                        {referenceLinks[0].platform === "youtube" ? (
+                          <Youtube
+                            size={16}
+                            className="text-ethereal-crimson"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <Music2
+                            size={16}
+                            className="text-ethereal-sage"
+                            aria-hidden="true"
+                          />
+                        )}
                         <Eyebrow color="default">
                           {t(
                             "materials.piece.listen_reference",
@@ -224,7 +246,7 @@ export const PieceMaterialCard = ({
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {piece.myCasting && (
+                    {piece.my_casting && (
                       <GlassCard
                         variant="ethereal"
                         className="bg-ethereal-sage/10 h-full"
@@ -247,15 +269,15 @@ export const PieceMaterialCard = ({
                               <Emphasis>
                                 {t("materials.piece.part", "Partia:")}
                               </Emphasis>{" "}
-                              {piece.myCasting.voice_line_display ||
-                                piece.myCasting.voice_line}
+                              {piece.my_casting.voice_line_display ||
+                                piece.my_casting.voice_line}
                             </Text>
                           </div>
                         </div>
-                        {piece.myCasting.notes ? (
+                        {piece.my_casting.notes ? (
                           <div className="bg-ethereal-marble/40 p-3 rounded-lg border border-ethereal-marble/60">
                             <Text className="italic text-ethereal-graphite">
-                              &quot;{piece.myCasting.notes}&quot;
+                              &quot;{piece.my_casting.notes}&quot;
                             </Text>
                           </div>
                         ) : (
@@ -269,10 +291,7 @@ export const PieceMaterialCard = ({
                       </GlassCard>
                     )}
 
-                    <PieceDivisiRoster
-                      allCastings={piece.allCastings}
-                      myCastingId={piece.myCasting?.id}
-                    />
+                    <PieceDivisiRoster castings={piece.castings} />
                   </div>
 
                   {piece.tracks.length > 0 && (
@@ -296,7 +315,7 @@ export const PieceMaterialCard = ({
                             key={track.id}
                             track={track}
                             isMyTrack={
-                              piece.myCasting?.voice_line === track.voice_part
+                              piece.my_casting?.voice_line === track.voice_part
                             }
                             isLocked={isArchived}
                             onPlay={handleAudioPlay}

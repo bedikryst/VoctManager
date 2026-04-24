@@ -2,20 +2,20 @@
  * @file EducationalAudioPlayer.tsx
  * @description Interactive educational audio player with localized speed controls.
  * Adapts visual states based on user track assignment and archive locks.
- * @module features/materials/components/EducationalAudioPlayer
  */
 
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PlayCircle, Lock, FastForward } from "lucide-react";
-import type { Track } from "@/shared/types";
 
-// Design System Primitives
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
+import type { MaterialsTrack } from "../types/materials.dto";
+
+const PLAYBACK_RATES = [0.5, 0.75, 1] as const;
 
 interface EducationalAudioPlayerProps {
-  track: Track;
+  track: MaterialsTrack;
   isMyTrack: boolean;
   isLocked: boolean;
   onPlay: (e: React.SyntheticEvent<HTMLAudioElement>) => void;
@@ -31,14 +31,13 @@ export const EducationalAudioPlayer = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const [speed, setSpeed] = useState<number>(1);
 
-  const changeSpeed = (newSpeed: number) => {
+  const changeSpeed = (rate: number) => {
     if (audioRef.current) {
-      audioRef.current.playbackRate = newSpeed;
-      setSpeed(newSpeed);
+      audioRef.current.playbackRate = rate;
+      setSpeed(rate);
     }
   };
 
-  // Zastosowanie wariantów GlassCard i palety Ethereal zamiast surowych klas Tailwind
   return (
     <GlassCard
       variant={isMyTrack && !isLocked ? "outline" : "ethereal"}
@@ -55,15 +54,10 @@ export const EducationalAudioPlayer = ({
           }`}
         >
           {isLocked ? (
-            <Lock
-              size={14}
-              className="text-ethereal-graphite"
-              aria-hidden="true"
-            />
+            <Lock size={14} className="text-ethereal-graphite" aria-hidden="true" />
           ) : (
             <PlayCircle size={14} aria-hidden={!isMyTrack} />
           )}
-
           <Eyebrow
             color={isMyTrack && !isLocked ? "default" : "muted"}
             className={isMyTrack && !isLocked ? "text-white" : ""}
@@ -96,7 +90,7 @@ export const EducationalAudioPlayer = ({
               className="text-ethereal-graphite mx-2"
               aria-hidden="true"
             />
-            {[0.5, 0.75, 1].map((rate) => (
+            {PLAYBACK_RATES.map((rate) => (
               <button
                 key={rate}
                 onClick={() => changeSpeed(rate)}

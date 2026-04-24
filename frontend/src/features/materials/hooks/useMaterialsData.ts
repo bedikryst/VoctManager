@@ -1,156 +1,78 @@
 /**
  * @file useMaterialsData.ts
- * @description Encapsulates enrichment and memoized grouping for the Materials domain.
- * @architecture Enterprise SaaS 2026
+ * @description Transforms the pre-aggregated server response into view-ready groups.
+ * All client-side work is limited to: sorting, track prioritisation, and search filtering.
+ * No joins, no N+1 enrichment — that is now owned by the backend CQRS query.
  */
 
 import { useMemo } from "react";
 import { compareAsc, parseISO } from "date-fns";
-import { useMaterialsContextData } from "../api/materials.queries";
+import { useArtistMaterialsDashboard } from "../api/materials.queries";
 import type {
-  EnrichedPiece,
-  ProjectMaterialGroup,
+  MaterialsDashboardGroup,
+  MaterialsProgramItem,
 } from "../types/materials.dto";
 
-export const useMaterialsData = (
-  userId?: string | number,
-  searchQuery: string = "",
-) => {
-  const {
-    projects,
-    myParticipations,
-    programItems,
-    pieceCastings,
-    pieces,
-    composers,
-    tracks,
-    isLoading,
-    isError,
-  } = useMaterialsContextData(userId);
+const prioritiseMyTrack = (item: MaterialsProgramItem): MaterialsProgramItem => {
+  const { piece } = item;
+  if (!piece.my_casting) return item;
 
-  const groupedMaterials = useMemo<ProjectMaterialGroup[]>(() => {
-    if (!userId || myParticipations.length === 0) {
-      return [];
-    }
+  const myVoicePart = piece.my_casting.voice_line;
+  const sortedTracks = [...piece.tracks].sort((a, b) => {
+    const aIsMe = a.voice_part === myVoicePart;
+    const bIsMe = b.voice_part === myVoicePart;
+    return aIsMe === bIsMe ? 0 : aIsMe ? -1 : 1;
+  });
 
-    const activeParticipations = myParticipations.filter(
-      (participation) => participation.status !== "DEC",
-    );
-    const myProjectIds = activeParticipations.map((participation) =>
-      String(participation.project),
-    );
-    const myProjects = projects.filter(
-      (project) =>
-        myProjectIds.includes(String(project.id)) && project.status !== "CANC",
-    );
+  return { ...item, piece: { ...piece, tracks: sortedTracks } };
+};
 
-    const groups = myProjects
-      .map((project) => {
-        const participation = activeParticipations.find(
-          (candidate) => String(candidate.project) === String(project.id),
+export const useMaterialsData = (searchQuery = "", enabled = true) => {
+  const { data, isLoading, isError } = useArtistMaterialsDashboard(enabled);
+
+  const groupedMaterials = useMemo<MaterialsDashboardGroup[]>(() => {
+    if (!data?.length) return [];
+
+    return data
+      .filter(
+        (item) =>
+          item.participation_status !== "DEC" &&
+          item.project.status !== "CANC",
+      )
+      .map((item) => ({
+        project: item.project,
+        participationId: item.participation_id,
+        participationStatus: item.participation_status,
+        fee: item.fee,
+        program: item.program.map(prioritiseMyTrack),
+      }))
+      .sort((a, b) => {
+        if (a.project.status !== "DONE" && b.project.status === "DONE")
+          return -1;
+        if (a.project.status === "DONE" && b.project.status !== "DONE")
+          return 1;
+        return compareAsc(
+          parseISO(a.project.date_time),
+          parseISO(b.project.date_time),
         );
+      });
+  }, [data]);
 
-        if (!participation) {
-          return null;
-        }
-
-        const projectProgram = programItems
-          .filter(
-            (programItem) => String(programItem.project) === String(project.id),
-          )
-          .sort((left, right) => left.order - right.order);
-
-        const enrichedPieces = projectProgram
-          .map((programItem) => {
-            const piece = pieces.find(
-              (candidate) => String(candidate.id) === String(programItem.piece),
-            );
-
-            if (!piece) return null;
-
-            const composerData =
-              composers.find(
-                (composer) => String(composer.id) === String(piece.composer),
-              ) || null;
-
-            const allCastingsForPiece = pieceCastings.filter((casting) => {
-              return (
-                String(casting.piece) === String(piece.id) &&
-                String(casting.project_id) === String(project.id)
-              );
-            });
-
-            const myCasting =
-              allCastingsForPiece.find(
-                (casting) =>
-                  String(casting.participation) === String(participation.id),
-              ) || null;
-
-            let pieceTracks = tracks.filter(
-              (track) => String(track.piece) === String(piece.id),
-            );
-
-            if (myCasting) {
-              pieceTracks = pieceTracks.sort((left, right) => {
-                const leftIsMine = left.voice_part === myCasting.voice_line;
-                const rightIsMine = right.voice_part === myCasting.voice_line;
-                return leftIsMine === rightIsMine ? 0 : leftIsMine ? -1 : 1;
-              });
-            }
-
-            return {
-              ...piece,
-              composerData,
-              myCasting,
-              allCastings: allCastingsForPiece,
-              tracks: pieceTracks,
-            } as EnrichedPiece;
-          })
-          .filter(Boolean) as EnrichedPiece[];
-
-        return { project, participation, pieces: enrichedPieces };
-      })
-      .filter(Boolean) as ProjectMaterialGroup[];
-
-    return groups.sort((left, right) => {
-      if (left.project.status !== "DONE" && right.project.status === "DONE")
-        return -1;
-      if (left.project.status === "DONE" && right.project.status !== "DONE")
-        return 1;
-
-      return compareAsc(
-        parseISO(left.project.date_time),
-        parseISO(right.project.date_time),
-      );
-    });
-  }, [
-    composers,
-    myParticipations,
-    pieceCastings,
-    pieces,
-    programItems,
-    projects,
-    tracks,
-    userId,
-  ]);
-
-  const filteredGroups = useMemo<ProjectMaterialGroup[]>(() => {
+  const filteredGroups = useMemo<MaterialsDashboardGroup[]>(() => {
     if (!searchQuery) return groupedMaterials;
 
     const term = searchQuery.toLowerCase();
 
     return groupedMaterials
-      .map((group) => {
-        const filteredPieces = group.pieces.filter((piece) => {
-          return (
-            piece.title.toLowerCase().includes(term) ||
-            (piece.composerData?.last_name || "").toLowerCase().includes(term)
-          );
-        });
-
-        return { ...group, pieces: filteredPieces };
-      })
-      .filter((group) => group.pieces.length > 0);
+      .map((group) => ({
+        ...group,
+        program: group.program.filter(
+          (item) =>
+            item.piece.title.toLowerCase().includes(term) ||
+            (item.piece.composer?.last_name ?? "").toLowerCase().includes(term),
+        ),
+      }))
+      .filter((group) => group.program.length > 0);
   }, [groupedMaterials, searchQuery]);
 
   return { isLoading, isError, filteredGroups };

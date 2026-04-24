@@ -1,56 +1,17 @@
 /**
  * @file materials.service.ts
  * @description Pure HTTP service for the Materials domain.
+ * Single endpoint — all aggregation is handled server-side.
  */
 
 import api from "@/shared/api/api";
-import type {
-  Composer,
-  Participation,
-  Piece,
-  PieceCasting,
-  ProgramItem,
-  Project,
-  Track,
-} from "@/shared/types";
+import type { MaterialsDashboardItem } from "../types/materials.dto";
 
 export const MaterialsService = {
-  getProjects: async (): Promise<Project[]> => {
-    const response = await api.get<Project[]>("/api/projects/");
-    return response.data;
-  },
-
-  getParticipationsByArtist: async (
-    artistId: string | number,
-  ): Promise<Participation[]> => {
-    const response = await api.get<Participation[]>(
-      `/api/participations/?artist=${artistId}`,
+  getArtistMaterialsDashboard: async (): Promise<MaterialsDashboardItem[]> => {
+    const response = await api.get<MaterialsDashboardItem[]>(
+      "/api/participations/materials-dashboard/",
     );
-    return response.data;
-  },
-
-  getProgramItems: async (): Promise<ProgramItem[]> => {
-    const response = await api.get<ProgramItem[]>("/api/program-items/");
-    return response.data;
-  },
-
-  getPieceCastings: async (): Promise<PieceCasting[]> => {
-    const response = await api.get<PieceCasting[]>("/api/piece-castings/");
-    return response.data;
-  },
-
-  getPieces: async (): Promise<Piece[]> => {
-    const response = await api.get<Piece[]>("/api/pieces/");
-    return response.data;
-  },
-
-  getComposers: async (): Promise<Composer[]> => {
-    const response = await api.get<Composer[]>("/api/composers/");
-    return response.data;
-  },
-
-  getTracks: async (): Promise<Track[]> => {
-    const response = await api.get<Track[]>("/api/tracks/");
     return response.data;
   },
 };

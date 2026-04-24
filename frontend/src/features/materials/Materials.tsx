@@ -2,7 +2,6 @@
  * @file Materials.tsx
  * @description Master view for the Artist Rehearsal Materials Module.
  * Facilitates access to sheet music, isolated audio tracks, and casting assignments.
- * @module features/materials/Materials
  */
 
 import React, { useState, useEffect } from "react";
@@ -15,7 +14,6 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useMaterialsData } from "./hooks/useMaterialsData";
 import { ProjectMaterialGroup } from "./components/ProjectMaterialGroup";
 
-// Design System & Kinematics
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -29,12 +27,12 @@ export const Materials = (): React.JSX.Element => {
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { isLoading, isError, filteredGroups } = useMaterialsData(
-    user?.artist_profile_id ?? undefined,
     searchQuery,
+    !!user,
   );
 
   useEffect(() => {
-    if (isError && user?.artist_profile_id) {
+    if (isError) {
       toast.error(
         t("materials.dashboard.sync_error_title", "Błąd synchronizacji"),
         {
@@ -45,9 +43,9 @@ export const Materials = (): React.JSX.Element => {
         },
       );
     }
-  }, [isError, t, user?.artist_profile_id]);
+  }, [isError, t]);
 
-  if (isLoading && !!user?.artist_profile_id) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <EtherealLoader />
@@ -96,7 +94,10 @@ export const Materials = (): React.JSX.Element => {
         <AnimatePresence mode="popLayout">
           {filteredGroups.length > 0 ? (
             filteredGroups.map((group) => (
-              <ProjectMaterialGroup key={group.project.id} group={group} />
+              <ProjectMaterialGroup
+                key={group.project.id}
+                group={group}
+              />
             ))
           ) : (
             <motion.div
