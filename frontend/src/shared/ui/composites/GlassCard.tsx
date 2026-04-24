@@ -32,7 +32,7 @@ const glassCardVariants = cva(
           "bg-glass-surface/50 backdrop-blur-[4px] border border-glass-border shadow-glass-ethereal",
       },
       isHoverable: {
-        true: "hover:-translate-y-2 hover:scale-[1.002] cursor-pointer hover:shadow-glass-ethereal-hover hover:bg-glass-surface hover:border-glass-border",
+        true: "hover:-translate-y-2 hover:scale-[1.002] cursor-pointer hover:shadow-glass-ethereal-hover",
         false: "",
       },
       padding: {
@@ -100,7 +100,7 @@ const GlassCardInner = <C extends ElementType = "div">(
   const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
     if (onPointerMove) {
       const forwardedPointerMove = onPointerMove as unknown as (
-        pointerEvent: PointerEvent<HTMLElement>
+        pointerEvent: PointerEvent<HTMLElement>,
       ) => void;
       forwardedPointerMove(event);
     }
