@@ -1,15 +1,8 @@
-/**
- * @file TimelineRehearsalCard.tsx
- * @description Isolated component for rendering a Rehearsal on the Artist Timeline.
- * @module panel/schedule/cards/TimelineRehearsalCard
- */
-
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  MapPin,
   Clock,
   AlertCircle,
   CheckCircle2,
@@ -29,7 +22,12 @@ import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Select } from "@/shared/ui/primitives/Select";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { cn } from "@/shared/lib/utils";
 
 interface TimelineRehearsalCardProps {
   event: TimelineEvent;
@@ -44,16 +42,13 @@ interface TimelineRehearsalCardProps {
   viewMode: ScheduleViewMode;
 }
 
-const STYLE_LABEL =
-  "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-1.5 ml-1";
-
-export default function TimelineRehearsalCard({
+export const TimelineRehearsalCard = ({
   event,
   isExpanded,
   onToggle,
   onSubmitReport,
   viewMode,
-}: TimelineRehearsalCardProps): React.JSX.Element {
+}: TimelineRehearsalCardProps): React.JSX.Element => {
   const { t } = useTranslation();
   const tz = (event.rawObj as { timezone?: string })?.timezone;
   const {
@@ -74,24 +69,36 @@ export default function TimelineRehearsalCard({
     switch (masked) {
       case "PRESENT":
         return (
-          <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-700 rounded border border-emerald-200 flex items-center gap-1">
-            <CheckCircle2 size={12} />{" "}
+          <Eyebrow
+            as="span"
+            color="sage"
+            className="px-2 py-0.5 bg-ethereal-sage/10 rounded border border-ethereal-sage/20 flex items-center gap-1"
+          >
+            <CheckCircle2 size={12} aria-hidden="true" />
             {t("schedule.rehearsal.status_present", "Potwierdzona")}
-          </span>
+          </Eyebrow>
         );
       case "LATE":
         return (
-          <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-orange-50 text-orange-700 rounded border border-orange-200 flex items-center gap-1">
-            <Clock size={12} />{" "}
+          <Eyebrow
+            as="span"
+            color="incense"
+            className="px-2 py-0.5 bg-ethereal-incense/10 rounded border border-ethereal-incense/20 flex items-center gap-1"
+          >
+            <Clock size={12} aria-hidden="true" />
             {t("schedule.rehearsal.status_late", "Spóźnienie")}
-          </span>
+          </Eyebrow>
         );
       case "ABSENT":
         return (
-          <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-red-50 text-red-700 rounded border border-red-200 flex items-center gap-1">
-            <XCircle size={12} />{" "}
+          <Eyebrow
+            as="span"
+            color="crimson"
+            className="px-2 py-0.5 bg-ethereal-crimson/10 rounded border border-ethereal-crimson/20 flex items-center gap-1"
+          >
+            <XCircle size={12} aria-hidden="true" />
             {t("schedule.rehearsal.status_absent", "Nieobecność")}
-          </span>
+          </Eyebrow>
         );
       default:
         return null;
@@ -107,21 +114,50 @@ export default function TimelineRehearsalCard({
       className="relative sm:pl-16 transition-all duration-300 group"
     >
       <div
-        className={`hidden sm:block absolute left-4 md:left-[27px] top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-[#f4f2ee] z-10 transition-all duration-500 ${isExcusedOrLate ? "bg-orange-500 border-orange-500" : currentMaskedStatus === "PRESENT" ? "bg-emerald-500 border-emerald-500" : "bg-white border-stone-300 group-hover:border-brand"}`}
+        className={cn(
+          "hidden sm:block absolute left-4 md:left-6.75 top-6 w-3 h-3 rounded-full border-[3px] ring-4 ring-ethereal-parchment z-10 transition-all duration-500",
+          isExcusedOrLate
+            ? "bg-ethereal-incense border-ethereal-incense"
+            : currentMaskedStatus === "PRESENT"
+              ? "bg-ethereal-sage border-ethereal-sage"
+              : "bg-ethereal-marble border-ethereal-incense/40 group-hover:border-ethereal-amethyst",
+        )}
       />
 
-      <div
-        className={`bg-white/80 backdrop-blur-xl rounded-2xl relative overflow-hidden transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.02)] border hover:border-brand/30 hover:shadow-[0_8px_25px_rgb(0,0,0,0.04)] w-full flex flex-col ${isExpanded ? "border-brand/30" : "border-stone-200/80"}`}
+      <GlassCard
+        variant="ethereal"
+        padding="none"
+        isHoverable={false}
+        className={cn(
+          "transition-all duration-300",
+          isExpanded
+            ? "border-ethereal-amethyst/30"
+            : "hover:border-ethereal-amethyst/20",
+        )}
       >
         <div className="flex flex-col md:flex-row items-stretch">
           <div
-            className={`w-full md:w-28 p-4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-dashed border-stone-200/80 transition-colors ${currentMaskedStatus === "PRESENT" ? "bg-emerald-50/50" : isExcusedOrLate ? "bg-stone-50" : "bg-brand/5 group-hover:bg-brand/10"}`}
+            className={cn(
+              "w-full md:w-28 p-4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-dashed border-ethereal-incense/20 transition-colors cursor-pointer",
+              currentMaskedStatus === "PRESENT"
+                ? "bg-ethereal-sage/5"
+                : isExcusedOrLate
+                  ? "bg-ethereal-alabaster"
+                  : "bg-ethereal-amethyst/5 group-hover:bg-ethereal-amethyst/10",
+            )}
             onClick={() => {
               if (!reportingMode) onToggle();
             }}
           >
-            <span
-              className={`text-[10px] font-bold uppercase tracking-widest ${currentMaskedStatus === "PRESENT" ? "text-emerald-600" : isExcusedOrLate ? "text-stone-400" : "text-brand/60"}`}
+            <Eyebrow
+              as="span"
+              color={
+                currentMaskedStatus === "PRESENT"
+                  ? "sage"
+                  : isExcusedOrLate
+                    ? "muted"
+                    : "amethyst"
+              }
             >
               {formatLocalizedDate(
                 event.date_time,
@@ -129,9 +165,19 @@ export default function TimelineRehearsalCard({
                 undefined,
                 tz,
               )}
-            </span>
-            <span
-              className={`text-3xl font-black leading-none my-0.5 ${currentMaskedStatus === "PRESENT" ? "text-emerald-700" : isExcusedOrLate ? "text-stone-500" : "text-brand"}`}
+            </Eyebrow>
+            <Heading
+              as="span"
+              size="3xl"
+              weight="black"
+              color={
+                currentMaskedStatus === "PRESENT"
+                  ? "sage"
+                  : isExcusedOrLate
+                    ? "graphite"
+                    : "amethyst"
+              }
+              className="leading-none my-0.5"
             >
               {formatLocalizedDate(
                 event.date_time,
@@ -139,15 +185,15 @@ export default function TimelineRehearsalCard({
                 undefined,
                 tz,
               )}
-            </span>
-            <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
+            </Heading>
+            <Eyebrow as="span" color="muted" className="mt-0.5">
               {formatLocalizedDate(
                 event.date_time,
                 { weekday: "short" },
                 undefined,
                 tz,
               )}
-            </span>
+            </Eyebrow>
           </div>
 
           <div
@@ -157,52 +203,65 @@ export default function TimelineRehearsalCard({
             }}
           >
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <span className="px-2 py-0.5 bg-stone-100 text-stone-500 text-[8px] font-bold uppercase tracking-widest rounded border border-stone-200/60 shadow-sm">
+              <Eyebrow
+                as="span"
+                className="px-2 py-0.5 bg-ethereal-alabaster border border-ethereal-incense/20 rounded shadow-glass-ethereal"
+              >
                 {t("schedule.rehearsal.badge", "Próba")}
-              </span>
+              </Eyebrow>
               {!event.is_mandatory && (
-                <span className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest bg-orange-50 text-orange-600 rounded border border-orange-200 shadow-sm">
+                <Eyebrow
+                  as="span"
+                  color="incense"
+                  className="px-2 py-0.5 bg-ethereal-incense/10 rounded border border-ethereal-incense/20 shadow-glass-ethereal"
+                >
                   {t("schedule.rehearsal.optional", "Opcjonalna")}
-                </span>
+                </Eyebrow>
               )}
               {getStatusBadge(event.status)}
             </div>
-            <h3
-              className={`text-lg md:text-xl font-bold tracking-tight leading-tight truncate max-w-xl ${isExcusedOrLate ? "text-stone-500" : "text-stone-900"}`}
-              style={{ fontFamily: "'Cormorant', serif" }}
+            <Heading
+              as="h3"
+              size="xl"
+              weight="bold"
+              color={isExcusedOrLate ? "graphite" : "default"}
+              truncate
+              className="max-w-xl"
             >
               {event.title}
-            </h3>
-            <div className="flex flex-wrap items-center gap-4 mt-2 text-[11px] font-bold text-stone-500 uppercase tracking-widest">
+            </Heading>
+            <div className="flex flex-wrap items-center gap-4 mt-2">
               <DualTimeDisplay
                 value={event.date_time}
                 timeZone={tz}
                 icon={
                   <Clock
                     size={12}
-                    className="text-brand/60"
+                    className="text-ethereal-amethyst/60"
                     aria-hidden="true"
                   />
                 }
                 containerClassName="flex items-center gap-1.5"
                 primaryTimeClassName="flex items-center gap-1.5"
-                localTimeClassName="text-[9px] text-stone-400 font-medium normal-case tracking-normal pl-2"
+                localTimeClassName="text-[9px] text-ethereal-graphite/50 font-medium normal-case tracking-normal pl-2"
               />
-              <span className="flex items-center gap-1.5 truncate max-w-[200px]">
-                <MapPin size={12} className="text-brand/60 flex-shrink-0" />{" "}
-                <span className="truncate">
-                  {event.location ||
-                    t("schedule.rehearsal.no_location", "Brak")}
-                </span>
-              </span>
+              <LocationPreview
+                locationRef={event.location}
+                fallback={t("schedule.rehearsal.no_location", "Brak")}
+                variant="minimal"
+              />
             </div>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 group-hover:text-brand transition-colors">
-              {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-ethereal-incense/40 group-hover:text-ethereal-amethyst transition-colors">
+              {isExpanded ? (
+                <ChevronUp size={20} aria-hidden="true" />
+              ) : (
+                <ChevronDown size={20} aria-hidden="true" />
+              )}
             </div>
           </div>
 
           {viewMode === "UPCOMING" && !reportingMode && (
-            <div className="w-full md:w-48 p-4 border-t md:border-t-0 md:border-l border-stone-100 bg-stone-50/30 flex flex-row md:flex-col gap-2 justify-center">
+            <div className="w-full md:w-48 p-4 border-t md:border-t-0 md:border-l border-ethereal-incense/15 bg-ethereal-alabaster/30 flex flex-row md:flex-col gap-2 justify-center">
               {currentMaskedStatus !== "PRESENT" && (
                 <Button
                   variant="primary"
@@ -214,7 +273,7 @@ export default function TimelineRehearsalCard({
                       <Check size={14} aria-hidden="true" />
                     ) : undefined
                   }
-                  className="!bg-emerald-500 hover:!bg-emerald-600 flex-1 md:flex-none"
+                  className="flex-1 md:flex-none bg-ethereal-sage! hover:bg-ethereal-sage/80! border-ethereal-sage/30!"
                 >
                   <span className="hidden md:inline">
                     {t("schedule.rehearsal.action.confirm_short", "Potwierdź")}
@@ -230,7 +289,12 @@ export default function TimelineRehearsalCard({
               <Button
                 variant="outline"
                 onClick={enableReportingMode}
-                className={`flex-1 md:flex-none ${isExcusedOrLate ? "text-stone-700" : "text-orange-600 hover:text-orange-700 hover:border-orange-300"}`}
+                className={cn(
+                  "flex-1 md:flex-none",
+                  isExcusedOrLate
+                    ? ""
+                    : "text-ethereal-crimson hover:text-ethereal-crimson hover:border-ethereal-crimson/30",
+                )}
                 leftIcon={<AlertCircle size={14} aria-hidden="true" />}
               >
                 {currentMaskedStatus
@@ -250,30 +314,38 @@ export default function TimelineRehearsalCard({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-t border-stone-200/60 bg-orange-50/30"
+              className="border-t border-ethereal-crimson/15 bg-ethereal-crimson/5"
             >
               <form onSubmit={handleSubmitReport} className="p-5 md:p-6">
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-orange-600 mb-4 flex items-center gap-1.5">
-                  <AlertCircle size={14} />{" "}
+                <Eyebrow
+                  as="h4"
+                  color="crimson"
+                  className="mb-4 flex items-center gap-1.5"
+                >
+                  <AlertCircle size={14} aria-hidden="true" />
                   {t(
                     "schedule.rehearsal.form.title",
                     "Formularz nieobecności dla Inspektora",
                   )}
-                </h4>
+                </Eyebrow>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                   <div className="sm:col-span-1">
-                    <label className={STYLE_LABEL}>
-                      {t("schedule.rehearsal.form.status_label", "Status *")}
-                    </label>
-                    <select
+                    <Select
+                      variant="glass"
+                      label={t(
+                        "schedule.rehearsal.form.status_label",
+                        "Status *",
+                      )}
                       value={reportForm.status}
                       onChange={(e) =>
                         setReportForm({
                           ...reportForm,
-                          status: e.target.value as any,
+                          status: e.target.value as Extract<
+                            AttendanceStatus,
+                            "ABSENT" | "LATE"
+                          >,
                         })
                       }
-                      className="w-full px-3 py-2.5 text-xs text-stone-800 bg-stone-50 border border-stone-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all shadow-inner font-bold appearance-none"
                       disabled={isSubmitting}
                     >
                       <option value="ABSENT">
@@ -288,15 +360,15 @@ export default function TimelineRehearsalCard({
                           "Spóźnię się",
                         )}
                       </option>
-                    </select>
+                    </Select>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className={STYLE_LABEL}>
+                    <Eyebrow as="label" color="muted" className="mb-1.5 ml-1 block">
                       {t(
                         "schedule.rehearsal.form.reason_label",
                         "Powód / Uwagi *",
                       )}
-                    </label>
+                    </Eyebrow>
                     <Input
                       required
                       type="text"
@@ -305,11 +377,10 @@ export default function TimelineRehearsalCard({
                         "np. Korki, choroba...",
                       )}
                       value={reportForm.notes}
-                      onChange={(e: any) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setReportForm({ ...reportForm, notes: e.target.value })
                       }
                       disabled={isSubmitting}
-                      className="bg-stone-50 border border-stone-200/80 font-medium text-xs py-2.5"
                     />
                   </div>
                 </div>
@@ -345,81 +416,114 @@ export default function TimelineRehearsalCard({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-t border-stone-200/60 bg-stone-50/40 relative z-0"
+              className="border-t border-ethereal-incense/15 bg-ethereal-alabaster/20 relative z-0"
             >
               <div className="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col h-full">
-                  <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-3 flex items-center gap-1.5">
-                    <AlignLeft size={14} />{" "}
+                  <Eyebrow
+                    as="h4"
+                    color="muted"
+                    className="mb-3 flex items-center gap-1.5"
+                  >
+                    <AlignLeft size={14} aria-hidden="true" />
                     {t("schedule.rehearsal.details.focus_title", "Plan Pracy")}
-                  </h4>
-                  <div className="bg-white/80 p-4 rounded-2xl border border-stone-200/80 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] flex-1">
+                  </Eyebrow>
+                  <GlassCard
+                    variant="light"
+                    padding="sm"
+                    isHoverable={false}
+                    className="flex-1 rounded-2xl"
+                  >
                     {event.focus ? (
-                      <p className="text-sm text-stone-700 italic leading-relaxed font-serif whitespace-pre-wrap">
+                      <Text
+                        size="sm"
+                        color="default"
+                        className="italic font-serif whitespace-pre-wrap leading-relaxed"
+                      >
                         {event.focus}
-                      </p>
+                      </Text>
                     ) : (
-                      <p className="text-xs text-stone-400 italic">
+                      <Text size="sm" color="muted" className="italic">
                         {t(
                           "schedule.rehearsal.details.no_focus",
                           "Brak szczegółowego planu dla tej próby.",
                         )}
-                      </p>
+                      </Text>
                     )}
-                  </div>
+                  </GlassCard>
                   {(event.absences || 0) > 0 && (
-                    <div className="mt-3 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold uppercase tracking-widest shadow-sm w-max">
-                      <UserMinus size={14} />{" "}
-                      {t(
-                        "schedule.rehearsal.details.reported_absences",
-                        "Zgłoszone nieobecności:",
-                      )}{" "}
-                      {event.absences}
+                    <div className="mt-3 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-ethereal-crimson/5 border border-ethereal-crimson/20 shadow-glass-ethereal w-max">
+                      <UserMinus
+                        size={14}
+                        className="text-ethereal-crimson"
+                        aria-hidden="true"
+                      />
+                      <Eyebrow as="span" color="crimson">
+                        {t(
+                          "schedule.rehearsal.details.reported_absences",
+                          "Zgłoszone nieobecności:",
+                        )}{" "}
+                        {event.absences}
+                      </Eyebrow>
                     </div>
                   )}
                 </div>
 
                 <div className="flex flex-col h-full">
-                  <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-stone-400 mb-3 flex items-center gap-1.5">
-                    <Music size={14} />{" "}
+                  <Eyebrow
+                    as="h4"
+                    color="muted"
+                    className="mb-3 flex items-center gap-1.5"
+                  >
+                    <Music size={14} aria-hidden="true" />
                     {t(
                       "schedule.rehearsal.details.materials_title",
                       "Twoje Nuty",
                     )}
-                  </h4>
-                  <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-2xl border border-blue-100 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] flex-1 flex flex-col justify-center items-center text-center">
-                    <p className="text-xs font-bold text-stone-700 mb-1">
+                  </Eyebrow>
+                  <GlassCard
+                    variant="solid"
+                    padding="sm"
+                    isHoverable={false}
+                    className="flex-1 flex flex-col justify-center items-center text-center rounded-2xl"
+                  >
+                    <Text size="sm" weight="bold" color="default" className="mb-1">
                       {t(
                         "schedule.rehearsal.details.materials_subtitle",
                         "Przygotuj się do próby",
                       )}
-                    </p>
-                    <p className="text-[10px] text-stone-500 mb-3 px-4">
+                    </Text>
+                    <Text size="sm" color="muted" className="mb-3 px-4">
                       {t(
                         "schedule.rehearsal.details.materials_desc",
                         "Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.",
                       )}
-                    </p>
-                    <Link
-                      to="/panel/materials"
-                      className="bg-white border border-blue-200 text-brand hover:bg-brand hover:text-white px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 group/mat"
-                    >
-                      {t(
-                        "schedule.rehearsal.details.materials_button",
-                        "Materiały",
-                      )}{" "}
-                      <ArrowRight
-                        size={14}
-                        className="group-hover/mat:translate-x-1 transition-transform"
-                      />
-                    </Link>
-                  </div>
+                    </Text>
+                    <Button variant="secondary" size="sm" asChild>
+                      <Link
+                        to="/panel/materials"
+                        className="inline-flex items-center gap-2"
+                      >
+                        {t(
+                          "schedule.rehearsal.details.materials_button",
+                          "Materiały",
+                        )}
+                        <ArrowRight
+                          size={14}
+                          className="transition-transform group-hover:translate-x-1"
+                          aria-hidden="true"
+                        />
+                      </Link>
+                    </Button>
+                  </GlassCard>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </GlassCard>
     </motion.div>
   );
-}
+};
+
+export default TimelineRehearsalCard;

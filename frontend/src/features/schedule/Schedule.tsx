@@ -1,13 +1,6 @@
-/**
- * @file Schedule.tsx
- * @description Main Controller for the Artist Timeline.
- * Renders chronological rehearsal and project cards with absence reporting capabilities.
- * @module panel/schedule/Schedule
- */
-
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Loader2, CalendarHeart } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CalendarHeart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "../../app/providers/AuthProvider";
@@ -15,6 +8,11 @@ import { useScheduleData } from "./hooks/useScheduleData";
 import TimelineProjectCard from "./components/TimelineProjectCard";
 import TimelineRehearsalCard from "./components/TimelineRehearsalCard";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 
 export default function Schedule(): React.JSX.Element {
   const { t } = useTranslation();
@@ -30,129 +28,121 @@ export default function Schedule(): React.JSX.Element {
     artistId,
   } = useScheduleData(user?.artist_profile_id ?? undefined);
 
+  const tabs: Array<{ id: "UPCOMING" | "PAST"; label: string }> = [
+    { id: "UPCOMING", label: t("schedule.tabs.upcoming", "Nadchodzące") },
+    { id: "PAST", label: t("schedule.tabs.past", "Historia") },
+  ];
+
   return (
-    <div className="space-y-6 animate-fade-in relative cursor-default pb-24 max-w-4xl mx-auto px-4 sm:px-0">
-      <header className="relative pt-6 mb-10">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-white/60 shadow-sm mb-4">
-            <Calendar size={12} className="text-brand" aria-hidden="true" />
-            <p className="text-[9px] uppercase tracking-widest font-bold antialiased text-brand/80">
-              {t("schedule.dashboard.subtitle", "Osobisty Kalendarz")}
-            </p>
-          </div>
-          <h1
-            className="text-4xl md:text-5xl font-medium text-stone-900 leading-tight tracking-tight"
-            style={{ fontFamily: "'Cormorant', serif" }}
-          >
-            {t("schedule.dashboard.title", "Mój")}{" "}
-            <span className="italic text-brand">
-              {t("schedule.dashboard.title_highlight", "Harmonogram")}
-            </span>
-            .
-          </h1>
-          <p className="text-stone-500 mt-2 font-medium tracking-wide text-sm">
+    <PageTransition>
+      <div className="relative pb-24 max-w-4xl mx-auto px-4 sm:px-0">
+        <div className="pt-6 mb-4">
+          <PageHeader
+            size="standard"
+            roleText={t("schedule.dashboard.subtitle", "Osobisty Kalendarz")}
+            title={t("schedule.dashboard.title", "Mój")}
+            titleHighlight={t(
+              "schedule.dashboard.title_highlight",
+              "Harmonogram.",
+            )}
+          />
+          <Text color="muted" size="sm" className="mt-2 ml-1">
             {t(
               "schedule.dashboard.description",
               "Sprawdzaj próby, zgłaszaj nieobecności i śledź plany koncertowe.",
             )}
-          </p>
-        </motion.div>
-      </header>
+          </Text>
+        </div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <div className="inline-flex items-center p-1.5 bg-white/60 backdrop-blur-xl border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-xl overflow-x-auto max-w-full scrollbar-hide">
-          {[
-            {
-              id: "UPCOMING",
-              label: t("schedule.tabs.upcoming", "Nadchodzące"),
-            },
-            { id: "PAST", label: t("schedule.tabs.past", "Historia") },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setViewMode(tab.id as "UPCOMING" | "PAST");
-                setExpandedEventId(null);
-              }}
-              className={`px-5 py-2 text-[9px] font-bold antialiased uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${viewMode === tab.id ? "bg-white text-brand shadow-sm border border-stone-100" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div className="inline-flex items-center gap-1 p-1.5 bg-ethereal-alabaster border border-ethereal-incense/20 rounded-xl shadow-glass-ethereal overflow-x-auto no-scrollbar">
+            {tabs.map((tab) => (
+              <Button
+                key={tab.id}
+                variant={viewMode === tab.id ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  setViewMode(tab.id);
+                  setExpandedEventId(null);
+                }}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative z-10">
+          <div className="absolute left-4.75 md:left-7.75 top-6 bottom-0 w-0.5 bg-linear-to-b from-ethereal-amethyst/20 via-ethereal-incense/15 to-transparent z-0 hidden sm:block" />
+
+          {isLoading ? (
+            <EtherealLoader
+              fullHeight={false}
+              message={t("schedule.loading", "Pobieranie grafiku...")}
+            />
+          ) : filteredEvents.length > 0 ? (
+            <div className="space-y-6">
+              <AnimatePresence mode="popLayout">
+                {filteredEvents.map((ev) =>
+                  ev.type === "PROJECT" ? (
+                    <TimelineProjectCard
+                      key={ev.id}
+                      event={ev}
+                      isExpanded={expandedEventId === ev.id}
+                      onToggle={() =>
+                        setExpandedEventId(
+                          expandedEventId === ev.id ? null : ev.id,
+                        )
+                      }
+                      artistId={artistId}
+                    />
+                  ) : (
+                    <TimelineRehearsalCard
+                      key={ev.id}
+                      event={ev}
+                      isExpanded={expandedEventId === ev.id}
+                      onToggle={() =>
+                        setExpandedEventId(
+                          expandedEventId === ev.id ? null : ev.id,
+                        )
+                      }
+                      onSubmitReport={handleAbsenceSubmit}
+                      viewMode={viewMode}
+                    />
+                  ),
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="relative z-10"
             >
-              {tab.label}
-            </button>
-          ))}
+              <GlassCard
+                padding="lg"
+                isHoverable={false}
+                className="flex flex-col items-center justify-center text-center"
+              >
+                <CalendarHeart
+                  size={48}
+                  className="text-ethereal-incense/30 mb-4"
+                  aria-hidden="true"
+                />
+                <Eyebrow color="muted" className="mb-2">
+                  {t("schedule.empty.title", "Brak wpisów w kalendarzu")}
+                </Eyebrow>
+                <Text size="sm" color="muted" className="max-w-sm">
+                  {t(
+                    "schedule.empty.description",
+                    "W tym widoku nie masz przypisanych żadnych spotkań ani koncertów.",
+                  )}
+                </Text>
+              </GlassCard>
+            </motion.div>
+          )}
         </div>
       </div>
-
-      <div className="relative z-10">
-        <div className="absolute left-[19px] md:left-[31px] top-6 bottom-0 w-0.5 bg-gradient-to-b from-brand/20 via-stone-200/50 to-transparent z-0 hidden sm:block"></div>
-
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 size={32} className="animate-spin text-brand/40 mb-4" />
-            <span className="text-[10px] uppercase font-bold tracking-widest text-brand/60">
-              {t("schedule.loading", "Pobieranie grafiku...")}
-            </span>
-          </div>
-        ) : filteredEvents.length > 0 ? (
-          <div className="space-y-6">
-            <AnimatePresence mode="popLayout">
-              {filteredEvents.map((ev) =>
-                ev.type === "PROJECT" ? (
-                  <TimelineProjectCard
-                    key={ev.id}
-                    event={ev}
-                    isExpanded={expandedEventId === ev.id}
-                    onToggle={() =>
-                      setExpandedEventId(
-                        expandedEventId === ev.id ? null : ev.id,
-                      )
-                    }
-                    artistId={artistId}
-                  />
-                ) : (
-                  <TimelineRehearsalCard
-                    key={ev.id}
-                    event={ev}
-                    isExpanded={expandedEventId === ev.id}
-                    onToggle={() =>
-                      setExpandedEventId(
-                        expandedEventId === ev.id ? null : ev.id,
-                      )
-                    }
-                    onSubmitReport={handleAbsenceSubmit}
-                    viewMode={viewMode}
-                  />
-                ),
-              )}
-            </AnimatePresence>
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="relative z-10"
-          >
-            <GlassCard className="p-16 flex flex-col items-center justify-center text-center">
-              <CalendarHeart
-                size={48}
-                className="text-stone-300 mb-4 opacity-50"
-                aria-hidden="true"
-              />
-              <span className="text-[11px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2">
-                {t("schedule.empty.title", "Brak wpisów w kalendarzu")}
-              </span>
-              <span className="text-xs text-stone-400 max-w-sm">
-                {t(
-                  "schedule.empty.description",
-                  "W tym widoku nie masz przypisanych żadnych spotkań ani koncertów.",
-                )}
-              </span>
-            </GlassCard>
-          </motion.div>
-        )}
-      </div>
-    </div>
+    </PageTransition>
   );
 }

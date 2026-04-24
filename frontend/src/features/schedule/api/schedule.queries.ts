@@ -1,8 +1,3 @@
-/**
- * @file schedule.queries.ts
- * @description React Query hooks for the Schedule domain.
- */
-
 import {
   useMutation,
   useQueries,
@@ -10,6 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
+import type { Attendance } from "@/shared/types";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
@@ -89,7 +85,53 @@ export const useUpsertScheduleAttendance = () => {
       existingAttendanceId?: string;
       payload: ScheduleAttendanceReportDTO;
     }) => ScheduleService.saveAttendanceReport(existingAttendanceId, payload),
-    onSuccess: async () => {
+
+    onMutate: async ({ existingAttendanceId, payload }) => {
+      await queryClient.cancelQueries({
+        queryKey: rehearsalKeys.attendances.all,
+      });
+
+      const snapshot = queryClient.getQueriesData<Attendance[]>({
+        queryKey: rehearsalKeys.attendances.all,
+      });
+
+      queryClient.setQueriesData<Attendance[]>(
+        { queryKey: rehearsalKeys.attendances.all },
+        (old = []) => {
+          if (existingAttendanceId) {
+            return old.map((record) =>
+              record.id === existingAttendanceId
+                ? {
+                    ...record,
+                    status: payload.status,
+                    excuse_note: payload.excuse_note,
+                  }
+                : record,
+            );
+          }
+          const optimisticRecord: Attendance = {
+            id: `optimistic-${Date.now()}`,
+            rehearsal: String(payload.rehearsal),
+            participation: String(payload.participation),
+            status: payload.status,
+            excuse_note: payload.excuse_note,
+            created_at: new Date().toISOString(),
+          };
+          return [...old, optimisticRecord];
+        },
+      );
+
+      return { snapshot };
+    },
+
+    onError: (_error, _variables, context) => {
+      if (!context?.snapshot) return;
+      for (const [queryKey, data] of context.snapshot) {
+        queryClient.setQueryData(queryKey, data);
+      }
+    },
+
+    onSettled: async () => {
       await queryClient.invalidateQueries({
         queryKey: rehearsalKeys.attendances.all,
       });
