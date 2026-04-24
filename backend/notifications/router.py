@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from .models import NotificationPreference, NotificationType
-from .email_tasks import send_transactional_email_task
+from .email_tasks import send_notification_email_task
 from .tasks import send_push_notification_task
 
 class NotificationRouter:
@@ -20,7 +20,7 @@ class NotificationRouter:
 
         # 1. Email Channel
         if pref.email_enabled:
-            send_transactional_email_task.delay(
+            send_notification_email_task.delay(
                 recipient_id=str(recipient_id),
                 notification_type=notification_type,
                 template_name="system_notification",
