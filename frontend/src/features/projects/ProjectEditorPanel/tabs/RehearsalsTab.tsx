@@ -281,7 +281,7 @@ export const RehearsalsTab = ({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="ethereal-scroll grid max-h-[200px] grid-cols-1 gap-2 border-t border-ethereal-incense/10 pt-4 sm:grid-cols-2 md:grid-cols-3 overflow-y-auto pr-1"
+                  className=" grid max-h-[200px] grid-cols-1 gap-2 border-t border-ethereal-incense/10 pt-4 sm:grid-cols-2 md:grid-cols-3 overflow-y-auto pr-1"
                 >
                   {projectParticipations.map((participation) => {
                     const artist = artistMap.get(String(participation.artist));

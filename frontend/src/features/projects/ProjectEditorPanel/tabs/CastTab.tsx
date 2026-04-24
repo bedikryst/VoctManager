@@ -80,7 +80,11 @@ const ArtistCard = React.memo(
               <Text weight="bold" size="sm">
                 {artist.first_name} {artist.last_name}
               </Text>
-              <Badge variant={isDeclined ? "danger" : isAssigned ? "warning" : "neutral"}>
+              <Badge
+                variant={
+                  isDeclined ? "danger" : isAssigned ? "warning" : "neutral"
+                }
+              >
                 {artist.voice_type_display || artist.voice_type || "?"}
               </Badge>
             </div>
@@ -273,7 +277,7 @@ export const CastTab = ({
               variant="light"
               padding="sm"
               isHoverable={false}
-              className="ethereal-scroll flex flex-col min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
+              className=" flex flex-col min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
             >
               {allArtists
                 .filter((artist) => !assignedIds.has(String(artist.id)))
@@ -326,7 +330,7 @@ export const CastTab = ({
               variant="light"
               padding="sm"
               isHoverable={false}
-              className="ethereal-scroll flex-1 flex-col min-h-0 overflow-y-auto overflow-x-hidden border-ethereal-gold/20 bg-ethereal-gold/5 [scrollbar-gutter:stable]"
+              className=" flex-1 flex-col min-h-0 overflow-y-auto overflow-x-hidden border-ethereal-gold/20 bg-ethereal-gold/5 [scrollbar-gutter:stable]"
             >
               {allArtists
                 .filter((artist) => assignedIds.has(String(artist.id)))

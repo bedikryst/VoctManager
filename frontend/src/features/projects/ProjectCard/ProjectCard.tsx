@@ -156,7 +156,8 @@ export const ProjectCard = ({
   }, []);
 
   return (
-    <motion.div
+    <GlassCard
+      as={motion.div}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
@@ -165,123 +166,119 @@ export const ProjectCard = ({
         stiffness: 300,
         damping: 24,
       }}
-      className={`group relative ${isDone ? STYLE_DISABLED : ""}`}
+      className={`group ${isDone ? STYLE_DISABLED : ""}`}
+      variant="light"
+      padding="none"
     >
-      <GlassCard
-        variant="ethereal"
-        padding="none"
-        className="overflow-hidden border-ethereal-incense/20 transition-all duration-700 hover:-translate-y-0.5"
-      >
-        {!isDone && (
-          <div
-            className="pointer-events-none absolute -right-8 -top-8 text-ethereal-gold opacity-[0.04] transition-transform duration-700 group-hover:scale-110"
-            aria-hidden="true"
+      {!isDone && (
+        <div
+          className="pointer-events-none absolute -right-8 -top-8 text-ethereal-gold opacity-[0.04] transition-transform duration-700 group-hover:scale-110"
+          aria-hidden="true"
+        >
+          <Briefcase size={200} strokeWidth={1} />
+        </div>
+      )}
+
+      <ProjectCardHeader
+        project={project}
+        isExpanded={isExpanded}
+        dashboardData={dashboardData}
+        onToggle={handleToggleExpanded}
+        onStatusToggle={toggleLifecycleStatus}
+        onEdit={handleEditDetails}
+        onDelete={handleDelete}
+      />
+
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            key={`expanded-card-${project.id}`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="relative z-0 overflow-hidden border-t border-ethereal-incense/15 bg-ethereal-alabaster/40"
           >
-            <Briefcase size={200} strokeWidth={1} />
-          </div>
-        )}
-
-        <ProjectCardHeader
-          project={project}
-          isExpanded={isExpanded}
-          dashboardData={dashboardData}
-          onToggle={handleToggleExpanded}
-          onStatusToggle={toggleLifecycleStatus}
-          onEdit={handleEditDetails}
-          onDelete={handleDelete}
-        />
-
-        <AnimatePresence initial={false}>
-          {isExpanded && (
-            <motion.div
-              key={`expanded-card-${project.id}`}
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="relative z-0 overflow-hidden border-t border-ethereal-incense/15 bg-ethereal-alabaster/40"
+            <Suspense
+              fallback={
+                <div className="flex min-h-[400px] items-center justify-center p-8">
+                  <EtherealLoader />
+                </div>
+              }
             >
-              <Suspense
-                fallback={
-                  <div className="flex min-h-[400px] items-center justify-center p-8">
-                    <EtherealLoader />
-                  </div>
-                }
-              >
-                <div className="space-y-10 p-6 md:p-8">
-                  <div className="space-y-4">
-                    <SectionHeader
-                      title={t(
-                        "projects.card.artistic_dashboard",
-                        "Pulpit Artystyczny",
-                      )}
-                      icon={<Music size={16} aria-hidden="true" />}
-                      className="mb-0 pb-4"
-                    />
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                      <div className="lg:col-span-2">
-                        <RehearsalsWidget
-                          project={project}
-                          onEdit={handleEditRehearsals}
-                        />
-                      </div>
-                      <div className="lg:col-span-1">
-                        <ProgramWidget
-                          project={project}
-                          onEdit={handleEditProgram}
-                          onOpenMicroCast={handleEditMicroCast}
-                        />
-                      </div>
-                      <div className="lg:col-span-2">
-                        <CastWidget project={project} onEdit={handleEditCast} />
-                      </div>
-                      <div className="lg:col-span-1">
-                        <SpotifyWidget
-                          playlistUrl={project.spotify_playlist_url}
-                        />
-                      </div>
+              <div className="space-y-10 p-6 md:p-8">
+                <div className="space-y-4">
+                  <SectionHeader
+                    title={t(
+                      "projects.card.artistic_dashboard",
+                      "Pulpit Artystyczny",
+                    )}
+                    icon={<Music size={16} aria-hidden="true" />}
+                    className="mb-0 pb-4"
+                  />
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <div className="lg:col-span-2">
+                      <RehearsalsWidget
+                        project={project}
+                        onEdit={handleEditRehearsals}
+                      />
                     </div>
-                  </div>
-
-                  <div className="space-y-4 border-t border-ethereal-incense/15 pt-6">
-                    <SectionHeader
-                      title={t(
-                        "projects.card.logistics_dashboard",
-                        "Logistyka i Produkcja",
-                      )}
-                      icon={<Wrench size={16} aria-hidden="true" />}
-                      className="mb-0 pb-4"
-                    />
-
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                      <div className="flex h-full flex-col">
-                        <RunSheetWidget
-                          project={project}
-                          onEdit={handleEditDetails}
-                        />
-                      </div>
-                      <div className="flex h-full flex-col gap-6">
-                        <ProjectCardDetails project={project} />
-                      </div>
+                    <div className="lg:col-span-1">
+                      <ProgramWidget
+                        project={project}
+                        onEdit={handleEditProgram}
+                        onOpenMicroCast={handleEditMicroCast}
+                      />
                     </div>
-
-                    <div className="grid grid-cols-1 gap-6 pt-4 lg:grid-cols-3">
-                      <div className="lg:col-span-2">
-                        <BudgetWidget
-                          project={project}
-                          onEdit={handleEditBudget}
-                        />
-                      </div>
-                      <div className="lg:col-span-1">
-                        <CrewWidget project={project} onEdit={handleEditCrew} />
-                      </div>
+                    <div className="lg:col-span-2">
+                      <CastWidget project={project} onEdit={handleEditCast} />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <SpotifyWidget
+                        playlistUrl={project.spotify_playlist_url}
+                      />
                     </div>
                   </div>
                 </div>
-              </Suspense>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </GlassCard>
-    </motion.div>
+
+                <div className="space-y-4 border-t border-ethereal-incense/15 pt-6">
+                  <SectionHeader
+                    title={t(
+                      "projects.card.logistics_dashboard",
+                      "Logistyka i Produkcja",
+                    )}
+                    icon={<Wrench size={16} aria-hidden="true" />}
+                    className="mb-0 pb-4"
+                  />
+
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <div className="flex h-full flex-col">
+                      <RunSheetWidget
+                        project={project}
+                        onEdit={handleEditDetails}
+                      />
+                    </div>
+                    <div className="flex h-full flex-col gap-6">
+                      <ProjectCardDetails project={project} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 pt-4 lg:grid-cols-3">
+                    <div className="lg:col-span-2">
+                      <BudgetWidget
+                        project={project}
+                        onEdit={handleEditBudget}
+                      />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <CrewWidget project={project} onEdit={handleEditCrew} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Suspense>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </GlassCard>
   );
 };

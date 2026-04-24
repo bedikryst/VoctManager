@@ -481,7 +481,7 @@ export const ProjectEditorPanel = ({
 
                   <div
                     data-scroll-lock-ignore="true"
-                    className="ethereal-scroll flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pt-4 md:px-10"
+                    className=" flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pt-4 md:px-10"
                   >
                     <AnimatePresence mode="wait">
                       <motion.div

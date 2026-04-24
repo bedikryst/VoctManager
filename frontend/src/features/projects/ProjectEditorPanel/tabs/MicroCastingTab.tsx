@@ -136,7 +136,9 @@ export const MicroCastingTab = ({
                 key={casting.id}
                 participationId={String(casting.participation)}
                 artist={artist}
-                participationStatus={participationStatusMap.get(String(casting.participation))}
+                participationStatus={participationStatusMap.get(
+                  String(casting.participation),
+                )}
                 casting={casting}
                 onUpdateNote={handleUpdateNote}
               />
@@ -184,10 +186,7 @@ export const MicroCastingTab = ({
                     aria-hidden="true"
                   />
                   <Heading as="h2" size="xl" weight="medium">
-                    {t(
-                      "projects.micro_cast.header.title",
-                      "Divisi",
-                    )}
+                    {t("projects.micro_cast.header.title", "Divisi")}
                   </Heading>
                 </div>
                 <Text size="sm" color="muted">
@@ -231,12 +230,14 @@ export const MicroCastingTab = ({
                           if (status === "OK")
                             optionColorClass = "font-bold text-ethereal-sage";
                           if (status === "DEFICIT")
-                            optionColorClass = "font-bold text-ethereal-crimson";
+                            optionColorClass =
+                              "font-bold text-ethereal-crimson";
 
                           return (
                             <option
                               key={
-                                item.id || `microcast-opt-${item.piece}-${index}`
+                                item.id ||
+                                `microcast-opt-${item.piece}-${index}`
                               }
                               value={item.piece}
                               className={optionColorClass}
@@ -273,7 +274,9 @@ export const MicroCastingTab = ({
                       )}
                     </Eyebrow>
                   </div>
-                  <Badge variant="warning">{unassignedParticipations.length}</Badge>
+                  <Badge variant="warning">
+                    {unassignedParticipations.length}
+                  </Badge>
                 </div>
 
                 <DroppableBucket
@@ -282,7 +285,7 @@ export const MicroCastingTab = ({
                     "projects.micro_cast.sections.unassigned",
                     "Nieprzypisani",
                   )}
-                  className="ethereal-scroll -mr-2 flex-1 min-h-0 overflow-y-auto pr-2 [scrollbar-gutter:stable]"
+                  className=" -mr-2 flex-1 min-h-0 overflow-y-auto pr-2 [scrollbar-gutter:stable]"
                 >
                   <div className="grid grid-cols-1 gap-2 pb-2 sm:grid-cols-[repeat(auto-fill,minmax(130px,1fr))]">
                     {unassignedParticipations.map((part) => {
@@ -293,7 +296,9 @@ export const MicroCastingTab = ({
                           key={part.id}
                           participationId={String(part.id)}
                           artist={artist}
-                          participationStatus={participationStatusMap.get(String(part.id))}
+                          participationStatus={participationStatusMap.get(
+                            String(part.id),
+                          )}
                         />
                       );
                     })}
@@ -373,7 +378,7 @@ export const MicroCastingTab = ({
                   )}
                 </div>
 
-                <div className="ethereal-scroll -mr-2 min-h-0 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
+                <div className=" -mr-2 min-h-0 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
                   {requirements.length === 0 ? (
                     <div className="space-y-8 pb-4">
                       <GlassCard
@@ -404,7 +409,9 @@ export const MicroCastingTab = ({
                             <Eyebrow color="gold">{group.label}</Eyebrow>
                           </div>
                           {voiceLines
-                            .filter((vl) => String(vl.value).startsWith(group.filter))
+                            .filter((vl) =>
+                              String(vl.value).startsWith(group.filter),
+                            )
                             .map((vl) =>
                               renderBucket(
                                 String(vl.value),

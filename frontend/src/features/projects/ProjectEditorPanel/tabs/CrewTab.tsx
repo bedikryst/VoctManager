@@ -135,7 +135,7 @@ export const CrewTab = ({
           </Eyebrow>
         </div>
 
-        <div className="ethereal-scroll max-h-125 divide-y divide-ethereal-incense/10 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+        <div className=" max-h-125 divide-y divide-ethereal-incense/10 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
           <AnimatePresence initial={false}>
             {projectAssignments.length > 0 ? (
               projectAssignments.map((assignment) => {

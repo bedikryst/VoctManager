@@ -440,7 +440,7 @@ export const ProgramTab = ({
           />
         </div>
 
-        <div className="ethereal-scroll flex-1 space-y-2 overflow-y-auto pr-2">
+        <div className=" flex-1 space-y-2 overflow-y-auto pr-2">
           {filteredPieces.length > 0 ? (
             filteredPieces.map((piece, index) => {
               const safePieceId = piece.id || `db-piece-${index}`;
