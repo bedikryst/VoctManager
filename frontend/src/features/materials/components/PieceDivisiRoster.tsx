@@ -29,34 +29,32 @@ export const PieceDivisiRoster = ({
   );
 
   return (
-    <GlassCard variant="ethereal" className="h-full">
+    <GlassCard variant="ethereal">
       <div className="flex items-center gap-1.5 border-b border-ethereal-marble pb-2 mb-3">
-        <Users size={14} className="text-ethereal-graphite" aria-hidden="true" />
+        <Users size={13} className="text-ethereal-graphite" aria-hidden="true" />
         <Eyebrow color="muted">
-          {t("materials.piece.cast_divisi", "Obsada utworu (Divisi)")}
+          {t("materials.piece.cast_divisi", "Obsada (Divisi)")}
         </Eyebrow>
       </div>
 
       {castings.length > 0 ? (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-h-40 overflow-y-auto pr-2 no-scrollbar">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 max-h-48 overflow-y-auto no-scrollbar">
           {Object.entries(divisiGroups).map(([label, groupCastings]) => (
             <div key={label} className="space-y-1.5">
               <Eyebrow color="muted">{label}</Eyebrow>
               <ul className="space-y-1">
                 {groupCastings.map((c) => (
-                  <li key={c.id} className="flex items-center gap-1.5">
+                  <li key={c.artist_id} className="flex items-center gap-1.5">
                     {c.is_me && (
                       <div
-                        className="w-1.5 h-1.5 bg-ethereal-gold rounded-full animate-pulse shadow-glass-solid"
+                        className="w-1.5 h-1.5 bg-ethereal-gold rounded-full animate-pulse shadow-glass-solid shrink-0"
                         aria-hidden="true"
                       />
                     )}
                     <Text
-                      className={
-                        c.is_me
-                          ? "text-ethereal-ink font-bold"
-                          : "text-ethereal-graphite"
-                      }
+                      size="sm"
+                      color={c.is_me ? "default" : "graphite"}
+                      weight={c.is_me ? "semibold" : "normal"}
                     >
                       {c.artist_name ||
                         t("materials.piece.unknown_artist", "Artysta")}
@@ -68,7 +66,7 @@ export const PieceDivisiRoster = ({
           ))}
         </div>
       ) : (
-        <Text className="italic text-ethereal-graphite opacity-80">
+        <Text size="sm" color="graphite" className="italic opacity-70">
           {t(
             "materials.piece.no_divisi",
             "Brak zdefiniowanego podziału głosów.",

@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
-import { Briefcase, Clock } from "lucide-react";
+import { Archive, Briefcase, CalendarDays } from "lucide-react";
 
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -19,56 +18,50 @@ export const ProjectMaterialGroup = ({
   const isArchived = group.project.status === "DONE";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="space-y-5"
-    >
-      <div
-        className={`flex items-center gap-3 border-b border-ethereal-marble pb-3 ml-2 transition-opacity ${
-          isArchived ? "opacity-70" : "opacity-100"
-        }`}
-      >
-        <Briefcase
-          size={18}
-          className={
-            isArchived ? "text-ethereal-graphite" : "text-ethereal-gold"
-          }
-          aria-hidden="true"
-        />
-        <div>
-          <Eyebrow color={isArchived ? "muted" : "default"}>
-            {t("materials.project.event", "Wydarzenie:")} {group.project.title}
-          </Eyebrow>
-          <div className="flex items-center gap-2 mt-0.5">
-            <div className="flex items-center gap-1">
-              <Clock
-                size={10}
+    <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
+      <div className="flex items-start justify-between gap-3 pb-4 border-b border-ethereal-marble">
+        <div className="flex items-start gap-3 min-w-0">
+          <div
+            className={`mt-0.5 shrink-0 p-2 rounded-lg ${
+              isArchived ? "bg-ethereal-marble" : "bg-ethereal-gold/10"
+            }`}
+          >
+            <Briefcase
+              size={15}
+              className={
+                isArchived ? "text-ethereal-graphite" : "text-ethereal-gold"
+              }
+              aria-hidden="true"
+            />
+          </div>
+          <div className="min-w-0">
+            <Eyebrow color={isArchived ? "muted" : "default"} className="block truncate">
+              {t("materials.project.event", "Wydarzenie:")} {group.project.title}
+            </Eyebrow>
+            <div className="flex items-center gap-1.5 mt-1">
+              <CalendarDays
+                size={11}
+                className="text-ethereal-graphite shrink-0"
                 aria-hidden="true"
-                className="text-ethereal-graphite"
               />
               <Eyebrow color="muted">
                 {formatLocalizedDate(group.project.date_time)}
               </Eyebrow>
             </div>
-            {isArchived && (
-              <Eyebrow
-                color="muted"
-                className="bg-ethereal-marble px-2 py-0.5 rounded shadow-glass-solid"
-              >
-                {t(
-                  "materials.project.archived_badge",
-                  "Projekt Zarchiwizowany",
-                )}
-              </Eyebrow>
-            )}
           </div>
         </div>
+
+        {isArchived && (
+          <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-ethereal-marble/60 border border-ethereal-marble rounded-lg shadow-glass-solid">
+            <Archive size={11} className="text-ethereal-graphite" aria-hidden="true" />
+            <Eyebrow color="muted">
+              {t("materials.project.archived_badge", "Archiwum")}
+            </Eyebrow>
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {group.program.map((item) => (
           <PieceMaterialCard
             key={item.piece.id}
@@ -79,6 +72,6 @@ export const ProjectMaterialGroup = ({
           />
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 };

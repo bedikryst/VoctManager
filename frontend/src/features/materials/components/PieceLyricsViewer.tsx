@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
-import { AlignLeft, ChevronUp, ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlignLeft, ChevronDown } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -26,28 +26,26 @@ export const PieceLyricsViewer = ({
     <GlassCard padding="none" variant="ethereal" className="overflow-hidden">
       <button
         onClick={() => setIsExpanded((prev) => !prev)}
-        className="w-full flex items-center justify-between p-5 text-left hover:bg-ethereal-marble/40 transition-colors focus:outline-none"
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-ethereal-marble/40 active:bg-ethereal-marble/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset"
         aria-expanded={isExpanded}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <AlignLeft
-            size={16}
-            className="text-ethereal-gold"
+            size={15}
+            className="text-ethereal-gold shrink-0"
             aria-hidden="true"
           />
           <Eyebrow color="default">
-            {t(
-              "materials.piece.lyrics_translation",
-              "Tekst Utworu i Tłumaczenie",
-            )}
+            {t("materials.piece.lyrics_translation", "Tekst i Tłumaczenie")}
           </Eyebrow>
         </div>
-        <div className="text-ethereal-graphite bg-ethereal-alabaster shadow-glass-solid p-1.5 rounded-full border border-ethereal-marble">
-          {isExpanded ? (
-            <ChevronUp size={16} aria-hidden="true" />
-          ) : (
-            <ChevronDown size={16} aria-hidden="true" />
-          )}
+        <div
+          className={`shrink-0 p-1.5 rounded-full border border-ethereal-marble bg-ethereal-alabaster shadow-glass-solid text-ethereal-graphite transition-transform duration-300 ${
+            isExpanded ? "rotate-180" : "rotate-0"
+          }`}
+          aria-hidden="true"
+        >
+          <ChevronDown size={14} />
         </div>
       </button>
 
@@ -57,10 +55,10 @@ export const PieceLyricsViewer = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden border-t border-ethereal-marble/60"
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] as const }}
+            className="overflow-hidden"
           >
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 bg-ethereal-marble/20">
+            <div className="border-t border-ethereal-marble/60 p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-ethereal-marble/15">
               {originalLyrics && (
                 <div>
                   <div className="border-b border-ethereal-marble pb-2 mb-3">
@@ -68,7 +66,10 @@ export const PieceLyricsViewer = ({
                       {t("materials.piece.original_lyrics", "Oryginał")}
                     </Eyebrow>
                   </div>
-                  <Text className="whitespace-pre-wrap leading-relaxed font-serif text-ethereal-ink">
+                  <Text
+                    color="default"
+                    className="whitespace-pre-wrap leading-relaxed font-serif"
+                  >
                     {originalLyrics}
                   </Text>
                 </div>
@@ -77,13 +78,13 @@ export const PieceLyricsViewer = ({
                 <div>
                   <div className="border-b border-ethereal-marble pb-2 mb-3">
                     <Eyebrow color="muted">
-                      {t(
-                        "materials.piece.translation_notes",
-                        "Tłumaczenie (Notatki)",
-                      )}
+                      {t("materials.piece.translation_notes", "Tłumaczenie")}
                     </Eyebrow>
                   </div>
-                  <Text className="whitespace-pre-wrap leading-relaxed font-serif italic text-ethereal-graphite">
+                  <Text
+                    color="graphite"
+                    className="whitespace-pre-wrap leading-relaxed font-serif italic"
+                  >
                     {translationNotes}
                   </Text>
                 </div>
