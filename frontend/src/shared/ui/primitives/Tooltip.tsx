@@ -1,0 +1,97 @@
+import React, { useState, useEffect } from "react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import { motion, AnimatePresence } from "framer-motion";
+import { Label } from "./typography";
+
+export const TooltipProvider = TooltipPrimitive.Provider;
+
+interface TooltipProps {
+  children: React.ReactNode;
+  content: string;
+  side?: "top" | "right" | "bottom" | "left";
+  disabled?: boolean;
+}
+
+const INITIAL_PROPS = {
+  top: { opacity: 0, y: 8, scale: 0.95 },
+  right: { opacity: 0, x: -8, scale: 0.95 },
+  bottom: { opacity: 0, y: -8, scale: 0.95 },
+  left: { opacity: 0, x: 8, scale: 0.95 },
+} as const;
+
+const ANIMATE_PROPS = {
+  top: { opacity: 1, y: 0, scale: 1 },
+  right: { opacity: 1, x: 0, scale: 1 },
+  bottom: { opacity: 1, y: 0, scale: 1 },
+  left: { opacity: 1, x: 0, scale: 1 },
+} as const;
+
+const MotionTooltipContent = motion.create(TooltipPrimitive.Content);
+
+export const Tooltip = ({
+  children,
+  content,
+  side = "right",
+  disabled = false,
+}: TooltipProps): React.JSX.Element => {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+    }
+  }, [disabled]);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (disabled) {
+      setOpen(false);
+      return;
+    }
+    setOpen(isOpen);
+  };
+
+  return (
+    <TooltipPrimitive.Root
+      open={open}
+      onOpenChange={handleOpenChange}
+      delayDuration={0}
+    >
+      <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
+      <TooltipPrimitive.Portal forceMount>
+        <AnimatePresence>
+          {!disabled && open && (
+            <MotionTooltipContent
+              key="tooltip-content"
+              forceMount
+              side={side}
+              sideOffset={14}
+              initial={INITIAL_PROPS[side]}
+              animate={ANIMATE_PROPS[side]}
+              exit={INITIAL_PROPS[side]}
+              transition={{
+                type: "spring",
+                stiffness: 700,
+                damping: 30,
+                mass: 0.2,
+              }}
+              className="z-[100] pointer-events-none px-3 py-1 rounded-lg border border-ethereal-gold/50 bg-ethereal-parchment/90 backdrop-blur-xl shadow-(--shadow-ethereal-soft) will-change-transform"
+            >
+              <Label
+                size="sm"
+                color="graphite"
+                className="whitespace-nowrap font-medium tracking-wide"
+              >
+                {content}
+              </Label>
+              <TooltipPrimitive.Arrow
+                width={12}
+                height={6}
+                className="fill-ethereal-gold/50"
+              />
+            </MotionTooltipContent>
+          )}
+        </AnimatePresence>
+      </TooltipPrimitive.Portal>
+    </TooltipPrimitive.Root>
+  );
+};

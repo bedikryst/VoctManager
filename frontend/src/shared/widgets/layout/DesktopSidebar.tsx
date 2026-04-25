@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import React, { forwardRef } from "react";
+import { Link, NavLink, NavLinkProps } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Transition } from "framer-motion";
 import { LogOut, Settings } from "lucide-react";
@@ -14,6 +14,8 @@ import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKin
 import { Heading, Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Divider } from "@/shared/ui/primitives/Divider";
+// Import zmodyfikowany o wstrzyknięcie globalnego Providera
+import { Tooltip, TooltipProvider } from "@/shared/ui/primitives/Tooltip";
 
 interface DesktopSidebarProps {
   user: AuthUser | null;
@@ -48,6 +50,29 @@ const navLinkVariants = cva(
   },
 );
 
+const SidebarNavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(
+  ({ className: radixClassName, to, children, style, ...props }, ref) => {
+    return (
+      <NavLink
+        to={to}
+        ref={ref}
+        style={style}
+        className={({ isActive }) =>
+          cn(
+            navLinkVariants({ isActive }),
+            "transition-[width] duration-300 ease-out will-change-[width]",
+            radixClassName as string,
+          )
+        }
+        {...props}
+      >
+        {children}
+      </NavLink>
+    );
+  },
+);
+SidebarNavLink.displayName = "SidebarNavLink";
+
 export const DesktopSidebar = ({
   user,
   logout,
@@ -58,11 +83,7 @@ export const DesktopSidebar = ({
     useNavigationAura(user);
 
   return (
-    <>
-      {/* Overlay Backdrop: Kinetic Volumetric Shadow (2026 Trend)
-          Instead of dulling the entire screen, we cast an ethereal volumetric
-          gradient shadow from the left edge. This provides peripheral depth
-          focusing attention on the sidebar without repainting the entire viewport. */}
+    <TooltipProvider delayDuration={10} disableHoverableContent>
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -171,52 +192,52 @@ export const DesktopSidebar = ({
                     {group.links.map((link) => {
                       const IconComponent = link.icon as React.ElementType;
                       return (
-                        <NavLink
+                        <Tooltip
                           key={link.to}
-                          to={link.to}
-                          end={link.to === "/panel"}
-                          style={{ width: isExpanded ? "100%" : "56px" }}
-                          className={({ isActive }) =>
-                            cn(
-                              navLinkVariants({ isActive }),
-                              "transition-[width] duration-300 ease-out will-change-[width]",
-                            )
-                          }
-                          aria-label={
-                            !isExpanded ? t(link.labelKey) : undefined
-                          }
+                          content={t(link.labelKey)}
+                          disabled={isExpanded}
+                          side="right"
                         >
-                          {({ isActive }) => (
-                            <>
-                              <div className="absolute left-0 top-0 bottom-0 w-14 flex shrink-0 items-center justify-center transition-transform duration-300 ease-out group-active/desklink:scale-95">
-                                <IconComponent
-                                  size={18}
-                                  strokeWidth={isActive ? 2.5 : 1.5}
-                                  className="transition-all duration-300"
-                                />
-                              </div>
-                              <motion.div
-                                initial={false}
-                                animate={{
-                                  opacity: isExpanded ? 1 : 0,
-                                  x: isExpanded ? 0 : -4,
-                                }}
-                                transition={CONTENT_FADE_TRANSITION}
-                                className="absolute left-14 right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
-                                aria-hidden={!isExpanded}
-                              >
-                                <Label
-                                  weight={isActive ? "semibold" : "medium"}
-                                  size="base"
-                                  color="inherit"
-                                  className="transition-all duration-300"
+                          <SidebarNavLink
+                            to={link.to}
+                            end={link.to === "/panel"}
+                            style={{ width: isExpanded ? "100%" : "56px" }}
+                            aria-label={
+                              !isExpanded ? t(link.labelKey) : undefined
+                            }
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <div className="absolute left-0 top-0 bottom-0 w-14 flex shrink-0 items-center justify-center transition-transform duration-300 ease-out group-active/desklink:scale-95">
+                                  <IconComponent
+                                    size={18}
+                                    strokeWidth={isActive ? 2.5 : 1.5}
+                                    className="transition-all duration-300"
+                                  />
+                                </div>
+                                <motion.div
+                                  initial={false}
+                                  animate={{
+                                    opacity: isExpanded ? 1 : 0,
+                                    x: isExpanded ? 0 : -4,
+                                  }}
+                                  transition={CONTENT_FADE_TRANSITION}
+                                  className="absolute left-14 right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
+                                  aria-hidden={!isExpanded}
                                 >
-                                  {t(link.labelKey)}
-                                </Label>
-                              </motion.div>
-                            </>
-                          )}
-                        </NavLink>
+                                  <Label
+                                    weight={isActive ? "semibold" : "medium"}
+                                    size="base"
+                                    color="inherit"
+                                    className="transition-all duration-300"
+                                  >
+                                    {t(link.labelKey)}
+                                  </Label>
+                                </motion.div>
+                              </>
+                            )}
+                          </SidebarNavLink>
+                        </Tooltip>
                       );
                     })}
                   </div>
@@ -233,7 +254,6 @@ export const DesktopSidebar = ({
               className="opacity-50"
             />
 
-            {/* Profile Block Pill */}
             <div
               style={{ width: isExpanded ? "100%" : "56px" }}
               className="relative flex h-12 rounded-[14px] bg-white/5 border border-white/10 overflow-hidden shadow-(--shadow-ethereal-soft) transition-[width] duration-300 ease-out"
@@ -273,44 +293,56 @@ export const DesktopSidebar = ({
               style={{ width: isExpanded ? "100%" : "56px" }}
               className="flex flex-wrap gap-2 transition-[width] duration-300 ease-out overflow-hidden"
             >
-              <Link
-                to="/panel/settings"
-                aria-label={t("dashboard.layout.actions.settings")}
-                className="group/settings relative block h-10 flex-1 min-w-14 rounded-xl hover:bg-white/10 text-ethereal-graphite/60 hover:text-ethereal-ink transition-colors duration-300 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+              <Tooltip
+                content={t("dashboard.layout.actions.settings")}
+                disabled={isExpanded}
+                side="right"
               >
-                <div className="absolute left-0 top-0 bottom-0 w-14 flex items-center justify-center transition-transform duration-300 ease-out group-active/settings:scale-95">
-                  <Settings size={18} strokeWidth={2} />
-                </div>
-                <motion.div
-                  initial={false}
-                  animate={{ opacity: isExpanded ? 1 : 0 }}
-                  transition={CONTENT_FADE_TRANSITION}
-                  className="absolute left-14 right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
-                  aria-hidden={!isExpanded}
+                <Link
+                  to="/panel/settings"
+                  aria-label={t("dashboard.layout.actions.settings")}
+                  className="group/settings relative block h-10 flex-1 min-w-14 rounded-xl hover:bg-white/10 text-ethereal-graphite/60 hover:text-ethereal-ink transition-colors duration-300 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
                 >
-                  <Label size="sm" weight="medium" color="inherit">
-                    {t("dashboard.layout.actions.settings")}
-                  </Label>
-                </motion.div>
-              </Link>
+                  <div className="absolute left-0 top-0 bottom-0 w-14 flex items-center justify-center transition-transform duration-300 ease-out group-active/settings:scale-95">
+                    <Settings size={18} strokeWidth={2} />
+                  </div>
+                  <motion.div
+                    initial={false}
+                    animate={{ opacity: isExpanded ? 1 : 0 }}
+                    transition={CONTENT_FADE_TRANSITION}
+                    className="absolute left-14 right-0 top-0 bottom-0 flex items-center whitespace-nowrap"
+                    aria-hidden={!isExpanded}
+                  >
+                    <Label size="sm" weight="medium" color="inherit">
+                      {t("dashboard.layout.actions.settings")}
+                    </Label>
+                  </motion.div>
+                </Link>
+              </Tooltip>
 
               <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded-xl transition-all duration-300">
                 <NotificationCenter />
               </div>
 
-              <button
-                onClick={logout}
-                aria-label={t("dashboard.layout.actions.logout")}
-                className="group/logout relative flex h-10 w-14 shrink-0 items-center justify-center rounded-xl hover:bg-red-500/10 text-ethereal-graphite/50 hover:text-red-600 transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+              <Tooltip
+                content={t("dashboard.layout.actions.logout")}
+                disabled={isExpanded}
+                side="right"
               >
-                <div className="transition-transform duration-300 ease-out group-active/logout:scale-95">
-                  <LogOut size={18} strokeWidth={2.5} />
-                </div>
-              </button>
+                <button
+                  onClick={logout}
+                  aria-label={t("dashboard.layout.actions.logout")}
+                  className="group/logout relative flex h-10 w-14 shrink-0 items-center justify-center rounded-xl hover:bg-red-500/10 text-ethereal-graphite/50 hover:text-red-600 transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+                >
+                  <div className="transition-transform duration-300 ease-out group-active/logout:scale-95">
+                    <LogOut size={18} strokeWidth={2.5} />
+                  </div>
+                </button>
+              </Tooltip>
             </div>
           </div>
         </div>
       </GlassCard>
-    </>
+    </TooltipProvider>
   );
 };
