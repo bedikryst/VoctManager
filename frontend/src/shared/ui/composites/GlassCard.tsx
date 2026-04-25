@@ -84,8 +84,16 @@ const GlassCardInner = <C extends ElementType = "div">(
   ref: React.ForwardedRef<HTMLDivElement>,
 ) => {
   const Component = as || "div";
+  const isInteractive =
+    Component === "button" ||
+    Component === "a" ||
+    (typeof Component !== "string" &&
+      ((Component as any).displayName === "Link" ||
+        (Component as any).render?.displayName === "Link" ||
+        (Component as any).name === "Link"));
 
   // Lazy evaluation of motion values to prevent memory overhead when glow is disabled
+
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -124,6 +132,8 @@ const GlassCardInner = <C extends ElementType = "div">(
           animationEngine,
           className,
         }),
+        isInteractive &&
+          "block w-full text-left appearance-none outline-none select-none",
       )}
       {...rest}
     >
