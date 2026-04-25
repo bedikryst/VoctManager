@@ -26,72 +26,79 @@ const ANIMATE_PROPS = {
   left: { opacity: 1, x: 0, scale: 1 },
 } as const;
 
-const MotionTooltipContent = motion.create(TooltipPrimitive.Content);
-
 export const Tooltip = ({
   children,
   content,
   side = "right",
   disabled = false,
 }: TooltipProps): React.JSX.Element => {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
+  // Natychmiastowe zdjęcie Tooltipa, gdy np. Sidebar się rozwinie
   useEffect(() => {
     if (disabled) {
-      setOpen(false);
+      setIsOpen(false);
     }
   }, [disabled]);
 
-  const handleOpenChange = (isOpen: boolean) => {
+  const handleOpenChange = (open: boolean) => {
     if (disabled) {
-      setOpen(false);
+      setIsOpen(false);
       return;
     }
-    setOpen(isOpen);
+    setIsOpen(open);
   };
 
   return (
     <TooltipPrimitive.Root
-      open={open}
+      open={isOpen}
       onOpenChange={handleOpenChange}
-      delayDuration={0}
+      delayDuration={10}
     >
+      {/* Trigger pozostaje asChild, bo zawsze otrzymuje czysty, renderowany pojedynczy element (np. <button>) */}
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
-      <TooltipPrimitive.Portal forceMount>
-        <AnimatePresence>
-          {!disabled && open && (
-            <MotionTooltipContent
-              key="tooltip-content"
+
+      <AnimatePresence>
+        {isOpen && !disabled && (
+          <TooltipPrimitive.Portal forceMount key="tooltip-portal">
+            {/* Brak asChild! Radix renderuje czysty, techniczny div do pozycjonowania (transform: translate) */}
+            <TooltipPrimitive.Content
               forceMount
               side={side}
               sideOffset={14}
-              initial={INITIAL_PROPS[side]}
-              animate={ANIMATE_PROPS[side]}
-              exit={INITIAL_PROPS[side]}
-              transition={{
-                type: "spring",
-                stiffness: 700,
-                damping: 30,
-                mass: 0.2,
-              }}
-              className="z-[100] pointer-events-none px-3 py-1 rounded-lg border border-ethereal-gold/50 bg-ethereal-parchment/90 backdrop-blur-xl shadow-(--shadow-ethereal-soft) will-change-transform"
+              className="z-[100] pointer-events-none"
             >
-              <Label
-                size="sm"
-                color="graphite"
-                className="whitespace-nowrap font-medium tracking-wide"
+              {/* motion.div renderuje się niezależnie i zajmuje się wyłącznie animacją (transform: scale) */}
+              <motion.div
+                initial={INITIAL_PROPS[side]}
+                animate={ANIMATE_PROPS[side]}
+                exit={INITIAL_PROPS[side]}
+                transition={{
+                  type: "spring",
+                  stiffness: 700,
+                  damping: 30,
+                  mass: 0.2,
+                }}
+                className="relative px-3 py-1 rounded-lg border border-ethereal-gold/50 bg-ethereal-parchment/90 backdrop-blur-xl shadow-(--shadow-ethereal-soft) will-change-transform"
               >
-                {content}
-              </Label>
-              <TooltipPrimitive.Arrow
-                width={12}
-                height={6}
-                className="fill-ethereal-gold/50"
-              />
-            </MotionTooltipContent>
-          )}
-        </AnimatePresence>
-      </TooltipPrimitive.Portal>
+                <Label
+                  size="sm"
+                  color="graphite"
+                  className="whitespace-nowrap font-medium tracking-wide"
+                >
+                  {content}
+                </Label>
+                {/* Arrow pozycjonuje się poprawnie dzięki className="relative" dodanemu do wyższego motion.div */}
+                <TooltipPrimitive.Arrow
+                  width={12}
+                  height={6}
+                  className="fill-ethereal-gold/50"
+                />
+              </motion.div>
+            </TooltipPrimitive.Content>
+          </TooltipPrimitive.Portal>
+        )}
+      </AnimatePresence>
     </TooltipPrimitive.Root>
   );
 };
