@@ -29,14 +29,17 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
           willChange: isAuraStabilized ? "auto" : "transform",
         }}
       >
-        {/* LAYER 0: The Oculus Vignette (Chiaroscuro Base) */}
-        <div className="absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_top,transparent_10%,rgba(22,20,18,0.06)_100%)]" />
+        {/* LAYER 0: Ambient Darkening (Overall Page Dimming) */}
+        <div className="absolute inset-0 z-[1] bg-ethereal-ink/[0.06]" />
 
-        {/* LAYER 1: Core Ethereal Glows (Sub-pixel rendering) */}
+        {/* LAYER 1: The Oculus Vignette (Chiaroscuro Base) */}
+        <div className="absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_top,transparent_10%,rgba(22,20,18,0.08)_100%)]" />
+
+        {/* LAYER 2: Core Ethereal Glows (Sub-pixel rendering) */}
         <div className="absolute -left-[5%] -top-[5%] z-[2] h-[45vw] w-[45vw] rounded-full bg-ethereal-gold/20 blur-[100px] mix-blend-multiply" />
         <div className="absolute -bottom-[50%] -right-[10%] z-[2] h-[55vw] w-[55vw] rounded-full bg-ethereal-amethyst/15 blur-[100px] mix-blend-multiply" />
 
-        {/* LAYER 2: The Kinematic Stave & Clef */}
+        {/* LAYER 3: The Kinematic Stave & Clef */}
         <div className="absolute inset-0 z-[3] flex items-center justify-center">
           <motion.div
             className="relative flex h-[300vh] w-[300vw] -rotate-[8deg] flex-col justify-center"

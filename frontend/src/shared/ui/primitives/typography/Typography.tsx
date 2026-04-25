@@ -52,6 +52,8 @@ export const typographyVariants = cva("transition-colors duration-500", {
       incense: "text-ethereal-incense",
       "incense-muted": "text-ethereal-incense/60",
       graphite: "text-ethereal-graphite",
+      "marble-muted": "text-ethereal-marble/60",
+      "parchment-muted": "text-ethereal-parchment/60",
       crimson: "text-ethereal-crimson",
       "crimson-light": "text-ethereal-crimson-light",
       alabaster: "text-ethereal-alabaster",
