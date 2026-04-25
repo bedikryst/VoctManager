@@ -20,9 +20,14 @@ const containerVariants = cva("flex flex-col transition-all duration-300", {
       default: "gap-1",
       compact: "gap-0.5",
     },
+    variant: {
+      default: "",
+      dark: "",
+    },
   },
   defaultVariants: {
     spacing: "default",
+    variant: "default",
   },
 });
 
@@ -33,15 +38,17 @@ const primaryTimeVariants = cva("flex items-baseline gap-2 tracking-wide", {
       sans: "font-sans",
     },
     color: {
-      muted: "text-ethereal-graphite/60",
       default: "text-ethereal-ink",
+      muted: "text-ethereal-graphite/60",
       gold: "text-ethereal-gold",
       incense: "text-ethereal-incense/60",
+      dark: "text-ethereal-parchment",
+      "dark-muted": "text-ethereal-parchment/70",
     },
     size: {
       xs: "text-[10px]",
       sm: "text-xs",
-      base: "text-sm", // Standard 2026 high-density UI
+      base: "text-sm",
       md: "text-base",
       lg: "text-lg",
       xl: "text-xl",
@@ -59,16 +66,26 @@ const primaryTimeVariants = cva("flex items-baseline gap-2 tracking-wide", {
     },
   },
   defaultVariants: {
-    typography: "serif",
+    typography: "sans",
     color: "default",
     size: "base",
     weight: "normal",
   },
 });
 
-// Muted, high-end technical typography for the secondary timezone
 const localTimeVariants = cva(
-  "text-[9px] font-bold text-ethereal-incense/80 uppercase tracking-[0.25em] flex items-center gap-1.5",
+  "text-[9px] font-bold uppercase tracking-[0.25em] flex items-center gap-1.5",
+  {
+    variants: {
+      variant: {
+        default: "text-ethereal-incense/80",
+        dark: "text-ethereal-parchment/60",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
 );
 
 export interface DualTimeDisplayProps extends VariantProps<
@@ -82,6 +99,7 @@ export interface DualTimeDisplayProps extends VariantProps<
   color?: VariantProps<typeof primaryTimeVariants>["color"];
   size?: VariantProps<typeof primaryTimeVariants>["size"];
   weight?: VariantProps<typeof primaryTimeVariants>["weight"];
+  variant?: "default" | "dark";
   className?: string;
   containerClassName?: string;
   timeClassName?: string;
@@ -99,6 +117,7 @@ export const DualTimeDisplay = ({
   color,
   size,
   weight,
+  variant = "default",
   className,
   containerClassName,
   timeClassName,
@@ -137,17 +156,25 @@ export const DualTimeDisplay = ({
     timeZoneName: "short",
   };
 
+  // Resolve defaults based on variant if not explicitly provided
+  const resolvedColor = color || (variant === "dark" ? "dark" : "default");
+
   return (
     <div
       className={cn(
-        containerVariants({ spacing }),
+        containerVariants({ spacing, variant }),
         className,
         containerClassName,
       )}
     >
       <div
         className={cn(
-          primaryTimeVariants({ typography, color, size, weight }),
+          primaryTimeVariants({
+            typography,
+            color: resolvedColor,
+            size,
+            weight,
+          }),
           timeClassName,
           primaryTimeClassName,
         )}
@@ -155,14 +182,26 @@ export const DualTimeDisplay = ({
         {icon && (
           <span
             aria-hidden="true"
-            className="text-ethereal-gold/80 shrink-0 self-center translate-y-[1px]"
+            className={cn(
+              "shrink-0 self-center translate-y-[1px]",
+              variant === "dark"
+                ? "text-ethereal-gold/90"
+                : "text-ethereal-gold/80",
+            )}
           >
             {icon}
           </span>
         )}
 
         {label && (
-          <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/70 mr-1 self-center">
+          <span
+            className={cn(
+              "font-sans text-[10px] font-bold uppercase tracking-widest mr-1 self-center",
+              variant === "dark"
+                ? "text-ethereal-parchment/60"
+                : "text-ethereal-graphite/70",
+            )}
+          >
             {label}
           </span>
         )}
@@ -182,14 +221,13 @@ export const DualTimeDisplay = ({
 
       {hasDiffTz && (
         <div className="flex items-center">
-          {/* Invisible spacer matching the icon width to keep strict left-alignment */}
           {icon && (
             <span className="w-5 shrink-0 invisible" aria-hidden="true" />
           )}
 
           <time
             dateTime={isoDateString}
-            className={cn(localTimeVariants(), localTimeClassName)}
+            className={cn(localTimeVariants({ variant }), localTimeClassName)}
           >
             <span className="sr-only">
               {t("common.time.localAria", "Twój czas lokalny to:")}
@@ -202,7 +240,14 @@ export const DualTimeDisplay = ({
                 userTimezone,
               )}
             </span>
-            <span className="font-serif text-[12px] font-bold lowercase tracking-normal text-ethereal-incense/50">
+            <span
+              className={cn(
+                "font-sans text-[12px] font-bold lowercase tracking-normal",
+                variant === "dark"
+                  ? "text-ethereal-parchment/40"
+                  : "text-ethereal-incense/50",
+              )}
+            >
               {t("common.time.localSuffix", "(twój czas)")}
             </span>
           </time>

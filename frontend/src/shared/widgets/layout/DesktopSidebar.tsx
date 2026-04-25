@@ -11,11 +11,7 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
 import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKinematics";
 
-import {
-  Heading,
-  Eyebrow,
-  Label,
-} from "@/shared/ui/primitives/typography";
+import { Heading, Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Divider } from "@/shared/ui/primitives/Divider";
 
@@ -63,16 +59,22 @@ export const DesktopSidebar = ({
 
   return (
     <>
-      {/* Overlay Backdrop: subtle dim only — no backdrop-blur to avoid full-viewport
-          GPU repaint on every hover. A composited opacity transition costs nothing. */}
+      {/* Overlay Backdrop: Kinetic Volumetric Shadow (2026 Trend)
+          Instead of dulling the entire screen, we cast an ethereal volumetric
+          gradient shadow from the left edge. This provides peripheral depth
+          focusing attention on the sidebar without repainting the entire viewport. */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-30 bg-ethereal-ink/6 pointer-events-none hidden md:block"
+            initial={{ opacity: 0, scaleX: 0.5 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            exit={{ opacity: 0, scaleX: 0.5 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-y-0 left-0 z-30 w-[800px] pointer-events-none hidden md:block origin-left mix-blend-multiply"
+            style={{
+              background:
+                "linear-gradient(to right, rgba(22, 20, 18, 0.12) 0%, rgba(22, 20, 18, 0.04) 40%, transparent 100%)",
+            }}
             aria-hidden="true"
           />
         )}
@@ -88,13 +90,17 @@ export const DesktopSidebar = ({
           clipPath: isExpanded
             ? "inset(0px 0% 0px 0px round 2.5rem)"
             : "inset(0px calc(100% - 88px) 0px 0px round 2.5rem)",
+          boxShadow: isExpanded
+            ? "0 24px 64px -12px rgba(194, 168, 120, 0.15), 0 0 0 1px rgba(194, 168, 120, 0.25)"
+            : "0 8px 32px rgba(166, 146, 121, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.3)",
         }}
         transition={KINETIC_TRANSITION}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         padding="none"
         aria-expanded={isExpanded}
-        className="fixed bottom-4 left-4 top-4 z-60 hidden md:flex flex-col w-70 border-white/30 shadow-(--shadow-ethereal-deep) will-change-[clip-path]"
+        isHoverable={false}
+        className="fixed bottom-4 left-4 top-4 z-60 hidden md:flex flex-col w-70 border-none will-change-[clip-path,box-shadow]"
       >
         <div className="flex flex-col h-full w-70 p-4 relative">
           {/* STRATUM: LOGO */}
@@ -233,7 +239,7 @@ export const DesktopSidebar = ({
               className="relative flex h-12 rounded-[14px] bg-white/5 border border-white/10 overflow-hidden shadow-(--shadow-ethereal-soft) transition-[width] duration-300 ease-out"
             >
               <div className="absolute left-0 top-0 bottom-0 w-14 flex items-center justify-center shrink-0">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-linear-to-br from-ethereal-gold/20 to-transparent border border-ethereal-gold/30">
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-linear-to-br from-ethereal-gold/30 to-transparent border border-ethereal-gold/40">
                   <Label color="gold" size="sm" weight="semibold">
                     {initials}
                   </Label>
