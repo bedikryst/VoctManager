@@ -1,18 +1,23 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarHeart } from "lucide-react";
+import { CalendarHeart, History, CalendarClock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "../../app/providers/AuthProvider";
 import { useScheduleData } from "./hooks/useScheduleData";
-import TimelineProjectCard from "./components/TimelineProjectCard";
-import TimelineRehearsalCard from "./components/TimelineRehearsalCard";
+import { TimelineProjectCard } from "./components/TimelineProjectCard";
+import { TimelineRehearsalCard } from "./components/TimelineRehearsalCard";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
+import { cn } from "@/shared/lib/utils";
+
+const TABS = [
+  { id: "UPCOMING" as const, labelKey: "schedule.tabs.upcoming", fallback: "Nadchodzące", Icon: CalendarClock },
+  { id: "PAST" as const,     labelKey: "schedule.tabs.past",     fallback: "Historia",     Icon: History },
+];
 
 export default function Schedule(): React.JSX.Element {
   const { t } = useTranslation();
@@ -28,23 +33,21 @@ export default function Schedule(): React.JSX.Element {
     artistId,
   } = useScheduleData(user?.artist_profile_id ?? undefined);
 
-  const tabs: Array<{ id: "UPCOMING" | "PAST"; label: string }> = [
-    { id: "UPCOMING", label: t("schedule.tabs.upcoming", "Nadchodzące") },
-    { id: "PAST", label: t("schedule.tabs.past", "Historia") },
-  ];
+  const handleTabChange = (id: "UPCOMING" | "PAST") => {
+    setViewMode(id);
+    setExpandedEventId(null);
+  };
 
   return (
     <PageTransition>
-      <div className="relative pb-24 max-w-4xl mx-auto px-4 sm:px-0">
-        <div className="pt-6 mb-4">
+      <div className="relative pb-16 max-w-5xl mx-auto px-4 md:px-6">
+        {/* ── header ───────────────────────────────────────────────────── */}
+        <div className="pt-6 mb-6">
           <PageHeader
             size="standard"
             roleText={t("schedule.dashboard.subtitle", "Osobisty Kalendarz")}
             title={t("schedule.dashboard.title", "Mój")}
-            titleHighlight={t(
-              "schedule.dashboard.title_highlight",
-              "Harmonogram.",
-            )}
+            titleHighlight={t("schedule.dashboard.title_highlight", "Harmonogram.")}
           />
           <Text color="muted" size="sm" className="mt-2 ml-1">
             {t(
@@ -54,26 +57,34 @@ export default function Schedule(): React.JSX.Element {
           </Text>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div className="inline-flex items-center gap-1 p-1.5 bg-ethereal-alabaster border border-ethereal-incense/20 rounded-xl shadow-glass-ethereal overflow-x-auto no-scrollbar">
-            {tabs.map((tab) => (
-              <Button
-                key={tab.id}
-                variant={viewMode === tab.id ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => {
-                  setViewMode(tab.id);
-                  setExpandedEventId(null);
-                }}
+        {/* ── tab switcher — top bar on all screen sizes ───────────────── */}
+        <div className="flex items-center gap-1 p-1.5 bg-ethereal-alabaster border border-ethereal-incense/20 rounded-xl shadow-glass-ethereal w-full sm:w-max mb-8">
+          {TABS.map(({ id, labelKey, fallback, Icon }) => {
+            const active = viewMode === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleTabChange(id)}
+                className={cn(
+                  "flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  active
+                    ? "bg-ethereal-amethyst/15 text-ethereal-amethyst border border-ethereal-amethyst/25 shadow-glass-ethereal"
+                    : "text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-ethereal-alabaster/60",
+                )}
+                aria-current={active ? "page" : undefined}
               >
-                {tab.label}
-              </Button>
-            ))}
-          </div>
+                <Icon size={14} aria-hidden="true" />
+                {t(labelKey, fallback)}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="relative z-10">
-          <div className="absolute left-4.75 md:left-7.75 top-6 bottom-0 w-0.5 bg-linear-to-b from-ethereal-amethyst/20 via-ethereal-incense/15 to-transparent z-0 hidden sm:block" />
+        {/* ── timeline feed ─────────────────────────────────────────────── */}
+        <div className="relative">
+          {/* vertical timeline line — desktop only */}
+          <div className="absolute left-4.5 md:left-6.5 top-6 bottom-0 w-px bg-linear-to-b from-ethereal-amethyst/25 via-ethereal-incense/12 to-transparent z-0 hidden sm:block pointer-events-none" />
 
           {isLoading ? (
             <EtherealLoader
@@ -81,8 +92,8 @@ export default function Schedule(): React.JSX.Element {
               message={t("schedule.loading", "Pobieranie grafiku...")}
             />
           ) : filteredEvents.length > 0 ? (
-            <div className="space-y-6">
-              <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="popLayout">
+              <div className="space-y-4 sm:space-y-5">
                 {filteredEvents.map((ev) =>
                   ev.type === "PROJECT" ? (
                     <TimelineProjectCard
@@ -90,9 +101,7 @@ export default function Schedule(): React.JSX.Element {
                       event={ev}
                       isExpanded={expandedEventId === ev.id}
                       onToggle={() =>
-                        setExpandedEventId(
-                          expandedEventId === ev.id ? null : ev.id,
-                        )
+                        setExpandedEventId(expandedEventId === ev.id ? null : ev.id)
                       }
                       artistId={artistId}
                     />
@@ -102,17 +111,15 @@ export default function Schedule(): React.JSX.Element {
                       event={ev}
                       isExpanded={expandedEventId === ev.id}
                       onToggle={() =>
-                        setExpandedEventId(
-                          expandedEventId === ev.id ? null : ev.id,
-                        )
+                        setExpandedEventId(expandedEventId === ev.id ? null : ev.id)
                       }
                       onSubmitReport={handleAbsenceSubmit}
                       viewMode={viewMode}
                     />
                   ),
                 )}
-              </AnimatePresence>
-            </div>
+              </div>
+            </AnimatePresence>
           ) : (
             <motion.div
               initial={{ opacity: 0 }}
@@ -122,17 +129,17 @@ export default function Schedule(): React.JSX.Element {
               <GlassCard
                 padding="lg"
                 isHoverable={false}
-                className="flex flex-col items-center justify-center text-center"
+                className="flex flex-col items-center justify-center text-center py-16"
               >
                 <CalendarHeart
-                  size={48}
-                  className="text-ethereal-incense/30 mb-4"
+                  size={40}
+                  className="text-ethereal-incense/25 mb-4"
                   aria-hidden="true"
                 />
                 <Eyebrow color="muted" className="mb-2">
                   {t("schedule.empty.title", "Brak wpisów w kalendarzu")}
                 </Eyebrow>
-                <Text size="sm" color="muted" className="max-w-sm">
+                <Text size="sm" color="muted" className="max-w-xs">
                   {t(
                     "schedule.empty.description",
                     "W tym widoku nie masz przypisanych żadnych spotkań ani koncertów.",
