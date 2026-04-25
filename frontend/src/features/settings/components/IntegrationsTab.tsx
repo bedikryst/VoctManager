@@ -9,13 +9,17 @@ import {
 } from "lucide-react";
 
 import { GlassCard } from "@ui/composites/GlassCard";
+import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Button } from "@ui/primitives/Button";
+import { Input } from "@ui/primitives/Input";
+import { Text, Eyebrow } from "@ui/primitives/typography";
+import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import {
   useSettingsData,
   useResetCalendarToken,
 } from "../api/settings.queries";
 
-export default function IntegrationsTab() {
+export const IntegrationsTab = () => {
   const { t } = useTranslation();
   const { data: user, isLoading } = useSettingsData();
   const { mutate: resetToken, isPending: isResetting } =
@@ -24,9 +28,13 @@ export default function IntegrationsTab() {
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center">
-        {t("common.state.loading", "Wczytywanie...")}
-      </div>
+      <GlassCard
+        variant="light"
+        isHoverable={false}
+        className="flex items-center justify-center py-20"
+      >
+        <EtherealLoader />
+      </GlassCard>
     );
   }
 
@@ -40,65 +48,64 @@ export default function IntegrationsTab() {
       await navigator.clipboard.writeText(calendarUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
+    } catch {
+      // clipboard API unavailable in insecure contexts
     }
   };
 
   return (
-    <GlassCard>
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-          <CalendarDays className="w-5 h-5 text-brand" />
-          {t("settings.integrations.title", "Integracje i kalendarze")}
-        </h2>
-        <p className="text-sm text-stone-500 mt-1">
-          {t(
-            "settings.integrations.subtitle",
-            "Zsynchronizuj harmonogram prób ze swoim kalendarzem w telefonie.",
-          )}
-        </p>
-      </div>
+    <GlassCard variant="light" isHoverable={false}>
+      <SectionHeader
+        title={t("settings.integrations.title", "Integracje i kalendarze")}
+        icon={<CalendarDays className="w-5 h-5" />}
+      />
+      <Text color="muted" className="mt-1 mb-8">
+        {t(
+          "settings.integrations.subtitle",
+          "Zsynchronizuj harmonogram prób ze swoim kalendarzem w telefonie.",
+        )}
+      </Text>
 
-      <div className="space-y-6">
-        <div className="p-6 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="mt-1">
-              <Info className="w-5 h-5 text-brand" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider">
+      <div className="space-y-5">
+        {/* ── Live sync info + URL ──────────────────────── */}
+        <GlassCard variant="light" padding="md" isHoverable={false}>
+          <div className="flex items-start gap-3 mb-5">
+            <Info className="w-5 h-5 text-ethereal-amethyst shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <Eyebrow color="amethyst">
                 {t(
                   "settings.integrations.live_sync_title",
                   "Synchronizacja na żywo (Apple, Google, Outlook)",
                 )}
-              </h3>
-              <p className="text-xs text-blue-800/80 leading-relaxed mt-1">
+              </Eyebrow>
+              <Text size="sm" color="muted" className="leading-relaxed">
                 {t(
                   "settings.integrations.live_sync_desc",
                   'Użyj tego linku, aby zasubskrybować kalendarz chóru. Twoje próby i koncerty będą aktualizować się automatycznie. Dodaj go jako "Subskrypcję" (URL), a nie jednorazowy plik pobrany z dysku.',
                 )}
-              </p>
+              </Text>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 mt-4">
-            <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-1">
+          <div className="space-y-2">
+            <Eyebrow>
               {t(
                 "settings.integrations.calendar_url_label",
                 "Twój prywatny adres kalendarza",
               )}
-            </label>
-            <div className="flex flex-col md:flex-row gap-3">
-              <input
-                type="text"
+            </Eyebrow>
+            <div className="flex flex-col gap-2.5 md:flex-row">
+              <Input
                 readOnly
                 value={calendarUrl}
-                className="flex-1 bg-white border border-blue-200 text-stone-600 text-xs font-mono rounded-xl px-4 py-3 focus:outline-none"
+                aria-label={t(
+                  "settings.integrations.calendar_url_label",
+                  "Twój prywatny adres kalendarza",
+                )}
               />
               <Button
                 onClick={handleCopy}
-                variant="primary"
+                variant="outline"
                 className="shrink-0"
                 leftIcon={
                   copied ? (
@@ -109,37 +116,43 @@ export default function IntegrationsTab() {
                 }
               >
                 {copied
-                  ? t("settings.integrations.copied", "Skopiowano")
+                  ? t("settings.integrations.copied", "Skopiowano!")
                   : t("settings.integrations.copy_link", "Kopiuj link")}
               </Button>
             </div>
           </div>
-        </div>
+        </GlassCard>
 
-        <div className="border-t border-stone-200/50 pt-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h4 className="text-sm font-bold text-stone-800">
+        {/* ── Reset token ───────────────────────────────── */}
+        <GlassCard variant="outline" padding="md" isHoverable={false}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1.5">
+              <Eyebrow>
                 {t("settings.integrations.reset_title", "Zresetuj swój link")}
-              </h4>
-              <p className="text-xs text-stone-500 mt-1 max-w-md">
+              </Eyebrow>
+              <Text
+                size="sm"
+                color="muted"
+                className="max-w-md leading-relaxed"
+              >
                 {t(
                   "settings.integrations.reset_desc",
                   "Jeśli podejrzewasz, że ktoś niepowołany uzyskał dostęp do Twojego linku kalendarza, wygeneruj go ponownie. Poprzedni adres natychmiast przestanie działać.",
                 )}
-              </p>
+              </Text>
             </div>
             <Button
               variant="outline"
               onClick={() => resetToken()}
               isLoading={isResetting}
               leftIcon={<RefreshCw className="w-4 h-4" />}
+              className="shrink-0"
             >
               {t("settings.integrations.reset_btn", "Wygeneruj nowy link")}
             </Button>
           </div>
-        </div>
+        </GlassCard>
       </div>
     </GlassCard>
   );
-}
+};
