@@ -21,6 +21,8 @@ const badgeVariants = cva(
           "bg-ethereal-gold/10 text-ethereal-gold border-ethereal-gold/40 shadow-sm",
         danger:
           "bg-ethereal-incense/10 text-ethereal-incense border-ethereal-incense/30 shadow-sm",
+        amethyst:
+          "bg-ethereal-amethyst/10 text-ethereal-amethyst border-ethereal-amethyst/30 shadow-sm",
         neutral:
           "bg-ethereal-alabaster text-ethereal-graphite border-ethereal-incense/20",
         brand:

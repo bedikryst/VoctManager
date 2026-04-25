@@ -205,6 +205,7 @@
       "save_profile": "Zapisz Profil",
       "section_basic": "Dane Podstawowe",
       "section_voice": "Profil Wokalny",
+      "send_notification": "",
       "sight_reading": "Czytanie a vista (Ocena)",
       "stars_count_one": "{{count}} gwiazdka",
       "stars_count_few": "{{count}} gwiazdki",
@@ -299,7 +300,8 @@
       "submit_button": "Autoryzuj dostęp",
       "submitting": "Autoryzacja...",
       "subtitle": "Panel Administracyjny & Kadrowy"
-    }
+    },
+    "logout": ""
   },
   "common": {
     "actions": {
@@ -323,6 +325,7 @@
     },
     "artist_generic": "Artysty",
     "cancel": "Anuluj",
+    "close": "",
     "conductor_prefix": "Maestro",
     "currency": "PLN",
     "edit": "Edytuj",
@@ -337,13 +340,17 @@
       "server_error": "Błąd serwera",
       "server_problem": "Wystąpił problem z serwerem."
     },
+    "labels": {
+      "not_available": ""
+    },
     "locale": "pl-PL",
+    "management": "",
     "people_short": "os.",
     "rightsReserved": "Wszelkie prawa zastrzeżone",
     "save_changes": "Zapisz Zmiany",
+    "select_location": "",
     "send": "Wyślij",
     "state": {
-      "loading": "Wczytywanie...",
       "saved": "Zapisano"
     },
     "status": {
@@ -495,7 +502,24 @@
         "transport": "Transport",
         "vendors": "Podwykonawcy"
       },
+      "inv_col_concert": "",
+      "inv_col_email": "",
+      "inv_col_person": "",
+      "inv_col_phone": "",
+      "inv_confirmed": "",
+      "inv_declined": "",
+      "inv_details_link": "",
+      "inv_empty": "",
+      "inv_loading": "",
+      "inv_modal_subtitle_one": "",
+      "inv_modal_subtitle_few": "",
+      "inv_modal_subtitle_many": "",
+      "inv_modal_subtitle_other": "",
+      "inv_modal_title": "",
+      "inv_open_details_aria": "",
+      "inv_pending": "",
       "kpi_active_projects": "Aktywne Dyrektywy",
+      "kpi_invitations": "",
       "kpi_pieces": "Repertuar Sakralny",
       "kpi_readiness": "Spójność Harmoniczna",
       "kpi_telemetry": "Telemetria Bazy",
@@ -535,12 +559,12 @@
       "empty_events_desc": "Odpocznij. Twój muzyczny kalendarz jest obecnie pusty. Czas na regenerację głosu.",
       "empty_events_title": "Brak nadchodzących wydarzeń",
       "features": {
-        "events": "Próby i Koncerty",
         "absences": "Zgłaszanie Absencji",
-        "pdf_scores": "Partytury PDF",
         "audio_tracks": "Ścieżki Audio",
         "dress_code": "Dress-code",
-        "logistics": "Logistyka"
+        "events": "Próby i Koncerty",
+        "logistics": "Logistyka",
+        "pdf_scores": "Partytury PDF"
       },
       "general_work": "Praca bieżąca",
       "greeting_afternoon": "Dobrego popołudnia",
@@ -549,16 +573,10 @@
       "greeting_night": "Dobrej nocy",
       "label_call_time": "Zbiórka: ",
       "modules": {
-        "schedule_title": "Harmonogram",
         "materials_title": "Repertuar",
-        "resources_title": "Materiały"
+        "resources_title": "Materiały",
+        "schedule_title": "Harmonogram"
       },
-      "module_materials_desc": "Twoje osobiste repozytorium. Pobierz nuty PDF i ćwicz z dedykowanymi ścieżkami audio.",
-      "module_materials_title": "Materiały",
-      "module_resources_desc": "Sprawdź wytyczne dyrygenta, obowiązujący dress-code oraz regulaminy i umowy.",
-      "module_resources_title": "Baza Wiedzy",
-      "module_schedule_desc": "Sprawdź próby, koncerty i w prosty sposób zgłoś swoją nieobecność inspektorowi.",
-      "module_schedule_title": "Mój Kalendarz",
       "nav_aria": "Nawigacja artysty",
       "next_challenges": "Na horyzoncie",
       "note_dashboard_confirm": "Obecność potwierdzona z Dashboardu",
@@ -580,11 +598,6 @@
       "actions": {
         "logout": "Wyloguj",
         "settings": "Ustawienia"
-      },
-      "aria": {
-        "closeMenu": "Zamknij menu",
-        "openMenu": "Otwórz menu nawigacyjne",
-        "sidebar": "Główna Nawigacja"
       },
       "groups": {
         "artist_zone": "Strefa Artysty",
@@ -608,10 +621,14 @@
         "resources": "Zasoby i Wiedza",
         "schedule": "Mój Kalendarz"
       },
+      "nav": {
+        "main_menu": ""
+      },
       "roles": {
         "admin": "Administrator",
         "artist": "Artysta",
-        "crew": "Obsługa Techniczna"
+        "crew": "Obsługa Techniczna",
+        "guest": ""
       }
     },
     "shared": {
@@ -743,6 +760,7 @@
       "audio_badge": "Audio",
       "cast_divisi": "Obsada utworu (Divisi)",
       "download_pdf": "Pobierz Partyturę (PDF)",
+      "encore_badge": "",
       "listen_reference": "Posłuchaj Referencji",
       "locked_badge": "Chronione",
       "lyrics_translation": "Tekst Utworu i Tłumaczenie",
@@ -757,7 +775,6 @@
       "traditional": "Tradycyjny / Nieznany",
       "translation_notes": "Tłumaczenie (Notatki)",
       "unknown_artist": "Artysta",
-      "you_sing": "Śpiewasz:",
       "your_guidelines": "Twoje wytyczne do utworu"
     },
     "player": {
@@ -800,45 +817,49 @@
         "active": "Status: Aktywna",
         "location": "Kraków, PL — Fundacja VoctEnsemble"
       }
+    },
+    "settings": "",
+    "sheet": {
+      "accessibility_label": ""
     }
   },
   "notifications": {
     "changed": "Zmiany:",
     "crew_role": "Przypisana rola: {{role}}",
+    "custom_message": {
+      "from": "",
+      "mark_read": "",
+      "open_link": ""
+    },
     "empty_subtitle": "Nie masz nowych powiadomień.",
     "empty_title": "Wszystko przeczytane",
-    "mark_all_read": "Oznacz wszystkie jako przeczytane",
-    "title": "Powiadomienia",
-    "unread": "nieprzeczytane",
-    "types": {
-      "PROJECT_INVITATION": "Zaproszenie do projektu",
-      "PROJECT_UPDATED": "Projekt zaktualizowany",
-      "PROJECT_CANCELLED": "Projekt anulowany",
-      "PROJECT_REMINDER": "Przypomnienie o projekcie",
-      "REHEARSAL_SCHEDULED": "Próba zaplanowana",
-      "REHEARSAL_UPDATED": "Próba zaktualizowana",
-      "REHEARSAL_CANCELLED": "Próba odwołana",
-      "REHEARSAL_REMINDER": "Przypomnienie o próbie",
-      "PIECE_CASTING_ASSIGNED": "Obsada przypisana",
-      "PIECE_CASTING_UPDATED": "Obsada zaktualizowana",
-      "MATERIAL_UPLOADED": "Nowy materiał",
-      "CREW_ASSIGNED": "Obsada techniczna przypisana",
-      "CONTRACT_ISSUED": "Kontrakt gotowy",
-      "ABSENCE_REQUESTED": "Zgłoszenie nieobecności",
-      "ABSENCE_APPROVED": "Nieobecność zatwierdzona",
-      "ABSENCE_REJECTED": "Nieobecność odrzucona",
-      "SYSTEM_ALERT": "Alert systemowy",
-      "PARTICIPATION_RESPONSE": "Odpowiedź artysty",
-      "ATTENDANCE_SUBMITTED": "Obecność zgłoszona"
-    },
     "invitation_toast": {
-      "title": "Nowe zaproszenie do projektu",
-      "invites": "Zaprasza: {{name}}",
-      "status_updated": "Zaktualizowano status uczestnictwa",
-      "status_error": "Wystąpił błąd podczas aktualizacji statusu",
       "accept": "Akceptuj",
-      "decline": "Odrzuć"
-    }
+      "decline": "Odrzuć",
+      "invites": "Zaprasza: {{name}}",
+      "status_error": "Wystąpił błąd podczas aktualizacji statusu",
+      "status_updated": "Zaktualizowano status uczestnictwa",
+      "title": "Nowe zaproszenie do projektu"
+    },
+    "mark_all_read": "Oznacz wszystkie jako przeczytane",
+    "send_modal": {
+      "cta_label": "",
+      "cta_label_placeholder": "",
+      "cta_optional": "",
+      "cta_url": "",
+      "error": "",
+      "heading": "",
+      "level": "",
+      "message": "",
+      "message_placeholder": "",
+      "send": "",
+      "sending": "",
+      "success": "",
+      "title": "",
+      "title_placeholder": ""
+    },
+    "title": "Powiadomienia",
+    "unread": "nieprzeczytane"
   },
   "preloader": {
     "resonance": "Rezonans",
@@ -897,8 +918,8 @@
       "logistics_dashboard": "Logistyka i Produkcja",
       "status_active": "Projekt oznaczony jako w przygotowaniu",
       "status_done": "Projekt oznaczony jako zrealizowany",
-      "status_production": "Status produkcji",
       "status_update_failed": "Nie udało się zmienić statusu.",
+      "toggle": "",
       "updating_status": "Aktualizowanie statusu..."
     },
     "cast": {
@@ -928,6 +949,7 @@
         "available": "Baza Artystów"
       },
       "title": "Obsada Wokalna",
+      "title_short": "",
       "toast": {
         "added": "Dodano do obsady",
         "removed": "Usunięto z obsady"
@@ -953,6 +975,7 @@
         "title": "Skład Ekipy (Crew)"
       },
       "title": "Ekipa (Crew)",
+      "title_short": "",
       "toast": {
         "assign_error": "Błąd przypisania",
         "assign_error_desc": "Nie udało się przypisać członka ekipy do projektu.",
@@ -974,12 +997,15 @@
       "header_title_2": "Produkcja"
     },
     "details": {
+      "date_title": "",
       "description_title": "Opis wydarzenia",
       "dress_code_female": "Panie:",
       "dress_code_male": "Panowie:",
       "dress_code_title": "Dress Code",
+      "location_title": "",
       "no_description": "Nie ma żadnych dodatkowych uwag do tego wydarzenia.",
       "no_dress_code": "Nie ma wymagań co do ubioru.",
+      "time_title": "",
       "toast": {
         "create_success": "Utworzono nowy projekt z harmonogramem",
         "saving": "Zapisywanie szczegółów projektu...",
@@ -1000,6 +1026,8 @@
       },
       "fields": {
         "call_time": "Zbiórka (Call Time)",
+        "conductor": "",
+        "conductor_placeholder": "",
         "date_time": "Data i Czas *",
         "description": "Opis wydarzenia",
         "dress_code_female": "Dress Code: Panie",
@@ -1030,26 +1058,16 @@
       }
     },
     "editor": {
+      "active_tab": "Aktywna zakładka",
       "archive_badge": "Archiwum",
+      "create_description": "Najpierw zapisz podstawowe dane wydarzenia, a następnie przejdź do kolejnych zakładek operacyjnych.",
       "new_project": "Kreator nowego wydarzenia",
+      "new_project_title": "Nowy projekt",
+      "tabs_aria": "Zakładki panelu projektu",
       "unsaved_changes_desc": "Masz niezapisane zmiany w tej zakładce. Opuszczenie widoku spowoduje utratę lokalnych danych.",
       "unsaved_changes_title": "Niezapisane zmiany",
       "workspace": "Przestrzeń projektu",
-      "new_project_title": "Nowy projekt",
-      "workspace_description": "Zarządzaj szczegółami projektu, próbami, obsadą i logistyką w jednym kontekście roboczym.",
-      "create_description": "Najpierw zapisz podstawowe dane wydarzenia, a następnie przejdź do kolejnych zakładek operacyjnych.",
-      "active_tab": "Aktywna zakładka",
-      "tabs_aria": "Zakładki panelu projektu",
-      "tabs": {
-        "details": "Szczegóły",
-        "rehearsals": "Próby",
-        "matrix": "Frekwencja",
-        "cast": "Obsada",
-        "program": "Program",
-        "micro_cast": "Mikro-obsada",
-        "crew": "Ekipa",
-        "budget": "Budżet"
-      }
+      "workspace_description": "Zarządzaj szczegółami projektu, próbami, obsadą i logistyką w jednym kontekście roboczym."
     },
     "exports": {
       "call_sheet": "Pobierz Call Sheet",
@@ -1238,7 +1256,7 @@
         "optional": "Opcjonalna",
         "tutti": "TUTTI"
       },
-      "title": "Próby",
+      "title_short": "",
       "toast": {
         "remove_error_desc": "Nie udało się usunąć próby. Serwer odrzucił żądanie.",
         "remove_success": "Próba została usunięta",
@@ -1246,6 +1264,7 @@
         "save_error_desc": "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie.",
         "save_success": "Próba zapisana pomyślnie",
         "saving": "Zapisywanie próby w kalendarzu...",
+        "select_location": "",
         "select_target": "Wybierz przynajmniej jedną osobę lub sekcję na próbę!",
         "update_success": "Próba zaktualizowana pomyślnie",
         "updating": "Aktualizowanie próby..."
@@ -1258,6 +1277,9 @@
         "sopranos": "Soprany",
         "tenors": "Tenory"
       }
+    },
+    "roles": {
+      "maestro": ""
     },
     "run_sheet": {
       "empty": "Brak harmonogramu dostępnego dla tego wydarzenia.",
@@ -1273,9 +1295,7 @@
       "delete_error_desc": "Sprawdź powiązania projektu w bazie (być może ma przypisane umowy lub obecności).",
       "delete_error_title": "Błąd usuwania",
       "delete_loading": "Usuwanie projektu...",
-      "delete_success": "Projekt usunięty pomyślnie",
-      "sync_error_desc": "Słowniki nie zostały pobrane poprawnie.",
-      "sync_error_title": "Błąd synchronizacji"
+      "delete_success": "Projekt usunięty pomyślnie"
     }
   },
   "rehearsals": {
@@ -1298,11 +1318,7 @@
     },
     "row": {
       "minutes_placeholder": "Ile min?",
-      "note_placeholder": "Notatka (opcjonalnie)",
-      "status_absent": "Nieobecny",
-      "status_excused": "Zwolniony",
-      "status_late": "Spóźniony",
-      "status_present": "Obecny"
+      "note_placeholder": "Notatka (opcjonalnie)"
     },
     "stats": {
       "absent": "Braki",
@@ -1370,6 +1386,7 @@
     },
     "dashboard": {
       "badge": "Baza wiedzy i dokumenty",
+      "description": "",
       "title": "Zasoby",
       "title_highlight": "Fundacji"
     }
@@ -1395,10 +1412,6 @@
       "note_label": "Notatka:",
       "project_badge": "Koncert / Wydarzenie",
       "run_sheet_title": "Harmonogram Dnia",
-      "tab": {
-        "logistics": "Logistyka & Plan",
-        "setlist": "Repertuar & Divisi"
-      },
       "unknown_artist": "Artysta"
     },
     "dashboard": {
@@ -1449,10 +1462,6 @@
       "status_late": "Spóźnienie",
       "status_present": "Potwierdzona"
     },
-    "tabs": {
-      "past": "Historia",
-      "upcoming": "Nadchodzące"
-    },
     "toast": {
       "submit_error_desc": "Nie udało się zapisać zgłoszenia.",
       "submit_error_title": "Błąd zapisu",
@@ -1462,13 +1471,15 @@
   },
   "settings": {
     "errors": {
-      "invalid_current_password": "Błędne hasło. Spróbuj ponownie."
+      "invalid_current_password": "Błędne hasło. Spróbuj ponownie.",
+      "unknown_error": ""
     },
     "general": {
       "firstName": "Imię",
       "language": "Język interfejsu",
       "lastName": "Nazwisko",
       "phone": "Numer telefonu",
+      "preferencesTitle": "",
       "subtitle": "Zarządzaj swoimi danymi i preferencjami aplikacji.",
       "timezone": "Strefa czasowa",
       "title": "Ustawienia ogólne"
@@ -1509,8 +1520,15 @@
       "title": "Logistyka i trasy"
     },
     "membership": {
-      "title": "Profil artysty",
       "voice": "Twój głos"
+    },
+    "nav": {
+      "aria": ""
+    },
+    "page": {
+      "highlight": "konta",
+      "role": "PANEL UŻYTKOWNIKA",
+      "title": "Ustawienia"
     },
     "privacy": {
       "confirmPasswordLabel": "Potwierdź hasłem, aby usunąć konto",
@@ -1536,11 +1554,30 @@
       "updatePassword": "Zmień hasło"
     },
     "tabs": {
-      "general": "Ogólne",
-      "integrations": "Integracje",
-      "logistics": "Logistyka",
-      "privacy": "Prywatność",
-      "security": "Bezpieczeństwo"
+      "general": {
+        "label": "Ogólne",
+        "short": "Ogólne"
+      },
+      "integrations": {
+        "label": "Integracje",
+        "short": "Kalend."
+      },
+      "logistics": {
+        "label": "Logistyka",
+        "short": "Logistyka"
+      },
+      "notifications": {
+        "label": "Powiadomienia",
+        "short": "Alerty"
+      },
+      "privacy": {
+        "label": "Prywatność",
+        "short": "Prywatność"
+      },
+      "security": {
+        "label": "Bezpieczeństwo",
+        "short": "Hasło"
+      }
     }
   },
   "shared": {

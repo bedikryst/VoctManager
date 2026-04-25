@@ -205,16 +205,17 @@
       "save_profile": "Enregistrer le profil",
       "section_basic": "Informations de base",
       "section_voice": "Profil vocal",
+      "send_notification": "",
       "sight_reading": "Déchiffrage (évaluation)",
       "stars_count_one": "{{count}} étoile",
+      "stars_count_few": "{{count}} étoiles",
       "stars_count_many": "{{count}} étoiles",
       "stars_count_other": "{{count}} étoiles",
       "title_edit": "Modification du profil",
       "title_new": "Nouvel artiste",
       "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera.",
       "unsaved_title": "Vous avez des modifications non enregistrées !",
-      "voice_type": "Type de voix *",
-      "stars_count_few": "{{count}} étoiles"
+      "voice_type": "Type de voix *"
     },
     "filters": {
       "all": "Tous",
@@ -299,7 +300,8 @@
       "submit_button": "Autoriser l'accès",
       "submitting": "Autorisation en cours...",
       "subtitle": "Panneau d'administration et RH"
-    }
+    },
+    "logout": ""
   },
   "common": {
     "actions": {
@@ -323,6 +325,7 @@
     },
     "artist_generic": "De l'artiste",
     "cancel": "Annuler",
+    "close": "",
     "conductor_prefix": "Maestro",
     "currency": "PLN",
     "edit": "Modifier",
@@ -337,13 +340,17 @@
       "server_error": "Erreur serveur",
       "server_problem": "Un problème est survenu avec le serveur."
     },
+    "labels": {
+      "not_available": ""
+    },
     "locale": "fr-FR",
+    "management": "",
     "people_short": "pers.",
     "rightsReserved": "Tous droits réservés",
     "save_changes": "Enregistrer les modifications",
+    "select_location": "",
     "send": "Envoyer",
     "state": {
-      "loading": "Chargement...",
       "saved": "Enregistré"
     },
     "status": {
@@ -405,13 +412,13 @@
       "bulk_applying": "Application des tarifs groupés...",
       "bulk_error": "Erreur serveur pendant l'opération groupée.",
       "bulk_success_one": "1 contrat mis à jour.",
+      "bulk_success_few": "{{count}} contrats mis à jour.",
       "bulk_success_many": "{{count}} contrats mis à jour.",
       "bulk_success_other": "{{count}} contrats mis à jour.",
       "pdf_error": "Erreur de génération : {{message}}",
       "pdf_generating": "Génération du PDF pour {{name}}...",
       "pdf_success": "Document généré avec succès.",
-      "save_error": "Impossible d'enregistrer la rémunération pour : {{name}}.",
-      "bulk_success_few": "{{count}} contrats mis à jour."
+      "save_error": "Impossible d'enregistrer la rémunération pour : {{name}}."
     }
   },
   "crew": {
@@ -474,6 +481,7 @@
   "dashboard": {
     "admin": {
       "absences_one": "{{count}} absence signalée",
+      "absences_few": "{{count}} absences signalées",
       "absences_many": "{{count}} absences signalées",
       "absences_other": "{{count}} absences signalées",
       "aria_open_project": "Ouvrir les détails de la directive : {{title}}",
@@ -494,7 +502,23 @@
         "transport": "Transport",
         "vendors": "Fournisseurs"
       },
+      "inv_col_concert": "",
+      "inv_col_email": "",
+      "inv_col_person": "",
+      "inv_col_phone": "",
+      "inv_confirmed": "",
+      "inv_declined": "",
+      "inv_details_link": "",
+      "inv_empty": "",
+      "inv_loading": "",
+      "inv_modal_subtitle_one": "",
+      "inv_modal_subtitle_many": "",
+      "inv_modal_subtitle_other": "",
+      "inv_modal_title": "",
+      "inv_open_details_aria": "",
+      "inv_pending": "",
       "kpi_active_projects": "Directives actives",
+      "kpi_invitations": "",
       "kpi_pieces": "Répertoire sacré",
       "kpi_readiness": "Cohérence harmonique",
       "kpi_telemetry": "Télémétrie de la base",
@@ -517,8 +541,7 @@
         "status_active": "En production",
         "status_prep": "En préparation"
       },
-      "unknown_project": "Projet inconnu",
-      "absences_few": "{{count}} absences signalées"
+      "unknown_project": "Projet inconnu"
     },
     "artist": {
       "absence_status": "Statut d'absence",
@@ -535,12 +558,12 @@
       "empty_events_desc": "Reposez-vous. Votre calendrier musical est actuellement vide. Le temps de régénérer votre voix.",
       "empty_events_title": "Aucun événement à venir",
       "features": {
-        "events": "Répétitions & Concerts",
         "absences": "Signaler une absence",
-        "pdf_scores": "Partitions PDF",
         "audio_tracks": "Pistes audio",
         "dress_code": "Code vestimentaire",
-        "logistics": "Logistique"
+        "events": "Répétitions & Concerts",
+        "logistics": "Logistique",
+        "pdf_scores": "Partitions PDF"
       },
       "general_work": "Travail général",
       "greeting_afternoon": "Bon après-midi",
@@ -549,16 +572,10 @@
       "greeting_night": "Bonne nuit",
       "label_call_time": "Convocation : ",
       "modules": {
-        "schedule_title": "Planning",
         "materials_title": "Répertoire",
-        "resources_title": "Connaissances"
+        "resources_title": "Connaissances",
+        "schedule_title": "Planning"
       },
-      "module_materials_desc": "Votre espace personnel. Téléchargez les partitions PDF et travaillez avec des pistes audio dédiées.",
-      "module_materials_title": "Supports",
-      "module_resources_desc": "Consultez les consignes du chef, le dress code en vigueur et les contrats/règlements.",
-      "module_resources_title": "Base de connaissances",
-      "module_schedule_desc": "Consultez les répétitions, les concerts et signalez facilement votre absence à l'inspecteur.",
-      "module_schedule_title": "Mon calendrier",
       "nav_aria": "Navigation de l'artiste",
       "next_challenges": "À l'horizon",
       "note_dashboard_confirm": "Présence confirmée depuis le tableau de bord",
@@ -580,11 +597,6 @@
       "actions": {
         "logout": "Déconnexion",
         "settings": "Paramètres"
-      },
-      "aria": {
-        "closeMenu": "Fermer le menu",
-        "openMenu": "Ouvrir le menu de navigation",
-        "sidebar": "Navigation principale"
       },
       "groups": {
         "artist_zone": "Zone Artiste",
@@ -608,10 +620,14 @@
         "resources": "Ressources",
         "schedule": "Mon Calendrier"
       },
+      "nav": {
+        "main_menu": ""
+      },
       "roles": {
         "admin": "Administrateur",
         "artist": "Artiste",
-        "crew": "Équipe technique"
+        "crew": "Équipe technique",
+        "guest": ""
       }
     },
     "shared": {
@@ -743,6 +759,7 @@
       "audio_badge": "Audio",
       "cast_divisi": "Distribution de la pièce (Divisi)",
       "download_pdf": "Télécharger la partition (PDF)",
+      "encore_badge": "",
       "listen_reference": "Écouter la référence",
       "locked_badge": "Protégé",
       "lyrics_translation": "Paroles et traduction",
@@ -757,7 +774,6 @@
       "traditional": "Traditionnel / Inconnu",
       "translation_notes": "Traduction (notes)",
       "unknown_artist": "Artiste",
-      "you_sing": "Vous chantez :",
       "your_guidelines": "Vos consignes pour la pièce"
     },
     "player": {
@@ -800,45 +816,49 @@
         "active": "Statut : Actif",
         "location": "Cracovie, PL — Fondation VoctEnsemble"
       }
+    },
+    "settings": "",
+    "sheet": {
+      "accessibility_label": ""
     }
   },
   "notifications": {
     "changed": "Changements :",
     "crew_role": "Rôle assigné : {{role}}",
+    "custom_message": {
+      "from": "",
+      "mark_read": "",
+      "open_link": ""
+    },
     "empty_subtitle": "Vous n'avez pas de nouvelles notifications.",
     "empty_title": "À jour !",
-    "mark_all_read": "Marquer tout comme lu",
-    "title": "Notifications",
-    "unread": "Non lues",
-    "types": {
-      "PROJECT_INVITATION": "Invitation au projet",
-      "PROJECT_UPDATED": "Projet mis à jour",
-      "PROJECT_CANCELLED": "Projet annulé",
-      "PROJECT_REMINDER": "Rappel de projet",
-      "REHEARSAL_SCHEDULED": "Répétition planifiée",
-      "REHEARSAL_UPDATED": "Répétition modifiée",
-      "REHEARSAL_CANCELLED": "Répétition annulée",
-      "REHEARSAL_REMINDER": "Rappel de répétition",
-      "PIECE_CASTING_ASSIGNED": "Distribution attribuée",
-      "PIECE_CASTING_UPDATED": "Distribution mise à jour",
-      "MATERIAL_UPLOADED": "Nouveau matériel",
-      "CREW_ASSIGNED": "Équipe assignée",
-      "CONTRACT_ISSUED": "Contrat disponible",
-      "ABSENCE_REQUESTED": "Absence demandée",
-      "ABSENCE_APPROVED": "Absence approuvée",
-      "ABSENCE_REJECTED": "Absence refusée",
-      "SYSTEM_ALERT": "Alerte système",
-      "PARTICIPATION_RESPONSE": "Réponse d'artiste",
-      "ATTENDANCE_SUBMITTED": "Présence enregistrée"
-    },
     "invitation_toast": {
-      "title": "Nouvelle invitation au projet",
-      "invites": "Invité par : {{name}}",
-      "status_updated": "Statut de participation mis à jour",
-      "status_error": "Erreur lors de la mise à jour du statut",
       "accept": "Accepter",
-      "decline": "Refuser"
-    }
+      "decline": "Refuser",
+      "invites": "Invité par : {{name}}",
+      "status_error": "Erreur lors de la mise à jour du statut",
+      "status_updated": "Statut de participation mis à jour",
+      "title": "Nouvelle invitation au projet"
+    },
+    "mark_all_read": "Marquer tout comme lu",
+    "send_modal": {
+      "cta_label": "",
+      "cta_label_placeholder": "",
+      "cta_optional": "",
+      "cta_url": "",
+      "error": "",
+      "heading": "",
+      "level": "",
+      "message": "",
+      "message_placeholder": "",
+      "send": "",
+      "sending": "",
+      "success": "",
+      "title": "",
+      "title_placeholder": ""
+    },
+    "title": "Notifications",
+    "unread": "Non lues"
   },
   "preloader": {
     "resonance": "Résonance",
@@ -897,8 +917,8 @@
       "logistics_dashboard": "Logistique & Production",
       "status_active": "Projet marqué comme en préparation",
       "status_done": "Projet marqué comme terminé",
-      "status_production": "Statut de production",
       "status_update_failed": "Impossible de mettre à jour le statut.",
+      "toggle": "",
       "updating_status": "Mise à jour du statut..."
     },
     "cast": {
@@ -928,6 +948,7 @@
         "available": "Base artistes"
       },
       "title": "Distribution vocale",
+      "title_short": "",
       "toast": {
         "added": "Ajouté à la distribution",
         "removed": "Retiré de la distribution"
@@ -946,13 +967,14 @@
       },
       "list": {
         "assigned_count_one": "{{count}} personne assignée",
+        "assigned_count_few": "{{count}} personnes assignées",
         "assigned_count_many": "{{count}} personnes assignées",
         "assigned_count_other": "{{count}} personnes assignées",
         "remove_title": "Retirer de l'équipe technique",
-        "title": "Membres de l'équipe",
-        "assigned_count_few": "{{count}} personnes assignées"
+        "title": "Membres de l'équipe"
       },
       "title": "Équipe",
+      "title_short": "",
       "toast": {
         "assign_error": "Erreur d'affectation",
         "assign_error_desc": "Impossible d'affecter ce membre d'équipe au projet.",
@@ -974,12 +996,15 @@
       "header_title_2": "Production"
     },
     "details": {
+      "date_title": "",
       "description_title": "Description de l'événement",
       "dress_code_female": "Femmes :",
       "dress_code_male": "Hommes :",
       "dress_code_title": "Dress code",
+      "location_title": "",
       "no_description": "Aucune note supplémentaire pour cet événement.",
       "no_dress_code": "Aucune exigence vestimentaire.",
+      "time_title": "",
       "toast": {
         "create_success": "Nouveau projet et planning créés",
         "saving": "Enregistrement des détails du projet...",
@@ -1000,6 +1025,8 @@
       },
       "fields": {
         "call_time": "Convocation",
+        "conductor": "",
+        "conductor_placeholder": "",
         "date_time": "Date et heure *",
         "description": "Description de l'événement",
         "dress_code_female": "Dress code : femmes",
@@ -1030,26 +1057,16 @@
       }
     },
     "editor": {
+      "active_tab": "Onglet actif",
       "archive_badge": "Archive",
+      "create_description": "Enregistrez d’abord les informations principales de l’événement, puis poursuivez dans les onglets opérationnels.",
       "new_project": "Créateur de nouvel événement",
+      "new_project_title": "Nouveau projet",
+      "tabs_aria": "Onglets de l’éditeur de projet",
       "unsaved_changes_desc": "Vous avez des modifications non enregistrées dans cet onglet. Quitter la vue supprimera les données locales.",
       "unsaved_changes_title": "Modifications non enregistrées",
       "workspace": "Espace projet",
-      "new_project_title": "Nouveau projet",
-      "workspace_description": "Gérez les détails du projet, les répétitions, la distribution et la logistique dans un seul espace opérationnel.",
-      "create_description": "Enregistrez d’abord les informations principales de l’événement, puis poursuivez dans les onglets opérationnels.",
-      "active_tab": "Onglet actif",
-      "tabs_aria": "Onglets de l’éditeur de projet",
-      "tabs": {
-        "details": "Détails",
-        "rehearsals": "Répétitions",
-        "matrix": "Présences",
-        "cast": "Distribution",
-        "program": "Programme",
-        "micro_cast": "Micro-casting",
-        "crew": "Équipe",
-        "budget": "Budget"
-      }
+      "workspace_description": "Gérez les détails du projet, les répétitions, la distribution et la logistique dans un seul espace opérationnel."
     },
     "exports": {
       "call_sheet": "Télécharger le Call Sheet",
@@ -1140,15 +1157,16 @@
         "remove_from_program": "Retirer du programme"
       },
       "and_more_one": "et 1 de plus...",
+      "and_more_few": "et {{count}} de plus...",
       "and_more_many": "et {{count}} de plus...",
       "and_more_other": "et {{count}} de plus...",
       "aria_label": "Gérer le programme du concert",
       "badges": {
         "encore": "BIS",
         "tracks_count_one": "{{count}} piste",
+        "tracks_count_few": "{{count}} pistes",
         "tracks_count_many": "{{count}} pistes",
-        "tracks_count_other": "{{count}} pistes",
-        "tracks_count_few": "{{count}} pistes"
+        "tracks_count_other": "{{count}} pistes"
       },
       "duration_unknown": "Durée inconnue",
       "empty": {
@@ -1189,8 +1207,7 @@
         "save_order_success": "Ordre enregistré avec succès",
         "saving_order": "Enregistrement du nouvel ordre..."
       },
-      "unfulfilled": "Non couvert",
-      "and_more_few": "et {{count}} de plus..."
+      "unfulfilled": "Non couvert"
     },
     "rehearsals": {
       "absences_reported": "Absences signalées :",
@@ -1232,13 +1249,13 @@
       "status": {
         "finished": "Terminée",
         "invited_one": "1 invité",
+        "invited_few": "{{count}} invités",
         "invited_many": "{{count}} invités",
         "invited_other": "{{count}} invités",
         "optional": "Optionnel",
-        "tutti": "TUTTI",
-        "invited_few": "{{count}} invités"
+        "tutti": "TUTTI"
       },
-      "title": "Répétitions",
+      "title_short": "",
       "toast": {
         "remove_error_desc": "Impossible de supprimer la répétition. Le serveur a rejeté la requête.",
         "remove_success": "La répétition a été supprimée",
@@ -1246,6 +1263,7 @@
         "save_error_desc": "Un problème est survenu lors de l'enregistrement dans la base. Vérifiez le formulaire et la connexion.",
         "save_success": "Répétition enregistrée avec succès",
         "saving": "Enregistrement de la répétition dans le calendrier...",
+        "select_location": "",
         "select_target": "Sélectionnez au moins une personne ou un pupitre pour la répétition !",
         "update_success": "Répétition mise à jour avec succès",
         "updating": "Mise à jour de la répétition..."
@@ -1258,6 +1276,9 @@
         "sopranos": "Sopranos",
         "tenors": "Ténors"
       }
+    },
+    "roles": {
+      "maestro": ""
     },
     "run_sheet": {
       "empty": "Aucune feuille de route disponible pour cet événement.",
@@ -1273,14 +1294,13 @@
       "delete_error_desc": "Vérifiez les relations du projet dans la base de données (il peut avoir des contrats ou des présences associés).",
       "delete_error_title": "Erreur de suppression",
       "delete_loading": "Suppression du projet...",
-      "delete_success": "Projet supprimé avec succès",
-      "sync_error_desc": "Les dictionnaires n'ont pas été récupérés correctement.",
-      "sync_error_title": "Erreur de synchronisation"
+      "delete_success": "Projet supprimé avec succès"
     }
   },
   "rehearsals": {
     "dashboard": {
       "bulk_fill_one": "Remplir {{count}} manquant",
+      "bulk_fill_few": "Remplir {{count}} manquants",
       "bulk_fill_many": "Remplir {{count}} manquants",
       "bulk_fill_other": "Remplir {{count}} manquants",
       "general_work": "Travail général",
@@ -1293,16 +1313,11 @@
       "title": "Journal des",
       "title_highlight": "présences",
       "tutti": "Tutti (ensemble complet)",
-      "tutti_badge": "Répétition tutti",
-      "bulk_fill_few": "Remplir {{count}} manquants"
+      "tutti_badge": "Répétition tutti"
     },
     "row": {
       "minutes_placeholder": "Combien de min ?",
-      "note_placeholder": "Note (optionnelle)",
-      "status_absent": "Absent",
-      "status_excused": "Excusé",
-      "status_late": "En retard",
-      "status_present": "Présent"
+      "note_placeholder": "Note (optionnelle)"
     },
     "stats": {
       "absent": "Absents",
@@ -1370,6 +1385,7 @@
     },
     "dashboard": {
       "badge": "Base de connaissances et documents",
+      "description": "",
       "title": "Ressources de la",
       "title_highlight": "Fondation"
     }
@@ -1395,10 +1411,6 @@
       "note_label": "Note :",
       "project_badge": "Concert / Événement",
       "run_sheet_title": "Feuille de route",
-      "tab": {
-        "logistics": "Logistique & Plan",
-        "setlist": "Répertoire & Divisi"
-      },
       "unknown_artist": "Artiste"
     },
     "dashboard": {
@@ -1449,10 +1461,6 @@
       "status_late": "Retard",
       "status_present": "Confirmé"
     },
-    "tabs": {
-      "past": "Historique",
-      "upcoming": "À venir"
-    },
     "toast": {
       "submit_error_desc": "Impossible d'enregistrer le signalement.",
       "submit_error_title": "Erreur d'enregistrement",
@@ -1462,13 +1470,15 @@
   },
   "settings": {
     "errors": {
-      "invalid_current_password": "Mot de passe invalide. Réessayez."
+      "invalid_current_password": "Mot de passe invalide. Réessayez.",
+      "unknown_error": ""
     },
     "general": {
       "firstName": "Prénom",
       "language": "Langue de l'interface",
       "lastName": "Nom",
       "phone": "Numéro de téléphone",
+      "preferencesTitle": "",
       "subtitle": "Gérez vos données et préférences d'application.",
       "timezone": "Fuseau horaire",
       "title": "Paramètres généraux"
@@ -1509,8 +1519,15 @@
       "title": "Logistique et déplacements"
     },
     "membership": {
-      "title": "Profil artiste",
       "voice": "Votre voix"
+    },
+    "nav": {
+      "aria": ""
+    },
+    "page": {
+      "highlight": "du compte",
+      "role": "PANNEAU UTILISATEUR",
+      "title": "Paramètres"
     },
     "privacy": {
       "confirmPasswordLabel": "Confirmez avec votre mot de passe pour supprimer le compte",
@@ -1536,11 +1553,30 @@
       "updatePassword": "Changer le mot de passe"
     },
     "tabs": {
-      "general": "Général",
-      "integrations": "Intégrations",
-      "logistics": "Logistique",
-      "privacy": "Confidentialité",
-      "security": "Sécurité"
+      "general": {
+        "label": "Général",
+        "short": "Général"
+      },
+      "integrations": {
+        "label": "Intégrations",
+        "short": "Calend."
+      },
+      "logistics": {
+        "label": "Logistique",
+        "short": "Logistique"
+      },
+      "notifications": {
+        "label": "Notifications",
+        "short": "Alertes"
+      },
+      "privacy": {
+        "label": "Confidentialité",
+        "short": "Confid."
+      },
+      "security": {
+        "label": "Sécurité",
+        "short": "Mot de passe"
+      }
     }
   },
   "shared": {

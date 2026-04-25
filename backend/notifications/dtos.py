@@ -78,6 +78,26 @@ class ManagerActionMetadata(EnterpriseBaseDTO):
     rehearsal_date: Optional[str] = None
     message: Optional[str] = None
 
+
+class CustomAdminMessageMetadata(EnterpriseBaseDTO):
+    """Payload for direct manager → artist messages. Carries sender context for read receipts."""
+    title: str = Field(..., max_length=120)
+    message: str = Field(..., max_length=2000)
+    sender_id: Union[str, UUID]
+    sender_name: str
+    level: str = Field(default="INFO")
+    cta_url: Optional[str] = Field(None, max_length=500)
+    cta_label: Optional[str] = Field(None, max_length=80)
+
+
+class NotificationReadReceiptMetadata(EnterpriseBaseDTO):
+    """Payload sent back to the manager when the artist reads a CUSTOM_ADMIN_MESSAGE."""
+    artist_name: str
+    artist_id: Union[str, UUID]
+    original_title: str
+    read_at: str
+
+
 # Polymorphic Payload Definition
 NotificationMetadataPayload = Union[
     ProjectInvitationMetadata,
@@ -89,7 +109,9 @@ NotificationMetadataPayload = Union[
     CrewAssignedMetadata,
     AbsenceStatusMetadata,
     ManagerActionMetadata,
-    Dict[str, Any] # Enterprise fallback for manual custom alerts
+    CustomAdminMessageMetadata,
+    NotificationReadReceiptMetadata,
+    Dict[str, Any]
 ]
 
 # ==========================================

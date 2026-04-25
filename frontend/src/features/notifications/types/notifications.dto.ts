@@ -21,7 +21,9 @@ export type NotificationType =
   | "ABSENCE_REJECTED"
   | "SYSTEM_ALERT"
   | "PARTICIPATION_RESPONSE"
-  | "ATTENDANCE_SUBMITTED";
+  | "ATTENDANCE_SUBMITTED"
+  | "CUSTOM_ADMIN_MESSAGE"
+  | "NOTIFICATION_READ_RECEIPT";
 
 // ==========================================
 // STRICT METADATA PAYLOADS
@@ -94,6 +96,23 @@ export interface ManagerActionMetadata {
   rehearsal_date?: string;
 }
 
+export interface CustomAdminMessageMetadata {
+  title: string;
+  message: string;
+  sender_id: string;
+  sender_name: string;
+  level: NotificationLevel;
+  cta_url?: string | null;
+  cta_label?: string | null;
+}
+
+export interface NotificationReadReceiptMetadata {
+  artist_name: string;
+  artist_id: string;
+  original_title: string;
+  read_at: string;
+}
+
 export type DefaultMetadata = Record<string, unknown>;
 
 // ==========================================
@@ -152,6 +171,14 @@ export type NotificationDTO = BaseNotification &
           | "CONTRACT_ISSUED"
           | "SYSTEM_ALERT";
         metadata: DefaultMetadata;
+      }
+    | {
+        notification_type: "CUSTOM_ADMIN_MESSAGE";
+        metadata: CustomAdminMessageMetadata;
+      }
+    | {
+        notification_type: "NOTIFICATION_READ_RECEIPT";
+        metadata: NotificationReadReceiptMetadata;
       }
   );
 

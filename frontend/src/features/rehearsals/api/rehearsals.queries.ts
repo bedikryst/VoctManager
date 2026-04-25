@@ -124,7 +124,7 @@ export const useMarkMissingAttendancesPresent = () => {
             participation: entry.participationId,
             status: "PRESENT",
             minutes_late: null,
-            excuse_note: null,
+            excuse_note: "",
           };
 
           return entry.attendanceId

@@ -36,7 +36,7 @@ export const ProjectInvitationToasts: React.FC = () => {
 
   useEffect(() => {
     const pendingInvitations = notifications.filter(
-      (n) => n.notification_type === "PROJECT_INVITATION" && !n.is_read
+      (n) => n.notification_type === "PROJECT_INVITATION" && !n.is_read,
     );
 
     pendingInvitations.forEach((notification) => {
@@ -51,10 +51,10 @@ export const ProjectInvitationToasts: React.FC = () => {
         (toastId) => (
           <GlassCard className="p-4 flex flex-col gap-3 w-full min-w-[320px] max-w-[400px]">
             <div>
-              <Heading as="h5" size="lg" className="text-ethereal-graphite dark:text-ethereal-parchment">
+              <Heading as="h5" size="lg" color="graphite">
                 {metadata.project_name}
               </Heading>
-              <Text size="sm" className="text-ethereal-graphite/60 dark:text-white/60 mb-2">
+              <Text size="sm" color="graphite" className="mb-2">
                 {t("notifications.invitation_toast.title")}
               </Text>
             </div>
@@ -64,7 +64,8 @@ export const ProjectInvitationToasts: React.FC = () => {
                 <UserIcon size={14} className="text-ethereal-amethyst" />
                 <Text size="sm">
                   {t("notifications.invitation_toast.invites", {
-                    name: metadata.inviter_name || t("common.management", "Zarząd"),
+                    name:
+                      metadata.inviter_name || t("common.management", "Zarząd"),
                   })}
                 </Text>
               </div>
@@ -74,10 +75,15 @@ export const ProjectInvitationToasts: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 text-ethereal-graphite/80 dark:text-white/80">
                 <MapPin size={14} className="text-ethereal-gold" />
-                <Text size="sm" className="truncate">{metadata.location}</Text>
+                <Text size="sm" className="truncate">
+                  {metadata.location}
+                </Text>
               </div>
               {metadata.description && (
-                <Text size="xs" className="mt-1 text-ethereal-graphite/60 dark:text-white/60 italic line-clamp-2">
+                <Text
+                  size="xs"
+                  className="mt-1 text-ethereal-graphite/60 dark:text-white/60 italic line-clamp-2"
+                >
                   {metadata.description}
                 </Text>
               )}
@@ -117,7 +123,7 @@ export const ProjectInvitationToasts: React.FC = () => {
           duration: Infinity,
           id: notification.id,
           position: "top-center",
-        }
+        },
       );
     });
   }, [notifications, markAsRead, updateStatusMutation, t]);

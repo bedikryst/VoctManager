@@ -205,6 +205,7 @@
       "save_profile": "Save Profile",
       "section_basic": "Basic Information",
       "section_voice": "Vocal Profile",
+      "send_notification": "Wyślij powiadomienie",
       "sight_reading": "Sight-reading (Score)",
       "stars_count_one": "{{count}} star",
       "stars_count_other": "{{count}} stars",
@@ -212,9 +213,7 @@
       "title_new": "New Artist",
       "unsaved_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
       "unsaved_title": "You have unsaved changes!",
-      "voice_type": "Voice Type *",
-      "stars_count_few": "{{count}} stars",
-      "stars_count_many": "{{count}} stars"
+      "voice_type": "Voice Type *"
     },
     "filters": {
       "all": "All",
@@ -299,7 +298,8 @@
       "submit_button": "Authorize access",
       "submitting": "Authorizing...",
       "subtitle": "Administration & HR Panel"
-    }
+    },
+    "logout": "Wyloguj się"
   },
   "common": {
     "actions": {
@@ -323,6 +323,7 @@
     },
     "artist_generic": "Artist's",
     "cancel": "Cancel",
+    "close": "Zamknij",
     "conductor_prefix": "Maestro",
     "currency": "PLN",
     "edit": "Edit",
@@ -337,13 +338,17 @@
       "server_error": "Server error",
       "server_problem": "A problem occurred with the server."
     },
+    "labels": {
+      "not_available": "Brak danych"
+    },
     "locale": "en-US",
+    "management": "Zarząd",
     "people_short": "ppl.",
     "rightsReserved": "common.rightsReserved",
     "save_changes": "Save Changes",
+    "select_location": "--- Wybierz zapisaną lokalizację ---",
     "send": "Send",
     "state": {
-      "loading": "Loading...",
       "saved": "Saved"
     },
     "status": {
@@ -409,9 +414,7 @@
       "pdf_error": "Generation error: {{message}}",
       "pdf_generating": "Generating PDF for {{name}}...",
       "pdf_success": "Document generated successfully.",
-      "save_error": "Failed to save compensation for: {{name}}.",
-      "bulk_success_few": "Updated {{count}} contracts.",
-      "bulk_success_many": "Updated {{count}} contracts."
+      "save_error": "Failed to save compensation for: {{name}}."
     }
   },
   "crew": {
@@ -493,7 +496,22 @@
         "transport": "Transport",
         "vendors": "Vendors"
       },
+      "inv_col_concert": "Koncert",
+      "inv_col_email": "E-mail",
+      "inv_col_person": "Osoba",
+      "inv_col_phone": "Telefon",
+      "inv_confirmed": "Potwierdzeni",
+      "inv_declined": "Odrzucili",
+      "inv_details_link": "Szczegóły",
+      "inv_empty": "Brak uczestników do wyświetlenia",
+      "inv_loading": "Ładowanie listy...",
+      "inv_modal_subtitle_one": "Aktywne projekty · {{count}} uczestników",
+      "inv_modal_subtitle_other": "Aktywne projekty · {{count}} uczestników",
+      "inv_modal_title": "Status Zaproszeń",
+      "inv_open_details_aria": "Otwórz szczegółową listę zaproszeń",
+      "inv_pending": "Oczekujący",
       "kpi_active_projects": "Active Directives",
+      "kpi_invitations": "Status Zaproszeń",
       "kpi_pieces": "Sacral Repertoire",
       "kpi_readiness": "Harmonic Cohesion",
       "kpi_telemetry": "Database Telemetry",
@@ -516,9 +534,7 @@
         "status_active": "In Production",
         "status_prep": "In Preparation"
       },
-      "unknown_project": "Unknown project",
-      "absences_few": "{{count}} reported absences",
-      "absences_many": "{{count}} reported absences"
+      "unknown_project": "Unknown project"
     },
     "artist": {
       "absence_status": "Absence status",
@@ -535,12 +551,12 @@
       "empty_events_desc": "Rest. Your musical calendar is currently empty. Time to regenerate your voice.",
       "empty_events_title": "No upcoming events",
       "features": {
-        "events": "Rehearsals & Concerts",
         "absences": "Report Absence",
-        "pdf_scores": "PDF Scores",
         "audio_tracks": "Audio Tracks",
         "dress_code": "Dress-code",
-        "logistics": "Logistics"
+        "events": "Rehearsals & Concerts",
+        "logistics": "Logistics",
+        "pdf_scores": "PDF Scores"
       },
       "general_work": "General work",
       "greeting_afternoon": "Good afternoon",
@@ -549,16 +565,10 @@
       "greeting_night": "Good night",
       "label_call_time": "Call time: ",
       "modules": {
-        "schedule_title": "Schedule",
         "materials_title": "Repertoire",
-        "resources_title": "Knowledge"
+        "resources_title": "Knowledge",
+        "schedule_title": "Schedule"
       },
-      "module_materials_desc": "Your personal repository. Download PDF scores and practice with dedicated audio tracks.",
-      "module_materials_title": "Materials",
-      "module_resources_desc": "Check conductor guidelines, current dress code, and contracts/regulations.",
-      "module_resources_title": "Knowledge Base",
-      "module_schedule_desc": "Check rehearsals, concerts, and easily report your absence to the inspector.",
-      "module_schedule_title": "My Calendar",
       "nav_aria": "Artist navigation",
       "next_challenges": "On the horizon",
       "note_dashboard_confirm": "Presence confirmed from Dashboard",
@@ -580,11 +590,6 @@
       "actions": {
         "logout": "Log out",
         "settings": "Settings"
-      },
-      "aria": {
-        "closeMenu": "Close menu",
-        "openMenu": "Open navigation menu",
-        "sidebar": "Main Navigation"
       },
       "groups": {
         "artist_zone": "Artist Zone",
@@ -608,10 +613,14 @@
         "resources": "Knowledge Base",
         "schedule": "My Schedule"
       },
+      "nav": {
+        "main_menu": "dashboard.layout.nav.main_menu"
+      },
       "roles": {
         "admin": "Administrator",
         "artist": "Artist",
-        "crew": "Crew"
+        "crew": "Crew",
+        "guest": "Guest"
       }
     },
     "shared": {
@@ -743,6 +752,7 @@
       "audio_badge": "Audio",
       "cast_divisi": "Piece Cast (Divisi)",
       "download_pdf": "Download Score (PDF)",
+      "encore_badge": "Bis",
       "listen_reference": "Listen to Reference",
       "locked_badge": "Protected",
       "lyrics_translation": "Lyrics and Translation",
@@ -757,7 +767,6 @@
       "traditional": "Traditional / Unknown",
       "translation_notes": "Translation (Notes)",
       "unknown_artist": "Artist",
-      "you_sing": "You sing:",
       "your_guidelines": "Your guidelines for the piece"
     },
     "player": {
@@ -800,45 +809,49 @@
         "active": "Status: Active",
         "location": "Krakow, PL — VoctEnsemble Foundation"
       }
+    },
+    "settings": "Ustawienia",
+    "sheet": {
+      "accessibility_label": "Expanded mobile navigation"
     }
   },
   "notifications": {
     "changed": "Changed:",
     "crew_role": "Assigned Role: {{role}}",
+    "custom_message": {
+      "from": "notifications.custom_message.from",
+      "mark_read": "notifications.custom_message.mark_read",
+      "open_link": "notifications.custom_message.open_link"
+    },
     "empty_subtitle": "You have no new notifications.",
     "empty_title": "All caught up!",
-    "mark_all_read": "Mark all as read",
-    "title": "Notifications",
-    "unread": "Unread",
-    "types": {
-      "PROJECT_INVITATION": "Project Invitation",
-      "PROJECT_UPDATED": "Project Updated",
-      "PROJECT_CANCELLED": "Project Cancelled",
-      "PROJECT_REMINDER": "Project Reminder",
-      "REHEARSAL_SCHEDULED": "Rehearsal Scheduled",
-      "REHEARSAL_UPDATED": "Rehearsal Updated",
-      "REHEARSAL_CANCELLED": "Rehearsal Cancelled",
-      "REHEARSAL_REMINDER": "Rehearsal Reminder",
-      "PIECE_CASTING_ASSIGNED": "Casting Assigned",
-      "PIECE_CASTING_UPDATED": "Casting Updated",
-      "MATERIAL_UPLOADED": "New Material",
-      "CREW_ASSIGNED": "Crew Assigned",
-      "CONTRACT_ISSUED": "Contract Ready",
-      "ABSENCE_REQUESTED": "Absence Requested",
-      "ABSENCE_APPROVED": "Absence Approved",
-      "ABSENCE_REJECTED": "Absence Rejected",
-      "SYSTEM_ALERT": "System Alert",
-      "PARTICIPATION_RESPONSE": "Artist Response",
-      "ATTENDANCE_SUBMITTED": "Attendance Submitted"
-    },
     "invitation_toast": {
-      "title": "New project invitation",
-      "invites": "Invited by: {{name}}",
-      "status_updated": "Participation status updated",
-      "status_error": "Error updating participation status",
       "accept": "Accept",
-      "decline": "Decline"
-    }
+      "decline": "Decline",
+      "invites": "Invited by: {{name}}",
+      "status_error": "Error updating participation status",
+      "status_updated": "Participation status updated",
+      "title": "New project invitation"
+    },
+    "mark_all_read": "Mark all as read",
+    "send_modal": {
+      "cta_label": "notifications.send_modal.cta_label",
+      "cta_label_placeholder": "notifications.send_modal.cta_label_placeholder",
+      "cta_optional": "notifications.send_modal.cta_optional",
+      "cta_url": "notifications.send_modal.cta_url",
+      "error": "notifications.send_modal.error",
+      "heading": "Wyślij powiadomienie",
+      "level": "Poziom ważności",
+      "message": "notifications.send_modal.message",
+      "message_placeholder": "notifications.send_modal.message_placeholder",
+      "send": "notifications.send_modal.send",
+      "sending": "notifications.send_modal.sending",
+      "success": "notifications.send_modal.success",
+      "title": "notifications.send_modal.title",
+      "title_placeholder": "notifications.send_modal.title_placeholder"
+    },
+    "title": "Notifications",
+    "unread": "Unread"
   },
   "preloader": {
     "resonance": "résonance",
@@ -897,8 +910,8 @@
       "logistics_dashboard": "Logistics & Production",
       "status_active": "Project marked as in preparation",
       "status_done": "Project marked as completed",
-      "status_production": "Production status",
       "status_update_failed": "Failed to update status.",
+      "toggle": "Przełącz widok szczegółów projektu",
       "updating_status": "Updating status..."
     },
     "cast": {
@@ -928,6 +941,7 @@
         "available": "Artist Database"
       },
       "title": "Vocal Cast",
+      "title_short": "artystów",
       "toast": {
         "added": "Added to cast",
         "removed": "Removed from cast"
@@ -948,11 +962,10 @@
         "assigned_count_one": "{{count}} assigned",
         "assigned_count_other": "{{count}} assigned",
         "remove_title": "Remove from technical crew",
-        "title": "Crew Members",
-        "assigned_count_few": "{{count}} people assigned",
-        "assigned_count_many": "{{count}} people assigned"
+        "title": "Crew Members"
       },
       "title": "Crew",
+      "title_short": "tech",
       "toast": {
         "assign_error": "Assignment error",
         "assign_error_desc": "Failed to assign crew member to the project.",
@@ -974,12 +987,15 @@
       "header_title_2": "Production"
     },
     "details": {
+      "date_title": "Termin",
       "description_title": "Event Description",
       "dress_code_female": "Women:",
       "dress_code_male": "Men:",
       "dress_code_title": "Dress Code",
+      "location_title": "Miejsce",
       "no_description": "There are no additional notes for this event.",
       "no_dress_code": "No dress code requirements.",
+      "time_title": "Czas lokalny",
       "toast": {
         "create_success": "New project and schedule created",
         "saving": "Saving project details...",
@@ -1000,6 +1016,8 @@
       },
       "fields": {
         "call_time": "Call Time",
+        "conductor": "Dyrygent",
+        "conductor_placeholder": "--- Wybierz dyrygenta ---",
         "date_time": "Date and Time *",
         "description": "Event description",
         "dress_code_female": "Dress Code: Women",
@@ -1030,26 +1048,16 @@
       }
     },
     "editor": {
+      "active_tab": "Active tab",
       "archive_badge": "Archive",
+      "create_description": "Save the core event details first, then continue to the operational tabs.",
       "new_project": "New event creator",
+      "new_project_title": "New project",
+      "tabs_aria": "Project editor tabs",
       "unsaved_changes_desc": "You have unsaved changes in this tab. Leaving the view will discard local data.",
       "unsaved_changes_title": "Unsaved changes",
       "workspace": "Project workspace",
-      "new_project_title": "New project",
-      "workspace_description": "Manage project details, rehearsals, casting, and logistics in one operational workspace.",
-      "create_description": "Save the core event details first, then continue to the operational tabs.",
-      "active_tab": "Active tab",
-      "tabs_aria": "Project editor tabs",
-      "tabs": {
-        "details": "Details",
-        "rehearsals": "Rehearsals",
-        "matrix": "Attendance",
-        "cast": "Cast",
-        "program": "Program",
-        "micro_cast": "Micro-casting",
-        "crew": "Crew",
-        "budget": "Budget"
-      }
+      "workspace_description": "Manage project details, rehearsals, casting, and logistics in one operational workspace."
     },
     "exports": {
       "call_sheet": "Download Call Sheet",
@@ -1145,9 +1153,7 @@
       "badges": {
         "encore": "ENCORE",
         "tracks_count_one": "{{count}} track",
-        "tracks_count_other": "{{count}} tracks",
-        "tracks_count_few": "{{count}} tracks",
-        "tracks_count_many": "{{count}} tracks"
+        "tracks_count_other": "{{count}} tracks"
       },
       "duration_unknown": "Duration unknown",
       "empty": {
@@ -1188,9 +1194,7 @@
         "save_order_success": "Order saved successfully",
         "saving_order": "Saving new order..."
       },
-      "unfulfilled": "Unfulfilled",
-      "and_more_few": "and {{count}} more...",
-      "and_more_many": "and {{count}} more..."
+      "unfulfilled": "Unfulfilled"
     },
     "rehearsals": {
       "absences_reported": "Reported absences:",
@@ -1234,11 +1238,9 @@
         "invited_one": "1 invited",
         "invited_other": "{{count}} invited",
         "optional": "Optional",
-        "tutti": "TUTTI",
-        "invited_few": "{{count}} invited",
-        "invited_many": "{{count}} invited"
+        "tutti": "TUTTI"
       },
-      "title": "Rehearsals",
+      "title_short": "prób",
       "toast": {
         "remove_error_desc": "Failed to delete rehearsal. The server rejected the request.",
         "remove_success": "Rehearsal has been deleted",
@@ -1246,6 +1248,7 @@
         "save_error_desc": "A problem occurred while saving to the database. Check the form and connection.",
         "save_success": "Rehearsal saved successfully",
         "saving": "Saving rehearsal to calendar...",
+        "select_location": "Wybierz lokalizacjÄ™ prĂłby przed zapisem.",
         "select_target": "Select at least one person or section for the rehearsal!",
         "update_success": "Rehearsal updated successfully",
         "updating": "Updating rehearsal..."
@@ -1258,6 +1261,9 @@
         "sopranos": "Sopranos",
         "tenors": "Tenors"
       }
+    },
+    "roles": {
+      "maestro": "Maestro"
     },
     "run_sheet": {
       "empty": "No run sheet available for this event.",
@@ -1273,9 +1279,7 @@
       "delete_error_desc": "Check project relations in the database (it might have assigned contracts or attendance records).",
       "delete_error_title": "Deletion error",
       "delete_loading": "Deleting project...",
-      "delete_success": "Project deleted successfully",
-      "sync_error_desc": "Dictionaries were not fetched properly.",
-      "sync_error_title": "Sync error"
+      "delete_success": "Project deleted successfully"
     }
   },
   "rehearsals": {
@@ -1292,17 +1296,11 @@
       "title": "Attendance",
       "title_highlight": "Logbook",
       "tutti": "Tutti (Full Ensemble)",
-      "tutti_badge": "Tutti Rehearsal",
-      "bulk_fill_few": "Fill {{count}} missing",
-      "bulk_fill_many": "Fill {{count}} missing"
+      "tutti_badge": "Tutti Rehearsal"
     },
     "row": {
       "minutes_placeholder": "How many min?",
-      "note_placeholder": "Note (optional)",
-      "status_absent": "Absent",
-      "status_excused": "Excused",
-      "status_late": "Late",
-      "status_present": "Present"
+      "note_placeholder": "Note (optional)"
     },
     "stats": {
       "absent": "Missing",
@@ -1370,6 +1368,7 @@
     },
     "dashboard": {
       "badge": "Knowledge Base and Documents",
+      "description": "Przeglądaj oficjalne dokumenty, regulaminy i wytyczne niezbędne do funkcjonowania w zespole.",
       "title": "Foundation",
       "title_highlight": "Resources"
     }
@@ -1395,10 +1394,6 @@
       "note_label": "Note:",
       "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
-      "tab": {
-        "logistics": "Logistics & Plan",
-        "setlist": "Repertoire & Divisi"
-      },
       "unknown_artist": "Artist"
     },
     "dashboard": {
@@ -1449,10 +1444,6 @@
       "status_late": "Running Late",
       "status_present": "Confirmed"
     },
-    "tabs": {
-      "past": "History",
-      "upcoming": "Upcoming"
-    },
     "toast": {
       "submit_error_desc": "Failed to save the report.",
       "submit_error_title": "Save error",
@@ -1462,13 +1453,15 @@
   },
   "settings": {
     "errors": {
-      "invalid_current_password": "Invalid password. Try again."
+      "invalid_current_password": "Invalid password. Try again.",
+      "unknown_error": "Wystąpił błąd. Spróbuj ponownie."
     },
     "general": {
       "firstName": "First Name",
       "language": "Interface Language",
       "lastName": "Last Name",
       "phone": "Phone Number",
+      "preferencesTitle": "Preferencje",
       "subtitle": "Manage your data and application preferences.",
       "timezone": "Time Zone",
       "title": "General Settings"
@@ -1509,8 +1502,15 @@
       "title": "Logistics and Travel"
     },
     "membership": {
-      "title": "Artist Profile",
       "voice": "Your Voice"
+    },
+    "nav": {
+      "aria": "Menu ustawień"
+    },
+    "page": {
+      "highlight": "account",
+      "role": "USER PANEL",
+      "title": "Settings"
     },
     "privacy": {
       "confirmPasswordLabel": "Confirm with your password to delete the account",
@@ -1536,11 +1536,30 @@
       "updatePassword": "Change Password"
     },
     "tabs": {
-      "general": "General",
-      "integrations": "Integrations",
-      "logistics": "Logistics",
-      "privacy": "Privacy",
-      "security": "Security"
+      "general": {
+        "label": "General",
+        "short": "General"
+      },
+      "integrations": {
+        "label": "Integrations",
+        "short": "Calendars"
+      },
+      "logistics": {
+        "label": "Logistics",
+        "short": "Logistics"
+      },
+      "notifications": {
+        "label": "Notifications",
+        "short": "Alerts"
+      },
+      "privacy": {
+        "label": "Privacy",
+        "short": "Privacy"
+      },
+      "security": {
+        "label": "Security",
+        "short": "Password"
+      }
     }
   },
   "shared": {

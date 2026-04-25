@@ -79,23 +79,19 @@ export function ProgramWidget({
                 key={item.id}
                 className="flex items-center justify-between gap-3 rounded-xl border border-ethereal-incense/10 bg-ethereal-alabaster/60 px-3 py-2"
               >
-                <Text
-                  as="span"
-                  size="sm"
-                  weight="medium"
-                  className="min-w-0 truncate pr-2"
-                >
-                  <Text
+                <div className="flex min-w-0 items-center gap-2.5 truncate pr-2">
+                  <Caption
                     as="span"
-                    size="sm"
-                    weight="medium"
-                    color="muted"
-                    className="inline-block w-4"
+                    color="gold"
+                    weight="bold"
+                    className="shrink-0 tabular-nums"
                   >
-                    {index + 1}.
-                  </Text>{" "}
-                  {item.title}
-                </Text>
+                    {String(index + 1).padStart(2, "0")}
+                  </Caption>
+                  <Text as="span" size="sm" weight="medium" className="truncate">
+                    {item.title}
+                  </Text>
+                </div>
                 <Badge variant={item.statusVariant}>{item.statusText}</Badge>
               </li>
             ))}
@@ -115,7 +111,7 @@ export function ProgramWidget({
             )}
           </ul>
 
-          <div className="mt-auto flex-shrink-0 border-t border-ethereal-incense/10 pt-3 text-center">
+          <div className="mt-auto shrink-0 border-t border-ethereal-incense/10 pt-3 text-center">
             {hasDuration ? (
               <Badge
                 variant="brand"

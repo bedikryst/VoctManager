@@ -1,0 +1,21 @@
+{% load i18n %}
+VoctManager — {% blocktranslate trimmed with sender=metadata.sender_name %}Message from {{ sender }}{% endblocktranslate %}
+
+---
+
+{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+
+{{ metadata.title }}
+
+{{ metadata.message }}
+
+{% if metadata.cta_url %}
+{% if metadata.cta_label %}{{ metadata.cta_label }}{% else %}{% translate "Open link" %}{% endif %}:
+{{ metadata.cta_url }}
+{% else %}
+{% translate "Open VoctManager" %}: {{ site_url }}/panel
+{% endif %}
+
+---
+{% translate "With warmest regards," %}
+{% translate "The VoctEnsemble Team" %}

@@ -16,6 +16,7 @@ import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
+import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 
 export const DashboardLayout = (): React.JSX.Element => {
   const { user, logout } = useAuth();
@@ -53,6 +54,7 @@ export const DashboardLayout = (): React.JSX.Element => {
         </div>
       </main>
       <ProjectInvitationToasts />
+      <CustomAdminMessageToast />
     </div>
   );
 };

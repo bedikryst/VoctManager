@@ -18,6 +18,7 @@ import {
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
@@ -194,32 +195,16 @@ export const RehearsalsWidget = ({
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-1">
-                      <div
-                        className={`rounded-full px-2 py-1 ${
-                          isTutti
-                            ? "bg-ethereal-sage/15 text-ethereal-sage"
-                            : "bg-ethereal-amethyst/10 text-ethereal-amethyst"
-                        }`}
-                      >
-                        <Caption
-                          weight="bold"
-                          color="inherit"
-                          className="uppercase tracking-[0.16em]"
-                        >
-                          {isTutti
-                            ? t("projects.rehearsals.tutti", "TUTTI")
-                            : t("projects.rehearsals.sectional", "SEKCYJNA")}
-                        </Caption>
-                      </div>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <Badge variant={isTutti ? "success" : "amethyst"}>
+                        {isTutti
+                          ? t("projects.rehearsals.tutti", "TUTTI")
+                          : t("projects.rehearsals.sectional", "SEKCYJNA")}
+                      </Badge>
                       {!rehearsal.is_mandatory && (
-                        <Caption
-                          color="crimson"
-                          weight="bold"
-                          className="uppercase tracking-[0.16em]"
-                        >
+                        <Badge variant="danger">
                           {t("projects.rehearsals.optional", "Opcjonalna")}
-                        </Caption>
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -229,15 +214,19 @@ export const RehearsalsWidget = ({
           </ul>
         </div>
       ) : (
-        <Text
-          color="muted"
-          className="flex flex-1 items-center justify-center py-4"
-        >
-          {t(
-            "projects.rehearsals.empty.no_rehearsals",
-            "Brak zaplanowanych prób.",
-          )}
-        </Text>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 py-6">
+          <Calendar
+            size={28}
+            className="text-ethereal-incense/30"
+            aria-hidden="true"
+          />
+          <Text color="muted">
+            {t(
+              "projects.rehearsals.empty.no_rehearsals",
+              "Brak zaplanowanych prób.",
+            )}
+          </Text>
+        </div>
       )}
     </GlassCard>
   );

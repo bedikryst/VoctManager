@@ -31,3 +31,13 @@ class NotificationPreferenceUpdateSerializer(serializers.Serializer):
     email_enabled = serializers.BooleanField(required=False, allow_null=True)
     push_enabled = serializers.BooleanField(required=False, allow_null=True)
     sms_enabled = serializers.BooleanField(required=False, allow_null=True)
+
+
+class SendToArtistSerializer(serializers.Serializer):
+    """Validates manager → artist direct message payload."""
+    artist_id = serializers.UUIDField()
+    title = serializers.CharField(max_length=120)
+    message = serializers.CharField(max_length=2000)
+    level = serializers.ChoiceField(choices=['INFO', 'WARNING', 'URGENT'], default='INFO')
+    cta_url = serializers.URLField(required=False, allow_null=True, allow_blank=True, max_length=500)
+    cta_label = serializers.CharField(required=False, allow_null=True, allow_blank=True, max_length=80)

@@ -3,8 +3,18 @@
 import api from "@/shared/api/api";
 import type {
   NotificationDTO,
+  NotificationLevel,
   UnreadCountResponse,
 } from "../types/notifications.dto";
+
+export interface SendToArtistPayload {
+  artist_id: string;
+  title: string;
+  message: string;
+  level: NotificationLevel;
+  cta_url?: string | null;
+  cta_label?: string | null;
+}
 
 const NOTIFICATIONS_BASE_URL = "/api/notifications/";
 
@@ -33,5 +43,9 @@ export const NotificationService = {
 
   markAllAsRead: async (): Promise<void> => {
     await api.post(`${NOTIFICATIONS_BASE_URL}mark-all-read/`, {});
+  },
+
+  sendToArtist: async (payload: SendToArtistPayload): Promise<void> => {
+    await api.post(`${NOTIFICATIONS_BASE_URL}send-to-artist/`, payload);
   },
 };

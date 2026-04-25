@@ -1,12 +1,4 @@
-/**
- * @file ProjectCard.tsx
- * @description Main orchestrator component for the expandable Project Card.
- * Implements the "Container/Presenter" pattern with an enterprise dashboard layout.
- * @architecture Enterprise SaaS 2026
- * @module panel/projects/ProjectCard
- */
-
-import React, { useCallback, useMemo, useState } from "react";
+import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Briefcase, Music, Wrench } from "lucide-react";
@@ -14,10 +6,13 @@ import { toast } from "sonner";
 
 import type { Project } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { useUpdateProjectStatus } from "../api/project.queries";
-import { Suspense } from "react";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import {
+  StaggeredBentoContainer,
+  StaggeredBentoItem,
+} from "@/shared/ui/kinematics/StaggeredBentoGrid";
+import { Heading } from "@/shared/ui/primitives/typography";
 import {
   PROJECT_STATUS,
   PROJECT_TABS,
@@ -33,7 +28,6 @@ import { CastWidget } from "./widgets/CastWidget";
 import { ProgramWidget } from "./widgets/ProgramWidget";
 import { CrewWidget } from "./widgets/CrewWidget";
 import { BudgetWidget } from "./widgets/BudgetWidget";
-import { isFutureProjectDate } from "../lib/projectPresentation";
 
 const STYLE_DISABLED =
   "opacity-70 saturate-[0.8] grayscale-[0.2] transition-all duration-500";
@@ -52,6 +46,32 @@ export interface ProjectCardProps {
   onEdit: (project: Project, tab: ProjectTabId) => void;
   onDelete: (projectId: string) => void;
 }
+
+interface DashboardSectionProps {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const DashboardSection = ({
+  icon,
+  title,
+  children,
+  className,
+}: DashboardSectionProps): React.JSX.Element => (
+  <div className={className}>
+    <div className="mb-5 flex items-center gap-3">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ethereal-gold/10 text-ethereal-gold">
+        {icon}
+      </div>
+      <Heading as="h3" size="lg" weight="medium">
+        {title}
+      </Heading>
+    </div>
+    {children}
+  </div>
+);
 
 export const ProjectCard = ({
   project,
@@ -169,6 +189,7 @@ export const ProjectCard = ({
       className={`group ${isDone ? STYLE_DISABLED : ""}`}
       variant="light"
       padding="none"
+      glow
     >
       {!isDone && (
         <div
@@ -196,84 +217,81 @@ export const ProjectCard = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="relative z-0 overflow-hidden border-t border-ethereal-incense/15 bg-ethereal-alabaster/40"
+            className="relative z-0 border-t border-ethereal-incense/10 overflow-hidden"
           >
             <Suspense
               fallback={
-                <div className="flex min-h-[400px] items-center justify-center p-8">
+                <div className="flex min-h-100 items-center justify-center p-8">
                   <EtherealLoader />
                 </div>
               }
             >
-              <div className="space-y-10 p-6 md:p-8">
-                <div className="space-y-4">
-                  <SectionHeader
-                    title={t(
-                      "projects.card.artistic_dashboard",
-                      "Pulpit Artystyczny",
-                    )}
-                    icon={<Music size={16} aria-hidden="true" />}
-                    className="mb-0 pb-4"
-                  />
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="lg:col-span-2">
+              <div className="p-6 md:p-8">
+                <DashboardSection
+                  icon={<Music size={14} aria-hidden="true" />}
+                  title={t(
+                    "projects.card.artistic_dashboard",
+                    "Pulpit Artystyczny",
+                  )}
+                  className="mb-10"
+                >
+                  <StaggeredBentoContainer className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+                    <StaggeredBentoItem className="lg:col-span-2">
                       <RehearsalsWidget
                         project={project}
                         onEdit={handleEditRehearsals}
                       />
-                    </div>
-                    <div className="lg:col-span-1">
+                    </StaggeredBentoItem>
+                    <StaggeredBentoItem className="lg:col-span-1">
                       <ProgramWidget
                         project={project}
                         onEdit={handleEditProgram}
                         onOpenMicroCast={handleEditMicroCast}
                       />
-                    </div>
-                    <div className="lg:col-span-2">
+                    </StaggeredBentoItem>
+                    <StaggeredBentoItem className="lg:col-span-2">
                       <CastWidget project={project} onEdit={handleEditCast} />
-                    </div>
-                    <div className="lg:col-span-1">
+                    </StaggeredBentoItem>
+                    <StaggeredBentoItem className="lg:col-span-1">
                       <SpotifyWidget
                         playlistUrl={project.spotify_playlist_url}
                       />
-                    </div>
-                  </div>
-                </div>
+                    </StaggeredBentoItem>
+                  </StaggeredBentoContainer>
+                </DashboardSection>
 
-                <div className="space-y-4 border-t border-ethereal-incense/15 pt-6">
-                  <SectionHeader
-                    title={t(
-                      "projects.card.logistics_dashboard",
-                      "Logistyka i Produkcja",
-                    )}
-                    icon={<Wrench size={16} aria-hidden="true" />}
-                    className="mb-0 pb-4"
-                  />
-
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <div className="flex h-full flex-col">
+                <DashboardSection
+                  icon={<Wrench size={14} aria-hidden="true" />}
+                  title={t(
+                    "projects.card.logistics_dashboard",
+                    "Logistyka i Produkcja",
+                  )}
+                  className="border-t border-ethereal-incense/15 pt-8"
+                >
+                  <StaggeredBentoContainer className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    <StaggeredBentoItem className="flex h-full flex-col">
                       <RunSheetWidget
                         project={project}
                         onEdit={handleEditDetails}
                       />
-                    </div>
-                    <div className="flex h-full flex-col gap-6">
+                    </StaggeredBentoItem>
+                    <StaggeredBentoItem className="flex h-full flex-col">
                       <ProjectCardDetails project={project} />
-                    </div>
-                  </div>
+                    </StaggeredBentoItem>
+                  </StaggeredBentoContainer>
 
-                  <div className="grid grid-cols-1 gap-6 pt-4 lg:grid-cols-3">
-                    <div className="lg:col-span-2">
+                  <StaggeredBentoContainer className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+                    <StaggeredBentoItem className="lg:col-span-2">
                       <BudgetWidget
                         project={project}
                         onEdit={handleEditBudget}
                       />
-                    </div>
-                    <div className="lg:col-span-1">
+                    </StaggeredBentoItem>
+                    <StaggeredBentoItem className="lg:col-span-1">
                       <CrewWidget project={project} onEdit={handleEditCrew} />
-                    </div>
-                  </div>
-                </div>
+                    </StaggeredBentoItem>
+                  </StaggeredBentoContainer>
+                </DashboardSection>
               </div>
             </Suspense>
           </motion.div>

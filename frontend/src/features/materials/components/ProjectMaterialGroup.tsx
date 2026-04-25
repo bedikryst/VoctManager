@@ -19,7 +19,7 @@ export const ProjectMaterialGroup = ({
 
   return (
     <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
-      <div className="flex items-start justify-between gap-3 pb-4 border-b border-ethereal-marble">
+      <div className="flex items-start justify-between gap-3 pb-4 border-b border-ethereal-gold/30">
         <div className="flex items-start gap-3 min-w-0">
           <div
             className={`mt-0.5 shrink-0 p-2 rounded-lg ${
@@ -35,8 +35,12 @@ export const ProjectMaterialGroup = ({
             />
           </div>
           <div className="min-w-0">
-            <Eyebrow color={isArchived ? "muted" : "default"} className="block truncate">
-              {t("materials.project.event", "Wydarzenie:")} {group.project.title}
+            <Eyebrow
+              color={isArchived ? "muted" : "default"}
+              className="block truncate"
+            >
+              {t("materials.project.event", "Wydarzenie:")}{" "}
+              {group.project.title}
             </Eyebrow>
             <div className="flex items-center gap-1.5 mt-1">
               <CalendarDays
@@ -53,7 +57,11 @@ export const ProjectMaterialGroup = ({
 
         {isArchived && (
           <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-ethereal-marble/60 border border-ethereal-marble rounded-lg shadow-glass-solid">
-            <Archive size={11} className="text-ethereal-graphite" aria-hidden="true" />
+            <Archive
+              size={11}
+              className="text-ethereal-graphite"
+              aria-hidden="true"
+            />
             <Eyebrow color="muted">
               {t("materials.project.archived_badge", "Archiwum")}
             </Eyebrow>

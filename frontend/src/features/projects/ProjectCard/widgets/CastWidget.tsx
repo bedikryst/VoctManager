@@ -5,11 +5,11 @@
  * @module panel/projects/ProjectCard/widgets/CastWidget
  */
 
-import React, { useMemo } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
 
-import type { Project, Artist } from "@/shared/types";
+import type { Project } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -73,37 +73,45 @@ export function CastWidget({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center py-2">
-        <div className="mb-2 flex flex-wrap justify-center gap-2">
-          {visibleParticipations.map((part, index) => {
-            const artist = artistMap.get(String(part.artist));
-            if (!artist) return null;
+      {projectParticipations.length > 0 ? (
+        <>
+          <div className="flex flex-1 flex-wrap gap-2 py-2">
+            {visibleParticipations.map((part, index) => {
+              const artist = artistMap.get(String(part.artist));
+              if (!artist) return null;
 
-            return (
-              <Badge key={part.id || `cast-${index}`} variant="neutral">
-                {artist.first_name} {artist.last_name.charAt(0)}.
-              </Badge>
-            );
-          })}
+              return (
+                <Badge key={part.id || `cast-${index}`} variant="neutral">
+                  {artist.first_name} {artist.last_name.charAt(0)}.
+                </Badge>
+              );
+            })}
+            {overflowCount > 0 && (
+              <Badge variant="brand">+{overflowCount}</Badge>
+            )}
+          </div>
 
-          {overflowCount > 0 && <Badge variant="brand">+{overflowCount}</Badge>}
-
-          {projectParticipations.length === 0 && (
-            <Text color="muted" className="italic">
-              {t("projects.cast.empty", "Brak obsady wokalnej.")}
-            </Text>
-          )}
+          <Caption
+            color="muted"
+            weight="bold"
+            className="mt-auto border-t border-ethereal-incense/10 pt-3 text-center uppercase tracking-[0.16em]"
+          >
+            {t("projects.cast.employed", "Zatrudnionych:")}{" "}
+            {projectParticipations.length}
+          </Caption>
+        </>
+      ) : (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 py-4">
+          <Users
+            size={28}
+            className="text-ethereal-incense/30"
+            aria-hidden="true"
+          />
+          <Text color="muted" className="italic">
+            {t("projects.cast.empty", "Brak obsady wokalnej.")}
+          </Text>
         </div>
-      </div>
-
-      <Caption
-        color="muted"
-        weight="bold"
-        className="mt-auto border-t border-ethereal-incense/10 pt-3 text-center uppercase tracking-[0.16em]"
-      >
-        {t("projects.cast.employed", "Zatrudnionych:")}{" "}
-        {projectParticipations.length}
-      </Caption>
+      )}
     </GlassCard>
   );
 }

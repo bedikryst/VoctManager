@@ -51,6 +51,10 @@ class NotificationType(models.TextChoices):
     PARTICIPATION_RESPONSE = 'PARTICIPATION_RESPONSE', _('Artist Project Response')
     ATTENDANCE_SUBMITTED = 'ATTENDANCE_SUBMITTED', _('Artist Attendance Info')
 
+    # --- DIRECT MESSAGING ---
+    CUSTOM_ADMIN_MESSAGE = 'CUSTOM_ADMIN_MESSAGE', _('Direct Message from Management')
+    NOTIFICATION_READ_RECEIPT = 'NOTIFICATION_READ_RECEIPT', _('Message Read by Artist')
+
 class Notification(EnterpriseBaseModel):
     """
     Enterprise notification model for user-specific alerts.

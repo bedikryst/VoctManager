@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'archive',
     'notifications',
     'logistics',
+    'documents',
 ]
 
 # --- AUTHENTICATION BACKENDS ---

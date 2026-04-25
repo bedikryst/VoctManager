@@ -59,10 +59,7 @@ export const Materials = (): React.JSX.Element => {
           <PageHeader
             roleText={t("materials.dashboard.subtitle", "Strefa Artysty")}
             title={t("materials.dashboard.title", "Materiały do")}
-            titleHighlight={t(
-              "materials.dashboard.title_highlight",
-              "ćwiczeń",
-            )}
+            titleHighlight={t("materials.dashboard.title_highlight", "ćwiczeń")}
           />
           <Text color="graphite" className="mt-3 max-w-lg">
             {t(

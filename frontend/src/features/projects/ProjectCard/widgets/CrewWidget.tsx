@@ -77,39 +77,48 @@ export function CrewWidget({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center py-2">
-        <div className="mb-2 flex flex-wrap justify-center gap-2">
-          {visibleCrew.map((assign, index) => {
-            const person = crewMap.get(String(assign.collaborator));
-            if (!person) return null;
+      {projectCrew.length > 0 ? (
+        <>
+          <div className="flex flex-1 flex-wrap gap-2 py-2">
+            {visibleCrew.map((assign, index) => {
+              const person = crewMap.get(String(assign.collaborator));
+              if (!person) return null;
 
-            const roleLabel: string =
-              assign.role_description || person.specialty.substring(0, 4);
+              const roleLabel: string =
+                assign.role_description || person.specialty.substring(0, 4);
 
-            return (
-              <Badge key={assign.id || `crew-${index}`} variant="neutral">
-                {person.first_name} {person.last_name.charAt(0)}. ({roleLabel})
-              </Badge>
-            );
-          })}
+              return (
+                <Badge key={assign.id || `crew-${index}`} variant="neutral">
+                  {person.first_name} {person.last_name.charAt(0)}. (
+                  {roleLabel})
+                </Badge>
+              );
+            })}
+            {overflowCount > 0 && (
+              <Badge variant="brand">+{overflowCount}</Badge>
+            )}
+          </div>
 
-          {overflowCount > 0 && <Badge variant="brand">+{overflowCount}</Badge>}
-
-          {projectCrew.length === 0 && (
-            <Text color="muted" className="italic">
-              {t("projects.crew.empty", "Brak przypisanej ekipy.")}
-            </Text>
-          )}
+          <Caption
+            color="muted"
+            weight="bold"
+            className="mt-auto border-t border-ethereal-incense/10 pt-3 text-center uppercase tracking-[0.16em]"
+          >
+            {t("projects.crew.employed", "Zatrudnionych:")} {projectCrew.length}
+          </Caption>
+        </>
+      ) : (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 py-4">
+          <Wrench
+            size={28}
+            className="text-ethereal-incense/30"
+            aria-hidden="true"
+          />
+          <Text color="muted" className="italic">
+            {t("projects.crew.empty", "Brak przypisanej ekipy.")}
+          </Text>
         </div>
-      </div>
-
-      <Caption
-        color="muted"
-        weight="bold"
-        className="mt-auto border-t border-ethereal-incense/10 pt-3 text-center uppercase tracking-[0.16em]"
-      >
-        {t("projects.crew.employed", "Zatrudnionych:")} {projectCrew.length}
-      </Caption>
+      )}
     </GlassCard>
   );
 }

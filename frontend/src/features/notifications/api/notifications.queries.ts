@@ -1,7 +1,7 @@
 // frontend/src/features/notifications/api/notifications.queries.ts
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { NotificationService } from "./notifications.service";
+import { NotificationService, type SendToArtistPayload } from "./notifications.service";
 
 export const notificationKeys = {
   all: ["notifications"] as const,
@@ -57,3 +57,10 @@ export const useMarkAllNotificationsRead = () => {
     },
   });
 };
+
+// 5. Mutation: Manager sends a direct message to an artist
+export const useSendToArtist = () =>
+  useMutation({
+    mutationFn: (payload: SendToArtistPayload) =>
+      NotificationService.sendToArtist(payload),
+  });

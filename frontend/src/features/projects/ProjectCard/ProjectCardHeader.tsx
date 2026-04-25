@@ -1,18 +1,10 @@
-/**
- * @file ProjectCardHeader.tsx
- * @description Renders the compact, scannable header for a project card.
- * Integrates dual-timezone presentation and high-level project telemetry.
- * @architecture Enterprise SaaS 2026
- * @module panel/projects/ProjectCard/ProjectCardHeader
- */
-
 import React, { useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
   AlignLeft,
   Calendar,
   ChevronDown,
-  ChevronUp,
   Clock,
   Download,
   Edit2,
@@ -28,12 +20,10 @@ import { PROJECT_STATUS } from "../constants/projectDomain";
 import type { Project } from "@/shared/types";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { useProjectCard } from "./hooks/useProjectCard";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import {
   Caption,
-  Eyebrow,
   Heading,
   Text,
 } from "@/shared/ui/primitives/typography";
@@ -58,34 +48,51 @@ interface ProjectCardHeaderProps {
   onDelete: () => void;
 }
 
-interface HeaderMetaCardProps {
-  label: string;
+interface MetaItemProps {
   icon: React.ReactNode;
+  label: string;
   children: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  stopPropagation?: boolean;
 }
 
-const HeaderMetaCard = ({
-  label,
+const MetaItem = ({
   icon,
+  label,
   children,
-  onClick,
-}: HeaderMetaCardProps): React.JSX.Element => (
-  <GlassCard
-    variant="light"
-    padding="sm"
-    isHoverable={false}
-    className="min-w-44 border-ethereal-incense/15"
-    onClick={onClick}
+  stopPropagation,
+}: MetaItemProps): React.JSX.Element => (
+  <div
+    className="flex items-start gap-2.5"
+    onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
   >
-    <div className="mb-2 flex items-center gap-2 text-ethereal-incense/70">
-      <div className="shrink-0 text-ethereal-gold" aria-hidden="true">
-        {icon}
-      </div>
-      <Eyebrow color="muted">{label}</Eyebrow>
+    <div className="mt-0.5 shrink-0 text-ethereal-gold" aria-hidden="true">
+      {icon}
     </div>
-    {children}
-  </GlassCard>
+    <div className="min-w-0">
+      <Caption color="muted" className="mb-0.5 block">
+        {label}
+      </Caption>
+      {children}
+    </div>
+  </div>
+);
+
+interface StatChipProps {
+  icon: React.ReactNode;
+  value: string | number;
+  label: string;
+}
+
+const StatChip = ({ icon, value, label }: StatChipProps): React.JSX.Element => (
+  <div className="flex items-center gap-1.5">
+    <span className="text-ethereal-incense/40" aria-hidden="true">
+      {icon}
+    </span>
+    <Text as="span" size="sm" weight="medium">
+      {value}
+    </Text>
+    <Caption color="muted">{label}</Caption>
+  </div>
 );
 
 export const ProjectCardHeader = ({
@@ -106,6 +113,13 @@ export const ProjectCardHeader = ({
     [project.conductor, project.conductor_name],
   );
 
+  const hasMetadata = Boolean(
+    project.date_time || project.location || conductorName || project.call_time,
+  );
+
+  const rehearsalsDone =
+    dashboardData.rehearsalsTotal - dashboardData.rehearsalsUpcoming;
+
   const handleHeaderKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -118,7 +132,7 @@ export const ProjectCardHeader = ({
 
   return (
     <div
-      className="flex cursor-pointer flex-col gap-8 p-6 md:p-8 lg:flex-row lg:items-stretch lg:justify-between"
+      className="cursor-pointer p-6 md:p-8"
       onClick={onToggle}
       onKeyDown={handleHeaderKeyDown}
       role="button"
@@ -129,193 +143,144 @@ export const ProjectCardHeader = ({
         "Przełącz widok szczegółów projektu",
       )}
     >
-      <div className="flex flex-1 flex-col justify-between">
-        <div>
-          <div className="mb-5 flex flex-wrap items-center gap-3">
-            <div
-              className={`inline-flex items-center rounded-full border px-3 py-1.5 ${
-                isDone
-                  ? "border-ethereal-incense/20 bg-ethereal-parchment text-ethereal-graphite"
-                  : "border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-gold"
-              }`}
-            >
-              <Eyebrow color="inherit">
-                {isDone
-                  ? t("projects.badge_done", "Zrealizowano")
-                  : t("projects.badge_active", "W przygotowaniu")}
-              </Eyebrow>
-            </div>
-            <Caption color="incense-muted">
-              {t("projects.card.status_production", "Status Produkcji")}
-            </Caption>
-          </div>
+      {/* ── 1. Identity ── */}
+      <div className="mb-6">
+        <Badge variant={isDone ? "neutral" : "warning"} className="mb-5">
+          {isDone
+            ? t("projects.badge_done", "Zrealizowano")
+            : t("projects.badge_active", "W przygotowaniu")}
+        </Badge>
 
-          <Heading
-            as="h2"
-            size="4xl"
-            weight="medium"
-            className="mb-3 max-w-4xl leading-tight"
-          >
-            {project.title}
-          </Heading>
+        <Heading
+          as="h2"
+          size="4xl"
+          weight="medium"
+          className="mb-2 max-w-4xl leading-tight"
+        >
+          {project.title}
+        </Heading>
 
-          <Text color="graphite" className="mb-6 max-w-2xl">
-            {project.description?.trim()
-              ? project.description
-              : t(
-                  "projects.card.header_fallback_description",
-                  "Scalony pulpit operacyjny dla harmonogramu, programu, obsady i produkcji.",
-                )}
+        {project.description?.trim() && (
+          <Text color="graphite" className="mt-2 max-w-2xl">
+            {project.description}
           </Text>
-
-          <div className="mb-6 flex flex-wrap items-start gap-3">
-            {project.date_time && (
-              <HeaderMetaCard
-                label={t("projects.details.date_title", "Termin")}
-                icon={<Calendar size={14} aria-hidden="true" />}
-              >
-                <Text weight="medium">
-                  {formatLocalizedDate(
-                    project.date_time,
-                    {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    },
-                    undefined,
-                    project.timezone,
-                  )}
-                </Text>
-              </HeaderMetaCard>
-            )}
-
-            {project.date_time && (
-              <HeaderMetaCard
-                label={t("projects.details.time_title", "Czas lokalny")}
-                icon={<Clock size={14} aria-hidden="true" />}
-              >
-                <DualTimeDisplay
-                  value={project.date_time}
-                  timeZone={project.timezone}
-                  icon={
-                    <Clock
-                      size={14}
-                      className="text-ethereal-gold"
-                      aria-hidden="true"
-                    />
-                  }
-                  className="border-none bg-transparent p-0"
-                  typography="sans"
-                  size="sm"
-                  weight="bold"
-                  color="default"
-                />
-              </HeaderMetaCard>
-            )}
-
-            {project.location && (
-              <HeaderMetaCard
-                label={t("projects.details.location_title", "Miejsce")}
-                icon={<MapPin size={14} aria-hidden="true" />}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <LocationPreview
-                  locationRef={project.location}
-                  variant="minimal"
-                  className="max-w-60 justify-start"
-                />
-              </HeaderMetaCard>
-            )}
-
-            {conductorName && (
-              <HeaderMetaCard
-                label={t("projects.roles.maestro", "Maestro")}
-                icon={<UserRound size={14} aria-hidden="true" />}
-              >
-                <Text weight="medium">{conductorName}</Text>
-              </HeaderMetaCard>
-            )}
-
-            {project.call_time && (
-              <HeaderMetaCard
-                label={t("projects.call_time", "Call Time")}
-                icon={<Clock size={14} aria-hidden="true" />}
-              >
-                <DualTimeDisplay
-                  value={project.call_time}
-                  timeZone={project.timezone}
-                  icon={
-                    <Clock
-                      size={14}
-                      className="text-ethereal-gold"
-                      aria-hidden="true"
-                    />
-                  }
-                  className="border-none bg-transparent p-0"
-                  typography="sans"
-                  size="sm"
-                  weight="bold"
-                  timeClassName="text-ethereal-gold"
-                />
-              </HeaderMetaCard>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 border-t border-ethereal-incense/15 pt-6">
-          <Button
-            variant="outline"
-            onClick={(event) => {
-              event.stopPropagation();
-              onEdit();
-            }}
-            leftIcon={<Edit2 size={14} aria-hidden="true" />}
-          >
-            {t("projects.actions.manage", "Zarządzaj")}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete();
-            }}
-            leftIcon={<Trash2 size={14} aria-hidden="true" />}
-            className="!border-ethereal-crimson/20 !text-ethereal-crimson hover:!border-ethereal-crimson/35 hover:!bg-ethereal-crimson-light/20"
-          >
-            {t("common.actions.delete", "Usuń")}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onStatusToggle}
-            className="ml-auto"
-          >
-            {isDone
-              ? t("projects.actions.mark_active", "Oznacz jako aktywny")
-              : t("projects.actions.mark_done", "Zakończ projekt")}
-          </Button>
-        </div>
+        )}
       </div>
 
-      <GlassCard
-        variant="light"
-        padding="md"
-        isHoverable={false}
-        className="relative w-full flex-shrink-0 border-ethereal-incense/15 lg:w-80"
-      >
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <div>
-            <Eyebrow color="muted">
-              {t("projects.card.status_production", "Status Produkcji")}
-            </Eyebrow>
-            <Heading as="h3" size="xl" weight="medium" className="mt-2">
-              {t("projects.card.snapshot", "Snapshot")}
-            </Heading>
-          </div>
+      {/* ── 2. Event metadata — inline, no nested cards ── */}
+      {hasMetadata && (
+        <div className="mb-6 flex flex-wrap items-start gap-x-8 gap-y-4 border-t border-ethereal-incense/10 pt-5">
+          {project.date_time && (
+            <MetaItem
+              icon={<Calendar size={14} />}
+              label={t("projects.details.date_title", "Termin")}
+            >
+              <Text size="sm" weight="medium">
+                {formatLocalizedDate(
+                  project.date_time,
+                  {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  },
+                  undefined,
+                  project.timezone,
+                )}
+              </Text>
+            </MetaItem>
+          )}
 
-          <div className="flex items-center gap-2">
+          {project.date_time && (
+            <MetaItem
+              icon={<Clock size={14} />}
+              label={t("projects.details.time_title", "Czas lokalny")}
+            >
+              <DualTimeDisplay
+                value={project.date_time}
+                timeZone={project.timezone}
+                className="border-none bg-transparent p-0"
+                typography="sans"
+                size="sm"
+                weight="medium"
+                color="default"
+              />
+            </MetaItem>
+          )}
+
+          {project.location && (
+            <MetaItem
+              icon={<MapPin size={14} />}
+              label={t("projects.details.location_title", "Miejsce")}
+              stopPropagation
+            >
+              <LocationPreview
+                locationRef={project.location}
+                variant="minimal"
+                className="max-w-64 justify-start"
+              />
+            </MetaItem>
+          )}
+
+          {conductorName && (
+            <MetaItem
+              icon={<UserRound size={14} />}
+              label={t("projects.roles.maestro", "Maestro")}
+            >
+              <Text size="sm" weight="medium">
+                {conductorName}
+              </Text>
+            </MetaItem>
+          )}
+
+          {project.call_time && (
+            <MetaItem
+              icon={<Clock size={14} />}
+              label={t("projects.call_time", "Call Time")}
+            >
+              <DualTimeDisplay
+                value={project.call_time}
+                timeZone={project.timezone}
+                className="border-none bg-transparent p-0"
+                typography="sans"
+                size="sm"
+                weight="medium"
+                timeClassName="text-ethereal-gold"
+              />
+            </MetaItem>
+          )}
+        </div>
+      )}
+
+      {/* ── 3. Footer bar: stats · actions · expand ── */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-ethereal-incense/10 pt-5">
+        {/* Production stats */}
+        <div className="flex flex-wrap items-center gap-5">
+          <StatChip
+            icon={<Clock size={13} />}
+            value={`${rehearsalsDone}/${dashboardData.rehearsalsTotal}`}
+            label={t("projects.rehearsals.title_short", "prób")}
+          />
+          <StatChip
+            icon={<Users size={13} />}
+            value={dashboardData.castTotal}
+            label={t("projects.cast.title_short", "artystów")}
+          />
+          <StatChip
+            icon={<Wrench size={13} />}
+            value={dashboardData.crewTotal}
+            label={t("projects.crew.title_short", "tech")}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Export buttons */}
+          <div className="flex items-center gap-0.5 border-r border-ethereal-incense/15 pr-3">
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
+              className="p-1.5"
               disabled={isDownloading !== null}
               isLoading={isDownloading === "CALL_SHEET"}
               onClick={(event) => {
@@ -328,14 +293,15 @@ export const ProjectCardHeader = ({
               }}
               leftIcon={
                 isDownloading !== "CALL_SHEET" ? (
-                  <FileText size={10} aria-hidden="true" />
+                  <FileText size={13} aria-hidden="true" />
                 ) : undefined
               }
-              className="!border-transparent !p-1.5 shadow-none"
               title={t("projects.exports.call_sheet", "Pobierz Call Sheet")}
             />
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
+              className="p-1.5"
               disabled={isDownloading !== null}
               isLoading={isDownloading === "ZAIKS"}
               onClick={(event) => {
@@ -348,73 +314,91 @@ export const ProjectCardHeader = ({
               }}
               leftIcon={
                 isDownloading !== "ZAIKS" ? (
-                  <Download size={10} aria-hidden="true" />
+                  <Download size={13} aria-hidden="true" />
                 ) : undefined
               }
-              className="!border-transparent !p-1.5 shadow-none"
               title={t("projects.exports.zaiks", "Pobierz ZAiKS")}
             />
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
+              className="p-1.5"
               disabled={isDownloading !== null}
               isLoading={isDownloading === "DTP"}
               onClick={(event) => {
                 event.stopPropagation();
-                downloadReport("export_dtp", `DTP_${project.title}.txt`, "DTP");
+                downloadReport(
+                  "export_dtp",
+                  `DTP_${project.title}.txt`,
+                  "DTP",
+                );
               }}
               leftIcon={
                 isDownloading !== "DTP" ? (
-                  <AlignLeft size={10} aria-hidden="true" />
+                  <AlignLeft size={13} aria-hidden="true" />
                 ) : undefined
               }
-              className="!border-transparent !p-1.5 shadow-none"
               title={t("projects.exports.dtp", "Pobierz notkę do DTP")}
             />
           </div>
-        </div>
 
-        <div className="space-y-5">
-          <MetricBlock
-            label={t("projects.rehearsals.title", "Próby")}
-            value={`${dashboardData.rehearsalsTotal - dashboardData.rehearsalsUpcoming} / ${dashboardData.rehearsalsTotal}`}
-            icon={<Clock aria-hidden="true" />}
-            interactiveMode="glass"
-          />
-          <MetricBlock
-            label={t("projects.cast.title", "Obsada")}
-            value={dashboardData.castTotal}
-            unit={t("common.people_short", "os.")}
-            icon={<Users aria-hidden="true" />}
-            interactiveMode="glass"
-          />
-          <MetricBlock
-            label={t("projects.crew.title", "Ekipa")}
-            value={dashboardData.crewTotal}
-            unit={t("common.people_short", "os.")}
-            icon={<Wrench aria-hidden="true" />}
-            interactiveMode="glass"
-          />
-        </div>
-
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <Caption
-            color="gold"
-            weight="bold"
-            className="uppercase tracking-[0.18em]"
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit();
+            }}
+            leftIcon={<Edit2 size={13} aria-hidden="true" />}
           >
-            {isExpanded
-              ? t("projects.card.collapse", "Zwiń panel")
-              : t("projects.card.expand", "Rozwiń widgety")}
-          </Caption>
-          <div className="text-ethereal-gold" aria-hidden="true">
-            {isExpanded ? (
-              <ChevronUp size={16} aria-hidden="true" />
-            ) : (
-              <ChevronDown size={16} aria-hidden="true" />
-            )}
+            {t("projects.actions.manage", "Zarządzaj")}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete();
+            }}
+            leftIcon={<Trash2 size={13} aria-hidden="true" />}
+            className="!border-ethereal-crimson/20 !text-ethereal-crimson hover:!border-ethereal-crimson/30 hover:!bg-ethereal-crimson/5"
+          >
+            {t("common.actions.delete", "Usuń")}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onStatusToggle}
+          >
+            {isDone
+              ? t("projects.actions.mark_active", "Oznacz jako aktywny")
+              : t("projects.actions.mark_done", "Zakończ projekt")}
+          </Button>
+
+          {/* Expand trigger */}
+          <div className="ml-1 flex items-center gap-1.5 border-l border-ethereal-incense/15 pl-3">
+            <Caption
+              color="gold"
+              weight="bold"
+              className="uppercase tracking-[0.16em]"
+            >
+              {isExpanded
+                ? t("projects.card.collapse", "Zwiń")
+                : t("projects.card.expand", "Rozwiń")}
+            </Caption>
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="text-ethereal-gold"
+              aria-hidden="true"
+            >
+              <ChevronDown size={14} />
+            </motion.div>
           </div>
         </div>
-      </GlassCard>
+      </div>
     </div>
   );
 };

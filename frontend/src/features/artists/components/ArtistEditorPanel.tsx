@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { X, CheckCircle2 } from "lucide-react";
+import { X, CheckCircle2, Send } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
@@ -17,6 +17,8 @@ import { Button } from "@ui/primitives/Button";
 import { Input } from "@ui/primitives/Input";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useArtistForm } from "../hooks/useArtistForm";
+import { SendNotificationModal } from "./SendNotificationModal";
+import z from "zod";
 
 interface ArtistEditorPanelProps {
   isOpen: boolean;
@@ -40,6 +42,7 @@ export default function ArtistEditorPanel({
 }: ArtistEditorPanelProps): React.ReactPortal | null {
   const { t } = useTranslation();
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -90,7 +93,7 @@ export default function ArtistEditorPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleCloseRequest}
-            style={{ zIndex: 9998 }}
+            style={{ zIndex: 99 }}
             className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm"
             aria-hidden="true"
           />
@@ -101,7 +104,7 @@ export default function ArtistEditorPanel({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            style={{ zIndex: 9999 }}
+            style={{ zIndex: 100 }}
             className="fixed inset-y-0 right-0 w-full max-w-xl bg-[#f4f2ee] shadow-2xl flex flex-col border-l border-white/60"
             role="dialog"
             aria-modal="true"
@@ -112,13 +115,32 @@ export default function ArtistEditorPanel({
                   ? t("artists.editor.title_edit", "Edycja Profilu")
                   : t("artists.editor.title_new", "Nowy Artysta")}
               </h3>
-              <button
-                type="button"
-                onClick={handleCloseRequest}
-                className="text-stone-400 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200/60 shadow-sm transition-all p-2.5 rounded-2xl active:scale-95"
-              >
-                <X size={20} aria-hidden="true" />
-              </button>
+              <div className="flex items-center gap-2">
+                {artist?.id && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNotifyModal(true)}
+                    title={t(
+                      "artists.editor.send_notification",
+                      "Wyślij powiadomienie",
+                    )}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-ethereal-amethyst bg-white hover:bg-ethereal-amethyst/10 border border-ethereal-amethyst/30 shadow-sm transition-all px-3 py-2 rounded-xl active:scale-95"
+                  >
+                    <Send size={14} />
+                    {t(
+                      "artists.editor.send_notification",
+                      "Wyślij powiadomienie",
+                    )}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCloseRequest}
+                  className="text-stone-400 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200/60 shadow-sm transition-all p-2.5 rounded-2xl active:scale-95"
+                >
+                  <X size={20} aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 relative">
@@ -419,6 +441,14 @@ export default function ArtistEditorPanel({
               onConfirm={forceClose}
               onCancel={() => setShowExitConfirm(false)}
             />
+
+            {artist && (
+              <SendNotificationModal
+                isOpen={showNotifyModal}
+                onClose={() => setShowNotifyModal(false)}
+                artist={artist}
+              />
+            )}
           </motion.div>
         </>
       )}

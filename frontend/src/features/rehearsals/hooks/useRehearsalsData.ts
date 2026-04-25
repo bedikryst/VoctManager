@@ -171,7 +171,7 @@ export const useRehearsalsData = () => {
     invitedParticipations.forEach((participation) => {
       const attendance = attendanceMap.get(String(participation.id));
 
-      if (!attendance) none += 1;
+      if (!attendance || attendance.status === null || attendance.status === undefined) none += 1;
       else if (attendance.status === "PRESENT") present += 1;
       else if (attendance.status === "LATE") late += 1;
       else if (attendance.status === "EXCUSED") excused += 1;
@@ -205,29 +205,17 @@ export const useRehearsalsData = () => {
       const entries = invitedParticipations.flatMap((participation) => {
         const existingAttendance = attendanceMap.get(String(participation.id));
 
-        if (existingAttendance) {
-          if (
-            existingAttendance.status !== "PRESENT" &&
-            existingAttendance.status !== "EXCUSED" &&
-            existingAttendance.status !== "LATE"
-          ) {
-            return [
-              {
-                attendanceId: existingAttendance.id,
-                rehearsalId: String(activeRehearsalId),
-                participationId: String(participation.id),
-              },
-            ];
-          }
-          return [];
+        if (!existingAttendance || existingAttendance.status === null || existingAttendance.status === undefined) {
+          return [
+            {
+              attendanceId: existingAttendance ? String(existingAttendance.id) : undefined,
+              rehearsalId: String(activeRehearsalId),
+              participationId: String(participation.id),
+            },
+          ];
         }
 
-        return [
-          {
-            rehearsalId: String(activeRehearsalId),
-            participationId: String(participation.id),
-          },
-        ];
+        return [];
       });
 
       if (entries.length === 0) {

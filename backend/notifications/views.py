@@ -1,4 +1,5 @@
 # notifications/views.py
+import logging
 from django.utils import timezone
 from rest_framework import viewsets, status, views
 from rest_framework.decorators import action
@@ -6,16 +7,25 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
-from .models import Notification, NotificationPreference, NotificationType
+from .models import Notification, NotificationPreference, NotificationType, NotificationLevel
 from core.constants import AppRole
 from .serializers import (
     NotificationSerializer,
     PushDeviceRegisterSerializer,
-    NotificationPreferenceUpdateSerializer
+    NotificationPreferenceUpdateSerializer,
+    SendToArtistSerializer,
 )
-from .dtos import PushDeviceRegisterDTO, NotificationPreferenceUpdateDTO
+from .dtos import (
+    PushDeviceRegisterDTO,
+    NotificationPreferenceUpdateDTO,
+    CustomAdminMessageMetadata,
+    NotificationReadReceiptMetadata,
+    NotificationCreateDTO,
+)
 from .services import NotificationPreferenceService
 from .push_service import PushDispatcherService
+
+logger = logging.getLogger(__name__)
 
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -40,15 +50,91 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['patch'], url_path='mark-read')
     def mark_read(self, request: Request, pk: str = None) -> Response:
-        """Marks a specific notification as read."""
+        """Marks a specific notification as read. Dispatches read receipt for CUSTOM_ADMIN_MESSAGE."""
         notification = self.get_object()
         if not notification.is_read:
             notification.is_read = True
             notification.read_at = timezone.now()
             notification.save(update_fields=['is_read', 'read_at', 'updated_at'])
-        
+            self._dispatch_read_receipt_if_applicable(notification)
+
         serializer = self.get_serializer(notification)
         return Response(serializer.data)
+
+    def _dispatch_read_receipt_if_applicable(self, notification: Notification) -> None:
+        """
+        Fires a NOTIFICATION_READ_RECEIPT to the original sender when a
+        CUSTOM_ADMIN_MESSAGE is first read. Runs in the background via Celery.
+        """
+        if notification.notification_type != NotificationType.CUSTOM_ADMIN_MESSAGE:
+            return
+        meta = notification.metadata or {}
+        sender_id = meta.get('sender_id')
+        if not sender_id:
+            return
+        try:
+            artist = notification.recipient
+            artist_name = getattr(artist, 'get_full_name', lambda: artist.email)()
+            receipt_meta = NotificationReadReceiptMetadata(
+                artist_name=artist_name or artist.email,
+                artist_id=str(artist.id),
+                original_title=meta.get('title', ''),
+                read_at=notification.read_at.isoformat(),
+            )
+            dto = NotificationCreateDTO(
+                recipient_id=str(sender_id),
+                notification_type=NotificationType.NOTIFICATION_READ_RECEIPT,
+                level=NotificationLevel.INFO,
+                metadata=receipt_meta,
+            )
+            from .services import NotificationService
+            NotificationService.create_notification(dto)
+        except Exception as exc:
+            logger.error(f"[ReadReceipt] Failed to dispatch receipt for notification {notification.id}: {exc}", exc_info=True)
+
+    @action(detail=False, methods=['post'], url_path='send-to-artist')
+    def send_to_artist(self, request: Request) -> Response:
+        """
+        Manager-only endpoint to dispatch a direct CUSTOM_ADMIN_MESSAGE to a single artist.
+        Resolves the artist's linked user account before dispatching.
+        """
+        user_role = getattr(request.user.profile, 'role', None) if hasattr(request.user, 'profile') else None
+        is_manager = (user_role == AppRole.MANAGER) or request.user.is_staff
+        if not is_manager:
+            return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = SendToArtistSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            from roster.models import Artist
+            artist = Artist.objects.select_related('user').get(id=data['artist_id'], is_deleted=False)
+        except Artist.DoesNotExist:
+            return Response({"detail": "Artist not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not artist.user_id:
+            return Response({"detail": "Artist has no linked user account."}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        sender_name = request.user.get_full_name() or request.user.email
+        meta = CustomAdminMessageMetadata(
+            title=data['title'],
+            message=data['message'],
+            sender_id=str(request.user.id),
+            sender_name=sender_name,
+            level=data['level'],
+            cta_url=data.get('cta_url') or None,
+            cta_label=data.get('cta_label') or None,
+        )
+        dto = NotificationCreateDTO(
+            recipient_id=str(artist.user_id),
+            notification_type=NotificationType.CUSTOM_ADMIN_MESSAGE,
+            level=data['level'],
+            metadata=meta,
+        )
+        from .services import NotificationService
+        NotificationService.create_notification(dto)
+        return Response({"status": "dispatched"}, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'], url_path='mark-all-read')
     def mark_all_read(self, request: Request) -> Response:

@@ -99,7 +99,12 @@ export function SpotifyWidget({
           </Button>
         </div>
       ) : (
-        <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-ethereal-incense/20 bg-ethereal-alabaster/45">
+        <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-ethereal-incense/20 bg-ethereal-alabaster/45">
+          <Music
+            size={28}
+            className="text-ethereal-incense/30"
+            aria-hidden="true"
+          />
           <Text color="muted" className="italic">
             {t("projects.spotify.empty", "Brak przypisanej playlisty.")}
           </Text>

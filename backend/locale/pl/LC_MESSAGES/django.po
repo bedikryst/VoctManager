@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VoctManager 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-24 09:58+0000\n"
+"POT-Creation-Date: 2026-04-25 21:31+0000\n"
 "PO-Revision-Date: 2026-04-09 17:15+0100\n"
 "Last-Translator: Krystian Bugalski\n"
 "Language-Team: Polish\n"
@@ -402,8 +402,7 @@ msgstr "Prywatny token subskrypcji kalendarza iCal."
 
 #: core/models.py:150
 msgid "Determines if the user receives non-critical operational emails."
-msgstr ""
-"Określa, czy użytkownik otrzymuje niekrytyczne wiadomości operacyjne."
+msgstr "Określa, czy użytkownik otrzymuje niekrytyczne wiadomości operacyjne."
 
 #: core/models.py:158
 msgid "Business role defining application access level."
@@ -533,7 +532,19 @@ msgstr "Odpowiedź artysty na projekt"
 msgid "Attendance Submitted"
 msgstr "Przesłano listę obecności"
 
-#: notifications/email_service.py:66
+#: notifications/email_service.py:57
+#, fuzzy
+#| msgid "New update from VoctManager"
+msgid "New message from management"
+msgstr "Nowa aktualizacja od VoctManager"
+
+#: notifications/email_service.py:58
+#, fuzzy
+#| msgid "Your password has been changed"
+msgid "Your message has been read"
+msgstr "Twoje hasło zostało zmienione"
+
+#: notifications/email_service.py:68
 msgid "New update from VoctManager"
 msgstr "Nowa aktualizacja od VoctManager"
 
@@ -605,65 +616,76 @@ msgstr "Odpowiedź artysty na projekt"
 msgid "Artist Attendance Info"
 msgstr "Informacja o obecności artysty"
 
-#: notifications/models.py:65
+#: notifications/models.py:55
+msgid "Direct Message from Management"
+msgstr ""
+
+#: notifications/models.py:56
+#, fuzzy
+#| msgid "Absence Requested by Artist"
+msgid "Message Read by Artist"
+msgstr "Prośba o nieobecność"
+
+#: notifications/models.py:69
 msgid "The user receiving the notification."
 msgstr "Użytkownik otrzymujący powiadomienie."
 
-#: notifications/models.py:71
+#: notifications/models.py:75
 msgid "Categorization key for frontend routing and icon selection."
 msgstr "Klucz kategorii dla interfejsu."
 
-#: notifications/models.py:77
+#: notifications/models.py:81
 msgid "Urgency level dictating frontend presentation."
 msgstr "Poziom ważności powiadomienia."
 
-#: notifications/models.py:82
+#: notifications/models.py:86
 msgid "Indicates whether the recipient has viewed this notification."
 msgstr "Status przeczytania powiadomienia."
 
-#: notifications/models.py:87
+#: notifications/models.py:91
 msgid "Timestamp of when the notification was marked as read."
 msgstr "Czas przeczytania powiadomienia."
 
-#: notifications/models.py:92
+#: notifications/models.py:96
 msgid ""
 "Contextual payload. E.g., {'project_id': 'uuid', 'piece_title': 'Requiem', "
 "'voice_type': 'Soprano 1'}."
 msgstr "Metadane powiadomienia."
 
-#: notifications/models.py:98
+#: notifications/models.py:102
 msgid "Notification"
 msgstr "Powiadomienie"
 
-#: notifications/models.py:99
+#: notifications/models.py:103
 msgid "Notifications"
 msgstr "Powiadomienia"
 
-#: notifications/models.py:115
+#: notifications/models.py:119
 msgid "Web Browser"
 msgstr "Przeglądarka internetowa"
 
-#: notifications/models.py:116
+#: notifications/models.py:120
 msgid "Apple iOS"
 msgstr "Apple iOS"
 
-#: notifications/models.py:117
+#: notifications/models.py:121
 msgid "Google Android"
 msgstr "Google Android"
 
-#: notifications/models.py:129
+#: notifications/models.py:133
 msgid "The user entity owning this device."
 msgstr "Użytkownik będący właścicielem tego urządzenia."
 
-#: notifications/models.py:133
+#: notifications/models.py:137
 msgid "The FCM or APNs device token provided by the client infrastructure."
-msgstr "Token urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta."
+msgstr ""
+"Token urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta."
 
-#: notifications/models.py:139
+#: notifications/models.py:143
 msgid "Hardware/Software platform of the registered device."
 msgstr "Platforma sprzętowa/programowa zarejestrowanego urządzenia."
 
-#: notifications/models.py:144
+#: notifications/models.py:148
 msgid ""
 "Indicates whether the token is currently valid. Invalidated automatically by "
 "delivery failures."
@@ -671,39 +693,40 @@ msgstr ""
 "Określa, czy token jest obecnie ważny. Unieważniany automatycznie przy "
 "błędach dostarczenia."
 
-#: notifications/models.py:149
+#: notifications/models.py:153
 msgid "Push Device"
 msgstr "Urządzenie Push"
 
-#: notifications/models.py:150
+#: notifications/models.py:154
 msgid "Push Devices"
 msgstr "Urządzenia Push"
 
-#: notifications/models.py:168
+#: notifications/models.py:172
 msgid "The user defining these preferences."
 msgstr "Użytkownik definiujący te preferencje."
 
-#: notifications/models.py:173
-msgid "The specific business event category this preference applies to."
-msgstr "Konkretna kategoria zdarzeń biznesowych, której dotyczy ta preferencja."
-
 #: notifications/models.py:177
+msgid "The specific business event category this preference applies to."
+msgstr ""
+"Konkretna kategoria zdarzeń biznesowych, której dotyczy ta preferencja."
+
+#: notifications/models.py:181
 msgid "Delivery authorization for Email channel."
 msgstr "Autoryzacja dostarczania dla kanału E-mail."
 
-#: notifications/models.py:181
+#: notifications/models.py:185
 msgid "Delivery authorization for Push channel."
 msgstr "Autoryzacja dostarczania dla kanału Push."
 
-#: notifications/models.py:185
+#: notifications/models.py:189
 msgid "Delivery authorization for SMS channel."
 msgstr "Autoryzacja dostarczania dla kanału SMS."
 
-#: notifications/models.py:190
+#: notifications/models.py:194
 msgid "Notification Preference"
 msgstr "Preferencja powiadomień"
 
-#: notifications/models.py:191
+#: notifications/models.py:195
 msgid "Notification Preferences"
 msgstr "Preferencje powiadomień"
 
@@ -1053,140 +1076,37 @@ msgstr "Przypisanie obsługi"
 msgid "Crew Assignments"
 msgstr "Obsługa techniczna"
 
-#: templates/emails/account_activation.html:9
-msgid "VoctManager Invitation"
-msgstr "Zaproszenie do VoctManager"
-
-#: templates/emails/account_activation.html:15
-#: templates/emails/account_activation.txt:4
-msgid "Activate your artist profile"
-msgstr "Aktywuj swój profil artysty"
-
-#: templates/emails/account_activation.html:21
-#: templates/emails/account_activation.txt:7
-#: templates/emails/account_deleted.html:21
-#: templates/emails/account_deleted.txt:7
-#: templates/emails/password_changed.html:21
-#: templates/emails/password_changed.txt:7
-#: templates/emails/system_notification.html:29
-#: templates/emails/system_notification.txt:8
-#, python-format
-msgid "Hello %(first_name)s,"
-msgstr "Witaj %(first_name)s,"
-
-#: templates/emails/account_activation.html:23
-#: templates/emails/account_activation.txt:7
-#: templates/emails/password_changed.html:23
-#: templates/emails/password_changed.txt:7
-#: templates/emails/system_notification.html:31
-#: templates/emails/system_notification.txt:8
-msgid "Hello,"
-msgstr "Witaj"
-
-#: templates/emails/account_activation.html:29
-#: templates/emails/account_activation.txt:9
-msgid ""
-"Your exclusive access to VoctManager has been prepared. Complete the final "
-"activation step to set your secure password and enter the operational "
-"workspace used for our projects and rehearsals."
-msgstr ""
-"Twój ekskluzywny dostęp do platformy VoctManager jest już gotowy. Dokończ "
-"proces aktywacji, aby ustawić bezpieczne hasło i uzyskać dostęp do panelu "
-"operacyjnego, w którym zarządzamy naszymi projektami i próbami."
-
-#: templates/emails/account_activation.html:41
-#: templates/emails/account_activation.txt:15
-msgid "Security Notice:"
-msgstr "Informacja o bezpieczeństwie:"
-
-#: templates/emails/account_activation.html:42
-#: templates/emails/account_activation.txt:16
-msgid ""
-"This activation link is unique to your account. For your security, it will "
-"expire automatically. Please do not share it with anyone."
-msgstr ""
-"Ten link aktywacyjny jest przypisany wyłącznie do Twojego konta. Ze względów "
-"bezpieczeństwa wygaśnie on automatycznie. Prosimy nie udostępniać go nikomu."
-
-#: templates/emails/account_activation.html:60
-msgid "Activate Account"
-msgstr "Aktywuj Konto"
-
-#: templates/emails/account_activation.html:70
-#: templates/emails/account_activation.txt:25
-msgid ""
-"If the button does not work, securely copy and paste this link into your "
-"browser:"
-msgstr ""
-"Jeśli przycisk nie działa, bezpiecznie skopiuj i wklej poniższy link do "
-"przeglądarki:"
-
-#: templates/emails/account_activation.html:81
-#: templates/emails/account_activation.txt:35
-#: templates/emails/account_deleted.html:49
-#: templates/emails/account_deleted.txt:19
-#: templates/emails/password_changed.html:56
-#: templates/emails/password_changed.txt:19
-#: templates/emails/system_notification.html:156
-#: templates/emails/system_notification.txt:33
-#: templates/emails/welcome_email.html:126
-#: templates/emails/welcome_email.txt:34
-msgid "Musically yours,"
-msgstr "Z muzycznym pozdrowieniem,"
-
-#: templates/emails/account_activation.html:82
-#: templates/emails/account_activation.txt:36
-#: templates/emails/account_deleted.html:50
-#: templates/emails/account_deleted.txt:20
-#: templates/emails/password_changed.html:57
-#: templates/emails/password_changed.txt:20
-#: templates/emails/system_notification.html:157
-#: templates/emails/system_notification.txt:34
-#: templates/emails/welcome_email.html:127
-#: templates/emails/welcome_email.txt:35
-msgid "The VoctEnsemble Team"
-msgstr "Zespół VoctEnsemble"
-
-#: templates/emails/account_activation.txt:2
-msgid "VOCTMANAGER INVITATION"
-msgstr "Zaproszenie do VoctManager"
-
-#: templates/emails/account_activation.txt:21
-msgid "ACTIVATE ACCOUNT NOW:"
-msgstr "AKTYWUJ KONTO TERAZ:"
-
-#: templates/emails/account_activation.txt:31
-msgid ""
-"If you did not expect this message, contact the VoctEnsemble administration "
-"team."
-msgstr ""
-"Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z zespołem "
-"administracyjnym VoctEnsemble."
-
 # ── account_activation (nowy szablon) ─────────────────────────────────────
-
-#: templates/emails/account_activation.html:7
+#: templates/emails/account_activation.html:14
 msgid "Overture"
 msgstr "Uwertura"
 
-#: templates/emails/account_activation.html:12
+#: templates/emails/account_activation.html:20
 msgid "Welcome to VoctManager"
 msgstr "Witamy w VoctManager"
 
-#: templates/emails/account_activation.html:18
+#: templates/emails/account_activation.html:26
 msgid "Your profile awaits"
 msgstr "Twój profil oczekuje"
 
-#: templates/emails/account_activation.html:25
+#: templates/emails/account_activation.html:46
+#: templates/emails/account_activation.txt:6
+#: templates/emails/account_deleted.html:46
+#: templates/emails/password_changed.html:46
+#: templates/emails/welcome_email.html:46
 #, python-format
 msgid "Dear %(first_name)s,"
 msgstr "Drogi %(first_name)s,"
 
-#: templates/emails/account_activation.html:28
+#: templates/emails/account_activation.html:48
+#: templates/emails/account_activation.txt:6
+#: templates/emails/account_deleted.html:48
+#: templates/emails/password_changed.html:48
+#: templates/emails/welcome_email.html:48
 msgid "Dear Artist,"
 msgstr "Drogi Artysto,"
 
-#: templates/emails/account_activation.html:32
+#: templates/emails/account_activation.html:54
 msgid ""
 "Your place within VoctEnsemble is ready. We have prepared your private "
 "workspace &mdash; where repertoire, rehearsal schedules, and artistic "
@@ -1196,62 +1116,114 @@ msgstr ""
 "obszar roboczy — gdzie repertuar, harmonogramy prób i współpraca artystyczna "
 "łączą się w jednym miejscu."
 
-#: templates/emails/account_activation.html:39
+#: templates/emails/account_activation.html:64
 msgid "One final step remains before the music begins."
 msgstr "Jeden ostatni krok dzieli Cię od muzyki."
 
-#: templates/emails/account_activation.html:46
+#: templates/emails/account_activation.html:80
 msgid "Complete your activation"
 msgstr "Dokończ aktywację"
 
-#: templates/emails/account_activation.html:51
+#: templates/emails/account_activation.html:88
 msgid "Activate Profile"
 msgstr "Aktywuj Profil"
 
-#: templates/emails/account_activation.html:57
+#: templates/emails/account_activation.html:93
 msgid "This invitation expires automatically"
 msgstr "To zaproszenie wygasa automatycznie"
 
-#: templates/emails/account_activation.html:66
+#: templates/emails/account_activation.html:112
 msgid "For your security"
 msgstr "Dla Twojego bezpieczeństwa"
 
-#: templates/emails/account_activation.html:68
+#: templates/emails/account_activation.html:113
+#: templates/emails/account_activation.txt:23
 msgid ""
 "This unique access key will expire automatically. Please ensure it remains "
 "confidential and do not share it."
 msgstr ""
-"Ten unikalny klucz dostępu wygaśnie automatycznie. Zachowaj go w tajemnicy "
-"i nie udostępniaj go nikomu."
+"Ten unikalny klucz dostępu wygaśnie automatycznie. Zachowaj go w tajemnicy i "
+"nie udostępniaj go nikomu."
 
-#: templates/emails/account_activation.html:74
+#: templates/emails/account_activation.html:122
 msgid "Link not working?"
 msgstr "Link nie działa?"
 
-#: templates/emails/account_activation.html:76
+#: templates/emails/account_activation.html:125
 msgid "Use this fallback link"
 msgstr "Użyj alternatywnego linku"
 
-#: templates/emails/account_activation.html:84
+#: templates/emails/account_activation.html:143
+#: templates/emails/account_activation.txt:31
+#: templates/emails/account_deleted.html:107
+#: templates/emails/custom_admin_message.html:123
+#: templates/emails/custom_admin_message.txt:20
+#: templates/emails/password_changed.html:128
+#: templates/emails/system_notification.html:262
+#: templates/emails/welcome_email.html:180
 msgid "With warmest regards,"
 msgstr "Z serdecznymi pozdrowieniami,"
 
-#: templates/emails/account_deleted.html:9
-#: templates/emails/account_deleted.txt:2
-msgid "Account Closure"
-msgstr "Zamknięcie konta"
+#: templates/emails/account_activation.html:149
+#: templates/emails/account_activation.txt:32
+#: templates/emails/account_deleted.html:113
+#: templates/emails/account_deleted.txt:20
+#: templates/emails/custom_admin_message.html:129
+#: templates/emails/custom_admin_message.txt:21
+#: templates/emails/password_changed.html:134
+#: templates/emails/password_changed.txt:20
+#: templates/emails/system_notification.html:268
+#: templates/emails/system_notification.txt:41
+#: templates/emails/welcome_email.html:186
+#: templates/emails/welcome_email.txt:35
+msgid "The VoctEnsemble Team"
+msgstr "Zespół VoctEnsemble"
 
-#: templates/emails/account_deleted.html:15
+#: templates/emails/account_activation.txt:8
+#, fuzzy
+#| msgid ""
+#| "Your exclusive access to VoctManager has been prepared. Complete the "
+#| "final activation step to set your secure password and enter the "
+#| "operational workspace used for our projects and rehearsals."
+msgid ""
+"We are honored to invite you to our digital workspace. Your profile has been "
+"meticulously prepared. Please complete the final activation step to "
+"establish your secure credentials and step into the operational heart of our "
+"ensemble."
+msgstr ""
+"Twój ekskluzywny dostęp do platformy VoctManager jest już gotowy. Dokończ "
+"proces aktywacji, aby ustawić bezpieczne hasło i uzyskać dostęp do panelu "
+"operacyjnego, w którym zarządzamy naszymi projektami i próbami."
+
+#: templates/emails/account_activation.txt:16
+#, fuzzy
+#| msgid "ACTIVATE ACCOUNT NOW:"
+msgid "ACTIVATE YOUR PROFILE"
+msgstr "AKTYWUJ KONTO TERAZ:"
+
+#: templates/emails/account_activation.txt:22
+msgid "FOR YOUR SECURITY"
+msgstr ""
+
+#: templates/emails/account_deleted.html:14
+msgid "Coda"
+msgstr ""
+
+#: templates/emails/account_deleted.html:20
 #: templates/emails/account_deleted.txt:4
 msgid "Your VoctManager account has been closed"
 msgstr "Twoje konto VoctManager zostało zamknięte"
 
-#: templates/emails/account_deleted.html:27
+#: templates/emails/account_deleted.html:26
+msgid "A quiet farewell"
+msgstr ""
+
+#: templates/emails/account_deleted.html:54
 #: templates/emails/account_deleted.txt:10
 msgid "We have successfully processed your account deletion request."
 msgstr "Pomyślnie przetworzyliśmy Twoje żądanie usunięcia konta."
 
-#: templates/emails/account_deleted.html:32
+#: templates/emails/account_deleted.html:59
 #: templates/emails/account_deleted.txt:12
 msgid ""
 "All personal data associated with your account has been permanently removed "
@@ -1260,33 +1232,111 @@ msgstr ""
 "Wszystkie dane osobowe powiązane z Twoim kontem zostały trwale usunięte z "
 "naszych systemów zgodnie z naszą polityką prywatności."
 
-#: templates/emails/account_deleted.html:39
+#: templates/emails/account_deleted.html:64
 #: templates/emails/account_deleted.txt:15
 msgid ""
 "It has been our honour to have you as part of the VoctEnsemble community."
 msgstr "Było dla nas zaszczytem mieć Cię w społeczności VoctEnsemble."
 
-#: templates/emails/account_deleted.html:44
+#: templates/emails/account_deleted.html:70
+msgid ""
+"Your artistic journey with us remains a chapter we shall remember with "
+"fondness."
+msgstr ""
+
+#: templates/emails/account_deleted.html:85
+#, fuzzy
+#| msgid "Information"
+msgid "Confirmation"
+msgstr "Informacja"
+
+#: templates/emails/account_deleted.html:86
 #: templates/emails/account_deleted.txt:17
 msgid "This confirmation was sent to:"
 msgstr "To potwierdzenie zostało wysłane na adres:"
 
-#: templates/emails/base.html:237
-msgid "Automatically generated. Please do not reply to this message."
+#: templates/emails/account_deleted.txt:2
+msgid "Account Closure"
+msgstr "Zamknięcie konta"
+
+#: templates/emails/account_deleted.txt:7
+#: templates/emails/custom_admin_message.html:46
+#: templates/emails/custom_admin_message.txt:6
+#: templates/emails/password_changed.txt:7
+#: templates/emails/system_notification.html:54
+#: templates/emails/system_notification.txt:8
+#, python-format
+msgid "Hello %(first_name)s,"
+msgstr "Witaj %(first_name)s,"
+
+#: templates/emails/account_deleted.txt:19
+#: templates/emails/password_changed.txt:19
+#: templates/emails/system_notification.txt:40
+#: templates/emails/welcome_email.txt:34
+msgid "Musically yours,"
+msgstr "Z muzycznym pozdrowieniem,"
+
+#: templates/emails/base.html:125
+#, fuzzy
+#| msgid "Automatically generated. Please do not reply to this message."
+msgid "Automatically generated. Please do not reply."
 msgstr ""
 "Wiadomość generowana automatycznie. Prosimy nie odpowiadać na tę wiadomość."
 
-#: templates/emails/password_changed.html:9
-#: templates/emails/password_changed.txt:2
-msgid "Security Notice"
-msgstr "Informacja o bezpieczeństwie"
+#: templates/emails/base.html:135
+msgid ""
+"You are receiving this because you are a member of the VoctEnsemble artist "
+"network."
+msgstr ""
 
-#: templates/emails/password_changed.html:15
+#: templates/emails/custom_admin_message.html:26
+#: templates/emails/custom_admin_message.txt:2
+#, python-format
+msgid "Message from %(sender)s"
+msgstr ""
+
+#: templates/emails/custom_admin_message.html:48
+#: templates/emails/custom_admin_message.txt:6
+#: templates/emails/password_changed.txt:7
+#: templates/emails/system_notification.html:56
+#: templates/emails/system_notification.txt:8
+msgid "Hello,"
+msgstr "Witaj"
+
+#: templates/emails/custom_admin_message.html:82
+#: templates/emails/custom_admin_message.txt:13
+msgid "Open link"
+msgstr ""
+
+#: templates/emails/custom_admin_message.html:95
+#: templates/emails/system_notification.html:228
+#, fuzzy
+#| msgid "Private Workspace"
+msgid "Your workspace"
+msgstr "Prywatna przestrzeń robocza"
+
+#: templates/emails/custom_admin_message.html:102
+#: templates/emails/custom_admin_message.txt:16
+#: templates/emails/system_notification.html:236
+msgid "Open VoctManager"
+msgstr "Otwórz VoctManager"
+
+#: templates/emails/password_changed.html:14
+msgid "Sentinel"
+msgstr ""
+
+#: templates/emails/password_changed.html:20
 #: templates/emails/password_changed.txt:4
 msgid "Your password has been changed"
 msgstr "Twoje hasło zostało zmienione"
 
-#: templates/emails/password_changed.html:29
+#: templates/emails/password_changed.html:26
+#, fuzzy
+#| msgid "For your security"
+msgid "Your account security"
+msgstr "Dla Twojego bezpieczeństwa"
+
+#: templates/emails/password_changed.html:54
 #: templates/emails/password_changed.txt:9
 msgid ""
 "We are writing to confirm that your VoctManager password was recently "
@@ -1295,18 +1345,18 @@ msgstr ""
 "Piszemy, aby potwierdzić, że hasło do Twojego konta VoctManager zostało "
 "niedawno zmienione."
 
-#: templates/emails/password_changed.html:34
+#: templates/emails/password_changed.html:59
 #: templates/emails/password_changed.txt:11
 msgid "If you made this change, no further action is required."
 msgstr ""
 "Jeśli to Ty dokonałeś/aś tej zmiany, nie musisz podejmować żadnych działań."
 
-#: templates/emails/password_changed.html:42
+#: templates/emails/password_changed.html:74
 #: templates/emails/password_changed.txt:13
 msgid "Did not make this change?"
 msgstr "Nie dokonywałeś/aś tej zmiany?"
 
-#: templates/emails/password_changed.html:43
+#: templates/emails/password_changed.html:75
 #: templates/emails/password_changed.txt:14
 msgid ""
 "If you did not make this change, please contact our administration team "
@@ -1315,75 +1365,124 @@ msgstr ""
 "Jeśli nie dokonałeś/aś tej zmiany, natychmiast skontaktuj się z naszym "
 "zespołem administracyjnym, aby zabezpieczyć konto."
 
-#: templates/emails/password_changed.html:51
+#: templates/emails/password_changed.html:94
+msgid "Immediate action required"
+msgstr ""
+
+#: templates/emails/password_changed.html:102
+#, fuzzy
+#| msgid "Activate Account"
+msgid "Secure My Account"
+msgstr "Aktywuj Konto"
+
+#: templates/emails/password_changed.html:107
+msgid "Take control of your account security"
+msgstr ""
+
+#: templates/emails/password_changed.txt:2
+msgid "Security Notice"
+msgstr "Informacja o bezpieczeństwie"
+
 #: templates/emails/password_changed.txt:17
 msgid "This security alert was sent to:"
 msgstr "Ten alert bezpieczeństwa został wysłany na adres:"
 
-#: templates/emails/system_notification.html:22
+#: templates/emails/system_notification.html:27
 #: templates/emails/system_notification.txt:4
 msgid "New notification"
 msgstr "Nowe powiadomienie"
 
-#: templates/emails/system_notification.html:49
-#: templates/emails/system_notification.txt:13
+#: templates/emails/system_notification.html:34
+#, fuzzy
+#| msgid "Notification Preference"
+msgid "Notification from your workspace"
+msgstr "Preferencja powiadomień"
+
+#: templates/emails/system_notification.html:70
+#, python-format
+msgid ""
+"You have been invited to participate in the concert "
+"\"<strong>%(project_name)s</strong>\"."
+msgstr ""
+
+#: templates/emails/system_notification.html:90
+#: templates/emails/system_notification.txt:16
 msgid "Invited by:"
 msgstr "Zaprasza:"
 
-#: templates/emails/system_notification.html:56
-#: templates/emails/system_notification.txt:15
+#: templates/emails/system_notification.html:99
+#: templates/emails/system_notification.txt:18
 msgid "Date:"
 msgstr "Termin:"
 
-#: templates/emails/system_notification.html:63
-#: templates/emails/system_notification.txt:17
+#: templates/emails/system_notification.html:108
+#: templates/emails/system_notification.txt:20
 msgid "Location:"
 msgstr "Miejsce:"
 
-#: templates/emails/system_notification.html:76
-#: templates/emails/system_notification.txt:19
+#: templates/emails/system_notification.html:117
+#: templates/emails/system_notification.txt:22
+#, fuzzy
+#| msgid "Description"
+msgid "Description:"
+msgstr "Opis"
+
+#: templates/emails/system_notification.html:136
+#: templates/emails/system_notification.txt:24
 msgid "Voice part:"
 msgstr "Głos:"
 
-#: templates/emails/system_notification.html:89
-#: templates/emails/system_notification.txt:21
+#: templates/emails/system_notification.html:155
+#: templates/emails/system_notification.txt:26
 msgid "Details:"
 msgstr "Szczegóły:"
 
-#: templates/emails/system_notification.html:96
-#: templates/emails/system_notification.txt:23
+#: templates/emails/system_notification.html:164
+#: templates/emails/system_notification.txt:28
 msgid "Rehearsal:"
 msgstr "Próba:"
 
-#: templates/emails/system_notification.html:109
+#: templates/emails/system_notification.html:183
 msgid "Rehearsal date:"
 msgstr "Data próby:"
 
-#: templates/emails/system_notification.html:121
+#: templates/emails/system_notification.html:199
 msgid "Changes"
 msgstr "Zmiany"
 
-#: templates/emails/system_notification.html:146
-msgid "Open VoctManager"
-msgstr "Otwórz VoctManager"
+#: templates/emails/system_notification.html:241
+msgid "View the full details in your workspace"
+msgstr ""
 
-#: templates/emails/system_notification.txt:26
+#: templates/emails/system_notification.txt:13
+#, python-format
+msgid ""
+"You have been invited to participate in the concert \"%(project_name)s\"."
+msgstr ""
+
+#: templates/emails/system_notification.txt:32
 msgid "Changes:"
 msgstr "Zmiany:"
 
-#: templates/emails/system_notification.txt:31
+#: templates/emails/system_notification.txt:38
 msgid "Open VoctManager:"
 msgstr "Otwórz VoctManager:"
 
-#: templates/emails/welcome_email.html:9 templates/emails/welcome_email.txt:2
-msgid "Welcome"
-msgstr "Witamy"
+#: templates/emails/welcome_email.html:14
+msgid "Aria"
+msgstr ""
 
-#: templates/emails/welcome_email.html:15 templates/emails/welcome_email.txt:4
+#: templates/emails/welcome_email.html:20 templates/emails/welcome_email.txt:4
 msgid "Welcome to VoctEnsemble"
 msgstr "Witaj w VoctEnsemble"
 
-#: templates/emails/welcome_email.html:20 templates/emails/welcome_email.txt:7
+#: templates/emails/welcome_email.html:26
+#, fuzzy
+#| msgid "Your profile awaits"
+msgid "Your stage awaits"
+msgstr "Twój profil oczekuje"
+
+#: templates/emails/welcome_email.html:54 templates/emails/welcome_email.txt:7
 msgid ""
 "We are thrilled to welcome you to VoctManager — the digital heart of our "
 "artistic operations. This platform was designed to streamline our creative "
@@ -1395,29 +1494,34 @@ msgstr ""
 "nasz proces twórczy — od zarządzania repertuarem po logistykę koncertową — "
 "tak, abyś mógł/mogła skupić się wyłącznie na muzyce."
 
-#: templates/emails/welcome_email.html:30 templates/emails/welcome_email.txt:14
+#: templates/emails/welcome_email.html:64
 msgid ""
-"Your profile has been successfully provisioned. You can now log in to view "
-"your upcoming projects, access sheet music, and review rehearsal schedules."
+"Your profile has been provisioned and is ready to explore. Should you "
+"encounter any difficulty accessing your account, our administration team "
+"remains at hand."
 msgstr ""
-"Twój profil został pomyślnie utworzony. Możesz teraz zalogować się, aby "
-"sprawdzić nadchodzące projekty, pobrać nuty oraz przejrzeć harmonogram prób."
 
-#: templates/emails/welcome_email.html:47
+#: templates/emails/welcome_email.html:74
+msgid "All that remains is to take your place."
+msgstr ""
+
+#: templates/emails/welcome_email.html:89
 msgid "Projects &amp; Repertoire"
 msgstr "Projekty i repertuar"
 
-#: templates/emails/welcome_email.html:51 templates/emails/welcome_email.txt:20
+#: templates/emails/welcome_email.html:93 templates/emails/welcome_email.txt:20
 msgid ""
 "View your upcoming projects, concert programmes, and casting assignments."
 msgstr ""
 "Przeglądaj nadchodzące projekty, programy koncertów i przypisania obsadowe."
 
-#: templates/emails/welcome_email.html:67 templates/emails/welcome_email.txt:22
+#: templates/emails/welcome_email.html:106
+#: templates/emails/welcome_email.txt:22
 msgid "Sheet Music"
 msgstr "Nuty"
 
-#: templates/emails/welcome_email.html:71 templates/emails/welcome_email.txt:23
+#: templates/emails/welcome_email.html:110
+#: templates/emails/welcome_email.txt:23
 msgid ""
 "Access your digital score library — scores and audio materials, organised by "
 "project."
@@ -1425,29 +1529,42 @@ msgstr ""
 "Korzystaj z cyfrowej biblioteki nut — partytury i materiały audio, "
 "posegregowane według projektów."
 
-#: templates/emails/welcome_email.html:87 templates/emails/welcome_email.txt:25
+#: templates/emails/welcome_email.html:123
+#: templates/emails/welcome_email.txt:25
 msgid "Rehearsal Schedule"
 msgstr "Harmonogram prób"
 
-#: templates/emails/welcome_email.html:91 templates/emails/welcome_email.txt:26
+#: templates/emails/welcome_email.html:127
+#: templates/emails/welcome_email.txt:26
 msgid ""
 "Stay up to date with rehearsal times, locations, and any last-minute changes."
 msgstr ""
 "Bądź na bieżąco z godzinami prób, miejscami i wszelkimi zmianami w ostatniej "
 "chwili."
 
-#: templates/emails/welcome_email.html:111
+#: templates/emails/welcome_email.html:146
+msgid "Your personal workspace"
+msgstr ""
+
+#: templates/emails/welcome_email.html:154
 msgid "Access Your Dashboard"
 msgstr "Przejdź do panelu"
 
-#: templates/emails/welcome_email.html:121
-#: templates/emails/welcome_email.txt:32
-msgid ""
-"If you experience any issues logging in, please reach out to the "
-"administration team."
+#: templates/emails/welcome_email.html:159
+msgid "Sign in at any time from any device"
 msgstr ""
-"W razie problemów z logowaniem, prosimy o kontakt z zespołem "
-"administracyjnym."
+
+#: templates/emails/welcome_email.txt:2
+msgid "Welcome"
+msgstr "Witamy"
+
+#: templates/emails/welcome_email.txt:14
+msgid ""
+"Your profile has been successfully provisioned. You can now log in to view "
+"your upcoming projects, access sheet music, and review rehearsal schedules."
+msgstr ""
+"Twój profil został pomyślnie utworzony. Możesz teraz zalogować się, aby "
+"sprawdzić nadchodzące projekty, pobrać nuty oraz przejrzeć harmonogram prób."
 
 #: templates/emails/welcome_email.txt:19
 msgid "Projects & Repertoire"
@@ -1456,6 +1573,48 @@ msgstr "Projekty i repertuar"
 #: templates/emails/welcome_email.txt:28
 msgid "Access Your Dashboard here:"
 msgstr "Uzyskaj dostęp do swojego panelu tutaj:"
+
+#: templates/emails/welcome_email.txt:32
+msgid ""
+"If you experience any issues logging in, please reach out to the "
+"administration team."
+msgstr ""
+"W razie problemów z logowaniem, prosimy o kontakt z zespołem "
+"administracyjnym."
+
+#~ msgid "VoctManager Invitation"
+#~ msgstr "Zaproszenie do VoctManager"
+
+#~ msgid "Activate your artist profile"
+#~ msgstr "Aktywuj swój profil artysty"
+
+#~ msgid "Security Notice:"
+#~ msgstr "Informacja o bezpieczeństwie:"
+
+#~ msgid ""
+#~ "This activation link is unique to your account. For your security, it "
+#~ "will expire automatically. Please do not share it with anyone."
+#~ msgstr ""
+#~ "Ten link aktywacyjny jest przypisany wyłącznie do Twojego konta. Ze "
+#~ "względów bezpieczeństwa wygaśnie on automatycznie. Prosimy nie "
+#~ "udostępniać go nikomu."
+
+#~ msgid ""
+#~ "If the button does not work, securely copy and paste this link into your "
+#~ "browser:"
+#~ msgstr ""
+#~ "Jeśli przycisk nie działa, bezpiecznie skopiuj i wklej poniższy link do "
+#~ "przeglądarki:"
+
+#~ msgid "VOCTMANAGER INVITATION"
+#~ msgstr "Zaproszenie do VoctManager"
+
+#~ msgid ""
+#~ "If you did not expect this message, contact the VoctEnsemble "
+#~ "administration team."
+#~ msgstr ""
+#~ "Jeśli nie spodziewałeś się tej wiadomości, skontaktuj się z zespołem "
+#~ "administracyjnym VoctEnsemble."
 
 #~ msgid ""
 #~ "Critical for rendering rehearsal/project times correctly across regions."

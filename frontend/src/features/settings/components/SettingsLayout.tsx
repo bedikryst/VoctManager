@@ -56,37 +56,37 @@ export default function SettingsLayout(): React.JSX.Element {
   const tabs: TabDef[] = [
     {
       id: "general",
-      label: t("settings.tabs.general", "Ogólne"),
+      label: t("settings.tabs.general.label", "Ogólne"),
       shortLabel: t("settings.tabs.general.short", "Ogólne"),
       icon: <User size={18} strokeWidth={1.5} />,
     },
     {
       id: "security",
-      label: t("settings.tabs.security", "Bezpieczeństwo"),
+      label: t("settings.tabs.security.label", "Bezpieczeństwo"),
       shortLabel: t("settings.tabs.security.short", "Hasło"),
       icon: <Shield size={18} strokeWidth={1.5} />,
     },
     {
       id: "logistics",
-      label: t("settings.tabs.logistics", "Logistyka"),
+      label: t("settings.tabs.logistics.label", "Logistyka"),
       shortLabel: t("settings.tabs.logistics.short", "Logistyka"),
       icon: <Truck size={18} strokeWidth={1.5} />,
     },
     {
       id: "privacy",
-      label: t("settings.tabs.privacy", "Prywatność"),
+      label: t("settings.tabs.privacy.label", "Prywatność"),
       shortLabel: t("settings.tabs.privacy.short", "Prywatność"),
       icon: <ShieldAlert size={18} strokeWidth={1.5} />,
     },
     {
       id: "integrations",
-      label: t("settings.tabs.integrations", "Integracje"),
+      label: t("settings.tabs.integrations.label", "Integracje"),
       shortLabel: t("settings.tabs.integrations.short", "Kalend."),
       icon: <Calendar size={18} strokeWidth={1.5} />,
     },
     {
       id: "notifications",
-      label: t("settings.tabs.notifications", "Powiadomienia"),
+      label: t("settings.tabs.notifications.label", "Powiadomienia"),
       shortLabel: t("settings.tabs.notifications.short", "Alerty"),
       icon: <Bell size={18} strokeWidth={1.5} />,
     },
