@@ -55,20 +55,17 @@ export const Tooltip = ({
       onOpenChange={handleOpenChange}
       delayDuration={10}
     >
-      {/* Trigger pozostaje asChild, bo zawsze otrzymuje czysty, renderowany pojedynczy element (np. <button>) */}
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
 
       <AnimatePresence>
         {isOpen && !disabled && (
           <TooltipPrimitive.Portal forceMount key="tooltip-portal">
-            {/* Brak asChild! Radix renderuje czysty, techniczny div do pozycjonowania (transform: translate) */}
             <TooltipPrimitive.Content
               forceMount
               side={side}
               sideOffset={14}
               className="z-[100] pointer-events-none"
             >
-              {/* motion.div renderuje się niezależnie i zajmuje się wyłącznie animacją (transform: scale) */}
               <motion.div
                 initial={INITIAL_PROPS[side]}
                 animate={ANIMATE_PROPS[side]}
@@ -88,7 +85,6 @@ export const Tooltip = ({
                 >
                   {content}
                 </Label>
-                {/* Arrow pozycjonuje się poprawnie dzięki className="relative" dodanemu do wyższego motion.div */}
                 <TooltipPrimitive.Arrow
                   width={12}
                   height={6}

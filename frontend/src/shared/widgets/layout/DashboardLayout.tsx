@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { useLocation, useOutlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -20,6 +20,8 @@ import { ProjectInvitationToasts } from "@/features/notifications/components/Pro
 export const DashboardLayout = (): React.JSX.Element => {
   const { user, logout } = useAuth();
   const location = useLocation();
+
+  const outlet = useOutlet();
 
   useEffect(() => {
     document.body.classList.add("admin-mode");
@@ -36,7 +38,7 @@ export const DashboardLayout = (): React.JSX.Element => {
         id="main-content"
       >
         <div className="mx-auto flex h-full w-full max-w-7xl flex-col relative">
-          <AnimatePresence mode="popLayout" initial={false}>
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0, y: 12 }}
@@ -45,12 +47,12 @@ export const DashboardLayout = (): React.JSX.Element => {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col w-full h-full"
             >
-              <Outlet />
+              {outlet}
             </motion.div>
           </AnimatePresence>
         </div>
       </main>
-      <ProjectInvitationToasts />;
+      <ProjectInvitationToasts />
     </div>
   );
 };
