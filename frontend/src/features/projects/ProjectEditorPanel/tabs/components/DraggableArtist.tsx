@@ -37,7 +37,8 @@ export const DraggableArtist = React.memo(function DraggableArtist({
 }: DraggableArtistProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  const isBlocked = !isOverlay && !!participationStatus && participationStatus !== "CON";
+  const isBlocked =
+    !isOverlay && !!participationStatus && participationStatus !== "CON";
 
   const draggable = useDraggable({
     id: participationId,
@@ -45,7 +46,9 @@ export const DraggableArtist = React.memo(function DraggableArtist({
   });
   const { attributes, listeners, setNodeRef, isDragging } = draggable;
 
-  const voiceTypeInitial = artist.voice_type_display?.substring(0, 1) || "?";
+  const voiceTypeInitial = artist.voice_type
+    ? t(`dashboard.layout.roles.${artist.voice_type}`).substring(0, 1)
+    : artist.voice_type_display?.substring(0, 1) || "?";
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [noteValue, setNoteValue] = useState<string>(casting?.notes || "");

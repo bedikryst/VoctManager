@@ -85,7 +85,9 @@ const ArtistCard = React.memo(
                   isDeclined ? "danger" : isAssigned ? "warning" : "neutral"
                 }
               >
-                {artist.voice_type_display || artist.voice_type || "?"}
+                {artist.voice_type
+                  ? t(`dashboard.layout.roles.${artist.voice_type}`)
+                  : artist.voice_type_display || artist.voice_type || "?"}
               </Badge>
             </div>
 

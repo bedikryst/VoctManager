@@ -19,6 +19,7 @@ export const PieceDivisiRoster = ({
     (acc, c) => {
       const label =
         c.voice_line_display ||
+        (c.voice_line ? t(`dashboard.layout.roles.${c.voice_line}`) : null) ||
         c.voice_line ||
         t("materials.piece.other_voice", "Inne");
       if (!acc[label]) acc[label] = [];
@@ -31,7 +32,11 @@ export const PieceDivisiRoster = ({
   return (
     <GlassCard variant="ethereal">
       <div className="flex items-center gap-1.5 border-b border-ethereal-marble pb-2 mb-3">
-        <Users size={13} className="text-ethereal-graphite" aria-hidden="true" />
+        <Users
+          size={13}
+          className="text-ethereal-graphite"
+          aria-hidden="true"
+        />
         <Eyebrow color="muted">
           {t("materials.piece.cast_divisi", "Obsada (Divisi)")}
         </Eyebrow>

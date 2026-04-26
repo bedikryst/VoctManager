@@ -52,8 +52,20 @@ export const MicroCastingTab = ({
 
   const VOICE_GROUPS = [
     { label: t("projects.micro_cast.voices.sopranos", "Soprany"), filter: "S" },
+    {
+      label: t("projects.micro_cast.voices.mezzos", "Mezzosoprany"),
+      filter: "M",
+    },
     { label: t("projects.micro_cast.voices.altos", "Alty"), filter: "A" },
+    {
+      label: t("projects.micro_cast.voices.countertenors", "Kontratenory"),
+      filter: "C",
+    },
     { label: t("projects.micro_cast.voices.tenors", "Tenory"), filter: "T" },
+    {
+      label: t("projects.micro_cast.voices.baritones", "Barytony"),
+      filter: "BAR",
+    },
     { label: t("projects.micro_cast.voices.basses", "Basy"), filter: "B" },
   ];
 

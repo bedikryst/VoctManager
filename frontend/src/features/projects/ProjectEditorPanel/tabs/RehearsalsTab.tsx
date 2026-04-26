@@ -307,7 +307,11 @@ export const RehearsalsTab = ({
                           {artist.first_name} {artist.last_name}
                         </Text>
                         <Eyebrow color="inherit" className="ml-2 opacity-60">
-                          {artist.voice_type_display || artist.voice_type || ""}
+                          {artist.voice_type
+                            ? t(`dashboard.layout.roles.${artist.voice_type}`)
+                            : artist.voice_type_display ||
+                              artist.voice_type ||
+                              ""}
                         </Eyebrow>
                       </Button>
                     );

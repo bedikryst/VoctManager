@@ -108,7 +108,11 @@ export const PieceMaterialCard = ({
                 />
                 <Eyebrow color="incense">
                   {piece.my_casting.voice_line_display ||
-                    piece.my_casting.voice_line}
+                    (piece.my_casting.voice_line
+                      ? t(
+                          `dashboard.layout.roles.${piece.my_casting.voice_line}`,
+                        )
+                      : piece.my_casting.voice_line)}
                 </Eyebrow>
               </div>
             )}
@@ -282,7 +286,11 @@ export const PieceMaterialCard = ({
                                 {t("materials.piece.part", "Partia:")}
                               </Emphasis>{" "}
                               {piece.my_casting.voice_line_display ||
-                                piece.my_casting.voice_line}
+                                (piece.my_casting.voice_line
+                                  ? t(
+                                      `dashboard.layout.roles.${piece.my_casting.voice_line}`,
+                                    )
+                                  : piece.my_casting.voice_line)}
                             </Text>
                           </div>
                         </div>
