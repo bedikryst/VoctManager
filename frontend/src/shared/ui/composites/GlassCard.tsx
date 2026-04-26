@@ -24,7 +24,7 @@ const glassCardVariants = cva(
         ethereal:
           "bg-glass-surface backdrop-blur-ethereal border border-glass-border shadow-glass-ethereal",
         solid:
-          "bg-ethereal-marble border border-ethereal-ink/10 shadow-glass-solid",
+          "bg-ethereal-alabaster/70 border border-ethereal-ink/10 shadow-glass-solid",
         dark: "bg-ethereal-ink/90 backdrop-blur-ethereal border border-ethereal-incense/20 text-ethereal-marble shadow-glass-solid",
         outline:
           "bg-transparent border border-ethereal-incense/30 transition-colors hover:border-ethereal-gold hover:shadow-glass-outline-hover",

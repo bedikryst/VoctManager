@@ -69,7 +69,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative flex items-center">
           {leftIcon && (
             <div
-              className="absolute left-4 flex items-center justify-center text-ethereal-incense"
+              className="absolute left-0 flex items-center justify-center text-ethereal-incense"
               aria-hidden="true"
             >
               {/* Refactored to eliminate 'any' type violation */}
@@ -92,7 +92,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={hasError ? errorId : undefined}
             className={cn(
               inputVariants({ variant, hasError, className }),
-              leftIcon ? "pl-11" : "px-4",
+              leftIcon ? "ml-5" : "px-4",
               rightElement ? "pr-12" : "px-4",
               "py-3",
             )}
@@ -101,7 +101,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
           {rightElement && (
             <div
-              className="absolute right-4 flex items-center justify-center text-[10px] font-bold text-ethereal-incense uppercase tracking-tighter"
+              className="absolute right-6 flex items-center justify-center text-[10px] font-bold text-ethereal-incense uppercase tracking-tighter"
               aria-hidden="true"
             >
               {rightElement}

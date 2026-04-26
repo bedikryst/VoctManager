@@ -222,7 +222,10 @@
       "altos": "Alty",
       "basses": "Basy",
       "sopranos": "Soprany",
-      "tenors": "Tenory"
+      "tenors": "Tenory",
+      "mezzos": "Mezzosoprany",
+      "countertenors": "Kontratenory",
+      "baritones": "Barytony"
     },
     "form": {
       "toast": {
@@ -273,7 +276,8 @@
         "security_desc": "Użyj co najmniej 8 znaków. Zalecane jest dłuższe hasło z małymi i wielkimi literami, cyframi oraz znakami specjalnymi.",
         "security_title": "Standard bezpieczeństwa",
         "subtitle": "Ustawienie hasła",
-        "terms": "Oświadczam, że zapoznałem/am się z Regulaminem VoctManager oraz Polityką Prywatności i akceptuję ich postanowienia.",
+        "terms_link": "Regulamin serwisu VoctManager",
+        "terms_prefix": "Akceptuję ",
         "title": "Dokończ aktywację"
       },
       "subtitle": "Dostęp do VoctManagera",
@@ -289,6 +293,9 @@
       },
       "title_1": "Aktywuj swój",
       "title_2": "panel artysty"
+    },
+    "activation": {
+      "terms_modal_title": "Regulamin i Zasady Użytkowania"
     },
     "login": {
       "back_to_lobby": "Powrót do przedsionka",
@@ -708,7 +715,15 @@
         "admin": "Administrator",
         "artist": "Artysta",
         "crew": "Obsługa Techniczna",
-        "guest": "Gość"
+        "guest": "Gość",
+        "SOP": "Sopran",
+        "MEZ": "Mezzosopran",
+        "ALT": "Alt",
+        "CT": "Kontratenor",
+        "TEN": "Tenor",
+        "BAR": "Baryton",
+        "BAS": "Bas",
+        "DIR": "Dyrygent"
       }
     },
     "shared": {
@@ -930,6 +945,9 @@
       "error": "Błąd podczas wysyłania powiadomienia.",
       "heading": "Wyślij powiadomienie",
       "level": "Poziom ważności",
+      "level_info": "Informacyjne",
+      "level_urgent": "Pilne",
+      "level_warning": "Ostrzeżenie",
       "message": "Treść wiadomości",
       "message_placeholder": "Wpisz treść powiadomienia...",
       "send": "Wyślij powiadomienie",
@@ -1236,7 +1254,10 @@
         "altos": "Alty",
         "basses": "Basy",
         "sopranos": "Soprany",
-        "tenors": "Tenory"
+        "tenors": "Tenory",
+        "mezzos": "Mezzosoprany",
+        "countertenors": "Kontratenory",
+        "baritones": "Barytony"
       }
     },
     "program": {
@@ -1366,7 +1387,10 @@
         "altos": "Alty",
         "basses": "Basy",
         "sopranos": "Soprany",
-        "tenors": "Tenory"
+        "tenors": "Tenory",
+        "mezzos": "Mezzosoprany",
+        "countertenors": "Kontratenory",
+        "baritones": "Barytony"
       }
     },
     "roles": {
@@ -1436,7 +1460,8 @@
       "countertenors": "Kontratenory",
       "mezzos": "Mezzosoprany",
       "sopranos": "Soprany",
-      "tenors": "Tenory"
+      "tenors": "Tenory",
+      "baritones": "Barytony"
     }
   },
   "schedule": {

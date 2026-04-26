@@ -44,8 +44,17 @@ export const useNavigationAura = (user: AuthUser | null) => {
     if (isManagerUser) return t("dashboard.layout.roles.admin");
     if (isCrew(user)) return t("dashboard.layout.roles.crew");
 
-    // Fallback to specific vocal part (e.g., "Soprano I") or generic "Artist"
-    return user?.voice_type_display || t("dashboard.layout.roles.artist");
+    // Resolve specific vocal part or role from translations if available
+    const voiceKey = user?.voice_type;
+    const translatedVoice = voiceKey
+      ? t(`dashboard.layout.roles.${voiceKey}`)
+      : null;
+
+    return (
+      translatedVoice ||
+      user?.voice_type_display ||
+      t("dashboard.layout.roles.artist")
+    );
   }, [user, isManagerUser, t]);
 
   const initials = useMemo(() => {

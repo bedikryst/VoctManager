@@ -205,7 +205,7 @@
       "save_profile": "Save Profile",
       "section_basic": "Basic Information",
       "section_voice": "Vocal Profile",
-      "send_notification": "Wyślij powiadomienie",
+      "send_notification": "Send notification",
       "sight_reading": "Sight-reading (Score)",
       "stars_count_one": "{{count}} star",
       "stars_count_other": "{{count}} stars",
@@ -220,7 +220,10 @@
       "altos": "Altos",
       "basses": "Basses",
       "sopranos": "Sopranos",
-      "tenors": "Tenors"
+      "tenors": "Tenors",
+      "mezzos": "Mezzos",
+      "countertenors": "Countertenors",
+      "baritones": "Baritones"
     },
     "form": {
       "toast": {
@@ -271,7 +274,8 @@
         "security_desc": "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
         "security_title": "Security standard",
         "subtitle": "Password setup",
-        "terms": "I confirm that I have read the VoctManager Terms of Service and Privacy Policy and accept their provisions.",
+        "terms_link": "VoctManager Terms of Service",
+        "terms_prefix": "I accept the ",
         "title": "Finalize your access"
       },
       "subtitle": "VoctManager Access",
@@ -288,6 +292,9 @@
       "title_1": "Activate your",
       "title_2": "artist panel"
     },
+    "activation": {
+      "terms_modal_title": "Terms and Conditions of Use"
+    },
     "login": {
       "back_to_lobby": "Back to lobby",
       "email_label": "Email address",
@@ -300,7 +307,7 @@
       "submitting": "Authorizing...",
       "subtitle": "Administration & HR Panel"
     },
-    "logout": "Wyloguj się"
+    "logout": "Log out"
   },
   "chorister_hub": {
     "category": {
@@ -419,14 +426,14 @@
       "server_problem": "A problem occurred with the server."
     },
     "labels": {
-      "not_available": "Brak danych"
+      "not_available": "No data"
     },
     "locale": "en-US",
     "management": "Zarząd",
     "people_short": "ppl.",
     "rightsReserved": "All rights reserved",
     "save_changes": "Save Changes",
-    "select_location": "--- Wybierz zapisaną lokalizację ---",
+    "select_location": "--- Select saved location ---",
     "send": "Send",
     "state": {
       "saved": "Saved"
@@ -576,22 +583,22 @@
         "transport": "Transport",
         "vendors": "Vendors"
       },
-      "inv_col_concert": "Koncert",
-      "inv_col_email": "E-mail",
-      "inv_col_person": "Osoba",
-      "inv_col_phone": "Telefon",
-      "inv_confirmed": "Potwierdzeni",
-      "inv_declined": "Odrzucili",
-      "inv_details_link": "Szczegóły",
-      "inv_empty": "Brak uczestników do wyświetlenia",
-      "inv_loading": "Ładowanie listy...",
-      "inv_modal_subtitle_one": "Aktywne projekty · {{count}} uczestników",
-      "inv_modal_subtitle_other": "Aktywne projekty · {{count}} uczestników",
-      "inv_modal_title": "Status Zaproszeń",
-      "inv_open_details_aria": "Otwórz szczegółową listę zaproszeń",
-      "inv_pending": "Oczekujący",
+      "inv_col_concert": "Concert",
+      "inv_col_email": "Email",
+      "inv_col_person": "Person",
+      "inv_col_phone": "Phone",
+      "inv_confirmed": "Confirmed",
+      "inv_declined": "Declined",
+      "inv_details_link": "Details",
+      "inv_empty": "No participants to display",
+      "inv_loading": "Loading list...",
+      "inv_modal_subtitle_one": "Active projects · {{count}} participant",
+      "inv_modal_subtitle_other": "Active projects · {{count}} participants",
+      "inv_modal_title": "Invitation Status",
+      "inv_open_details_aria": "Open detailed invitation list",
+      "inv_pending": "Pending",
       "kpi_active_projects": "Active Directives",
-      "kpi_invitations": "Status Zaproszeń",
+      "kpi_invitations": "Invitation Status",
       "kpi_pieces": "Sacral Repertoire",
       "kpi_readiness": "Harmonic Cohesion",
       "kpi_telemetry": "Database Telemetry",
@@ -700,7 +707,15 @@
         "admin": "Administrator",
         "artist": "Artist",
         "crew": "Crew",
-        "guest": "Guest"
+        "guest": "Guest",
+        "SOP": "Soprano",
+        "MEZ": "Mezzo-Soprano",
+        "ALT": "Alto",
+        "CT": "Countertenor",
+        "TEN": "Tenor",
+        "BAR": "Baritone",
+        "BAS": "Bass",
+        "DIR": "Conductor"
       }
     },
     "shared": {
@@ -890,7 +905,7 @@
         "location": "Krakow, PL — VoctEnsemble Foundation"
       }
     },
-    "settings": "Ustawienia",
+    "settings": "Settings",
     "sheet": {
       "accessibility_label": "Expanded mobile navigation"
     }
@@ -922,6 +937,9 @@
       "error": "Failed to send notification",
       "heading": "Send Notification",
       "level": "Urgency Level",
+      "level_info": "Information",
+      "level_urgent": "Urgent",
+      "level_warning": "Warning",
       "message": "Message Content",
       "message_placeholder": "Type your message here...",
       "send": "Send Notification",
@@ -1000,7 +1018,7 @@
       "status_active": "Project marked as in preparation",
       "status_done": "Project marked as completed",
       "status_update_failed": "Failed to update status.",
-      "toggle": "Przełącz widok szczegółów projektu",
+      "toggle": "Toggle project details view",
       "updating_status": "Updating status..."
     },
     "cast": {
@@ -1030,7 +1048,7 @@
         "available": "Artist Database"
       },
       "title": "Vocal Cast",
-      "title_short": "artystów",
+      "title_short": "artists",
       "toast": {
         "added": "Added to cast",
         "removed": "Removed from cast"
@@ -1226,7 +1244,10 @@
         "altos": "Altos",
         "basses": "Basses",
         "sopranos": "Sopranos",
-        "tenors": "Tenors"
+        "tenors": "Tenors",
+        "mezzos": "Mezzos",
+        "countertenors": "Countertenors",
+        "baritones": "Baritones"
       }
     },
     "program": {
@@ -1305,7 +1326,7 @@
         "location_placeholder": "e.g., Room 102, Academy",
         "mandatory": "Mandatory attendance for invitees",
         "submit": "Save to calendar",
-        "timezone": "Strefa Czasowa *",
+        "timezone": "Time Zone *",
         "title": "Schedule new rehearsal",
         "title_edit": "Edit rehearsal",
         "type_custom": "Selected people",
@@ -1331,7 +1352,7 @@
         "optional": "Optional",
         "tutti": "TUTTI"
       },
-      "title_short": "prób",
+      "title_short": "rehearsals",
       "toast": {
         "remove_error_desc": "Failed to delete rehearsal. The server rejected the request.",
         "remove_success": "Rehearsal has been deleted",
@@ -1339,7 +1360,7 @@
         "save_error_desc": "A problem occurred while saving to the database. Check the form and connection.",
         "save_success": "Rehearsal saved successfully",
         "saving": "Saving rehearsal to calendar...",
-        "select_location": "Wybierz lokalizacjÄ™ prĂłby przed zapisem.",
+        "select_location": "Select rehearsal location before saving.",
         "select_target": "Select at least one person or section for the rehearsal!",
         "update_success": "Rehearsal updated successfully",
         "updating": "Updating rehearsal..."
@@ -1350,7 +1371,10 @@
         "altos": "Altos",
         "basses": "Basses",
         "sopranos": "Sopranos",
-        "tenors": "Tenors"
+        "tenors": "Tenors",
+        "mezzos": "Mezzos",
+        "countertenors": "Countertenors",
+        "baritones": "Baritones"
       }
     },
     "roles": {
@@ -1418,7 +1442,8 @@
       "countertenors": "Countertenors",
       "mezzos": "Mezzo-sopranos",
       "sopranos": "Sopranos",
-      "tenors": "Tenors"
+      "tenors": "Tenors",
+      "baritones": "Baritones"
     }
   },
   "schedule": {
@@ -1504,14 +1529,14 @@
   "settings": {
     "errors": {
       "invalid_current_password": "Invalid password. Try again.",
-      "unknown_error": "Wystąpił błąd. Spróbuj ponownie."
+      "unknown_error": "An error occurred. Please try again."
     },
     "general": {
       "firstName": "First Name",
       "language": "Interface Language",
       "lastName": "Last Name",
       "phone": "Phone Number",
-      "preferencesTitle": "Preferencje",
+      "preferencesTitle": "Preferences",
       "subtitle": "Manage your data and application preferences.",
       "timezone": "Time Zone",
       "title": "General Settings"
@@ -1555,7 +1580,7 @@
       "voice": "Your Voice"
     },
     "nav": {
-      "aria": "Menu ustawień"
+      "aria": "Settings menu"
     },
     "page": {
       "highlight": "account",
