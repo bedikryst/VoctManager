@@ -9,7 +9,10 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { PROJECT_FILTER, type ProjectFilterId } from "../constants/projectDomain";
+import {
+  PROJECT_FILTER,
+  type ProjectFilterId,
+} from "../constants/projectDomain";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
@@ -49,36 +52,29 @@ export const DashboardFilterMenu = ({
   );
 
   return (
-    <GlassCard
-      variant="light"
-      padding="sm"
-      isHoverable={false}
-      className="overflow-hidden"
+    <div
+      role="tablist"
+      aria-label={t("projects.filters.aria_label", "Filtry statusu projektów")}
+      className="flex max-w-full gap-2 overflow-x-auto no-scrollbar"
     >
-      <div
-        role="tablist"
-        aria-label={t("projects.filters.aria_label", "Filtry statusu projektów")}
-        className="flex max-w-full gap-2 overflow-x-auto no-scrollbar"
-      >
-        {filterOptions.map((filter) => {
-          const isActive = currentFilter === filter.id;
+      {filterOptions.map((filter) => {
+        const isActive = currentFilter === filter.id;
 
-          return (
-            <Button
-              key={filter.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              variant={isActive ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => onFilterChange(filter.id)}
-              className="shrink-0"
-            >
-              <Eyebrow color="inherit">{filter.label}</Eyebrow>
-            </Button>
-          );
-        })}
-      </div>
-    </GlassCard>
+        return (
+          <Button
+            key={filter.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            variant={isActive ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => onFilterChange(filter.id)}
+            className="shrink-0"
+          >
+            <Eyebrow color="inherit">{filter.label}</Eyebrow>
+          </Button>
+        );
+      })}
+    </div>
   );
 };

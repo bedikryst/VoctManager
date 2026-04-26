@@ -5,11 +5,13 @@ import {
   Clock,
   ChevronDown,
   Shirt,
+  Eye,
   Download,
   Users,
   Music,
   Wrench,
 } from "lucide-react";
+import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -68,6 +70,10 @@ export const TimelineProjectCard = ({
     castings,
     isCastingsLoading,
     handleDownloadCallSheet,
+    isCallSheetPreviewOpen,
+    fetchCallSheetBlob,
+    handleOpenCallSheetPreview,
+    handleCloseCallSheetPreview,
   } = useTimelineProjectCard(proj.id, proj.title, isExpanded);
 
   const populatedCastings = castings as PopulatedPieceCasting[];
@@ -327,24 +333,36 @@ export const TimelineProjectCard = ({
                             "Harmonogram Dnia",
                           )}
                         </Eyebrow>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDownloadCallSheet}
-                          disabled={isDownloading}
-                          isLoading={isDownloading}
-                          leftIcon={
-                            !isDownloading ? (
-                              <Download size={11} aria-hidden="true" />
-                            ) : undefined
-                          }
-                          className="border-ethereal-amethyst/50 text-ethereal-amethyst hover:bg-ethereal-amethyst/20"
-                        >
-                          {t(
-                            "schedule.card.download_call_sheet",
-                            "Call-Sheet PDF",
-                          )}
-                        </Button>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleOpenCallSheetPreview}
+                            leftIcon={<Eye size={11} aria-hidden="true" />}
+                            className="border-ethereal-amethyst/50 text-ethereal-amethyst hover:bg-ethereal-amethyst/20"
+                          >
+                            {t(
+                              "schedule.card.preview_call_sheet",
+                              "Call-Sheet PDF",
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleDownloadCallSheet}
+                            disabled={isDownloading}
+                            isLoading={isDownloading}
+                            aria-label={t(
+                              "schedule.card.download_call_sheet_aria",
+                              "Download Call-Sheet PDF",
+                            )}
+                            className="text-ethereal-amethyst/70 hover:text-ethereal-amethyst hover:bg-ethereal-amethyst/20"
+                          >
+                            {!isDownloading && (
+                              <Download size={13} aria-hidden="true" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
 
                       {event.run_sheet && event.run_sheet.length > 0 ? (
@@ -671,6 +689,16 @@ export const TimelineProjectCard = ({
           )}
         </AnimatePresence>
       </GlassCard>
+
+      <PdfViewerModal
+        isOpen={isCallSheetPreviewOpen}
+        title={t("schedule.card.call_sheet_preview_title", "Call-Sheet")}
+        subtitle={proj.title}
+        fileName={`CallSheet_${proj.title.replace(/\s+/g, "_")}.pdf`}
+        fetchBlob={fetchCallSheetBlob}
+        docKey={proj.id}
+        onClose={handleCloseCallSheetPreview}
+      />
     </motion.div>
   );
 };

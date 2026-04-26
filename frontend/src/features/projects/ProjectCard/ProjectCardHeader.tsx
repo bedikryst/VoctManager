@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -8,6 +8,7 @@ import {
   Clock,
   Download,
   Edit2,
+  Eye,
   FileText,
   MapPin,
   Trash2,
@@ -22,14 +23,12 @@ import { LocationPreview } from "@/features/logistics/components/LocationPreview
 import { useProjectCard } from "./hooks/useProjectCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import {
-  Caption,
-  Heading,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { getArtistDisplayName } from "../lib/projectPresentation";
+import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
+import { ProjectService } from "../api/project.service";
 
 interface ProjectCardDashboardData {
   rehearsalsTotal: number;
@@ -106,6 +105,15 @@ export const ProjectCardHeader = ({
 }: ProjectCardHeaderProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { downloadReport, isDownloading } = useProjectCard(String(project.id));
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+
+  const fetchRunsheetBlob = useCallback(async () => {
+    const response = await ProjectService.downloadReport(
+      String(project.id),
+      "export_call_sheet",
+    );
+    return new Blob([response.data], { type: "application/pdf" });
+  }, [project.id]);
 
   const isDone = project.status === PROJECT_STATUS.DONE;
   const conductorName = useMemo(
@@ -281,6 +289,17 @@ export const ProjectCardHeader = ({
               variant="ghost"
               size="sm"
               className="p-1.5"
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsPdfModalOpen(true);
+              }}
+              leftIcon={<Eye size={13} aria-hidden="true" />}
+              title={t("projects.exports.open_runsheet", "Otwórz Harmonogram")}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-1.5"
               disabled={isDownloading !== null}
               isLoading={isDownloading === "CALL_SHEET"}
               onClick={(event) => {
@@ -327,11 +346,7 @@ export const ProjectCardHeader = ({
               isLoading={isDownloading === "DTP"}
               onClick={(event) => {
                 event.stopPropagation();
-                downloadReport(
-                  "export_dtp",
-                  `DTP_${project.title}.txt`,
-                  "DTP",
-                );
+                downloadReport("export_dtp", `DTP_${project.title}.txt`, "DTP");
               }}
               leftIcon={
                 isDownloading !== "DTP" ? (
@@ -367,11 +382,7 @@ export const ProjectCardHeader = ({
             {t("common.actions.delete", "Usuń")}
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onStatusToggle}
-          >
+          <Button variant="outline" size="sm" onClick={onStatusToggle}>
             {isDone
               ? t("projects.actions.mark_active", "Oznacz jako aktywny")
               : t("projects.actions.mark_done", "Zakończ projekt")}
@@ -399,6 +410,16 @@ export const ProjectCardHeader = ({
           </div>
         </div>
       </div>
+
+      <PdfViewerModal
+        isOpen={isPdfModalOpen}
+        title={t("projects.exports.runsheet_title", "Harmonogram (Runsheet)")}
+        subtitle={project.title}
+        fileName={`Runsheet_${project.title}.pdf`}
+        fetchBlob={fetchRunsheetBlob}
+        docKey={`runsheet-${project.id}`}
+        onClose={() => setIsPdfModalOpen(false)}
+      />
     </div>
   );
 };

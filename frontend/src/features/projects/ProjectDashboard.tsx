@@ -106,7 +106,7 @@ const DashboardGrid = ({
 export const ProjectDashboard = (): React.JSX.Element => {
   const { t } = useTranslation();
   const {
-    filteredProjects, // wyciągnięto isLoading
+    filteredProjects,
     listFilter,
     setListFilter,
     isPanelOpen,

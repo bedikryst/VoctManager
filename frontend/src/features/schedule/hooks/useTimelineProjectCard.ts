@@ -3,7 +3,7 @@
  * @description Encapsulates lazy data fetching and call-sheet download handling for project timeline cards.
  */
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +24,7 @@ export const useTimelineProjectCard = (
   );
   const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCallSheetPreviewOpen, setCallSheetPreviewOpen] = useState(false);
 
   const { data: programItems = [], isLoading: isProgramLoading } =
     useScheduleProgramItems(
@@ -32,6 +33,23 @@ export const useTimelineProjectCard = (
     );
   const { data: castings = [], isLoading: isCastingsLoading } =
     useSchedulePieceCastings(projectId, expandedPieceId, !!expandedPieceId);
+
+  const fetchCallSheetBlob = useCallback(
+    () => ScheduleService.exportCallSheet(projectId),
+    [projectId],
+  );
+
+  const handleOpenCallSheetPreview = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      setCallSheetPreviewOpen(true);
+    },
+    [],
+  );
+
+  const handleCloseCallSheetPreview = useCallback(() => {
+    setCallSheetPreviewOpen(false);
+  }, []);
 
   const handleDownloadCallSheet = async (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -81,5 +99,9 @@ export const useTimelineProjectCard = (
     castings,
     isCastingsLoading,
     handleDownloadCallSheet,
+    isCallSheetPreviewOpen,
+    fetchCallSheetBlob,
+    handleOpenCallSheetPreview,
+    handleCloseCallSheetPreview,
   };
 };
