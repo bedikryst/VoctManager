@@ -20,6 +20,9 @@ COPY . .
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
+ARG VITE_GOOGLE_MAPS_FRONTEND_KEY
+ENV VITE_GOOGLE_MAPS_FRONTEND_KEY=$VITE_GOOGLE_MAPS_FRONTEND_KEY
+
 # Build the React application for production (generates static assets in /app/dist)
 RUN npm run build
 

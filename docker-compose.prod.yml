@@ -19,3 +19,8 @@ services:
       - ./infra/nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - ./infra/maintenance:/usr/share/nginx/html/maintenance:ro
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_GOOGLE_MAPS_FRONTEND_KEY=${VITE_GOOGLE_MAPS_FRONTEND_KEY}

@@ -1277,9 +1277,7 @@ msgid ""
 msgstr ""
 "Twoje miejsce w VoctEnsemble jest gotowe. Przygotowaliśmy Twoją prywatną "
 "przestrzeń roboczą &mdash; gdzie repertuar, harmonogramy prób i współpraca "
-"artystyczna spotykają się w jednym miejscu.Twoje miejsce w VoctEnsemble jest "
-"gotowe. Przygotowaliśmy Twój prywatny obszar roboczy — gdzie repertuar, "
-"harmonogramy prób i współpraca artystyczna łączą się w jednym miejscu."
+"artystyczna spotykają się w jednym miejscu."
 
 #: templates/emails/account_activation.html:64
 msgid "One final step remains before the music begins."
@@ -1308,8 +1306,7 @@ msgid ""
 "confidential and do not share it."
 msgstr ""
 "Ten unikalny klucz dostępu wygaśnie automatycznie. Upewnij się, że "
-"pozostanie poufny i nie udostępniaj go.Ten unikalny klucz dostępu wygaśnie "
-"automatycznie. Zachowaj go w tajemnicy i nie udostępniaj go nikomu."
+"pozostanie poufny i nie udostępniaj go."
 
 #: templates/emails/account_activation.html:122
 msgid "Link not working?"
