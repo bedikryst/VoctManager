@@ -48,3 +48,6 @@ email-validator>=2.1.1
 firebase-admin==7.4.0
 
 requests==2.31.0
+
+# File type detection (reads magic bytes, not file extension)
+python-magic==0.4.27

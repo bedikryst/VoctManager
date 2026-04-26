@@ -42,6 +42,12 @@
   --shadow-glass-solid: 0 4px 16px rgba(166, 146, 121, 0.04);
   --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
 
+  --shadow-button-primary:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 12px rgba(22, 20, 18, 0.3);
+  --shadow-button-primary-hover:
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    0 8px 24px rgba(194, 168, 120, 0.25);
+
   /* =========================================
      SPATIAL, LAYOUT & Z-INDEX TOKENS 
      ========================================= */

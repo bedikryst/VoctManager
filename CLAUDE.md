@@ -6,7 +6,7 @@ Tech Stack: React 19, Tailwind CSS v4, TypeScript, Django 6.0, FSD (Feature-Slic
 ## 1. THE ABSOLUTE UI MANDATE ("NO-RAW-HTML")
 
 - **NEVER** use raw HTML tags for typography (`<h1>`, `<p>`, `<span>`). ALWAYS use components from `shared/ui/primitives/typography/` (e.g., `<Heading>`, `<Text>`, `<Eyebrow>`, `<Metric>`).
-- **NEVER** build flat, raw HTML UIs or use manual glassmorphism (like `bg-white/10`). ALWAYS compose interfaces using `<GlassCard>`, `<PageHeader>`, `<SectionHeader>`, and `<MetricBlock>`.
+- **NEVER** build flat, raw HTML UIs or use manual glassmorphism (like `bg-white/10`). ALWAYS compose interfaces using `<GlassCard>`, `<PageHeader>`, `<SectionHeader>`, `<Input>` and `<MetricBlock>`.
 - ALL Dashboards MUST be wrapped in `<StaggeredBentoContainer>` and items in `<StaggeredBentoItem>`.
 
 ## 2. TAILWIND V4 ETHEREAL THEME
