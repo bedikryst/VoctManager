@@ -150,8 +150,11 @@ export const ArtistCard = React.memo(
                   <span
                     className={`px-2 py-0.5 text-[8px] font-bold antialiased uppercase tracking-widest rounded-md border shadow-sm ${artist.is_active ? `${voiceColor.bg} ${voiceColor.text} ${voiceColor.border}` : "bg-stone-100 text-stone-400 border-stone-200"}`}
                   >
-                    {artist.voice_type_display || artist.voice_type}
+                    {artist.voice_type
+                      ? t(`dashboard.layout.roles.${artist.voice_type}`)
+                      : artist.voice_type_display || artist.voice_type}
                   </span>
+
                   {!artist.is_active && (
                     <span className="px-2 py-0.5 bg-stone-200 text-stone-600 text-[8px] antialiased uppercase tracking-widest font-bold rounded-md border border-stone-300 shadow-sm">
                       {t("artists.card.archive_badge", "Archiwum")}

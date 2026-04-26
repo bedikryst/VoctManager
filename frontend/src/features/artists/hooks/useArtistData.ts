@@ -47,12 +47,11 @@ export const useArtistData = () => {
   const ensembleBalance = useMemo(() => {
     return {
       S: activeArtists.filter((a) => a.voice_type?.startsWith("S")).length,
-      A: activeArtists.filter(
-        (a) => a.voice_type?.startsWith("A") || a.voice_type === "MEZ",
-      ).length,
-      T: activeArtists.filter(
-        (a) => a.voice_type?.startsWith("T") || a.voice_type === "CT",
-      ).length,
+      MEZ: activeArtists.filter((a) => a.voice_type === "MEZ").length,
+      A: activeArtists.filter((a) => a.voice_type?.startsWith("A")).length,
+      CT: activeArtists.filter((a) => a.voice_type === "CT").length,
+      T: activeArtists.filter((a) => a.voice_type?.startsWith("T")).length,
+      BAR: activeArtists.filter((a) => a.voice_type === "BAR").length,
       B: activeArtists.filter((a) => a.voice_type?.startsWith("B")).length,
       Total: activeArtists.length,
     };

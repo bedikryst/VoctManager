@@ -104,6 +104,7 @@ export default function ArtistManagement(): React.JSX.Element {
           isActive={voiceFilter === "S"}
           onClick={() => setVoiceFilter(voiceFilter === "S" ? "" : "S")}
         />
+
         <VoiceFilterButton
           voiceType="A"
           label={t("artists.filters.altos", "Alty")}
@@ -111,6 +112,7 @@ export default function ArtistManagement(): React.JSX.Element {
           isActive={voiceFilter === "A"}
           onClick={() => setVoiceFilter(voiceFilter === "A" ? "" : "A")}
         />
+
         <VoiceFilterButton
           voiceType="T"
           label={t("artists.filters.tenors", "Tenory")}
@@ -118,6 +120,7 @@ export default function ArtistManagement(): React.JSX.Element {
           isActive={voiceFilter === "T"}
           onClick={() => setVoiceFilter(voiceFilter === "T" ? "" : "T")}
         />
+
         <VoiceFilterButton
           voiceType="B"
           label={t("artists.filters.basses", "Basy")}
@@ -125,6 +128,7 @@ export default function ArtistManagement(): React.JSX.Element {
           isActive={voiceFilter === "B"}
           onClick={() => setVoiceFilter(voiceFilter === "B" ? "" : "B")}
         />
+
         <VoiceFilterButton
           voiceType="ALL"
           label={t("artists.filters.all", "Tutti")}

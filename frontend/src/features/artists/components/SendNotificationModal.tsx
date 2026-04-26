@@ -11,7 +11,8 @@ import { X, Send, AlertTriangle, Info } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Heading, Text } from "@/shared/ui/primitives/typography";
+import { Textarea } from "@/shared/ui/primitives/Textarea";
+import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { useSendToArtist } from "@/features/notifications/api/notifications.queries";
 import type { Artist } from "@/shared/types";
 
@@ -53,10 +54,12 @@ const LEVEL_OPTIONS: {
   },
 ];
 
-const STYLE_LABEL =
-  "block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
-const STYLE_TEXTAREA =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] resize-none";
+/**
+ * Translation keys for extraction:
+ * t('notifications.send_modal.level_info')
+ * t('notifications.send_modal.level_warning')
+ * t('notifications.send_modal.level_urgent')
+ */
 
 export const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
   isOpen,
@@ -170,10 +173,10 @@ export const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 {/* Body */}
                 <div className="p-6 flex flex-col gap-4">
                   {/* Level selector */}
-                  <div>
-                    <p className={STYLE_LABEL}>
+                  <div className="flex flex-col gap-2">
+                    <Eyebrow color="muted" className="ml-1">
                       {t("notifications.send_modal.level", "Poziom ważności")}
-                    </p>
+                    </Eyebrow>
                     <div className="flex gap-2">
                       {LEVEL_OPTIONS.map((opt) => (
                         <button
@@ -194,49 +197,25 @@ export const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                   </div>
 
                   {/* Title */}
-                  <div>
-                    <label className={STYLE_LABEL}>
-                      {t("notifications.send_modal.title")}
-                    </label>
-                    <Input
-                      {...register("title")}
-                      placeholder={t(
-                        "notifications.send_modal.title_placeholder",
-                      )}
-                      error={!!errors.title}
-                    />
-                    {errors.title && (
-                      <Text
-                        size="xs"
-                        className="text-ethereal-crimson mt-1 ml-1"
-                      >
-                        {errors.title.message}
-                      </Text>
+                  <Input
+                    {...register("title")}
+                    label={t("notifications.send_modal.title")}
+                    placeholder={t(
+                      "notifications.send_modal.title_placeholder",
                     )}
-                  </div>
+                    error={errors.title?.message}
+                  />
 
                   {/* Message */}
-                  <div>
-                    <label className={STYLE_LABEL}>
-                      {t("notifications.send_modal.message")}
-                    </label>
-                    <textarea
-                      {...register("message")}
-                      rows={5}
-                      placeholder={t(
-                        "notifications.send_modal.message_placeholder",
-                      )}
-                      className={STYLE_TEXTAREA}
-                    />
-                    {errors.message && (
-                      <Text
-                        size="xs"
-                        className="text-ethereal-crimson mt-1 ml-1"
-                      >
-                        {errors.message.message}
-                      </Text>
+                  <Textarea
+                    {...register("message")}
+                    rows={5}
+                    label={t("notifications.send_modal.message")}
+                    placeholder={t(
+                      "notifications.send_modal.message_placeholder",
                     )}
-                  </div>
+                    error={errors.message?.message}
+                  />
 
                   {/* Optional CTA */}
                   <details className="group">
@@ -247,27 +226,20 @@ export const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                       {t("notifications.send_modal.cta_optional")}
                     </summary>
                     <div className="mt-3 flex flex-col gap-3 pl-3 border-l border-stone-200/60">
-                      <div>
-                        <label className={STYLE_LABEL}>
-                          {t("notifications.send_modal.cta_url")}
-                        </label>
-                        <Input
-                          {...register("cta_url")}
-                          placeholder="https://..."
-                          error={!!errors.cta_url}
-                        />
-                      </div>
-                      <div>
-                        <label className={STYLE_LABEL}>
-                          {t("notifications.send_modal.cta_label")}
-                        </label>
-                        <Input
-                          {...register("cta_label")}
-                          placeholder={t(
-                            "notifications.send_modal.cta_label_placeholder",
-                          )}
-                        />
-                      </div>
+                      <Input
+                        {...register("cta_url")}
+                        label={t("notifications.send_modal.cta_url")}
+                        placeholder="https://..."
+                        error={errors.cta_url?.message}
+                      />
+                      <Input
+                        {...register("cta_label")}
+                        label={t("notifications.send_modal.cta_label")}
+                        placeholder={t(
+                          "notifications.send_modal.cta_label_placeholder",
+                        )}
+                        error={errors.cta_label?.message}
+                      />
                     </div>
                   </details>
                 </div>
