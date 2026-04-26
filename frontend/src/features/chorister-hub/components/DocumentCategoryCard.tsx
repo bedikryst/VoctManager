@@ -81,13 +81,18 @@ const DocumentRow = ({
   onPreview,
 }: DocumentRowProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const isPdf = doc.mime_type === 'application/pdf';
+  const isPdf = doc.mime_type === "application/pdf";
   return (
     <GlassCard
       variant="light"
       padding="none"
+      isHoverable={false}
       className="group/file flex items-stretch justify-between p-4 cursor-pointer active:scale-[0.99] hover:bg-ethereal-parchment/30 transition-colors"
-      onClick={() => isPdf ? onPreview(doc) : window.open(doc.file_url, "_blank", "noopener,noreferrer")}
+      onClick={() =>
+        isPdf
+          ? onPreview(doc)
+          : window.open(doc.file_url, "_blank", "noopener,noreferrer")
+      }
     >
       <div className="flex items-start gap-4 overflow-hidden pr-4 flex-1 min-w-0">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-ethereal-incense/20 bg-ethereal-alabaster text-ethereal-graphite group-hover/file:bg-ethereal-ink group-hover/file:text-white group-hover/file:border-transparent transition-colors shrink-0 shadow-sm">
@@ -197,6 +202,7 @@ export const DocumentCategoryCard = ({
     <GlassCard
       variant="ethereal"
       padding="lg"
+      isHoverable={false}
       className="flex flex-col h-full group relative overflow-hidden"
     >
       <div
@@ -274,7 +280,10 @@ export const DocumentCategoryCard = ({
         >
           {category.documents.length === 0 && !isManager && (
             <Text size="sm" color="muted" className="text-center py-4">
-              {t('chorister_hub.category.no_documents', 'No documents available.')}
+              {t(
+                "chorister_hub.category.no_documents",
+                "No documents available.",
+              )}
             </Text>
           )}
           {category.documents.map((doc) => (
@@ -296,7 +305,7 @@ export const DocumentCategoryCard = ({
               onClick={() => onUploadDocument(category)}
               className="mt-2 border border-dashed border-ethereal-incense/30 hover:border-ethereal-ink/30"
             >
-              {t('chorister_hub.category.upload', 'Upload document')}
+              {t("chorister_hub.category.upload", "Upload document")}
             </Button>
           )}
         </div>

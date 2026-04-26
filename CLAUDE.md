@@ -30,4 +30,17 @@ Tech Stack: React 19, Tailwind CSS v4, TypeScript, Django 6.0, FSD (Feature-Slic
 - Use `framer-motion` for hardware-accelerated animations (animate `transform` or `opacity` only).
 - Use `<PageTransition>` for routes and `<EtherealLoader>` for suspense/loading states. No generic spinners.
 
+## 5. HEADER
+
+At the beginnig of every file add a header similar to this:
+
+/\*\*
+
+- @file ProjectDashboard.tsx
+- @description Master controller for the Project operations dashboard.
+- Keeps the page shell declarative and delegates data orchestration to feature hooks.
+- @architecture Enterprise SaaS 2026
+- @module panel/projects/ProjectDashboard
+  \*/
+
 **CRITICAL INSTRUCTION:** Whenever you generate or refactor UI code, apply these rules immediately. If you need more detailed domain context, prompt the user to include files from the `.ai/` directory.

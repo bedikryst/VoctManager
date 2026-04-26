@@ -69,7 +69,7 @@ export const LogisticsTab = () => {
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* ── Catering ─────────────────────────────────── */}
+        {/* ── Catering ─────────────────────────────────── deleted temporary, will be reintroduced in future iterations ── 
         <div className="space-y-5">
           <SectionHeader
             title={t("settings.logistics.sections.catering", "Catering")}
@@ -114,7 +114,7 @@ export const LogisticsTab = () => {
             onChange={(e) => handleChange("dietary_notes", e.target.value)}
           />
         </div>
-
+*/}
         {/* ── Wymiary ───────────────────────────────────── */}
         <div className="space-y-5">
           <SectionHeader

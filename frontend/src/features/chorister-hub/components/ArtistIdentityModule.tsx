@@ -31,6 +31,7 @@ const MetricTile = ({
   <GlassCard
     variant="light"
     padding="md"
+    isHoverable={false}
     className="flex flex-col items-start gap-3"
   >
     <div className="w-9 h-9 rounded-xl bg-ethereal-gold/10 border border-ethereal-gold/20 flex items-center justify-center text-ethereal-gold shrink-0">
@@ -95,6 +96,7 @@ export const ArtistIdentityModule = (): React.JSX.Element => {
         <GlassCard
           variant="ethereal"
           padding="lg"
+          isHoverable={false}
           className="text-center py-10"
         >
           <Star

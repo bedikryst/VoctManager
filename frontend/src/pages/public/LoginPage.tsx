@@ -98,6 +98,7 @@ export default function Login(): React.JSX.Element {
           variant="ethereal"
           padding="lg"
           glow={true}
+          isHoverable={false}
           className="!pt-10"
         >
           <form className="space-y-6" onSubmit={handleSubmit}>
