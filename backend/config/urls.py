@@ -32,6 +32,7 @@ from core.views import (
     CalendarFeedView
 )
 from notifications.views import NotificationViewSet, NotificationPreferenceAPIView
+from documents.views import DocumentCategoryViewSet, ArtistMetricsAPIView, DocumentDownloadView
 __author__ = "Krystian Bugalski"
 
 # Initialize the REST Framework Router
@@ -55,7 +56,10 @@ router.register(r'tracks', TrackViewSet, basename='track')
 router.register(r'piece-voice-requirements', PieceVoiceRequirementViewSet, basename='piece-voice-requirement')
 
 # --- System & Notifications ---
-router.register(r'notifications', NotificationViewSet, basename='notification') 
+router.register(r'notifications', NotificationViewSet, basename='notification')
+
+# --- Chorister Hub & Knowledge Base ---
+router.register(r'documents/categories', DocumentCategoryViewSet, basename='document-category')
 
 urlpatterns = [
     # Django Admin Panel
@@ -99,6 +103,12 @@ urlpatterns = [
     path('api/users/me/reset-calendar-token/', ResetCalendarTokenView.as_view(), name='user-reset-calendar-token'),
 
     path("api/logistics/", include("logistics.urls")),
+
+    # --- Chorister Hub: Artist Identity Metrics ---
+    path('api/documents/artist-metrics/', ArtistMetricsAPIView.as_view(), name='artist-metrics'),
+
+    # --- Chorister Hub: Authenticated, role-gated file download ---
+    path('api/documents/<uuid:pk>/download/', DocumentDownloadView.as_view(), name='document-download'),
 ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.

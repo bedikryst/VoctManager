@@ -12,23 +12,28 @@ class BaseEnterprisePermission(permissions.BasePermission):
     Abstract base permission class providing resilient user profile resolution.
     Prevents AttributeError when handling unauthenticated requests or broken relations.
     """
-    
+
     def _get_profile(self, request) -> models.Model | None:
-        """Safely retrieves the UserProfile from the request."""
         if not request.user or not request.user.is_authenticated:
             return None
         return getattr(request.user, 'profile', None)
+
+    def _is_manager(self, request) -> bool:
+        """Returns True for staff users and users with the manager profile role."""
+        if request.user and request.user.is_authenticated and request.user.is_staff:
+            return True
+        profile = self._get_profile(request)
+        return bool(profile and profile.is_manager)
 
 
 # --- Role-Based Permissions ---
 
 class IsManager(BaseEnterprisePermission):
     """
-    Grants access exclusively to users with the MANAGER role.
+    Grants access exclusively to users with the MANAGER role or Django staff flag.
     """
     def has_permission(self, request, view) -> bool:
-        profile = self._get_profile(request)
-        return bool(profile and profile.is_manager)
+        return self._is_manager(request)
 
 
 class IsArtist(BaseEnterprisePermission):
@@ -54,14 +59,12 @@ class IsCrew(BaseEnterprisePermission):
 class IsManagerOrReadOnly(BaseEnterprisePermission):
     """
     Grants read-only access (GET, HEAD, OPTIONS) to any authenticated user.
-    Restricts write operations (POST, PUT, PATCH, DELETE) to Managers.
+    Restricts write operations (POST, PUT, PATCH, DELETE) to Managers and staff.
     """
     def has_permission(self, request, view) -> bool:
         if request.method in permissions.SAFE_METHODS:
             return bool(request.user and request.user.is_authenticated)
-            
-        profile = self._get_profile(request)
-        return bool(profile and profile.is_manager)
+        return self._is_manager(request)
 
 
 class IsManagerOrCrew(BaseEnterprisePermission):
