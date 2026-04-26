@@ -178,13 +178,18 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
 
   const locationMap = useMemo(
     () =>
-      new Map(locationsData.map((location) => [String(location.id), location])),
+      new Map(
+        (locationsData || []).map((location) => [
+          String(location.id),
+          location,
+        ]),
+      ),
     [locationsData],
   );
 
   const projects = useMemo(
     () =>
-      rawProjects.map((project) => {
+      (rawProjects || []).map((project) => {
         const location = resolveProjectLocation(project, locationMap);
         const conductor = resolveProjectConductor(project, artistMap);
 

@@ -46,7 +46,7 @@ export const LogisticsTab = () => {
       <Text color="muted" className="mt-1 mb-6">
         {t(
           "settings.logistics.subtitle",
-          "Dane wykorzystywane przez management do zamawiania strojów i cateringu.",
+          "Dane wykorzystywane przez management do zamawiania strojów.",
         )}
       </Text>
 

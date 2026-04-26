@@ -139,6 +139,7 @@ export const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
             className="fixed inset-0 z-9999 flex items-center justify-center p-4 pointer-events-none"
           >
             <GlassCard
+              variant="solid"
               isHoverable={false}
               className="w-full max-w-lg pointer-events-auto"
             >

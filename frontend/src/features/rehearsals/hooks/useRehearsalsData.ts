@@ -24,26 +24,26 @@ export const useRehearsalsData = () => {
   );
 
   const {
-    projects,
-    rehearsals,
-    participations,
-    attendances,
-    artists,
-    locations,
+    projects = [],
+    rehearsals = [],
+    participations = [],
+    attendances = [],
+    artists = [],
+    locations = [],
     isLoading,
     isError,
-  } = useRehearsalsWorkspaceData();
+  } = useRehearsalsWorkspaceData() || {};
 
   const markMissingAttendanceMutation = useMarkMissingAttendancesPresent();
 
   const activeProjects = useMemo(() => {
-    return projects.filter(
+    return (projects || []).filter(
       (project) => project.status !== "DONE" && project.status !== "CANC",
     );
   }, [projects]);
 
   const archivedProjects = useMemo(() => {
-    return projects.filter(
+    return (projects || []).filter(
       (project) => project.status === "DONE" || project.status === "CANC",
     );
   }, [projects]);
@@ -53,7 +53,7 @@ export const useRehearsalsData = () => {
 
   const locationMap = useMemo(() => {
     const map = new Map<string, LocationDto>();
-    locations.forEach((loc) => map.set(String(loc.id), loc));
+    (locations || []).forEach((loc) => map.set(String(loc.id), loc));
     return map;
   }, [locations]);
 
@@ -75,7 +75,7 @@ export const useRehearsalsData = () => {
 
   const artistMap = useMemo(() => {
     const map = new Map<string, Artist>();
-    artists.forEach((artist) => map.set(String(artist.id), artist));
+    (artists || []).forEach((artist) => map.set(String(artist.id), artist));
     return map;
   }, [artists]);
 
@@ -171,7 +171,12 @@ export const useRehearsalsData = () => {
     invitedParticipations.forEach((participation) => {
       const attendance = attendanceMap.get(String(participation.id));
 
-      if (!attendance || attendance.status === null || attendance.status === undefined) none += 1;
+      if (
+        !attendance ||
+        attendance.status === null ||
+        attendance.status === undefined
+      )
+        none += 1;
       else if (attendance.status === "PRESENT") present += 1;
       else if (attendance.status === "LATE") late += 1;
       else if (attendance.status === "EXCUSED") excused += 1;
@@ -205,10 +210,16 @@ export const useRehearsalsData = () => {
       const entries = invitedParticipations.flatMap((participation) => {
         const existingAttendance = attendanceMap.get(String(participation.id));
 
-        if (!existingAttendance || existingAttendance.status === null || existingAttendance.status === undefined) {
+        if (
+          !existingAttendance ||
+          existingAttendance.status === null ||
+          existingAttendance.status === undefined
+        ) {
           return [
             {
-              attendanceId: existingAttendance ? String(existingAttendance.id) : undefined,
+              attendanceId: existingAttendance
+                ? String(existingAttendance.id)
+                : undefined,
               rehearsalId: String(activeRehearsalId),
               participationId: String(participation.id),
             },

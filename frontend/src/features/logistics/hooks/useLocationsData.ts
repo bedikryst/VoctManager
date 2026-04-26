@@ -22,7 +22,9 @@ export const useLocationsData = () => {
 
   const deleteLocationMutation = useDeleteLocation();
 
-  const locations: LocationDto[] = locationsData || [];
+  const locations: LocationDto[] = Array.isArray(locationsData)
+    ? locationsData
+    : [];
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<LocationCategory | "">(

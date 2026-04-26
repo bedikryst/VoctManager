@@ -127,13 +127,13 @@ export const DesktopSidebar = ({
           {/* STRATUM: LOGO */}
           <div className="relative flex h-16 w-full shrink-0 items-start overflow-hidden mb-4">
             <motion.img
-              src="/monogram_V.png"
+              src="/logo.png"
               initial={false}
               animate={{
                 opacity: isExpanded ? 0 : 1,
                 scale: isExpanded ? 0 : 1,
               }}
-              className="absolute left-3.5 top-2 h-14 object-contain"
+              className="absolute left-1 top-2 h-14 object-contain"
             />
 
             <motion.div
