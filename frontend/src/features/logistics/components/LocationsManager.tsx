@@ -15,12 +15,11 @@ import { LocationCard } from "./LocationCard";
 import LocationInlineEditor from "./LocationInlineEditor";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { StaggeredBentoContainer, StaggeredBentoItem } from "@/shared/ui/composites/StaggeredBento";
 import {
-  Heading,
-  Text,
-  Caption,
-} from "@/shared/ui/primitives/typography";
+  StaggeredBentoContainer,
+  StaggeredBentoItem,
+} from "@/shared/ui/composites/StaggeredBento";
+import { Heading, Text, Caption } from "@/shared/ui/primitives/typography";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import type { LocationCategory } from "@/shared/types";
 
@@ -130,7 +129,7 @@ export const LocationsManager = (): React.JSX.Element => {
 
   return (
     <PageTransition>
-      <div className="pb-24 -mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pb-6 -mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <PageHeader
           size="standard"
           roleText={t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
@@ -138,7 +137,9 @@ export const LocationsManager = (): React.JSX.Element => {
           titleHighlight={t("logistics.dashboard.title_highlight", "Lokacji")}
           rightContent={
             <Button
-              variant={isPanelOpen && !editingLocation ? "secondary" : "primary"}
+              variant={
+                isPanelOpen && !editingLocation ? "secondary" : "primary"
+              }
               onClick={toggleAddMode}
               leftIcon={
                 <Plus
@@ -209,7 +210,10 @@ export const LocationsManager = (): React.JSX.Element => {
                 }`}
             >
               {t(cat.labelKey, cat.fallback)}
-              <Badge variant={categoryFilter === cat.value ? "glass" : "neutral"} className="px-1.5 py-0.5 min-w-[24px] justify-center text-[10px]">
+              <Badge
+                variant={categoryFilter === cat.value ? "glass" : "neutral"}
+                className="px-1.5 py-0.5 min-w-[24px] justify-center text-[10px]"
+              >
                 {count}
               </Badge>
             </button>
@@ -260,9 +264,7 @@ export const LocationsManager = (): React.JSX.Element => {
               <StaggeredBentoContainer>
                 {Array.from({ length: 6 }).map((_, index) => (
                   <StaggeredBentoItem key={`skeleton-${index}`}>
-                    <div
-                      className="h-64 bg-stone-100/50 rounded-[2.5rem] border border-white/50 animate-pulse"
-                    />
+                    <div className="h-64 bg-stone-100/50 rounded-[2.5rem] border border-white/50 animate-pulse" />
                   </StaggeredBentoItem>
                 ))}
               </StaggeredBentoContainer>
@@ -281,9 +283,7 @@ export const LocationsManager = (): React.JSX.Element => {
                         category.replace("_", " "),
                       )}
                     </Heading>
-                    <Badge variant="neutral">
-                      {locs.length}
-                    </Badge>
+                    <Badge variant="neutral">{locs.length}</Badge>
                   </div>
 
                   <StaggeredBentoContainer>
@@ -291,7 +291,10 @@ export const LocationsManager = (): React.JSX.Element => {
                       {locs.map((loc) => {
                         if (isPanelOpen && editingLocation?.id === loc.id) {
                           return (
-                            <StaggeredBentoItem key={`edit-${loc.id}`} className="col-span-full xl:col-span-2">
+                            <StaggeredBentoItem
+                              key={`edit-${loc.id}`}
+                              className="col-span-full xl:col-span-2"
+                            >
                               <LocationInlineEditor
                                 location={loc}
                                 onClose={closePanel}
