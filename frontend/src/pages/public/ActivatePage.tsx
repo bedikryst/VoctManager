@@ -6,7 +6,7 @@
  * @module pages/public/ActivatePage
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -18,7 +18,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-
+import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { useAccountActivation } from "@features/auth/hooks/useAccountActivation";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -29,7 +29,8 @@ import { Eyebrow } from "@/shared/ui/primitives/typography/Eyebrow";
 export default function ActivatePage(): React.JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
+  const [isTermsOpen, setIsTermsOpen] = useState<boolean>(false);
 
   const {
     password,
@@ -46,6 +47,15 @@ export default function ActivatePage(): React.JSX.Element {
   useEffect(() => {
     document.body.classList.add("admin-mode");
     return () => document.body.classList.remove("admin-mode");
+  }, []);
+
+  // Memoized fetch function explicitly returning a Blob for the PdfViewerModal
+  const fetchTermsBlob = useCallback(async (): Promise<Blob> => {
+    const response = await fetch("/assets/documents/regulamin.pdf");
+    if (!response.ok) {
+      throw new Error("Failed to load Terms of Service PDF");
+    }
+    return response.blob();
   }, []);
 
   const activationHighlights = [
@@ -74,62 +84,89 @@ export default function ActivatePage(): React.JSX.Element {
           className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-ethereal-graphite hover:text-ethereal-gold transition-colors"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-          <span>{t("auth.activate.back_to_home")}</span>
+          <span>{t("auth.activate.back_to_home", "Powrót")}</span>
         </Link>
       </div>
 
       <div className="absolute top-8 right-8 z-10">
         <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-ethereal-graphite/50">
-          {t("auth.activate.badge")}
+          {t("auth.activate.badge", "Aktywacja")}
         </span>
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col items-center justify-center px-6 py-24 lg:px-10">
         <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 items-stretch">
-
           {/* Left – brand & feature overview */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           >
-            <GlassCard variant="dark" padding="lg" isHoverable={false} className="h-full flex flex-col">
+            <GlassCard
+              variant="dark"
+              padding="lg"
+              isHoverable={false}
+              className="h-full flex flex-col"
+            >
               <Eyebrow color="parchment-muted" as="p" className="mb-4">
                 {t("auth.activate.subtitle")}
               </Eyebrow>
 
-              <Heading as="h1" size="5xl" color="marble" className="leading-none">
+              <Heading
+                as="h1"
+                size="5xl"
+                color="marble"
+                className="leading-none"
+              >
                 {t("auth.activate.title_1")}
                 <span className="ml-2 italic text-ethereal-gold">
                   {t("auth.activate.title_2")}
                 </span>
               </Heading>
 
-              <Text size="base" color="parchment-muted" className="mt-5 max-w-lg leading-7">
+              <Text
+                size="base"
+                color="parchment-muted"
+                className="mt-5 max-w-lg leading-7"
+              >
                 {t("auth.activate.description")}
               </Text>
 
               <div className="mt-8 grid gap-4 flex-1">
-                {activationHighlights.map(({ title, description, icon: Icon }) => (
-                  <div
-                    key={title}
-                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="mt-0.5 shrink-0 rounded-xl bg-ethereal-gold/15 p-2.5">
-                        <Icon className="h-5 w-5 text-ethereal-gold" aria-hidden="true" />
-                      </div>
-                      <div>
-                        <Text size="xs" weight="bold" color="marble" className="uppercase tracking-[0.18em]">
-                          {title}
-                        </Text>
-                        <Text size="sm" color="parchment-muted" className="mt-1.5 leading-6">
-                          {description}
-                        </Text>
+                {activationHighlights.map(
+                  ({ title, description, icon: Icon }) => (
+                    <div
+                      key={title}
+                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="mt-0.5 shrink-0 rounded-xl bg-ethereal-gold/15 p-2.5">
+                          <Icon
+                            className="h-5 w-5 text-ethereal-gold"
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <div>
+                          <Text
+                            size="xs"
+                            weight="bold"
+                            color="marble"
+                            className="uppercase tracking-[0.18em]"
+                          >
+                            {title}
+                          </Text>
+                          <Text
+                            size="sm"
+                            color="parchment-muted"
+                            className="mt-1.5 leading-6"
+                          >
+                            {description}
+                          </Text>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </GlassCard>
           </motion.div>
@@ -138,9 +175,19 @@ export default function ActivatePage(): React.JSX.Element {
           <motion.div
             initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            transition={{
+              duration: 0.55,
+              delay: 0.08,
+              ease: [0.16, 1, 0.3, 1],
+            }}
           >
-            <GlassCard variant="ethereal" padding="lg" glow isHoverable={false} className="relative h-full flex flex-col">
+            <GlassCard
+              variant="ethereal"
+              padding="lg"
+              glow
+              isHoverable={false}
+              className="relative h-full flex flex-col"
+            >
               <div
                 className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-ethereal-gold/60 to-transparent"
                 aria-hidden="true"
@@ -155,19 +202,35 @@ export default function ActivatePage(): React.JSX.Element {
                     <Heading as="h2" size="4xl" color="default">
                       {t("auth.activate.form.title")}
                     </Heading>
-                    <Text size="sm" color="graphite" className="mt-3 max-w-lg leading-7">
+                    <Text
+                      size="sm"
+                      color="graphite"
+                      className="mt-3 max-w-lg leading-7"
+                    >
                       {t("auth.activate.form.description")}
                     </Text>
                   </div>
 
                   <div className="mb-6 rounded-2xl border border-ethereal-incense/20 bg-ethereal-incense/5 p-4">
                     <div className="flex items-start gap-3">
-                      <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-gold" aria-hidden="true" />
+                      <ShieldCheck
+                        className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-gold"
+                        aria-hidden="true"
+                      />
                       <div>
-                        <Text size="xs" weight="bold" color="graphite" className="uppercase tracking-[0.18em]">
+                        <Text
+                          size="xs"
+                          weight="bold"
+                          color="graphite"
+                          className="uppercase tracking-[0.18em]"
+                        >
                           {t("auth.activate.form.security_title")}
                         </Text>
-                        <Text size="sm" color="graphite" className="mt-1.5 leading-6">
+                        <Text
+                          size="sm"
+                          color="graphite"
+                          className="mt-1.5 leading-6"
+                        >
                           {t("auth.activate.form.security_desc")}
                         </Text>
                       </div>
@@ -200,7 +263,9 @@ export default function ActivatePage(): React.JSX.Element {
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         className="appearance-none block w-full px-4 py-3 bg-white/40 backdrop-blur-sm border border-ethereal-incense/20 rounded-xl shadow-sm placeholder-ethereal-graphite/40 text-ethereal-ink focus:outline-none focus:ring-2 focus:ring-ethereal-gold/40 focus:border-ethereal-gold/50 text-sm font-medium transition-all disabled:opacity-50"
-                        placeholder={t("auth.activate.form.new_password_placeholder")}
+                        placeholder={t(
+                          "auth.activate.form.new_password_placeholder",
+                        )}
                       />
                     </div>
 
@@ -219,13 +284,17 @@ export default function ActivatePage(): React.JSX.Element {
                         required
                         disabled={isSubmitting || !hasActivationParams}
                         value={confirmPassword}
-                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        onChange={(event) =>
+                          setConfirmPassword(event.target.value)
+                        }
                         className="appearance-none block w-full px-4 py-3 bg-white/40 backdrop-blur-sm border border-ethereal-incense/20 rounded-xl shadow-sm placeholder-ethereal-graphite/40 text-ethereal-ink focus:outline-none focus:ring-2 focus:ring-ethereal-gold/40 focus:border-ethereal-gold/50 text-sm font-medium transition-all disabled:opacity-50"
-                        placeholder={t("auth.activate.form.confirm_password_placeholder")}
+                        placeholder={t(
+                          "auth.activate.form.confirm_password_placeholder",
+                        )}
                       />
                     </div>
 
-                    {/* Terms & Privacy Policy acceptance */}
+                    {/* Terms & Privacy Policy acceptance with modal trigger */}
                     <label
                       htmlFor="terms-accepted"
                       className="flex items-start gap-3 cursor-pointer rounded-2xl border border-ethereal-incense/15 bg-white/30 p-4 transition-colors hover:bg-white/50"
@@ -256,8 +325,25 @@ export default function ActivatePage(): React.JSX.Element {
                           </svg>
                         </div>
                       </div>
-                      <Text size="sm" color="graphite" className="leading-6 select-none">
-                        {t("auth.activate.form.terms")}
+                      <Text
+                        size="sm"
+                        color="graphite"
+                        className="leading-6 select-none"
+                      >
+                        {t("auth.activate.form.terms_prefix", "Akceptuję ")}{" "}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsTermsOpen(true);
+                          }}
+                          className="text-ethereal-gold hover:text-ethereal-ink transition-colors font-medium underline underline-offset-4"
+                        >
+                          {t(
+                            "auth.activate.form.terms_link",
+                            "Regulamin serwisu VoctManager",
+                          )}
+                        </button>
                       </Text>
                     </label>
 
@@ -269,8 +355,15 @@ export default function ActivatePage(): React.JSX.Element {
                           className="rounded-2xl border border-ethereal-crimson/20 bg-ethereal-crimson/5 p-4"
                         >
                           <div className="flex items-start gap-3">
-                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-crimson" aria-hidden="true" />
-                            <Text size="sm" color="crimson" className="leading-6">
+                            <AlertCircle
+                              className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-crimson"
+                              aria-hidden="true"
+                            />
+                            <Text
+                              size="sm"
+                              color="crimson"
+                              className="leading-6"
+                            >
                               {t(formError, formError)}
                             </Text>
                           </div>
@@ -303,7 +396,10 @@ export default function ActivatePage(): React.JSX.Element {
                   <div className="rounded-3xl border border-ethereal-sage/30 bg-ethereal-sage/5 p-6">
                     <div className="flex items-start gap-4">
                       <div className="shrink-0 rounded-2xl bg-ethereal-sage/15 p-3">
-                        <CheckCircle2 className="h-7 w-7 text-ethereal-sage" aria-hidden="true" />
+                        <CheckCircle2
+                          className="h-7 w-7 text-ethereal-sage"
+                          aria-hidden="true"
+                        />
                       </div>
                       <div>
                         <Eyebrow color="sage" as="p" className="mb-3">
@@ -312,7 +408,11 @@ export default function ActivatePage(): React.JSX.Element {
                         <Heading as="h2" size="4xl" color="default">
                           {t("auth.activate.success.title")}
                         </Heading>
-                        <Text size="sm" color="graphite" className="mt-3 leading-7">
+                        <Text
+                          size="sm"
+                          color="graphite"
+                          className="mt-3 leading-7"
+                        >
                           {t("auth.activate.success.desc_1")}
                           <span className="font-semibold text-ethereal-ink">
                             {activatedData.email}
@@ -321,15 +421,29 @@ export default function ActivatePage(): React.JSX.Element {
                         </Text>
 
                         <div className="mt-5 mb-4 rounded-xl border border-ethereal-incense/20 bg-white/70 p-4 shadow-glass-solid">
-                          <Text size="xs" weight="bold" color="graphite" className="mb-1 uppercase tracking-[0.2em]">
+                          <Text
+                            size="xs"
+                            weight="bold"
+                            color="graphite"
+                            className="mb-1 uppercase tracking-[0.2em]"
+                          >
                             {t("auth.activate.success.your_username")}
                           </Text>
-                          <Text size="md" weight="bold" color="gold" className="font-mono tracking-tight">
+                          <Text
+                            size="md"
+                            weight="bold"
+                            color="gold"
+                            className="font-mono tracking-tight"
+                          >
                             {activatedData.email}
                           </Text>
                         </div>
 
-                        <Text size="xs" color="graphite" className="leading-relaxed">
+                        <Text
+                          size="xs"
+                          color="graphite"
+                          className="leading-relaxed"
+                        >
                           {t("auth.activate.success.instruction")}
                         </Text>
                       </div>
@@ -360,9 +474,20 @@ export default function ActivatePage(): React.JSX.Element {
               )}
             </GlassCard>
           </motion.div>
-
         </div>
       </div>
+
+      {/* PDF Viewer Modal */}
+      <PdfViewerModal
+        isOpen={isTermsOpen}
+        onClose={() => setIsTermsOpen(false)}
+        fetchBlob={fetchTermsBlob}
+        title={t(
+          "auth.activation.terms_modal_title",
+          "Regulamin i Zasady Użytkowania",
+        )}
+        fileName="Regulamin_VoctManager.pdf"
+      />
     </div>
   );
 }
