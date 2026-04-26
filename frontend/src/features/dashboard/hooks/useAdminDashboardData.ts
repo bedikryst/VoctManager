@@ -21,6 +21,7 @@ import type {
   Rehearsal,
   ProgramItem,
   Piece,
+  LocationSnippet,
 } from "@/shared/types";
 
 // UI DTOs imports
@@ -28,6 +29,15 @@ import type { AdminTelemetryStatsDto } from "../components/TelemetryWidget";
 import type { ProjectStatsDto } from "../components/SpotlightProjectCard";
 import type { InvitationStatsDto } from "../components/InvitationStatusWidget";
 import { parseConductorName } from "../utils/conductorParser";
+
+/**
+ * Type Guard to distinguish between a Location ID (string) and a full LocationSnippet.
+ */
+const isLocationSnippet = (
+  loc: string | LocationSnippet | null | undefined,
+): loc is LocationSnippet => {
+  return typeof loc === "object" && loc !== null && "id" in loc;
+};
 
 export interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;
@@ -89,22 +99,28 @@ export const useAdminDashboardData = () => {
     const S = activeArtistsList.filter((a) =>
       a.voice_type?.startsWith("S"),
     ).length;
-    const A = activeArtistsList.filter(
-      (a) => a.voice_type?.startsWith("A") || a.voice_type === "MEZ",
+    const MEZ = activeArtistsList.filter((a) => a.voice_type === "MEZ").length;
+    const A = activeArtistsList.filter((a) =>
+      a.voice_type?.startsWith("A"),
     ).length;
-    const T = activeArtistsList.filter(
-      (a) => a.voice_type?.startsWith("T") || a.voice_type === "CT",
+    const CT = activeArtistsList.filter((a) => a.voice_type === "CT").length;
+    const T = activeArtistsList.filter((a) =>
+      a.voice_type?.startsWith("T"),
     ).length;
+    const BAR = activeArtistsList.filter((a) => a.voice_type === "BAR").length;
     const B = activeArtistsList.filter((a) =>
       a.voice_type?.startsWith("B"),
     ).length;
 
     const satb = {
       S,
+      MEZ,
       A,
+      CT,
       T,
+      BAR,
       B,
-      Total: S + A + T + B,
+      Total: activeArtistsList.length,
     };
 
     return { activeProjects, totalPieces, satb };
@@ -113,12 +129,23 @@ export const useAdminDashboardData = () => {
   // 2. INVITATION STATUS AGGREGATION (non-archived projects only)
   const invitationStats: InvitationStatsDto = useMemo(() => {
     const nonArchivedProjects = projects.filter(
-      (p) => p.status !== PROJECT_STATUS.DONE && p.status !== PROJECT_STATUS.CANCELLED,
+      (p) =>
+        p.status !== PROJECT_STATUS.DONE &&
+        p.status !== PROJECT_STATUS.CANCELLED,
     );
     return {
-      confirmed: nonArchivedProjects.reduce((sum, p) => sum + (p.cast_confirmed ?? 0), 0),
-      pending: nonArchivedProjects.reduce((sum, p) => sum + (p.cast_pending ?? 0), 0),
-      declined: nonArchivedProjects.reduce((sum, p) => sum + (p.cast_declined ?? 0), 0),
+      confirmed: nonArchivedProjects.reduce(
+        (sum, p) => sum + (p.cast_confirmed ?? 0),
+        0,
+      ),
+      pending: nonArchivedProjects.reduce(
+        (sum, p) => sum + (p.cast_pending ?? 0),
+        0,
+      ),
+      declined: nonArchivedProjects.reduce(
+        (sum, p) => sum + (p.cast_declined ?? 0),
+        0,
+      ),
     };
   }, [projects]);
 
@@ -146,12 +173,14 @@ export const useAdminDashboardData = () => {
   const nextProject = useMemo(() => {
     if (!rawNextProject) return undefined;
 
+    const loc = rawNextProject.location;
+
     return {
       id: String(rawNextProject.id),
       title: rawNextProject.title,
       conductor: parseConductorName(rawNextProject.conductor_name) || undefined,
-      locationId: rawNextProject.location?.id,
-      locationFallbackName: rawNextProject.location?.name,
+      locationId: isLocationSnippet(loc) ? loc.id : (loc ?? undefined),
+      locationFallbackName: isLocationSnippet(loc) ? loc.name : undefined,
       startDate: rawNextProject.date_time,
       status: rawNextProject.status?.toLowerCase() as
         | "active"

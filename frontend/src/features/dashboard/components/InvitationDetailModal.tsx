@@ -15,7 +15,12 @@ import { Users, X, UserX, Clock, UserCheck, Mail, Phone } from "lucide-react";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import {
+  Eyebrow,
+  Heading,
+  Label,
+  Text,
+} from "@/shared/ui/primitives/typography";
 import { useInvitationDetails } from "../hooks/useInvitationDetails";
 import type { InvitationDetailRow } from "../hooks/useInvitationDetails";
 
@@ -83,9 +88,20 @@ const StatusSection = ({
             </Text>
           </td>
           <td className="px-4 py-2.5">
-            <Text size="sm" weight="medium" truncate>
-              {row.artistName}
-            </Text>
+            <div className="flex flex-col">
+              <Text size="sm" weight="medium" truncate>
+                {row.artistName}
+              </Text>
+              {row.artistVoice && (
+                <Label
+                  color="muted"
+                  size="xs"
+                  className="uppercase tracking-tighter opacity-70"
+                >
+                  {row.artistVoice}
+                </Label>
+              )}
+            </div>
           </td>
           <td className="px-4 py-2.5">
             {row.email ? (

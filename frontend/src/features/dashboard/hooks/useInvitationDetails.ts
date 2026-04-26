@@ -12,12 +12,18 @@ import api from "@/shared/api/api";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
-import type { Artist, Participation, ParticipationStatus, Project } from "@/shared/types";
+import type {
+  Artist,
+  Participation,
+  ParticipationStatus,
+  Project,
+} from "@/shared/types";
 
 export interface InvitationDetailRow {
   id: string;
   projectName: string;
   artistName: string;
+  artistVoice?: string;
   email: string;
   phone?: string;
   status: ParticipationStatus;
@@ -32,7 +38,8 @@ export interface InvitationDetailGroups {
 export const useInvitationDetails = (isOpen: boolean) => {
   const { data: allParticipations = [], isLoading } = useQuery({
     queryKey: projectKeys.participations.all,
-    queryFn: async () => (await api.get<Participation[]>("/api/participations/")).data,
+    queryFn: async () =>
+      (await api.get<Participation[]>("/api/participations/")).data,
     enabled: isOpen,
     staleTime: 30_000,
   });
@@ -57,7 +64,9 @@ export const useInvitationDetails = (isOpen: boolean) => {
     const activeProjectIds = new Set<string>(
       projects
         .filter(
-          (p) => p.status !== PROJECT_STATUS.DONE && p.status !== PROJECT_STATUS.CANCELLED,
+          (p) =>
+            p.status !== PROJECT_STATUS.DONE &&
+            p.status !== PROJECT_STATUS.CANCELLED,
         )
         .map((p) => String(p.id)),
     );
@@ -76,6 +85,8 @@ export const useInvitationDetails = (isOpen: boolean) => {
           artistName:
             p.artist_name ??
             `${artist?.first_name ?? ""} ${artist?.last_name ?? ""}`.trim(),
+          artistVoice:
+            p.artist_voice_type_display || artist?.voice_type_display,
           email: artist?.email ?? "",
           phone: artist?.phone_number,
           status: p.status,

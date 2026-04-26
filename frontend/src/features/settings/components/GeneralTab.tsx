@@ -106,7 +106,10 @@ export const GeneralTab = () => {
           {user?.voice_type && (
             <MetricBlock
               label={t("settings.membership.voice", "Twój Głos w Chórze")}
-              value={user.voice_type_display}
+              value={
+                t(`dashboard.layout.roles.${user.voice_type}`) ||
+                user.voice_type_display
+              }
               icon={<Mic2 className="w-5 h-5" />}
               accentColor="gold"
               className="scale-80 md:-left-3"

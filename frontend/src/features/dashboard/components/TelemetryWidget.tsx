@@ -19,8 +19,11 @@ import { KineticGlow } from "@/shared/ui/kinematics/KineticGlow";
 
 export interface VoiceStatsDto {
   S: number;
+  MEZ: number;
   A: number;
+  CT: number;
   T: number;
+  BAR: number;
   B: number;
   Total: number;
 }
@@ -43,14 +46,17 @@ export function TelemetryWidget({
   const stats = adminStats ?? {
     totalPieces: 0,
     activeProjects: 0,
-    satb: { S: 0, A: 0, T: 0, B: 0, Total: 0 },
+    satb: { S: 0, MEZ: 0, A: 0, CT: 0, T: 0, BAR: 0, B: 0, Total: 0 },
   };
 
   const voices = useMemo(
     () => [
       { label: "S", val: stats.satb.S, voiceType: "S" as const },
+      { label: "M", val: stats.satb.MEZ, voiceType: "A" as const },
       { label: "A", val: stats.satb.A, voiceType: "A" as const },
+      { label: "CT", val: stats.satb.CT, voiceType: "T" as const },
       { label: "T", val: stats.satb.T, voiceType: "T" as const },
+      { label: "BAR", val: stats.satb.BAR, voiceType: "B" as const },
       { label: "B", val: stats.satb.B, voiceType: "B" as const },
     ],
     [stats.satb],
