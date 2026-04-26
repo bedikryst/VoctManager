@@ -200,6 +200,7 @@ export interface CrewAssignment extends BaseModel {
 
 export type LocationCategory =
   | "CONCERT_HALL"
+  | "CHURCH"
   | "REHEARSAL_ROOM"
   | "HOTEL"
   | "AIRPORT"

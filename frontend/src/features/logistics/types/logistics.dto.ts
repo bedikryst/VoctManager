@@ -7,6 +7,7 @@ import type { LocationCategory } from "@/shared/types";
 
 const LocationCategoryEnum = z.enum([
   "CONCERT_HALL",
+  "CHURCH",
   "REHEARSAL_ROOM",
   "HOTEL",
   "AIRPORT",

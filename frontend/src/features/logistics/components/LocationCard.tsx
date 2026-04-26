@@ -12,13 +12,19 @@ import {
   Bed,
   Plane,
   Briefcase,
+  Church,
 } from "lucide-react";
 import type { LocationDto } from "../types/logistics.dto";
 import type { LocationCategory } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useLocalTime } from "@/shared/lib/time/hooks/useLocalTime";
-import { Heading, Text, Caption, Eyebrow } from "@/shared/ui/primitives/typography";
+import {
+  Heading,
+  Text,
+  Caption,
+  Eyebrow,
+} from "@/shared/ui/primitives/typography";
 import { Badge } from "@/shared/ui/primitives/Badge";
 
 interface LocationCardProps {
@@ -31,21 +37,46 @@ const CATEGORY_CONFIG: Record<
   LocationCategory,
   { icon: React.ElementType; color: string; bg: string }
 > = {
-  CONCERT_HALL: { icon: Music, color: "text-ethereal-gold", bg: "bg-ethereal-gold/10 border-ethereal-gold/30" },
+  CONCERT_HALL: {
+    icon: Music,
+    color: "text-ethereal-gold",
+    bg: "bg-ethereal-gold/10 border-ethereal-gold/30",
+  },
+  CHURCH: {
+    icon: Church,
+    color: "text-ethereal-sage",
+    bg: "bg-ethereal-sage/10 border-ethereal-sage/30",
+  },
   REHEARSAL_ROOM: {
     icon: Building2,
     color: "text-ethereal-sage",
     bg: "bg-ethereal-sage/10 border-ethereal-sage/30",
   },
-  HOTEL: { icon: Bed, color: "text-ethereal-amethyst", bg: "bg-ethereal-amethyst/10 border-ethereal-amethyst/30" },
-  AIRPORT: { icon: Plane, color: "text-ethereal-incense", bg: "bg-ethereal-incense/10 border-ethereal-incense/30" },
+  HOTEL: {
+    icon: Bed,
+    color: "text-ethereal-amethyst",
+    bg: "bg-ethereal-amethyst/10 border-ethereal-amethyst/30",
+  },
+  AIRPORT: {
+    icon: Plane,
+    color: "text-ethereal-incense",
+    bg: "bg-ethereal-incense/10 border-ethereal-incense/30",
+  },
   TRANSIT_STATION: {
     icon: Globe,
     color: "text-ethereal-incense",
     bg: "bg-ethereal-incense/10 border-ethereal-incense/30",
   },
-  WORKSPACE: { icon: Briefcase, color: "text-ethereal-crimson", bg: "bg-ethereal-crimson/10 border-ethereal-crimson/30" },
-  OTHER: { icon: MapPin, color: "text-ethereal-graphite", bg: "bg-ethereal-incense/5 border-ethereal-incense/20" },
+  WORKSPACE: {
+    icon: Briefcase,
+    color: "text-ethereal-crimson",
+    bg: "bg-ethereal-crimson/10 border-ethereal-crimson/30",
+  },
+  OTHER: {
+    icon: MapPin,
+    color: "text-ethereal-graphite",
+    bg: "bg-ethereal-incense/5 border-ethereal-incense/20",
+  },
 };
 
 export const LocationCard = React.memo(
@@ -72,7 +103,12 @@ export const LocationCard = React.memo(
                 <Icon size={24} strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <Heading as="h3" size="lg" weight="bold" className="line-clamp-2 text-ethereal-ink leading-tight">
+                <Heading
+                  as="h3"
+                  size="lg"
+                  weight="bold"
+                  className="line-clamp-2 text-ethereal-ink leading-tight"
+                >
                   {location.name}
                 </Heading>
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
@@ -88,7 +124,9 @@ export const LocationCard = React.memo(
                     <Clock
                       size={11}
                       className={
-                        liveLocalTime ? "text-ethereal-gold" : "text-ethereal-incense/50"
+                        liveLocalTime
+                          ? "text-ethereal-gold"
+                          : "text-ethereal-incense/50"
                       }
                     />
                     {liveLocalTime ? (
@@ -112,14 +150,26 @@ export const LocationCard = React.memo(
             </div>
 
             <div className="bg-ethereal-alabaster/40 border border-ethereal-incense/10 rounded-xl p-3.5 mb-5 shadow-glass-solid space-y-2">
-              <Text as="p" size="sm" weight="medium" color="graphite" className="line-clamp-2 leading-relaxed">
-                <MapPin size={12} className="inline mr-1 text-ethereal-incense/60" />
+              <Text
+                as="p"
+                size="sm"
+                weight="medium"
+                color="graphite"
+                className="line-clamp-2 leading-relaxed"
+              >
+                <MapPin
+                  size={12}
+                  className="inline mr-1 text-ethereal-incense/60"
+                />
                 {location.formatted_address}
               </Text>
             </div>
 
             {location.internal_notes && (
-              <Caption color="incense-muted" className="italic mb-6 line-clamp-2 pl-2 border-l-2 border-ethereal-incense/20">
+              <Caption
+                color="incense-muted"
+                className="italic mb-6 line-clamp-2 pl-2 border-l-2 border-ethereal-incense/20"
+              >
                 {location.internal_notes}
               </Caption>
             )}

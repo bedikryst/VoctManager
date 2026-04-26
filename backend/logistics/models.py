@@ -7,6 +7,7 @@ class LocationCategory(models.TextChoices):
     Defines the standard categories for global choir logistics.
     """
     CONCERT_HALL = "CONCERT_HALL", _("Concert Hall")
+    CHURCH = "CHURCH", _("Church")
     REHEARSAL_ROOM = "REHEARSAL_ROOM", _("Rehearsal Room")
     HOTEL = "HOTEL", _("Hotel")
     AIRPORT = "AIRPORT", _("Airport")

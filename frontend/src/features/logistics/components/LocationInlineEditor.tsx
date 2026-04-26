@@ -10,7 +10,12 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2, MapPin, Globe } from "lucide-react";
-import { Heading, Text, Caption, Eyebrow } from "@/shared/ui/primitives/typography";
+import {
+  Heading,
+  Text,
+  Caption,
+  Eyebrow,
+} from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
@@ -28,8 +33,7 @@ interface LocationInlineEditorProps {
 const getValidationMessage = (message: unknown): string | null =>
   typeof message === "string" && message.trim().length > 0 ? message : null;
 
-const STYLE_LABEL =
-  "block mb-2 ml-1";
+const STYLE_LABEL = "block mb-2 ml-1";
 const STYLE_SELECT =
   "w-full px-4 py-3 text-sm text-ethereal-ink bg-ethereal-alabaster/50 backdrop-blur-sm border border-ethereal-incense/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-ethereal-gold/20 focus:border-ethereal-gold/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
 
@@ -79,13 +83,23 @@ export default function LocationInlineEditor({
 
         <div className="flex justify-between items-center p-6 md:p-8 border-b border-ethereal-incense/20 bg-white/40">
           <div>
-            <Heading as="h3" size="3xl" weight="bold" className="tracking-tight text-ethereal-ink">
+            <Heading
+              as="h3"
+              size="3xl"
+              weight="bold"
+              className="tracking-tight text-ethereal-ink"
+            >
               {location?.id
                 ? t("logistics.editor.title_edit", "Edycja Lokacji")
                 : t("logistics.editor.title_new", "Nowa Lokacja")}
             </Heading>
             {location?.id && (
-              <Text as="p" size="xs" color="graphite" className="mt-1 font-mono">
+              <Text
+                as="p"
+                size="xs"
+                color="graphite"
+                className="mt-1 font-mono"
+              >
                 {location.id}
               </Text>
             )}
@@ -107,14 +121,23 @@ export default function LocationInlineEditor({
               <div className="space-y-5 bg-ethereal-gold/5 p-6 rounded-2xl border border-ethereal-gold/10 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                 <div className="flex items-center gap-2 mb-2">
                   <Globe size={18} className="text-ethereal-gold" />
-                  <Caption color="gold" weight="bold" className="uppercase tracking-[0.15em]">
+                  <Caption
+                    color="gold"
+                    weight="bold"
+                    className="uppercase tracking-[0.15em]"
+                  >
                     {t(
                       "logistics.editor.section_search",
                       "Globalna Baza Google",
                     )}
                   </Caption>
                 </div>
-                <Text as="p" size="xs" color="graphite" className="mb-4 max-w-2xl">
+                <Text
+                  as="p"
+                  size="xs"
+                  color="graphite"
+                  className="mb-4 max-w-2xl"
+                >
                   {t(
                     "logistics.editor.search_hint",
                     "Wyszukaj miejsce na mapie, aby automatycznie uzupełnić dane, koordynaty i strefę czasową. Pozwoli to na inteligentne zarządzanie czasem w projektach.",
@@ -127,13 +150,23 @@ export default function LocationInlineEditor({
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {/* Column 1: Basic Information */}
               <div className="space-y-6">
-                <Caption color="gold" weight="bold" className="block uppercase tracking-[0.15em] border-b border-ethereal-incense/20 pb-2">
+                <Caption
+                  color="gold"
+                  weight="bold"
+                  className="block uppercase tracking-[0.15em] border-b border-ethereal-incense/20 pb-2"
+                >
                   {t("logistics.editor.section_basic", "Dane Podstawowe")}
                 </Caption>
 
                 <div>
                   <label className={STYLE_LABEL}>
-                    <Caption color="muted" weight="bold" className="uppercase tracking-widest">{t("logistics.editor.category", "Klasyfikacja *")}</Caption>
+                    <Caption
+                      color="muted"
+                      weight="bold"
+                      className="uppercase tracking-widest"
+                    >
+                      {t("logistics.editor.category", "Klasyfikacja *")}
+                    </Caption>
                   </label>
                   <select
                     {...form.register("category")}
@@ -150,6 +183,9 @@ export default function LocationInlineEditor({
                         "logistics.categories.concert_hall",
                         "Sala Koncertowa",
                       )}
+                    </option>
+                    <option value="CHURCH">
+                      {t("logistics.categories.church", "Kościół")}
                     </option>
                     <option value="REHEARSAL_ROOM">
                       {t("logistics.categories.rehearsal_room", "Sala Prób")}
@@ -173,16 +209,28 @@ export default function LocationInlineEditor({
                       {t("logistics.categories.other", "Inne")}
                     </option>
                   </select>
-                  {getValidationMessage(form.formState.errors.category?.message) && (
+                  {getValidationMessage(
+                    form.formState.errors.category?.message,
+                  ) && (
                     <p className="text-red-500 text-xs mt-1.5 ml-1">
-                      {t(getValidationMessage(form.formState.errors.category?.message) ?? "")}
+                      {t(
+                        getValidationMessage(
+                          form.formState.errors.category?.message,
+                        ) ?? "",
+                      )}
                     </p>
                   )}
                 </div>
 
                 <div>
                   <label className={STYLE_LABEL}>
-                    <Caption color="muted" weight="bold" className="uppercase tracking-widest">{t("logistics.editor.name", "Nazwa Wyświetlana *")}</Caption>
+                    <Caption
+                      color="muted"
+                      weight="bold"
+                      className="uppercase tracking-widest"
+                    >
+                      {t("logistics.editor.name", "Nazwa Wyświetlana *")}
+                    </Caption>
                   </label>
                   <Input
                     type="text"
@@ -198,16 +246,28 @@ export default function LocationInlineEditor({
                       "np. Filharmonia Narodowa - Sala Kameralna",
                     )}
                   />
-                  {getValidationMessage(form.formState.errors.name?.message) && (
+                  {getValidationMessage(
+                    form.formState.errors.name?.message,
+                  ) && (
                     <Caption color="crimson" className="mt-1.5 ml-1 block">
-                      {t(getValidationMessage(form.formState.errors.name?.message) ?? "")}
+                      {t(
+                        getValidationMessage(
+                          form.formState.errors.name?.message,
+                        ) ?? "",
+                      )}
                     </Caption>
                   )}
                 </div>
 
                 <div>
                   <label className={STYLE_LABEL}>
-                    <Caption color="muted" weight="bold" className="uppercase tracking-widest">{t("logistics.editor.address", "Oficjalny Adres *")}</Caption>
+                    <Caption
+                      color="muted"
+                      weight="bold"
+                      className="uppercase tracking-widest"
+                    >
+                      {t("logistics.editor.address", "Oficjalny Adres *")}
+                    </Caption>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ethereal-incense/60">
@@ -228,7 +288,9 @@ export default function LocationInlineEditor({
                       )}
                     />
                   </div>
-                  {getValidationMessage(form.formState.errors.formatted_address?.message) && (
+                  {getValidationMessage(
+                    form.formState.errors.formatted_address?.message,
+                  ) && (
                     <Caption color="crimson" className="mt-1.5 ml-1 block">
                       {t(
                         getValidationMessage(
@@ -242,16 +304,26 @@ export default function LocationInlineEditor({
 
               {/* Column 2: Internal Logistics */}
               <div className="space-y-6">
-                <Caption color="gold" weight="bold" className="block uppercase tracking-[0.15em] border-b border-ethereal-incense/20 pb-2">
+                <Caption
+                  color="gold"
+                  weight="bold"
+                  className="block uppercase tracking-[0.15em] border-b border-ethereal-incense/20 pb-2"
+                >
                   {t("logistics.editor.section_notes", "Instrukcje Wewnętrzne")}
                 </Caption>
 
                 <div className="h-full flex flex-col">
                   <label className={STYLE_LABEL}>
-                    <Caption color="muted" weight="bold" className="uppercase tracking-widest">{t(
-                      "logistics.editor.internal_notes",
-                      "Notatki dla Zespołu (Opcjonalnie)",
-                    )}</Caption>
+                    <Caption
+                      color="muted"
+                      weight="bold"
+                      className="uppercase tracking-widest"
+                    >
+                      {t(
+                        "logistics.editor.internal_notes",
+                        "Notatki dla Zespołu (Opcjonalnie)",
+                      )}
+                    </Caption>
                   </label>
                   <textarea
                     {...form.register("internal_notes")}
@@ -266,7 +338,9 @@ export default function LocationInlineEditor({
                       "np. Wejście dla artystów znajduje się od strony parkingu. Kod do bramy: 1234#.",
                     )}
                   />
-                  {getValidationMessage(form.formState.errors.internal_notes?.message) && (
+                  {getValidationMessage(
+                    form.formState.errors.internal_notes?.message,
+                  ) && (
                     <Caption color="crimson" className="mt-1.5 ml-1 block">
                       {t(
                         getValidationMessage(

@@ -31,7 +31,7 @@ import {
 
 const DISABLED_QUERY_STALE_TIME = Number.POSITIVE_INFINITY;
 
-const getDisabledListQueryConfig = <TData,>() => ({
+const getDisabledListQueryConfig = <TData>() => ({
   queryFn: async (): Promise<TData[]> => [],
   staleTime: DISABLED_QUERY_STALE_TIME,
   initialData: [] as TData[],
@@ -69,8 +69,14 @@ export const useProjectArtistsMap = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<Artist>()),
-    select: (artists) =>
-      new Map(artists.map((artist) => [String(artist.id), artist])),
+    select: (artists) => {
+      const safeArtists = Array.isArray(artists)
+        ? artists
+        : artists
+          ? [artists]
+          : [];
+      return new Map(safeArtists.map((artist) => [String(artist.id), artist]));
+    },
   });
 
 export const useProjectPiecesDictionary = (enabled = true) =>
@@ -133,8 +139,7 @@ export const useProjectCrewAssignments = (projectId: string | undefined) =>
     queryKey: projectKeys.crewAssignments.byProject(projectId ?? "pending"),
     ...(projectId
       ? {
-          queryFn: () =>
-            ProjectService.getCrewAssignmentsByProject(projectId),
+          queryFn: () => ProjectService.getCrewAssignmentsByProject(projectId),
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<CrewAssignment>()),

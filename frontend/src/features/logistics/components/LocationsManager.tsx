@@ -13,7 +13,13 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { LocationCard } from "./LocationCard";
 import LocationInlineEditor from "./LocationInlineEditor";
-import { Heading, Text, Eyebrow, Caption } from "@/shared/ui/primitives/typography";
+import {
+  Heading,
+  Text,
+  Eyebrow,
+  Caption,
+  Label,
+} from "@/shared/ui/primitives/typography";
 import type { LocationCategory } from "@/shared/types";
 
 const FILTER_CATEGORIES: {
@@ -26,6 +32,11 @@ const FILTER_CATEGORIES: {
     value: "CONCERT_HALL",
     labelKey: "logistics.categories.concert_hall",
     fallback: "Sale Koncertowe",
+  },
+  {
+    value: "CHURCH",
+    labelKey: "logistics.categories.church",
+    fallback: "Kościół",
   },
   {
     value: "REHEARSAL_ROOM",
@@ -131,13 +142,22 @@ export const LocationsManager = (): React.JSX.Element => {
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-glass-surface backdrop-blur-md border border-glass-border shadow-sm mb-4">
                 <MapIcon size={12} className="text-ethereal-gold" />
-                <Caption color="gold" weight="bold" className="uppercase tracking-widest antialiased">
+                <Label
+                  color="gold"
+                  weight="bold"
+                  className="uppercase tracking-widest antialiased"
+                >
                   {t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
-                </Caption>
+                </Label>
               </div>
-              <Heading as="h1" size="4xl" weight="medium" className="leading-tight tracking-tight">
+              <Heading
+                as="h1"
+                size="4xl"
+                weight="medium"
+                className="leading-tight tracking-tight"
+              >
                 {t("logistics.dashboard.title_prefix", "Baza")}{" "}
-                <Text as="span" color="gold" size="inherit" className="italic">
+                <Text as="span" color="gold" className="italic">
                   {t("logistics.dashboard.title_highlight", "Lokacji")}
                 </Text>
                 .
@@ -289,7 +309,12 @@ export const LocationsManager = (): React.JSX.Element => {
                 <div key={category} className="w-full relative">
                   {/* Nagłówek Sekcji */}
                   <div className="flex items-center gap-3 mb-5 border-b border-ethereal-incense/20 pb-3">
-                    <Heading as="h2" size="xl" weight="bold" className="tracking-tight text-ethereal-ink">
+                    <Heading
+                      as="h2"
+                      size="xl"
+                      weight="bold"
+                      className="tracking-tight text-ethereal-ink"
+                    >
                       {t(
                         `logistics.categories.${category.toLowerCase()}`,
                         category.replace("_", " "),
@@ -342,10 +367,19 @@ export const LocationsManager = (): React.JSX.Element => {
                     size={48}
                     className="text-ethereal-incense mb-4 opacity-50"
                   />
-                  <Caption color="muted" weight="bold" className="uppercase tracking-widest mb-2">
+                  <Caption
+                    color="muted"
+                    weight="bold"
+                    className="uppercase tracking-widest mb-2"
+                  >
                     {t("logistics.dashboard.empty_title", "Brak wyników")}
                   </Caption>
-                  <Text as="span" size="sm" color="graphite" className="max-w-sm">
+                  <Text
+                    as="span"
+                    size="sm"
+                    color="graphite"
+                    className="max-w-sm"
+                  >
                     {t(
                       "logistics.dashboard.empty_desc",
                       "Zmień filtry lub dodaj nowe miejsce korzystając z integracji Google Maps.",
