@@ -16,7 +16,10 @@ import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { useRehearsalsData } from "./hooks/useRehearsalsData";
 import { useLocationResolver } from "@/features/logistics/hooks/useLocationResolver";
-import { formatLocalizedDate, formatLocalizedTime } from "@/shared/lib/time/intl";
+import {
+  formatLocalizedDate,
+  formatLocalizedTime,
+} from "@/shared/lib/time/intl";
 
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -26,7 +29,12 @@ import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import {
+  Caption,
+  Eyebrow,
+  Heading,
+  Text,
+} from "@/shared/ui/primitives/typography";
 import { ArtistRow } from "./components/ArtistRow";
 
 const VOICE_LABELS: Record<string, string> = {
@@ -34,6 +42,9 @@ const VOICE_LABELS: Record<string, string> = {
   A: "rehearsals.voices.altos",
   T: "rehearsals.voices.tenors",
   B: "rehearsals.voices.basses",
+  M: "rehearsals.voices.mezzos",
+  C: "rehearsals.voices.countertenors",
+  BAR: "rehearsals.voices.baritones",
 };
 
 const VOICE_FALLBACKS: Record<string, string> = {
@@ -41,6 +52,9 @@ const VOICE_FALLBACKS: Record<string, string> = {
   A: "Alty",
   T: "Tenory",
   B: "Basy",
+  M: "Mezzosoprany",
+  C: "Kontratenory",
+  BAR: "Barytony",
 };
 
 export default function Rehearsals(): React.JSX.Element {
@@ -69,9 +83,15 @@ export default function Rehearsals(): React.JSX.Element {
 
   useEffect(() => {
     if (isError)
-      toast.error(t("rehearsals.toast.sync_error_title", "Błąd synchronizacji"), {
-        description: t("rehearsals.toast.sync_error_desc", "Nie udało się załadować danych."),
-      });
+      toast.error(
+        t("rehearsals.toast.sync_error_title", "Błąd synchronizacji"),
+        {
+          description: t(
+            "rehearsals.toast.sync_error_desc",
+            "Nie udało się załadować danych.",
+          ),
+        },
+      );
   }, [isError, t]);
 
   const sectionalDetails = useMemo(() => {
@@ -81,7 +101,8 @@ export default function Rehearsals(): React.JSX.Element {
     const voices = new Set<string>();
     invitedParticipations.forEach((p) => {
       const artist = artistMap.get(String(p.artist));
-      if (artist?.voice_type) voices.add(artist.voice_type.charAt(0).toUpperCase());
+      if (artist?.voice_type)
+        voices.add(artist.voice_type.charAt(0).toUpperCase());
     });
 
     const voiceDict: Record<string, string> = {
@@ -91,13 +112,15 @@ export default function Rehearsals(): React.JSX.Element {
       B: t("rehearsals.voices.basses", "Basy"),
       M: t("rehearsals.voices.mezzos", "Mezzosoprany"),
       C: t("rehearsals.voices.countertenors", "Kontratenory"),
+      BAR: t("rehearsals.voices.baritones", "Barytony"),
     };
 
     const names = Array.from(voices).map((v) => voiceDict[v] ?? v);
     return `${t("rehearsals.dashboard.only", "Tylko:")} ${names.join(", ")}`;
   }, [activeRehearsal, invitedParticipations, artistMap, t]);
 
-  const attendanceRateAccent = stats.rate >= 80 ? "gold" : stats.rate >= 50 ? "default" : "crimson";
+  const attendanceRateAccent =
+    stats.rate >= 80 ? "gold" : stats.rate >= 50 ? "default" : "crimson";
 
   if (isLoading && displayProjects.length === 0) {
     return <EtherealLoader />;
@@ -106,19 +129,24 @@ export default function Rehearsals(): React.JSX.Element {
   return (
     <PageTransition>
       <div className="space-y-10 pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
         <PageHeader
           size="dashboard"
           roleText={t("rehearsals.dashboard.subtitle", "Moduł Inspektora")}
           title={t("rehearsals.dashboard.title", "Dziennik")}
-          titleHighlight={t("rehearsals.dashboard.title_highlight", "Obecności")}
+          titleHighlight={t(
+            "rehearsals.dashboard.title_highlight",
+            "Obecności",
+          )}
         />
 
         {/* ── Project Context ──────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-5">
             <SectionHeader
-              title={t("rehearsals.dashboard.project_context", "Kontekst Projektu")}
+              title={t(
+                "rehearsals.dashboard.project_context",
+                "Kontekst Projektu",
+              )}
               withFluidDivider={false}
               className="pb-0 mb-0"
             />
@@ -134,7 +162,9 @@ export default function Rehearsals(): React.JSX.Element {
                       : "text-ethereal-graphite hover:text-ethereal-ink"
                   }`}
                 >
-                  {tab === "ARCHIVE" && <Archive size={10} aria-hidden="true" />}
+                  {tab === "ARCHIVE" && (
+                    <Archive size={10} aria-hidden="true" />
+                  )}
                   {tab === "ACTIVE"
                     ? t("rehearsals.tabs.active", "Aktywne")
                     : t("rehearsals.tabs.archive", "Archiwum")}
@@ -144,9 +174,14 @@ export default function Rehearsals(): React.JSX.Element {
           </div>
 
           <div className="relative group">
-            <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar snap-x items-stretch">
+            <div className="flex overflow-x-auto gap-4 py-4 -my-4 no-scrollbar snap-x items-stretch">
               {displayProjects.length === 0 ? (
-                <Caption className="italic">{t("rehearsals.dashboard.no_projects", "Brak projektów w tej zakładce.")}</Caption>
+                <Caption className="italic">
+                  {t(
+                    "rehearsals.dashboard.no_projects",
+                    "Brak projektów w tej zakładce.",
+                  )}
+                </Caption>
               ) : (
                 displayProjects.map((project) => {
                   const isSelected = selectedProjectId === String(project.id);
@@ -163,9 +198,18 @@ export default function Rehearsals(): React.JSX.Element {
                       }`}
                     >
                       <Caption className="block mb-1.5 text-left">
-                        {formatLocalizedDate(project.date_time, undefined, undefined, project.timezone)}
+                        {formatLocalizedDate(
+                          project.date_time,
+                          undefined,
+                          undefined,
+                          project.timezone,
+                        )}
                       </Caption>
-                      <Text size="sm" weight="semibold" className="truncate block text-left">
+                      <Text
+                        size="sm"
+                        weight="semibold"
+                        className="truncate block text-left"
+                      >
                         {project.title}
                       </Text>
                     </GlassCard>
@@ -191,9 +235,10 @@ export default function Rehearsals(): React.JSX.Element {
           >
             {/* Time chips */}
             <div className="relative group">
-              <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar snap-x items-stretch">
+              <div className="flex overflow-x-auto gap-4 py-4 -my-4 no-scrollbar snap-x items-stretch">
                 {projectRehearsals.map((reh) => {
-                  const isSelected = String(activeRehearsalId) === String(reh.id);
+                  const isSelected =
+                    String(activeRehearsalId) === String(reh.id);
                   const isPast = new Date(reh.date_time) < new Date();
                   return (
                     <GlassCard
@@ -232,7 +277,10 @@ export default function Rehearsals(): React.JSX.Element {
                           reh.timezone,
                         )}
                       </Heading>
-                      <Caption color="muted" className="truncate max-w-full block">
+                      <Caption
+                        color="muted"
+                        className="truncate max-w-full block"
+                      >
                         {getLocationName(
                           reh.location,
                           t("rehearsals.dashboard.no_location", "Brak lok."),
@@ -252,32 +300,58 @@ export default function Rehearsals(): React.JSX.Element {
             {/* Active rehearsal inspector */}
             {activeRehearsal && (
               <GlassCard variant="solid" padding="none" isHoverable={false}>
-
                 {/* ── Inspector header ── */}
                 <div className="p-6 md:p-8 border-b border-ethereal-incense/10">
                   <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <Badge variant={activeRehearsal.invited_participations?.length ? "amethyst" : "brand"}>
+                        <Badge
+                          variant={
+                            activeRehearsal.invited_participations?.length
+                              ? "amethyst"
+                              : "brand"
+                          }
+                        >
                           {activeRehearsal.invited_participations?.length
-                            ? t("rehearsals.dashboard.sectional", "Próba Sekcyjna")
-                            : t("rehearsals.dashboard.tutti_badge", "Próba Tutti")}
+                            ? t(
+                                "rehearsals.dashboard.sectional",
+                                "Próba Sekcyjna",
+                              )
+                            : t(
+                                "rehearsals.dashboard.tutti_badge",
+                                "Próba Tutti",
+                              )}
                         </Badge>
                         <Badge variant="neutral">{sectionalDetails}</Badge>
                       </div>
 
-                      <Text size="lg" weight="semibold" className="mb-5 leading-tight block">
-                        {activeRehearsal.focus ?? t("rehearsals.dashboard.general_work", "Praca Bieżąca")}
+                      <Text
+                        size="lg"
+                        weight="semibold"
+                        className="mb-5 leading-tight block"
+                      >
+                        {activeRehearsal.focus ??
+                          t(
+                            "rehearsals.dashboard.general_work",
+                            "Praca Bieżąca",
+                          )}
                       </Text>
 
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ethereal-alabaster border border-ethereal-incense/15">
-                          <Clock size={12} className="text-ethereal-gold shrink-0" aria-hidden="true" />
+                          <Clock
+                            size={12}
+                            className="text-ethereal-gold shrink-0"
+                            aria-hidden="true"
+                          />
                           <Caption>
                             {formatLocalizedDate(
                               activeRehearsal.date_time,
-                              { weekday: "long", day: "numeric", month: "long" },
+                              {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                              },
                               undefined,
                               activeRehearsal.timezone,
                             )}
@@ -296,7 +370,10 @@ export default function Rehearsals(): React.JSX.Element {
 
                         <LocationPreview
                           locationRef={activeRehearsal.location}
-                          fallback={t("rehearsals.dashboard.no_location", "Brak lok.")}
+                          fallback={t(
+                            "rehearsals.dashboard.no_location",
+                            "Brak lok.",
+                          )}
                           variant="minimal"
                         />
                       </div>
@@ -335,9 +412,15 @@ export default function Rehearsals(): React.JSX.Element {
                     variant="primary"
                     size="sm"
                     onClick={handleMarkAllPresent}
-                    disabled={isMarkingAll || invitedParticipations.length === 0 || stats.none === 0}
+                    disabled={
+                      isMarkingAll ||
+                      invitedParticipations.length === 0 ||
+                      stats.none === 0
+                    }
                     isLoading={isMarkingAll}
-                    leftIcon={!isMarkingAll ? <CheckCircle2 size={15} /> : undefined}
+                    leftIcon={
+                      !isMarkingAll ? <CheckCircle2 size={15} /> : undefined
+                    }
                   >
                     {t(
                       "rehearsals.dashboard.bulk_fill",
@@ -349,45 +432,61 @@ export default function Rehearsals(): React.JSX.Element {
 
                 {/* ── Attendance roster ── */}
                 <div className="overflow-x-hidden overflow-y-auto max-h-[60vh]">
-                  {(["S", "A", "T", "B"] as const).map((voiceGroup) => {
-                    const groupParts = invitedParticipations.filter((p) =>
-                      artistMap.get(String(p.artist))?.voice_type?.startsWith(voiceGroup),
-                    );
-                    if (groupParts.length === 0) return null;
+                  {(["S", "A", "T", "B", "M", "C", "BAR"] as const).map(
+                    (voiceGroup) => {
+                      const groupParts = invitedParticipations.filter((p) => {
+                        const artist = artistMap.get(String(p.artist));
+                        if (!artist?.voice_type) return false;
 
-                    return (
-                      <div key={voiceGroup}>
-                        <div className="sticky top-0 z-10 bg-ethereal-alabaster/95 backdrop-blur-sm px-6 py-2.5 border-b border-ethereal-incense/10">
-                          <Eyebrow color="gold">
-                            {t(VOICE_LABELS[voiceGroup], VOICE_FALLBACKS[voiceGroup])}
-                          </Eyebrow>
-                        </div>
+                        // Handling "BAR" and others that might be longer than 1 char
+                        if (voiceGroup === "BAR")
+                          return artist.voice_type === "BAR";
+                        if (voiceGroup === "M")
+                          return artist.voice_type === "MEZ";
+                        if (voiceGroup === "C")
+                          return artist.voice_type === "CT";
 
-                        <div className="flex flex-col">
-                          {groupParts.map((part) => {
-                            const artist = artistMap.get(String(part.artist));
-                            if (!artist) return null;
-                            return (
-                              <ArtistRow
-                                key={part.id}
-                                part={part}
-                                artist={artist}
-                                existingRecord={attendanceMap.get(String(part.id))}
-                                rehearsalId={activeRehearsal.id}
-                              />
-                            );
-                          })}
+                        return artist.voice_type.startsWith(voiceGroup);
+                      });
+                      if (groupParts.length === 0) return null;
+
+                      return (
+                        <div key={voiceGroup}>
+                          <div className="sticky top-0 z-10 bg-ethereal-alabaster/95 backdrop-blur-sm px-6 py-2.5 border-b border-ethereal-incense/10">
+                            <Eyebrow color="gold">
+                              {t(
+                                VOICE_LABELS[voiceGroup],
+                                VOICE_FALLBACKS[voiceGroup],
+                              )}
+                            </Eyebrow>
+                          </div>
+
+                          <div className="flex flex-col">
+                            {groupParts.map((part) => {
+                              const artist = artistMap.get(String(part.artist));
+                              if (!artist) return null;
+                              return (
+                                <ArtistRow
+                                  key={part.id}
+                                  part={part}
+                                  artist={artist}
+                                  existingRecord={attendanceMap.get(
+                                    String(part.id),
+                                  )}
+                                  rehearsalId={activeRehearsal.id}
+                                />
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    },
+                  )}
                 </div>
-
               </GlassCard>
             )}
           </motion.div>
         )}
-
       </div>
     </PageTransition>
   );

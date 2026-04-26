@@ -70,8 +70,8 @@ export type ProjectReportEndpoint =
 
 export const ProjectService = {
   getAll: async (): Promise<Project[]> => {
-    const response = await api.get<Project[]>(PROJECTS_BASE_URL);
-    return response.data;
+    const response = await api.get(PROJECTS_BASE_URL);
+    return response.data.results ?? response.data ?? [];
   },
 
   create: async (data: ProjectCreateDTO): Promise<Project> => {
@@ -103,32 +103,32 @@ export const ProjectService = {
     }),
 
   getArtistsDictionary: async (): Promise<Artist[]> => {
-    const response = await api.get<Artist[]>(ARTISTS_BASE_URL);
-    return response.data;
+    const response = await api.get(ARTISTS_BASE_URL);
+    return response.data.results ?? response.data ?? [];
   },
 
   getPiecesDictionary: async (): Promise<Piece[]> => {
-    const response = await api.get<Piece[]>(PIECES_BASE_URL);
-    return response.data;
+    const response = await api.get(PIECES_BASE_URL);
+    return response.data.results ?? response.data ?? [];
   },
 
   getCollaboratorsDictionary: async (): Promise<Collaborator[]> => {
-    const response = await api.get<Collaborator[]>(COLLABORATORS_BASE_URL);
-    return response.data;
+    const response = await api.get(COLLABORATORS_BASE_URL);
+    return response.data.results ?? response.data ?? [];
   },
 
   getVoiceLinesDictionary: async (): Promise<VoiceLineOption[]> => {
-    const response = await api.get<VoiceLineOption[]>(VOICE_LINES_BASE_URL);
-    return response.data;
+    const response = await api.get(VOICE_LINES_BASE_URL);
+    return response.data.results ?? response.data ?? [];
   },
 
   getParticipationsByProject: async (
     projectId: string | number,
   ): Promise<Participation[]> => {
-    const response = await api.get<Participation[]>(
+    const response = await api.get(
       buildListUrl(PARTICIPATIONS_BASE_URL, { project: projectId }),
     );
-    return response.data;
+    return response.data.results ?? response.data ?? [];
   },
 
   createParticipation: async (
@@ -154,11 +154,11 @@ export const ProjectService = {
 
   updateParticipationStatus: async (
     id: string,
-    status: "CON" | "DEC"
+    status: "CON" | "DEC",
   ): Promise<Participation> => {
     const response = await api.patch<Participation>(
       `${PARTICIPATIONS_BASE_URL}${id}/status/`,
-      { status }
+      { status },
     );
     return response.data;
   },
@@ -170,10 +170,10 @@ export const ProjectService = {
   getRehearsalsByProject: async (
     projectId: string | number,
   ): Promise<Rehearsal[]> => {
-    const response = await api.get<Rehearsal[]>(
+    const response = await api.get(
       buildListUrl(REHEARSALS_BASE_URL, { project: projectId }),
     );
-    return response.data;
+    return response.data.results ?? response.data ?? [];
   },
 
   createRehearsal: async (data: RehearsalCreateDTO): Promise<Rehearsal> => {
@@ -199,10 +199,10 @@ export const ProjectService = {
   getCrewAssignmentsByProject: async (
     projectId: string | number,
   ): Promise<CrewAssignment[]> => {
-    const response = await api.get<CrewAssignment[]>(
+    const response = await api.get(
       buildListUrl(CREW_ASSIGNMENTS_BASE_URL, { project: projectId }),
     );
-    return response.data;
+    return response.data.results ?? response.data ?? [];
   },
 
   createCrewAssignment: async (
@@ -233,10 +233,13 @@ export const ProjectService = {
   getProgramByProject: async (
     projectId: string | number,
   ): Promise<ProgramItem[]> => {
-    const response = await api.get<ProgramItem[]>(
+    const response = await api.get(
       buildListUrl(PROGRAM_ITEMS_BASE_URL, { project: projectId }),
     );
-    return [...response.data].sort((a, b) => a.order - b.order);
+    const data = response.data.results ?? response.data ?? [];
+    return [...data].sort(
+      (a: ProgramItem, b: ProgramItem) => a.order - b.order,
+    );
   },
 
   createProgramItem: async (
@@ -264,12 +267,12 @@ export const ProjectService = {
   getPieceCastingsByProject: async (
     projectId: string | number,
   ): Promise<PieceCasting[]> => {
-    const response = await api.get<PieceCasting[]>(
+    const response = await api.get(
       buildListUrl(PIECE_CASTINGS_BASE_URL, {
         participation__project: projectId,
       }),
     );
-    return response.data;
+    return response.data.results ?? response.data ?? [];
   },
 
   createPieceCasting: async (
@@ -300,10 +303,10 @@ export const ProjectService = {
   getAttendancesByProject: async (
     projectId: string | number,
   ): Promise<Attendance[]> => {
-    const response = await api.get<Attendance[]>(
+    const response = await api.get(
       buildListUrl(ATTENDANCES_BASE_URL, { rehearsal__project: projectId }),
     );
-    return response.data;
+    return response.data.results ?? response.data ?? [];
   },
 
   createAttendance: async (data: AttendanceCreateDTO): Promise<Attendance> => {

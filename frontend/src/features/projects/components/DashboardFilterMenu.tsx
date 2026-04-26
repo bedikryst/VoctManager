@@ -55,7 +55,7 @@ export const DashboardFilterMenu = ({
     <div
       role="tablist"
       aria-label={t("projects.filters.aria_label", "Filtry statusu projektów")}
-      className="flex max-w-full gap-2 overflow-x-auto no-scrollbar"
+      className="flex max-w-full gap-2 py-4 -my-4 overflow-x-auto no-scrollbar"
     >
       {filterOptions.map((filter) => {
         const isActive = currentFilter === filter.id;

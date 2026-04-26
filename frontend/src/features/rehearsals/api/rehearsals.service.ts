@@ -16,28 +16,28 @@ import type { LocationDto } from "../../logistics/types/logistics.dto";
 
 export const RehearsalsService = {
   getProjects: async (): Promise<Project[]> => {
-    const response = await api.get<Project[]>("/api/projects/");
-    return response.data;
+    const response = await api.get("/api/projects/");
+    return response.data.results ?? response.data ?? [];
   },
 
   getRehearsals: async (): Promise<Rehearsal[]> => {
-    const response = await api.get<Rehearsal[]>("/api/rehearsals/");
-    return response.data;
+    const response = await api.get("/api/rehearsals/");
+    return response.data.results ?? response.data ?? [];
   },
 
   getParticipations: async (): Promise<Participation[]> => {
-    const response = await api.get<Participation[]>("/api/participations/");
-    return response.data;
+    const response = await api.get("/api/participations/");
+    return response.data.results ?? response.data ?? [];
   },
 
   getAttendances: async (): Promise<Attendance[]> => {
-    const response = await api.get<Attendance[]>("/api/attendances/");
-    return response.data;
+    const response = await api.get("/api/attendances/");
+    return response.data.results ?? response.data ?? [];
   },
 
   getArtists: async (): Promise<Artist[]> => {
-    const response = await api.get<Artist[]>("/api/artists/");
-    return response.data;
+    const response = await api.get("/api/artists/");
+    return response.data.results ?? response.data ?? [];
   },
 
   createAttendance: async (data: AttendanceUpsertDTO): Promise<Attendance> => {
@@ -61,7 +61,7 @@ export const RehearsalsService = {
   },
 
   getLocations: async (): Promise<LocationDto[]> => {
-    const response = await api.get<LocationDto[]>("/api/logistics/locations/");
-    return response.data;
+    const response = await api.get("/api/logistics/locations/");
+    return response.data.results ?? response.data ?? [];
   },
 };

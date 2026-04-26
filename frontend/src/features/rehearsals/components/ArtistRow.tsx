@@ -7,9 +7,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { attendanceUpsertSchema, type AttendanceUpsertDTO } from "../types/rehearsals.dto";
-import type { Artist, Attendance, AttendanceStatus, Participation } from "@/shared/types";
-import { useDeleteAttendanceRecord, useUpsertAttendanceRecord } from "../api/rehearsals.queries";
+import {
+  attendanceUpsertSchema,
+  type AttendanceUpsertDTO,
+} from "../types/rehearsals.dto";
+import type {
+  Artist,
+  Attendance,
+  AttendanceStatus,
+  Participation,
+} from "@/shared/types";
+import {
+  useDeleteAttendanceRecord,
+  useUpsertAttendanceRecord,
+} from "../api/rehearsals.queries";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { Input } from "@/shared/ui/primitives/Input";
 
@@ -94,7 +105,8 @@ export const ArtistRow = React.memo(
     const onSubmit = async (data: RowFormValues) => {
       try {
         if (!data.status) {
-          if (existingRecord?.id) await deleteMutation.mutateAsync(existingRecord.id);
+          if (existingRecord?.id)
+            await deleteMutation.mutateAsync(existingRecord.id);
           return;
         }
         await upsertMutation.mutateAsync({
@@ -109,8 +121,12 @@ export const ArtistRow = React.memo(
     };
 
     const handleStatusChange = (targetStatus: AttendanceStatus) => {
-      const nextStatus = form.getValues("status") === targetStatus ? undefined : targetStatus;
-      form.setValue("status", nextStatus, { shouldValidate: true, shouldDirty: true });
+      const nextStatus =
+        form.getValues("status") === targetStatus ? undefined : targetStatus;
+      form.setValue("status", nextStatus, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
       void form.handleSubmit(onSubmit)();
     };
 
@@ -122,12 +138,12 @@ export const ArtistRow = React.memo(
 
     return (
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 px-6 py-3 bg-ethereal-marble/20 hover:bg-ethereal-marble/50 transition-colors duration-200 border-b border-ethereal-incense/10 group">
-
         {/* ── Artist identity ── */}
         <div className="flex items-center gap-3 w-full md:w-64 shrink-0">
           <div className="w-8 h-8 rounded-xl bg-ethereal-alabaster border border-ethereal-incense/20 flex items-center justify-center shrink-0">
             <Caption weight="bold">
-              {artist.first_name[0]}{artist.last_name[0]}
+              {artist.first_name[0]}
+              {artist.last_name[0]}
             </Caption>
           </div>
           <div className="flex flex-col min-w-0">
@@ -135,14 +151,15 @@ export const ArtistRow = React.memo(
               {artist.first_name} {artist.last_name}
             </Text>
             <Caption color="muted" className="truncate">
-              {artist.voice_type_display ?? artist.voice_type}
+              {artist.voice_type
+                ? t(`dashboard.layout.roles.${artist.voice_type}`)
+                : (artist.voice_type_display ?? artist.voice_type)}
             </Caption>
           </div>
         </div>
 
         {/* ── Controls ── */}
         <div className="flex-1 flex flex-col xl:flex-row items-start xl:items-center gap-3 md:gap-4 w-full justify-end">
-
           {/* Status toggle strip */}
           <div className="flex items-center p-1 rounded-xl bg-ethereal-alabaster border border-ethereal-incense/15 w-full sm:w-auto shrink-0">
             {STATUS_BUTTONS.map(({ key, labelKey, fallback, activeClass }) => (
@@ -175,7 +192,10 @@ export const ArtistRow = React.memo(
                     type="number"
                     min="1"
                     variant="glass"
-                    placeholder={t("rehearsals.row.minutes_placeholder", "Min?")}
+                    placeholder={t(
+                      "rehearsals.row.minutes_placeholder",
+                      "Min?",
+                    )}
                     leftIcon={<Clock />}
                     {...form.register("minutes_late", {
                       setValueAs: (v) =>
@@ -193,10 +213,15 @@ export const ArtistRow = React.memo(
               <Input
                 type="text"
                 variant="ghost"
-                placeholder={t("rehearsals.row.note_placeholder", "Notatka (opcjonalnie)")}
+                placeholder={t(
+                  "rehearsals.row.note_placeholder",
+                  "Notatka (opcjonalnie)",
+                )}
                 leftIcon={<Edit3 />}
                 rightElement={
-                  isSyncing ? <Loader2 size={12} className="animate-spin" /> : undefined
+                  isSyncing ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : undefined
                 }
                 {...form.register("excuse_note")}
                 onBlur={handleBlur}
@@ -205,7 +230,6 @@ export const ArtistRow = React.memo(
             </div>
           </div>
         </div>
-
       </div>
     );
   },
