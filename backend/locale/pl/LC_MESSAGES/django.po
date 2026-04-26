@@ -21,7 +21,7 @@ msgstr ""
 #: archive/models.py:35
 #, python-format
 msgid "File size must be under %(size)s MB. Current: %(current)s MB"
-msgstr ""
+msgstr "Rozmiar pliku musi być mniejszy niż %(size)s MB. Obecnie: %(current)s MB"
 "Rozmiar pliku musi być mniejszy niż %(size)s MB. Aktualny: %(current)s MB"
 
 #: archive/models.py:46 roster/models.py:43 roster/models.py:258
@@ -357,7 +357,7 @@ msgstr "Polski"
 #: core/models.py:90
 msgid ""
 "The core authentication user linked to this profile. Cascades on hard delete."
-msgstr ""
+msgstr "Główny użytkownik autoryzacyjny powiązany z tym profilem. Kaskadowo usuwany przy twardym usunięciu."
 "Główne konto użytkownika powiązane z tym profilem. Kaskadowe usuwanie przy "
 "twardym skasowaniu."
 
@@ -372,7 +372,7 @@ msgstr "Preferowany język interfejsu użytkownika."
 #: core/models.py:110
 msgid ""
 "Local timezone for this entity. Critical for UI rendering and iCal feeds."
-msgstr ""
+msgstr "Lokalna strefa czasowa dla tej encji. Krytyczna dla renderowania UI i feedów iCal."
 "Lokalna strefa czasowa dla tego podmiotu. Kluczowa dla renderowania UI i "
 "kanałów iCal."
 
@@ -443,14 +443,14 @@ msgstr "Prywatna przestrzeń robocza"
 #: logistics/models.py:31
 msgid ""
 "Internal display name, e.g., 'National Philharmonic' or 'Conductor's Room'"
-msgstr ""
+msgstr "Wewnętrzna nazwa wyświetlana, np. 'Filharmonia Narodowa' lub 'Pokój dyrygenta'"
 "Wewnętrzna nazwa wyświetlana, np. 'Filharmonia Narodowa' lub 'Pokój "
 "dyrygenta'"
 
 #: logistics/models.py:44
 msgid ""
 "Unique identifier from Google Places API. Null for private/custom locations."
-msgstr ""
+msgstr "Unikalny identyfikator z Google Places API. Null dla prywatnych/niestandardowych lokalizacji."
 "Unikalny identyfikator z Google Places API. Brak dla prywatnych/własnych "
 "lokalizacji."
 
@@ -461,7 +461,7 @@ msgstr "Pełny oficjalny adres lub precyzyjny opis niestandardowy."
 #: logistics/models.py:68
 msgid ""
 "IANA timezone string, e.g., 'Europe/Warsaw'. Updated via external service."
-msgstr ""
+msgstr "Ciąg strefy czasowej IANA, np. 'Europe/Warsaw'. Aktualizowany przez zewnętrzną usługę."
 "Ciąg strefy czasowej IANA, np. 'Europe/Warsaw'. Aktualizowany przez usługę "
 "zewnętrzną."
 
@@ -469,14 +469,14 @@ msgstr ""
 msgid ""
 "Internal logistics instructions, e.g., 'Gate code: 1234', 'Backstage "
 "entrance'."
-msgstr ""
+msgstr "Wewnętrzne instrukcje logistyczne, np. 'Kod do bramy: 1234', 'Wejście na zaplecze'."
 "Wewnętrzne instrukcje logistyczne, np. 'Kod bramy: 1234', 'Wejście od kulis'."
 
 #: logistics/models.py:78
 msgid ""
 "Designates whether this location is available for new projects. Use instead "
 "of deletion."
-msgstr ""
+msgstr "Określa, czy ta lokalizacja jest dostępna dla nowych projektów. Użyj zamiast usuwania."
 "Określa, czy ta lokalizacja jest dostępna dla nowych projektów. Używaj "
 "zamiast usuwania."
 
@@ -618,7 +618,7 @@ msgstr "Informacja o obecności artysty"
 
 #: notifications/models.py:55
 msgid "Direct Message from Management"
-msgstr ""
+msgstr "Bezpośrednia wiadomość od zarządu"
 
 #: notifications/models.py:56
 #, fuzzy
@@ -678,7 +678,7 @@ msgstr "Użytkownik będący właścicielem tego urządzenia."
 
 #: notifications/models.py:137
 msgid "The FCM or APNs device token provided by the client infrastructure."
-msgstr ""
+msgstr "Token urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta."
 "Token urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta."
 
 #: notifications/models.py:143
@@ -689,7 +689,7 @@ msgstr "Platforma sprzętowa/programowa zarejestrowanego urządzenia."
 msgid ""
 "Indicates whether the token is currently valid. Invalidated automatically by "
 "delivery failures."
-msgstr ""
+msgstr "Wskazuje, czy token jest obecnie ważny. Unieważniany automatycznie przy błędach dostarczenia."
 "Określa, czy token jest obecnie ważny. Unieważniany automatycznie przy "
 "błędach dostarczenia."
 
@@ -707,7 +707,7 @@ msgstr "Użytkownik definiujący te preferencje."
 
 #: notifications/models.py:177
 msgid "The specific business event category this preference applies to."
-msgstr ""
+msgstr "Konkretna kategoria zdarzeń biznesowych, do której odnosi się ta preferencja."
 "Konkretna kategoria zdarzeń biznesowych, której dotyczy ta preferencja."
 
 #: notifications/models.py:181
@@ -852,7 +852,7 @@ msgstr "Zbiórka"
 msgid ""
 "Local timezone for this project's primary location. Critical for UI "
 "rendering and iCal feeds."
-msgstr ""
+msgstr "Lokalna strefa czasowa dla głównej lokalizacji tego projektu. Krytyczna dla renderowania UI i feedów iCal."
 "Lokalna strefa czasowa dla głównej lokalizacji projektu. Kluczowa dla "
 "renderowania UI i kanałów iCal."
 
@@ -961,14 +961,14 @@ msgstr "Data i godzina"
 msgid ""
 "Local timezone for this specific rehearsal. Essential for tours crossing "
 "multiple timezones."
-msgstr ""
+msgstr "Lokalna strefa czasowa dla tej konkretnej próby. Niezbędna dla tras koncertowych obejmujących wiele stref czasowych."
 "Lokalna strefa czasowa dla tej konkretnej próby. Istotna przy trasach "
 "koncertowych przez wiele stref czasowych."
 
 #: roster/models.py:204
 msgid ""
 "Specific location for this rehearsal. Overrides project default if needed."
-msgstr ""
+msgstr "Konkretna lokalizacja dla tej próby. W razie potrzeby nadpisuje domyślną dla projektu."
 "Konkretne miejsce tej próby. Nadpisuje domyślne miejsce projektu w razie "
 "potrzeby."
 
@@ -1111,7 +1111,7 @@ msgid ""
 "Your place within VoctEnsemble is ready. We have prepared your private "
 "workspace &mdash; where repertoire, rehearsal schedules, and artistic "
 "collaboration come together in one place."
-msgstr ""
+msgstr "Twoje miejsce w VoctEnsemble jest gotowe. Przygotowaliśmy Twoją prywatną przestrzeń roboczą &mdash; gdzie repertuar, harmonogramy prób i współpraca artystyczna spotykają się w jednym miejscu."
 "Twoje miejsce w VoctEnsemble jest gotowe. Przygotowaliśmy Twój prywatny "
 "obszar roboczy — gdzie repertuar, harmonogramy prób i współpraca artystyczna "
 "łączą się w jednym miejscu."
@@ -1141,7 +1141,7 @@ msgstr "Dla Twojego bezpieczeństwa"
 msgid ""
 "This unique access key will expire automatically. Please ensure it remains "
 "confidential and do not share it."
-msgstr ""
+msgstr "Ten unikalny klucz dostępu wygaśnie automatycznie. Upewnij się, że pozostanie poufny i nie udostępniaj go."
 "Ten unikalny klucz dostępu wygaśnie automatycznie. Zachowaj go w tajemnicy i "
 "nie udostępniaj go nikomu."
 
@@ -1190,7 +1190,7 @@ msgid ""
 "meticulously prepared. Please complete the final activation step to "
 "establish your secure credentials and step into the operational heart of our "
 "ensemble."
-msgstr ""
+msgstr "Mamy zaszczyt zaprosić Cię do naszej cyfrowej przestrzeni roboczej. Twój profil został skrupulatnie przygotowany. Dokończ ostatni krok aktywacji, aby ustanowić bezpieczne dane logowania i wejść do operacyjnego serca naszego zespołu."
 "Twój ekskluzywny dostęp do platformy VoctManager jest już gotowy. Dokończ "
 "proces aktywacji, aby ustawić bezpieczne hasło i uzyskać dostęp do panelu "
 "operacyjnego, w którym zarządzamy naszymi projektami i próbami."
@@ -1203,11 +1203,11 @@ msgstr "AKTYWUJ KONTO TERAZ:"
 
 #: templates/emails/account_activation.txt:22
 msgid "FOR YOUR SECURITY"
-msgstr ""
+msgstr "DLA TWOJEGO BEZPIECZEŃSTWA"
 
 #: templates/emails/account_deleted.html:14
 msgid "Coda"
-msgstr ""
+msgstr "Koda"
 
 #: templates/emails/account_deleted.html:20
 #: templates/emails/account_deleted.txt:4
@@ -1216,7 +1216,7 @@ msgstr "Twoje konto VoctManager zostało zamknięte"
 
 #: templates/emails/account_deleted.html:26
 msgid "A quiet farewell"
-msgstr ""
+msgstr "Ciche pożegnanie"
 
 #: templates/emails/account_deleted.html:54
 #: templates/emails/account_deleted.txt:10
@@ -1228,7 +1228,7 @@ msgstr "Pomyślnie przetworzyliśmy Twoje żądanie usunięcia konta."
 msgid ""
 "All personal data associated with your account has been permanently removed "
 "from our systems in compliance with our privacy policy."
-msgstr ""
+msgstr "Wszystkie dane osobowe powiązane z Twoim kontem zostały trwale usunięte z naszych systemów zgodnie z naszą polityką prywatności."
 "Wszystkie dane osobowe powiązane z Twoim kontem zostały trwale usunięte z "
 "naszych systemów zgodnie z naszą polityką prywatności."
 
@@ -1242,7 +1242,7 @@ msgstr "Było dla nas zaszczytem mieć Cię w społeczności VoctEnsemble."
 msgid ""
 "Your artistic journey with us remains a chapter we shall remember with "
 "fondness."
-msgstr ""
+msgstr "Twoja artystyczna podróż z nami pozostaje rozdziałem, który będziemy z sentymentem wspominać."
 
 #: templates/emails/account_deleted.html:85
 #, fuzzy
@@ -1280,20 +1280,20 @@ msgstr "Z muzycznym pozdrowieniem,"
 #, fuzzy
 #| msgid "Automatically generated. Please do not reply to this message."
 msgid "Automatically generated. Please do not reply."
-msgstr ""
+msgstr "Wiadomość wygenerowana automatycznie. Prosimy nie odpowiadać."
 "Wiadomość generowana automatycznie. Prosimy nie odpowiadać na tę wiadomość."
 
 #: templates/emails/base.html:135
 msgid ""
 "You are receiving this because you are a member of the VoctEnsemble artist "
 "network."
-msgstr ""
+msgstr "Otrzymujesz tę wiadomość, ponieważ jesteś członkiem sieci artystów VoctEnsemble."
 
 #: templates/emails/custom_admin_message.html:26
 #: templates/emails/custom_admin_message.txt:2
 #, python-format
 msgid "Message from %(sender)s"
-msgstr ""
+msgstr "Wiadomość od %(sender)s"
 
 #: templates/emails/custom_admin_message.html:48
 #: templates/emails/custom_admin_message.txt:6
@@ -1306,7 +1306,7 @@ msgstr "Witaj"
 #: templates/emails/custom_admin_message.html:82
 #: templates/emails/custom_admin_message.txt:13
 msgid "Open link"
-msgstr ""
+msgstr "Otwórz link"
 
 #: templates/emails/custom_admin_message.html:95
 #: templates/emails/system_notification.html:228
@@ -1323,7 +1323,7 @@ msgstr "Otwórz VoctManager"
 
 #: templates/emails/password_changed.html:14
 msgid "Sentinel"
-msgstr ""
+msgstr "Strażnik"
 
 #: templates/emails/password_changed.html:20
 #: templates/emails/password_changed.txt:4
@@ -1341,14 +1341,14 @@ msgstr "Dla Twojego bezpieczeństwa"
 msgid ""
 "We are writing to confirm that your VoctManager password was recently "
 "changed."
-msgstr ""
+msgstr "Piszemy, aby potwierdzić, że Twoje hasło w VoctManager zostało niedawno zmienione."
 "Piszemy, aby potwierdzić, że hasło do Twojego konta VoctManager zostało "
 "niedawno zmienione."
 
 #: templates/emails/password_changed.html:59
 #: templates/emails/password_changed.txt:11
 msgid "If you made this change, no further action is required."
-msgstr ""
+msgstr "Jeśli dokonałeś tej zmiany, nie są wymagane żadne dalsze działania."
 "Jeśli to Ty dokonałeś/aś tej zmiany, nie musisz podejmować żadnych działań."
 
 #: templates/emails/password_changed.html:74
@@ -1361,13 +1361,13 @@ msgstr "Nie dokonywałeś/aś tej zmiany?"
 msgid ""
 "If you did not make this change, please contact our administration team "
 "immediately to secure your account."
-msgstr ""
+msgstr "Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z naszym zespołem administracyjnym, aby zabezpieczyć konto."
 "Jeśli nie dokonałeś/aś tej zmiany, natychmiast skontaktuj się z naszym "
 "zespołem administracyjnym, aby zabezpieczyć konto."
 
 #: templates/emails/password_changed.html:94
 msgid "Immediate action required"
-msgstr ""
+msgstr "Wymagane natychmiastowe działanie"
 
 #: templates/emails/password_changed.html:102
 #, fuzzy
@@ -1377,7 +1377,7 @@ msgstr "Aktywuj Konto"
 
 #: templates/emails/password_changed.html:107
 msgid "Take control of your account security"
-msgstr ""
+msgstr "Przejmij kontrolę nad bezpieczeństwem swojego konta"
 
 #: templates/emails/password_changed.txt:2
 msgid "Security Notice"
@@ -1403,7 +1403,7 @@ msgstr "Preferencja powiadomień"
 msgid ""
 "You have been invited to participate in the concert "
 "\"<strong>%(project_name)s</strong>\"."
-msgstr ""
+msgstr "Zostałeś zaproszony do wzięcia udziału w koncercie \"<strong>%(project_name)s</strong>\"."
 
 #: templates/emails/system_notification.html:90
 #: templates/emails/system_notification.txt:16
@@ -1452,13 +1452,13 @@ msgstr "Zmiany"
 
 #: templates/emails/system_notification.html:241
 msgid "View the full details in your workspace"
-msgstr ""
+msgstr "Zobacz pełne szczegóły w swojej przestrzeni roboczej"
 
 #: templates/emails/system_notification.txt:13
 #, python-format
 msgid ""
 "You have been invited to participate in the concert \"%(project_name)s\"."
-msgstr ""
+msgstr "Zostałeś zaproszony do wzięcia udziału w koncercie \"%(project_name)s\"."
 
 #: templates/emails/system_notification.txt:32
 msgid "Changes:"
@@ -1470,7 +1470,7 @@ msgstr "Otwórz VoctManager:"
 
 #: templates/emails/welcome_email.html:14
 msgid "Aria"
-msgstr ""
+msgstr "Aria"
 
 #: templates/emails/welcome_email.html:20 templates/emails/welcome_email.txt:4
 msgid "Welcome to VoctEnsemble"
@@ -1488,7 +1488,7 @@ msgid ""
 "artistic operations. This platform was designed to streamline our creative "
 "process, from repertoire management to concert logistics, ensuring you can "
 "focus entirely on the music."
-msgstr ""
+msgstr "Cieszymy się, że możemy powitać Cię w VoctManager — cyfrowym sercu naszych działań artystycznych. Ta platforma została zaprojektowana, aby usprawnić nasz proces twórczy, od zarządzania repertuarem po logistykę koncertów, upewniając się, że możesz w pełni skupić się na muzyce."
 "Z ogromną radością witamy Cię w VoctManager — cyfrowym sercu naszych "
 "operacji artystycznych. Ta platforma została zaprojektowana, aby usprawnić "
 "nasz proces twórczy — od zarządzania repertuarem po logistykę koncertową — "
@@ -1499,11 +1499,11 @@ msgid ""
 "Your profile has been provisioned and is ready to explore. Should you "
 "encounter any difficulty accessing your account, our administration team "
 "remains at hand."
-msgstr ""
+msgstr "Twój profil został utworzony i jest gotowy do odkrywania. Jeśli napotkasz jakiekolwiek trudności z uzyskaniem dostępu do konta, nasz zespół administracyjny pozostaje do Twojej dyspozycji."
 
 #: templates/emails/welcome_email.html:74
 msgid "All that remains is to take your place."
-msgstr ""
+msgstr "Pozostaje tylko zająć swoje miejsce."
 
 #: templates/emails/welcome_email.html:89
 msgid "Projects &amp; Repertoire"
@@ -1512,7 +1512,7 @@ msgstr "Projekty i repertuar"
 #: templates/emails/welcome_email.html:93 templates/emails/welcome_email.txt:20
 msgid ""
 "View your upcoming projects, concert programmes, and casting assignments."
-msgstr ""
+msgstr "Przeglądaj swoje nadchodzące projekty, programy koncertów i obsadę."
 "Przeglądaj nadchodzące projekty, programy koncertów i przypisania obsadowe."
 
 #: templates/emails/welcome_email.html:106
@@ -1525,7 +1525,7 @@ msgstr "Nuty"
 msgid ""
 "Access your digital score library — scores and audio materials, organised by "
 "project."
-msgstr ""
+msgstr "Uzyskaj dostęp do swojej cyfrowej biblioteki partytur — nuty i materiały audio, uporządkowane według projektów."
 "Korzystaj z cyfrowej biblioteki nut — partytury i materiały audio, "
 "posegregowane według projektów."
 
@@ -1538,13 +1538,13 @@ msgstr "Harmonogram prób"
 #: templates/emails/welcome_email.txt:26
 msgid ""
 "Stay up to date with rehearsal times, locations, and any last-minute changes."
-msgstr ""
+msgstr "Bądź na bieżąco z godzinami prób, lokalizacjami i wszelkimi zmianami w ostatniej chwili."
 "Bądź na bieżąco z godzinami prób, miejscami i wszelkimi zmianami w ostatniej "
 "chwili."
 
 #: templates/emails/welcome_email.html:146
 msgid "Your personal workspace"
-msgstr ""
+msgstr "Twoja osobista przestrzeń robocza"
 
 #: templates/emails/welcome_email.html:154
 msgid "Access Your Dashboard"
@@ -1552,7 +1552,7 @@ msgstr "Przejdź do panelu"
 
 #: templates/emails/welcome_email.html:159
 msgid "Sign in at any time from any device"
-msgstr ""
+msgstr "Zaloguj się w dowolnym momencie z dowolnego urządzenia"
 
 #: templates/emails/welcome_email.txt:2
 msgid "Welcome"
@@ -1562,7 +1562,7 @@ msgstr "Witamy"
 msgid ""
 "Your profile has been successfully provisioned. You can now log in to view "
 "your upcoming projects, access sheet music, and review rehearsal schedules."
-msgstr ""
+msgstr "Twój profil został pomyślnie utworzony. Możesz teraz się zalogować, aby zobaczyć nadchodzące projekty, uzyskać dostęp do nut i przeglądać harmonogramy prób."
 "Twój profil został pomyślnie utworzony. Możesz teraz zalogować się, aby "
 "sprawdzić nadchodzące projekty, pobrać nuty oraz przejrzeć harmonogram prób."
 
@@ -1578,7 +1578,7 @@ msgstr "Uzyskaj dostęp do swojego panelu tutaj:"
 msgid ""
 "If you experience any issues logging in, please reach out to the "
 "administration team."
-msgstr ""
+msgstr "Jeśli napotkasz jakiekolwiek problemy z logowaniem, skontaktuj się z zespołem administracyjnym."
 "W razie problemów z logowaniem, prosimy o kontakt z zespołem "
 "administracyjnym."
 
