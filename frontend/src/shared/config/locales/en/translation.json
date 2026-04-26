@@ -271,6 +271,7 @@
         "security_desc": "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
         "security_title": "Security standard",
         "subtitle": "Password setup",
+        "terms": "I confirm that I have read the VoctManager Terms of Service and Privacy Policy and accept their provisions.",
         "title": "Finalize your access"
       },
       "subtitle": "VoctManager Access",
@@ -301,10 +302,87 @@
     },
     "logout": "Wyloguj się"
   },
+  "chorister_hub": {
+    "category": {
+      "delete_aria": "Delete {{category}}",
+      "download_aria": "Download {{title}}",
+      "edit_aria": "Edit {{category}}",
+      "no_documents": "No documents available.",
+      "preview_aria": "Preview {{title}}",
+      "remove_aria": "Remove {{title}}",
+      "upload": "Upload document"
+    },
+    "identity": {
+      "metric_concerts": "Concerts performed",
+      "metric_seasons": "Active seasons",
+      "metric_voice_lines": "Voice lines performed",
+      "no_casting_data": "No casting data for completed projects.",
+      "no_history": "No completed project history to display.",
+      "season_timeline": "Season timeline",
+      "since": "since {{year}}",
+      "subtitle": "Aggregated from completed projects",
+      "title": "Artist Profile & History",
+      "vocal_distribution": "Voice Line Distribution"
+    },
+    "knowledge_base": {
+      "add_category": "New category",
+      "empty": "No document categories have been configured.",
+      "subtitle": "Regulations, policies and institutional documents",
+      "title": "Knowledge Base"
+    },
+    "modal": {
+      "category": {
+        "description_label": "Description",
+        "description_placeholder": "Brief description of the category contents...",
+        "icon_label": "Icon",
+        "name_label": "Category name",
+        "name_placeholder": "Foundation Statute",
+        "roles_label": "Visible to roles",
+        "title_create": "New category",
+        "title_edit": "Edit category"
+      },
+      "document": {
+        "description_label": "Description",
+        "description_placeholder": "Brief description...",
+        "drop_hint": "Click to select a file (max 50 MB)",
+        "file_label": "File",
+        "into": "Into: {{category}}",
+        "roles_label": "Override visible roles",
+        "submit": "Upload",
+        "title": "Upload document",
+        "title_label": "Document title",
+        "title_placeholder": "Foundation Statute (2026 Edition)"
+      },
+      "preview": {
+        "non_pdf": "Preview is only available for PDF files."
+      }
+    },
+    "page": {
+      "badge": "Knowledge & Identity",
+      "title": "Chorister",
+      "title_highlight": "Hub."
+    },
+    "tabs": {
+      "identity": "Artist Profile & History",
+      "knowledge": "Knowledge Base"
+    },
+    "toast": {
+      "category_create_error": "Category creation failed.",
+      "category_created": "Category created.",
+      "category_delete_error": "Category deletion failed.",
+      "category_deleted": "Category removed.",
+      "category_update_error": "Category update failed.",
+      "category_updated": "Category updated.",
+      "document_delete_error": "Document deletion failed.",
+      "document_deleted": "Document removed.",
+      "document_upload_error": "Document upload failed.",
+      "document_uploaded": "Document uploaded."
+    }
+  },
   "common": {
     "actions": {
       "cancel": "Cancel",
-      "close": "common.actions.close",
+      "close": "Close",
       "close_panel": "Close panel (ESC)",
       "confirmDelete": "Yes, Delete Account",
       "delete": "Delete",
@@ -313,7 +391,7 @@
       "discard": "Discard changes",
       "download": "Download",
       "edit": "Edit",
-      "retry": "common.actions.retry",
+      "retry": "Retry",
       "save": "Save",
       "select": "Select"
     },
@@ -324,7 +402,9 @@
     "artist_generic": "Artist's",
     "cancel": "Cancel",
     "close": "Zamknij",
+    "close_aria": "Close",
     "conductor_prefix": "Maestro",
+    "create": "Create",
     "currency": "PLN",
     "edit": "Edit",
     "error_occurred": "An error occurred",
@@ -332,7 +412,7 @@
     "errors": {
       "database_error": "A database connection problem occurred.",
       "generation_error": "Generation error",
-      "generic": "common.errors.generic",
+      "generic": "An error occurred",
       "save_error": "Save error",
       "save_problem": "A problem occurred while saving data.",
       "server_error": "Server error",
@@ -344,7 +424,7 @@
     "locale": "en-US",
     "management": "Zarząd",
     "people_short": "ppl.",
-    "rightsReserved": "common.rightsReserved",
+    "rightsReserved": "All rights reserved",
     "save_changes": "Save Changes",
     "select_location": "--- Wybierz zapisaną lokalizację ---",
     "send": "Send",
@@ -352,7 +432,7 @@
       "saved": "Saved"
     },
     "status": {
-      "processingInBackground": "common.status.processingInBackground"
+      "processingInBackground": "Processing in background..."
     },
     "tba": "TBA",
     "time": {
@@ -610,10 +690,11 @@
         "locations": "Locations",
         "materials": "Practice Materials",
         "projects": "Project Management",
+        "resources": "Resources & Knowledge",
         "schedule": "My Schedule"
       },
       "nav": {
-        "main_menu": "dashboard.layout.nav.main_menu"
+        "main_menu": "Main menu"
       },
       "roles": {
         "admin": "Administrator",
@@ -630,11 +711,11 @@
   },
   "export": {
     "actions": {
-      "downloadZip": "export.actions.downloadZip",
-      "generateZip": "export.actions.generateZip"
+      "downloadZip": "Download ZIP",
+      "generateZip": "Generate ZIP"
     },
     "aria": {
-      "downloadReadyFile": "export.aria.downloadReadyFile"
+      "downloadReadyFile": "Download ready file"
     }
   },
   "footer": {
@@ -794,11 +875,11 @@
         "primaryLinks": "Primary Navigation"
       },
       "links": {
-        "about": "nav.overlay.links.about",
-        "foundation": "nav.overlay.links.foundation",
-        "home": "nav.overlay.links.home",
-        "repertoire": "nav.overlay.links.repertoire",
-        "support": "nav.overlay.links.support"
+        "about": "About Us",
+        "foundation": "Foundation",
+        "home": "Home",
+        "repertoire": "Repertoire",
+        "support": "Support"
       },
       "sections": {
         "community": "Community",
@@ -818,9 +899,9 @@
     "changed": "Changed:",
     "crew_role": "Assigned Role: {{role}}",
     "custom_message": {
-      "from": "notifications.custom_message.from",
-      "mark_read": "notifications.custom_message.mark_read",
-      "open_link": "notifications.custom_message.open_link"
+      "from": "From",
+      "mark_read": "Mark as read",
+      "open_link": "Open link"
     },
     "empty_subtitle": "You have no new notifications.",
     "empty_title": "All caught up!",
@@ -834,23 +915,32 @@
     },
     "mark_all_read": "Mark all as read",
     "send_modal": {
-      "cta_label": "notifications.send_modal.cta_label",
-      "cta_label_placeholder": "notifications.send_modal.cta_label_placeholder",
-      "cta_optional": "notifications.send_modal.cta_optional",
-      "cta_url": "notifications.send_modal.cta_url",
-      "error": "notifications.send_modal.error",
-      "heading": "Wyślij powiadomienie",
-      "level": "Poziom ważności",
-      "message": "notifications.send_modal.message",
-      "message_placeholder": "notifications.send_modal.message_placeholder",
-      "send": "notifications.send_modal.send",
-      "sending": "notifications.send_modal.sending",
-      "success": "notifications.send_modal.success",
-      "title": "notifications.send_modal.title",
-      "title_placeholder": "notifications.send_modal.title_placeholder"
+      "cta_label": "Button Label",
+      "cta_label_placeholder": "e.g. View Details",
+      "cta_optional": "Action Button (Optional)",
+      "cta_url": "Target URL",
+      "error": "Failed to send notification",
+      "heading": "Send Notification",
+      "level": "Urgency Level",
+      "message": "Message Content",
+      "message_placeholder": "Type your message here...",
+      "send": "Send Notification",
+      "sending": "Sending...",
+      "success": "Notification sent successfully",
+      "title": "Notification Title",
+      "title_placeholder": "e.g. Rehearsal Update"
     },
     "title": "Notifications",
     "unread": "Unread"
+  },
+  "pdf_viewer": {
+    "download": "Download",
+    "error_403": "You do not have permission to view this document.",
+    "error_generic": "The document could not be loaded.",
+    "next_page": "Next page",
+    "prev_page": "Previous page",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out"
   },
   "preloader": {
     "resonance": "résonance",
@@ -986,15 +1076,15 @@
       "header_title_2": "Production"
     },
     "details": {
-      "date_title": "Termin",
+      "date_title": "Date",
       "description_title": "Event Description",
       "dress_code_female": "Women:",
       "dress_code_male": "Men:",
       "dress_code_title": "Dress Code",
-      "location_title": "Miejsce",
+      "location_title": "Location",
       "no_description": "There are no additional notes for this event.",
       "no_dress_code": "No dress code requirements.",
-      "time_title": "Czas lokalny",
+      "time_title": "Local Time",
       "toast": {
         "create_success": "New project and schedule created",
         "saving": "Saving project details...",
@@ -1015,15 +1105,15 @@
       },
       "fields": {
         "call_time": "Call Time",
-        "conductor": "Dyrygent",
-        "conductor_placeholder": "--- Wybierz dyrygenta ---",
+        "conductor": "Conductor",
+        "conductor_placeholder": "--- Select Conductor ---",
         "date_time": "Date and Time *",
         "description": "Event description",
         "dress_code_female": "Dress Code: Women",
         "dress_code_male": "Dress Code: Men",
         "location": "Location / Venue",
         "spotify": "Playlist (Spotify)",
-        "timezone": "Strefa Czasowa *",
+        "timezone": "Time Zone *",
         "title": "Project Title *"
       },
       "header": {
@@ -1061,6 +1151,8 @@
     "exports": {
       "call_sheet": "Download Call Sheet",
       "dtp": "Download DTP Note",
+      "open_runsheet": "Otwórz Harmonogram",
+      "runsheet_title": "Harmonogram (Runsheet)",
       "zaiks": "Download ZAiKS"
     },
     "filters": {
@@ -1329,53 +1421,11 @@
       "tenors": "Tenors"
     }
   },
-  "resources": {
-    "actions": {
-      "add_category": "Add Category",
-      "add_document": "Add New Document",
-      "delete_category": "Delete Category",
-      "delete_file": "Delete File",
-      "download_file": "Download {{title}}",
-      "edit_category": "Edit Category"
-    },
-    "banner": {
-      "description": "The file structure shown below is a mock-up. The actual documents, contracts, and foundation regulations will be uploaded in a later CMS rollout phase.",
-      "title": "Preview Section (Demo Version)"
-    },
-    "categories": {
-      "regulations": {
-        "description": "Official foundation documents, collaboration rules, privacy policy, and rehearsal participation regulations.",
-        "files": {
-          "choir_rules": "Choir Member Regulations and Attendance Rules",
-          "gdpr": "Personal Data Processing Policy (GDPR)",
-          "statute": "Foundation Statute (2026 Version - Updated After the Board General Assembly)"
-        },
-        "title": "Regulations and Statutes"
-      },
-      "wardrobe": {
-        "description": "Guidelines for standardized concert attire and rules for taking care of entrusted wardrobe items.",
-        "files": {
-          "dress_guide": "Guide: Choral Dress (Soprano / Alto)",
-          "tuxedo_guide": "Guide: Tuxedo and Bow Tie (Tenor / Bass)"
-        },
-        "title": "Wardrobe and Dress Code"
-      }
-    },
-    "cms": {
-      "description": "The ability to upload and edit files on the server will be enabled once the target API is connected.",
-      "title": "CMS Module in Progress"
-    },
-    "dashboard": {
-      "badge": "Knowledge Base and Documents",
-      "description": "Przeglądaj oficjalne dokumenty, regulaminy i wytyczne niezbędne do funkcjonowania w zespole.",
-      "title": "Foundation",
-      "title_highlight": "Resources"
-    }
-  },
   "schedule": {
     "card": {
+      "call_sheet_preview_title": "Call-Sheet",
       "call_time": "Call Time:",
-      "download_call_sheet": "Call-Sheet PDF",
+      "download_call_sheet_aria": "Download Call-Sheet PDF",
       "download_error_desc": "Failed to download the file.",
       "download_loading": "Generating Call Sheet document...",
       "download_success": "File downloaded successfully",
@@ -1391,6 +1441,7 @@
       "no_run_sheet": "The run sheet has not been published by the manager yet.",
       "no_spotify": "No reference playlist.",
       "note_label": "Note:",
+      "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
       "unknown_artist": "Artist"

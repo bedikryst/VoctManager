@@ -205,7 +205,7 @@
       "save_profile": "Zapisz Profil",
       "section_basic": "Dane Podstawowe",
       "section_voice": "Profil Wokalny",
-      "send_notification": "",
+      "send_notification": "Wyślij powiadomienie",
       "sight_reading": "Czytanie a vista (Ocena)",
       "stars_count_one": "{{count}} gwiazdka",
       "stars_count_few": "{{count}} gwiazdki",
@@ -273,6 +273,7 @@
         "security_desc": "Użyj co najmniej 8 znaków. Zalecane jest dłuższe hasło z małymi i wielkimi literami, cyframi oraz znakami specjalnymi.",
         "security_title": "Standard bezpieczeństwa",
         "subtitle": "Ustawienie hasła",
+        "terms": "Oświadczam, że zapoznałem/am się z Regulaminem VoctManager oraz Polityką Prywatności i akceptuję ich postanowienia.",
         "title": "Dokończ aktywację"
       },
       "subtitle": "Dostęp do VoctManagera",
@@ -301,7 +302,84 @@
       "submitting": "Autoryzacja...",
       "subtitle": "Panel Administracyjny & Kadrowy"
     },
-    "logout": ""
+    "logout": "Wyloguj się"
+  },
+  "chorister_hub": {
+    "category": {
+      "delete_aria": "Usuń kategorię {{category}}",
+      "download_aria": "Pobierz {{title}}",
+      "edit_aria": "Edytuj kategorię {{category}}",
+      "no_documents": "Brak dostępnych dokumentów.",
+      "preview_aria": "Podgląd {{title}}",
+      "remove_aria": "Usuń {{title}}",
+      "upload": "Wgraj dokument"
+    },
+    "identity": {
+      "metric_concerts": "Wykonane koncerty",
+      "metric_seasons": "Aktywne sezony",
+      "metric_voice_lines": "Wykonane partie",
+      "no_casting_data": "Brak danych o obsadzie dla zakończonych projektów.",
+      "no_history": "Brak historii zakończonych projektów do wyświetlenia.",
+      "season_timeline": "Oś czasu sezonów",
+      "since": "od {{year}}",
+      "subtitle": "Zagregowane z zakończonych projektów",
+      "title": "Profil i historia artysty",
+      "vocal_distribution": "Dystrybucja partii wokalnych"
+    },
+    "knowledge_base": {
+      "add_category": "Nowa kategoria",
+      "empty": "Nie skonfigurowano żadnych kategorii dokumentów.",
+      "subtitle": "Regulaminy, polisy i dokumenty instytucjonalne",
+      "title": "Baza wiedzy"
+    },
+    "modal": {
+      "category": {
+        "description_label": "Opis",
+        "description_placeholder": "Krótki opis zawartości kategorii...",
+        "icon_label": "Ikona",
+        "name_label": "Nazwa kategorii",
+        "name_placeholder": "Statut Fundacji",
+        "roles_label": "Widoczne dla ról",
+        "title_create": "Nowa kategoria",
+        "title_edit": "Edytuj kategorię"
+      },
+      "document": {
+        "description_label": "Opis",
+        "description_placeholder": "Krótki opis...",
+        "drop_hint": "Kliknij, aby wybrać plik (max 50 MB)",
+        "file_label": "Plik",
+        "into": "Do: {{category}}",
+        "roles_label": "Nadpisz widoczne role",
+        "submit": "Wgraj",
+        "title": "Wgraj dokument",
+        "title_label": "Tytuł dokumentu",
+        "title_placeholder": "Statut Fundacji (Edycja 2026)"
+      },
+      "preview": {
+        "non_pdf": "Podgląd jest dostępny tylko dla plików PDF."
+      }
+    },
+    "page": {
+      "badge": "Wiedza i Tożsamość",
+      "title": "Centrum",
+      "title_highlight": "Chórzysty."
+    },
+    "tabs": {
+      "identity": "Profil i historia artysty",
+      "knowledge": "Baza wiedzy"
+    },
+    "toast": {
+      "category_create_error": "Błąd tworzenia kategorii.",
+      "category_created": "Kategoria utworzona.",
+      "category_delete_error": "Błąd usuwania kategorii.",
+      "category_deleted": "Kategoria usunięta.",
+      "category_update_error": "Błąd aktualizacji kategorii.",
+      "category_updated": "Kategoria zaktualizowana.",
+      "document_delete_error": "Błąd usuwania dokumentu.",
+      "document_deleted": "Dokument usunięty.",
+      "document_upload_error": "Błąd wgrywania dokumentu.",
+      "document_uploaded": "Dokument wgrany."
+    }
   },
   "common": {
     "actions": {
@@ -325,8 +403,10 @@
     },
     "artist_generic": "Artysty",
     "cancel": "Anuluj",
-    "close": "",
+    "close": "Zamknij",
+    "close_aria": "Zamknij panel",
     "conductor_prefix": "Maestro",
+    "create": "Utwórz",
     "currency": "PLN",
     "edit": "Edytuj",
     "error_occurred": "Wystąpił błąd",
@@ -341,14 +421,14 @@
       "server_problem": "Wystąpił problem z serwerem."
     },
     "labels": {
-      "not_available": ""
+      "not_available": "Brak danych"
     },
     "locale": "pl-PL",
-    "management": "",
+    "management": "Zarząd",
     "people_short": "os.",
     "rightsReserved": "Wszelkie prawa zastrzeżone",
     "save_changes": "Zapisz Zmiany",
-    "select_location": "",
+    "select_location": "--- Wybierz zapisaną lokalizację ---",
     "send": "Wyślij",
     "state": {
       "saved": "Zapisano"
@@ -502,24 +582,24 @@
         "transport": "Transport",
         "vendors": "Podwykonawcy"
       },
-      "inv_col_concert": "",
-      "inv_col_email": "",
-      "inv_col_person": "",
-      "inv_col_phone": "",
-      "inv_confirmed": "",
-      "inv_declined": "",
-      "inv_details_link": "",
-      "inv_empty": "",
-      "inv_loading": "",
-      "inv_modal_subtitle_one": "",
-      "inv_modal_subtitle_few": "",
-      "inv_modal_subtitle_many": "",
-      "inv_modal_subtitle_other": "",
-      "inv_modal_title": "",
-      "inv_open_details_aria": "",
-      "inv_pending": "",
+      "inv_col_concert": "Koncert",
+      "inv_col_email": "E-mail",
+      "inv_col_person": "Osoba",
+      "inv_col_phone": "Telefon",
+      "inv_confirmed": "Potwierdzeni",
+      "inv_declined": "Odrzucili",
+      "inv_details_link": "Szczegóły",
+      "inv_empty": "Brak uczestników do wyświetlenia",
+      "inv_loading": "Ładowanie listy...",
+      "inv_modal_subtitle_one": "Aktywne projekty · {{count}} uczestnik",
+      "inv_modal_subtitle_few": "Aktywne projekty · {{count}} uczestników",
+      "inv_modal_subtitle_many": "Aktywne projekty · {{count}} uczestników",
+      "inv_modal_subtitle_other": "Aktywne projekty · {{count}} uczestników",
+      "inv_modal_title": "Status Zaproszeń",
+      "inv_open_details_aria": "Otwórz szczegółową listę zaproszeń",
+      "inv_pending": "Oczekujący",
       "kpi_active_projects": "Aktywne Dyrektywy",
-      "kpi_invitations": "",
+      "kpi_invitations": "Status Zaproszeń",
       "kpi_pieces": "Repertuar Sakralny",
       "kpi_readiness": "Spójność Harmoniczna",
       "kpi_telemetry": "Telemetria Bazy",
@@ -618,16 +698,17 @@
         "locations": "Lokalizacje",
         "materials": "Materiały Ćwiczeniowe",
         "projects": "Zarządzanie Projektami",
+        "resources": "Materiały & Wiedza",
         "schedule": "Mój Kalendarz"
       },
       "nav": {
-        "main_menu": ""
+        "main_menu": "Menu główne"
       },
       "roles": {
         "admin": "Administrator",
         "artist": "Artysta",
         "crew": "Obsługa Techniczna",
-        "guest": ""
+        "guest": "Gość"
       }
     },
     "shared": {
@@ -759,7 +840,7 @@
       "audio_badge": "Audio",
       "cast_divisi": "Obsada utworu (Divisi)",
       "download_pdf": "Pobierz Partyturę (PDF)",
-      "encore_badge": "",
+      "encore_badge": "BIS",
       "listen_reference": "Posłuchaj Referencji",
       "locked_badge": "Chronione",
       "lyrics_translation": "Tekst Utworu i Tłumaczenie",
@@ -817,18 +898,18 @@
         "location": "Kraków, PL — Fundacja VoctEnsemble"
       }
     },
-    "settings": "",
+    "settings": "Ustawienia",
     "sheet": {
-      "accessibility_label": ""
+      "accessibility_label": "Rozwinięta nawigacja mobilna"
     }
   },
   "notifications": {
     "changed": "Zmiany:",
     "crew_role": "Przypisana rola: {{role}}",
     "custom_message": {
-      "from": "",
-      "mark_read": "",
-      "open_link": ""
+      "from": "Od: {{name}}",
+      "mark_read": "Oznacz jako przeczytane",
+      "open_link": "Otwórz link"
     },
     "empty_subtitle": "Nie masz nowych powiadomień.",
     "empty_title": "Wszystko przeczytane",
@@ -842,23 +923,32 @@
     },
     "mark_all_read": "Oznacz wszystkie jako przeczytane",
     "send_modal": {
-      "cta_label": "",
-      "cta_label_placeholder": "",
-      "cta_optional": "",
-      "cta_url": "",
-      "error": "",
-      "heading": "",
-      "level": "",
-      "message": "",
-      "message_placeholder": "",
-      "send": "",
-      "sending": "",
-      "success": "",
-      "title": "",
-      "title_placeholder": ""
+      "cta_label": "Etykieta przycisku (CTA)",
+      "cta_label_placeholder": "np. Zobacz szczegóły",
+      "cta_optional": "Przycisk akcji (opcjonalnie)",
+      "cta_url": "Link przycisku (URL)",
+      "error": "Błąd podczas wysyłania powiadomienia.",
+      "heading": "Wyślij powiadomienie",
+      "level": "Poziom ważności",
+      "message": "Treść wiadomości",
+      "message_placeholder": "Wpisz treść powiadomienia...",
+      "send": "Wyślij powiadomienie",
+      "sending": "Wysyłanie...",
+      "success": "Powiadomienie zostało wysłane.",
+      "title": "Tytuł powiadomienia",
+      "title_placeholder": "np. Zmiana godziny próby"
     },
     "title": "Powiadomienia",
     "unread": "nieprzeczytane"
+  },
+  "pdf_viewer": {
+    "download": "Pobierz",
+    "error_403": "Nie masz uprawnień do wyświetlenia tego dokumentu.",
+    "error_generic": "Nie udało się załadować dokumentu.",
+    "next_page": "Następna strona",
+    "prev_page": "Poprzednia strona",
+    "zoom_in": "Powiększ",
+    "zoom_out": "Pomniejsz"
   },
   "preloader": {
     "resonance": "Rezonans",
@@ -918,7 +1008,7 @@
       "status_active": "Projekt oznaczony jako w przygotowaniu",
       "status_done": "Projekt oznaczony jako zrealizowany",
       "status_update_failed": "Nie udało się zmienić statusu.",
-      "toggle": "",
+      "toggle": "Przełącz widok szczegółów projektu",
       "updating_status": "Aktualizowanie statusu..."
     },
     "cast": {
@@ -948,7 +1038,7 @@
         "available": "Baza Artystów"
       },
       "title": "Obsada Wokalna",
-      "title_short": "",
+      "title_short": "artystów",
       "toast": {
         "added": "Dodano do obsady",
         "removed": "Usunięto z obsady"
@@ -974,7 +1064,7 @@
         "title": "Skład Ekipy (Crew)"
       },
       "title": "Ekipa (Crew)",
-      "title_short": "",
+      "title_short": "tech",
       "toast": {
         "assign_error": "Błąd przypisania",
         "assign_error_desc": "Nie udało się przypisać członka ekipy do projektu.",
@@ -996,15 +1086,15 @@
       "header_title_2": "Produkcja"
     },
     "details": {
-      "date_title": "",
+      "date_title": "Data",
       "description_title": "Opis wydarzenia",
       "dress_code_female": "Panie:",
       "dress_code_male": "Panowie:",
       "dress_code_title": "Dress Code",
-      "location_title": "",
+      "location_title": "Lokalizacja",
       "no_description": "Nie ma żadnych dodatkowych uwag do tego wydarzenia.",
       "no_dress_code": "Nie ma wymagań co do ubioru.",
-      "time_title": "",
+      "time_title": "Czas lokalny",
       "toast": {
         "create_success": "Utworzono nowy projekt z harmonogramem",
         "saving": "Zapisywanie szczegółów projektu...",
@@ -1025,8 +1115,8 @@
       },
       "fields": {
         "call_time": "Zbiórka (Call Time)",
-        "conductor": "",
-        "conductor_placeholder": "",
+        "conductor": "Dyrygent",
+        "conductor_placeholder": "--- Wybierz Dyrygenta ---",
         "date_time": "Data i Czas *",
         "description": "Opis wydarzenia",
         "dress_code_female": "Dress Code: Panie",
@@ -1071,6 +1161,8 @@
     "exports": {
       "call_sheet": "Pobierz Call Sheet",
       "dtp": "Pobierz notkę do DTP",
+      "open_runsheet": "Otwórz Harmonogram",
+      "runsheet_title": "Harmonogram (Runsheet)",
       "zaiks": "Pobierz ZAiKS"
     },
     "filters": {
@@ -1255,7 +1347,7 @@
         "optional": "Opcjonalna",
         "tutti": "TUTTI"
       },
-      "title_short": "",
+      "title_short": "prób",
       "toast": {
         "remove_error_desc": "Nie udało się usunąć próby. Serwer odrzucił żądanie.",
         "remove_success": "Próba została usunięta",
@@ -1263,7 +1355,7 @@
         "save_error_desc": "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie.",
         "save_success": "Próba zapisana pomyślnie",
         "saving": "Zapisywanie próby w kalendarzu...",
-        "select_location": "",
+        "select_location": "Wybierz lokalizację próby przed zapisem.",
         "select_target": "Wybierz przynajmniej jedną osobę lub sekcję na próbę!",
         "update_success": "Próba zaktualizowana pomyślnie",
         "updating": "Aktualizowanie próby..."
@@ -1278,7 +1370,7 @@
       }
     },
     "roles": {
-      "maestro": ""
+      "maestro": "Maestro"
     },
     "run_sheet": {
       "empty": "Brak harmonogramu dostępnego dla tego wydarzenia.",
@@ -1347,53 +1439,11 @@
       "tenors": "Tenory"
     }
   },
-  "resources": {
-    "actions": {
-      "add_category": "Dodaj kategorię",
-      "add_document": "Dodaj nowy dokument",
-      "delete_category": "Usuń kategorię",
-      "delete_file": "Usuń plik",
-      "download_file": "Pobierz {{title}}",
-      "edit_category": "Edytuj kategorię"
-    },
-    "banner": {
-      "description": "Widoczna poniżej struktura plików ma charakter makiety. Prawdziwe, docelowe dokumenty, umowy i regulaminy fundacji zostaną wgrane w późniejszym etapie wdrożenia CMS.",
-      "title": "Sekcja poglądowa (wersja demo)"
-    },
-    "categories": {
-      "regulations": {
-        "description": "Oficjalne dokumenty fundacji, zasady współpracy, polityka prywatności oraz regulaminy uczestnictwa w próbach.",
-        "files": {
-          "choir_rules": "Regulamin Chórzysty i Zasady Obecności",
-          "gdpr": "Polityka Przetwarzania Danych Osobowych (RODO)",
-          "statute": "Statut Fundacji (Wersja 2026 - Zaktualizowany po walnym zgromadzeniu zarządu)"
-        },
-        "title": "Regulaminy i Statuty"
-      },
-      "wardrobe": {
-        "description": "Wytyczne dotyczące ujednoliconego stroju koncertowego oraz zasady dbania o powierzone elementy garderoby.",
-        "files": {
-          "dress_guide": "Przewodnik: Suknia Chóralna (Sopran / Alt)",
-          "tuxedo_guide": "Wytyczne: Frak i Muszka (Tenor / Bas)"
-        },
-        "title": "Garderoba i Dress Code"
-      }
-    },
-    "cms": {
-      "description": "Możliwość wgrywania i edycji plików na serwerze zostanie aktywowana po podpięciu docelowego API.",
-      "title": "Moduł CMS w przygotowaniu"
-    },
-    "dashboard": {
-      "badge": "Baza wiedzy i dokumenty",
-      "description": "",
-      "title": "Zasoby",
-      "title_highlight": "Fundacji"
-    }
-  },
   "schedule": {
     "card": {
+      "call_sheet_preview_title": "Podgląd Call-Sheet",
       "call_time": "Zbiórka:",
-      "download_call_sheet": "Call-Sheet PDF",
+      "download_call_sheet_aria": "Pobierz Call-Sheet PDF",
       "download_error_desc": "Nie udało się pobrać pliku.",
       "download_loading": "Generowanie dokumentu Call-Sheet...",
       "download_success": "Plik został pobrany",
@@ -1409,6 +1459,7 @@
       "no_run_sheet": "Harmonogram dnia nie został jeszcze opublikowany przez menedżera.",
       "no_spotify": "Brak playlisty referencyjnej.",
       "note_label": "Notatka:",
+      "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Koncert / Wydarzenie",
       "run_sheet_title": "Harmonogram Dnia",
       "unknown_artist": "Artysta"
@@ -1471,14 +1522,14 @@
   "settings": {
     "errors": {
       "invalid_current_password": "Błędne hasło. Spróbuj ponownie.",
-      "unknown_error": ""
+      "unknown_error": "Wystąpił nieoczekiwany błąd."
     },
     "general": {
       "firstName": "Imię",
       "language": "Język interfejsu",
       "lastName": "Nazwisko",
       "phone": "Numer telefonu",
-      "preferencesTitle": "",
+      "preferencesTitle": "Preferencje",
       "subtitle": "Zarządzaj swoimi danymi i preferencjami aplikacji.",
       "timezone": "Strefa czasowa",
       "title": "Ustawienia ogólne"
@@ -1522,7 +1573,7 @@
       "voice": "Twój głos"
     },
     "nav": {
-      "aria": ""
+      "aria": "Menu ustawień"
     },
     "page": {
       "highlight": "konta",

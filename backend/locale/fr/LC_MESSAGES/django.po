@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VoctManager 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-25 21:32+0000\n"
+"POT-Creation-Date: 2026-04-26 15:17+0000\n"
 "PO-Revision-Date: 2026-04-24 00:00+0100\n"
 "Last-Translator: VoctEnsemble\n"
 "Language-Team: French\n"
@@ -417,6 +417,156 @@ msgstr "Profil utilisateur"
 #: core/models.py:178
 msgid "User Profiles"
 msgstr "Profils utilisateurs"
+
+#: documents/models.py:15
+msgid "Book Open"
+msgstr "Livre Ouvert"
+
+#: documents/models.py:16
+msgid "Shirt / Wardrobe"
+msgstr "Chemise / Garde-robe"
+
+#: documents/models.py:17
+msgid "File / Document"
+msgstr "Fichier / Document"
+
+#: documents/models.py:18
+msgid "Shield / Policy"
+msgstr "Bouclier / Politique"
+
+#: documents/models.py:19
+msgid "Health / Medical"
+msgstr "Santé / Médical"
+
+#: documents/models.py:20
+#, fuzzy
+#| msgid "Sheet Music"
+msgid "Music"
+msgstr "Musique"
+
+#: documents/models.py:21
+msgid "Group / Team"
+msgstr "Groupe / Équipe"
+
+#: documents/models.py:22
+msgid "Briefcase / Work"
+msgstr "Mallette / Travail"
+
+#: documents/models.py:23
+#, fuzzy
+#| msgid "Location:"
+msgid "Location / Map"
+msgstr "Lieu / Carte"
+
+#: documents/models.py:24
+msgid "Institution / Foundation"
+msgstr "Institution / Fondation"
+
+#: documents/models.py:25
+#, fuzzy
+#| msgid "Pronunciation / Diction"
+msgid "Education / Training"
+msgstr "Éducation / Formation"
+
+#: documents/models.py:26
+msgid "Scroll / Statute"
+msgstr "Parchemin / Statut"
+
+#: documents/models.py:27
+msgid "Scale / Legal"
+msgstr "Balance / Juridique"
+
+#: documents/models.py:28
+msgid "Microphone / Performance"
+msgstr "Microphone / Performance"
+
+#: documents/models.py:36
+#, fuzzy
+#| msgid "Last Name"
+msgid "Category Name"
+msgstr "Nom de la catégorie"
+
+#: documents/models.py:37
+msgid "URL Slug"
+msgstr "Slug URL"
+
+#: documents/models.py:38 documents/models.py:74 roster/models.py:111
+msgid "Description"
+msgstr "Description"
+
+#: documents/models.py:43
+msgid "Icon"
+msgstr "Icône"
+
+#: documents/models.py:45 documents/models.py:91
+msgid "Display Order"
+msgstr "Ordre d'affichage"
+
+#: documents/models.py:48
+msgid "Allowed Roles"
+msgstr "Rôles autorisés"
+
+#: documents/models.py:49
+msgid ""
+"JSON array of role codes that can view this category. E.g. ['ARTIST', "
+"'MANAGER']"
+msgstr ""
+"Tableau JSON des codes de rôle pouvant voir cette catégorie. P. ex. "
+"['ARTIST', 'MANAGER']"
+
+#: documents/models.py:54
+msgid "Document Category"
+msgstr "Catégorie de document"
+
+#: documents/models.py:55
+msgid "Document Categories"
+msgstr "Catégories de documents"
+
+#: documents/models.py:71
+msgid "Category"
+msgstr "Catégorie"
+
+#: documents/models.py:73
+#, fuzzy
+#| msgid "Project Title"
+msgid "Document Title"
+msgstr "Titre du document"
+
+#: documents/models.py:75
+msgid "File"
+msgstr "Fichier"
+
+#: documents/models.py:76
+msgid "File Size (bytes)"
+msgstr "Taille du fichier (octets)"
+
+#: documents/models.py:77
+msgid "MIME Type"
+msgstr "Type MIME"
+
+#: documents/models.py:80
+msgid "Allowed Roles Override"
+msgstr "Surcharge des rôles autorisés"
+
+#: documents/models.py:81
+msgid ""
+"Overrides category roles when non-empty. Leave empty to inherit from "
+"category."
+msgstr ""
+"Surcharge les rôles de la catégorie si non vide. Laisser vide pour hériter "
+"de la catégorie."
+
+#: documents/models.py:89
+msgid "Uploaded By"
+msgstr "Téléchargé par"
+
+#: documents/models.py:95
+msgid "Document"
+msgstr "Document"
+
+#: documents/models.py:96
+msgid "Documents"
+msgstr "Documents"
 
 #: logistics/models.py:9
 msgid "Concert Hall"
@@ -873,10 +1023,6 @@ msgstr "Le Maestro dirigeant ce projet."
 #: roster/models.py:109
 msgid "Primary location for the project. Dictates the default timezone."
 msgstr "Lieu principal du projet. Dicte le fuseau horaire par défaut."
-
-#: roster/models.py:111
-msgid "Description"
-msgstr "Description"
 
 #: roster/models.py:112 roster/models.py:155 roster/models.py:234
 #: roster/models.py:289

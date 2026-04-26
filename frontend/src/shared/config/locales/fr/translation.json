@@ -205,7 +205,7 @@
       "save_profile": "Enregistrer le profil",
       "section_basic": "Informations de base",
       "section_voice": "Profil vocal",
-      "send_notification": "",
+      "send_notification": "Envoyer une notification",
       "sight_reading": "Déchiffrage (évaluation)",
       "stars_count_one": "{{count}} étoile",
       "stars_count_few": "{{count}} étoiles",
@@ -273,6 +273,7 @@
         "security_desc": "Utilisez au moins 8 caractères. Un mot de passe plus long avec des lettres majuscules et minuscules, des chiffres et des symboles est recommandé.",
         "security_title": "Norme de sécurité",
         "subtitle": "Configuration du mot de passe",
+        "terms": "Je confirme avoir lu les Conditions d'utilisation de VoctManager et la Politique de confidentialité et en accepter les dispositions.",
         "title": "Finalisez votre accès"
       },
       "subtitle": "Accès VoctManager",
@@ -301,7 +302,84 @@
       "submitting": "Autorisation en cours...",
       "subtitle": "Panneau d'administration et RH"
     },
-    "logout": ""
+    "logout": "Déconnexion"
+  },
+  "chorister_hub": {
+    "category": {
+      "delete_aria": "Supprimer la catégorie {{category}}",
+      "download_aria": "Télécharger {{title}}",
+      "edit_aria": "Modifier la catégorie {{category}}",
+      "no_documents": "Aucun document disponible.",
+      "preview_aria": "Aperçu de {{title}}",
+      "remove_aria": "Supprimer {{title}}",
+      "upload": "Télécharger un document"
+    },
+    "identity": {
+      "metric_concerts": "Concerts réalisés",
+      "metric_seasons": "Saisons actives",
+      "metric_voice_lines": "Lignes vocales réalisées",
+      "no_casting_data": "Aucune donnée de distribution pour les projets terminés.",
+      "no_history": "Aucun historique de projet terminé à afficher.",
+      "season_timeline": "Chronologie de la saison",
+      "since": "depuis {{year}}",
+      "subtitle": "Agrégé à partir des projets terminés",
+      "title": "Profil et historique de l'artiste",
+      "vocal_distribution": "Distribution des lignes vocales"
+    },
+    "knowledge_base": {
+      "add_category": "Nouvelle catégorie",
+      "empty": "Aucune catégorie de documents n'a été configurée.",
+      "subtitle": "Règlements, politiques et documents institutionnels",
+      "title": "Base de connaissances"
+    },
+    "modal": {
+      "category": {
+        "description_label": "Description",
+        "description_placeholder": "Brève description du contenu de la catégorie...",
+        "icon_label": "Icône",
+        "name_label": "Nom de la catégorie",
+        "name_placeholder": "Statut de la Fondation",
+        "roles_label": "Visible pour les rôles",
+        "title_create": "Nouvelle catégorie",
+        "title_edit": "Modifier la catégorie"
+      },
+      "document": {
+        "description_label": "Description",
+        "description_placeholder": "Brève description...",
+        "drop_hint": "Cliquez pour sélectionner un fichier (max 50 Mo)",
+        "file_label": "Fichier",
+        "into": "Dans : {{category}}",
+        "roles_label": "Surcharger les rôles visibles",
+        "submit": "Télécharger",
+        "title": "Télécharger un document",
+        "title_label": "Titre du document",
+        "title_placeholder": "Statut de la Fondation (Édition 2026)"
+      },
+      "preview": {
+        "non_pdf": "L'aperçu n'est disponible que pour les fichiers PDF."
+      }
+    },
+    "page": {
+      "badge": "Connaissance et Identité",
+      "title": "Hub du",
+      "title_highlight": "Choriste."
+    },
+    "tabs": {
+      "identity": "Profil et historique de l'artiste",
+      "knowledge": "Base de connaissances"
+    },
+    "toast": {
+      "category_create_error": "Échec de la création de la catégorie.",
+      "category_created": "Catégorie créée.",
+      "category_delete_error": "Échec de la suppression de la catégorie.",
+      "category_deleted": "Catégorie supprimée.",
+      "category_update_error": "Échec de la mise à jour de la catégorie.",
+      "category_updated": "Catégorie mise à jour.",
+      "document_delete_error": "Échec de la suppression du document.",
+      "document_deleted": "Document supprimé.",
+      "document_upload_error": "Échec du téléchargement du document.",
+      "document_uploaded": "Document téléchargé."
+    }
   },
   "common": {
     "actions": {
@@ -325,8 +403,10 @@
     },
     "artist_generic": "De l'artiste",
     "cancel": "Annuler",
-    "close": "",
+    "close": "Fermer",
+    "close_aria": "Fermer le panneau",
     "conductor_prefix": "Maestro",
+    "create": "Créer",
     "currency": "PLN",
     "edit": "Modifier",
     "error_occurred": "Une erreur est survenue",
@@ -341,14 +421,14 @@
       "server_problem": "Un problème est survenu avec le serveur."
     },
     "labels": {
-      "not_available": ""
+      "not_available": "Pas de données"
     },
     "locale": "fr-FR",
-    "management": "",
+    "management": "Direction",
     "people_short": "pers.",
     "rightsReserved": "Tous droits réservés",
     "save_changes": "Enregistrer les modifications",
-    "select_location": "",
+    "select_location": "--- Sélectionner un lieu enregistré ---",
     "send": "Envoyer",
     "state": {
       "saved": "Enregistré"
@@ -502,23 +582,23 @@
         "transport": "Transport",
         "vendors": "Fournisseurs"
       },
-      "inv_col_concert": "",
-      "inv_col_email": "",
-      "inv_col_person": "",
-      "inv_col_phone": "",
-      "inv_confirmed": "",
-      "inv_declined": "",
-      "inv_details_link": "",
-      "inv_empty": "",
-      "inv_loading": "",
-      "inv_modal_subtitle_one": "",
-      "inv_modal_subtitle_many": "",
-      "inv_modal_subtitle_other": "",
-      "inv_modal_title": "",
-      "inv_open_details_aria": "",
-      "inv_pending": "",
+      "inv_col_concert": "Concert",
+      "inv_col_email": "E-mail",
+      "inv_col_person": "Personne",
+      "inv_col_phone": "Téléphone",
+      "inv_confirmed": "Confirmés",
+      "inv_declined": "Déclinés",
+      "inv_details_link": "Détails",
+      "inv_empty": "Aucun participant à afficher",
+      "inv_loading": "Chargement de la liste...",
+      "inv_modal_subtitle_one": "Projets actifs · {{count}} participant",
+      "inv_modal_subtitle_many": "Projets actifs · {{count}} participants",
+      "inv_modal_subtitle_other": "Projets actifs · {{count}} participants",
+      "inv_modal_title": "Statut des Invitations",
+      "inv_open_details_aria": "Ouvrir la liste détaillée des invitations",
+      "inv_pending": "En attente",
       "kpi_active_projects": "Directives actives",
-      "kpi_invitations": "",
+      "kpi_invitations": "Statut des Invitations",
       "kpi_pieces": "Répertoire sacré",
       "kpi_readiness": "Cohérence harmonique",
       "kpi_telemetry": "Télémétrie de la base",
@@ -617,16 +697,17 @@
         "locations": "Lieux",
         "materials": "Matériel d'étude",
         "projects": "Gestion des Projets",
+        "resources": "Base de Connaissances",
         "schedule": "Mon Calendrier"
       },
       "nav": {
-        "main_menu": ""
+        "main_menu": "Menu principal"
       },
       "roles": {
         "admin": "Administrateur",
         "artist": "Artiste",
         "crew": "Équipe technique",
-        "guest": ""
+        "guest": "Invité"
       }
     },
     "shared": {
@@ -758,7 +839,7 @@
       "audio_badge": "Audio",
       "cast_divisi": "Distribution de la pièce (Divisi)",
       "download_pdf": "Télécharger la partition (PDF)",
-      "encore_badge": "",
+      "encore_badge": "BIS",
       "listen_reference": "Écouter la référence",
       "locked_badge": "Protégé",
       "lyrics_translation": "Paroles et traduction",
@@ -816,18 +897,18 @@
         "location": "Cracovie, PL — Fondation VoctEnsemble"
       }
     },
-    "settings": "",
+    "settings": "Paramètres",
     "sheet": {
-      "accessibility_label": ""
+      "accessibility_label": "Navigation mobile étendue"
     }
   },
   "notifications": {
     "changed": "Changements :",
     "crew_role": "Rôle assigné : {{role}}",
     "custom_message": {
-      "from": "",
-      "mark_read": "",
-      "open_link": ""
+      "from": "De : {{name}}",
+      "mark_read": "Marquer comme lu",
+      "open_link": "Ouvrir le lien"
     },
     "empty_subtitle": "Vous n'avez pas de nouvelles notifications.",
     "empty_title": "À jour !",
@@ -841,23 +922,32 @@
     },
     "mark_all_read": "Marquer tout comme lu",
     "send_modal": {
-      "cta_label": "",
-      "cta_label_placeholder": "",
-      "cta_optional": "",
-      "cta_url": "",
-      "error": "",
-      "heading": "",
-      "level": "",
-      "message": "",
-      "message_placeholder": "",
-      "send": "",
-      "sending": "",
-      "success": "",
-      "title": "",
-      "title_placeholder": ""
+      "cta_label": "Libellé du bouton (CTA)",
+      "cta_label_placeholder": "ex. Voir les détails",
+      "cta_optional": "Bouton d'action (optionnel)",
+      "cta_url": "Lien du bouton (URL)",
+      "error": "Erreur lors de l'envoi de la notification.",
+      "heading": "Envoyer une notification",
+      "level": "Niveau d'importance",
+      "message": "Contenu du message",
+      "message_placeholder": "Saisissez le contenu de la notification...",
+      "send": "Envoyer la notification",
+      "sending": "Envoi en cours...",
+      "success": "La notification a été envoyée.",
+      "title": "Titre de la notification",
+      "title_placeholder": "ex. Changement d'heure de répétition"
     },
     "title": "Notifications",
     "unread": "Non lues"
+  },
+  "pdf_viewer": {
+    "download": "Télécharger",
+    "error_403": "Vous n'avez pas la permission de voir ce document.",
+    "error_generic": "Le document n'a pas pu être chargé.",
+    "next_page": "Page suivante",
+    "prev_page": "Page précédente",
+    "zoom_in": "Zoom avant",
+    "zoom_out": "Zoom arrière"
   },
   "preloader": {
     "resonance": "Résonance",
@@ -917,7 +1007,7 @@
       "status_active": "Projet marqué comme en préparation",
       "status_done": "Projet marqué comme terminé",
       "status_update_failed": "Impossible de mettre à jour le statut.",
-      "toggle": "",
+      "toggle": "Basculer la vue des détails du projet",
       "updating_status": "Mise à jour du statut..."
     },
     "cast": {
@@ -947,7 +1037,7 @@
         "available": "Base artistes"
       },
       "title": "Distribution vocale",
-      "title_short": "",
+      "title_short": "artistes",
       "toast": {
         "added": "Ajouté à la distribution",
         "removed": "Retiré de la distribution"
@@ -973,7 +1063,7 @@
         "title": "Membres de l'équipe"
       },
       "title": "Équipe",
-      "title_short": "",
+      "title_short": "tech",
       "toast": {
         "assign_error": "Erreur d'affectation",
         "assign_error_desc": "Impossible d'affecter ce membre d'équipe au projet.",
@@ -995,15 +1085,15 @@
       "header_title_2": "Production"
     },
     "details": {
-      "date_title": "",
+      "date_title": "Date",
       "description_title": "Description de l'événement",
       "dress_code_female": "Femmes :",
       "dress_code_male": "Hommes :",
       "dress_code_title": "Dress code",
-      "location_title": "",
+      "location_title": "Lieu",
       "no_description": "Aucune note supplémentaire pour cet événement.",
       "no_dress_code": "Aucune exigence vestimentaire.",
-      "time_title": "",
+      "time_title": "Heure locale",
       "toast": {
         "create_success": "Nouveau projet et planning créés",
         "saving": "Enregistrement des détails du projet...",
@@ -1024,8 +1114,8 @@
       },
       "fields": {
         "call_time": "Convocation",
-        "conductor": "",
-        "conductor_placeholder": "",
+        "conductor": "Chef d'orchestre",
+        "conductor_placeholder": "--- Sélectionner un chef ---",
         "date_time": "Date et heure *",
         "description": "Description de l'événement",
         "dress_code_female": "Dress code : femmes",
@@ -1070,6 +1160,8 @@
     "exports": {
       "call_sheet": "Télécharger le Call Sheet",
       "dtp": "Télécharger la note DTP",
+      "open_runsheet": "Ouvrir le planning",
+      "runsheet_title": "Planning (Runsheet)",
       "zaiks": "Télécharger ZAiKS"
     },
     "filters": {
@@ -1254,7 +1346,7 @@
         "optional": "Optionnel",
         "tutti": "TUTTI"
       },
-      "title_short": "",
+      "title_short": "répét.",
       "toast": {
         "remove_error_desc": "Impossible de supprimer la répétition. Le serveur a rejeté la requête.",
         "remove_success": "La répétition a été supprimée",
@@ -1262,7 +1354,7 @@
         "save_error_desc": "Un problème est survenu lors de l'enregistrement dans la base. Vérifiez le formulaire et la connexion.",
         "save_success": "Répétition enregistrée avec succès",
         "saving": "Enregistrement de la répétition dans le calendrier...",
-        "select_location": "",
+        "select_location": "Sélectionnez un lieu de répétition avant d'enregistrer.",
         "select_target": "Sélectionnez au moins une personne ou un pupitre pour la répétition !",
         "update_success": "Répétition mise à jour avec succès",
         "updating": "Mise à jour de la répétition..."
@@ -1277,7 +1369,7 @@
       }
     },
     "roles": {
-      "maestro": ""
+      "maestro": "Maestro"
     },
     "run_sheet": {
       "empty": "Aucune feuille de route disponible pour cet événement.",
@@ -1346,53 +1438,11 @@
       "tenors": "Ténors"
     }
   },
-  "resources": {
-    "actions": {
-      "add_category": "Ajouter une catégorie",
-      "add_document": "Ajouter un nouveau document",
-      "delete_category": "Supprimer la catégorie",
-      "delete_file": "Supprimer le fichier",
-      "download_file": "Télécharger {{title}}",
-      "edit_category": "Modifier la catégorie"
-    },
-    "banner": {
-      "description": "La structure de fichiers affichée ci-dessous est une maquette. Les documents, contrats et règlements réels de la fondation seront téléversés lors d'une phase ultérieure de déploiement du CMS.",
-      "title": "Section d'aperçu (version démo)"
-    },
-    "categories": {
-      "regulations": {
-        "description": "Documents officiels de la fondation, règles de collaboration, politique de confidentialité et règlements de participation aux répétitions.",
-        "files": {
-          "choir_rules": "Règlement des choristes et règles de présence",
-          "gdpr": "Politique de traitement des données personnelles (RGPD)",
-          "statute": "Statut de la fondation (version 2026 - mis à jour après l'assemblée générale du conseil)"
-        },
-        "title": "Règlements et statuts"
-      },
-      "wardrobe": {
-        "description": "Consignes relatives à la tenue de concert standardisée et règles d'entretien des éléments de garde-robe confiés.",
-        "files": {
-          "dress_guide": "Guide : Robe chorale (Soprano / Alto)",
-          "tuxedo_guide": "Guide : Frac et nœud papillon (Ténor / Basse)"
-        },
-        "title": "Tenue et dress code"
-      }
-    },
-    "cms": {
-      "description": "La possibilité de téléverser et modifier des fichiers sur le serveur sera activée une fois l'API cible connectée.",
-      "title": "Module CMS en préparation"
-    },
-    "dashboard": {
-      "badge": "Base de connaissances et documents",
-      "description": "",
-      "title": "Ressources de la",
-      "title_highlight": "Fondation"
-    }
-  },
   "schedule": {
     "card": {
+      "call_sheet_preview_title": "Aperçu Call-Sheet",
       "call_time": "Convocation :",
-      "download_call_sheet": "Call Sheet PDF",
+      "download_call_sheet_aria": "Télécharger Call-Sheet PDF",
       "download_error_desc": "Impossible de télécharger le fichier.",
       "download_loading": "Génération du document Call Sheet...",
       "download_success": "Fichier téléchargé avec succès",
@@ -1408,6 +1458,7 @@
       "no_run_sheet": "La feuille de route n'a pas encore été publiée par le manager.",
       "no_spotify": "Aucune playlist de référence.",
       "note_label": "Note :",
+      "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Concert / Événement",
       "run_sheet_title": "Feuille de route",
       "unknown_artist": "Artiste"
@@ -1470,14 +1521,14 @@
   "settings": {
     "errors": {
       "invalid_current_password": "Mot de passe invalide. Réessayez.",
-      "unknown_error": ""
+      "unknown_error": "Une erreur inattendue est survenue."
     },
     "general": {
       "firstName": "Prénom",
       "language": "Langue de l'interface",
       "lastName": "Nom",
       "phone": "Numéro de téléphone",
-      "preferencesTitle": "",
+      "preferencesTitle": "Préférences",
       "subtitle": "Gérez vos données et préférences d'application.",
       "timezone": "Fuseau horaire",
       "title": "Paramètres généraux"
@@ -1521,7 +1572,7 @@
       "voice": "Votre voix"
     },
     "nav": {
-      "aria": ""
+      "aria": "Menu des paramètres"
     },
     "page": {
       "highlight": "du compte",
