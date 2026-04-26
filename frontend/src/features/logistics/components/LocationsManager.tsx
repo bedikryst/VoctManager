@@ -13,13 +13,15 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { LocationCard } from "./LocationCard";
 import LocationInlineEditor from "./LocationInlineEditor";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
+import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { StaggeredBentoContainer, StaggeredBentoItem } from "@/shared/ui/composites/StaggeredBento";
 import {
   Heading,
   Text,
-  Eyebrow,
   Caption,
-  Label,
 } from "@/shared/ui/primitives/typography";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import type { LocationCategory } from "@/shared/types";
 
 const FILTER_CATEGORIES: {
@@ -111,63 +113,32 @@ export const LocationsManager = (): React.JSX.Element => {
     }
   };
 
-  // Architektura Smart Grouping - kategoryzacja wizualna
   const groupedLocations = useMemo(() => {
     const groups: Record<string, typeof displayLocations> = {};
 
-    // Inicjalizacja pustych tablic w ustalonej kolejności (aby zachować stały layout)
     FILTER_CATEGORIES.forEach((cat) => {
       if (cat.value) groups[cat.value] = [];
     });
 
-    // Grupowanie lokacji do odpowiednich "wiaderek"
     displayLocations.forEach((loc) => {
       if (!groups[loc.category]) groups[loc.category] = [];
       groups[loc.category].push(loc);
     });
 
-    // Odfiltrowujemy puste grupy (żeby nie rysować nagłówka z wynikiem 0)
     return Object.entries(groups).filter(([_, locs]) => locs.length > 0);
   }, [displayLocations]);
 
   return (
-    <div className="space-y-6 animate-fade-in relative cursor-default pb-12 max-w-7xl mx-auto px-4 sm:px-0">
-      <header className="relative pt-2 mb-8">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-glass-surface backdrop-blur-md border border-glass-border shadow-sm mb-4">
-                <MapIcon size={12} className="text-ethereal-gold" />
-                <Label
-                  color="gold"
-                  weight="bold"
-                  className="uppercase tracking-widest antialiased"
-                >
-                  {t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
-                </Label>
-              </div>
-              <Heading
-                as="h1"
-                size="4xl"
-                weight="medium"
-                className="leading-tight tracking-tight"
-              >
-                {t("logistics.dashboard.title_prefix", "Baza")}{" "}
-                <Text as="span" color="gold" className="italic">
-                  {t("logistics.dashboard.title_highlight", "Lokacji")}
-                </Text>
-                .
-              </Heading>
-            </div>
-
+    <PageTransition>
+      <div className="pb-24 -mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <PageHeader
+          size="standard"
+          roleText={t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
+          title={t("logistics.dashboard.title", "Baza")}
+          titleHighlight={t("logistics.dashboard.title_highlight", "Lokacji")}
+          rightContent={
             <Button
-              variant={
-                isPanelOpen && !editingLocation ? "secondary" : "primary"
-              }
+              variant={isPanelOpen && !editingLocation ? "secondary" : "primary"}
               onClick={toggleAddMode}
               leftIcon={
                 <Plus
@@ -184,11 +155,10 @@ export const LocationsManager = (): React.JSX.Element => {
                 ? t("common.cancel", "Anuluj")
                 : t("logistics.dashboard.add_location", "Dodaj Miejsce")}
             </Button>
-          </div>
-        </motion.div>
-      </header>
+          }
+        />
+      </div>
 
-      {/* PASEK AKCJI: Wyszukiwarka i Przełącznik Widoków */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-between">
         <div className="w-full sm:max-w-md">
           <Input
@@ -219,7 +189,6 @@ export const LocationsManager = (): React.JSX.Element => {
         </div>
       </div>
 
-      {/* LUKSUSOWE PRZYCISKI KATEGORII (Pills ze statystykami) */}
       <div
         className="flex items-center gap-3 overflow-x-auto pb-4 mb-4 w-full [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
@@ -240,15 +209,9 @@ export const LocationsManager = (): React.JSX.Element => {
                 }`}
             >
               {t(cat.labelKey, cat.fallback)}
-              <span
-                className={`px-2 py-0.5 rounded-md text-[10px] shadow-inner ${
-                  categoryFilter === cat.value
-                    ? "bg-white/20 text-white"
-                    : "bg-ethereal-alabaster/80 text-ethereal-graphite border border-ethereal-incense/20"
-                }`}
-              >
+              <Badge variant={categoryFilter === cat.value ? "glass" : "neutral"} className="px-1.5 py-0.5 min-w-[24px] justify-center text-[10px]">
                 {count}
-              </span>
+              </Badge>
             </button>
           );
         })}
@@ -281,10 +244,9 @@ export const LocationsManager = (): React.JSX.Element => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col gap-10" // Zamiana grid na kolumnę dla zgrupowanych sekcji
+            className="flex flex-col gap-10"
           >
             <AnimatePresence mode="popLayout">
-              {/* Edytor tworzenia zawsze na samej górze */}
               {isPanelOpen && !editingLocation && (
                 <LocationInlineEditor
                   key="new-location-editor"
@@ -295,19 +257,18 @@ export const LocationsManager = (): React.JSX.Element => {
             </AnimatePresence>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+              <StaggeredBentoContainer>
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <div
-                    key={`skeleton-${index}`}
-                    className="h-64 bg-stone-100/50 rounded-[2rem] border border-white/50 animate-pulse"
-                  />
+                  <StaggeredBentoItem key={`skeleton-${index}`}>
+                    <div
+                      className="h-64 bg-stone-100/50 rounded-[2.5rem] border border-white/50 animate-pulse"
+                    />
+                  </StaggeredBentoItem>
                 ))}
-              </div>
+              </StaggeredBentoContainer>
             ) : displayLocations.length > 0 ? (
-              // RENDEROWANIE SMART GROUPING
               groupedLocations.map(([category, locs]) => (
                 <div key={category} className="w-full relative">
-                  {/* Nagłówek Sekcji */}
                   <div className="flex items-center gap-3 mb-5 border-b border-ethereal-incense/20 pb-3">
                     <Heading
                       as="h2"
@@ -320,40 +281,36 @@ export const LocationsManager = (): React.JSX.Element => {
                         category.replace("_", " "),
                       )}
                     </Heading>
-                    <span className="px-2 py-0.5 rounded-md bg-ethereal-alabaster border border-ethereal-incense/20 text-ethereal-graphite text-[10px] font-bold">
+                    <Badge variant="neutral">
                       {locs.length}
-                    </span>
+                    </Badge>
                   </div>
 
-                  {/* Siatka dla konkretnej Kategorii */}
-                  <motion.div
-                    layout
-                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-                  >
+                  <StaggeredBentoContainer>
                     <AnimatePresence mode="popLayout">
                       {locs.map((loc) => {
-                        // Jeśli kliknięto "Edytuj", karta w tej grupie zamienia się na szeroki edytor
                         if (isPanelOpen && editingLocation?.id === loc.id) {
                           return (
-                            <LocationInlineEditor
-                              key={`edit-${loc.id}`}
-                              location={loc}
-                              onClose={closePanel}
-                            />
+                            <StaggeredBentoItem key={`edit-${loc.id}`} className="col-span-full xl:col-span-2">
+                              <LocationInlineEditor
+                                location={loc}
+                                onClose={closePanel}
+                              />
+                            </StaggeredBentoItem>
                           );
                         }
-                        // Standardowa karta
                         return (
-                          <LocationCard
-                            key={`card-${loc.id}`}
-                            location={loc}
-                            onEdit={openPanel}
-                            onArchive={setLocationToArchive}
-                          />
+                          <StaggeredBentoItem key={`card-${loc.id}`}>
+                            <LocationCard
+                              location={loc}
+                              onEdit={openPanel}
+                              onArchive={setLocationToArchive}
+                            />
+                          </StaggeredBentoItem>
                         );
                       })}
                     </AnimatePresence>
-                  </motion.div>
+                  </StaggeredBentoContainer>
                 </div>
               ))
             ) : (
@@ -370,7 +327,7 @@ export const LocationsManager = (): React.JSX.Element => {
                   <Caption
                     color="muted"
                     weight="bold"
-                    className="uppercase tracking-widest mb-2"
+                    className="uppercase tracking-widest mb-2 block"
                   >
                     {t("logistics.dashboard.empty_title", "Brak wyników")}
                   </Caption>
@@ -403,6 +360,6 @@ export const LocationsManager = (): React.JSX.Element => {
         onCancel={() => setLocationToArchive(null)}
         isLoading={isArchiving}
       />
-    </div>
+    </PageTransition>
   );
 };

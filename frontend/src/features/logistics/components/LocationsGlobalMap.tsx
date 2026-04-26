@@ -53,8 +53,8 @@ const LocationInfo = ({ location }: { location: LocationDto }) => {
     <div className="p-2 min-w-[200px] font-sans">
       <p className="text-[9px] font-bold antialiased uppercase tracking-widest text-brand mb-1">
         {t(
-          `logistics.categories.${location.category.toLowerCase()}`,
-          location.category.replace("_", " "),
+          `logistics.categories.${(location.category || "OTHER").toLowerCase()}`,
+          (location.category || "OTHER").replace("_", " "),
         )}
       </p>
       <h4 className="text-sm font-bold text-stone-900 leading-tight mb-2">

@@ -51,13 +51,22 @@ export function TelemetryWidget({
 
   const voices = useMemo(
     () => [
-      { label: "S", val: stats.satb.S, voiceType: "S" as const },
-      { label: "M", val: stats.satb.MEZ, voiceType: "A" as const },
-      { label: "A", val: stats.satb.A, voiceType: "A" as const },
-      { label: "CT", val: stats.satb.CT, voiceType: "T" as const },
+      {
+        label: "S",
+        val: stats.satb.S + stats.satb.MEZ,
+        voiceType: "S" as const,
+      },
+      {
+        label: "A",
+        val: stats.satb.A + stats.satb.CT,
+        voiceType: "A" as const,
+      },
       { label: "T", val: stats.satb.T, voiceType: "T" as const },
-      { label: "BAR", val: stats.satb.BAR, voiceType: "B" as const },
-      { label: "B", val: stats.satb.B, voiceType: "B" as const },
+      {
+        label: "B",
+        val: stats.satb.B + stats.satb.BAR,
+        voiceType: "B" as const,
+      },
     ],
     [stats.satb],
   );

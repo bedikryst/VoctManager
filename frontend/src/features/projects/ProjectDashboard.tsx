@@ -126,6 +126,7 @@ export const ProjectDashboard = (): React.JSX.Element => {
     <PageTransition>
       <div className="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-24 sm:px-0">
         <PageHeader
+          size="standard"
           roleText={t("projects.dashboard.header_badge", "Centrum Dowodzenia")}
           title={t("projects.dashboard.header_title_1", "Wydarzenia i")}
           titleHighlight={t("projects.dashboard.header_title_2", "Produkcja")}
@@ -138,7 +139,6 @@ export const ProjectDashboard = (): React.JSX.Element => {
               {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
             </Button>
           }
-          size="dashboard"
         />
 
         <div className="md:hidden">

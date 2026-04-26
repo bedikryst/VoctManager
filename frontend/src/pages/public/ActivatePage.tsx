@@ -186,7 +186,7 @@ export default function ActivatePage(): React.JSX.Element {
               className="relative h-full flex flex-col"
             >
               <div
-                className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-ethereal-gold/60 to-transparent"
+                className="absolute inset-x-0 -top-6 h-px bg-linear-to-r from-transparent via-ethereal-gold/60 to-transparent"
                 aria-hidden="true"
               />
               {!activatedData ? (

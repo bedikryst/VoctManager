@@ -40,9 +40,11 @@ export const useLocationsData = () => {
 
   const displayLocations = useMemo(() => {
     return locations.filter((loc) => {
+      const name = loc.name || "";
+      const address = loc.formatted_address || "";
       const matchesSearch =
-        loc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        loc.formatted_address.toLowerCase().includes(searchTerm.toLowerCase());
+        name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        address.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter
         ? loc.category === categoryFilter
         : true;

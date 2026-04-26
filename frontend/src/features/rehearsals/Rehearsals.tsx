@@ -130,7 +130,7 @@ export default function Rehearsals(): React.JSX.Element {
     <PageTransition>
       <div className="space-y-10 pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <PageHeader
-          size="dashboard"
+          size="standard"
           roleText={t("rehearsals.dashboard.subtitle", "Moduł Inspektora")}
           title={t("rehearsals.dashboard.title", "Dziennik")}
           titleHighlight={t(

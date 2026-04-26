@@ -2,6 +2,7 @@
  * @file LegalModals.tsx
  * @description Enterprise-grade legal modals for Terms of Service and Privacy Policy.
  * Compliant with Ethereal UI constraints (Glassmorphism, CVA Typography).
+ * Updated: 2026-04-26
  */
 
 import React from "react";
@@ -47,7 +48,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-4xl max-h-[150vh] flex flex-col"
+          className="relative w-full max-w-4xl max-h-[90vh] flex flex-col"
           role="dialog"
           aria-modal="true"
         >
@@ -55,8 +56,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             variant="solid"
             padding="none"
             isHoverable={false}
-            className="flex flex-col h-full overflow-hidden shadow-glass-ethereal"
+            className="flex flex-col h-full shadow-glass-ethereal"
           >
+            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-ethereal-incense/10 bg-white/5">
               <div>
                 <Heading size="3xl" weight="medium" color="default">
@@ -75,7 +77,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   onClick={handlePrint}
                   className="hidden sm:flex"
                 >
-                  <Printer className="w-4 h-4 ml-3 items-center" />
+                  <Printer className="w-4 h-4 ml-3" />
                   Drukuj
                 </Button>
                 <Button
@@ -89,12 +91,14 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               </div>
             </div>
 
+            {/* Content Area */}
             <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-white/40">
               {type === "privacy" ? <PrivacyContent /> : <TermsContent />}
             </div>
 
+            {/* Footer */}
             <div className="p-4 border-t border-ethereal-incense/10 flex justify-end bg-white/50">
-              <Button variant="primary" onClick={onClose}>
+              <Button variant="primary" onClick={onClose} className="mr-6">
                 Rozumiem i zamykam
               </Button>
             </div>
@@ -122,58 +126,73 @@ const PrivacyContent: React.FC = () => (
       <Eyebrow color="muted" size={"md"} className="mb-4">
         2. Cele i Podstawy Przetwarzania
       </Eyebrow>
-      <ul className="space-y-3 list-none pl-0 m-0">
+      <ul className="space-y-4 list-none pl-0 m-0">
         <li>
           <Text weight="bold" color="default" size={"md"} className="mt-2">
-            Konto i Komunikacja:
+            Obsługa Konta i Współpraca:
           </Text>
           <Text size="md" color="graphite" className="mt-1">
-            Imię, nazwisko, e-mail, telefon – niezbędne do realizacji współpracy
-            (Art. 6 ust. 1 lit. b RODO).
+            Imię, nazwisko, e-mail, telefon – dane niezbędne do realizacji celów
+            statutowych Fundacji i współpracy artystycznej (Art. 6 ust. 1 lit. b
+            RODO).
           </Text>
         </li>
         <li>
           <Text weight="bold" color="default" size={"md"}>
-            Logistyka:
+            Logistyka i Produkcja:
           </Text>
           <Text size="md" color="graphite" className="mt-1">
-            Rozmiar ubrań i dane transportowe – nasz prawnie uzasadniony interes
-            w organizacji produkcji (Art. 6 ust. 1 lit. f RODO).
+            Rozmiar ubrań (kostiumy) oraz dane o lokalizacji – nasz prawnie
+            uzasadniony interes w organizacji produkcji koncertowych (Art. 6
+            ust. 1 lit. f RODO).
           </Text>
         </li>
-        {/* Tekst poniżej został usunięty w ostatniej aktualizacji, ale zostawiam go tutaj dla kontekstu i ewentualnego przywrócenia w przyszłości. --- IGNORE ---
         <li>
-          <Text weight="bold" color="default" size={"md"}>
-            Rozliczenia:
+          <Text weight="bold" color="default" size={"md"} className="mt-2">
+            Przygotowanie Umów:
           </Text>
           <Text size="md" color="graphite" className="mt-1">
-            PESEL, nr konta – obowiązek prawny (podatkowy/księgowy) przy
-            generowaniu umów.
+            Imię i nazwisko są wykorzystywane do generowania wzorów dokumentów.
+            Pozostałe dane (PESEL, adres) są uzupełniane przez Użytkownika
+            ręcznie poza systemem.
           </Text>
         </li>
-            */}
       </ul>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        3. Dostawcy i Transfer Danych
+        3. Technologie i Bezpieczeństwo (JWT)
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Dane powierzamy: DigitalOcean (serwery), Google (mapy lokalizacji),
-        Spotify (widgety audio). Korzystanie z Google/Spotify może wiązać się z
-        transferem do USA w ramach Data Privacy Framework.
+        Aplikacja wykorzystuje technologię JWT (JSON Web Token) przechowywaną w
+        pamięci przeglądarki (LocalStorage) wyłącznie w celu utrzymania sesji
+        logowania oraz zapewnienia bezpieczeństwa dostępu do danych. Nie
+        stosujemy ciasteczek śledzących.
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        4. Twoje Prawa
+        4. Odbiorcy Danych
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Masz prawo do wglądu, sprostowania oraz usunięcia danych w dowolnym
-        momencie w ustawieniach profilu. Dane rozliczeniowe przechowujemy przez
-        5 lat zgodnie z wymogami skarbowymi.
+        Dane powierzamy sprawdzonym dostawcom: DigitalOcean (infrastruktura
+        serwerowa) oraz Google (usługi map). Korzystanie z widgetów audio może
+        wiązać się z transferem technicznym danych do USA w oparciu o Data
+        Privacy Framework.
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
+        5. Twoje Prawa
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        Masz prawo do: wglądu w swoje dane, ich sprostowania, usunięcia,
+        ograniczenia przetwarzania, przenoszenia danych oraz wniesienia
+        sprzeciwu. Przysługuje Ci również prawo do wniesienia skargi do Prezesa
+        Urzędu Ochrony Danych Osobowych (PUODO).
       </Text>
     </div>
   </div>
@@ -183,48 +202,65 @@ const TermsContent: React.FC = () => (
   <div className="space-y-6">
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        1. Zasady Korzystania
+        1. Charakter Systemu
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        VoctManager jest wewnętrznym systemem Fundacji. Dostęp jest osobisty i
-        nieprzenoszalny. Zakazuje się udostępniania linków iCal oraz haseł
-        osobom trzecim.
+        VoctManager jest wewnętrznym narzędziem operacyjnym Fundacji. Dostęp do
+        niego jest przyznawany indywidualnie. Zakazuje się udostępniania danych
+        dostępowych oraz personalnych linków iCal osobom trzecim.
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        2. Własność Intelektualna
+        2. Własność Intelektualna i Materiały
       </Eyebrow>
-      <div className="bg-ethereal-gold/30 p-3 border-l-2 border-ethereal-gold mt-2">
-        <Text size="md" color="graphite" className="italic">
-          Wszelkie nuty (PDF), nagrania (MP3) i materiały edukacyjne są
-          własnością Fundacji lub twórców. Dostęp jest udzielany wyłącznie do
-          celów przygotowania do koncertów. Kopiowanie i publiczne
-          rozpowszechnianie bez zgody Zarządu jest surowo zabronione.
+      <div className="bg-ethereal-gold/10 p-4 border-l-2 border-ethereal-gold mt-2">
+        <Text size="md" color="graphite" className="italic mt-2">
+          Wszelkie nuty (PDF), nagrania próbne (MP3) i materiały edukacyjne
+          udostępnione w systemie stanowią własność Fundacji lub podmiotów
+          współpracujących. Pobieranie materiałów jest dozwolone wyłącznie w
+          celu przygotowania do koncertów VoctEnsemble. Kopiowanie i
+          rozpowszechnianie ich bez zgody jest zabronione.
         </Text>
       </div>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        3. Poufność (NDA)
+        3. Poufność i NDA
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Listy obsady, stawki, lokalizacje prób i plany produkcyjne są objęte
-        tajemnicą. Obowiązuje zakaz robienia i publikowania zrzutów ekranu z
-        aplikacji.
+        Informacje o stawkach, planach produkcyjnych, lokalizacjach prób oraz
+        obsadach są objęte tajemnicą zawodową. Zabrania się publikowania zrzutów
+        ekranu z wnętrza aplikacji w mediach społecznościowych bez zgody
+        Zarządu.
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        4. Deklaracje i Nieobecności
+        4. Zgłaszanie Problemów i Wsparcie
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Kliknięcie "Akceptuję projekt" w systemie jest traktowane jako wiążąca
-        deklaracja udziału. Nieobecności muszą być zgłaszane przez moduł
-        systemowy z odpowiednim wyprzedzeniem.
+        Wszelkie błędy w działaniu systemu, nieścisłości w grafikach lub
+        problemy z dostępem należy zgłaszać pod adresem:{" "}
+        <span className="font-medium text-ethereal-ink">
+          voctensemble@gmail.com
+        </span>
+        .
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
+        5. Odpowiedzialność i Blokowanie Konta
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        Fundacja zastrzega sobie prawo do czasowego zawieszenia lub trwałego
+        usunięcia konta Użytkownika w przypadku naruszenia zasad poufności lub
+        rażącego naruszenia regulaminu pracy zespołu. Fundacja nie odpowiada za
+        przerwy techniczne wynikające z winy dostawców zewnętrznych.
       </Text>
     </div>
   </div>
