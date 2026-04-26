@@ -6,7 +6,7 @@
  * @module pages/public/ActivatePage
  */
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -18,19 +18,22 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { useAccountActivation } from "@features/auth/hooks/useAccountActivation";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading } from "@/shared/ui/primitives/typography/Heading";
 import { Text } from "@/shared/ui/primitives/typography/Text";
 import { Eyebrow } from "@/shared/ui/primitives/typography/Eyebrow";
+import { LegalModal } from "@features/auth/components/LegalModals";
 
 export default function ActivatePage(): React.JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
-  const [isTermsOpen, setIsTermsOpen] = useState<boolean>(false);
+  const [legalModalState, setLegalModalState] = useState<{
+    isOpen: boolean;
+    type: "privacy" | "terms";
+  }>({ isOpen: false, type: "terms" });
 
   const {
     password,
@@ -47,15 +50,6 @@ export default function ActivatePage(): React.JSX.Element {
   useEffect(() => {
     document.body.classList.add("admin-mode");
     return () => document.body.classList.remove("admin-mode");
-  }, []);
-
-  // Memoized fetch function explicitly returning a Blob for the PdfViewerModal
-  const fetchTermsBlob = useCallback(async (): Promise<Blob> => {
-    const response = await fetch("/assets/documents/regulamin.pdf");
-    if (!response.ok) {
-      throw new Error("Failed to load Terms of Service PDF");
-    }
-    return response.blob();
   }, []);
 
   const activationHighlights = [
@@ -75,6 +69,14 @@ export default function ActivatePage(): React.JSX.Element {
       icon: Sparkles,
     },
   ];
+
+  const handleOpenLegalModal = (
+    type: "privacy" | "terms",
+    e: React.MouseEvent,
+  ) => {
+    e.preventDefault();
+    setLegalModalState({ isOpen: true, type });
+  };
 
   return (
     <div className="relative min-h-screen bg-transparent selection:bg-ethereal-gold/30">
@@ -96,7 +98,6 @@ export default function ActivatePage(): React.JSX.Element {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col items-center justify-center px-6 py-24 lg:px-10">
         <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 items-stretch">
-          {/* Left – brand & feature overview */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -111,7 +112,6 @@ export default function ActivatePage(): React.JSX.Element {
               <Eyebrow color="parchment-muted" as="p" className="mb-4">
                 {t("auth.activate.subtitle")}
               </Eyebrow>
-
               <Heading
                 as="h1"
                 size="5xl"
@@ -123,7 +123,6 @@ export default function ActivatePage(): React.JSX.Element {
                   {t("auth.activate.title_2")}
                 </span>
               </Heading>
-
               <Text
                 size="base"
                 color="parchment-muted"
@@ -131,7 +130,6 @@ export default function ActivatePage(): React.JSX.Element {
               >
                 {t("auth.activate.description")}
               </Text>
-
               <div className="mt-8 grid gap-4 flex-1">
                 {activationHighlights.map(
                   ({ title, description, icon: Icon }) => (
@@ -171,7 +169,6 @@ export default function ActivatePage(): React.JSX.Element {
             </GlassCard>
           </motion.div>
 
-          {/* Right – activation form */}
           <motion.div
             initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
@@ -192,7 +189,6 @@ export default function ActivatePage(): React.JSX.Element {
                 className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-ethereal-gold/60 to-transparent"
                 aria-hidden="true"
               />
-
               {!activatedData ? (
                 <>
                   <div className="mb-8">
@@ -294,7 +290,6 @@ export default function ActivatePage(): React.JSX.Element {
                       />
                     </div>
 
-                    {/* Terms & Privacy Policy acceptance with modal trigger */}
                     <label
                       htmlFor="terms-accepted"
                       className="flex items-start gap-3 cursor-pointer rounded-2xl border border-ethereal-incense/15 bg-white/30 p-4 transition-colors hover:bg-white/50"
@@ -333,15 +328,20 @@ export default function ActivatePage(): React.JSX.Element {
                         {t("auth.activate.form.terms_prefix", "Akceptuję ")}{" "}
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setIsTermsOpen(true);
-                          }}
+                          onClick={(e) => handleOpenLegalModal("terms", e)}
+                          className="text-ethereal-gold hover:text-ethereal-ink transition-colors font-medium underline underline-offset-4"
+                        >
+                          {t("auth.activate.form.terms_link", "Regulamin")}
+                        </button>{" "}
+                        &{" "}
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenLegalModal("privacy", e)}
                           className="text-ethereal-gold hover:text-ethereal-ink transition-colors font-medium underline underline-offset-4"
                         >
                           {t(
-                            "auth.activate.form.terms_link",
-                            "Regulamin serwisu VoctManager",
+                            "auth.activate.form.privacy_link",
+                            "Politykę Prywatności",
                           )}
                         </button>
                       </Text>
@@ -419,7 +419,6 @@ export default function ActivatePage(): React.JSX.Element {
                           </span>
                           {t("auth.activate.success.desc_2")}
                         </Text>
-
                         <div className="mt-5 mb-4 rounded-xl border border-ethereal-incense/20 bg-white/70 p-4 shadow-glass-solid">
                           <Text
                             size="xs"
@@ -438,7 +437,6 @@ export default function ActivatePage(): React.JSX.Element {
                             {activatedData.email}
                           </Text>
                         </div>
-
                         <Text
                           size="xs"
                           color="graphite"
@@ -449,7 +447,6 @@ export default function ActivatePage(): React.JSX.Element {
                       </div>
                     </div>
                   </div>
-
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                     <Button
                       type="button"
@@ -477,16 +474,12 @@ export default function ActivatePage(): React.JSX.Element {
         </div>
       </div>
 
-      {/* PDF Viewer Modal */}
-      <PdfViewerModal
-        isOpen={isTermsOpen}
-        onClose={() => setIsTermsOpen(false)}
-        fetchBlob={fetchTermsBlob}
-        title={t(
-          "auth.activation.terms_modal_title",
-          "Regulamin i Zasady Użytkowania",
-        )}
-        fileName="Regulamin_VoctManager.pdf"
+      <LegalModal
+        isOpen={legalModalState.isOpen}
+        onClose={() =>
+          setLegalModalState({ ...legalModalState, isOpen: false })
+        }
+        type={legalModalState.type}
       />
     </div>
   );

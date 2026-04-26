@@ -58,6 +58,7 @@ export const useProjectArtistsDictionary = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<Artist>()),
+    select: (artists) => (Array.isArray(artists) ? artists : artists ? [artists] : []),
   });
 
 export const useProjectArtistsMap = (enabled = true) =>
@@ -88,6 +89,7 @@ export const useProjectPiecesDictionary = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<Piece>()),
+    select: (pieces) => (Array.isArray(pieces) ? pieces : pieces ? [pieces] : []),
   });
 
 export const useProjectCollaboratorsDictionary = (enabled = true) =>
@@ -99,6 +101,7 @@ export const useProjectCollaboratorsDictionary = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<Collaborator>()),
+    select: (collabs) => (Array.isArray(collabs) ? collabs : collabs ? [collabs] : []),
   });
 
 export const useProjectVoiceLinesDictionary = (enabled = true) =>
@@ -110,6 +113,7 @@ export const useProjectVoiceLinesDictionary = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<VoiceLineOption>()),
+    select: (lines) => (Array.isArray(lines) ? lines : lines ? [lines] : []),
   });
 
 export const useProjectParticipations = (projectId: string | undefined) =>
@@ -121,6 +125,7 @@ export const useProjectParticipations = (projectId: string | undefined) =>
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<Participation>()),
+    select: (data) => (Array.isArray(data) ? data : data ? [data] : []),
   });
 
 export const useProjectRehearsals = (projectId: string | undefined) =>
@@ -132,6 +137,7 @@ export const useProjectRehearsals = (projectId: string | undefined) =>
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<Rehearsal>()),
+    select: (data) => (Array.isArray(data) ? data : data ? [data] : []),
   });
 
 export const useProjectCrewAssignments = (projectId: string | undefined) =>
@@ -143,6 +149,7 @@ export const useProjectCrewAssignments = (projectId: string | undefined) =>
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<CrewAssignment>()),
+    select: (data) => (Array.isArray(data) ? data : data ? [data] : []),
   });
 
 export const useProjectProgram = (projectId: string | undefined) =>
@@ -154,6 +161,7 @@ export const useProjectProgram = (projectId: string | undefined) =>
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<ProgramItem>()),
+    select: (data) => (Array.isArray(data) ? data : data ? [data] : []),
   });
 
 export const useProjectPieceCastings = (projectId: string | undefined) =>
@@ -165,6 +173,7 @@ export const useProjectPieceCastings = (projectId: string | undefined) =>
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<PieceCasting>()),
+    select: (data) => (Array.isArray(data) ? data : data ? [data] : []),
   });
 
 export const useProjectAttendances = (projectId: string | undefined) =>
@@ -176,4 +185,5 @@ export const useProjectAttendances = (projectId: string | undefined) =>
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<Attendance>()),
+    select: (data) => (Array.isArray(data) ? data : data ? [data] : []),
   });

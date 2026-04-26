@@ -24,6 +24,7 @@ export const useLocations = () => {
     queryKey: logisticsQueryKeys.lists(),
     queryFn: logisticsService.getLocations,
     staleTime: 1000 * 60 * 5,
+    select: (locations) => (Array.isArray(locations) ? locations : locations ? [locations] : []),
   });
 };
 

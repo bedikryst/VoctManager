@@ -22,6 +22,7 @@ import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { VocalClefShadow } from "@/shared/ui/kinematics/VocalClefShadow";
+import { LegalModal } from "@features/auth/components/LegalModals";
 
 export default function Login(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
@@ -29,23 +30,28 @@ export default function Login(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  const [legalModalState, setLegalModalState] = useState<{
+    isOpen: boolean;
+    type: "privacy" | "terms";
+  }>({ isOpen: false, type: "privacy" });
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
 
-  // Enforce system cursor normalization for accessibility on the auth screen
   useEffect(() => {
     document.body.classList.add("admin-mode");
     return () => document.body.classList.remove("admin-mode");
   }, []);
 
-  // Smart redirect resolution with strict type assertion
   const from =
     (location.state as { from?: { pathname: string } })?.from?.pathname ||
     "/panel";
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
@@ -63,16 +69,22 @@ export default function Login(): React.JSX.Element {
     }
   };
 
+  const handleOpenLegalModal = (
+    type: "privacy" | "terms",
+    e: React.MouseEvent,
+  ) => {
+    e.preventDefault();
+    setLegalModalState({ isOpen: true, type });
+  };
+
   return (
     <PageTransition>
       <div className="relative min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Kinematic Backgrounds */}
         <EtherealBackground />
         <div className="absolute top-0 right-0 opacity-10 pointer-events-none translate-x-1/4 -translate-y-1/4">
           <VocalClefShadow />
         </div>
 
-        {/* Back Navigation */}
         <div className="absolute top-8 left-8 z-20">
           <Link
             to="/"
@@ -111,11 +123,7 @@ export default function Login(): React.JSX.Element {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.8,
-              delay: 0.15,
-              ease: [0.16, 1, 0.3, 1],
-            }}
+            transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           >
             <GlassCard
               variant="ethereal"
@@ -207,18 +215,45 @@ export default function Login(): React.JSX.Element {
                 </div>
               </form>
 
-              <div className="mt-8 text-center">
+              <div className="mt-8 flex flex-col items-center gap-2">
                 <Eyebrow color="muted" className="text-[9px] opacity-60">
                   {t(
                     "auth.login.footer_security",
                     "Zabezpieczone przez JWT Auth • 2026",
                   )}
                 </Eyebrow>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenLegalModal("terms", e)}
+                    className="text-[10px] text-ethereal-graphite/60 hover:text-ethereal-gold transition-colors uppercase tracking-widest font-medium"
+                  >
+                    Regulamin
+                  </button>
+                  <span className="text-ethereal-graphite/30 text-[10px]">
+                    •
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenLegalModal("privacy", e)}
+                    className="text-[10px] text-ethereal-graphite/60 hover:text-ethereal-gold transition-colors uppercase tracking-widest font-medium"
+                  >
+                    Polityka Prywatności
+                  </button>
+                </div>
               </div>
             </GlassCard>
           </motion.div>
         </div>
       </div>
+
+      <LegalModal
+        isOpen={legalModalState.isOpen}
+        onClose={() =>
+          setLegalModalState({ ...legalModalState, isOpen: false })
+        }
+        type={legalModalState.type}
+      />
     </PageTransition>
   );
 }
