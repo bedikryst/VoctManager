@@ -12,7 +12,7 @@ import {
   Calendar,
   CalendarCheck,
   FileText,
-  FolderOpen,
+  BookMarked,
   Headphones,
   LayoutDashboard,
   Music,
@@ -149,7 +149,7 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
       },
       {
         to: "/panel/resources",
-        icon: FolderOpen,
+        icon: BookMarked,
         labelKey: t("dashboard.layout.links.resources"),
         isPinned: false,
       },
@@ -186,7 +186,7 @@ export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
       },
       {
         to: "/panel/resources",
-        icon: FolderOpen,
+        icon: BookMarked,
         labelKey: t("dashboard.layout.links.resources"),
         isPinned: true,
       },

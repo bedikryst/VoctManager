@@ -37,7 +37,7 @@ import Schedule from "@features/schedule/Schedule";
 import ArtistManagement from "@pages/app/ArtistsPage";
 import { ProjectDashboard } from "@features/projects/ProjectDashboard";
 import ArchiveManagement from "@pages/app/ArchivePage";
-import Resources from "@features/resources/Resources";
+import ChoristerHubPage from "@features/chorister-hub/ChoristerHubPage";
 import CrewManagement from "@features/crew/CrewManagement";
 
 import { CSRFProvider } from "@/app/providers/CSRFProvider";
@@ -107,7 +107,7 @@ export default function App(): React.JSX.Element {
                 <Route path="crew" element={<CrewManagement />} />
                 <Route path="locations" element={<LogisticsLocationsPage />} />
               </Route>
-              <Route path="resources" element={<Resources />} />
+              <Route path="resources" element={<ChoristerHubPage />} />
               <Route path="materials" element={<Materials />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
