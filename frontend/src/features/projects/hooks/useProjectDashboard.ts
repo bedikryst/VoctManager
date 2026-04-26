@@ -35,6 +35,30 @@ import {
 } from "../constants/projectDomain";
 import { compareProjectDateDesc } from "../lib/projectPresentation";
 
+interface PaginatedResponse<T> {
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
+  results: T[];
+}
+
+function extractData<T>(data: T[] | PaginatedResponse<T> | unknown): T[] {
+  if (!data) return [];
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (typeof data === "object" && data !== null && "results" in data) {
+    const paginatedData = data as PaginatedResponse<T>;
+    if (Array.isArray(paginatedData.results)) {
+      return paginatedData.results;
+    }
+  }
+
+  return [];
+}
+
 interface UseProjectDashboardReturn {
   filteredProjects: Project[];
   listFilter: ProjectFilterId;
@@ -176,36 +200,38 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
     };
   }, []);
 
-  const locationMap = useMemo(
-    () =>
-      new Map(
-        (locationsData || []).map((location) => [
-          String(location.id),
-          location,
-        ]),
-      ),
-    [locationsData],
-  );
+  const locationMap = useMemo(() => {
+    // extractData samo wywnioskuje, jak wydobyć tablicę
+    const validLocations = extractData<LocationDto>(locationsData);
 
-  const projects = useMemo(
-    () =>
-      (rawProjects || []).map((project) => {
-        const location = resolveProjectLocation(project, locationMap);
-        const conductor = resolveProjectConductor(project, artistMap);
+    return new Map(
+      validLocations.map((location) => [
+        // TS już wie, że location to LocationDto
+        String(location.id),
+        location,
+      ]),
+    );
+  }, [locationsData]);
 
-        return {
-          ...project,
-          location,
-          ...conductor,
-        };
-      }),
-    [artistMap, locationMap, rawProjects],
-  );
+  const projects = useMemo(() => {
+    const validProjects = extractData<Project>(rawProjects);
+
+    return validProjects.map((project) => {
+      const location = resolveProjectLocation(project, locationMap);
+      const conductor = resolveProjectConductor(project, artistMap);
+
+      return {
+        ...project,
+        location,
+        ...conductor,
+      };
+    });
+  }, [artistMap, locationMap, rawProjects]);
 
   const filteredProjects = useMemo<Project[]>(
     () =>
       projects
-        .filter((project) => {
+        .filter((project: Project) => {
           const status = project.status || PROJECT_STATUS.DRAFT;
 
           if (listFilter === PROJECT_FILTER.ACTIVE) {
@@ -218,7 +244,7 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
 
           return true;
         })
-        .sort((left, right) =>
+        .sort((left: Project, right: Project) =>
           compareProjectDateDesc(left.date_time, right.date_time),
         ),
     [listFilter, projects],

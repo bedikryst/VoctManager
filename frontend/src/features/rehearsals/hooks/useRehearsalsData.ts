@@ -15,6 +15,30 @@ import {
 import type { ProjectTabType } from "../types/rehearsals.dto";
 import type { LocationDto } from "../../logistics/types/logistics.dto";
 
+interface PaginatedResponse<T> {
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
+  results: T[];
+}
+
+function extractData<T>(data: T[] | PaginatedResponse<T> | unknown): T[] {
+  if (!data) return [];
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (typeof data === "object" && data !== null && "results" in data) {
+    const paginatedData = data as PaginatedResponse<T>;
+    if (Array.isArray(paginatedData.results)) {
+      return paginatedData.results;
+    }
+  }
+
+  return [];
+}
+
 export const useRehearsalsData = () => {
   const { t } = useTranslation();
   const [projectTab, setProjectTab] = useState<ProjectTabType>("ACTIVE");
@@ -36,17 +60,22 @@ export const useRehearsalsData = () => {
 
   const markMissingAttendanceMutation = useMarkMissingAttendancesPresent();
 
+  const safeProjects = extractData<(typeof projects)[0]>(projects);
+  const safeRehearsals = extractData<(typeof rehearsals)[0]>(rehearsals);
+  const safeParticipations =
+    extractData<(typeof participations)[0]>(participations);
+
   const activeProjects = useMemo(() => {
-    return (projects || []).filter(
+    return safeProjects.filter(
       (project) => project.status !== "DONE" && project.status !== "CANC",
     );
-  }, [projects]);
+  }, [safeProjects]);
 
   const archivedProjects = useMemo(() => {
-    return (projects || []).filter(
+    return safeProjects.filter(
       (project) => project.status === "DONE" || project.status === "CANC",
     );
-  }, [projects]);
+  }, [safeProjects]);
 
   const displayProjects =
     projectTab === "ACTIVE" ? activeProjects : archivedProjects;
@@ -82,24 +111,24 @@ export const useRehearsalsData = () => {
   const projectRehearsals = useMemo(() => {
     if (!selectedProjectId) return [];
 
-    return rehearsals
+    return safeRehearsals
       .filter((rehearsal) => String(rehearsal.project) === selectedProjectId)
       .sort(
         (left, right) =>
           new Date(left.date_time).getTime() -
           new Date(right.date_time).getTime(),
       );
-  }, [rehearsals, selectedProjectId]);
+  }, [safeRehearsals, selectedProjectId]);
 
   const projectParticipations = useMemo(() => {
     if (!selectedProjectId) return [];
 
-    return participations.filter(
+    return safeParticipations.filter(
       (participation) =>
         String(participation.project) === selectedProjectId &&
         participation.status !== "DEC",
     );
-  }, [participations, selectedProjectId]);
+  }, [safeParticipations, selectedProjectId]);
 
   useEffect(() => {
     if (
