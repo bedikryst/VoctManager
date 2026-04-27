@@ -85,20 +85,22 @@ class ArtistHRService:
                     email=dto.email,
                     first_name=dto.first_name,
                     last_name=dto.last_name,
-                    language=getattr(dto, 'language', 'en')
+                    language=getattr(dto, 'language', 'en'),
+                    first_name_vocative=dto.first_name_vocative or ""
                 )
-                
+
                 # 2. Create Roster-specific entity
                 artist = Artist.objects.create(
-                    user=user, 
-                    first_name=dto.first_name, 
-                    last_name=dto.last_name, 
-                    email=dto.email, 
-                    voice_type=dto.voice_type, 
-                    phone_number=dto.phone_number or "",               
-                    sight_reading_skill=dto.sight_reading_skill, 
-                    vocal_range_bottom=dto.vocal_range_bottom or "",   
-                    vocal_range_top=dto.vocal_range_top or ""          
+                    user=user,
+                    first_name=dto.first_name,
+                    last_name=dto.last_name,
+                    first_name_vocative=dto.first_name_vocative or "",
+                    email=dto.email,
+                    voice_type=dto.voice_type,
+                    phone_number=dto.phone_number or "",
+                    sight_reading_skill=dto.sight_reading_skill,
+                    vocal_range_bottom=dto.vocal_range_bottom or "",
+                    vocal_range_top=dto.vocal_range_top or ""
                 )
 
                 logger.info(f"Successfully provisioned artist HR profile for: {dto.email}")

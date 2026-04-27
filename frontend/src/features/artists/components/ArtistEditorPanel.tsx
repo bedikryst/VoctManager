@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2, Send } from "lucide-react";
+import { useWatch } from "react-hook-form";
 import { cn } from "@/shared/lib/utils";
 
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
@@ -55,6 +56,9 @@ export default function ArtistEditorPanel({
     initialSearchContext,
     onClose,
   );
+
+  const firstNameValue = useWatch({ control: form.control, name: "first_name" });
+  const languageValue = useWatch({ control: form.control, name: "language" });
 
   const handleCloseRequest = () => {
     if (isDirty) {
@@ -154,28 +158,61 @@ export default function ArtistEditorPanel({
                       {t("artists.editor.section_basic", "Dane Podstawowe")}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className={STYLE_LABEL}>
-                          {t("artists.editor.first_name", "Imię *")}
-                        </label>
-                        <Input
-                          type="text"
-                          {...form.register("first_name")}
-                          disabled={isSubmitting}
-                          className={cn(
-                            "font-bold",
-                            form.formState.errors.first_name &&
-                              "border-red-500",
-                          )}
-                        />
-                        {form.formState.errors.first_name && (
-                          <p className="text-red-500 text-xs mt-1.5 ml-1">
-                            {t(
-                              form.formState.errors.first_name
-                                .message as string,
+                      <div className="space-y-3">
+                        <div>
+                          <label className={STYLE_LABEL}>
+                            {t("artists.editor.first_name", "Imię *")}
+                          </label>
+                          <Input
+                            type="text"
+                            {...form.register("first_name")}
+                            disabled={isSubmitting}
+                            className={cn(
+                              "font-bold",
+                              form.formState.errors.first_name &&
+                                "border-red-500",
                             )}
-                          </p>
-                        )}
+                          />
+                          {form.formState.errors.first_name && (
+                            <p className="text-red-500 text-xs mt-1.5 ml-1">
+                              {t(
+                                form.formState.errors.first_name
+                                  .message as string,
+                              )}
+                            </p>
+                          )}
+                        </div>
+                        <AnimatePresence>
+                          {firstNameValue && languageValue === "pl" && (
+                            <motion.div
+                              key="vocative-input"
+                              initial={{ opacity: 0, y: -6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -6 }}
+                              transition={{ duration: 0.18 }}
+                            >
+                              <label className={cn(STYLE_LABEL, "text-ethereal-amethyst/80")}>
+                                {t("artists.editor.first_name_vocative", "Wołacz")}
+                              </label>
+                              <Input
+                                type="text"
+                                {...form.register("first_name_vocative")}
+                                placeholder={t(
+                                  "artists.editor.first_name_vocative_placeholder",
+                                  "np. Krystianie",
+                                )}
+                                disabled={isSubmitting}
+                                className="text-sm text-ethereal-amethyst font-medium"
+                              />
+                              <p className="text-stone-400 text-[10px] mt-1.5 ml-1">
+                                {t(
+                                  "artists.editor.first_name_vocative_hint",
+                                  "Forma używana w powitaniach, np. w mailach.",
+                                )}
+                              </p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                       <div>
                         <label className={STYLE_LABEL}>

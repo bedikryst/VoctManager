@@ -16,6 +16,7 @@ class EnterpriseBaseDTO(BaseModel):
 class ArtistCreateDTO(EnterpriseBaseDTO):
     first_name: str = Field(..., min_length=1, max_length=50)
     last_name: str = Field(..., min_length=1, max_length=50)
+    first_name_vocative: Optional[str] = Field(None, max_length=50)
     email: EmailStr
     voice_type: str = Field(..., min_length=2, max_length=5)
     phone_number: Optional[str] = Field(None, max_length=15)

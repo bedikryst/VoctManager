@@ -9,6 +9,7 @@ import { z } from "zod";
 // 1. Zod Schema defining both validation rules and the shape of the form
 export const artistFormSchema = z.object({
   first_name: z.string().min(1, "artists.validation.first_name_required"),
+  first_name_vocative: z.string().optional(),
   last_name: z.string().min(1, "artists.validation.last_name_required"),
   email: z.string().email("artists.validation.invalid_email"),
   voice_type: z.string().min(1, "artists.validation.voice_type_required"),
@@ -24,6 +25,7 @@ export type ArtistFormValues = z.infer<typeof artistFormSchema>;
 
 export interface ArtistCreateDTO {
   first_name: string;
+  first_name_vocative?: string;
   last_name: string;
   email: string;
   voice_type: string;

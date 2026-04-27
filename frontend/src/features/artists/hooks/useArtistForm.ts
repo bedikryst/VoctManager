@@ -43,6 +43,7 @@ export const useArtistForm = (
     resolver: zodResolver(artistFormSchema),
     defaultValues: {
       first_name: artist?.first_name || defaultNames.first,
+      first_name_vocative: artist?.first_name_vocative || "",
       last_name: artist?.last_name || defaultNames.last,
       email: artist?.email || "",
       phone_number: artist?.phone_number || "",
@@ -63,6 +64,7 @@ export const useArtistForm = (
     if (artist) {
       form.reset({
         first_name: artist.first_name,
+        first_name_vocative: artist.first_name_vocative || "",
         last_name: artist.last_name,
         email: artist.email,
         phone_number: artist.phone_number || "",
@@ -78,6 +80,7 @@ export const useArtistForm = (
     } else {
       form.reset({
         first_name: defaultNames.first,
+        first_name_vocative: "",
         last_name: defaultNames.last,
         email: "",
         phone_number: "",
@@ -100,6 +103,7 @@ export const useArtistForm = (
 
     const basePayload: ArtistCreateDTO = {
       first_name: data.first_name.trim(),
+      first_name_vocative: data.first_name_vocative?.trim() || undefined,
       last_name: data.last_name.trim(),
       email: data.email.trim(),
       voice_type: data.voice_type,

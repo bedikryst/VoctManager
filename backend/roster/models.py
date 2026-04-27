@@ -56,6 +56,11 @@ class Artist(EnterpriseBaseModel):
     )
     vocal_range_bottom = models.CharField(max_length=5, blank=True, help_text=_("e.g. G2"), verbose_name=_("Range (Bottom)"))
     vocal_range_top = models.CharField(max_length=5, blank=True, help_text=_("e.g. C5"), verbose_name=_("Range (Top)"))
+    first_name_vocative = models.CharField(
+        max_length=50, blank=True,
+        verbose_name=_("First Name (Vocative)"),
+        help_text=_("Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in personalized greetings and emails.")
+    )
 
     class Meta:
         verbose_name = _("Artist")
