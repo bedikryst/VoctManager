@@ -1166,6 +1166,17 @@
       }
     },
     "editor": {
+      "tabs": {
+        "details": "Szczegóły",
+        "cast": "Obsada",
+        "crew": "Ekipa",
+        "logistics": "Logistyka",
+        "program": "Program i Repertuar",
+        "budget": "Kosztorys",
+        "micro_cast": "Divisi i Mikro-Casting",
+        "rehearsals": "Próby",
+        "matrix": "Macierz Frekwencji"
+      },
       "active_tab": "Aktywna zakładka",
       "archive_badge": "Archiwum",
       "create_description": "Najpierw zapisz podstawowe dane wydarzenia, a następnie przejdź do kolejnych zakładek operacyjnych.",

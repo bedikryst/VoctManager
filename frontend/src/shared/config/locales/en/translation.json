@@ -1156,6 +1156,17 @@
       }
     },
     "editor": {
+      "tabs": {
+        "details": "Details",
+        "cast": "Cast",
+        "crew": "Crew",
+        "logistics": "Logistics",
+        "program": "Program and Repertoire",
+        "budget": "Budget",
+        "micro_cast": "Divisi and Micro-Casting",
+        "rehearsals": "Rehearsals",
+        "matrix": "Attendance Matrix"
+      },
       "active_tab": "Active tab",
       "archive_badge": "Archive",
       "create_description": "Save the core event details first, then continue to the operational tabs.",

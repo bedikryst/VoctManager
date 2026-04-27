@@ -363,25 +363,30 @@ export const ProjectEditorPanel = ({
               }}
               className="fixed top-0 bottom-0 right-0 z-(--z-nav-sheet) flex justify-end w-full max-w-[1600px] p-0 md:p-4 focus:outline-none"
             >
-              <h2 id="project-editor-title" className="sr-only">
+              <Heading as="h2" id="project-editor-title" className="sr-only">
                 {project
                   ? project.title
                   : t("projects.editor.new_project_title")}
-              </h2>
-              <p id="project-editor-desc" className="sr-only">
+              </Heading>
+              <Text id="project-editor-desc" className="sr-only">
                 {project
                   ? t("projects.editor.workspace_description")
                   : t("projects.editor.create_description")}
-              </p>
+              </Text>
 
               <GlassCard
                 variant="solid"
                 padding="none"
                 isHoverable={false}
-                className="h-full w-full rounded-none md:rounded-[2rem] border-ethereal-incense/20"
+                className="h-full w-full rounded-none md:rounded-[2rem] border-ethereal-incense/20 flex flex-col shadow-glass-solid"
               >
                 <div className="flex h-full flex-col">
-                  <div className="relative flex-shrink-0 border-b border-ethereal-incense/10 bg-ethereal-marble/90 px-6 pb-5 pt-8 backdrop-blur-2xl md:px-10">
+                  <GlassCard
+                    variant="light"
+                    padding="none"
+                    isHoverable={false}
+                    className="relative flex-shrink-0 border-b border-glass-border px-6 pb-5 pt-8 md:px-10 z-[10] rounded-none md:rounded-t-[2rem]"
+                  >
                     <div className="flex items-start justify-between gap-6">
                       <div className="max-w-4xl space-y-3">
                         <Eyebrow color="muted">
@@ -433,16 +438,16 @@ export const ProjectEditorPanel = ({
 
                     {project && (
                       <GlassCard
-                        variant="light"
+                        variant="ethereal"
                         padding="sm"
                         isHoverable={false}
-                        className="mt-6 overflow-hidden"
+                        className="mt-6 overflow-hidden rounded-[1rem] shadow-none border-glass-border"
                       >
                         <div
                           data-scroll-lock-ignore="true"
                           role="tablist"
                           aria-label={t("projects.editor.tabs_aria")}
-                          className="flex gap-2 overflow-x-auto touch-pan-x overscroll-contain no-scrollbar"
+                          className="flex gap-2 overflow-x-auto touch-pan-x overscroll-contain no-scrollbar ethereal-scroll"
                         >
                           {TAB_CONFIG.map((tab) => {
                             const isActive = activeTab === tab.id;
@@ -477,11 +482,11 @@ export const ProjectEditorPanel = ({
                         </div>
                       </GlassCard>
                     )}
-                  </div>
+                  </GlassCard>
 
                   <div
                     data-scroll-lock-ignore="true"
-                    className=" flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pt-4 md:px-10"
+                    className=" flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pt-4 md:px-10 ethereal-scroll"
                   >
                     <AnimatePresence mode="wait">
                       <motion.div

@@ -1165,6 +1165,17 @@
       }
     },
     "editor": {
+      "tabs": {
+        "details": "Détails",
+        "cast": "Distribution",
+        "crew": "Équipe",
+        "logistics": "Logistique",
+        "program": "Programme et Répertoire",
+        "budget": "Budget",
+        "micro_cast": "Divisi et micro-casting",
+        "rehearsals": "Répétitions",
+        "matrix": "Matrice de présence"
+      },
       "active_tab": "Onglet actif",
       "archive_badge": "Archive",
       "create_description": "Enregistrez d’abord les informations principales de l’événement, puis poursuivez dans les onglets opérationnels.",
