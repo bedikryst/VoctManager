@@ -2,12 +2,12 @@
 # Copyright (C) 2026 VoctEnsemble
 # This file is distributed under the same license as the VoctManager package.
 # Krystian Bugalski <admin@voctensemble.com>, 2026.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: VoctManager 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-26 15:17+0000\n"
+"POT-Creation-Date: 2026-04-27 14:24+0000\n"
 "PO-Revision-Date: 2026-04-09 17:15+0100\n"
 "Last-Translator: Krystian Bugalski\n"
 "Language-Team: Polish\n"
@@ -21,15 +21,13 @@ msgstr ""
 #: archive/models.py:35
 #, python-format
 msgid "File size must be under %(size)s MB. Current: %(current)s MB"
-msgstr ""
-"Rozmiar pliku musi być mniejszy niż %(size)s MB. Obecnie: %(current)s "
-"MBRozmiar pliku musi być mniejszy niż %(size)s MB. Aktualny: %(current)s MB"
+msgstr "Rozmiar pliku musi być mniejszy niż %(size)s MB. Aktualny: %(current)s MB"
 
-#: archive/models.py:46 roster/models.py:43 roster/models.py:258
+#: archive/models.py:46 roster/models.py:43 roster/models.py:263
 msgid "First Name"
 msgstr "Imię"
 
-#: archive/models.py:47 roster/models.py:44 roster/models.py:259
+#: archive/models.py:47 roster/models.py:44 roster/models.py:264
 msgid "Last Name"
 msgstr "Nazwisko"
 
@@ -89,7 +87,7 @@ msgstr "Muzyka rozrywkowa"
 msgid "Folk / Traditional"
 msgstr "Folk / Tradycyjna"
 
-#: archive/models.py:73 logistics/models.py:15 roster/models.py:256
+#: archive/models.py:73 logistics/models.py:16 roster/models.py:261
 msgid "Other"
 msgstr "Inne"
 
@@ -174,7 +172,7 @@ msgid "Epoch"
 msgstr "Epoka"
 
 #: archive/models.py:114 archive/models.py:138 archive/models.py:167
-#: roster/models.py:131 roster/models.py:177
+#: roster/models.py:136 roster/models.py:182
 msgid "Piece"
 msgstr "Utwór"
 
@@ -318,7 +316,7 @@ msgstr "Artysta / Śpiewak"
 msgid "Crew / Collaborator"
 msgstr "Obsługa / Współpracownik"
 
-#: core/ical_service.py:74 roster/models.py:213 roster/models.py:232
+#: core/ical_service.py:74 roster/models.py:218 roster/models.py:237
 msgid "Rehearsal"
 msgstr "Próba"
 
@@ -330,8 +328,8 @@ msgstr "Brak"
 msgid "Focus"
 msgstr "Temat próby"
 
-#: core/ical_service.py:77 roster/models.py:117 roster/models.py:154
-#: roster/models.py:191 roster/models.py:287
+#: core/ical_service.py:77 roster/models.py:122 roster/models.py:159
+#: roster/models.py:196 roster/models.py:292
 msgid "Project"
 msgstr "Projekt"
 
@@ -339,11 +337,11 @@ msgstr "Projekt"
 msgid "Concert"
 msgstr "Koncert"
 
-#: core/ical_service.py:100 roster/models.py:91
+#: core/ical_service.py:100 roster/models.py:96
 msgid "Dress Code (Male)"
 msgstr "Strój (Mężczyźni)"
 
-#: core/ical_service.py:101 roster/models.py:92
+#: core/ical_service.py:101 roster/models.py:97
 msgid "Dress Code (Female)"
 msgstr "Strój (Kobiety)"
 
@@ -359,9 +357,8 @@ msgstr "Polski"
 msgid ""
 "The core authentication user linked to this profile. Cascades on hard delete."
 msgstr ""
-"Główny użytkownik autoryzacyjny powiązany z tym profilem. Kaskadowo usuwany "
-"przy twardym usunięciu.Główne konto użytkownika powiązane z tym profilem. "
-"Kaskadowe usuwanie przy twardym skasowaniu."
+"Główne konto użytkownika powiązane z tym profilem. Kaskadowe usuwanie przy "
+"twardym skasowaniu."
 
 #: core/models.py:97
 msgid "International format phone number."
@@ -375,9 +372,8 @@ msgstr "Preferowany język interfejsu użytkownika."
 msgid ""
 "Local timezone for this entity. Critical for UI rendering and iCal feeds."
 msgstr ""
-"Lokalna strefa czasowa dla tej encji. Krytyczna dla renderowania UI i feedów "
-"iCal.Lokalna strefa czasowa dla tego podmiotu. Kluczowa dla renderowania UI "
-"i kanałów iCal."
+"Lokalna strefa czasowa dla tego podmiotu. Kluczowa dla renderowania UI i "
+"kanałów iCal."
 
 #: core/models.py:117
 msgid "Primary dietary requirement for catering."
@@ -440,8 +436,6 @@ msgid "Health / Medical"
 msgstr "Zdrowie / Medyczne"
 
 #: documents/models.py:20
-#, fuzzy
-#| msgid "Sheet Music"
 msgid "Music"
 msgstr "Muzyka"
 
@@ -454,8 +448,6 @@ msgid "Briefcase / Work"
 msgstr "Teczka / Praca"
 
 #: documents/models.py:23
-#, fuzzy
-#| msgid "Location"
 msgid "Location / Map"
 msgstr "Miejsce / Mapa"
 
@@ -464,8 +456,6 @@ msgid "Institution / Foundation"
 msgstr "Instytucja / Fundacja"
 
 #: documents/models.py:25
-#, fuzzy
-#| msgid "Pronunciation / Diction"
 msgid "Education / Training"
 msgstr "Edukacja / Szkolenie"
 
@@ -482,8 +472,6 @@ msgid "Microphone / Performance"
 msgstr "Mikrofon / Występ"
 
 #: documents/models.py:36
-#, fuzzy
-#| msgid "Last Name"
 msgid "Category Name"
 msgstr "Nazwa kategorii"
 
@@ -491,7 +479,7 @@ msgstr "Nazwa kategorii"
 msgid "URL Slug"
 msgstr "Slug URL"
 
-#: documents/models.py:38 documents/models.py:74 roster/models.py:111
+#: documents/models.py:38 documents/models.py:74 roster/models.py:116
 msgid "Description"
 msgstr "Opis"
 
@@ -528,8 +516,6 @@ msgid "Category"
 msgstr "Kategoria"
 
 #: documents/models.py:73
-#, fuzzy
-#| msgid "Project Title"
 msgid "Document Title"
 msgstr "Tytuł dokumentu"
 
@@ -574,70 +560,68 @@ msgid "Concert Hall"
 msgstr "Sala koncertowa"
 
 #: logistics/models.py:10
+msgid "Church"
+msgstr "Kościół"
+
+#: logistics/models.py:11
 msgid "Rehearsal Room"
 msgstr "Sala prób"
 
-#: logistics/models.py:11
+#: logistics/models.py:12
 msgid "Hotel"
 msgstr "Hotel"
 
-#: logistics/models.py:12
+#: logistics/models.py:13
 msgid "Airport"
 msgstr "Lotnisko"
 
-#: logistics/models.py:13
+#: logistics/models.py:14
 msgid "Transit Station"
 msgstr "Stacja przesiadkowa"
 
-#: logistics/models.py:14
+#: logistics/models.py:15
 msgid "Private Workspace"
 msgstr "Prywatna przestrzeń robocza"
 
-#: logistics/models.py:31
+#: logistics/models.py:32
 msgid ""
 "Internal display name, e.g., 'National Philharmonic' or 'Conductor's Room'"
 msgstr ""
 "Wewnętrzna nazwa wyświetlana, np. 'Filharmonia Narodowa' lub 'Pokój "
-"dyrygenta'Wewnętrzna nazwa wyświetlana, np. 'Filharmonia Narodowa' lub "
-"'Pokój dyrygenta'"
+"dyrygenta'"
 
-#: logistics/models.py:44
+#: logistics/models.py:45
 msgid ""
 "Unique identifier from Google Places API. Null for private/custom locations."
 msgstr ""
-"Unikalny identyfikator z Google Places API. Null dla prywatnych/"
-"niestandardowych lokalizacji.Unikalny identyfikator z Google Places API. "
-"Brak dla prywatnych/własnych lokalizacji."
+"Unikalny identyfikator z Google Places API. Brak dla prywatnych/własnych "
+"lokalizacji."
 
-#: logistics/models.py:47
+#: logistics/models.py:48
 msgid "Full official address or precise custom description."
 msgstr "Pełny oficjalny adres lub precyzyjny opis niestandardowy."
 
-#: logistics/models.py:68
+#: logistics/models.py:69
 msgid ""
 "IANA timezone string, e.g., 'Europe/Warsaw'. Updated via external service."
 msgstr ""
-"Ciąg strefy czasowej IANA, np. 'Europe/Warsaw'. Aktualizowany przez "
-"zewnętrzną usługę.Ciąg strefy czasowej IANA, np. 'Europe/Warsaw'. "
-"Aktualizowany przez usługę zewnętrzną."
+"Ciąg strefy czasowej IANA, np. 'Europe/Warsaw'. Aktualizowany przez usługę "
+"zewnętrzną."
 
-#: logistics/models.py:72
+#: logistics/models.py:73
 msgid ""
 "Internal logistics instructions, e.g., 'Gate code: 1234', 'Backstage "
 "entrance'."
 msgstr ""
-"Wewnętrzne instrukcje logistyczne, np. 'Kod do bramy: 1234', 'Wejście na "
-"zaplecze'.Wewnętrzne instrukcje logistyczne, np. 'Kod bramy: 1234', 'Wejście "
-"od kulis'."
+"Wewnętrzne instrukcje logistyczne, np. 'Kod bramy: 1234', 'Wejście od kulis'."
 
-#: logistics/models.py:78
+#: logistics/models.py:79
 msgid ""
 "Designates whether this location is available for new projects. Use instead "
 "of deletion."
 msgstr ""
-"Określa, czy ta lokalizacja jest dostępna dla nowych projektów. Użyj zamiast "
-"usuwania.Określa, czy ta lokalizacja jest dostępna dla nowych projektów. "
-"Używaj zamiast usuwania."
+"Określa, czy ta lokalizacja jest dostępna dla nowych projektów. Używaj "
+"zamiast usuwania."
 
 #: notifications/email_service.py:44
 msgid "You have a new project invitation"
@@ -692,16 +676,12 @@ msgid "Attendance Submitted"
 msgstr "Przesłano listę obecności"
 
 #: notifications/email_service.py:57
-#, fuzzy
-#| msgid "New update from VoctManager"
 msgid "New message from management"
-msgstr "Nowa aktualizacja od VoctManager"
+msgstr "Nowa wiadomość od zarządu"
 
 #: notifications/email_service.py:58
-#, fuzzy
-#| msgid "Your password has been changed"
 msgid "Your message has been read"
-msgstr "Twoje hasło zostało zmienione"
+msgstr "Twoja wiadomość została przeczytana"
 
 #: notifications/email_service.py:68
 msgid "New update from VoctManager"
@@ -780,10 +760,8 @@ msgid "Direct Message from Management"
 msgstr "Bezpośrednia wiadomość od zarządu"
 
 #: notifications/models.py:56
-#, fuzzy
-#| msgid "Absence Requested by Artist"
 msgid "Message Read by Artist"
-msgstr "Prośba o nieobecność"
+msgstr "Wiadomość przeczytana przez artystę"
 
 #: notifications/models.py:69
 msgid "The user receiving the notification."
@@ -838,8 +816,7 @@ msgstr "Użytkownik będący właścicielem tego urządzenia."
 #: notifications/models.py:137
 msgid "The FCM or APNs device token provided by the client infrastructure."
 msgstr ""
-"Token urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta.Token "
-"urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta."
+"Token urządzenia FCM lub APNs dostarczony przez infrastrukturę klienta."
 
 #: notifications/models.py:143
 msgid "Hardware/Software platform of the registered device."
@@ -850,9 +827,8 @@ msgid ""
 "Indicates whether the token is currently valid. Invalidated automatically by "
 "delivery failures."
 msgstr ""
-"Wskazuje, czy token jest obecnie ważny. Unieważniany automatycznie przy "
-"błędach dostarczenia.Określa, czy token jest obecnie ważny. Unieważniany "
-"automatycznie przy błędach dostarczenia."
+"Określa, czy token jest obecnie ważny. Unieważniany automatycznie przy "
+"błędach dostarczenia."
 
 #: notifications/models.py:153
 msgid "Push Device"
@@ -869,9 +845,7 @@ msgstr "Użytkownik definiujący te preferencje."
 #: notifications/models.py:177
 msgid "The specific business event category this preference applies to."
 msgstr ""
-"Konkretna kategoria zdarzeń biznesowych, do której odnosi się ta "
-"preferencja.Konkretna kategoria zdarzeń biznesowych, której dotyczy ta "
-"preferencja."
+"Konkretna kategoria zdarzeń biznesowych, której dotyczy ta preferencja."
 
 #: notifications/models.py:181
 msgid "Delivery authorization for Email channel."
@@ -921,7 +895,7 @@ msgstr "Baryton"
 msgid "Bass"
 msgstr "Bas"
 
-#: roster/models.py:30 roster/models.py:100
+#: roster/models.py:30 roster/models.py:105
 msgid "Conductor"
 msgstr "Dyrygent"
 
@@ -935,11 +909,11 @@ msgid ""
 "account is deleted."
 msgstr "Powiązana tożsamość użytkownika."
 
-#: roster/models.py:47 roster/models.py:260
+#: roster/models.py:47 roster/models.py:265
 msgid "Email"
 msgstr "E-mail"
 
-#: roster/models.py:49 roster/models.py:261
+#: roster/models.py:49 roster/models.py:266
 msgid "Phone"
 msgstr "Telefon"
 
@@ -971,271 +945,279 @@ msgstr "np. C5"
 msgid "Range (Top)"
 msgstr "Skala (Góra)"
 
-#: roster/models.py:61 roster/models.py:153
+#: roster/models.py:61
+msgid "First Name (Vocative)"
+msgstr "Imię (Wołacz)"
+
+#: roster/models.py:62
+msgid ""
+"Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in personalized "
+"greetings and emails."
+msgstr ""
+"Polska forma wołacza, np. 'Krystianie' dla 'Krystian'. Używana w "
+"spersonalizowanych powitaniach i e-mailach."
+
+#: roster/models.py:66 roster/models.py:158
 msgid "Artist"
 msgstr "Artysta"
 
-#: roster/models.py:62
+#: roster/models.py:67
 msgid "Artists"
 msgstr "Artyści"
 
-#: roster/models.py:78
+#: roster/models.py:83
 msgid "Draft / Planned"
 msgstr "Szkic / Planowany"
 
-#: roster/models.py:79
+#: roster/models.py:84
 msgid "Active / In Prep"
 msgstr "Aktywny / W przygotowaniu"
 
-#: roster/models.py:80
+#: roster/models.py:85
 msgid "Completed"
 msgstr "Zakończony"
 
-#: roster/models.py:81
+#: roster/models.py:86
 msgid "Cancelled"
 msgstr "Odwołany"
 
-#: roster/models.py:83
+#: roster/models.py:88
 msgid "Project Title"
 msgstr "Tytuł projektu"
 
-#: roster/models.py:84
+#: roster/models.py:89
 msgid "Event Date & Time"
 msgstr "Data i godzina wydarzenia"
 
-#: roster/models.py:85
+#: roster/models.py:90
 msgid "Call time for performers"
 msgstr "Godzina zbiórki dla wykonawców"
 
-#: roster/models.py:85
+#: roster/models.py:90
 msgid "Call Time"
 msgstr "Zbiórka"
 
-#: roster/models.py:89
+#: roster/models.py:94
 msgid ""
 "Local timezone for this project's primary location. Critical for UI "
 "rendering and iCal feeds."
 msgstr ""
-"Lokalna strefa czasowa dla głównej lokalizacji tego projektu. Krytyczna dla "
-"renderowania UI i feedów iCal.Lokalna strefa czasowa dla głównej lokalizacji "
-"projektu. Kluczowa dla renderowania UI i kanałów iCal."
+"Lokalna strefa czasowa dla głównej lokalizacji projektu. Kluczowa dla "
+"renderowania UI i kanałów iCal."
 
-#: roster/models.py:101
+#: roster/models.py:106
 msgid "The Maestro leading this project."
 msgstr "Maestro prowadzący ten projekt."
 
-#: roster/models.py:109
+#: roster/models.py:114
 msgid "Primary location for the project. Dictates the default timezone."
 msgstr "Główna lokalizacja projektu. Narzuca domyślną strefę czasową."
 
-#: roster/models.py:112 roster/models.py:155 roster/models.py:234
-#: roster/models.py:289
+#: roster/models.py:117 roster/models.py:160 roster/models.py:239
+#: roster/models.py:294
 msgid "Status"
 msgstr "Status"
 
-#: roster/models.py:113
+#: roster/models.py:118
 msgid "Run-sheet"
 msgstr "Harmonogram minutowy"
 
-#: roster/models.py:114
+#: roster/models.py:119
 msgid "Spotify playlist URL"
 msgstr "Link do playlisty Spotify"
 
-#: roster/models.py:114
+#: roster/models.py:119
 msgid "Spotify Playlist"
 msgstr "Playlista Spotify"
 
-#: roster/models.py:118
+#: roster/models.py:123
 msgid "Projects"
 msgstr "Projekty"
 
-#: roster/models.py:132
+#: roster/models.py:137
 msgid "Order (1, 2, 3...)"
 msgstr "Kolejność"
 
-#: roster/models.py:133
+#: roster/models.py:138
 msgid "Is Encore?"
 msgstr "Bis?"
 
-#: roster/models.py:137
+#: roster/models.py:142
 msgid "Program Item"
 msgstr "Punkt programu"
 
-#: roster/models.py:138
+#: roster/models.py:143
 msgid "Concert Program (Setlist)"
 msgstr "Program koncertu"
 
-#: roster/models.py:149
+#: roster/models.py:154
 msgid "Invited"
 msgstr "Zaproszony"
 
-#: roster/models.py:150 roster/models.py:284
+#: roster/models.py:155 roster/models.py:289
 msgid "Confirmed"
 msgstr "Potwierdzony"
 
-#: roster/models.py:151
+#: roster/models.py:156
 msgid "Declined"
 msgstr "Odrzucony"
 
-#: roster/models.py:156 roster/models.py:290
+#: roster/models.py:161 roster/models.py:295
 msgid "Fee"
 msgstr "Honorarium"
 
-#: roster/models.py:159
+#: roster/models.py:164
 msgid "Participation"
 msgstr "Udział"
 
-#: roster/models.py:160
+#: roster/models.py:165
 msgid "Participations"
 msgstr "Uczestnictwo"
 
-#: roster/models.py:176 roster/models.py:233
+#: roster/models.py:181 roster/models.py:238
 msgid "Participant"
 msgstr "Uczestnik"
 
-#: roster/models.py:178
+#: roster/models.py:183
 msgid "Voice Line (Divisi)"
 msgstr "Głos (Divisi)"
 
-#: roster/models.py:179
+#: roster/models.py:184
 msgid "Gives Pitch (Tuning Fork)"
 msgstr "Podaje ton (Kamerton)"
 
-#: roster/models.py:180
+#: roster/models.py:185
 msgid "Notes"
 msgstr "Uwagi"
 
-#: roster/models.py:183
+#: roster/models.py:188
 msgid "Piece Casting"
 msgstr "Obsada utworu"
 
-#: roster/models.py:184
+#: roster/models.py:189
 msgid "Piece Castings"
 msgstr "Obsady utworów"
 
-#: roster/models.py:192
+#: roster/models.py:197
 msgid "Date & Time"
 msgstr "Data i godzina"
 
-#: roster/models.py:196
+#: roster/models.py:201
 msgid ""
 "Local timezone for this specific rehearsal. Essential for tours crossing "
 "multiple timezones."
 msgstr ""
-"Lokalna strefa czasowa dla tej konkretnej próby. Niezbędna dla tras "
-"koncertowych obejmujących wiele stref czasowych.Lokalna strefa czasowa dla "
-"tej konkretnej próby. Istotna przy trasach koncertowych przez wiele stref "
-"czasowych."
+"Lokalna strefa czasowa dla tej konkretnej próby. Istotna przy trasach "
+"koncertowych przez wiele stref czasowych."
 
-#: roster/models.py:204
+#: roster/models.py:209
 msgid ""
 "Specific location for this rehearsal. Overrides project default if needed."
 msgstr ""
-"Konkretna lokalizacja dla tej próby. W razie potrzeby nadpisuje domyślną dla "
-"projektu.Konkretne miejsce tej próby. Nadpisuje domyślne miejsce projektu w "
-"razie potrzeby."
+"Konkretne miejsce tej próby. Nadpisuje domyślne miejsce projektu w razie "
+"potrzeby."
 
-#: roster/models.py:206
+#: roster/models.py:211
 msgid "Rehearsal Focus"
 msgstr "Temat próby"
 
-#: roster/models.py:207
+#: roster/models.py:212
 msgid "Is Mandatory"
 msgstr "Obowiązkowa"
 
-#: roster/models.py:209
+#: roster/models.py:214
 msgid "Invited Singers"
 msgstr "Zaproszeni śpiewacy"
 
-#: roster/models.py:214
+#: roster/models.py:219
 msgid "Rehearsals"
 msgstr "Próby"
 
-#: roster/models.py:226
+#: roster/models.py:231
 msgid "Present"
 msgstr "Obecny"
 
-#: roster/models.py:227
+#: roster/models.py:232
 msgid "Late"
 msgstr "Spóźniony"
 
-#: roster/models.py:228
+#: roster/models.py:233
 msgid "Absent"
 msgstr "Nieobecny"
 
-#: roster/models.py:229
+#: roster/models.py:234
 msgid "Excused"
 msgstr "Usprawiedliwiony"
 
-#: roster/models.py:235
+#: roster/models.py:240
 msgid "Minutes Late"
 msgstr "Minuty spóźnienia"
 
-#: roster/models.py:236
+#: roster/models.py:241
 msgid "Excuse Note"
 msgstr "Usprawiedliwienie"
 
-#: roster/models.py:239
+#: roster/models.py:244
 msgid "Attendance"
 msgstr "Obecność"
 
-#: roster/models.py:240
+#: roster/models.py:245
 msgid "Attendances"
 msgstr "Lista obecności"
 
-#: roster/models.py:251
+#: roster/models.py:256
 msgid "Sound Engineering"
 msgstr "Nagłośnienie"
 
-#: roster/models.py:252
+#: roster/models.py:257
 msgid "Lighting Design"
 msgstr "Oświetlenie"
 
-#: roster/models.py:253
+#: roster/models.py:258
 msgid "Visual Arts"
 msgstr "Oprawa wizualna"
 
-#: roster/models.py:254
+#: roster/models.py:259
 msgid "Instrumentalist"
 msgstr "Instrumentalista"
 
-#: roster/models.py:255
+#: roster/models.py:260
 msgid "Logistics"
 msgstr "Logistyka"
 
-#: roster/models.py:262
+#: roster/models.py:267
 msgid "Company / Brand"
 msgstr "Firma / Marka"
 
-#: roster/models.py:263
+#: roster/models.py:268
 msgid "Specialty"
 msgstr "Specjalizacja"
 
-#: roster/models.py:266
+#: roster/models.py:271
 msgid "Collaborator (Crew)"
 msgstr "Współpracownik (Obsługa)"
 
-#: roster/models.py:267
+#: roster/models.py:272
 msgid "Collaborators"
 msgstr "Współpracownicy"
 
-#: roster/models.py:283
+#: roster/models.py:288
 msgid "Tentatively Booked"
 msgstr "Wstępnie zarezerwowany"
 
-#: roster/models.py:286
+#: roster/models.py:291
 msgid "Collaborator"
 msgstr "Współpracownik"
 
-#: roster/models.py:288
+#: roster/models.py:293
 msgid "Role Description"
 msgstr "Opis roli"
 
-#: roster/models.py:293
+#: roster/models.py:298
 msgid "Crew Assignment"
 msgstr "Przypisanie obsługi"
 
-#: roster/models.py:294
+#: roster/models.py:299
 msgid "Crew Assignments"
 msgstr "Obsługa techniczna"
 
@@ -1258,8 +1240,8 @@ msgstr "Twój profil oczekuje"
 #: templates/emails/password_changed.html:46
 #: templates/emails/welcome_email.html:46
 #, python-format
-msgid "Dear %(first_name)s,"
-msgstr "Drogi %(first_name)s,"
+msgid "Dear %(first_name_vocative|default:first_name)s,"
+msgstr "Drogi/a %(first_name_vocative|default:first_name)s,"
 
 #: templates/emails/account_activation.html:48
 #: templates/emails/account_activation.txt:6
@@ -1343,11 +1325,6 @@ msgid "The VoctEnsemble Team"
 msgstr "Zespół VoctEnsemble"
 
 #: templates/emails/account_activation.txt:8
-#, fuzzy
-#| msgid ""
-#| "Your exclusive access to VoctManager has been prepared. Complete the "
-#| "final activation step to set your secure password and enter the "
-#| "operational workspace used for our projects and rehearsals."
 msgid ""
 "We are honored to invite you to our digital workspace. Your profile has been "
 "meticulously prepared. Please complete the final activation step to "
@@ -1357,15 +1334,11 @@ msgstr ""
 "Mamy zaszczyt zaprosić Cię do naszej cyfrowej przestrzeni roboczej. Twój "
 "profil został skrupulatnie przygotowany. Dokończ ostatni krok aktywacji, aby "
 "ustanowić bezpieczne dane logowania i wejść do operacyjnego serca naszego "
-"zespołu.Twój ekskluzywny dostęp do platformy VoctManager jest już gotowy. "
-"Dokończ proces aktywacji, aby ustawić bezpieczne hasło i uzyskać dostęp do "
-"panelu operacyjnego, w którym zarządzamy naszymi projektami i próbami."
+"zespołu."
 
 #: templates/emails/account_activation.txt:16
-#, fuzzy
-#| msgid "ACTIVATE ACCOUNT NOW:"
 msgid "ACTIVATE YOUR PROFILE"
-msgstr "AKTYWUJ KONTO TERAZ:"
+msgstr "AKTYWUJ SWÓJ PROFIL"
 
 #: templates/emails/account_activation.txt:22
 msgid "FOR YOUR SECURITY"
@@ -1396,9 +1369,7 @@ msgid ""
 "from our systems in compliance with our privacy policy."
 msgstr ""
 "Wszystkie dane osobowe powiązane z Twoim kontem zostały trwale usunięte z "
-"naszych systemów zgodnie z naszą polityką prywatności.Wszystkie dane osobowe "
-"powiązane z Twoim kontem zostały trwale usunięte z naszych systemów zgodnie "
-"z naszą polityką prywatności."
+"naszych systemów zgodnie z naszą polityką prywatności."
 
 #: templates/emails/account_deleted.html:64
 #: templates/emails/account_deleted.txt:15
@@ -1415,10 +1386,8 @@ msgstr ""
 "sentymentem wspominać."
 
 #: templates/emails/account_deleted.html:85
-#, fuzzy
-#| msgid "Information"
 msgid "Confirmation"
-msgstr "Informacja"
+msgstr "Potwierdzenie"
 
 #: templates/emails/account_deleted.html:86
 #: templates/emails/account_deleted.txt:17
@@ -1436,8 +1405,8 @@ msgstr "Zamknięcie konta"
 #: templates/emails/system_notification.html:54
 #: templates/emails/system_notification.txt:8
 #, python-format
-msgid "Hello %(first_name)s,"
-msgstr "Witaj %(first_name)s,"
+msgid "Hello %(first_name_vocative|default:first_name)s,"
+msgstr "Witaj %(first_name_vocative|default:first_name)s,"
 
 #: templates/emails/account_deleted.txt:19
 #: templates/emails/password_changed.txt:19
@@ -1447,12 +1416,8 @@ msgid "Musically yours,"
 msgstr "Z muzycznym pozdrowieniem,"
 
 #: templates/emails/base.html:125
-#, fuzzy
-#| msgid "Automatically generated. Please do not reply to this message."
 msgid "Automatically generated. Please do not reply."
-msgstr ""
-"Wiadomość wygenerowana automatycznie. Prosimy nie odpowiadać.Wiadomość "
-"generowana automatycznie. Prosimy nie odpowiadać na tę wiadomość."
+msgstr "Wiadomość wygenerowana automatycznie. Prosimy nie odpowiadać."
 
 #: templates/emails/base.html:135
 msgid ""
@@ -1504,10 +1469,8 @@ msgid "Your password has been changed"
 msgstr "Twoje hasło zostało zmienione"
 
 #: templates/emails/password_changed.html:26
-#, fuzzy
-#| msgid "For your security"
 msgid "Your account security"
-msgstr "Dla Twojego bezpieczeństwa"
+msgstr "Bezpieczeństwo Twojego konta"
 
 #: templates/emails/password_changed.html:54
 #: templates/emails/password_changed.txt:9
@@ -1516,15 +1479,12 @@ msgid ""
 "changed."
 msgstr ""
 "Piszemy, aby potwierdzić, że Twoje hasło w VoctManager zostało niedawno "
-"zmienione.Piszemy, aby potwierdzić, że hasło do Twojego konta VoctManager "
-"zostało niedawno zmienione."
+"zmienione."
 
 #: templates/emails/password_changed.html:59
 #: templates/emails/password_changed.txt:11
 msgid "If you made this change, no further action is required."
-msgstr ""
-"Jeśli dokonałeś tej zmiany, nie są wymagane żadne dalsze działania.Jeśli to "
-"Ty dokonałeś/aś tej zmiany, nie musisz podejmować żadnych działań."
+msgstr "Jeśli dokonałeś tej zmiany, nie są wymagane żadne dalsze działania."
 
 #: templates/emails/password_changed.html:74
 #: templates/emails/password_changed.txt:13
@@ -1538,9 +1498,7 @@ msgid ""
 "immediately to secure your account."
 msgstr ""
 "Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z naszym zespołem "
-"administracyjnym, aby zabezpieczyć konto.Jeśli nie dokonałeś/aś tej zmiany, "
-"natychmiast skontaktuj się z naszym zespołem administracyjnym, aby "
-"zabezpieczyć konto."
+"administracyjnym, aby zabezpieczyć konto."
 
 #: templates/emails/password_changed.html:94
 msgid "Immediate action required"
@@ -1570,10 +1528,8 @@ msgid "New notification"
 msgstr "Nowe powiadomienie"
 
 #: templates/emails/system_notification.html:34
-#, fuzzy
-#| msgid "Notification Preference"
 msgid "Notification from your workspace"
-msgstr "Preferencja powiadomień"
+msgstr "Powiadomienie z Twojej przestrzeni roboczej"
 
 #: templates/emails/system_notification.html:70
 #, python-format
@@ -1601,10 +1557,8 @@ msgstr "Miejsce:"
 
 #: templates/emails/system_notification.html:117
 #: templates/emails/system_notification.txt:22
-#, fuzzy
-#| msgid "Description"
 msgid "Description:"
-msgstr "Opis"
+msgstr "Opis:"
 
 #: templates/emails/system_notification.html:136
 #: templates/emails/system_notification.txt:24
@@ -1657,10 +1611,8 @@ msgid "Welcome to VoctEnsemble"
 msgstr "Witaj w VoctEnsemble"
 
 #: templates/emails/welcome_email.html:26
-#, fuzzy
-#| msgid "Your profile awaits"
 msgid "Your stage awaits"
-msgstr "Twój profil oczekuje"
+msgstr "Twoja scena czeka"
 
 #: templates/emails/welcome_email.html:54 templates/emails/welcome_email.txt:7
 msgid ""
@@ -1672,11 +1624,7 @@ msgstr ""
 "Cieszymy się, że możemy powitać Cię w VoctManager — cyfrowym sercu naszych "
 "działań artystycznych. Ta platforma została zaprojektowana, aby usprawnić "
 "nasz proces twórczy, od zarządzania repertuarem po logistykę koncertów, "
-"upewniając się, że możesz w pełni skupić się na muzyce.Z ogromną radością "
-"witamy Cię w VoctManager — cyfrowym sercu naszych operacji artystycznych. Ta "
-"platforma została zaprojektowana, aby usprawnić nasz proces twórczy — od "
-"zarządzania repertuarem po logistykę koncertową — tak, abyś mógł/mogła "
-"skupić się wyłącznie na muzyce."
+"upewniając się, że możesz w pełni skupić się na muzyce."
 
 #: templates/emails/welcome_email.html:64
 msgid ""
@@ -1700,9 +1648,7 @@ msgstr "Projekty i repertuar"
 msgid ""
 "View your upcoming projects, concert programmes, and casting assignments."
 msgstr ""
-"Przeglądaj swoje nadchodzące projekty, programy koncertów i "
-"obsadę.Przeglądaj nadchodzące projekty, programy koncertów i przypisania "
-"obsadowe."
+"Przeglądaj nadchodzące projekty, programy koncertów i przypisania obsadowe."
 
 #: templates/emails/welcome_email.html:106
 #: templates/emails/welcome_email.txt:22
@@ -1715,9 +1661,8 @@ msgid ""
 "Access your digital score library — scores and audio materials, organised by "
 "project."
 msgstr ""
-"Uzyskaj dostęp do swojej cyfrowej biblioteki partytur — nuty i materiały "
-"audio, uporządkowane według projektów.Korzystaj z cyfrowej biblioteki nut — "
-"partytury i materiały audio, posegregowane według projektów."
+"Korzystaj z cyfrowej biblioteki nut — partytury i materiały audio, "
+"posegregowane według projektów."
 
 #: templates/emails/welcome_email.html:123
 #: templates/emails/welcome_email.txt:25
@@ -1729,9 +1674,8 @@ msgstr "Harmonogram prób"
 msgid ""
 "Stay up to date with rehearsal times, locations, and any last-minute changes."
 msgstr ""
-"Bądź na bieżąco z godzinami prób, lokalizacjami i wszelkimi zmianami w "
-"ostatniej chwili.Bądź na bieżąco z godzinami prób, miejscami i wszelkimi "
-"zmianami w ostatniej chwili."
+"Bądź na bieżąco z godzinami prób, miejscami i wszelkimi zmianami w ostatniej "
+"chwili."
 
 #: templates/emails/welcome_email.html:146
 msgid "Your personal workspace"
@@ -1754,11 +1698,8 @@ msgid ""
 "Your profile has been successfully provisioned. You can now log in to view "
 "your upcoming projects, access sheet music, and review rehearsal schedules."
 msgstr ""
-"Twój profil został pomyślnie utworzony. Możesz teraz się zalogować, aby "
-"zobaczyć nadchodzące projekty, uzyskać dostęp do nut i przeglądać "
-"harmonogramy prób.Twój profil został pomyślnie utworzony. Możesz teraz "
-"zalogować się, aby sprawdzić nadchodzące projekty, pobrać nuty oraz "
-"przejrzeć harmonogram prób."
+"Twój profil został pomyślnie utworzony. Możesz teraz zalogować się, aby "
+"sprawdzić nadchodzące projekty, pobrać nuty oraz przejrzeć harmonogram prób."
 
 #: templates/emails/welcome_email.txt:19
 msgid "Projects & Repertoire"
@@ -1773,9 +1714,12 @@ msgid ""
 "If you experience any issues logging in, please reach out to the "
 "administration team."
 msgstr ""
-"Jeśli napotkasz jakiekolwiek problemy z logowaniem, skontaktuj się z "
-"zespołem administracyjnym.W razie problemów z logowaniem, prosimy o kontakt "
-"z zespołem administracyjnym."
+"W razie problemów z logowaniem, prosimy o kontakt z zespołem "
+"administracyjnym."
+
+#, python-format
+#~ msgid "Dear %(first_name)s,"
+#~ msgstr "Drogi %(first_name)s,"
 
 #~ msgid "VoctManager Invitation"
 #~ msgstr "Zaproszenie do VoctManager"
