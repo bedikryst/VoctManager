@@ -21,9 +21,16 @@ class NotificationSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 class PushDeviceRegisterSerializer(serializers.Serializer):
-    """Validates incoming push device registration payload."""
+    """Validates FCM token registration payload (iOS / Android)."""
     registration_token = serializers.CharField(min_length=10)
     device_type = serializers.CharField(default="WEB", max_length=50)
+
+
+class WebPushSubscribeSerializer(serializers.Serializer):
+    """Validates Web Push (VAPID) subscription payload from browser clients."""
+    endpoint = serializers.URLField()
+    p256dh_key = serializers.CharField(min_length=10)
+    auth_key = serializers.CharField(min_length=10)
 
 class NotificationPreferenceUpdateSerializer(serializers.Serializer):
     """Validates granular preference update payload."""

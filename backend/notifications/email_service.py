@@ -133,8 +133,15 @@ class EmailDispatcherService:
             with translation.override(resolved_language):
                 subject = NotificationTemplateRegistry.resolve_subject(notification_type)
                 
+                artist_profile = getattr(user, 'artist_profile', None)
+                raw_vocative = getattr(artist_profile, 'first_name_vocative', '') if artist_profile else ''
+                first_name_vocative = (
+                    (raw_vocative or user.first_name) if resolved_language == 'pl' else user.first_name
+                )
+
                 context = {
                     "first_name": user.first_name,
+                    "first_name_vocative": first_name_vocative,
                     "notification_type": notification_type,
                     "metadata": metadata,
                     "lang": resolved_language,

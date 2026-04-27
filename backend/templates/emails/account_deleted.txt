@@ -4,7 +4,7 @@ VOCTMANAGER — {% translate "Account Closure" %}
 {% translate "Your VoctManager account has been closed" %}
 =========================================
 
-{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}
+{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name_vocative|default:first_name }},{% endblocktranslate %}
 
 {% endif %}
 {% translate "We have successfully processed your account deletion request." %}

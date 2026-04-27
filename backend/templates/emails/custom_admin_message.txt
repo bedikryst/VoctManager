@@ -3,7 +3,7 @@ VoctManager — {% blocktranslate trimmed with sender=metadata.sender_name %}Mes
 
 ---
 
-{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name_vocative|default:first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
 
 {{ metadata.title }}
 

@@ -129,12 +129,22 @@ class NotificationCreateDTO(EnterpriseBaseDTO):
     metadata: NotificationMetadataPayload = Field(default_factory=dict)
 
 class PushDeviceRegisterDTO(BaseModel):
-    """DTO for incoming device token registration requests."""
+    """DTO for FCM token registration (iOS / Android)."""
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     user_id: Union[int, str, UUID]
-    registration_token: str = Field(..., min_length=10, description="The client-provided push token.")
+    registration_token: str = Field(..., min_length=10, description="The client-provided FCM token.")
     device_type: str = Field(default="WEB", description="Platform identifier.")
+
+
+class WebPushSubscribeDTO(BaseModel):
+    """DTO for Web Push (VAPID) subscription registration from browser clients."""
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    user_id: Union[int, str, UUID]
+    endpoint: str = Field(..., description="Browser-assigned push endpoint URL.")
+    p256dh_key: str = Field(..., description="ECDH public key for payload encryption.")
+    auth_key: str = Field(..., description="Auth secret for payload encryption.")
 
 
 class NotificationPreferenceUpdateDTO(BaseModel):

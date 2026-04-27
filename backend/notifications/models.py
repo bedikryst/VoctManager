@@ -134,7 +134,18 @@ class PushDevice(EnterpriseBaseModel):
     )
     registration_token = models.TextField(
         unique=True,
-        help_text=_("The FCM or APNs device token provided by the client infrastructure.")
+        help_text=_("The FCM/APNs device token (mobile) or Web Push endpoint URL (web).")
+    )
+    p256dh_key = models.TextField(
+        null=True,
+        blank=True,
+        help_text=_("ECDH public key for Web Push payload encryption. WEB device type only.")
+    )
+    auth_key = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Auth secret for Web Push payload encryption. WEB device type only.")
     )
     device_type = models.CharField(
         max_length=10,

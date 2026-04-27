@@ -1,7 +1,7 @@
 {% load i18n %}
 VOCTENSEMBLE — {% translate "Welcome" %}
 
-{% translate "Welcome to VoctEnsemble" %}{% if first_name %}, {{ first_name }}{% endif %}.
+{% translate "Welcome to VoctEnsemble" %}{% if first_name %}, {{ first_name_vocative|default:first_name }}{% endif %}.
 =========================================
 
 {% blocktranslate trimmed %}

@@ -5,7 +5,7 @@ VOCTMANAGER
 
 =========================================
 
-{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name_vocative|default:first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
 
 {% if metadata.message %}{{ metadata.message }}
 {% endif %}

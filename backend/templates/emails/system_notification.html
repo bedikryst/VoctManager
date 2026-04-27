@@ -51,7 +51,7 @@
           font-size: 21px; font-style: italic; color: #374151;
           margin: 0 0 28px 0; text-align: center; line-height: 1.4;">
   {% if first_name %}
-    {% blocktranslate trimmed %}Hello {{ first_name }},{% endblocktranslate %}
+    {% blocktranslate trimmed %}Hello {{ first_name_vocative|default:first_name }},{% endblocktranslate %}
   {% else %}
     {% translate "Hello," %}
   {% endif %}

@@ -3,7 +3,7 @@
         VOCTMANAGER / EXCLUSIVE INVITATION
 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 
-{% if first_name %}{% blocktranslate trimmed %}Dear {{ first_name }},{% endblocktranslate %}{% else %}{% translate "Dear Artist," %}{% endif %}
+{% if first_name %}{% blocktranslate trimmed %}Dear {{ first_name_vocative|default:first_name }},{% endblocktranslate %}{% else %}{% translate "Dear Artist," %}{% endif %}
 
 {% blocktranslate trimmed %}
 We are honored to invite you to our digital workspace.

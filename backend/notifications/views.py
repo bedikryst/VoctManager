@@ -12,11 +12,13 @@ from core.constants import AppRole
 from .serializers import (
     NotificationSerializer,
     PushDeviceRegisterSerializer,
+    WebPushSubscribeSerializer,
     NotificationPreferenceUpdateSerializer,
     SendToArtistSerializer,
 )
 from .dtos import (
     PushDeviceRegisterDTO,
+    WebPushSubscribeDTO,
     NotificationPreferenceUpdateDTO,
     CustomAdminMessageMetadata,
     NotificationReadReceiptMetadata,
@@ -149,29 +151,42 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PushDeviceViewSet(viewsets.ViewSet):
     """
-    API endpoints for managing push notification devices.
+    API endpoints for managing push notification subscriptions.
+    Routes between VAPID (web) and FCM (mobile) based on payload shape.
     Strictly delegates business logic to PushDispatcherService.
     """
     permission_classes = [IsAuthenticated]
 
     def create(self, request: Request) -> Response:
-        """Registers a new push notification token."""
-        serializer = PushDeviceRegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        dto = PushDeviceRegisterDTO(
-            user_id=request.user.id,
-            registration_token=serializer.validated_data['registration_token'],
-            device_type=serializer.validated_data.get('device_type', 'WEB')
-        )
-        
-        PushDispatcherService.register_device(dto)
+        """
+        Registers a push subscription.
+        - Web Push (VAPID): payload contains endpoint + p256dh_key + auth_key
+        - FCM (mobile): payload contains registration_token + device_type
+        """
+        if 'endpoint' in request.data:
+            serializer = WebPushSubscribeSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            dto = WebPushSubscribeDTO(
+                user_id=request.user.id,
+                endpoint=serializer.validated_data['endpoint'],
+                p256dh_key=serializer.validated_data['p256dh_key'],
+                auth_key=serializer.validated_data['auth_key'],
+            )
+            PushDispatcherService.register_web_push(dto)
+        else:
+            serializer = PushDeviceRegisterSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            dto = PushDeviceRegisterDTO(
+                user_id=request.user.id,
+                registration_token=serializer.validated_data['registration_token'],
+                device_type=serializer.validated_data.get('device_type', 'WEB'),
+            )
+            PushDispatcherService.register_device(dto)
+
         return Response(status=status.HTTP_201_CREATED)
 
     def destroy(self, request: Request, pk: str = None) -> Response:
-        """
-        Unregisters a push token. The token string is passed as the primary key.
-        """
+        """Unregisters a push subscription. pk is the endpoint URL or FCM token."""
         PushDispatcherService.unregister_device(user_id=request.user.id, token=pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
