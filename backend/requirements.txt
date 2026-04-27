@@ -51,3 +51,5 @@ requests==2.31.0
 
 # File type detection (reads magic bytes, not file extension)
 python-magic==0.4.27
+
+pywebpush>=2.0.0

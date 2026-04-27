@@ -37,10 +37,10 @@ class UserIdentityService:
         return {"uidb64": uidb64, "token": token}
 
     @staticmethod
-    def provision_user_account(email: str, first_name: str, last_name: str, language: str = 'en') -> User:
+    def provision_user_account(email: str, first_name: str, last_name: str, language: str = 'en', first_name_vocative: str = '') -> User:
         """
         Enterprise IAM: Provisions a new core identity and profile.
-        Generates a collision-free UUID username, handles activation tokens, 
+        Generates a collision-free UUID username, handles activation tokens,
         and explicitly dispatches the secure onboarding email.
         """
         if User.objects.filter(email__iexact=email).exists():
@@ -49,29 +49,31 @@ class UserIdentityService:
         with transaction.atomic():
             # SaaS 2026 Standard: Abstract usernames prevent enumeration and PII leaks
             username = str(uuid.uuid4())
-            
+
             user = User.objects.create(
-                username=username, 
-                email=email, 
+                username=username,
+                email=email,
                 first_name=first_name,
                 last_name=last_name,
                 is_active=False
             )
-            user.set_unusable_password() 
+            user.set_unusable_password()
             user.save()
-            
+
             # Explicit Profile Creation
             profile = UserProfile.objects.create(
                 user=user,
                 language=language
             )
-            
+
             # Generate Activation Tokens
             payload = UserIdentityService.generate_activation_token_payload(user)
             activation_link = (
                 f"{settings.CORS_ALLOWED_ORIGINS[0]}/activate"
                 f"?uid={payload['uidb64']}&token={payload['token']}"
             )
+
+            vocative = (first_name_vocative or first_name) if language == 'pl' else first_name
 
             # Dispatch Operational Email
             transaction.on_commit(
@@ -81,13 +83,14 @@ class UserIdentityService:
                     template_name="account_activation",
                     context={
                         "first_name": user.first_name,
+                        "first_name_vocative": vocative,
                         "activation_link": activation_link,
                     },
                     fallback_language=language,
                     email_type=EmailType.OPERATIONAL
                 )
             )
-            
+
             logger.info(f"Core IAM identity provisioned and invite dispatched for: {email}")
             return user
 
@@ -116,6 +119,10 @@ class UserIdentityService:
             fallback_lang = user.profile.language if hasattr(user, 'profile') else 'en'
 
             # Dispatch Welcome Email
+            artist_profile = getattr(user, 'artist_profile', None)
+            raw_vocative = getattr(artist_profile, 'first_name_vocative', '') if artist_profile else ''
+            base_name = getattr(user, 'first_name', '')
+            vocative = (raw_vocative or base_name) if fallback_lang == 'pl' else base_name
             transaction.on_commit(
                 lambda: send_transactional_email_task.delay(
                     recipient_email=user.email,
@@ -123,6 +130,7 @@ class UserIdentityService:
                     template_name="welcome_email",
                     context={
                         "first_name": getattr(user, "first_name", ""),
+                        "first_name_vocative": vocative,
                         "frontend_url": f"{settings.CORS_ALLOWED_ORIGINS[0]}/login",
                     },
                     fallback_language=fallback_lang,
