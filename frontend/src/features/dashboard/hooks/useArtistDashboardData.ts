@@ -18,7 +18,9 @@ import type {
   Rehearsal,
   Participation,
   Attendance,
+  Artist,
 } from "@/shared/types";
+import { artistKeys } from "@/features/artists/api/artist.queries";
 
 export interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;
@@ -63,6 +65,12 @@ export const useArtistDashboardData = (artistId?: string | number) => {
           ).data,
         enabled: !!artistId,
       },
+      {
+        queryKey: artistKeys.artists.details(artistId!),
+        queryFn: async () =>
+          (await api.get<Artist>(`/api/artists/${artistId}/`)).data,
+        enabled: !!artistId,
+      },
     ],
   });
 
@@ -71,6 +79,7 @@ export const useArtistDashboardData = (artistId?: string | number) => {
   const rehearsals = results[1].data || [];
   const projects = results[2].data || [];
   const attendances = results[3].data || [];
+  const artistProfile = results[4].data ?? null;
 
   const { upNextRehearsal, upNextProject } = useMemo(() => {
     const now = new Date();
@@ -144,5 +153,7 @@ export const useArtistDashboardData = (artistId?: string | number) => {
     return t("dashboard.artist.greeting_evening", "Dobry wieczór");
   }, [t]);
 
-  return { isLoading, upNextRehearsal, upNextProject, greeting };
+  const firstNameVocative = artistProfile?.first_name_vocative || null;
+
+  return { isLoading, upNextRehearsal, upNextProject, greeting, firstNameVocative };
 };

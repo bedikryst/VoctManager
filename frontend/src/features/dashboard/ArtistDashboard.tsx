@@ -31,7 +31,7 @@ export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  const { isLoading, upNextRehearsal, upNextProject, greeting } =
+  const { isLoading, upNextRehearsal, upNextProject, greeting, firstNameVocative } =
     useArtistDashboardData(user?.artist_profile_id ?? undefined);
 
   if (isLoading) {
@@ -53,7 +53,9 @@ export default function ArtistDashboard(): React.JSX.Element {
           roleText={t("dashboard.artist.title_main", "Przestrzeń chórzysty")}
           title={greeting}
           titleHighlight={
-            user?.first_name || t("common.artist_generic", "Artysty")
+            (user?.profile?.language === "pl" && firstNameVocative)
+              ? firstNameVocative
+              : (user?.first_name || t("common.artist_generic", "Artysty"))
           }
           rightContent={<UserLocalClock />}
         />

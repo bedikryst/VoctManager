@@ -84,6 +84,7 @@ export interface Artist extends BaseModel {
   user?: string | null; // FK relation, can be null
   first_name: string;
   last_name: string;
+  first_name_vocative?: string;
   email: string;
   phone_number?: string;
   voice_type: VoiceType;

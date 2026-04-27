@@ -7,8 +7,12 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
+import api from "@/shared/api/api";
+import type { Artist } from "@/shared/types";
+import { artistKeys } from "@/features/artists/api/artist.queries";
 
 import { UserLocalClock } from "@/shared/widgets/utility/UserLocalClock";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -38,6 +42,15 @@ export default function AdminDashboard(): React.JSX.Element {
     greeting,
   } = useAdminDashboardData();
 
+  const { data: adminArtistProfile } = useQuery({
+    queryKey: artistKeys.artists.details(user?.artist_profile_id!),
+    queryFn: async () =>
+      (await api.get<Artist>(`/api/artists/${user?.artist_profile_id}/`)).data,
+    enabled: !!user?.artist_profile_id,
+  });
+
+  const adminFirstNameVocative = adminArtistProfile?.first_name_vocative || null;
+
   if (isLoading) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center">
@@ -56,7 +69,11 @@ export default function AdminDashboard(): React.JSX.Element {
           size="dashboard"
           roleText={t("dashboard.admin.role", "Główny Pulpit Dyrygenta")}
           title={greeting}
-          titleHighlight={user?.first_name || "Maestro"}
+          titleHighlight={
+            (user?.profile?.language === "pl" && adminFirstNameVocative)
+              ? adminFirstNameVocative
+              : (user?.first_name || "Maestro")
+          }
           rightContent={<UserLocalClock />}
         />
       </StaggeredBentoItem>
