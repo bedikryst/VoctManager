@@ -114,6 +114,16 @@ export const PdfViewerModal = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, docKey]);
 
+  // Body scroll lock while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   // Safety-net revoke on unmount
   useEffect(() => {
     return () => {

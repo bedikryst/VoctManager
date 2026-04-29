@@ -44,19 +44,19 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           aria-hidden="true"
         />
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-4xl max-h-[90vh] flex flex-col"
-          role="dialog"
-          aria-modal="true"
-        >
+        <div className="relative w-full max-w-4xl">
           <GlassCard
+            as={motion.div}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
             variant="solid"
             padding="none"
             isHoverable={false}
-            className="flex flex-col h-full shadow-glass-ethereal"
+            className="relative w-full max-h-[90vh] flex flex-col min-h-0 shadow-glass-ethereal overflow-hidden"
+            role="dialog"
+            aria-modal="true"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-ethereal-incense/10 bg-white/5">
@@ -92,7 +92,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-white/40">
+            <div className="min-h-0 flex-1 overflow-y-auto touch-pan-y overscroll-contain pointer-events-auto p-6 space-y-8 custom-scrollbar bg-white/40">
               {type === "privacy" ? <PrivacyContent /> : <TermsContent />}
             </div>
 
@@ -103,7 +103,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               </Button>
             </div>
           </GlassCard>
-        </motion.div>
+        </div>
       </div>
     </AnimatePresence>
   );
@@ -118,7 +118,7 @@ const PrivacyContent: React.FC = () => (
       <Text color="graphite" size="md" className="mt-2">
         Administratorem Twoich danych jest Fundacja „VoctFoundation” z siedzibą
         w Krakowie (31-150), ul. Św. Filipa 23/3. Kontakt w sprawach ochrony
-        danych: rodo@voctfoundation.pl.
+        danych: kontakt@voctensemble.com.
       </Text>
     </div>
 
