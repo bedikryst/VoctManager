@@ -13,6 +13,7 @@ import {
   Edit2,
   Trash2,
   Music,
+  Mic,
   FileText,
   Headphones,
   ChevronDown,
@@ -136,8 +137,8 @@ export default function PieceCard({
 
             <div className="flex flex-wrap gap-2 mt-2.5">
               {piece.voicing && (
-                <Eyebrow className="!mb-0 px-2 py-1 border border-ethereal-incense/20 bg-ethereal-alabaster/60 backdrop-blur-sm rounded-md shadow-sm">
-                  🎤 {piece.voicing}
+                <Eyebrow className="!mb-0 px-2 py-1 border border-ethereal-incense/20 bg-ethereal-alabaster/60 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5">
+                  <Mic size={10} aria-hidden="true" /> {piece.voicing}
                 </Eyebrow>
               )}
               {piece.estimated_duration && (
@@ -312,7 +313,7 @@ export default function PieceCard({
                       onDelete();
                     }}
                     leftIcon={<Trash2 size={14} />}
-                    className="w-full justify-center text-ethereal-crimson hover:text-red-600 hover:bg-ethereal-crimson/10 mt-2"
+                    className="w-full justify-center text-ethereal-crimson hover:text-ethereal-crimson hover:bg-ethereal-crimson/10 mt-2"
                   >
                     {t("archive.card.actions.delete", "Usuń utwór")}
                   </Button>

@@ -2,6 +2,7 @@
  * @file ArchiveEditorPanel.tsx
  * @description Slide-over panel for editing repertoire metadata and managing audio tracks.
  * Integrates dirty-state interception to prevent accidental data loss during active editing.
+ * @architecture Enterprise SaaS 2026
  * @module panel/archive/components/ArchiveEditorPanel
  */
 
@@ -14,6 +15,8 @@ import { X, FileText, Headphones } from "lucide-react";
 import PieceDetailsForm from "./PieceDetailsForm";
 import TrackUploadManager from "./TrackUploadManager";
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import { Button } from "@ui/primitives/Button";
+import { Heading } from "@ui/primitives/typography";
 import type { Composer, VoiceLineOption } from "@/shared/types";
 import type { EnrichedPiece } from "../types/archive.dto";
 import { ArchiveTabId } from "../constants/archiveDomain";
@@ -87,7 +90,7 @@ export default function ArchiveEditorPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleAttemptClose}
-            className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-[90]"
+            className="fixed inset-0 bg-ethereal-ink/20 backdrop-blur-sm z-focus-trap"
             aria-hidden="true"
           />
 
@@ -96,37 +99,47 @@ export default function ArchiveEditorPanel({
             animate={{ right: 0 }}
             exit={{ right: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 w-full md:w-[600px] lg:w-[800px] xl:w-[900px] bg-[#f4f2ee] shadow-2xl z-[100] flex flex-col border-l border-white/60"
+            className="fixed inset-y-0 right-0 w-full md:w-[600px] lg:w-[800px] xl:w-[900px] bg-ethereal-parchment shadow-glass-solid z-toast flex flex-col border-l border-ethereal-incense/20"
             role="dialog"
             aria-modal="true"
           >
             <div className="flex justify-between items-center px-6 md:px-10 pt-6 md:pt-10 pb-6 flex-shrink-0 z-20">
-              <h3 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 tracking-tight">
+              <Heading as="h2" size="4xl" color="default" className="tracking-tight font-serif">
                 {piece
                   ? piece.title
                   : t("archive.editor.new_piece", "Nowy Utwór")}
-              </h3>
-              <button
+              </Heading>
+              <Button
+                variant="ghost"
                 onClick={handleAttemptClose}
-                className="text-stone-400 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200/60 shadow-sm transition-all p-3 rounded-2xl active:scale-95"
+                aria-label={t("common.actions.close", "Zamknij")}
+                className="text-ethereal-graphite hover:text-ethereal-ink border border-ethereal-incense/20 hover:border-ethereal-incense/40 bg-ethereal-alabaster/60 hover:bg-ethereal-alabaster p-3 rounded-2xl"
               >
                 <X size={20} aria-hidden="true" />
-              </button>
+              </Button>
             </div>
 
             {piece && (
               <div className="px-6 md:px-10 pb-6 flex-shrink-0 relative z-30">
-                <div className="inline-flex items-center p-1.5 bg-stone-200/40 backdrop-blur-xl border border-stone-200/60 rounded-2xl shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
+                <div className="inline-flex items-center p-1.5 bg-ethereal-incense/10 backdrop-blur-xl border border-ethereal-incense/20 rounded-2xl shadow-glass-ethereal">
                   <button
                     onClick={() => onTabChange("DETAILS")}
-                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === "DETAILS" ? "bg-white text-brand shadow-sm border border-white" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
+                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${
+                      activeTab === "DETAILS"
+                        ? "bg-ethereal-alabaster text-ethereal-gold shadow-glass-ethereal border border-ethereal-incense/20"
+                        : "text-ethereal-graphite hover:text-ethereal-ink hover:bg-ethereal-alabaster/40 border border-transparent"
+                    }`}
                   >
                     <FileText size={14} aria-hidden="true" />{" "}
                     {t("archive.editor.tabs.details", "Metadane")}
                   </button>
                   <button
                     onClick={() => onTabChange("TRACKS")}
-                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === "TRACKS" ? "bg-white text-brand shadow-sm border border-white" : "text-stone-500 hover:text-stone-800 hover:bg-white/40 border border-transparent"}`}
+                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${
+                      activeTab === "TRACKS"
+                        ? "bg-ethereal-alabaster text-ethereal-gold shadow-glass-ethereal border border-ethereal-incense/20"
+                        : "text-ethereal-graphite hover:text-ethereal-ink hover:bg-ethereal-alabaster/40 border border-transparent"
+                    }`}
                   >
                     <Headphones size={14} aria-hidden="true" />{" "}
                     {t("archive.editor.tabs.tracks", "Ścieżki MP3")}
