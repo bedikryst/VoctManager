@@ -11,12 +11,27 @@ import zoneinfo
 from django.utils import timezone
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.utils.translation import gettext_lazy as _
 
 from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
 
 DEFAULT_EVENT_TIMEZONE = 'Europe/Warsaw'
+
+
+def validate_pdf_file_size(value) -> None:
+    """Validates uploaded PDF size against the environment-configured limit."""
+    max_size_mb = getattr(settings, 'MAX_UPLOAD_SIZE_MB', 50)
+    max_size_bytes = max_size_mb * 1024 * 1024
+    if value.size > max_size_bytes:
+        raise ValidationError(
+            _('File size must be under %(size)s MB. Current: %(current)s MB') % {
+                'size': max_size_mb,
+                'current': round(value.size / (1024 * 1024), 2),
+            }
+        )
 
 
 class VoiceType(models.TextChoices):
@@ -117,6 +132,14 @@ class Project(EnterpriseBaseModel):
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name=_("Status"))
     run_sheet = models.JSONField(default=list, blank=True, verbose_name=_("Run-sheet"))
     spotify_playlist_url = models.URLField(blank=True, help_text=_("Spotify playlist URL"), verbose_name=_("Spotify Playlist"))
+    score_pdf = models.FileField(
+        upload_to='project_scores/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(['pdf']), validate_pdf_file_size],
+        verbose_name=_("Score PDF"),
+        help_text=_("Main concert program PDF. In the future: auto-generated from piece sheets and analyzed by AI.")
+    )
 
     class Meta:
         verbose_name = _("Project")

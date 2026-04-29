@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import { ScheduleService } from "../api/schedule.service";
+import { ProjectService } from "@/features/projects/api/project.service";
 import {
   useSchedulePieceCastings,
   useScheduleProgramItems,
@@ -25,6 +26,7 @@ export const useTimelineProjectCard = (
   const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCallSheetPreviewOpen, setCallSheetPreviewOpen] = useState(false);
+  const [isScorePdfPreviewOpen, setScorePdfPreviewOpen] = useState(false);
 
   const { data: programItems = [], isLoading: isProgramLoading } =
     useScheduleProgramItems(
@@ -39,6 +41,11 @@ export const useTimelineProjectCard = (
     [projectId],
   );
 
+  const fetchScorePdfBlob = useCallback(
+    () => ProjectService.fetchScorePdfBlob(String(projectId)),
+    [projectId],
+  );
+
   const handleOpenCallSheetPreview = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
@@ -49,6 +56,18 @@ export const useTimelineProjectCard = (
 
   const handleCloseCallSheetPreview = useCallback(() => {
     setCallSheetPreviewOpen(false);
+  }, []);
+
+  const handleOpenScorePdfPreview = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      setScorePdfPreviewOpen(true);
+    },
+    [],
+  );
+
+  const handleCloseScorePdfPreview = useCallback(() => {
+    setScorePdfPreviewOpen(false);
   }, []);
 
   const handleDownloadCallSheet = async (event: React.MouseEvent) => {
@@ -103,5 +122,9 @@ export const useTimelineProjectCard = (
     fetchCallSheetBlob,
     handleOpenCallSheetPreview,
     handleCloseCallSheetPreview,
+    isScorePdfPreviewOpen,
+    fetchScorePdfBlob,
+    handleOpenScorePdfPreview,
+    handleCloseScorePdfPreview,
   };
 };

@@ -189,6 +189,78 @@ class ProjectViewSet(viewsets.ModelViewSet):
         ]
         return Response(roster_data)
     
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='score_pdf',
+            permission_classes=[permissions.IsAuthenticated])
+    def score_pdf(self, request, pk=None) -> Response:
+        """
+        Manages the project score PDF.
+        GET  — All authenticated users who have access to this project.
+        POST — Managers only. Multipart upload with field name 'score_pdf'.
+        DELETE — Managers only. Clears the stored file.
+        """
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        project = self.get_object()
+
+        if request.method == 'GET':
+            if not project.score_pdf:
+                return Response(
+                    {"detail": "This project has no score PDF."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            try:
+                file_handle = project.score_pdf.open('rb')
+            except OSError:
+                return Response(
+                    {"detail": "Score PDF file not found on the server."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            response = FileResponse(
+                file_handle,
+                content_type='application/pdf',
+                filename=f"Score_{project.title.replace(' ', '_')}.pdf",
+            )
+            response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+            return response
+
+        if not _is_manager(request.user):
+            return Response(
+                {"detail": "Manager access required to modify the score PDF."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if request.method == 'DELETE':
+            if project.score_pdf:
+                project.score_pdf.delete(save=False)
+                project.score_pdf = None
+                project.save(update_fields=['score_pdf', 'updated_at'])
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # POST — upload a new PDF
+        if 'score_pdf' not in request.FILES:
+            return Response(
+                {"error": "A 'score_pdf' file is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        uploaded_file = request.FILES['score_pdf']
+
+        # Run model-level validators (extension + size) before persisting
+        score_pdf_field = project._meta.get_field('score_pdf')
+        try:
+            for validator in score_pdf_field.validators:
+                validator(uploaded_file)
+        except DjangoValidationError as exc:
+            return Response({"error": exc.messages}, status=status.HTTP_400_BAD_REQUEST)
+
+        if project.score_pdf:
+            project.score_pdf.delete(save=False)
+
+        project.score_pdf = uploaded_file
+        project.save(update_fields=['score_pdf', 'updated_at'])
+
+        return Response(self.get_serializer(project).data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def export_call_sheet(self, request, pk=None) -> FileResponse:
         project = self.get_object()

@@ -1,24 +1,27 @@
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Briefcase, Music, Wrench } from "lucide-react";
+import { Briefcase, Music, Wrench, FileText, Eye, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Project } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
 import { useUpdateProjectStatus } from "../api/project.queries";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import {
   StaggeredBentoContainer,
   StaggeredBentoItem,
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
-import { Heading } from "@/shared/ui/primitives/typography";
+import { Heading, Text } from "@/shared/ui/primitives/typography";
 import {
   PROJECT_STATUS,
   PROJECT_TABS,
   type ProjectTabId,
 } from "../constants/projectDomain";
 
+import { ProjectService } from "../api/project.service";
+import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { ProjectCardHeader } from "./ProjectCardHeader";
 import { ProjectCardDetails } from "./ProjectCardDetails";
 import { SpotifyWidget } from "./widgets/SpotifyWidget";
@@ -81,6 +84,8 @@ export const ProjectCard = ({
 }: ProjectCardProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isScorePdfPreviewOpen, setScorePdfPreviewOpen] = useState(false);
+  const [isScorePdfDownloading, setScorePdfDownloading] = useState(false);
   const updateProjectStatusMutation = useUpdateProjectStatus();
 
   const isDone = project.status === PROJECT_STATUS.DONE;
@@ -171,11 +176,44 @@ export const ProjectCard = ({
     [onDelete, project.id],
   );
 
+  const fetchScorePdfBlob = useCallback(
+    () => ProjectService.fetchScorePdfBlob(String(project.id)),
+    [project.id],
+  );
+
+  const handleDownloadScorePdf = useCallback(async () => {
+    setScorePdfDownloading(true);
+    const toastId = toast.loading(
+      t("projects.card.score_pdf_downloading", "Pobieranie partytury..."),
+    );
+    try {
+      const blob = await ProjectService.fetchScorePdfBlob(String(project.id));
+      const url = window.URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = `Score_${project.title.replace(/\s+/g, "_")}.pdf`;
+      window.document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success(t("projects.card.score_pdf_downloaded", "Pobrano plik PDF"), {
+        id: toastId,
+      });
+    } catch {
+      toast.error(t("common.errors.download_error", "Błąd pobierania"), {
+        id: toastId,
+      });
+    } finally {
+      setScorePdfDownloading(false);
+    }
+  }, [project.id, project.title, t]);
+
   const handleToggleExpanded = useCallback(() => {
     setIsExpanded((previousState) => !previousState);
   }, []);
 
   return (
+    <>
     <GlassCard
       as={motion.div}
       initial={{ opacity: 0, y: 20 }}
@@ -268,6 +306,53 @@ export const ProjectCard = ({
                   )}
                   className="border-t border-ethereal-incense/15 pt-8"
                 >
+                  {project.score_pdf && (
+                    <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-ethereal-amethyst/20 bg-ethereal-amethyst/5 px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <FileText
+                          size={14}
+                          className="text-ethereal-amethyst"
+                          aria-hidden="true"
+                        />
+                        <Text size="sm" color="muted">
+                          {t(
+                            "projects.card.score_pdf_label",
+                            "Partytura koncertu (PDF)",
+                          )}
+                        </Text>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setScorePdfPreviewOpen(true)}
+                          leftIcon={<Eye size={11} aria-hidden="true" />}
+                          className="text-ethereal-amethyst hover:bg-ethereal-amethyst/15"
+                        >
+                          {t("projects.card.score_pdf_preview", "Podgląd")}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleDownloadScorePdf}
+                          disabled={isScorePdfDownloading}
+                          isLoading={isScorePdfDownloading}
+                          aria-label={t(
+                            "projects.card.score_pdf_download_aria",
+                            "Pobierz plik PDF partytury",
+                          )}
+                          className="text-ethereal-amethyst/70 hover:text-ethereal-amethyst hover:bg-ethereal-amethyst/15"
+                        >
+                          {!isScorePdfDownloading && (
+                            <Download size={13} aria-hidden="true" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <StaggeredBentoContainer className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                     <StaggeredBentoItem className="flex h-full flex-col">
                       <RunSheetWidget
@@ -298,5 +383,18 @@ export const ProjectCard = ({
         )}
       </AnimatePresence>
     </GlassCard>
+
+      {project.score_pdf && (
+        <PdfViewerModal
+          isOpen={isScorePdfPreviewOpen}
+          title={t("projects.card.score_pdf_modal_title", "Partytura Koncertu")}
+          subtitle={project.title}
+          fileName={`Score_${project.title.replace(/\s+/g, "_")}.pdf`}
+          fetchBlob={fetchScorePdfBlob}
+          docKey={project.id}
+          onClose={() => setScorePdfPreviewOpen(false)}
+        />
+      )}
+    </>
   );
 };

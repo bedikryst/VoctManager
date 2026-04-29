@@ -102,6 +102,29 @@ export const ProjectService = {
       responseType: "blob",
     }),
 
+  uploadScorePdf: async (projectId: string, file: File): Promise<Project> => {
+    const formData = new FormData();
+    formData.append("score_pdf", file);
+    const response = await api.post<Project>(
+      `${PROJECTS_BASE_URL}${projectId}/score_pdf/`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  },
+
+  removeScorePdf: async (projectId: string): Promise<void> => {
+    await api.delete(`${PROJECTS_BASE_URL}${projectId}/score_pdf/`);
+  },
+
+  fetchScorePdfBlob: async (projectId: string): Promise<Blob> => {
+    const response = await api.get(
+      `${PROJECTS_BASE_URL}${projectId}/score_pdf/`,
+      { responseType: "blob" },
+    );
+    return response.data;
+  },
+
   getArtistsDictionary: async (): Promise<Artist[]> => {
     const response = await api.get(ARTISTS_BASE_URL);
     return response.data.results ?? response.data ?? [];

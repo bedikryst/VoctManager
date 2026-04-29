@@ -10,6 +10,7 @@ import {
   Users,
   Music,
   Wrench,
+  FileText,
 } from "lucide-react";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
@@ -74,6 +75,10 @@ export const TimelineProjectCard = ({
     fetchCallSheetBlob,
     handleOpenCallSheetPreview,
     handleCloseCallSheetPreview,
+    isScorePdfPreviewOpen,
+    fetchScorePdfBlob,
+    handleOpenScorePdfPreview,
+    handleCloseScorePdfPreview,
   } = useTimelineProjectCard(proj.id, proj.title, isExpanded);
 
   const populatedCastings = castings as PopulatedPieceCasting[];
@@ -326,7 +331,7 @@ export const TimelineProjectCard = ({
 
                     {/* run sheet */}
                     <div>
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-3">
                         <Eyebrow color="parchment">
                           {t(
                             "schedule.card.run_sheet_title",
@@ -364,6 +369,41 @@ export const TimelineProjectCard = ({
                           </Button>
                         </div>
                       </div>
+
+                      {/* Score PDF — only shown when the manager has uploaded one */}
+                      {proj.score_pdf && (
+                        <div className="flex items-center justify-between mb-4 rounded-xl border border-ethereal-sage/30 bg-ethereal-sage/10 px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <FileText
+                              size={12}
+                              className="text-ethereal-sage"
+                              aria-hidden="true"
+                            />
+                            <Text
+                              size="sm"
+                              color="parchment-muted"
+                              className="text-ethereal-parchment/70"
+                            >
+                              {t(
+                                "schedule.card.score_pdf_label",
+                                "Partytura / Program",
+                              )}
+                            </Text>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleOpenScorePdfPreview}
+                            leftIcon={<Eye size={11} aria-hidden="true" />}
+                            className="border-ethereal-sage/50 text-ethereal-sage hover:bg-ethereal-sage/20"
+                          >
+                            {t(
+                              "schedule.card.view_score_pdf",
+                              "Podgląd PDF",
+                            )}
+                          </Button>
+                        </div>
+                      )}
 
                       {event.run_sheet && event.run_sheet.length > 0 ? (
                         <div className="relative pl-5 border-l border-ethereal-incense/20 space-y-4 ml-2">
@@ -699,6 +739,18 @@ export const TimelineProjectCard = ({
         docKey={proj.id}
         onClose={handleCloseCallSheetPreview}
       />
+
+      {proj.score_pdf && (
+        <PdfViewerModal
+          isOpen={isScorePdfPreviewOpen}
+          title={t("schedule.card.score_pdf_modal_title", "Partytura Koncertu")}
+          subtitle={proj.title}
+          fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
+          fetchBlob={fetchScorePdfBlob}
+          docKey={`score-${proj.id}`}
+          onClose={handleCloseScorePdfPreview}
+        />
+      )}
     </motion.div>
   );
 };

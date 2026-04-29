@@ -25,6 +25,8 @@ import {
   useCreateProject,
   useProjects,
   useUpdateProject,
+  useUploadProjectScorePdf,
+  useRemoveProjectScorePdf,
 } from "../../api/project.queries";
 import type {
   ProjectCreateDTO,
@@ -46,6 +48,11 @@ export interface UseDetailsFormResult {
   ) => void;
   handleRemoveRunSheetItem: (id: string) => void;
   handleSubmit: (event: FormEvent) => Promise<void>;
+  pendingPdfFile: File | null;
+  pendingPdfRemoval: boolean;
+  handleSelectPdfFile: (file: File) => void;
+  handleRemovePdf: () => void;
+  handleCancelPdfChange: () => void;
 }
 
 const normalizeRunSheetItem = (
@@ -122,8 +129,12 @@ export const useDetailsForm = (
 
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
+  const uploadScorePdfMutation = useUploadProjectScorePdf();
+  const removeScorePdfMutation = useRemoveProjectScorePdf();
 
   const [baseline, setBaseline] = useState<Project | null>(project);
+  const [pendingPdfFile, setPendingPdfFile] = useState<File | null>(null);
+  const [pendingPdfRemoval, setPendingPdfRemoval] = useState(false);
 
   const [formData, setFormData] = useState<ProjectFormData>({
     title: project?.title || "",
@@ -163,6 +174,8 @@ export const useDetailsForm = (
         normalizeRunSheetItem(item, `runsheet-init-${index}-${Date.now()}`),
       ),
     );
+    setPendingPdfFile(null);
+    setPendingPdfRemoval(false);
   }, []);
 
   useEffect(() => {
@@ -212,8 +225,8 @@ export const useDetailsForm = (
       JSON.stringify(cleanLocalRunSheet) !==
       JSON.stringify(cleanBaselineRunSheet);
 
-    return basicFieldsChanged || runSheetChanged;
-  }, [baseline, formData, runSheet]);
+    return basicFieldsChanged || runSheetChanged || pendingPdfFile !== null || pendingPdfRemoval;
+  }, [baseline, formData, runSheet, pendingPdfFile, pendingPdfRemoval]);
 
   useEffect(() => {
     onDirtyStateChange?.(isDirty);
@@ -253,6 +266,21 @@ export const useDetailsForm = (
     setRunSheet((previous) =>
       previous.filter((item) => String(item.id) !== id),
     );
+  }, []);
+
+  const handleSelectPdfFile = useCallback((file: File): void => {
+    setPendingPdfFile(file);
+    setPendingPdfRemoval(false);
+  }, []);
+
+  const handleRemovePdf = useCallback((): void => {
+    setPendingPdfRemoval(true);
+    setPendingPdfFile(null);
+  }, []);
+
+  const handleCancelPdfChange = useCallback((): void => {
+    setPendingPdfFile(null);
+    setPendingPdfRemoval(false);
   }, []);
 
   const handleSubmit = async (event: FormEvent): Promise<void> => {
@@ -306,9 +334,11 @@ export const useDetailsForm = (
         run_sheet: sanitizedRunSheet,
       };
 
+      let savedProject: Project;
+
       if (baseline?.id) {
         const updatePayload: ProjectUpdateDTO = payload;
-        const updatedProject = await updateProjectMutation.mutateAsync({
+        savedProject = await updateProjectMutation.mutateAsync({
           id: String(baseline.id),
           data: updatePayload,
         });
@@ -320,25 +350,50 @@ export const useDetailsForm = (
           ),
           { id: toastId },
         );
+      } else {
+        const createPayload: ProjectCreateDTO = payload;
+        savedProject = await createProjectMutation.mutateAsync(createPayload);
 
-        resetFormToProject(updatedProject);
-        onSuccess(updatedProject);
-        return;
+        toast.success(
+          t(
+            "projects.details.toast.create_success",
+            "Utworzono nowy projekt z harmonogramem",
+          ),
+          { id: toastId },
+        );
       }
 
-      const createPayload: ProjectCreateDTO = payload;
-      const createdProject = await createProjectMutation.mutateAsync(createPayload);
+      // Handle deferred PDF changes after the project entity is persisted
+      if (pendingPdfRemoval && savedProject.score_pdf) {
+        try {
+          await removeScorePdfMutation.mutateAsync(String(savedProject.id));
+          savedProject = { ...savedProject, score_pdf: null };
+        } catch {
+          toast.warning(
+            t(
+              "projects.details.toast.pdf_remove_failed",
+              "Projekt zapisany — nie udało się usunąć PDF.",
+            ),
+          );
+        }
+      } else if (pendingPdfFile) {
+        try {
+          savedProject = await uploadScorePdfMutation.mutateAsync({
+            id: String(savedProject.id),
+            file: pendingPdfFile,
+          });
+        } catch {
+          toast.warning(
+            t(
+              "projects.details.toast.pdf_upload_failed",
+              "Projekt zapisany — nie udało się załadować PDF. Spróbuj ponownie.",
+            ),
+          );
+        }
+      }
 
-      toast.success(
-        t(
-          "projects.details.toast.create_success",
-          "Utworzono nowy projekt z harmonogramem",
-        ),
-        { id: toastId },
-      );
-
-      resetFormToProject(createdProject);
-      onSuccess(createdProject);
+      resetFormToProject(savedProject);
+      onSuccess(savedProject);
     } catch (error: unknown) {
       const isAxiosError = (
         value: unknown,
@@ -366,10 +421,18 @@ export const useDetailsForm = (
     sortedRunSheet,
     isDirty,
     isSubmitting:
-      createProjectMutation.isPending || updateProjectMutation.isPending,
+      createProjectMutation.isPending ||
+      updateProjectMutation.isPending ||
+      uploadScorePdfMutation.isPending ||
+      removeScorePdfMutation.isPending,
     handleAddRunSheetItem,
     handleUpdateRunSheetItem,
     handleRemoveRunSheetItem,
     handleSubmit,
+    pendingPdfFile,
+    pendingPdfRemoval,
+    handleSelectPdfFile,
+    handleRemovePdf,
+    handleCancelPdfChange,
   };
 };

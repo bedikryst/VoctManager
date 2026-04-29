@@ -129,6 +129,7 @@ export interface Project extends BaseModel {
   conductor_name?: string | null;
   description?: string | null;
   spotify_playlist_url?: string | null;
+  score_pdf?: string | null;
   status: ProjectStatus;
   run_sheet?: RunSheetItem[];
   program?: ProgramItem[];
