@@ -85,7 +85,7 @@ class PushDispatcherService:
                         "keys": {"p256dh": device.p256dh_key, "auth": device.auth_key},
                     },
                     data=payload,
-                    vapid_private_key=settings.FIREBASE_VAPID_PRIVATE_KEY,
+                    vapid_private_key=settings.VAPID_PRIVATE_KEY,
                     vapid_claims=_VAPID_CLAIMS,
                 )
             except WebPushException as e:

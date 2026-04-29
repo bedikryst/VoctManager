@@ -2,16 +2,20 @@
  * @file usePushNotifications.ts
  * @description Manages the full lifecycle of Web Push (VAPID) subscriptions.
  * Handles browser permission, service worker registration, push subscription,
- * and syncing the subscription to the backend.
+ * and syncing the subscription to the backend via React Query mutations.
+ * Also listens for browser-initiated subscription renewals (pushsubscriptionchange).
  * @architecture Enterprise SaaS 2026
  * @module notifications/hooks/usePushNotifications
  */
 import { useState, useEffect, useCallback } from "react";
-import api from "@/shared/api/api";
+import {
+  useRegisterPushDevice,
+  useUnregisterPushDevice,
+  type PushDevicePayload,
+} from "@/features/notifications/api/devices";
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_FIREBASE_VAPID_PUBLIC_KEY as string;
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
 
-/** Converts the base64url VAPID public key to the Uint8Array the browser Push API expects. */
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -26,15 +30,10 @@ const isPushSupported =
   "PushManager" in window;
 
 export interface UsePushNotificationsReturn {
-  /** Current browser notification permission state. */
   permission: NotificationPermission;
-  /** Whether this browser has an active push subscription registered on the server. */
   isSubscribed: boolean;
-  /** True while requesting permission or syncing with the server. */
   isLoading: boolean;
-  /** Request permission and subscribe. No-op if already granted. */
   subscribe: () => Promise<void>;
-  /** Unsubscribe and remove the subscription from the server. */
   unsubscribe: () => Promise<void>;
 }
 
@@ -43,31 +42,45 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     isPushSupported ? Notification.permission : "denied",
   );
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // On mount, check whether this browser already has an active subscription.
+  const registerMutation = useRegisterPushDevice();
+  const unregisterMutation = useUnregisterPushDevice();
+
+  const isLoading = registerMutation.isPending || unregisterMutation.isPending;
+
   useEffect(() => {
     if (!isPushSupported) return;
-
     navigator.serviceWorker.ready.then(async (registration) => {
       const existing = await registration.pushManager.getSubscription();
       setIsSubscribed(!!existing);
     });
   }, []);
 
+  // Handles browser-initiated subscription rotation (pushsubscriptionchange in sw.ts).
+  // The SW posts the new subscription here so we can sync it with the backend while authenticated.
+  useEffect(() => {
+    if (!isPushSupported) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGED") {
+        const payload = event.data.subscription as PushDevicePayload;
+        registerMutation.mutate(payload);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener("message", handleMessage);
+    return () => navigator.serviceWorker.removeEventListener("message", handleMessage);
+  }, [registerMutation]);
+
   const subscribe = useCallback(async () => {
     if (!isPushSupported || permission === "denied") return;
 
-    setIsLoading(true);
     try {
       const result = await Notification.requestPermission();
       setPermission(result);
       if (result !== "granted") return;
 
-      // Register SW if not already active.
-      const registration = await navigator.serviceWorker.register("/sw.js", {
-        scope: "/",
-      });
+      const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       await navigator.serviceWorker.ready;
 
       const subscription = await registration.pushManager.subscribe({
@@ -80,7 +93,7 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
         keys: { p256dh: string; auth: string };
       };
 
-      await api.post("/api/notifications/devices/", {
+      await registerMutation.mutateAsync({
         endpoint: json.endpoint,
         p256dh_key: json.keys.p256dh,
         auth_key: json.keys.auth,
@@ -89,15 +102,12 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       setIsSubscribed(true);
     } catch (error) {
       console.error("[PushNotifications] Subscription failed:", error);
-    } finally {
-      setIsLoading(false);
     }
-  }, [permission]);
+  }, [permission, registerMutation]);
 
   const unsubscribe = useCallback(async () => {
     if (!isPushSupported) return;
 
-    setIsLoading(true);
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
@@ -105,18 +115,13 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       if (subscription) {
         const endpoint = subscription.endpoint;
         await subscription.unsubscribe();
-        // The endpoint URL is the pk used by the backend destroy endpoint.
-        await api.delete(
-          `/api/notifications/devices/${encodeURIComponent(endpoint)}/`,
-        );
+        await unregisterMutation.mutateAsync(endpoint);
         setIsSubscribed(false);
       }
     } catch (error) {
       console.error("[PushNotifications] Unsubscribe failed:", error);
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [unregisterMutation]);
 
   return { permission, isSubscribed, isLoading, subscribe, unsubscribe };
 };
