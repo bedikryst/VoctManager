@@ -116,6 +116,27 @@
 /* ========================================== */
 /* CUSTOM UTILITIES (V4 Syntax)               */
 /* ========================================== */
+/* ========================================== */
+/* Z-INDEX UTILITIES (explicit registration)  */
+/* @theme alone doesn't generate classes for  */
+/* compound names with hyphens in Tailwind v4 */
+/* ========================================== */
+@utility z-nav-dock {
+  z-index: var(--z-nav-dock);
+}
+
+@utility z-nav-sheet {
+  z-index: var(--z-nav-sheet);
+}
+
+@utility z-focus-trap {
+  z-index: var(--z-focus-trap);
+}
+
+@utility z-toast {
+  z-index: var(--z-toast);
+}
+
 @utility no-scrollbar {
   &::-webkit-scrollbar {
     display: none;
