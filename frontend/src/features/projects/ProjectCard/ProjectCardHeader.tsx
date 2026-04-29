@@ -106,6 +106,7 @@ export const ProjectCardHeader = ({
   const { t } = useTranslation();
   const { downloadReport, isDownloading } = useProjectCard(String(project.id));
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [isScorePdfModalOpen, setIsScorePdfModalOpen] = useState(false);
 
   const fetchRunsheetBlob = useCallback(async () => {
     const response = await ProjectService.downloadReport(
@@ -114,6 +115,11 @@ export const ProjectCardHeader = ({
     );
     return new Blob([response.data], { type: "application/pdf" });
   }, [project.id]);
+
+  const fetchScorePdfBlob = useCallback(
+    () => ProjectService.fetchScorePdfBlob(String(project.id)),
+    [project.id],
+  );
 
   const isDone = project.status === PROJECT_STATUS.DONE;
   const conductorName = useMemo(
@@ -296,6 +302,19 @@ export const ProjectCardHeader = ({
               leftIcon={<Eye size={13} aria-hidden="true" />}
               title={t("projects.exports.open_runsheet", "Otwórz Harmonogram")}
             />
+            {project.score_pdf && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-1.5 text-ethereal-amethyst/70 hover:text-ethereal-amethyst"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsScorePdfModalOpen(true);
+                }}
+                leftIcon={<FileText size={13} aria-hidden="true" />}
+                title={t("projects.exports.open_score_pdf", "Otwórz Partyturę (PDF)")}
+              />
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -420,6 +439,18 @@ export const ProjectCardHeader = ({
         docKey={`runsheet-${project.id}`}
         onClose={() => setIsPdfModalOpen(false)}
       />
+
+      {project.score_pdf && (
+        <PdfViewerModal
+          isOpen={isScorePdfModalOpen}
+          title={t("projects.card.score_pdf_modal_title", "Partytura Koncertu")}
+          subtitle={project.title}
+          fileName={`Score_${project.title.replace(/\s+/g, "_")}.pdf`}
+          fetchBlob={fetchScorePdfBlob}
+          docKey={`score-pdf-${project.id}`}
+          onClose={() => setIsScorePdfModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
