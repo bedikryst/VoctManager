@@ -7,7 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ArchiveService } from "./archive.service";
-import type { PieceWriteDTO } from "../types/archive.dto";
+import type { ComposerWriteDTO, PieceWriteDTO } from "../types/archive.dto";
 
 export const archiveKeys = {
   pieces: {
@@ -48,6 +48,17 @@ export const useCreatePiece = () => {
     mutationFn: (data: PieceWriteDTO) => ArchiveService.createPiece(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
+export const useCreateComposer = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ComposerWriteDTO) => ArchiveService.createComposer(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: archiveKeys.composers.all });
     },
   });
 };

@@ -21,6 +21,11 @@ from .dtos import PieceWriteDTO, VoiceRequirementDTO
 _LEGACY_REFERENCE_RECORDING = object()
 
 
+def _blank_to_none(value):
+    """Converts empty strings to None for DTO fields that require semantic nullability."""
+    return None if value in (None, '') else value
+
+
 class ComposerSerializer(serializers.ModelSerializer):
     """Serializes Composer entities and their biographical metadata."""
     class Meta:
@@ -80,27 +85,30 @@ class PieceSerializer(serializers.ModelSerializer):
 
         nullable_fields = (
             'composer',
+            'composition_year',
+            'estimated_duration',
+        )
+
+        blank_string_fields = (
             'arranger',
             'language',
-            'composition_year',
             'epoch',
-            'estimated_duration',
             'lyrics_original',
             'lyrics_translation',
             'reference_recording',
             'reference_recording_youtube',
             'reference_recording_spotify',
+            'voicing',
+            'description',
         )
 
         for field in nullable_fields:
-            if data.get(field) == '':
+            if field in data and data.get(field) == '':
                 data[field] = None
 
-        if 'voicing' in data and data.get('voicing') is None:
-            data['voicing'] = ''
-
-        if 'description' in data and data.get('description') is None:
-            data['description'] = ''
+        for field in blank_string_fields:
+            if field in data and data.get(field) is None:
+                data[field] = ''
 
         return super().to_internal_value(data)
 
@@ -170,16 +178,26 @@ class PieceSerializer(serializers.ModelSerializer):
         return PieceWriteDTO(
             title=vd.get('title', instance.title if instance else ''),
             composer_id=composer_id,
-            arranger=vd.get('arranger', getattr(instance, 'arranger', None)),
-            language=vd.get('language', getattr(instance, 'language', None)),
+            arranger=vd.get('arranger', getattr(instance, 'arranger', '')),
+            language=vd.get('language', getattr(instance, 'language', '')),
             estimated_duration=vd.get('estimated_duration', getattr(instance, 'estimated_duration', None)),
             voicing=vd.get('voicing', getattr(instance, 'voicing', '')),
             description=vd.get('description', getattr(instance, 'description', '')),
-            lyrics_original=vd.get('lyrics_original', getattr(instance, 'lyrics_original', None)),
-            lyrics_translation=vd.get('lyrics_translation', getattr(instance, 'lyrics_translation', None)),
-            reference_recording_youtube=vd.get('reference_recording_youtube', getattr(instance, 'reference_recording_youtube', None)),
-            reference_recording_spotify=vd.get('reference_recording_spotify', getattr(instance, 'reference_recording_spotify', None)),
+            lyrics_original=vd.get('lyrics_original', getattr(instance, 'lyrics_original', '')),
+            lyrics_translation=vd.get('lyrics_translation', getattr(instance, 'lyrics_translation', '')),
+            reference_recording_youtube=_blank_to_none(
+                vd.get(
+                    'reference_recording_youtube',
+                    getattr(instance, 'reference_recording_youtube', ''),
+                )
+            ),
+            reference_recording_spotify=_blank_to_none(
+                vd.get(
+                    'reference_recording_spotify',
+                    getattr(instance, 'reference_recording_spotify', ''),
+                )
+            ),
             composition_year=vd.get('composition_year', getattr(instance, 'composition_year', None)),
-            epoch=vd.get('epoch', getattr(instance, 'epoch', None)),
+            epoch=vd.get('epoch', getattr(instance, 'epoch', '')),
             voice_requirements=req_dtos
         )

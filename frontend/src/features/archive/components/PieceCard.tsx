@@ -98,7 +98,7 @@ export default function PieceCard({
       }`}
     >
       <div
-        className="p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 cursor-pointer hover:bg-ethereal-alabaster/40 transition-colors relative z-10"
+        className="p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 cursor-pointer relative z-10"
         onClick={onToggleExpand}
       >
         <div className="flex items-start gap-4 md:gap-5">

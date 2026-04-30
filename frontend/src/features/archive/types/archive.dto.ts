@@ -11,6 +11,13 @@ export interface VoiceRequirementDTO {
   quantity: number;
 }
 
+export interface ComposerWriteDTO {
+  first_name?: string;
+  last_name: string;
+  birth_year?: string;
+  death_year?: string;
+}
+
 export interface PieceWriteDTO {
   title: string;
   composer?: string;

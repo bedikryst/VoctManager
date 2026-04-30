@@ -6,7 +6,7 @@
 
 import api from "@/shared/api/api";
 import type { Piece, Composer, Track } from "@/shared/types";
-import type { PieceWriteDTO } from "../types/archive.dto";
+import type { ComposerWriteDTO, PieceWriteDTO } from "../types/archive.dto";
 
 const PIECES_URL = "/api/pieces/";
 const COMPOSERS_URL = "/api/composers/";
@@ -16,9 +16,21 @@ const COMPOSERS_URL = "/api/composers/";
  */
 const buildPieceFormData = (dto: PieceWriteDTO): FormData => {
   const formData = new FormData();
+  const nullableFieldNames = new Set([
+    "composer",
+    "estimated_duration",
+    "composition_year",
+  ]);
 
   Object.entries(dto).forEach(([key, value]) => {
-    if (value === null || value === undefined) return;
+    if (value === undefined) return;
+
+    if (value === null) {
+      if (nullableFieldNames.has(key)) {
+        formData.append(key, "");
+      }
+      return;
+    }
 
     if (key === "voice_requirements") {
       formData.append("requirements_data", JSON.stringify(value));
@@ -65,6 +77,11 @@ export const ArchiveService = {
   // --- COMPOSERS ---
   getComposers: async (): Promise<Composer[]> => {
     const response = await api.get<Composer[]>(COMPOSERS_URL);
+    return response.data;
+  },
+
+  createComposer: async (data: ComposerWriteDTO): Promise<Composer> => {
+    const response = await api.post<Composer>(COMPOSERS_URL, data);
     return response.data;
   },
 

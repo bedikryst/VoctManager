@@ -49,6 +49,14 @@ class ArchiveManagementService:
         PieceVoiceRequirement.objects.bulk_create(new_requirements)
         logger.debug(f"[ArchiveService] Synchronized {len(new_requirements)} voice requirements for '{piece.title}'")
 
+    @staticmethod
+    def _normalize_blank_text(value: str | None) -> str:
+        """
+        Guarantees non-null writes for model fields that allow blank strings but disallow NULL.
+        Keeps the aggregate root resilient even if upstream serialization changes.
+        """
+        return value or ""
+
     @classmethod
     def create_piece(cls, dto: PieceWriteDTO, sheet_music_file=None) -> Piece:
         """
@@ -65,17 +73,21 @@ class ArchiveManagementService:
             piece = Piece.objects.create(
                 title=dto.title,
                 composer=composer,
-                arranger=dto.arranger,
-                language=dto.language,
+                arranger=cls._normalize_blank_text(dto.arranger),
+                language=cls._normalize_blank_text(dto.language),
                 estimated_duration=dto.estimated_duration,
-                voicing=dto.voicing,
-                description=dto.description,
-                lyrics_original=dto.lyrics_original,
-                lyrics_translation=dto.lyrics_translation,
-                reference_recording_youtube=dto.reference_recording_youtube,
-                reference_recording_spotify=dto.reference_recording_spotify,
+                voicing=cls._normalize_blank_text(dto.voicing),
+                description=cls._normalize_blank_text(dto.description),
+                lyrics_original=cls._normalize_blank_text(dto.lyrics_original),
+                lyrics_translation=cls._normalize_blank_text(dto.lyrics_translation),
+                reference_recording_youtube=cls._normalize_blank_text(
+                    str(dto.reference_recording_youtube) if dto.reference_recording_youtube else None
+                ),
+                reference_recording_spotify=cls._normalize_blank_text(
+                    str(dto.reference_recording_spotify) if dto.reference_recording_spotify else None
+                ),
                 composition_year=dto.composition_year,
-                epoch=dto.epoch,
+                epoch=cls._normalize_blank_text(dto.epoch),
                 sheet_music=sheet_music_file
             )
             
@@ -101,17 +113,21 @@ class ArchiveManagementService:
         with transaction.atomic():
             piece.title = dto.title
             piece.composer = composer
-            piece.arranger = dto.arranger
-            piece.language = dto.language
+            piece.arranger = cls._normalize_blank_text(dto.arranger)
+            piece.language = cls._normalize_blank_text(dto.language)
             piece.estimated_duration = dto.estimated_duration
-            piece.voicing = dto.voicing
-            piece.description = dto.description
-            piece.lyrics_original = dto.lyrics_original
-            piece.lyrics_translation = dto.lyrics_translation
-            piece.reference_recording_youtube = dto.reference_recording_youtube
-            piece.reference_recording_spotify = dto.reference_recording_spotify
+            piece.voicing = cls._normalize_blank_text(dto.voicing)
+            piece.description = cls._normalize_blank_text(dto.description)
+            piece.lyrics_original = cls._normalize_blank_text(dto.lyrics_original)
+            piece.lyrics_translation = cls._normalize_blank_text(dto.lyrics_translation)
+            piece.reference_recording_youtube = cls._normalize_blank_text(
+                str(dto.reference_recording_youtube) if dto.reference_recording_youtube else None
+            )
+            piece.reference_recording_spotify = cls._normalize_blank_text(
+                str(dto.reference_recording_spotify) if dto.reference_recording_spotify else None
+            )
             piece.composition_year = dto.composition_year
-            piece.epoch = dto.epoch
+            piece.epoch = cls._normalize_blank_text(dto.epoch)
             
             if update_sheet_music:
                 piece.sheet_music = sheet_music_file

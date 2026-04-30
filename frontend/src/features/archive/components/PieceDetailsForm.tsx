@@ -115,7 +115,10 @@ export default function PieceDetailsForm({
               </Eyebrow>
               <button
                 type="button"
-                onClick={() => setIsAddingComposer(!isAddingComposer)}
+                onClick={() => {
+                  setIsAddingComposer(!isAddingComposer);
+                  setIsCompDropdownOpen(false);
+                }}
                 className="text-[9px] text-ethereal-gold font-medium antialiased uppercase tracking-widest hover:underline"
                 disabled={isSubmitting}
               >
@@ -212,10 +215,13 @@ export default function PieceDetailsForm({
                         <div
                           key={composer.id}
                           onMouseDown={() => {
+                            const composerLabel =
+                              `${composer.last_name} ${composer.first_name || ""}`.trim();
                             setFormData((prev) => ({
                               ...prev,
                               composer: String(composer.id),
                             }));
+                            setCompSearchTerm(composerLabel);
                             setIsCompDropdownOpen(false);
                           }}
                           className="px-4 py-3 text-sm font-medium text-ethereal-ink hover:bg-ethereal-gold/10 hover:text-ethereal-ink cursor-pointer transition-colors"

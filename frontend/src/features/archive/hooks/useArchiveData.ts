@@ -36,6 +36,7 @@ export const useArchiveData = () => {
   const [epochFilter, setEpochFilter] = useState<string>("");
   const [composerFilter, setComposerFilter] = useState<string>("");
   const [voicingFilter, setVoicingFilter] = useState<string>("");
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
   // Modal & Context State
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
@@ -54,8 +55,9 @@ export const useArchiveData = () => {
       }))
       .filter((piece) => {
         const matchesSearch =
-          piece.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          piece.composer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+          normalizedSearchTerm.length === 0 ||
+          piece.title.toLowerCase().includes(normalizedSearchTerm) ||
+          piece.composer_name?.toLowerCase().includes(normalizedSearchTerm);
         const matchesEpoch = epochFilter ? piece.epoch === epochFilter : true;
         const matchesComposer = composerFilter
           ? piece.composer?.id === composerFilter
@@ -71,24 +73,81 @@ export const useArchiveData = () => {
   }, [
     pieces,
     composers,
-    searchTerm,
+    normalizedSearchTerm,
     epochFilter,
     composerFilter,
     voicingFilter,
   ]);
 
-  // 4. Derived State (Library Statistics) - WYMAGANE PRZEZ ARCHIVE MANAGEMENT
+  const availableVoicings = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          pieces
+            .map((piece) => piece.voicing?.trim())
+            .filter((voicing): voicing is string => Boolean(voicing)),
+        ),
+      ).sort((left, right) =>
+        left.localeCompare(right, undefined, { sensitivity: "base" }),
+      ),
+    [pieces],
+  );
+
+  // 4. Derived State (Library Statistics)
   const libraryStats = useMemo(() => {
+    const uniqueComposers = new Set(
+      pieces
+        .map(
+          (piece) =>
+            piece.composer || piece.composer_name || piece.composer_full_name,
+        )
+        .filter((value): value is string => Boolean(value)),
+    );
+    const uniqueVoicings = new Set(
+      pieces
+        .map((piece) => piece.voicing?.trim())
+        .filter((value): value is string => Boolean(value)),
+    );
+
     return {
       totalPieces: pieces.length,
       withPdf: pieces.filter((p) => !!p.sheet_music).length,
+      piecesWithAudio: pieces.filter((p) => (p.tracks?.length ?? 0) > 0).length,
       totalAudio: pieces.reduce((sum, p) => sum + (p.tracks?.length || 0), 0),
+      withReferenceLinks: pieces.filter(
+        (p) =>
+          Boolean(
+            p.reference_recording ||
+              p.reference_recording_youtube ||
+              p.reference_recording_spotify,
+          ),
+      ).length,
+      uniqueComposers: uniqueComposers.size,
+      uniqueVoicings: uniqueVoicings.size,
     };
   }, [pieces]);
+
+  const hasActiveFilters = Boolean(
+    normalizedSearchTerm || epochFilter || composerFilter || voicingFilter,
+  );
+
+  const activeFilterCount = [
+    normalizedSearchTerm,
+    epochFilter,
+    composerFilter,
+    voicingFilter,
+  ].filter(Boolean).length;
 
   // 5. UI Actions
   const handleDeleteRequest = useCallback((id: string, title: string) => {
     setPieceToDelete({ id, title });
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setSearchTerm("");
+    setEpochFilter("");
+    setComposerFilter("");
+    setVoicingFilter("");
   }, []);
 
   const executeDelete = async () => {
@@ -132,6 +191,9 @@ export const useArchiveData = () => {
     composers,
     voiceLines,
     libraryStats,
+    availableVoicings,
+    hasActiveFilters,
+    activeFilterCount,
 
     // Filters
     searchTerm,
@@ -142,6 +204,7 @@ export const useArchiveData = () => {
     setComposerFilter,
     voicingFilter,
     setVoicingFilter,
+    resetFilters,
 
     // UI Context
     isPanelOpen,
