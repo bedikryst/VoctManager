@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from "react";
-import { AnimatePresence, LayoutGroup } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { useNavigationAura } from "../hooks/useNavigationAura";
 import { MobileNavSheet } from "./MobileNavSheet";
 import { MobileNavTrigger } from "./MobileNavTrigger";
@@ -38,23 +38,21 @@ export const MobileNavigation = ({ user, logout }: MobileNavigationProps) => {
   useCloseWatcher(isOpen, handleClose);
 
   return (
-    <LayoutGroup>
-      <AnimatePresence>
-        {!isOpen ? (
-          <MobileNavTrigger
-            key="trigger"
-            onOpen={handleOpen}
-            aura={navigationAura}
-          />
-        ) : (
-          <MobileNavSheet
-            key="sheet"
-            onClose={handleClose}
-            aura={navigationAura}
-            logout={logout}
-          />
-        )}
-      </AnimatePresence>
-    </LayoutGroup>
+    <AnimatePresence initial={false}>
+      {!isOpen ? (
+        <MobileNavTrigger
+          key="trigger"
+          onOpen={handleOpen}
+          aura={navigationAura}
+        />
+      ) : (
+        <MobileNavSheet
+          key="sheet"
+          onClose={handleClose}
+          aura={navigationAura}
+          logout={logout}
+        />
+      )}
+    </AnimatePresence>
   );
 };

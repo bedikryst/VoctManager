@@ -1,3 +1,13 @@
+/**
+ * @file MobileNavTrigger.tsx
+ * @description Collapsed dock state of the mobile navigation.
+ * Owns its own enter/exit kinematics (transform + opacity only).
+ * Framer-motion manages compositor promotion for the duration of the animation;
+ * static `will-change` is intentionally absent so the GPU layer is released at rest.
+ * @architecture Enterprise SaaS 2026
+ * @module shared/widgets/layout/mobile
+ */
+
 import React from "react";
 import { motion } from "framer-motion";
 import { NavLink } from "react-router-dom";
@@ -21,7 +31,6 @@ export const MobileNavTrigger = ({
 
   return (
     <motion.div
-      layoutId="mobile-nav-container"
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -31,8 +40,10 @@ export const MobileNavTrigger = ({
       <GlassCard
         variant="ethereal"
         padding="none"
-        withNoise={true}
-        className="pointer-events-auto flex items-center justify-evenly h-nav-dock px-3 rounded-full min-w-[320px] max-w-sm w-full border border-white/60 shadow-2xl transform-gpu will-change-transform"
+        withNoise={false}
+        isHoverable={false}
+        animationEngine="framer"
+        className="pointer-events-auto flex items-center justify-evenly h-nav-dock px-3 rounded-full min-w-[320px] max-w-sm w-full border border-white/60 shadow-2xl"
       >
         <nav
           aria-label="Main Mobile Navigation"
@@ -85,7 +96,7 @@ export const MobileNavTrigger = ({
             onClick={onOpen}
             aria-label="Open expansive menu"
             aria-haspopup="dialog"
-            className="flex items-center justify-center h-12 w-12 rounded-full text-ethereal-graphite/60 hover:text-ethereal-graphite/90 transition-all duration-300 active:scale-90 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
+            className="flex items-center justify-center h-12 w-12 rounded-full text-ethereal-graphite/60 hover:text-ethereal-graphite/90 transition-colors duration-300 active:scale-90 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
           >
             <Menu size={24} strokeWidth={2} />
           </button>

@@ -9,14 +9,14 @@
 import { cva } from "class-variance-authority";
 
 export const mobileNavLinkVariants = cva(
-  "group/moblink relative flex items-center gap-5 rounded-[1.25rem] px-6 py-4 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 active:scale-[0.97] will-change-transform overflow-hidden",
+  "group/moblink relative flex items-center gap-5 rounded-[1.25rem] px-6 py-4 transition-[background-color,border-color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 active:scale-[0.97] overflow-hidden",
   {
     variants: {
       isActive: {
         true: [
           "bg-gradient-to-r from-ethereal-gold/[0.08] to-transparent",
           "shadow-[inset_0_1px_0_rgba(194,168,120,0.2),inset_1px_0_0_rgba(194,168,120,0.1)]",
-          "border border-ethereal-gold/10 backdrop-blur-md",
+          "border border-ethereal-gold/10",
         ],
         false: [
           "bg-transparent border border-transparent",
