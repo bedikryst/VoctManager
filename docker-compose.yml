@@ -83,6 +83,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      # Vite resolves env vars at build time, baking them into the static bundle.
+      # Because `.env` is excluded by .dockerignore, every VITE_* must be passed
+      # explicitly here (sourced from the root `.env` via Compose interpolation).
+      args:
+        - VITE_API_URL=${VITE_API_URL-}
+        - VITE_GOOGLE_MAPS_FRONTEND_KEY=${VITE_GOOGLE_MAPS_FRONTEND_KEY-}
+        - VITE_GOOGLE_MAP_ID=${VITE_GOOGLE_MAP_ID-}
+        - VITE_VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY-}
     restart: always
     depends_on:
       web:
