@@ -23,17 +23,9 @@
       "traditional_unknown": "Traditional / Unknown"
     },
     "dashboard": {
-      "add_piece": "Add piece:",
-      "empty_hint": "Change filter parameters or add a new composition to the database.",
-      "empty_state": "No results",
-      "filter_composer": "All Composers",
-      "filter_epoch": "All Epochs",
+      "collection_desc": "Każda karta prowadzi bezpośrednio do szczegółów utworu, plików nutowych i zarządzania ścieżkami audio.",
+      "collection_title": "Kolekcja robocza",
       "new_piece": "New Piece",
-      "not_found": "Composition not found",
-      "search_placeholder": "Search piece by title...",
-      "stats_audio": "Audio Tracks (MIDI/MP3)",
-      "stats_pdf": "Available Scores (PDF)",
-      "stats_total": "Items in database",
       "subtitle": "Repertoire Resources",
       "title": "Sheet Music",
       "title_highlight": "Archive"
@@ -50,6 +42,37 @@
       },
       "unsaved_desc": "You have made changes in the form that have not been saved to the database yet. Are you sure you want to close the panel? Unsaved data will be lost.",
       "unsaved_title": "You have unsaved changes!"
+    },
+    "empty_state": {
+      "add_piece": "Add piece",
+      "add_search": "Add piece \"{{term}}\"",
+      "filters_blocked": "Active filters are hiding the collection. Clear them to return to the full catalog.",
+      "search_results": "No results for \"{{term}}\". You can create a new piece card or remove some filters.",
+      "start_building": "Start building the library by adding the first piece to the archive.",
+      "title": "No pieces in the current view"
+    },
+    "filters": {
+      "active_description": "Click a filter to remove it without resetting the whole view.",
+      "active_filters_one": "{{count}} aktywne filtry",
+      "active_filters_other": "{{count}} aktywne filtry",
+      "all_composers": "All composers",
+      "all_epochs": "All epochs",
+      "all_voicings": "All voicing profiles",
+      "clear_filters": "Clear filters",
+      "composer_label": "Composer",
+      "composer_token": "Composer: {{composer}}",
+      "epoch_label": "Epoch",
+      "epoch_token": "Epoch: {{epoch}}",
+      "heading": "Collection Filters",
+      "no_active_filters": "No active filters",
+      "no_filters_message": "No active filters. The view shows the full archive catalog.",
+      "search_label": "Search",
+      "search_placeholder": "Search by title or composer...",
+      "search_token": "Phrase: \"{{term}}\"",
+      "summary": "{{visible}} of {{total}} pieces in the current view.",
+      "unknown_composer": "Unknown",
+      "voicing_label": "Voicing",
+      "voicing_token": "Voicing: {{voicing}}"
     },
     "form": {
       "actions": {
@@ -111,8 +134,7 @@
         "sheet_music_attached": "Sheet music is already attached in the database."
       },
       "toast": {
-        "constraint_desc": "Creating composers inline requires a separate endpoint. Select a composer from the list.",
-        "constraint_title": "System constraint",
+        "composer_required": "Nazwisko kompozytora jest wymagane.",
         "create_success": "Piece added successfully.",
         "creating": "Adding piece to archive...",
         "save_error_desc": "Check the data and try again.",
@@ -124,6 +146,25 @@
         "minutes_short": "min",
         "seconds_short": "sec"
       }
+    },
+    "hero": {
+      "badge": "Archive Operations",
+      "description": "A single operational view for managing the piece catalog, materials, and reference recordings.",
+      "stats": {
+        "composers_one": "{{count}} kompozytorów",
+        "composers_other": "{{count}} kompozytorów",
+        "references_one": "{{count}} utworów z referencjami",
+        "references_other": "{{count}} utworów z referencjami",
+        "voicings_one": "{{count}} profili obsady",
+        "voicings_other": "{{count}} profili obsady"
+      },
+      "title": "Sheet music, score and audio library."
+    },
+    "metrics": {
+      "audio": "Audio tracks",
+      "composers": "Composers",
+      "pdf": "Score coverage",
+      "pieces": "Pieces"
     },
     "toast": {
       "delete_error_desc": "Make sure the piece is not linked to active projects.",
@@ -190,6 +231,9 @@
       "create_artist": "Create Artist",
       "email": "Email *",
       "first_name": "First Name *",
+      "first_name_vocative": "Wołacz",
+      "first_name_vocative_hint": "Forma używana w powitaniach, np. w mailach.",
+      "first_name_vocative_placeholder": "np. Krystianie",
       "language": "Message Language *",
       "language_edit_disabled": "Language is managed individually by the artist in their account settings.",
       "last_name": "Last Name *",
@@ -220,10 +264,7 @@
       "altos": "Altos",
       "basses": "Basses",
       "sopranos": "Sopranos",
-      "tenors": "Tenors",
-      "mezzos": "Mezzos",
-      "countertenors": "Countertenors",
-      "baritones": "Baritones"
+      "tenors": "Tenors"
     },
     "form": {
       "toast": {
@@ -271,6 +312,7 @@
         "missing_params": "This link is missing activation parameters. Open the latest invitation email and use the full button or URL.",
         "new_password": "New password",
         "new_password_placeholder": "Create a secure password",
+        "privacy_link": "Politykę Prywatności",
         "security_desc": "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
         "security_title": "Security standard",
         "subtitle": "Password setup",
@@ -291,9 +333,6 @@
       },
       "title_1": "Activate your",
       "title_2": "artist panel"
-    },
-    "activation": {
-      "terms_modal_title": "Terms and Conditions of Use"
     },
     "login": {
       "back_to_lobby": "Back to lobby",
@@ -400,7 +439,8 @@
       "edit": "Edit",
       "retry": "Retry",
       "save": "Save",
-      "select": "Select"
+      "select": "Select",
+      "undo": "Cofnij"
     },
     "archive": "Archive",
     "aria": {
@@ -418,6 +458,7 @@
     "error_saving": "Error saving",
     "errors": {
       "database_error": "A database connection problem occurred.",
+      "download_error": "Błąd pobierania",
       "generation_error": "Generation error",
       "generic": "An error occurred",
       "save_error": "Save error",
@@ -454,44 +495,119 @@
     "unsaved_title": "You have unsaved changes!"
   },
   "contracts": {
-    "dashboard": {
-      "apply_valuation": "Apply Valuation",
-      "archived": "(Archived)",
-      "contracts_issued": "Issued Contracts",
-      "description": "Manage artist and crew compensation, control production budgets, and generate PDF contracts.",
-      "empty_state_desc": "Select an event from the context switcher above to manage rates and control the production budget.",
-      "empty_state_title": "Ready for billing",
-      "global_budget": "Global System Budget",
-      "loading": "Loading registries...",
-      "mass_fee_injection": "Bulk Fee Injection (Choir Only)",
-      "missing_appraisals": "Missing Appraisals",
-      "no_event_selected": "— No event selected —",
-      "no_personnel_desc": "Go to the \"Project Management\" tab to hire cast or crew for this event.",
-      "no_personnel_title": "No personnel assigned",
-      "personnel_budget": "Personnel Budget",
-      "priced_contracts": "Priced Contracts",
-      "select_event_label": "Select Event (Billing Context)",
-      "subtitle": "Finance Management",
-      "tech_crew": "Tech Crew & Logistics",
-      "title": "HR &",
-      "title_highlight": "Payroll",
-      "value_placeholder": "Value...",
-      "valued": "valued",
-      "vocal_cast": "Vocal Cast (Choir / Soloists)"
+    "actions": {
+      "bulk_apply": "Apply valuation",
+      "bulk_badge": "Bulk valuation",
+      "bulk_description": "This action affects cast contracts only. It is useful when the production uses a shared standard fee before individual adjustments.",
+      "bulk_disabled_reason": "Bulk valuation activates after at least one cast record is assigned to the project.",
+      "bulk_fee_error": "Enter a valid remuneration value.",
+      "bulk_hint": "You can still refine individual remuneration values inside each record below.",
+      "bulk_label": "Gross fee",
+      "bulk_placeholder": "0.00",
+      "bulk_title": "Apply one remuneration amount across the vocal roster.",
+      "cast_count_one": "{{count}} cast records",
+      "cast_count_other": "{{count}} cast records",
+      "currency_label": "PLN",
+      "export_badge": "Project export",
+      "export_description": "Use the background export pipeline to prepare the ZIP package with contract PDFs for the whole event.",
+      "export_missing_one": "{{count}} valuations missing",
+      "export_missing_other": "{{count}} valuations missing",
+      "export_ready": "Ledger ready for export",
+      "export_title": "Generate a contract package for the selected project."
+    },
+    "empty": {
+      "idle_description": "The finance cockpit is ready. Pick an event above to inspect coverage, update remuneration values, and prepare exportable contract packages.",
+      "idle_eyebrow": "Portfolio view",
+      "idle_title": "Select a project to open the settlement ledger.",
+      "no_personnel_description": "Assign personnel in the project workspace first. Once records exist here, you can define remunerations and generate PDF contracts.",
+      "no_personnel_eyebrow": "No records yet",
+      "no_personnel_title": "This project has no assigned cast or crew."
+    },
+    "error": {
+      "action": "Retry synchronization",
+      "description": "Project, cast, or crew data did not arrive from the API. Retry synchronization to restore the contracts dashboard.",
+      "eyebrow": "Ledger unavailable",
+      "title": "The settlement workspace could not be loaded."
+    },
+    "header": {
+      "badge": "Finance operations",
+      "refresh": "Refresh data",
+      "syncing": "Synchronizing",
+      "title": "Contracts and",
+      "title_highlight": "Payroll"
+    },
+    "hero": {
+      "active_projects": "active",
+      "cast": "cast",
+      "context_badge_active": "Active settlement context",
+      "context_badge_idle": "Finance operations workspace",
+      "context_location": "Location",
+      "context_location_placeholder": "Event venue and logistics context will appear here.",
+      "context_mix": "Personnel mix",
+      "context_schedule": "Schedule",
+      "context_schedule_placeholder": "Select an event to activate the settlement workspace.",
+      "contract_records": "records",
+      "crew": "crew",
+      "description_default": "Choose a project to manage cast fees, crew remuneration, and contract-ready PDFs in one coherent workspace.",
+      "description_selected": "Control valuations, payout readiness, and document exports for the selected production without leaving the ledger surface.",
+      "draft_projects": "draft",
+      "portfolio_projects": "projects in portfolio",
+      "selector_description": "The selected event becomes the operational context for valuations, budget checks, and PDF generation.",
+      "selector_eyebrow": "Project scope",
+      "selector_label": "Settlement context",
+      "selector_placeholder": "Choose an event from the portfolio",
+      "stat_budget": "Budget posture",
+      "stat_completion": "Valuation coverage",
+      "stat_contracts": "Contracts",
+      "title_default": "Contracts and payroll cockpit"
+    },
+    "loader": {
+      "message": "Loading settlement ledgers..."
+    },
+    "metrics": {
+      "global_archive": "Archived projects",
+      "global_archive_desc": "Completed productions still available for historical exports.",
+      "global_budget": "Global budget",
+      "global_budget_desc": "All remunerations already introduced into the platform.",
+      "global_coverage": "Valuation coverage",
+      "global_coverage_desc": "How much of the entire portfolio is already priced.",
+      "global_live": "Live projects",
+      "global_live_desc": "Draft and active events available for ongoing settlements.",
+      "project_budget": "Personnel budget",
+      "project_budget_desc": "Current gross budget across cast and crew.",
+      "project_missing": "Missing valuations",
+      "project_missing_desc": "These records still block direct PDF generation.",
+      "project_mix": "Personnel mix",
+      "project_mix_desc": "Cast versus crew headcount in the active ledger.",
+      "project_priced": "Priced contracts",
+      "project_priced_desc": "Contracts with a defined remuneration value."
     },
     "row": {
+      "cast_record": "Cast contract record",
+      "crew_record": "Crew contract record",
+      "currency_label": "PLN",
+      "current_fee": "Current fee: {{amount}}",
+      "download_pdf": "PDF",
+      "fee_placeholder": "0.00",
+      "invalid_fee": "Enter a valid remuneration value.",
       "missing_fee": "Missing Fee",
-      "no_name": "Performer",
-      "save": "Save"
+      "save": "Save",
+      "saved": "Saved"
+    },
+    "sections": {
+      "cast_description": "Manage vocal remuneration, track valuation coverage, and generate individual contract PDFs for the artistic roster.",
+      "cast_title": "Cast ledger",
+      "crew_description": "Keep technical and logistics contracts aligned with the same remuneration and export workflow.",
+      "crew_title": "Crew ledger"
     },
     "table": {
-      "contractor": "Contractor / Company",
+      "all_priced": "All records priced",
       "documents": "Documents",
-      "gross_amount": "Gross Amount",
+      "missing_valuations": "missing valuations",
       "performer": "Performer",
-      "role": "Role",
-      "status": "Status",
-      "voice": "Voice"
+      "records": "records",
+      "remuneration": "Remuneration",
+      "role": "Role"
     },
     "toast": {
       "bulk_applying": "Applying bulk rates...",
@@ -502,6 +618,11 @@
       "pdf_generating": "Generating PDF for {{name}}...",
       "pdf_success": "Document generated successfully.",
       "save_error": "Failed to save compensation for: {{name}}."
+    },
+    "warning": {
+      "action": "Retry sync",
+      "description": "The dashboard is still usable, but one or more data sources failed to refresh. Run a manual sync to reconcile the latest project, cast, and crew records.",
+      "title": "Some ledger data is out of sync."
     }
   },
   "crew": {
@@ -707,15 +828,7 @@
         "admin": "Administrator",
         "artist": "Artist",
         "crew": "Crew",
-        "guest": "Guest",
-        "SOP": "Soprano",
-        "MEZ": "Mezzo-Soprano",
-        "ALT": "Alto",
-        "CT": "Countertenor",
-        "TEN": "Tenor",
-        "BAR": "Baritone",
-        "BAS": "Bass",
-        "DIR": "Conductor"
+        "guest": "Guest"
       }
     },
     "shared": {
@@ -727,10 +840,11 @@
   "export": {
     "actions": {
       "downloadZip": "Download ZIP",
-      "generateZip": "Generate ZIP"
+      "generateZip": "Generate ZIP",
+      "generatingZip": "Preparing contract package"
     },
-    "aria": {
-      "downloadReadyFile": "Download ready file"
+    "status": {
+      "ready": "Package ready"
     }
   },
   "footer": {
@@ -773,8 +887,8 @@
     },
     "categories": {
       "airport": "Airport",
-      "concert_hall": "Concert Hall",
       "church": "Church",
+      "concert_hall": "Concert Hall",
       "hotel": "Hotel",
       "other": "Other",
       "rehearsal_room": "Rehearsal Room",
@@ -790,8 +904,8 @@
       "search_placeholder": "Search location by name or address...",
       "subtitle": "Logistics Module",
       "sync_error": "Error syncing locations with the database.",
-      "title_highlight": "Locations",
-      "title_prefix": "Database"
+      "title": "Baza",
+      "title_highlight": "Locations"
     },
     "editor": {
       "address": "Official Address *",
@@ -956,10 +1070,17 @@
     "download": "Download",
     "error_403": "You do not have permission to view this document.",
     "error_generic": "The document could not be loaded.",
+    "fit_width": "Fit width",
+    "jump_to_page": "Jump to page",
     "next_page": "Next page",
+    "open_browser": "Open",
+    "page_short": "Page",
     "prev_page": "Previous page",
+    "share": "Share",
+    "unavailable_title": "Document unavailable",
     "zoom_in": "Zoom in",
-    "zoom_out": "Zoom out"
+    "zoom_out": "Zoom out",
+    "zoom_short": "Zoom"
   },
   "preloader": {
     "resonance": "résonance",
@@ -1016,6 +1137,12 @@
       "expand": "Expand",
       "generating_doc": "Generating document...",
       "logistics_dashboard": "Logistics & Production",
+      "score_pdf_download_aria": "Pobierz plik PDF partytury",
+      "score_pdf_downloaded": "Pobrano plik PDF",
+      "score_pdf_downloading": "Pobieranie partytury...",
+      "score_pdf_label": "Partytura koncertu (PDF)",
+      "score_pdf_modal_title": "Partytura Koncertu",
+      "score_pdf_preview": "Podgląd",
       "status_active": "Project marked as in preparation",
       "status_done": "Project marked as completed",
       "status_update_failed": "Failed to update status.",
@@ -1106,6 +1233,8 @@
       "time_title": "Local Time",
       "toast": {
         "create_success": "New project and schedule created",
+        "pdf_remove_failed": "Projekt zapisany — nie udało się usunąć PDF.",
+        "pdf_upload_failed": "Projekt zapisany — nie udało się załadować PDF. Spróbuj ponownie.",
         "saving": "Saving project details...",
         "update_success": "Project and schedule updated"
       }
@@ -1147,26 +1276,25 @@
         "time": "Time",
         "title": "Title"
       },
+      "score_pdf": {
+        "current": "Bieżący plik PDF",
+        "delete_aria": "Usuń PDF",
+        "modal_title": "Partytura Koncertu",
+        "pending_removal": "PDF zostanie usunięty po zapisaniu zmian.",
+        "preview": "Podgląd",
+        "replace": "Kliknij, aby zastąpić plik PDF",
+        "upload": "Kliknij, aby dodać partytury / program (PDF)"
+      },
       "sections": {
         "logistics": "Call Time and Dress Code",
         "notes": "Production Notes",
         "references": "Musical References",
         "run_sheet": "Concert Day Run Sheet",
+        "score_pdf": "Partytura Koncertu (PDF)",
         "title_desc": "Title and Description"
       }
     },
     "editor": {
-      "tabs": {
-        "details": "Details",
-        "cast": "Cast",
-        "crew": "Crew",
-        "logistics": "Logistics",
-        "program": "Program and Repertoire",
-        "budget": "Budget",
-        "micro_cast": "Divisi and Micro-Casting",
-        "rehearsals": "Rehearsals",
-        "matrix": "Attendance Matrix"
-      },
       "active_tab": "Active tab",
       "archive_badge": "Archive",
       "create_description": "Save the core event details first, then continue to the operational tabs.",
@@ -1182,6 +1310,7 @@
       "call_sheet": "Download Call Sheet",
       "dtp": "Download DTP Note",
       "open_runsheet": "Otwórz Harmonogram",
+      "open_score_pdf": "Otwórz Partyturę (PDF)",
       "runsheet_title": "Harmonogram (Runsheet)",
       "zaiks": "Download ZAiKS"
     },
@@ -1254,12 +1383,12 @@
       },
       "voices": {
         "altos": "Altos",
+        "baritones": "Baritones",
         "basses": "Basses",
-        "sopranos": "Sopranos",
-        "tenors": "Tenors",
-        "mezzos": "Mezzos",
         "countertenors": "Countertenors",
-        "baritones": "Baritones"
+        "mezzos": "Mezzos",
+        "sopranos": "Sopranos",
+        "tenors": "Tenors"
       }
     },
     "program": {
@@ -1383,10 +1512,7 @@
         "altos": "Altos",
         "basses": "Basses",
         "sopranos": "Sopranos",
-        "tenors": "Tenors",
-        "mezzos": "Mezzos",
-        "countertenors": "Countertenors",
-        "baritones": "Baritones"
+        "tenors": "Tenors"
       }
     },
     "roles": {
@@ -1450,12 +1576,12 @@
     },
     "voices": {
       "altos": "Altos",
+      "baritones": "Baritones",
       "basses": "Basses",
       "countertenors": "Countertenors",
       "mezzos": "Mezzo-sopranos",
       "sopranos": "Sopranos",
-      "tenors": "Tenors",
-      "baritones": "Baritones"
+      "tenors": "Tenors"
     }
   },
   "schedule": {
@@ -1481,7 +1607,10 @@
       "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
-      "unknown_artist": "Artist"
+      "score_pdf_label": "Partytura / Program",
+      "score_pdf_modal_title": "Partytura Koncertu",
+      "unknown_artist": "Artist",
+      "view_score_pdf": "Podgląd PDF"
     },
     "dashboard": {
       "description": "Check rehearsals, report absences, and track concert plans.",

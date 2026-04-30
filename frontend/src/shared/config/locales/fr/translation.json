@@ -23,17 +23,9 @@
       "traditional_unknown": "Traditionnel / Inconnu"
     },
     "dashboard": {
-      "add_piece": "Ajouter la pièce :",
-      "empty_hint": "Modifiez les filtres ou ajoutez une nouvelle composition à la base de données.",
-      "empty_state": "Aucun résultat",
-      "filter_composer": "Tous les compositeurs",
-      "filter_epoch": "Toutes les époques",
+      "collection_desc": "",
+      "collection_title": "",
       "new_piece": "Nouvelle pièce",
-      "not_found": "Composition introuvable",
-      "search_placeholder": "Rechercher une pièce par titre...",
-      "stats_audio": "Pistes audio (MIDI/MP3)",
-      "stats_pdf": "Partitions disponibles (PDF)",
-      "stats_total": "Éléments dans la base",
       "subtitle": "Ressources du répertoire",
       "title": "Archive de",
       "title_highlight": "Partitions"
@@ -50,6 +42,38 @@
       },
       "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas encore été enregistrées dans la base. Voulez-vous vraiment fermer le panneau ? Les données non enregistrées seront perdues.",
       "unsaved_title": "Vous avez des modifications non enregistrées !"
+    },
+    "empty_state": {
+      "add_piece": "Ajouter une pièce",
+      "add_search": "Ajouter la pièce \"{{term}}\"",
+      "filters_blocked": "Les filtres actifs masquent la collection. Effacez-les pour revenir au catalogue complet.",
+      "search_results": "Aucun résultat pour \"{{term}}\". Vous pouvez créer une nouvelle fiche de pièce ou supprimer certains filtres.",
+      "start_building": "Commencez à construire la bibliothèque en ajoutant la première pièce à l'archive.",
+      "title": "Aucune pièce dans la vue actuelle"
+    },
+    "filters": {
+      "active_description": "Cliquez sur un filtre pour le supprimer sans réinitialiser toute la vue.",
+      "active_filters_one": "{{count}} filtre actif",
+      "active_filters_many": "{{count}} filtres actifs",
+      "active_filters_other": "{{count}} filtres actifs",
+      "all_composers": "Tous les compositeurs",
+      "all_epochs": "Toutes les époques",
+      "all_voicings": "Tous les profils de distribution",
+      "clear_filters": "Effacer les filtres",
+      "composer_label": "Compositeur",
+      "composer_token": "Compositeur : {{composer}}",
+      "epoch_label": "Époque",
+      "epoch_token": "Époque : {{epoch}}",
+      "heading": "Filtres de collection",
+      "no_active_filters": "Aucun filtre actif",
+      "no_filters_message": "Aucun filtre actif. La vue affiche le catalogue d'archives complet.",
+      "search_label": "Recherche",
+      "search_placeholder": "Recherchez par titre ou compositeur...",
+      "search_token": "Expression : \"{{term}}\"",
+      "summary": "{{visible}} sur {{total}} pièces dans la vue actuelle.",
+      "unknown_composer": "Inconnu",
+      "voicing_label": "Distribution",
+      "voicing_token": "Distribution : {{voicing}}"
     },
     "form": {
       "actions": {
@@ -111,8 +135,7 @@
         "sheet_music_attached": "La partition est déjà jointe dans la base de données."
       },
       "toast": {
-        "constraint_desc": "La création de compositeurs à la volée nécessite un endpoint distinct. Sélectionnez un compositeur dans la liste.",
-        "constraint_title": "Contrainte système",
+        "composer_required": "Le nom du compositeur est requis.",
         "create_success": "Pièce ajoutée avec succès.",
         "creating": "Ajout de la pièce à l'archive...",
         "save_error_desc": "Vérifiez les données et réessayez.",
@@ -124,6 +147,28 @@
         "minutes_short": "min",
         "seconds_short": "s"
       }
+    },
+    "hero": {
+      "badge": "Opérations d'archive",
+      "description": "Une vue opérationnelle unique pour gérer le catalogue de pièces, les supports et les enregistrements de référence.",
+      "stats": {
+        "composers_one": "{{count}} compositeur",
+        "composers_many": "{{count}} compositeurs",
+        "composers_other": "{{count}} compositeurs",
+        "references_one": "{{count}} œuvre avec référence",
+        "references_many": "{{count}} œuvres avec références",
+        "references_other": "{{count}} œuvres avec références",
+        "voicings_one": "{{count}} profil de distribution",
+        "voicings_many": "{{count}} profils de distribution",
+        "voicings_other": "{{count}} profils de distribution"
+      },
+      "title": "Bibliothèque de partitions, musiques et audio."
+    },
+    "metrics": {
+      "audio": "Pistes audio",
+      "composers": "Compositeurs",
+      "pdf": "Couverture des partitions",
+      "pieces": "Pièces"
     },
     "toast": {
       "delete_error_desc": "Assurez-vous que la pièce n'est pas liée à des projets actifs.",
@@ -190,6 +235,9 @@
       "create_artist": "Créer l'artiste",
       "email": "E-mail *",
       "first_name": "Prénom *",
+      "first_name_vocative": "Cas vocatif du prénom",
+      "first_name_vocative_hint": "Forme utilisée dans les salutations, ex. dans les e-mails.",
+      "first_name_vocative_placeholder": "ex. Jean",
       "language": "Langue des messages *",
       "language_edit_disabled": "La langue est gérée individuellement par l'artiste dans les paramètres de son compte.",
       "last_name": "Nom *",
@@ -222,10 +270,7 @@
       "altos": "Altos",
       "basses": "Basses",
       "sopranos": "Sopranos",
-      "tenors": "Ténors",
-      "mezzos": "Mezzos",
-      "countertenors": "Contreténors",
-      "baritones": "Barytons"
+      "tenors": "Ténors"
     },
     "form": {
       "toast": {
@@ -273,6 +318,7 @@
         "missing_params": "Ce lien manque de paramètres d'activation. Ouvrez le dernier e-mail d'invitation et utilisez le bouton ou l'URL complet.",
         "new_password": "Nouveau mot de passe",
         "new_password_placeholder": "Créez un mot de passe sécurisé",
+        "privacy_link": "Politique de confidentialité",
         "security_desc": "Utilisez au moins 8 caractères. Un mot de passe plus long avec des lettres majuscules et minuscules, des chiffres et des symboles est recommandé.",
         "security_title": "Norme de sécurité",
         "subtitle": "Configuration du mot de passe",
@@ -293,9 +339,6 @@
       },
       "title_1": "Activez votre",
       "title_2": "panneau artiste"
-    },
-    "activation": {
-      "terms_modal_title": "Conditions Générales d'Utilisation"
     },
     "login": {
       "back_to_lobby": "Retour à l'accueil",
@@ -402,7 +445,8 @@
       "edit": "Modifier",
       "retry": "Réessayer",
       "save": "Enregistrer",
-      "select": "Sélectionner"
+      "select": "Sélectionner",
+      "undo": "Annuler"
     },
     "archive": "Archiver",
     "aria": {
@@ -420,6 +464,7 @@
     "error_saving": "Erreur lors de l'enregistrement",
     "errors": {
       "database_error": "Un problème de connexion à la base de données est survenu.",
+      "download_error": "Erreur de téléchargement",
       "generation_error": "Erreur de génération",
       "generic": "Une erreur est survenue",
       "save_error": "Erreur d'enregistrement",
@@ -456,44 +501,121 @@
     "unsaved_title": "Modifications non enregistrées !"
   },
   "contracts": {
-    "dashboard": {
-      "apply_valuation": "Appliquer l'évaluation",
-      "archived": "(Archivé)",
-      "contracts_issued": "Contrats émis",
-      "description": "Gérez les rémunérations des artistes et de l'équipe, contrôlez les budgets de production et générez des contrats PDF.",
-      "empty_state_desc": "Sélectionnez un événement dans le sélecteur de contexte ci-dessus pour gérer les tarifs et contrôler le budget de production.",
-      "empty_state_title": "Prêt pour la facturation",
-      "global_budget": "Budget global du système",
-      "loading": "Chargement des registres...",
-      "mass_fee_injection": "Injection massive de tarifs (chœur uniquement)",
-      "missing_appraisals": "Évaluations manquantes",
-      "no_event_selected": "— Aucun événement sélectionné —",
-      "no_personnel_desc": "Accédez à l'onglet « Gestion de projets » pour recruter la distribution ou l'équipe pour cet événement.",
-      "no_personnel_title": "Aucun personnel assigné",
-      "personnel_budget": "Budget du personnel",
-      "priced_contracts": "Contrats chiffrés",
-      "select_event_label": "Sélectionner l'événement (contexte de facturation)",
-      "subtitle": "Gestion financière",
-      "tech_crew": "Équipe technique & logistique",
-      "title": "RH &",
-      "title_highlight": "Paie",
-      "value_placeholder": "Valeur...",
-      "valued": "évalués",
-      "vocal_cast": "Distribution vocale (chœur / solistes)"
+    "actions": {
+      "bulk_apply": "Appliquer aux sélectionnés",
+      "bulk_badge": "Évaluation groupée",
+      "bulk_description": "Appliquez le même tarif à tous les membres de la distribution sélectionnés.",
+      "bulk_disabled_reason": "Sélectionnez d'abord les membres de la distribution",
+      "bulk_fee_error": "Entrez une valeur de rémunération valide.",
+      "bulk_hint": "Cela remplacera les tarifs individuels",
+      "bulk_label": "Montant du tarif",
+      "bulk_placeholder": "Saisir le tarif...",
+      "bulk_title": "Injection groupée de tarifs",
+      "cast_count_one": "{{count}} contrat de distribution",
+      "cast_count_many": "{{count}} contrats de distribution",
+      "cast_count_other": "{{count}} contrats de distribution",
+      "currency_label": "PLN",
+      "export_badge": "Prêt pour export",
+      "export_description": "Générez des PDFs pour les contrats sélectionnés",
+      "export_missing_one": "{{count}} évaluation manquante",
+      "export_missing_many": "{{count}} évaluations manquantes",
+      "export_missing_other": "{{count}} évaluations manquantes",
+      "export_ready": "Prêt pour export",
+      "export_title": "Exports de documents"
+    },
+    "empty": {
+      "idle_description": "Le cockpit financier est prêt. Choisissez un événement ci-dessus pour inspecter la couverture, mettre à jour les valeurs de rémunération et préparer les packages de contrats exportables.",
+      "idle_eyebrow": "Vue du portefeuille",
+      "idle_title": "Sélectionnez un projet pour ouvrir le registre de règlement.",
+      "no_personnel_description": "Assignez d'abord le personnel dans l'espace du projet. Une fois que les enregistrements existent ici, vous pouvez définir les rémunérations et générer les contrats PDF.",
+      "no_personnel_eyebrow": "Aucun enregistrement pour l'instant",
+      "no_personnel_title": "Ce projet n'a pas d'équipe d'interprètes ou d'équipe technique assignée."
+    },
+    "error": {
+      "action": "Réessayer la synchronisation",
+      "description": "Impossible de récupérer les données des contrats. Vérifiez votre connexion.",
+      "eyebrow": "Erreur de synchronisation",
+      "title": "Échec du chargement des contrats"
+    },
+    "header": {
+      "badge": "Opérations financières",
+      "refresh": "Actualiser les données",
+      "syncing": "Synchronisation",
+      "title": "Contrats et",
+      "title_highlight": "Paie"
+    },
+    "hero": {
+      "active_projects": "actifs",
+      "cast": "distribution",
+      "context_badge_active": "Contexte de règlement actif",
+      "context_badge_idle": "Espace de travail des opérations financières",
+      "context_location": "Localisation",
+      "context_location_placeholder": "Le lieu de l'événement et le contexte logistique apparaîtront ici.",
+      "context_mix": "Mix du personnel",
+      "context_schedule": "Calendrier",
+      "context_schedule_placeholder": "Sélectionnez un événement pour activer l'espace de règlement.",
+      "contract_records": "enregistrements",
+      "crew": "équipe",
+      "description_default": "Choisissez un projet pour gérer les frais de distribution, la rémunération de l'équipe et les PDFs prêts pour les contrats dans un espace cohérent.",
+      "description_selected": "Contrôlez les évaluations, la préparation des paiements et les exports de documents pour la production sélectionnée sans quitter la surface du registre.",
+      "draft_projects": "brouillons",
+      "portfolio_projects": "projets dans le portefeuille",
+      "selector_description": "L'événement sélectionné devient le contexte opérationnel pour les évaluations, les vérifications de budget et la génération de PDF.",
+      "selector_eyebrow": "Étendue du projet",
+      "selector_label": "Contexte de règlement",
+      "selector_placeholder": "Choisissez un événement du portefeuille",
+      "stat_budget": "Posture budgétaire",
+      "stat_completion": "Couverture d'évaluation",
+      "stat_contracts": "Contrats",
+      "title_default": "Cockpit des contrats et de la paie"
+    },
+    "loader": {
+      "message": "Chargement des registres de règlement..."
+    },
+    "metrics": {
+      "global_archive": "Projets archivés",
+      "global_archive_desc": "Productions terminées encore disponibles pour les exports historiques.",
+      "global_budget": "Budget global",
+      "global_budget_desc": "Budget total sur tous les projets actifs",
+      "global_coverage": "Taux de couverture",
+      "global_coverage_desc": "Pourcentage de contrats avec tarifs",
+      "global_live": "Projets en cours",
+      "global_live_desc": "Productions actives en cours",
+      "project_budget": "Budget du projet",
+      "project_budget_desc": "Coût total estimé pour cette production",
+      "project_missing": "Évaluations manquantes",
+      "project_missing_desc": "Contrats sans tarifs",
+      "project_mix": "Mix distribution/équipe",
+      "project_mix_desc": "Répartition des coûts du personnel",
+      "project_priced": "Contrats tarifés",
+      "project_priced_desc": "Contrats avec tarifs assignés"
     },
     "row": {
+      "cast_record": "Enregistrement de contrat de distribution",
+      "crew_record": "Enregistrement de contrat d'équipe",
+      "currency_label": "PLN",
+      "current_fee": "Tarif actuel : {{amount}}",
+      "download_pdf": "PDF",
+      "fee_placeholder": "0.00",
+      "invalid_fee": "Entrez une valeur de rémunération valide.",
       "missing_fee": "Tarif manquant",
-      "no_name": "Interprète",
-      "save": "Enregistrer"
+      "save": "Enregistrer",
+      "saved": "Enregistré"
+    },
+    "sections": {
+      "cast_description": "Gérez les tarifs pour les interprètes du chœur et les solistes",
+      "cast_title": "Distribution vocale",
+      "crew_description": "Gardez les contrats techniques et logistiques alignés avec le même workflow de rémunération et d'export.",
+      "crew_title": "Équipe technique"
     },
     "table": {
-      "contractor": "Prestataire / Entreprise",
+      "all_priced": "Tous tarifés",
       "documents": "Documents",
-      "gross_amount": "Montant brut",
+      "missing_valuations": "évaluations manquantes",
       "performer": "Interprète",
-      "role": "Rôle",
-      "status": "Statut",
-      "voice": "Voix"
+      "records": "Enregistrements",
+      "remuneration": "Rémunération",
+      "role": "Rôle"
     },
     "toast": {
       "bulk_applying": "Application des tarifs groupés...",
@@ -506,6 +628,11 @@
       "pdf_generating": "Génération du PDF pour {{name}}...",
       "pdf_success": "Document généré avec succès.",
       "save_error": "Impossible d'enregistrer la rémunération pour : {{name}}."
+    },
+    "warning": {
+      "action": "Réessayer la synchronisation",
+      "description": "Certaines données peuvent être obsolètes. Actualisez pour obtenir les dernières.",
+      "title": "Avertissement de synchronisation"
     }
   },
   "crew": {
@@ -714,15 +841,7 @@
         "admin": "Administrateur",
         "artist": "Artiste",
         "crew": "Équipe technique",
-        "guest": "Invité",
-        "SOP": "Soprano",
-        "MEZ": "Mezzo-Soprano",
-        "ALT": "Alto",
-        "CT": "Contreténor",
-        "TEN": "Ténor",
-        "BAR": "Baryton",
-        "BAS": "Basse",
-        "DIR": "Chef d'orchestre"
+        "guest": "Invité"
       }
     },
     "shared": {
@@ -734,10 +853,11 @@
   "export": {
     "actions": {
       "downloadZip": "Télécharger l'archive ZIP",
-      "generateZip": "Générer l'archive ZIP"
+      "generateZip": "Générer l'archive ZIP",
+      "generatingZip": "Préparation du package de contrats"
     },
-    "aria": {
-      "downloadReadyFile": "Télécharger le fichier prêt"
+    "status": {
+      "ready": "Package prêt"
     }
   },
   "footer": {
@@ -780,8 +900,8 @@
     },
     "categories": {
       "airport": "Aéroport",
-      "concert_hall": "Salle de concert",
       "church": "Église",
+      "concert_hall": "Salle de concert",
       "hotel": "Hôtel",
       "other": "Autre",
       "rehearsal_room": "Salle de répétition",
@@ -797,8 +917,8 @@
       "search_placeholder": "Rechercher un lieu par nom ou adresse...",
       "subtitle": "Module Logistique",
       "sync_error": "Erreur de synchronisation des lieux avec la base de données.",
-      "title_highlight": "Lieux",
-      "title_prefix": "Base de données"
+      "title": "Base de",
+      "title_highlight": "Lieux"
     },
     "editor": {
       "address": "Adresse officielle *",
@@ -963,10 +1083,17 @@
     "download": "Télécharger",
     "error_403": "Vous n'avez pas la permission de voir ce document.",
     "error_generic": "Le document n'a pas pu être chargé.",
+    "fit_width": "Ajuster",
+    "jump_to_page": "Aller à la page",
     "next_page": "Page suivante",
+    "open_browser": "Ouvrir",
+    "page_short": "Page",
     "prev_page": "Page précédente",
+    "share": "Partager",
+    "unavailable_title": "Document indisponible",
     "zoom_in": "Zoom avant",
-    "zoom_out": "Zoom arrière"
+    "zoom_out": "Zoom arrière",
+    "zoom_short": "Zoom"
   },
   "preloader": {
     "resonance": "Résonance",
@@ -1023,6 +1150,12 @@
       "expand": "Développer",
       "generating_doc": "Génération du document...",
       "logistics_dashboard": "Logistique & Production",
+      "score_pdf_download_aria": "Télécharger le PDF de la partition",
+      "score_pdf_downloaded": "Partition téléchargée",
+      "score_pdf_downloading": "Téléchargement de la partition...",
+      "score_pdf_label": "Partition du concert (PDF)",
+      "score_pdf_modal_title": "Partition du concert",
+      "score_pdf_preview": "Aperçu",
       "status_active": "Projet marqué comme en préparation",
       "status_done": "Projet marqué comme terminé",
       "status_update_failed": "Impossible de mettre à jour le statut.",
@@ -1115,6 +1248,8 @@
       "time_title": "Heure locale",
       "toast": {
         "create_success": "Nouveau projet et planning créés",
+        "pdf_remove_failed": "",
+        "pdf_upload_failed": "",
         "saving": "Enregistrement des détails du projet...",
         "update_success": "Projet et planning mis à jour"
       }
@@ -1156,26 +1291,25 @@
         "time": "Heure",
         "title": "Titre"
       },
+      "score_pdf": {
+        "current": "Fichier PDF actuel",
+        "delete_aria": "Supprimer le PDF",
+        "modal_title": "Partition du concert",
+        "pending_removal": "Le PDF sera supprimé après l'enregistrement des modifications.",
+        "preview": "Aperçu",
+        "replace": "Cliquez pour remplacer le PDF",
+        "upload": "Cliquez pour ajouter les partitions / programme (PDF)"
+      },
       "sections": {
         "logistics": "Convocation et dress code",
         "notes": "Notes de production",
         "references": "Références musicales",
         "run_sheet": "Feuille de route du jour du concert",
+        "score_pdf": "Partition du concert (PDF)",
         "title_desc": "Titre et description"
       }
     },
     "editor": {
-      "tabs": {
-        "details": "Détails",
-        "cast": "Distribution",
-        "crew": "Équipe",
-        "logistics": "Logistique",
-        "program": "Programme et Répertoire",
-        "budget": "Budget",
-        "micro_cast": "Divisi et micro-casting",
-        "rehearsals": "Répétitions",
-        "matrix": "Matrice de présence"
-      },
       "active_tab": "Onglet actif",
       "archive_badge": "Archive",
       "create_description": "Enregistrez d’abord les informations principales de l’événement, puis poursuivez dans les onglets opérationnels.",
@@ -1191,6 +1325,7 @@
       "call_sheet": "Télécharger le Call Sheet",
       "dtp": "Télécharger la note DTP",
       "open_runsheet": "Ouvrir le planning",
+      "open_score_pdf": "Ouvrir la partition (PDF)",
       "runsheet_title": "Planning (Runsheet)",
       "zaiks": "Télécharger ZAiKS"
     },
@@ -1263,12 +1398,12 @@
       },
       "voices": {
         "altos": "Altos",
+        "baritones": "Barytons",
         "basses": "Basses",
-        "sopranos": "Sopranos",
-        "tenors": "Ténors",
-        "mezzos": "Mezzos",
         "countertenors": "Contreténors",
-        "baritones": "Barytons"
+        "mezzos": "Mezzos",
+        "sopranos": "Sopranos",
+        "tenors": "Ténors"
       }
     },
     "program": {
@@ -1398,10 +1533,7 @@
         "altos": "Altos",
         "basses": "Basses",
         "sopranos": "Sopranos",
-        "tenors": "Ténors",
-        "mezzos": "Mezzos",
-        "countertenors": "Contreténors",
-        "baritones": "Barytons"
+        "tenors": "Ténors"
       }
     },
     "roles": {
@@ -1426,10 +1558,10 @@
   },
   "rehearsals": {
     "dashboard": {
-      "bulk_fill_one": "Remplir {{count}} manquant",
-      "bulk_fill_few": "Remplir {{count}} manquants",
-      "bulk_fill_many": "Remplir {{count}} manquants",
-      "bulk_fill_other": "Remplir {{count}} manquants",
+      "bulk_fill_one": "Remplir 1 absent comme 'Présent'",
+      "bulk_fill_few": "Remplir {{count}} absents comme 'Présent'",
+      "bulk_fill_many": "Remplir {{count}} absents comme 'Présent'",
+      "bulk_fill_other": "Remplir {{count}} absents comme 'Présent'",
       "general_work": "Travail général",
       "no_location": "Sans lieu",
       "no_projects": "Aucun projet dans cet onglet.",
@@ -1467,12 +1599,12 @@
     },
     "voices": {
       "altos": "Altos",
+      "baritones": "Barytons",
       "basses": "Basses",
       "countertenors": "Contreténors",
       "mezzos": "Mezzo-sopranos",
       "sopranos": "Sopranos",
-      "tenors": "Ténors",
-      "baritones": "Barytons"
+      "tenors": "Ténors"
     }
   },
   "schedule": {
@@ -1498,7 +1630,10 @@
       "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Concert / Événement",
       "run_sheet_title": "Feuille de route",
-      "unknown_artist": "Artiste"
+      "score_pdf_label": "Partition / Programme",
+      "score_pdf_modal_title": "Partition du concert",
+      "unknown_artist": "Artiste",
+      "view_score_pdf": "Voir le PDF"
     },
     "dashboard": {
       "description": "Consultez les répétitions, signalez vos absences et suivez les plans de concert.",

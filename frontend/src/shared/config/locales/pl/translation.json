@@ -23,17 +23,9 @@
       "traditional_unknown": "Tradycyjny / Nieznany"
     },
     "dashboard": {
-      "add_piece": "Dodaj utwór:",
-      "empty_hint": "Zmień parametry filtrowania lub dodaj nową kompozycję do bazy.",
-      "empty_state": "Brak wyników",
-      "filter_composer": "Wszyscy Kompozytorzy",
-      "filter_epoch": "Wszystkie Epoki",
+      "collection_desc": "",
+      "collection_title": "",
       "new_piece": "Nowy Utwór",
-      "not_found": "Nie znaleźliśmy kompozycji",
-      "search_placeholder": "Szukaj utworu po tytule...",
-      "stats_audio": "Ścieżki Audio (MIDI/MP3)",
-      "stats_pdf": "Dostępne Partytury (PDF)",
-      "stats_total": "Pozycje w bazie",
       "subtitle": "Zasoby Repertuarowe",
       "title": "Archiwum",
       "title_highlight": "Nut"
@@ -50,6 +42,39 @@
       },
       "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały jeszcze zapisane w bazie. Czy na pewno chcesz zamknąć panel? Niezapisane dane przepadną.",
       "unsaved_title": "Masz niezapisane zmiany!"
+    },
+    "empty_state": {
+      "add_piece": "Dodaj utwór",
+      "add_search": "Dodaj utwór \"{{term}}\"",
+      "filters_blocked": "Aktualne filtry ukrywają całą kolekcję. Wyczyść je, aby wrócić do pełnego katalogu.",
+      "search_results": "Nie znaleziono wyników dla \"{{term}}\". Możesz utworzyć nową kartę utworu lub usunąć część filtrów.",
+      "start_building": "Rozpocznij budowę biblioteki, dodając pierwszy utwór do archiwum.",
+      "title": "Brak utworów w bieżącym widoku"
+    },
+    "filters": {
+      "active_description": "Kliknij filtr, aby usunąć go bez resetowania całego widoku.",
+      "active_filters_one": "{{count}} aktywny filtr",
+      "active_filters_few": "{{count}} aktywne filtry",
+      "active_filters_many": "{{count}} aktywnych filtrów",
+      "active_filters_other": "{{count}} aktywnych filtrów",
+      "all_composers": "Wszyscy kompozytorzy",
+      "all_epochs": "Wszystkie epoki",
+      "all_voicings": "Wszystkie profile obsady",
+      "clear_filters": "Wyczyść filtry",
+      "composer_label": "Kompozytor",
+      "composer_token": "Kompozytor: {{composer}}",
+      "epoch_label": "Epoka",
+      "epoch_token": "Epoka: {{epoch}}",
+      "heading": "Filtry Kolekcji",
+      "no_active_filters": "Brak aktywnych filtrów",
+      "no_filters_message": "Brak aktywnych filtrów. Widok pokazuje pełny katalog archiwum.",
+      "search_label": "Wyszukiwanie",
+      "search_placeholder": "Szukaj po tytule lub kompozytorze...",
+      "search_token": "Fraza: \"{{term}}\"",
+      "summary": "{{visible}} z {{total}} utworów w aktualnym widoku.",
+      "unknown_composer": "Nieznany",
+      "voicing_label": "Obsada",
+      "voicing_token": "Obsada: {{voicing}}"
     },
     "form": {
       "actions": {
@@ -111,8 +136,7 @@
         "sheet_music_attached": "Dokument nutowy jest już załączony w bazie."
       },
       "toast": {
-        "constraint_desc": "Dodawanie kompozytorów w locie wymaga osobnego endpointu. Wybierz kompozytora z listy.",
-        "constraint_title": "Ograniczenie systemowe",
+        "composer_required": "Nazwisko kompozytora jest wymagane.",
         "create_success": "Utwór dodany pomyślnie.",
         "creating": "Dodawanie utworu do archiwum...",
         "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie.",
@@ -124,6 +148,31 @@
         "minutes_short": "min",
         "seconds_short": "sek"
       }
+    },
+    "hero": {
+      "badge": "Operacje Archiwum",
+      "description": "Jeden operacyjny widok do zarządzania katalogiem utworów, materiałami i referencjami wykonawczymi.",
+      "stats": {
+        "composers_one": "{{count}} kompozytor",
+        "composers_few": "{{count}} kompozytorzy",
+        "composers_many": "{{count}} kompozytorów",
+        "composers_other": "{{count}} kompozytorów",
+        "references_one": "{{count}} utwór z referencją",
+        "references_few": "{{count}} utwory z referencjami",
+        "references_many": "{{count}} utworów z referencjami",
+        "references_other": "{{count}} utworów z referencjami",
+        "voicings_one": "{{count}} profil obsady",
+        "voicings_few": "{{count}} profile obsady",
+        "voicings_many": "{{count}} profili obsady",
+        "voicings_other": "{{count}} profili obsady"
+      },
+      "title": "Biblioteka repertuaru, nut i audio."
+    },
+    "metrics": {
+      "audio": "Ścieżki audio",
+      "composers": "Kompozytorzy",
+      "pdf": "Pokrycie nut",
+      "pieces": "Utwory"
     },
     "toast": {
       "delete_error_desc": "Upewnij się, że utwór nie jest powiązany z aktywnymi projektami.",
@@ -190,6 +239,9 @@
       "create_artist": "Utwórz Artystę",
       "email": "E-mail *",
       "first_name": "Imię *",
+      "first_name_vocative": "Wołacz",
+      "first_name_vocative_hint": "Forma używana w powitaniach, np. w mailach.",
+      "first_name_vocative_placeholder": "np. Krystianie",
       "language": "Język wiadomości *",
       "language_edit_disabled": "Język jest zarządzany indywidualnie przez artystę w ustawieniach konta.",
       "last_name": "Nazwisko *",
@@ -222,10 +274,7 @@
       "altos": "Alty",
       "basses": "Basy",
       "sopranos": "Soprany",
-      "tenors": "Tenory",
-      "mezzos": "Mezzosoprany",
-      "countertenors": "Kontratenory",
-      "baritones": "Barytony"
+      "tenors": "Tenory"
     },
     "form": {
       "toast": {
@@ -273,6 +322,7 @@
         "missing_params": "W tym linku brakuje parametrów aktywacyjnych. Otwórz najnowszy e-mail z zaproszeniem i użyj pełnego przycisku lub adresu URL.",
         "new_password": "Nowe hasło",
         "new_password_placeholder": "Utwórz bezpieczne hasło",
+        "privacy_link": "Politykę Prywatności",
         "security_desc": "Użyj co najmniej 8 znaków. Zalecane jest dłuższe hasło z małymi i wielkimi literami, cyframi oraz znakami specjalnymi.",
         "security_title": "Standard bezpieczeństwa",
         "subtitle": "Ustawienie hasła",
@@ -293,9 +343,6 @@
       },
       "title_1": "Aktywuj swój",
       "title_2": "panel artysty"
-    },
-    "activation": {
-      "terms_modal_title": "Regulamin i Zasady Użytkowania"
     },
     "login": {
       "back_to_lobby": "Powrót do przedsionka",
@@ -402,7 +449,8 @@
       "edit": "Edytuj",
       "retry": "Spróbuj ponownie",
       "save": "Zapisz",
-      "select": "Wybierz"
+      "select": "Wybierz",
+      "undo": "Cofnij"
     },
     "archive": "Archiwizuj",
     "aria": {
@@ -420,6 +468,7 @@
     "error_saving": "Błąd podczas zapisywania",
     "errors": {
       "database_error": "Wystąpił problem z połączeniem z bazą danych.",
+      "download_error": "Błąd pobierania",
       "generation_error": "Błąd generowania",
       "generic": "Wystąpił błąd",
       "save_error": "Błąd zapisu",
@@ -456,44 +505,123 @@
     "unsaved_title": "Masz niezapisane zmiany!"
   },
   "contracts": {
-    "dashboard": {
-      "apply_valuation": "Zastosuj Wycenę",
-      "archived": "(Zarchiwizowane)",
-      "contracts_issued": "Wystawione Umowy",
-      "description": "Zarządzaj wynagrodzeniami artystów i ekipy, kontroluj budżety produkcyjne oraz generuj umowy PDF.",
-      "empty_state_desc": "Wybierz wydarzenie z przełącznika kontekstu powyżej, aby zarządzać stawkami i kontrolować budżet produkcji.",
-      "empty_state_title": "Gotowe do rozliczeń",
-      "global_budget": "Globalny Budżet Systemowy",
-      "loading": "Wczytywanie rejestrów...",
-      "mass_fee_injection": "Masowe Wprowadzenie Stawek (Tylko Chór)",
-      "missing_appraisals": "Brakujące Wyceny",
-      "no_event_selected": "— Nie wybrano wydarzenia —",
-      "no_personnel_desc": "Przejdź do zakładki \"Zarządzanie Projektami\", aby zatrudnić obsadę lub ekipę na to wydarzenie.",
-      "no_personnel_title": "Brak przypisanego personelu",
-      "personnel_budget": "Budżet Osobowy",
-      "priced_contracts": "Wycenione Umowy",
-      "select_event_label": "Wybierz Wydarzenie (Kontekst Rozliczeniowy)",
-      "subtitle": "Zarządzanie Finansami",
-      "tech_crew": "Ekipa Techniczna i Logistyka",
-      "title": "Kadry i",
-      "title_highlight": "Płace",
-      "value_placeholder": "Wartość...",
-      "valued": "wycenionych",
-      "vocal_cast": "Obsada Wokalna (Chór / Soliści)"
+    "actions": {
+      "bulk_apply": "Zastosuj wycenę",
+      "bulk_badge": "Masowe wyceny",
+      "bulk_description": "Operacja dotyczy tylko kontraktów chóru. Przydatne, gdy produkcja stosuje wspólną stawkę podstawową.",
+      "bulk_disabled_reason": "Masowe wyceny są możliwe, gdy co najmniej jeden wykonawca jest przypisany do projektu.",
+      "bulk_fee_error": "Wpisz poprawną wartość wynagrodzenia.",
+      "bulk_hint": "Możesz nadal dopracowywać stawki w pojedynczych rekordach poniżej.",
+      "bulk_label": "Stawka brutto",
+      "bulk_placeholder": "0.00",
+      "bulk_title": "Zastosuj jedną stawkę dla całej obsady.",
+      "cast_count_one": "{{count}} rekord kontraktu chóru",
+      "cast_count_few": "{{count}} rekordy umów chóru",
+      "cast_count_many": "{{count}} rekordów umów chóru",
+      "cast_count_other": "{{count}} rekordów umów chóru",
+      "currency_label": "PLN",
+      "export_badge": "Eksport projektu",
+      "export_description": "Przygotuj pakiet ZIP z umowami PDF w tle dla całego wydarzenia.",
+      "export_missing_one": "{{count}} brakująca wycena",
+      "export_missing_few": "{{count}} brakujące wyceny",
+      "export_missing_many": "{{count}} brakujących wycen",
+      "export_missing_other": "{{count}} brakujących wycen",
+      "export_ready": "Zestaw gotowy do eksportu",
+      "export_title": "Wygeneruj pakiet umów dla wybranego projektu."
+    },
+    "empty": {
+      "idle_description": "Panel finansowy jest gotów. Wybierz projekt powyżej, aby sprawdzić pokrycie, zaktualizować wartości wynagrodzeń i przygotować pakiety umów eksportowych.",
+      "idle_eyebrow": "Widok portfolio",
+      "idle_title": "Wybierz projekt, aby otworzyć rejestr rozliczeń.",
+      "no_personnel_description": "Najpierw przypisz pracowników w obszarze roboczym projektu. Po dodaniu rekordów możesz zdefiniować wynagrodzenia i wygenerować umowy PDF.",
+      "no_personnel_eyebrow": "Brak rekordów",
+      "no_personnel_title": "Ten projekt nie ma przypisanej obsady ani ekipy technicznej."
+    },
+    "error": {
+      "action": "Ponów synchronizację",
+      "description": "Dane projektu, obsady lub ekipy nie dotarły z API. Spróbuj ponownie zsynchronizować pulpit.",
+      "eyebrow": "Rejestr nieosiągalny",
+      "title": "Nie udało się załadować obszaru rozliczeń."
+    },
+    "header": {
+      "badge": "Finanse",
+      "refresh": "Odśwież dane",
+      "syncing": "Synchronizacja",
+      "title": "Umowy i",
+      "title_highlight": "Płace"
+    },
+    "hero": {
+      "active_projects": "aktywne",
+      "cast": "obsada",
+      "context_badge_active": "Aktywny kontekst rozliczeń",
+      "context_badge_idle": "Panel finansowy",
+      "context_location": "Lokalizacja",
+      "context_location_placeholder": "Tutaj pojawi się konferencja i lokalizacja wydarzenia.",
+      "context_mix": "Mix personelu",
+      "context_schedule": "Harmonogram",
+      "context_schedule_placeholder": "Wybierz wydarzenie, aby aktywować obszar rozliczeń.",
+      "contract_records": "rekordy",
+      "crew": "ekipa",
+      "description_default": "Wybierz projekt, aby zarządzać stawkami, wynagrodzeniami ekipy i PDF-ami umów w jednym miejscu.",
+      "description_selected": "Kontroluj wynagrodzenia, gotowość wypłat i eksport dokumentów bez opuszczania widoku rozliczeń.",
+      "draft_projects": "szkice",
+      "portfolio_projects": "projekty w portfolio",
+      "selector_description": "Wybrany projekt staje się kontekstem operacyjnym dla wycen, kontroli budżetu i generowania PDF.",
+      "selector_eyebrow": "Zakres projektu",
+      "selector_label": "Kontekst rozliczeń",
+      "selector_placeholder": "Wybierz projekt z portfolio",
+      "stat_budget": "Pozycja budżetowa",
+      "stat_completion": "Pokrycie wycen",
+      "stat_contracts": "Umowy",
+      "title_default": "Kokpit umów i płac"
+    },
+    "loader": {
+      "message": "Wczytywanie rejestrów rozliczeń..."
+    },
+    "metrics": {
+      "global_archive": "Projekty archiwalne",
+      "global_archive_desc": "Zakończone produkcje dostępne historycznie.",
+      "global_budget": "Globalny budżet",
+      "global_budget_desc": "Wszystkie wynagrodzenia wprowadzone do platformy.",
+      "global_coverage": "Pokrycie wycen",
+      "global_coverage_desc": "Ile z całego portfolio zostało już wycenione.",
+      "global_live": "Projekty aktywne",
+      "global_live_desc": "Szkice i wydarzenia dostępne do bieżących rozliczeń.",
+      "project_budget": "Budżet personalny",
+      "project_budget_desc": "Bieżący budżet brutto dla obsady i ekipy.",
+      "project_missing": "Brakujące wyceny",
+      "project_missing_desc": "Te rekordy blokują bezpośrednie generowanie PDF-ów.",
+      "project_mix": "Skład personelu",
+      "project_mix_desc": "Obsada wobec ekipy w aktywnym rejestrze.",
+      "project_priced": "Wycenione umowy",
+      "project_priced_desc": "Umowy z określoną stawką."
     },
     "row": {
+      "cast_record": "Rekord umowy chóru",
+      "crew_record": "Rekord umowy ekipy",
+      "currency_label": "PLN",
+      "current_fee": "Aktualna stawka: {{amount}}",
+      "download_pdf": "PDF",
+      "fee_placeholder": "0.00",
+      "invalid_fee": "Wpisz poprawną wartość wynagrodzenia.",
       "missing_fee": "Brak Stawki",
-      "no_name": "Wykonawca",
-      "save": "Zapisz"
+      "save": "Zapisz",
+      "saved": "Zapisano"
+    },
+    "sections": {
+      "cast_description": "Zarządzaj wynagrodzeniami wokalnymi, pokryciem wycen i generowaniem umów PDF dla artystów.",
+      "cast_title": "Rejestr obsady",
+      "crew_description": "Utrzymuj umowy techniczne i logistyczne w tym samym obiegu płatności i eksportu.",
+      "crew_title": "Rejestr ekipy"
     },
     "table": {
-      "contractor": "Kontrahent / Firma",
+      "all_priced": "Wszystkie rekordy wycenione",
       "documents": "Dokumenty",
-      "gross_amount": "Kwota Brutto",
+      "missing_valuations": "brakujących wycen",
       "performer": "Wykonawca",
-      "role": "Rola",
-      "status": "Status",
-      "voice": "Głos"
+      "records": "rekordy",
+      "remuneration": "Wynagrodzenie",
+      "role": "Rola"
     },
     "toast": {
       "bulk_applying": "Aplikowanie masowych stawek...",
@@ -506,6 +634,11 @@
       "pdf_generating": "Generowanie PDF dla {{name}}...",
       "pdf_success": "Dokument został pomyślnie wygenerowany.",
       "save_error": "Nie udało się zapisać wynagrodzenia dla: {{name}}."
+    },
+    "warning": {
+      "action": "Ponów synchronizację",
+      "description": "Panel jest używalny, jednak niektóre źródła nie odświeżyły się poprawnie. Wykonaj ręczną synchronizację.",
+      "title": "Dane książki są niespójne."
     }
   },
   "crew": {
@@ -715,15 +848,7 @@
         "admin": "Administrator",
         "artist": "Artysta",
         "crew": "Obsługa Techniczna",
-        "guest": "Gość",
-        "SOP": "Sopran",
-        "MEZ": "Mezzosopran",
-        "ALT": "Alt",
-        "CT": "Kontratenor",
-        "TEN": "Tenor",
-        "BAR": "Baryton",
-        "BAS": "Bas",
-        "DIR": "Dyrygent"
+        "guest": "Gość"
       }
     },
     "shared": {
@@ -735,10 +860,11 @@
   "export": {
     "actions": {
       "downloadZip": "Pobierz archiwum ZIP",
-      "generateZip": "Generuj archiwum ZIP"
+      "generateZip": "Generuj archiwum ZIP",
+      "generatingZip": "Przygotowanie pakietu umów"
     },
-    "aria": {
-      "downloadReadyFile": "Pobierz gotowy plik"
+    "status": {
+      "ready": "Pakiet gotowy"
     }
   },
   "footer": {
@@ -781,8 +907,8 @@
     },
     "categories": {
       "airport": "Lotnisko",
-      "concert_hall": "Sala Koncertowa",
       "church": "Kościół",
+      "concert_hall": "Sala Koncertowa",
       "hotel": "Hotel",
       "other": "Inne",
       "rehearsal_room": "Sala Prób",
@@ -798,8 +924,8 @@
       "search_placeholder": "Szukaj lokacji po nazwie lub adresie...",
       "subtitle": "Moduł Logistyczny",
       "sync_error": "Błąd synchronizacji lokacji z bazą.",
-      "title_highlight": "Lokacji",
-      "title_prefix": "Baza"
+      "title": "Baza",
+      "title_highlight": "Lokacji"
     },
     "editor": {
       "address": "Oficjalny Adres *",
@@ -964,10 +1090,17 @@
     "download": "Pobierz",
     "error_403": "Nie masz uprawnień do wyświetlenia tego dokumentu.",
     "error_generic": "Nie udało się załadować dokumentu.",
+    "fit_width": "Dopasuj",
+    "jump_to_page": "Przejdź do strony",
     "next_page": "Następna strona",
+    "open_browser": "Otwórz",
+    "page_short": "Strona",
     "prev_page": "Poprzednia strona",
+    "share": "Udostępnij",
+    "unavailable_title": "Dokument niedostępny",
     "zoom_in": "Powiększ",
-    "zoom_out": "Pomniejsz"
+    "zoom_out": "Pomniejsz",
+    "zoom_short": "Zoom"
   },
   "preloader": {
     "resonance": "Rezonans",
@@ -1024,6 +1157,12 @@
       "expand": "Rozwiń",
       "generating_doc": "Generowanie dokumentu...",
       "logistics_dashboard": "Logistyka i Produkcja",
+      "score_pdf_download_aria": "Pobierz plik PDF partytury",
+      "score_pdf_downloaded": "Pobrano plik PDF",
+      "score_pdf_downloading": "Pobieranie partytury...",
+      "score_pdf_label": "Partytura koncertu (PDF)",
+      "score_pdf_modal_title": "Partytura Koncertu",
+      "score_pdf_preview": "Podgląd",
       "status_active": "Projekt oznaczony jako w przygotowaniu",
       "status_done": "Projekt oznaczony jako zrealizowany",
       "status_update_failed": "Nie udało się zmienić statusu.",
@@ -1116,6 +1255,8 @@
       "time_title": "Czas lokalny",
       "toast": {
         "create_success": "Utworzono nowy projekt z harmonogramem",
+        "pdf_remove_failed": "",
+        "pdf_upload_failed": "",
         "saving": "Zapisywanie szczegółów projektu...",
         "update_success": "Zaktualizowano projekt i harmonogram"
       }
@@ -1157,26 +1298,25 @@
         "time": "Godz.",
         "title": "Tytuł"
       },
+      "score_pdf": {
+        "current": "Bieżący plik PDF",
+        "delete_aria": "Usuń PDF",
+        "modal_title": "Partytura Koncertu",
+        "pending_removal": "PDF zostanie usunięty po zapisaniu zmian.",
+        "preview": "Podgląd",
+        "replace": "Kliknij, aby zastąpić plik PDF",
+        "upload": "Kliknij, aby dodać partytury / program (PDF)"
+      },
       "sections": {
         "logistics": "Zbiórka i Dress Code",
         "notes": "Notatki Produkcyjne",
         "references": "Referencje Muzyczne",
         "run_sheet": "Harmonogram Dnia Koncertu",
+        "score_pdf": "Partytura Koncertu (PDF)",
         "title_desc": "Tytuł i Opis"
       }
     },
     "editor": {
-      "tabs": {
-        "details": "Szczegóły",
-        "cast": "Obsada",
-        "crew": "Ekipa",
-        "logistics": "Logistyka",
-        "program": "Program i Repertuar",
-        "budget": "Kosztorys",
-        "micro_cast": "Divisi i Mikro-Casting",
-        "rehearsals": "Próby",
-        "matrix": "Macierz Frekwencji"
-      },
       "active_tab": "Aktywna zakładka",
       "archive_badge": "Archiwum",
       "create_description": "Najpierw zapisz podstawowe dane wydarzenia, a następnie przejdź do kolejnych zakładek operacyjnych.",
@@ -1192,6 +1332,7 @@
       "call_sheet": "Pobierz Call Sheet",
       "dtp": "Pobierz notkę do DTP",
       "open_runsheet": "Otwórz Harmonogram",
+      "open_score_pdf": "Otwórz Partyturę (PDF)",
       "runsheet_title": "Harmonogram (Runsheet)",
       "zaiks": "Pobierz ZAiKS"
     },
@@ -1264,12 +1405,12 @@
       },
       "voices": {
         "altos": "Alty",
+        "baritones": "Barytony",
         "basses": "Basy",
-        "sopranos": "Soprany",
-        "tenors": "Tenory",
-        "mezzos": "Mezzosoprany",
         "countertenors": "Kontratenory",
-        "baritones": "Barytony"
+        "mezzos": "Mezzosoprany",
+        "sopranos": "Soprany",
+        "tenors": "Tenory"
       }
     },
     "program": {
@@ -1399,10 +1540,7 @@
         "altos": "Alty",
         "basses": "Basy",
         "sopranos": "Soprany",
-        "tenors": "Tenory",
-        "mezzos": "Mezzosoprany",
-        "countertenors": "Kontratenory",
-        "baritones": "Barytony"
+        "tenors": "Tenory"
       }
     },
     "roles": {
@@ -1427,10 +1565,10 @@
   },
   "rehearsals": {
     "dashboard": {
-      "bulk_fill_one": "Uzupełnij {{count}} brak",
-      "bulk_fill_few": "Uzupełnij {{count}} braki",
-      "bulk_fill_many": "Uzupełnij {{count}} braków",
-      "bulk_fill_other": "Uzupełnij {{count}} braków",
+      "bulk_fill_one": "Uzupełnij 1 brak jako 'Obecny'",
+      "bulk_fill_few": "Uzupełnij {{count}} braki jako 'Obecni'",
+      "bulk_fill_many": "Uzupełnij {{count}} braków jako 'Obecni'",
+      "bulk_fill_other": "Uzupełnij {{count}} braków jako 'Obecni'",
       "general_work": "Praca Bieżąca",
       "no_location": "Brak lok.",
       "no_projects": "Brak projektów w tej zakładce.",
@@ -1468,12 +1606,12 @@
     },
     "voices": {
       "altos": "Alty",
+      "baritones": "Barytony",
       "basses": "Basy",
       "countertenors": "Kontratenory",
       "mezzos": "Mezzosoprany",
       "sopranos": "Soprany",
-      "tenors": "Tenory",
-      "baritones": "Barytony"
+      "tenors": "Tenory"
     }
   },
   "schedule": {
@@ -1499,7 +1637,10 @@
       "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Koncert / Wydarzenie",
       "run_sheet_title": "Harmonogram Dnia",
-      "unknown_artist": "Artysta"
+      "score_pdf_label": "Partytura / Program",
+      "score_pdf_modal_title": "Partytura Koncertu",
+      "unknown_artist": "Artysta",
+      "view_score_pdf": "Podgląd PDF"
     },
     "dashboard": {
       "description": "Sprawdzaj próby, zgłaszaj nieobecności i śledź plany koncertowe.",
