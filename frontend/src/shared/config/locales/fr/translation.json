@@ -843,10 +843,11 @@
         "crew": "Équipe technique",
         "guest": "Invité",
         "TEN": "Ténor",
+        "CT": "Countertenor",
         "ALT": "Alto",
         "SOP": "Soprano",
         "BAS": "Basse",
-        "MEZZO": "Mezzo-soprano",
+        "MEZ": "Mezzo-soprano",
         "BAR": "Baryton",
         "DIR": "Chef d'orchestre"
       }

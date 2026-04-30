@@ -850,10 +850,11 @@
         "crew": "Obsługa Techniczna",
         "guest": "Gość",
         "TEN": "Tenor",
+        "CT": "Kontratenor",
         "ALT": "Alt",
         "SOP": "Sopran",
         "BAS": "Bas",
-        "MEZZO": "Mezzosopran",
+        "MEZ": "Mezzosopran",
         "BAR": "Baryton",
         "DIR": "Dyrygent"
       }

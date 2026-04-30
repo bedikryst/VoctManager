@@ -2,9 +2,8 @@
  * @file App.tsx
  * @description Main application routing, global layout orchestrator, and notification registry.
  * Dynamically resolves rendering trees based on active routes (Public vs. Secure Zones).
- * Implements Persistent App Shell architecture for the Dashboard.
- * Route trees are code-split via React.lazy — HomePage stays eager for LCP priority,
- * every other page is loaded on demand behind a Suspense boundary.
+ * Implements Persistent App Shell architecture for the Dashboard with local route
+ * suspension and idle preloading for panel modules.
  * @architecture Enterprise 2026 Standards
  * @module core/App
  */
@@ -24,43 +23,99 @@ import { Preloader } from "@/shared/ui/kinematics/Preloader";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import ProtectedRoute from "./router/ProtectedRoute";
 import ManagerRoute from "./router/ManagerRoute";
-import { DashboardLayout } from "@/shared/widgets/layout/DashboardLayout";
+import {
+  DashboardLayout,
+  type DashboardRoutePreloader,
+} from "@/shared/widgets/layout/DashboardLayout";
 
 import Home from "@pages/public/HomePage";
 
 import { CSRFProvider } from "@/app/providers/CSRFProvider";
 
-// Public routes — lazy (HomePage stays eager above for LCP priority).
-const Login = lazy(() => import("@pages/public/LoginPage"));
-const Activate = lazy(() => import("@pages/public/ActivatePage"));
+type RouteComponent = React.ComponentType;
+type RouteModule<TComponent extends RouteComponent = RouteComponent> = {
+  default: TComponent;
+};
 
-// Secure shell entry points — lazy.
-const DashboardHome = lazy(() => import("@features/dashboard/DashboardHome"));
-const SettingsPage = lazy(() => import("@pages/app/SettingsPage"));
-const LogisticsLocationsPage = lazy(
+type PreloadableRoute<TComponent extends RouteComponent = RouteComponent> =
+  React.LazyExoticComponent<TComponent> & {
+    preload: () => Promise<RouteModule<TComponent>>;
+  };
+
+function lazyWithPreload<TComponent extends RouteComponent>(
+  factory: () => Promise<RouteModule<TComponent>>,
+): PreloadableRoute<TComponent> {
+  let modulePromise: Promise<RouteModule<TComponent>> | undefined;
+
+  const load = () => {
+    modulePromise ??= factory();
+    return modulePromise;
+  };
+
+  const Component = lazy(load) as PreloadableRoute<TComponent>;
+  Component.preload = load;
+
+  return Component;
+}
+
+// Public routes are lazy-loaded while HomePage stays eager for LCP priority.
+const Login = lazyWithPreload(() => import("@pages/public/LoginPage"));
+const Activate = lazyWithPreload(() => import("@pages/public/ActivatePage"));
+
+// Secure shell entry points are lazy-loaded and warmed after the dashboard shell mounts.
+const DashboardHome = lazyWithPreload(
+  () => import("@features/dashboard/DashboardHome"),
+);
+const SettingsPage = lazyWithPreload(() => import("@pages/app/SettingsPage"));
+const LogisticsLocationsPage = lazyWithPreload(
   () => import("@pages/app/LogisticsLocationsPage"),
 );
-const Schedule = lazy(() => import("@features/schedule/Schedule"));
-const Materials = lazy(() =>
+const Schedule = lazyWithPreload(() => import("@features/schedule/Schedule"));
+const Materials = lazyWithPreload(() =>
   import("@features/materials/Materials").then((m) => ({
     default: m.Materials,
   })),
 );
-const ChoristerHubPage = lazy(
+const ChoristerHubPage = lazyWithPreload(
   () => import("@features/chorister-hub/ChoristerHubPage"),
 );
 
-// Manager-only feature trees — lazy. These are heavy (panels, dnd, react-pdf, maps).
-const Contracts = lazy(() => import("@features/contracts/Contracts"));
-const Rehearsals = lazy(() => import("@features/rehearsals/Rehearsals"));
-const ArtistManagement = lazy(() => import("@pages/app/ArtistsPage"));
-const ProjectDashboard = lazy(() =>
+// Manager-only feature trees remain lazy, then preload only for manager sessions.
+const Contracts = lazyWithPreload(
+  () => import("@features/contracts/Contracts"),
+);
+const Rehearsals = lazyWithPreload(
+  () => import("@features/rehearsals/Rehearsals"),
+);
+const ArtistManagement = lazyWithPreload(
+  () => import("@pages/app/ArtistsPage"),
+);
+const ProjectDashboard = lazyWithPreload(() =>
   import("@features/projects/ProjectDashboard").then((m) => ({
     default: m.ProjectDashboard,
   })),
 );
-const ArchiveManagement = lazy(() => import("@pages/app/ArchivePage"));
-const CrewManagement = lazy(() => import("@features/crew/CrewManagement"));
+const ArchiveManagement = lazyWithPreload(
+  () => import("@pages/app/ArchivePage"),
+);
+const CrewManagement = lazyWithPreload(
+  () => import("@features/crew/CrewManagement"),
+);
+
+const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
+  { preload: DashboardHome.preload },
+  { preload: SettingsPage.preload },
+  { preload: ChoristerHubPage.preload },
+  { preload: Materials.preload },
+  { preload: Schedule.preload },
+  { scope: "manager", preload: Contracts.preload },
+  { scope: "manager", preload: Rehearsals.preload },
+  { scope: "manager", preload: ArtistManagement.preload },
+  { scope: "manager", preload: ProjectDashboard.preload },
+  { scope: "manager", preload: ArchiveManagement.preload },
+  { scope: "manager", preload: CrewManagement.preload },
+  { scope: "manager", preload: LogisticsLocationsPage.preload },
+];
 
 export default function App(): React.JSX.Element {
   const location = useLocation();
@@ -114,7 +169,12 @@ export default function App(): React.JSX.Element {
             />
 
             <Route element={<ProtectedRoute />}>
-              <Route path="/panel" element={<DashboardLayout />}>
+              <Route
+                path="/panel"
+                element={
+                  <DashboardLayout routePreloaders={PANEL_ROUTE_PRELOADERS} />
+                }
+              >
                 <Route index element={<DashboardHome />} />
                 <Route element={<ManagerRoute />}>
                   <Route path="contracts" element={<Contracts />} />

@@ -7,20 +7,44 @@
  * @module shared/widgets/layout/DashboardLayout
  */
 
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import { isManager } from "@/shared/auth/rbac";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 
-export const DashboardLayout = (): React.JSX.Element => {
+export interface DashboardRoutePreloader {
+  readonly preload: () => Promise<unknown>;
+  readonly scope?: "manager";
+}
+
+interface DashboardLayoutProps {
+  readonly routePreloaders?: readonly DashboardRoutePreloader[];
+}
+
+const EMPTY_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [];
+const ROUTE_PRELOAD_IDLE_TIMEOUT_MS = 2500;
+const ROUTE_PRELOAD_FALLBACK_DELAY_MS = 600;
+
+const DashboardRouteFallback = (): React.JSX.Element => (
+  <div className="flex min-h-[420px] w-full items-center justify-center">
+    <EtherealLoader fullHeight={false} />
+  </div>
+);
+
+export const DashboardLayout = ({
+  routePreloaders = EMPTY_ROUTE_PRELOADERS,
+}: DashboardLayoutProps): React.JSX.Element => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const canPreloadManagerRoutes = isManager(user);
 
   const outlet = useOutlet();
 
@@ -28,6 +52,44 @@ export const DashboardLayout = (): React.JSX.Element => {
     document.body.classList.add("admin-mode");
     return () => document.body.classList.remove("admin-mode");
   }, []);
+
+  useEffect(() => {
+    if (routePreloaders.length === 0) return;
+
+    const preloadEligibleRoutes = () => {
+      const preloadTasks = routePreloaders
+        .filter(
+          ({ scope }) => scope !== "manager" || canPreloadManagerRoutes,
+        )
+        .map(({ preload }) => preload());
+
+      void Promise.allSettled(preloadTasks);
+    };
+
+    const scheduleIdleCallback =
+      typeof window.requestIdleCallback === "function"
+        ? window.requestIdleCallback.bind(window)
+        : undefined;
+    const cancelScheduledIdleCallback =
+      typeof window.cancelIdleCallback === "function"
+        ? window.cancelIdleCallback.bind(window)
+        : undefined;
+
+    if (scheduleIdleCallback && cancelScheduledIdleCallback) {
+      const idleCallbackId = scheduleIdleCallback(preloadEligibleRoutes, {
+        timeout: ROUTE_PRELOAD_IDLE_TIMEOUT_MS,
+      });
+
+      return () => cancelScheduledIdleCallback(idleCallbackId);
+    }
+
+    const timeoutId = window.setTimeout(
+      preloadEligibleRoutes,
+      ROUTE_PRELOAD_FALLBACK_DELAY_MS,
+    );
+
+    return () => window.clearTimeout(timeoutId);
+  }, [canPreloadManagerRoutes, routePreloaders]);
 
   return (
     <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
@@ -48,7 +110,9 @@ export const DashboardLayout = (): React.JSX.Element => {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col w-full h-full"
             >
-              {outlet}
+              <Suspense fallback={<DashboardRouteFallback />}>
+                {outlet}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </div>

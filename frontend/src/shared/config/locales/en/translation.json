@@ -830,10 +830,11 @@
         "crew": "Crew",
         "guest": "Guest",
         "TEN": "Tenor",
+        "CT": "Countertenor",
         "ALT": "Alto",
         "SOP": "Soprano",
         "BAS": "Bass",
-        "MEZZO": "Mezzo-soprano",
+        "MEZ": "Mezzo-soprano",
         "BAR": "Baryton",
         "DIR": "Conductor"
       }
