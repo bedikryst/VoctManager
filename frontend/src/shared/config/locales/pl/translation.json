@@ -848,7 +848,14 @@
         "admin": "Administrator",
         "artist": "Artysta",
         "crew": "Obsługa Techniczna",
-        "guest": "Gość"
+        "guest": "Gość",
+        "TEN": "Tenor",
+        "ALT": "Alt",
+        "SOP": "Sopran",
+        "BAS": "Bas",
+        "MEZZO": "Mezzosopran",
+        "BAR": "Baryton",
+        "DIR": "Dyrygent"
       }
     },
     "shared": {

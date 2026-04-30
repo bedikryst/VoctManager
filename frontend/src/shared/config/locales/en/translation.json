@@ -828,7 +828,14 @@
         "admin": "Administrator",
         "artist": "Artist",
         "crew": "Crew",
-        "guest": "Guest"
+        "guest": "Guest",
+        "TEN": "Tenor",
+        "ALT": "Alto",
+        "SOP": "Soprano",
+        "BAS": "Bass",
+        "MEZZO": "Mezzo-soprano",
+        "BAR": "Baryton",
+        "DIR": "Conductor"
       }
     },
     "shared": {
