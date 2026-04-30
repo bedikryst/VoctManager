@@ -94,7 +94,7 @@ export const MobileNavSheet = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-0 z-[calc(var(--z-nav-sheet)-1)] bg-ethereal-ink/45 md:hidden"
+        className="fixed inset-0 z-[calc(z-nav-sheet-1)] bg-ethereal-ink/45 md:hidden"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -107,7 +107,7 @@ export const MobileNavSheet = ({
           "nav.sheet.accessibility_label",
           "Expanded mobile navigation",
         )}
-        className="fixed bottom-0 left-0 right-0 z-[var(--z-nav-sheet)] max-h-[94dvh] h-full outline-none md:hidden flex flex-col justify-end pt-8"
+        className="fixed bottom-0 left-0 right-0 z-nav-sheet max-h-[94dvh] h-full outline-none md:hidden flex flex-col justify-end pt-8"
         style={{ y, touchAction: "none" }}
         drag="y"
         dragControls={dragControls}
