@@ -1,50 +1,66 @@
+# syntax=docker/dockerfile:1.7
 # ==========================================
-# Stage 1: Build Environment (Node.js)
+# VoctManager Frontend — Production Build
+# Standard: Enterprise SaaS 2026
 # ==========================================
-FROM node:20-alpine AS builder
 
-# Set the working directory inside the container
+# ==========================================
+# Stage 1: Build Environment (Node.js 22 LTS)
+# ==========================================
+FROM node:22-alpine AS builder
+
 WORKDIR /app
 
-# Copy dependency definitions first to leverage Docker layer caching
-COPY package*.json ./
+# Configure npm for non-interactive, low-noise CI behavior before install.
+ENV CI=true \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_UPDATE_NOTIFIER=false
 
-# Install dependencies cleanly (npm ci is required for reliable production builds)
-RUN npm ci
+# Copy lockfile + manifest first to maximize Docker layer cache hits when
+# only application source changes.
+COPY package.json package-lock.json ./
 
-# Copy the rest of the application source code
+# BuildKit cache mount — persists ~/.npm between builds. The lockfile drives
+# determinism via `npm ci`; the cache only affects download speed.
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --prefer-offline --no-audit --no-fund
+
+# Copy the application source after deps so source edits don't bust the deps layer.
 COPY . .
 
-# Declare Build Arguments (e.g., API URLs needed by Vite during the build phase)
-# These must be passed during the `docker build` command or via docker-compose
+# Vite resolves these at build time and bakes them into the static bundle.
 ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
-
 ARG VITE_GOOGLE_MAPS_FRONTEND_KEY
-ENV VITE_GOOGLE_MAPS_FRONTEND_KEY=$VITE_GOOGLE_MAPS_FRONTEND_KEY
-
 ARG VITE_GOOGLE_MAP_ID
-ENV VITE_GOOGLE_MAP_ID=$VITE_GOOGLE_MAP_ID
-
-# Web Push (VAPID) public key — must be embedded in the bundle at build time.
 ARG VITE_VAPID_PUBLIC_KEY
-ENV VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_GOOGLE_MAPS_FRONTEND_KEY=$VITE_GOOGLE_MAPS_FRONTEND_KEY \
+    VITE_GOOGLE_MAP_ID=$VITE_GOOGLE_MAP_ID \
+    VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
 
-# Build the React application for production (generates static assets in /app/dist)
+# Production build.
+#  - max-old-space-size=4096: rollup graphs for 3000+ modules with sourcemaps
+#    can briefly hit 1.8–2.4 GB. The default ~1.5 GB heap is what causes the
+#    "Mark-Compact … allocation failure" SIGABRT seen on cold builds.
+#  - The final dist/ contains hashed, code-split chunks (see vite.config.ts).
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run build
 
 
 # ==========================================
 # Stage 2: Production Server (Nginx)
 # ==========================================
-FROM nginx:alpine
+FROM nginx:1.27-alpine AS runtime
 
-# Copy the compiled static assets from the builder stage to Nginx's serving directory
-# Note: The target directory matches the root path defined in prod.conf
+LABEL org.opencontainers.image.title="voctmanager-frontend" \
+      org.opencontainers.image.description="VoctManager SaaS — production frontend bundle served by Nginx." \
+      org.opencontainers.image.source="https://github.com/bedikryst/VoctManager" \
+      org.opencontainers.image.licenses="Proprietary"
+
+# Copy the compiled static assets. Target path mirrors the `root` in prod.conf.
 COPY --from=builder /app/dist /usr/share/nginx/html/app
 
-# Expose port 80 for internal Docker network traffic
 EXPOSE 80
 
-# Start Nginx in the foreground to keep the container running
 CMD ["nginx", "-g", "daemon off;"]
