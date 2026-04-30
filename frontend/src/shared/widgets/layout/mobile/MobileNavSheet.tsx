@@ -108,7 +108,7 @@ export const MobileNavSheet = ({
           "Expanded mobile navigation",
         )}
         className="fixed bottom-0 left-0 right-0 z-nav-sheet max-h-[94dvh] h-full outline-none md:hidden flex flex-col justify-end pt-8"
-        style={{ y, touchAction: "none" }}
+        style={{ y }}
         drag="y"
         dragControls={dragControls}
         dragListener={false}
@@ -121,13 +121,13 @@ export const MobileNavSheet = ({
         transition={KINEMATICS.SHEET_SPRING}
       >
         <GlassCard
-          variant="solid"
+          variant="ethereal"
           padding="none"
           withNoise={false}
           isHoverable={false}
           glow={false}
           animationEngine="framer"
-          className="w-full h-full overflow-hidden rounded-t-[2.5rem] rounded-b-none border-t border-white/20 shadow-[0_-4px_24px_rgba(0,0,0,0.15)] bg-gradient-to-b from-white/95 to-white/80 contain-strict"
+          className="w-full h-full flex flex-col overflow-hidden rounded-t-[2.5rem] rounded-b-none border-t border-white/20 shadow-[0_-4px_24px_rgba(0,0,0,0.15)] bg-ethereal-alabaster/95 backdrop-blur-ethereal contain-strict"
         >
           <div
             className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 rounded-full"
@@ -147,13 +147,17 @@ export const MobileNavSheet = ({
           </div>
 
           <header className="flex items-center justify-between px-8 pb-6 shrink-0 relative z-10">
-            <Heading as="span" size="3xl" className="tracking-tight">
-              <Text as="span" weight="light" color="graphite">
-                Voct
-              </Text>
-              <Text as="span" color="gold" size="3xl" className="italic ml-1">
+            <Heading size="3xl" className="tracking-tight">
+              Voct
+              <Heading
+                as="span"
+                weight="light"
+                color="gold"
+                size="3xl"
+                className="italic ml-1"
+              >
                 Manager
-              </Text>
+              </Heading>
             </Heading>
             <button
               onClick={onClose}
@@ -170,6 +174,10 @@ export const MobileNavSheet = ({
             initial="hidden"
             animate="visible"
             className="flex-1 min-h-0 mb-5 overflow-y-auto px-6 touch-pan-y overscroll-contain no-scrollbar relative z-10"
+            style={{
+              WebkitOverflowScrolling: "touch",
+              touchAction: "pan-y pinch-zoom",
+            }}
           >
             <nav className="flex flex-col gap-8 py-4 pb-24">
               {aura.navGroups.map((group) => (
