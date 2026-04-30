@@ -17,15 +17,26 @@ export const useContractLedgers = () => {
   const projectsQuery = useQuery({
     queryKey: projectKeys.projects.all,
     queryFn: ContractsService.getProjects,
+    staleTime: 30_000,
   });
   const castQuery = useQuery({
     queryKey: projectKeys.participations.all,
     queryFn: ContractsService.getParticipations,
+    staleTime: 30_000,
   });
   const crewQuery = useQuery({
     queryKey: projectKeys.crewAssignments.all,
     queryFn: ContractsService.getCrewAssignments,
+    staleTime: 30_000,
   });
+
+  const refresh = async (): Promise<void> => {
+    await Promise.allSettled([
+      projectsQuery.refetch(),
+      castQuery.refetch(),
+      crewQuery.refetch(),
+    ]);
+  };
 
   return {
     projects: projectsQuery.data || [],
@@ -33,7 +44,10 @@ export const useContractLedgers = () => {
     crewAssignments: crewQuery.data || [],
     isLoading:
       projectsQuery.isLoading || castQuery.isLoading || crewQuery.isLoading,
+    isFetching:
+      projectsQuery.isFetching || castQuery.isFetching || crewQuery.isFetching,
     isError: projectsQuery.isError || castQuery.isError || crewQuery.isError,
+    refresh,
   };
 };
 
