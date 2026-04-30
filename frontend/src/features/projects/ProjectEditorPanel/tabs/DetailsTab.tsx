@@ -111,7 +111,7 @@ export const DetailsTab = ({
                 <Text size="xs" color="muted">
                   {t(
                     "projects.details_tab.fab.description",
-                    "ZmodyfikowaĹ‚eĹ› ustawienia projektu.",
+                    "Zmodyfikowałeś ustawienia projektu.",
                   )}
                 </Text>
               </div>
