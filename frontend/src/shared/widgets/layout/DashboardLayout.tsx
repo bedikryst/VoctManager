@@ -35,7 +35,7 @@ export const DashboardLayout = (): React.JSX.Element => {
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-8 pb-4 sm:px-6 md:pl-[104px] md:pr-8 md:pt-8 lg:pr-12"
+        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-4 sm:px-6 md:pl-[104px] md:pr-8 md:pt-8 lg:pr-12"
         id="main-content"
       >
         <div className="mx-auto flex h-full w-full max-w-7xl flex-col relative">
