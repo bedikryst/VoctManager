@@ -9,7 +9,7 @@ Strictly handles HTTP protocol parsing, RBAC-based QuerySet routing, and Respons
 Delegates ALL state-mutating business logic to the Service Layer.
 """
 import io
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Prefetch
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,6 +19,7 @@ from rest_framework.response import Response
 from pydantic import ValidationError
 from django.utils import timezone
 
+from archive.models import Track, PieceVoiceRequirement
 from core.constants import VoiceLine
 from core.permissions import IsManager, IsManagerOrReadOnly, IsOwnerOrManager
 
@@ -266,9 +267,47 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         participations = Participation.objects.filter(project=project, is_deleted=False).select_related('artist').order_by('artist__last_name')
         crew = CrewAssignment.objects.filter(project=project).select_related('collaborator')
-        program = ProgramItem.objects.filter(project=project).select_related('piece').order_by('order')
-        
-        pdf_bytes = DocumentGenerator.generate_call_sheet_pdf(project, participations, crew, program)
+        program = (
+            ProgramItem.objects
+            .filter(project=project)
+            .select_related('piece', 'piece__composer')
+            .prefetch_related(
+                Prefetch(
+                    'piece__tracks',
+                    queryset=Track.objects.filter(is_deleted=False).order_by('voice_part'),
+                    to_attr='prefetched_tracks',
+                ),
+                Prefetch(
+                    'piece__voice_requirements',
+                    queryset=PieceVoiceRequirement.objects.filter(is_deleted=False).order_by('voice_line'),
+                    to_attr='prefetched_voice_requirements',
+                ),
+            )
+            .order_by('order')
+        )
+        rehearsals = (
+            Rehearsal.objects
+            .filter(project=project, is_deleted=False)
+            .select_related('location')
+            .prefetch_related('invited_participations__artist')
+            .order_by('date_time')
+        )
+        castings = (
+            ProjectPieceCasting.objects
+            .filter(participation__project=project, participation__is_deleted=False)
+            .select_related('piece', 'participation__artist')
+            .order_by('piece__title', 'voice_line', 'participation__artist__last_name')
+        )
+
+        pdf_bytes = DocumentGenerator.generate_call_sheet_pdf(
+            project,
+            participations,
+            crew,
+            program,
+            rehearsals,
+            castings,
+            base_url=request.build_absolute_uri('/'),
+        )
         buffer = io.BytesIO(pdf_bytes)
         buffer.seek(0)
         

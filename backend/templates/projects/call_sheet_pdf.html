@@ -4,145 +4,311 @@
     <meta charset="UTF-8">
     <title>Call Sheet - {{ project.title }}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant:wght@700&family=Inter:wght@400;600;800&display=swap');
-        
-        @page {
-            size: A4 portrait;
-            margin: 15mm;
-            @bottom-right { content: "Strona " counter(page) " z " counter(pages); font-family: 'Inter', sans-serif; font-size: 9px; color: #a8a29e; }
-            @bottom-left { content: "VoctManager Enterprise (Wygenerowano: {{ generation_date|date:'d.m.Y H:i' }})"; font-family: 'Inter', sans-serif; font-size: 9px; color: #a8a29e; }
-        }
-
-        body { font-family: 'Inter', sans-serif; font-size: 11px; color: #1c1917; line-height: 1.4; }
-        
-        /* HEADER */
-        .header { border-bottom: 2px solid #002395; padding-bottom: 10px; margin-bottom: 20px; }
-        .header h1 { font-family: 'Cormorant', serif; font-size: 28px; color: #002395; margin: 0; }
-        .header p.subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #78716c; margin: 5px 0 0 0; }
-
-        /* GRID (META DATA) */
-        .meta-grid { display: table; width: 100%; margin-bottom: 25px; }
-        .meta-col { display: table-cell; width: 50%; vertical-align: top; }
-        .meta-item { margin-bottom: 12px; }
-        .meta-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #a8a29e; font-weight: 800; display: block; margin-bottom: 2px;}
-        .meta-value { font-size: 13px; font-weight: 800; }
-        .meta-value.highlight { color: #ea580c; font-size: 16px; }
-
-        /* NOTES */
-        .notes-box { background-color: #fafaf9; border-left: 3px solid #ea580c; padding: 10px 15px; margin-bottom: 25px; }
-        
-        /* TABLES */
-        h2.section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #44403c; border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; margin-top: 0; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
-        th { text-align: left; font-size: 9px; text-transform: uppercase; color: #a8a29e; border-bottom: 1px solid #d6d3d1; padding: 6px 4px; }
-        td { padding: 6px 4px; border-bottom: 1px solid #f5f5f4; vertical-align: top; }
-        
-        /* COLUMNS FOR ROSTER */
-        .roster-grid { display: table; width: 100%; page-break-inside: avoid; }
-        .roster-col { display: table-cell; width: 50%; vertical-align: top; }
-        ul.roster-list { list-style-type: none; padding: 0; margin: 0; }
-        ul.roster-list li { padding: 4px 0; border-bottom: 1px dashed #f5f5f4; font-size: 10px; }
-        .voice-badge { color: #a8a29e; font-size: 9px; margin-left: 5px; }
+        @page { size: A4; margin: 14mm 14mm 18mm; @bottom-left { content: "VoctManager | Artist Call Sheet"; font: 8px "Segoe UI", Arial, sans-serif; color: #6b7280; } @bottom-right { content: "Strona " counter(page) " / " counter(pages); font: 8px "Segoe UI", Arial, sans-serif; color: #6b7280; } }
+        body { margin: 0; color: #172236; font: 10px/1.5 "Segoe UI", Arial, sans-serif; }
+        h1, h2, h3, p { margin: 0; }
+        a { color: #172236; text-decoration: none; }
+        .hero { margin-bottom: 12px; padding: 18px 20px; color: #f8f5ef; border-radius: 10px; background: linear-gradient(180deg, #0f1d33 0%, #1c3358 100%); }
+        .hero-grid, .split, .metrics { display: table; width: 100%; table-layout: fixed; }
+        .hero-main, .hero-side, .col, .metric { display: table-cell; vertical-align: top; }
+        .hero-main { width: 72%; padding-right: 14px; }
+        .hero-side { width: 28%; }
+        .eyebrow, .kicker, .meta-label, th { font-size: 8px; text-transform: uppercase; letter-spacing: 1.5px; color: #6b7280; }
+        .hero .eyebrow { color: #d8c7ab; margin-bottom: 8px; }
+        .hero h1 { margin-bottom: 8px; color: #fff; font: 700 28px/1.1 Georgia, "Times New Roman", serif; }
+        .hero-copy { max-width: 92%; color: #ece3d5; }
+        .chips { margin-top: 12px; }
+        .chip { display: inline-block; margin: 0 6px 6px 0; padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.08); font-size: 8px; letter-spacing: .7px; text-transform: uppercase; }
+        .chip.accent { background: #d8a865; border-color: #d8a865; color: #172236; font-weight: 700; }
+        .hero-box { padding: 12px 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; background: rgba(255,255,255,.05); }
+        .hero-box .label { font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: #d8c7ab; }
+        .hero-box .value { margin: 4px 0 2px; color: #fff; font: 700 18px/1 Georgia, "Times New Roman", serif; }
+        .hero-box .note { color: #ece3d5; font-size: 9px; }
+        .metrics { margin-bottom: 12px; }
+        .metric { width: 25%; padding-right: 8px; }
+        .metric:last-child { padding-right: 0; }
+        .metric > div { min-height: 70px; padding: 12px; border: 1px solid #d9dee7; border-radius: 8px; background: #f8f4ee; }
+        .metric-value { margin: 6px 0; font: 700 22px/1 Georgia, "Times New Roman", serif; }
+        .metric-note { color: #475569; font-size: 9px; }
+        .section { margin-bottom: 12px; }
+        .kicker { color: #8b6a43; margin-bottom: 4px; }
+        .section h2 { margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #d9dee7; font: 700 15px/1.2 Georgia, "Times New Roman", serif; }
+        .col { width: 50%; }
+        .col.left { padding-right: 8px; }
+        .col.right { padding-left: 8px; }
+        .card, .program, .casting, .contact, .roster { page-break-inside: avoid; border: 1px solid #d9dee7; border-radius: 8px; background: #fff; padding: 12px 14px; }
+        .soft { background: #fbf8f2; }
+        .card + .card, .contact + .contact, .roster + .roster, .program + .program, .casting + .casting { margin-top: 8px; }
+        .facts { width: 100%; border-collapse: collapse; }
+        .facts td, .sheet td, .sheet th { padding: 7px 6px; vertical-align: top; }
+        .facts td { border-bottom: 1px solid #edf0f4; }
+        .facts tr:last-child td, .sheet tr:last-child td { border-bottom: none; }
+        .facts .meta-label { width: 34%; padding-right: 10px; }
+        .fact-value { font-weight: 600; }
+        .links { margin-top: 10px; }
+        .button { display: inline-block; margin: 0 8px 6px 0; padding: 6px 10px; border-radius: 999px; background: #172236; color: #fff; font-size: 8px; letter-spacing: .7px; text-transform: uppercase; }
+        .button.alt { background: #d8a865; color: #172236; }
+        .item { padding: 8px 0; border-bottom: 1px solid #edf0f4; }
+        .item:last-child { border-bottom: none; }
+        .item-top { display: table; width: 100%; }
+        .item-name, .item-status { display: table-cell; vertical-align: top; }
+        .item-name { font-weight: 700; }
+        .item-status { width: 64px; text-align: right; color: #8b6a43; font-size: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .muted { color: #64748b; font-size: 9px; }
+        .sheet { width: 100%; border-collapse: collapse; }
+        .sheet th { color: #6b7280; border-bottom: 1px solid #cfd6df; text-align: left; }
+        .sheet td { border-bottom: 1px solid #edf0f4; }
+        .pill { display: inline-block; padding: 3px 7px; border-radius: 999px; background: #edf2f7; font-size: 8px; text-transform: uppercase; letter-spacing: .7px; }
+        .pill.accent { background: #ead8ba; color: #6a4a24; }
+        .program-head { display: table; width: 100%; table-layout: fixed; margin-bottom: 8px; }
+        .program-no, .program-body { display: table-cell; vertical-align: top; }
+        .program-no { width: 42px; padding-right: 10px; }
+        .disc { width: 34px; height: 34px; border-radius: 50%; background: #172236; color: #fff; text-align: center; font: 700 18px/34px Georgia, "Times New Roman", serif; }
+        .program h3, .casting h3 { font: 700 14px/1.2 Georgia, "Times New Roman", serif; }
+        .program h3 { font-size: 16px; }
+        .program-meta { margin: 4px 0 6px; color: #475569; font-size: 9px; }
+        .tags { margin-bottom: 4px; }
+        .tag { display: inline-block; margin: 0 6px 6px 0; padding: 4px 7px; border-radius: 999px; background: #f4efe7; color: #6a4a24; font-size: 8px; letter-spacing: .7px; text-transform: uppercase; }
+        .mini-grid { display: table; width: 100%; table-layout: fixed; margin-bottom: 6px; }
+        .mini { display: table-cell; width: 25%; padding-right: 8px; vertical-align: top; }
+        .mini:last-child { padding-right: 0; }
+        .mini .meta-label { margin-bottom: 2px; }
+        .mini .fact-value { font-size: 9px; }
+        .divider { margin-top: 8px; padding-top: 8px; border-top: 1px solid #edf0f4; }
+        .contact-name { font-weight: 700; font-size: 11px; }
+        .contact-role { color: #6a4a24; font-size: 9px; margin: 2px 0 4px; }
+        .line { color: #475569; font-size: 9px; margin-bottom: 2px; }
+        .roster h3 { margin-bottom: 6px; font-size: 10px; font-weight: 700; }
+        .roster ul { margin: 0; padding-left: 16px; color: #334155; }
+        .roster li { margin-bottom: 2px; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1>{{ project.title }}</h1>
-        <p class="subtitle">Karta Produkcyjna Wydarzenia (Call Sheet)</p>
-    </div>
-
-    <div class="meta-grid">
-        <div class="meta-col">
-            <div class="meta-item">
-                <span class="meta-label">Data Wydarzenia</span>
-                <span class="meta-value">{{ project.date_time|date:"l, j F Y" }}</span>
+    <div class="hero">
+        <div class="eyebrow">VoctManager | Artist Call Sheet</div>
+        <div class="hero-grid">
+            <div class="hero-main">
+                <h1>{{ project.title }}</h1>
+                <p class="hero-copy">Dokument operacyjny dla artystów: godziny, logistyka, materiały, próby, repertuar i kontakty potrzebne w dniu wydarzenia.</p>
+                <div class="chips">
+                    <span class="chip">Data {{ event_date_label }}</span>
+                    <span class="chip accent">Call {{ call_time_label }}</span>
+                    <span class="chip">Start {{ event_time_label }}</span>
+                    <span class="chip">{{ project.timezone }}</span>
+                    {% if project.location %}<span class="chip">{{ project.location.name }}</span>{% endif %}
+                </div>
             </div>
-            <div class="meta-item">
-                <span class="meta-label">Start Koncertu</span>
-                <span class="meta-value">{{ project.date_time|date:"H:i" }}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">Zbiórka (Call Time)</span>
-                <span class="meta-value highlight">{% if project.call_time %}{{ project.call_time|date:"H:i" }}{% else %}DO USTALENIA{% endif %}</span>
+            <div class="hero-side">
+                <div class="hero-box">
+                    <div class="label">Okno Przyjazdu</div>
+                    <div class="value">{% if call_buffer_label %}{{ call_buffer_label }}{% else %}TBC{% endif %}</div>
+                    <div class="note">{% if project.conductor %}Prowadzenie: {{ project.conductor.first_name }} {{ project.conductor.last_name }}{% else %}Prowadzenie do potwierdzenia.{% endif %}</div>
+                </div>
             </div>
         </div>
-        <div class="meta-col">
-            <div class="meta-item">
-                <span class="meta-label">Lokalizacja</span>
-                <span class="meta-value">{{ project.location|default:"Nie podano" }}</span>
+    </div>
+
+    <div class="metrics">
+        <div class="metric"><div><div class="meta-label">Potwierdzona Obsada</div><div class="metric-value">{{ metrics.cast_confirmed }}</div><div class="metric-note">Gotowi wykonawcy.</div></div></div>
+        <div class="metric"><div><div class="meta-label">Program</div><div class="metric-value">{{ metrics.pieces_total }}</div><div class="metric-note">{% if metrics.program_total_duration %}{{ metrics.program_total_duration }}{% else %}Czas programu do uzupełnienia.{% endif %}</div></div></div>
+        <div class="metric"><div><div class="meta-label">Próby</div><div class="metric-value">{{ metrics.rehearsals_total }}</div><div class="metric-note">Zaplanowane punkty przygotowawcze.</div></div></div>
+        <div class="metric"><div><div class="meta-label">Pokrycie Crew</div><div class="metric-value">{{ metrics.crew_confirmed }}</div><div class="metric-note">{% if metrics.crew_tentative %}{{ metrics.crew_tentative }} pozycji w statusie wstępnym.{% else %}Wsparcie techniczne potwierdzone.{% endif %}</div></div></div>
+    </div>
+
+    <div class="section">
+        <div class="kicker">01</div>
+        <h2>Wydarzenie i Przygotowanie</h2>
+        <div class="split">
+            <div class="col left">
+                <div class="card">
+                    <table class="facts">
+                        {% for fact in event_facts %}
+                        <tr><td class="meta-label">{{ fact.label }}</td><td class="fact-value">{{ fact.text|default:"Do ustalenia" }}</td></tr>
+                        {% endfor %}
+                    </table>
+                    <div class="links">
+                        {% if venue_map_url %}<a class="button" href="{{ venue_map_url }}">Mapa Miejsca</a>{% endif %}
+                        {% if project_score_url %}<a class="button alt" href="{{ project_score_url }}">Pełny Score</a>{% endif %}
+                        {% if project.spotify_playlist_url %}<a class="button alt" href="{{ project.spotify_playlist_url }}">Playlista</a>{% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="meta-item">
-                <span class="meta-label">Ubiór (Dress Code)</span>
-                <span class="meta-value">
-                    {% if project.dress_code_female or project.dress_code_male %}
-                        {% if project.dress_code_female %}Panie: {{ project.dress_code_female }}{% endif %}
-                        {% if project.dress_code_female and project.dress_code_male %}<br>{% endif %}
-                        {% if project.dress_code_male %}Panowie: {{ project.dress_code_male }}{% endif %}
+            <div class="col right">
+                <div class="card soft">
+                    <div class="kicker">Dress Code</div>
+                    {% for entry in dress_code_entries %}
+                    <div class="item"><div class="item-name">{{ entry.label }}</div><div class="fact-value">{{ entry.value }}</div></div>
+                    {% endfor %}
+                    {% if project.description %}<div class="divider"><strong>Brief wydarzenia:</strong><br>{{ project.description|linebreaksbr }}</div>{% endif %}
+                </div>
+                <div class="card">
+                    <div class="kicker">Gotowość Materiałów</div>
+                    {% for asset in preparation_assets %}
+                    <div class="item">
+                        <div class="item-top"><div class="item-name">{{ asset.label }}</div><div class="item-status">{{ asset.status }}</div></div>
+                        <div class="muted">{{ asset.note }}</div>
+                        {% if asset.url %}<div class="muted"><a href="{{ asset.url }}">Otwórz zasób</a></div>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="kicker">02</div>
+        <h2>Przebieg Dnia</h2>
+        <div class="card">
+            {% if run_sheet_items %}
+            <table class="sheet">
+                <thead><tr><th style="width:70px;">Czas</th><th style="width:170px;">Moment</th><th>Szczegóły</th></tr></thead>
+                <tbody>
+                    {% for item in run_sheet_items %}
+                    <tr>
+                        <td><strong>{{ item.time|default:"TBC" }}</strong></td>
+                        <td><strong>{{ item.title }}</strong></td>
+                        <td>{% if item.description %}{{ item.description }}{% endif %}{% if item.location %}{% if item.description %}<br>{% endif %}<span class="muted">Lokalizacja: {{ item.location }}</span>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="muted">Szczegółowy run sheet nie został jeszcze uzupełniony. Korzystaj z godzin głównych z nagłówka dokumentu.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="kicker">03</div>
+        <h2>Plan Prób</h2>
+        <div class="card">
+            {% if rehearsal_items %}
+            <table class="sheet">
+                <thead><tr><th style="width:72px;">Data</th><th style="width:52px;">Czas</th><th style="width:74px;">Typ</th><th style="width:92px;">Zakres</th><th style="width:130px;">Fokus</th><th>Lokalizacja</th></tr></thead>
+                <tbody>
+                    {% for rehearsal in rehearsal_items %}
+                    <tr>
+                        <td>{{ rehearsal.date_label }}</td>
+                        <td>{{ rehearsal.time_label }}</td>
+                        <td>{% if rehearsal.is_mandatory %}<span class="pill accent">Obowiązkowa</span>{% else %}<span class="pill">Opcjonalna</span>{% endif %}</td>
+                        <td>{{ rehearsal.scope_label }}</td>
+                        <td>{{ rehearsal.focus|default:"Zakres do potwierdzenia." }}</td>
+                        <td><strong>{{ rehearsal.location_name }}</strong><br><span class="muted">{{ rehearsal.location_address }}</span>{% if rehearsal.map_url %}<br><a href="{{ rehearsal.map_url }}">Mapa</a>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="muted">Brak zdefiniowanych prób dla tego projektu.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="kicker">04</div>
+        <h2>Program i Materiały</h2>
+        {% if program_cards %}
+            {% for piece in program_cards %}
+            <div class="program">
+                <div class="program-head">
+                    <div class="program-no"><div class="disc">{{ piece.order }}</div></div>
+                    <div class="program-body">
+                        <h3>{{ piece.title }}</h3>
+                        <div class="program-meta">{% if piece.composer %}{{ piece.composer }}{% else %}Kompozytor nieuzupełniony{% endif %}{% if piece.arranger %} | arr. {{ piece.arranger }}{% endif %}</div>
+                        {% if piece.material_badges %}<div class="tags">{% for badge in piece.material_badges %}<span class="tag">{{ badge }}</span>{% endfor %}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="mini-grid">
+                    <div class="mini"><div class="meta-label">Czas Trwania</div><div class="fact-value">{{ piece.duration_label|default:"Do uzupełnienia" }}</div></div>
+                    <div class="mini"><div class="meta-label">Język</div><div class="fact-value">{{ piece.language|default:"Do uzupełnienia" }}</div></div>
+                    <div class="mini"><div class="meta-label">Voicing</div><div class="fact-value">{{ piece.voicing|default:"Do uzupełnienia" }}</div></div>
+                    <div class="mini"><div class="meta-label">Wymagania Głosowe</div><div class="fact-value">{{ piece.voice_requirements_summary|default:"Brak rozpiski" }}</div></div>
+                </div>
+                {% if piece.description %}<div class="muted" style="margin-top:6px;">{{ piece.description|linebreaksbr }}</div>{% endif %}
+                <div class="divider">
+                    <div class="meta-label" style="margin-bottom:4px;">Materiały Przygotowawcze</div>
+                    {% if piece.sheet_music_url %}<a href="{{ piece.sheet_music_url }}">Nuty PDF</a>{% endif %}
+                    {% for link in piece.reference_links %}{% if piece.sheet_music_url or not forloop.first %} | {% endif %}<a href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+                    <div class="muted" style="margin-top:4px;">{% if piece.track_count %}Tracki dostępne: {{ piece.track_summary }}.{% else %}Brak dedykowanych tracków do tej pozycji.{% endif %}{% if piece.casting_count %} Rozpisany casting: {{ piece.casting_count }} przydziałów.{% endif %}</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="card"><div class="muted">Program nie został jeszcze zatwierdzony.</div></div>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <div class="kicker">05</div>
+        <h2>Casting i Odpowiedzialności</h2>
+        {% if casting_sections %}
+            {% for section in casting_sections %}
+            <div class="casting">
+                <h3>{{ section.order }}. {{ section.title }}</h3>
+                {% if section.rows %}
+                <table class="sheet" style="margin-top:8px;">
+                    <thead><tr><th style="width:90px;">Linia</th><th>Wykonawcy</th><th style="width:130px;">Daje Pitch</th><th style="width:130px;">Notatki</th></tr></thead>
+                    <tbody>
+                        {% for row in section.rows %}
+                        <tr><td><strong>{{ row.voice_line }}</strong></td><td>{{ row.singers }}</td><td>{{ row.pitch_team|default:"-" }}</td><td>{{ row.notes|default:"-" }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="muted" style="margin-top:6px;">Dla tej pozycji nie rozpisano jeszcze micro-castingu.</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="card"><div class="muted">Brak danych castingowych dla programu.</div></div>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <div class="kicker">06</div>
+        <h2>Kontakty i Zespół</h2>
+        <div class="split">
+            <div class="col left">
+                <div class="card">
+                    {% if contact_directory %}
+                        {% for contact in contact_directory %}
+                        <div class="contact">
+                            <div class="contact-name">{{ contact.name }}</div>
+                            <div class="contact-role">{{ contact.role }}{% if contact.organization %} | {{ contact.organization }}{% endif %}</div>
+                            <div class="line">Status: {{ contact.status }}</div>
+                            <div class="line">Telefon: {{ contact.phone|default:"Do potwierdzenia" }}</div>
+                            <div class="line">Email: {{ contact.email|default:"Do potwierdzenia" }}</div>
+                        </div>
+                        {% endfor %}
                     {% else %}
-                        Standardowy koncertowy
+                    <div class="muted">Brak zdefiniowanych kontaktów operacyjnych.</div>
                     {% endif %}
-                </span>
+                </div>
+            </div>
+            <div class="col right">
+                <div class="card">
+                    {% if ensemble_sections %}
+                        {% for section in ensemble_sections %}
+                        <div class="roster soft">
+                            <h3>{{ section.label }} ({{ section.count }})</h3>
+                            <ul>{% for member in section.members %}<li>{{ member }}</li>{% endfor %}</ul>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="muted">Brak potwierdzonej obsady artystycznej.</div>
+                    {% endif %}
+                    {% if pending_sections %}
+                    <div class="roster">
+                        <h3>Oczekujące Potwierdzenia ({{ metrics.cast_pending }})</h3>
+                        {% for section in pending_sections %}<div class="line"><strong>{{ section.label }}:</strong> {{ section.members|join:", " }}</div>{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if metrics.cast_declined %}
+                    <div class="roster"><h3>Odrzucone</h3><div class="muted">{{ metrics.cast_declined }} pozycji zostało odrzuconych i nie wchodzi w aktywną obsadę.</div></div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-
-    {% if project.description %}
-    <div class="notes-box">
-        <span class="meta-label">Notatki / Wytyczne:</span>
-        {{ project.description|linebreaksbr }}
-    </div>
-    {% endif %}
-
-    {% if project.run_sheet %}
-    <h2 class="section-title">Harmonogram Dnia (Run-sheet)</h2>
-    <table>
-        {% for item in project.run_sheet %}
-        <tr>
-            <td style="width: 50px; font-weight: 800; color: #002395;">{{ item.time }}</td>
-            <td><strong>{{ item.title }}</strong><br><span style="color: #78716c; font-size: 9px;">{{ item.description }}</span></td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% endif %}
-
-    <h2 class="section-title">Program Koncertu (Setlista)</h2>
-    <table>
-        {% for item in program %}
-        <tr>
-            <td style="width: 20px; color: #a8a29e;">{{ forloop.counter }}.</td>
-            <td>
-                <strong>{% if item.title %}{{ item.title }}{% else %}{{ item.piece.title }}{% endif %}</strong>
-                {% if item.is_encore %}<span style="color: #ea580c; font-weight: bold; font-size: 9px; margin-left: 5px;">(BIS)</span>{% endif %}
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td>Brak zatwierdzonego programu.</td></tr>
-        {% endfor %}
-    </table>
-
-    <div class="roster-grid">
-        <div class="roster-col" style="padding-right: 20px;">
-            <h2 class="section-title">Obsada Wokalna ({{ participations|length }})</h2>
-            <ul class="roster-list">
-                {% for p in participations %}
-                <li>{{ p.artist.first_name }} {{ p.artist.last_name }} <span class="voice-badge">({{ p.artist.get_voice_type_display }})</span></li>
-                {% empty %}
-                <li>Brak przypisanych artystów.</li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="roster-col">
-            <h2 class="section-title">Ekipa Techniczna ({{ crew|length }})</h2>
-            <ul class="roster-list">
-                {% for c in crew %}
-                <li>{{ c.collaborator.first_name }} {{ c.collaborator.last_name }} <span class="voice-badge">({% if c.role_description %}{{ c.role_description }}{% else %}{{ c.collaborator.get_specialty_display }}{% endif %})</span></li>
-                {% empty %}
-                <li>Brak ekipy technicznej.</li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-
 </body>
 </html>
