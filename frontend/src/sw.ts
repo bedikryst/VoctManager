@@ -65,12 +65,17 @@ self.addEventListener("notificationclick", (event) => {
 // Without this, subscriptions silently break after rotation and users stop receiving push notifications.
 self.addEventListener("pushsubscriptionchange", (rawEvent) => {
   const event = rawEvent as ExtendableEvent;
+  const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+  if (!vapidKey) {
+    console.error("[SW] VITE_VAPID_PUBLIC_KEY missing — cannot resubscribe after rotation.");
+    return;
+  }
 
   event.waitUntil(
     self.registration.pushManager
       .subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       })
       .then((newSub) => {
         const json = newSub.toJSON() as {

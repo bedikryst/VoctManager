@@ -1,11 +1,11 @@
 /**
  * @file devices.ts
- * @description React Query mutations for Web Push device registration and deregistration.
+ * @description React Query mutations for Web Push device registration, deregistration,
+ * and one-shot test push dispatch.
  * @architecture Enterprise SaaS 2026
  * @module notifications/api/devices
  */
 import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
 import api from "@/shared/api/api";
 
 export interface PushDevicePayload {
@@ -20,9 +20,6 @@ export const useRegisterPushDevice = () => {
       const { data } = await api.post("/api/notifications/devices/", payload);
       return data;
     },
-    onError: () => {
-      toast.error("Nie udało się aktywować powiadomień push.");
-    },
   });
 };
 
@@ -31,8 +28,14 @@ export const useUnregisterPushDevice = () => {
     mutationFn: async (endpoint: string) => {
       await api.delete(`/api/notifications/devices/${encodeURIComponent(endpoint)}/`);
     },
-    onError: () => {
-      toast.error("Nie udało się wyłączyć powiadomień push.");
+  });
+};
+
+export const useSendTestPush = () => {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post("/api/notifications/devices/test/");
+      return data as { delivered: number };
     },
   });
 };

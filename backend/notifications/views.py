@@ -190,6 +190,20 @@ class PushDeviceViewSet(viewsets.ViewSet):
         PushDispatcherService.unregister_device(user_id=request.user.id, token=pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def test_push(self, request: Request) -> Response:
+        """
+        Dispatches a one-shot test notification to all active devices of the
+        current user. Used by Settings → Notifications to confirm the
+        push pipeline end-to-end (browser permission → SW → backend → device).
+        """
+        delivered = PushDispatcherService.send_test_push(user=request.user)
+        if delivered == 0:
+            return Response(
+                {"detail": "No active push devices for this user."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response({"delivered": delivered}, status=status.HTTP_200_OK)
+
 
 class NotificationPreferenceAPIView(views.APIView):
     """

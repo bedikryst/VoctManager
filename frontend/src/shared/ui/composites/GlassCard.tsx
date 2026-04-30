@@ -161,7 +161,7 @@ const GlassCardInner = <C extends ElementType = "div">(
         />
       )}
 
-      <div className="relative z-10 h-full">{children}</div>
+      <div className="relative z-10 min-h-0 flex-1 flex flex-col">{children}</div>
     </Component>
   );
 };

@@ -26,6 +26,10 @@ ENV VITE_GOOGLE_MAPS_FRONTEND_KEY=$VITE_GOOGLE_MAPS_FRONTEND_KEY
 ARG VITE_GOOGLE_MAP_ID
 ENV VITE_GOOGLE_MAP_ID=$VITE_GOOGLE_MAP_ID
 
+# Web Push (VAPID) public key — must be embedded in the bundle at build time.
+ARG VITE_VAPID_PUBLIC_KEY
+ENV VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
+
 # Build the React application for production (generates static assets in /app/dist)
 RUN npm run build
 

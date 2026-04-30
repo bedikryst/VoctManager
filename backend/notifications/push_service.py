@@ -172,3 +172,34 @@ class PushDispatcherService:
         ).delete()
         if deleted_count > 0:
             logger.info(f"[PushService] Push subscription unregistered for UID:{user_id}")
+
+    @classmethod
+    def send_test_push(cls, user) -> int:
+        """
+        Dispatches a synchronous test push to every active device of the user.
+        Returns the number of devices the message was attempted on (stale ones
+        are auto-invalidated by the underlying batch senders).
+        """
+        devices = list(PushDevice.objects.filter(user=user, is_active=True))
+        if not devices:
+            return 0
+
+        title = "VoctManager — test powiadomień"
+        body = "Powiadomienia push są aktywne. Wszystko działa jak należy."
+        metadata: Dict[str, Any] = {
+            "url": "/panel/settings?tab=notifications",
+            "tag": "voct-test-push",
+            "renotify": True,
+        }
+
+        web_devices = [d for d in devices if d.device_type == DeviceType.WEB]
+        mobile_devices = [d for d in devices if d.device_type != DeviceType.WEB]
+
+        if web_devices:
+            cls._send_vapid_batch(web_devices, title, body, metadata)
+        if mobile_devices:
+            tokens = [d.registration_token for d in mobile_devices]
+            cls._send_fcm_batch(tokens, title, body, metadata)
+
+        logger.info(f"[PushService] Test push dispatched to {len(devices)} device(s) for UID:{user.id}")
+        return len(devices)

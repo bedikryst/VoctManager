@@ -31,7 +31,7 @@ from core.views import (
     ResetCalendarTokenView,
     CalendarFeedView
 )
-from notifications.views import NotificationViewSet, NotificationPreferenceAPIView
+from notifications.views import NotificationViewSet, NotificationPreferenceAPIView, PushDeviceViewSet
 from documents.views import DocumentCategoryViewSet, ArtistMetricsAPIView, DocumentDownloadView
 __author__ = "Krystian Bugalski"
 
@@ -68,9 +68,16 @@ urlpatterns = [
     path('api/csrf/', CSRFCookieView.as_view(), name='csrf-cookie'),
 
     # --- System & Notifications Specific Routes ---
-    # These must be evaluated before the router to prevent 'preferences' from being interpreted as a primary key.
+    # These must be evaluated before the router to prevent 'preferences' / 'devices'
+    # from being interpreted as a primary key by the NotificationViewSet detail route.
     path('api/notifications/preferences/', NotificationPreferenceAPIView.as_view(), name='notification-preferences'),
     path('api/notifications/preferences/<str:notification_type>/', NotificationPreferenceAPIView.as_view(), name='notification-preferences-detail'),
+
+    # --- Push Device Endpoints (Web Push / FCM) ---
+    # Order: 'test' before 'devices/' so it isn't swallowed by the catch-all <path:pk>.
+    path('api/notifications/devices/test/', PushDeviceViewSet.as_view({'post': 'test_push'}), name='push-device-test'),
+    path('api/notifications/devices/', PushDeviceViewSet.as_view({'post': 'create'}), name='push-device-register'),
+    path('api/notifications/devices/<path:pk>/', PushDeviceViewSet.as_view({'delete': 'destroy'}), name='push-device-unregister'),
 
     # Auto-generated REST API routes
     path('api/', include(router.urls)),
