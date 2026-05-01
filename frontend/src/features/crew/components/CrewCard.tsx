@@ -1,155 +1,203 @@
 /**
  * @file CrewCard.tsx
- * @description Isolated, memoized UI component for a single crew/collaborator card.
- * Integrates "Dense Data Boxes" for company info and standardized action footers.
- * @module panel/crew/CrewCard
+ * @description Memoised card surface for a single collaborator.
+ * Built around Ethereal typography primitives, GlassCard surfaces, and
+ * specialty-driven accents — zero raw HTML typography or stone palette.
+ * @architecture Enterprise SaaS 2026
+ * @module features/crew/components/CrewCard
  */
 
 import React from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Edit2, Trash2, Mail, Phone, Briefcase } from "lucide-react";
+import { Briefcase, Edit2, Mail, Phone, Trash2 } from "lucide-react";
+
 import type { Collaborator } from "@/shared/types";
-import { GlassCard } from "@ui/composites/GlassCard";
-import { Button } from "@ui/primitives/Button";
-import { SPECIALTY_CHOICES } from "../types/crew.dto";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
+import {
+  Emphasis,
+  Eyebrow,
+  Heading,
+  Text,
+} from "@/shared/ui/primitives/typography";
+
+import { CrewSpecialtyBadge } from "./CrewSpecialtyBadge";
 
 interface CrewCardProps {
   person: Collaborator;
   onEdit: (person: Collaborator) => void;
-  onDelete: (id: string) => void;
+  onDelete: (person: Collaborator) => void;
 }
 
-export const CrewCard = React.memo(
-  ({ person, onEdit, onDelete }: CrewCardProps) => {
-    const { t } = useTranslation();
-    const initials =
-      `${person.first_name?.charAt(0) || ""}${person.last_name?.charAt(0) || ""}`.toUpperCase();
+interface ContactRowProps {
+  icon: React.ReactNode;
+  href?: string;
+  value?: string;
+  fallback: string;
+}
 
-    const getSpecialtyLabel = (val: string): string => {
-      const choice = SPECIALTY_CHOICES.find((s) => s.value === val);
-      return choice
-        ? t(choice.labelKey)
-        : t("crew.card.specialty_other", "Inne");
-    };
-
-    return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="transition-all duration-300 group hover:-translate-y-0.5 hover:shadow-lg"
+function ContactRow({
+  icon,
+  href,
+  value,
+  fallback,
+}: ContactRowProps): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-3 text-ethereal-graphite">
+      <span
+        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border border-ethereal-incense/15 bg-ethereal-alabaster/60 text-ethereal-graphite/70"
+        aria-hidden="true"
       >
-        <GlassCard className="flex flex-col justify-between h-full">
-          <div className="relative z-10 flex-1">
-            <div className="flex items-start gap-4 mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-white text-stone-600 border border-stone-100 flex items-center justify-center shadow-sm font-bold tracking-widest text-xs flex-shrink-0">
+        {icon}
+      </span>
+      {value && href ? (
+        <Text
+          as="a"
+          size="sm"
+          href={href}
+          color="graphite"
+          truncate
+          className="transition-colors duration-300 hover:text-ethereal-gold"
+        >
+          {value}
+        </Text>
+      ) : (
+        <Text size="sm" color="muted" truncate>
+          <Emphasis>{fallback}</Emphasis>
+        </Text>
+      )}
+    </div>
+  );
+}
+
+const computeInitials = (firstName: string, lastName: string): string => {
+  const first = firstName?.charAt(0) ?? "";
+  const last = lastName?.charAt(0) ?? "";
+  return `${first}${last}`.toUpperCase() || "—";
+};
+
+const CrewCardComponent = ({
+  person,
+  onEdit,
+  onDelete,
+}: CrewCardProps): React.JSX.Element => {
+  const { t } = useTranslation();
+  const initials = computeInitials(person.first_name, person.last_name);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+    >
+      <GlassCard
+        variant="ethereal"
+        padding="md"
+        isHoverable={false}
+        className="flex h-full flex-col justify-between border border-ethereal-incense/20 transition-[transform,box-shadow,border-color] duration-500 hover:-translate-y-0.5 hover:border-ethereal-gold/30 hover:shadow-glass-ethereal-hover"
+      >
+        <div className="flex flex-1 flex-col gap-5">
+          <header className="flex items-start gap-4">
+            <div
+              className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/80 shadow-sm"
+              aria-hidden="true"
+            >
+              <Eyebrow color="incense" className="!tracking-[0.18em]">
                 {initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-stone-900 tracking-tight leading-tight truncate">
-                  {person.first_name} {person.last_name}
-                </h3>
-                <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  <span className="px-2 py-0.5 text-[8px] font-bold antialiased uppercase tracking-widest rounded-md border shadow-sm bg-blue-50 text-brand border-blue-200">
-                    {getSpecialtyLabel(person.specialty)}
-                  </span>
-                </div>
-              </div>
+              </Eyebrow>
             </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Heading as="h3" size="xl" truncate>
+                {person.first_name} {person.last_name}
+              </Heading>
+              <CrewSpecialtyBadge specialty={person.specialty} size="sm" />
+            </div>
+          </header>
 
-            <div className="bg-stone-50/80 border border-stone-200/60 rounded-xl p-3.5 mb-5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-bold antialiased uppercase tracking-widest text-stone-400 flex items-center gap-1.5">
-                  <Briefcase size={10} aria-hidden="true" />{" "}
+          <div className="rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/45 px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-ethereal-graphite/70">
+                <Briefcase size={12} strokeWidth={1.6} aria-hidden="true" />
+                <Eyebrow color="muted">
                   {t("crew.card.company", "Firma / Marka")}
-                </span>
-                <span
-                  className="text-[10px] font-bold px-2 py-0.5 rounded bg-white border border-stone-200 text-stone-700 shadow-sm truncate max-w-[120px]"
-                  title={person.company_name || ""}
-                >
-                  {person.company_name ? (
-                    person.company_name
-                  ) : (
-                    <span className="text-stone-400 italic">
-                      {t("crew.card.no_company", "Brak danych")}
-                    </span>
-                  )}
-                </span>
+                </Eyebrow>
               </div>
-            </div>
-
-            <div className="space-y-2.5 text-xs text-stone-600 mb-6 font-medium">
-              <p className="flex items-center gap-2.5">
-                <Mail
-                  size={14}
-                  className="text-stone-400 flex-shrink-0"
-                  aria-hidden="true"
-                />
-                {person.email ? (
-                  <a
-                    href={`mailto:${person.email}`}
-                    className="hover:text-brand transition-colors truncate"
-                  >
-                    {person.email}
-                  </a>
-                ) : (
-                  <span className="italic text-stone-400 font-normal">
-                    {t("crew.card.no_email", "Brak e-mail")}
-                  </span>
-                )}
-              </p>
-              <p className="flex items-center gap-2.5">
-                <Phone
-                  size={14}
-                  className="text-stone-400 flex-shrink-0"
-                  aria-hidden="true"
-                />
-                {person.phone_number ? (
-                  <a
-                    href={`tel:${person.phone_number}`}
-                    className="hover:text-brand transition-colors"
-                  >
-                    {person.phone_number}
-                  </a>
-                ) : (
-                  <span className="italic text-stone-400 font-normal">
-                    {t("crew.card.no_phone", "Brak telefonu")}
-                  </span>
-                )}
-              </p>
+              {person.company_name ? (
+                <Text
+                  as="span"
+                  size="xs"
+                  weight="bold"
+                  truncate
+                  className="max-w-[55%] text-right text-ethereal-ink"
+                  title={person.company_name}
+                >
+                  {person.company_name}
+                </Text>
+              ) : (
+                <Text as="span" size="xs" color="muted">
+                  <Emphasis>{t("crew.card.no_company", "Brak danych")}</Emphasis>
+                </Text>
+              )}
             </div>
           </div>
 
-          <div className="flex gap-3 border-t border-stone-100/50 pt-5 relative z-10">
-            <Button
-              variant="outline"
-              onClick={() => onEdit(person)}
-              leftIcon={<Edit2 size={14} aria-hidden="true" />}
-              className="flex-1"
-            >
-              {t("crew.card.btn_edit", "Edytuj")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => onDelete(person.id!)}
-              leftIcon={<Trash2 size={14} aria-hidden="true" />}
-              className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-            >
-              {t("crew.card.btn_delete", "Usuń")}
-            </Button>
+          <div className="flex flex-col gap-3">
+            <ContactRow
+              icon={<Mail size={14} strokeWidth={1.5} />}
+              href={person.email ? `mailto:${person.email}` : undefined}
+              value={person.email}
+              fallback={t("crew.card.no_email", "Brak e-mail")}
+            />
+            <ContactRow
+              icon={<Phone size={14} strokeWidth={1.5} />}
+              href={
+                person.phone_number ? `tel:${person.phone_number}` : undefined
+              }
+              value={person.phone_number}
+              fallback={t("crew.card.no_phone", "Brak telefonu")}
+            />
           </div>
-        </GlassCard>
-      </motion.div>
-    );
-  },
-  (prevProps, nextProps) => {
-    return (
-      prevProps.person.id === nextProps.person.id &&
-      JSON.stringify(prevProps.person) === JSON.stringify(nextProps.person)
-    );
-  },
-);
+        </div>
 
+        <div className="mt-6 flex gap-3 border-t border-ethereal-incense/15 pt-5">
+          <Button
+            variant="outline"
+            onClick={() => onEdit(person)}
+            leftIcon={<Edit2 size={14} aria-hidden="true" />}
+            className="flex-1 justify-center"
+          >
+            {t("crew.card.btn_edit", "Edytuj")}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => onDelete(person)}
+            leftIcon={<Trash2 size={14} aria-hidden="true" />}
+            className="flex-1 justify-center text-ethereal-crimson hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
+          >
+            {t("crew.card.btn_delete", "Usuń")}
+          </Button>
+        </div>
+      </GlassCard>
+    </motion.div>
+  );
+};
+
+const arePropsEqual = (
+  prev: Readonly<CrewCardProps>,
+  next: Readonly<CrewCardProps>,
+): boolean =>
+  prev.person.id === next.person.id &&
+  prev.person.first_name === next.person.first_name &&
+  prev.person.last_name === next.person.last_name &&
+  prev.person.email === next.person.email &&
+  prev.person.phone_number === next.person.phone_number &&
+  prev.person.company_name === next.person.company_name &&
+  prev.person.specialty === next.person.specialty &&
+  prev.onEdit === next.onEdit &&
+  prev.onDelete === next.onDelete;
+
+export const CrewCard = React.memo(CrewCardComponent, arePropsEqual);
 CrewCard.displayName = "CrewCard";

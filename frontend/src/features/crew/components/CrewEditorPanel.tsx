@@ -1,22 +1,35 @@
 /**
  * @file CrewEditorPanel.tsx
- * @description Slide-over panel and form for creating or editing crew profiles.
- * @module panel/crew/CrewEditorPanel
+ * @description Slide-over editor for creating or updating a collaborator profile.
+ * Built on Ethereal primitives — Heading/Eyebrow typography, Select primitive,
+ * Input with native label slot — and a portal-managed motion shell.
+ * @architecture Enterprise SaaS 2026
+ * @module features/crew/components/CrewEditorPanel
  */
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { X, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 
-import { ConfirmModal } from "@ui/composites/ConfirmModal";
-import { Input } from "@ui/primitives/Input";
-import { Button } from "@ui/primitives/Button";
 import type { Collaborator } from "@/shared/types";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { Divider } from "@/shared/ui/primitives/Divider";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Select } from "@/shared/ui/primitives/Select";
+import {
+  Eyebrow,
+  Heading,
+  Text,
+} from "@/shared/ui/primitives/typography";
+
+import { getCrewSpecialtyOptions } from "../constants/crewSpecialties";
 import { useCrewForm } from "../hooks/useCrewForm";
 import type { CrewFormData } from "../types/crew.dto";
-import { SPECIALTY_CHOICES } from "../types/crew.dto";
+
+import { CrewSpecialtyBadge } from "./CrewSpecialtyBadge";
 
 interface CrewEditorPanelProps {
   isOpen: boolean;
@@ -25,24 +38,15 @@ interface CrewEditorPanelProps {
   initialSearchContext?: string;
 }
 
-const STYLE_LABEL =
-  "block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
-const STYLE_SELECT =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
-
-export default function CrewEditorPanel({
+export function CrewEditorPanel({
   isOpen,
   onClose,
   person,
   initialSearchContext = "",
 }: CrewEditorPanelProps): React.ReactPortal | null {
   const { t } = useTranslation();
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
 
   const {
     formData,
@@ -54,33 +58,43 @@ export default function CrewEditorPanel({
   } = useCrewForm(person, initialSearchContext, onClose);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (isOpen) setFormData(initialFormData);
   }, [initialFormData, isOpen, setFormData]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isOpen && !showExitConfirm) {
-        handleCloseRequest();
-      }
-    };
-    if (isOpen) window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  });
-
-  const handleCloseRequest = () => {
+  const handleCloseRequest = React.useCallback(() => {
     if (isFormDirty) {
       setShowExitConfirm(true);
       return;
     }
     onClose();
-  };
+  }, [isFormDirty, onClose]);
+
+  useEffect(() => {
+    if (!isOpen || showExitConfirm) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") handleCloseRequest();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleCloseRequest, isOpen, showExitConfirm]);
 
   const forceClose = () => {
     setShowExitConfirm(false);
     onClose();
   };
 
+  const specialtyOptions = getCrewSpecialtyOptions(t);
+
   if (!mounted) return null;
+
+  const updateField = <K extends keyof CrewFormData>(
+    key: K,
+    value: CrewFormData[K],
+  ) => setFormData({ ...formData, [key]: value });
 
   return createPortal(
     <AnimatePresence>
@@ -92,8 +106,7 @@ export default function CrewEditorPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleCloseRequest}
-            style={{ zIndex: 9998 }}
-            className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-ethereal-ink/35 backdrop-blur-sm"
             aria-hidden="true"
           />
 
@@ -102,166 +115,160 @@ export default function CrewEditorPanel({
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            style={{ zIndex: 9999 }}
-            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#f4f2ee] shadow-2xl flex flex-col border-l border-white/60"
+            transition={{ type: "spring", damping: 26, stiffness: 220 }}
+            className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-md flex-col border-l border-ethereal-incense/20 bg-ethereal-alabaster/95 shadow-glass-solid backdrop-blur-xl"
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex justify-between items-center p-6 md:p-8 border-b border-stone-200/50 bg-white/80 backdrop-blur-xl flex-shrink-0 z-20">
-              <h3 className="font-serif text-2xl font-bold text-stone-900 tracking-tight">
-                {person?.id
-                  ? t("crew.editor.title_edit", "Edycja Danych")
-                  : t("crew.editor.title_new", "Nowy Współpracownik")}
-              </h3>
+            <header className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-ethereal-incense/15 bg-ethereal-marble/60 px-6 py-5 backdrop-blur-xl md:px-8">
+              <div className="min-w-0 space-y-1.5">
+                <Eyebrow color="muted">
+                  {t("crew.editor.eyebrow", "Profil współpracownika")}
+                </Eyebrow>
+                <Heading as="h3" size="2xl" truncate>
+                  {person?.id
+                    ? t("crew.editor.title_edit", "Edycja danych")
+                    : t("crew.editor.title_new", "Nowy współpracownik")}
+                </Heading>
+              </div>
               <button
+                type="button"
                 onClick={handleCloseRequest}
-                className="text-stone-400 hover:text-stone-900 transition-colors p-2.5 bg-white rounded-xl border border-stone-200/60 shadow-sm active:scale-95"
+                aria-label={t("crew.editor.close_aria", "Zamknij panel")}
+                className="rounded-xl border border-ethereal-incense/20 bg-ethereal-marble/70 p-2.5 text-ethereal-graphite shadow-sm transition-all duration-300 hover:border-ethereal-gold/40 hover:text-ethereal-ink active:scale-95"
               >
                 <X size={18} aria-hidden="true" />
               </button>
-            </div>
+            </header>
 
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 relative">
+            <div className="relative flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
               <form
                 onSubmit={handleSubmit}
-                className="space-y-6 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] relative flex flex-col min-h-full"
+                className="flex min-h-full flex-col gap-7 rounded-3xl border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl md:p-8"
               >
-                <div className="flex-1 space-y-5">
-                  <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
-                    {t("crew.editor.contact_person", "Osoba Kontaktowa")}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-5">
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t("crew.editor.first_name", "Imię *")}
-                      </label>
-                      <Input
-                        type="text"
-                        required
-                        value={formData.first_name}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            first_name: e.target.value,
-                          })
-                        }
-                        disabled={isSubmitting}
-                        className="font-bold"
-                      />
-                    </div>
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t("crew.editor.last_name", "Nazwisko *")}
-                      </label>
-                      <Input
-                        type="text"
-                        required
-                        value={formData.last_name}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            last_name: e.target.value,
-                          })
-                        }
-                        disabled={isSubmitting}
-                        className="font-bold"
-                      />
-                    </div>
+                <section className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <Eyebrow color="gold">
+                      {t("crew.editor.contact_person", "Osoba kontaktowa")}
+                    </Eyebrow>
+                    <Divider variant="gradient-right" />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-5">
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t("crew.editor.email", "E-mail")}
-                      </label>
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t("crew.editor.phone", "Telefon")}
-                      </label>
-                      <Input
-                        type="tel"
-                        value={formData.phone_number}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            phone_number: e.target.value,
-                          })
-                        }
-                        disabled={isSubmitting}
-                      />
-                    </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      label={t("crew.editor.first_name", "Imię *")}
+                      type="text"
+                      required
+                      value={formData.first_name}
+                      onChange={(event) =>
+                        updateField("first_name", event.target.value)
+                      }
+                      disabled={isSubmitting}
+                      autoComplete="given-name"
+                    />
+                    <Input
+                      label={t("crew.editor.last_name", "Nazwisko *")}
+                      type="text"
+                      required
+                      value={formData.last_name}
+                      onChange={(event) =>
+                        updateField("last_name", event.target.value)
+                      }
+                      disabled={isSubmitting}
+                      autoComplete="family-name"
+                    />
                   </div>
 
-                  <div className="space-y-5 pt-4 border-t border-stone-200/60">
-                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
-                      {t("crew.editor.business_profile", "Profil Działalności")}
-                    </h4>
-
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t("crew.editor.specialty", "Specjalizacja *")}
-                      </label>
-                      <select
-                        value={formData.specialty}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            specialty: e.target
-                              .value as CrewFormData["specialty"],
-                          })
-                        }
-                        className={`${STYLE_SELECT} font-bold text-stone-700 appearance-none`}
-                        disabled={isSubmitting}
-                      >
-                        {SPECIALTY_CHOICES.map((specialty) => (
-                          <option key={specialty.value} value={specialty.value}>
-                            {t(specialty.labelKey)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t(
-                          "crew.editor.company_name",
-                          "Firma / Marka (Opcjonalnie)",
-                        )}
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder={t(
-                          "crew.editor.company_placeholder",
-                          "np. SoundTech Pro Sp. z o.o.",
-                        )}
-                        value={formData.company_name}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            company_name: e.target.value,
-                          })
-                        }
-                        disabled={isSubmitting}
-                        className="font-bold"
-                      />
-                    </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      label={t("crew.editor.email", "E-mail")}
+                      type="email"
+                      value={formData.email}
+                      onChange={(event) =>
+                        updateField("email", event.target.value)
+                      }
+                      disabled={isSubmitting}
+                      autoComplete="email"
+                    />
+                    <Input
+                      label={t("crew.editor.phone", "Telefon")}
+                      type="tel"
+                      value={formData.phone_number}
+                      onChange={(event) =>
+                        updateField("phone_number", event.target.value)
+                      }
+                      disabled={isSubmitting}
+                      autoComplete="tel"
+                    />
                   </div>
-                </div>
+                </section>
 
-                <div className="sticky bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-stone-200/60 p-4 md:p-6 -mx-6 md:-mx-8 -mb-8 mt-8 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-b-2xl">
+                <section className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <Eyebrow color="gold">
+                      {t(
+                        "crew.editor.business_profile",
+                        "Profil działalności",
+                      )}
+                    </Eyebrow>
+                    <Divider variant="gradient-right" />
+                  </div>
+
+                  <Select
+                    label={t("crew.editor.specialty", "Specjalizacja *")}
+                    value={formData.specialty}
+                    onChange={(event) =>
+                      updateField(
+                        "specialty",
+                        event.target.value as CrewFormData["specialty"],
+                      )
+                    }
+                    disabled={isSubmitting}
+                  >
+                    {specialtyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
+                    <Text size="xs" color="graphite">
+                      {t(
+                        "crew.editor.specialty_preview",
+                        "Wybrana specjalizacja",
+                      )}
+                    </Text>
+                    <CrewSpecialtyBadge
+                      specialty={formData.specialty}
+                      size="sm"
+                    />
+                  </div>
+
+                  <Input
+                    label={t(
+                      "crew.editor.company_name",
+                      "Firma / Marka (opcjonalnie)",
+                    )}
+                    type="text"
+                    placeholder={t(
+                      "crew.editor.company_placeholder",
+                      "np. SoundTech Pro Sp. z o.o.",
+                    )}
+                    value={formData.company_name}
+                    onChange={(event) =>
+                      updateField("company_name", event.target.value)
+                    }
+                    disabled={isSubmitting}
+                    autoComplete="organization"
+                  />
+                </section>
+
+                <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto border-t border-ethereal-incense/15 bg-ethereal-marble/80 px-6 py-5 backdrop-blur-xl md:-mx-8 md:-mb-8 md:px-8">
                   <Button
                     type="submit"
                     variant="primary"
+                    fullWidth
                     disabled={isSubmitting}
                     isLoading={isSubmitting}
                     leftIcon={
@@ -269,7 +276,6 @@ export default function CrewEditorPanel({
                         <CheckCircle2 size={16} aria-hidden="true" />
                       ) : undefined
                     }
-                    className="w-full"
                   >
                     {t("crew.editor.btn_save", "Zapisz do bazy")}
                   </Button>

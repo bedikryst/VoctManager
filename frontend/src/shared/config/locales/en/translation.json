@@ -635,14 +635,19 @@
       "no_phone": "No phone",
       "specialty_other": "Other"
     },
+    "contact_filters": {
+      "all": "Any contact",
+      "full_contact": "Complete contact",
+      "missing_contact": "Incomplete contact",
+      "with_email": "With email",
+      "with_phone": "With phone"
+    },
     "dashboard": {
-      "add_btn": "Add Person / Company",
-      "add_search_term": "Add to database: {{term}}",
-      "empty_desc_default": "Change filters or add a new person / company to the database.",
-      "empty_desc_search": "We didn't find the company or person \"{{term}}\". You can add it now.",
-      "empty_title": "No results",
-      "filter_all": "All specialties",
-      "search_placeholder": "Search by name or company...",
+      "add_btn": "Add person",
+      "collection_desc": "Each card opens quick profile editing, company details, and the operational contact in one move.",
+      "collection_title": "Production team",
+      "filtered_view": "Filtered view",
+      "in_view": "{{count}} in view",
       "subtitle": "Logistics",
       "title": "Tech",
       "title_highlight": "Crew"
@@ -653,24 +658,96 @@
     },
     "editor": {
       "btn_save": "Save to database",
-      "business_profile": "Business Profile",
-      "company_name": "Company / Brand (Optional)",
+      "business_profile": "Business profile",
+      "close_aria": "Close panel",
+      "company_name": "Company / Brand (optional)",
       "company_placeholder": "e.g., SoundTech Pro LLC",
       "confirm_exit_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
       "confirm_exit_title": "You have unsaved changes!",
-      "contact_person": "Contact Person",
+      "contact_person": "Contact person",
       "email": "Email",
+      "eyebrow": "Collaborator profile",
       "first_name": "First Name *",
       "last_name": "Last Name *",
       "phone": "Phone",
       "specialty": "Specialty *",
-      "title_edit": "Edit Data",
-      "title_new": "New Collaborator"
+      "specialty_preview": "Selected specialty",
+      "title_edit": "Edit data",
+      "title_new": "New collaborator"
+    },
+    "empty_state": {
+      "add_person": "Add collaborator",
+      "add_search": "Add entry \"{{term}}\"",
+      "filters_blocked": "Current filters hide the entire roster. Clear them to return to the full directory.",
+      "search_results": "We couldn't find a person or company \"{{term}}\". Add a new entry or remove some filters.",
+      "start_building": "Start building your production team by adding the first collaborator to the database.",
+      "title": "No people in the current view"
+    },
+    "filters": {
+      "active_description": "Click a filter to remove it without resetting the whole view.",
+      "active_filters_one": "{{count}} active filter",
+      "active_filters_other": "{{count}} active filters",
+      "all_companies": "All companies",
+      "all_specialties": "All specialties",
+      "clear_filters": "Clear filters",
+      "company_label": "Company / Brand",
+      "company_token": "Company: {{label}}",
+      "contact_label": "Contact state",
+      "contact_token": "Contact: {{label}}",
+      "heading": "Crew Filters",
+      "no_active_filters": "No active filters",
+      "no_filters_message": "No active filters. The view shows the full collaborator directory.",
+      "search_label": "Search",
+      "search_placeholder": "Search by name, company, or email...",
+      "search_token": "Term: \"{{term}}\"",
+      "specialty_label": "Specialty",
+      "specialty_token": "Specialty: {{label}}",
+      "summary": "{{visible}} of {{total}} people in the current view."
+    },
+    "hero": {
+      "badge": "Logistics Operations",
+      "coverage": {
+        "email": "Email coverage",
+        "phone": "Phone coverage",
+        "ratio": "{{value}} / {{total}}"
+      },
+      "description": "One central view for external collaborators, partner companies, and the specialties supporting every production.",
+      "stats": {
+        "companies": "{{count}} companies",
+        "people": "{{count}} collaborators",
+        "specialties": "{{count}} specialties on file",
+        "top_specialty": "Top: {{label}} ({{count}})"
+      },
+      "title": "A technical crew ready for production."
+    },
+    "metrics": {
+      "companies": "Partner companies",
+      "email_coverage": "Email coverage",
+      "email_desc": "{{value}} people with email",
+      "people": "Collaborators",
+      "phone_coverage": "Phone coverage",
+      "phone_desc": "{{value}} people with phone"
+    },
+    "specialties": {
+      "INSTRUMENT": "Instruments",
+      "LIGHT": "Lighting",
+      "LOGISTICS": "Logistics",
+      "OTHER": "Other",
+      "SOUND": "Sound",
+      "VISUALS": "Visuals"
+    },
+    "specialty_descriptions": {
+      "INSTRUMENT": "External instrumentalists and instrument support.",
+      "LIGHT": "Lighting design and stage visual coverage.",
+      "LOGISTICS": "Transport, staging, and production safeguarding.",
+      "OTHER": "Collaborators outside the standard categories.",
+      "SOUND": "Sound engineering, mixing, and stage amplification.",
+      "VISUALS": "Multimedia, projections, and screen content."
     },
     "toast": {
       "delete_error_desc": "They are likely associated with existing projects. Try editing their data instead.",
       "delete_error_title": "Cannot delete this person",
-      "delete_loading": "Deleting collaborator...",
+      "delete_loading": "Deleting \"{{name}}\"...",
       "delete_success": "Person has been removed from the database.",
       "save_error_desc": "Check the data and try again.",
       "save_error_title": "An error occurred while saving data.",
@@ -679,7 +756,7 @@
       "save_success_edit": "Collaborator profile updated.",
       "save_success_new": "New person added to the database.",
       "sync_error": "Failed to fetch collaborators list.",
-      "sync_warning": "Warning"
+      "sync_warning": "Sync warning"
     }
   },
   "dashboard": {

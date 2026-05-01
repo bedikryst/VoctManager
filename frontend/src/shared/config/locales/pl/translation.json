@@ -651,14 +651,19 @@
       "no_phone": "Brak telefonu",
       "specialty_other": "Inne"
     },
+    "contact_filters": {
+      "all": "Dowolny kontakt",
+      "full_contact": "Pełny kontakt",
+      "missing_contact": "Niekompletny kontakt",
+      "with_email": "Z e-mailem",
+      "with_phone": "Z telefonem"
+    },
     "dashboard": {
-      "add_btn": "Dodaj Osobę / Firmę",
-      "add_search_term": "Dodaj do bazy: {{term}}",
-      "empty_desc_default": "Zmień filtry lub dodaj nową osobę / firmę do bazy.",
-      "empty_desc_search": "Nie znaleźliśmy firmy lub osoby \"{{term}}\". Możesz dodać ją teraz.",
-      "empty_title": "Brak wyników",
-      "filter_all": "Wszystkie specjalizacje",
-      "search_placeholder": "Szukaj po nazwisku lub firmie...",
+      "add_btn": "Dodaj osobę",
+      "collection_desc": "Każda karta otwiera szybką edycję profilu, dane firmy i kompletny kontakt operacyjny.",
+      "collection_title": "Zespół produkcyjny",
+      "filtered_view": "Widok filtrowany",
+      "in_view": "{{count}} w widoku",
       "subtitle": "Logistyka",
       "title": "Ekipa",
       "title_highlight": "Techniczna"
@@ -669,24 +674,98 @@
     },
     "editor": {
       "btn_save": "Zapisz do bazy",
-      "business_profile": "Profil Działalności",
-      "company_name": "Firma / Marka (Opcjonalnie)",
+      "business_profile": "Profil działalności",
+      "close_aria": "Zamknij panel",
+      "company_name": "Firma / Marka (opcjonalnie)",
       "company_placeholder": "np. SoundTech Pro Sp. z o.o.",
       "confirm_exit_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
       "confirm_exit_title": "Masz niezapisane zmiany!",
-      "contact_person": "Osoba Kontaktowa",
+      "contact_person": "Osoba kontaktowa",
       "email": "E-mail",
+      "eyebrow": "Profil współpracownika",
       "first_name": "Imię *",
       "last_name": "Nazwisko *",
       "phone": "Telefon",
       "specialty": "Specjalizacja *",
-      "title_edit": "Edycja Danych",
-      "title_new": "Nowy Współpracownik"
+      "specialty_preview": "Wybrana specjalizacja",
+      "title_edit": "Edycja danych",
+      "title_new": "Nowy współpracownik"
+    },
+    "empty_state": {
+      "add_person": "Dodaj współpracownika",
+      "add_search": "Dodaj wpis \"{{term}}\"",
+      "filters_blocked": "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego spisu.",
+      "search_results": "Nie znaleźliśmy osoby ani firmy \"{{term}}\". Możesz dodać nowy wpis lub usunąć część filtrów.",
+      "start_building": "Rozpocznij budowę zespołu produkcyjnego, dodając pierwszego współpracownika do bazy.",
+      "title": "Brak osób w bieżącym widoku"
+    },
+    "filters": {
+      "active_description": "Kliknij filtr, aby usunąć go bez resetowania całego widoku.",
+      "active_filters_one": "{{count}} aktywny filtr",
+      "active_filters_few": "{{count}} aktywne filtry",
+      "active_filters_many": "{{count}} aktywnych filtrów",
+      "active_filters_other": "{{count}} aktywnych filtrów",
+      "all_companies": "Wszystkie firmy",
+      "all_specialties": "Wszystkie specjalizacje",
+      "clear_filters": "Wyczyść filtry",
+      "company_label": "Firma / Marka",
+      "company_token": "Firma: {{label}}",
+      "contact_label": "Stan kontaktu",
+      "contact_token": "Kontakt: {{label}}",
+      "heading": "Filtry Ekipy",
+      "no_active_filters": "Brak aktywnych filtrów",
+      "no_filters_message": "Brak aktywnych filtrów. Widok pokazuje pełną bazę współpracowników.",
+      "search_label": "Wyszukiwanie",
+      "search_placeholder": "Szukaj po nazwisku, firmie lub e-mailu...",
+      "search_token": "Fraza: \"{{term}}\"",
+      "specialty_label": "Specjalizacja",
+      "specialty_token": "Specjalizacja: {{label}}",
+      "summary": "{{visible}} z {{total}} osób w aktualnym widoku."
+    },
+    "hero": {
+      "badge": "Operacje Logistyczne",
+      "coverage": {
+        "email": "Pokrycie e-mail",
+        "phone": "Pokrycie telefon",
+        "ratio": "{{value}} / {{total}}"
+      },
+      "description": "Jeden centralny widok dla zewnętrznych współpracowników, firm i specjalizacji wspierających każdą produkcję.",
+      "stats": {
+        "companies": "{{count}} firm",
+        "people": "{{count}} współpracowników",
+        "specialties": "{{count}} specjalizacji w bazie",
+        "top_specialty": "Najliczniej: {{label}} ({{count}})"
+      },
+      "title": "Ekipa techniczna gotowa na produkcję."
+    },
+    "metrics": {
+      "companies": "Firmy partnerskie",
+      "email_coverage": "Pokrycie e-mail",
+      "email_desc": "{{value}} osób z e-mailem",
+      "people": "Współpracownicy",
+      "phone_coverage": "Pokrycie telefon",
+      "phone_desc": "{{value}} osób z telefonem"
+    },
+    "specialties": {
+      "INSTRUMENT": "Instrumenty",
+      "LIGHT": "Światło",
+      "LOGISTICS": "Logistyka",
+      "OTHER": "Inne",
+      "SOUND": "Dźwięk",
+      "VISUALS": "Wizualizacje"
+    },
+    "specialty_descriptions": {
+      "INSTRUMENT": "Instrumentaliści zewnętrzni i obsługa instrumentów.",
+      "LIGHT": "Reżyseria świateł, oprawa wizualna sceny.",
+      "LOGISTICS": "Transport, scena, zabezpieczenie produkcji.",
+      "OTHER": "Współpracownicy spoza standardowych kategorii.",
+      "SOUND": "Realizacja dźwięku, miks i nagłośnienie sceniczne.",
+      "VISUALS": "Multimedia, projekcje, materiał ekranowy."
     },
     "toast": {
       "delete_error_desc": "Prawdopodobnie jest ona powiązana z istniejącymi projektami. Spróbuj edytować jej dane.",
       "delete_error_title": "Nie można usunąć tej osoby",
-      "delete_loading": "Usuwanie współpracownika...",
+      "delete_loading": "Usuwanie \"{{name}}\"...",
       "delete_success": "Osoba została usunięta z bazy.",
       "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie.",
       "save_error_title": "Wystąpił błąd podczas zapisywania danych.",
@@ -695,7 +774,7 @@
       "save_success_edit": "Zaktualizowano profil współpracownika.",
       "save_success_new": "Dodano nową osobę do bazy.",
       "sync_error": "Nie udało się pobrać listy współpracowników.",
-      "sync_warning": "Ostrzeżenie"
+      "sync_warning": "Ostrzeżenie synchronizacji"
     }
   },
   "dashboard": {
