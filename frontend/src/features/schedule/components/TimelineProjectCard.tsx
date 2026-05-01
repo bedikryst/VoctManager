@@ -737,6 +737,15 @@ export const TimelineProjectCard = ({
         fileName={`CallSheet_${proj.title.replace(/\s+/g, "_")}.pdf`}
         fetchBlob={fetchCallSheetBlob}
         docKey={proj.id}
+        fullView={{
+          type: "project-call-sheet",
+          id: proj.id,
+          hint: {
+            title: t("schedule.card.call_sheet_preview_title", "Call-Sheet"),
+            subtitle: proj.title,
+            fileName: `CallSheet_${proj.title.replace(/\s+/g, "_")}.pdf`,
+          },
+        }}
         onClose={handleCloseCallSheetPreview}
       />
 
@@ -748,6 +757,18 @@ export const TimelineProjectCard = ({
           fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
           fetchBlob={fetchScorePdfBlob}
           docKey={`score-${proj.id}`}
+          fullView={{
+            type: "project-score",
+            id: proj.id,
+            hint: {
+              title: t(
+                "schedule.card.score_pdf_modal_title",
+                "Partytura Koncertu",
+              ),
+              subtitle: proj.title,
+              fileName: `Score_${proj.title.replace(/\s+/g, "_")}.pdf`,
+            },
+          }}
           onClose={handleCloseScorePdfPreview}
         />
       )}

@@ -57,6 +57,8 @@ interface TabDefinition {
   labelKey: string;
 }
 
+
+
 const TAB_CONFIG: TabDefinition[] = [
   {
     id: PROJECT_TABS.DETAILS,
@@ -124,6 +126,19 @@ export const ProjectEditorPanel = ({
   onProjectPersisted,
 }: ProjectEditorPanelProps): React.ReactElement => {
   const { t } = useTranslation();
+
+  // i18n namespace reference (prevents keys from being lost during extract-i18n)
+  if (false) {
+    t("projects.editor.tabs.details");
+    t("projects.editor.tabs.rehearsals");
+    t("projects.editor.tabs.matrix");
+    t("projects.editor.tabs.cast");
+    t("projects.editor.tabs.program");
+    t("projects.editor.tabs.micro_cast");
+    t("projects.editor.tabs.crew");
+    t("projects.editor.tabs.budget");
+  }
+
   const queryClient = useQueryClient();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [pendingTabId, setPendingTabId] =

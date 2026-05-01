@@ -392,6 +392,18 @@ export const ProjectCard = ({
           fileName={`Score_${project.title.replace(/\s+/g, "_")}.pdf`}
           fetchBlob={fetchScorePdfBlob}
           docKey={project.id}
+          fullView={{
+            type: "project-score",
+            id: project.id,
+            hint: {
+              title: t(
+                "projects.card.score_pdf_modal_title",
+                "Partytura Koncertu",
+              ),
+              subtitle: project.title,
+              fileName: `Score_${project.title.replace(/\s+/g, "_")}.pdf`,
+            },
+          }}
           onClose={() => setScorePdfPreviewOpen(false)}
         />
       )}

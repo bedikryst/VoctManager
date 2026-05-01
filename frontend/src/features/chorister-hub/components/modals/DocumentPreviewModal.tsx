@@ -107,6 +107,19 @@ export const DocumentPreviewModal = ({
       fileName={previewDocument?.title}
       fetchBlob={previewDocument ? fetchBlob : null}
       docKey={previewDocument?.id}
+      fullView={
+        previewDocument
+          ? {
+              type: 'chorister-hub',
+              id: previewDocument.id,
+              hint: {
+                title: previewDocument.title,
+                subtitle,
+                fileName: previewDocument.title,
+              },
+            }
+          : undefined
+      }
       onClose={onClose}
     />
   );

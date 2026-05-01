@@ -437,6 +437,15 @@ export const ProjectCardHeader = ({
         fileName={`Runsheet_${project.title}.pdf`}
         fetchBlob={fetchRunsheetBlob}
         docKey={`runsheet-${project.id}`}
+        fullView={{
+          type: "project-call-sheet",
+          id: project.id,
+          hint: {
+            title: t("projects.exports.runsheet_title", "Harmonogram (Runsheet)"),
+            subtitle: project.title,
+            fileName: `Runsheet_${project.title}.pdf`,
+          },
+        }}
         onClose={() => setIsPdfModalOpen(false)}
       />
 
@@ -448,6 +457,18 @@ export const ProjectCardHeader = ({
           fileName={`Score_${project.title.replace(/\s+/g, "_")}.pdf`}
           fetchBlob={fetchScorePdfBlob}
           docKey={`score-pdf-${project.id}`}
+          fullView={{
+            type: "project-score",
+            id: project.id,
+            hint: {
+              title: t(
+                "projects.card.score_pdf_modal_title",
+                "Partytura Koncertu",
+              ),
+              subtitle: project.title,
+              fileName: `Score_${project.title.replace(/\s+/g, "_")}.pdf`,
+            },
+          }}
           onClose={() => setIsScorePdfModalOpen(false)}
         />
       )}
