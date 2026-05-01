@@ -234,6 +234,4 @@ const DocumentViewerPage = (): React.JSX.Element => {
     </PageTransition>
   );
 };
-
 export default DocumentViewerPage;
-t DocumentViewerPage;
