@@ -131,7 +131,7 @@ export const PdfViewerModal = ({
                 closeButtonRef.current?.focus();
               }}
             >
-              <div className="fixed inset-0 z-focus-trap flex flex-col items-center justify-center outline-none sm:p-6 md:p-12 pointer-events-none">
+              <div className="fixed inset-0 z-focus-trap flex flex-col items-center justify-center outline-none sm:p-3 pointer-events-none">
                 <motion.div
                   initial={{ opacity: 0, y: 30, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -139,7 +139,7 @@ export const PdfViewerModal = ({
                   transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                   className="pointer-events-auto relative flex h-full w-full max-w-7xl flex-col overflow-hidden bg-ethereal-ink shadow-glass-ethereal sm:max-h-full sm:rounded-[2rem] sm:border sm:border-white/10"
                 >
-                  <div className="relative z-10 flex shrink-0 items-center justify-between gap-4 border-b border-white/5 bg-white/[0.02] px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl sm:px-6 sm:py-4">
+                  <div className="relative z-10 flex shrink-0 items-center justify-between gap-4 border-b border-white/5 bg-white/[0.02] px-4 py-2 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl sm:px-10">
                     <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
                       <Dialog.Title asChild>
                         <Heading as="h2" size="sm" className="truncate text-ethereal-marble">
