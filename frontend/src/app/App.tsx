@@ -102,6 +102,11 @@ const CrewManagement = lazyWithPreload(
   () => import("@features/crew/CrewManagement"),
 );
 
+// Standalone, fullscreen authed route — sibling of the dashboard shell, not nested in it.
+const DocumentViewerPage = lazyWithPreload(
+  () => import("@pages/app/DocumentViewerPage"),
+);
+
 const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: DashboardHome.preload },
   { preload: SettingsPage.preload },
@@ -122,10 +127,13 @@ export default function App(): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
 
   const isPanelRoute: boolean = location.pathname.startsWith("/panel");
+  const isDocumentViewerRoute: boolean =
+    location.pathname.startsWith("/documents/");
   const isAuthRoute: boolean =
     location.pathname === "/login" || location.pathname === "/activate";
 
-  const shouldShowGlobalComponents: boolean = !isPanelRoute && !isAuthRoute;
+  const shouldShowGlobalComponents: boolean =
+    !isPanelRoute && !isAuthRoute && !isDocumentViewerRoute;
 
   return (
     <CSRFProvider>
@@ -196,6 +204,11 @@ export default function App(): React.JSX.Element {
                 <Route path="schedule" element={<Schedule />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
+
+              <Route
+                path="/documents/:docType/:docId"
+                element={<DocumentViewerPage />}
+              />
             </Route>
           </Routes>
         </Suspense>
