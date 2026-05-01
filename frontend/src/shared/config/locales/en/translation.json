@@ -1074,6 +1074,17 @@
     "title": "Notifications",
     "unread": "Unread"
   },
+  "document_viewer": {
+    "back_aria": "Go back",
+    "back_to_app": "Back to dashboard",
+    "fallback": {
+      "chorister_hub_title": "Document",
+      "project_call_sheet_title": "Call Sheet",
+      "project_score_title": "Concert Score"
+    },
+    "invalid_description": "We could not recognize this document link. It may be malformed or out of date.",
+    "invalid_title": "Unsupported document"
+  },
   "pdf_viewer": {
     "download": "Download",
     "error_403": "You do not have permission to view this document.",
@@ -1082,6 +1093,8 @@
     "jump_to_page": "Jump to page",
     "next_page": "Next page",
     "open_browser": "Open",
+    "open_full_view": "Open full view",
+    "open_full_view_short": "Full view",
     "page_short": "Page",
     "prev_page": "Previous page",
     "share": "Share",
@@ -1308,6 +1321,16 @@
       "create_description": "Save the core event details first, then continue to the operational tabs.",
       "new_project": "New event creator",
       "new_project_title": "New project",
+      "tabs": {
+        "budget": "Budget",
+        "cast": "Cast",
+        "crew": "Crew",
+        "details": "Details",
+        "matrix": "Attendance Matrix",
+        "micro_cast": "Micro Cast",
+        "program": "Program",
+        "rehearsals": "Rehearsals"
+      },
       "tabs_aria": "Project editor tabs",
       "unsaved_changes_desc": "You have unsaved changes in this tab. Leaving the view will discard local data.",
       "unsaved_changes_title": "Unsaved changes",

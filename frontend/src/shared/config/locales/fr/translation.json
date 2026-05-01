@@ -1087,6 +1087,17 @@
     "title": "Notifications",
     "unread": "Non lues"
   },
+  "document_viewer": {
+    "back_aria": "Retour",
+    "back_to_app": "Retour au tableau de bord",
+    "fallback": {
+      "chorister_hub_title": "Document",
+      "project_call_sheet_title": "Feuille de service",
+      "project_score_title": "Partition de concert"
+    },
+    "invalid_description": "Nous n'avons pas reconnu ce lien de document. Il peut être malformé ou obsolète.",
+    "invalid_title": "Document non pris en charge"
+  },
   "pdf_viewer": {
     "download": "Télécharger",
     "error_403": "Vous n'avez pas la permission de voir ce document.",
@@ -1095,6 +1106,8 @@
     "jump_to_page": "Aller à la page",
     "next_page": "Page suivante",
     "open_browser": "Ouvrir",
+    "open_full_view": "Vue plein écran",
+    "open_full_view_short": "Plein écran",
     "page_short": "Page",
     "prev_page": "Page précédente",
     "share": "Partager",
@@ -1323,6 +1336,16 @@
       "create_description": "Enregistrez d’abord les informations principales de l’événement, puis poursuivez dans les onglets opérationnels.",
       "new_project": "Créateur de nouvel événement",
       "new_project_title": "Nouveau projet",
+      "tabs": {
+        "budget": "Budget",
+        "cast": "Distribution",
+        "crew": "Équipe",
+        "details": "Détails",
+        "matrix": "Matrice de présence",
+        "micro_cast": "Micro-distribution",
+        "program": "Programme",
+        "rehearsals": "Répétitions"
+      },
       "tabs_aria": "Onglets de l’éditeur de projet",
       "unsaved_changes_desc": "Vous avez des modifications non enregistrées dans cet onglet. Quitter la vue supprimera les données locales.",
       "unsaved_changes_title": "Modifications non enregistrées",

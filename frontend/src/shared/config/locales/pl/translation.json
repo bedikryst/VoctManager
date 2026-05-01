@@ -1094,6 +1094,17 @@
     "title": "Powiadomienia",
     "unread": "nieprzeczytane"
   },
+  "document_viewer": {
+    "back_aria": "Wróć",
+    "back_to_app": "Powrót do panelu",
+    "fallback": {
+      "chorister_hub_title": "Dokument",
+      "project_call_sheet_title": "Call-Sheet",
+      "project_score_title": "Partytura koncertu"
+    },
+    "invalid_description": "Nie rozpoznaliśmy tego linku do dokumentu. Może być uszkodzony lub nieaktualny.",
+    "invalid_title": "Nieobsługiwany dokument"
+  },
   "pdf_viewer": {
     "download": "Pobierz",
     "error_403": "Nie masz uprawnień do wyświetlenia tego dokumentu.",
@@ -1102,6 +1113,8 @@
     "jump_to_page": "Przejdź do strony",
     "next_page": "Następna strona",
     "open_browser": "Otwórz",
+    "open_full_view": "Otwórz pełny widok",
+    "open_full_view_short": "Pełny widok",
     "page_short": "Strona",
     "prev_page": "Poprzednia strona",
     "share": "Udostępnij",
@@ -1330,6 +1343,16 @@
       "create_description": "Najpierw zapisz podstawowe dane wydarzenia, a następnie przejdź do kolejnych zakładek operacyjnych.",
       "new_project": "Kreator nowego wydarzenia",
       "new_project_title": "Nowy projekt",
+      "tabs": {
+        "budget": "Budżet",
+        "cast": "Obsada",
+        "crew": "Zespół",
+        "details": "Szczegóły",
+        "matrix": "Macierz frekwencji",
+        "micro_cast": "Mikro-obsada",
+        "program": "Program",
+        "rehearsals": "Próby"
+      },
       "tabs_aria": "Zakładki panelu projektu",
       "unsaved_changes_desc": "Masz niezapisane zmiany w tej zakładce. Opuszczenie widoku spowoduje utratę lokalnych danych.",
       "unsaved_changes_title": "Niezapisane zmiany",
