@@ -1,15 +1,15 @@
 /**
  * @file PdfViewerModal.tsx
  * @description Dialog shell wrapping the headless PdfViewer primitive. Owns Radix Dialog
- * semantics (focus trap, overlay, ARIA), the close affordance, and the "Open full view"
+ * semantics (focus trap, overlay, ARIA, exit animations), the close affordance, and the "Open full view"
  * link to the deep-linkable DocumentViewerPage when callers provide a typed docType + docId.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewerModal
  */
 
-import React, { useCallback, useEffect, useId, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -20,10 +20,6 @@ import {
   PdfViewer,
   type PdfViewerEvent,
 } from "@/shared/ui/composites/PdfViewer";
-import {
-  buildDocumentViewerPath,
-  type DocumentDescriptor,
-} from "@/pages/app/DocumentViewerPage/types";
 
 type CloseWatcherHandle = {
   onclose: (() => void) | null;
@@ -43,10 +39,12 @@ export interface PdfViewerModalProps {
   /** Stable identity used by the underlying PdfViewer to trigger refetch. */
   docKey?: string | number;
   /**
-   * Document descriptor enabling the "Open full view" affordance. When omitted,
+   * The destination path for the "Open full view" affordance. When omitted,
    * the link is hidden — the modal still functions as a contextual preview.
    */
-  fullView?: DocumentDescriptor;
+  fullViewHref?: string;
+  /** Optional state payload for the full view route. */
+  fullViewHint?: unknown;
   /** Telemetry seam forwarded to the underlying PdfViewer. No transport bundled. */
   onEvent?: (event: PdfViewerEvent) => void;
   onClose: () => void;
@@ -59,13 +57,12 @@ export const PdfViewerModal = ({
   fileName,
   fetchBlob,
   docKey,
-  fullView,
+  fullViewHref,
+  fullViewHint,
   onEvent,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const titleId = useId();
-  const descriptionId = useId();
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const handleFullViewClick = useCallback(() => {
@@ -74,14 +71,10 @@ export const PdfViewerModal = ({
 
   // Android/iOS hardware-back gesture — close via CloseWatcher when available.
   useEffect(() => {
-    if (!isOpen || typeof window === "undefined") {
-      return;
-    }
+    if (!isOpen) return;
 
     const closeWatcherWindow = window as CloseWatcherWindow;
-    if (!closeWatcherWindow.CloseWatcher) {
-      return;
-    }
+    if (!closeWatcherWindow.CloseWatcher) return;
 
     const watcher = new closeWatcherWindow.CloseWatcher();
     watcher.onclose = () => {
@@ -97,109 +90,106 @@ export const PdfViewerModal = ({
     };
   }, [isOpen, onClose]);
 
-  const fullViewSlot = fullView ? (
+  const fullViewSlot = fullViewHref ? (
     <Button
       asChild
-      variant="secondary"
-      size="sm"
-      className="h-11 rounded-2xl px-4 text-ethereal-marble"
+      variant="ghost"
+      size="icon"
+      className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10 hover:text-white"
     >
       <Link
-        to={buildDocumentViewerPath(fullView)}
-        state={fullView.hint}
+        to={fullViewHref}
+        state={fullViewHint}
         onClick={handleFullViewClick}
         aria-label={t("pdf_viewer.open_full_view", "Open full view")}
       >
-        <ExternalLink size={16} aria-hidden="true" className="mr-2" />
-        <span className="hidden sm:inline">
-          {t("pdf_viewer.open_full_view", "Open full view")}
-        </span>
-        <span className="sm:hidden">
-          {t("pdf_viewer.open_full_view_short", "Full view")}
-        </span>
+        <ExternalLink size={18} aria-hidden="true" />
       </Link>
     </Button>
   ) : null;
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      {isOpen && (
-        <Dialog.Portal>
-          <Dialog.Overlay asChild>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.18 }}
-              className="fixed inset-0 z-[120] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_30%),rgba(8,8,10,0.92)] backdrop-blur-xl"
-            />
-          </Dialog.Overlay>
-
-          <Dialog.Content
-            onOpenAutoFocus={(event) => {
-              event.preventDefault();
-              closeButtonRef.current?.focus();
-            }}
-            className="fixed inset-0 z-[121] outline-none sm:p-4"
-            aria-describedby={subtitle ? descriptionId : undefined}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className="relative flex h-full w-full flex-col overflow-hidden bg-[#111015] text-ethereal-marble sm:mx-auto sm:max-w-[min(100rem,calc(100vw-2rem))] sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-[0_40px_120px_rgba(0,0,0,0.45)]"
-            >
-              <header className="relative z-10 flex items-start gap-3 border-b border-white/10 bg-black/20 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.875rem)] backdrop-blur-xl sm:px-6 sm:pb-4 sm:pt-6">
-                <div className="min-w-0 flex-1">
-                  <Dialog.Title asChild>
-                    <Heading
-                      id={titleId}
-                      as="h2"
-                      size="lg"
-                      className="truncate text-ethereal-marble sm:text-[1.375rem]"
-                    >
-                      {title}
-                    </Heading>
-                  </Dialog.Title>
-
-                  {subtitle ? (
-                    <Dialog.Description asChild>
-                      <Text
-                        id={descriptionId}
-                        color="parchment-muted"
-                        className="mt-1 line-clamp-2"
-                      >
-                        {subtitle}
-                      </Text>
-                    </Dialog.Description>
-                  ) : null}
-                </div>
-
-                <Button
-                  ref={closeButtonRef}
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  aria-label={t("common.close_aria", "Close")}
-                  className="h-11 w-11 shrink-0 rounded-2xl text-ethereal-marble hover:bg-white/10 hover:text-white"
-                >
-                  <X size={18} aria-hidden="true" />
-                </Button>
-              </header>
-
-              <PdfViewer
-                fetchBlob={fetchBlob}
-                docKey={docKey}
-                title={title}
-                subtitle={subtitle}
-                fileName={fileName}
-                onEvent={onEvent}
-                toolbarSlot={fullViewSlot}
-                className="flex-1"
+      <AnimatePresence>
+        {isOpen && (
+          <Dialog.Portal forceMount>
+            <Dialog.Overlay asChild forceMount>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 z-focus-trap bg-ethereal-ink/80 backdrop-blur-md"
               />
-            </motion.div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      )}
+            </Dialog.Overlay>
+
+            <Dialog.Content
+              asChild
+              forceMount
+              onOpenAutoFocus={(event) => {
+                event.preventDefault();
+                closeButtonRef.current?.focus();
+              }}
+            >
+              <div className="fixed inset-0 z-focus-trap flex flex-col items-center justify-center outline-none sm:p-6 md:p-12 pointer-events-none">
+                <motion.div
+                  initial={{ opacity: 0, y: 30, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.96 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="pointer-events-auto relative flex h-full w-full max-w-7xl flex-col overflow-hidden bg-ethereal-ink shadow-glass-ethereal sm:max-h-full sm:rounded-[2rem] sm:border sm:border-white/10"
+                >
+                  <div className="relative z-10 flex shrink-0 items-center justify-between gap-4 border-b border-white/5 bg-white/[0.02] px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl sm:px-6 sm:py-4">
+                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+                      <Dialog.Title asChild>
+                        <Heading as="h2" size="sm" className="truncate text-ethereal-marble">
+                          {title}
+                        </Heading>
+                      </Dialog.Title>
+                      {subtitle ? (
+                        <Dialog.Description asChild>
+                          <Text color="parchment-muted" className="truncate text-xs">
+                            {subtitle}
+                          </Text>
+                        </Dialog.Description>
+                      ) : (
+                        <Dialog.Description className="sr-only">
+                          {title}
+                        </Dialog.Description>
+                      )}
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+                      {fullViewSlot}
+                      {fullViewSlot && <div className="mx-1 h-6 w-px bg-white/10" />}
+                      <Button
+                        ref={closeButtonRef}
+                        variant="ghost"
+                        size="icon"
+                        onClick={onClose}
+                        aria-label={t("common.close_aria", "Close")}
+                        className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10 hover:text-white"
+                      >
+                        <X size={20} aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <PdfViewer
+                    fetchBlob={fetchBlob}
+                    docKey={docKey}
+                    title={title}
+                    subtitle={subtitle}
+                    fileName={fileName}
+                    onEvent={onEvent}
+                    className="flex-1"
+                  />
+                </motion.div>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        )}
+      </AnimatePresence>
     </Dialog.Root>
   );
 };

@@ -3,7 +3,7 @@
  * @description Headless authenticated PDF viewing primitive. Owns the rendering pipeline
  * (text + annotation layers, virtualized worker, responsive page sizing), action toolbar
  * (download, share, open-in-browser, zoom, page nav), and a typed onEvent telemetry seam.
- * Outer chrome (modal frame, page frame, dialog semantics) is delegated to the caller.
+ * Uses TanStack Query for blob fetching, fulfilling the 2026 architecture mandate.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewer
  */
@@ -18,6 +18,8 @@ import React, {
   useState,
 } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import {
@@ -34,8 +36,10 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 
 // pdf.js worker bootstrap. Vite resolves this URL at build time and emits the worker
 // as a separate chunk. Module-level so it runs exactly once per page load.
@@ -52,8 +56,6 @@ const COMPACT_VIEWPORT_THRESHOLD = 640;
 const MOBILE_MIN_PAGE_WIDTH = 260;
 const DESKTOP_MIN_PAGE_WIDTH = 320;
 const DESKTOP_PAGE_WIDTH_CAP = 1080;
-
-type ViewerStatus = "idle" | "loading" | "success" | "error";
 
 type LoadErrorReason = "permission_denied" | "network" | "parse" | "unknown";
 
@@ -146,41 +148,6 @@ const createDownloadAnchor = (blob: Blob, targetFileName: string): void => {
   }, 0);
 };
 
-interface StatePanelProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-}
-
-const StatePanel = ({
-  icon,
-  title,
-  description,
-  action,
-}: StatePanelProps): React.JSX.Element => (
-  <div className="flex min-h-full w-full items-center justify-center px-6 py-12 sm:px-10">
-    <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-[2rem] border border-white/10 bg-white/[0.04] px-6 py-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-ethereal-gold">
-        {icon}
-      </div>
-      <div className="space-y-2">
-        <Heading
-          as="h3"
-          size="lg"
-          className="text-ethereal-marble text-balance"
-        >
-          {title}
-        </Heading>
-        <Text color="parchment-muted" className="text-balance">
-          {description}
-        </Text>
-      </div>
-      {action}
-    </div>
-  </div>
-);
-
 export const PdfViewer = ({
   fetchBlob,
   docKey,
@@ -194,20 +161,31 @@ export const PdfViewer = ({
   const { t } = useTranslation();
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const activeRequestIdRef = useRef(0);
-  const blobUrlRef = useRef<string | null>(null);
-  const documentBlobRef = useRef<Blob | null>(null);
 
-  const [status, setStatus] = useState<ViewerStatus>("idle");
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [viewportWidth, setViewportWidth] = useState(0);
-  const [retryNonce, setRetryNonce] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+
+  // TanStack Query for data fetching
+  const {
+    data: documentBlob,
+    isPending: isFetchingBlob,
+    isError: isFetchError,
+    error: fetchError,
+    refetch: retryFetch,
+  } = useQuery({
+    queryKey: ["pdf", docKey],
+    queryFn: async () => {
+      if (!fetchBlob) throw new Error("No fetchBlob provided");
+      return await fetchBlob();
+    },
+    enabled: !!fetchBlob && !!docKey,
+    staleTime: Infinity,
+  });
 
   const resolvedFileName = useMemo(
     () => buildPdfFileName(title, fileName),
@@ -270,30 +248,6 @@ export const PdfViewer = ({
     onEvent?.(event);
   });
 
-  const revokeObjectUrl = useCallback(() => {
-    if (blobUrlRef.current) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
-
-    documentBlobRef.current = null;
-  }, []);
-
-  const clearDocumentResource = useCallback(() => {
-    revokeObjectUrl();
-    setBlobUrl(null);
-  }, [revokeObjectUrl]);
-
-  const resetViewerState = useCallback(() => {
-    setStatus("idle");
-    setNumPages(null);
-    setCurrentPage(1);
-    setZoom(DEFAULT_ZOOM);
-    setErrorMsg(null);
-    setIsDownloading(false);
-    setIsSharing(false);
-  }, []);
-
   const resolveViewerErrorMessage = useEffectEvent((reason: LoadErrorReason): string => {
     return reason === "permission_denied"
       ? t(
@@ -306,52 +260,7 @@ export const PdfViewer = ({
   const flagViewerError = useEffectEvent((error: unknown) => {
     const reason = classifyLoadError(error);
     const message = error instanceof Error ? error.message : undefined;
-
-    setStatus("error");
-    setErrorMsg(resolveViewerErrorMessage(reason));
     emitEvent({ type: "load_error", reason, message });
-  });
-
-  const ensureDocumentBlob = useEffectEvent(async (): Promise<Blob | null> => {
-    if (documentBlobRef.current) {
-      return documentBlobRef.current;
-    }
-
-    if (!fetchBlob) {
-      return null;
-    }
-
-    const blob = await fetchBlob();
-    documentBlobRef.current = blob;
-    return blob;
-  });
-
-  const loadDocument = useEffectEvent(async (requestId: number) => {
-    if (!fetchBlob) {
-      return;
-    }
-
-    try {
-      const blob = await fetchBlob();
-
-      if (requestId !== activeRequestIdRef.current) {
-        return;
-      }
-
-      const nextBlobUrl = URL.createObjectURL(blob);
-
-      blobUrlRef.current = nextBlobUrl;
-      documentBlobRef.current = blob;
-
-      setBlobUrl(nextBlobUrl);
-      setStatus("success");
-    } catch (error) {
-      if (requestId !== activeRequestIdRef.current) {
-        return;
-      }
-
-      flagViewerError(error);
-    }
   });
 
   const changePage = useCallback(
@@ -362,60 +271,49 @@ export const PdfViewer = ({
 
       const clamped = clampValue(nextPage, 1, numPages);
 
-      setCurrentPage((previous) => {
-        if (previous === clamped) {
-          return previous;
-        }
-        emitEvent({ type: "page_change", from: previous, to: clamped });
-        return clamped;
-      });
+      if (currentPage !== clamped) {
+        emitEvent({ type: "page_change", from: currentPage, to: clamped });
+        setCurrentPage(clamped);
+      }
     },
-    [emitEvent, numPages],
+    [emitEvent, numPages, currentPage],
   );
 
   const changeZoom = useCallback(
     (delta: number) => {
-      startTransition(() => {
-        setZoom((currentZoom) => {
-          const next = clampValue(
-            Number((currentZoom + delta).toFixed(2)),
-            MIN_ZOOM,
-            MAX_ZOOM,
-          );
+      const next = clampValue(
+        Number((zoom + delta).toFixed(2)),
+        MIN_ZOOM,
+        MAX_ZOOM,
+      );
 
-          if (next === currentZoom) {
-            return currentZoom;
-          }
-          emitEvent({ type: "zoom_change", from: currentZoom, to: next });
-          return next;
+      if (next !== zoom) {
+        emitEvent({ type: "zoom_change", from: zoom, to: next });
+        startTransition(() => {
+          setZoom(next);
         });
-      });
+      }
     },
-    [emitEvent],
+    [emitEvent, zoom],
   );
 
   const resetZoom = useCallback(() => {
-    startTransition(() => {
-      setZoom((currentZoom) => {
-        if (currentZoom === DEFAULT_ZOOM) {
-          return currentZoom;
-        }
-        emitEvent({
-          type: "zoom_change",
-          from: currentZoom,
-          to: DEFAULT_ZOOM,
-        });
-        return DEFAULT_ZOOM;
+    if (zoom !== DEFAULT_ZOOM) {
+      emitEvent({
+        type: "zoom_change",
+        from: zoom,
+        to: DEFAULT_ZOOM,
       });
-    });
-  }, [emitEvent]);
+      startTransition(() => {
+        setZoom(DEFAULT_ZOOM);
+      });
+    }
+  }, [emitEvent, zoom]);
 
   const handleRetry = useCallback(() => {
     emitEvent({ type: "retry" });
-    startTransition(() => {
-      setRetryNonce((currentNonce) => currentNonce + 1);
-    });
-  }, [emitEvent]);
+    retryFetch();
+  }, [emitEvent, retryFetch]);
 
   const handleDocumentLoadSuccess = useEffectEvent(
     ({ numPages: totalPages }: { numPages: number }) => {
@@ -439,38 +337,30 @@ export const PdfViewer = ({
   }, [blobUrl, emitEvent]);
 
   const handleDownload = useCallback(async () => {
-    if (isDownloading) {
+    if (isDownloading || !documentBlob) {
       return;
     }
 
     setIsDownloading(true);
-
-    let succeeded = false;
     try {
-      const blob = await ensureDocumentBlob();
-
-      if (!blob) {
-        return;
-      }
-
-      createDownloadAnchor(blob, resolvedFileName);
-      succeeded = true;
+      createDownloadAnchor(documentBlob, resolvedFileName);
+      emitEvent({ type: "download", fileName: resolvedFileName, succeeded: true });
     } catch (error) {
       flagViewerError(error);
+      emitEvent({ type: "download", fileName: resolvedFileName, succeeded: false });
     } finally {
       setIsDownloading(false);
-      emitEvent({ type: "download", fileName: resolvedFileName, succeeded });
     }
   }, [
+    documentBlob,
     emitEvent,
-    ensureDocumentBlob,
     flagViewerError,
     isDownloading,
     resolvedFileName,
   ]);
 
   const handleShare = useCallback(async () => {
-    if (!supportsNativeShare || isSharing) {
+    if (!supportsNativeShare || isSharing || !documentBlob) {
       return;
     }
 
@@ -479,14 +369,8 @@ export const PdfViewer = ({
     let succeeded = false;
     let cancelled = false;
     try {
-      const blob = await ensureDocumentBlob();
-
-      if (!blob) {
-        return;
-      }
-
-      const shareFile = new File([blob], resolvedFileName, {
-        type: blob.type || "application/pdf",
+      const shareFile = new File([documentBlob], resolvedFileName, {
+        type: documentBlob.type || "application/pdf",
       });
 
       if (
@@ -519,8 +403,8 @@ export const PdfViewer = ({
       });
     }
   }, [
+    documentBlob,
     emitEvent,
-    ensureDocumentBlob,
     flagViewerError,
     handleDownload,
     isSharing,
@@ -531,7 +415,7 @@ export const PdfViewer = ({
   ]);
 
   const handleKeyboardShortcuts = useEffectEvent((event: KeyboardEvent) => {
-    if (status !== "success") {
+    if (!blobUrl || isFetchError) {
       return;
     }
 
@@ -576,38 +460,25 @@ export const PdfViewer = ({
     }
   });
 
-  // Document load lifecycle: refetch when fetchBlob, docKey, or retryNonce changes.
+  // Track document key and emit open event
   useEffect(() => {
-    if (!fetchBlob) {
-      activeRequestIdRef.current += 1;
-      clearDocumentResource();
-      resetViewerState();
-      setStatus("loading");
+    if (docKey) {
+      emitEvent({ type: "open", docKey });
+    }
+  }, [docKey, emitEvent]);
+
+  // Object URL lifecycle
+  useEffect(() => {
+    if (!documentBlob) {
+      setBlobUrl(null);
       return;
     }
-
-    const nextRequestId = activeRequestIdRef.current + 1;
-
-    activeRequestIdRef.current = nextRequestId;
-    clearDocumentResource();
-    setStatus("loading");
-    setNumPages(null);
-    setCurrentPage(1);
-    setZoom(DEFAULT_ZOOM);
-    setErrorMsg(null);
-
-    emitEvent({ type: "open", docKey });
-
-    void loadDocument(nextRequestId);
-  }, [
-    clearDocumentResource,
-    docKey,
-    emitEvent,
-    fetchBlob,
-    loadDocument,
-    resetViewerState,
-    retryNonce,
-  ]);
+    const url = URL.createObjectURL(documentBlob);
+    setBlobUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [documentBlob]);
 
   // Track viewport width for responsive page sizing.
   useEffect(() => {
@@ -649,91 +520,83 @@ export const PdfViewer = ({
     };
   }, [handleKeyboardShortcuts]);
 
-  // Final cleanup on unmount.
-  useEffect(() => {
-    return () => {
-      activeRequestIdRef.current += 1;
-      revokeObjectUrl();
-    };
-  }, [revokeObjectUrl]);
-
-  const showLoadingState =
-    status === "loading" || (status === "idle" && !blobUrl);
-  const showPdfChrome = status === "success" && blobUrl && numPages !== null;
+  // Computed state
+  const isIdle = !fetchBlob;
+  const showLoadingState = (isIdle && !blobUrl) || (!isIdle && isFetchingBlob && !blobUrl);
+  const showPdfChrome = !!blobUrl && numPages !== null && !isFetchError;
+  const errorReason = isFetchError ? classifyLoadError(fetchError) : null;
+  const errorMessage = errorReason ? resolveViewerErrorMessage(errorReason) : null;
 
   return (
     <div
       className={cn(
-        "relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#111015] text-ethereal-marble",
+        "relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-ethereal-ink text-ethereal-marble",
         className,
       )}
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(194,168,120,0.14),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent_32%)]"
+        className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn"
         aria-hidden="true"
       />
 
-      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3 backdrop-blur-xl sm:px-6">
-        <div className="flex flex-wrap items-center gap-2">
-          {showPdfChrome && (
-            <>
-              <Caption className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-ethereal-parchment/75">
-                {t("pdf_viewer.page_short", "Page")} {currentPage} / {numPages}
-              </Caption>
-              <Caption className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-ethereal-parchment/75">
-                {zoomPercentage}%
-              </Caption>
-            </>
-          )}
-        </div>
+      {showPdfChrome && (
+        <div className="absolute right-4 top-4 z-20 flex items-center sm:right-6 sm:top-6">
+          <GlassCard
+            variant="surface"
+            padding="sm"
+            className="flex items-center gap-1 rounded-full p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+            isHoverable={false}
+          >
+            {blobUrl && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleOpenInBrowser}
+                aria-label={t("pdf_viewer.open_browser", "Open in browser")}
+                className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
+              >
+                <Globe size={16} aria-hidden="true" />
+              </Button>
+            )}
 
-        <div className="flex shrink-0 items-center gap-2">
-          {blobUrl && (
-            <Button
-              variant="secondary"
-              size="icon"
-              onClick={handleOpenInBrowser}
-              aria-label={t("pdf_viewer.open_browser", "Open in browser")}
-              className="hidden h-11 w-11 rounded-2xl text-ethereal-marble sm:inline-flex"
-            >
-              <Globe size={18} aria-hidden="true" />
-            </Button>
-          )}
+            {supportsNativeShare && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleShare}
+                isLoading={isSharing}
+                aria-label={t("pdf_viewer.share", "Share")}
+                className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
+              >
+                {!isSharing && <Share2 size={16} aria-hidden="true" />}
+              </Button>
+            )}
 
-          {supportsNativeShare && showPdfChrome && (
             <Button
-              variant="secondary"
-              size="icon"
-              onClick={handleShare}
-              isLoading={isSharing}
-              aria-label={t("pdf_viewer.share", "Share")}
-              className="hidden h-11 w-11 rounded-2xl text-ethereal-marble sm:inline-flex"
-            >
-              {!isSharing && <Share2 size={18} aria-hidden="true" />}
-            </Button>
-          )}
-
-          {showPdfChrome && (
-            <Button
-              variant="secondary"
+              variant="ghost"
               size="icon"
               onClick={handleDownload}
               isLoading={isDownloading}
               aria-label={t("pdf_viewer.download", "Download")}
-              className="hidden h-11 w-11 rounded-2xl text-ethereal-marble sm:inline-flex"
+              className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
             >
-              {!isDownloading && <Download size={18} aria-hidden="true" />}
+              {!isDownloading && <Download size={16} aria-hidden="true" />}
             </Button>
-          )}
 
-          {toolbarSlot}
+            {toolbarSlot && (
+              <>
+                <div className="mx-1 h-4 w-px bg-white/15" />
+                {toolbarSlot}
+              </>
+            )}
+          </GlassCard>
         </div>
-      </div>
+      )}
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <div
           ref={viewportRef}
-          className="h-full overflow-auto overscroll-contain px-3 pb-8 pt-4 sm:px-6 sm:pb-10 sm:pt-6"
+          className="ethereal-scroll h-full overflow-auto overscroll-contain px-3 pb-8 pt-4 sm:px-6 sm:pb-32 sm:pt-6"
           style={{ touchAction: "pan-x pan-y pinch-zoom" }}
         >
           <div className="mx-auto flex min-h-full w-full items-start justify-center">
@@ -741,36 +604,39 @@ export const PdfViewer = ({
               <div className="flex min-h-full w-full items-center justify-center py-16">
                 <EtherealLoader />
               </div>
-            ) : status === "error" ? (
-              <StatePanel
-                icon={
-                  <FileWarning
-                    size={28}
-                    className="text-ethereal-crimson/80"
-                    aria-hidden="true"
-                  />
-                }
-                title={t(
-                  "pdf_viewer.unavailable_title",
-                  "Document unavailable",
-                )}
-                description={
-                  errorMsg ??
-                  t(
-                    "pdf_viewer.error_generic",
-                    "The document could not be loaded.",
-                  )
-                }
-                action={
-                  <Button
-                    variant="secondary"
-                    onClick={handleRetry}
-                    className="mt-1"
-                  >
-                    {t("common.actions.retry", "Retry")}
-                  </Button>
-                }
-              />
+            ) : isFetchError ? (
+              <div className="flex min-h-full w-full items-center justify-center px-6 py-12 sm:px-10">
+                <StatePanel
+                  tone="danger"
+                  icon={
+                    <FileWarning
+                      size={28}
+                      className="text-ethereal-crimson"
+                      aria-hidden="true"
+                    />
+                  }
+                  title={t(
+                    "pdf_viewer.unavailable_title",
+                    "Document unavailable",
+                  )}
+                  description={
+                    errorMessage ??
+                    t(
+                      "pdf_viewer.error_generic",
+                      "The document could not be loaded.",
+                    )
+                  }
+                  actions={
+                    <Button
+                      variant="secondary"
+                      onClick={handleRetry}
+                    >
+                      {t("common.actions.retry", "Retry")}
+                    </Button>
+                  }
+                  className="w-full max-w-md shadow-glass-ethereal"
+                />
+              </div>
             ) : blobUrl && renderedPageWidth ? (
               <Document
                 file={blobUrl}
@@ -784,26 +650,36 @@ export const PdfViewer = ({
                 }
                 className="mx-auto"
               >
-                <Page
-                  pageNumber={currentPage}
-                  width={renderedPageWidth}
-                  scale={zoom}
-                  devicePixelRatio={devicePixelRatio}
-                  canvasBackground="#ffffff"
-                  renderAnnotationLayer
-                  renderTextLayer
-                  onLoadError={flagViewerError}
-                  onRenderError={flagViewerError}
-                  loading={
-                    <div className="flex min-h-[12rem] items-center justify-center py-8">
-                      <EtherealLoader />
-                    </div>
-                  }
-                  className={cn(
-                    "overflow-hidden rounded-[1.5rem] bg-white shadow-[0_32px_90px_rgba(0,0,0,0.35)]",
-                    isCompactViewport && "rounded-[1.125rem]",
-                  )}
-                />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentPage}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Page
+                      pageNumber={currentPage}
+                      width={renderedPageWidth}
+                      scale={zoom}
+                      devicePixelRatio={devicePixelRatio}
+                      canvasBackground="#ffffff"
+                      renderAnnotationLayer
+                      renderTextLayer
+                      onLoadError={flagViewerError}
+                      onRenderError={flagViewerError}
+                      loading={
+                        <div className="flex min-h-[12rem] items-center justify-center py-8">
+                          <EtherealLoader />
+                        </div>
+                      }
+                      className={cn(
+                        "overflow-hidden rounded-[1.5rem] bg-white shadow-glass-ethereal",
+                        isCompactViewport && "rounded-[1.125rem]",
+                      )}
+                    />
+                  </motion.div>
+                </AnimatePresence>
               </Document>
             ) : (
               <div className="flex min-h-full w-full items-center justify-center py-16">
@@ -812,169 +688,76 @@ export const PdfViewer = ({
             )}
           </div>
         </div>
-
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-[#111015] to-transparent"
-          aria-hidden="true"
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#111015] to-transparent"
-          aria-hidden="true"
-        />
       </div>
 
       {showPdfChrome && (
-        <div className="relative z-10 border-t border-white/10 bg-black/25 px-4 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] pt-3 backdrop-blur-xl sm:px-6 sm:pb-5 sm:pt-4">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => changePage(currentPage - 1)}
-                  disabled={currentPage <= 1}
-                  aria-label={t("pdf_viewer.prev_page", "Previous page")}
-                  className="h-11 w-11 rounded-2xl text-ethereal-marble"
-                >
-                  <ChevronLeft size={18} aria-hidden="true" />
-                </Button>
+        <div className="pointer-events-none absolute bottom-6 left-0 right-0 z-20 flex justify-center pb-[env(safe-area-inset-bottom)] sm:bottom-8">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-ethereal-ink/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => changePage(currentPage - 1)}
+              disabled={currentPage <= 1}
+              aria-label={t("pdf_viewer.prev_page", "Previous page")}
+              className="h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10"
+            >
+              <ChevronLeft size={18} aria-hidden="true" />
+            </Button>
 
-                <div
-                  aria-live="polite"
-                  className="rounded-[1.125rem] border border-white/10 bg-white/[0.04] px-3 py-2 text-center"
-                >
-                  <Caption className="block text-[10px] uppercase tracking-[0.14em] text-ethereal-parchment/55">
-                    {t("pdf_viewer.page_short", "Page")}
-                  </Caption>
-                  <Text
-                    as="span"
-                    className="block tabular-nums font-semibold text-ethereal-marble"
-                  >
-                    {currentPage} / {numPages}
-                  </Text>
-                </div>
-
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => changePage(currentPage + 1)}
-                  disabled={currentPage >= numPages}
-                  aria-label={t("pdf_viewer.next_page", "Next page")}
-                  className="h-11 w-11 rounded-2xl text-ethereal-marble"
-                >
-                  <ChevronRight size={18} aria-hidden="true" />
-                </Button>
-              </div>
-
-              <div className="rounded-[1.125rem] border border-white/10 bg-white/[0.04] px-3 py-2 text-center">
-                <Caption className="block text-[10px] uppercase tracking-[0.14em] text-ethereal-parchment/55">
-                  {t("pdf_viewer.zoom_short", "Zoom")}
-                </Caption>
-                <Text
-                  as="span"
-                  className="block tabular-nums font-semibold text-ethereal-marble"
-                >
-                  {zoomPercentage}%
-                </Text>
-              </div>
+            <div className="flex min-w-[4rem] items-center justify-center px-1">
+              <Text className="text-xs font-medium tabular-nums tracking-wider text-ethereal-marble">
+                {currentPage} <span className="text-white/40">/ {numPages}</span>
+              </Text>
             </div>
 
-            {numPages > 1 && (
-              <div className="flex items-center gap-3">
-                <Caption className="min-w-8 tabular-nums text-ethereal-marble/45">
-                  1
-                </Caption>
-                <input
-                  type="range"
-                  min={1}
-                  max={numPages}
-                  step={1}
-                  value={currentPage}
-                  onChange={(event) =>
-                    changePage(Number(event.currentTarget.value))
-                  }
-                  aria-label={t("pdf_viewer.jump_to_page", "Jump to page")}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-ethereal-gold"
-                />
-                <Caption className="min-w-8 text-right tabular-nums text-ethereal-marble/45">
-                  {numPages}
-                </Caption>
-              </div>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => changePage(currentPage + 1)}
+              disabled={currentPage >= numPages}
+              aria-label={t("pdf_viewer.next_page", "Next page")}
+              className="h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10"
+            >
+              <ChevronRight size={18} aria-hidden="true" />
+            </Button>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => changeZoom(-ZOOM_STEP)}
-                  disabled={zoom <= MIN_ZOOM}
-                  aria-label={t("pdf_viewer.zoom_out", "Zoom out")}
-                  className="h-11 w-11 rounded-2xl text-ethereal-marble"
-                >
-                  <ZoomOut size={18} aria-hidden="true" />
-                </Button>
+            <div className="mx-1 h-5 w-px bg-white/15" />
 
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={resetZoom}
-                  aria-label={t("pdf_viewer.fit_width", "Fit width")}
-                  className="h-11 rounded-2xl px-4 text-ethereal-marble"
-                >
-                  {t("pdf_viewer.fit_width", "Fit width")}
-                </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => changeZoom(-ZOOM_STEP)}
+              disabled={zoom <= MIN_ZOOM}
+              aria-label={t("pdf_viewer.zoom_out", "Zoom out")}
+              className="h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10"
+            >
+              <ZoomOut size={18} aria-hidden="true" />
+            </Button>
 
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => changeZoom(ZOOM_STEP)}
-                  disabled={zoom >= MAX_ZOOM}
-                  aria-label={t("pdf_viewer.zoom_in", "Zoom in")}
-                  className="h-11 w-11 rounded-2xl text-ethereal-marble"
-                >
-                  <ZoomIn size={18} aria-hidden="true" />
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2 sm:hidden">
-                {blobUrl && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleOpenInBrowser}
-                    className="h-11 flex-1 rounded-2xl px-4 text-ethereal-marble"
-                  >
-                    {t("pdf_viewer.open_browser", "Open")}
-                  </Button>
-                )}
-
-                {supportsNativeShare && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleShare}
-                    isLoading={isSharing}
-                    className="h-11 flex-1 rounded-2xl px-4 text-ethereal-marble"
-                  >
-                    {!isSharing && t("pdf_viewer.share", "Share")}
-                  </Button>
-                )}
-
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleDownload}
-                  isLoading={isDownloading}
-                  className="h-11 flex-1 rounded-2xl px-4 text-ethereal-marble"
-                >
-                  {!isDownloading && t("pdf_viewer.download", "Download")}
-                </Button>
-              </div>
+            <div
+              className="flex min-w-[4rem] cursor-pointer items-center justify-center px-1 transition-colors hover:text-white"
+              onClick={resetZoom}
+              title={t("pdf_viewer.fit_width", "Fit width")}
+            >
+              <Text className="text-xs font-medium tabular-nums tracking-wider text-ethereal-marble">
+                {zoomPercentage}%
+              </Text>
             </div>
-          </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => changeZoom(ZOOM_STEP)}
+              disabled={zoom >= MAX_ZOOM}
+              aria-label={t("pdf_viewer.zoom_in", "Zoom in")}
+              className="h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10"
+            >
+              <ZoomIn size={18} aria-hidden="true" />
+            </Button>
+        </div>
         </div>
       )}
+      
     </div>
   );
 };

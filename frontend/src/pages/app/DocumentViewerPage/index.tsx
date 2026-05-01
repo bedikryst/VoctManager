@@ -18,6 +18,9 @@ import type { TFunction } from "i18next";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { ProjectService } from "@/features/projects/api/project.service";
 import { ScheduleService } from "@/features/schedule/api/schedule.service";
 import { ChoristerHubService } from "@/features/chorister-hub/api/chorister-hub.service";
@@ -109,24 +112,22 @@ const DocumentViewerErrorState = ({
   onBack,
   backLabel,
 }: DocumentViewerErrorStateProps): React.JSX.Element => (
-  <div className="fixed inset-0 z-0 flex items-center justify-center bg-[#111015] px-6 text-ethereal-marble">
-    <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-[2rem] border border-white/10 bg-white/[0.04] px-6 py-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-ethereal-crimson/80">
-        <FileWarning size={28} aria-hidden="true" />
-      </div>
-      <div className="space-y-2">
-        <Heading as="h1" size="lg" className="text-ethereal-marble text-balance">
-          {title}
-        </Heading>
-        <Text color="parchment-muted" className="text-balance">
-          {description}
-        </Text>
-      </div>
-      <Button variant="secondary" onClick={onBack} className="mt-1">
-        {backLabel}
-      </Button>
+  <PageTransition>
+    <div className="fixed inset-0 z-0 flex items-center justify-center bg-ethereal-ink px-6">
+      <StatePanel
+        tone="danger"
+        icon={<FileWarning size={28} aria-hidden="true" />}
+        title={title}
+        description={description}
+        actions={
+          <Button variant="secondary" onClick={onBack}>
+            {backLabel}
+          </Button>
+        }
+        className="w-full max-w-md shadow-glass-ethereal"
+      />
     </div>
-  </div>
+  </PageTransition>
 );
 
 const DocumentViewerPage = (): React.JSX.Element => {
@@ -188,48 +189,51 @@ const DocumentViewerPage = (): React.JSX.Element => {
   const docKey = `${docType}/${decodedId}`;
 
   return (
-    <div className="fixed inset-0 z-0 flex flex-col bg-[#111015] text-ethereal-marble">
-      <header className="relative z-10 flex items-center gap-3 border-b border-white/10 bg-black/30 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.875rem)] backdrop-blur-xl sm:px-6 sm:pb-4 sm:pt-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-          aria-label={
-            canGoBack
-              ? t("document_viewer.back_aria", "Go back")
-              : t("document_viewer.back_to_app", "Back to dashboard")
-          }
-          className="h-11 w-11 shrink-0 rounded-2xl text-ethereal-marble hover:bg-white/10 hover:text-white"
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-        </Button>
-
-        <div className="min-w-0 flex-1">
-          <Heading
-            as="h1"
-            size="lg"
-            className="truncate text-ethereal-marble sm:text-[1.375rem]"
+    <PageTransition>
+      <div className="fixed inset-0 z-0 flex flex-col bg-ethereal-ink text-ethereal-marble">
+        <div className="relative z-10 flex shrink-0 items-center gap-4 border-b border-white/5 bg-white/[0.02] px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl sm:px-6 sm:py-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            aria-label={
+              canGoBack
+                ? t("document_viewer.back_aria", "Go back")
+                : t("document_viewer.back_to_app", "Back to dashboard")
+            }
+            className="h-9 w-9 shrink-0 rounded-full text-ethereal-marble hover:bg-white/10 hover:text-white"
           >
-            {resolved.title}
-          </Heading>
-          {resolved.subtitle ? (
-            <Text color="parchment-muted" className="mt-1 line-clamp-2">
-              {resolved.subtitle}
-            </Text>
-          ) : null}
-        </div>
-      </header>
+            <ArrowLeft size={20} aria-hidden="true" />
+          </Button>
 
-      <PdfViewer
-        fetchBlob={resolved.fetchBlob}
-        docKey={docKey}
-        title={resolved.title}
-        subtitle={resolved.subtitle}
-        fileName={resolved.fileName}
-        className="flex-1"
-      />
-    </div>
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+            <Heading
+              as="h1"
+              size="sm"
+              className="truncate text-ethereal-marble"
+            >
+              {resolved.title}
+            </Heading>
+            {resolved.subtitle ? (
+              <Text color="parchment-muted" className="truncate text-xs">
+                {resolved.subtitle}
+              </Text>
+            ) : null}
+          </div>
+        </div>
+
+        <PdfViewer
+          fetchBlob={resolved.fetchBlob}
+          docKey={docKey}
+          title={resolved.title}
+          subtitle={resolved.subtitle}
+          fileName={resolved.fileName}
+          className="flex-1"
+        />
+      </div>
+    </PageTransition>
   );
 };
 
 export default DocumentViewerPage;
+t DocumentViewerPage;
