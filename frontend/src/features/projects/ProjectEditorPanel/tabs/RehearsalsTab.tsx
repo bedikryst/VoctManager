@@ -26,6 +26,7 @@ import type { RehearsalTargetType } from "../types";
 import { cn } from "@/shared/lib/utils";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { TabHeader } from "@/shared/ui/composites/TabHeader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -78,6 +79,15 @@ export const RehearsalsTab = ({
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 pb-12">
+      <TabHeader
+        icon={<Calendar1 size={20} aria-hidden="true" />}
+        title={t("projects.rehearsals.header.title", "Próby")}
+        description={t(
+          "projects.rehearsals.header.subtitle",
+          "Planuj próby, zarządzaj uczestnictwem sekcji oraz frekwencją.",
+        )}
+      />
+
       <form onSubmit={handleSubmit}>
         <GlassCard
           variant="ethereal"

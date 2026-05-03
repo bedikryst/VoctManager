@@ -21,11 +21,8 @@ import {
   type AttendanceStatus,
 } from "../hooks/useAttendanceMatrix";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import {
-  Eyebrow,
-  Heading,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { TabHeader } from "@/shared/ui/composites/TabHeader";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface AttendanceMatrixTabProps {
   projectId: string;
@@ -153,62 +150,40 @@ export const AttendanceMatrixTab = ({
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-24">
-      <GlassCard
-        variant="ethereal"
-        padding="md"
-        isHoverable={false}
-        className="flex flex-col justify-between gap-6 md:flex-row md:items-center"
-      >
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <Users
-              className="text-ethereal-gold"
-              size={20}
-              aria-hidden="true"
-            />
-            <Heading as="h2" size="xl" weight="medium">
-              {t(
-                "projects.matrix.header.title",
-                "Macierz Obecności i Frekwencji",
-              )}
-            </Heading>
-          </div>
-          <Text size="sm" color="muted">
-            {t(
-              "projects.matrix.header.subtitle",
-              "Szybkie oznaczanie frekwencji na próbach. Zarządzaj statusem klikając w kafelki pod nazwiskiem.",
-            )}
-          </Text>
-        </div>
+      <TabHeader
+        icon={<Users size={20} aria-hidden="true" />}
+        title={t(
+          "projects.matrix.header.title",
+          "Macierz obecności i frekwencji",
+        )}
+        description={t(
+          "projects.matrix.header.subtitle",
+          "Szybkie oznaczanie frekwencji na próbach. Klikaj w kafelki pod nazwiskiem aby zmienić status.",
+        )}
+      />
 
-        <GlassCard
-          variant="light"
-          padding="sm"
-          isHoverable={false}
-          className="flex flex-wrap gap-3"
-        >
-          <div className="mb-1 w-full">
-            <Eyebrow color="muted">
-              {t("projects.matrix.legend.title", "Status frekwencji")}
-            </Eyebrow>
-          </div>
-          {Object.entries(STATUS_DEF).map(([key, config]) => (
+      <GlassCard
+        variant="light"
+        padding="sm"
+        isHoverable={false}
+        className="flex flex-wrap items-center gap-x-5 gap-y-2"
+      >
+        <Eyebrow color="muted" className="mr-2">
+          {t("projects.matrix.legend.title", "Status frekwencji")}
+        </Eyebrow>
+        {Object.entries(STATUS_DEF).map(([key, config]) => (
+          <div key={key} className="flex items-center gap-1.5">
             <div
-              key={key}
-              className="flex items-center gap-1.5"
+              className={`flex h-4 w-4 items-center justify-center rounded-md ${config.swatchClass}`}
+              aria-hidden="true"
             >
-              <div
-                className={`flex h-4 w-4 items-center justify-center rounded-md ${config.swatchClass}`}
-                aria-hidden="true"
-              >
-                {config.icon}
-              </div>
-              <Text size="xs" color="graphite" weight="medium">
-                {t(config.labelKey, config.defaultLabel)}
-              </Text>
+              {config.icon}
             </div>
-          ))}
-        </GlassCard>
+            <Text size="xs" color="graphite" weight="medium">
+              {t(config.labelKey, config.defaultLabel)}
+            </Text>
+          </div>
+        ))}
       </GlassCard>
 
       <GlassCard

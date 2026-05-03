@@ -1,7 +1,8 @@
 /**
  * @file DroppableBucket.tsx
- * @description Droppable zone container for @dnd-kit.
- * Handles drop detection and visual feedback during active drag operations.
+ * @description Droppable container for the micro-casting Kanban.
+ * Wraps `useDroppable` and renders a tactile, motion-aware highlight while
+ * a draggable artist hovers above it.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/components/DroppableBucket
  */
@@ -46,15 +47,18 @@ export function DroppableBucket({
           : t("projects.micro_cast.bucket.aria", "Sekcja upuszczania")
       }
       className={cn(
-        "relative rounded-xl transition-all duration-200",
+        "relative rounded-xl transition-[background-color,box-shadow,border-color] duration-200",
         isOver
-          ? "bg-ethereal-gold/5 ring-2 ring-ethereal-gold/20 shadow-inner"
+          ? "bg-ethereal-gold/8 ring-2 ring-ethereal-gold/40 shadow-[inset_0_0_0_1px_rgba(194,168,120,0.15)]"
           : "border border-transparent bg-transparent",
         className,
       )}
     >
       {isOver && (
-        <div className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-b from-ethereal-gold/5 to-transparent" />
+        <div
+          className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-b from-ethereal-gold/8 via-transparent to-transparent"
+          aria-hidden="true"
+        />
       )}
 
       <div className="relative z-10 flex h-full flex-col">{children}</div>

@@ -1,33 +1,24 @@
 /**
  * @file BudgetTab.tsx
  * @description Financial estimation and fee assignment widget.
- * Features Unified Floating Action Bar (FAB) for state commits and instant rollbacks.
- * Delegates caching and dirty-state mutation to useBudgetTab hook.
+ * Defers fee commits via dirty-state tracking surfaced through the shared `EditorActionBar`.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/BudgetTab
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Banknote,
-  Users,
-  Wrench,
-  Sparkles,
-  Save,
-  AlertCircle,
-} from "lucide-react";
+import { Banknote, Users, Wrench, Sparkles, AlertCircle } from "lucide-react";
 
 import { useBudgetTab } from "../hooks/useBudgetTab";
 import { cn } from "@/shared/lib/utils";
+import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Button } from "@/shared/ui/primitives/Button";
+import { TabHeader } from "@/shared/ui/composites/TabHeader";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import {
   Eyebrow,
-  Heading,
   Text,
   Metric,
   Unit,
@@ -57,83 +48,26 @@ export const BudgetTab = ({
 
   return (
     <div className="relative mx-auto max-w-4xl space-y-8 pb-24">
-      {/* FLOATING ACTION BAR (FAB) */}
-      <AnimatePresence>
-        {isDirty && (
-          <motion.div
-            key="fab-menu"
-            initial={{ y: 100, opacity: 0, x: "-50%" }}
-            animate={{ y: 0, opacity: 1, x: "-50%" }}
-            exit={{ y: 100, opacity: 0, x: "-50%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 left-1/2 z-(--z-toast) w-[90%] max-w-md md:bottom-10"
-          >
-            <GlassCard
-              variant="solid"
-              padding="sm"
-              isHoverable={false}
-              className="flex items-center justify-between gap-4 rounded-2xl"
-            >
-              <div className="ml-2 flex flex-col">
-                <Eyebrow color="gold">
-                  {t("projects.budget.fab.unsaved", "Niezapisane Zmiany")}
-                </Eyebrow>
-                <Text size="xs" color="muted">
-                  {t(
-                    "projects.budget.fab.description",
-                    "Wprowadziłeś zmiany w stawkach.",
-                  )}
-                </Text>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={handleReset}
-                  disabled={isSaving}
-                >
-                  {t("common.actions.cancel", "Anuluj")}
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleBulkSave}
-                  disabled={isSaving}
-                  isLoading={isSaving}
-                  leftIcon={
-                    !isSaving ? (
-                      <Save size={16} aria-hidden="true" />
-                    ) : undefined
-                  }
-                >
-                  {t("common.actions.save", "Zapisz")}
-                </Button>
-              </div>
-            </GlassCard>
-          </motion.div>
+      <EditorActionBar
+        isOpen={isDirty}
+        description={t(
+          "projects.budget.fab.description",
+          "Wprowadziłeś zmiany w stawkach.",
         )}
-      </AnimatePresence>
+        onCancel={handleReset}
+        onConfirm={handleBulkSave}
+        isLoading={isSaving}
+      />
 
-      <div className="flex items-center gap-3 border-b border-ethereal-incense/20 pb-6">
-        <GlassCard
-          variant="light"
-          padding="none"
-          isHoverable={false}
-          className="flex h-10 w-10 shrink-0 items-center justify-center border-ethereal-sage/30 bg-ethereal-sage/10 text-ethereal-sage"
-        >
-          <Banknote size={20} aria-hidden="true" />
-        </GlassCard>
-        <div>
-          <Heading as="h2" size="xl" weight="medium">
-            {t("projects.budget.sections.estimated", "Szacowany Budżet")}
-          </Heading>
-          <Text size="sm" color="muted">
-            {t(
-              "projects.budget.sections.description",
-              "Zarządzaj kosztami osobowymi",
-            )}
-          </Text>
-        </div>
-      </div>
+      <TabHeader
+        tone="sage"
+        icon={<Banknote size={20} aria-hidden="true" />}
+        title={t("projects.budget.sections.estimated", "Szacowany budżet")}
+        description={t(
+          "projects.budget.sections.description",
+          "Zarządzaj kosztami osobowymi obsady i ekipy realizacyjnej.",
+        )}
+      />
 
       {/* KPI DASHBOARD */}
       <GlassCard variant="ethereal" padding="lg" isHoverable={false}>

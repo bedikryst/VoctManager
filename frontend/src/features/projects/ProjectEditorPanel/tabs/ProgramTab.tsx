@@ -1,8 +1,7 @@
 /**
  * @file ProgramTab.tsx
- * @description Setlist Builder with Drag & Drop Reordering and Database search.
- * Implements @dnd-kit for strict accessibility and a Unified Floating Action Bar (FAB).
- * Delegates state and network mutations entirely to useProgramTab.
+ * @description Setlist builder with drag & drop reordering and a piece-database search.
+ * Defers reorder commits via dirty-state tracking surfaced through the shared `EditorActionBar`.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/ProgramTab
  */
@@ -10,12 +9,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   ListOrdered,
   GripVertical,
   Trash2,
-  Save,
   Search,
   Plus,
   CheckCircle2,
@@ -41,6 +38,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import type { Piece } from "@/shared/types";
+import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
@@ -271,63 +269,16 @@ export const ProgramTab = ({
 
   return (
     <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-8 pb-24 lg:grid-cols-5">
-      <AnimatePresence>
-        {isDirty && (
-          <motion.div
-            key="fab-menu"
-            initial={{ y: 100, opacity: 0, x: "-50%" }}
-            animate={{ y: 0, opacity: 1, x: "-50%" }}
-            exit={{ y: 100, opacity: 0, x: "-50%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 left-1/2 z-(--z-toast) w-[90%] max-w-md md:bottom-10"
-          >
-            <GlassCard
-              variant="solid"
-              padding="sm"
-              isHoverable={false}
-              className="flex items-center justify-between gap-4 rounded-2xl"
-            >
-              <div className="ml-2 flex flex-col">
-                <Eyebrow color="gold">
-                  {t("projects.program.fab.unsaved", "Niezapisane Zmiany")}
-                </Eyebrow>
-                <Text size="xs" color="muted">
-                  {t(
-                    "projects.program.fab.description",
-                    "Zmodyfikowałeś kolejność programu.",
-                  )}
-                </Text>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                >
-                  {t("common.actions.cancel", "Anuluj")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  onClick={handleSaveChanges}
-                  disabled={isSaving}
-                  isLoading={isSaving}
-                  leftIcon={
-                    !isSaving ? (
-                      <Save size={16} aria-hidden="true" />
-                    ) : undefined
-                  }
-                >
-                  {t("common.actions.save", "Zapisz")}
-                </Button>
-              </div>
-            </GlassCard>
-          </motion.div>
+      <EditorActionBar
+        isOpen={isDirty}
+        description={t(
+          "projects.program.fab.description",
+          "Zmodyfikowałeś kolejność programu.",
         )}
-      </AnimatePresence>
+        onCancel={handleCancel}
+        onConfirm={handleSaveChanges}
+        isLoading={isSaving}
+      />
 
       <div className="lg:col-span-3">
         <div className="mb-5 flex flex-col justify-between gap-3 border-b border-ethereal-incense/20 pb-4 sm:flex-row sm:items-end">

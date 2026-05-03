@@ -1,16 +1,17 @@
 /**
  * @file DraggableArtist.tsx
- * @description Draggable card representing an artist in the micro-casting Kanban board.
- * Manages its own local state for inline note editing to prevent upper-level re-renders.
- * Fully integrated with i18n for internationalization and accessibility.
+ * @description Draggable artist card for the micro-casting Kanban.
+ * Owns its own inline note editing state to avoid re-rendering the entire board.
+ * In the deferred-save world, all edits route through `onUpdateNote` to a draft
+ * held by the parent hook — no mutation is fired here.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/components/DraggableArtist
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDraggable } from "@dnd-kit/core";
-import { GripVertical, Pencil, Loader2 } from "lucide-react";
+import { GripVertical, Pencil } from "lucide-react";
 
 import type { Artist, ParticipationStatus, PieceCasting } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
@@ -26,6 +27,9 @@ interface DraggableArtistProps {
   casting?: PieceCasting;
   onUpdateNote?: (id: string, note: string) => void;
 }
+
+const isPending = (casting?: PieceCasting): boolean =>
+  Boolean(casting && String(casting.id).startsWith("temp-"));
 
 export const DraggableArtist = React.memo(function DraggableArtist({
   participationId,
@@ -53,13 +57,20 @@ export const DraggableArtist = React.memo(function DraggableArtist({
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [noteValue, setNoteValue] = useState<string>(casting?.notes || "");
 
-  const isTemp = casting && String(casting.id).startsWith("temp-");
+  // Reflect external changes to the persisted note (e.g. after Discard).
+  useEffect(() => {
+    if (!isEditing) {
+      setNoteValue(casting?.notes || "");
+    }
+  }, [casting?.notes, isEditing]);
+
+  const pending = isPending(casting);
 
   const handleSaveNote = () => {
     setIsEditing(false);
     const finalNote = noteValue.trim();
 
-    if (casting?.id && finalNote !== (casting.notes || "") && !isTemp) {
+    if (casting?.id && finalNote !== (casting.notes || "")) {
       onUpdateNote?.(String(casting.id), finalNote);
     }
   };
@@ -71,17 +82,30 @@ export const DraggableArtist = React.memo(function DraggableArtist({
         padding="none"
         isHoverable={false}
         className={cn(
-          "group flex items-center justify-between gap-2 px-2 py-1.5 transition-all",
+          "group relative flex items-center gap-2 px-2 py-1.5 transition-colors",
           isOverlay
-            ? "scale-105 rotate-2 border-ethereal-gold/50 shadow-glass-ethereal ring-2 ring-ethereal-gold/20"
+            ? "scale-105 rotate-1 border-ethereal-gold/50 shadow-glass-ethereal ring-2 ring-ethereal-gold/20"
             : "hover:border-ethereal-gold/40",
           isDragging && !isOverlay ? "opacity-30" : "",
           participationStatus === "DEC" && !isOverlay
             ? "border-ethereal-crimson/30 bg-ethereal-crimson/5"
             : "",
           participationStatus === "INV" && !isOverlay ? "opacity-60" : "",
+          pending && !isOverlay
+            ? "ring-1 ring-ethereal-gold/25"
+            : "",
         )}
       >
+        {pending && !isOverlay && (
+          <span
+            className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-ethereal-gold shadow-[0_0_0_2px_rgba(255,255,255,0.6)]"
+            aria-label={t(
+              "projects.micro_cast.artist.pending_label",
+              "Niezapisane",
+            )}
+          />
+        )}
+
         <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
           <div
             {...(isBlocked ? {} : listeners)}
@@ -103,10 +127,18 @@ export const DraggableArtist = React.memo(function DraggableArtist({
             <GripVertical size={14} aria-hidden="true" />
           </div>
 
-          <div className="flex shrink-0 max-w-25 items-center gap-1 sm:max-w-35">
-            <Eyebrow color={isOverlay ? "gold" : "muted"} className="shrink-0">
-              ({voiceTypeInitial})
-            </Eyebrow>
+          <div className="flex shrink-0 max-w-25 items-center gap-1.5 sm:max-w-35">
+            <span
+              className={cn(
+                "inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-md border px-1 text-[9px] font-bold uppercase tracking-wider",
+                isOverlay
+                  ? "border-ethereal-gold/40 bg-ethereal-gold/15 text-ethereal-gold"
+                  : "border-ethereal-incense/25 bg-ethereal-marble text-ethereal-graphite/70",
+              )}
+              aria-hidden="true"
+            >
+              {voiceTypeInitial}
+            </span>
             <Text
               size="xs"
               weight="bold"
@@ -131,8 +163,14 @@ export const DraggableArtist = React.memo(function DraggableArtist({
                 value={noteValue}
                 onChange={(e) => setNoteValue(e.target.value)}
                 onBlur={handleSaveNote}
-                onKeyDown={(e) => e.key === "Enter" && handleSaveNote()}
-                className="ml-1 w-16 sm:w-20 rounded border border-ethereal-sage/30 bg-ethereal-sage/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-ethereal-sage outline-none placeholder:text-ethereal-sage/40 focus:border-ethereal-sage/60 focus:ring-1 focus:ring-ethereal-sage/40"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveNote();
+                  if (e.key === "Escape") {
+                    setNoteValue(casting?.notes || "");
+                    setIsEditing(false);
+                  }
+                }}
+                className="ml-1 w-16 sm:w-20 rounded-md border border-ethereal-sage/30 bg-ethereal-sage/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-ethereal-sage outline-none placeholder:text-ethereal-sage/40 focus:border-ethereal-sage/60 focus:ring-1 focus:ring-ethereal-sage/40"
                 placeholder={t(
                   "projects.micro_cast.artist.note_placeholder",
                   "Notatka...",
@@ -140,14 +178,9 @@ export const DraggableArtist = React.memo(function DraggableArtist({
               />
             ) : casting.notes ? (
               <button
-                onClick={() => !isTemp && setIsEditing(true)}
-                disabled={isTemp}
-                className={cn(
-                  "ml-1 max-w-15 truncate rounded border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest transition-colors sm:max-w-20",
-                  isTemp
-                    ? "border-ethereal-incense/20 bg-ethereal-parchment/50 text-ethereal-graphite/40"
-                    : "border-ethereal-sage/30 bg-ethereal-sage/10 text-ethereal-sage hover:bg-ethereal-sage/20",
-                )}
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="ml-1 max-w-15 truncate rounded-md border border-ethereal-sage/30 bg-ethereal-sage/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest text-ethereal-sage transition-colors hover:bg-ethereal-sage/20 sm:max-w-20"
                 title={casting.notes}
               >
                 {casting.notes}
@@ -161,24 +194,14 @@ export const DraggableArtist = React.memo(function DraggableArtist({
             variant="ghost"
             size="icon"
             onClick={() => setIsEditing(true)}
-            disabled={isTemp}
-            className={cn(
-              "h-5 w-5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100",
-              isTemp
-                ? "text-ethereal-graphite/30"
-                : "text-ethereal-graphite/60 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
-            )}
+            className="h-5 w-5 shrink-0 text-ethereal-graphite/60 opacity-0 transition-opacity hover:bg-ethereal-gold/10 hover:text-ethereal-gold group-hover:opacity-100"
             title={t("projects.micro_cast.artist.add_note", "Dodaj notatkę")}
             aria-label={t(
               "projects.micro_cast.artist.add_note",
               "Dodaj notatkę",
             )}
           >
-            {isTemp ? (
-              <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <Pencil size={12} aria-hidden="true" />
-            )}
+            <Pencil size={12} aria-hidden="true" />
           </Button>
         )}
       </GlassCard>

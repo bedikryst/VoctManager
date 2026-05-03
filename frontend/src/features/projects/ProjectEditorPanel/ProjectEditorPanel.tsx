@@ -1,12 +1,13 @@
 /**
  * @file ProjectEditorPanel.tsx
- * @description Slide-over workspace for deep project editing based on custom framer-motion modal.
- * Guards tab navigation when local form state is dirty.
+ * @description Slide-over workspace for deep project editing.
+ * Owns the tab navigation, dirty-state guard for tab/close transitions, and the
+ * shared close/focus/scroll-lock behaviours of the panel surface.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel
  */
 
-import React, { useCallback, useMemo, useState, useRef } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -54,52 +55,26 @@ import { AttendanceMatrixTab } from "./tabs/AttendanceMatrixTab";
 interface TabDefinition {
   id: ProjectTabId;
   icon: React.ReactNode;
-  labelKey: string;
 }
 
-
-
 const TAB_CONFIG: TabDefinition[] = [
-  {
-    id: PROJECT_TABS.DETAILS,
-    icon: <Briefcase size={14} aria-hidden="true" />,
-    labelKey: "projects.editor.tabs.details",
-  },
+  { id: PROJECT_TABS.DETAILS, icon: <Briefcase size={14} aria-hidden="true" /> },
   {
     id: PROJECT_TABS.REHEARSALS,
     icon: <Calendar1 size={14} aria-hidden="true" />,
-    labelKey: "projects.editor.tabs.rehearsals",
   },
-  {
-    id: PROJECT_TABS.MATRIX,
-    icon: <Grid size={14} aria-hidden="true" />,
-    labelKey: "projects.editor.tabs.matrix",
-  },
-  {
-    id: PROJECT_TABS.CAST,
-    icon: <Users size={14} aria-hidden="true" />,
-    labelKey: "projects.editor.tabs.cast",
-  },
+  { id: PROJECT_TABS.MATRIX, icon: <Grid size={14} aria-hidden="true" /> },
+  { id: PROJECT_TABS.CAST, icon: <Users size={14} aria-hidden="true" /> },
   {
     id: PROJECT_TABS.PROGRAM,
     icon: <ListOrdered size={14} aria-hidden="true" />,
-    labelKey: "projects.editor.tabs.program",
   },
   {
     id: PROJECT_TABS.MICRO_CAST,
     icon: <MicVocal size={14} aria-hidden="true" />,
-    labelKey: "projects.editor.tabs.micro_cast",
   },
-  {
-    id: PROJECT_TABS.CREW,
-    icon: <Wrench size={14} aria-hidden="true" />,
-    labelKey: "projects.editor.tabs.crew",
-  },
-  {
-    id: PROJECT_TABS.BUDGET,
-    icon: <Banknote size={14} aria-hidden="true" />,
-    labelKey: "projects.editor.tabs.budget",
-  },
+  { id: PROJECT_TABS.CREW, icon: <Wrench size={14} aria-hidden="true" /> },
+  { id: PROJECT_TABS.BUDGET, icon: <Banknote size={14} aria-hidden="true" /> },
 ];
 
 const CLOSE_PANEL_SENTINEL = "CLOSE_PANEL" as const;
@@ -127,17 +102,24 @@ export const ProjectEditorPanel = ({
 }: ProjectEditorPanelProps): React.ReactElement => {
   const { t } = useTranslation();
 
-  // i18n namespace reference (prevents keys from being lost during extract-i18n)
-  if (false) {
-    t("projects.editor.tabs.details");
-    t("projects.editor.tabs.rehearsals");
-    t("projects.editor.tabs.matrix");
-    t("projects.editor.tabs.cast");
-    t("projects.editor.tabs.program");
-    t("projects.editor.tabs.micro_cast");
-    t("projects.editor.tabs.crew");
-    t("projects.editor.tabs.budget");
-  }
+  // Resolved tab labels. Defining each key as a literal string here keeps
+  // i18n extractors happy without any unreachable-code workaround.
+  const tabLabels = useMemo<Record<ProjectTabId, string>>(
+    () => ({
+      [PROJECT_TABS.DETAILS]: t("projects.editor.tabs.details", "Szczegóły"),
+      [PROJECT_TABS.REHEARSALS]: t("projects.editor.tabs.rehearsals", "Próby"),
+      [PROJECT_TABS.MATRIX]: t("projects.editor.tabs.matrix", "Frekwencja"),
+      [PROJECT_TABS.CAST]: t("projects.editor.tabs.cast", "Obsada"),
+      [PROJECT_TABS.PROGRAM]: t("projects.editor.tabs.program", "Program"),
+      [PROJECT_TABS.MICRO_CAST]: t(
+        "projects.editor.tabs.micro_cast",
+        "Mikrocasting",
+      ),
+      [PROJECT_TABS.CREW]: t("projects.editor.tabs.crew", "Ekipa"),
+      [PROJECT_TABS.BUDGET]: t("projects.editor.tabs.budget", "Budżet"),
+    }),
+    [t],
+  );
 
   const queryClient = useQueryClient();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
@@ -297,11 +279,6 @@ export const ProjectEditorPanel = ({
     setPendingTabId(null);
   }, []);
 
-  const activeTabDefinition = useMemo(
-    () => TAB_CONFIG.find((tab) => tab.id === effectiveActiveTab) ?? null,
-    [effectiveActiveTab],
-  );
-
   const renderActiveTab = useCallback(() => {
     switch (effectiveActiveTab) {
       case PROJECT_TABS.DETAILS:
@@ -331,7 +308,12 @@ export const ProjectEditorPanel = ({
           />
         ) : null;
       case PROJECT_TABS.MICRO_CAST:
-        return project ? <MicroCastingTab projectId={project.id} /> : null;
+        return project ? (
+          <MicroCastingTab
+            projectId={project.id}
+            onDirtyStateChange={setHasUnsavedChanges}
+          />
+        ) : null;
       case PROJECT_TABS.CREW:
         return project ? <CrewTab projectId={project.id} /> : null;
       case PROJECT_TABS.BUDGET:
@@ -396,44 +378,61 @@ export const ProjectEditorPanel = ({
                 className="h-full w-full rounded-none md:rounded-[2rem] border-ethereal-incense/20 flex flex-col shadow-glass-solid"
               >
                 <div className="flex h-full flex-col">
-                  <GlassCard
-                    variant="light"
-                    padding="none"
-                    isHoverable={false}
-                    className="relative flex-shrink-0 border-b border-glass-border px-6 pb-5 pt-8 md:px-10 z-[10] rounded-none md:rounded-t-[2rem]"
-                  >
+                  {/* HEADER */}
+                  <header className="relative flex-shrink-0 border-b border-ethereal-incense/15 bg-gradient-to-b from-ethereal-marble/60 to-transparent px-6 pb-5 pt-7 md:px-10">
                     <div className="flex items-start justify-between gap-6">
-                      <div className="max-w-4xl space-y-3">
-                        <Eyebrow color="muted">
-                          {project
-                            ? t("projects.editor.workspace")
-                            : t("projects.editor.new_project")}
-                        </Eyebrow>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <Heading as="h2" size="4xl" weight="medium">
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-px w-8 bg-ethereal-gold/40"
+                            aria-hidden="true"
+                          />
+                          <Eyebrow color="muted">
                             {project
-                              ? project.title
-                              : t("projects.editor.new_project_title")}
-                          </Heading>
+                              ? t(
+                                  "projects.editor.workspace",
+                                  "Workspace projektu",
+                                )
+                              : t(
+                                  "projects.editor.new_project",
+                                  "Nowy projekt",
+                                )}
+                          </Eyebrow>
                           {project?.status === PROJECT_STATUS.DONE && (
-                            <div className="rounded-full border border-ethereal-incense/20 bg-ethereal-parchment px-3 py-1.5 text-ethereal-graphite">
+                            <span className="rounded-full border border-ethereal-incense/20 bg-ethereal-parchment px-2.5 py-0.5">
                               <Eyebrow color="inherit">
-                                {t("projects.editor.archive_badge")}
+                                {t(
+                                  "projects.editor.archive_badge",
+                                  "Archiwum",
+                                )}
                               </Eyebrow>
-                            </div>
+                            </span>
                           )}
                         </div>
-                        <Text color="muted" className="max-w-3xl">
+                        <Heading
+                          as="h2"
+                          size="3xl"
+                          weight="medium"
+                          className="truncate"
+                        >
                           {project
-                            ? t("projects.editor.workspace_description")
-                            : t("projects.editor.create_description")}
+                            ? project.title
+                            : t(
+                                "projects.editor.new_project_title",
+                                "Tworzenie nowego projektu",
+                              )}
+                        </Heading>
+                        <Text size="sm" color="muted" className="max-w-3xl">
+                          {project
+                            ? t(
+                                "projects.editor.workspace_description",
+                                "Zarządzaj wszystkimi aspektami produkcji w jednym miejscu.",
+                              )
+                            : t(
+                                "projects.editor.create_description",
+                                "Uzupełnij szczegóły aby utworzyć nowy projekt koncertu.",
+                              )}
                         </Text>
-                        {project && activeTabDefinition && (
-                          <Text color="graphite" size="sm">
-                            {t("projects.editor.active_tab")}:{" "}
-                            {t(activeTabDefinition.labelKey)}
-                          </Text>
-                        )}
                       </div>
 
                       <Button
@@ -451,57 +450,67 @@ export const ProjectEditorPanel = ({
                       </Button>
                     </div>
 
+                    {/* TABLIST */}
                     {project && (
-                      <GlassCard
-                        variant="ethereal"
-                        padding="sm"
-                        isHoverable={false}
-                        className="mt-6 overflow-hidden rounded-[1rem] shadow-none border-glass-border"
+                      <div
+                        data-scroll-lock-ignore="true"
+                        role="tablist"
+                        aria-label={t(
+                          "projects.editor.tabs_aria",
+                          "Sekcje projektu",
+                        )}
+                        className="mt-6 flex gap-1.5 overflow-x-auto rounded-2xl border border-ethereal-incense/15 bg-ethereal-marble/40 p-1.5 backdrop-blur-md touch-pan-x overscroll-contain no-scrollbar ethereal-scroll"
                       >
-                        <div
-                          data-scroll-lock-ignore="true"
-                          role="tablist"
-                          aria-label={t("projects.editor.tabs_aria")}
-                          className="flex gap-2 overflow-x-auto touch-pan-x overscroll-contain no-scrollbar ethereal-scroll"
-                        >
-                          {TAB_CONFIG.map((tab) => {
-                            const isActive = activeTab === tab.id;
+                        {TAB_CONFIG.map((tab) => {
+                          const isActive = activeTab === tab.id;
 
-                            return (
-                              <Button
-                                key={tab.id}
-                                id={`project-editor-tab-${tab.id.toLowerCase()}`}
-                                type="button"
-                                role="tab"
-                                aria-selected={isActive}
-                                aria-controls={`project-editor-panel-${tab.id.toLowerCase()}`}
-                                tabIndex={isActive ? 0 : -1}
-                                variant={isActive ? "primary" : "ghost"}
-                                size="sm"
-                                onClick={() => handleTabInteraction(tab.id)}
-                                onKeyDown={(event) =>
-                                  handleTabKeyDown(event, tab.id)
-                                }
-                                onMouseEnter={() => handleTabPrefetch(tab.id)}
-                                onFocus={() => handleTabPrefetch(tab.id)}
+                          return (
+                            <button
+                              key={tab.id}
+                              id={`project-editor-tab-${tab.id.toLowerCase()}`}
+                              type="button"
+                              role="tab"
+                              aria-selected={isActive}
+                              aria-controls={`project-editor-panel-${tab.id.toLowerCase()}`}
+                              tabIndex={isActive ? 0 : -1}
+                              onClick={() => handleTabInteraction(tab.id)}
+                              onKeyDown={(event) =>
+                                handleTabKeyDown(event, tab.id)
+                              }
+                              onMouseEnter={() => handleTabPrefetch(tab.id)}
+                              onFocus={() => handleTabPrefetch(tab.id)}
+                              className={cn(
+                                "relative inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                                isActive
+                                  ? "bg-ethereal-alabaster text-ethereal-ink shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_1px_rgba(194,168,120,0.12)]"
+                                  : "text-ethereal-graphite/65 hover:bg-ethereal-alabaster/60 hover:text-ethereal-ink",
+                              )}
+                            >
+                              <span
                                 className={cn(
-                                  "shrink-0",
-                                  isActive && "shadow-sm",
+                                  "shrink-0 transition-colors",
+                                  isActive
+                                    ? "text-ethereal-gold"
+                                    : "text-ethereal-graphite/50",
                                 )}
-                                leftIcon={tab.icon}
+                                aria-hidden="true"
                               >
-                                {t(tab.labelKey)}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      </GlassCard>
+                                {tab.icon}
+                              </span>
+                              <span className="truncate">
+                                {tabLabels[tab.id]}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
-                  </GlassCard>
+                  </header>
 
+                  {/* CONTENT */}
                   <div
                     data-scroll-lock-ignore="true"
-                    className=" flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-linear-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pt-4 md:px-10 ethereal-scroll"
+                    className="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden touch-pan-y overscroll-contain bg-gradient-to-b from-ethereal-marble/40 to-ethereal-alabaster/60 px-4 pt-6 md:px-10 md:pt-8 ethereal-scroll"
                   >
                     <AnimatePresence mode="wait">
                       <motion.div
@@ -509,9 +518,9 @@ export const ProjectEditorPanel = ({
                         id={`project-editor-panel-${effectiveActiveTab.toLowerCase()}`}
                         role="tabpanel"
                         aria-labelledby={`project-editor-tab-${effectiveActiveTab.toLowerCase()}`}
-                        initial={{ opacity: 0, y: 16 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -12 }}
+                        exit={{ opacity: 0, y: -8 }}
                         transition={{ duration: 0.2, ease: "easeInOut" }}
                         className="flex-col flex-1 min-h-0 w-full h-full"
                       >
@@ -528,8 +537,14 @@ export const ProjectEditorPanel = ({
 
       <ConfirmModal
         isOpen={pendingTabId !== null}
-        title={t("projects.editor.unsaved_changes_title")}
-        description={t("projects.editor.unsaved_changes_desc")}
+        title={t(
+          "projects.editor.unsaved_changes_title",
+          "Niezapisane zmiany",
+        )}
+        description={t(
+          "projects.editor.unsaved_changes_desc",
+          "Masz niezapisane zmiany. Czy na pewno chcesz je odrzucić?",
+        )}
         onConfirm={confirmNavigation}
         onCancel={cancelNavigation}
         confirmText={t("common.actions.discard", "Odrzuć zmiany")}

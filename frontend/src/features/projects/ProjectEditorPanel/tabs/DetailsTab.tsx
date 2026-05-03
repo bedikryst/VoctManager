@@ -1,14 +1,14 @@
 /**
  * @file DetailsTab.tsx
- * @description Handles creation and editing of base project metadata and production timelines.
- * Features "Dirty State Tracking" with a Floating Action Bar (FAB) to defer API syncing.
+ * @description Creation and editing of base project metadata and production timelines.
+ * Defers API sync via dirty-state tracking surfaced through the shared `EditorActionBar`.
  * @architecture Enterprise SaaS 2026
  * @module panel/projects/ProjectEditorPanel/tabs/DetailsTab
  */
 
 import React, { useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Clock,
   Plus,
@@ -16,7 +16,6 @@ import {
   ListOrdered,
   Briefcase,
   PlayCircle,
-  Save,
   FileText,
   Upload,
   Eye,
@@ -33,9 +32,11 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
+import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { TabHeader } from "@/shared/ui/composites/TabHeader";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface DetailsTabProps {
   project: Project | null;
@@ -88,59 +89,25 @@ export const DetailsTab = ({
 
   return (
     <div className="relative mx-auto max-w-4xl pb-24">
-      <AnimatePresence>
-        {isDirty && (
-          <motion.div
-            key="fab-menu"
-            initial={{ y: 100, opacity: 0, x: "-50%" }}
-            animate={{ y: 0, opacity: 1, x: "-50%" }}
-            exit={{ y: 100, opacity: 0, x: "-50%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 left-1/2 z-(--z-toast) w-[90%] max-w-md md:bottom-10"
-          >
-            <GlassCard
-              variant="solid"
-              padding="sm"
-              isHoverable={false}
-              className="flex items-center justify-between gap-4 rounded-2xl"
-            >
-              <div className="ml-2 flex flex-col">
-                <Eyebrow color="gold">
-                  {t("projects.details_tab.fab.unsaved", "Niezapisane Zmiany")}
-                </Eyebrow>
-                <Text size="xs" color="muted">
-                  {t(
-                    "projects.details_tab.fab.description",
-                    "Zmodyfikowałeś ustawienia projektu.",
-                  )}
-                </Text>
-              </div>
-
-              <Button
-                form="details-form"
-                type="submit"
-                variant="primary"
-                disabled={isSubmitting}
-                isLoading={isSubmitting}
-                leftIcon={<Save size={16} aria-hidden="true" />}
-              >
-                {t("projects.details_tab.fab.save", "Zapisz Zmiany")}
-              </Button>
-            </GlassCard>
-          </motion.div>
+      <EditorActionBar
+        isOpen={isDirty}
+        description={t(
+          "projects.details_tab.fab.description",
+          "Zmodyfikowałeś ustawienia projektu.",
         )}
-      </AnimatePresence>
+        formId="details-form"
+        confirmText={t("projects.details_tab.fab.save", "Zapisz zmiany")}
+        isLoading={isSubmitting}
+      />
 
-      <div className="mb-8 flex items-center gap-3">
-        <Briefcase
-          className="text-ethereal-gold"
-          size={22}
-          aria-hidden="true"
-        />
-        <Heading as="h2" size="xl" weight="medium">
-          {t("projects.details_tab.header.title", "SzczegĂłĹ‚y Wydarzenia")}
-        </Heading>
-      </div>
+      <TabHeader
+        icon={<Briefcase size={20} aria-hidden="true" />}
+        title={t("projects.details_tab.header.title", "Szczegóły wydarzenia")}
+        description={t(
+          "projects.details_tab.header.subtitle",
+          "Tytuł, harmonogram, dress code i materiały referencyjne projektu.",
+        )}
+      />
 
       <form id="details-form" onSubmit={handleSubmit} className="space-y-8">
         <GlassCard variant="ethereal" padding="md" isHoverable={false}>

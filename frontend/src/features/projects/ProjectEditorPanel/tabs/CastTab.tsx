@@ -25,6 +25,7 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { TabHeader } from "@/shared/ui/composites/TabHeader";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { useCastTab } from "../hooks/useCastTab";
@@ -187,34 +188,14 @@ export const CastTab = ({
 
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col">
-      <div className="mb-6 flex shrink-0 flex-col gap-4">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div className="flex items-center gap-3">
-            <GlassCard
-              variant="light"
-              padding="sm"
-              isHoverable={false}
-              className="flex h-10 w-10 items-center justify-center"
-            >
-              <Users
-                size={18}
-                className="text-ethereal-gold"
-                aria-hidden="true"
-              />
-            </GlassCard>
-            <div>
-              <Eyebrow color="default">
-                {t("projects.cast.header.title", "Casting Główny")}
-              </Eyebrow>
-              <Text size="xs" color="muted">
-                {t(
-                  "projects.cast.header.subtitle",
-                  "Zarządzaj wokalistami. Ustawienie [scrollbar-gutter] neutralizuje skoki układu.",
-                )}
-              </Text>
-            </div>
-          </div>
-
+      <TabHeader
+        icon={<Users size={20} aria-hidden="true" />}
+        title={t("projects.cast.header.title", "Casting główny")}
+        description={t(
+          "projects.cast.header.subtitle",
+          "Przypisuj wokalistów do projektu, ustawiaj statusy i stawki.",
+        )}
+        actions={
           <div className="w-full md:w-80">
             <Input
               type="text"
@@ -227,8 +208,10 @@ export const CastTab = ({
               leftIcon={<Search size={16} aria-hidden="true" />}
             />
           </div>
-        </div>
+        }
+      />
 
+      <div className="mb-6 flex shrink-0 flex-col gap-4">
         <GlassCard
           variant="light"
           padding="none"

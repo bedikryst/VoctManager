@@ -14,6 +14,7 @@ import { Plus, Wrench, Trash2 } from "lucide-react";
 
 import { useCrewAssignments } from "../hooks/useCrewAssignments";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { TabHeader } from "@/shared/ui/composites/TabHeader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -42,6 +43,15 @@ export const CrewTab = ({
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 pb-12">
+      <TabHeader
+        icon={<Wrench size={20} aria-hidden="true" />}
+        title={t("projects.crew.header.title", "Ekipa realizacyjna")}
+        description={t(
+          "projects.crew.header.subtitle",
+          "Zatrudnij współpracowników z bazy i przypisz im role na tym koncercie.",
+        )}
+      />
+
       <form onSubmit={handleAssign}>
         <GlassCard
           variant="ethereal"
