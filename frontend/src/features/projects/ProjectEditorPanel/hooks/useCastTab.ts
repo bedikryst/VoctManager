@@ -44,8 +44,10 @@ export interface UseCastTabResult {
 export const useCastTab = (projectId: string): UseCastTabResult => {
   const { t } = useTranslation();
 
-  const { data: artists } = useProjectArtistsDictionary();
-  const { data: participations } = useProjectParticipations(projectId);
+  const artistsQuery = useProjectArtistsDictionary();
+  const participationsQuery = useProjectParticipations(projectId);
+  const artists: Artist[] = artistsQuery.data ?? [];
+  const participations: Participation[] = participationsQuery.data ?? [];
 
   const createParticipationMutation = useCreateParticipation(projectId);
   const updateParticipationMutation = useUpdateParticipation(projectId);
@@ -97,7 +99,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     try {
       if (isCurrentlyCasted && participationId) {
         await deleteParticipationMutation.mutateAsync(String(participationId));
-        toast.success(t("projects.cast.toast.removed", "UsuniÄ™to z obsady"));
+        toast.success(t("projects.cast.toast.removed", "Usunięto z obsady"));
       } else {
         const existingDeclined = participations.find(
           (participation) =>
@@ -121,10 +123,10 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
         toast.success(t("projects.cast.toast.added", "Dodano do obsady"));
       }
     } catch {
-      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         description: t(
           "common.errors.database_error",
-          "WystÄ…piĹ‚ problem z poĹ‚Ä…czeniem z bazÄ… danych.",
+          "Wystąpił problem z połączeniem z bazą danych.",
         ),
       });
     } finally {

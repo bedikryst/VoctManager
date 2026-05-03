@@ -128,7 +128,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
           </div>
 
           <div className="flex shrink-0 max-w-25 items-center gap-1.5 sm:max-w-35">
-            <span
+            <Text
               className={cn(
                 "inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-md border px-1 text-[9px] font-bold uppercase tracking-wider",
                 isOverlay
@@ -138,7 +138,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
               aria-hidden="true"
             >
               {voiceTypeInitial}
-            </span>
+            </Text>
             <Text
               size="xs"
               weight="bold"

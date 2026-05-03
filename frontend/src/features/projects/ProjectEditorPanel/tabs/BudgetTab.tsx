@@ -23,6 +23,10 @@ import {
   Metric,
   Unit,
 } from "@/shared/ui/primitives/typography";
+import {
+  StaggeredBentoContainer,
+  StaggeredBentoItem,
+} from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
 interface BudgetTabProps {
   projectId: string;
@@ -213,9 +217,9 @@ export const BudgetTab = ({
                             "!border-ethereal-gold/40 !bg-white/90",
                         )}
                       />
-                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/40">
+                      <Text className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/40">
                         {t("common.currency", "PLN")}
-                      </span>
+                      </Text>
                       {currentValue === "" && (
                         <div className="absolute -left-3 top-1/2 hidden -translate-x-full -translate-y-1/2 sm:block">
                           <Badge variant="danger">
@@ -320,9 +324,9 @@ export const BudgetTab = ({
                             "!border-ethereal-gold/40 !bg-white/90",
                         )}
                       />
-                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/40">
+                      <Text className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/40">
                         {t("common.currency", "PLN")}
-                      </span>
+                      </Text>
                       {currentValue === "" && (
                         <div className="absolute -left-3 top-1/2 hidden -translate-x-full -translate-y-1/2 sm:block">
                           <Badge variant="danger">

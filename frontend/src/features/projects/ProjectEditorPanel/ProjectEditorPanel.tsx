@@ -7,7 +7,7 @@
  * @module panel/projects/ProjectEditorPanel
  */
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -30,6 +30,7 @@ import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
@@ -422,17 +423,6 @@ export const ProjectEditorPanel = ({
                                 "Tworzenie nowego projektu",
                               )}
                         </Heading>
-                        <Text size="sm" color="muted" className="max-w-3xl">
-                          {project
-                            ? t(
-                                "projects.editor.workspace_description",
-                                "Zarządzaj wszystkimi aspektami produkcji w jednym miejscu.",
-                              )
-                            : t(
-                                "projects.editor.create_description",
-                                "Uzupełnij szczegóły aby utworzyć nowy projekt koncertu.",
-                              )}
-                        </Text>
                       </div>
 
                       <Button
@@ -480,7 +470,7 @@ export const ProjectEditorPanel = ({
                               onMouseEnter={() => handleTabPrefetch(tab.id)}
                               onFocus={() => handleTabPrefetch(tab.id)}
                               className={cn(
-                                "relative inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                                "relative inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-[10px] font-bold tracking-[0.1em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
                                 isActive
                                   ? "bg-ethereal-alabaster text-ethereal-ink shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_1px_rgba(194,168,120,0.12)]"
                                   : "text-ethereal-graphite/65 hover:bg-ethereal-alabaster/60 hover:text-ethereal-ink",
@@ -497,9 +487,9 @@ export const ProjectEditorPanel = ({
                               >
                                 {tab.icon}
                               </span>
-                              <span className="truncate">
+                              <Text className="truncate text-inherit">
                                 {tabLabels[tab.id]}
-                              </span>
+                              </Text>
                             </button>
                           );
                         })}
@@ -522,9 +512,11 @@ export const ProjectEditorPanel = ({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}
                         transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="flex-col flex-1 min-h-0 w-full h-full"
+                        className="flex flex-col flex-1 min-h-0 w-full h-full"
                       >
-                        {renderActiveTab()}
+                        <Suspense fallback={<EtherealLoader fullHeight={false} />}>
+                          {renderActiveTab()}
+                        </Suspense>
                       </motion.div>
                     </AnimatePresence>
                   </div>

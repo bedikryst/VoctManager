@@ -41,8 +41,10 @@ export const useCrewAssignments = (
 ): UseCrewAssignmentsResult => {
   const { t } = useTranslation();
 
-  const { data: collaborators } = useProjectCollaboratorsDictionary();
-  const { data: crewAssignments } = useProjectCrewAssignments(projectId);
+  const collaboratorsQuery = useProjectCollaboratorsDictionary();
+  const crewAssignmentsQuery = useProjectCrewAssignments(projectId);
+  const collaborators: Collaborator[] = collaboratorsQuery.data ?? [];
+  const crewAssignments: CrewAssignment[] = crewAssignmentsQuery.data ?? [];
 
   const createCrewAssignmentMutation = useCreateCrewAssignment(projectId);
   const deleteCrewAssignmentMutation = useDeleteCrewAssignment(projectId);
@@ -95,7 +97,7 @@ export const useCrewAssignments = (
     }
 
     const toastId = toast.loading(
-      t("projects.crew.toast.assigning", "Przypisywanie czĹ‚onka ekipy..."),
+      t("projects.crew.toast.assigning", "Przypisywanie członka ekipy..."),
     );
 
     try {
@@ -111,16 +113,16 @@ export const useCrewAssignments = (
       toast.success(
         t(
           "projects.crew.toast.assign_success",
-          "CzĹ‚onek ekipy przypisany pomyĹ›lnie",
+          "Członek ekipy przypisany pomyślnie",
         ),
         { id: toastId },
       );
     } catch {
-      toast.error(t("projects.crew.toast.assign_error", "BĹ‚Ä…d przypisania"), {
+      toast.error(t("projects.crew.toast.assign_error", "Błąd przypisania"), {
         id: toastId,
         description: t(
           "projects.crew.toast.assign_error_desc",
-          "Nie udaĹ‚o siÄ™ przypisaÄ‡ czĹ‚onka ekipy do projektu.",
+          "Nie udało się przypisać członka ekipy do projektu.",
         ),
       });
     }
@@ -128,7 +130,7 @@ export const useCrewAssignments = (
 
   const handleRemove = async (id: string): Promise<void> => {
     const toastId = toast.loading(
-      t("projects.crew.toast.removing", "Usuwanie czĹ‚onka ekipy..."),
+      t("projects.crew.toast.removing", "Usuwanie członka ekipy..."),
     );
 
     try {
@@ -136,16 +138,16 @@ export const useCrewAssignments = (
       toast.success(
         t(
           "projects.crew.toast.remove_success",
-          "UsuniÄ™to przypisanie z projektu",
+          "Usunięto przypisanie z projektu",
         ),
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.actions.delete_error", "BĹ‚Ä…d usuwania"), {
+      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
         description: t(
           "projects.crew.toast.remove_error_desc",
-          "Nie udaĹ‚o siÄ™ odpiÄ…Ä‡ czĹ‚onka ekipy z projektu.",
+          "Nie udało się odpiąć członka ekipy z projektu.",
         ),
       });
     }

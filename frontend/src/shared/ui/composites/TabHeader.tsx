@@ -63,7 +63,12 @@ export function TabHeader({
             toneIconClassMap[tone],
           )}
         >
-          <span aria-hidden="true">{icon}</span>
+          <span
+            aria-hidden="true"
+            className="flex h-full w-full items-center justify-center"
+          >
+            {icon}
+          </span>
         </GlassCard>
 
         <div className="min-w-0 flex-1 space-y-1">

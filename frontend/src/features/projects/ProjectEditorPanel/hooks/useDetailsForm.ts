@@ -116,7 +116,8 @@ export const useDetailsForm = (
 ): UseDetailsFormResult => {
   const { t } = useTranslation();
 
-  const { data: projects } = useProjects(Boolean(projectId));
+  const projectsQuery = useProjects(Boolean(projectId));
+  const projects: Project[] = projectsQuery.data ?? [];
 
   const project = useMemo(
     () =>
@@ -291,7 +292,7 @@ export const useDetailsForm = (
     }
 
     const toastId = toast.loading(
-      t("projects.details.toast.saving", "Zapisywanie szczegĂłĹ‚Ăłw projektu..."),
+      t("projects.details.toast.saving", "Zapisywanie szczegółów projektu..."),
     );
 
     try {
@@ -405,10 +406,10 @@ export const useDetailsForm = (
           ? Object.values(error.response.data).flat().join(" | ")
           : t(
               "common.errors.save_problem",
-              "WystÄ…piĹ‚ problem podczas zapisywania danych.",
+              "Wystąpił problem podczas zapisywania danych.",
             );
 
-      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: errorMessage,
       });

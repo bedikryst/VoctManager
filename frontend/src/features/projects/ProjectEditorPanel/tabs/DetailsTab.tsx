@@ -114,7 +114,7 @@ export const DetailsTab = ({
           <SectionHeader
             title={t(
               "projects.details_tab.sections.title_desc",
-              "TytuĹ‚ i Opis",
+              "Tytuł i Opis",
             )}
           />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -122,7 +122,7 @@ export const DetailsTab = ({
               <Input
                 label={t(
                   "projects.details_tab.fields.title",
-                  "TytuĹ‚ Projektu *",
+                  "Tytuł Projektu *",
                 )}
                 type="text"
                 required
@@ -222,14 +222,14 @@ export const DetailsTab = ({
           <SectionHeader
             title={t(
               "projects.details_tab.sections.logistics",
-              "ZbiĂłrka i Dress Code",
+              "Zbiórka i Dress Code",
             )}
           />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <Input
               label={t(
                 "projects.details_tab.fields.call_time",
-                "ZbiĂłrka (Call Time)",
+                "Zbiórka (Call Time)",
               )}
               type="datetime-local"
               value={formData.call_time || ""}
@@ -287,7 +287,7 @@ export const DetailsTab = ({
             }
             placeholder={t(
               "projects.details_tab.placeholders.description",
-              "np. ProszÄ™ o punktualnoĹ›Ä‡...",
+              "np. Proszę o punktualność...",
             )}
           />
         </GlassCard>
@@ -545,7 +545,7 @@ export const DetailsTab = ({
                 <Text size="xs" color="muted">
                   {t(
                     "projects.details_tab.empty.run_sheet",
-                    "Brak punktĂłw harmonogramu. Dodaj pierwszy!",
+                    "Brak punktów harmonogramu. Dodaj pierwszy!",
                   )}
                 </Text>
               </GlassCard>
@@ -605,7 +605,7 @@ export const DetailsTab = ({
                             }
                             placeholder={t(
                               "projects.details_tab.run_sheet.title",
-                              "TytuĹ‚",
+                              "Tytuł",
                             )}
                           />
                         </div>
@@ -632,7 +632,7 @@ export const DetailsTab = ({
                           variant="icon"
                           size="icon"
                           onClick={() => handleRemoveRunSheetItem(safeId)}
-                          aria-label={t("common.actions.delete", "UsuĹ„")}
+                          aria-label={t("common.actions.delete", "Usuń")}
                           className="self-end md:self-auto"
                         >
                           <Trash2 size={16} aria-hidden="true" />

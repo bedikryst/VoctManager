@@ -90,12 +90,18 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const { data: artists } = useProjectArtistsDictionary();
-  const { data: pieces } = useProjectPiecesDictionary();
-  const { data: participations } = useProjectParticipations(projectId);
-  const { data: voiceLines } = useProjectVoiceLinesDictionary();
-  const { data: program } = useProjectProgram(projectId);
-  const { data: pieceCastings } = useProjectPieceCastings(projectId);
+  const artistsQuery = useProjectArtistsDictionary();
+  const piecesQuery = useProjectPiecesDictionary();
+  const participationsQuery = useProjectParticipations(projectId);
+  const voiceLinesQuery = useProjectVoiceLinesDictionary();
+  const programQuery = useProjectProgram(projectId);
+  const pieceCastingsQuery = useProjectPieceCastings(projectId);
+  const artists: Artist[] = artistsQuery.data ?? [];
+  const pieces: Piece[] = piecesQuery.data ?? [];
+  const participations: Participation[] = participationsQuery.data ?? [];
+  const voiceLines: VoiceLineOption[] = voiceLinesQuery.data ?? [];
+  const program: ProgramItem[] = programQuery.data ?? [];
+  const pieceCastings: PieceCasting[] = pieceCastingsQuery.data ?? [];
 
   const createMutation = useCreatePieceCasting(projectId);
   const updateMutation = useUpdatePieceCasting(projectId);

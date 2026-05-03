@@ -23,6 +23,7 @@ import type {
   Location,
   Participation,
   Rehearsal,
+  Project,
 } from "@/shared/types";
 import { useLocations } from "@/features/logistics/api/logistics.queries";
 import {
@@ -92,11 +93,16 @@ const getLocationId = (location: Rehearsal["location"]): string => {
 export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   const { t } = useTranslation();
 
-  const { data: projects } = useProjects();
-  const { data: artists } = useProjectArtistsDictionary();
-  const { data: participations } = useProjectParticipations(projectId);
-  const { data: rehearsals } = useProjectRehearsals(projectId);
-  const { data: locationsData } = useLocations();
+  const projectsQuery = useProjects();
+  const artistsQuery = useProjectArtistsDictionary();
+  const participationsQuery = useProjectParticipations(projectId);
+  const rehearsalsQuery = useProjectRehearsals(projectId);
+  const locationsDataQuery = useLocations();
+  const projects: import("@/shared/types").Project[] = projectsQuery.data ?? [];
+  const artists: Artist[] = artistsQuery.data ?? [];
+  const participations: Participation[] = participationsQuery.data ?? [];
+  const rehearsals: Rehearsal[] = rehearsalsQuery.data ?? [];
+  const locationsData: Location[] = locationsDataQuery.data ?? [];
 
   const project =
     projects.find((candidate) => String(candidate.id) === String(projectId)) ??
@@ -247,7 +253,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       toast.warning(
         t(
           "projects.rehearsals.toast.select_location",
-          "Wybierz lokalizacjÄ™ prĂłby przed zapisem.",
+          "Wybierz lokalizację próby przed zapisem.",
         ),
       );
       return;
@@ -259,7 +265,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       toast.warning(
         t(
           "projects.rehearsals.toast.select_target",
-          "Wybierz przynajmniej jednÄ… osobÄ™ lub sekcjÄ™ na prĂłbÄ™.",
+          "Wybierz przynajmniej jedną osobę lub sekcję na próbę.",
         ),
       );
       return;
@@ -268,10 +274,10 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     const isEditing = editingRehearsalId !== null;
     const toastId = toast.loading(
       isEditing
-        ? t("projects.rehearsals.toast.updating", "Aktualizowanie prĂłby...")
+        ? t("projects.rehearsals.toast.updating", "Aktualizowanie próby...")
         : t(
             "projects.rehearsals.toast.saving",
-            "Zapisywanie prĂłby w kalendarzu...",
+            "Zapisywanie próby w kalendarzu...",
           ),
     );
 
@@ -308,20 +314,20 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
         isEditing
           ? t(
               "projects.rehearsals.toast.update_success",
-              "PrĂłba zaktualizowana pomyĹ›lnie",
+              "Próba zaktualizowana pomyślnie",
             )
           : t(
               "projects.rehearsals.toast.save_success",
-              "PrĂłba zapisana pomyĹ›lnie",
+              "Próba zapisana pomyślnie",
             ),
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: t(
           "projects.rehearsals.toast.save_error_desc",
-          "WystÄ…piĹ‚ problem z zapisem do bazy. SprawdĹş formularz i poĹ‚Ä…czenie.",
+          "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie.",
         ),
       });
     }
@@ -337,7 +343,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     }
 
     const toastId = toast.loading(
-      t("projects.rehearsals.toast.removing", "Usuwanie prĂłby..."),
+      t("projects.rehearsals.toast.removing", "Usuwanie próby..."),
     );
 
     try {
@@ -348,15 +354,15 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       }
 
       toast.success(
-        t("projects.rehearsals.toast.remove_success", "PrĂłba zostaĹ‚a usuniÄ™ta"),
+        t("projects.rehearsals.toast.remove_success", "Próba została usunięta"),
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.actions.delete_error", "BĹ‚Ä…d usuwania"), {
+      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
         description: t(
           "projects.rehearsals.toast.remove_error_desc",
-          "Nie udaĹ‚o siÄ™ usunÄ…Ä‡ prĂłby. Serwer odrzuciĹ‚ ĹĽÄ…danie.",
+          "Nie udało się usunąć próby. Serwer odrzucił żądanie.",
         ),
       });
     } finally {

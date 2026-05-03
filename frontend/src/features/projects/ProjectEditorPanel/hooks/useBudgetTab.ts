@@ -10,6 +10,12 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
+import type {
+  Artist,
+  Collaborator,
+  CrewAssignment,
+  Participation,
+} from "@/shared/types";
 import {
   useProjectArtistsDictionary,
   useProjectCollaboratorsDictionary,
@@ -18,7 +24,6 @@ import {
   useUpdateCrewAssignment,
   useUpdateParticipation,
 } from "../../api/project.queries";
-
 import type {
   EnrichedCrewAssignment,
   EnrichedParticipation,
@@ -50,10 +55,14 @@ export const useBudgetTab = (
 ): UseBudgetTabResult => {
   const { t } = useTranslation();
 
-  const { data: participations } = useProjectParticipations(projectId);
-  const { data: crewAssignments } = useProjectCrewAssignments(projectId);
-  const { data: artists } = useProjectArtistsDictionary();
-  const { data: collaborators } = useProjectCollaboratorsDictionary();
+  const participationsQuery = useProjectParticipations(projectId);
+  const crewAssignmentsQuery = useProjectCrewAssignments(projectId);
+  const artistsQuery = useProjectArtistsDictionary();
+  const collaboratorsQuery = useProjectCollaboratorsDictionary();
+  const participations: Participation[] = participationsQuery.data ?? [];
+  const crewAssignments: CrewAssignment[] = crewAssignmentsQuery.data ?? [];
+  const artists: Artist[] = artistsQuery.data ?? [];
+  const collaborators: Collaborator[] = collaboratorsQuery.data ?? [];
 
   const updateParticipationMutation = useUpdateParticipation(projectId);
   const updateCrewAssignmentMutation = useUpdateCrewAssignment(projectId);
@@ -173,7 +182,7 @@ export const useBudgetTab = (
     setIsSaving(true);
 
     const toastId = toast.loading(
-      t("projects.budget.toast.saving", "Zapisywanie budĹĽetu..."),
+      t("projects.budget.toast.saving", "Zapisywanie budżetu..."),
     );
 
     try {
@@ -201,16 +210,16 @@ export const useBudgetTab = (
       toast.success(
         t(
           "projects.budget.toast.save_success",
-          "Zapisano stawki i przeliczono budĹĽet",
+          "Zapisano stawki i przeliczono budżet",
         ),
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: t(
           "projects.budget.toast.save_error_desc",
-          "Nie udaĹ‚o siÄ™ zapisaÄ‡ wszystkich stawek.",
+          "Nie udało się zapisać wszystkich stawek.",
         ),
       });
     } finally {

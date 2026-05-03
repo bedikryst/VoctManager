@@ -385,46 +385,47 @@ export const MicroCastingTab = ({
                   </Badge>
                 </div>
 
-                <DroppableBucket
-                  id="UNASSIGNED"
-                  title={t(
-                    "projects.micro_cast.sections.unassigned",
-                    "Nieprzypisani",
-                  )}
-                  className="-mr-2 flex-1 min-h-0 overflow-y-auto pr-2 [scrollbar-gutter:stable]"
-                >
-                  <div className="grid grid-cols-1 gap-2 pb-2 sm:grid-cols-[repeat(auto-fill,minmax(130px,1fr))]">
-                    {unassignedParticipations.map((part) => {
-                      const artist = artistMap.get(String(part.id));
-                      if (!artist) return null;
-                      return (
-                        <DraggableArtist
-                          key={part.id}
-                          participationId={String(part.id)}
-                          artist={artist}
-                          participationStatus={participationStatusMap.get(
-                            String(part.id),
-                          )}
-                        />
-                      );
-                    })}
-                    {unassignedParticipations.length === 0 && (
-                      <div className="col-span-full py-8 text-center opacity-60">
-                        <CheckCircle2
-                          size={32}
-                          className="mx-auto mb-2 text-ethereal-sage"
-                          aria-hidden="true"
-                        />
-                        <Eyebrow color="muted">
-                          {t(
-                            "projects.micro_cast.empty.unassigned",
-                            "Wszyscy zostali przypisani do ról.",
-                          )}
-                        </Eyebrow>
-                      </div>
+                <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
+                  <DroppableBucket
+                    id="UNASSIGNED"
+                    title={t(
+                      "projects.micro_cast.sections.unassigned",
+                      "Nieprzypisani",
                     )}
-                  </div>
-                </DroppableBucket>
+                  >
+                    <div className="grid grid-cols-1 gap-2 pb-2 sm:grid-cols-[repeat(auto-fill,minmax(130px,1fr))]">
+                      {unassignedParticipations.map((part) => {
+                        const artist = artistMap.get(String(part.id));
+                        if (!artist) return null;
+                        return (
+                          <DraggableArtist
+                            key={part.id}
+                            participationId={String(part.id)}
+                            artist={artist}
+                            participationStatus={participationStatusMap.get(
+                              String(part.id),
+                            )}
+                          />
+                        );
+                      })}
+                      {unassignedParticipations.length === 0 && (
+                        <div className="col-span-full py-8 text-center opacity-60">
+                          <CheckCircle2
+                            size={32}
+                            className="mx-auto mb-2 text-ethereal-sage"
+                            aria-hidden="true"
+                          />
+                          <Eyebrow color="muted">
+                            {t(
+                              "projects.micro_cast.empty.unassigned",
+                              "Wszyscy zostali przypisani do ról.",
+                            )}
+                          </Eyebrow>
+                        </div>
+                      )}
+                    </div>
+                  </DroppableBucket>
+                </div>
               </div>
             </GlassCard>
           </StaggeredBentoItem>
@@ -435,7 +436,7 @@ export const MicroCastingTab = ({
               variant="ethereal"
               padding="md"
               isHoverable={false}
-              className="flex-1 min-h-0 overflow-hidden"
+              className="flex flex-col flex-1 min-h-0 overflow-hidden"
             >
               <div className="flex h-full min-h-0 flex-col">
                 <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]">

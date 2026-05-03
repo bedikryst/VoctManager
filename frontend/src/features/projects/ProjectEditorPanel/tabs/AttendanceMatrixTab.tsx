@@ -23,6 +23,10 @@ import {
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { TabHeader } from "@/shared/ui/composites/TabHeader";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import {
+  StaggeredBentoContainer,
+  StaggeredBentoItem,
+} from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
 interface AttendanceMatrixTabProps {
   projectId: string;
@@ -149,49 +153,54 @@ export const AttendanceMatrixTab = ({
   } = useAttendanceMatrix(projectId);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 pb-24">
-      <TabHeader
-        icon={<Users size={20} aria-hidden="true" />}
-        title={t(
-          "projects.matrix.header.title",
-          "Macierz obecności i frekwencji",
-        )}
-        description={t(
-          "projects.matrix.header.subtitle",
-          "Szybkie oznaczanie frekwencji na próbach. Klikaj w kafelki pod nazwiskiem aby zmienić status.",
-        )}
-      />
+    <StaggeredBentoContainer className="mx-auto max-w-7xl space-y-6 pb-24">
+      <StaggeredBentoItem>
+        <TabHeader
+          icon={<Users size={20} aria-hidden="true" />}
+          title={t(
+            "projects.matrix.header.title",
+            "Macierz obecności i frekwencji",
+          )}
+          description={t(
+            "projects.matrix.header.subtitle",
+            "Szybkie oznaczanie frekwencji na próbach. Klikaj w kafelki pod nazwiskiem aby zmienić status.",
+          )}
+        />
+      </StaggeredBentoItem>
 
-      <GlassCard
-        variant="light"
-        padding="sm"
-        isHoverable={false}
-        className="flex flex-wrap items-center gap-x-5 gap-y-2"
-      >
-        <Eyebrow color="muted" className="mr-2">
-          {t("projects.matrix.legend.title", "Status frekwencji")}
-        </Eyebrow>
-        {Object.entries(STATUS_DEF).map(([key, config]) => (
-          <div key={key} className="flex items-center gap-1.5">
-            <div
-              className={`flex h-4 w-4 items-center justify-center rounded-md ${config.swatchClass}`}
-              aria-hidden="true"
-            >
-              {config.icon}
+      <StaggeredBentoItem>
+        <GlassCard
+          variant="light"
+          padding="sm"
+          isHoverable={false}
+          className="flex flex-wrap items-center gap-x-5 gap-y-2"
+        >
+          <Eyebrow color="muted" className="mr-2">
+            {t("projects.matrix.legend.title", "Status frekwencji")}
+          </Eyebrow>
+          {Object.entries(STATUS_DEF).map(([key, config]) => (
+            <div key={key} className="flex items-center gap-1.5">
+              <div
+                className={`flex h-4 w-4 items-center justify-center rounded-md ${config.swatchClass}`}
+                aria-hidden="true"
+              >
+                {config.icon}
+              </div>
+              <Text size="xs" color="graphite" weight="medium">
+                {t(config.labelKey, config.defaultLabel)}
+              </Text>
             </div>
-            <Text size="xs" color="graphite" weight="medium">
-              {t(config.labelKey, config.defaultLabel)}
-            </Text>
-          </div>
-        ))}
-      </GlassCard>
+          ))}
+        </GlassCard>
+      </StaggeredBentoItem>
 
-      <GlassCard
-        variant="solid"
-        padding="none"
-        isHoverable={false}
-        className="overflow-x-auto no-scrollbar"
-      >
+      <StaggeredBentoItem>
+        <GlassCard
+          variant="solid"
+          padding="none"
+          isHoverable={false}
+          className="overflow-x-auto no-scrollbar"
+        >
         <table className="w-full min-w-200 border-collapse text-left text-sm">
           <thead className="sticky top-0 z-10 bg-ethereal-parchment/80 backdrop-blur-ethereal">
             <tr>
@@ -384,11 +393,11 @@ export const AttendanceMatrixTab = ({
                   })}
 
                   <td className="border-b border-l border-ethereal-incense/20 p-4 text-center">
-                    <span
-                      className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold tracking-widest ${rateClass}`}
+                    <Text
+                      className={`inline-block rounded-lg border px-2.5 py-1.5 text-[10px] font-bold tracking-widest ${rateClass}`}
                     >
                       {attendanceRate}%
-                    </span>
+                    </Text>
                   </td>
                 </tr>
               );
@@ -396,6 +405,7 @@ export const AttendanceMatrixTab = ({
           </tbody>
         </table>
       </GlassCard>
-    </div>
+    </StaggeredBentoItem>
+    </StaggeredBentoContainer>
   );
 };

@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import type { Artist, Attendance, Participation } from "@/shared/types";
+import type { Artist, Attendance, Participation, Rehearsal } from "@/shared/types";
 import { compareProjectDateAsc } from "../../lib/projectPresentation";
 import {
   projectKeys,
@@ -60,7 +60,7 @@ const toAttendanceEntity = (attendance: AttendanceRecord): Attendance => ({
 });
 
 export interface UseAttendanceMatrixResult {
-  projectRehearsals: import("@/shared/types").Rehearsal[];
+  projectRehearsals: Rehearsal[];
   enrichedParticipations: EnrichedParticipation[];
   attendanceMap: Map<string, AttendanceRecord>;
   mutatingCells: Set<string>;
@@ -77,10 +77,14 @@ export const useAttendanceMatrix = (
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const { data: rehearsals } = useProjectRehearsals(projectId);
-  const { data: participations } = useProjectParticipations(projectId);
-  const { data: artists } = useProjectArtistsDictionary();
-  const { data: fetchedAttendances } = useProjectAttendances(projectId);
+  const rehearsalsQuery = useProjectRehearsals(projectId);
+  const participationsQuery = useProjectParticipations(projectId);
+  const artistsQuery = useProjectArtistsDictionary();
+  const fetchedAttendancesQuery = useProjectAttendances(projectId);
+  const rehearsals: Rehearsal[] = rehearsalsQuery.data ?? [];
+  const participations: Participation[] = participationsQuery.data ?? [];
+  const artists: Artist[] = artistsQuery.data ?? [];
+  const fetchedAttendances: Attendance[] = fetchedAttendancesQuery.data ?? [];
 
   const createMutation = useCreateAttendance(projectId);
   const updateMutation = useUpdateAttendance(projectId);
@@ -231,12 +235,12 @@ export const useAttendanceMatrix = (
         toast.error(
           t(
             "projects.matrix.toast.save_error",
-            "Nie udaĹ‚o siÄ™ zapisaÄ‡ zmiany.",
+            "Nie udało się zapisać zmiany.",
           ),
           {
             description: t(
               "projects.matrix.toast.save_error_desc",
-              "SprawdĹş poĹ‚Ä…czenie i sprĂłbuj ponownie.",
+              "Sprawdź połączenie i spróbuj ponownie.",
             ),
           },
         );

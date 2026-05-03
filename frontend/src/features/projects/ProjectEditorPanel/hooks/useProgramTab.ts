@@ -74,8 +74,10 @@ export const useProgramTab = (
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const { data: pieces } = useProjectPiecesDictionary();
-  const { data: fetchedProgram } = useProjectProgram(projectId);
+  const projectPiecesQuery = useProjectPiecesDictionary();
+  const projectProgramQuery = useProjectProgram(projectId);
+  const pieces: Piece[] = projectPiecesQuery.data ?? [];
+  const fetchedProgram: ProgramItem[] = projectProgramQuery.data ?? [];
 
   const createProgramMutation = useCreateProgramItem(projectId);
   const updateProgramMutation = useUpdateProgramItem(projectId);
@@ -163,11 +165,11 @@ export const useProgramTab = (
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: t(
           "projects.program.toast.add_error",
-          "Nie powiodĹ‚o siÄ™ dodanie utworu.",
+          "Nie powiodło się dodanie utworu.",
         ),
       });
     }
@@ -183,14 +185,14 @@ export const useProgramTab = (
       toast.success(
         t(
           "projects.program.toast.encore_toggled",
-          "Status BIS zostaĹ‚ zaktualizowany",
+          "Status BIS został zaktualizowany",
         ),
       );
     } catch {
       toast.error(
         t(
           "projects.program.toast.encore_error",
-          "BĹ‚Ä…d poĹ‚Ä…czenia. Nie udaĹ‚o siÄ™ zmieniÄ‡ statusu BIS.",
+          "Błąd połączenia. Nie udało się zmienić statusu BIS.",
         ),
       );
     }
@@ -205,15 +207,15 @@ export const useProgramTab = (
       await deleteProgramMutation.mutateAsync(itemId);
 
       toast.success(
-        t("projects.program.toast.remove_success", "UsuniÄ™to z programu"),
+        t("projects.program.toast.remove_success", "Usunięto z programu"),
         { id: toastId },
       );
     } catch {
-      toast.error(t("common.actions.delete_error", "BĹ‚Ä…d usuwania"), {
+      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
         id: toastId,
         description: t(
           "common.errors.server_problem",
-          "WystÄ…piĹ‚ problem z serwerem.",
+          "Wystąpił problem z serwerem.",
         ),
       });
     }
@@ -252,7 +254,7 @@ export const useProgramTab = (
     setIsSaving(true);
 
     const toastId = toast.loading(
-      t("projects.program.toast.saving_order", "Zapisywanie nowego ukĹ‚adu..."),
+      t("projects.program.toast.saving_order", "Zapisywanie nowego układy..."),
     );
 
     const persistOrders = async (
@@ -305,12 +307,6 @@ export const useProgramTab = (
         return;
       }
 
-      const originalOrderById = new Map(
-        changedItems.map((item) => [
-          item.id,
-          originalById.get(item.id)?.order ?? item.order,
-        ]),
-      );
       const maxKnownOrder = Math.max(
         0,
         ...fetchedProgram.map((programItem) => programItem.order),
@@ -332,9 +328,7 @@ export const useProgramTab = (
         projectKeys.program.byProject(projectId),
         nextProgram,
       );
-      setProgramItems(
-        reorderedItems.map((programItem) => normalizeProgramItem(programItem, pieces)),
-      );
+      setProgramItems(reorderedItems);
 
       await queryClient.invalidateQueries({
         queryKey: projectKeys.program.byProject(projectId),
@@ -346,7 +340,7 @@ export const useProgramTab = (
       toast.success(
         t(
           "projects.program.toast.save_order_success",
-          "UkĹ‚ad zapisany pomyĹ›lnie",
+          "Układ zapisany pomyślnie",
         ),
         { id: toastId },
       );
@@ -390,11 +384,11 @@ export const useProgramTab = (
         queryKey: projectKeys.program.all,
       });
 
-      toast.error(t("common.errors.save_error", "BĹ‚Ä…d zapisu"), {
+      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
         id: toastId,
         description: t(
           "projects.program.toast.save_order_error",
-          "Serwer odrzuciĹ‚ czÄ™Ĺ›Ä‡ zmian.",
+          "Serwer odrzucił część zmian.",
         ),
       });
 
