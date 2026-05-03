@@ -50,9 +50,10 @@ class NotificationService:
                 def dispatch_task():
                     from .tasks import route_notification_task
                     route_notification_task.delay(
-                        recipient_id=str(dto.recipient_id), 
+                        recipient_id=str(dto.recipient_id),
                         notification_type=dto.notification_type,
-                        metadata=notification.metadata
+                        metadata=notification.metadata,
+                        level=dto.level,
                     )
 
                 transaction.on_commit(dispatch_task)

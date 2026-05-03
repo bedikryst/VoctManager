@@ -61,9 +61,10 @@ def send_notification_task(
 
 @shared_task(name="notifications.route_notification")
 def route_notification_task(
-    recipient_id: str, 
-    notification_type: str, 
-    metadata: Dict[str, Any]
+    recipient_id: str,
+    notification_type: str,
+    metadata: Dict[str, Any],
+    level: str = NotificationLevel.INFO,
 ) -> None:
     """
     Evaluates DB preferences and dynamically spawns isolated transport tasks.
@@ -71,9 +72,10 @@ def route_notification_task(
     """
     from .router import NotificationRouter
     NotificationRouter.route(
-        recipient_id=recipient_id, 
-        notification_type=notification_type, 
-        metadata=metadata
+        recipient_id=recipient_id,
+        notification_type=notification_type,
+        metadata=metadata,
+        level=level,
     )
 
 # --- 3. PUSH TRANSPORT ---
@@ -87,25 +89,27 @@ def route_notification_task(
     retry_jitter=True
 )
 def send_push_notification_task(
-    self, 
-    recipient_id: str, 
-    notification_type: str, 
-    metadata: Dict[str, Any]
+    self,
+    recipient_id: str,
+    notification_type: str,
+    metadata: Dict[str, Any],
+    level: str = NotificationLevel.INFO,
 ) -> None:
     """
-    Isolated background task for FCM interactions.
-    Includes automatic retries for temporary Firebase API downtime.
+    Isolated transport task for VAPID + FCM dispatch. Delegates payload
+    composition to the dispatcher service; transient transport failures are
+    retried with exponential backoff.
     """
     try:
         from .push_service import PushDispatcherService
         PushDispatcherService.dispatch_to_user(
             recipient_id=recipient_id,
-            title_key=f"PUSH_TITLE_{notification_type}",
-            body_key=f"PUSH_BODY_{notification_type}",
-            metadata=metadata
+            notification_type=notification_type,
+            metadata=metadata,
+            level=level,
         )
     except Exception as exc:
-        logger.error(f"[Task] FCM transport failed for UID:{recipient_id}. Retrying... Reason: {exc}")
+        logger.error(f"[Task] Push transport failed for UID:{recipient_id}. Retrying... Reason: {exc}")
         raise self.retry(exc=exc)
 
 # --- 4. FAN-OUT ORCHESTRATION ---

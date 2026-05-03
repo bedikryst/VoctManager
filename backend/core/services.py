@@ -13,6 +13,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
+from django.utils.translation import gettext as _, override
 from .signals import account_soft_deleted, user_email_changed, user_pii_updated
 
 from .models import UserProfile
@@ -76,10 +77,13 @@ class UserIdentityService:
             vocative = (first_name_vocative or first_name) if language == 'pl' else first_name
 
             # Dispatch Operational Email
+            with override(language):
+                translated_subject = str(_("Welcome to VoctManager - Activate Your Account"))
+                
             transaction.on_commit(
                 lambda: send_transactional_email_task.delay(
                     recipient_email=user.email,
-                    subject="Welcome to VoctManager - Activate Your Account",
+                    subject=translated_subject,
                     template_name="account_activation",
                     context={
                         "first_name": user.first_name,
@@ -123,10 +127,14 @@ class UserIdentityService:
             raw_vocative = getattr(artist_profile, 'first_name_vocative', '') if artist_profile else ''
             base_name = getattr(user, 'first_name', '')
             vocative = (raw_vocative or base_name) if fallback_lang == 'pl' else base_name
+            
+            with override(fallback_lang):
+                translated_subject = str(_("Welcome to VoctManager"))
+                
             transaction.on_commit(
                 lambda: send_transactional_email_task.delay(
                     recipient_email=user.email,
-                    subject="Welcome to VoctManager",
+                    subject=translated_subject,
                     template_name="welcome_email",
                     context={
                         "first_name": getattr(user, "first_name", ""),
@@ -155,13 +163,17 @@ class UserIdentityService:
             user.save()
             
             # Dispatch Security Alert
+            fallback_lang = user.profile.language if hasattr(user, 'profile') else 'en'
+            with override(fallback_lang):
+                translated_subject = str(_("Security Alert: Password Changed"))
+                
             transaction.on_commit(
                 lambda: send_transactional_email_task.delay(
                     recipient_email=user.email,
-                    subject="Security Alert: Password Changed",
+                    subject=translated_subject,
                     template_name="password_changed",
                     context={"user_email": user.email},
-                    fallback_language='en', # Dispatcher resolves correct language via DB
+                    fallback_language=fallback_lang,
                     email_type=EmailType.CRITICAL_SECURITY
                 )
             )
@@ -197,6 +209,7 @@ class UserIdentityService:
             raise InvalidCredentialsException("invalid_current_password")
         
         original_email = user.email
+        fallback_lang = user.profile.language if hasattr(user, 'profile') else 'en'
 
         with transaction.atomic():
             # 1. GDPR Anonymization (Freeing up unique constraints)
@@ -216,13 +229,16 @@ class UserIdentityService:
             account_soft_deleted.send(sender=UserIdentityService, user=user)
             
             # 4. Dispatch confirmation email (using the original email we stored)
+            with override(fallback_lang):
+                translated_subject = str(_("Your VoctManager Account has been successfully deleted"))
+                
             transaction.on_commit(
                 lambda: send_transactional_email_task.delay(
                     recipient_email=original_email,
-                    subject="Your VoctManager Account has been successfully deleted",
+                    subject=translated_subject,
                     template_name="account_deleted",
                     context={"user_email": original_email},
-                    fallback_language='en',
+                    fallback_language=fallback_lang,
                     email_type=EmailType.CRITICAL_SECURITY
                 )
             )
