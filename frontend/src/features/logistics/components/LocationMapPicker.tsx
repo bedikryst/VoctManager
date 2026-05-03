@@ -1,27 +1,33 @@
 /**
  * @file LocationMapPicker.tsx
- * @description Provides an interactive Google Map with a search overlay to pick precise geographical locations.
- * Utilizes the Google Maps Places API (New) with Session Tokens for optimized billing.
+ * @description Provides an interactive Google Map with a search overlay to pick precise
+ * geographical locations. Uses the Places API (New) with session tokens for billing
+ * optimisation, the shared Input/Button primitives, and Ethereal tokens throughout.
+ * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationMapPicker
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Map,
   AdvancedMarker,
+  Map,
+  MapMouseEvent,
   useMap,
   useMapsLibrary,
-  MapMouseEvent,
 } from "@vis.gl/react-google-maps";
-import { Search, MapPin, Navigation, Loader2 } from "lucide-react";
-import { useDebounceValue } from "usehooks-ts"; // Modern standard for debouncing
+import { Loader2, MapPin, Navigation, Search } from "lucide-react";
+import { useDebounceValue } from "usehooks-ts";
 
-import type { LocationFormValues } from "../types/logistics.dto"; // Synced with Zod schema
 import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Text } from "@/shared/ui/primitives/typography";
+
+import type { LocationFormValues } from "../types/logistics.dto";
 
 interface LocationMapPickerProps {
   onLocationSelect: (locationData: Partial<LocationFormValues>) => void;
+  initialPosition?: google.maps.LatLngLiteral;
 }
 
 const isNodeTarget = (value: EventTarget | null): value is Node =>
@@ -34,48 +40,39 @@ const DEFAULT_CENTER: google.maps.LatLngLiteral = {
 
 export const LocationMapPicker = ({
   onLocationSelect,
-}: LocationMapPickerProps) => {
+  initialPosition,
+}: LocationMapPickerProps): React.JSX.Element => {
   const { t } = useTranslation();
 
-  // Dedicated map instance reference
   const map = useMap("VOCTMANAGER_PICKER_MAP");
-
-  // Load necessary Google Maps libraries dynamically
   const placesLibrary = useMapsLibrary("places");
   const geocodingLibrary = useMapsLibrary("geocoding");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [markerPos, setMarkerPos] =
-    useState<google.maps.LatLngLiteral>(DEFAULT_CENTER);
-  const [inputValue, setInputValue] = useState("");
-
-  // Replaces custom useEffect + setTimeout for safe, leak-free debouncing
+  const [markerPos, setMarkerPos] = useState<google.maps.LatLngLiteral>(
+    initialPosition ?? DEFAULT_CENTER,
+  );
+  const [inputValue, setInputValue] = useState<string>("");
   const [debouncedValue] = useDebounceValue(inputValue, 300);
 
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompleteSuggestion[]
   >([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
 
   const [sessionToken, setSessionToken] =
     useState<google.maps.places.AutocompleteSessionToken | null>(null);
 
-  /**
-   * Initializes the Autocomplete Session Token to group requests for billing optimization.
-   */
   useEffect(() => {
     if (placesLibrary) {
       setSessionToken(new placesLibrary.AutocompleteSessionToken());
     }
   }, [placesLibrary]);
 
-  /**
-   * Fetches place suggestions based on the debounced input value using the New Places API.
-   */
   useEffect(() => {
-    const fetchSuggestions = async () => {
+    const fetchSuggestions = async (): Promise<void> => {
       if (!debouncedValue.trim() || !placesLibrary || !sessionToken) {
         setSuggestions([]);
         return;
@@ -84,44 +81,32 @@ export const LocationMapPicker = ({
       try {
         const { suggestions: newSuggestions } =
           await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions(
-            {
-              input: debouncedValue,
-              sessionToken: sessionToken,
-            },
+            { input: debouncedValue, sessionToken },
           );
-
         setSuggestions(newSuggestions);
         setIsOpen(true);
       } catch (error) {
-        console.error(
-          "[VoctManager] Failed to fetch autocomplete suggestions:",
-          error,
-        );
+        console.error("[VoctManager Logistics] Autocomplete failed:", error);
       }
     };
 
-    fetchSuggestions();
+    void fetchSuggestions();
   }, [debouncedValue, placesLibrary, sessionToken]);
 
-  /**
-   * Handles the selection of a specific suggestion from the dropdown and extracts detailed fields.
-   */
   const handleSelectSuggestion = async (
     suggestion: google.maps.places.AutocompleteSuggestion,
-  ) => {
+  ): Promise<void> => {
     if (!placesLibrary || !suggestion.placePrediction) return;
 
     try {
       const place = suggestion.placePrediction.toPlace();
-
-      // Restrict payload to essential fields to optimize data usage and latency
       await place.fetchFields({
         fields: ["id", "displayName", "formattedAddress", "location"],
       });
 
-      const name = place.displayName || "";
-      const address = place.formattedAddress || "";
-      const newPos = {
+      const name = place.displayName ?? "";
+      const address = place.formattedAddress ?? "";
+      const newPos: google.maps.LatLngLiteral = {
         lat: place.location?.lat() ?? 0,
         lng: place.location?.lng() ?? 0,
       };
@@ -129,8 +114,6 @@ export const LocationMapPicker = ({
       setInputValue(name || address);
       setIsOpen(false);
       setSuggestions([]);
-
-      // Refresh session token for subsequent independent queries
       setSessionToken(new placesLibrary.AutocompleteSessionToken());
 
       setMarkerPos(newPos);
@@ -145,26 +128,28 @@ export const LocationMapPicker = ({
         longitude: newPos.lng,
       });
     } catch (error) {
-      console.error("[VoctManager] Failed to fetch place details:", error);
+      console.error("[VoctManager Logistics] Place fetch failed:", error);
     }
   };
 
-  /**
-   * Performs reverse geocoding when the user clicks directly on the map interface.
-   */
   const handleMapClick = useCallback(
-    (e: MapMouseEvent) => {
-      if (!e.detail.latLng || !geocodingLibrary) return;
+    (event: MapMouseEvent) => {
+      if (!event.detail.latLng || !geocodingLibrary) return;
 
-      const latLng = { lat: e.detail.latLng.lat, lng: e.detail.latLng.lng };
+      const latLng: google.maps.LatLngLiteral = {
+        lat: event.detail.latLng.lat,
+        lng: event.detail.latLng.lng,
+      };
       setMarkerPos(latLng);
 
       const geocoder = new geocodingLibrary.Geocoder();
-      geocoder.geocode({ location: latLng }, (results, status) => {
-        if (status === "OK" && results?.[0]) {
-          const place = results[0];
-          setInputValue(place.formatted_address);
+      void geocoder
+        .geocode({ location: latLng })
+        .then((response) => {
+          const place = response.results?.[0];
+          if (!place) return;
 
+          setInputValue(place.formatted_address);
           onLocationSelect({
             name: place.formatted_address.split(",")[0],
             formatted_address: place.formatted_address,
@@ -172,22 +157,21 @@ export const LocationMapPicker = ({
             latitude: latLng.lat,
             longitude: latLng.lng,
           });
-        }
-      });
+        })
+        .catch((error) => {
+          console.error("[VoctManager Logistics] Reverse geocode failed:", error);
+        });
     },
     [geocodingLibrary, onLocationSelect],
   );
 
-  /**
-   * Uses HTML5 Geolocation to center the map on the user's physical position.
-   */
-  const handleLocateMe = () => {
+  const handleLocateMe = (): void => {
     if (!navigator.geolocation) return;
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const pos = {
+        const pos: google.maps.LatLngLiteral = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
@@ -200,16 +184,10 @@ export const LocationMapPicker = ({
     );
   };
 
-  /**
-   * Handles closing the suggestion dropdown when clicking outside the component.
-   */
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target;
-      if (!isNodeTarget(target)) {
-        return;
-      }
-
+    const handleClickOutside = (event: MouseEvent): void => {
+      const target = event.target;
+      if (!isNodeTarget(target)) return;
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(target)
@@ -222,38 +200,45 @@ export const LocationMapPicker = ({
   }, []);
 
   return (
-    <div className="space-y-4" ref={dropdownRef}>
-      <div className="flex flex-col sm:flex-row gap-3 relative">
+    <div ref={dropdownRef} className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-brand/50 z-10">
-            <Search size={18} />
-          </div>
-          <input
-            type="text"
+          <Input
+            type="search"
+            leftIcon={<Search size={16} aria-hidden="true" />}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onFocus={() => suggestions.length > 0 && setIsOpen(true)}
             placeholder={t(
               "logistics.map.search_placeholder",
               "Wyszukaj globalne lokacje...",
             )}
-            className="w-full pl-10 pr-4 py-3 bg-white/50 border border-stone-200/60 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 backdrop-blur-md transition-all duration-300 relative z-10 font-medium text-sm"
+            onChange={(event) => setInputValue(event.target.value)}
+            onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           />
 
           {isOpen && suggestions.length > 0 && (
-            <ul className="absolute z-50 w-full mt-2 py-2 bg-white/95 backdrop-blur-xl border border-stone-200/60 rounded-xl overflow-hidden shadow-2xl">
+            <ul
+              role="listbox"
+              className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-ethereal-incense/20 bg-ethereal-marble/95 py-2 shadow-glass-solid backdrop-blur-xl"
+            >
               {suggestions.map((suggestion, index) => {
                 if (!suggestion.placePrediction) return null;
                 return (
                   <li
-                    key={index}
-                    onClick={() => handleSelectSuggestion(suggestion)}
-                    className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-brand/5 transition-colors duration-200 text-stone-700 text-sm border-b border-stone-100 last:border-0"
+                    key={`${suggestion.placePrediction.placeId ?? index}`}
+                    role="option"
+                    aria-selected="false"
+                    onClick={() => void handleSelectSuggestion(suggestion)}
+                    className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors duration-200 hover:bg-ethereal-gold/10"
                   >
-                    <MapPin size={16} className="text-brand/70 shrink-0" />
-                    <span className="truncate text-stone-900 font-medium">
+                    <MapPin
+                      size={14}
+                      strokeWidth={1.6}
+                      className="shrink-0 text-ethereal-gold"
+                      aria-hidden="true"
+                    />
+                    <Text size="sm" color="default" truncate>
                       {suggestion.placePrediction.text.text}
-                    </span>
+                    </Text>
                   </li>
                 );
               })}
@@ -266,36 +251,39 @@ export const LocationMapPicker = ({
           variant="secondary"
           onClick={handleLocateMe}
           disabled={isLocating}
-          className="flex items-center gap-2"
+          leftIcon={
+            isLocating ? (
+              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Navigation size={14} aria-hidden="true" />
+            )
+          }
+          className="shrink-0"
         >
-          {isLocating ? (
-            <Loader2 size={18} className="animate-spin" />
-          ) : (
-            <Navigation size={18} />
-          )}
-          <span className="hidden sm:inline">
-            {t("logistics.map.locate_me", "Moja Lokalizacja")}
-          </span>
+          {t("logistics.map.locate_me", "Moja Lokalizacja")}
         </Button>
       </div>
 
-      <div className="w-full h-[350px] rounded-xl overflow-hidden border border-stone-200/60 shadow-inner relative bg-stone-50">
+      <div className="relative h-[360px] w-full overflow-hidden rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/40 shadow-[inset_0_1px_2px_rgba(22,20,18,0.04)]">
         <Map
-          defaultZoom={12}
-          defaultCenter={DEFAULT_CENTER}
+          defaultZoom={initialPosition ? 15 : 11}
+          defaultCenter={initialPosition ?? DEFAULT_CENTER}
           id="VOCTMANAGER_PICKER_MAP"
           mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
           disableDefaultUI={true}
           onClick={handleMapClick}
-          className="w-full h-full"
+          gestureHandling="greedy"
+          className="absolute inset-0 h-full w-full"
         >
           <AdvancedMarker position={markerPos}>
-            <div className="flex flex-col items-center gap-0.5 group">
-              <MapPin
-                className="text-[#2e57dd] transition-transform group-hover:-translate-y-1"
-                size={24}
+            <div className="group relative flex flex-col items-center">
+              <span
+                aria-hidden="true"
+                className="absolute -top-2 h-7 w-7 rounded-full bg-ethereal-gold opacity-50 blur-md"
               />
-              <div className="w-1.5 h-1 rounded-full bg-[#c49a45] blur-[1px] opacity-60" />
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-full border border-ethereal-gold bg-ethereal-marble text-ethereal-gold shadow-[0_8px_18px_rgba(22,20,18,0.25)]">
+                <MapPin size={16} strokeWidth={1.75} />
+              </div>
             </div>
           </AdvancedMarker>
         </Map>

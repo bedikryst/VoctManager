@@ -1,13 +1,28 @@
-import { useEffect, useRef, useState } from "react";
+/**
+ * @file LocationAutocomplete.tsx
+ * @description Search-only autocomplete for the Google Places API (New).
+ * Uses session tokens for billing optimisation, the shared Input primitive for
+ * styling, and a portal-free dropdown anchored to the input. Use it when the
+ * caller does not need the in-line map picker.
+ * @architecture Enterprise SaaS 2026
+ * @module features/logistics/components/LocationAutocomplete
+ */
+
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
-import { Search, MapPin } from "lucide-react";
 import { useDebounceValue } from "usehooks-ts";
-import type { LocationDto } from "../types/logistics.dto";
+import { MapPin, Search } from "lucide-react";
+
+import { Input } from "@/shared/ui/primitives/Input";
+import { Text } from "@/shared/ui/primitives/typography";
+
+import type { LocationFormValues } from "../types/logistics.dto";
 
 interface LocationAutocompleteProps {
-  onLocationSelect: (locationData: Partial<LocationDto>) => void;
+  onLocationSelect: (locationData: Partial<LocationFormValues>) => void;
   placeholder?: string;
+  label?: string;
 }
 
 const isNodeTarget = (value: EventTarget | null): value is Node =>
@@ -16,19 +31,18 @@ const isNodeTarget = (value: EventTarget | null): value is Node =>
 export const LocationAutocomplete = ({
   onLocationSelect,
   placeholder,
-}: LocationAutocompleteProps) => {
+  label,
+}: LocationAutocompleteProps): React.JSX.Element => {
   const { t } = useTranslation();
-
   const placesLibrary = useMapsLibrary("places");
 
-  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState<string>("");
   const [debouncedValue] = useDebounceValue(inputValue, 300);
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompleteSuggestion[]
   >([]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [sessionToken, setSessionToken] =
     useState<google.maps.places.AutocompleteSessionToken | null>(null);
 
@@ -39,81 +53,34 @@ export const LocationAutocomplete = ({
   }, [placesLibrary]);
 
   useEffect(() => {
-    const fetchSuggestions = async () => {
+    const fetchSuggestions = async (): Promise<void> => {
       if (!debouncedValue.trim()) {
         setSuggestions([]);
         setIsOpen(false);
         return;
       }
-
       if (!placesLibrary || !sessionToken) return;
 
       try {
-        const request = {
-          input: debouncedValue,
-          sessionToken: sessionToken,
-        };
-
         const { suggestions: newSuggestions } =
           await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions(
-            request,
+            { input: debouncedValue, sessionToken },
           );
-
         setSuggestions(newSuggestions);
         setIsOpen(true);
       } catch (error) {
-        console.error("Error fetching places suggestions:", error);
+        console.error("[VoctManager Logistics] Autocomplete failed:", error);
         setSuggestions([]);
       }
     };
 
-    fetchSuggestions();
+    void fetchSuggestions();
   }, [debouncedValue, placesLibrary, sessionToken]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  const handleSelect = async (
-    suggestion: google.maps.places.AutocompleteSuggestion,
-  ) => {
-    if (!suggestion.placePrediction || !placesLibrary) return;
-
-    try {
-      const place = suggestion.placePrediction.toPlace();
-
-      await place.fetchFields({
-        fields: ["id", "displayName", "formattedAddress", "location"],
-      });
-
-      const name = place.displayName || "";
-      const address = place.formattedAddress || "";
-
-      setInputValue(name || address);
-      setIsOpen(false);
-      setSuggestions([]);
-
-      setSessionToken(new placesLibrary.AutocompleteSessionToken());
-
-      onLocationSelect({
-        name: name,
-        google_place_id: place.id,
-        formatted_address: address,
-        latitude: place.location?.lat(),
-        longitude: place.location?.lng(),
-      });
-    } catch (error) {
-      console.error("Error fetching place details:", error);
-    }
-  };
-
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target;
-      if (!isNodeTarget(target)) {
-        return;
-      }
-
+    const handleClickOutside = (event: MouseEvent): void => {
+      const target = event.target;
+      if (!isNodeTarget(target)) return;
       if (
         containerRef.current &&
         !containerRef.current.contains(target)
@@ -125,43 +92,82 @@ export const LocationAutocomplete = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleSelect = async (
+    suggestion: google.maps.places.AutocompleteSuggestion,
+  ): Promise<void> => {
+    if (!suggestion.placePrediction || !placesLibrary) return;
+
+    try {
+      const place = suggestion.placePrediction.toPlace();
+      await place.fetchFields({
+        fields: ["id", "displayName", "formattedAddress", "location"],
+      });
+
+      const name = place.displayName ?? "";
+      const address = place.formattedAddress ?? "";
+
+      setInputValue(name || address);
+      setIsOpen(false);
+      setSuggestions([]);
+
+      setSessionToken(new placesLibrary.AutocompleteSessionToken());
+
+      onLocationSelect({
+        name,
+        google_place_id: place.id,
+        formatted_address: address,
+        latitude: place.location?.lat(),
+        longitude: place.location?.lng(),
+      });
+    } catch (error) {
+      console.error("[VoctManager Logistics] Place fetch failed:", error);
+    }
+  };
+
   return (
-    <div className="relative w-full" ref={containerRef}>
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ethereal-graphite/50 z-10">
-        <Search size={18} />
-      </div>
-      <input
-        ref={inputRef}
-        type="text"
+    <div ref={containerRef} className="relative w-full">
+      <Input
+        type="search"
+        label={label}
+        leftIcon={<Search size={16} aria-hidden="true" />}
         value={inputValue}
-        onChange={handleInputChange}
-        onFocus={() => {
-          if (suggestions.length > 0) setIsOpen(true);
-        }}
         placeholder={
           placeholder ||
           t(
             "logistics.autocomplete.placeholder",
-            "Wyszukaj globalne lokacje...",
+            "Zacznij wpisywać nazwę miejsca...",
           )
         }
-        className="w-full pl-10 pr-4 py-3 bg-white/40 border border-ethereal-gold/20 rounded-xl text-ethereal-ink placeholder-ethereal-graphite/60 focus:outline-none focus:ring-2 focus:ring-ethereal-gold/40 backdrop-blur-md transition-all duration-300"
+        onChange={(event) => setInputValue(event.target.value)}
+        onFocus={() => {
+          if (suggestions.length > 0) setIsOpen(true);
+        }}
       />
 
       {isOpen && suggestions.length > 0 && (
-        <ul className="absolute z-50 w-full mt-2 py-2 bg-ethereal-ink/90 backdrop-blur-xl border border-ethereal-incense/20 rounded-xl overflow-hidden shadow-2xl">
+        <ul
+          role="listbox"
+          className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-ethereal-incense/20 bg-ethereal-marble/95 py-2 shadow-glass-solid backdrop-blur-xl"
+        >
           {suggestions.map((suggestion, index) => {
             if (!suggestion.placePrediction) return null;
             return (
               <li
-                key={index}
-                onClick={() => handleSelect(suggestion)}
-                className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors duration-200 text-ethereal-marble text-sm"
+                key={`${suggestion.placePrediction.placeId ?? index}`}
+                role="option"
+                aria-selected="false"
+                onClick={() => void handleSelect(suggestion)}
+                className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors duration-200 hover:bg-ethereal-gold/10"
               >
-                <MapPin size={16} className="text-ethereal-gold/60 shrink-0" />
-                <span className="truncate">
+                <MapPin
+                  size={14}
+                  strokeWidth={1.6}
+                  className="shrink-0 text-ethereal-gold"
+                  aria-hidden="true"
+                />
+                <Text size="sm" color="default" truncate>
                   {suggestion.placePrediction.text.text}
-                </span>
+                </Text>
               </li>
             );
           })}
