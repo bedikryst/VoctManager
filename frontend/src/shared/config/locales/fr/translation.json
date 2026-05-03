@@ -23,8 +23,8 @@
       "traditional_unknown": "Traditionnel / Inconnu"
     },
     "dashboard": {
-      "collection_desc": "",
-      "collection_title": "",
+      "collection_desc": "Historique de vos événements réalisés.",
+      "collection_title": "Projets Historiques",
       "new_piece": "Nouvelle pièce",
       "subtitle": "Ressources du répertoire",
       "title": "Archive de",
@@ -460,6 +460,9 @@
     "create": "Créer",
     "currency": "PLN",
     "edit": "Modifier",
+    "editor_action_bar": {
+      "unsaved": "Modifications non enregistrées"
+    },
     "error_occurred": "Une erreur est survenue",
     "error_saving": "Erreur lors de l'enregistrement",
     "errors": {
@@ -499,6 +502,10 @@
     },
     "unsaved_desc": "Vous avez des modifications non enregistrées. Fermer l'éditeur entraînera leur perte.",
     "unsaved_title": "Modifications non enregistrées !"
+  },
+  "contact_filters": {
+    "no_phone": "Pas de téléphone",
+    "specialty_other": "Autre"
   },
   "contracts": {
     "actions": {
@@ -642,8 +649,7 @@
       "company": "Entreprise / Marque",
       "no_company": "Aucune donnée",
       "no_email": "Pas d'e-mail",
-      "no_phone": "Pas de téléphone",
-      "specialty_other": "Autre"
+      "no_phone": "Pas de téléphone"
     },
     "contact_filters": {
       "all": "Tout contact",
@@ -657,7 +663,9 @@
       "collection_desc": "Chaque carte ouvre l'édition rapide du profil, les détails de l'entreprise et le contact opérationnel.",
       "collection_title": "Équipe de production",
       "filtered_view": "Vue filtrée",
-      "in_view": "{{count}} dans la vue",
+      "in_view_one": "{{count}} dans la vue",
+      "in_view_many": "{{count}} dans la vue",
+      "in_view_other": "{{count}} dans la vue",
       "subtitle": "Logistique",
       "title": "Équipe",
       "title_highlight": "technique"
@@ -696,6 +704,7 @@
     "filters": {
       "active_description": "Cliquez sur un filtre pour le retirer sans réinitialiser toute la vue.",
       "active_filters_one": "{{count}} filtre actif",
+      "active_filters_many": "{{count}} filtres actifs",
       "active_filters_other": "{{count}} filtres actifs",
       "all_companies": "Toutes les entreprises",
       "all_specialties": "Toutes les spécialités",
@@ -723,10 +732,18 @@
       },
       "description": "Une vue centrale pour les collaborateurs externes, les entreprises partenaires et les spécialités qui soutiennent chaque production.",
       "stats": {
-        "companies": "{{count}} entreprises",
-        "people": "{{count}} collaborateurs",
-        "specialties": "{{count}} spécialités enregistrées",
-        "top_specialty": "Plus présent : {{label}} ({{count}})"
+        "companies_one": "{{count}} entreprise",
+        "companies_many": "{{count}} entreprises",
+        "companies_other": "{{count}} entreprises",
+        "people_one": "{{count}} collaborateur",
+        "people_many": "{{count}} collaborateurs",
+        "people_other": "{{count}} collaborateurs",
+        "specialties_one": "{{count}} spécialité enregistrée",
+        "specialties_many": "{{count}} spécialités enregistrées",
+        "specialties_other": "{{count}} spécialités enregistrées",
+        "top_specialty_one": "Plus présent : {{label}} ({{count}})",
+        "top_specialty_many": "Plus présent : {{label}} ({{count}})",
+        "top_specialty_other": "Plus présent : {{label}} ({{count}})"
       },
       "title": "Une équipe technique prête pour la production."
     },
@@ -745,14 +762,6 @@
       "OTHER": "Autre",
       "SOUND": "Son",
       "VISUALS": "Visuels"
-    },
-    "specialty_descriptions": {
-      "INSTRUMENT": "Instrumentistes externes et soutien instrumental.",
-      "LIGHT": "Conception lumière et habillage visuel de la scène.",
-      "LOGISTICS": "Transport, scène et sécurisation de la production.",
-      "OTHER": "Collaborateurs hors catégories standard.",
-      "SOUND": "Ingénierie son, mixage et amplification scénique.",
-      "VISUALS": "Multimédia, projections et contenus écran."
     },
     "toast": {
       "delete_error_desc": "Elle est probablement liée à des projets existants. Essayez plutôt de modifier ses données.",
@@ -916,17 +925,33 @@
       },
       "roles": {
         "admin": "Administrateur",
-        "artist": "Artiste",
-        "crew": "Équipe technique",
-        "guest": "Invité",
-        "TEN": "Ténor",
-        "CT": "Countertenor",
         "ALT": "Alto",
-        "SOP": "Soprano",
-        "BAS": "Basse",
-        "MEZ": "Mezzo-soprano",
+        "artist": "Artiste",
         "BAR": "Baryton",
-        "DIR": "Chef d'orchestre"
+        "BAS": "Basse",
+        "crew": "Équipe technique",
+        "CT": "Countertenor",
+        "DIR": "Chef d'orchestre",
+        "guest": "Invité",
+        "MEZ": "Mezzo-soprano",
+        "SOP": "Soprano",
+        "TEN": "Ténor"
+      },
+      "specialties": {
+        "INSTRUMENT": "Instruments",
+        "LIGHT": "Éclairage",
+        "LOGISTICS": "Logistique",
+        "OTHER": "Autre",
+        "SOUND": "Son",
+        "VISUALS": "Visuels"
+      },
+      "specialty_descriptions": {
+        "INSTRUMENT": "Instrumentistes externes et soutien instrumental.",
+        "LIGHT": "Conception lumière et habillage visuel de la scène.",
+        "LOGISTICS": "Transport, scène et sécurisation de la production.",
+        "OTHER": "Collaborateurs hors catégories standard.",
+        "SOUND": "Ingénierie son, mixage et amplification scénique.",
+        "VISUALS": "Multimédia, projections et contenus écran."
       }
     },
     "shared": {
@@ -934,6 +959,17 @@
       "load": "Synchronisation...",
       "syncing": "Synchronisation du tableau de bord..."
     }
+  },
+  "document_viewer": {
+    "back_aria": "Retour",
+    "back_to_app": "Retour au tableau de bord",
+    "fallback": {
+      "chorister_hub_title": "Document",
+      "project_call_sheet_title": "Feuille de service",
+      "project_score_title": "Partition de concert"
+    },
+    "invalid_description": "Nous n'avons pas reconnu ce lien de document. Il peut être malformé ou obsolète.",
+    "invalid_title": "Document non pris en charge"
   },
   "export": {
     "actions": {
@@ -1164,17 +1200,6 @@
     "title": "Notifications",
     "unread": "Non lues"
   },
-  "document_viewer": {
-    "back_aria": "Retour",
-    "back_to_app": "Retour au tableau de bord",
-    "fallback": {
-      "chorister_hub_title": "Document",
-      "project_call_sheet_title": "Feuille de service",
-      "project_score_title": "Partition de concert"
-    },
-    "invalid_description": "Nous n'avons pas reconnu ce lien de document. Il peut être malformé ou obsolète.",
-    "invalid_title": "Document non pris en charge"
-  },
   "pdf_viewer": {
     "download": "Télécharger",
     "error_403": "Vous n'avez pas la permission de voir ce document.",
@@ -1213,8 +1238,7 @@
       },
       "estimated_cost": "Coût estimé",
       "fab": {
-        "description": "Vous avez modifié les tarifs.",
-        "unsaved": "Modifications non enregistrées"
+        "description": "Vous avez modifié les tarifs."
       },
       "input_placeholder": "Saisir un montant...",
       "kpi": {
@@ -1304,6 +1328,10 @@
         "select_placeholder": "— Sélectionner un collaborateur —",
         "submit": "Assigner"
       },
+      "header": {
+        "subtitle": "Engagez des collaborateurs et attribuez-leur des rôles pour cette production.",
+        "title": "Équipe technique"
+      },
       "list": {
         "assigned_count_one": "{{count}} personne assignée",
         "assigned_count_few": "{{count}} personnes assignées",
@@ -1346,8 +1374,8 @@
       "time_title": "Heure locale",
       "toast": {
         "create_success": "Nouveau projet et planning créés",
-        "pdf_remove_failed": "",
-        "pdf_upload_failed": "",
+        "pdf_remove_failed": "Échec de la suppression du PDF",
+        "pdf_upload_failed": "Échec de l'envoi du PDF",
         "saving": "Enregistrement des détails du projet...",
         "update_success": "Projet et planning mis à jour"
       }
@@ -1361,8 +1389,7 @@
       },
       "fab": {
         "description": "Vous avez modifié les paramètres du projet.",
-        "save": "Enregistrer les modifications",
-        "unsaved": "Modifications non enregistrées"
+        "save": "Enregistrer les modifications"
       },
       "fields": {
         "call_time": "Convocation",
@@ -1378,6 +1405,7 @@
         "title": "Titre du projet *"
       },
       "header": {
+        "subtitle": "Titre, chronologie, code vestimentaire et documents de référence.",
         "title": "Détails de l'événement"
       },
       "placeholders": {
@@ -1411,6 +1439,10 @@
       "active_tab": "Onglet actif",
       "archive_badge": "Archive",
       "create_description": "Enregistrez d’abord les informations principales de l’événement, puis poursuivez dans les onglets opérationnels.",
+      "fab": {
+        "save": "Enregistrer",
+        "unsaved": "Modifications non enregistrées"
+      },
       "new_project": "Créateur de nouvel événement",
       "new_project_title": "Nouveau projet",
       "tabs": {
@@ -1466,10 +1498,17 @@
       }
     },
     "micro_cast": {
+      "action_bar": {
+        "description_one": "Vous avez glissé {{count}} modification. Enregistrez.",
+        "description_many": "Vous avez glissé {{count}} modifications. Enregistrez.",
+        "description_other": "Vous avez glissé {{count}} modifications. Enregistrez.",
+        "save": "Enregistrer casting"
+      },
       "artist": {
         "add_note": "Ajouter une note",
         "drag_aria": "Faire glisser {{name}}",
-        "note_placeholder": "Note..."
+        "note_placeholder": "Note...",
+        "pending_label": "En attente"
       },
       "bucket": {
         "aria": "Section de dépôt: ",
@@ -1491,6 +1530,16 @@
       "label": {
         "pieces_in_program": "Pièces du programme"
       },
+      "meta": {
+        "unsaved_one": "Non enregistré: {{count}}",
+        "unsaved_many": "Non enregistrés: {{count}}",
+        "unsaved_other": "Non enregistrés: {{count}}"
+      },
+      "piece_switch": {
+        "description": "Changer de pièce supprimera les affectations non enregistrées. Continuer ?",
+        "discard": "Ignorer et changer",
+        "title": "Modifications de casting"
+      },
       "sections": {
         "unassigned": "Non assignés (base de roster)"
       },
@@ -1500,9 +1549,8 @@
         "free": "Poste vacant"
       },
       "toast": {
-        "note_error": "Impossible de mettre à jour la note.",
-        "sync_error": "Erreur de synchronisation",
-        "sync_error_desc": "Impossible de mettre à jour la distribution."
+        "save_success": "Casting enregistré",
+        "save_success_desc": "Toutes les modifications sont synchronisées."
       },
       "voices": {
         "altos": "Altos",
@@ -1542,8 +1590,7 @@
         "setlist_title": "La setlist est vide"
       },
       "fab": {
-        "description": "Vous avez modifié l'ordre du programme.",
-        "unsaved": "Modifications non enregistrées"
+        "description": "Vous avez modifié l'ordre du programme."
       },
       "format": {
         "duration_hours": "~ {{h}}h {{m}}min de musique",
@@ -1602,6 +1649,10 @@
         "type_tutti": "Tutti (tout le monde)",
         "update": "Mettre à jour la répétition",
         "who": "Qui est convoqué à la répétition ?"
+      },
+      "header": {
+        "subtitle": "Planifiez les répétitions et gérez la présence.",
+        "title": "Répétitions"
       },
       "list": {
         "title": "Planning des répétitions"
@@ -1913,5 +1964,14 @@
     "loader": {
       "authorizing": "Synchronisation des partitions..."
     }
+  },
+  "voice_types": {
+    "ALT": "Alto",
+    "BAR": "Baryton",
+    "BAS": "Basse",
+    "CT": "Contre-ténor",
+    "MEZ": "Mezzo-soprano",
+    "SOP": "Soprano",
+    "TEN": "Ténor"
   }
 }

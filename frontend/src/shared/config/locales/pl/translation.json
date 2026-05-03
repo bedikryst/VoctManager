@@ -23,8 +23,8 @@
       "traditional_unknown": "Tradycyjny / Nieznany"
     },
     "dashboard": {
-      "collection_desc": "",
-      "collection_title": "",
+      "collection_desc": "Historia Twoich zrealizowanych wydarzeń.",
+      "collection_title": "Projekty Historyczne",
       "new_piece": "Nowy Utwór",
       "subtitle": "Zasoby Repertuarowe",
       "title": "Archiwum",
@@ -464,6 +464,9 @@
     "create": "Utwórz",
     "currency": "PLN",
     "edit": "Edytuj",
+    "editor_action_bar": {
+      "unsaved": "Niezapisane zmiany"
+    },
     "error_occurred": "Wystąpił błąd",
     "error_saving": "Błąd podczas zapisywania",
     "errors": {
@@ -503,6 +506,10 @@
     },
     "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie edytora spowoduje ich utratę.",
     "unsaved_title": "Masz niezapisane zmiany!"
+  },
+  "contact_filters": {
+    "no_phone": "Brak telefonu",
+    "specialty_other": "Inne"
   },
   "contracts": {
     "actions": {
@@ -648,8 +655,7 @@
       "company": "Firma / Marka",
       "no_company": "Brak danych",
       "no_email": "Brak e-mail",
-      "no_phone": "Brak telefonu",
-      "specialty_other": "Inne"
+      "no_phone": "Brak telefonu"
     },
     "contact_filters": {
       "all": "Dowolny kontakt",
@@ -663,7 +669,10 @@
       "collection_desc": "Każda karta otwiera szybką edycję profilu, dane firmy i kompletny kontakt operacyjny.",
       "collection_title": "Zespół produkcyjny",
       "filtered_view": "Widok filtrowany",
-      "in_view": "{{count}} w widoku",
+      "in_view_one": "{{count}} w widoku",
+      "in_view_few": "{{count}} w widoku",
+      "in_view_many": "{{count}} w widoku",
+      "in_view_other": "{{count}} w widoku",
       "subtitle": "Logistyka",
       "title": "Ekipa",
       "title_highlight": "Techniczna"
@@ -731,10 +740,22 @@
       },
       "description": "Jeden centralny widok dla zewnętrznych współpracowników, firm i specjalizacji wspierających każdą produkcję.",
       "stats": {
-        "companies": "{{count}} firm",
-        "people": "{{count}} współpracowników",
-        "specialties": "{{count}} specjalizacji w bazie",
-        "top_specialty": "Najliczniej: {{label}} ({{count}})"
+        "companies_one": "{{count}} firma",
+        "companies_few": "{{count}} firmy",
+        "companies_many": "{{count}} firm",
+        "companies_other": "{{count}} firm",
+        "people_one": "{{count}} współpracownik",
+        "people_few": "{{count}} współpracowników",
+        "people_many": "{{count}} współpracowników",
+        "people_other": "{{count}} współpracowników",
+        "specialties_one": "{{count}} specjalizacja w bazie",
+        "specialties_few": "{{count}} specjalizacje w bazie",
+        "specialties_many": "{{count}} specjalizacji w bazie",
+        "specialties_other": "{{count}} specjalizacji w bazie",
+        "top_specialty_one": "Najliczniej: {{label}} ({{count}})",
+        "top_specialty_few": "Najliczniej: {{label}} ({{count}})",
+        "top_specialty_many": "Najliczniej: {{label}} ({{count}})",
+        "top_specialty_other": "Najliczniej: {{label}} ({{count}})"
       },
       "title": "Ekipa techniczna gotowa na produkcję."
     },
@@ -753,14 +774,6 @@
       "OTHER": "Inne",
       "SOUND": "Dźwięk",
       "VISUALS": "Wizualizacje"
-    },
-    "specialty_descriptions": {
-      "INSTRUMENT": "Instrumentaliści zewnętrzni i obsługa instrumentów.",
-      "LIGHT": "Reżyseria świateł, oprawa wizualna sceny.",
-      "LOGISTICS": "Transport, scena, zabezpieczenie produkcji.",
-      "OTHER": "Współpracownicy spoza standardowych kategorii.",
-      "SOUND": "Realizacja dźwięku, miks i nagłośnienie sceniczne.",
-      "VISUALS": "Multimedia, projekcje, materiał ekranowy."
     },
     "toast": {
       "delete_error_desc": "Prawdopodobnie jest ona powiązana z istniejącymi projektami. Spróbuj edytować jej dane.",
@@ -925,17 +938,33 @@
       },
       "roles": {
         "admin": "Administrator",
-        "artist": "Artysta",
-        "crew": "Obsługa Techniczna",
-        "guest": "Gość",
-        "TEN": "Tenor",
-        "CT": "Kontratenor",
         "ALT": "Alt",
-        "SOP": "Sopran",
-        "BAS": "Bas",
-        "MEZ": "Mezzosopran",
+        "artist": "Artysta",
         "BAR": "Baryton",
-        "DIR": "Dyrygent"
+        "BAS": "Bas",
+        "crew": "Obsługa Techniczna",
+        "CT": "Kontratenor",
+        "DIR": "Dyrygent",
+        "guest": "Gość",
+        "MEZ": "Mezzosopran",
+        "SOP": "Sopran",
+        "TEN": "Tenor"
+      },
+      "specialties": {
+        "INSTRUMENT": "Instrumenty",
+        "LIGHT": "Światło",
+        "LOGISTICS": "Logistyka",
+        "OTHER": "Inne",
+        "SOUND": "Dźwięk",
+        "VISUALS": "Wizualizacje"
+      },
+      "specialty_descriptions": {
+        "INSTRUMENT": "Instrumentaliści zewnętrzni i obsługa instrumentów.",
+        "LIGHT": "Reżyseria świateł, oprawa wizualna sceny.",
+        "LOGISTICS": "Transport, scena, zabezpieczenie produkcji.",
+        "OTHER": "Współpracownicy spoza standardowych kategorii.",
+        "SOUND": "Realizacja dźwięku, miks i nagłośnienie sceniczne.",
+        "VISUALS": "Multimedia, projekcje, materiał ekranowy."
       }
     },
     "shared": {
@@ -943,6 +972,17 @@
       "load": "Synchronizacja Aury...",
       "syncing": "Synchronizacja pulpitu..."
     }
+  },
+  "document_viewer": {
+    "back_aria": "Wróć",
+    "back_to_app": "Powrót do panelu",
+    "fallback": {
+      "chorister_hub_title": "Dokument",
+      "project_call_sheet_title": "Call-Sheet",
+      "project_score_title": "Partytura koncertu"
+    },
+    "invalid_description": "Nie rozpoznaliśmy tego linku do dokumentu. Może być uszkodzony lub nieaktualny.",
+    "invalid_title": "Nieobsługiwany dokument"
   },
   "export": {
     "actions": {
@@ -1173,17 +1213,6 @@
     "title": "Powiadomienia",
     "unread": "nieprzeczytane"
   },
-  "document_viewer": {
-    "back_aria": "Wróć",
-    "back_to_app": "Powrót do panelu",
-    "fallback": {
-      "chorister_hub_title": "Dokument",
-      "project_call_sheet_title": "Call-Sheet",
-      "project_score_title": "Partytura koncertu"
-    },
-    "invalid_description": "Nie rozpoznaliśmy tego linku do dokumentu. Może być uszkodzony lub nieaktualny.",
-    "invalid_title": "Nieobsługiwany dokument"
-  },
   "pdf_viewer": {
     "download": "Pobierz",
     "error_403": "Nie masz uprawnień do wyświetlenia tego dokumentu.",
@@ -1222,8 +1251,7 @@
       },
       "estimated_cost": "Przewidywany Koszt",
       "fab": {
-        "description": "Wprowadziłeś zmiany w stawkach.",
-        "unsaved": "Niezapisane zmiany"
+        "description": "Wprowadziłeś zmiany w stawkach."
       },
       "input_placeholder": "Wpisz kwotę...",
       "kpi": {
@@ -1313,6 +1341,10 @@
         "select_placeholder": "— Wybierz współpracownika —",
         "submit": "Przypisz"
       },
+      "header": {
+        "subtitle": "Zatrudnij współpracowników z bazy i przypisz im role na tym koncercie.",
+        "title": "Ekipa realizacyjna"
+      },
       "list": {
         "assigned_count_one": "{{count}} osoba przypisana",
         "assigned_count_few": "{{count}} osoby przypisane",
@@ -1355,8 +1387,8 @@
       "time_title": "Czas lokalny",
       "toast": {
         "create_success": "Utworzono nowy projekt z harmonogramem",
-        "pdf_remove_failed": "",
-        "pdf_upload_failed": "",
+        "pdf_remove_failed": "Nie udało się usunąć pliku PDF",
+        "pdf_upload_failed": "Nie udało się wgrać pliku PDF",
         "saving": "Zapisywanie szczegółów projektu...",
         "update_success": "Zaktualizowano projekt i harmonogram"
       }
@@ -1370,8 +1402,7 @@
       },
       "fab": {
         "description": "Zmodyfikowałeś ustawienia projektu.",
-        "save": "Zapisz Zmiany",
-        "unsaved": "Niezapisane Zmiany"
+        "save": "Zapisz Zmiany"
       },
       "fields": {
         "call_time": "Zbiórka (Call Time)",
@@ -1387,6 +1418,7 @@
         "title": "Tytuł Projektu *"
       },
       "header": {
+        "subtitle": "Tytuł, harmonogram, dress code i materiały referencyjne projektu.",
         "title": "Szczegóły Wydarzenia"
       },
       "placeholders": {
@@ -1420,6 +1452,10 @@
       "active_tab": "Aktywna zakładka",
       "archive_badge": "Archiwum",
       "create_description": "Najpierw zapisz podstawowe dane wydarzenia, a następnie przejdź do kolejnych zakładek operacyjnych.",
+      "fab": {
+        "save": "Zapisz Zmiany",
+        "unsaved": "Niezapisane Zmiany"
+      },
       "new_project": "Kreator nowego wydarzenia",
       "new_project_title": "Nowy projekt",
       "tabs": {
@@ -1475,10 +1511,18 @@
       }
     },
     "micro_cast": {
+      "action_bar": {
+        "description_one": "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
+        "description_few": "Przeciągnięto {{count}} zmiany. Zapisz, aby zsynchronizować obsadę.",
+        "description_many": "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
+        "description_other": "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
+        "save": "Zapisz casting"
+      },
       "artist": {
         "add_note": "Dodaj notatkę",
         "drag_aria": "Przeciągnij {{name}}",
-        "note_placeholder": "Notatka..."
+        "note_placeholder": "Notatka...",
+        "pending_label": "Niezapisane"
       },
       "bucket": {
         "aria": "Sekcja upuszczania: ",
@@ -1500,6 +1544,17 @@
       "label": {
         "pieces_in_program": "Utwory w programie"
       },
+      "meta": {
+        "unsaved_one": "Niezapisane: {{count}}",
+        "unsaved_few": "Niezapisane: {{count}}",
+        "unsaved_many": "Niezapisane: {{count}}",
+        "unsaved_other": "Niezapisane: {{count}}"
+      },
+      "piece_switch": {
+        "description": "Przełączenie utworu odrzuci wszystkie niezapisane przypisania w tej sekcji. Czy chcesz kontynuować?",
+        "discard": "Odrzuć i przełącz",
+        "title": "Niezapisane zmiany castingu"
+      },
       "sections": {
         "unassigned": "Nieprzypisani (Baza Osobowa)"
       },
@@ -1509,9 +1564,8 @@
         "free": "Wolny Wakat"
       },
       "toast": {
-        "note_error": "Nie udało się zaktualizować notatki.",
-        "sync_error": "Błąd synchronizacji",
-        "sync_error_desc": "Nie udało się zaktualizować obsady."
+        "save_success": "Casting zapisany",
+        "save_success_desc": "Wszystkie zmiany zostały zsynchronizowane."
       },
       "voices": {
         "altos": "Alty",
@@ -1551,8 +1605,7 @@
         "setlist_title": "Setlista jest pusta"
       },
       "fab": {
-        "description": "Zmodyfikowałeś kolejność programu.",
-        "unsaved": "Niezapisane Zmiany"
+        "description": "Zmodyfikowałeś kolejność programu."
       },
       "format": {
         "duration_hours": "~ {{h}}h {{m}}min muzyki",
@@ -1611,6 +1664,10 @@
         "type_tutti": "Tutti (Wszyscy)",
         "update": "Aktualizuj próbę",
         "who": "Kto jest wezwany na próbę?"
+      },
+      "header": {
+        "subtitle": "Planuj próby, zarządzaj uczestnictwem sekcji oraz frekwencją.",
+        "title": "Próby"
       },
       "list": {
         "title": "Harmonogram Prób"
@@ -1922,5 +1979,14 @@
     "loader": {
       "authorizing": "Synchronizacja nut..."
     }
+  },
+  "voice_types": {
+    "ALT": "Alt",
+    "BAR": "Baryton",
+    "BAS": "Bas",
+    "CT": "Kontratenor",
+    "MEZ": "Mezzosopran",
+    "SOP": "Sopran",
+    "TEN": "Tenor"
   }
 }
