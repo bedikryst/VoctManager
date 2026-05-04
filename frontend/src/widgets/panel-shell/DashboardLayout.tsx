@@ -8,7 +8,7 @@
  */
 
 import React, { Suspense, useEffect } from "react";
-import { useLocation, useOutlet } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -45,8 +45,6 @@ export const DashboardLayout = ({
   const { user, logout } = useAuth();
   const location = useLocation();
   const canPreloadManagerRoutes = isManager(user);
-
-  const outlet = useOutlet();
 
   useEffect(() => {
     document.body.classList.add("admin-mode");
@@ -111,7 +109,7 @@ export const DashboardLayout = ({
               className="flex-1 flex flex-col w-full h-full"
             >
               <Suspense fallback={<DashboardRouteFallback />}>
-                {outlet}
+                <Outlet />
               </Suspense>
             </motion.div>
           </AnimatePresence>
