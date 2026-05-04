@@ -37,12 +37,7 @@ export function RunSheetWidget({
   const hasRunSheet = sortedRunSheet.length > 0;
 
   return (
-    <GlassCard
-      variant="solid"
-      padding="none"
-      isHoverable={false}
-      className="overflow-hidden"
-    >
+    <GlassCard variant="solid" padding="none" isHoverable={false}>
       <div
         className="flex cursor-pointer items-center justify-between p-5 transition-colors hover:bg-ethereal-alabaster/45"
         onClick={() => setIsOpen(!isOpen)}

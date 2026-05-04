@@ -41,6 +41,7 @@ export const InvitationStatusWidget = ({
         as="button"
         type="button"
         variant="light"
+        padding="none"
         withNoise
         isHoverable
         onClick={() => setIsModalOpen(true)}

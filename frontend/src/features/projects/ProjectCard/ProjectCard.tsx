@@ -30,7 +30,7 @@ import { CrewWidget } from "./widgets/CrewWidget";
 import { BudgetWidget } from "./widgets/BudgetWidget";
 
 const STYLE_DISABLED =
-  "opacity-70 saturate-[0.8] grayscale-[0.2] transition-all duration-500";
+  "opacity-70 saturate-[0.8] grayscale-[0.2] transition-[opacity,filter] duration-500 ease-out";
 
 export interface ProjectCardDashboardData {
   isLoading: boolean;
@@ -193,7 +193,8 @@ export const ProjectCard = ({
       className={`group ${isDone ? STYLE_DISABLED : ""}`}
       variant="light"
       padding="none"
-      glow
+      isHoverable={false}
+      animationEngine="framer"
     >
       {!isDone && (
         <div

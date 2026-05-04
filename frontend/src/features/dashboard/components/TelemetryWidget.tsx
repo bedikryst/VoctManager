@@ -76,8 +76,10 @@ export function TelemetryWidget({
   return (
     <GlassCard
       variant="light"
+      padding="none"
+      isHoverable={false}
       withNoise
-      className="isolate flex h-full w-full flex-col justify-between p-6 md:p-8 xl:p-10 pb-4 md:pb-5 xl:pb-6"
+      className="flex h-full w-full flex-col justify-between p-6 pb-4 md:p-8 md:pb-5 xl:p-10 xl:pb-6"
     >
       {/* UPPER STRATUM: Resonance Metrics */}
       <section className="relative z-10 flex flex-col">

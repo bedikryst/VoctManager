@@ -158,16 +158,11 @@ function SortablePieceItem({
             className="shrink-0 text-ethereal-graphite/30 transition-colors group-hover:text-ethereal-gold"
             aria-hidden="true"
           />
-          <GlassCard
-            variant="light"
-            padding="none"
-            isHoverable={false}
-            className="flex h-8 w-8 shrink-0 items-center justify-center"
-          >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-ethereal-incense/15 bg-ethereal-marble/60">
             <Text size="xs" weight="bold" color="gold">
               {index + 1}
             </Text>
-          </GlassCard>
+          </div>
 
           <div className="flex min-w-0 flex-col">
             <Text

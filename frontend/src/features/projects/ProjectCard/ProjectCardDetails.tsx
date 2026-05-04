@@ -87,13 +87,10 @@ export function ProjectCardDetails({
         padding="md"
         isHoverable={false}
         withNoise
-        className="relative flex-1 border-ethereal-incense/15"
+        className="flex-1 border-ethereal-incense/15"
       >
-        {/* Ambient corner glow — animates opacity only */}
-        <motion.div
-          animate={{ opacity: [0.04, 0.12, 0.04] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          className="pointer-events-none absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-ethereal-gold blur-3xl"
+        <div
+          className="pointer-events-none absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-ethereal-gold opacity-[0.08] blur-3xl"
           aria-hidden="true"
         />
 

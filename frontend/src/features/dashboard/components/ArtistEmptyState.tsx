@@ -6,7 +6,7 @@
  * @module features/dashboard/components/ArtistEmptyState
  */
 
-import React from "react";
+import React, { type CSSProperties } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Feather } from "lucide-react";
@@ -14,36 +14,43 @@ import { Feather } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 
-/**
- * Background element creating an organic, breathing sound-wave effect.
- */
+type BreathRing = {
+  size: number;
+  borderClass: string;
+  duration: string;
+  delay: string;
+  scale: string;
+  min: string;
+  max: string;
+};
+
+const RESONANCE_RINGS: ReadonlyArray<BreathRing> = [
+  { size: 280, borderClass: "border-ethereal-gold/30", duration: "8s", delay: "0s", scale: "1.4", min: "0.10", max: "0.30" },
+  { size: 380, borderClass: "border-ethereal-sage/20", duration: "12s", delay: "2s", scale: "1.7", min: "0.05", max: "0.15" },
+  { size: 500, borderClass: "border-ethereal-incense/10", duration: "16s", delay: "4s", scale: "1.2", min: "0.02", max: "0.08" },
+];
+
 const ResonanceWaves = (): React.JSX.Element => (
   <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none mix-blend-multiply">
-    <motion.div
-      animate={{ scale: [1, 1.4, 1], opacity: [0.1, 0.3, 0.1] }}
-      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      className="absolute w-[280px] h-[280px] rounded-full border border-ethereal-gold/30"
-    />
-    <motion.div
-      animate={{ scale: [1, 1.7, 1], opacity: [0.05, 0.15, 0.05] }}
-      transition={{
-        duration: 12,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay: 2,
-      }}
-      className="absolute w-[380px] h-[380px] rounded-full border border-ethereal-sage/20"
-    />
-    <motion.div
-      animate={{ scale: [1, 1.2, 1], opacity: [0.02, 0.08, 0.02] }}
-      transition={{
-        duration: 16,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay: 4,
-      }}
-      className="absolute w-[500px] h-[500px] rounded-full border border-ethereal-incense/10"
-    />
+    {RESONANCE_RINGS.map((ring) => {
+      const style: CSSProperties & Record<string, string> = {
+        width: `${ring.size}px`,
+        height: `${ring.size}px`,
+        "--breath-duration": ring.duration,
+        "--breath-delay": ring.delay,
+        "--breath-scale": ring.scale,
+        "--breath-min": ring.min,
+        "--breath-max": ring.max,
+      };
+      return (
+        <div
+          key={ring.size}
+          aria-hidden="true"
+          style={style}
+          className={`ethereal-breath absolute rounded-full border ${ring.borderClass}`}
+        />
+      );
+    })}
   </div>
 );
 
@@ -59,9 +66,8 @@ export const ArtistEmptyState = (): React.JSX.Element => {
       <GlassCard
         variant="light"
         padding="lg"
-        glow={true}
-        isHoverable={true}
-        className="group flex flex-col items-center justify-center py-24 text-center overflow-hidden"
+        isHoverable={false}
+        className="group flex flex-col items-center justify-center py-24 text-center"
         backgroundElement={<ResonanceWaves />}
       >
         <motion.div

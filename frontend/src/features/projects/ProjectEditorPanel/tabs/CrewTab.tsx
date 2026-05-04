@@ -122,18 +122,13 @@ export const CrewTab = ({
       >
         <div className="relative z-10 flex items-center justify-between border-b border-ethereal-incense/20 bg-ethereal-parchment/40 p-5">
           <div className="flex items-center gap-2.5">
-            <GlassCard
-              variant="light"
-              padding="none"
-              isHoverable={false}
-              className="flex h-8 w-8 items-center justify-center"
-            >
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-ethereal-incense/15 bg-ethereal-marble/60">
               <Wrench
                 size={14}
                 className="text-ethereal-graphite"
                 aria-hidden="true"
               />
-            </GlassCard>
+            </div>
             <Eyebrow color="default">
               {t("projects.crew.list.title", "Skład Ekipy (Crew)")}
             </Eyebrow>

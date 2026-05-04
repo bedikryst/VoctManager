@@ -53,8 +53,9 @@ export function NextRehearsalAlert({
       <GlassCard
         variant="ethereal"
         padding="none"
+        isHoverable={false}
         className={cn(
-          "group/alert relative z-10 overflow-hidden transition-all duration-700 ease-[0.16,1,0.3,1]",
+          "group/alert z-10",
           "hover:border-ethereal-gold/30 hover:shadow-[0_16px_48px_rgba(166,146,121,0.15)]",
         )}
         backgroundElement={<KineticGlow variant="sage" position="left" />}

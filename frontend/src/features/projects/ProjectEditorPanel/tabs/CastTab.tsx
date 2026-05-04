@@ -18,7 +18,7 @@ import {
   UserPlus,
   Trash2,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 import type { Artist, ParticipationStatus } from "@/shared/types";
 import { Input } from "@/shared/ui/primitives/Input";
@@ -242,11 +242,8 @@ export const CastTab = ({
         </GlassCard>
       </div>
 
-      <AnimatePresence mode="popLayout" initial={false}>
-        <div className="grid flex-1 min-h-0 w-full grid-cols-1 gap-6 overflow-hidden pb-8 md:grid-cols-2 md:gap-8">
-          <motion.div
-            key="available-list"
-            layoutId="available-list-container"
+      <div className="grid flex-1 min-h-0 w-full grid-cols-1 gap-6 overflow-hidden pb-8 md:grid-cols-2 md:gap-8">
+          <div
             className={`h-full flex-1 min-h-0 flex-col [scrollbar-gutter:stable] ${
               mobileView === "AVAILABLE" ? "flex" : "hidden md:flex"
             }`}
@@ -288,11 +285,9 @@ export const CastTab = ({
                 </div>
               )}
             </GlassCard>
-          </motion.div>
+          </div>
 
-          <motion.div
-            key="assigned-list"
-            layoutId="assigned-list-container"
+          <div
             className={`flex-col flex-1 min-h-0 h-full [scrollbar-gutter:stable] ${
               mobileView === "ASSIGNED" ? "flex" : "hidden md:flex"
             }`}
@@ -348,9 +343,8 @@ export const CastTab = ({
                 </div>
               )}
             </GlassCard>
-          </motion.div>
+          </div>
         </div>
-      </AnimatePresence>
     </div>
   );
 };
