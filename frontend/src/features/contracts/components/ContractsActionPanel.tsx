@@ -9,7 +9,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Calculator, Download, Users } from "lucide-react";
 
-import { ExportContractButton } from "@/shared/widgets/domain/ExportContractButton";
+import { ExportContractButton } from "@/widgets/domain/ExportContractButton";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
