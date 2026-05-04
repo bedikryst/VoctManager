@@ -45,6 +45,9 @@ graph TD
 
     subgraph BackgroundProcessing
         Redis <--> Celery[Celery 5.3 Workers]
+        Celery <--> NotificationService[Notification Router Service]
+        NotificationService -->|Email| Resend[Resend Email API]
+        NotificationService -->|Push| Firebase[Firebase Push API]
         Celery <--> DB
         Celery -->|WeasyPrint PDF Gen| Ext[File System / S3]
     end
