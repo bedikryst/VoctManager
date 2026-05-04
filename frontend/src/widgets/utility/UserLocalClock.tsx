@@ -4,7 +4,7 @@
  * Zero-box paradigm. Pure typography with an expanding kinetic dimension for seconds.
  * Resolves V8 event-loop drift via recursive delta timeouts.
  * @architecture Enterprise SaaS 2026
- * @module shared/widgets/utility/UserLocalClock
+ * @module widgets/utility/UserLocalClock
  */
 
 import React, { useState, useEffect, useMemo } from "react";

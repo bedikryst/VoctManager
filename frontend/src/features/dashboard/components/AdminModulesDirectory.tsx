@@ -8,7 +8,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
+import { SystemModuleCard } from "@/widgets/domain/SystemModuleCard";
 import { ADMIN_BENTO_DIRECTIVES } from "@/shared/config/navigation/dashboard.config";
 import {
   BENTO_CONTAINER_VARIANTS,

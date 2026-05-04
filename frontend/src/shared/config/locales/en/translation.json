@@ -23,8 +23,8 @@
       "traditional_unknown": "Traditional / Unknown"
     },
     "dashboard": {
-      "collection_desc": "Każda karta prowadzi bezpośrednio do szczegółów utworu, plików nutowych i zarządzania ścieżkami audio.",
-      "collection_title": "Kolekcja robocza",
+      "collection_desc": "The piece archive is the central repository for all repertoire resources. Each card represents a piece with its metadata, reference recordings, and attached sheet music. Use the filters to narrow down the collection or add new pieces to expand the library.",
+      "collection_title": "Piece archive",
       "new_piece": "New Piece",
       "subtitle": "Repertoire Resources",
       "title": "Sheet Music",
@@ -134,7 +134,7 @@
         "sheet_music_attached": "Sheet music is already attached in the database."
       },
       "toast": {
-        "composer_required": "Nazwisko kompozytora jest wymagane.",
+        "composer_required": "Composer name is required.",
         "create_success": "Piece added successfully.",
         "creating": "Adding piece to archive...",
         "save_error_desc": "Check the data and try again.",
@@ -151,12 +151,12 @@
       "badge": "Archive Operations",
       "description": "A single operational view for managing the piece catalog, materials, and reference recordings.",
       "stats": {
-        "composers_one": "{{count}} kompozytorów",
-        "composers_other": "{{count}} kompozytorów",
-        "references_one": "{{count}} utworów z referencjami",
-        "references_other": "{{count}} utworów z referencjami",
-        "voicings_one": "{{count}} profili obsady",
-        "voicings_other": "{{count}} profili obsady"
+        "composers_one": "{{count}} composer",
+        "composers_other": "{{count}} composers",
+        "references_one": "{{count}} pieces with references",
+        "references_other": "{{count}} pieces with references",
+        "voicings_one": "{{count}} voicing profiles",
+        "voicings_other": "{{count}} voicing profiles"
       },
       "title": "Sheet music, score and audio library."
     },
@@ -312,7 +312,7 @@
         "missing_params": "This link is missing activation parameters. Open the latest invitation email and use the full button or URL.",
         "new_password": "New password",
         "new_password_placeholder": "Create a secure password",
-        "privacy_link": "Politykę Prywatności",
+        "privacy_link": "VoctManager Privacy Policy",
         "security_desc": "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
         "security_title": "Security standard",
         "subtitle": "Password setup",
@@ -342,9 +342,66 @@
       "footer_security": "Secured by JWT Auth • 2026",
       "password_label": "Access key",
       "password_placeholder": "••••••••",
+      "privacy_link": "Privacy Policy",
       "submit_button": "Authorize access",
       "submitting": "Authorizing...",
-      "subtitle": "Administration & HR Panel"
+      "subtitle": "Administration & HR Panel",
+      "terms_link": "Terms of Service"
+    },
+    "legal": {
+      "common": {
+        "last_updated": "Last updated: {{date}}",
+        "print": "Print",
+        "close_button": "I understand and close"
+      },
+      "privacy": {
+        "administrator": "Data Administrator",
+        "administrator_desc": "The administrator of your data is the Foundation \"VoctFoundation\" based in Krakow (31-150), ul. Św. Filipa 23/3. For data protection inquiries, contact: kontakt@voctensemble.com.",
+        "contact_email": "voctensemble@gmail.com",
+        "goals_and_basis": "Goals and Legal Basis for Processing",
+        "goals_items": {
+          "account": {
+            "desc": "First name, last name, email, phone – data necessary to fulfill the Foundation's statutory goals and artistic cooperation (Art. 6 (1) (b) GDPR).",
+            "title": "Account and Cooperation"
+          },
+          "contracts": {
+            "desc": "First and last name are used to generate document templates. Other data (PESEL, address) are filled in manually by the User outside the system.",
+            "title": "Contract Preparation"
+          },
+          "logistics": {
+            "desc": "Clothing size (costumes) and location data – our legitimate interest in organizing concert production (Art. 6 (1) (f) GDPR).",
+            "title": "Logistics and Production"
+          }
+        },
+        "reporting": "Report any system errors, inconsistencies in schedules, or access issues to: voctensemble@gmail.com.",
+        "reporting_title": "Reporting Issues and Support",
+        "security_and_tech": "Technologies and Security (JWT)",
+        "security_desc": "The application uses JWT (JSON Web Token) technology stored in the browser's memory (LocalStorage) solely to maintain login sessions and ensure secure data access. We do not use tracking cookies.",
+        "subtitle": "Privacy Policy",
+        "title": "Privacy Policy",
+        "your_rights": "Your Rights",
+        "your_rights_desc": "You have the right to: access your data, correct it, delete it, restrict processing, data portability, and object to processing. You also have the right to lodge a complaint with the President of the Office for Personal Data Protection (PUODO).",
+        "your_rights_title": "Your Rights",
+        "recipients": "Data Recipients",
+        "recipients_desc": "We entrust data to trusted providers: DigitalOcean (server infrastructure) and Google (map services). Use of audio widgets may involve technical data transfer to the USA under the Data Privacy Framework.",
+        "recipients_title": "Data Recipients"
+      },
+      "terms": {
+        "blocking_account": "Responsibility and Account Blocking",
+        "blocking_desc": "The Foundation reserves the right to temporarily suspend or permanently delete a User's account in case of confidentiality violation or gross breach of team working rules. The Foundation is not liable for downtime resulting from external providers' fault.",
+        "character_and_usage": "System Character and Usage Rules",
+        "character_desc": "VoctManager is an internal operational tool of the Foundation. Access is granted individually. It is prohibited to share access credentials and personal iCal links with third parties.",
+        "confidentiality": "Confidentiality and NDA",
+        "confidentiality_desc": "Information about rates, production plans, rehearsal locations, and cast assignments is subject to professional secrecy. Taking screenshots of the application's interior and sharing them on social media without Board approval is prohibited.",
+        "intellectual_property": "Intellectual Property and Materials",
+        "intellectual_property_desc": "All sheet music (PDF), demo recordings (MP3), and educational materials provided in the system are the property of the Foundation or cooperating entities. Downloading materials is allowed only for preparation for VoctEnsemble concerts. Copying and distributing them without permission is prohibited.",
+        "support_title": "Reporting Issues and Support",
+        "support_desc_prefix": "Report any system errors, inconsistencies in schedules, or access issues to",
+        "support_desc_suffix": ".",
+        "subtitle": "Terms of Service",
+        "title": "Terms of Service",
+        "title_highlight": "VoctManager"
+      }
     },
     "logout": "Log out"
   },
@@ -440,7 +497,7 @@
       "retry": "Retry",
       "save": "Save",
       "select": "Select",
-      "undo": "Cofnij"
+      "undo": "Undo"
     },
     "archive": "Archive",
     "aria": {
@@ -455,7 +512,7 @@
     "currency": "PLN",
     "edit": "Edit",
     "editor_action_bar": {
-      "unsaved": "Niezapisane zmiany"
+      "unsaved": "Unsaved changes"
     },
     "error_occurred": "An error occurred",
     "error_saving": "Error saving",

@@ -17,6 +17,18 @@ import { cn } from "@/shared/lib/utils";
 const SUPPORTED_LANGUAGES = ["pl", "en", "fr"] as const;
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
+const LANGUAGE_DISPLAY = {
+  pl: "PL",
+  en: "EN",
+  fr: "FR",
+} as const;
+
+const LANGUAGE_FULL_NAMES = {
+  pl: "Polski",
+  en: "English",
+  fr: "Français",
+} as const;
+
 const buttonVariants = cva(
   [
     "relative px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em]",
@@ -69,7 +81,7 @@ export const AuthLanguageSwitcher: React.FC<AuthLanguageSwitcherProps> = ({
           <button
             type="button"
             onClick={() => handleChange(lang)}
-            aria-label={t(`auth.language_switcher.${lang}_full`)}
+            aria-label={LANGUAGE_FULL_NAMES[lang]}
             aria-current={currentLang === lang ? "true" : undefined}
             className={buttonVariants({ active: currentLang === lang })}
           >
@@ -82,7 +94,7 @@ export const AuthLanguageSwitcher: React.FC<AuthLanguageSwitcherProps> = ({
               />
             )}
             <span className="relative">
-              {t(`auth.language_switcher.${lang}`)}
+              {LANGUAGE_DISPLAY[lang]}
             </span>
           </button>
 

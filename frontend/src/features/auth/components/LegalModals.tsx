@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Printer } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -24,6 +25,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
   onClose,
   type,
 }) => {
+  const { t } = useTranslation();
   useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
@@ -63,11 +65,13 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               <div>
                 <Heading size="3xl" weight="medium" color="default">
                   {type === "privacy"
-                    ? "Polityka Prywatności"
-                    : "Regulamin Serwisu"}
+                    ? t("auth.legal.privacy.title")
+                    : t("auth.legal.terms.title")}
                 </Heading>
                 <Eyebrow color="muted" className="mt-1">
-                  Ostatnia aktualizacja: 26.04.2026
+                  {t("auth.legal.common.last_updated", {
+                    date: "26.04.2026",
+                  })}
                 </Eyebrow>
               </div>
               <div className="flex items-center gap-2">
@@ -78,7 +82,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   className="hidden sm:flex"
                 >
                   <Printer className="w-4 h-4 ml-3" />
-                  Drukuj
+                  {t("auth.legal.common.print")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -99,7 +103,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             {/* Footer */}
             <div className="p-4 border-t border-ethereal-incense/10 flex justify-end bg-white/50">
               <Button variant="primary" onClick={onClose} className="mr-6">
-                Rozumiem i zamykam
+                {t("auth.legal.common.close_button")}
               </Button>
             </div>
           </GlassCard>
@@ -109,52 +113,47 @@ export const LegalModal: React.FC<LegalModalProps> = ({
   );
 };
 
-const PrivacyContent: React.FC = () => (
-  <div className="space-y-6">
+const PrivacyContent: React.FC = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        1. Administrator Danych
+        {t("auth.legal.privacy.administrator")}
       </Eyebrow>
       <Text color="graphite" size="md" className="mt-2">
-        Administratorem Twoich danych jest Fundacja „VoctFoundation” z siedzibą
-        w Krakowie (31-150), ul. Św. Filipa 23/3. Kontakt w sprawach ochrony
-        danych: kontakt@voctensemble.com.
+        {t("auth.legal.privacy.administrator_desc")}
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        2. Cele i Podstawy Przetwarzania
+        {t("auth.legal.privacy.goals_and_basis")}
       </Eyebrow>
       <ul className="space-y-4 list-none pl-0 m-0">
         <li>
           <Text weight="bold" color="default" size={"md"} className="mt-2">
-            Obsługa Konta i Współpraca:
+            {t("auth.legal.privacy.goals_items.account.title")}:
           </Text>
           <Text size="md" color="graphite" className="mt-1">
-            Imię, nazwisko, e-mail, telefon – dane niezbędne do realizacji celów
-            statutowych Fundacji i współpracy artystycznej (Art. 6 ust. 1 lit. b
-            RODO).
+            {t("auth.legal.privacy.goals_items.account.desc")}
           </Text>
         </li>
         <li>
           <Text weight="bold" color="default" size={"md"}>
-            Logistyka i Produkcja:
+            {t("auth.legal.privacy.goals_items.logistics.title")}:
           </Text>
           <Text size="md" color="graphite" className="mt-1">
-            Rozmiar ubrań (kostiumy) oraz dane o lokalizacji – nasz prawnie
-            uzasadniony interes w organizacji produkcji koncertowych (Art. 6
-            ust. 1 lit. f RODO).
+            {t("auth.legal.privacy.goals_items.logistics.desc")}
           </Text>
         </li>
         <li>
           <Text weight="bold" color="default" size={"md"} className="mt-2">
-            Przygotowanie Umów:
+            {t("auth.legal.privacy.goals_items.contracts.title")}:
           </Text>
           <Text size="md" color="graphite" className="mt-1">
-            Imię i nazwisko są wykorzystywane do generowania wzorów dokumentów.
-            Pozostałe dane (PESEL, adres) są uzupełniane przez Użytkownika
-            ręcznie poza systemem.
+            {t("auth.legal.privacy.goals_items.contracts.desc")}
           </Text>
         </li>
       </ul>
@@ -162,106 +161,85 @@ const PrivacyContent: React.FC = () => (
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        3. Technologie i Bezpieczeństwo (JWT)
+        {t("auth.legal.privacy.security_and_tech")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Aplikacja wykorzystuje technologię JWT (JSON Web Token) przechowywaną w
-        pamięci przeglądarki (LocalStorage) wyłącznie w celu utrzymania sesji
-        logowania oraz zapewnienia bezpieczeństwa dostępu do danych. Nie
-        stosujemy ciasteczek śledzących.
+        {t("auth.legal.privacy.security_desc")}
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        4. Odbiorcy Danych
+        {t("auth.legal.privacy.recipients")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Dane powierzamy sprawdzonym dostawcom: DigitalOcean (infrastruktura
-        serwerowa) oraz Google (usługi map). Korzystanie z widgetów audio może
-        wiązać się z transferem technicznym danych do USA w oparciu o Data
-        Privacy Framework.
+        {t("auth.legal.privacy.recipients_desc")}
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        5. Twoje Prawa
+        {t("auth.legal.privacy.your_rights_title")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Masz prawo do: wglądu w swoje dane, ich sprostowania, usunięcia,
-        ograniczenia przetwarzania, przenoszenia danych oraz wniesienia
-        sprzeciwu. Przysługuje Ci również prawo do wniesienia skargi do Prezesa
-        Urzędu Ochrony Danych Osobowych (PUODO).
+        {t("auth.legal.privacy.your_rights_desc")}
       </Text>
     </div>
   </div>
-);
+  );
+};
 
-const TermsContent: React.FC = () => (
-  <div className="space-y-6">
+const TermsContent: React.FC = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        1. Charakter Systemu
+        {t("auth.legal.terms.character_and_usage")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        VoctManager jest wewnętrznym narzędziem operacyjnym Fundacji. Dostęp do
-        niego jest przyznawany indywidualnie. Zakazuje się udostępniania danych
-        dostępowych oraz personalnych linków iCal osobom trzecim.
+        {t("auth.legal.terms.character_desc")}
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        2. Własność Intelektualna i Materiały
+        {t("auth.legal.terms.intellectual_property")}
       </Eyebrow>
       <div className="bg-ethereal-gold/10 p-4 border-l-2 border-ethereal-gold mt-2">
         <Text size="md" color="graphite" className="italic mt-2">
-          Wszelkie nuty (PDF), nagrania próbne (MP3) i materiały edukacyjne
-          udostępnione w systemie stanowią własność Fundacji lub podmiotów
-          współpracujących. Pobieranie materiałów jest dozwolone wyłącznie w
-          celu przygotowania do koncertów VoctEnsemble. Kopiowanie i
-          rozpowszechnianie ich bez zgody jest zabronione.
+          {t("auth.legal.terms.intellectual_property_desc")}
         </Text>
       </div>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        3. Poufność i NDA
+        {t("auth.legal.terms.confidentiality")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Informacje o stawkach, planach produkcyjnych, lokalizacjach prób oraz
-        obsadach są objęte tajemnicą zawodową. Zabrania się publikowania zrzutów
-        ekranu z wnętrza aplikacji w mediach społecznościowych bez zgody
-        Zarządu.
+        {t("auth.legal.terms.confidentiality_desc")}
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        4. Zgłaszanie Problemów i Wsparcie
+        {t("auth.legal.terms.support_title")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Wszelkie błędy w działaniu systemu, nieścisłości w grafikach lub
-        problemy z dostępem należy zgłaszać pod adresem:{" "}
-        <span className="font-medium text-ethereal-ink">
-          voctensemble@gmail.com
-        </span>
-        .
+        {t("auth.legal.terms.support_desc_prefix")} <span className="font-medium text-ethereal-ink">{t("auth.legal.privacy.contact_email")}</span> {t("auth.legal.terms.support_desc_suffix")}
       </Text>
     </div>
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
-        5. Odpowiedzialność i Blokowanie Konta
+        {t("auth.legal.terms.blocking_account")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
-        Fundacja zastrzega sobie prawo do czasowego zawieszenia lub trwałego
-        usunięcia konta Użytkownika w przypadku naruszenia zasad poufności lub
-        rażącego naruszenia regulaminu pracy zespołu. Fundacja nie odpowiada za
-        przerwy techniczne wynikające z winy dostawców zewnętrznych.
+        {t("auth.legal.terms.blocking_desc")}
       </Text>
     </div>
   </div>
-);
+  );
+};

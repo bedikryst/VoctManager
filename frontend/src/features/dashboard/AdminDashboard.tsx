@@ -14,7 +14,7 @@ import api from "@/shared/api/api";
 import type { Artist } from "@/shared/types";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 
-import { UserLocalClock } from "@/shared/widgets/utility/UserLocalClock";
+import { UserLocalClock } from "@/widgets/utility/UserLocalClock";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import {
   StaggeredBentoContainer,

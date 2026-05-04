@@ -13,7 +13,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
 import { ARTIST_BENTO_DIRECTIVES } from "@/shared/config/navigation/dashboard.config";
 
-import { SystemModuleCard } from "@/shared/widgets/domain/SystemModuleCard";
+import { SystemModuleCard } from "@/widgets/domain/SystemModuleCard";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import {
   StaggeredBentoContainer,
@@ -21,7 +21,7 @@ import {
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
-import { UserLocalClock } from "@/shared/widgets/utility/UserLocalClock";
+import { UserLocalClock } from "@/widgets/utility/UserLocalClock";
 
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";

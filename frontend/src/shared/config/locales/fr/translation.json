@@ -348,9 +348,66 @@
       "footer_security": "Sécurisé par JWT Auth • 2026",
       "password_label": "Clé d'accès",
       "password_placeholder": "••••••••",
+      "privacy_link": "Politique de confidentialité",
       "submit_button": "Autoriser l'accès",
       "submitting": "Autorisation en cours...",
-      "subtitle": "Panneau d'administration et RH"
+      "subtitle": "Panneau d'administration et RH",
+      "terms_link": "Conditions d'utilisation"
+    },
+    "legal": {
+      "common": {
+        "last_updated": "Dernière mise à jour : {{date}}",
+        "print": "Imprimer",
+        "close_button": "Je comprends et je ferme"
+      },
+      "privacy": {
+        "administrator": "Responsable du traitement",
+        "administrator_desc": "Le responsable du traitement de vos données est la Fondation \"VoctFoundation\" basée à Cracovie (31-150), ul. Św. Filipa 23/3. Pour toute question concernant la protection des données, contactez : kontakt@voctensemble.com.",
+        "contact_email": "voctensemble@gmail.com",
+        "goals_and_basis": "Objectifs et base juridique du traitement",
+        "goals_items": {
+          "account": {
+            "desc": "Prénom, nom, e-mail, téléphone – données nécessaires pour réaliser les objectifs statutaires de la Fondation et la coopération artistique (Art. 6 (1) (b) RGPD).",
+            "title": "Gestion du compte et coopération"
+          },
+          "contracts": {
+            "desc": "Le prénom et le nom sont utilisés pour générer des modèles de documents. Les autres données (PESEL, adresse) sont remplies manuellement par l'utilisateur en dehors du système.",
+            "title": "Préparation des contrats"
+          },
+          "logistics": {
+            "desc": "Taille des vêtements (costumes) et données de localisation – notre intérêt légitime dans l'organisation de la production de concerts (Art. 6 (1) (f) RGPD).",
+            "title": "Logistique et production"
+          }
+        },
+        "reporting": "Toute erreur de fonctionnement du système, incohérence dans les horaires ou problème d'accès doit être signalé à : voctensemble@gmail.com.",
+        "reporting_title": "Signalement de problèmes et support",
+        "security_and_tech": "Technologies et sécurité (JWT)",
+        "security_desc": "L'application utilise la technologie JWT (JSON Web Token) stockée dans la mémoire du navigateur (LocalStorage) uniquement pour maintenir les sessions de connexion et assurer un accès sécurisé aux données. Nous n'utilisons pas de cookies de suivi.",
+        "subtitle": "Politique de confidentialité",
+        "title": "Politique de confidentialité",
+        "your_rights": "Vos droits",
+        "your_rights_desc": "Vous avez le droit d'accéder à vos données, de les rectifier, de les supprimer, de restreindre le traitement, de les transférer et de vous opposer au traitement. Vous avez également le droit de déposer une plainte auprès du Président de l'Office pour la protection des données personnelles (UODO).",
+        "your_rights_title": "Vos droits",
+        "recipients": "Destinataires des données",
+        "recipients_desc": "Nous confions vos données à des prestataires de confiance : DigitalOcean (infrastructure serveur) et Google (services de cartographie). L'utilisation de widgets audio peut entraîner un transfert technique de données vers les États-Unis en vertu du Data Privacy Framework.",
+        "recipients_title": "Destinataires des données"
+      },
+      "terms": {
+        "blocking_account": "Responsabilité et blocage de compte",
+        "blocking_desc": "La Fondation se réserve le droit de suspendre temporairement ou de supprimer définitivement le compte d'un utilisateur en cas de violation de confidentialité ou de violation flagrante des règles de travail en équipe. La Fondation ne peut être tenue responsable des interruptions dues à la faute de fournisseurs externes.",
+        "character_and_usage": "Nature du système",
+        "character_desc": "VoctManager est un outil opérationnel interne de la Fondation. L'accès est accordé individuellement. Il est interdit de partager les identifiants d'accès et les liens iCal personnels avec des tiers.",
+        "confidentiality": "Confidentialité et NDA",
+        "confidentiality_desc": "Les informations sur les tarifs, les plans de production, les lieux de répétition et les distributions sont soumises au secret professionnel. Il est interdit de publier des captures d'écran de l'intérieur de l'application sur les réseaux sociaux sans l'approbation du Conseil.",
+        "intellectual_property": "Propriété intellectuelle et matériels",
+        "intellectual_property_desc": "Toutes les partitions (PDF), les enregistrements de répétition (MP3) et les matériels pédagogiques fournis dans le système sont la propriété de la Fondation ou de ses partenaires. Le téléchargement de matériels est autorisé uniquement pour la préparation des concerts VoctEnsemble. La copie et la distribution sans permission sont interdites.",
+        "support_title": "Signalement de problèmes et support",
+        "support_desc_prefix": "Toute erreur de fonctionnement du système, incohérence dans les horaires ou problème d'accès doit être signalé à",
+        "support_desc_suffix": ".",
+        "subtitle": "Conditions d'utilisation",
+        "title": "Conditions d'utilisation",
+        "title_highlight": "VoctManager"
+      }
     },
     "logout": "Déconnexion"
   },

@@ -352,9 +352,66 @@
       "footer_security": "Zabezpieczone przez JWT Auth • 2026",
       "password_label": "Klucz dostępu",
       "password_placeholder": "••••••••",
+      "privacy_link": "Politykę Prywatności",
       "submit_button": "Autoryzuj dostęp",
       "submitting": "Autoryzacja...",
-      "subtitle": "Panel Administracyjny & Kadrowy"
+      "subtitle": "Panel Administracyjny & Kadrowy",
+      "terms_link": "Regulamin serwisu"
+    },
+    "legal": {
+      "common": {
+        "last_updated": "Ostatnia aktualizacja: {{date}}",
+        "print": "Drukuj",
+        "close_button": "Rozumiem i zamykam"
+      },
+      "privacy": {
+        "administrator": "Administrator Danych",
+        "administrator_desc": "Administratorem Twoich danych jest Fundacja \"VoctFoundation\" z siedzibą w Krakowie (31-150), ul. Św. Filipa 23/3. Kontakt w sprawach ochrony danych: kontakt@voctensemble.com.",
+        "contact_email": "voctensemble@gmail.com",
+        "goals_and_basis": "Cele i Podstawy Przetwarzania",
+        "goals_items": {
+          "account": {
+            "desc": "Imię, nazwisko, e-mail, telefon – dane niezbędne do realizacji celów statutowych Fundacji i współpracy artystycznej (Art. 6 ust. 1 lit. b RODO).",
+            "title": "Obsługa Konta i Współpraca"
+          },
+          "contracts": {
+            "desc": "Imię i nazwisko są wykorzystywane do generowania wzorów dokumentów. Pozostałe dane (PESEL, adres) są uzupełniane przez Użytkownika ręcznie poza systemem.",
+            "title": "Przygotowanie Umów"
+          },
+          "logistics": {
+            "desc": "Rozmiar ubrań (kostiumy) oraz dane o lokalizacji – nasz prawnie uzasadniony interes w organizacji produkcji koncertowych (Art. 6 ust. 1 lit. f RODO).",
+            "title": "Logistyka i Produkcja"
+          }
+        },
+        "reporting": "Wszelkie błędy w działaniu systemu, nieścisłości w grafikach lub problemy z dostępem należy zgłaszać pod adresem: voctensemble@gmail.com.",
+        "reporting_title": "Zgłaszanie Problemów i Wsparcie",
+        "security_and_tech": "Technologie i Bezpieczeństwo (JWT)",
+        "security_desc": "Aplikacja wykorzystuje technologię JWT (JSON Web Token) przechowywaną w pamięci przeglądarki (LocalStorage) wyłącznie w celu utrzymania sesji logowania oraz zapewnienia bezpieczeństwa dostępu do danych. Nie stosujemy ciasteczek śledzących.",
+        "subtitle": "Polityka Prywatności",
+        "title": "Polityka Prywatności",
+        "your_rights": "Twoje Prawa",
+        "your_rights_desc": "Masz prawo do: wglądu w swoje dane, ich sprostowania, usunięcia, ograniczenia przetwarzania, przenoszenia danych oraz wniesienia sprzeciwu. Przysługuje Ci również prawo do wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych (PUODO).",
+        "your_rights_title": "Twoje Prawa",
+        "recipients": "Odbiorcy Danych",
+        "recipients_desc": "Dane powierzamy sprawdzonym dostawcom: DigitalOcean (infrastruktura serwerowa) oraz Google (usługi map). Korzystanie z widgetów audio może wiązać się z transferem technicznym danych do USA w oparciu o Data Privacy Framework.",
+        "recipients_title": "Odbiorcy Danych"
+      },
+      "terms": {
+        "blocking_account": "Odpowiedzialność i Blokowanie Konta",
+        "blocking_desc": "Fundacja zastrzega sobie prawo do czasowego zawieszenia lub trwałego usunięcia konta Użytkownika w przypadku naruszenia zasad poufności lub rażącego naruszenia regulaminu pracy zespołu. Fundacja nie odpowiada za przerwy techniczne wynikające z winy dostawców zewnętrznych.",
+        "character_and_usage": "Charakter Systemu",
+        "character_desc": "VoctManager jest wewnętrznym narzędziem operacyjnym Fundacji. Dostęp do niego jest przyznawany indywidualnie. Zakazuje się udostępniania danych dostępowych oraz personalnych linków iCal osobom trzecim.",
+        "confidentiality": "Poufność i NDA",
+        "confidentiality_desc": "Informacje o stawkach, planach produkcyjnych, lokalizacjach prób oraz obsadach są objęte tajemnicą zawodową. Zabrania się publikowania zrzutów ekranu z wnętrza aplikacji w mediach społecznościowych bez zgody Zarządu.",
+        "intellectual_property": "Własność Intelektualna i Materiały",
+        "intellectual_property_desc": "Wszelkie nuty (PDF), nagrania próbne (MP3) i materiały edukacyjne udostępnione w systemie stanowią własność Fundacji lub podmiotów współpracujących. Pobieranie materiałów jest dozwolone wyłącznie w celu przygotowania do koncertów VoctEnsemble. Kopiowanie i rozpowszechnianie ich bez zgody jest zabronione.",
+        "support_title": "Zgłaszanie Problemów i Wsparcie",
+        "support_desc_prefix": "Wszelkie błędy w działaniu systemu, nieścisłości w grafikach lub problemy z dostępem należy zgłaszać pod adresem:",
+        "support_desc_suffix": ".",
+        "subtitle": "Regulamin serwisu",
+        "title": "Regulamin serwisu",
+        "title_highlight": "VoctManager"
+      }
     },
     "logout": "Wyloguj się"
   },
