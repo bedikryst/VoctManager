@@ -151,8 +151,10 @@ VoctManager is architected for continuous evolution toward production-grade obse
 | Main Dashboard (Staggered Bento OS) | Project & Logistics Editor |
 |:---:|:---:|
 | <img src="docs/assets/dashboard.png" width="400" alt="Main Dashboard showcasing Bento Grid"/> | <img src="docs/assets/editor.png" width="400" alt="Project Editor"/> |
-| **Smart Archive (Asset Management)** | **High-Density Attendance Matrix** |
-| <img src="docs/assets/archive.png" width="400" alt="Smart Archive view"/> | <img src="docs/assets/matrix.png" width="400" alt="Attendance Matrix"/> |
+| **Locations Management** | **Notifications Center** |
+| <img src="docs/assets/locations.png" width="400" alt="Locations Management view"/> | <img src="docs/assets/notifications.png" width="400" alt="Notifications Center"/> |
+| **System Settings** | **Knowledge Base** |
+| <img src="docs/assets/settings.png" width="400" alt="System Settings view"/> | <img src="docs/assets/chorister.png" width="400" alt="Knowledge base"/> |
 
 ---
 
@@ -210,7 +212,7 @@ The backend provides fully interactive, automatically generated OpenAPI (Swagger
 ## 👨‍💻 Engineering Leadership
 
 **Krystian Bugalski**  
-Enterprise Software Engineer & UI/UX Specialist  
+Software Engineer & UI/UX Specialist  
 * [LinkedIn](https://www.linkedin.com/in/krystian-bugalski)  
 * [GitHub](https://github.com/bedikryst)  
 

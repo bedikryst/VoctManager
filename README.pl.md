@@ -150,9 +150,11 @@ VoctManager jest zaprojektowany do ciągłej ewolucji w kierunku obserwowalnośc
 
 | Główny Dashboard (Staggered Bento OS) | Projekt i edytor logistyki |
 |:---:|:---:|
-| <img src="docs/assets/dashboard.png" width="400" alt="Main Dashboard showcasing Bento Grid"/> | <img src="docs/assets/editor.png" width="400" alt="Project Editor"/> |
-| **Smart Archive (Zarządzanie zasobami)** | **Macierz obecności o wysokiej gęstości** |
-| <img src="docs/assets/archive.png" width="400" alt="Smart Archive view"/> | <img src="docs/assets/matrix.png" width="400" alt="Attendance Matrix"/> |
+| <img src="docs/assets/dashboard.png" width="400" alt="Główny Dashboard prezentujący siatkę Bento"/> | <img src="docs/assets/editor.png" width="400" alt="Edytor projektu"/> |
+| **Zarządzanie lokalizacjami** | **Centrum powiadomień** |
+| <img src="docs/assets/locations.png" width="400" alt="Widok zarządzania lokalizacjami"/> | <img src="docs/assets/notifications.png" width="400" alt="Centrum powiadomień"/> |
+| **Ustawienia systemu** | **Baza wiedzy** |
+| <img src="docs/assets/settings.png" width="400" alt="Widok ustawień systemu"/> | <img src="docs/assets/chorister.png" width="400" alt="Baza wiedzy"/> |
 
 ---
 
