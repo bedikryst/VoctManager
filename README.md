@@ -28,7 +28,7 @@ The platform is built on a highly decoupled architecture designed for high avail
 graph TD
     Client([Web Browser / Mobile]) -->|HTTPS| Nginx[Nginx Reverse Proxy]
     
-    subgraph Frontend: React 19 (Vite + FSD)
+    subgraph Frontend: React 19 [(Vite + FSD)]
         Nginx -->|Serves Static UI| React[React SPA]
         React -->|TanStack Query v5 / Zustand| StateManager[State & Cache]
     end
