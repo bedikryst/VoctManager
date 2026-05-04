@@ -110,9 +110,39 @@ graph TD
 ## 🔒 Security & Data Compliance
 
 Processing artist contracts, rehearsal schedules, and copyrighted musical material requires uncompromising security:
+
+### Authentication & Access Control
 * **Stateless Authentication:** Secure, `httpOnly` cookie strategies with JWT rotation to mitigate XSS and CSRF vectors.
+* **Granular RBAC:** Role-based access matrices (Admin, Manager, Artist, Crew) with fine-grained endpoint and payload restrictions.
+* **Token-Gated Asset Distribution:** Sensitive repertoire (Sheet Music PDFs, Reference Audio) secured with time-limited, signed tokens tied exclusively to active project participation.
+
+### Data Protection & Privacy
 * **GDPR Compliance:** Built-in data minimization workflows and soft-deletion mechanisms to preserve production history while meeting strict privacy regulations.
-* **Domain Integrity:** Strict relational database constraints coupled with Pydantic service-layer validation to guarantee data consistency.
+* **Field-Level Encryption:** Sensitive fields (contracts, payroll data) encrypted at rest using FERNET cipher.
+* **Audit Logging:** Immutable transaction logs for all mutations on HR and financial records, enabling forensic analysis and compliance reporting.
+
+### Domain Integrity
+* **Relational Constraints:** Strict foreign key and check constraints at the database layer prevent data corruption during complex multi-entity operations (e.g., casting rollbacks, contract terminations).
+* **Pydantic Validation:** Service-layer DTOs enforce type safety and business rule validation before persistence, eliminating silent data degradation.
+
+---
+
+## 🚦 Engineering Roadmap (2026 Vision)
+
+VoctManager is architected for continuous evolution toward production-grade observability and resilience:
+
+- [x] **Core ERP & Logistics:** Complete domain models for projects, rosters, contracts, and scheduling.
+- [x] **Event-Driven Notifications:** Async notification routing with Resend (email) and Firebase (push) providers.
+- [x] **Containerization & Orchestration:** Docker & Docker Compose with zero-parity between Dev and Prod environments.
+- [x] **Asynchronous Processing:** Celery + Redis for background tasks (document generation, batch notifications, data export).
+- [ ] **Observability & APM:** Sentry for error tracking, Prometheus + Grafana for metrics and dashboards.
+- [ ] **Distributed Tracing:** OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
+- [ ] **Automated Testing:** PyTest coverage for critical business paths (contract generation, payroll calculations, casting algorithms).
+- [ ] **CI/CD Pipelines:** GitHub Actions for automated lint, build, test, and zero-downtime deploys.
+- [ ] **Advanced Caching:** Redis cluster for session management and distributed cache invalidation.
+- [ ] **Rate Limiting & DDoS Protection:** CloudFlare + WAF rules for API abuse prevention.
+- [ ] **Database Replication:** PostgreSQL streaming replication for high availability and disaster recovery.
+- [ ] **SMS & Voice:** Twilio integration for rehearsal reminders and critical schedule alerts.
 
 ---
 

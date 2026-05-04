@@ -110,9 +110,39 @@ graph TD
 ## 🔒 Bezpieczeństwo, prywatność i zgodność danych
 
 Przetwarzanie umów artystycznych, harmonogramów prób i chronionych materiałów muzycznych wymaga najwyższej klasy zabezpieczeń:
-* **Zgodność z RODO (GDPR):** Rozwiązania zaprojektowane pod minimalizację danych oraz mechanizmy miękkiego usuwania (soft-deletion), zachowujące integralność historii produkcji.
-* **Uwierzytelnianie:** Bezpieczna, bezstanowa strategia oparta na ciasteczkach HttpOnly i rotacji tokenów JWT, ograniczająca ryzyko XSS i CSRF.
-* **Integralność danych:** Restrykcyjne ograniczenia bazodanowe połączone z walidacją aplikacyjną zapobiegają uszkodzeniu tabel relacyjnych przy złożonych operacjach castingowych.
+
+### Uwierzytelnianie i kontrola dostępu
+* **Uwierzytelnianie bezstanowe:** Bezpieczna strategia oparta na ciasteczkach HttpOnly i rotacji tokenów JWT, ograniczająca ryzyko XSS i CSRF.
+* **Granularny RBAC:** Macierze kontroli dostępu oparte na rolach (Admin, Manager, Artysta, Crew) z restrykcjami na poziomie endpointu i payloadu.
+* **Dystrybucja zasobów z zabezpieczeniem tokenem:** Wrażliwe zasoby repertuarowe (PDF-y nut, pliki referencyjne audio) zabezpieczone czasowo ograniczonymi, podpisanymi tokenami powiązanymi wyłącznie z aktywnym uczestnictwem w projekcie.
+
+### Ochrona danych i prywatność
+* **Zgodność z RODO:** Zbudowane przepływy minimalizacji danych i mechanizmy miękkiego usuwania, aby zachować historię produkcji, spełniając ścisłe przepisy dotyczące prywatności.
+* **Szyfrowanie na poziomie pola:** Wrażliwe pola (umowy, dane wynagrodzenia) są szyfrowane w spoczynku przy użyciu szyfru FERNET.
+* **Dziennik audytu:** Niezmienne logi transakcji dla wszystkich mutacji dotyczących danych HR i finansowych, umożliwiające analizę kryminalistyczną i raportowanie zgodności.
+
+### Integralność domeny
+* **Ograniczenia relacyjne:** Ścisłe ograniczenia klucza obcego i sprawdzenia na poziomie bazy danych zapobiegają uszkodzeniu danych podczas złożonych operacji wieloentityowych (np. wycofywanie castingu, rozwiązywanie umów).
+* **Walidacja Pydantic:** Usługowe DTO wymuszają bezpieczeństwo typów i walidację reguł biznesowych przed utrwalieniem, eliminując cichą degradację danych.
+
+---
+
+## 🚦 Mapa drogi inżynierii (Wizja 2026)
+
+VoctManager jest zaprojektowany do ciągłej ewolucji w kierunku obserwowalności i odporności klasy produkcyjnej:
+
+- [x] **Podstawowe ERP i logistyka:** Kompletne modele domeny dla projektów, zespołów, umów i planowania.
+- [x] **Powiadomienia oparte na zdarzeniach:** Asynchroniczne trasowanie powiadomień z dostawcami Resend (email) i Firebase (push).
+- [x] **Konteneryzacja i orkiestracja:** Docker i Docker Compose z zerową parytetem między środowiskami Dev i Prod.
+- [x] **Przetwarzanie asynchroniczne:** Celery + Redis dla zadań w tle (generowanie dokumentów, powiadomienia grupowe, eksport danych).
+- [ ] **Obserwowalność i APM:** Sentry do śledzenia błędów, Prometheus + Grafana do metryk i dashboardów.
+- [ ] **Rozproszone śledzenie:** Instrumentacja OpenTelemetry do śledzenia żądań end-to-end między usługami i zewnętrznymi API.
+- [ ] **Automatyczne testowanie:** Pokrycie PyTest dla krytycznych ścieżek biznesowych (generowanie umów, kalkulacje wynagrodzeń, algorytmy castingu).
+- [ ] **Pipelines CI/CD:** GitHub Actions do zautomatyzowanego lint, build, test i wdrożeń bez przestojów.
+- [ ] **Zaawansowane buforowanie:** Klaster Redis do zarządzania sesją i unieważniania rozproszonej pamięci podręcznej.
+- [ ] **Limitowanie szybkości i ochrona DDoS:** Reguły CloudFlare + WAF do zapobiegania nadużywaniu API.
+- [ ] **Replikacja bazy danych:** Replikacja przesyłania PostgreSQL w celu zapewnienia wysokiej dostępności i odzyskiwania po awarii.
+- [ ] **SMS i połączenia głosowe:** Integracja Twilio dla przypomnień o próbach i krytycznych alertów harmonogramu.
 
 ---
 
