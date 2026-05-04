@@ -1,7 +1,7 @@
-/**
+﻿/**
  * @file App.tsx
  * @description Main application routing, global layout orchestrator, and notification registry.
- * Dynamically resolves rendering trees based on active routes (Public vs. Secure Zones).
+ * Dynamically resolves rendering trees based on active routes (Marketing Site vs. Secure Panel).
  * Implements Persistent App Shell architecture for the Dashboard with local route
  * suspension and idle preloading for panel modules.
  * @architecture Enterprise 2026 Standards
@@ -13,9 +13,9 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
-import { GlobalNavbar } from "@/shared/widgets/layout/GlobalNavbar";
-import { OverlayMenu } from "@/shared/widgets/layout/OverlayMenu";
-import { FooterSection } from "@/shared/widgets/layout/FooterSection";
+import { GlobalNavbar } from "@/widgets/marketing-shell/GlobalNavbar";
+import { OverlayMenu } from "@/widgets/marketing-shell/OverlayMenu";
+import { FooterSection } from "@/widgets/marketing-shell/FooterSection";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { CustomCursor } from "@/shared/ui/kinematics/CustomCursor";
 import { NoiseOverlay } from "@/shared/ui/kinematics/NoiseOverlay";
@@ -26,9 +26,9 @@ import ManagerRoute from "./router/ManagerRoute";
 import {
   DashboardLayout,
   type DashboardRoutePreloader,
-} from "@/shared/widgets/layout/DashboardLayout";
+} from "@/widgets/panel-shell/DashboardLayout";
 
-import Home from "@pages/public/HomePage";
+import Home from "@pages/marketing/HomePage";
 
 import { CSRFProvider } from "@/app/providers/CSRFProvider";
 
@@ -58,17 +58,25 @@ function lazyWithPreload<TComponent extends RouteComponent>(
   return Component;
 }
 
-// Public routes are lazy-loaded while HomePage stays eager for LCP priority.
-const Login = lazyWithPreload(() => import("@pages/public/LoginPage"));
-const Activate = lazyWithPreload(() => import("@pages/public/ActivatePage"));
+// Marketing site pages are lazy-loaded while HomePage stays eager for LCP priority.
+const EnsemblePage = lazyWithPreload(() => import("@pages/marketing/EnsemblePage"));
+const ExperiencePage = lazyWithPreload(() => import("@pages/marketing/ExperiencePage"));
+const FoundationPage = lazyWithPreload(() => import("@pages/marketing/FoundationPage"));
+const DonatePage = lazyWithPreload(() => import("@pages/marketing/DonatePage"));
+const CollaborationsPage = lazyWithPreload(() => import("@pages/marketing/CollaborationsPage"));
+const ContactPage = lazyWithPreload(() => import("@pages/marketing/ContactPage"));
+
+// Auth routes are public and lazy-loaded.
+const Login = lazyWithPreload(() => import("@pages/auth/LoginPage"));
+const Activate = lazyWithPreload(() => import("@pages/auth/ActivatePage"));
 
 // Secure shell entry points are lazy-loaded and warmed after the dashboard shell mounts.
 const DashboardHome = lazyWithPreload(
   () => import("@features/dashboard/DashboardHome"),
 );
-const SettingsPage = lazyWithPreload(() => import("@pages/app/SettingsPage"));
+const SettingsPage = lazyWithPreload(() => import("@pages/panel/SettingsPage"));
 const LogisticsLocationsPage = lazyWithPreload(
-  () => import("@pages/app/LogisticsLocationsPage"),
+  () => import("@pages/panel/LogisticsLocationsPage"),
 );
 const Schedule = lazyWithPreload(() => import("@features/schedule/Schedule"));
 const Materials = lazyWithPreload(() =>
@@ -88,7 +96,7 @@ const Rehearsals = lazyWithPreload(
   () => import("@features/rehearsals/Rehearsals"),
 );
 const ArtistManagement = lazyWithPreload(
-  () => import("@pages/app/ArtistsPage"),
+  () => import("@pages/panel/ArtistsPage"),
 );
 const ProjectDashboard = lazyWithPreload(() =>
   import("@features/projects/ProjectDashboard").then((m) => ({
@@ -96,7 +104,7 @@ const ProjectDashboard = lazyWithPreload(() =>
   })),
 );
 const ArchiveManagement = lazyWithPreload(
-  () => import("@pages/app/ArchivePage"),
+  () => import("@pages/panel/ArchivePage"),
 );
 const CrewManagement = lazyWithPreload(
   () => import("@features/crew/CrewManagement"),
@@ -104,7 +112,7 @@ const CrewManagement = lazyWithPreload(
 
 // Standalone, fullscreen authed route — sibling of the dashboard shell, not nested in it.
 const DocumentViewerPage = lazyWithPreload(
-  () => import("@pages/app/DocumentViewerPage"),
+  () => import("@pages/panel/DocumentViewerPage"),
 );
 
 const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
@@ -132,7 +140,7 @@ export default function App(): React.JSX.Element {
   const isAuthRoute: boolean =
     location.pathname === "/login" || location.pathname === "/activate";
 
-  const shouldShowGlobalComponents: boolean =
+  const shouldShowMarketingShell: boolean =
     !isPanelRoute && !isAuthRoute && !isDocumentViewerRoute;
 
   return (
@@ -144,8 +152,8 @@ export default function App(): React.JSX.Element {
         version="weekly"
         libraries={["places", "geocoding"]}
       >
-        {shouldShowGlobalComponents && <Preloader />}
-        {shouldShowGlobalComponents && (
+        {shouldShowMarketingShell && <Preloader />}
+        {shouldShowMarketingShell && (
           <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
         )}
 
@@ -156,6 +164,54 @@ export default function App(): React.JSX.Element {
               element={
                 <PageTransition>
                   <Home />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/o-zespole"
+              element={
+                <PageTransition>
+                  <EnsemblePage />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/repertuar"
+              element={
+                <PageTransition>
+                  <ExperiencePage />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/fundacja"
+              element={
+                <PageTransition>
+                  <FoundationPage />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/darowizna"
+              element={
+                <PageTransition>
+                  <DonatePage />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/wspolpraca"
+              element={
+                <PageTransition>
+                  <CollaborationsPage />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/kontakt"
+              element={
+                <PageTransition>
+                  <ContactPage />
                 </PageTransition>
               }
             />
@@ -213,13 +269,13 @@ export default function App(): React.JSX.Element {
           </Routes>
         </Suspense>
 
-        {shouldShowGlobalComponents && <FooterSection />}
-        {shouldShowGlobalComponents && (
+        {shouldShowMarketingShell && <FooterSection />}
+        {shouldShowMarketingShell && (
           <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
         )}
 
-        {shouldShowGlobalComponents && <NoiseOverlay />}
-        {shouldShowGlobalComponents && <CustomCursor />}
+        {shouldShowMarketingShell && <NoiseOverlay />}
+        {shouldShowMarketingShell && <CustomCursor />}
 
         <Toaster position="top-right" richColors closeButton duration={4000} />
       </APIProvider>

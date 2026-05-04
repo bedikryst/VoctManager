@@ -4,7 +4,7 @@
  * Features deep dark mode, staggered typographic reveals, an editorial
  * serif-to-sans hover effect, and contextual background image reveals.
  * Refactored to Enterprise 2026 Standards: Centralized Kinematics, Body Scroll Lock.
- * @module shared/widgets/layout/OverlayMenu
+ * @module widgets/marketing-shell/OverlayMenu
  */
 
 import React, { useState } from "react";

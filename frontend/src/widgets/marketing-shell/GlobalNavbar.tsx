@@ -4,7 +4,7 @@
  * Implements "Immersive Mode" (bare) on the Home page, guarantees a clean start.
  * Refactored to Strict TS 7.0, i18next integration, and Ethereal UI compliance.
  * Decoupled logic resides in useNavbarKinematics.
- * @module shared/widgets/layout/GlobalNavbar
+ * @module widgets/marketing-shell/GlobalNavbar
  */
 
 import React from "react";

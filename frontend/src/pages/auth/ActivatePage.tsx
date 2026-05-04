@@ -25,6 +25,7 @@ import { Heading } from "@/shared/ui/primitives/typography/Heading";
 import { Text } from "@/shared/ui/primitives/typography/Text";
 import { Eyebrow } from "@/shared/ui/primitives/typography/Eyebrow";
 import { LegalModal } from "@features/auth/components/LegalModals";
+import { AuthLanguageSwitcher } from "@features/auth/components/AuthLanguageSwitcher";
 
 export default function ActivatePage(): React.JSX.Element {
   const { t } = useTranslation();
@@ -86,14 +87,15 @@ export default function ActivatePage(): React.JSX.Element {
           className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-ethereal-graphite hover:text-ethereal-gold transition-colors"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-          <span>{t("auth.activate.back_to_home", "Powrót")}</span>
+          <span>{t("auth.activate.back_to_home")}</span>
         </Link>
       </div>
 
-      <div className="absolute top-8 right-8 z-10">
+      <div className="absolute top-8 right-8 z-10 flex flex-col items-end gap-2">
         <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-ethereal-graphite/50">
-          {t("auth.activate.badge", "Aktywacja")}
+          {t("auth.activate.badge")}
         </span>
+        <AuthLanguageSwitcher />
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col items-center justify-center px-6 py-24 lg:px-10">
@@ -325,13 +327,13 @@ export default function ActivatePage(): React.JSX.Element {
                         color="graphite"
                         className="leading-6 select-none"
                       >
-                        {t("auth.activate.form.terms_prefix", "Akceptuję ")}{" "}
+                        {t("auth.activate.form.terms_prefix")}{" "}
                         <button
                           type="button"
                           onClick={(e) => handleOpenLegalModal("terms", e)}
                           className="text-ethereal-gold hover:text-ethereal-ink transition-colors font-medium underline underline-offset-4"
                         >
-                          {t("auth.activate.form.terms_link", "Regulamin")}
+                          {t("auth.activate.form.terms_link")}
                         </button>{" "}
                         &{" "}
                         <button
@@ -339,10 +341,7 @@ export default function ActivatePage(): React.JSX.Element {
                           onClick={(e) => handleOpenLegalModal("privacy", e)}
                           className="text-ethereal-gold hover:text-ethereal-ink transition-colors font-medium underline underline-offset-4"
                         >
-                          {t(
-                            "auth.activate.form.privacy_link",
-                            "Politykę Prywatności",
-                          )}
+                          {t("auth.activate.form.privacy_link")}
                         </button>
                       </Text>
                     </label>

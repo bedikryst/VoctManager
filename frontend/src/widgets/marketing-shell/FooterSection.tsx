@@ -4,7 +4,7 @@
  * Features high-contrast dark mode, a live status indicator with local time,
  * an architectural "Back to Top" thread, and a massive interactive typographic monolith.
  * Refactored to Enterprise 2026 Standards (Strict TS 7.0, i18next, Centralized Kinematics).
- * @module shared/widgets/layout/FooterSection
+ * @module widgets/marketing-shell/FooterSection
  */
 
 import React, { useRef, useEffect, useState, useCallback } from "react";

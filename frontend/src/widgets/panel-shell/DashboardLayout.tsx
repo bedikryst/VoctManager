@@ -4,7 +4,7 @@
  * Implements the Persistent App Shell pattern. Delegates background kinetics
  * to isolated persistent layers and orchestrates content-only transitions.
  * @architecture Enterprise SaaS 2026
- * @module shared/widgets/layout/DashboardLayout
+ * @module widgets/panel-shell/DashboardLayout
  */
 
 import React, { Suspense, useEffect } from "react";

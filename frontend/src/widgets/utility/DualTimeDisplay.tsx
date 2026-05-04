@@ -4,7 +4,7 @@
  * Automatically handles the display of event timezone vs local user timezone.
  * Refined for Ethereal UI: Strict baseline alignments and sub-pixel typography.
  * @architecture Enterprise SaaS 2026
- * @module shared/widgets/utility/DualTimeDisplay
+ * @module widgets/utility/DualTimeDisplay
  */
 
 import React, { useMemo } from "react";

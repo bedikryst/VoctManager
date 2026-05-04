@@ -2,7 +2,7 @@
  * @file useNavigationAura.ts
  * @description Centralized identity & navigation logic for Ethereal UI Layouts.
  * Implements SSOT (Single Source of Truth) for Spatial UI Dock routing and RBAC resolution.
- * @module shared/widgets/layout/hooks
+ * @module widgets/panel-shell/hooks
  * @architecture Enterprise SaaS 2026
  */
 

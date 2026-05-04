@@ -23,6 +23,7 @@ import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { VocalClefShadow } from "@/shared/ui/kinematics/VocalClefShadow";
 import { LegalModal } from "@features/auth/components/LegalModals";
+import { AuthLanguageSwitcher } from "@features/auth/components/AuthLanguageSwitcher";
 
 export default function Login(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
@@ -62,8 +63,7 @@ export default function Login(): React.JSX.Element {
       navigate(from, { replace: true });
     } else {
       setError(
-        result.error ||
-          t("auth.login.error_default", "Autoryzacja nie powiodła się."),
+        result.error || t("auth.login.error_default"),
       );
       setIsSubmitting(false);
     }
@@ -95,9 +95,13 @@ export default function Login(): React.JSX.Element {
               aria-hidden="true"
             />
             <Eyebrow className="group-hover:text-ethereal-gold transition-colors">
-              {t("auth.login.back_to_lobby", "Powrót do przedsionka")}
+              {t("auth.login.back_to_lobby")}
             </Eyebrow>
           </Link>
+        </div>
+
+        <div className="absolute top-8 right-8 z-20">
+          <AuthLanguageSwitcher />
         </div>
 
         <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md">
@@ -116,7 +120,7 @@ export default function Login(): React.JSX.Element {
               <span className="italic text-ethereal-gold pr-2">Manager</span>
             </Heading>
             <Eyebrow color="muted">
-              {t("auth.login.subtitle", "Panel Administracyjny & Kadrowy")}
+              {t("auth.login.subtitle")}
             </Eyebrow>
           </motion.div>
 
@@ -134,7 +138,7 @@ export default function Login(): React.JSX.Element {
               <form className="space-y-6" onSubmit={handleSubmit} noValidate>
                 <div>
                   <Eyebrow as="label" className="block mb-2 ml-1">
-                    {t("auth.login.email_label", "Adres e-mail")}
+                    {t("auth.login.email_label")}
                   </Eyebrow>
                   <Input
                     id="email"
@@ -145,16 +149,13 @@ export default function Login(): React.JSX.Element {
                     disabled={isSubmitting}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t(
-                      "auth.login.email_placeholder",
-                      "np. jan.kowalski@voctensemble.pl",
-                    )}
+                    placeholder={t("auth.login.email_placeholder")}
                   />
                 </div>
 
                 <div>
                   <Eyebrow as="label" className="block mb-2 ml-1">
-                    {t("auth.login.password_label", "Klucz dostępu")}
+                    {t("auth.login.password_label")}
                   </Eyebrow>
                   <Input
                     id="password"
@@ -165,10 +166,7 @@ export default function Login(): React.JSX.Element {
                     disabled={isSubmitting}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t(
-                      "auth.login.password_placeholder",
-                      "••••••••",
-                    )}
+                    placeholder={t("auth.login.password_placeholder")}
                   />
                 </div>
 
@@ -209,18 +207,15 @@ export default function Login(): React.JSX.Element {
                     disabled={!email || !password || isSubmitting}
                   >
                     {isSubmitting
-                      ? t("auth.login.submitting", "Autoryzacja...")
-                      : t("auth.login.submit_button", "Autoryzuj dostęp")}
+                      ? t("auth.login.submitting")
+                      : t("auth.login.submit_button")}
                   </Button>
                 </div>
               </form>
 
               <div className="mt-8 flex flex-col items-center gap-2">
                 <Eyebrow color="muted" className="text-[9px] opacity-60">
-                  {t(
-                    "auth.login.footer_security",
-                    "Zabezpieczone przez JWT Auth • 2026",
-                  )}
+                  {t("auth.login.footer_security")}
                 </Eyebrow>
                 <div className="flex items-center gap-3">
                   <button
@@ -228,9 +223,9 @@ export default function Login(): React.JSX.Element {
                     onClick={(e) => handleOpenLegalModal("terms", e)}
                     className="text-[10px] text-ethereal-graphite/60 hover:text-ethereal-gold transition-colors uppercase tracking-widest font-medium"
                   >
-                    Regulamin
+                    {t("auth.login.terms_link")}
                   </button>
-                  <span className="text-ethereal-graphite/30 text-[10px]">
+                  <span className="text-ethereal-graphite/30 text-[10px]" aria-hidden="true">
                     •
                   </span>
                   <button
@@ -238,7 +233,7 @@ export default function Login(): React.JSX.Element {
                     onClick={(e) => handleOpenLegalModal("privacy", e)}
                     className="text-[10px] text-ethereal-graphite/60 hover:text-ethereal-gold transition-colors uppercase tracking-widest font-medium"
                   >
-                    Polityka Prywatności
+                    {t("auth.login.privacy_link")}
                   </button>
                 </div>
               </div>

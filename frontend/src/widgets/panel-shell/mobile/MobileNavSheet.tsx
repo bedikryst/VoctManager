@@ -8,7 +8,7 @@
  * compositor layers. Stagger entry runs once on mount; the sheet itself only
  * animates `y` and `opacity` — both GPU-composited.
  * @architecture Enterprise SaaS 2026
- * @module shared/widgets/layout/mobile
+ * @module widgets/panel-shell/mobile
  */
 
 import React, { useRef } from "react";
