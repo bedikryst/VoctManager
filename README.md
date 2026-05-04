@@ -27,32 +27,32 @@ The platform is built on a highly decoupled architecture designed for high avail
 ```mermaid
 graph TD
     Client([Web Browser / Mobile]) -->|HTTPS| Nginx[Nginx Reverse Proxy]
-    
-    subgraph Frontend: React 19 [(Vite + FSD)]
+
+    subgraph Frontend
         Nginx -->|Serves Static UI| React[React SPA]
         React -->|TanStack Query v5 / Zustand| StateManager[State & Cache]
     end
-    
-    subgraph Backend: Django 6.0 (DRF)
+
+    subgraph Backend
         Nginx -->|REST API requests| Gunicorn[Gunicorn / Uvicorn]
         StateManager -->|JSON / JWT| Gunicorn
     end
-    
-    subgraph Data & Storage
+
+    subgraph DataStorage
         Gunicorn <-->|psycopg3| DB[(PostgreSQL)]
         Gunicorn -->|Task Queues| Redis[(Redis 5)]
     end
-    
-    subgraph Background Processing
+
+    subgraph BackgroundProcessing
         Redis <--> Celery[Celery 5.3 Workers]
         Celery <--> DB
         Celery -->|WeasyPrint PDF Gen| Ext[File System / S3]
     end
-    
+
     classDef default fill:#1f2937,stroke:#4b5563,stroke-width:1px,color:#f3f4f6;
     classDef highlight fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#ffffff;
     classDef db fill:#059669,stroke:#1d4ed8,stroke-width:2px,color:#ffffff;
-    
+
     class React,StateManager,Gunicorn highlight;
     class DB,Redis db;
 ```

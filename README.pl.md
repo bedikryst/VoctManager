@@ -1,154 +1,164 @@
-# 🎼 VoctManager | Korporacyjny System Operacyjny i Cyfrowe Doświadczenie dla Chóru
+# 🎼 VoctManager | Korporacyjny System Operacyjny dla Chóru i Platforma Operacji Cyfrowych
 
-🌍 *Przeczytaj w innych językach: [English](README.md), [Polski](README.pl.md).*
+🌍 *Przeczytaj w innych językach: [English](README.md), [Polski](README.pl.md).* 
 
-![React](https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Django](https://img.shields.io/badge/Django_4-092E20?style=for-the-badge&logo=django&logoColor=white)
+![React 19](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript 6](https://img.shields.io/badge/TypeScript_6-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Django 6](https://img.shields.io/badge/Django_6-092E20?style=for-the-badge&logo=django&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Redis 5](https://img.shields.io/badge/Redis_5-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Celery 5](https://img.shields.io/badge/Celery_5-37814A?style=for-the-badge&logo=celery&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
 
-**VoctManager** to wysokowydajna platforma o podwójnej architekturze, zaprojektowana w celu zatarcia granicy między immersyjną narracją cyfrową (storytellingiem) a solidnym systemem planowania zasobów (ERP). Zbudowana jako oficjalna cyfrowa infrastruktura dla profesjonalnego zespołu wokalnego **VoctEnsemble**.
+**VoctManager** to wysokowydajna platforma o podwójnej architekturze, zaprojektowana jako oficjalna cyfrowa infrastruktura dla profesjonalnego zespołu wokalnego **VoctEnsemble**. Łączy w sobie złożoną logistykę produkcji, bezpieczne zarządzanie zasobami i immersyjne, kinowe doświadczenie cyfrowe.
 
-🌐 **Wersja Live (Beta):** [test.voctensemble.com](https://test.voctensemble.com)
-🔐 **Panel Enterprise (Wersja Demo):** [test.voctensemble.com/panel](https://test.voctensemble.com/panel)
-> **Dane logowania (Demo):** > Login: `daccess` | Hasło: `demoaccess` 
-> *(Konto do panelu artysty z uprawnieniami tylko do odczytu)*
+Platforma ściśle przestrzega architektury **Feature-Sliced Design (FSD)**, co zapewnia skalowalność, separację domeny i długoterminową odporność.
+
+🌐 **Wersja Publiczna Live:** [test.voctensemble.com](https://test.voctensemble.com)
+🔐 **Panel Enterprise (Demo):** [test.voctensemble.com/panel](https://test.voctensemble.com/panel)
+
 ---
 
-## 🏛️ Architektura Systemu
+## 🏛️ Architektura Systemu i Standardy Inżynieryjne
 
-Aplikacja opiera się na nowoczesnej, rozproszonej architekturze zaprojektowanej z myślą o wysokiej dostępności, agresywnym buforowaniu (Zero-Layout-Shift) oraz asynchronicznym przetwarzaniu danych w tle.
+Platforma jest zbudowana na wysoko zdekomponowanej architekturze zaprojektowanej z myślą o wysokiej dostępności, odpornym na offline buforowaniu oraz asynchronicznym przetwarzaniu w tle.
 
 ```mermaid
 graph TD
     Client([Przeglądarka / Mobile]) -->|HTTPS| Nginx[Nginx Reverse Proxy]
-    
-    subgraph Frontend Container
-        Nginx -->|Serwuje statyczne UI| React[React 18 SPA]
+
+    subgraph Frontend
+        Nginx -->|Serwuje statyczne UI| React[React SPA]
+        React -->|TanStack Query v5 / Zustand| StateManager[Stan i Pamięć podręczna]
     end
-    
-    subgraph Backend Container
-        Nginx -->|Zapytania API| Gunicorn[Gunicorn / Django DRF]
-        React -->|REST API / JSON| Gunicorn
+
+    subgraph Backend
+        Nginx -->|Zapytania REST API| Gunicorn[Gunicorn / Uvicorn]
+        StateManager -->|JSON / JWT| Gunicorn
     end
-    
-    subgraph Data Layer
-        Gunicorn <-->|Odczyt/Zapis| DB[(PostgreSQL)]
-        Gunicorn -->|Kolejka Zadań| Redis[(Redis Broker)]
+
+    subgraph DataStorage
+        Gunicorn <-->|psycopg3| DB[(PostgreSQL)]
+        Gunicorn -->|Kolejka zadań| Redis[(Redis 5)]
     end
-    
-    subgraph Async Workers
-        Redis <--> Celery[Celery Workers]
+
+    subgraph BackgroundProcessing
+        Redis <--> Celery[Celery 5.3 Workers]
         Celery <--> DB
-        Celery -->|Heavy I/O, PDF Gen| Ext[File System / S3]
+        Celery -->|Generowanie PDF WeasyPrint| Ext[System plików / S3]
     end
-    
+
     classDef default fill:#1f2937,stroke:#4b5563,stroke-width:1px,color:#f3f4f6;
     classDef highlight fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#ffffff;
     classDef db fill:#059669,stroke:#1d4ed8,stroke-width:2px,color:#ffffff;
-    
-    class React,Gunicorn highlight;
+
+    class React,StateManager,Gunicorn highlight;
     class DB,Redis db;
 ```
 
 ---
 
-## 🎭 Część I: Strona Publiczna (Immersyjne Doświadczenie Webowe)
-Wielce zoptymalizowany, kinowy interfejs zbudowany z myślą o budowaniu marki, dostarczający doświadczenia użytkownika (UX) klasy premium.
+## ✨ Podstawowe Funkcje Enterprise
 
-* 🎬 **Scrollytelling & Kinematyka:** Złożona matematycznie kinematyka przewijania przy użyciu **Framer Motion**. Elementy dynamicznie reagują na pozycję scrolla, kontrolując skalowanie wideo, maski przezroczystości i architektoniczne siatki.
-* 🌊 **Mechanika Płynów (Fluid Mechanics):** Zintegrowana biblioteka **Lenis** zapewniająca gładkie przewijanie w 60 klatkach na sekundę (60FPS), gwarantująca idealną synchronizację animacji na wszystkich urządzeniach.
-* 🎛️ **Fizyka Akcelerowana Sprzętowo:** Autorskie, interaktywne hooki (`useMouseAndGyro`, `useScrollyAudio`) łączące dane wejściowe ze sprzętu (żyroskop, prędkość kursora) z mikrointerakcjami interfejsu.
-* ♿ **Dostępność (WCAG):** Interfejs zaprojektowany z uwzględnieniem zgodności z Europejskim Aktem o Dostępności (EAA), wykorzystujący semantyczny HTML i atrybuty ARIA dla czytników ekranu.
+### 1. Kinowy UX "Ethereal" (Frontend)
+- **Architektura Zero-Layout-Shift:** Obowiązkowe użycie boundary suspense, `EtherealLoader` i rygorystycznych stanów skeleton, zapewniających absolutną stabilność układu przy asynchronicznym pobieraniu danych.
+- **Sprzętowo akcelerowana kinematyka:** Złożone animacje 60FPS na bazie **Framer Motion v12** i **Three.js**. Autorskie hooki React (`useMouseAndGyro`) mapują telemetrię sprzętu na mikrointerakcje UI.
+- **Siatki Bento:** Panele Dashboard są organizowane za pomocą matematycznego, stopniowanego układu bento (`<StaggeredBentoContainer>`), tworząc przestrzenny, wielowarstwowy interfejs 3D z własnymi wariantami glassmorphism.
+- **Dostępność EAA:** Primitwy Radix i semantyczny HTML gwarantują zgodność z Europejskim Aktem o Dostępności.
 
----
-
-## 🏢 Część II: System Enterprise (Główna Architektura)
-Zabezpieczona, skalowalna platforma ERP/CRM, która cyfryzuje i automatyzuje przepływy pracy dla zarządu i artystów chóru.
-
-* 🛡️ **Kontrola Dostępu Oparta na Rolach (RBAC):** Granularne polityki bezpieczeństwa zapewniające ścisłą izolację wrażliwych umów, danych płacowych i własności intelektualnej.
-* 🗄️ **Inteligentne Archiwum:** Cyfrowe zarządzanie repertuarem z bezpieczną dystrybucją partytur (PDF) i ścieżek dźwiękowych do ćwiczeń.
-* 📅 **Automatyzacja Produkcji:** Zautomatyzowane generowanie złożonych dokumentów, w tym *Call Sheets* i *Umów Dzieło/Zlecenie*, oddelegowane do asynchronicznych workerów **Celery**, co zapobiega blokowaniu głównego wątku aplikacji.
-* 🎵 **Mikro-Casting i Setlisty:** Interaktywny kreator programów koncertowych wykorzystujący płynny interfejs Drag & Drop wspierający ekrany dotykowe (`@hello-pangea/dnd`).
-* ⚡ **Optimistic UI i Caching:** Głęboka integracja **Zustand** i **React Query** dla agresywnego buforowania stanu serwera. Zapewnia to natychmiastową responsywność aplikacji, nawet przy słabym zasięgu sieci komórkowej za kulisami sceny.
-
----
-
-## 🔒 Bezpieczeństwo, Prywatność i Zgodność Danych
-
-Przetwarzanie dokumentacji HR, umów finansowych oraz chronionych prawem autorskim materiałów artystycznych wymaga zabezpieczeń klasy Enterprise.
-
-* **Zgodność z RODO (GDPR):** Zaprojektowane z myślą o minimalizacji danych oraz mechanizmach "miękkiego usuwania" (soft-deletion), aby zachować integralność historycznych koncertów przy jednoczesnym przestrzeganiu przepisów o ochronie prywatności.
-* **Uwierzytelnianie:** Bezpieczne, bezstanowe uwierzytelnianie wykorzystujące ciasteczka HttpOnly i rotację tokenów JWT.
-* **Integralność Danych:** Restrykcyjne ograniczenia (constraints) na poziomie bazy danych połączone z walidacją na poziomie aplikacji, co zapobiega korupcji tabel łącznikowych podczas złożonych operacji castingowych.
+### 2. System Enterprise i Logistyka (Backend)
+- **Granularny RBAC:** Głęboka kontrola dostępu oparta na rolach (Admin, Manager, Artysta, Crew), zabezpieczająca endpointy, payloady i widoczność interfejsu.
+- **Web Push i alerty w czasie rzeczywistym:** Rodzaj natywnej komunikacji push oparty na standardzie W3C VAPID. Obsługiwany asynchronicznie przez Celery wraz z transakcyjnym systemem email.
+- **Synchronizacja kalendarzy (iCal):** Bezproblemowa integracja z zewnętrznymi kalendarzami, automatycznie generująca feedy iCal do Google i Apple Calendar.
+- **Optimistic UI:** Agresywne buforowanie stanu serwera przy użyciu **@tanstack/react-query v5.91+**, zapewniające odczucie zerowego opóźnienia dla krytycznych mutacji (potwierdzenie obecności, zmiany castingu).
+- **Asynchroniczny silnik dokumentów:** Produkcyjne przepływy pracy, takie jak dynamiczne generowanie umów i arkuszy produkcyjnych, są obsługiwane przez **Celery workers** i **WeasyPrint**, co chroni główny wątek przed blokowaniem.
+- **Smart Archive i ochrona zasobów:** Bezpieczna, tokenowana dystrybucja wrażliwych zasobów repertuarowych (PDF-y nut, pliki referencyjne audio) skojarzona z aktywnym obsadzeniem projektu.
+- **Mikro-casting:** Interfejsy Drag & Drop przystosowane do obsługi dotykowej (`@dnd-kit/core`), do budowy programów koncertowych i zarządzania przypisaniami artystów.
+- **Internacjonalizacja (i18n):** Pełne wsparcie lokalizacyjne (angielski, francuski, polski) przygotowane dla międzynarodowych tras i różnorodnych zespołów.
 
 ---
 
-## 🚦 Monitorowanie i Roadmapa (Wizja 2026)
+## 🛠️ Stos technologiczny (standardy 2026)
 
-VoctManager nieustannie ewoluuje w kierunku w pełni zautomatyzowanej i monitorowalnej infrastruktury.
+### Środowisko frontendu
+* **Rdzeń:** React 19.2+, Vite 7.3+, TypeScript 6.0+
+* **Architektura:** Feature-Sliced Design (FSD)
+* **Styling:** Tailwind CSS v4.2+ (z tokenami Ethereal Design System), `clsx`, `tailwind-merge`
+* **Stan i pobieranie:** Zustand 5+, `@tanstack/react-query` v5.91+
+* **Ruch i interakcje:** Framer Motion v12+, `@dnd-kit/core` v6+ (TouchSensor)
+* **Formularze:** React Hook Form v7+ z Zod v4.3+
 
-- [x] **Konteneryzacja:** Pełne wsparcie dla Dockera gwarantujące identyczne środowiska Dev/Prod.
-- [x] **Przetwarzanie Asynchroniczne:** Wdrożona architektura Celery + Redis.
-- [ ] **Telemetria i Śledzenie Błędów:** Wstępnie skonfigurowana integracja z **Sentry** (oczekująca na wdrożenie infrastruktury fundacji) w celu monitorowania błędów frontendu i backendu w czasie rzeczywistym.
-- [ ] **Automatyczne Testy (QA):** Wdrożenie pakietów testowych PyTest dla krytycznych ścieżek biznesowych (generowanie umów, kalkulacje płacowe).
-- [ ] **Pipelines CI/CD:** Wykorzystanie GitHub Actions do zautomatyzowanego lintowania, budowania obrazów i wdrożeń bez przestojów (zero-downtime deployments).
+### Środowisko backendowe
+* **Rdzeń:** Python 3.12+, Django 6.0+, Django REST Framework (DRF) 3.16+
+* **Walidacja i typy:** Surowe adnotacje typów Pythona, Pydantic
+* **Baza danych:** PostgreSQL (przez sterownik `psycopg` v3)
+* **Uwierzytelnianie:** JWT przez `djangorestframework-simplejwt`
+* **Broker i workerzy:** Redis 5+, Celery 5.3+
+* **Generowanie dokumentów:** WeasyPrint v68+
+
+### Infrastruktura i DevOps
+* **Konteneryzacja:** Docker i Docker Compose (Zero-parity między Dev a Prod)
+* **Serwer WWW:** Nginx, Gunicorn 21+ (Uvicorn dla asynchronicznego ruchu)
+* **Zarządzanie zasobami statycznymi:** WhiteNoise
 
 ---
 
-## 📸 Interfejs Systemu
+## 🔒 Bezpieczeństwo, prywatność i zgodność danych
 
-| Główny Dashboard (Bento OS) | Edytor Projektu |
+Przetwarzanie umów artystycznych, harmonogramów prób i chronionych materiałów muzycznych wymaga najwyższej klasy zabezpieczeń:
+* **Zgodność z RODO (GDPR):** Rozwiązania zaprojektowane pod minimalizację danych oraz mechanizmy miękkiego usuwania (soft-deletion), zachowujące integralność historii produkcji.
+* **Uwierzytelnianie:** Bezpieczna, bezstanowa strategia oparta na ciasteczkach HttpOnly i rotacji tokenów JWT, ograniczająca ryzyko XSS i CSRF.
+* **Integralność danych:** Restrykcyjne ograniczenia bazodanowe połączone z walidacją aplikacyjną zapobiegają uszkodzeniu tabel relacyjnych przy złożonych operacjach castingowych.
+
+---
+
+## 📸 Interfejs systemu (Ethereal Design System)
+
+| Główny Dashboard (Staggered Bento OS) | Projekt i edytor logistyki |
 |:---:|:---:|
-| <img src="docs/assets/dashboard.png" width="400" alt="Main Dashboard"/> | <img src="docs/assets/editor.png" width="400" alt="Project Editor"/> |
-| **Smart Archive (Zarządzanie Zasoabmi)** | **Macierz Obecności (High-Density)** |
-| <img src="docs/assets/archive.png" width="400" alt="Archive"/> | <img src="docs/assets/matrix.png" width="400" alt="Attendance Matrix"/> |
-
-*(Uwaga: Zastąp ścieżki `docs/assets/...` prawdziwymi zrzutami ekranu ze swojej aplikacji)*
+| <img src="docs/assets/dashboard.png" width="400" alt="Main Dashboard showcasing Bento Grid"/> | <img src="docs/assets/editor.png" width="400" alt="Project Editor"/> |
+| **Smart Archive (Zarządzanie zasobami)** | **Macierz obecności o wysokiej gęstości** |
+| <img src="docs/assets/archive.png" width="400" alt="Smart Archive view"/> | <img src="docs/assets/matrix.png" width="400" alt="Attendance Matrix"/> |
 
 ---
 
-## 🚀 Szybki Start (Środowisko Lokalne)
+## 🚀 Szybki start (lokalne środowisko)
 
-Projekt opiera się w pełni na Dockerze, redukując proces uruchomienia do zaledwie kilku komend.
+Projekt wykorzystuje Docker Compose do standaryzowanego środowiska deweloperskiego.
 
 ### Wymagania
-* Docker oraz Docker Compose
-* Node.js (opcjonalnie, do pracy nad frontendem poza kontenerem)
-* GNU Make (zalecane)
+* Docker oraz Docker Compose (v2)
+* GNU Make
 
-### Instalacja
+### Inicjalizacja
 
 1. **Sklonuj repozytorium:**
    ```bash
-   git clone [https://github.com/bedikryst/voctmanager.git](https://github.com/bedikryst/voctmanager.git)
+   git clone https://github.com/bedikryst/voctmanager.git
    cd voctmanager
    ```
 
-2. **Skonfiguruj zmienne środowiskowe:**
+2. **Konfiguracja środowiska:**
    ```bash
    cp .env.example .env
    cp frontend/.env.example frontend/.env
    ```
 
-3. **Uruchom infrastrukturę:**
-   Używając dołączonego pliku `Makefile` (Zalecane):
+3. **Orkiestracja infrastruktury:**
+   Korzystając z dołączonego Makefile:
    ```bash
    make up
    ```
-   *(Lub ręcznie: `docker compose --build -d`)*
 
-4. **Zainicjalizuj bazę i wgraj dane testowe:**
+4. **Provisioning bazy danych:**
    ```bash
    make migrate
    make seed
    make superuser
    ```
 
-4. **Uruchom Frontend lokalnie:**
+5. **Lokalny serwer frontendowy (opcjonalnie dla inżynierii UI):**
    ```bash
    cd frontend
    npm install
@@ -159,15 +169,18 @@ Projekt opiera się w pełni na Dockerze, redukując proces uruchomienia do zale
    * Frontend: `http://localhost:5173`
 
 ### 📖 Dokumentacja API
-Backend udostępnia w pełni interaktywną dokumentację OpenAPI (Swagger). Po uruchomieniu kontenerów jest ona dostępna pod adresem:
+Backend udostępnia w pełni interaktywną dokumentację OpenAPI (Swagger). Po uruchomieniu kontenerów jest dostępna pod adresem:
 👉 **[http://localhost:8000/api/docs](http://localhost:8000/api/docs)**
 
 ---
 
-## 👨‍💻 Autor i Główny Inżynier
+## 👨‍💻 Kierownictwo inżynieryjne
 
 **Krystian Bugalski**
 * [LinkedIn](https://www.linkedin.com/in/krystian-bugalski)
 * [GitHub](https://github.com/bedikryst)
 
 *Zaprojektowane z precyzją dla przyszłości zarządzania chórem.*
+'''
+with open(r'c:\Users\kryst\VoctManager\README.pl.md','w',encoding='utf-8') as f:
+    f.write(content)"
