@@ -6,6 +6,7 @@
  * @module settings/NotificationsTab
  */
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bell,
   BellOff,
@@ -78,7 +79,7 @@ const PALETTES: Record<HeroVariant, HeroPalette> = {
     iconBg: "bg-ethereal-sage/15",
     iconColor: "text-ethereal-sage",
     Icon: CheckCircle2,
-    eyebrow: "Aktywne",
+    eyebrow: "active",
     eyebrowTone: "text-ethereal-sage",
   },
   ready: {
@@ -86,7 +87,7 @@ const PALETTES: Record<HeroVariant, HeroPalette> = {
     iconBg: "bg-ethereal-gold/10",
     iconColor: "text-ethereal-gold",
     Icon: BellRing,
-    eyebrow: "Zalecane",
+    eyebrow: "recommended",
     eyebrowTone: "text-ethereal-gold",
   },
   denied: {
@@ -94,7 +95,7 @@ const PALETTES: Record<HeroVariant, HeroPalette> = {
     iconBg: "bg-ethereal-crimson/10",
     iconColor: "text-ethereal-crimson",
     Icon: ShieldAlert,
-    eyebrow: "Zablokowane",
+    eyebrow: "blocked",
     eyebrowTone: "text-ethereal-crimson",
   },
   unsupported: {
@@ -102,7 +103,7 @@ const PALETTES: Record<HeroVariant, HeroPalette> = {
     iconBg: "bg-ethereal-parchment/40",
     iconColor: "text-ethereal-graphite/70",
     Icon: Smartphone,
-    eyebrow: "Niedostępne",
+    eyebrow: "unavailable",
     eyebrowTone: "text-ethereal-graphite/70",
   },
   misconfigured: {
@@ -110,12 +111,13 @@ const PALETTES: Record<HeroVariant, HeroPalette> = {
     iconBg: "bg-ethereal-amethyst/10",
     iconColor: "text-ethereal-amethyst",
     Icon: Info,
-    eyebrow: "Konfiguracja",
+    eyebrow: "configuration",
     eyebrowTone: "text-ethereal-amethyst",
   },
 };
 
 export const NotificationsTab: React.FC = () => {
+  const { t } = useTranslation();
   const { data: preferences, isLoading } = useNotificationPreferences();
   const updateMutation = useUpdatePreference();
   const {
@@ -172,10 +174,9 @@ export const NotificationsTab: React.FC = () => {
   return (
     <Tooltip.Provider delayDuration={200}>
       <GlassCard variant="light" isHoverable={false}>
-        <SectionHeader title="Powiadomienia" icon={<Bell className="w-5 h-5" />} />
+        <SectionHeader title={t("settings.notifications.title")} icon={<Bell className="w-5 h-5" />} />
         <Text color="muted" className="mt-1 mb-6">
-          Zarządzaj tym, jak i kiedy chcesz otrzymywać informacje z systemu. Powiadomienia
-          wewnątrz aplikacji są zawsze aktywne.
+          {t("settings.notifications.description")}
         </Text>
 
         <PushHero
@@ -191,16 +192,16 @@ export const NotificationsTab: React.FC = () => {
         <div className="flex flex-col divide-y divide-ethereal-parchment/40 sm:border-t sm:border-ethereal-parchment/40">
           <div className="hidden sm:grid grid-cols-[1fr_100px_100px_100px] gap-4 py-4 px-2">
             <div>
-              <Eyebrow>Typ zdarzenia</Eyebrow>
+              <Eyebrow>{t("settings.notifications.table.event_type")}</Eyebrow>
             </div>
             <div className="text-center">
-              <Eyebrow>In-App</Eyebrow>
+              <Eyebrow>{t("settings.notifications.table.in_app")}</Eyebrow>
             </div>
             <div className="text-center">
-              <Eyebrow>E-mail</Eyebrow>
+              <Eyebrow>{t("settings.notifications.table.email")}</Eyebrow>
             </div>
             <div className="text-center">
-              <Eyebrow>Push</Eyebrow>
+              <Eyebrow>{t("settings.notifications.table.push")}</Eyebrow>
             </div>
           </div>
 
@@ -211,18 +212,18 @@ export const NotificationsTab: React.FC = () => {
             >
               <div className="flex items-center px-1 sm:px-0">
                 <Text size="sm" weight="medium">
-                  {pref.label || pref.notification_type.replace(/_/g, " ")}
+                  {t(`settings.notifications.types.${pref.notification_type}`, pref.label || pref.notification_type.replace(/_/g, " "))}
                 </Text>
               </div>
 
               <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-lg p-4 sm:p-0">
                 <div className="flex items-center justify-between sm:justify-center w-full">
-                  <Eyebrow className="sm:hidden">In-App</Eyebrow>
+                  <Eyebrow className="sm:hidden">{t("settings.notifications.table.in_app")}</Eyebrow>
                   <LockedOnSwitch />
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-center w-full">
-                  <Eyebrow className="sm:hidden">E-mail</Eyebrow>
+                  <Eyebrow className="sm:hidden">{t("settings.notifications.table.email")}</Eyebrow>
                   <NotificationSwitch
                     checked={pref.email_enabled}
                     onCheckedChange={(val) =>
@@ -235,7 +236,7 @@ export const NotificationsTab: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-center w-full">
-                  <Eyebrow className="sm:hidden">Push</Eyebrow>
+                  <Eyebrow className="sm:hidden">{t("settings.notifications.table.push")}</Eyebrow>
                   {canManagePushColumn ? (
                     <NotificationSwitch
                       checked={pref.push_enabled}
@@ -260,10 +261,10 @@ export const NotificationsTab: React.FC = () => {
                           className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-lg shadow-glass-solid max-w-55 text-center leading-snug z-toast"
                         >
                           {heroVariant === "denied"
-                            ? "Powiadomienia są zablokowane. Odblokuj je w ustawieniach przeglądarki."
+                            ? t("settings.notifications.tooltips.denied")
                             : heroVariant === "unsupported"
-                              ? "Ta przeglądarka nie obsługuje powiadomień push."
-                              : "Aktywuj powiadomienia push u góry, aby zarządzać tymi ustawieniami."}
+                              ? t("settings.notifications.tooltips.unsupported")
+                              : t("settings.notifications.tooltips.activate_first")}
                           <Tooltip.Arrow className="fill-ethereal-ink" />
                         </Tooltip.Content>
                       </Tooltip.Portal>
@@ -285,13 +286,13 @@ export const NotificationsTab: React.FC = () => {
 
       <ConfirmModal
         isOpen={unsubConfirmOpen}
-        title="Wyłączyć powiadomienia push?"
-        description="Nie będziesz już otrzymywać powiadomień push na tym urządzeniu. W każdej chwili możesz je włączyć ponownie."
+        title={t("settings.notifications.unsubscribe_modal.title")}
+        description={t("settings.notifications.unsubscribe_modal.description")}
         onConfirm={handleUnsubscribeConfirm}
         onCancel={() => setUnsubConfirmOpen(false)}
         isLoading={pushLoading}
-        confirmText="Wyłącz"
-        cancelText="Anuluj"
+        confirmText={t("settings.notifications.actions.disable")}
+        cancelText={t("settings.notifications.actions.cancel")}
         isDestructive
       />
     </Tooltip.Provider>
@@ -320,7 +321,8 @@ const PushHero: React.FC<PushHeroProps> = ({
   const palette = PALETTES[variant];
   const { Icon } = palette;
 
-  const { title, description } = describe(variant, availability);
+  const { t } = useTranslation();
+  const { title, description } = describe(variant, availability, t);
 
   return (
     <motion.div
@@ -334,7 +336,7 @@ const PushHero: React.FC<PushHeroProps> = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Eyebrow className={palette.eyebrowTone}>{palette.eyebrow}</Eyebrow>
+            <Eyebrow className={palette.eyebrowTone}>{t(`settings.notifications.hero_variant.${palette.eyebrow}`)}</Eyebrow>
           </div>
           <Text size="sm" weight="medium">
             {title}
@@ -355,7 +357,7 @@ const PushHero: React.FC<PushHeroProps> = ({
               disabled={isLoading}
               leftIcon={<BellOff className="w-3.5 h-3.5" />}
             >
-              Wyłącz
+              {t("settings.notifications.actions.disable")}
             </Button>
             <Button
               variant="secondary"
@@ -365,7 +367,7 @@ const PushHero: React.FC<PushHeroProps> = ({
               disabled={isLoading}
               leftIcon={!isSendingTest ? <Send className="w-3.5 h-3.5" /> : undefined}
             >
-              Wyślij test
+              {t("settings.notifications.actions.send_test")}
             </Button>
           </>
         )}
@@ -378,14 +380,14 @@ const PushHero: React.FC<PushHeroProps> = ({
             isLoading={isLoading}
             leftIcon={!isLoading ? <BellRing className="w-3.5 h-3.5" /> : undefined}
           >
-            Włącz powiadomienia
+            {t("settings.notifications.actions.enable")}
           </Button>
         )}
 
         {variant === "denied" && (
           <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.1em] font-bold text-ethereal-crimson/80">
             <Loader2 className="w-3 h-3 opacity-0" aria-hidden />
-            Wymagana ręczna zmiana w przeglądarce
+            {t("settings.notifications.actions.manual_change_required")}
           </span>
         )}
       </div>
@@ -393,54 +395,44 @@ const PushHero: React.FC<PushHeroProps> = ({
   );
 };
 
-function describe(
-  variant: HeroVariant,
-  availability: ReturnType<typeof usePushNotifications>["availability"],
-): { title: string; description: string } {
+function describe(variant: HeroVariant, availability: ReturnType<typeof usePushNotifications>["availability"], t: any): { title: string; description: string } {
   switch (variant) {
     case "subscribed":
       return {
-        title: "Powiadomienia push są aktywne na tym urządzeniu",
-        description:
-          "Otrzymujesz powiadomienia nawet gdy aplikacja jest zamknięta. Możesz dostosować poszczególne typy zdarzeń poniżej.",
+        title: t("settings.notifications.describe.subscribed_title"),
+        description: t("settings.notifications.describe.subscribed_desc"),
       };
     case "ready":
       return {
-        title: "Bądź na bieżąco bez pilnowania zakładki",
-        description:
-          "Włącz powiadomienia push, aby otrzymywać informacje o próbach, projektach i pilnych wiadomościach bezpośrednio na to urządzenie.",
+        title: t("settings.notifications.describe.ready_title"),
+        description: t("settings.notifications.describe.ready_desc"),
       };
     case "denied":
       return {
-        title: "Powiadomienia są zablokowane w przeglądarce",
-        description:
-          "Aby je włączyć, kliknij ikonę kłódki obok adresu strony, znajdź sekcję „Powiadomienia” i ustaw zezwolenie na „Zezwalaj”. Następnie odśwież stronę.",
+        title: t("settings.notifications.describe.denied_title"),
+        description: t("settings.notifications.describe.denied_desc"),
       };
     case "unsupported":
       if (availability.kind === "unsupported" && availability.reason === "ios-not-standalone") {
         return {
-          title: "Wymagany tryb aplikacji na iOS",
-          description:
-            "Aby włączyć powiadomienia na iPhone lub iPad, otwórz tę stronę w Safari, dotknij „Udostępnij” i wybierz „Dodaj do ekranu początkowego”. Następnie uruchom aplikację z ikony.",
+          title: t("settings.notifications.describe.ios_title"),
+          description: t("settings.notifications.describe.ios_desc"),
         };
       }
       if (availability.kind === "unsupported" && availability.reason === "insecure-context") {
         return {
-          title: "Wymagane bezpieczne połączenie (HTTPS)",
-          description:
-            "Powiadomienia push wymagają szyfrowanego połączenia. Otwórz aplikację przez HTTPS, aby je aktywować.",
+          title: t("settings.notifications.describe.https_title"),
+          description: t("settings.notifications.describe.https_desc"),
         };
       }
       return {
-        title: "Ta przeglądarka nie obsługuje powiadomień push",
-        description:
-          "Skorzystaj z najnowszej wersji Chrome, Edge, Firefox lub Safari. Powiadomienia w aplikacji nadal działają normalnie.",
+        title: t("settings.notifications.describe.unsupported_title"),
+        description: t("settings.notifications.describe.unsupported_desc"),
       };
     case "misconfigured":
       return {
-        title: "Powiadomienia push wymagają konfiguracji administratora",
-        description:
-          "Wszystkie powiadomienia w aplikacji oraz e-mailowe działają normalnie. Powiadomienia push będą dostępne po zakończeniu konfiguracji systemu.",
+        title: t("settings.notifications.describe.misconfigured_title"),
+        description: t("settings.notifications.describe.misconfigured_desc"),
       };
   }
 }

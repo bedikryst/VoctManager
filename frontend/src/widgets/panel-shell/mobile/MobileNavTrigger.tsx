@@ -1,22 +1,53 @@
 /**
  * @file MobileNavTrigger.tsx
- * @description Collapsed dock state of the mobile navigation.
- * Owns its own enter/exit kinematics (transform + opacity only).
- * Framer-motion manages compositor promotion for the duration of the animation;
- * static `will-change` is intentionally absent so the GPU layer is released at rest.
+ * @description Collapsed dock state of the mobile navigation. Pinned routes,
+ * notification entry point, and an opener for the expanded sheet.
+ *
+ * Performance contract: enter / exit animations only. No shared-layout
+ * indicators, no live blur recomputation under translation. The dock itself is
+ * static at rest; backdrop-filter is therefore safe to keep on this element.
+ *
  * @architecture Enterprise SaaS 2026
- * @module shared/widgets/layout/mobile
+ * @module widgets/panel-shell/mobile
  */
 
 import React from "react";
 import { motion } from "framer-motion";
+import type { Transition } from "framer-motion";
 import { NavLink } from "react-router-dom";
 import { Menu } from "lucide-react";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
+import { cva } from "class-variance-authority";
+
 import { cn } from "@/shared/lib/utils";
 import { hapticsService } from "@/shared/lib/hardware/hapticsService";
+import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
 import { useNavigationAura } from "../hooks/useNavigationAura";
+
+const DOCK_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 360,
+  damping: 32,
+  mass: 0.85,
+};
+
+const dockSlotVariants = cva(
+  [
+    "relative grid h-11 w-11 place-items-center rounded-[14px]",
+    "outline-none transition-[background-color,color,transform] duration-200",
+    "focus-visible:ring-2 focus-visible:ring-ethereal-gold/60",
+    "active:scale-[0.94]",
+  ],
+  {
+    variants: {
+      isActive: {
+        true: "bg-ethereal-gold/[0.10] text-ethereal-gold",
+        false:
+          "text-ethereal-graphite/65 hover:bg-ethereal-graphite/[0.04] hover:text-ethereal-ink",
+      },
+    },
+    defaultVariants: { isActive: false },
+  },
+);
 
 interface MobileNavTriggerProps {
   readonly onOpen: () => void;
@@ -27,81 +58,71 @@ export const MobileNavTrigger = ({
   onOpen,
   aura,
 }: MobileNavTriggerProps): React.JSX.Element => {
-  const dockItems = aura.pinnedItems;
+  const { pinnedItems, t } = aura;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className="md:hidden fixed bottom-6 left-0 right-0 z-[var(--z-nav-dock)] flex justify-center px-4 pointer-events-none"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 16 }}
+      transition={DOCK_TRANSITION}
+      className="pointer-events-none fixed inset-x-0 bottom-5 z-nav-dock flex justify-center px-4 md:hidden"
     >
-      <GlassCard
-        variant="ethereal"
-        padding="none"
-        withNoise={false}
-        isHoverable={false}
-        animationEngine="framer"
-        className="pointer-events-auto flex items-center justify-evenly h-nav-dock px-3 rounded-full min-w-[320px] max-w-sm w-full border border-white/60 shadow-2xl"
+      <nav
+        aria-label={t("dashboard.layout.nav.main_menu", "Primary navigation")}
+        className={cn(
+          "pointer-events-auto flex items-center gap-1 rounded-[22px] px-2 py-1.5",
+          "border border-glass-border bg-ethereal-alabaster/92 backdrop-blur-md",
+          "shadow-[0_10px_32px_-12px_rgba(22,20,18,0.18),0_2px_6px_rgba(22,20,18,0.06)]",
+        )}
       >
-        <nav
-          aria-label="Main Mobile Navigation"
-          className="flex items-center justify-between w-full"
-        >
-          {dockItems.map(({ icon: Icon, to, labelKey }) => (
-            <NavLink
-              key={to}
-              to={to}
-              aria-label={aura.t(labelKey)}
-              onClick={() => hapticsService.playEtherealTick()}
-              className={({ isActive }) =>
-                cn(
-                  "relative flex flex-col items-center justify-center h-12 w-12 rounded-full outline-none transition-colors duration-300 active:scale-90 focus-visible:ring-2 focus-visible:ring-ethereal-gold",
-                  isActive
-                    ? "text-ethereal-gold"
-                    : "text-ethereal-graphite/60 hover:text-ethereal-graphite/90",
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                  {isActive && (
-                    <motion.div
-                      layoutId="active-dock-indicator"
-                      className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-ethereal-gold"
-                      transition={{
-                        type: "spring",
-                        bounce: 0.2,
-                        duration: 0.6,
-                      }}
-                    />
-                  )}
-                </>
-              )}
-            </NavLink>
-          ))}
-
-          <div
-            className="w-[1px] h-6 bg-ethereal-graphite/10 mx-1"
-            aria-hidden="true"
-          />
-
-          <div className="flex items-center justify-center h-12 w-12 shrink-0 relative z-10">
-            <NotificationCenter />
-          </div>
-
-          <button
-            onClick={onOpen}
-            aria-label="Open expansive menu"
-            aria-haspopup="dialog"
-            className="flex items-center justify-center h-12 w-12 rounded-full text-ethereal-graphite/60 hover:text-ethereal-graphite/90 transition-colors duration-300 active:scale-90 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold"
+        {pinnedItems.map(({ icon: Icon, to, labelKey }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === "/panel"}
+            aria-label={t(labelKey)}
+            onClick={() => hapticsService.playEtherealTick()}
+            className={({ isActive }) => cn(dockSlotVariants({ isActive }))}
           >
-            <Menu size={24} strokeWidth={2} />
-          </button>
-        </nav>
-      </GlassCard>
+            {({ isActive }) => (
+              <Icon
+                size={20}
+                strokeWidth={isActive ? 2.25 : 1.75}
+                aria-hidden="true"
+              />
+            )}
+          </NavLink>
+        ))}
+
+        <span
+          aria-hidden="true"
+          className="mx-1 h-5 w-px bg-ethereal-graphite/12"
+        />
+
+        <div className="grid h-11 w-11 place-items-center">
+          <NotificationCenter />
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={t("dashboard.layout.actions.open_menu", "Open menu")}
+          aria-haspopup="dialog"
+          className={cn(
+            "grid h-11 w-11 place-items-center rounded-[14px]",
+            "text-ethereal-graphite/65 outline-none",
+            "transition-[background-color,color,transform] duration-200",
+            "hover:bg-ethereal-graphite/[0.04] hover:text-ethereal-ink",
+            "focus-visible:ring-2 focus-visible:ring-ethereal-gold/60",
+            "active:scale-[0.94]",
+          )}
+        >
+          <Menu size={20} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+      </nav>
     </motion.div>
   );
 };
+
+MobileNavTrigger.displayName = "MobileNavTrigger";

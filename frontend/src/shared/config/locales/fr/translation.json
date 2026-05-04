@@ -2107,6 +2107,77 @@
         "label": "Sécurité",
         "short": "Mot de passe"
       }
+    },
+    "notifications": {
+      "hero_variant": {
+        "active": "Actives",
+        "recommended": "Recommandé",
+        "blocked": "Bloquées",
+        "unavailable": "Indisponible",
+        "configuration": "Configuration"
+      },
+      "title": "Notifications",
+      "description": "Gérez comment et quand vous souhaitez recevoir des informations du système. Les notifications intégrées à l'application sont toujours actives.",
+      "table": {
+        "event_type": "Type d'événement",
+        "in_app": "In-App",
+        "email": "E-mail",
+        "push": "Push"
+      },
+      "tooltips": {
+        "denied": "Les notifications sont bloquées. Débloquez-les dans les paramètres de votre navigateur.",
+        "unsupported": "Ce navigateur ne prend pas en charge les notifications push.",
+        "activate_first": "Activez les notifications push en haut pour gérer ces paramètres."
+      },
+      "unsubscribe_modal": {
+        "title": "Désactiver les notifications push ?",
+        "description": "Vous ne recevrez plus de notifications push sur cet appareil. Vous pourrez les réactiver à tout moment."
+      },
+      "actions": {
+        "disable": "Désactiver",
+        "cancel": "Annuler",
+        "send_test": "Envoyer un test",
+        "enable": "Activer les notifications",
+        "manual_change_required": "Modification manuelle requise dans le navigateur"
+      },
+      "describe": {
+        "subscribed_title": "Les notifications push sont actives sur cet appareil",
+        "subscribed_desc": "Vous recevez des notifications même lorsque l'application est fermée. Vous pouvez personnaliser des types d'événements spécifiques ci-dessous.",
+        "ready_title": "Restez informé sans surveiller l'onglet",
+        "ready_desc": "Activez les notifications push pour recevoir des informations sur les répétitions, les projets et les messages urgents directement sur cet appareil.",
+        "denied_title": "Les notifications sont bloquées dans votre navigateur",
+        "denied_desc": "Pour les activer, cliquez sur l'icône de cadenas à côté de l'adresse de la page, trouvez la section « Notifications » et choisissez « Autoriser ». Puis rafraîchissez la page.",
+        "ios_title": "Mode application requis sur iOS",
+        "ios_desc": "Pour activer les notifications sur iPhone ou iPad, ouvrez cette page dans Safari, touchez « Partager » et sélectionnez « Sur l'écran d'accueil ». Lancez ensuite l'application depuis l'icône.",
+        "https_title": "Connexion sécurisée (HTTPS) requise",
+        "https_desc": "Les notifications push nécessitent une connexion chiffrée. Ouvrez l'application via HTTPS pour les activer.",
+        "unsupported_title": "Ce navigateur ne prend pas en charge les notifications push",
+        "unsupported_desc": "Utilisez la dernière version de Chrome, Edge, Firefox ou Safari. Les notifications dans l'application fonctionnent toujours normalement.",
+        "misconfigured_title": "Les notifications push nécessitent une configuration de l'administrateur",
+        "misconfigured_desc": "Toutes les notifications dans l'application et par e-mail fonctionnent normalement. Les notifications push seront disponibles une fois la configuration du système terminée."
+      },
+      "types": {
+        "PROJECT_INVITATION": "Invitation au projet",
+        "PROJECT_UPDATED": "Détails du projet mis à jour",
+        "PROJECT_CANCELLED": "Projet annulé",
+        "PROJECT_REMINDER": "Rappel de projet à venir",
+        "REHEARSAL_SCHEDULED": "Nouvelle répétition programmée",
+        "REHEARSAL_UPDATED": "Heure/Lieu de répétition modifié",
+        "REHEARSAL_CANCELLED": "Répétition annulée",
+        "REHEARSAL_REMINDER": "Rappel de répétition à venir",
+        "PIECE_CASTING_ASSIGNED": "Affecté à une pièce",
+        "PIECE_CASTING_UPDATED": "Affectation de pièce modifiée",
+        "MATERIAL_UPLOADED": "Nouvelle partition ou piste audio",
+        "CONTRACT_ISSUED": "Contrat prêt à être examiné",
+        "ABSENCE_REQUESTED": "Demande d'absence par l'artiste",
+        "ABSENCE_APPROVED": "Demande d'absence approuvée",
+        "ABSENCE_REJECTED": "Demande d'absence rejetée",
+        "SYSTEM_ALERT": "Maintenance ou alerte système",
+        "PARTICIPATION_RESPONSE": "Réponse de l'artiste au projet",
+        "ATTENDANCE_SUBMITTED": "Infos de présence de l'artiste",
+        "CUSTOM_ADMIN_MESSAGE": "Message direct de la direction",
+        "NOTIFICATION_READ_RECEIPT": "Message lu par l'artiste"
+      }
     }
   },
   "shared": {

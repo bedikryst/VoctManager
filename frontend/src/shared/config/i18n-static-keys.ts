@@ -53,6 +53,29 @@ export const STATIC_VOICE_TYPES = [
   t("voice_types.BAR", "Baryton"),
 ];
 
+export const STATIC_NOTIFICATION_TYPES = [
+  t("settings.notifications.types.PROJECT_INVITATION", "Zaproszenie do projektu"),
+  t("settings.notifications.types.PROJECT_UPDATED", "Aktualizacja szczegółów projektu"),
+  t("settings.notifications.types.PROJECT_CANCELLED", "Projekt odwołany"),
+  t("settings.notifications.types.PROJECT_REMINDER", "Przypomnienie o projekcie"),
+  t("settings.notifications.types.REHEARSAL_SCHEDULED", "Nowa próba"),
+  t("settings.notifications.types.REHEARSAL_UPDATED", "Zmiana czasu/miejsca próby"),
+  t("settings.notifications.types.REHEARSAL_CANCELLED", "Próba odwołana"),
+  t("settings.notifications.types.REHEARSAL_REMINDER", "Przypomnienie o próbie"),
+  t("settings.notifications.types.PIECE_CASTING_ASSIGNED", "Przypisanie do utworu"),
+  t("settings.notifications.types.PIECE_CASTING_UPDATED", "Zmiana obsady utworu"),
+  t("settings.notifications.types.MATERIAL_UPLOADED", "Nowe materiały do ćwiczeń"),
+  t("settings.notifications.types.CONTRACT_ISSUED", "Umowa gotowa do wglądu"),
+  t("settings.notifications.types.ABSENCE_REQUESTED", "Prośba o nieobecność"),
+  t("settings.notifications.types.ABSENCE_APPROVED", "Nieobecność zatwierdzona"),
+  t("settings.notifications.types.ABSENCE_REJECTED", "Nieobecność odrzucona"),
+  t("settings.notifications.types.SYSTEM_ALERT", "Komunikat systemowy"),
+  t("settings.notifications.types.PARTICIPATION_RESPONSE", "Odpowiedź artysty"),
+  t("settings.notifications.types.ATTENDANCE_SUBMITTED", "Informacja o frekwencji"),
+  t("settings.notifications.types.CUSTOM_ADMIN_MESSAGE", "Bezpośrednia wiadomość"),
+  t("settings.notifications.types.NOTIFICATION_READ_RECEIPT", "Wiadomość odczytana"),
+];
+
 // Re-add potentially dropped keys from pdf_viewer, contact_filters, etc.
 export const STATIC_MISC = [
   t("pdf_viewer.jump_to_page", "Przejdź do strony"),

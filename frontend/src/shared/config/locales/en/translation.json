@@ -53,8 +53,8 @@
     },
     "filters": {
       "active_description": "Click a filter to remove it without resetting the whole view.",
-      "active_filters_one": "{{count}} aktywne filtry",
-      "active_filters_other": "{{count}} aktywne filtry",
+      "active_filters_one": "{{count}} active filter",
+      "active_filters_other": "{{count}} active filters",
       "all_composers": "All composers",
       "all_epochs": "All epochs",
       "all_voicings": "All voicing profiles",
@@ -231,9 +231,9 @@
       "create_artist": "Create Artist",
       "email": "Email *",
       "first_name": "First Name *",
-      "first_name_vocative": "Wołacz",
-      "first_name_vocative_hint": "Forma używana w powitaniach, np. w mailach.",
-      "first_name_vocative_placeholder": "np. Krystianie",
+      "first_name_vocative": "Vocative",
+      "first_name_vocative_hint": "Form used in greetings, e.g. in emails.",
+      "first_name_vocative_placeholder": "e.g. John",
       "language": "Message Language *",
       "language_edit_disabled": "Language is managed individually by the artist in their account settings.",
       "last_name": "Last Name *",
@@ -505,7 +505,7 @@
     },
     "artist_generic": "Artist's",
     "cancel": "Cancel",
-    "close": "Zamknij",
+    "close": "Close",
     "close_aria": "Close",
     "conductor_prefix": "Maestro",
     "create": "Create",
@@ -518,7 +518,7 @@
     "error_saving": "Error saving",
     "errors": {
       "database_error": "A database connection problem occurred.",
-      "download_error": "Błąd pobierania",
+      "download_error": "Download error",
       "generation_error": "Generation error",
       "generic": "An error occurred",
       "save_error": "Save error",
@@ -530,7 +530,7 @@
       "not_available": "No data"
     },
     "locale": "en-US",
-    "management": "Zarząd",
+    "management": "Management",
     "people_short": "ppl.",
     "rightsReserved": "All rights reserved",
     "save_changes": "Save Changes",
@@ -555,8 +555,8 @@
     "unsaved_title": "You have unsaved changes!"
   },
   "contact_filters": {
-    "no_phone": "Brak telefonu",
-    "specialty_other": "Inne"
+    "no_phone": "No phone",
+    "specialty_other": "Other"
   },
   "contracts": {
     "actions": {
@@ -710,8 +710,8 @@
       "collection_desc": "Each card opens quick profile editing, company details, and the operational contact in one move.",
       "collection_title": "Production team",
       "filtered_view": "Filtered view",
-      "in_view_one": "{{count}} w widoku",
-      "in_view_other": "{{count}} w widoku",
+      "in_view_one": "{{count}} in view",
+      "in_view_other": "{{count}} in view",
       "subtitle": "Logistics",
       "title": "Tech",
       "title_highlight": "Crew"
@@ -779,12 +779,12 @@
       "stats": {
         "companies_one": "{{count}} firm",
         "companies_other": "{{count}} firm",
-        "people_one": "{{count}} współpracowników",
-        "people_other": "{{count}} współpracowników",
-        "specialties_one": "{{count}} specjalizacji w bazie",
-        "specialties_other": "{{count}} specjalizacji w bazie",
-        "top_specialty_one": "Najliczniej: {{label}} ({{count}})",
-        "top_specialty_other": "Najliczniej: {{label}} ({{count}})"
+        "people_one": "{{count}} collaborator",
+        "people_other": "{{count}} collaborators",
+        "specialties_one": "{{count}} specialty in base",
+        "specialties_other": "{{count}} specialties in base",
+        "top_specialty_one": "Most common: {{label}} ({{count}})",
+        "top_specialty_other": "Most common: {{label}} ({{count}})"
       },
       "title": "A technical crew ready for production."
     },
@@ -976,20 +976,20 @@
         "TEN": "Tenor"
       },
       "specialties": {
-        "INSTRUMENT": "Instrumenty",
-        "LIGHT": "Światło",
-        "LOGISTICS": "Logistyka",
-        "OTHER": "Inne",
-        "SOUND": "Dźwięk",
-        "VISUALS": "Wizualizacje"
+        "INSTRUMENT": "Instruments",
+        "LIGHT": "Lighting",
+        "LOGISTICS": "Logistics",
+        "OTHER": "Other",
+        "SOUND": "Sound",
+        "VISUALS": "Visuals"
       },
       "specialty_descriptions": {
-        "INSTRUMENT": "Instrumentaliści zewnętrzni i obsługa instrumentów.",
-        "LIGHT": "Reżyseria świateł, oprawa wizualna sceny.",
-        "LOGISTICS": "Transport, scena, zabezpieczenie produkcji.",
-        "OTHER": "Współpracownicy spoza standardowych kategorii.",
-        "SOUND": "Realizacja dźwięku, miks i nagłośnienie sceniczne.",
-        "VISUALS": "Multimedia, projekcje, materiał ekranowy."
+        "INSTRUMENT": "External instrumentalists and instrument handling.",
+        "LIGHT": "Lighting design, visual stage setting.",
+        "LOGISTICS": "Transport, stage, production security.",
+        "OTHER": "Collaborators outside standard categories.",
+        "SOUND": "Sound engineering, mixing and stage sound.",
+        "VISUALS": "Multimedia, projections, screen materials."
       }
     },
     "shared": {
@@ -1402,12 +1402,12 @@
       "expand": "Expand",
       "generating_doc": "Generating document...",
       "logistics_dashboard": "Logistics & Production",
-      "score_pdf_download_aria": "Pobierz plik PDF partytury",
-      "score_pdf_downloaded": "Pobrano plik PDF",
-      "score_pdf_downloading": "Pobieranie partytury...",
-      "score_pdf_label": "Partytura koncertu (PDF)",
-      "score_pdf_modal_title": "Partytura Koncertu",
-      "score_pdf_preview": "Podgląd",
+      "score_pdf_download_aria": "Download score PDF",
+      "score_pdf_downloaded": "PDF downloaded",
+      "score_pdf_downloading": "Downloading score...",
+      "score_pdf_label": "Concert score (PDF)",
+      "score_pdf_modal_title": "Concert Score",
+      "score_pdf_preview": "Preview",
       "status_active": "Project marked as in preparation",
       "status_done": "Project marked as completed",
       "status_update_failed": "Failed to update status.",
@@ -1459,8 +1459,8 @@
         "submit": "Assign"
       },
       "header": {
-        "subtitle": "Zatrudnij współpracowników z bazy i przypisz im role na tym koncercie.",
-        "title": "Ekipa realizacyjna"
+        "subtitle": "Hire collaborators from the database and assign them roles for this concert.",
+        "title": "Production crew"
       },
       "list": {
         "assigned_count_one": "{{count}} assigned",
@@ -1502,8 +1502,8 @@
       "time_title": "Local Time",
       "toast": {
         "create_success": "New project and schedule created",
-        "pdf_remove_failed": "Projekt zapisany — nie udało się usunąć PDF.",
-        "pdf_upload_failed": "Projekt zapisany — nie udało się załadować PDF. Spróbuj ponownie.",
+        "pdf_remove_failed": "Project saved — failed to remove PDF.",
+        "pdf_upload_failed": "Project saved — failed to upload PDF. Try again.",
         "saving": "Saving project details...",
         "update_success": "Project and schedule updated"
       }
@@ -1533,7 +1533,7 @@
         "title": "Project Title *"
       },
       "header": {
-        "subtitle": "Tytuł, harmonogram, dress code i materiały referencyjne projektu.",
+        "subtitle": "Title, schedule, dress code and reference materials for the project.",
         "title": "Event Details"
       },
       "placeholders": {
@@ -1546,13 +1546,13 @@
         "title": "Title"
       },
       "score_pdf": {
-        "current": "Bieżący plik PDF",
-        "delete_aria": "Usuń PDF",
-        "modal_title": "Partytura Koncertu",
-        "pending_removal": "PDF zostanie usunięty po zapisaniu zmian.",
-        "preview": "Podgląd",
-        "replace": "Kliknij, aby zastąpić plik PDF",
-        "upload": "Kliknij, aby dodać partytury / program (PDF)"
+        "current": "Current PDF file",
+        "delete_aria": "Delete PDF",
+        "modal_title": "Concert Score",
+        "pending_removal": "PDF will be removed after saving changes.",
+        "preview": "Preview",
+        "replace": "Click to replace PDF file",
+        "upload": "Click to add scores / program (PDF)"
       },
       "sections": {
         "logistics": "Call Time and Dress Code",
@@ -1568,8 +1568,8 @@
       "archive_badge": "Archive",
       "create_description": "Save the core event details first, then continue to the operational tabs.",
       "fab": {
-        "save": "Zapisz Zmiany",
-        "unsaved": "Niezapisane Zmiany"
+        "save": "Save Changes",
+        "unsaved": "Unsaved Changes"
       },
       "new_project": "New event creator",
       "new_project_title": "New project",
@@ -1592,9 +1592,9 @@
     "exports": {
       "call_sheet": "Download Call Sheet",
       "dtp": "Download DTP Note",
-      "open_runsheet": "Otwórz Harmonogram",
-      "open_score_pdf": "Otwórz Partyturę (PDF)",
-      "runsheet_title": "Harmonogram (Runsheet)",
+      "open_runsheet": "Open Run Sheet",
+      "open_score_pdf": "Open Score (PDF)",
+      "runsheet_title": "Run Sheet",
       "zaiks": "Download ZAiKS"
     },
     "filters": {
@@ -1627,15 +1627,15 @@
     },
     "micro_cast": {
       "action_bar": {
-        "description_one": "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
-        "description_other": "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
-        "save": "Zapisz casting"
+        "description_one": "Dragged {{count}} change. Save to synchronize cast.",
+        "description_other": "Dragged {{count}} changes. Save to synchronize cast.",
+        "save": "Save casting"
       },
       "artist": {
         "add_note": "Add note",
         "drag_aria": "Drag {{name}}",
         "note_placeholder": "Note...",
-        "pending_label": "Niezapisane"
+        "pending_label": "Unsaved"
       },
       "bucket": {
         "aria": "Droppable Section",
@@ -1658,13 +1658,13 @@
         "pieces_in_program": "Pieces in program"
       },
       "meta": {
-        "unsaved_one": "Niezapisane: {{count}}",
-        "unsaved_other": "Niezapisane: {{count}}"
+        "unsaved_one": "Unsaved: {{count}}",
+        "unsaved_other": "Unsaved: {{count}}"
       },
       "piece_switch": {
-        "description": "Przełączenie utworu odrzuci wszystkie niezapisane przypisania w tej sekcji. Czy chcesz kontynuować?",
-        "discard": "Odrzuć i przełącz",
-        "title": "Niezapisane zmiany castingu"
+        "description": "Switching the piece will discard all unsaved assignments in this section. Do you want to continue?",
+        "discard": "Discard and switch",
+        "title": "Unsaved casting changes"
       },
       "sections": {
         "unassigned": "Unassigned (Roster Base)"
@@ -1675,8 +1675,8 @@
         "free": "Open Vacancy"
       },
       "toast": {
-        "save_success": "Casting zapisany",
-        "save_success_desc": "Wszystkie zmiany zostały zsynchronizowane."
+        "save_success": "Casting saved",
+        "save_success_desc": "All changes have been synchronized."
       },
       "voices": {
         "altos": "Altos",
@@ -1773,8 +1773,8 @@
         "who": "Who is called for the rehearsal?"
       },
       "header": {
-        "subtitle": "Planuj próby, zarządzaj uczestnictwem sekcji oraz frekwencją.",
-        "title": "Próby"
+        "subtitle": "Plan rehearsals, manage section participation and attendance.",
+        "title": "Rehearsals"
       },
       "list": {
         "title": "Rehearsal Schedule"
@@ -1907,10 +1907,10 @@
       "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
-      "score_pdf_label": "Partytura / Program",
-      "score_pdf_modal_title": "Partytura Koncertu",
+      "score_pdf_label": "Score / Program",
+      "score_pdf_modal_title": "Concert Score",
       "unknown_artist": "Artist",
-      "view_score_pdf": "Podgląd PDF"
+      "view_score_pdf": "View PDF"
     },
     "dashboard": {
       "description": "Check rehearsals, report absences, and track concert plans.",
@@ -2076,6 +2076,77 @@
         "label": "Security",
         "short": "Password"
       }
+    },
+    "notifications": {
+      "hero_variant": {
+        "active": "Active",
+        "recommended": "Recommended",
+        "blocked": "Blocked",
+        "unavailable": "Unavailable",
+        "configuration": "Configuration"
+      },
+      "title": "Notifications",
+      "description": "Manage how and when you want to receive information from the system. In-app notifications are always active.",
+      "table": {
+        "event_type": "Event type",
+        "in_app": "In-App",
+        "email": "Email",
+        "push": "Push"
+      },
+      "tooltips": {
+        "denied": "Notifications are blocked. Unblock them in your browser settings.",
+        "unsupported": "This browser does not support push notifications.",
+        "activate_first": "Activate push notifications at the top to manage these settings."
+      },
+      "unsubscribe_modal": {
+        "title": "Disable push notifications?",
+        "description": "You will no longer receive push notifications on this device. You can turn them back on at any time."
+      },
+      "actions": {
+        "disable": "Disable",
+        "cancel": "Cancel",
+        "send_test": "Send test",
+        "enable": "Enable notifications",
+        "manual_change_required": "Manual browser change required"
+      },
+      "describe": {
+        "subscribed_title": "Push notifications are active on this device",
+        "subscribed_desc": "You receive notifications even when the app is closed. You can customize specific event types below.",
+        "ready_title": "Stay up to date without watching the tab",
+        "ready_desc": "Enable push notifications to get rehearsal, project, and urgent message updates directly to this device.",
+        "denied_title": "Notifications are blocked in your browser",
+        "denied_desc": "To enable them, click the padlock icon next to the address bar, find 'Notifications', and set it to 'Allow'. Then refresh the page.",
+        "ios_title": "App mode required on iOS",
+        "ios_desc": "To enable notifications on iPhone or iPad, open this page in Safari, tap 'Share', and select 'Add to Home Screen'. Then launch the app from the icon.",
+        "https_title": "Secure connection (HTTPS) required",
+        "https_desc": "Push notifications require an encrypted connection. Open the app via HTTPS to activate them.",
+        "unsupported_title": "This browser does not support push notifications",
+        "unsupported_desc": "Use the latest version of Chrome, Edge, Firefox, or Safari. In-app notifications still work normally.",
+        "misconfigured_title": "Push notifications require admin configuration",
+        "misconfigured_desc": "All in-app and email notifications work normally. Push notifications will be available once system configuration is complete."
+      },
+      "types": {
+        "PROJECT_INVITATION": "Project Invitation",
+        "PROJECT_UPDATED": "Project Details Updated",
+        "PROJECT_CANCELLED": "Project Cancelled",
+        "PROJECT_REMINDER": "Upcoming Project Reminder",
+        "REHEARSAL_SCHEDULED": "New Rehearsal Scheduled",
+        "REHEARSAL_UPDATED": "Rehearsal Time/Location Changed",
+        "REHEARSAL_CANCELLED": "Rehearsal Cancelled",
+        "REHEARSAL_REMINDER": "Upcoming Rehearsal Reminder",
+        "PIECE_CASTING_ASSIGNED": "Assigned to Piece",
+        "PIECE_CASTING_UPDATED": "Piece Casting Changed",
+        "MATERIAL_UPLOADED": "New Sheet Music or Audio Track",
+        "CONTRACT_ISSUED": "Contract Ready for Review",
+        "ABSENCE_REQUESTED": "Absence Requested by Artist",
+        "ABSENCE_APPROVED": "Absence Request Approved",
+        "ABSENCE_REJECTED": "Absence Request Rejected",
+        "SYSTEM_ALERT": "System Maintenance or Alert",
+        "PARTICIPATION_RESPONSE": "Artist Project Response",
+        "ATTENDANCE_SUBMITTED": "Artist Attendance Info",
+        "CUSTOM_ADMIN_MESSAGE": "Direct Message from Management",
+        "NOTIFICATION_READ_RECEIPT": "Message Read by Artist"
+      }
     }
   },
   "shared": {
@@ -2084,12 +2155,12 @@
     }
   },
   "voice_types": {
-    "ALT": "Alt",
-    "BAR": "Baryton",
-    "BAS": "Bas",
-    "CT": "Kontratenor",
-    "MEZ": "Mezzosopran",
-    "SOP": "Sopran",
+    "ALT": "Alto",
+    "BAR": "Baritone",
+    "BAS": "Bass",
+    "CT": "Countertenor",
+    "MEZ": "Mezzo-soprano",
+    "SOP": "Soprano",
     "TEN": "Tenor"
   }
 }

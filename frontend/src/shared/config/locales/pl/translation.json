@@ -1425,7 +1425,7 @@
         "saving": "Zapisywanie budżetu..."
       }
     },
-    "call_time": "Call Time:",
+    "call_time": "Zbiórka:",
     "card": {
       "artistic_dashboard": "Pulpit Artystyczny",
       "collapse": "Zwiń",
@@ -1503,7 +1503,7 @@
         "title": "Skład Ekipy (Crew)"
       },
       "title": "Ekipa (Crew)",
-      "title_short": "tech",
+      "title_short": "technika",
       "toast": {
         "assign_error": "Błąd przypisania",
         "assign_error_desc": "Nie udało się przypisać członka ekipy do projektu.",
@@ -1950,7 +1950,7 @@
       "no_run_sheet": "Harmonogram dnia nie został jeszcze opublikowany przez menedżera.",
       "no_spotify": "Brak playlisty referencyjnej.",
       "note_label": "Notatka:",
-      "preview_call_sheet": "Call-Sheet PDF",
+      "preview_call_sheet": "Podgląd Call-Sheet",
       "project_badge": "Koncert / Wydarzenie",
       "run_sheet_title": "Harmonogram Dnia",
       "score_pdf_label": "Partytura / Program",
@@ -2121,6 +2121,77 @@
       "security": {
         "label": "Bezpieczeństwo",
         "short": "Hasło"
+      }
+    },
+    "notifications": {
+      "hero_variant": {
+        "active": "Aktywne",
+        "recommended": "Zalecane",
+        "blocked": "Zablokowane",
+        "unavailable": "Niedostępne",
+        "configuration": "Konfiguracja"
+      },
+      "title": "Powiadomienia",
+      "description": "Zarządzaj tym, jak i kiedy chcesz otrzymywać informacje z systemu. Powiadomienia wewnątrz aplikacji są zawsze aktywne.",
+      "table": {
+        "event_type": "Typ zdarzenia",
+        "in_app": "In-App",
+        "email": "E-mail",
+        "push": "Push"
+      },
+      "tooltips": {
+        "denied": "Powiadomienia są zablokowane. Odblokuj je w ustawieniach przeglądarki.",
+        "unsupported": "Ta przeglądarka nie obsługuje powiadomień push.",
+        "activate_first": "Aktywuj powiadomienia push u góry, aby zarządzać tymi ustawieniami."
+      },
+      "unsubscribe_modal": {
+        "title": "Wyłączyć powiadomienia push?",
+        "description": "Nie będziesz już otrzymywać powiadomień push na tym urządzeniu. W każdej chwili możesz je włączyć ponownie."
+      },
+      "actions": {
+        "disable": "Wyłącz",
+        "cancel": "Anuluj",
+        "send_test": "Wyślij test",
+        "enable": "Włącz powiadomienia",
+        "manual_change_required": "Wymagana ręczna zmiana w przeglądarce"
+      },
+      "describe": {
+        "subscribed_title": "Powiadomienia push są aktywne na tym urządzeniu",
+        "subscribed_desc": "Otrzymujesz powiadomienia nawet gdy aplikacja jest zamknięta. Możesz dostosować poszczególne typy zdarzeń poniżej.",
+        "ready_title": "Bądź na bieżąco bez pilnowania zakładki",
+        "ready_desc": "Włącz powiadomienia push, aby otrzymywać informacje o próbach, projektach i pilnych wiadomościach bezpośrednio na to urządzenie.",
+        "denied_title": "Powiadomienia są zablokowane w przeglądarce",
+        "denied_desc": "Aby je włączyć, kliknij ikonę kłódki obok adresu strony, znajdź sekcję „Powiadomienia” i ustaw zezwolenie na „Zezwalaj”. Następnie odśwież stronę.",
+        "ios_title": "Wymagany tryb aplikacji na iOS",
+        "ios_desc": "Aby włączyć powiadomienia na iPhone lub iPad, otwórz tę stronę w Safari, dotknij „Udostępnij” i wybierz „Dodaj do ekranu początkowego”. Następnie uruchom aplikację z ikony.",
+        "https_title": "Wymagane bezpieczne połączenie (HTTPS)",
+        "https_desc": "Powiadomienia push wymagają szyfrowanego połączenia. Otwórz aplikację przez HTTPS, aby je aktywować.",
+        "unsupported_title": "Ta przeglądarka nie obsługuje powiadomień push",
+        "unsupported_desc": "Skorzystaj z najnowszej wersji Chrome, Edge, Firefox lub Safari. Powiadomienia w aplikacji nadal działają normalnie.",
+        "misconfigured_title": "Powiadomienia push wymagają konfiguracji administratora",
+        "misconfigured_desc": "Wszystkie powiadomienia w aplikacji oraz e-mailowe działają normalnie. Powiadomienia push będą dostępne po zakończeniu konfiguracji systemu."
+      },
+      "types": {
+        "PROJECT_INVITATION": "Zaproszenie do projektu",
+        "PROJECT_UPDATED": "Aktualizacja szczegółów projektu",
+        "PROJECT_CANCELLED": "Projekt odwołany",
+        "PROJECT_REMINDER": "Przypomnienie o projekcie",
+        "REHEARSAL_SCHEDULED": "Nowa próba",
+        "REHEARSAL_UPDATED": "Zmiana czasu/miejsca próby",
+        "REHEARSAL_CANCELLED": "Próba odwołana",
+        "REHEARSAL_REMINDER": "Przypomnienie o próbie",
+        "PIECE_CASTING_ASSIGNED": "Przypisanie do utworu",
+        "PIECE_CASTING_UPDATED": "Zmiana obsady utworu",
+        "MATERIAL_UPLOADED": "Nowe materiały do ćwiczeń",
+        "CONTRACT_ISSUED": "Umowa gotowa do wglądu",
+        "ABSENCE_REQUESTED": "Prośba o nieobecność",
+        "ABSENCE_APPROVED": "Nieobecność zatwierdzona",
+        "ABSENCE_REJECTED": "Nieobecność odrzucona",
+        "SYSTEM_ALERT": "Komunikat systemowy",
+        "PARTICIPATION_RESPONSE": "Odpowiedź artysty",
+        "ATTENDANCE_SUBMITTED": "Informacja o frekwencji",
+        "CUSTOM_ADMIN_MESSAGE": "Bezpośrednia wiadomość",
+        "NOTIFICATION_READ_RECEIPT": "Wiadomość odczytana"
       }
     }
   },
