@@ -997,8 +997,24 @@
     }
   },
   "logistics": {
+    "atlas": {
+      "empty_desc": "Add a location from Google Maps to see it on the atlas.",
+      "empty_title": "No coordinates to display",
+      "legend_title": "Category legend",
+      "live_badge": "Location atlas",
+      "local_time": "Local time",
+      "markers_count": "{{count}} markers",
+      "open_maps": "Google Maps"
+    },
     "autocomplete": {
       "placeholder": "Type a venue, hotel, or address..."
+    },
+    "card": {
+      "archive": "Archive",
+      "deep_link": "Open in Google Maps",
+      "deep_link_aria": "Open {{name}} in Google Maps",
+      "edit": "Edit",
+      "no_address": "No address provided"
     },
     "categories": {
       "airport": "Airport",
@@ -1010,37 +1026,112 @@
       "transit": "Station / Transit",
       "workspace": "Private Space"
     },
+    "categories_plural": {
+      "airport": "Airports",
+      "church": "Churches",
+      "concert_hall": "Concert Halls",
+      "hotel": "Hotels",
+      "other": "Other",
+      "rehearsal_room": "Rehearsal Rooms",
+      "transit": "Stations & Transit",
+      "workspace": "Private Spaces"
+    },
+    "category_descriptions": {
+      "airport": "Airports serving the team's transfers.",
+      "church": "Sanctuaries, basilicas, and parish halls.",
+      "concert_hall": "Philharmonics, opera houses, and concert stages.",
+      "hotel": "Lodging for the ensemble and guest artists.",
+      "other": "Locations outside the standard groups.",
+      "rehearsal_room": "Acoustic studios and preparation rooms.",
+      "transit": "Train stations, coach terminals, and transfer hubs.",
+      "workspace": "Team offices, studios, and production back-of-house."
+    },
     "dashboard": {
-      "add_location": "Add Location",
-      "archive_desc": "The location will disappear from the main operational database but will be retained for historical projects.",
-      "archive_title": "Archive location?",
-      "empty_desc": "Change filters or add a new place using Google Maps integration.",
-      "empty_title": "No results",
-      "search_placeholder": "Search location by name or address...",
+      "add_location": "Add location",
+      "archive_desc": "The location will disappear from the main operational base but will be retained for historical projects.",
+      "archive_title": "Archive this location?",
+      "collection_desc": "Each location knows its time zone and stores internal instructions for the production team.",
+      "collection_title": "Global base",
+      "filtered_view": "Filtered view",
+      "in_view": "{{count}} in view",
       "subtitle": "Logistics Module",
-      "sync_error": "Error syncing locations with the database.",
-      "title": "Baza",
-      "title_highlight": "Locations"
+      "sync_error": "Failed to load the locations base.",
+      "title": "Atlas of",
+      "title_highlight": "locations"
     },
     "editor": {
-      "address": "Official Address *",
+      "action_bar": {
+        "description": "Confirm to commit the location to the global base."
+      },
+      "address": "Official address *",
       "category": "Classification *",
-      "internal_notes": "Team Notes (Optional)",
-      "name": "Display Name *",
-      "notes_placeholder": "e.g. Artist entrance is from the parking lot. Gate code: 1234#.",
+      "category_preview": "Selected category",
+      "close_aria": "Close panel",
+      "eyebrow": "Location profile",
+      "internal_notes": "Team notes (optional)",
+      "name": "Display name *",
+      "notes_hint": "Surfaced as the team's internal whisper on the location card — never visible externally.",
+      "notes_placeholder": "e.g. Artist entrance from the parking side. Gate code: 1234#.",
       "placeholder_address": "e.g. 5 Jasna St, 00-013 Warsaw",
-      "placeholder_name": "e.g. National Philharmonic - Chamber Hall",
-      "search_hint": "Search for a place on the map to automatically populate data, coordinates, and timezone. This will allow for smart time management in projects.",
-      "section_basic": "Basic Data",
-      "section_notes": "Internal Instructions",
-      "section_search": "Google Global Database",
-      "submit": "Add to Database",
-      "title_edit": "Edit Location",
-      "title_new": "New Location"
+      "placeholder_name": "e.g. National Philharmonic — Chamber Hall",
+      "search_hint": "Find a place to auto-fill the name, coordinates, and time zone — essential for smart scheduling.",
+      "section_basic": "Core data",
+      "section_notes": "Internal instructions",
+      "section_search": "Google global base",
+      "submit": "Commit to base",
+      "title_edit": "Edit location",
+      "title_new": "New location"
+    },
+    "empty_state": {
+      "add_location": "Add location",
+      "filters_blocked": "Current filters hide the entire base. Clear them to return to the full atlas.",
+      "search_results": "We couldn't find a location matching \"{{term}}\". Add a new entry or adjust your filters.",
+      "start_building": "Start building the global atlas by adding your first hall, church, or hotel.",
+      "title": "No locations in the current view"
+    },
+    "filters": {
+      "active_description": "Click a chip to remove it without resetting the entire view.",
+      "active_filters": "{{count}} active filters",
+      "all_categories": "All categories",
+      "category_label": "Category",
+      "chip_category": "Category: {{label}}",
+      "chip_search": "Search: \"{{term}}\"",
+      "clear_filters": "Clear filters",
+      "heading": "Base filters",
+      "no_active_filters": "No active filters",
+      "no_filters_message": "View shows the complete locations base.",
+      "search_label": "Search",
+      "search_placeholder": "Search by name or address...",
+      "summary": "{{visible}} of {{total}} locations in the current view.",
+      "view_aria": "View mode",
+      "view_atlas": "Atlas",
+      "view_grid": "Grid"
+    },
+    "hero": {
+      "badge": "Global Locations Base",
+      "coverage": {
+        "geo": "GPS coverage",
+        "notes": "Team notes",
+        "ratio": "{{value}} / {{total}}"
+      },
+      "description": "Concert halls, churches, rehearsal rooms, hotels, and airports — synced with Google Maps, time zones, and team instructions.",
+      "stats": {
+        "countries": "{{count}} countries",
+        "locations": "{{count}} locations",
+        "timezones": "{{count}} time zones",
+        "top_category": "Most: {{label}} ({{count}})"
+      },
+      "title": "Every stage, every hub — in one atlas."
     },
     "map": {
       "locate_me": "My Location",
       "search_placeholder": "Search global locations..."
+    },
+    "metrics": {
+      "countries": "Countries",
+      "geo_coverage": "GPS coverage",
+      "locations": "Locations in base",
+      "notes_coverage": "Team notes"
     },
     "preview": {
       "default_category": "Location",
@@ -1054,6 +1145,7 @@
       "archiving": "Deactivating location...",
       "create_success": "Added!",
       "creating": "Creating...",
+      "sync_warning": "Sync warning",
       "update_success": "Updated!",
       "updating": "Updating..."
     }

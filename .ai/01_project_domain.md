@@ -32,6 +32,8 @@ All code naming conventions (variables, DB models, TypeScript interfaces) must s
 - **Casting / Micro-Casting (`ProjectPieceCasting`):** Roster assignment for a specific project/piece (links `Project`, `Piece`, and `Artist`).
 - **Documents:** `Run Sheet` (Production schedule) and `Contract` (Automatically generated PDF/HTML).
 - **Logistics:** Managing locations, concert venues, and rehearsal spaces.
+- **Notifications & Web Push:** Real-time push notifications (W3C VAPID standard) and transactional emails for rehearsal updates, casting changes, and system alerts. Handled asynchronously via Celery.
+- **Calendar (iCal):** Automatic synchronization of rehearsals and projects via external iCal feeds (Google Calendar / Apple Calendar integration).
 
 ## 3. Core UX/UI & Architecture Principles
 

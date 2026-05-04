@@ -1029,8 +1029,24 @@
     }
   },
   "logistics": {
+    "atlas": {
+      "empty_desc": "Dodaj lokację z mapy Google, aby zobaczyć ją na atlasie.",
+      "empty_title": "Brak współrzędnych do wyświetlenia",
+      "legend_title": "Legenda kategorii",
+      "live_badge": "Atlas lokacji",
+      "local_time": "Czas lokalny",
+      "markers_count": "{{count}} markerów",
+      "open_maps": "Mapy Google"
+    },
     "autocomplete": {
       "placeholder": "Zacznij wpisywać nazwę miejsca..."
+    },
+    "card": {
+      "archive": "Archiwizuj",
+      "deep_link": "Otwórz w Google Maps",
+      "deep_link_aria": "Otwórz {{name}} w Google Maps",
+      "edit": "Edytuj",
+      "no_address": "Brak adresu"
     },
     "categories": {
       "airport": "Lotnisko",
@@ -1042,37 +1058,112 @@
       "transit": "Stacja / Dworzec",
       "workspace": "Prywatna Przestrzeń"
     },
+    "categories_plural": {
+      "airport": "Lotniska",
+      "church": "Kościoły",
+      "concert_hall": "Sale Koncertowe",
+      "hotel": "Hotele",
+      "other": "Pozostałe",
+      "rehearsal_room": "Sale Prób",
+      "transit": "Dworce i Stacje",
+      "workspace": "Prywatne Przestrzenie"
+    },
+    "category_descriptions": {
+      "airport": "Porty lotnicze obsługujące transfery zespołu.",
+      "church": "Świątynie, bazyliki i sale parafialne.",
+      "concert_hall": "Filharmonie, opery i sceny koncertowe.",
+      "hotel": "Zakwaterowanie zespołu i artystów gościnnych.",
+      "other": "Lokacje spoza standardowych grup.",
+      "rehearsal_room": "Studia akustyczne i sale przygotowań.",
+      "transit": "Stacje kolejowe, autobusowe i węzły transferowe.",
+      "workspace": "Biura zespołu, studia i zaplecze produkcyjne."
+    },
     "dashboard": {
-      "add_location": "Dodaj Miejsce",
+      "add_location": "Dodaj lokację",
       "archive_desc": "Lokacja zniknie z głównej bazy operacyjnej, ale zostanie zachowana dla projektów historycznych.",
       "archive_title": "Zarchiwizować lokację?",
-      "empty_desc": "Zmień filtry lub dodaj nowe miejsce korzystając z integracji Google Maps.",
-      "empty_title": "Brak wyników",
-      "search_placeholder": "Szukaj lokacji po nazwie lub adresie...",
+      "collection_desc": "Każda lokacja zna swoją strefę czasową i przechowuje wewnętrzne instrukcje dla zespołu produkcyjnego.",
+      "collection_title": "Globalna baza",
+      "filtered_view": "Widok filtrowany",
+      "in_view": "{{count}} w widoku",
       "subtitle": "Moduł Logistyczny",
-      "sync_error": "Błąd synchronizacji lokacji z bazą.",
-      "title": "Baza",
+      "sync_error": "Nie udało się pobrać bazy lokacji.",
+      "title": "Atlas",
       "title_highlight": "Lokacji"
     },
     "editor": {
-      "address": "Oficjalny Adres *",
+      "action_bar": {
+        "description": "Zatwierdź, aby zapisać lokację w globalnej bazie."
+      },
+      "address": "Oficjalny adres *",
       "category": "Klasyfikacja *",
-      "internal_notes": "Notatki dla Zespołu (Opcjonalnie)",
-      "name": "Nazwa Wyświetlana *",
-      "notes_placeholder": "np. Wejście dla artystów znajduje się od strony parkingu. Kod do bramy: 1234#.",
+      "category_preview": "Wybrana kategoria",
+      "close_aria": "Zamknij panel",
+      "eyebrow": "Profil lokacji",
+      "internal_notes": "Notatki dla zespołu (opcjonalnie)",
+      "name": "Nazwa wyświetlana *",
+      "notes_hint": "Pojawiają się jako wewnętrzny szept zespołu w karcie lokacji — niewidoczne na zewnątrz.",
+      "notes_placeholder": "np. Wejście dla artystów od strony parkingu. Kod do bramy: 1234#.",
       "placeholder_address": "np. ul. Jasna 5, 00-013 Warszawa",
-      "placeholder_name": "np. Filharmonia Narodowa - Sala Kameralna",
-      "search_hint": "Wyszukaj miejsce na mapie, aby automatycznie uzupełnić dane, koordynaty i strefę czasową. Pozwoli to na inteligentne zarządzanie czasem w projektach.",
-      "section_basic": "Dane Podstawowe",
-      "section_notes": "Instrukcje Wewnętrzne",
-      "section_search": "Globalna Baza Google",
-      "submit": "Dodaj do Bazy",
-      "title_edit": "Edycja Lokacji",
-      "title_new": "Nowa Lokacja"
+      "placeholder_name": "np. Filharmonia Narodowa — Sala Kameralna",
+      "search_hint": "Wyszukaj miejsce, aby automatycznie uzupełnić dane, koordynaty i strefę czasową — kluczowe dla inteligentnego planowania.",
+      "section_basic": "Dane podstawowe",
+      "section_notes": "Instrukcje wewnętrzne",
+      "section_search": "Globalna baza Google",
+      "submit": "Dodaj do bazy",
+      "title_edit": "Edycja lokacji",
+      "title_new": "Nowa lokacja"
+    },
+    "empty_state": {
+      "add_location": "Dodaj lokację",
+      "filters_blocked": "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego atlasu.",
+      "search_results": "Nie znaleźliśmy lokacji pasującej do \"{{term}}\". Możesz dodać nowy wpis lub zmienić filtry.",
+      "start_building": "Rozpocznij budowę globalnego atlasu, dodając pierwszą salę, kościół lub hotel zespołu.",
+      "title": "Brak lokacji w bieżącym widoku"
+    },
+    "filters": {
+      "active_description": "Kliknij filtr, aby usunąć go bez resetowania całego widoku.",
+      "active_filters": "{{count}} aktywne filtry",
+      "all_categories": "Wszystkie kategorie",
+      "category_label": "Kategoria",
+      "chip_category": "Kategoria: {{label}}",
+      "chip_search": "Wyszukiwanie: \"{{term}}\"",
+      "clear_filters": "Wyczyść filtry",
+      "heading": "Filtry Bazy",
+      "no_active_filters": "Brak aktywnych filtrów",
+      "no_filters_message": "Widok prezentuje pełną bazę lokacji.",
+      "search_label": "Wyszukiwanie",
+      "search_placeholder": "Szukaj po nazwie lub adresie...",
+      "summary": "{{visible}} z {{total}} lokacji w aktualnym widoku.",
+      "view_aria": "Tryb widoku",
+      "view_atlas": "Atlas",
+      "view_grid": "Siatka"
+    },
+    "hero": {
+      "badge": "Globalna Baza Lokacji",
+      "coverage": {
+        "geo": "Pokrycie GPS",
+        "notes": "Notatki zespołu",
+        "ratio": "{{value}} / {{total}}"
+      },
+      "description": "Filharmonie, kościoły, sale prób, hotele i lotniska — synchronizowane z Google Maps, ze strefami czasowymi i instrukcjami dla zespołu.",
+      "stats": {
+        "countries": "{{count}} krajów",
+        "locations": "{{count}} lokacji",
+        "timezones": "{{count}} stref czasowych",
+        "top_category": "Najliczniej: {{label}} ({{count}})"
+      },
+      "title": "Każda scena, każdy hub — w jednym atlasie."
     },
     "map": {
       "locate_me": "Moja Lokalizacja",
       "search_placeholder": "Wyszukaj globalne lokacje..."
+    },
+    "metrics": {
+      "countries": "Kraje",
+      "geo_coverage": "Pokrycie GPS",
+      "locations": "Lokacje w bazie",
+      "notes_coverage": "Notatki zespołu"
     },
     "preview": {
       "default_category": "Lokacja",
@@ -1086,6 +1177,7 @@
       "archiving": "Dezaktywacja lokacji...",
       "create_success": "Dodano!",
       "creating": "Tworzenie...",
+      "sync_warning": "Ostrzeżenie synchronizacji",
       "update_success": "Zaktualizowano!",
       "updating": "Aktualizacja..."
     }

@@ -1016,8 +1016,24 @@
     }
   },
   "logistics": {
+    "atlas": {
+      "empty_desc": "Ajoutez un lieu depuis Google Maps pour le voir apparaître sur l'atlas.",
+      "empty_title": "Aucune coordonnée à afficher",
+      "legend_title": "Légende des catégories",
+      "live_badge": "Atlas des lieux",
+      "local_time": "Heure locale",
+      "markers_count": "{{count}} marqueurs",
+      "open_maps": "Google Maps"
+    },
     "autocomplete": {
       "placeholder": "Rechercher une adresse, un hôtel..."
+    },
+    "card": {
+      "archive": "Archiver",
+      "deep_link": "Ouvrir dans Google Maps",
+      "deep_link_aria": "Ouvrir {{name}} dans Google Maps",
+      "edit": "Modifier",
+      "no_address": "Aucune adresse"
     },
     "categories": {
       "airport": "Aéroport",
@@ -1029,37 +1045,112 @@
       "transit": "Station / Gare",
       "workspace": "Espace privé"
     },
+    "categories_plural": {
+      "airport": "Aéroports",
+      "church": "Églises",
+      "concert_hall": "Salles de concert",
+      "hotel": "Hôtels",
+      "other": "Autres",
+      "rehearsal_room": "Salles de répétition",
+      "transit": "Stations et gares",
+      "workspace": "Espaces privés"
+    },
+    "category_descriptions": {
+      "airport": "Aéroports gérant les transferts de l'équipe.",
+      "church": "Sanctuaires, basiliques et salles paroissiales.",
+      "concert_hall": "Philharmonies, opéras et scènes de concert.",
+      "hotel": "Hébergement de l'ensemble et des artistes invités.",
+      "other": "Lieux hors des groupes standards.",
+      "rehearsal_room": "Studios acoustiques et salles de préparation.",
+      "transit": "Gares ferroviaires, routières et hubs de correspondance.",
+      "workspace": "Bureaux de l'équipe, studios et coulisses de production."
+    },
     "dashboard": {
       "add_location": "Ajouter un lieu",
-      "archive_desc": "Le lieu disparaîtra de la base de données opérationnelle principale mais sera conservé pour les projets historiques.",
-      "archive_title": "Archiver le lieu ?",
-      "empty_desc": "Modifiez les filtres ou ajoutez un nouveau lieu en utilisant l'intégration Google Maps.",
-      "empty_title": "Aucun résultat",
-      "search_placeholder": "Rechercher un lieu par nom ou adresse...",
+      "archive_desc": "Le lieu disparaîtra de la base opérationnelle mais restera conservé pour les projets historiques.",
+      "archive_title": "Archiver ce lieu ?",
+      "collection_desc": "Chaque lieu connaît son fuseau horaire et stocke des instructions internes pour l'équipe de production.",
+      "collection_title": "Base globale",
+      "filtered_view": "Vue filtrée",
+      "in_view": "{{count}} dans la vue",
       "subtitle": "Module Logistique",
-      "sync_error": "Erreur de synchronisation des lieux avec la base de données.",
-      "title": "Base de",
+      "sync_error": "Échec du chargement de la base des lieux.",
+      "title": "Atlas des",
       "title_highlight": "Lieux"
     },
     "editor": {
+      "action_bar": {
+        "description": "Confirmez pour enregistrer le lieu dans la base globale."
+      },
       "address": "Adresse officielle *",
       "category": "Classification *",
-      "internal_notes": "Notes de l'équipe (Optionnel)",
+      "category_preview": "Catégorie sélectionnée",
+      "close_aria": "Fermer le panneau",
+      "eyebrow": "Profil du lieu",
+      "internal_notes": "Notes de l'équipe (optionnel)",
       "name": "Nom d'affichage *",
-      "notes_placeholder": "ex. L'entrée des artistes se fait par le parking. Code du portail : 1234#.",
+      "notes_hint": "Apparaissent comme un murmure interne dans la fiche du lieu — jamais exposé à l'extérieur.",
+      "notes_placeholder": "ex. Entrée artistes côté parking. Code du portail : 1234#.",
       "placeholder_address": "ex. 5 rue Jasna, 00-013 Varsovie",
-      "placeholder_name": "ex. Philharmonie nationale - Salle de chambre",
-      "search_hint": "Recherchez un lieu sur la carte pour remplir automatiquement les données, les coordonnées et le fuseau horaire. Cela permettra une gestion intelligente du temps dans les projets.",
+      "placeholder_name": "ex. Philharmonie nationale — Salle de chambre",
+      "search_hint": "Recherchez un lieu pour remplir automatiquement les données, coordonnées et fuseau horaire — essentiel pour planifier intelligemment.",
       "section_basic": "Données de base",
       "section_notes": "Instructions internes",
-      "section_search": "Base de données globale Google",
-      "submit": "Ajouter à la base de données",
+      "section_search": "Base globale Google",
+      "submit": "Ajouter à la base",
       "title_edit": "Modifier le lieu",
       "title_new": "Nouveau lieu"
+    },
+    "empty_state": {
+      "add_location": "Ajouter un lieu",
+      "filters_blocked": "Les filtres actuels masquent toute la base. Effacez-les pour revenir à l'atlas complet.",
+      "search_results": "Aucun lieu ne correspond à \"{{term}}\". Ajoutez une nouvelle entrée ou ajustez les filtres.",
+      "start_building": "Commencez à construire l'atlas global en ajoutant votre première salle, église ou hôtel.",
+      "title": "Aucun lieu dans la vue actuelle"
+    },
+    "filters": {
+      "active_description": "Cliquez sur un filtre pour le supprimer sans réinitialiser toute la vue.",
+      "active_filters": "{{count}} filtres actifs",
+      "all_categories": "Toutes les catégories",
+      "category_label": "Catégorie",
+      "chip_category": "Catégorie : {{label}}",
+      "chip_search": "Recherche : \"{{term}}\"",
+      "clear_filters": "Effacer les filtres",
+      "heading": "Filtres de la base",
+      "no_active_filters": "Aucun filtre actif",
+      "no_filters_message": "La vue présente la base complète des lieux.",
+      "search_label": "Recherche",
+      "search_placeholder": "Rechercher par nom ou adresse...",
+      "summary": "{{visible}} sur {{total}} lieux dans la vue actuelle.",
+      "view_aria": "Mode d'affichage",
+      "view_atlas": "Atlas",
+      "view_grid": "Grille"
+    },
+    "hero": {
+      "badge": "Base globale des lieux",
+      "coverage": {
+        "geo": "Couverture GPS",
+        "notes": "Notes d'équipe",
+        "ratio": "{{value}} / {{total}}"
+      },
+      "description": "Salles, églises, salles de répétition, hôtels et aéroports — synchronisés avec Google Maps, fuseaux horaires et instructions de l'équipe.",
+      "stats": {
+        "countries": "{{count}} pays",
+        "locations": "{{count}} lieux",
+        "timezones": "{{count}} fuseaux horaires",
+        "top_category": "Plus nombreux : {{label}} ({{count}})"
+      },
+      "title": "Chaque scène, chaque hub — dans un seul atlas."
     },
     "map": {
       "locate_me": "Ma position",
       "search_placeholder": "Rechercher des lieux globaux..."
+    },
+    "metrics": {
+      "countries": "Pays",
+      "geo_coverage": "Couverture GPS",
+      "locations": "Lieux dans la base",
+      "notes_coverage": "Notes d'équipe"
     },
     "preview": {
       "default_category": "Lieu",
@@ -1073,6 +1164,7 @@
       "archiving": "Désactivation du lieu...",
       "create_success": "Ajouté !",
       "creating": "Création...",
+      "sync_warning": "Avertissement de synchronisation",
       "update_success": "Mis à jour !",
       "updating": "Mise à jour..."
     }

@@ -11,6 +11,7 @@ import {
 import { logisticsService } from "./logistics.service";
 import type {
   LocationCreateDto,
+  LocationDto,
   LocationUpdateDto,
 } from "../types/logistics.dto";
 
@@ -20,15 +21,10 @@ export const logisticsQueryKeys = {
 };
 
 export const useLocations = () => {
-  return useSuspenseQuery({
+  return useSuspenseQuery<LocationDto[]>({
     queryKey: logisticsQueryKeys.lists(),
     queryFn: logisticsService.getLocations,
     staleTime: 1000 * 60 * 5,
-    select: (locations: any) => {
-      if (Array.isArray(locations)) return locations;
-      if (locations && typeof locations === "object" && Array.isArray(locations.results)) return locations.results;
-      return [];
-    },
   });
 };
 

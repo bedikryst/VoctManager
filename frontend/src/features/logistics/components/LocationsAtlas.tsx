@@ -157,13 +157,11 @@ const AtlasMarker = ({
 
 interface AtlasInfoWindowProps {
   location: LocationDto;
-  option: LocationCategoryOption;
   onClose: () => void;
 }
 
 const AtlasInfoWindow = ({
   location,
-  option,
   onClose,
 }: AtlasInfoWindowProps): React.JSX.Element | null => {
   const { t } = useTranslation();
@@ -302,9 +300,6 @@ export const LocationsAtlas = ({
     () => locations.find((loc) => loc.id === selectedId) ?? null,
     [locations, selectedId],
   );
-  const selectedOption = selectedLocation
-    ? getLocationCategoryOption(t, selectedLocation.category)
-    : null;
 
   return (
     <motion.div
@@ -346,10 +341,9 @@ export const LocationsAtlas = ({
               );
             })}
 
-            {selectedLocation && selectedOption && (
+            {selectedLocation && (
               <AtlasInfoWindow
                 location={selectedLocation}
-                option={selectedOption}
                 onClose={() => setSelectedId(null)}
               />
             )}
