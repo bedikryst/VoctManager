@@ -25,7 +25,7 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
-import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { getArtistDisplayName } from "../lib/projectPresentation";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { ProjectService } from "../api/project.service";

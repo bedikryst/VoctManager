@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { useRehearsalsData } from "./hooks/useRehearsalsData";
 import { useLocationResolver } from "@/features/logistics/hooks/useLocationResolver";

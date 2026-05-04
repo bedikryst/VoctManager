@@ -22,7 +22,7 @@ import {
 import { EventCard } from "@/shared/ui/composites/EventCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
-import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { downloadFile } from "@/shared/lib/io/downloadFile";

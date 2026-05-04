@@ -35,7 +35,7 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { getAvailableTimezones } from "@/shared/lib/time/timezone";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
-import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import {
   getLocationLabel,

@@ -21,7 +21,7 @@ import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
-import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import {
   compareProjectDateAsc,
   isFutureProjectDate,

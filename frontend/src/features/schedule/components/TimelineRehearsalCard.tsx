@@ -24,7 +24,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
-import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { cn } from "@/shared/lib/utils";
 

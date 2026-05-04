@@ -13,7 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
-import { DualTimeDisplay } from "@/shared/widgets/utility/DualTimeDisplay";
+import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { Project, ProgramItem, PieceCasting } from "@/shared/types";
