@@ -8,7 +8,7 @@
  * @module core/App
  */
 
-import React, { Suspense, lazy, useState } from "react";
+import React, { Suspense, lazy, useState, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
@@ -142,6 +142,17 @@ export default function App(): React.JSX.Element {
 
   const shouldShowMarketingShell: boolean =
     !isPanelRoute && !isAuthRoute && !isDocumentViewerRoute;
+
+  // DOM Theme Orchestrator
+  useEffect(() => {
+    if (shouldShowMarketingShell) {
+      document.body.classList.add("theme-marketing");
+      document.body.classList.remove("theme-panel", "bg-ethereal-snow", "text-ethereal-ink", "selection:bg-ethereal-gold/20");
+    } else {
+      document.body.classList.add("theme-panel", "bg-ethereal-snow", "text-ethereal-ink", "selection:bg-ethereal-gold/20");
+      document.body.classList.remove("theme-marketing");
+    }
+  }, [shouldShowMarketingShell]);
 
   return (
     <CSRFProvider>

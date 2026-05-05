@@ -1,0 +1,60 @@
+@layer theme {
+  .theme-marketing {
+    --font-sans: 'Inter', sans-serif;
+    --font-serif: 'Cormorant Garamond', serif;
+
+    --h1-size: clamp(48px, 8vw, 120px);
+    --h1-weight: 300;
+    --h1-letter-spacing: 0.02em;
+
+    --h2-size: clamp(32px, 4vw, 64px);
+    --h2-weight: 400;
+
+    --h3-size: 20px;
+    --h3-weight: 400;
+
+    --body-size: 16px;
+    --body-line-height: 1.6;
+    --body-weight: 300;
+
+    --micro-size: 12px;
+    --micro-letter-spacing: 0.12em;
+    --micro-uppercase: uppercase;
+
+    --space-xs: 8px;
+    --space-sm: 16px;
+    --space-md: 32px;
+    --space-lg: 64px;
+    --space-xl: 120px;
+    
+    --bg-marketing: #F7F6F2;
+    --text-marketing: #1A1A1A;
+  }
+}
+
+body.theme-marketing {
+  font-family: var(--font-sans);
+  font-weight: var(--body-weight);
+  color: var(--text-marketing);
+  background: var(--bg-marketing);
+}
+
+body.theme-marketing h1, 
+body.theme-marketing h2, 
+body.theme-marketing h3,
+body.theme-marketing .font-serif {
+  font-family: var(--font-serif);
+}
+
+body.theme-marketing .hero-title {
+  font-size: var(--h1-size);
+  line-height: 1.1;
+  letter-spacing: var(--h1-letter-spacing);
+  font-weight: var(--h1-weight);
+}
+
+body.theme-marketing .container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
