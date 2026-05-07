@@ -1,0 +1,1515 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Voct Ensemble — Music. Silence. Contemplation.</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@200;300;400&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* tonalny pergamin / atrament */
+    --paper:        #F4F2EC;
+    --paper-deep:   #EDEAE2;
+    --ink:          #1A1A1A;
+    --ink-soft:     #2B2A28;
+    --ink-mute:     #6E6A62;
+    --ink-ghost:    #B6B1A6;
+    --rule:         #D9D5CA;
+
+    /* jedyny akcent — wosk świecy w półmroku */
+    --candle:       oklch(0.74 0.09 78);
+    --candle-soft:  oklch(0.78 0.07 78 / 0.18);
+
+    /* typografia */
+    --serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    --sans:  'Inter', -apple-system, sans-serif;
+    --mono:  'IBM Plex Mono', ui-monospace, monospace;
+
+    --h1: clamp(56px, 11vw, 168px);
+    --h2: clamp(36px, 5.4vw, 84px);
+    --h3: clamp(22px, 1.6vw, 28px);
+    --body: 16px;
+    --micro: 11px;
+
+    /* spacing */
+    --s-xs:  8px;
+    --s-sm:  16px;
+    --s-md:  32px;
+    --s-lg:  64px;
+    --s-xl:  120px;
+    --s-2xl: 200px;
+
+    /* easing — długi ogon */
+    --ease: cubic-bezier(0.22, 0.61, 0.16, 1);
+    --ease-slow: cubic-bezier(0.16, 0.84, 0.24, 1);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html, body{ background:var(--paper); color:var(--ink); }
+  body{
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: var(--body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  ::selection{ background: var(--candle-soft); color: var(--ink); }
+
+  a{ color:inherit; text-decoration:none; }
+
+  /* ---- LOADER ---- */
+  .loader{
+    position: fixed; inset:0; z-index: 100;
+    background: var(--ink);
+    display: grid; place-items:center;
+    animation: loaderOut 1.6s 1.6s var(--ease) forwards;
+  }
+  .loader svg{ width: 48px; height: 48px; opacity: 0; animation: loaderPulse 1.6s var(--ease) forwards; }
+  @keyframes loaderPulse{
+    0%   { opacity: 0; transform: scale(0.92); }
+    40%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0.0; transform: scale(1.06); }
+  }
+  @keyframes loaderOut{
+    to{ opacity: 0; visibility: hidden; }
+  }
+
+  /* ---- BOCZNA NUMERACJA ---- */
+  .rail{
+    position: fixed; top: 0; left: 0; height: 100vh; width: 128px;
+    display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+    padding-left: 64px;
+    z-index: 40;
+    pointer-events: none;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    mix-blend-mode: multiply;
+    opacity: 0;
+    animation: railEmerge 3s 3.4s var(--ease-slow) forwards;
+  }
+  @keyframes railEmerge{ to{ opacity: 1; } }
+  .rail ol{ list-style:none; display:flex; flex-direction:column; gap: 28px; }
+  .rail li{ display:flex; align-items:center; gap: 14px; color: var(--ink-ghost); transition: color 0.6s var(--ease), opacity 0.6s var(--ease); pointer-events: auto; cursor: pointer; opacity: 0.45; }
+  .rail li:hover{ opacity: 1; }
+  .rail li .num{ width: 22px; }
+  .rail li .name{ opacity: 0; transform: translateX(-4px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
+  .rail li:hover .name, .rail li.active .name{ opacity: 1; transform: translateX(0); }
+  .rail li.active{ opacity: 1; color: var(--ink); }
+  .rail li.active .dot{ background: var(--candle); }
+  .rail li .dot{
+    display:inline-block; width: 5px; height: 5px; border-radius: 50%;
+    background: currentColor; opacity: 0.5; transition: background 0.6s var(--ease), opacity 0.6s var(--ease);
+  }
+  .rail li.active .dot{ opacity: 1; }
+
+  /* ---- HEADER (logo + audio + lang) ---- */
+  .chrome-top{
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 56px 80px;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: 0;
+    animation: railEmerge 3s 3.4s var(--ease-slow) forwards;
+  }
+  .chrome-top > *{ pointer-events: auto; }
+  .wordmark{
+    display: flex; align-items: center; gap: 12px;
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+  }
+  .wordmark .glyph{ width: 22px; height: 30px; opacity: 0.7; }
+  .wordmark em{ font-style: italic; opacity: 0.7; }
+
+  .top-right{
+    display: flex; align-items: center; gap: 28px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .audio-toggle{
+    display: flex; align-items: center; gap: 10px;
+    background: none; border: 0; cursor: pointer;
+    color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit;
+    padding: 4px 0;
+  }
+  .audio-toggle .wave{ display:inline-block; width: 28px; height: 8px; }
+  .audio-toggle .wave svg{ width: 100%; height: 100%; }
+  .audio-toggle .wave path{ stroke: currentColor; stroke-width: 1; fill: none; }
+  .audio-toggle .label{ opacity: 0.65; transition: opacity 0.4s var(--ease); }
+  .audio-toggle:hover .label{ opacity: 1; }
+  .audio-toggle .wave .w-flat{ opacity: 1; transition: opacity 0.6s var(--ease); }
+  .audio-toggle .wave .w-curve{ opacity: 0; transition: opacity 0.6s var(--ease); }
+  .audio-toggle.on .wave .w-flat{ opacity: 0; }
+  .audio-toggle.on .wave .w-curve{ opacity: 1; animation: waveBreath 4s var(--ease-slow) infinite; transform-origin: center; }
+  @keyframes waveBreath{
+    0%,100% { transform: scaleY(0.4); }
+    50%     { transform: scaleY(1); }
+  }
+  .lang{ display:flex; gap: 8px; }
+  .lang span{ opacity: 0.4; }
+  .lang .on{ opacity: 1; }
+
+  /* ---- HERO ---- */
+  .hero{
+    min-height: 100vh;
+    display: grid;
+    /* rail (128) | meta-l (140) | stage (1fr) | gutter (128) */
+    grid-template-columns: 128px 140px 1fr 128px;
+    grid-template-rows: 1fr auto;
+    align-items: stretch;
+    padding: 0;
+    position: relative;
+  }
+  .hero-meta-l{
+    grid-row: 1 / 3;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 0 24px 56px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .hero-meta-l{
+    grid-column: 2;
+    opacity: 0;
+    animation: fadeInLate 2s 2.6s var(--ease) forwards;
+  }
+  .hero-meta-l > div + div{ margin-top: 8px; }
+  .hero-meta-l .label{ color: var(--ink-ghost); }
+
+  .hero-stage{
+    grid-column: 3;
+    grid-row: 1 / 3;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 160px 0 12px;
+    position: relative;
+  }
+  .hero-eyebrow{
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+    margin-bottom: 88px;
+    display: flex; align-items: center; gap: 14px;
+    opacity: 0;
+    animation: fadeInLate 1.6s 0.4s var(--ease) forwards;
+  }
+  .hero-eyebrow::before{
+    content: ""; width: 32px; height: 1px; background: var(--ink-ghost);
+  }
+
+  .hero-title{
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: var(--h1);
+    line-height: 1.08;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    margin: 0 0 100px;
+  }
+  .hero-title .row{ display: block; overflow: hidden; }
+  .hero-title .row span{
+    display: inline-block;
+    transform: translateY(105%);
+    animation: heroRise 1.6s var(--ease-slow) forwards;
+  }
+  /* premium jump — Music wycofane, Silence środek, Contemplation gong */
+  .hero-title .row.r1{ font-size: 0.72em; color: var(--ink-soft); margin-bottom: 0.04em; }
+  .hero-title .row.r1 span{ animation-delay: 0.9s; }
+  .hero-title .row.r2{ margin-top: 0.02em; }
+  .hero-title .row.r2 span{ animation-delay: 1.4s; }
+  .hero-title .row.r3{
+    font-size: 1.04em;
+    letter-spacing: 0.004em;
+    margin-top: 0.06em;
+    opacity: 0;
+    animation: gongFade 2.2s 2.4s var(--ease-slow) forwards;
+  }
+  .hero-title .row.r3 span{ animation-delay: 2.4s; animation-duration: 2s; }
+  .hero-title em{ font-style: italic; font-weight: 300; color: var(--ink); }
+  @keyframes heroRise{ to{ transform: translateY(0); } }
+  @keyframes gongFade{ to{ opacity: 1; } }
+
+  /* separator usunięty — no-op na wypadek leftover markup */
+  .hero-sep{ display: none; }
+
+  .hero-foot{
+    grid-column: 3;
+    grid-row: 2;
+    display: flex; justify-content: flex-end; align-items: flex-end;
+    padding: 0 0 56px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    opacity: 0;
+    animation: fadeInLate 2s 2.6s var(--ease) forwards;
+  }
+  .hero-foot .scroll{ display:flex; align-items: center; gap: 14px; }
+  .hero-foot .scroll .line{
+    display: inline-block; width: 56px; height: 1px; background: var(--ink-mute);
+    position: relative; overflow: hidden;
+  }
+  .hero-foot .scroll .line::after{
+    content:""; position: absolute; inset: 0; background: var(--ink);
+    transform: translateX(-100%);
+    animation: scrollLine 3.2s var(--ease-slow) infinite;
+  }
+  @keyframes scrollLine{
+    0%   { transform: translateX(-100%); }
+    50%  { transform: translateX(0); }
+    100% { transform: translateX(100%); }
+  }
+  @keyframes fadeInLate{ to{ opacity: 1; } }
+
+  .hero-bg-rosette{
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    pointer-events: none;
+    opacity: 0;
+    filter: blur(2.4px) contrast(0.55);
+    z-index: 0;
+    animation: rosetteAppear 4s 2.4s var(--ease-slow) forwards,
+               rosetteBreath 5s 5s var(--ease-slow) infinite;
+  }
+  .hero-bg-rosette svg{ width: 78vmin; height: 78vmin; }
+  .hero-stage > *{ position: relative; z-index: 1; }
+  @keyframes rosetteAppear{ to{ opacity: 0.035; } }
+  @keyframes rosetteBreath{
+    0%, 100% { transform: scale(1); opacity: 0.035; }
+    50%      { transform: scale(1.012); opacity: 0.043; }
+  }
+
+  /* placeholder — następne sekcje */
+  .next-placeholder{
+    min-height: 100vh;
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 128px 1fr 64px;
+    align-items: center;
+  }
+  .next-placeholder .center{
+    grid-column: 2;
+    text-align: center;
+    color: var(--ink-mute);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+  .next-placeholder .center .title{
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 28px;
+    color: var(--ink);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 14px;
+  }
+  .next-placeholder .center .meta{
+    margin-top: 28px;
+    color: var(--ink-ghost);
+  }
+
+  /* ============================================================
+     SEKCJE ETAP 2
+     ============================================================ */
+
+  /* wspólny scaffold sekcji */
+  .section{
+    position: relative;
+    display: grid;
+    grid-template-columns: 128px 160px 1fr 160px 64px;
+    padding: var(--s-2xl) 0;
+    border-top: 1px solid var(--rule);
+  }
+  .section-head{
+    grid-column: 2;
+    display: flex; flex-direction: column;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    gap: 8px;
+    padding-right: 24px;
+    align-self: start;
+    position: sticky;
+    top: 140px;
+  }
+  .section-head .roman{ color: var(--ink); font-size: 12px; }
+  .section-head .name{ color: var(--ink-mute); }
+  .section-head .latin{ color: var(--ink-ghost); font-style: italic; font-family: var(--serif); font-size: 14px; letter-spacing: 0; text-transform: none; margin-top: 8px; }
+  .section-body{ grid-column: 3; max-width: 880px; }
+  .section-aside{
+    grid-column: 4;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    padding-left: 24px;
+    align-self: start;
+    text-align: right;
+  }
+
+  /* II. CREDO ----------------------------------------- */
+  #credo .section-body{ max-width: 980px; }
+  .credo-manifest{
+    font-family: var(--serif);
+    font-weight: 300;
+    line-height: 1.32;
+    letter-spacing: -0.005em;
+  }
+  .credo-strophe{
+    font-size: clamp(28px, 3.4vw, 52px);
+    color: var(--ink);
+    margin-bottom: var(--s-xl);
+    max-width: 24ch;
+  }
+  .credo-strophe.indent{ margin-left: clamp(40px, 8vw, 160px); }
+  .credo-strophe em{ font-style: italic; color: var(--ink-soft); }
+  .credo-strophe .light{ color: var(--ink-mute); }
+  .credo-coda{
+    font-size: clamp(36px, 4.4vw, 72px);
+    font-style: italic;
+    color: var(--ink);
+    margin-top: var(--s-xl);
+    text-align: center;
+  }
+  .credo-coda::after{
+    content: "";
+    display: block;
+    width: 1px; height: 64px;
+    background: var(--ink-ghost);
+    margin: var(--s-lg) auto 0;
+  }
+
+  /* III. KALENDARIUM ---------------------------------- */
+  .kal-list{ display: flex; flex-direction: column; }
+  .kal-item{
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 32px;
+    padding: 36px 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: baseline;
+    transition: background 0.5s var(--ease);
+  }
+  .kal-item:first-child{ border-top: 1px solid var(--rule); }
+  .kal-item:hover{ background: var(--paper-deep); }
+  .kal-item .date{
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    padding-top: 6px;
+  }
+  .kal-item .date .day{ color: var(--ink); font-size: 22px; font-family: var(--serif); display: block; letter-spacing: 0; text-transform: none; line-height: 1; margin-bottom: 4px; }
+  .kal-item .title{
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(22px, 2.4vw, 34px);
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .kal-item .title em{ font-style: italic; color: var(--ink-soft); }
+  .kal-item .place{
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .kal-item .arrow{
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    padding-top: 6px;
+    transition: color 0.4s var(--ease), transform 0.5s var(--ease);
+  }
+  .kal-item:hover .arrow{ color: var(--candle); transform: translateX(8px); }
+  .kal-foot{
+    margin-top: 48px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-ghost);
+  }
+
+  /* IV. CYKL ------------------------------------------ */
+  .cykl-lede{
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(28px, 3vw, 46px);
+    line-height: 1.3;
+    color: var(--ink-soft);
+    max-width: 28ch;
+    margin-bottom: var(--s-xl);
+  }
+  .cykl-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px 64px;
+  }
+  .cykl-card .num{
+    font-family: var(--mono);
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-ghost);
+    margin-bottom: 16px;
+  }
+  .cykl-card .h{
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(24px, 2.2vw, 34px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .cykl-card .h em{ font-style: italic; color: var(--ink-soft); }
+  .cykl-card .b{
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    max-width: 38ch;
+  }
+  .cykl-rule{
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--rule);
+    margin: 16px 0;
+  }
+
+  /* V. DYSKOGRAFIA ------------------------------------ */
+  .disc-wrap{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .disc-cover{
+    aspect-ratio: 1 / 1;
+    background: var(--ink);
+    color: var(--paper);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 32px;
+    overflow: hidden;
+  }
+  .disc-cover::before{
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(0,0,0,0.4) 100%);
+    pointer-events: none;
+  }
+  .disc-cover .placeholder-tag{
+    position: absolute; top: 14px; right: 16px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em;
+    color: rgba(244,242,236,0.4);
+  }
+  .disc-cover .cover-rosette{
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    opacity: 0.18;
+  }
+  .disc-cover .cover-rosette svg{ width: 60%; height: 60%; }
+  .disc-cover .meta-top{
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    opacity: 0.6;
+    position: relative; z-index: 1;
+  }
+  .disc-cover .title-block{
+    font-family: var(--serif); font-weight: 300;
+    font-size: clamp(28px, 3vw, 44px);
+    line-height: 1.05;
+    position: relative; z-index: 1;
+  }
+  .disc-cover .title-block em{ font-style: italic; opacity: 0.75; }
+
+  .disc-info .meta{
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-mute); margin-bottom: 24px;
+  }
+  .disc-info h3{
+    font-family: var(--serif); font-weight: 300;
+    font-size: clamp(32px, 3.4vw, 56px);
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 32px;
+  }
+  .disc-info h3 em{ font-style: italic; color: var(--ink-soft); }
+  .disc-info p{
+    font-size: 15px; line-height: 1.7; color: var(--ink-soft);
+    margin-bottom: 16px; max-width: 42ch;
+  }
+  .disc-tracks{
+    margin-top: 48px;
+    border-top: 1px solid var(--rule);
+  }
+  .disc-track{
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    align-items: baseline;
+  }
+  .disc-track .n{ color: var(--ink-ghost); }
+  .disc-track .t{ font-family: var(--serif); font-size: 16px; letter-spacing: 0; color: var(--ink); }
+  .disc-track .t em{ font-style: italic; }
+  .disc-track .d{ color: var(--ink-mute); }
+
+  /* VI. GŁOSY ----------------------------------------- */
+  .glosy-direxit{
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 64px;
+    margin-bottom: var(--s-xl);
+    padding-bottom: var(--s-xl);
+    border-bottom: 1px solid var(--rule);
+  }
+  .glosy-portrait{
+    aspect-ratio: 3 / 4;
+    background: var(--paper-deep);
+    position: relative;
+    overflow: hidden;
+  }
+  .glosy-portrait .stripe{
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient( 90deg,
+      transparent 0, transparent 7px,
+      rgba(26,26,26,0.04) 7px, rgba(26,26,26,0.04) 8px );
+  }
+  .glosy-portrait .ph-tag{
+    position: absolute; bottom: 16px; left: 16px;
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .glosy-direxit .text .role{
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--ink-mute); margin-bottom: 18px;
+  }
+  .glosy-direxit .text h3{
+    font-family: var(--serif); font-weight: 300;
+    font-size: clamp(38px, 4vw, 64px);
+    line-height: 1; color: var(--ink); margin-bottom: 32px;
+  }
+  .glosy-direxit .text p{
+    font-size: 15px; line-height: 1.7; color: var(--ink-soft);
+    margin-bottom: 14px; max-width: 44ch;
+  }
+
+  .glosy-list-head{
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-mute); margin-bottom: 32px;
+  }
+  .glosy-list{
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 0 64px;
+  }
+  .glosy-row{
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  .glosy-row .voice{
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .glosy-row .name{
+    font-family: var(--serif); font-size: 20px; font-weight: 300; color: var(--ink);
+  }
+
+  /* VII. DEDYKACJA ------------------------------------ */
+  #dedykacja{ background: var(--paper-deep); border-top: none; }
+  #dedykacja::before{
+    content: ""; display: block;
+    grid-column: 1 / -1; grid-row: 1;
+    height: 1px; background: var(--rule);
+    align-self: start;
+  }
+  .ded-intro{
+    grid-column: 2 / span 3;
+    text-align: center;
+    margin-bottom: var(--s-xl);
+  }
+  .ded-intro .label{
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.32em;
+    text-transform: uppercase; color: var(--ink-mute); margin-bottom: 32px;
+  }
+  .ded-intro .lede{
+    font-family: var(--serif); font-style: italic; font-weight: 300;
+    font-size: clamp(32px, 3.6vw, 56px); line-height: 1.25;
+    color: var(--ink); max-width: 22ch; margin: 0 auto;
+  }
+  .ded-body{
+    grid-column: 2 / span 3;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .ded-tier{
+    padding: 48px 36px 56px;
+    border-right: 1px solid var(--rule);
+    display: flex; flex-direction: column;
+    min-height: 360px;
+  }
+  .ded-tier:last-child{ border-right: none; }
+  .ded-tier .roman{
+    font-family: var(--serif); font-style: italic; font-weight: 300;
+    font-size: 22px; color: var(--ink-mute); margin-bottom: 28px;
+  }
+  .ded-tier h4{
+    font-family: var(--serif); font-weight: 300;
+    font-size: 28px; line-height: 1.15; color: var(--ink); margin-bottom: 20px;
+  }
+  .ded-tier .sum{
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-mute); margin-bottom: 24px;
+  }
+  .ded-tier .sum strong{ color: var(--ink); font-weight: 400; }
+  .ded-tier p{
+    font-size: 14px; line-height: 1.65; color: var(--ink-soft); margin-bottom: 24px;
+  }
+  .ded-tier .cta{
+    margin-top: auto;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink); padding: 14px 0;
+    border-top: 1px solid var(--ink);
+    align-self: stretch;
+    cursor: pointer;
+    background: none;
+    text-align: left;
+    transition: color 0.4s var(--ease);
+    position: relative;
+  }
+  .ded-tier .cta::after{
+    content: "→";
+    position: absolute; right: 0;
+    transition: transform 0.4s var(--ease);
+  }
+  .ded-tier .cta:hover{ color: var(--candle); }
+  .ded-tier .cta:hover::after{ transform: translateX(6px); }
+
+  .ded-patrons{
+    grid-column: 2 / span 3;
+    margin-top: var(--s-lg);
+    text-align: center;
+  }
+  .ded-patrons .label{
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.32em;
+    text-transform: uppercase; color: var(--ink-mute); margin-bottom: 28px;
+  }
+  .ded-patrons .names{
+    font-family: var(--serif); font-style: italic; font-weight: 300;
+    font-size: clamp(18px, 1.5vw, 22px); line-height: 1.9; color: var(--ink-soft);
+    max-width: 56ch; margin: 0 auto;
+  }
+
+  /* VIII. SILENTIUM ----------------------------------- */
+  #silentium{ padding-bottom: var(--s-lg); }
+  .sil-block{
+    grid-column: 2 / span 3;
+    text-align: center;
+    padding: var(--s-xl) 0;
+  }
+  .sil-block .label{
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.32em;
+    text-transform: uppercase; color: var(--ink-mute); margin-bottom: 32px;
+  }
+  .sil-block h2{
+    font-family: var(--serif); font-weight: 300;
+    font-size: clamp(40px, 5vw, 76px);
+    line-height: 1.05; color: var(--ink); margin-bottom: 20px;
+    max-width: 16ch; margin-left: auto; margin-right: auto;
+  }
+  .sil-block h2 em{ font-style: italic; color: var(--ink-soft); }
+  .sil-block .sub{
+    font-size: 15px; line-height: 1.6; color: var(--ink-mute);
+    max-width: 44ch; margin: 0 auto var(--s-lg);
+  }
+  .sil-form{
+    display: flex; gap: 0;
+    max-width: 480px; margin: 0 auto;
+    border-bottom: 1px solid var(--ink);
+  }
+  .sil-form input{
+    flex: 1;
+    background: transparent; border: 0; outline: 0;
+    padding: 16px 0;
+    font-family: var(--sans); font-size: 15px;
+    color: var(--ink);
+  }
+  .sil-form input::placeholder{ color: var(--ink-ghost); font-style: italic; }
+  .sil-form button{
+    background: none; border: 0; cursor: pointer;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink);
+    padding: 16px 0 16px 24px;
+    transition: color 0.4s var(--ease);
+  }
+  .sil-form button:hover{ color: var(--candle); }
+
+  /* FOOTER -------------------------------------------- */
+  footer.colophon{
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--rule);
+    margin-top: var(--s-xl);
+    padding: 64px 96px 48px 128px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 48px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  footer.colophon h5{ color: var(--ink); margin-bottom: 16px; font-weight: 400; }
+  footer.colophon a{ display: block; padding: 4px 0; color: var(--ink-soft); }
+  footer.colophon a:hover{ color: var(--candle); }
+  footer.colophon .col-mark{ display: flex; align-items: flex-start; gap: 12px; }
+  footer.colophon .col-mark svg{ width: 18px; height: auto; }
+  footer.colophon .col-mark .text{ font-family: var(--serif); font-style: italic; font-size: 13px; letter-spacing: 0.04em; text-transform: none; color: var(--ink-soft); line-height: 1.6; max-width: 22ch; }
+  footer.colophon .baseline{ grid-column: 1 / -1; padding-top: 32px; margin-top: 16px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; color: var(--ink-ghost); }
+
+  /* ============================================================
+     ETAP 3.2 — SCROLL-DRIVEN REVEAL (native view-timeline)
+     primary: animation-timeline: view() — wjazd ciągle związany ze
+              scrollem, brak triggera one-shot
+     fallback: IO + .is-in (browsery bez view-timeline, np. starsze Safari)
+     granularność: r-block / r-items / r-lines / r-words
+     exit: subtelny — opacity → 0.25, blur 0 → 3px, lift -12px
+           (NIE pełne lustro, żeby content pozostał czytelny przy scroll-up)
+     ============================================================ */
+
+  /* --- keyframes: enter pełny, exit subtelny --- */
+  @keyframes rEnter{
+    from{ opacity: 0; transform: translateY(56px); filter: blur(10px); }
+    to  { opacity: 1; transform: translateY(0);    filter: blur(0); }
+  }
+  @keyframes rEnterFade{
+    from{ opacity: 0; }
+    to  { opacity: 1; }
+  }
+  @keyframes rExit{
+    from{ opacity: 1; transform: translateY(0);     filter: blur(0); }
+    to  { opacity: 0.25; transform: translateY(-12px); filter: blur(3px); }
+  }
+  @keyframes rExitFade{
+    from{ opacity: 1; }
+    to  { opacity: 0.45; }
+  }
+
+  /* word — element generowany przez splitter JS */
+  .word{ display: inline-block; white-space: pre; }
+
+  /* --- INITIAL (działa zarówno w fallback jak i scroll-driven do momentu trigger/range) --- */
+  .r,
+  .r-block,
+  .r-items > *,
+  .r-lines > *,
+  .r-words .word{
+    opacity: 0;
+    transform: translateY(56px);
+    filter: blur(10px);
+    will-change: opacity, transform, filter;
+  }
+
+  /* sticky-safe: .section-head jest sticky — transform/filter łamałyby kontekst */
+  .r-items > .section-head{
+    transform: none !important;
+    filter: none !important;
+  }
+
+  /* --- FALLBACK: IO-based, .is-in toggle --- */
+  .r.is-in,
+  .r-block.is-in,
+  .r-items.is-in > *,
+  .r-lines.is-in > *,
+  .r-words.is-in .word{
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+    transition: opacity 1.6s var(--ease-slow),
+                transform 1.6s var(--ease-slow),
+                filter 1.4s var(--ease-slow);
+  }
+  .r-items.is-in > *:nth-child(1){ transition-delay: 0ms; }
+  .r-items.is-in > *:nth-child(2){ transition-delay: 220ms; }
+  .r-items.is-in > *:nth-child(3){ transition-delay: 440ms; }
+  .r-items.is-in > *:nth-child(4){ transition-delay: 660ms; }
+  .r-items.is-in > *:nth-child(5){ transition-delay: 860ms; }
+  .r-items.is-in > *:nth-child(n+6){ transition-delay: 1040ms; }
+  .r-lines.is-in > *:nth-child(odd){ transition-delay: 100ms; }
+  .r-lines.is-in > *:nth-child(even){ transition-delay: 220ms; }
+
+  /* --- PRIMARY: scroll-driven (CSS view-timeline) --- */
+  @supports (animation-timeline: view()){
+    /* w trybie scroll-driven .is-in jest no-op — animacja przejmuje */
+    .r.is-in, .r-block.is-in,
+    .r-items.is-in > *, .r-lines.is-in > *,
+    .r-words.is-in .word{
+      transition: none;
+    }
+
+    /* własny widok jako timeline (single-element block) */
+    .r,
+    .r-block{
+      animation: rEnter both linear, rExit forwards linear;
+      animation-timeline: view(), view();
+      animation-range: entry 0% entry 70%, exit 30% exit 100%;
+    }
+
+    /* parent-as-timeline: items / lines / words */
+    .r-items,
+    .r-lines,
+    .r-words{
+      view-timeline-name: --rt;
+      view-timeline-axis: block;
+    }
+
+    /* items: stagger po --i (12% per krok, okno 50%) */
+    .r-items > *{
+      animation: rEnter both linear, rExit forwards linear;
+      animation-timeline: --rt, --rt;
+      animation-range:
+        entry calc(var(--i, 0) * 12%) entry calc(50% + var(--i, 0) * 12%),
+        exit 30% exit 100%;
+    }
+
+    /* sticky-safe override: section-head dostaje fade, nie transform */
+    .r-items > .section-head{
+      animation: rEnterFade both linear, rExitFade forwards linear;
+      animation-timeline: --rt, --rt;
+      animation-range: entry 0% entry 50%, exit 30% exit 100%;
+    }
+
+    /* lines: krótszy stagger (rzędy listy) */
+    .r-lines > *{
+      animation: rEnter both linear, rExit forwards linear;
+      animation-timeline: --rt, --rt;
+      animation-range:
+        entry calc(var(--i, 0) * 6%) entry calc(35% + var(--i, 0) * 6%),
+        exit 40% exit 100%;
+    }
+
+    /* words: stagger znormalizowany przez --total (bez tego długie strofy gnałyby) */
+    .r-words .word{
+      animation: rEnter both linear, rExit forwards linear;
+      animation-timeline: --rt, --rt;
+      animation-range:
+        entry calc(var(--i, 0) / max(var(--total, 1), 1) * 65%) entry calc(25% + var(--i, 0) / max(var(--total, 1), 1) * 65%),
+        exit 50% exit 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .r, .r-block,
+    .r-items > *, .r-lines > *, .r-words .word{
+      opacity: 1 !important;
+      transform: none !important;
+      filter: none !important;
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* ---- responsywność (lekka — to LP desktop-first) ---- */
+  @media (max-width: 1280px){
+    .section{ grid-template-columns: 96px 0 1fr 0 48px; }
+    .section-head, .section-aside{ display: none; }
+    .section-body{ grid-column: 3; max-width: none; }
+    .ded-intro, .ded-body, .ded-patrons, .sil-block{ grid-column: 3; }
+    .glosy-direxit{ grid-template-columns: 1fr; gap: 32px; }
+    .disc-wrap{ grid-template-columns: 1fr; gap: 48px; }
+    .cykl-grid{ grid-template-columns: 1fr; gap: 64px; }
+    .ded-body{ grid-template-columns: 1fr; }
+    .ded-tier{ border-right: none; border-bottom: 1px solid var(--rule); }
+    .ded-tier:last-child{ border-bottom: none; }
+    .glosy-list{ grid-template-columns: 1fr; }
+    footer.colophon{ grid-template-columns: 1fr 1fr; padding-left: 96px; }
+  }
+  @media (max-width: 1100px){
+    .hero{ grid-template-columns: 96px 0 1fr 32px; }
+    .hero-meta-l{ display: none; }
+    .hero-stage{ grid-column: 3; }
+    .hero-foot{ grid-column: 3; }
+  }
+  @media (max-width: 880px){
+    .rail{ display: none; }
+    .chrome-top{ padding: 20px 24px; }
+    .hero{ grid-template-columns: 24px 0 1fr 0 24px; }
+    .hero-stage{ padding: 120px 0 80px; }
+    .hero-foot{ padding-bottom: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="loader" aria-hidden="true">
+  <!-- fleur: rdzeń (wrzeciono z 2 lustrzanych krzywych) + 2 boczne łuki rezonansu, non-scaling-stroke -->
+  <svg viewBox="0 0 40 56" fill="none" stroke="#F4F2EC" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+    <path vector-effect="non-scaling-stroke" d="M20 6 C 21.6 20, 21.6 36, 20 50"/>
+    <path vector-effect="non-scaling-stroke" d="M20 6 C 18.4 20, 18.4 36, 20 50"/>
+    <path vector-effect="non-scaling-stroke" d="M20 14 C 30 22, 30 34, 20 42"/>
+    <path vector-effect="non-scaling-stroke" d="M20 14 C 10 22, 10 34, 20 42"/>
+  </svg>
+</div>
+
+<!-- BOCZNA NUMERACJA -->
+<nav class="rail" aria-label="Sekcje">
+  <ol>
+    <li class="active" data-target="introitus"><span class="num">I</span><span class="dot"></span><span class="name">Introitus</span></li>
+    <li data-target="credo"><span class="num">II</span><span class="dot"></span><span class="name">Credo</span></li>
+    <li data-target="kalendarium"><span class="num">III</span><span class="dot"></span><span class="name">Kalendarium</span></li>
+    <li data-target="cykl"><span class="num">IV</span><span class="dot"></span><span class="name">Cykl</span></li>
+    <li data-target="dyskografia"><span class="num">V</span><span class="dot"></span><span class="name">Dyskografia</span></li>
+    <li data-target="glosy"><span class="num">VI</span><span class="dot"></span><span class="name">Głosy</span></li>
+    <li data-target="dedykacja"><span class="num">VII</span><span class="dot"></span><span class="name">Dedykacja</span></li>
+    <li data-target="silentium"><span class="num">VIII</span><span class="dot"></span><span class="name">Silentium</span></li>
+  </ol>
+</nav>
+
+<!-- TOP CHROME -->
+<header class="chrome-top">
+  <div class="wordmark">
+    <svg class="glyph" viewBox="0 0 40 56" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path vector-effect="non-scaling-stroke" d="M20 6 C 21.6 20, 21.6 36, 20 50"/>
+      <path vector-effect="non-scaling-stroke" d="M20 6 C 18.4 20, 18.4 36, 20 50"/>
+      <path vector-effect="non-scaling-stroke" d="M20 14 C 30 22, 30 34, 20 42"/>
+      <path vector-effect="non-scaling-stroke" d="M20 14 C 10 22, 10 34, 20 42"/>
+    </svg>
+    <span>Voct&nbsp;<em>Ensemble</em></span>
+  </div>
+  <div class="top-right">
+    <button class="audio-toggle" id="audioToggle" aria-pressed="false" aria-label="Włącz dźwięk">
+      <span class="wave" aria-hidden="true">
+        <svg viewBox="0 0 28 8" preserveAspectRatio="none">
+          <path class="w-flat" d="M0,4 L28,4"/>
+          <path class="w-curve" d="M0,4 Q3.5,1 7,4 T14,4 T21,4 T28,4"/>
+        </svg>
+      </span>
+      <span class="label">Cisza</span>
+    </button>
+    <div class="lang">
+      <span class="on">PL</span>
+      <span>·</span>
+      <span>EN</span>
+    </div>
+  </div>
+</header>
+
+<!-- I. INTROITUS -->
+<section id="introitus" class="hero" data-screen-label="01 Introitus">
+
+  <div class="hero-bg-rosette" aria-hidden="true">
+    <!-- róża okienna: 12 promieni, struktura tła -->
+    <svg viewBox="-100 -100 200 200" fill="none" stroke="#1A1A1A" stroke-width="0.4" stroke-linecap="round">
+      <circle cx="0" cy="0" r="92"/>
+      <circle cx="0" cy="0" r="68"/>
+      <circle cx="0" cy="0" r="44"/>
+      <circle cx="0" cy="0" r="20"/>
+      <g id="spokes"></g>
+      <script type="application/json" id="rosette-spokes">12</script>
+    </svg>
+  </div>
+
+  <aside class="hero-meta-l" aria-hidden="true">
+    <div class="label">Est.</div>
+    <div>MMXXIV</div>
+  </aside>
+
+  <div class="hero-stage">
+    <div class="hero-eyebrow">I &nbsp;·&nbsp; Introitus</div>
+    <h1 class="hero-title">
+      <span class="row r1"><span>Music</span></span>
+      <span class="row r2"><span><em>Silence</em></span></span>
+      <span class="row r3"><span>Contemplation.</span></span>
+    </h1>
+  </div>
+
+  <div class="hero-foot">
+    <div class="scroll">
+      <span>scroll</span>
+      <span class="line"></span>
+    </div>
+  </div>
+
+</section>
+
+<!-- II. CREDO -->
+<section id="credo" class="section r-items" data-screen-label="02 Credo">
+  <div class="section-head">
+    <span class="roman">II</span>
+    <span class="name">Credo</span>
+    <span class="latin">— wyznanie</span>
+  </div>
+  <div class="section-body">
+    <div class="credo-manifest">
+      <p class="credo-strophe r-words">Z ciszy powstaje muzyka.</p>
+      <p class="credo-strophe indent r-words"><span class="light">Nie jako dźwięk,</span><br><em>lecz jako obecność.</em></p>
+      <p class="credo-strophe r-words">W niej spotyka się to, co minione, z tym, co jeszcze niewypowiedziane.</p>
+      <p class="credo-strophe indent r-words"><span class="light">Śpiew nie jest dla nas celem.</span><br>Jest formą kontemplacji — czasu, człowieka, świata.</p>
+      <p class="credo-strophe r-words">Niesiemy słowo, które odbija się w dźwięku, i dźwięk, który odsłania znaczenie słowa.</p>
+      <p class="credo-strophe indent r-words"><em>Każdy koncert jest drogą<br>ku temu, co przekracza.</em></p>
+      <p class="credo-strophe r-words"><span class="light">Nie pokazujemy muzyki.</span><br>Pozwalamy jej wybrzmieć.</p>
+      <p class="credo-coda r-words">W ciszy.</p>
+    </div>
+  </div>
+  <div class="section-aside">
+    Manifest<br>VoctEnsemble<br><br>MMXXIV
+  </div>
+</section>
+
+<!-- III. KALENDARIUM -->
+<section id="kalendarium" class="section r-items" data-screen-label="03 Kalendarium">
+  <div class="section-head">
+    <span class="roman">III</span>
+    <span class="name">Kalendarium</span>
+    <span class="latin">— droga</span>
+  </div>
+  <div class="section-body">
+    <div class="kal-list r-items">
+      <div class="kal-item">
+        <div class="date"><span class="day">14</span>marca · MMXXVI</div>
+        <div>
+          <div class="title"><em>Kontemplacja Wcielenia</em> — wieczór adwentowy</div>
+          <div class="place">Bazylika Mariacka · Kraków · 19:30</div>
+        </div>
+        <div class="arrow">więcej →</div>
+      </div>
+      <div class="kal-item">
+        <div class="date"><span class="day">28</span>kwietnia · MMXXVI</div>
+        <div>
+          <div class="title"><em>Aeternam</em> — Epitafium dla Gazy</div>
+          <div class="place">Mistrzejowice · Kraków · 20:00</div>
+        </div>
+        <div class="arrow">więcej →</div>
+      </div>
+      <div class="kal-item">
+        <div class="date"><span class="day">17</span>maja · MMXXVI</div>
+        <div>
+          <div class="title">Wołanie Gór — koncert światła i głosu</div>
+          <div class="place">Niedzica · Zamek · 21:00</div>
+        </div>
+        <div class="arrow">więcej →</div>
+      </div>
+      <div class="kal-item">
+        <div class="date"><span class="day">02</span>czerwca · MMXXVI</div>
+        <div>
+          <div class="title">9 Kart z <em>Księgi Psalmów</em></div>
+          <div class="place">Katedra Łódzka · Łódź · 19:00</div>
+        </div>
+        <div class="arrow">więcej →</div>
+      </div>
+    </div>
+    <div class="kal-foot">
+      // sezon MMXXVI / MMXXVII &nbsp;·&nbsp; daty placeholder &nbsp;·&nbsp; oczekuje contentu
+    </div>
+  </div>
+  <div class="section-aside">
+    Concerts<br>Spirituels<br><br>IV koncertów<br>w sezonie
+  </div>
+</section>
+
+<!-- IV. CYKL -->
+<section id="cykl" class="section r-items" data-screen-label="04 Cykl">
+  <div class="section-head">
+    <span class="roman">IV</span>
+    <span class="name">Cykl</span>
+    <span class="latin">— Concerts<br>Spirituels</span>
+  </div>
+  <div class="section-body">
+    <p class="cykl-lede r-words">Przywracamy tradycję dawnych <em>Concerts Spirituels</em> — most między historyczną świadomością a potrzebami współczesnego słuchacza.</p>
+
+    <div class="cykl-grid r-items">
+      <div class="cykl-card">
+        <div class="num">i — kalejdoskop</div>
+        <div class="h">Renesans i Barok spotyka <em>Pärta</em> i <em>Vivancosa</em></div>
+        <div class="b">Mistrzowie dawni i współcześni w jednej frazie. Każdy program zestawia dzieła oddalone o stulecia, żeby odsłonić to, co je łączy — kontemplację.</div>
+      </div>
+      <div class="cykl-card">
+        <div class="num">ii — interdyscyplinarność</div>
+        <div class="h">Reżyseria świateł, scenografia, dźwięk</div>
+        <div class="b">Współpraca z Adą Bystrzycką (światło) i Sebastianem Kuźmą (ART) sprawia, że koncert staje się formą nowoczesnego misterium — nie spektaklu.</div>
+      </div>
+      <div class="cykl-rule"></div>
+      <div class="cykl-card">
+        <div class="num">iii — czujność</div>
+        <div class="h">Modlitwa o <em>pokój</em>, epitafium dla <em>Gazy</em></div>
+        <div class="b">„Hymn Poległym” w Bazylice Mariackiej, „Aeternam — Epitafium dla Gazy” w Mistrzejowicach. Wrażliwość na los drugiego człowieka jako akt artystyczny.</div>
+      </div>
+      <div class="cykl-card">
+        <div class="num">iv — wspólnota</div>
+        <div class="h">Głosy, które stają się <em>jednym</em></div>
+        <div class="b">Tożsamość zespołu opiera się na jedności artystycznej i ludzkiej harmonii. VoctEnsemble to nie głosy — to wspólnota dążąca do autentycznego spotkania z publicznością.</div>
+      </div>
+    </div>
+  </div>
+  <div class="section-aside">
+    Współpracownicy<br><br>Ada Bystrzycka<br>Sebastian Kuźma<br>Ars Sonora<br>Carpe Diem
+  </div>
+</section>
+
+<!-- V. DYSKOGRAFIA -->
+<section id="dyskografia" class="section r-items" data-screen-label="05 Dyskografia">
+  <div class="section-head">
+    <span class="roman">V</span>
+    <span class="name">Dyskografia</span>
+    <span class="latin">— ślad</span>
+  </div>
+  <div class="section-body">
+    <div class="disc-wrap">
+      <div class="disc-cover" aria-label="okładka — placeholder">
+        <span class="placeholder-tag">// okładka · 1:1 · ostateczny grading: ciepła sepia</span>
+        <div class="cover-rosette" aria-hidden="true">
+          <svg viewBox="-100 -100 200 200" fill="none" stroke="#F4F2EC" stroke-width="0.4" stroke-linecap="round">
+            <circle cx="0" cy="0" r="92"/>
+            <circle cx="0" cy="0" r="68"/>
+            <circle cx="0" cy="0" r="44"/>
+            <circle cx="0" cy="0" r="20"/>
+            <g id="cover-spokes"></g>
+          </svg>
+        </div>
+        <div class="meta-top">MMXXIV &nbsp;·&nbsp; debiut</div>
+        <div class="title-block">Kontemplacja<br><em>Wcielenia</em></div>
+      </div>
+      <div class="disc-info">
+        <div class="meta">Album debiutancki · MMXXIV · zarejestrowany przez Jakuba Garbacza · Ars Sonora Studio</div>
+        <h3>Pierwsze wybrzmienie — od adwentu do <em>kontemplacji</em>.</h3>
+        <p>Projekt otworzył grupie drogę na ogólnopolskie festiwale, m.in. do Katedry Łódzkiej pod auspicjami Fundacji Carpe Diem. Album jest nie tyle nagraniem koncertu, ile zapisem stanu — pomiędzy słowem a milczeniem.</p>
+        <p>Dla nas to nie produkt. To dokument doświadczenia.</p>
+
+        <div class="disc-tracks r-items">
+          <div class="disc-track"><span class="n">i</span><span class="t">Veni, veni Emmanuel</span><span class="d">06:42</span></div>
+          <div class="disc-track"><span class="n">ii</span><span class="t"><em>Magnificat</em> — anim. anonim. XV w.</span><span class="d">04:18</span></div>
+          <div class="disc-track"><span class="n">iii</span><span class="t">Pärt — <em>Nunc dimittis</em></span><span class="d">07:11</span></div>
+          <div class="disc-track"><span class="n">iv</span><span class="t">Vivancos — <em>Salve Regina</em></span><span class="d">08:04</span></div>
+          <div class="disc-track"><span class="n">v</span><span class="t">Tota pulchra es Maria</span><span class="d">05:33</span></div>
+          <div class="disc-track"><span class="n">vi</span><span class="t"><em>Silentium</em> — koda</span><span class="d">02:56</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section-aside">
+    Studio<br>Ars Sonora<br><br>Realizacja<br>Jakub Garbacz
+  </div>
+</section>
+
+<!-- VI. GŁOSY -->
+<section id="glosy" class="section r-items" data-screen-label="06 Glosy">
+  <div class="section-head">
+    <span class="roman">VI</span>
+    <span class="name">Głosy</span>
+    <span class="latin">— wspólnota</span>
+  </div>
+  <div class="section-body">
+    <div class="glosy-direxit">
+      <div class="glosy-portrait" aria-label="portret — placeholder">
+        <div class="stripe"></div>
+        <div class="ph-tag">// portret · 3:4 · czarno-biały · oczekuje contentu</div>
+      </div>
+      <div class="text">
+        <div class="role">Kierownictwo artystyczne</div>
+        <h3>Florent<br>de&nbsp;Bazelaire</h3>
+        <p>Pod kierownictwem Florenta zespół wnosi na polską scenę muzyczną nową jakość estetyczną i duchową.</p>
+        <p>Misją jest zgłębianie człowieczeństwa za pomocą muzyki sakralnej, przy zachowaniu czujności na współczesne tragizmy i nadzieje świata.</p>
+      </div>
+    </div>
+
+    <div class="glosy-list-head">— Ensemble · głosy · MMXXIV</div>
+    <div class="glosy-list r-items">
+      <div class="glosy-row"><span class="voice">Sopran</span><span class="name">Imię Nazwisko</span></div>
+      <div class="glosy-row"><span class="voice">Sopran</span><span class="name">Imię Nazwisko</span></div>
+      <div class="glosy-row"><span class="voice">Alt</span><span class="name">Imię Nazwisko</span></div>
+      <div class="glosy-row"><span class="voice">Alt</span><span class="name">Imię Nazwisko</span></div>
+      <div class="glosy-row"><span class="voice">Tenor</span><span class="name">Imię Nazwisko</span></div>
+      <div class="glosy-row"><span class="voice">Tenor</span><span class="name">Imię Nazwisko</span></div>
+      <div class="glosy-row"><span class="voice">Bas</span><span class="name">Imię Nazwisko</span></div>
+      <div class="glosy-row"><span class="voice">Bas</span><span class="name">Imię Nazwisko</span></div>
+    </div>
+  </div>
+  <div class="section-aside">
+    VIII głosów<br><br>Sopran · Alt<br>Tenor · Bas
+  </div>
+</section>
+
+<!-- VII. DEDYKACJA -->
+<section id="dedykacja" class="section r-items" data-screen-label="07 Dedykacja">
+  <div class="section-head">
+    <span class="roman">VII</span>
+    <span class="name">Dedykacja</span>
+    <span class="latin">— wsparcie</span>
+  </div>
+
+  <div class="ded-intro">
+    <div class="label">Patroni · darczyńcy · współtwórcy</div>
+    <div class="lede r-words">Niniejszy koncert został umożliwiony dzięki tym, którzy uwierzyli w ciszę.</div>
+  </div>
+
+  <div class="ded-body r-items">
+    <div class="ded-tier">
+      <div class="roman">i.</div>
+      <h4>Dołóż swój głos</h4>
+      <div class="sum">od <strong>50 zł</strong> &nbsp;·&nbsp; jednorazowo</div>
+      <p>Drobna ofiara, która — pomnożona przez wspólnotę słuchaczy — zamienia się w realny koncert. Twoje imię w programie nadchodzącego wydarzenia.</p>
+      <button class="cta">Dołóż głos</button>
+    </div>
+    <div class="ded-tier">
+      <div class="roman">ii.</div>
+      <h4>Współtwórz <em>ciszę</em></h4>
+      <div class="sum">od <strong>500 zł</strong> &nbsp;·&nbsp; mecenat roczny</div>
+      <p>Patronat indywidualny — finansujesz pełen sezon Concerts Spirituels. Otrzymujesz zaproszenia, dedykowany dostęp do prób, rozmowy z zespołem.</p>
+      <button class="cta">Zostań patronem</button>
+    </div>
+    <div class="ded-tier">
+      <div class="roman">iii.</div>
+      <h4>Granty &amp; instytucje</h4>
+      <div class="sum">współpraca instytucjonalna</div>
+      <p>Fundacje, ministerstwa, samorządy, instytucje kultury — zapraszamy do współfinansowania programów, koprodukcji, rezydencji artystycznych.</p>
+      <button class="cta">Skontaktuj się</button>
+    </div>
+  </div>
+
+  <div class="ded-patrons">
+    <div class="label">— niech wybrzmią ich imiona</div>
+    <div class="names">
+      Fundacja Carpe Diem &nbsp;·&nbsp; Ars Sonora Studio &nbsp;·&nbsp; Bazylika Mariacka<br>
+      Sebastian Kuźma &nbsp;·&nbsp; Ada Bystrzycka &nbsp;·&nbsp; Jakub Garbacz<br>
+      <span style="color: var(--ink-ghost);">// pełna lista patronów — w przygotowaniu</span>
+    </div>
+  </div>
+</section>
+
+<!-- VIII. SILENTIUM -->
+<section id="silentium" class="section r-items" data-screen-label="08 Silentium">
+  <div class="section-head">
+    <span class="roman">VIII</span>
+    <span class="name">Silentium</span>
+    <span class="latin">— pozostań</span>
+  </div>
+  <div class="sil-block">
+    <div class="label">Newsletter — pozostań w ciszy z nami</div>
+    <h2>Pisujemy <em>rzadko</em>.<br>Tylko gdy mamy coś do powiedzenia.</h2>
+    <p class="sub">Listy o nadchodzących koncertach, o muzyce, o ludziach, o miejscach. Bez nachalności. Bez sprzedaży. Trzy, może cztery razy w roku.</p>
+    <form class="sil-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent = 'Dziękujemy';">
+      <input type="email" required placeholder="twój.adres@poczta.pl">
+      <button type="submit">Zapisz się &nbsp;→</button>
+    </form>
+  </div>
+
+  <footer class="colophon">
+    <div class="col-mark">
+      <svg viewBox="0 0 40 56" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path vector-effect="non-scaling-stroke" d="M20 6 C 21.6 20, 21.6 36, 20 50"/>
+        <path vector-effect="non-scaling-stroke" d="M20 6 C 18.4 20, 18.4 36, 20 50"/>
+        <path vector-effect="non-scaling-stroke" d="M20 14 C 30 22, 30 34, 20 42"/>
+        <path vector-effect="non-scaling-stroke" d="M20 14 C 10 22, 10 34, 20 42"/>
+      </svg>
+      <div class="text">VoctEnsemble<br><span style="color: var(--ink-ghost);">Music. Silence. Contemplation.</span></div>
+    </div>
+    <div>
+      <h5>Kontakt</h5>
+      <a href="mailto:kontakt@voctensemble.pl">kontakt @ voctensemble.pl</a>
+      <a href="mailto:booking@voctensemble.pl">booking @ voctensemble.pl</a>
+      <a href="mailto:patroni@voctensemble.pl">patroni @ voctensemble.pl</a>
+    </div>
+    <div>
+      <h5>Sekcje</h5>
+      <a href="#credo">II. Credo</a>
+      <a href="#kalendarium">III. Kalendarium</a>
+      <a href="#cykl">IV. Cykl</a>
+      <a href="#dyskografia">V. Dyskografia</a>
+    </div>
+    <div>
+      <h5>—</h5>
+      <a href="#glosy">VI. Głosy</a>
+      <a href="#dedykacja">VII. Dedykacja</a>
+      <a href="#silentium">VIII. Silentium</a>
+    </div>
+    <div class="baseline">
+      <span>© MMXXIV — VoctEnsemble · Kraków</span>
+      <span>kierownictwo artystyczne — Florent de Bazelaire</span>
+    </div>
+  </footer>
+</section>
+
+<script>
+  /* okładka — róża jak w hero */
+  (function(){
+    const g = document.getElementById('cover-spokes');
+    if(!g) return;
+    const N = 12; let s = '';
+    for(let i=0;i<N;i++){
+      const a = (i / N) * Math.PI * 2;
+      s += `<line x1="${(Math.cos(a)*20).toFixed(2)}" y1="${(Math.sin(a)*20).toFixed(2)}" x2="${(Math.cos(a)*92).toFixed(2)}" y2="${(Math.sin(a)*92).toFixed(2)}"/>`;
+    }
+    for(let i=0;i<N;i++){
+      const a = (i / N) * Math.PI * 2 + (Math.PI / N);
+      s += `<line x1="${(Math.cos(a)*20).toFixed(2)}" y1="${(Math.sin(a)*20).toFixed(2)}" x2="${(Math.cos(a)*44).toFixed(2)}" y2="${(Math.sin(a)*44).toFixed(2)}" opacity="0.5"/>`;
+    }
+    g.innerHTML = s;
+  })();
+</script>
+
+<script>
+  /* ----- róża okienna: render 12 promieni ----- */
+  (function(){
+    const g = document.getElementById('spokes');
+    if(!g) return;
+    const N = 12;
+    let s = '';
+    for(let i=0;i<N;i++){
+      const a = (i / N) * Math.PI * 2;
+      const x1 = Math.cos(a) * 20, y1 = Math.sin(a) * 20;
+      const x2 = Math.cos(a) * 92, y2 = Math.sin(a) * 92;
+      s += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"/>`;
+    }
+    // dodatkowo: 12 mniejszych łuków (płatków) między okręgiem r=20 a r=44
+    for(let i=0;i<N;i++){
+      const a = (i / N) * Math.PI * 2 + (Math.PI / N);
+      const x1 = Math.cos(a) * 20, y1 = Math.sin(a) * 20;
+      const x2 = Math.cos(a) * 44, y2 = Math.sin(a) * 44;
+      s += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" opacity="0.6"/>`;
+    }
+    g.innerHTML = s;
+  })();
+
+  /* ----- audio toggle (placeholder — etap 3 podepnie audio) ----- */
+  (function(){
+    const btn = document.getElementById('audioToggle');
+    const label = btn.querySelector('.label');
+    let on = false;
+    btn.addEventListener('click', () => {
+      on = !on;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', String(on));
+      label.textContent = on ? 'Wybrzmienie' : 'Cisza';
+    });
+  })();
+
+  /* ----- aktywna sekcja w boczne numeracji ----- */
+  (function(){
+    const items = document.querySelectorAll('.rail li');
+    const targets = [...items].map(li => document.getElementById(li.dataset.target)).filter(Boolean);
+    const map = new Map();
+    items.forEach(li => { const t = document.getElementById(li.dataset.target); if(t) map.set(t, li); });
+
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting && e.intersectionRatio > 0.4){
+          items.forEach(li => li.classList.remove('active'));
+          const li = map.get(e.target);
+          if(li) li.classList.add('active');
+        }
+      });
+    }, { threshold: [0.4, 0.6] });
+    targets.forEach(t => io.observe(t));
+
+    items.forEach(li => li.addEventListener('click', () => {
+      const t = document.getElementById(li.dataset.target);
+      if(!t) return;
+      const y = t.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }));
+  })();
+
+  /* ----- 3.2 scroll-driven reveal —
+     primary: CSS animation-timeline: view()  (browsers 2024+)
+     fallback: IO + .is-in (Safari < 18 i każdy bez view-timeline)
+     reduced-motion: CSS @media wyłącza wszystko, JS nic nie robi
+     ----- */
+  (function(){
+    /* 1. word-splitter: każdy .r-words dostaje span.word z --i, parent --total
+          zachowuje strukturę zagnieżdżoną (em, span.light, br) */
+    document.querySelectorAll('.r-words').forEach(splitWords);
+
+    /* 2. indeksy --i / --total dla containerów stagger */
+    document.querySelectorAll('.r-items, .r-lines').forEach(parent => {
+      const kids = parent.children;
+      for(let i = 0; i < kids.length; i++){
+        kids[i].style.setProperty('--i', i);
+      }
+      parent.style.setProperty('--total', kids.length);
+    });
+
+    /* 3. detekcja scroll-driven; jeśli wspierane — CSS robi resztę */
+    const supported = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('animation-timeline: view()');
+    if(supported) return;
+
+    /* 4. fallback: IntersectionObserver */
+    const targets = document.querySelectorAll('.r, .r-block, .r-items, .r-lines, .r-words');
+    if(!targets.length) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if(e.isIntersecting){
+          e.target.classList.add('is-in');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0, rootMargin: '0px 0px -25% 0px' });
+    targets.forEach(t => io.observe(t));
+
+    function splitWords(el){
+      if(el.querySelector('.word')) return;
+      let count = 0;
+      const walk = (node) => {
+        if(node.nodeType === 3){
+          const text = node.textContent;
+          if(!text || /^\s*$/.test(text)) return;
+          const tokens = text.split(/(\s+)/);
+          const frag = document.createDocumentFragment();
+          tokens.forEach(tok => {
+            if(tok === '') return;
+            if(/^\s+$/.test(tok)){
+              frag.appendChild(document.createTextNode(tok));
+            } else {
+              const span = document.createElement('span');
+              span.className = 'word';
+              span.style.setProperty('--i', count++);
+              span.textContent = tok;
+              frag.appendChild(span);
+            }
+          });
+          node.replaceWith(frag);
+        } else if(node.nodeType === 1){
+          if(node.classList && node.classList.contains('word')) return;
+          [...node.childNodes].forEach(walk);
+        }
+      };
+      [...el.childNodes].forEach(walk);
+      el.style.setProperty('--total', count);
+    }
+  })();
+</script>
+
+</body>
+</html>

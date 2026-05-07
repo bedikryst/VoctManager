@@ -1,0 +1,1554 @@
+[
+  {
+    "composer": {
+      "first_name": "Gregorio",
+      "last_name": "Allegri",
+      "birth_year": "1582",
+      "death_year": "1652"
+    },
+    "piece": {
+      "title": "Miserere mei, Deus",
+      "composition_year": 1638,
+      "epoch": "BAR",
+      "language": "Latin",
+      "estimated_duration": 840,
+      "voicing": "SSATB + SSAB",
+      "description": "Słynne opracowanie Psalmu 51 (50). Utwór napisany dla chóru papieskiego w Kaplicy Sykstyńskiej. Przeznaczony na dwa chóry: pięciogłosowy i czterogłosowy, ze słynnymi ornamentami i wysokim 'C' w partii sopranu.",
+      "lyrics_original": "Miserere mei, Deus, secundum magnam misericordiam tuam; et secundum multitudinem miserationum tuarum, dele iniquitatem meam.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Allegri+Miserere+mei+Deus"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 2},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 2},
+      {"voice_line": "T1", "quantity": 2},
+      {"voice_line": "B1", "quantity": 2}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Johann Sebastian",
+      "last_name": "Bach",
+      "birth_year": "1685",
+      "death_year": "1750"
+    },
+    "piece": {
+      "title": "Singet dem Herrn ein neues Lied, BWV 225",
+      "composition_year": 1727,
+      "epoch": "BAR",
+      "language": "German",
+      "estimated_duration": 960,
+      "voicing": "SATB + SATB",
+      "description": "Rozbudowany motet dwuchórowy, prawdopodobnie skomponowany na Nowy Rok lub jako ćwiczenie chóralne dla szkoły św. Tomasza w Lipsku.",
+      "lyrics_original": "Singet dem Herrn ein neues Lied, die Gemeine der Heiligen sollen ihn loben. Israel freue sich des, der ihn gemacht hat.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=3642pkZWlzY"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 2},
+      {"voice_line": "A1", "quantity": 2},
+      {"voice_line": "T1", "quantity": 2},
+      {"voice_line": "B1", "quantity": 2},
+      {"voice_line": "S2", "quantity": 2},
+      {"voice_line": "A2", "quantity": 2},
+      {"voice_line": "T2", "quantity": 2},
+      {"voice_line": "B2", "quantity": 2}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Edward C.",
+      "last_name": "Bairstow",
+      "birth_year": "1874",
+      "death_year": "1946"
+    },
+    "piece": {
+      "title": "I sat down under his shadow",
+      "composition_year": 1925,
+      "epoch": "M20",
+      "language": "English",
+      "estimated_duration": 120,
+      "voicing": "SATB",
+      "description": "Krótki, nastrojowy hymn/antem anglikański, oparty na tekście z Pieśni nad Pieśniami (Song of Solomon). Znakomity przykład brytyjskiej muzyki chóralnej wczesnego XX wieku.",
+      "lyrics_original": "I sat down under his shadow with great delight, and his fruit was sweet to my taste. He brought me to the banqueting house, and his banner over me was love.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=1Pc41lxwd7k"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Anton",
+      "last_name": "Bruckner",
+      "birth_year": "1824",
+      "death_year": "1896"
+    },
+    "piece": {
+      "title": "Os justi, WAB 30",
+      "composition_year": 1879,
+      "epoch": "ROM",
+      "language": "Latin",
+      "estimated_duration": 300,
+      "voicing": "SSAATTBB",
+      "description": "Motet a cappella napisany w skali lidyjskiej, bez żadnych znaków przykluczowych i chromatyki, dedykowany Ignazowi Traumihlerowi. Tekst pochodzi z Graduału Commune Confessoris non Pontificis.",
+      "lyrics_original": "Os justi meditabitur sapientiam: et lingua ejus loquetur judicium. Lex Dei ejus in corde ipsius: et non supplantabuntur gressus ejus. Alleluia.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=CrSZnUiwpMA"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Rihards",
+      "last_name": "Dubra",
+      "birth_year": "1964",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "O Crux ave",
+      "composition_year": 1995,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 210,
+      "voicing": "SATB divisi",
+      "description": "Utwór łotewskiego kompozytora, charakteryzujący się gęstą harmonią i mistycznym brzmieniem, charakterystycznym dla nowej muzyki wschodnioeuropejskiej. Czerpie z tradycji chorału gregoriańskiego.",
+      "lyrics_original": "O crux ave, spes unica, / hoc Passionis tempore / piis adauge gratiam, / reisque dele crimina.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=S-sHsLTkvdY"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 2},
+      {"voice_line": "A1", "quantity": 2},
+      {"voice_line": "T1", "quantity": 2},
+      {"voice_line": "B1", "quantity": 2}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Edward",
+      "last_name": "Elgar",
+      "birth_year": "1857",
+      "death_year": "1934"
+    },
+    "piece": {
+      "title": "Lux aeterna",
+      "arranger": "John Cameron",
+      "composition_year": 1899,
+      "epoch": "ROM",
+      "language": "Latin",
+      "estimated_duration": 240,
+      "voicing": "SSAATTBB",
+      "description": "Wokalna aranżacja słynnej wariacji 'Nimrod' z Wariacji Enigma (Enigma Variations, Op. 36). Tekst łaciński został podłożony przez Johna Camerona, tworząc niezwykle poruszający i potężny utwór a cappella.",
+      "lyrics_original": "Lux aeterna luceat eis, Domine, cum sanctis tuis in aeternum, quia pius es. Requiem aeternam dona eis, Domine; et lux perpetua luceat eis.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=1bPEH0y-nBc"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Ēriks",
+      "last_name": "Ešenvalds",
+      "birth_year": "1977",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "O salutaris hostia",
+      "composition_year": 2005,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 195,
+      "voicing": "SSAATTBB + 2 Soprano Solos",
+      "description": "Jeden z najpopularniejszych utworów Ešenvaldsa. Charakteryzuje się eterycznym, medytacyjnym brzmieniem chóru, na tle którego unosi się duet dwóch sopranów solo.",
+      "lyrics_original": "O salutaris Hostia, / Quae caeli pandis ostium: / Bella premunt hostilia, / Da robur, fer auxilium.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=Qk2G_Z4xEEg"
+    },
+    "voice_requirements": [
+      {"voice_line": "SOLO", "quantity": 2},
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Ēriks",
+      "last_name": "Ešenvalds",
+      "birth_year": "1977",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Stars",
+      "composition_year": 2011,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 250,
+      "voicing": "SSAATTBB + Water Glasses",
+      "description": "Magiczna kompozycja do słów wiersza Sary Teasdale. Utwór słynie z akompaniamentu strojonych kieliszków wypełnionych wodą (water glasses), które tworzą mistyczny, wibrujący rezonans.",
+      "lyrics_original": "Alone in the night / On a dark hill / With pines around me / Spicy and still, / And a heaven full of stars / Over my head, / White and topaz / And misty red; / Myriads with beating / Hearts of fire / That aeons / Cannot vex or tire; / Up the dome of heaven / Like a great hill, / I watch them marching / Stately and still, / And I know that I / Am honored to be / Witness / Of so much majesty.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=LWk2_yS1K0E"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1},
+      {"voice_line": "ACC", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Gabriel",
+      "last_name": "Fauré",
+      "birth_year": "1845",
+      "death_year": "1924"
+    },
+    "piece": {
+      "title": "Pie Jesu",
+      "arranger": "Barnaby Smith",
+      "composition_year": 1887,
+      "epoch": "ROM",
+      "language": "Latin",
+      "estimated_duration": 200,
+      "voicing": "SATB",
+      "description": "Aranżacja na chór a cappella stworzona przez Barnaby'ego Smitha z zespołu Voces8. Oryginalnie przepiękna aria na sopran solo z 'Requiem' op. 48 Faurégo.",
+      "lyrics_original": "Pie Jesu Domine, dona eis requiem. Dona eis requiem sempiternam.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=S0T-L0BvjI0"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Marco",
+      "last_name": "Frisina",
+      "birth_year": "1954",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Anima Christi",
+      "composition_year": 2000,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 230,
+      "voicing": "SATB",
+      "description": "Popularny utwór religijny włoskiego kompozytora i księdza Marco Frisiny, charakteryzujący się bardzo chwytliwą, włoską melodyką i majestatycznym charakterem.",
+      "lyrics_original": "Anima Christi, sanctifica me. Corpus Christi, salva me. Sanguis Christi, inebria me. Aqua lateris Christi, lava me. Passio Christi, conforta me. O bone Jesu, exaudi me. Intra tua vulnera absconde me. Ne permittas me separari a te. Ab hoste maligno defende me. In hora mortis meae voca me. Et iube me venire ad te, ut cum Sanctis tuis laudem te in saecula saeculorum. Amen.",
+      "reference_recording_youtube": "https://www.youtube.com/watch?v=sO-8lOqA07w"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Orlando",
+      "last_name": "Gibbons",
+      "birth_year": "1583",
+      "death_year": "1625"
+    },
+    "piece": {
+      "title": "Drop, drop, slow tears",
+      "composition_year": 1623,
+      "epoch": "REN",
+      "language": "English",
+      "estimated_duration": 100,
+      "voicing": "SATB",
+      "description": "Przejmujący hymn (znany jako 'Song 46') skomponowany do wiersza Phineasa Fletchera. Arcydzieło angielskiego renesansu oparte na prostej, ale głębokiej harmonii.",
+      "lyrics_original": "Drop, drop, slow tears, / and bathe those beauteous feet, / which brought from heaven / the news and Prince of peace.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Orlando+Gibbons+Drop+drop+slow+tears"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Orlando",
+      "last_name": "Gibbons",
+      "birth_year": "1583",
+      "death_year": "1625"
+    },
+    "piece": {
+      "title": "O clap your hands",
+      "composition_year": 1622,
+      "epoch": "REN",
+      "language": "English",
+      "estimated_duration": 310,
+      "voicing": "SSAATTBB",
+      "description": "Tryumfalny, ośmiogłosowy anthem (na dwa chóry SATB) skomponowany prawdopodobnie z okazji nadania stopnia doktora muzyki na Uniwersytecie Oksfordzkim. Tekst oparty na Psalmie 47.",
+      "lyrics_original": "O clap your hands together, all ye people; O sing unto God with the voice of melody. For the Lord is high, and to be feared...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Orlando+Gibbons+O+clap+your+hands"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Ola",
+      "last_name": "Gjeilo",
+      "birth_year": "1978",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Northern Lights (Pulchra es)",
+      "composition_year": 2012,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 250,
+      "voicing": "SATB divisi",
+      "description": "Zimowa, nastrojowa kompozycja norweskiego kompozytora zainspirowana zjawiskiem zorzy polarnej. Wykorzystuje fragmenty tekstu 'Pulchra es' z biblijnej Pieśni nad Pieśniami.",
+      "lyrics_original": "Pulchra es amica mea, suavis et decora sicut Jerusalem, terribilis ut castrorum acies ordinata...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Ola+Gjeilo+Northern+Lights"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Ola",
+      "last_name": "Gjeilo",
+      "birth_year": "1978",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Serenity (O magnum mysterium)",
+      "composition_year": 2010,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 310,
+      "voicing": "SATB + Cello",
+      "description": "Medytacyjne, przejmujące opracowanie klasycznego tekstu bożonarodzeniowego. Pierwotnie pomyślane z solową, improwizującą partią wiolonczeli (którą ująłem jako głos akompaniujący ACC).",
+      "lyrics_original": "O magnum mysterium, et admirabile sacramentum, ut animalia viderent Dominum natum, iacentem in praesepio.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Ola+Gjeilo+Serenity+O+magnum+mysterium"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1},
+      {"voice_line": "ACC", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Henryk Mikołaj",
+      "last_name": "Górecki",
+      "birth_year": "1933",
+      "death_year": "2010"
+    },
+    "piece": {
+      "title": "Sanctus, Sanctus, Sanctus",
+      "composition_year": 1986,
+      "epoch": "M20",
+      "language": "Latin",
+      "estimated_duration": 180,
+      "voicing": "SATB",
+      "description": "Mniej znany, ale bardzo sugestywny motet Góreckiego. Cechuje go charakterystyczna dla kompozytora monumentalna prosta harmonia oraz głęboka, radosna repetytywność.",
+      "lyrics_original": "Sanctus, Sanctus, Sanctus Dominus Deus Sabaoth. Pleni sunt caeli et terra gloria tua.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Henryk+Gorecki+Sanctus+Sanctus"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Jacob",
+      "last_name": "Handl (Gallus)",
+      "birth_year": "1550",
+      "death_year": "1591"
+    },
+    "piece": {
+      "title": "Canite tuba",
+      "composition_year": 1590,
+      "epoch": "REN",
+      "language": "Latin",
+      "estimated_duration": 150,
+      "voicing": "SSATB",
+      "description": "Radosny, pięciogłosowy motet adwentowy zapowiadający przyjście Pana. Cechuje go ożywiona rytmika i bogata polifonia typowa dla późnego renesansu.",
+      "lyrics_original": "Canite tuba in Sion, quia prope est dies Domini: ecce veniet ad salvandum nos.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Jacob+Handl+Gallus+Canite+tuba"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Hanna",
+      "last_name": "Havrylets",
+      "birth_year": "1958",
+      "death_year": "2022"
+    },
+    "piece": {
+      "title": "Prayer (Молитва до Пресвятої Богородиці)",
+      "composition_year": 2004,
+      "epoch": "CON",
+      "language": "Ukrainian",
+      "estimated_duration": 260,
+      "voicing": "SSAATTBB",
+      "description": "Niezwykle poruszająca modlitwa do Matki Bożej autorstwa wybitnej ukraińskiej kompozytorki. Utwór charakteryzuje się gęstą fakturą divisi i głębokim, cerkiewnym brzmieniem.",
+      "lyrics_original": "Богородице Діво, радуйся, Благодатна Маріє, Господь з Тобою...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Hanna+Havrylets+Prayer"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "George Frideric",
+      "last_name": "Händel",
+      "birth_year": "1685",
+      "death_year": "1759"
+    },
+    "piece": {
+      "title": "Hallelujah",
+      "composition_year": 1741,
+      "epoch": "BAR",
+      "language": "English",
+      "estimated_duration": 240,
+      "voicing": "SATB",
+      "description": "Najsłynniejszy fragment chóralny z oratorium 'Mesjasz' (HWV 56). Potężny, radosny chór wieńczący drugą część dzieła, tradycyjnie wysłuchiwany przez publiczność na stojąco.",
+      "lyrics_original": "Hallelujah! For the Lord God Omnipotent reigneth. The kingdom of this world is become the kingdom of our Lord, and of His Christ; and He shall reign for ever and ever. King of Kings, and Lord of Lords. Hallelujah!",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Handel+Hallelujah+Chorus"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Josquin",
+      "last_name": "des Prez",
+      "birth_year": "1450",
+      "death_year": "1521"
+    },
+    "piece": {
+      "title": "O salutaris hostia",
+      "composition_year": 1505,
+      "epoch": "REN",
+      "language": "Latin",
+      "estimated_duration": 180,
+      "voicing": "SATB",
+      "description": "Jeden z najpiękniejszych motetów eucharystycznych epoki renesansu, napisany przez mistrza szkoły franko-flamandzkiej. Cechuje go imitacyjna polifonia i niezwykła przejrzystość formy.",
+      "lyrics_original": "O salutaris hostia, Quae caeli pandis ostium: Bella premunt hostilia, Da robur, fer auxilium.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Josquin+des+Prez+O+salutaris+hostia"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Anonim / Tradycyjne",
+      "last_name": "Tradycyjne",
+      "birth_year": "",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Gdy śliczna Panna",
+      "arranger": "Mariusz Kramarz",
+      "composition_year": null,
+      "epoch": "CON",
+      "language": "Polish",
+      "estimated_duration": 210,
+      "voicing": "SATB divisi",
+      "description": "Współczesna, bogata harmonicznie aranżacja jednej z najpopularniejszych polskich kolęd. Melodia ludowa zyskała tu nowe, rozbudowane tło chóralne.",
+      "lyrics_original": "Gdy śliczna Panna Syna kołysała, z wielkim żalem tak Jemu śpiewała: Li, li, li, li, laj, moje Dzieciąteczko...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Gdy+sliczna+panna+Mariusz+Kramarz"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Dawid",
+      "last_name": "Kusz OP",
+      "birth_year": "1979",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Alleluja laterańskie",
+      "composition_year": null,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 180,
+      "voicing": "SATB",
+      "description": "Współczesna, uroczysta aklamacja przed Ewangelią skomponowana przez polskiego dominikanina na początku XXI wieku. Utwór charakteryzuje się jasną, radosną harmonią i jest bardzo popularny w polskim repertuarze liturgicznym.",
+      "lyrics_original": "Alleluja, Alleluja, Alleluja...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Dawid+Kusz+Alleluja+lateranskie"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Orlando di",
+      "last_name": "Lasso",
+      "birth_year": "1532",
+      "death_year": "1594"
+    },
+    "piece": {
+      "title": "Laudate Dominum omnes gentes",
+      "composition_year": 1574,
+      "epoch": "REN",
+      "language": "Latin",
+      "estimated_duration": 150,
+      "voicing": "SATB",
+      "description": "Renesansowy, niezwykle żywiołowy motet do tekstu Psalmu 117. Kompozycja pełna energii, z mistrzowsko poprowadzoną, imitacyjną polifonią. Często wykonywana na zakończenie koncertów.",
+      "lyrics_original": "Laudate Dominum omnes gentes, laudate eum omnes populi. Quoniam confirmata est super nos misericordia ejus, et veritas Domini manet in aeternum. Gloria Patri et Filio et Spiritui Sancto. Sicut erat in principio, et nunc, et semper, et in saecula saeculorum. Amen.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Orlando+di+Lasso+Laudate+Dominum"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Antonio",
+      "last_name": "Lotti",
+      "birth_year": "1667",
+      "death_year": "1740"
+    },
+    "piece": {
+      "title": "Crucifixus a 8",
+      "composition_year": 1717,
+      "epoch": "BAR",
+      "language": "Latin",
+      "estimated_duration": 200,
+      "voicing": "SSAATTBB",
+      "description": "Jeden z najsłynniejszych motetów pasyjnych w historii. Ośmiogłosowe arcydzieło weneckiego mistrza, które zasłynęło dzięki niesamowitemu, przyprawiającemu o dreszcze nagromadzeniu dysonansów i opóźnień w początkowych taktach.",
+      "lyrics_original": "Crucifixus etiam pro nobis, sub Pontio Pilato passus, et sepultus est.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Antonio+Lotti+Crucifixus"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "David",
+      "last_name": "MacIntyre",
+      "birth_year": "1952",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Ave Maria",
+      "composition_year": 1994,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 180,
+      "voicing": "SATB divisi",
+      "description": "Współczesne, niezwykle ekspresyjne opracowanie modlitwy 'Zdrowaś Maryjo' kanadyjskiego kompozytora. Utwór łamie tradycyjne schematy, wprowadzając gęstą fakturę, zróżnicowaną dynamikę i specyficzną deklamację tekstu.",
+      "lyrics_original": "Ave Maria, gratia plena, Dominus tecum. Benedicta tu in mulieribus, et benedictus fructus ventris tui, Jesus.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=David+MacIntyre+Ave+Maria"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Claudio",
+      "last_name": "Monteverdi",
+      "birth_year": "1567",
+      "death_year": "1643"
+    },
+    "piece": {
+      "title": "Cantate Domino canticum novum",
+      "composition_year": 1620,
+      "epoch": "BAR",
+      "language": "Latin",
+      "estimated_duration": 160,
+      "voicing": "SSATTB",
+      "description": "Żywiołowy, sześciogłosowy motet ze zbioru z 1620 roku. Monteverdi łączy w nim jeszcze wokalną technikę polifoniczną renesansu z wyrazistym, niemal tanecznym, nowym stylem wczesnego baroku.",
+      "lyrics_original": "Cantate Domino canticum novum, cantate et benedicite nomini ejus: quia mirabilia fecit.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Monteverdi+Cantate+Domino"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Claudio",
+      "last_name": "Monteverdi",
+      "birth_year": "1567",
+      "death_year": "1643"
+    },
+    "piece": {
+      "title": "Quel augellin che canta",
+      "composition_year": 1603,
+      "epoch": "REN",
+      "language": "Italian",
+      "estimated_duration": 150,
+      "voicing": "SSATB",
+      "description": "Świecki madrygał z IV Księgi Madrygałów Monteverdiego. Piękny przykład muzycznego malarstwa (madrigalizmów), gdzie muzyka wprost naśladuje lot i śpiew ptaka. Utwór na pograniczu renesansu i wczesnego baroku.",
+      "lyrics_original": "Quel augellin che canta / Sì dolcemente e lascivetto vola...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Monteverdi+Quel+augellin+che+canta"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Wolfgang Amadeus",
+      "last_name": "Mozart",
+      "birth_year": "1756",
+      "death_year": "1791"
+    },
+    "piece": {
+      "title": "Ave verum corpus",
+      "composition_year": 1791,
+      "epoch": "CLA",
+      "language": "Latin",
+      "estimated_duration": 180,
+      "voicing": "SATB",
+      "description": "Jeden z najsłynniejszych motetów eucharystycznych w historii muzyki, skomponowany na niespełna pół roku przed śmiercią kompozytora. Cechuje go genialna prostota, liryzm i krystaliczna harmonia.",
+      "lyrics_original": "Ave verum corpus, natum de Maria Virgine, vere passum, immolatum in cruce pro homine, cuius latus perforatum fluxit aqua et sanguine: esto nobis praegustatum in mortis examine. O Jesu dulcis, O Jesu pie, O Jesu, fili Mariae.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Mozart+Ave+verum+corpus+choir"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Giovanni Pierluigi da",
+      "last_name": "Palestrina",
+      "birth_year": "1525",
+      "death_year": "1594"
+    },
+    "piece": {
+      "title": "Super flumina Babylonis",
+      "composition_year": 1581,
+      "epoch": "REN",
+      "language": "Latin",
+      "estimated_duration": 240,
+      "voicing": "SATB",
+      "description": "Klasyczny, doskonały proporcjonalnie motet szkoły rzymskiej, oparty na tekście Psalmu 137. Pełen smutku i tęsknoty utwór opowiadający o wygnaniu Izraelitów do Babilonu.",
+      "lyrics_original": "Super flumina Babylonis, illic sedimus et flevimus, dum recordaremur tui, Sion...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Palestrina+Super+flumina+Babylonis"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Arvo",
+      "last_name": "Pärt",
+      "birth_year": "1935",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Da Pacem Domine",
+      "composition_year": 2004,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 300,
+      "voicing": "SATB",
+      "description": "Minimalistyczna, uduchowiona kompozycja napisana w unikalnym dla Pärta stylu 'tintinnabuli' (styl dzwoneczkowy). Utwór powstał jako hołd i modlitwa o pokój po zamachach w Madrycie.",
+      "lyrics_original": "Da pacem, Domine, in diebus nostris, quia non est alius qui pugnet pro nobis, nisi tu Deus noster.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Arvo+Part+Da+Pacem+Domine"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Arvo",
+      "last_name": "Pärt",
+      "birth_year": "1935",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Nunc dimittis",
+      "composition_year": 2001,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 360,
+      "voicing": "SATB divisi",
+      "description": "Medytacyjne, przejmujące opracowanie ewangelicznego Kantyku Symeona. Utwór narasta od delikatnego szeptu aż po ogromną, rozświetloną kulminację na słowach 'lumen ad revelationem'.",
+      "lyrics_original": "Nunc dimittis servum tuum, Domine, secundum verbum tuum in pace: quia viderunt oculi mei salutare tuum, quod parasti ante faciem omnium populorum: lumen ad revelationem gentium, et gloriam plebis tuae Israel.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Arvo+Part+Nunc+dimittis"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Arvo",
+      "last_name": "Pärt",
+      "birth_year": "1935",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "The Deer's Cry",
+      "composition_year": 2007,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 260,
+      "voicing": "SATB",
+      "description": "Niezwykle hipnotyzujące opracowanie tekstu z przypisywanej św. Patrykowi modlitwy (Lorica św. Patryka). Utwór rozwija się od pojedynczych sylab w technice tintinnabuli, aż do potężnego, pełnego akordu i wyciszenia na końcu.",
+      "lyrics_original": "Christ with me, Christ before me, Christ behind me, Christ in me...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Arvo+Part+The+Deer%27s+Cry"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Krzysztof",
+      "last_name": "Penderecki",
+      "birth_year": "1933",
+      "death_year": "2020"
+    },
+    "piece": {
+      "title": "O gloriosa Virginum",
+      "composition_year": 2009,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 200,
+      "voicing": "SATB divisi",
+      "description": "Późne dzieło polskiego mistrza, dedykowane José Antonio Abreu. Kompozycja łączy tradycyjny język muzyki sakralnej z gęstą harmonią i bardzo wyrazistymi, emocjonalnymi kulminacjami właściwymi Pendereckiemu.",
+      "lyrics_original": "O gloriosa virginum, sublimis inter sidera, qui te creavit, parvulum lactente nutris ubere...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Penderecki+O+gloriosa+Virginum"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Siergiej",
+      "last_name": "Rachmaninow",
+      "birth_year": "1873",
+      "death_year": "1943"
+    },
+    "piece": {
+      "title": "Ektenia Pokoju (z Liturgii św. Jana Złotoustego)",
+      "composition_year": 1910,
+      "epoch": "M20",
+      "language": "Church Slavonic",
+      "estimated_duration": 180,
+      "voicing": "SSAATTBB",
+      "description": "Fragment Liturgii św. Jana Złotoustego (op. 31). Wielka Ektenia to majestatyczna, potężna chóralna modlitwa bazująca na niezwykle niskich, sonorycznych basach (często oktatystach) i gęstej rosyjskiej polifonii.",
+      "lyrics_original": "Gospodi pomiluj. Tebe Gospodi...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Rachmaninoff+Liturgy+Great+Ektenia"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Salomone",
+      "last_name": "Rossi",
+      "birth_year": "1570",
+      "death_year": "1630"
+    },
+    "piece": {
+      "title": "Barukh haba beshem Adonai",
+      "composition_year": 1622,
+      "epoch": "BAR",
+      "language": "Hebrew",
+      "estimated_duration": 150,
+      "voicing": "SATB",
+      "description": "Unikalny w skali historii muzyki utwór – wczesnobarokowa żydowska muzyka synagogalna. Rossi przełożył estetykę i technikę włoskiej polifonii (znamiennej np. dla Monteverdiego) na język hebrajski i liturgię żydowską (tekst z Psalmu 118).",
+      "lyrics_original": "Barukh haba beshem Adonai, berakhnumikem mibeit Adonai...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Salomone+Rossi+Barukh+haba"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "John",
+      "last_name": "Rutter",
+      "birth_year": "1945",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "A Ukrainian Prayer",
+      "composition_year": 2022,
+      "epoch": "CON",
+      "language": "Ukrainian",
+      "estimated_duration": 180,
+      "voicing": "SATB",
+      "description": "Niezwykle wzruszający gest kompozytora – krótka i bardzo przystępna harmonicznie modlitwa chóralna o pokój w Ukrainie, napisana a cappella tuż po rozpoczęciu rosyjskiej inwazji w 2022 roku.",
+      "lyrics_original": "Hospody, bozhe velykyi, yedynyi, Nam Ukrainu khrany...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=John+Rutter+A+Ukrainian+Prayer"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Jan",
+      "last_name": "Sandström",
+      "birth_year": "1942",
+      "death_year": "2019"
+    },
+    "piece": {
+      "title": "Es ist ein Ros' entsprungen",
+      "composition_year": 1990,
+      "epoch": "CON",
+      "language": "German",
+      "estimated_duration": 300,
+      "voicing": "SSAATTBB + SATB",
+      "description": "Niezwykła kompozycja oparta na klasycznym opracowaniu Praetoriusa. Jeden, mniejszy chór śpiewa oryginalny chorał z 1609 roku, podczas gdy reszta zespołu otacza go gęstą, powoli pulsującą, klasterową 'chmurą' brzmieniową, śpiewając na długich samogłoskach.",
+      "lyrics_original": "Es ist ein Ros entsprungen aus einer Wurzel zart, wie uns die Alten sungen, von Jesse kam die Art...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Jan+Sandstrom+Es+ist+ein+Ros+entsprungen"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Heinrich",
+      "last_name": "Schütz",
+      "birth_year": "1585",
+      "death_year": "1672"
+    },
+    "piece": {
+      "title": "Jauchzet dem Herrn, alle Welt, SWV 36",
+      "composition_year": 1619,
+      "epoch": "BAR",
+      "language": "German",
+      "estimated_duration": 360,
+      "voicing": "SATB + SATB",
+      "description": "Potężny, radosny motet dwuchórowy ze zbioru 'Psalmen Davids'. Kompozycja zdradza silne wpływy weneckiej polichóralności (w szczególności Giovanniego Gabrielego, u którego Schütz studiował).",
+      "lyrics_original": "Jauchzet dem Herren, alle Welt! Dienet dem Herren mit Freuden, kommt vor sein Angesicht mit Frohlocken!",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Schutz+Jauchzet+dem+Herrn+SWV+36"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Caroline",
+      "last_name": "Shaw",
+      "birth_year": "1982",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "and the swallow",
+      "composition_year": 2017,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 180,
+      "voicing": "SATB divisi",
+      "description": "Intymne i harmonicznie nowatorskie opracowanie Psalmu 84, stworzone przez amerykańską laureatkę Nagrody Pulitzera. Kompozycja charakteryzuje się bogatymi akordami opartymi na naturalnym rezonansie mowy.",
+      "lyrics_original": "How beloved is your dwelling place, O Lord of hosts. My soul yearns, faints, my heart and my flesh cry out...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Caroline+Shaw+and+the+swallow"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Jean",
+      "last_name": "Sibelius",
+      "birth_year": "1865",
+      "death_year": "1957"
+    },
+    "piece": {
+      "title": "Be Still My Soul",
+      "arranger": "C. Rand Matheson",
+      "composition_year": 1899,
+      "epoch": "ROM",
+      "language": "English",
+      "estimated_duration": 240,
+      "voicing": "SATB",
+      "description": "Chóralna aranżacja słynnej, przepięknej melodii hymnu z poematu symfonicznego 'Finlandia' op. 26. Tekst Kathariny von Schlegel przydaje tej romantycznej kompozycji silnie duchowego, refleksyjnego charakteru.",
+      "lyrics_original": "Be still, my soul: the Lord is on thy side; bear patiently the cross of grief or pain...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Sibelius+Be+Still+My+Soul+choir"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Charles Villiers",
+      "last_name": "Stanford",
+      "birth_year": "1852",
+      "death_year": "1924"
+    },
+    "piece": {
+      "title": "Beati quorum via, Op. 38, No. 3",
+      "composition_year": 1888,
+      "epoch": "ROM",
+      "language": "Latin",
+      "estimated_duration": 200,
+      "voicing": "SSATBB",
+      "description": "Trzeci z 'Trzech Motetów Łacińskich' Stanforda. Utwór a cappella w genialny sposób ukazuje bogatą, późnoromantyczną harmonikę, będąc zarazem swoistym powrotem do form polifonicznych na sześć głosów.",
+      "lyrics_original": "Beati quorum via integra est, qui ambulant in lege Domini.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Stanford+Beati+quorum+via"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Ken",
+      "last_name": "Steven",
+      "birth_year": "1993",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Dawn and Dusk",
+      "composition_year": 2020,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 220,
+      "voicing": "SATB divisi",
+      "description": "Fascynująca kompozycja młodego indonezyjskiego twórcy. Utwór maluje muzyczny krajobraz wschodu i zachodu słońca, wykorzystując bogatą, nowoczesną harmonię oraz efekty perkusyjne i onomatopeiczne charakterystyczne dla współczesnej azjatyckiej muzyki chóralnej.",
+      "lyrics_original": "The sun is rising, painting the sky...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Ken+Steven+Dawn+and+Dusk"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Philip W. J.",
+      "last_name": "Stopford",
+      "birth_year": "1977",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Lully, Lullay",
+      "composition_year": 2008,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 270,
+      "voicing": "SATB divisi",
+      "description": "Współczesne, niezwykle wzruszające opracowanie tekstu znanej angielskiej kolędy 'Coventry Carol'. Utwór charakteryzuje się bogatymi akordami oraz przepiękną, rzewną melodią prowadzoną głównie w partiach sopranów.",
+      "lyrics_original": "Lully, lullay, thou little tiny child, bye bye, lully lullay. O sisters too, how may we do for to preserve this day...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Philip+Stopford+Lully+Lullay"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Jacek",
+      "last_name": "Sykulski",
+      "birth_year": "1964",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Stoi lód na prośnie",
+      "composition_year": 2017,
+      "epoch": "CON",
+      "language": "Polish",
+      "estimated_duration": 180,
+      "voicing": "SATB divisi",
+      "description": "Chóralne opracowanie polskiej pieśni ludowej pochodzącej z regionu Kurpiów. Jacek Sykulski zastosował tu zaawansowane techniki wokalne i gęstą harmonię klastrową, wydobywając mroczny, dramatyczny charakter tekstu.",
+      "lyrics_original": "Stoi lód na prośnie, a śnieżek na sośnie, oj niedługo stopnieje...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Jacek+Sykulski+Stoi+lod+na+prosnie"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "John",
+      "last_name": "Tavener",
+      "birth_year": "1944",
+      "death_year": "2013"
+    },
+    "piece": {
+      "title": "A Hymn to the Mother of God",
+      "composition_year": 1985,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 160,
+      "voicing": "SATB + SATB",
+      "description": "Jeden z najbardziej znanych krótkich utworów Tavenera, napisany na podwójny chór. Cechą charakterystyczną jest ścisły kanon, w którym drugi chór śpiewa dokładnie to samo co pierwszy, opóźniony o zaledwie kilka miar, co tworzy potężny, mistyczny rezonans inspirowany cerkiewnym echem.",
+      "lyrics_original": "In You, O Woman full of Grace, the angelic choirs, and the human race...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Tavener+A+Hymn+to+the+Mother+of+God"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "John",
+      "last_name": "Tavener",
+      "birth_year": "1944",
+      "death_year": "2013"
+    },
+    "piece": {
+      "title": "Mother of God, here I stand",
+      "composition_year": 2003,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 150,
+      "voicing": "SATB",
+      "description": "Niezwykle prosta, homofoniczna i pełna pokory pieśń, stanowiąca fragment monumentalnego, nocnego nabożeństwa Tavenera 'The Veil of the Temple'. Tekst jest modlitwą z wiersza Michaiła Lermontowa.",
+      "lyrics_original": "Mother of God, here I stand now praying, before this ikon of your radiant brightness...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Tavener+Mother+of+God+here+I+stand"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "John",
+      "last_name": "Tavener",
+      "birth_year": "1944",
+      "death_year": "2013"
+    },
+    "piece": {
+      "title": "Song for Athene",
+      "composition_year": 1993,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 360,
+      "voicing": "SATB divisi",
+      "description": "Jeden z najbardziej poruszających utworów Tavenera, który zdobył ogólnoświatowy rozgłos po wykonaniu na pogrzebie księżnej Diany w 1997 roku. Oparty jest na nieprzerwanym burdonie w basach, na tle którego wznoszą się coraz potężniejsze akordy z tekstem Szekspira i prawosławną modlitwą za zmarłych.",
+      "lyrics_original": "Alleluia. May flights of angels sing thee to thy rest. Alleluia. Remember me, O Lord, when you come into your kingdom...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Tavener+Song+for+Athene"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Ralph",
+      "last_name": "Vaughan Williams",
+      "birth_year": "1872",
+      "death_year": "1958"
+    },
+    "piece": {
+      "title": "The Lark Ascending",
+      "arranger": "Paul Drayton",
+      "composition_year": 1914,
+      "epoch": "M20",
+      "language": "English",
+      "estimated_duration": 900,
+      "voicing": "SATB divisi + Solo Violin",
+      "description": "Niezwykła aranżacja słynnego poematu na skrzypce i orkiestrę, gdzie partię orkiestry przejął chór a cappella (aranżacja: Paul Drayton) śpiewający fragmenty wiersza George'a Mereditha. Skrzypce solo zachowują swoją oryginalną, wirtuozowską i niezwykle malowniczą partię (oznaczoną w wymaganiach jako ACC).",
+      "lyrics_original": "He rises and begins to round, / He drops the silver chain of sound...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Vaughan+Williams+The+Lark+Ascending+choir"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1},
+      {"voice_line": "ACC", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Tomás Luis de",
+      "last_name": "Victoria",
+      "birth_year": "1548",
+      "death_year": "1611"
+    },
+    "piece": {
+      "title": "Alma Redemptoris Mater",
+      "composition_year": 1581,
+      "epoch": "REN",
+      "language": "Latin",
+      "estimated_duration": 300,
+      "voicing": "SSAATTBB",
+      "description": "Wspaniały, podwójny chór (cori spezzati) autorstwa najwybitniejszego hiszpańskiego kompozytora renesansu. Ta antyfona maryjna charakteryzuje się świetlistą hiszpańską polifonią i bardzo radosnym, niemal tanecznym metrum w części potrójnej.",
+      "lyrics_original": "Alma Redemptoris Mater, quae pervia caeli porta manes, et stella maris, succurre cadenti, surgere qui curat, populo: tu quae genuisti, natura mirante, tuum sanctum Genitorem, Virgo prius ac posterius, Gabrielis ab ore sumens illud Ave, peccatorum miserere.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Victoria+Alma+Redemptoris+Mater+8"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Bernat",
+      "last_name": "Vivancos",
+      "birth_year": "1973",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "A Child is born",
+      "composition_year": 2001,
+      "epoch": "CON",
+      "language": "English",
+      "estimated_duration": 280,
+      "voicing": "SSAATTBB",
+      "description": "Kataloński kompozytor znany jest z tzw. muzyki spektralnej i 'muzyki kolorów'. Utwór ten jest niezwykle gęsty brzmieniowo, opiera się na powoli ewoluujących, naturalnych alikwotach tworzących świetliste klastry zwiastujące narodziny.",
+      "lyrics_original": "A child is born in Bethlehem; / Exult for joy, Jerusalem! / Alleluia.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Bernat+Vivancos+A+Child+is+born"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Bernat",
+      "last_name": "Vivancos",
+      "birth_year": "1973",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Aeternam",
+      "composition_year": 2014,
+      "epoch": "CON",
+      "language": "Latin",
+      "estimated_duration": 480,
+      "voicing": "SSAATTBB divisi",
+      "description": "Monumentalna, niezwykle przejmująca modlitwa za zmarłych. Podobnie jak wiele dzieł Vivancosa, wymaga od chóru nieskazitelnej intonacji, aby w pełni ukazać bogactwo harmonii spektralnej, która sprawia wrażenie fizycznego otaczania słuchacza dźwiękiem.",
+      "lyrics_original": "Requiem aeternam dona eis, Domine, et lux perpetua luceat eis...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Bernat+Vivancos+Aeternam"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 2},
+      {"voice_line": "S2", "quantity": 2},
+      {"voice_line": "A1", "quantity": 2},
+      {"voice_line": "A2", "quantity": 2},
+      {"voice_line": "T1", "quantity": 2},
+      {"voice_line": "T2", "quantity": 2},
+      {"voice_line": "B1", "quantity": 2},
+      {"voice_line": "B2", "quantity": 2}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Bernat",
+      "last_name": "Vivancos",
+      "birth_year": "1973",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Le cri des bergers",
+      "composition_year": 2004,
+      "epoch": "CON",
+      "language": "Catalan",
+      "estimated_duration": 300,
+      "voicing": "SSAATTBB",
+      "description": "Kolejny niesamowity utwór Vivancosa. 'Krzyk pasterzy' to kompozycja radosna, niemal ekstatyczna, naśladująca ludowe zawołania i grę pasterskich instrumentów poprzez gęste, rezonujące i jasne klastry harmoniczne.",
+      "lyrics_original": "Pastores dicite, quidnam vidistis, et annuntiate Christi nativitatem...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Bernat+Vivancos+Le+cri+des+bergers"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "S2", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "A2", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1},
+      {"voice_line": "B2", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "John",
+      "last_name": "Williams",
+      "birth_year": "1932",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Hymn to the Fallen",
+      "composition_year": 1998,
+      "epoch": "CON",
+      "language": "Wordless",
+      "estimated_duration": 360,
+      "voicing": "SATB",
+      "description": "Przejmujący utwór chóralno-orkiestrowy z filmu 'Szeregowiec Ryan'. Chór w tym utworze jest traktowany instrumentalnie (śpiewa wokalizy bez słów), tworząc niezwykle potężny, majestatyczny i smutny hołd dla poległych żołnierzy.",
+      "lyrics_original": "",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=John+Williams+Hymn+to+the+Fallen+choir"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Mikołaj",
+      "last_name": "Zieleński",
+      "birth_year": "1560",
+      "death_year": "1620"
+    },
+    "piece": {
+      "title": "Vox in Rama",
+      "composition_year": 1611,
+      "epoch": "BAR",
+      "language": "Latin",
+      "estimated_duration": 180,
+      "voicing": "SATB",
+      "description": "Arcydzieło polskiego wczesnego baroku (ze zbioru Communiones). Niezwykle sugestywny i bolesny motet ilustrujący biblijny 'płacz Racheli'. Charakteryzuje się nowoczesną na owe czasy ekspresją i swobodnym operowaniem dysonansem.",
+      "lyrics_original": "Vox in Rama audita est, ploratus et ululatus: Rachel plorans filios suos, et noluit consolari, quia non sunt.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Mikolaj+Zielenski+Vox+in+Rama"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Anonim / Tradycyjne",
+      "last_name": "Anonim",
+      "birth_year": "",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Gaudete",
+      "arranger": "Brian Kay",
+      "composition_year": null,
+      "epoch": "REN",
+      "language": "Latin",
+      "estimated_duration": 120,
+      "voicing": "SATB",
+      "description": "Słynna szesnastowieczna kolęda (opublikowana w fińskim zbiorze Piae Cantiones w 1582 r.). Wersja ułożona przez Briana Kaya (m.in. dla King's Singers) jest bardzo radosna, skoczna i rytmiczna.",
+      "lyrics_original": "Gaudete, gaudete! Christus est natus ex Maria virgine, gaudete!",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Gaudete+Brian+Kay"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Anonim / Tradycyjne",
+      "last_name": "Anonim",
+      "birth_year": "",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "O Virgo Splendens (Llibre Vermell de Montserrat)",
+      "composition_year": null,
+      "epoch": "MED",
+      "language": "Latin",
+      "estimated_duration": 180,
+      "voicing": "TUTTI",
+      "description": "Średniowieczny, dwu- lub trzygłosowy kanon pochodzący z Czerwonej Księgi z Montserrat (Llibre Vermell, XIV w.). Pierwotnie śpiewany przez pielgrzymów w klasztorze – zachwyca swoją hipnotyzującą rytmiką i prostotą.",
+      "lyrics_original": "O virgo splendens hic in monte celso, Miraculis serrato fulgentibus ubique...",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=O+Virgo+Splendens+Llibre+Vermell"
+    },
+    "voice_requirements": [
+      {"voice_line": "TUTTI", "quantity": 4}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Anonim / Tradycyjne",
+      "last_name": "Tradycyjne",
+      "birth_year": "",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Salve Regina",
+      "arranger": "Melodia z Oksytanii",
+      "composition_year": null,
+      "epoch": "FOLK",
+      "language": "Latin",
+      "estimated_duration": 240,
+      "voicing": "SATB",
+      "description": "Tradycyjna, surowa wersja słynnej antyfony maryjnej pochodząca z regionu Oksytanii (południowa Francja). Wykonywana w sposób nawiązujący do wczesnej, ludowej polifonii – często w bardzo silnym i otwartym brzmieniu.",
+      "lyrics_original": "Salve, Regina, mater misericordiae; vita, dulcedo et spes nostra, salve.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Salve+Regina+Occitania+choir"
+    },
+    "voice_requirements": [
+      {"voice_line": "S1", "quantity": 1},
+      {"voice_line": "A1", "quantity": 1},
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  },
+  {
+    "composer": {
+      "first_name": "Anonim / Tradycyjne",
+      "last_name": "Tradycyjne",
+      "birth_year": "",
+      "death_year": ""
+    },
+    "piece": {
+      "title": "Tantum ergo sacramentum",
+      "arranger": "Polifonia korsykańska",
+      "composition_year": null,
+      "epoch": "FOLK",
+      "language": "Latin",
+      "estimated_duration": 180,
+      "voicing": "T1 T2 B1",
+      "description": "Eucharystyczny hymn św. Tomasza z Akwinu opracowany w duchu głęboko zakorzenionej, męskiej polifonii wyspy Korsyki (tzw. Paghjella). Charakterystyczne mocne wibracje, specyficzne zdobnictwo i mroczne współbrzmienia.",
+      "lyrics_original": "Tantum ergo Sacramentum / Veneremur cernui: / Et antiquum documentum / Novo cedat ritui: / Praestet fides supplementum / Sensuum defectui. / Genitori, Genitoque / Laus et jubilatio, / Salus, honor, virtus quoque / Sit et benedictio: / Procedenti ab utroque / Compar sit laudatio. Amen.",
+      "reference_recording_youtube": "https://www.youtube.com/results?search_query=Tantum+ergo+corsican+polyphony"
+    },
+    "voice_requirements": [
+      {"voice_line": "T1", "quantity": 1},
+      {"voice_line": "T2", "quantity": 1},
+      {"voice_line": "B1", "quantity": 1}
+    ]
+  }
+]

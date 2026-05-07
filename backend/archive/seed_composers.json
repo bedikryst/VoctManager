@@ -1,0 +1,266 @@
+[
+  {
+    "first_name": "Gregorio",
+    "last_name": "Allegri",
+    "birth_year": "1582",
+    "death_year": "1652"
+  },
+  {
+    "first_name": "Johann Sebastian",
+    "last_name": "Bach",
+    "birth_year": "1685",
+    "death_year": "1750"
+  },
+  {
+    "first_name": "Edward C.",
+    "last_name": "Bairstow",
+    "birth_year": "1874",
+    "death_year": "1946"
+  },
+  {
+    "first_name": "Anton",
+    "last_name": "Bruckner",
+    "birth_year": "1824",
+    "death_year": "1896"
+  },
+  {
+    "first_name": "Rihards",
+    "last_name": "Dubra",
+    "birth_year": "1964",
+    "death_year": ""
+  },
+  {
+    "first_name": "Edward",
+    "last_name": "Elgar",
+    "birth_year": "1857",
+    "death_year": "1934"
+  },
+  {
+    "first_name": "Ēriks",
+    "last_name": "Ešenvalds",
+    "birth_year": "1977",
+    "death_year": ""
+  },
+  {
+    "first_name": "Gabriel",
+    "last_name": "Fauré",
+    "birth_year": "1845",
+    "death_year": "1924"
+  },
+  {
+    "first_name": "Marco",
+    "last_name": "Frisina",
+    "birth_year": "1954",
+    "death_year": ""
+  },
+  {
+    "first_name": "Orlando",
+    "last_name": "Gibbons",
+    "birth_year": "1583",
+    "death_year": "1625"
+  },
+  {
+    "first_name": "Ola",
+    "last_name": "Gjeilo",
+    "birth_year": "1978",
+    "death_year": ""
+  },
+  {
+    "first_name": "Henryk Mikołaj",
+    "last_name": "Górecki",
+    "birth_year": "1933",
+    "death_year": "2010"
+  },
+  {
+    "first_name": "Jacob",
+    "last_name": "Handl (Gallus)",
+    "birth_year": "1550",
+    "death_year": "1591"
+  },
+  {
+    "first_name": "Hanna",
+    "last_name": "Havrylets",
+    "birth_year": "1958",
+    "death_year": "2022"
+  },
+  {
+    "first_name": "George Frideric",
+    "last_name": "Händel",
+    "birth_year": "1685",
+    "death_year": "1759"
+  },
+  {
+    "first_name": "Josquin",
+    "last_name": "des Prez",
+    "birth_year": "ok. 1450",
+    "death_year": "1521"
+  },
+  {
+    "first_name": "Mariusz",
+    "last_name": "Kramarz",
+    "birth_year": "",
+    "death_year": ""
+  },
+  {
+    "first_name": "Dawid",
+    "last_name": "Kusz OP",
+    "birth_year": "",
+    "death_year": ""
+  },
+  {
+    "first_name": "Orlando di",
+    "last_name": "Lasso",
+    "birth_year": "1532",
+    "death_year": "1594"
+  },
+  {
+    "first_name": "Antonio",
+    "last_name": "Lotti",
+    "birth_year": "1667",
+    "death_year": "1740"
+  },
+  {
+    "first_name": "David",
+    "last_name": "MacIntyre",
+    "birth_year": "1952",
+    "death_year": ""
+  },
+  {
+    "first_name": "Claudio",
+    "last_name": "Monteverdi",
+    "birth_year": "1567",
+    "death_year": "1643"
+  },
+  {
+    "first_name": "Wolfgang Amadeus",
+    "last_name": "Mozart",
+    "birth_year": "1756",
+    "death_year": "1791"
+  },
+  {
+    "first_name": "Giovanni Pierluigi",
+    "last_name": "da Palestrina",
+    "birth_year": "1525",
+    "death_year": "1594"
+  },
+  {
+    "first_name": "Arvo",
+    "last_name": "Pärt",
+    "birth_year": "1935",
+    "death_year": ""
+  },
+  {
+    "first_name": "Krzysztof",
+    "last_name": "Penderecki",
+    "birth_year": "1933",
+    "death_year": "2020"
+  },
+  {
+    "first_name": "Siergiej",
+    "last_name": "Rachmaninow",
+    "birth_year": "1873",
+    "death_year": "1943"
+  },
+  {
+    "first_name": "Salomone",
+    "last_name": "Rossi",
+    "birth_year": "1570",
+    "death_year": "1630"
+  },
+  {
+    "first_name": "John",
+    "last_name": "Rutter",
+    "birth_year": "1945",
+    "death_year": ""
+  },
+  {
+    "first_name": "Jan",
+    "last_name": "Sandström",
+    "birth_year": "1942",
+    "death_year": "2019"
+  },
+  {
+    "first_name": "Heinrich",
+    "last_name": "Schütz",
+    "birth_year": "1585",
+    "death_year": "1672"
+  },
+  {
+    "first_name": "Caroline",
+    "last_name": "Shaw",
+    "birth_year": "1982",
+    "death_year": ""
+  },
+  {
+    "first_name": "Jean",
+    "last_name": "Sibelius",
+    "birth_year": "1865",
+    "death_year": "1957"
+  },
+  {
+    "first_name": "Charles Villiers",
+    "last_name": "Stanford",
+    "birth_year": "1852",
+    "death_year": "1924"
+  },
+  {
+    "first_name": "Ken",
+    "last_name": "Steven",
+    "birth_year": "1993",
+    "death_year": ""
+  },
+  {
+    "first_name": "Philip W. J.",
+    "last_name": "Stopford",
+    "birth_year": "1977",
+    "death_year": ""
+  },
+  {
+    "first_name": "Jacek",
+    "last_name": "Sykulski",
+    "birth_year": "1964",
+    "death_year": ""
+  },
+  {
+    "first_name": "John",
+    "last_name": "Tavener",
+    "birth_year": "1944",
+    "death_year": "2013"
+  },
+  {
+    "first_name": "Ralph",
+    "last_name": "Vaughan Williams",
+    "birth_year": "1872",
+    "death_year": "1958"
+  },
+  {
+    "first_name": "Tomás Luis",
+    "last_name": "de Victoria",
+    "birth_year": "1548",
+    "death_year": "1611"
+  },
+  {
+    "first_name": "Bernat",
+    "last_name": "Vivancos",
+    "birth_year": "1973",
+    "death_year": ""
+  },
+  {
+    "first_name": "John",
+    "last_name": "Williams",
+    "birth_year": "1932",
+    "death_year": ""
+  },
+  {
+    "first_name": "Mikołaj",
+    "last_name": "Zieleński",
+    "birth_year": "1560",
+    "death_year": "1620"
+  },
+  {
+    "first_name": "Anonim /",
+    "last_name": "Tradycyjne",
+    "birth_year": "",
+    "death_year": ""
+  }
+]
