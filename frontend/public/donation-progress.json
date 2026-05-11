@@ -1,0 +1,9 @@
+{
+  "raised": 0,
+  "goal": 12000,
+  "donors": 0,
+  "updatedAt": "2026-05-11T18:00:00+02:00",
+  "currency": "PLN",
+  "source": "zrzutka.pl/7dewdj",
+  "_note": "Edytuj raised / donors ręcznie albo podłącz cron z Zrzutki. Strona odświeża dane przy każdym otwarciu (cache: no-store)."
+}
