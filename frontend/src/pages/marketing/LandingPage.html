@@ -94,7 +94,7 @@
   body {
     margin: 0;
     min-width: 320px;
-    overflow-x: hidden;
+    overflow-x: clip;
     background:
       radial-gradient(circle at 50% -20%, rgba(198, 164, 91, 0.18), transparent 34rem),
       linear-gradient(180deg, var(--paper) 0%, #f8f6f0 48%, var(--paper-soft) 100%);
@@ -144,22 +144,61 @@
 
   .skip-link {
     position: fixed;
-    top: 14px;
-    left: 14px;
-    z-index: 120;
-    transform: translateY(-180%);
-    padding: 10px 14px;
-    background: var(--ink);
+    top: calc(env(safe-area-inset-top, 0px) + 14px);
+    left: 50%;
+    z-index: 125;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 22px 11px 18px;
+    border: 1px solid rgba(198, 164, 91, 0.48);
+    border-radius: 999px;
+    background: rgba(8, 8, 7, 0.72);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
     color: var(--paper);
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    transition: transform 0.35s var(--ease);
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    text-transform: none;
+    box-shadow: 0 22px 60px -28px rgba(198, 164, 91, 0.65);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -160%);
+    transition:
+      transform 0.55s var(--ease-slow),
+      opacity 0.45s var(--ease),
+      border-color 0.45s var(--ease),
+      color 0.45s var(--ease);
   }
 
-  .skip-link:focus {
-    transform: translateY(0);
+  .skip-link::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--candle);
+    box-shadow: 0 0 12px rgba(198, 164, 91, 0.85);
+    flex-shrink: 0;
+  }
+
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+    outline: none;
+    border-color: var(--candle);
+    color: var(--candle);
+  }
+
+  @media (max-width: 640px) {
+    .skip-link {
+      font-size: 13px;
+      padding: 10px 18px 10px 15px;
+    }
   }
 
   .has-custom-cursor,
@@ -611,14 +650,72 @@
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 24px;
-    padding: 34px max(28px, 5vw);
+    padding: calc(env(safe-area-inset-top, 0px) + 24px) max(28px, 5vw) 22px;
     color: var(--paper);
-    mix-blend-mode: difference;
+    background-color: transparent;
+    border-bottom: 1px solid transparent;
     pointer-events: none;
+    transition:
+      color 0.55s var(--ease),
+      background-color 0.55s var(--ease),
+      border-color 0.55s var(--ease),
+      padding 0.55s var(--ease),
+      backdrop-filter 0.55s var(--ease),
+      -webkit-backdrop-filter 0.55s var(--ease);
+  }
+
+  /* Veil for legibility over the hero — fades out when chrome activates into glass. */
+  .chrome::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(8, 8, 7, 0.34) 0%, rgba(8, 8, 7, 0) 100%);
+    opacity: 1;
+    transition: opacity 0.55s var(--ease);
+  }
+
+  .chrome.is-active::before {
+    opacity: 0;
+  }
+
+  /* Active glass — light surface (over jasne sekcje). */
+  .chrome.is-active {
+    background-color: rgba(244, 241, 233, 0.78);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    border-bottom-color: rgba(22, 21, 20, 0.08);
+    color: var(--ink);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    padding-bottom: 14px;
+  }
+
+  /* Active glass — dark surface (image-rite, ensemble, final-support). */
+  .chrome.is-active.is-on-dark {
+    background-color: rgba(8, 8, 7, 0.5);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border-bottom-color: rgba(244, 241, 233, 0.12);
+    color: var(--paper);
+  }
+
+  /* Idle over hero: text is already light via base; veil handles contrast. */
+  .chrome:not(.is-active).is-on-dark {
+    color: var(--paper);
   }
 
   .chrome > * {
     pointer-events: auto;
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .chrome.is-active {
+      background-color: rgba(244, 241, 233, 0.94);
+    }
+    .chrome.is-active.is-on-dark {
+      background-color: rgba(8, 8, 7, 0.78);
+    }
   }
 
   .brand {
@@ -1193,34 +1290,149 @@
   }
 
   .manifest {
-    padding-bottom: var(--space-xl);
+    position: relative;
+    overflow: clip;
+    padding-top: clamp(104px, 13vw, 178px);
+    padding-bottom: clamp(112px, 14vw, 196px);
+    background:
+      linear-gradient(180deg, rgba(244, 241, 233, 0), rgba(198, 164, 91, 0.07) 46%, rgba(244, 241, 233, 0) 100%);
+  }
+
+  .manifest::before {
+    content: "";
+    position: absolute;
+    inset: 10% 0 4%;
+    pointer-events: none;
+    opacity: 0.36;
+    background:
+      repeating-linear-gradient(
+        180deg,
+        transparent 0 56px,
+        rgba(22, 21, 20, 0.044) 56px 57px,
+        transparent 57px 112px
+      );
+    -webkit-mask-image:
+      linear-gradient(180deg, transparent, #000 18%, #000 74%, transparent),
+      linear-gradient(90deg, transparent, #000 20%, #000 86%, transparent);
+    mask-image:
+      linear-gradient(180deg, transparent, #000 18%, #000 74%, transparent),
+      linear-gradient(90deg, transparent, #000 20%, #000 86%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+
+  .manifest-grid {
+    align-items: start;
+    grid-template-columns: minmax(104px, 0.16fr) minmax(0, 1fr);
+    gap: clamp(34px, 5vw, 92px);
   }
 
   .manifest-lines {
+    position: relative;
+    z-index: 1;
     display: grid;
-    gap: 28px;
-    max-width: 1120px;
+    gap: clamp(34px, 4.4vw, 58px);
+    max-width: 1240px;
+  }
+
+  .manifest-lines::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: clamp(46px, 6vw, 86px);
+    width: 1px;
+    background: linear-gradient(180deg, rgba(198, 164, 91, 0), rgba(198, 164, 91, 0.52), rgba(198, 164, 91, 0));
+    transform: translateX(-50%);
   }
 
   .manifest-line {
+    position: relative;
+    display: grid;
+    grid-template-columns: clamp(42px, 6vw, 82px) minmax(0, 1fr);
+    gap: clamp(18px, 3vw, 42px);
+    align-items: start;
     margin: 0;
-    border-top: 1px solid var(--line);
-    padding-top: 30px;
+    border-top: 1px solid rgba(22, 21, 20, 0.14);
+    padding-top: clamp(22px, 3.4vw, 42px);
+    color: var(--ink);
     font-family: var(--serif);
-    font-size: clamp(40px, 4.8vw, 78px);
+    font-size: 72px;
     font-weight: 300;
-    line-height: 1.04;
+    letter-spacing: 0;
+    line-height: 0.98;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  }
+
+  .manifest-line::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: clamp(72px, 11vw, 160px);
+    height: 1px;
+    background: var(--candle);
+    opacity: 0.72;
+    transform: scaleX(0.48);
+    transform-origin: left center;
+    transition: transform 0.7s var(--ease-slow), opacity 0.7s var(--ease);
+  }
+
+  .manifest-line:hover::before {
+    opacity: 1;
+    transform: scaleX(1);
   }
 
   .manifest-line:nth-child(2) {
-    margin-left: clamp(0px, 7vw, 120px);
+    max-width: 1120px;
+    margin-left: clamp(0px, 4vw, 72px);
   }
 
-  .manifest-line:nth-child(3) {
-    max-width: 760px;
-    margin-left: clamp(0px, 14vw, 250px);
+  .manifest-line--closing {
+    max-width: 920px;
+    margin-left: clamp(0px, 7vw, 132px);
     color: var(--ink-soft);
-    font-size: clamp(32px, 3.6vw, 58px);
+    font-size: 54px;
+    line-height: 1.05;
+  }
+
+  .manifest-index {
+    color: var(--candle);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    padding-top: 0.9em;
+  }
+
+  .manifest-text {
+    display: block;
+    max-width: 13.8em;
+  }
+
+  .manifest-line:nth-child(2) .manifest-text {
+    max-width: 14.6em;
+  }
+
+  .manifest-line--closing .manifest-text {
+    max-width: 13.8em;
+  }
+
+  .manifest-text em {
+    color: var(--ink-muted);
+    font-style: normal;
+  }
+
+  @media (max-width: 1180px) {
+    .manifest-line {
+      font-size: 64px;
+    }
+
+    .manifest-line--closing {
+      font-size: 52px;
+    }
   }
 
   .image-rite {
@@ -1865,31 +2077,105 @@
   }
 
 
-  .neuma-interlude {
-    display: grid;
-    place-items: center;
+  .aether-interlude {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-    padding: clamp(48px, 8vw, 96px) max(28px, 5vw);
-    color: var(--ink-muted);
+    padding: clamp(60px, 10vw, 120px) 0;
     pointer-events: none;
+    color: var(--candle);
   }
 
-  .neuma-interlude + .image-rite,
-  .neuma-interlude + .ensemble,
-  .neuma-interlude + .final-support {
+  .aether-interlude + .image-rite,
+  .aether-interlude + .ensemble,
+  .aether-interlude + .final-support {
     margin-top: -32px;
   }
 
-  .neuma {
-    width: min(420px, 100%);
-    height: auto;
-    opacity: 0.78;
+  .aether-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, currentColor 50%, currentColor);
+    opacity: 0.15;
   }
 
-  /* darker variant when interlude follows light section before dark one */
-  .ensemble + .neuma-interlude,
-  .image-rite + .neuma-interlude {
-    color: var(--ink-muted);
+  .aether-line:last-child {
+    background: linear-gradient(270deg, transparent, currentColor 50%, currentColor);
+  }
+
+  .aether-knot {
+    width: 180px;
+    height: 60px;
+    flex-shrink: 0;
+    overflow: visible;
+  }
+
+  .aether-knot svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .knot-wave {
+    transform-origin: 90px 30px;
+  }
+
+  .knot-wave-top {
+    animation: breatheWave 8s ease-in-out infinite;
+  }
+
+  .knot-wave-bottom {
+    animation: breatheWave 8s ease-in-out infinite reverse;
+  }
+
+  .knot-harmonic-top {
+    animation: breatheHarmonic 5s ease-in-out infinite alternate-reverse;
+  }
+
+  .knot-harmonic-bottom {
+    animation: breatheHarmonic 6s ease-in-out infinite alternate;
+  }
+
+  .knot-light {
+    transform-origin: 90px 30px;
+    animation: pulseLight 4s ease-in-out infinite;
+  }
+
+  .knot-particle {
+    transform-origin: 90px 30px;
+  }
+
+  .kp-1 {
+    animation: pulseSpark 3s ease-in-out infinite 1s;
+  }
+
+  .kp-2 {
+    animation: pulseSpark 4s ease-in-out infinite 2s;
+  }
+
+  @keyframes breatheWave {
+    0%, 100% { transform: scaleY(0.85); opacity: 0.3; }
+    50% { transform: scaleY(1.15); opacity: 0.6; }
+  }
+
+  @keyframes breatheHarmonic {
+    0% { transform: scaleY(0.7); opacity: 0.15; }
+    100% { transform: scaleY(1.3); opacity: 0.4; }
+  }
+
+  @keyframes pulseLight {
+    0%, 100% { transform: scale(0.8); opacity: 0.6; }
+    50% { transform: scale(1.4); opacity: 1; }
+  }
+
+  @keyframes pulseSpark {
+    0%, 100% { opacity: 0.1; }
+    50% { opacity: 0.8; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .knot-wave, .knot-light, .knot-particle { animation: none; }
   }
 
   .final-support {
@@ -2050,46 +2336,185 @@
   }
 
   /* ───────────────────────────────────────────────────────────────
-     CODA · pre-footer · closing typography
+     CODA · pre-footer · closing typography (Awwwards 2026 Edition)
      ─────────────────────────────────────────────────────────────── */
 
   .coda {
     position: relative;
-    padding: clamp(120px, 18vw, 220px) max(28px, 5vw) clamp(72px, 10vw, 120px);
+    padding: clamp(90px, 14vw, 180px) max(28px, 5vw) clamp(90px, 14vw, 180px);
     background:
-      radial-gradient(circle at 50% 110%, rgba(198, 164, 91, 0.16), transparent 38rem),
+      radial-gradient(circle at 50% 110%, rgba(198, 164, 91, 0.22), transparent 42rem),
       linear-gradient(180deg, var(--paper-soft) 0%, var(--paper) 100%);
     border-top: 1px solid var(--line);
     overflow: hidden;
+    clip-path: inset(0);
+    view-timeline-name: --coda-scroll;
+  }
+
+  .coda::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.12;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .coda-container {
+    position: relative;
+    margin: 0 auto;
+    width: min(1580px, 100%);
+    perspective: 1200px;
+    transform-style: preserve-3d;
   }
 
   .coda-line {
     position: relative;
-    margin: 0 auto;
-    width: min(1580px, 100%);
     font-family: var(--serif);
     font-weight: 300;
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
     display: grid;
-    gap: 4px;
+    gap: 0;
+    mix-blend-mode: darken;
+    animation: codaReveal linear both;
+    animation-timeline: --coda-scroll;
+    animation-range: entry 10% cover 50%;
+  }
+
+  @keyframes codaReveal {
+    0% {
+      opacity: 0;
+      transform: translateY(80px) rotateX(15deg) scale(0.94);
+      filter: blur(24px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) rotateX(0deg) scale(1);
+      filter: blur(0px);
+    }
   }
 
   .coda-line-main {
+    position: relative;
     display: block;
-    font-size: clamp(96px, 18vw, 240px);
-    line-height: 0.86;
+    font-size: clamp(96px, 20vw, 320px);
+    line-height: 0.8;
     color: var(--ink);
+    background: linear-gradient(180deg, var(--ink) 10%, var(--ink-soft) 90%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    z-index: 2;
+  }
+
+  .coda-echo {
+    position: absolute;
+    inset: 0;
+    font-family: var(--serif);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    font-size: clamp(96px, 20vw, 320px);
+    line-height: 0.8;
+    color: var(--candle);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    filter: blur(4px);
+    animation: codaEcho linear both;
+    animation-timeline: --coda-scroll;
+    animation-range: entry 25% cover 75%;
+  }
+
+  @keyframes codaEcho {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 0.8;
+      filter: blur(2px);
+    }
+    100% {
+      transform: translateY(-12%) scale(1.15);
+      opacity: 0;
+      filter: blur(38px);
+    }
   }
 
   .coda-line-tail {
+    position: relative;
     display: block;
-    font-size: clamp(38px, 6vw, 96px);
-    line-height: 0.94;
-    margin-top: 12px;
+    font-size: clamp(42px, 8vw, 130px);
+    line-height: 0.85;
+    margin-top: -4%;
     font-style: italic;
-    color: var(--ink-muted);
+    color: var(--candle);
     text-align: right;
-    padding-right: clamp(0px, 6vw, 100px);
+    padding-right: clamp(0px, 8vw, 160px);
+    z-index: 3;
+    animation: tailResonate linear both;
+    animation-timeline: --coda-scroll;
+    animation-range: entry 30% cover 70%;
+  }
+
+  .coda-line-tail::after {
+    content: "brzmi dalej.";
+    position: absolute;
+    right: clamp(0px, 8vw, 160px);
+    top: 0;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--candle);
+    opacity: 0;
+    filter: blur(2px);
+    animation: tailGhost linear both;
+    animation-timeline: --coda-scroll;
+    animation-range: entry 45% cover 95%;
+  }
+
+  @keyframes tailResonate {
+    0% {
+      opacity: 0;
+      transform: translateX(-60px) skewX(-10deg);
+      filter: blur(16px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) skewX(0deg);
+      filter: blur(0px);
+    }
+  }
+
+  @keyframes tailGhost {
+    0% {
+      transform: translateX(0) scale(1);
+      opacity: 0;
+    }
+    40% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateX(80px) scale(1.08);
+      opacity: 0;
+      filter: blur(22px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .coda-line, .coda-echo, .coda-line-tail, .coda-line-tail::after {
+      animation: none !important;
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+    .coda-echo, .coda-line-tail::after {
+      display: none;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .coda-echo {
+      font-size: clamp(76px, 22vw, 130px);
+    }
+    .coda-line-tail::after {
+      right: 0;
+    }
   }
 
   /* ───────────────────────────────────────────────────────────────
@@ -2543,9 +2968,28 @@
       padding: 34px 0 0;
     }
 
+    .manifest {
+      padding-top: 104px;
+      padding-bottom: 112px;
+    }
+
+    .manifest-lines::before {
+      left: 26px;
+    }
+
+    .manifest-line,
     .manifest-line:nth-child(2),
-    .manifest-line:nth-child(3) {
+    .manifest-line--closing {
       margin-left: 0;
+      max-width: none;
+    }
+
+    .manifest-line {
+      font-size: 54px;
+    }
+
+    .manifest-line--closing {
+      font-size: 44px;
     }
 
     .site-footer-grid {
@@ -2559,7 +3003,7 @@
     }
 
     .coda {
-      padding-top: clamp(96px, 18vw, 160px);
+      padding-top: clamp(60px, 10vw, 96px);
       padding-bottom: clamp(60px, 10vw, 96px);
     }
 
@@ -2790,8 +3234,34 @@
       width: min(540px, calc(100vw - 32px));
     }
 
+    .manifest::before {
+      opacity: 0.42;
+    }
+
+    .manifest-lines {
+      gap: 30px;
+    }
+
+    .manifest-lines::before {
+      display: none;
+    }
+
     .manifest-line {
+      grid-template-columns: 1fr;
+      gap: 12px;
       padding-top: 22px;
+      font-size: 40px;
+      line-height: 1.02;
+    }
+
+    .manifest-line--closing {
+      font-size: 32px;
+      line-height: 1.08;
+    }
+
+    .manifest-index {
+      padding-top: 0;
+      font-size: 9px;
     }
 
     .program-note,
@@ -2823,7 +3293,7 @@
     }
 
     .coda {
-      padding-top: clamp(80px, 18vw, 130px);
+      padding-top: clamp(48px, 10vw, 80px);
       padding-bottom: clamp(48px, 10vw, 80px);
     }
 
@@ -2860,6 +3330,7 @@
     z-index: 110;
     visibility: hidden;
     pointer-events: none;
+    transition: visibility 0.85s var(--ease-slow);
   }
 
   .vault.is-open {
@@ -3899,7 +4370,7 @@
   </div>
 </div>
 
-<header class="chrome" aria-label="Nawigacja">
+<header class="chrome is-on-dark" aria-label="Nawigacja">
   <a class="brand" href="#top" aria-label="VoctEnsemble">
     <span class="brand-glyph-wrap" aria-hidden="true">
       <span class="brand-glyph-halo"></span>
@@ -4013,28 +4484,50 @@
     </div>
   </section>
 
-  <section class="section manifest" aria-label="Manifest">
-    <div class="section-grid">
+  <section class="section manifest" aria-label="Manifest chóru VoctEnsemble">
+    <div class="section-grid manifest-grid">
       <div class="section-label micro"><span>Manifest</span></div>
       <div class="manifest-lines">
-        <p class="manifest-line reveal">Nie budujemy wydarzenia.</p>
-        <p class="manifest-line reveal">Budujemy próg, przez który wchodzi się inaczej.</p>
-        <p class="manifest-line reveal">Muzyka sakralna nie jest dekoracją — jest językiem człowieczeństwa.</p>
+        <p class="manifest-line reveal">
+          <span class="manifest-index">I</span>
+          <span class="manifest-text">Nie śpiewamy repertuaru.</span>
+        </p>
+        <p class="manifest-line reveal">
+          <span class="manifest-index">II</span>
+          <span class="manifest-text">Słuchamy jednym oddechem.</span>
+        </p>
+        <p class="manifest-line manifest-line--closing reveal">
+          <span class="manifest-index">III</span>
+          <span class="manifest-text">Sacrum nie zdobi. Odsłania.</span>
+        </p>
       </div>
     </div>
   </section>
 
-  <div class="neuma-interlude" aria-hidden="true">
-    <svg class="neuma" viewBox="0 0 320 32" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
-      <line x1="0" y1="16" x2="118" y2="16" opacity="0.32"/>
-      <line x1="202" y1="16" x2="320" y2="16" opacity="0.32"/>
-      <path d="M134 16 L142 8" opacity="0.7"/>
-      <rect x="143" y="6" width="6" height="6" transform="rotate(45 146 9)" fill="currentColor" stroke="none"/>
-      <path d="M156 16 L168 16" opacity="0.7"/>
-      <rect x="170" y="14" width="4" height="4" fill="currentColor" stroke="none"/>
-      <path d="M180 16 L188 24" opacity="0.7"/>
-      <rect x="189" y="23" width="4" height="4" fill="currentColor" stroke="none"/>
-    </svg>
+  <div class="aether-interlude" aria-hidden="true">
+    <div class="aether-line"></div>
+    <div class="aether-knot">
+      <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <defs>
+          <filter id="ethereal-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
+        <path class="knot-wave knot-wave-top" d="M 0,30 C 45,30 60,10 90,10 C 120,10 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
+        <path class="knot-wave knot-wave-bottom" d="M 0,30 C 45,30 60,50 90,50 C 120,50 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
+        <path class="knot-wave knot-harmonic-top" d="M 20,30 C 50,30 65,20 90,20 C 115,20 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
+        <path class="knot-wave knot-harmonic-bottom" d="M 20,30 C 50,30 65,40 90,40 C 115,40 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
+        <circle class="knot-light" cx="90" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
+        <circle class="knot-particle kp-1" cx="45" cy="30" r="0.5" fill="currentColor" stroke="none" />
+        <circle class="knot-particle kp-2" cx="135" cy="30" r="0.5" fill="currentColor" stroke="none" />
+      </svg>
+    </div>
+    <div class="aether-line"></div>
   </div>
 
   <section class="image-rite" id="rite" aria-label="Światło">
@@ -4104,15 +4597,21 @@
     </div>
   </section>
 
-  <div class="neuma-interlude" aria-hidden="true">
-    <svg class="neuma" viewBox="0 0 320 32" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
-      <line x1="0" y1="16" x2="130" y2="16" opacity="0.32"/>
-      <line x1="190" y1="16" x2="320" y2="16" opacity="0.32"/>
-      <path d="M138 22 L146 10" opacity="0.7"/>
-      <rect x="148" y="7" width="6" height="6" fill="currentColor" stroke="none"/>
-      <path d="M158 10 L170 22" opacity="0.7"/>
-      <rect x="172" y="20" width="6" height="6" fill="currentColor" stroke="none"/>
-    </svg>
+  <div class="aether-interlude" aria-hidden="true">
+    <div class="aether-line"></div>
+    <div class="aether-knot">
+      <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
+        <path class="knot-wave knot-wave-top" d="M 0,30 C 45,30 60,10 90,10 C 120,10 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
+        <path class="knot-wave knot-wave-bottom" d="M 0,30 C 45,30 60,50 90,50 C 120,50 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
+        <path class="knot-wave knot-harmonic-top" d="M 20,30 C 50,30 65,20 90,20 C 115,20 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
+        <path class="knot-wave knot-harmonic-bottom" d="M 20,30 C 50,30 65,40 90,40 C 115,40 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
+        <circle class="knot-light" cx="90" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
+        <circle class="knot-particle kp-1" cx="45" cy="30" r="0.5" fill="currentColor" stroke="none" />
+        <circle class="knot-particle kp-2" cx="135" cy="30" r="0.5" fill="currentColor" stroke="none" />
+      </svg>
+    </div>
+    <div class="aether-line"></div>
   </div>
 
   <section class="section path" id="droga" aria-label="Wcześniejsze projekty">
@@ -4574,10 +5073,13 @@
 </div>
 
 <section class="coda" aria-label="Cisza brzmi dalej">
-  <p class="coda-line">
-    <span class="coda-line-main">Cisza</span>
-    <em class="coda-line-tail">brzmi dalej.</em>
-  </p>
+  <div class="coda-container">
+    <div class="coda-echo" aria-hidden="true">Cisza</div>
+    <p class="coda-line">
+      <span class="coda-line-main">Cisza</span>
+      <em class="coda-line-tail">brzmi dalej.</em>
+    </p>
+  </div>
 </section>
 
 <footer class="site-footer" aria-label="Stopka">
@@ -4669,6 +5171,9 @@
     let audio = null;
     let audioOn = false;
     let fadeFrame = null;
+    let audioContext = null;
+    let gainNode = null;
+    let audioGraphReady = false;
 
     /* ───────────────────────────────────────────────────────────────
        SKARBIEC · konfiguracja
@@ -4812,17 +5317,56 @@
       audio = new Audio("/ambient.m4a");
       audio.loop = true;
       audio.preload = "auto";
-      audio.volume = 0;
+      audio.crossOrigin = "anonymous";
+      // Web Audio GainNode steruje głośnością — audio.volume jest read-only na iOS Safari,
+      // więc native volume nie zadziała na iPhone. Trzymamy element przy pełnym signalu,
+      // a fade odbywa się przez GainNode.gain (sterowalny na każdej platformie).
+      audio.volume = 1;
       return audio;
+    }
+
+    function ensureAudioGraph() {
+      if (audioGraphReady) return true;
+      if (!audio) return false;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      try {
+        if (!audioContext) audioContext = new Ctx();
+        const source = audioContext.createMediaElementSource(audio);
+        gainNode = audioContext.createGain();
+        gainNode.gain.value = 0;
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        audioGraphReady = true;
+        return true;
+      } catch (e) {
+        console.warn("[VoctAudio] Web Audio graph unavailable, falling back to native volume:", e?.message || e);
+        return false;
+      }
     }
 
     function fadeTo(targetVolume, duration = 1400) {
       if (!audio) return Promise.resolve();
+      const clamped = Math.max(0, Math.min(1, targetVolume));
+
+      // Ścieżka Web Audio — działa wszędzie, w tym na iOS Safari (gdzie audio.volume jest no-op).
+      if (audioGraphReady && gainNode && audioContext) {
+        return new Promise((resolve) => {
+          const t0 = audioContext.currentTime;
+          const tEnd = t0 + Math.max(0.05, duration / 1000);
+          const startValue = gainNode.gain.value;
+          gainNode.gain.cancelScheduledValues(t0);
+          gainNode.gain.setValueAtTime(startValue, t0);
+          gainNode.gain.linearRampToValueAtTime(clamped, tEnd);
+          setTimeout(resolve, duration);
+        });
+      }
+
+      // Fallback: native HTMLAudioElement.volume (desktop / Android).
       if (fadeFrame) cancelAnimationFrame(fadeFrame);
       const startVolume = audio.volume;
-      const delta = targetVolume - startVolume;
+      const delta = clamped - startVolume;
       const start = performance.now();
-
       return new Promise((resolve) => {
         const step = (time) => {
           const progress = Math.min(1, (time - start) / duration);
@@ -4849,6 +5393,11 @@
       if (audioOn) {
         try {
           ensureAudio();
+          // Graph stawiamy PRZED play() — GainNode startuje z 0, więc dźwięk wchodzi cicho.
+          ensureAudioGraph();
+          if (audioContext && audioContext.state === "suspended") {
+            try { await audioContext.resume(); } catch (_) {}
+          }
           await audio.play();
           await fadeTo(0.28);
         } catch (_) {
@@ -4866,7 +5415,8 @@
 
     function closeThreshold(choice) {
       try {
-        localStorage.setItem(storageKey, choice);
+        const payload = JSON.stringify({ choice: choice, timestamp: Date.now() });
+        localStorage.setItem(storageKey, payload);
         console.info("[VoctAudio] saved choice =", choice);
       } catch (e) {
         console.warn("[VoctAudio] localStorage failed:", e);
@@ -4878,35 +5428,50 @@
     }
 
     function initThreshold() {
-      let saved = null;
+      let savedChoice = null;
       try {
-        saved = localStorage.getItem(storageKey);
+        const raw = localStorage.getItem(storageKey);
+        if (raw) {
+          if (raw === "silence" || raw === "voice") {
+            // Migracja ze starego formatu (bez timestampu)
+            savedChoice = raw;
+          } else {
+            const data = JSON.parse(raw);
+            const isExpired = (Date.now() - data.timestamp) > 3 * 60 * 60 * 1000;
+            if (isExpired) {
+              localStorage.removeItem(storageKey);
+              console.info("[VoctAudio] choice expired after 3 hours");
+            } else {
+              savedChoice = data.choice;
+            }
+          }
+        }
       } catch (_) {}
 
-      console.info("[VoctAudio] init · saved =", saved);
+      console.info("[VoctAudio] init · savedChoice =", savedChoice);
 
       const wantsDonation =
         location.hash === "#wesprzyj" ||
         location.hash === "#przelew" ||
         new URLSearchParams(location.search).has("donate");
 
-      if (wantsDonation && saved !== "voice") {
+      if (wantsDonation && savedChoice !== "voice") {
         threshold?.remove();
         body.classList.remove("threshold-open");
         return;
       }
 
-      if (saved === "silence" || saved === "voice") {
+      if (savedChoice === "silence" || savedChoice === "voice") {
         threshold?.remove();
         body.classList.remove("threshold-open");
-        if (saved === "voice") {
+        if (savedChoice === "voice") {
           audioOn = true;
           audioToggle?.classList.add("is-on");
           audioToggle?.setAttribute("aria-pressed", "true");
           body.classList.add("audio-on");
           if (audioToggle) audioToggle.textContent = "Głos";
 
-          // Pre-create audio early — daje czas na buforowanie zanim user kliknie
+          // Pre-create audio early
           ensureAudio();
 
           let audioStarted = false;
@@ -4924,19 +5489,21 @@
             inFlight = true;
             try {
               ensureAudio();
+              ensureAudioGraph();
+              if (audioContext && audioContext.state === "suspended") {
+                try { await audioContext.resume(); } catch (_) {}
+              }
               await audio.play();
               audioStarted = true;
               cleanup();
               fadeTo(0.28);
               console.info("[VoctAudio] resumed from saved · voice");
             } catch (e) {
-              // NIE zmieniamy state — zostawiamy "on" wizualnie, retry na następnej interakcji.
               console.warn("[VoctAudio] play deferred — will retry on next interaction:", e?.message || e);
             } finally {
               inFlight = false;
             }
           }
-          // Bez { once: true } — retry'ujemy aż się uda.
           window.addEventListener("pointerdown", tryPlay);
           window.addEventListener("keydown", tryPlay);
           window.addEventListener("touchstart", tryPlay, { passive: true });
@@ -5019,8 +5586,14 @@
 
     document.addEventListener("visibilitychange", () => {
       if (!audio || !audioOn) return;
-      if (document.hidden) audio.pause();
-      else audio.play().catch(() => {});
+      if (document.hidden) {
+        audio.pause();
+      } else {
+        if (audioContext && audioContext.state === "suspended") {
+          audioContext.resume().catch(() => {});
+        }
+        audio.play().catch(() => {});
+      }
     });
 
     initSiteCursor();
@@ -5259,6 +5832,10 @@
         vault.setAttribute("aria-hidden", "false");
         body.classList.add("vault-open");
 
+        if (!history.state?.vaultOpen) {
+          history.pushState({ vaultOpen: true }, "");
+        }
+
         if (window.lenis && typeof window.lenis.stop === "function") {
           window.lenis.stop();
         }
@@ -5271,10 +5848,15 @@
         }, 200);
       };
 
-      const close = () => {
+      const close = (fromPopState = false) => {
+        if (!vault.classList.contains("is-open")) return;
         vault.classList.remove("is-open");
         vault.setAttribute("aria-hidden", "true");
         body.classList.remove("vault-open");
+
+        if (fromPopState !== true && history.state?.vaultOpen) {
+          history.back();
+        }
 
         if (window.lenis && typeof window.lenis.start === "function") {
           window.lenis.start();
@@ -5285,6 +5867,12 @@
         }
       };
 
+      window.addEventListener("popstate", () => {
+        if (vault.classList.contains("is-open")) {
+          close(true);
+        }
+      });
+
       openers.forEach((btn) => {
         btn.addEventListener("click", (event) => {
           event.preventDefault();
@@ -5293,7 +5881,7 @@
         });
       });
 
-      dismissers.forEach((btn) => btn.addEventListener("click", close));
+      dismissers.forEach((btn) => btn.addEventListener("click", () => close()));
 
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && vault.classList.contains("is-open")) close();
@@ -5605,6 +6193,97 @@
       update();
     }
 
+    function initChromeTone() {
+      const chrome = document.querySelector(".chrome");
+      if (!chrome) return;
+
+      // Glass header z adaptacyjnym tintem — zastępuje `mix-blend-mode: difference`
+      // (które na iOS Safari rozjeżdżało paint przy animowanym dynamicznym toolbarze).
+      // Modern 2026 pattern: backdrop-filter glass z tintem dopasowanym do sekcji pod headerem.
+      const darkSelectors = ".hero, .image-rite, .ensemble, .final-support, .threshold, .vault, .gratitude";
+      let pending = false;
+
+      const update = () => {
+        pending = false;
+        const rect = chrome.getBoundingClientRect();
+        const probeY = Math.round(rect.bottom) + 8;
+        const probeX = Math.round(window.innerWidth / 2);
+        if (probeY <= 0 || probeY >= window.innerHeight) return;
+        const el = document.elementFromPoint(probeX, probeY);
+        if (!el) return;
+        const isDark = !!el.closest(darkSelectors);
+        chrome.classList.toggle("is-on-dark", isDark);
+      };
+
+      const onScroll = () => {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(update);
+      };
+
+      // is-active toggluje się przy opuszczaniu hero — wtedy chrome wjeżdża w tryb glass.
+      const hero = document.querySelector(".hero");
+      if (hero) {
+        const heroObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            // Hero out of view (lub prawie out) → glass on.
+            const active = entry.intersectionRatio < 0.08;
+            chrome.classList.toggle("is-active", active);
+          });
+        }, { threshold: [0, 0.08, 0.5, 1] });
+        heroObserver.observe(hero);
+      }
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+      // Initial pass + safety retries po zniknięciu preloadera i threshold.
+      update();
+      setTimeout(update, 1200);
+      setTimeout(update, 4600);
+    }
+
+    function initCodaParallax() {
+      const coda = document.querySelector(".coda");
+      if (!coda) return;
+      const main = coda.querySelector(".coda-line-main");
+      const tail = coda.querySelector(".coda-line-tail");
+      if (!main || !tail) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+      let ticking = false;
+      const viewportH = () => window.innerHeight || document.documentElement.clientHeight;
+
+      const update = () => {
+        const h = viewportH();
+        const rect = coda.getBoundingClientRect();
+
+        // Parallax is active when Coda is entering the screen.
+        if (rect.top <= h && rect.bottom >= 0) {
+          // Progress goes from 0 (top enters viewport) to 1 (top reaches top of viewport)
+          const progress = Math.max(0, Math.min(1, 1 - (rect.top / h)));
+          
+          // main scrolls down slightly relative to coda wrapper
+          const mainOffset = progress * 60;
+          // tail scrolls down more aggressively
+          const tailOffset = progress * 140;
+
+          main.style.transform = `translateY(${mainOffset}px)`;
+          tail.style.transform = `translateY(${tailOffset}px)`;
+        }
+        ticking = false;
+      };
+
+      const onScroll = () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(update);
+      };
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+      update();
+    }
+
     function initLenis() {
       const finePointer = window.matchMedia("(pointer: fine) and (hover: hover)");
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -5646,9 +6325,11 @@
     initReveals();
     initProgress();
     initParallax();
+    initCodaParallax();
     initSmoothDetails();
     initRiteGlow();
     initLenis();
+    initChromeTone();
     initVault();
     initGratitude();
     initFooterSignal();
