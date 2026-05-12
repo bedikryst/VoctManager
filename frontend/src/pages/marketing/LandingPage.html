@@ -39,6 +39,12 @@
     --line-strong: rgba(22, 21, 20, 0.34);
     --veil: rgba(244, 241, 233, 0.74);
     --candle: #c6a45b;
+    --candle-rgb: 198 164 91;
+    /* Cousin koloru candle dla jasnych powierzchni chrome:
+       głęboki granat, ~5% ciemniejszy niż kursor (#1D3268), żeby logo
+       miało spokojniejszą obecność niż pulsujący kursor. */
+    --candle-blue: #1b2d60;
+    --candle-blue-rgb: 27 45 96;
     --dark: #080807;
 
     --serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
@@ -743,7 +749,8 @@
     z-index: 1;
     width: 18px;
     height: 42px;
-    transition: transform 0.6s var(--ease-slow);
+    /* Płynne przejście koloru między ciemną a jasną powierzchnią chrome (granat↔złoty) */
+    transition: transform 0.6s var(--ease-slow), color 0.55s var(--ease);
   }
 
   .brand-glyph-halo {
@@ -752,12 +759,24 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(198, 164, 91, 0.55) 0%, rgba(198, 164, 91, 0.1) 40%, transparent 70%);
+    /* --halo-rgb steruje barwą halo; domyślnie złoty candle, na jasnym chrome przełączamy na granat */
+    --halo-rgb: var(--candle-rgb);
+    background: radial-gradient(
+      circle,
+      rgb(var(--halo-rgb) / 0.55) 0%,
+      rgb(var(--halo-rgb) / 0.1) 40%,
+      transparent 70%
+    );
     transform: translate(-50%, -50%) scale(0.4);
     opacity: 0;
     pointer-events: none;
+    /* Screen = additive glow na ciemnym tle. Na jasnym przełączamy na multiply (subtractive). */
     mix-blend-mode: screen;
-    transition: opacity 0.7s var(--ease-slow), transform 0.7s var(--ease-slow);
+    transition:
+      opacity 0.7s var(--ease-slow),
+      transform 0.7s var(--ease-slow),
+      background 0.55s var(--ease),
+      mix-blend-mode 0s;
   }
 
   body.audio-on .brand-glyph-halo {
@@ -769,6 +788,18 @@
   body.audio-on .brand-glyph {
     color: var(--candle);
     animation: brandGlyphBreathe 4.6s ease-in-out infinite;
+  }
+
+  /* Jasna powierzchnia chrome (scroll w jasne sekcje) — logo przechodzi na granatowy
+     dialog z kursorem, ale ~5% ciemniejszy. Halo również granatowe, w trybie multiply
+     żeby dać delikatny cień zamiast topniejącego "screen". */
+  body.audio-on .chrome.is-active:not(.is-on-dark) .brand-glyph {
+    color: var(--candle-blue);
+  }
+
+  body.audio-on .chrome.is-active:not(.is-on-dark) .brand-glyph-halo {
+    --halo-rgb: var(--candle-blue-rgb);
+    mix-blend-mode: multiply;
   }
 
   @keyframes brandHaloBreathe {
@@ -1803,6 +1834,19 @@
     gap: 0;
     margin-top: 56px;
     border-top: 1px solid var(--line-strong);
+    /* Numeracja katalogowa kart koncertów — rytm wizualny "ile jeszcze przede mną".
+       Klasyczny zabieg z katalogów wystaw i programów koncertowych. */
+    counter-reset: pathCard;
+  }
+
+  .path-card {
+    counter-increment: pathCard;
+  }
+
+  .path-card-meta::before {
+    content: counter(pathCard, decimal-leading-zero);
+    color: var(--candle);
+    font-feature-settings: "tnum" 1, "lnum" 1;
   }
 
   .path-card {
@@ -2077,20 +2121,84 @@
   }
 
 
+  /* --knot-intensity: 0..1, sterowane przez AnalyserNode gdy audio gra.
+     @property pozwala na płynne interpolacje i CSS-side defaulty. */
+  @property --knot-intensity {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+  }
+
   .aether-interlude {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: clamp(14px, 1.6vw, 22px);
     width: 100%;
     padding: clamp(60px, 10vw, 120px) 0;
     pointer-events: none;
     color: var(--candle);
   }
 
+  /* Entry animacja interludów obsługiwana przez istniejący IntersectionObserver
+     (`.reveal` + `.is-visible`). Wolniejszy + większy travel — interluda to "oddech",
+     ma się materializować z manuskryptu, nie wchodzić jak karta. */
+  .aether-interlude.reveal {
+    transform: translateY(64px);
+    transition:
+      opacity 2.2s var(--ease-slow),
+      transform 2.2s var(--ease-slow),
+      filter 1.8s var(--ease-slow);
+  }
+  .aether-interlude.reveal.is-visible {
+    transform: translateY(0);
+  }
+
   .aether-interlude + .image-rite,
   .aether-interlude + .ensemble,
-  .aether-interlude + .final-support {
+  .aether-interlude + .final-support,
+  .aether-interlude + .path {
     margin-top: -32px;
+  }
+
+  /* Inskrypcja: I · Lumen quaerit / II · Vox memoriae / III · Sustinete nos */
+  .aether-inscription {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 11px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    opacity: 0.62;
+  }
+
+  .aether-inscription .roman {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0;
+    transform: translateY(1px);
+  }
+
+  .aether-inscription .dot {
+    letter-spacing: 0;
+    opacity: 0.55;
+  }
+
+  .aether-inscription .latin {
+    font-style: italic;
+    font-weight: 300;
+  }
+
+  .aether-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: clamp(16px, 4vw, 36px);
   }
 
   .aether-line {
@@ -2109,12 +2217,96 @@
     height: 60px;
     flex-shrink: 0;
     overflow: visible;
+    /* Audio-reactive bloom: gdy --knot-intensity rośnie, brightness + drop-shadow.
+       Bez audio = całkowicie neutralne (intensity=0 nie dodaje nic). */
+    filter:
+      brightness(calc(1 + var(--knot-intensity, 0) * 0.55))
+      drop-shadow(0 0 calc(var(--knot-intensity, 0) * 5px) currentColor);
+    transition: filter 0.16s linear;
   }
 
   .aether-knot svg {
     width: 100%;
     height: 100%;
     overflow: visible;
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     I · Lumen quaerit — wschodzące smugi światła
+     Pionowe wisps wynurzające się z poziomej linii ku centralnemu blaskowi.
+     Metafora: pojedynczy płomień, oddech wstępujący ku światłu.
+     ────────────────────────────────────────────────────────────────────── */
+  .ascend-wisp {
+    transform-origin: 90px 50px; /* anchor u podstawy */
+    opacity: 0;
+  }
+  .aether-interlude[data-variant="passage"] .ascend-wisp {
+    animation: wispAscend 5.4s ease-in-out infinite;
+  }
+  .aether-interlude[data-variant="passage"] .ascend-wisp.w2 { animation-delay: 0.9s; }
+  .aether-interlude[data-variant="passage"] .ascend-wisp.w3 { animation-delay: 1.8s; }
+
+  @keyframes wispAscend {
+    0%   { transform: translateY(6px)  scaleY(0.6); opacity: 0; }
+    35%  { opacity: 0.55; }
+    65%  { opacity: 0.55; }
+    100% { transform: translateY(-4px) scaleY(1.15); opacity: 0; }
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     II · Vox memoriae — koncentryczne kręgi rozchodzące się z centrum
+     Trzy ringi z opóźnieniem — fala dźwiękowa pamięci, która rozprzestrzenia
+     się w czasie i zanika.
+     ────────────────────────────────────────────────────────────────────── */
+  .aether-interlude[data-variant="memory"] .aether-knot {
+    width: 200px;
+  }
+  .aether-interlude[data-variant="memory"] .aether-line {
+    opacity: 0.12;
+  }
+  .echo-ring {
+    transform-origin: 90px 30px;
+    opacity: 0;
+  }
+  .aether-interlude[data-variant="memory"] .echo-ring {
+    animation: echoRingExpand 6s ease-out infinite;
+  }
+  .aether-interlude[data-variant="memory"] .echo-ring.r2 { animation-delay: 2s; }
+  .aether-interlude[data-variant="memory"] .echo-ring.r3 { animation-delay: 4s; }
+
+  @keyframes echoRingExpand {
+    0%   { transform: scale(0.4); opacity: 0; }
+    15%  { opacity: 0.55; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
+     III · Sustinete nos — vesica piscis
+     Dwa półokręgi przenikające się wokół centralnego światła — uniwersalny
+     znak wsparcia, porozumienia, "ram trzymających".
+     ────────────────────────────────────────────────────────────────────── */
+  .aether-interlude[data-variant="offering"] .aether-line {
+    opacity: 0.22;
+  }
+  .vesica-half {
+    transform-origin: 90px 30px;
+    opacity: 0.32;
+  }
+  .aether-interlude[data-variant="offering"] .vesica-half {
+    animation: vesicaBreathe 7s ease-in-out infinite;
+  }
+  .aether-interlude[data-variant="offering"] .vesica-half.v-right {
+    /* Lekkie przesunięcie fazowe — vesica oddycha, nie pulsuje synchronicznie */
+    animation-delay: 0.6s;
+  }
+
+  @keyframes vesicaBreathe {
+    0%, 100% { transform: scale(0.92); opacity: 0.22; }
+    50%      { transform: scale(1.05); opacity: 0.5; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ascend-wisp, .echo-ring, .vesica-half { animation: none; opacity: 0.3; }
   }
 
   .knot-wave {
@@ -3173,12 +3365,31 @@
       letter-spacing: 0.16em;
     }
 
-    .path-card-poster {
-      aspect-ratio: 4 / 3;
-    }
-
     .path-card {
       padding: 20px 18px 26px;
+    }
+
+    /* Mobile: zwarty repertuar — krótszy footprint po rozwinięciu details.
+       Mniejszy font + ciaśniejsze odstępy + dwie kolumny dla bardzo krótkich pozycji
+       z list-grid auto-fill, gdy elementy się mieszczą. */
+    .path-works {
+      font-size: 12.5px;
+      line-height: 1.4;
+      gap: 5px;
+    }
+
+    .path-works li {
+      padding-left: 13px;
+    }
+
+    .path-works-note,
+    .path-detail-text {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .path-card-detail-body {
+      padding-bottom: 10px;
     }
 
     .section {
@@ -4504,30 +4715,39 @@
     </div>
   </section>
 
-  <div class="aether-interlude" aria-hidden="true">
-    <div class="aether-line"></div>
-    <div class="aether-knot">
-      <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-        <defs>
-          <filter id="ethereal-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
-        <path class="knot-wave knot-wave-top" d="M 0,30 C 45,30 60,10 90,10 C 120,10 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
-        <path class="knot-wave knot-wave-bottom" d="M 0,30 C 45,30 60,50 90,50 C 120,50 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
-        <path class="knot-wave knot-harmonic-top" d="M 20,30 C 50,30 65,20 90,20 C 115,20 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
-        <path class="knot-wave knot-harmonic-bottom" d="M 20,30 C 50,30 65,40 90,40 C 115,40 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
-        <circle class="knot-light" cx="90" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
-        <circle class="knot-particle kp-1" cx="45" cy="30" r="0.5" fill="currentColor" stroke="none" />
-        <circle class="knot-particle kp-2" cx="135" cy="30" r="0.5" fill="currentColor" stroke="none" />
-      </svg>
+  <div class="aether-interlude reveal" data-variant="passage" aria-hidden="true">
+    <span class="aether-inscription">
+      <span class="roman">I</span>
+      <span class="dot">·</span>
+      <span class="latin">Lumen quaerit</span>
+    </span>
+    <div class="aether-row">
+      <div class="aether-line"></div>
+      <div class="aether-knot" data-parallax="0.06">
+        <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <defs>
+            <filter id="ethereal-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
+          <path class="knot-wave knot-wave-top" d="M 0,30 C 45,30 60,10 90,10 C 120,10 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
+          <path class="knot-wave knot-wave-bottom" d="M 0,30 C 45,30 60,50 90,50 C 120,50 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
+          <path class="knot-wave knot-harmonic-top" d="M 20,30 C 50,30 65,20 90,20 C 115,20 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
+          <path class="knot-wave knot-harmonic-bottom" d="M 20,30 C 50,30 65,40 90,40 C 115,40 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
+          <!-- Wstępujące smugi światła — płomień szukający światła -->
+          <line class="ascend-wisp w1" x1="90" y1="50" x2="90" y2="34" stroke-width="0.6" stroke-opacity="0.6" />
+          <line class="ascend-wisp w2" x1="85" y1="50" x2="85" y2="40" stroke-width="0.35" stroke-opacity="0.4" />
+          <line class="ascend-wisp w3" x1="95" y1="50" x2="95" y2="40" stroke-width="0.35" stroke-opacity="0.4" />
+          <circle class="knot-light" cx="90" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
+        </svg>
+      </div>
+      <div class="aether-line"></div>
     </div>
-    <div class="aether-line"></div>
   </div>
 
   <section class="image-rite" id="rite" aria-label="Światło">
@@ -4597,21 +4817,28 @@
     </div>
   </section>
 
-  <div class="aether-interlude" aria-hidden="true">
-    <div class="aether-line"></div>
-    <div class="aether-knot">
-      <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
-        <path class="knot-wave knot-wave-top" d="M 0,30 C 45,30 60,10 90,10 C 120,10 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
-        <path class="knot-wave knot-wave-bottom" d="M 0,30 C 45,30 60,50 90,50 C 120,50 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
-        <path class="knot-wave knot-harmonic-top" d="M 20,30 C 50,30 65,20 90,20 C 115,20 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
-        <path class="knot-wave knot-harmonic-bottom" d="M 20,30 C 50,30 65,40 90,40 C 115,40 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
-        <circle class="knot-light" cx="90" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
-        <circle class="knot-particle kp-1" cx="45" cy="30" r="0.5" fill="currentColor" stroke="none" />
-        <circle class="knot-particle kp-2" cx="135" cy="30" r="0.5" fill="currentColor" stroke="none" />
-      </svg>
+  <div class="aether-interlude reveal" data-variant="memory" aria-hidden="true">
+    <span class="aether-inscription">
+      <span class="roman">II</span>
+      <span class="dot">·</span>
+      <span class="latin">Vox memoriae</span>
+    </span>
+    <div class="aether-row">
+      <div class="aether-line"></div>
+      <div class="aether-knot" data-parallax="0.08">
+        <svg viewBox="0 0 200 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="0" y1="30" x2="200" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
+          <path class="knot-wave knot-wave-top" d="M 10,30 C 55,30 70,10 100,10 C 130,10 145,30 190,30" stroke-width="0.75" stroke-opacity="0.4" />
+          <path class="knot-wave knot-wave-bottom" d="M 10,30 C 55,30 70,50 100,50 C 130,50 145,30 190,30" stroke-width="0.75" stroke-opacity="0.4" />
+          <!-- Koncentryczne kręgi pamięci — fala dźwiękowa rozchodząca się z punktu -->
+          <circle class="echo-ring r1" cx="100" cy="30" r="6"  fill="none" stroke-width="0.5" />
+          <circle class="echo-ring r2" cx="100" cy="30" r="11" fill="none" stroke-width="0.45" />
+          <circle class="echo-ring r3" cx="100" cy="30" r="17" fill="none" stroke-width="0.4" />
+          <circle class="knot-light" cx="100" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
+        </svg>
+      </div>
+      <div class="aether-line"></div>
     </div>
-    <div class="aether-line"></div>
   </div>
 
   <section class="section path" id="droga" aria-label="Wcześniejsze projekty">
@@ -4811,6 +5038,27 @@
       </div>
     </div>
   </section>
+
+  <div class="aether-interlude reveal" data-variant="offering" aria-hidden="true">
+    <span class="aether-inscription">
+      <span class="roman">III</span>
+      <span class="dot">·</span>
+      <span class="latin">Sustinete nos</span>
+    </span>
+    <div class="aether-row">
+      <div class="aether-line"></div>
+      <div class="aether-knot" data-parallax="0.06">
+        <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
+          <!-- Vesica piscis — dwa półokręgi tworzące migdał wokół centralnego światła -->
+          <circle class="vesica-half v-left"  cx="80"  cy="30" r="14" fill="none" stroke-width="0.6" />
+          <circle class="vesica-half v-right" cx="100" cy="30" r="14" fill="none" stroke-width="0.6" />
+          <circle class="knot-light" cx="90" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
+        </svg>
+      </div>
+      <div class="aether-line"></div>
+    </div>
+  </div>
 
   <section class="final-support" id="wesprzyj" aria-label="Wesprzyj VoctEnsemble">
     <div class="section">
@@ -5207,6 +5455,9 @@
     let fadeFrame = null;
     let audioContext = null;
     let gainNode = null;
+    let analyserNode = null;     // Web Audio AnalyserNode dla audio-reactive UI (knot intensity)
+    let reactiveBuffer = null;   // Uint8Array buffer (reuse — bez alokacji per frame)
+    let reactiveRaf = null;      // requestAnimationFrame id dla loopa
     let audioGraphReady = false;
     let resumeAC = null; // AbortController dla auto-resume listenerów (po reload, savedChoice=voice)
 
@@ -5372,12 +5623,56 @@
         gainNode.gain.value = 0;
         source.connect(gainNode);
         gainNode.connect(audioContext.destination);
+
+        // Analyser side-chain — sniff sygnału do audio-reactive UI (interludy).
+        // Nie podłączamy do destination (analyser tylko czyta, nie miksuje).
+        analyserNode = audioContext.createAnalyser();
+        analyserNode.fftSize = 64;
+        analyserNode.smoothingTimeConstant = 0.85;
+        gainNode.connect(analyserNode);
+        reactiveBuffer = new Uint8Array(analyserNode.frequencyBinCount);
+
         audioGraphReady = true;
         return true;
       } catch (e) {
         console.warn("[VoctAudio] Web Audio graph unavailable, falling back to native volume:", e?.message || e);
         return false;
       }
+    }
+
+    // Audio-reactive loop: czyta amplitudę z AnalyserNode, ustawia CSS custom property
+    // --knot-intensity (0..1) na :root. Interludy reagują przez CSS filter (brightness + glow).
+    function startAudioReactive() {
+      if (reactiveRaf) return;
+      if (!analyserNode || !reactiveBuffer) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+      const root = document.documentElement;
+      const tick = () => {
+        if (!audioOn || !analyserNode) {
+          root.style.setProperty("--knot-intensity", "0");
+          reactiveRaf = null;
+          return;
+        }
+        analyserNode.getByteFrequencyData(reactiveBuffer);
+        let sum = 0;
+        for (let i = 0; i < reactiveBuffer.length; i++) sum += reactiveBuffer[i];
+        const avg = sum / reactiveBuffer.length / 255; // 0..1
+        // Power 0.7 = bardziej "naturalna" krzywa percepcji (loudness),
+        // mnożnik 1.4 podbija dynamikę dla wyraźniejszego efektu na cichym ambientcie.
+        const intensity = Math.min(1, Math.pow(avg, 0.7) * 1.4);
+        root.style.setProperty("--knot-intensity", intensity.toFixed(3));
+        reactiveRaf = requestAnimationFrame(tick);
+      };
+      reactiveRaf = requestAnimationFrame(tick);
+    }
+
+    function stopAudioReactive() {
+      if (reactiveRaf) {
+        cancelAnimationFrame(reactiveRaf);
+        reactiveRaf = null;
+      }
+      document.documentElement.style.setProperty("--knot-intensity", "0");
     }
 
     function fadeTo(targetVolume, duration = 1400) {
@@ -5443,6 +5738,7 @@
             await audioContext.resume();
           }
           await audio.play();
+          startAudioReactive();
           fadeTo(0.28);
           console.info("[VoctAudio] resumed from saved · voice");
         } catch (e) {
@@ -5479,6 +5775,7 @@
             try { await audioContext.resume(); } catch (_) {}
           }
           await audio.play();
+          startAudioReactive();
           await fadeTo(0.28);
         } catch (_) {
           audioOn = false;
@@ -5486,10 +5783,12 @@
           audioToggle?.setAttribute("aria-pressed", "false");
           body.classList.remove("audio-on");
           if (audioToggle) audioToggle.textContent = "Cisza";
+          stopAudioReactive();
         }
       } else if (audio) {
         await fadeTo(0);
         audio.pause();
+        stopAudioReactive();
       }
     }
 
@@ -5613,11 +5912,15 @@
       if (!audio || !audioOn) return;
       if (document.hidden) {
         audio.pause();
+        stopAudioReactive();
       } else {
         if (audioContext && audioContext.state === "suspended") {
           audioContext.resume().catch(() => {});
         }
-        audio.play().then(() => fadeTo(0.28)).catch(() => {});
+        audio.play().then(() => {
+          startAudioReactive();
+          fadeTo(0.28);
+        }).catch(() => {});
       }
     });
 
@@ -6083,6 +6386,10 @@
       if (!all.length) return;
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+      // Rejestr handlerów per details — umożliwia exclusive accordion
+      // (otwarcie jednego automatycznie zamyka pozostałe).
+      const registry = new Map();
+
       all.forEach((details) => {
         const summary = details.querySelector("summary");
         if (!summary) return;
@@ -6143,10 +6450,44 @@
           wrap.addEventListener("transitionend", cleanup);
         };
 
+        registry.set(details, {
+          close: () => { if (details.open && !animating) animate(false); },
+        });
+
         summary.addEventListener("click", (event) => {
           event.preventDefault();
           if (animating) return;
-          animate(!details.open);
+          const toOpen = !details.open;
+
+          // Lista wcześniej otwartych innych sekcji — potrzebna do timingu scrolla
+          // (close-animation trwa ~380ms i zmienia offset summary, jeśli inna karta jest powyżej).
+          const othersOpen = toOpen
+            ? Array.from(registry.entries()).filter(([el]) => el !== details && el.open)
+            : [];
+
+          if (toOpen) {
+            // Exclusive accordion: zamknij wszystkie inne otwarte sekcje.
+            // Trzyma karty zwarte — w danym momencie tylko jedna lista rozwinięta.
+            othersOpen.forEach(([, api]) => api.close());
+          }
+
+          animate(toOpen);
+
+          // Smooth-scroll: kieruj viewport tak, by summary znalazło się ~22% od góry —
+          // daje miejsce na rozwijaną listę bez "zgubienia" karty. Tylko na otwieraniu
+          // i na węższych ekranach (≤980px). Jeśli zamykamy też inne karty, odczekujemy
+          // na ich animację (~380ms), żeby offsetTop summary był już ostateczny.
+          if (toOpen && window.matchMedia("(max-width: 980px)").matches) {
+            const delay = othersOpen.length > 0 ? 420 : 0;
+            setTimeout(() => {
+              const rect = summary.getBoundingClientRect();
+              const targetY = window.scrollY + rect.top - window.innerHeight * 0.22;
+              window.scrollTo({
+                top: targetY,
+                behavior: reduced ? "auto" : "smooth",
+              });
+            }, delay);
+          }
         });
       });
     }
