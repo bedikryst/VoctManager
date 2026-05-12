@@ -5167,6 +5167,40 @@
     const countdownPill = document.getElementById("countdownPill");
     const heroCountdown = document.getElementById("heroCountdown");
     const storageKey = "voct.demo.audio";
+    const PREF_TTL_MS = 3 * 60 * 60 * 1000; // wybór dźwięku pamiętamy 3h, potem ponownie zapytamy
+
+    // Single source of truth dla persystencji preferencji audio.
+    // Schemat na dysku: {"choice":"voice"|"silence","timestamp":<ms>}.
+    // Format legacy (sam string "voice"/"silence") jest migrowany przy odczycie.
+    const audioPref = {
+      read() {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          if (!raw) return null;
+          if (raw === "silence" || raw === "voice") return raw;
+          const data = JSON.parse(raw);
+          if (data?.choice !== "silence" && data?.choice !== "voice") return null;
+          if (!Number.isFinite(data?.timestamp)) return null;
+          if (Date.now() - data.timestamp > PREF_TTL_MS) {
+            localStorage.removeItem(storageKey);
+            console.info("[VoctAudio] preference expired");
+            return null;
+          }
+          return data.choice;
+        } catch {
+          return null;
+        }
+      },
+      write(choice) {
+        try {
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({ choice, timestamp: Date.now() }),
+          );
+        } catch {}
+      },
+    };
+
     const eventDate = new Date("2026-05-16T18:00:00+02:00");
     let audio = null;
     let audioOn = false;
@@ -5174,6 +5208,7 @@
     let audioContext = null;
     let gainNode = null;
     let audioGraphReady = false;
+    let resumeAC = null; // AbortController dla auto-resume listenerów (po reload, savedChoice=voice)
 
     /* ───────────────────────────────────────────────────────────────
        SKARBIEC · konfiguracja
@@ -5383,6 +5418,51 @@
       });
     }
 
+    // Uzbraja listenery „first-interaction" dla przypadku, gdy po reloadzie
+    // mamy zapisany wybór „voice", ale autoplay policy zabrania start bez gestu.
+    // Pierwszy realny ruch użytkownika (scroll/click/tap/key/focus) rozpala dźwięk.
+    function armAutoResume() {
+      resumeAC?.abort();
+      resumeAC = new AbortController();
+
+      let starting = false;
+
+      const tryResume = async () => {
+        if (starting || !audioOn) return;
+        starting = true;
+        // Pierwszy gest wystarczy — natychmiast zwalniamy wszystkie listenery.
+        // Jeśli play() zostanie odrzucone, ponownie uzbroimy w catch.
+        resumeAC?.abort();
+        try {
+          ensureAudio();
+          // KOLEJNOŚĆ KRYTYCZNA dla iOS Safari: AudioContext.resume() MUSI być wywołane
+          // synchronicznie w obrębie user gesture (bez wcześniejszego await),
+          // inaczej Safari potraktuje to jako autoplay i odrzuci.
+          ensureAudioGraph();
+          if (audioContext && audioContext.state === "suspended") {
+            await audioContext.resume();
+          }
+          await audio.play();
+          fadeTo(0.28);
+          console.info("[VoctAudio] resumed from saved · voice");
+        } catch (e) {
+          console.warn("[VoctAudio] resume deferred — rearming:", e?.message || e);
+          starting = false;
+          armAutoResume();
+        }
+      };
+
+      const opts = { signal: resumeAC.signal, passive: true, capture: true };
+      // capture:true — łapiemy gest na fazie przechwytywania, zanim
+      // Lenis / inne handlery zdążą wywołać stopPropagation albo preventDefault.
+      // Szerokie spektrum zdarzeń = każdy ruch użytkownika kwalifikuje się jako start.
+      const events = [
+        "pointerdown", "pointerup", "mousedown", "click", "keydown",
+        "touchstart", "touchend", "wheel", "scroll", "focusin",
+      ];
+      events.forEach((evt) => window.addEventListener(evt, tryResume, opts));
+    }
+
     async function setAudio(nextState) {
       audioOn = nextState;
       audioToggle?.classList.toggle("is-on", audioOn);
@@ -5414,13 +5494,8 @@
     }
 
     function closeThreshold(choice) {
-      try {
-        const payload = JSON.stringify({ choice: choice, timestamp: Date.now() });
-        localStorage.setItem(storageKey, payload);
-        console.info("[VoctAudio] saved choice =", choice);
-      } catch (e) {
-        console.warn("[VoctAudio] localStorage failed:", e);
-      }
+      audioPref.write(choice);
+      console.info("[VoctAudio] saved choice =", choice);
       threshold?.classList.add("is-hidden");
       body.classList.remove("threshold-open");
       if (choice === "voice") setAudio(true);
@@ -5428,26 +5503,7 @@
     }
 
     function initThreshold() {
-      let savedChoice = null;
-      try {
-        const raw = localStorage.getItem(storageKey);
-        if (raw) {
-          if (raw === "silence" || raw === "voice") {
-            // Migracja ze starego formatu (bez timestampu)
-            savedChoice = raw;
-          } else {
-            const data = JSON.parse(raw);
-            const isExpired = (Date.now() - data.timestamp) > 3 * 60 * 60 * 1000;
-            if (isExpired) {
-              localStorage.removeItem(storageKey);
-              console.info("[VoctAudio] choice expired after 3 hours");
-            } else {
-              savedChoice = data.choice;
-            }
-          }
-        }
-      } catch (_) {}
-
+      const savedChoice = audioPref.read();
       console.info("[VoctAudio] init · savedChoice =", savedChoice);
 
       const wantsDonation =
@@ -5471,44 +5527,12 @@
           body.classList.add("audio-on");
           if (audioToggle) audioToggle.textContent = "Głos";
 
-          // Pre-create audio early
+          // Pre-tworzymy element + load() — iOS Safari odmówi pierwszego play()
+          // bez wcześniejszego load(), nawet jeśli mamy świeży user gesture.
           ensureAudio();
+          try { audio.load(); } catch {}
 
-          let audioStarted = false;
-          let inFlight = false;
-          const cleanup = () => {
-            window.removeEventListener("pointerdown", tryPlay);
-            window.removeEventListener("keydown", tryPlay);
-            window.removeEventListener("touchstart", tryPlay);
-            window.removeEventListener("wheel", tryPlay);
-            window.removeEventListener("scroll", tryPlay);
-          };
-          async function tryPlay() {
-            if (audioStarted || inFlight) return;
-            if (!audioOn) { cleanup(); return; }
-            inFlight = true;
-            try {
-              ensureAudio();
-              ensureAudioGraph();
-              if (audioContext && audioContext.state === "suspended") {
-                try { await audioContext.resume(); } catch (_) {}
-              }
-              await audio.play();
-              audioStarted = true;
-              cleanup();
-              fadeTo(0.28);
-              console.info("[VoctAudio] resumed from saved · voice");
-            } catch (e) {
-              console.warn("[VoctAudio] play deferred — will retry on next interaction:", e?.message || e);
-            } finally {
-              inFlight = false;
-            }
-          }
-          window.addEventListener("pointerdown", tryPlay);
-          window.addEventListener("keydown", tryPlay);
-          window.addEventListener("touchstart", tryPlay, { passive: true });
-          window.addEventListener("wheel", tryPlay, { passive: true });
-          window.addEventListener("scroll", tryPlay, { passive: true });
+          armAutoResume();
         }
         return;
       }
@@ -5563,9 +5587,10 @@
 
     audioToggle?.addEventListener("click", () => {
       const nextState = !audioOn;
-      try {
-        localStorage.setItem(storageKey, nextState ? "voice" : "silence");
-      } catch (_) {}
+      audioPref.write(nextState ? "voice" : "silence");
+      // Manualny klik = start/stop natychmiast przez setAudio,
+      // więc oczekujące auto-resume listenery są już niepotrzebne.
+      resumeAC?.abort();
       setAudio(nextState);
     });
 
@@ -5592,7 +5617,7 @@
         if (audioContext && audioContext.state === "suspended") {
           audioContext.resume().catch(() => {});
         }
-        audio.play().catch(() => {});
+        audio.play().then(() => fadeTo(0.28)).catch(() => {});
       }
     });
 
