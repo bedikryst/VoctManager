@@ -394,13 +394,13 @@
 <main>
   <p class="doc-eyebrow">Dokument · RODO</p>
   <h1 class="doc-title">Polityka prywatności</h1>
-  <p class="doc-meta">Wersja 1.0 · obowiązuje od 13 maja 2026</p>
+  <p class="doc-meta">Wersja 1.1 · obowiązuje od 13 maja 2026</p>
 
   <p class="doc-lede">
-    Strona <em>voctensemble.com</em> jest witryną informacyjną. Nie prowadzimy własnej bazy danych
-    odwiedzających, nie używamy cookies marketingowych ani narzędzi analitycznych. Poniżej
-    wyjaśniamy precyzyjnie, jakie dane mogą zostać przetworzone w trakcie korzystania ze strony
-    i kto za to odpowiada.
+    Strona <em>voctensemble.com</em> jest witryną informacyjną oraz kanałem przyjmowania darowizn
+    na cele statutowe Fundacji. Nie używamy cookies marketingowych ani narzędzi analitycznych
+    typu Google Analytics. Poniżej wyjaśniamy precyzyjnie, jakie dane mogą zostać przetworzone
+    w trakcie korzystania ze strony — w tym podczas wykonywania darowizny — i kto za to odpowiada.
   </p>
 
   <nav class="toc" aria-label="Spis treści">
@@ -474,17 +474,54 @@
 
     <h3>Darczyńcy</h3>
     <p>
-      W trakcie składania darowizny — niezależnie od wybranej metody — przetwarzane są dane
-      niezbędne do realizacji transakcji oraz wystawienia ewentualnego zaświadczenia o darowiźnie.
-      W zależności od ścieżki płatności zakres różni się:
+      W trakcie składania darowizny przetwarzane są dane niezbędne do realizacji transakcji,
+      wystawienia ewentualnego zaświadczenia o darowiźnie oraz wypełnienia obowiązków
+      księgowych Fundacji. Zakres i sposób przetwarzania zależą od wybranej metody:
+    </p>
+
+    <h3>Bramka płatnicza Axepta BNP Paribas (BLIK, szybkie przelewy, Apple Pay, Google Pay, karty)</h3>
+    <p>
+      Korzystamy z bramki płatniczej <strong>Axepta BNP Paribas</strong>, której operatorem jest
+      <em>BNP Paribas Bank Polska S.A.</em> Dla transakcji kartowych agentem rozliczeniowym jest
+      <em>PayU S.A.</em> Płatność jest obsługiwana w dwóch trybach — w zależności od tego, który
+      jest dostępny w danym momencie:
     </p>
     <ul>
-      <li><strong>Stripe Payment Link</strong> — imię i nazwisko, adres e-mail, kraj, dane karty
-        (przetwarzane wyłącznie przez Stripe, my otrzymujemy potwierdzenie transakcji bez danych karty),</li>
-      <li><strong>Zrzutka.pl</strong> — zakres określa polityka Zrzutka.pl; administratorem danych
-        wpłacających w jej obrębie jest <em>Zrzutka Sp. z o.o.</em>,</li>
-      <li><strong>Przelew bankowy</strong> — dane wynikające z polecenia przelewu (nadawca, tytuł, kwota).</li>
+      <li>
+        <strong>Tryb wbudowany (embedded, REST API)</strong> — formularz płatności pojawia się
+        bezpośrednio w interfejsie naszej strony. Wprowadzone dane (kod BLIK, dane karty, wybór
+        banku przy szybkim przelewie) są przekazywane przez nasz serwer aplikacyjny (Django)
+        szyfrowanym kanałem (HTTPS / TLS 1.3) do REST API bramki — bez utrwalania pełnych danych
+        płatniczych po naszej stronie.
+      </li>
+      <li>
+        <strong>Tryb przekierowania (redirect)</strong> — używany jako wariant zastępczy. Po
+        kliknięciu „Wesprzyj" zostajesz przekierowany na podstronę operatora bramki, gdzie
+        wprowadzasz dane płatnicze, i wracasz na naszą stronę z potwierdzeniem transakcji.
+      </li>
     </ul>
+    <p>
+      Niezależnie od trybu, <strong>Fundacja nie przechowuje pełnych danych kart płatniczych</strong>
+      ani kodów BLIK na swoich serwerach. Dane karty są w czasie rzeczywistym
+      <em>tokenizowane</em> i przekazywane do bramki, która przejmuje ciężar autoryzacji oraz
+      obowiązki bezpieczeństwa zgodnie z normą <strong>PCI DSS</strong> (Payment Card Industry
+      Data Security Standard). Po stronie Fundacji zachowujemy wyłącznie: imię i nazwisko (lub
+      pseudonim) darczyńcy, adres e-mail (jeśli podany), kwotę, datę, identyfikator (token)
+      transakcji oraz jej status — w zakresie niezbędnym do ewidencji księgowej, wystawienia
+      potwierdzenia darowizny i ewentualnego zaświadczenia podatkowego.
+    </p>
+
+    <h3>Zrzutka.pl</h3>
+    <p>
+      Zakres danych określa polityka Zrzutka.pl; administratorem danych wpłacających w jej obrębie
+      jest <em>Zrzutka Sp. z o.o.</em>
+    </p>
+
+    <h3>Przelew bankowy</h3>
+    <p>
+      Dane wynikają z polecenia przelewu (nadawca, tytuł, kwota) i trafiają do nas wyłącznie
+      za pośrednictwem banku prowadzącego nasz rachunek.
+    </p>
 
     <h3>Korespondencja e-mail</h3>
     <p>
@@ -516,11 +553,18 @@
       <li>
         <strong>Realizacja darowizny</strong> — art. 6 ust. 1 lit. b RODO (niezbędność do
         wykonania umowy darowizny) oraz lit. c (obowiązki prawne w zakresie księgowości i
-        sprawozdawczości fundacji).
+        sprawozdawczości fundacji). W tym zakresie pośredniczymy w transmisji danych
+        płatniczych do bramki Axepta BNP Paribas / PayU.
       </li>
       <li>
         <strong>Wystawienie zaświadczenia o darowiźnie</strong> — art. 6 ust. 1 lit. c RODO,
         wykonanie obowiązków wynikających z przepisów podatkowych.
+      </li>
+      <li>
+        <strong>Przeciwdziałanie nadużyciom płatniczym</strong> (skrypty antyfraudowe bramki
+        ładowane przy formularzu darowizny) — art. 6 ust. 1 lit. f RODO, prawnie uzasadniony
+        interes Fundacji i operatorów bramki w zapobieganiu oszustwom oraz wykonaniu obowiązków
+        wynikających z PSD2 (Strong Customer Authentication) i przepisów AML.
       </li>
       <li>
         <strong>Odpowiedź na korespondencję</strong> — art. 6 ust. 1 lit. f RODO, prawnie
@@ -540,7 +584,8 @@
     <div class="badges">
       <span class="badge">DigitalOcean</span>
       <span class="badge">jsDelivr</span>
-      <span class="badge">Stripe</span>
+      <span class="badge">BNP Paribas</span>
+      <span class="badge">PayU</span>
       <span class="badge">Zrzutka.pl</span>
       <span class="badge">Biuro rachunkowe</span>
     </div>
@@ -558,9 +603,22 @@
         przekazujemy ich do żadnego zewnętrznego dostawcy.
       </li>
       <li>
-        <strong>Stripe Payments Europe Ltd</strong> (Irlandia) — w momencie wykonywania darowizny
-        przez Stripe Payment Link. Stripe jest odrębnym administratorem dla danych płatniczych;
-        polityka Stripe: <a href="https://stripe.com/privacy" rel="noopener noreferrer" target="_blank">stripe.com/privacy</a>.
+        <strong>BNP Paribas Bank Polska S.A.</strong> (ul. Kasprzaka 2, 01-211 Warszawa) —
+        operator bramki <em>Axepta BNP Paribas</em>. Przetwarza dane transakcyjne (BLIK,
+        szybkie przelewy, Apple Pay, Google Pay) w celu autoryzacji i rozliczenia płatności.
+        Zgodnie z § 8 ust. 1 zawartej z nami umowy jest <strong>odrębnym (niezależnym)
+        administratorem</strong> danych osobowych przetwarzanych w celu wykonania umowy o
+        bramkę płatniczą. Polityka prywatności i obowiązek informacyjny RODO:
+        <a href="https://www.bnpparibas.pl/repozytorium/rodo" rel="noopener noreferrer" target="_blank">bnpparibas.pl/repozytorium/rodo</a>.
+      </li>
+      <li>
+        <strong>PayU S.A.</strong> (ul. Grunwaldzka 186, 60-166 Poznań) — agent rozliczeniowy
+        wskazany w załączniku do umowy o bramkę Axepta BNP Paribas dla transakcji kartowych.
+        W momencie płatności kartą obsługuje autoryzację, tokenizację oraz przetwarza dane
+        karty zgodnie z normą PCI DSS. Również jest <strong>odrębnym (niezależnym)
+        administratorem</strong> danych osobowych w zakresie tych transakcji. Polityka
+        prywatności:
+        <a href="https://poland.payu.com/prywatnosc/" rel="noopener noreferrer" target="_blank">poland.payu.com/prywatnosc</a>.
       </li>
       <li>
         <strong>Zrzutka Sp. z o.o.</strong> — w momencie kliknięcia w link do naszej zbiórki
@@ -578,15 +636,26 @@
     <h2 data-num="06">Transfery poza EOG</h2>
     <p>
       Strona została skonfigurowana tak, by w miarę możliwości unikać transferu danych poza
-      Europejski Obszar Gospodarczy. Witryna hostowana jest w regionie <em>Frankfurt</em>
-      (DigitalOcean, UE). Fonty (Cormorant Garamond, Inter, IBM Plex Mono — licencja Open Font
-      License) serwowane są bezpośrednio z naszego serwera, bez udziału zewnętrznych dostawców.
-      Biblioteka Lenis ładuje się z sieci jsDelivr (Cloudflare, infrastruktura globalna).
+      Europejski Obszar Gospodarczy:
+    </p>
+    <ul>
+      <li>Witryna hostowana jest w regionie <em>Frankfurt</em> (DigitalOcean, UE).</li>
+      <li>Fonty (Cormorant Garamond, Inter, IBM Plex Mono — licencja Open Font License)
+        serwowane są bezpośrednio z naszego serwera, bez udziału zewnętrznych dostawców.</li>
+      <li>Operator bramki płatniczej (BNP Paribas Bank Polska S.A.) oraz agent rozliczeniowy
+        kart (PayU S.A.) są podmiotami z siedzibą w Polsce.</li>
+    </ul>
+    <p>
+      BNP Paribas oraz PayU jako niezależni administratorzy mogą — w ramach własnej
+      infrastruktury technicznej i systemów antyfraudowych — przetwarzać dane również poza
+      EOG. Robią to na zasadach i podstawach określonych w swoich politykach prywatności
+      (linkowane w sekcji „Odbiorcy danych") i odpowiadają za zgodność tych transferów
+      z RODO. Fundacja nie pośredniczy w tych transferach.
     </p>
     <p>
-      Stripe może przetwarzać dane płatnicze również w Stanach Zjednoczonych. Stripe stosuje
-      standardowe klauzule umowne (SCC) zatwierdzone przez Komisję Europejską oraz uczestniczy
-      w ramach <em>EU–U.S. Data Privacy Framework</em>. Szczegóły: polityka prywatności Stripe.
+      Biblioteka Lenis ładuje się z sieci jsDelivr (Cloudflare) — globalnej infrastruktury CDN.
+      Cloudflare jako podmiot z certyfikacją SCC i polityką GDPR stosuje wymagane gwarancje
+      przy ewentualnych transferach.
     </p>
   </section>
 
@@ -627,32 +696,67 @@
   </section>
 
   <section id="cookies">
-    <h2 data-num="09">Cookies i localStorage</h2>
+    <h2 data-num="09">Cookies, localStorage i skrypty podmiotów trzecich</h2>
+
+    <h3>Własne pliki cookies</h3>
     <p>
-      <strong>Nie używamy plików cookies</strong> — ani własnych, ani zewnętrznych (analitycznych
-      czy marketingowych). Strona nie zawiera Google Analytics, Meta Pixel ani podobnych narzędzi.
+      <strong>Nie używamy własnych plików cookies</strong> — ani analitycznych, ani marketingowych.
+      Strona nie zawiera Google Analytics, Meta Pixel ani podobnych narzędzi profilujących.
     </p>
+
+    <h3>localStorage przeglądarki</h3>
     <p>
-      Używamy wyłącznie mechanizmu <em>localStorage</em> przeglądarki do zapisania jednej
-      preferencji (dźwięk włączony/wyłączony, klucz <code>voct.demo.audio</code>). Jest to
-      mechanizm „ściśle niezbędny" do realizacji wybranej przez Ciebie funkcji witryny — zgodnie
+      Używamy mechanizmu <em>localStorage</em> przeglądarki do zapisania jednej preferencji
+      (dźwięk włączony/wyłączony, klucz <code>voct.demo.audio</code>). Jest to mechanizm
+      „ściśle niezbędny" do realizacji wybranej przez Ciebie funkcji witryny — zgodnie
       z motywem 30 dyrektywy 2002/58/WE oraz orzecznictwem nie wymaga uprzedniej zgody.
+      Możesz wyczyścić tę preferencję, czyszcząc dane strony w ustawieniach przeglądarki.
     </p>
+
+    <h3>Techniczne skrypty i pliki cookies bramki płatniczej</h3>
     <p>
-      W każdej chwili możesz wyczyścić tę preferencję, czyszcząc dane strony w ustawieniach
-      przeglądarki.
+      W momencie, w którym wybierzesz metodę płatności i przejdziesz do formularza darowizny,
+      w przeglądarce ładują się <strong>techniczne biblioteki JavaScript dostarczane przez
+      BNP Paribas / PayU</strong>. Mogą one ustawić pliki cookies lub korzystać z innych
+      mechanizmów przechowywania danych w przeglądarce w celach:
+    </p>
+    <ul>
+      <li>autoryzacji i utrzymania sesji płatności,</li>
+      <li>tokenizacji danych karty,</li>
+      <li>wykrywania nadużyć (fraud detection, device fingerprinting),</li>
+      <li>obsługi 3-D Secure / Strong Customer Authentication (PSD2 SCA).</li>
+    </ul>
+    <p>
+      Te mechanizmy są <strong>ściśle niezbędne</strong> do bezpiecznego przeprowadzenia
+      płatności i nie wymagają odrębnej zgody. Administratorem danych przetwarzanych przez te
+      skrypty są <em>BNP Paribas Bank Polska S.A.</em> oraz — w przypadku płatności kartą —
+      <em>PayU S.A.</em>, na zasadach opisanych w ich politykach prywatności (linki w sekcji
+      „Odbiorcy danych"). Nie pojawiają się one, dopóki nie rozpoczniesz procesu darowizny.
     </p>
   </section>
 
   <section id="bezpieczenstwo">
     <h2 data-num="10">Bezpieczeństwo</h2>
     <ul>
-      <li>Strona dostępna jest wyłącznie przez połączenie szyfrowane HTTPS (TLS 1.3).</li>
-      <li>Nie prowadzimy własnej bazy danych osobowych odwiedzających — strona jest statyczna.</li>
-      <li>Dane płatnicze przetwarzane są bezpośrednio przez Stripe / Zrzutkę — nigdy nie
-        przechodzą przez naszą infrastrukturę.</li>
+      <li>Strona dostępna jest wyłącznie przez połączenie szyfrowane <strong>HTTPS (TLS 1.3)</strong>.</li>
+      <li>Wymuszamy <em>HTTP Strict Transport Security</em> (HSTS) z opcją preload — przeglądarka
+        nie pozwoli na nieszyfrowane połączenie z naszą domeną.</li>
+      <li>
+        <strong>Nie przechowujemy pełnych danych kart płatniczych ani kodów BLIK</strong> na
+        serwerach Fundacji. Dane są w czasie rzeczywistym tokenizowane i przekazywane szyfrowanym
+        kanałem do bramki Axepta BNP Paribas / PayU, które posiadają certyfikację
+        <strong>PCI DSS</strong> i odpowiadają za autoryzację oraz przechowywanie danych
+        płatniczych.
+      </li>
+      <li>
+        W zakresie, w jakim nasz serwer aplikacyjny pośredniczy w transmisji danych płatniczych
+        (tryb embedded REST API), komunikacja odbywa się wyłącznie szyfrowanym TLS, a dane są
+        natychmiast po przekazaniu do bramki usuwane z pamięci procesu i nie są utrwalane na
+        dysku.
+      </li>
       <li>Adresy e-mail przechowywane są w skrzynkach pocztowych zabezpieczonych mechanizmami
         uwierzytelniania wieloskładnikowego.</li>
+      <li>Strona nie zawiera narzędzi profilowania, analityki ani reklam podmiotów trzecich.</li>
     </ul>
   </section>
 
@@ -663,8 +767,24 @@
       uruchomimy nowe metody płatności, dodamy formularze lub zmienimy infrastrukturę techniczną.
       Każda zmiana jest oznaczona nowym numerem wersji i datą obowiązywania (u góry tego dokumentu).
     </p>
+
+    <h3>Historia zmian</h3>
+    <ul>
+      <li>
+        <strong>1.1 · 13 maja 2026</strong> — Wybór bramki płatniczej: Axepta BNP Paribas
+        (operator: BNP Paribas Bank Polska S.A., agent rozliczeniowy dla kart: PayU S.A.).
+        Wprowadzenie integracji embedded (REST API) obok wariantu z przekierowaniem.
+        Doprecyzowanie zasad tokenizacji i PCI DSS. Aktualizacja sekcji o cookies i skryptach
+        podmiotów trzecich.
+      </li>
+      <li>
+        <strong>1.0 · 13 maja 2026</strong> — Wersja pierwotna polityki, opublikowana wraz
+        z uruchomieniem witryny voctensemble.com.
+      </li>
+    </ul>
+
     <p>
-      Historię istotnych zmian możesz zawsze otrzymać, pisząc na
+      Pełną historię zmian możesz zawsze otrzymać, pisząc na
       <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>.
     </p>
   </section>
