@@ -204,8 +204,11 @@
     inset: 0;
     z-index: 80;
     pointer-events: none;
-    opacity: 0.042;
-    mix-blend-mode: multiply;
+    /* mix-blend-mode: multiply WYRZUCONE — wymuszało re-composite całej warstwy
+       pod spodem na każdy scroll. Przy ~0.042 opacity grayscale noise efekt
+       wizualny dla mix vs. normal jest niemal identyczny, koszt GPU diametralny.
+       Lekko podbijam opacity (0.05) żeby zachować tę samą obecność grain. */
+    opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.84' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
@@ -2207,10 +2210,11 @@
 
 
   /* --knot-intensity: 0..1, sterowane przez AnalyserNode gdy audio gra.
-     @property pozwala na płynne interpolacje i CSS-side defaulty. */
+     inherits: false = JS pisze tylko na 3 elementach .aether-knot,
+     nie inwaliduje stylu całego drzewa DOM jak przy ustawieniu na :root. */
   @property --knot-intensity {
     syntax: "<number>";
-    inherits: true;
+    inherits: false;
     initial-value: 0;
   }
 
@@ -2224,6 +2228,12 @@
     padding: clamp(60px, 10vw, 120px) 0;
     pointer-events: none;
     color: var(--candle);
+    /* content-visibility: auto — gdy interlude poza viewportem, browser
+       pomija jego paint + style recalc. Z intrinsic-size scrollbar nie skacze.
+       contain: paint = SVG glow nie eksportuje paint poza box. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 240px;
+    contain: paint;
   }
 
   /* Entry animacja interludów obsługiwana przez istniejący IntersectionObserver
@@ -2233,8 +2243,7 @@
     transform: translateY(64px);
     transition:
       opacity 2.2s var(--ease-slow),
-      transform 2.2s var(--ease-slow),
-      filter 1.8s var(--ease-slow);
+      transform 2.2s var(--ease-slow);
   }
   .aether-interlude.reveal.is-visible {
     transform: translateY(0);
@@ -2298,22 +2307,42 @@
   }
 
   .aether-knot {
+    position: relative;
     width: 180px;
     height: 60px;
     flex-shrink: 0;
     overflow: visible;
-    /* Audio-reactive bloom: gdy --knot-intensity rośnie, brightness + drop-shadow.
-       Bez audio = całkowicie neutralne (intensity=0 nie dodaje nic). */
-    filter:
-      brightness(calc(1 + var(--knot-intensity, 0) * 0.55))
-      drop-shadow(0 0 calc(var(--knot-intensity, 0) * 5px) currentColor);
-    transition: filter 0.16s linear;
+    /* Audio-reactive bloom — TANIO:
+       - brightness() to GPU-cheap przekształcenie matrixowe
+       - drop-shadow() WYRZUCONE (Gaussian blur per frame = CPU)
+       - bloom realizuje sibling ::after z prerendered radial-gradient,
+         który zmienia tylko opacity (compositor-only update). */
+    filter: brightness(calc(1 + var(--knot-intensity, 0) * 0.5));
+    /* Bez transition: AnalyserNode smoothingTimeConstant=0.85 już smooth'uje;
+       CSS transition na właściwości aktualizowanej 30Hz to wasteful work. */
+  }
+
+  .aether-knot::after {
+    content: "";
+    position: absolute;
+    inset: -45% -15%;
+    background: radial-gradient(closest-side,
+      rgba(var(--candle-rgb), 0.55),
+      rgba(var(--candle-rgb), 0.18) 45%,
+      transparent 75%);
+    opacity: var(--knot-intensity, 0);
+    pointer-events: none;
+    z-index: -1;
+    /* Promote na własną GPU layer: opacity wtedy = czysty compositor update. */
+    will-change: opacity;
   }
 
   .aether-knot svg {
     width: 100%;
     height: 100%;
     overflow: visible;
+    position: relative;
+    z-index: 1;
   }
 
   /* ──────────────────────────────────────────────────────────────────────
@@ -2613,185 +2642,122 @@
   }
 
   /* ───────────────────────────────────────────────────────────────
-     CODA · pre-footer · closing typography (Awwwards 2026 Edition)
+     CODA · pre-footer · per-letter wght cascade (Awwwards MMXXVI)
+     "CISZA." — każda litera ma własną fazę breath, kaskada przesuwa
+     się lewo→prawo wraz ze scrollem. Cormorant variable wght
+     320→640→320. Bez 3D, bez blur, bez mix-blend-mode — cały efekt
+     siedzi w jednej osi typograficznej.
      ─────────────────────────────────────────────────────────────── */
 
   .coda {
     position: relative;
-    padding: clamp(90px, 14vw, 180px) max(28px, 5vw) clamp(90px, 14vw, 180px);
+    padding: clamp(110px, 16vw, 220px) max(28px, 5vw);
     background:
-      radial-gradient(circle at 50% 110%, rgba(198, 164, 91, 0.22), transparent 42rem),
+      radial-gradient(circle at 50% 110%, rgba(198, 164, 91, 0.18), transparent 42rem),
       linear-gradient(180deg, var(--paper-soft) 0%, var(--paper) 100%);
     border-top: 1px solid var(--line);
     overflow: hidden;
-    clip-path: inset(0);
     view-timeline-name: --coda-scroll;
-  }
-
-  .coda::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.12;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    view-timeline-axis: block;
   }
 
   .coda-container {
     position: relative;
     margin: 0 auto;
     width: min(1580px, 100%);
-    perspective: 1200px;
-    transform-style: preserve-3d;
-  }
-
-  .coda-line {
-    position: relative;
-    font-family: var(--serif);
-    font-weight: 300;
-    letter-spacing: -0.02em;
     display: grid;
-    gap: 0;
-    mix-blend-mode: darken;
-    animation: codaReveal linear both;
-    animation-timeline: --coda-scroll;
-    animation-range: entry 10% cover 50%;
+    gap: clamp(8px, 1.4vw, 20px);
   }
 
-  @keyframes codaReveal {
-    0% {
-      opacity: 0;
-      transform: translateY(80px) rotateX(15deg) scale(0.94);
-      filter: blur(24px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) rotateX(0deg) scale(1);
-      filter: blur(0px);
-    }
-  }
-
-  .coda-line-main {
-    position: relative;
-    display: block;
-    font-size: clamp(96px, 20vw, 320px);
-    line-height: 0.8;
-    color: var(--ink);
-    background: linear-gradient(180deg, var(--ink) 10%, var(--ink-soft) 90%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    z-index: 2;
-  }
-
-  .coda-echo {
-    position: absolute;
-    inset: 0;
+  .coda-headline {
+    margin: 0;
     font-family: var(--serif);
+    font-size: clamp(120px, 26vw, 400px);
     font-weight: 300;
+    line-height: 0.86;
     letter-spacing: -0.02em;
-    font-size: clamp(96px, 20vw, 320px);
-    line-height: 0.8;
+    color: var(--ink);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    /* font-feature-settings dla swash-i w razie potrzeby — Cormorant ma 'liga' */
+    font-feature-settings: "liga", "kern";
+  }
+
+  .coda-letter {
+    display: inline-block;
+    /* Domyślny wght 320 — fallback przed/po animacji oraz dla browser'ów
+       bez animation-timeline. */
+    font-variation-settings: "wght" 320;
+  }
+
+  .coda-letter--punct {
     color: var(--candle);
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0;
-    filter: blur(4px);
-    animation: codaEcho linear both;
-    animation-timeline: --coda-scroll;
-    animation-range: entry 25% cover 75%;
+    /* kropka delikatnie wcięta od poprzedniej litery — Cormorant ma
+       szerokie tracking na końcu liter. */
+    margin-left: -0.02em;
   }
 
-  @keyframes codaEcho {
-    0% {
-      transform: translateY(0) scale(1);
-      opacity: 0.8;
-      filter: blur(2px);
-    }
-    100% {
-      transform: translateY(-12%) scale(1.15);
-      opacity: 0;
-      filter: blur(38px);
-    }
-  }
-
-  .coda-line-tail {
-    position: relative;
-    display: block;
-    font-size: clamp(42px, 8vw, 130px);
-    line-height: 0.85;
-    margin-top: -4%;
+  .coda-tail {
+    margin: 0;
+    font-family: var(--serif);
     font-style: italic;
+    font-size: clamp(30px, 6vw, 96px);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0.005em;
     color: var(--candle);
-    text-align: right;
-    padding-right: clamp(0px, 8vw, 160px);
-    z-index: 3;
-    animation: tailResonate linear both;
-    animation-timeline: --coda-scroll;
-    animation-range: entry 30% cover 70%;
-  }
-
-  .coda-line-tail::after {
-    content: "brzmi dalej.";
-    position: absolute;
-    right: clamp(0px, 8vw, 160px);
-    top: 0;
-    color: transparent;
-    -webkit-text-stroke: 1px var(--candle);
+    text-align: center;
     opacity: 0;
-    filter: blur(2px);
-    animation: tailGhost linear both;
-    animation-timeline: --coda-scroll;
-    animation-range: entry 45% cover 95%;
   }
 
-  @keyframes tailResonate {
-    0% {
-      opacity: 0;
-      transform: translateX(-60px) skewX(-10deg);
-      filter: blur(16px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateX(0) skewX(0deg);
-      filter: blur(0px);
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+
+      /* Each letter scrubs wght 320→640→320 against its own slice
+         of the coda view-timeline. Każda kolejna litera startuje
+         8% później — fala "ciężaru" przesuwa się przez słowo. */
+      .coda-letter {
+        font-variation-settings: "wght" var(--wght);
+        animation: coda-letter-pulse linear both;
+        animation-timeline: --coda-scroll;
+      }
+
+      .coda-letter:nth-child(1) { animation-range: entry  0% cover 50%; }
+      .coda-letter:nth-child(2) { animation-range: entry  8% cover 58%; }
+      .coda-letter:nth-child(3) { animation-range: entry 16% cover 66%; }
+      .coda-letter:nth-child(4) { animation-range: entry 24% cover 74%; }
+      .coda-letter:nth-child(5) { animation-range: entry 32% cover 82%; }
+      .coda-letter:nth-child(6) { animation-range: entry 40% cover 90%; }
+
+      @keyframes coda-letter-pulse {
+        0%   { --wght: 320; }
+        45%  { --wght: 640; }
+        100% { --wght: 320; }
+      }
+
+      /* "brzmi dalej." — italic echo, wchodzi po falowaniu liter. */
+      .coda-tail {
+        animation: coda-tail-emerge linear both;
+        animation-timeline: --coda-scroll;
+        animation-range: entry 50% cover 95%;
+      }
+
+      @keyframes coda-tail-emerge {
+        0%   { opacity: 0; transform: translateY(18px); }
+        40%  { opacity: 1; transform: translateY(0); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
     }
   }
 
-  @keyframes tailGhost {
-    0% {
-      transform: translateX(0) scale(1);
-      opacity: 0;
-    }
-    40% {
-      opacity: 0.5;
-    }
-    100% {
-      transform: translateX(80px) scale(1.08);
-      opacity: 0;
-      filter: blur(22px);
-    }
+  @supports not (animation-timeline: scroll()) {
+    .coda-tail { opacity: 1; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .coda-line, .coda-echo, .coda-line-tail, .coda-line-tail::after {
-      animation: none !important;
-      opacity: 1;
-      transform: none;
-      filter: none;
-    }
-    .coda-echo, .coda-line-tail::after {
-      display: none;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .coda-echo {
-      font-size: clamp(76px, 22vw, 130px);
-    }
-    .coda-line-tail::after {
-      right: 0;
-    }
+    .coda-tail { opacity: 1; }
   }
 
   /* ───────────────────────────────────────────────────────────────
@@ -2812,8 +2778,11 @@
 
   .site-footer-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: clamp(32px, 4vw, 64px);
+    /* Asymmetric grid — lewa kolumna szersza (mieści Hora canonica + duży zegar),
+       środkowa wąska (sama lista linków), prawa średnia (dane fundacji).
+       Wyważona kompozycja editorialna zamiast generic 3×equal. */
+    grid-template-columns: 1.45fr 0.9fr 1.2fr;
+    gap: clamp(32px, 4.5vw, 72px);
     margin-bottom: clamp(32px, 4vw, 56px);
     align-items: start;
   }
@@ -2996,14 +2965,25 @@
     color: var(--ink);
   }
 
-  /* signal */
-  .footer-col-signal {
-    gap: 16px;
+  /* ─── Sygnał — lewa kolumna · dwa bloki:
+     1) Najbliższe wybrzmienie (statyczna data + countdown)
+     2) Kraków · teraz (live clock + hora canonica + GPS + tempus)
+     Bez horizontal rules — odstęp pionowy jako jedyny separator.
+     Hora canonica jest teraz SATELITĄ zegara (nie osobnym blokiem),
+     bo średniowieczny mnich nie patrzył osobno na zegar i osobno na
+     "która hora" — to była JEDNA rzecz. */
+  .footer-col-signal-body {
+    display: grid;
+    gap: clamp(28px, 3.2vw, 48px);
   }
 
   .footer-signal-block {
     display: grid;
     gap: 4px;
+  }
+
+  .footer-signal-now {
+    gap: 2px;
   }
 
   .footer-signal-key {
@@ -3019,15 +2999,96 @@
     line-height: 1.5;
   }
 
+  /* ─── Hora canonica — satellite zegara ───
+     Sit RIGHT under the clock — zegar to anchor, hora to jego nazwa.
+     Italic Cormorant ~26px sentence-case, łaciński akcent candle gold,
+     polski w ink-soft. Wygląda jak inskrypcja pod cyfrą. */
+  .footer-signal-hora-row {
+    margin: 0 0 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.45em;
+    line-height: 1.3;
+  }
+
+  .footer-signal-hora-name {
+    color: var(--candle);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(22px, 2vw, 30px);
+    font-weight: 400;
+    letter-spacing: 0.005em;
+  }
+
+  .footer-signal-hora-sep {
+    color: var(--candle);
+    opacity: 0.55;
+    font-size: clamp(16px, 1.4vw, 20px);
+    transform: translateY(-0.08em);
+  }
+
+  /* Tempus row separator — italic łaciński + mono polski mają różne baseline.
+     Dot lekko niżej żeby optycznie usiadł między nimi zamiast wisieć nad. */
+  .footer-signal-tempus-sep {
+    color: var(--candle);
+    opacity: 0.55;
+    font-size: clamp(12px, 1vw, 14px);
+    transform: translateY(0.06em);
+  }
+
+  .footer-signal-hora-poem {
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(15px, 1.2vw, 18px);
+    letter-spacing: 0;
+  }
+
+  /* ─── Tempus — okres roku liturgicznego ───
+     Najgłębsza warstwa czasu w kolumnie: zegar (instant) → hora (3h) →
+     miejsce → tempus (1-2 miesiące). Progresywne oddalanie. Zmienia się
+     ~6 razy w roku. Bezpośrednio powiązane z brand'em Concerts Spirituels =
+     muzyka roku liturgicznego. */
+  .footer-signal-tempus-row {
+    margin: 8px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.45em;
+    line-height: 1.3;
+  }
+
+  .footer-signal-tempus {
+    color: var(--ink);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(13px, 1vw, 15px);
+    letter-spacing: 0;
+    opacity: 0.78;
+  }
+
+  .footer-signal-tempus-pl {
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: lowercase;
+  }
+
+  /* ─── Live clock — zmniejszone z 96 do 80 max, żeby nie konkurowało
+     z wordmarkiem 'VoctEnsemble' poniżej. Anchor lewej kolumny, ale
+     nie kompozycyjny rywal pieczęci. */
   .footer-signal-clock {
     color: var(--candle);
     font-family: var(--serif);
-    font-size: clamp(34px, 3.5vw, 46px);
-    line-height: 1;
+    font-size: clamp(48px, 5.5vw, 80px);
+    line-height: 0.95;
     font-weight: 300;
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
     font-variant-numeric: tabular-nums;
-    margin: 4px 0;
+    margin: 8px 0 6px;
+    font-variation-settings: "wght" 360;
   }
 
   .footer-signal-countdown {
@@ -3037,6 +3098,131 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     margin-top: 2px;
+  }
+
+  /* Breath dla clock — uruchamia się gdy footer wchodzi do view.
+     Synchronicznie z site-footer-mark wordmarkiem — oba "wydychają"
+     wagę w tym samym rytmie. Hora canonica po zmianie na 26px italic
+     nie potrzebuje breath (zmiana wght byłaby niewidoczna na tej skali). */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .footer-col-signal {
+        view-timeline-name: --footer-signal-self;
+        view-timeline-axis: block;
+      }
+
+      .footer-signal-clock {
+        font-variation-settings: "wght" var(--wght);
+        animation: footer-signal-breath linear both;
+        animation-timeline: --footer-signal-self;
+        animation-range: entry 0% cover 60%;
+      }
+
+      @keyframes footer-signal-breath {
+        0%   { --wght: 520; }
+        100% { --wght: 300; }
+      }
+    }
+  }
+
+  /* ─── Closing wordmark — finalna pieczęć strony ───
+     Ogromny napis "VoctEnsemble" pod gridem footera. Pełni rolę
+     wizytówki/sygnatury — strona kończy się znakiem firmowym, nie
+     tabelą danych. Variable wght breath uruchamia się gdy mark
+     wjeżdża do viewportu — wchodzi cięższy (540), oddaje wagę do
+     300 gdy ustanie na środku ekranu. */
+  .site-footer-mark {
+    display: block;
+    width: 100%;
+    margin: clamp(28px, 4vw, 56px) 0 clamp(20px, 3vw, 40px);
+    padding-top: clamp(28px, 3.5vw, 48px);
+    /* Mirror visible portion to ~38% font-size (baseliny oryginalnych liter
+       wynurzone tuż pod waterline). Padding-bottom ≈ wysokość visible mirror'a
+       żeby colophon nie nachodził. */
+    padding-bottom: clamp(20px, calc(32cqi / 6.6), 76px);
+    border-top: 1px solid var(--line);
+    text-align: center;
+    overflow: visible;
+    container-type: inline-size;
+  }
+
+  .site-footer-mark-text {
+    position: relative;
+    display: inline-block;
+    font-family: var(--serif);
+    font-size: clamp(56px, calc(94cqi / 6.6), 220px);
+    font-weight: 300;
+    line-height: 0.86;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+    white-space: nowrap;
+    /* 6.6 = empirycznie wyliczona szerokość "VoctEnsemble" w em
+       przy Cormorant variable wght 540 (najwidsza klatka breath) + tracking -0.035em.
+       94cqi zostawia 3% safety margin na boki. */
+    font-variation-settings: "wght" 320;
+  }
+
+  /* ─── Mirror — prawdziwe odbicie przy waterline ───
+     KLUCZOWE: mask jest aplikowana PRZED transform, więc trzeba odwrócić
+     gradient. Pokazujemy DOLNĄ część oryginalnego tekstu (baseliny + lekko
+     wyżej), która po `scaleY(-1)` ląduje na SAMEJ GÓRZE mirrora, dokładnie
+     przy linii (water surface). Tam odbicie jest najmocniejsze i fade'uje
+     w głąb papieru. Tak działa prawdziwe odbicie w płytkiej wodzie.
+
+     Visible portion: bottom ~38% of original glyph → top ~38% of mirror. */
+  .site-footer-mark-text::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    transform: scaleY(-1);
+    pointer-events: none;
+    color: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    opacity: 0.14;
+    -webkit-mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      transparent 60%,
+      rgba(0, 0, 0, 0.55) 78%,
+      #000 100%);
+    mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      transparent 60%,
+      rgba(0, 0, 0, 0.55) 78%,
+      #000 100%);
+    transition: opacity 0.9s var(--ease-slow);
+  }
+
+  .site-footer-mark:hover .site-footer-mark-text::after {
+    opacity: 0.25;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-footer-mark-text::after { transition: none; }
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .site-footer-mark {
+        view-timeline-name: --footer-mark-self;
+        view-timeline-axis: block;
+      }
+
+      .site-footer-mark-text {
+        font-variation-settings: "wght" var(--wght);
+        animation: footer-mark-breath linear both;
+        animation-timeline: --footer-mark-self;
+        animation-range: entry 0% cover 70%;
+      }
+
+      @keyframes footer-mark-breath {
+        0%   { --wght: 540; }
+        100% { --wght: 300; }
+      }
+    }
   }
 
   /* colophon */
@@ -3135,18 +3321,25 @@
     }
   }
 
+  /* .reveal — wejście do viewportu (IntersectionObserver).
+     Wycięty filter: blur — Gaussian blur jest jedną z najdroższych operacji GPU,
+     a przy długich sekcjach z wieloma reveal'ami jednocześnie powodował drop frames.
+     Zamiast tego: większy translate i delikatne scale dla "głębi" zamiast blura.
+     Blur zostaje TYLKO w jednorazowym .intro-stage przy load — tam mamy budżet. */
   .reveal {
     opacity: 0;
-    transform: translateY(46px);
-    filter: blur(12px);
-    transition: opacity 1.2s var(--ease-slow), transform 1.2s var(--ease-slow), filter 1.2s var(--ease-slow);
+    transform: translateY(42px) scale(0.985);
+    transition:
+      opacity 1.1s var(--ease-slow),
+      transform 1.1s var(--ease-slow);
   }
 
   @media (pointer: coarse), (hover: none) {
     .reveal {
-      transform: translateY(24px);
-      filter: none;
-      transition: opacity 0.9s var(--ease-slow), transform 0.9s var(--ease-slow);
+      transform: translateY(22px) scale(1);
+      transition:
+        opacity 0.85s var(--ease-slow),
+        transform 0.85s var(--ease-slow);
     }
 
     .reveal-img img {
@@ -3171,13 +3364,11 @@
 
   .reveal.is-visible {
     opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
+    transform: translateY(0) scale(1);
   }
 
   .reveal.is-settled {
     transition: none;
-    filter: none;
     will-change: auto;
   }
 
@@ -3300,10 +3491,6 @@
     .coda {
       padding-top: clamp(60px, 10vw, 96px);
       padding-bottom: clamp(60px, 10vw, 96px);
-    }
-
-    .coda-line-tail {
-      padding-right: 0;
     }
 
     .ensemble-facts {
@@ -3611,13 +3798,12 @@
       padding-bottom: clamp(48px, 10vw, 80px);
     }
 
-    .coda-line-main {
-      font-size: clamp(76px, 22vw, 130px);
+    .coda-headline {
+      font-size: clamp(76px, 22vw, 150px);
     }
 
-    .coda-line-tail {
-      font-size: clamp(30px, 8vw, 54px);
-      padding-right: 0;
+    .coda-tail {
+      font-size: clamp(24px, 7vw, 50px);
     }
 
     .donation-row strong {
@@ -4625,6 +4811,179 @@
     }
   }
 
+  /* ─────────────────────────────────────────────────────────────────────────
+     KINETIC TYPOGRAPHY · MMXXVI
+     Variable-axis choreography scrubbed against scroll & view timelines.
+     Cormorant Garamond wght 300–700 (osobny plik italic) + Inter opsz auto.
+     CSS-WG L5 primitives: @property, animation-timeline, view-timeline.
+     ───────────────────────────────────────────────────────────────────────── */
+
+  @property --wght {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 320;
+  }
+
+  @property --wght-em {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 360;
+  }
+
+  @property --wght-reveal {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 320;
+  }
+
+  @property --reveal-y {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  /* Inter Variable ma oś opsz — niech browser sam dobiera display vs. text. */
+  html {
+    font-optical-sizing: auto;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+
+      /* ─── Hero "oddech" ───
+         Większy swing: 540 → 300 na tytule, 620 → 300 na akcencie złotym.
+         Cormorant variable obsługuje 300-700, więc mamy zapas. */
+      .hero-title,
+      .hero-title > span {
+        font-variation-settings: "wght" var(--wght);
+        animation: hero-breath linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 90vh;
+        will-change: font-variation-settings;
+      }
+
+      .hero-title em {
+        font-variation-settings: "wght" var(--wght-em);
+        animation: hero-breath-em linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 90vh;
+        will-change: font-variation-settings;
+      }
+
+      @keyframes hero-breath {
+        0%   { --wght: 540; }
+        55%  { --wght: 380; }
+        100% { --wght: 300; }
+      }
+
+      @keyframes hero-breath-em {
+        0%   { --wght-em: 620; }
+        55%  { --wght-em: 380; }
+        100% { --wght-em: 300; }
+      }
+
+      /* ─── Editorial headings — view-timeline lokalny per element ───
+         Każdy heading scrubuje wagę przeciw swojej własnej przeprawie
+         przez viewport. Wchodzi mocniejszy (520), oddaje wagę do 320
+         gdy zatrzymuje się na środku — jak głos który właśnie wybrzmiał.
+         Wykluczone:
+         - threshold/vault/gratitude (overlaye, view-timeline by nie zaskoczył)
+         - path-card-title (5 kart × text-reshape per frame = niepotrzebny koszt)
+         - hero-strap/occasion (jednoczesnie z .hero-title te same klatki). */
+      .support-lede h2,
+      .ensemble h2,
+      .path h2,
+      .section-title,
+      .final-support h2 {
+        view-timeline-name: --breathe-self;
+        view-timeline-axis: block;
+        font-variation-settings: "wght" var(--wght);
+        animation: heading-breath linear both;
+        animation-timeline: --breathe-self;
+        animation-range: entry 0% cover 55%;
+      }
+
+      @keyframes heading-breath {
+        0%   { --wght: 520; }
+        100% { --wght: 320; }
+      }
+
+      /* ─── Manifest lines — własny breath, większy swing ───
+         Trzy linie manifestu oddychają wyraźnie, każda osobno. */
+      .manifest-line {
+        view-timeline-name: --breathe-self;
+        view-timeline-axis: block;
+        font-variation-settings: "wght" var(--wght);
+        animation: manifest-breath linear both;
+        animation-timeline: --breathe-self;
+        animation-range: entry 5% cover 60%;
+      }
+
+      @keyframes manifest-breath {
+        0%   { --wght: 500; }
+        100% { --wght: 320; }
+      }
+
+      /* ─── Manifest III — italic emergence na JEDNYM słowie ───
+         "Odsłania." samo się odsłania. Italic Cormorant (osobny krój)
+         wchodzi z dołu, rośnie z wght 320 do 580, z opacity 0 do 1.
+         Bez dual-layer, bez metric mismatch. */
+      .manifest-line--closing {
+        view-timeline-name: --manifest-iii;
+        view-timeline-axis: block;
+      }
+
+      .reveal-italic {
+        display: inline-block;
+        font-style: italic;
+        color: var(--candle);
+        font-variation-settings: "wght" var(--wght-reveal);
+        opacity: 0;
+        transform: translateY(var(--reveal-y));
+        animation: italic-word-emerge linear both;
+        animation-timeline: --manifest-iii;
+        animation-range: entry 40% cover 75%;
+        /* Cromorant italic resetuje breath manifestu — ten span ma swój własny */
+        will-change: font-variation-settings, opacity, transform;
+      }
+
+      @keyframes italic-word-emerge {
+        0% {
+          opacity: 0;
+          --reveal-y: 0.18em;
+          --wght-reveal: 320;
+        }
+        60% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 1;
+          --reveal-y: 0px;
+          --wght-reveal: 580;
+        }
+      }
+
+      /* Coda ma własną choreografię per-letter wcześniej w tym pliku
+         (sekcja CODA · pre-footer). Nie powtarzamy tu. */
+    }
+  }
+
+  /* ─── Fallback: bez scroll-timeline lub reduced-motion ─── */
+  @supports not (animation-timeline: scroll()) {
+    .reveal-italic {
+      font-style: italic;
+      color: var(--candle);
+      font-variation-settings: "wght" 520;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-italic {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
 </style>
 </head>
 
@@ -4812,7 +5171,7 @@
         </p>
         <p class="manifest-line manifest-line--closing reveal">
           <span class="manifest-index">III</span>
-          <span class="manifest-text">Sacrum nie zdobi. Odsłania.</span>
+          <span class="manifest-text">Sacrum nie zdobi. <span class="reveal-italic">Odsłania.</span></span>
         </p>
       </div>
     </div>
@@ -5425,11 +5784,10 @@
 
 <section class="coda" aria-label="Cisza brzmi dalej">
   <div class="coda-container">
-    <div class="coda-echo" aria-hidden="true">Cisza</div>
-    <p class="coda-line">
-      <span class="coda-line-main">Cisza</span>
-      <em class="coda-line-tail">brzmi dalej.</em>
+    <p class="coda-headline" aria-label="Cisza">
+      <span class="coda-letter" aria-hidden="true">C</span><span class="coda-letter" aria-hidden="true">i</span><span class="coda-letter" aria-hidden="true">s</span><span class="coda-letter" aria-hidden="true">z</span><span class="coda-letter" aria-hidden="true">a</span><span class="coda-letter coda-letter--punct" aria-hidden="true">.</span>
     </p>
+    <p class="coda-tail">brzmi dalej</p>
   </div>
 </section>
 
@@ -5440,17 +5798,30 @@
 
       <div class="footer-col footer-col-signal">
         <span class="footer-col-label micro">Sygnał</span>
-        <div class="footer-col-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
-          <div class="footer-signal-block">
+        <div class="footer-col-body footer-col-signal-body">
+
+          <div class="footer-signal-block footer-signal-event">
             <span class="footer-signal-key micro">Najbliższe wybrzmienie</span>
-            <span class="footer-signal-time">16 V MMXXVI · 18:00 CEST</span>
+            <span class="footer-signal-time">16.V.MMXXVI · 18:00 CEST</span>
             <span class="footer-signal-countdown" id="footerCountdown">—</span>
           </div>
-          <div class="footer-signal-block" style="margin-top: auto; padding-top: 16px;">
+
+          <div class="footer-signal-block footer-signal-now">
             <span class="footer-signal-key micro">Kraków · teraz</span>
             <span class="footer-signal-clock" id="footerClock" aria-live="off">--:--</span>
+            <p class="footer-signal-hora-row">
+              <em class="footer-signal-hora-name" id="footerHoraName" aria-live="off">—</em>
+              <span class="footer-signal-hora-sep" aria-hidden="true">·</span>
+              <span class="footer-signal-hora-poem" id="footerHoraPoem">—</span>
+            </p>
             <span class="footer-signal-coord">50°03′41″N · 19°56′18″E</span>
+            <p class="footer-signal-tempus-row">
+              <em class="footer-signal-tempus" id="footerTempus">—</em>
+              <span class="footer-signal-tempus-sep" aria-hidden="true">·</span>
+              <span class="footer-signal-tempus-pl" id="footerTempusPl">—</span>
+            </p>
           </div>
+
         </div>
       </div>
 
@@ -5492,6 +5863,10 @@
         </div>
       </div>
 
+    </div>
+
+    <div class="site-footer-mark" aria-hidden="true">
+      <span class="site-footer-mark-text" data-text="VoctEnsemble">VoctEnsemble</span>
     </div>
 
     <div class="site-footer-colophon">
@@ -5749,27 +6124,38 @@
     }
 
     // Audio-reactive loop: czyta amplitudę z AnalyserNode, ustawia CSS custom property
-    // --knot-intensity (0..1) na :root. Interludy reagują przez CSS filter (brightness + glow).
+    // --knot-intensity (0..1) bezpośrednio na elementach .aether-knot (nie :root!).
+    // Powód: @property z inherits:false + write na 3 elementach inwaliduje style
+    // tylko tych 3 węzłów, zamiast całego drzewa DOM jak przy setProperty na :root.
+    // To zasadnicza różnica wydajnościowa przy 60Hz update loop.
+    let reactiveKnots = null; // cache NodeList — querySelectorAll raz, nie co frame
+    let reactiveSkip = 0;     // co druga klatka = ~30Hz update, oko nie zauważy, GPU odzyska budżet
+
     function startAudioReactive() {
       if (reactiveRaf) return;
       if (!analyserNode || !reactiveBuffer) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (!reactiveKnots) reactiveKnots = document.querySelectorAll(".aether-knot");
+      if (!reactiveKnots.length) return;
 
-      const root = document.documentElement;
       const tick = () => {
         if (!audioOn || !analyserNode) {
-          root.style.setProperty("--knot-intensity", "0");
+          reactiveKnots.forEach((el) => el.style.setProperty("--knot-intensity", "0"));
           reactiveRaf = null;
           return;
         }
-        analyserNode.getByteFrequencyData(reactiveBuffer);
-        let sum = 0;
-        for (let i = 0; i < reactiveBuffer.length; i++) sum += reactiveBuffer[i];
-        const avg = sum / reactiveBuffer.length / 255; // 0..1
-        // Power 0.7 = bardziej "naturalna" krzywa percepcji (loudness),
-        // mnożnik 1.4 podbija dynamikę dla wyraźniejszego efektu na cichym ambientcie.
-        const intensity = Math.min(1, Math.pow(avg, 0.7) * 1.4);
-        root.style.setProperty("--knot-intensity", intensity.toFixed(3));
+        // Throttle do 30Hz: AnalyserNode smoothingTimeConstant=0.85 i tak smooth'uje,
+        // a halo opacity zmiana <33ms jest niepostrzegalna dla człowieka.
+        reactiveSkip = (reactiveSkip + 1) & 1;
+        if (reactiveSkip === 0) {
+          analyserNode.getByteFrequencyData(reactiveBuffer);
+          let sum = 0;
+          for (let i = 0; i < reactiveBuffer.length; i++) sum += reactiveBuffer[i];
+          const avg = sum / reactiveBuffer.length / 255;
+          // Power 0.7 = krzywa percepcji (loudness), mnożnik 1.4 podbija dynamikę cichego ambientu.
+          const intensity = Math.min(1, Math.pow(avg, 0.7) * 1.4).toFixed(3);
+          reactiveKnots.forEach((el) => el.style.setProperty("--knot-intensity", intensity));
+        }
         reactiveRaf = requestAnimationFrame(tick);
       };
       reactiveRaf = requestAnimationFrame(tick);
@@ -5780,7 +6166,9 @@
         cancelAnimationFrame(reactiveRaf);
         reactiveRaf = null;
       }
-      document.documentElement.style.setProperty("--knot-intensity", "0");
+      if (reactiveKnots) {
+        reactiveKnots.forEach((el) => el.style.setProperty("--knot-intensity", "0"));
+      }
     }
 
     function fadeTo(targetVolume, duration = 1400) {
@@ -6396,11 +6784,75 @@
     }
 
     /* ───────────────────────────────────────────────────────────────
-       FOOTER SIGNAL — live clock (Europe/Warsaw) + countdown
+       FOOTER SIGNAL — live clock (Europe/Warsaw) + countdown + hora canonica
        ─────────────────────────────────────────────────────────────── */
+
+    // Osiem monastycznych godzin kanonicznych według reguły benedyktyńskiej.
+    // Mapowanie czasów uproszczone (klasyczne godziny są astronomiczne /
+    // związane ze świtem i zmrokiem — my dzielimy dobę na 8 trzygodzinnych okien
+    // dla czytelności i stabilności w ciągu roku).
+    const HORAE_CANONICAE = [
+      { from:  0, name: "Matutinum",    poem: "noc czuwa"            },
+      { from:  3, name: "Laudes",       poem: "świt wstępuje"        },
+      { from:  6, name: "Prima",        poem: "dzień się otwiera"    },
+      { from:  9, name: "Tertia",       poem: "ranek dojrzewa"       },
+      { from: 12, name: "Sexta",        poem: "południe gęstnieje"   },
+      { from: 15, name: "Nona",         poem: "cień się wydłuża"     },
+      { from: 18, name: "Vesperae",     poem: "światło opada"        },
+      { from: 21, name: "Completorium", poem: "noc się zamyka"       },
+    ];
+
+    function horaForWarsaw(date) {
+      // Wyciągamy godzinę Europe/Warsaw niezależnie od TZ klienta.
+      const hour = parseInt(new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        hour12: false,
+        timeZone: "Europe/Warsaw",
+      }).format(date), 10);
+      // Znajdź ostatnią pozycję z `from <= hour`. Indeks dzielenia: floor(hour/3).
+      return HORAE_CANONICAE[Math.floor(hour / 3)];
+    }
+
+    // Tempus — okres roku liturgicznego. Tabela hard-coded dla 2026-2027
+    // (Wielkanoc 2026: 5 IV; 2027: 28 III). Po 2027 funkcja zwraca fallback —
+    // do tego czasu strona dawno wybrzmiała albo zostanie zaktualizowana.
+    function tempusForDate(date) {
+      const y = date.getFullYear();
+      const md = (date.getMonth() + 1) * 100 + date.getDate(); // np. 16 maja = 516
+
+      const PER_ANNUM = { lat: "Tempus per annum",  pl: "okres zwykły" };
+      const QUADR     = { lat: "Quadragesima",      pl: "wielki post" };
+      const PASCHA    = { lat: "Tempus Paschae",    pl: "okres wielkanocny" };
+      const ADVENTUS  = { lat: "Adventus",          pl: "adwent" };
+      const NATIVIT   = { lat: "Tempus Nativitatis",pl: "okres narodzenia" };
+
+      if (y === 2026) {
+        if (md < 218)  return PER_ANNUM;   // 1 I – 17 II
+        if (md < 405)  return QUADR;       // 18 II – 4 IV (Wielkanoc 5 IV)
+        if (md < 524)  return PASCHA;      // 5 IV – 23 V (Pięćdziesiątnica 24 V)
+        if (md < 1129) return PER_ANNUM;   // 24 V – 28 XI
+        if (md < 1225) return ADVENTUS;    // 29 XI – 24 XII
+        return NATIVIT;                    // 25 XII – 31 XII
+      }
+      if (y === 2027) {
+        if (md < 111)  return NATIVIT;     // 1 I – 10 I
+        if (md < 210)  return PER_ANNUM;   // 11 I – 9 II
+        if (md < 328)  return QUADR;       // 10 II – 27 III (Wielkanoc 28 III)
+        if (md < 516)  return PASCHA;      // 28 III – 15 V
+        if (md < 1128) return PER_ANNUM;
+        if (md < 1225) return ADVENTUS;
+        return NATIVIT;
+      }
+      return PER_ANNUM;
+    }
+
     function initFooterSignal() {
       const clockEl = document.getElementById("footerClock");
       const countdownEl = document.getElementById("footerCountdown");
+      const horaNameEl = document.getElementById("footerHoraName");
+      const horaPoemEl = document.getElementById("footerHoraPoem");
+      const tempusEl = document.getElementById("footerTempus");
+      const tempusPlEl = document.getElementById("footerTempusPl");
 
       if (clockEl) {
         const fmt = new Intl.DateTimeFormat("pl-PL", {
@@ -6409,9 +6861,22 @@
           hour12: false,
           timeZone: "Europe/Warsaw",
         });
-        const tick = () => { clockEl.textContent = fmt.format(new Date()); };
+        const tick = () => {
+          const now = new Date();
+          clockEl.textContent = fmt.format(now);
+          // Aktualizuj horę razem z zegarem — i tak są w tym samym blocku.
+          if (horaNameEl && horaPoemEl) {
+            const hora = horaForWarsaw(now);
+            if (horaNameEl.textContent !== hora.name) horaNameEl.textContent = hora.name;
+            if (horaPoemEl.textContent !== hora.poem) horaPoemEl.textContent = hora.poem;
+          }
+          if (tempusEl && tempusPlEl) {
+            const tempus = tempusForDate(now);
+            if (tempusEl.textContent !== tempus.lat) tempusEl.textContent = tempus.lat;
+            if (tempusPlEl.textContent !== tempus.pl) tempusPlEl.textContent = tempus.pl;
+          }
+        };
         tick();
-        // odśwież zaraz po przekroczeniu pełnej minuty, potem co 30s
         const now = new Date();
         const msToNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
         setTimeout(() => {
@@ -6716,48 +7181,6 @@
       setTimeout(update, 4600);
     }
 
-    function initCodaParallax() {
-      const coda = document.querySelector(".coda");
-      if (!coda) return;
-      const main = coda.querySelector(".coda-line-main");
-      const tail = coda.querySelector(".coda-line-tail");
-      if (!main || !tail) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-      let ticking = false;
-      const viewportH = () => window.innerHeight || document.documentElement.clientHeight;
-
-      const update = () => {
-        const h = viewportH();
-        const rect = coda.getBoundingClientRect();
-
-        // Parallax is active when Coda is entering the screen.
-        if (rect.top <= h && rect.bottom >= 0) {
-          // Progress goes from 0 (top enters viewport) to 1 (top reaches top of viewport)
-          const progress = Math.max(0, Math.min(1, 1 - (rect.top / h)));
-          
-          // main scrolls down slightly relative to coda wrapper
-          const mainOffset = progress * 60;
-          // tail scrolls down more aggressively
-          const tailOffset = progress * 140;
-
-          main.style.transform = `translateY(${mainOffset}px)`;
-          tail.style.transform = `translateY(${tailOffset}px)`;
-        }
-        ticking = false;
-      };
-
-      const onScroll = () => {
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(update);
-      };
-
-      window.addEventListener("scroll", onScroll, { passive: true });
-      window.addEventListener("resize", onScroll);
-      update();
-    }
-
     function initLenis() {
       const finePointer = window.matchMedia("(pointer: fine) and (hover: hover)");
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -6799,7 +7222,6 @@
     initReveals();
     initProgress();
     initParallax();
-    initCodaParallax();
     initSmoothDetails();
     initRiteGlow();
     initLenis();
