@@ -107,21 +107,21 @@ class AxeptaPaymentService:
         # The donor form only collects an email; its local-part is forwarded as
         # `firstName` purely so transactions are distinguishable in Axepta's
         # dashboard. A dedicated name field on the form would supersede this.
-        customer_first_name = donation.email.split('@', 1)[0][:64] or 'Darczyńca'
+        # customer_first_name = donation.email.split('@', 1)[0][:64] or 'Darczyńca'
         payload = {
             'serviceId': settings.AXEPTA_SERVICE_ID,
             'amount': donation.get_amount_in_minor_units(),
             'currency': donation.currency,
             'orderId': str(donation.id),
-            'description': 'Darowizna na cele statutowe VoctFoundation',
+            'title': 'Darowizna na cele statutowe VoctFoundation',
             'successReturnUrl': success_url,
             'failureReturnUrl': failure_url,
             # A neutral / abandoned return also lands on the failure surface, so
             # the donor sees the retry path, not a thank-you they didn't earn.
             'returnUrl': failure_url,
             'customer': {
-                'firstName': customer_first_name,
-                'lastName': 'Darczyńca',
+                'firstName': 'Darczyńca',
+                'lastName': 'VoctFoundation',
                 'email': donation.email,
             },
         }
