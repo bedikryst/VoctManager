@@ -8,7 +8,9 @@ from uuid import UUID
 
 from django.conf import settings
 from rest_framework import status
+from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.permissions import AllowAny
+from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -26,6 +28,24 @@ from .services import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class IgnoreClientContentNegotiation(BaseContentNegotiation):
+    """
+    Disables content negotiation for machine-to-machine callbacks.
+
+    Payment gateways do not negotiate representations — Axepta posts a fixed
+    JSON body and sends an `Accept` header DRF cannot satisfy, which rejected
+    every webhook with HTTP 406 *before* the handler ran. A webhook receiver
+    should ignore `Accept` entirely and always answer with its one mandated
+    JSON body, so parser/renderer are pinned to the first configured class.
+    """
+
+    def select_parser(self, request, parsers):
+        return parsers[0]
+
+    def select_renderer(self, request, renderers, format_suffix=None):
+        return renderers[0], renderers[0].media_type
 
 
 class InitiateDonationView(APIView):
@@ -101,6 +121,11 @@ class AxeptaWebhookView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
     throttle_classes = []
+    # Axepta's callback sends an `Accept` header DRF won't negotiate, which
+    # rejected the webhook with HTTP 406 before it reached `handle_webhook`.
+    # Pin the renderer and skip negotiation — the response body is fixed anyway.
+    renderer_classes = [JSONRenderer]
+    content_negotiation_class = IgnoreClientContentNegotiation
 
     @staticmethod
     def _is_allowed_source(request: Request) -> bool:

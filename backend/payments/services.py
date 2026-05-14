@@ -113,6 +113,7 @@ class AxeptaPaymentService:
             'amount': donation.get_amount_in_minor_units(),
             'currency': donation.currency,
             'orderId': str(donation.id),
+            'description': 'Darowizna na cele statutowe VoctFoundation',
             'successReturnUrl': success_url,
             'failureReturnUrl': failure_url,
             # A neutral / abandoned return also lands on the failure surface, so

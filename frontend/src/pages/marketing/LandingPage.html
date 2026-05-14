@@ -2966,6 +2966,19 @@
     width: max-content;
   }
 
+  /* znacznik typu pliku przy linku do dokumentu PDF */
+  .footer-doc-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: var(--ink-muted);
+    transition: color 0.4s var(--ease);
+  }
+
+  .footer-col-link:hover .footer-doc-tag {
+    color: var(--candle);
+  }
+
   .footer-board-name {
     font-size: 13px;
     color: var(--ink);
@@ -4287,6 +4300,26 @@
     opacity: 0;
   }
 
+  /* fine print — metody płatności + tytuł transakcji, jeden zwarty klaster */
+  .give-fineprint {
+    display: grid;
+    gap: 8px;
+  }
+
+  .give-descriptor {
+    margin: 0;
+    color: rgba(244, 241, 233, 0.42);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    line-height: 1.7;
+  }
+
+  .give-descriptor strong {
+    color: rgba(244, 241, 233, 0.7);
+    font-weight: 400;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .give-currency-thumb,
     .give-methods-note {
@@ -5326,7 +5359,7 @@
           </div>
           <p class="hero-copy intro-stage s6">
             Nie szukamy publiczności. Szukamy wspólnoty słuchania.
-            Wesprzyj naszą misję, by cisza miała gdzie wybrzmieć.
+            Wesprzyj naszą misję, by muzyka miała gdzie wybrzmieć.
           </p>
           <div class="hero-actions intro-stage s7">
             <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj cykl</a>
@@ -5340,8 +5373,8 @@
   <section class="section compact support-early" id="koncert">
     <div class="support-panel reveal">
       <div class="support-lede">
-        <div class="micro">Zaplecze ciszy · cykl MMXXVI</div>
-        <h2>Cisza brzmi lekko tylko wtedy, gdy zaplecze jest pewne.</h2>
+        <div class="micro">Zaplecze muzyki · cykl MMXXVI</div>
+        <h2>Muzyka brzmi lekko tylko wtedy, gdy zaplecze jest pewne.</h2>
         <p>
           Próby, logistyka, światło, rejestracja, materiały i komunikacja —
           to wszystko musi wydarzyć się przed pierwszym dźwiękiem.
@@ -5382,7 +5415,7 @@
           <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj cykl</a>
           <a class="secondary-link" href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble">Napisz do Florenta</a>
         </div>
-        <div class="trust-line">Fundacja VOCTFOUNDATION · KRS 0001237252 · darowizna na cele statutowe</div>
+        <div class="trust-line">Fundacja VoctFoundation · KRS 0001237252 · darowizna na cele statutowe</div>
       </div>
     </div>
   </section>
@@ -5757,9 +5790,9 @@
       <div class="final-grid">
         <div class="final-copy reveal">
           <div class="micro">Patronat · darowizna · partnerstwo</div>
-          <h2>Niech cisza ma swoje miejsce.</h2>
+          <h2>Niech muzyka ma swoje miejsce.</h2>
           <p>
-            Jeśli ta estetyka i ta misja są potrzebne, Wesprzyj cykl Concerts Spirituels.
+            Jeśli nasza misja jest potrzebna, wesprzyj cykl Concerts Spirituels.
             Możesz wpłacić jednorazowo, dołączyć jako patron albo porozmawiać o partnerstwie
             instytucjonalnym bezpośrednio z kierownictwem artystycznym.
           </p>
@@ -5800,8 +5833,8 @@
               <button class="copy-account" type="button" data-copy="PL96160010131724418410000002">Kopiuj</button>
             </div>
             <div class="foundation-data">
-              Fundacja VOCTFOUNDATION · KRS 0001237252 · NIP 6762718992 · REGON 544621525<br>
-              Tytuł przelewu: Darowizna na cele statutowe · VoctEnsemble<br>
+              Fundacja VoctFoundation · KRS 0001237252 · NIP 6762718992 · REGON 544621525<br>
+              Tytuł przelewu: Darowizna na cele statutowe VoctFoundation<br>
               Św. Filipa 23 / 3, 31-150 Kraków, Polska
             </div>
           </div>
@@ -5827,7 +5860,7 @@
         </svg>
       </div>
       <div class="vault-head-text">
-        <div class="micro vault-kicker">Skarbiec ciszy · cykl MMXXVI</div>
+        <div class="micro vault-kicker">Skarbiec muzyki · cykl MMXXVI</div>
         <h2 class="vault-title" id="vault-title">Wesprzyj cykl</h2>
       </div>
       <button class="vault-close" type="button" data-vault-dismiss aria-label="Zamknij">
@@ -5901,7 +5934,10 @@
               <span class="method-cta-arrow" aria-hidden="true">→</span>
             </button>
 
-            <p class="give-methods-note" id="giveMethodsNote">Płatności w PLN obsługują BLIK, szybkie przelewy, karty oraz Apple/Google Pay.</p>
+            <div class="give-fineprint">
+              <p class="give-methods-note" id="giveMethodsNote">Płatności w PLN obsługują BLIK, szybkie przelewy, karty oraz Apple/Google Pay.</p>
+              <p class="give-descriptor">Tytuł transakcji: <strong>Darowizna na cele statutowe VoctFoundation</strong></p>
+            </div>
           </form>
         </article>
 
@@ -5934,7 +5970,7 @@
 
           <div class="method-qr-stage">
             <div class="qr-canvas" id="qrCanvas">
-              <img src="/qr-bank.png" alt="Kod QR przelewu — Fundacja VOCTFOUNDATION" loading="lazy" onerror="this.parentElement.classList.add('is-missing'); this.remove();">
+              <img src="/qr-bank.png" alt="Kod QR przelewu — Fundacja VoctFoundation" loading="lazy" onerror="this.parentElement.classList.add('is-missing'); this.remove();">
               <div class="qr-canvas-placeholder" aria-hidden="true">
                 <svg viewBox="0 0 24 56" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 3 V47"/>
@@ -5972,8 +6008,8 @@
             </div>
             <div class="transfer-field">
               <span class="transfer-field-label">Odbiorca</span>
-              <button type="button" class="transfer-field-copy" data-copy="Fundacja VOCTFOUNDATION">
-                <span class="transfer-field-val">Fundacja VOCTFOUNDATION</span>
+              <button type="button" class="transfer-field-copy" data-copy="Fundacja VoctFoundation">
+                <span class="transfer-field-val">Fundacja VoctFoundation</span>
                 <span class="transfer-field-copy-action">Kopiuj</span>
               </button>
             </div>
@@ -5986,8 +6022,8 @@
             </div>
             <div class="transfer-field">
               <span class="transfer-field-label">Tytuł przelewu</span>
-              <button type="button" class="transfer-field-copy" data-copy="Darowizna na cele statutowe VOCTFOUNDATION">
-                <span class="transfer-field-val">Darowizna na cele statutowe VOCTFOUNDATION</span>
+              <button type="button" class="transfer-field-copy" data-copy="Darowizna na cele statutowe VoctFoundation">
+                <span class="transfer-field-val">Darowizna na cele statutowe VoctFoundation</span>
                 <span class="transfer-field-copy-action">Kopiuj</span>
               </button>
             </div>
@@ -5999,7 +6035,7 @@
 
     <footer class="vault-foot">
       <p class="vault-trust">
-        <strong>Fundacja VOCTFOUNDATION</strong><br>
+        <strong>Fundacja VoctFoundation</strong><br>
         KRS 0001237252 · NIP 6762718992 · REGON 544621525<br>
         Św. Filipa 23/3, 31-150 Kraków · Darowizna na cele statutowe.
       </p>
@@ -6022,7 +6058,7 @@
     </div>
     <div class="gratitude-kicker micro">VoctEnsemble · cykl MMXXVI</div>
     <h1 class="gratitude-title" id="gratitude-title">Twój głos<br>dołączył do chóru.</h1>
-    <p class="gratitude-strap">Dziękujemy. Niech ta cisza wybrzmiewa dalej — także dzięki Tobie.</p>
+    <p class="gratitude-strap">Dziękujemy. Niech ta muzyka wybrzmiewa dalej — także dzięki Tobie.</p>
     <button class="gratitude-close" type="button" data-gratitude-close>Wróć do strony</button>
   </div>
 </div>
@@ -6046,9 +6082,9 @@
   </div>
 </div>
 
-<section class="coda" aria-label="Cisza brzmi dalej">
+<section class="coda" aria-label="Muzyka brzmi dalej">
   <div class="coda-container">
-    <p class="coda-headline" aria-label="Cisza">
+    <p class="coda-headline" aria-label="Muzyka">
       <span class="coda-letter" aria-hidden="true">C</span><span class="coda-letter" aria-hidden="true">i</span><span class="coda-letter" aria-hidden="true">s</span><span class="coda-letter" aria-hidden="true">z</span><span class="coda-letter" aria-hidden="true">a</span><span class="coda-letter coda-letter--punct" aria-hidden="true">.</span>
     </p>
     <p class="coda-tail">brzmi dalej</p>
@@ -6109,7 +6145,7 @@
       <div class="footer-col footer-col-foundation">
         <span class="footer-col-label micro">Fundacja</span>
         <div class="footer-col-body">
-          <strong class="footer-foundation-name">VOCTFOUNDATION</strong>
+          <strong class="footer-foundation-name">VoctFoundation</strong>
           <span class="footer-col-text">
             Św. Filipa 23/3, 31-150 Kraków<br>
             KRS 0001237252 · NIP 6762718992<br>
@@ -6120,6 +6156,10 @@
             <a class="footer-board-name" href="mailto:florent.de.bazelaire@voctensemble.com" target="_blank" rel="noopener noreferrer">Florent de Bazelaire</a>
             <a class="footer-board-name" href="mailto:anna.marcisz@voctensemble.com" target="_blank" rel="noopener noreferrer">Anna Marcisz</a>
             <a class="footer-board-name" href="mailto:krystian.bugalski@voctensemble.com" target="_blank" rel="noopener noreferrer">Krystian Bugalski</a>
+          </div>
+          <div class="footer-legal">
+            <span class="footer-legal-label micro">Dokumenty</span>
+            <a class="footer-col-link" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener" aria-label="Statut Fundacji VoctFoundation — dokument PDF, otwiera się w nowej karcie">Statut fundacji <span class="footer-doc-tag" aria-hidden="true">PDF</span> <span aria-hidden="true">↗</span></a>
           </div>
           <div class="footer-legal">
             <span class="footer-legal-label micro">Dane osobowe</span>
@@ -6220,8 +6260,8 @@
       goalAmount: 20000,
       currency: "PLN",
       recipient: {
-        name: "Fundacja VOCTFOUNDATION",         // wyświetlana w UI (pełna)
-        nameShort: "VOCTFOUNDATION",             // do QR — Polski Standard 2D, max 20 znaków ASCII
+        name: "Fundacja VoctFoundation",         // wyświetlana w UI (pełna)
+        nameShort: "VoctFoundation",             // do QR — Polski Standard 2D, max 20 znaków ASCII
         nip: "6762718992",
         nrb: "26160010131724418410000001",       // bez "PL" i spacji — 26 cyfr
         ibanDisplay: "PL26 1600 1013 1724 4184 1000 0001",
