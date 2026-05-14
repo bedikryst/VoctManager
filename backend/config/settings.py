@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'notifications',
     'logistics',
     'documents',
+    'payments',
 ]
 
 # --- AUTHENTICATION BACKENDS ---
@@ -150,7 +151,12 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/minute',
-        'user': '300/minute'
+        'user': '300/minute',
+        # Scoped limits for the public, unauthenticated payments endpoints.
+        # 'donation_initiate' both writes a row and calls the gateway per hit;
+        # kept generous enough for shared NAT (e.g. concert-venue Wi-Fi).
+        'donation_initiate': '2000/hour',
+        'donation_status': '60/minute',
     }
 }
 
@@ -198,6 +204,15 @@ CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://redis:6379
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# Scheduled tasks — requires the `celery beat` process to be running alongside
+# the worker. Hourly sweep that fails out abandoned PENDING donations.
+CELERY_BEAT_SCHEDULE = {
+    'payments-expire-stale-pending-donations': {
+        'task': 'payments.expire_stale_pending_donations',
+        'schedule': timedelta(hours=1),
+    },
+}
 
 # --- EMAIL (ANYMAIL) ---
 ANYMAIL = {
@@ -271,6 +286,24 @@ if not DEBUG:
 # ==========================================
 # Google Maps Platform (Logistics, Geocoding, Time Zones)
 GOOGLE_MAPS_BACKEND_KEY = env("GOOGLE_MAPS_BACKEND_KEY", default=None)
+
+# --- AXEPTA BNP PARIBAS (Payments / Donations) ---
+# Required, no defaults: missing credentials must fail fast at boot (see header).
+AXEPTA_MERCHANT_ID = env('AXEPTA_MERCHANT_ID')
+AXEPTA_SERVICE_ID = env('AXEPTA_SERVICE_ID')
+AXEPTA_TOKEN = env('AXEPTA_TOKEN')
+AXEPTA_MAC_KEY = env('AXEPTA_MAC_KEY')
+AXEPTA_API_URL = env('AXEPTA_API_URL')
+# Frontend page the donor lands on after a successful hosted payment; the
+# donation UUID is merged into the query string by _build_return_url.
+AXEPTA_RETURN_URL = env('AXEPTA_RETURN_URL', default='https://voctensemble.com/donation/status')
+# Where the donor is sent on a declined / cancelled / abandoned payment. The
+# landing page reveals the retry overlay off the `?donated=failure` param.
+AXEPTA_FAILURE_RETURN_URL = env('AXEPTA_FAILURE_RETURN_URL', default='https://voctensemble.com/?donated=failure')
+# Optional defence-in-depth: when non-empty, the Axepta webhook endpoint rejects
+# any source IP not in this list. Leave empty to rely on signature verification
+# alone (the canonical IP allowlist belongs at the nginx tier).
+AXEPTA_WEBHOOK_ALLOWED_IPS = env.list('AXEPTA_WEBHOOK_ALLOWED_IPS', default=[])
 
 FIREBASE_CREDENTIALS_PATH = os.getenv('FIREBASE_CREDENTIALS_PATH')
 VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')

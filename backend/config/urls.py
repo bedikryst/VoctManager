@@ -111,6 +111,9 @@ urlpatterns = [
 
     path("api/logistics/", include("logistics.urls")),
 
+    # --- Payments & Donations (Axepta BNP Paribas) ---
+    path("api/payments/", include("payments.urls")),
+
     # --- Chorister Hub: Artist Identity Metrics ---
     path('api/documents/artist-metrics/', ArtistMetricsAPIView.as_view(), name='artist-metrics'),
 

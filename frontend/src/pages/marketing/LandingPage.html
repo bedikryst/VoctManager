@@ -2249,11 +2249,18 @@
     transform: translateY(0);
   }
 
+  /* Sekcja po interludzie: bez własnego border-top — aether-line interludu
+     JEST jedyną linią graniczną. Wcześniej dwie linie (aether-line w środku
+     interludu + border-top sekcji) wisiały na różnej wysokości Y i się
+     "rozjeżdżały". Teraz interlude to samodzielny moment oddechu z własną
+     sygnaturą linii. */
   .aether-interlude + .image-rite,
   .aether-interlude + .ensemble,
   .aether-interlude + .final-support,
-  .aether-interlude + .path {
+  .aether-interlude + .path,
+  .aether-interlude + .section {
     margin-top: -32px;
+    border-top: none;
   }
 
   /* Inskrypcja: I · Lumen quaerit / II · Vox memoriae / III · Sustinete nos */
@@ -2265,7 +2272,7 @@
     font-size: 10.5px;
     letter-spacing: 0.32em;
     text-transform: uppercase;
-    opacity: 0.62;
+    opacity: 0.74;
   }
 
   .aether-inscription .roman {
@@ -2299,7 +2306,7 @@
     flex: 1;
     height: 1px;
     background: linear-gradient(90deg, transparent, currentColor 50%, currentColor);
-    opacity: 0.15;
+    opacity: 0.24;
   }
 
   .aether-line:last-child {
@@ -2931,7 +2938,6 @@
   /* board */
   .footer-board {
     display: grid;
-    gap: 12px;
     padding-top: 16px;
     margin-top: 4px;
     border-top: 1px solid var(--line);
@@ -2939,7 +2945,7 @@
 
   .footer-board-label {
     color: var(--ink-muted);
-    margin-bottom: 0;
+    margin-bottom: 12px;
   }
 
   /* legal — sekcja RODO + polityka prywatności, ten sam wzór co board */
@@ -3119,8 +3125,8 @@
       }
 
       @keyframes footer-signal-breath {
-        0%   { --wght: 520; }
-        100% { --wght: 300; }
+        0%   { --wght: 460; }
+        100% { --wght: 320; }
       }
     }
   }
@@ -3150,15 +3156,15 @@
     position: relative;
     display: inline-block;
     font-family: var(--serif);
-    font-size: clamp(56px, calc(94cqi / 6.6), 220px);
+    /* Cap zmniejszony 220→180, min 56→48 — footer ma być cichym "amen"
+       msza kończy się pianissimo, nie standing ovation. calc(88cqi/6.6)
+       zostaje jako formuła fit-to-container (88cqi = 6% safety margin). */
+    font-size: clamp(48px, calc(88cqi / 6.6), 180px);
     font-weight: 300;
     line-height: 0.86;
     letter-spacing: -0.035em;
     color: var(--ink);
     white-space: nowrap;
-    /* 6.6 = empirycznie wyliczona szerokość "VoctEnsemble" w em
-       przy Cormorant variable wght 540 (najwidsza klatka breath) + tracking -0.035em.
-       94cqi zostawia 3% safety margin na boki. */
     font-variation-settings: "wght" 320;
   }
 
@@ -3219,8 +3225,8 @@
       }
 
       @keyframes footer-mark-breath {
-        0%   { --wght: 540; }
-        100% { --wght: 300; }
+        0%   { --wght: 460; }
+        100% { --wght: 320; }
       }
     }
   }
@@ -4030,150 +4036,266 @@
     font-weight: 400;
   }
 
-  .amount-picker {
-    padding: 30px max(28px, 4vw);
-    border-bottom: 1px solid rgba(244, 241, 233, 0.12);
+  /* ───────────────────────────────────────────────────────────────
+     Skarbiec · wpłata online — Axepta BNP Paribas
+     Formularz currency-aware (PLN/EUR) osadzony w karcie metody.
+     ─────────────────────────────────────────────────────────────── */
+  .give-form {
+    display: grid;
+    gap: 22px;
+    margin-top: 6px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(244, 241, 233, 0.1);
   }
 
-  .amount-picker-label {
+  .give-field {
+    display: grid;
+    gap: 12px;
+  }
+
+  .give-label {
+    color: rgba(244, 241, 233, 0.5);
+  }
+
+  .give-label-row {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     gap: 12px;
-    margin-bottom: 18px;
-    color: rgba(244, 241, 233, 0.5);
   }
 
-  .amount-picker-current {
+  .give-amount-current {
     color: var(--candle);
     font-family: var(--serif);
-    font-size: clamp(18px, 1.4vw, 22px);
+    font-size: clamp(18px, 1.5vw, 22px);
     font-weight: 300;
     line-height: 1;
-    letter-spacing: 0;
   }
 
-  .amount-tiers {
+  /* currency — segmented toggle with a sliding gold thumb */
+  .give-currency {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: max-content;
+    border: 1px solid rgba(244, 241, 233, 0.18);
+    background: rgba(244, 241, 233, 0.02);
+  }
+
+  .give-currency-thumb {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 50%;
+    background: var(--candle);
+    transition: transform 0.55s var(--ease-slow);
+  }
+
+  .give-currency[data-currency="EUR"] .give-currency-thumb {
+    transform: translateX(100%);
+  }
+
+  .give-currency-opt {
+    position: relative;
+    z-index: 1;
+    border: 0;
+    background: transparent;
+    color: rgba(244, 241, 233, 0.6);
+    cursor: pointer;
+    padding: 11px 30px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: color 0.5s var(--ease);
+  }
+
+  .give-currency-opt:hover {
+    color: var(--paper);
+  }
+
+  .give-currency-opt.is-active {
+    color: var(--dark);
+  }
+
+  /* amount tiers */
+  .give-tiers {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
   }
 
-  .amount-tier {
-    position: relative;
-    display: grid;
-    gap: 6px;
+  .give-tier {
     border: 1px solid rgba(244, 241, 233, 0.16);
     background: rgba(244, 241, 233, 0.02);
     color: rgba(244, 241, 233, 0.78);
-    padding: 18px 8px 16px;
     cursor: pointer;
+    padding: 16px 6px;
     text-align: center;
+    font-family: var(--serif);
+    font-size: clamp(15px, 1.5vw, 19px);
+    font-weight: 300;
+    line-height: 1;
     transition: border-color 0.4s var(--ease), background 0.4s var(--ease), color 0.4s var(--ease);
   }
 
-  .amount-tier:hover {
+  .give-tier:hover {
     border-color: rgba(244, 241, 233, 0.4);
     color: var(--paper);
   }
 
-  .amount-tier.is-active {
+  .give-tier.is-active {
     border-color: var(--candle);
     background: rgba(198, 164, 91, 0.08);
     color: var(--paper);
   }
 
-  .amount-tier::before {
-    content: "";
-    position: absolute;
-    top: 7px;
-    left: 50%;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--candle);
-    box-shadow: 0 0 10px rgba(198, 164, 91, 0.78);
-    transform: translateX(-50%) scale(0);
-    opacity: 0;
-    transition: transform 0.5s var(--ease), opacity 0.5s var(--ease);
-  }
-
-  .amount-tier.is-active::before {
-    transform: translateX(-50%) scale(1);
-    opacity: 1;
-  }
-
-  .tier-value {
-    font-family: var(--serif);
-    font-size: clamp(19px, 1.8vw, 24px);
-    font-weight: 300;
-    line-height: 1;
-    letter-spacing: 0;
-  }
-
-  .tier-hint {
-    color: rgba(244, 241, 233, 0.5);
+  .give-tier--custom {
     font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 0.16em;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
+    color: rgba(244, 241, 233, 0.62);
   }
 
-  .amount-tier.is-active .tier-hint {
+  .give-tier--custom.is-active {
     color: var(--candle);
   }
 
-  .amount-custom {
-    display: grid;
-    gap: 8px;
-    margin-top: 18px;
+  /* custom amount */
+  .give-custom[hidden] {
+    display: none;
   }
 
-  .amount-custom-input {
+  .give-custom-field {
     display: flex;
     align-items: center;
     border-bottom: 1px solid rgba(244, 241, 233, 0.22);
     transition: border-color 0.4s var(--ease);
   }
 
-  .amount-custom-input:focus-within {
+  .give-custom-field:focus-within {
     border-color: var(--candle);
   }
 
-  .amount-custom-input input {
+  .give-custom-field input {
     flex: 1;
     width: 100%;
+    min-width: 0;
     border: 0;
     background: transparent;
     color: var(--paper);
     font-family: var(--serif);
-    font-size: clamp(22px, 2vw, 28px);
+    font-size: clamp(20px, 2vw, 26px);
     font-weight: 300;
-    letter-spacing: 0;
-    padding: 10px 0;
+    padding: 9px 0;
     appearance: textfield;
+    -moz-appearance: textfield;
   }
 
-  .amount-custom-input input::-webkit-outer-spin-button,
-  .amount-custom-input input::-webkit-inner-spin-button {
+  .give-custom-field input::-webkit-outer-spin-button,
+  .give-custom-field input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
 
-  .amount-custom-input input::placeholder {
-    color: rgba(244, 241, 233, 0.32);
+  .give-custom-field input::placeholder {
+    color: rgba(244, 241, 233, 0.3);
   }
 
-  .amount-custom-input input:focus {
+  .give-custom-field input:focus {
     outline: none;
   }
 
-  .amount-custom-currency {
+  .give-custom-suffix {
+    flex-shrink: 0;
+    margin-left: 10px;
     color: rgba(244, 241, 233, 0.5);
     font-family: var(--serif);
-    font-size: clamp(18px, 1.5vw, 22px);
+    font-size: clamp(16px, 1.5vw, 20px);
     font-weight: 300;
-    margin-left: 8px;
+  }
+
+  /* email */
+  .give-email {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid rgba(244, 241, 233, 0.22);
+    background: transparent;
+    color: var(--paper);
+    font-family: var(--serif);
+    font-size: clamp(16px, 1.6vw, 20px);
+    font-weight: 300;
+    padding: 9px 0;
+    transition: border-color 0.4s var(--ease);
+  }
+
+  .give-email::placeholder {
+    color: rgba(244, 241, 233, 0.3);
+  }
+
+  .give-email:focus {
+    outline: none;
+    border-color: var(--candle);
+  }
+
+  .give-email[aria-invalid="true"] {
+    border-color: #c98e7e;
+  }
+
+  /* polite, restrained error message */
+  .give-error {
+    margin: -4px 0 0;
+    color: #d6a08e;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    line-height: 1.65;
+  }
+
+  .give-error[hidden] {
+    display: none;
+  }
+
+  /* submit — reuses .method-cta (elevated gold variant) */
+  .give-submit {
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .give-submit.is-loading .method-cta-arrow {
+    animation: giveSubmitPulse 1.1s var(--ease) infinite;
+  }
+
+  @keyframes giveSubmitPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* dynamic payment-methods note — fades on currency swap */
+  .give-methods-note {
+    margin: 0;
+    color: rgba(244, 241, 233, 0.5);
+    font-size: 12.5px;
+    line-height: 1.6;
+    transition: opacity 0.3s var(--ease);
+  }
+
+  .give-methods-note.is-swapping {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .give-currency-thumb,
+    .give-methods-note {
+      transition: none;
+    }
+
+    .give-submit.is-loading .method-cta-arrow {
+      animation: none;
+    }
   }
 
   .methods {
@@ -4314,7 +4436,8 @@
     color: var(--dark);
   }
 
-  .method-cta[aria-disabled="true"] {
+  .method-cta[aria-disabled="true"],
+  .method-cta:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     pointer-events: none;
@@ -4759,6 +4882,114 @@
     border-color: var(--candle);
   }
 
+  /* ───────────────────────────────────────────────────────────────
+     FAILURE · restrained reveal after a declined payment
+     Mirrors GRATITUDE's structure, but drops the celebratory gold
+     rings/halo for a calmer, apologetic register.
+     ─────────────────────────────────────────────────────────────── */
+
+  .failure {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    display: grid;
+    place-items: center;
+    visibility: hidden;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(244, 241, 233, 0.07), transparent 32rem),
+      rgba(8, 8, 7, 0.95);
+    opacity: 0;
+    transition: opacity 1.1s var(--ease-slow), visibility 1.1s var(--ease-slow), filter 1.1s var(--ease-slow);
+    filter: blur(18px);
+    text-align: center;
+    color: var(--paper);
+    padding: 24px;
+  }
+
+  .failure.is-visible {
+    visibility: visible;
+    pointer-events: auto;
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  .failure-inner {
+    position: relative;
+    z-index: 1;
+    width: min(680px, calc(100vw - 56px));
+  }
+
+  .failure-mark {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 38px;
+    color: rgba(244, 241, 233, 0.62);
+  }
+
+  .failure-mark::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(244, 241, 233, 0.16);
+  }
+
+  .failure-mark svg {
+    position: relative;
+    z-index: 1;
+    width: 30px;
+    height: 68px;
+  }
+
+  .failure-kicker {
+    color: rgba(244, 241, 233, 0.5);
+  }
+
+  .failure-title {
+    margin: 22px 0 22px;
+    font-family: var(--serif);
+    font-size: clamp(40px, 5.8vw, 78px);
+    font-weight: 300;
+    letter-spacing: 0;
+    line-height: 0.98;
+  }
+
+  .failure-strap {
+    margin: 0 auto;
+    max-width: 32rem;
+    color: rgba(244, 241, 233, 0.62);
+    font-family: var(--serif);
+    font-size: clamp(15px, 1.2vw, 18px);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .failure-retry {
+    margin-top: 44px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(244, 241, 233, 0.4);
+    background: transparent;
+    color: rgba(244, 241, 233, 0.84);
+    cursor: pointer;
+    padding: 13px 26px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    transition: color 0.4s var(--ease), border-color 0.4s var(--ease);
+  }
+
+  .failure-retry:hover {
+    color: var(--candle);
+    border-color: var(--candle);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .vault-mark-halo,
     .gratitude-mark svg,
@@ -4784,14 +5015,13 @@
     }
 
     .vault-progress,
-    .amount-picker,
     .methods,
     .vault-foot {
       padding-left: 22px;
       padding-right: 22px;
     }
 
-    .amount-tiers {
+    .give-tiers {
       grid-template-columns: repeat(2, 1fr);
     }
 
@@ -5061,7 +5291,7 @@
   <div class="event-pill" id="countdownPill">16 maja 2026 · Warszawa</div>
   <div class="chrome-actions">
     <button class="audio-toggle" id="audioToggle" type="button" aria-pressed="false">Cisza</button>
-    <a class="support-link" href="#wesprzyj" data-vault-open data-amount="500">Wesprzyj</a>
+    <a class="support-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj</a>
   </div>
 </header>
 
@@ -5099,7 +5329,7 @@
             Wesprzyj sezon, by cisza miała gdzie wybrzmieć.
           </p>
           <div class="hero-actions intro-stage s7">
-            <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="500">Wesprzyj sezon</a>
+            <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj sezon</a>
             <a class="secondary-link" href="#zespol">Poznaj zespół</a>
           </div>
         </div>
@@ -5149,7 +5379,7 @@
           </div>
         </div>
         <div class="support-actions">
-          <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="500">Wesprzyj sezon</a>
+          <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj sezon</a>
           <a class="secondary-link" href="#wesprzyj" data-vault-open data-amount="100" data-tab="transfer">Przelew bankowy</a>
         </div>
         <div class="trust-line">Fundacja VOCTFOUNDATION · KRS 0001237252 · darowizna na cele statutowe</div>
@@ -5539,7 +5769,7 @@
             <span class="final-contact-mail">florent.de.bazelaire@voctensemble.com</span>
           </div>
           <div class="final-actions">
-            <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="500">Otwórz skarbiec</a>
+            <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="100">Otwórz skarbiec</a>
             <a class="secondary-link" href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble">Napisz do Florenta</a>
           </div>
         </div>
@@ -5615,59 +5845,67 @@
       </div>
     </section>
 
-    <section class="amount-picker" aria-label="Wybierz kwotę darowizny">
-      <div class="amount-picker-label">
-        <span class="micro">Twoja darowizna</span>
-        <span class="amount-picker-current" id="amountCurrent" aria-live="polite">500 zł</span>
-      </div>
-      <div class="amount-tiers" role="radiogroup" aria-label="Sugerowane kwoty">
-        <button type="button" class="amount-tier" data-amount="100" role="radio" aria-checked="false">
-          <span class="tier-value">100 zł</span>
-          <span class="tier-hint">obecność</span>
-        </button>
-        <button type="button" class="amount-tier" data-amount="250" role="radio" aria-checked="false">
-          <span class="tier-value">250 zł</span>
-          <span class="tier-hint">próba</span>
-        </button>
-        <button type="button" class="amount-tier is-active" data-amount="500" role="radio" aria-checked="true">
-          <span class="tier-value">500 zł</span>
-          <span class="tier-hint">patronat</span>
-        </button>
-        <button type="button" class="amount-tier" data-amount="2500" role="radio" aria-checked="false">
-          <span class="tier-value">2 500 zł</span>
-          <span class="tier-hint">partnerstwo</span>
-        </button>
-      </div>
-      <div class="amount-custom">
-        <label for="vaultCustomAmount" class="micro">lub własna kwota</label>
-        <div class="amount-custom-input">
-          <input id="vaultCustomAmount" type="number" inputmode="decimal" min="1" max="20000" step="1" placeholder="0" aria-label="Własna kwota w złotych">
-          <span class="amount-custom-currency" aria-hidden="true">zł</span>
-        </div>
-      </div>
-    </section>
-
     <section class="methods" aria-label="Wybierz drogę wsparcia">
       <div class="methods-label micro">Wybierz drogę</div>
       <div class="methods-grid" id="methodsGrid">
 
-        <article class="method" data-method="stripe">
+        <article class="method" data-method="axepta" data-elevated="true">
           <div class="method-head">
             <div class="method-tag">
               <span class="method-tag-dot" aria-hidden="true"></span>
-              <span class="micro">karta · BLIK · Pay</span>
+              <span class="micro">natychmiast · bezpiecznie</span>
             </div>
-            <span class="method-status" data-status="pending" id="stripeStatus">aktywujemy w 24h</span>
+            <span class="method-status" data-status="ready">dostępne</span>
           </div>
-          <h3 class="method-title">Karta, BLIK, Apple Pay, Google Pay</h3>
-          <p class="method-note">Bezpośrednio na konto fundacji. Bez pośredników. Szyfrowanie bankowe Stripe — najszybsza droga, gdy aktywujemy.</p>
-          <button type="button" class="method-cta" id="stripeCheckoutBtn" aria-disabled="true">
-            <span class="method-cta-text">Wesprzyj <span data-amount-display>500 zł</span></span>
-            <span class="method-cta-arrow" aria-hidden="true">→</span>
-          </button>
+          <h3 class="method-title">Wpłać online</h3>
+          <p class="method-note">Bezpośrednio na konto Fundacji — przez bramkę Axepta BNP Paribas. Bez pośredników, bez zakładania konta.</p>
+
+          <form class="give-form" id="giveForm" novalidate>
+            <div class="give-field">
+              <span class="give-label micro">Waluta</span>
+              <div class="give-currency" id="giveCurrency" data-currency="PLN" role="radiogroup" aria-label="Waluta darowizny">
+                <span class="give-currency-thumb" aria-hidden="true"></span>
+                <button type="button" class="give-currency-opt is-active" data-currency="PLN" role="radio" aria-checked="true">PLN</button>
+                <button type="button" class="give-currency-opt" data-currency="EUR" role="radio" aria-checked="false">EUR</button>
+              </div>
+            </div>
+
+            <div class="give-field">
+              <div class="give-label-row">
+                <span class="give-label micro">Kwota darowizny</span>
+                <span class="give-amount-current" id="giveAmountCurrent" aria-live="polite">100 zł</span>
+              </div>
+              <div class="give-tiers" id="giveTiers" role="radiogroup" aria-label="Sugerowana kwota darowizny">
+                <button type="button" class="give-tier" data-tier="0" role="radio" aria-checked="false">50 zł</button>
+                <button type="button" class="give-tier is-active" data-tier="1" role="radio" aria-checked="true">100 zł</button>
+                <button type="button" class="give-tier" data-tier="2" role="radio" aria-checked="false">200 zł</button>
+                <button type="button" class="give-tier give-tier--custom" data-tier="custom" role="radio" aria-checked="false">Inna kwota</button>
+              </div>
+              <div class="give-custom" id="giveCustomWrap" hidden>
+                <div class="give-custom-field">
+                  <input type="number" id="giveCustomAmount" inputmode="decimal" min="1" max="100000" step="1" placeholder="0" autocomplete="off" aria-label="Własna kwota darowizny">
+                  <span class="give-custom-suffix" id="giveCustomSuffix" aria-hidden="true">zł</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="give-field">
+              <label class="give-label micro" for="giveEmail">E-mail · na ten adres wyślemy potwierdzenie</label>
+              <input type="email" id="giveEmail" class="give-email" name="email" placeholder="twoj@adres.pl" required autocomplete="email" inputmode="email">
+            </div>
+
+            <p class="give-error" id="giveError" role="alert" hidden></p>
+
+            <button type="submit" class="method-cta give-submit" id="giveSubmit">
+              <span class="method-cta-text" id="giveSubmitText">Wesprzyj 100 zł</span>
+              <span class="method-cta-arrow" aria-hidden="true">→</span>
+            </button>
+
+            <p class="give-methods-note" id="giveMethodsNote">Płatności w PLN obsługują BLIK, szybkie przelewy, karty oraz Apple/Google Pay.</p>
+          </form>
         </article>
 
-        <article class="method" data-method="zrzutka" data-elevated="true">
+        <article class="method" data-method="zrzutka">
           <div class="method-head">
             <div class="method-tag">
               <span class="method-tag-dot" aria-hidden="true"></span>
@@ -5676,7 +5914,7 @@
             <span class="method-status" data-status="ready">dostępne</span>
           </div>
           <h3 class="method-title">Zrzutka.pl</h3>
-          <p class="method-note">Najszybciej — BLIK, karta, Apple Pay, Google Pay. Wpłaty regularne dostępne. Dołącz do społeczności słuchaczy.</p>
+          <p class="method-note">BLIK, karta, Apple Pay, Google Pay. Wpłaty regularne dostępne. Dołącz do społeczności słuchaczy.</p>
           <a class="method-cta" id="zrzutkaLink" href="https://zrzutka.pl/7dewdj" target="_blank" rel="noopener">
             <span class="method-cta-text">Otwórz Zrzutkę</span>
             <span class="method-cta-arrow" aria-hidden="true">↗</span>
@@ -5696,7 +5934,7 @@
 
           <div class="method-qr-stage">
             <div class="qr-canvas" id="qrCanvas">
-              <img src="/qr-bank.jpg" alt="Kod QR przelewu — Fundacja VOCTFOUNDATION" loading="lazy" onerror="this.parentElement.classList.add('is-missing'); this.remove();">
+              <img src="/qr-bank.png" alt="Kod QR przelewu — Fundacja VOCTFOUNDATION" loading="lazy" onerror="this.parentElement.classList.add('is-missing'); this.remove();">
               <div class="qr-canvas-placeholder" aria-hidden="true">
                 <svg viewBox="0 0 24 56" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 3 V47"/>
@@ -5717,12 +5955,9 @@
 
           <details class="qr-debug">
             <summary>
-              <span class="micro">pokaż dane QR / wygeneruj zewnętrznie</span>
+              <span class="micro">pokaż dane QR</span>
               <span class="qr-debug-icon" aria-hidden="true"></span>
             </summary>
-            <p class="qr-debug-intro">
-              Wklej poniższe dane do generatora <a href="https://www.qrcode-monkey.com/#text" target="_blank" rel="noopener">qrcode-monkey.com</a> (poziom korekcji błędów: <strong>H</strong>), pobierz JPG i zapisz jako <code>frontend/public/qr-bank.jpg</code>.
-            </p>
             <pre class="qr-debug-payload" id="qrDebugPayload">…</pre>
             <button type="button" class="qr-debug-copy" id="qrDebugCopy">Kopiuj dane QR</button>
           </details>
@@ -5730,19 +5965,29 @@
           <div class="method-transfer-fields">
             <div class="transfer-field">
               <span class="transfer-field-label">Numer konta · PLN</span>
-              <button type="button" class="transfer-field-copy" data-copy="PL26160010131724418410000001">
-                <span class="transfer-field-val">PL26 1600 1013 1724 4184 1000 0001</span>
+              <button type="button" class="transfer-field-copy" data-copy="26160010131724418410000001">
+                <span class="transfer-field-val">26 1600 1013 1724 4184 1000 0001</span>
                 <span class="transfer-field-copy-action">Kopiuj</span>
               </button>
             </div>
             <div class="transfer-field">
               <span class="transfer-field-label">Odbiorca</span>
-              <span class="transfer-field-val">Fundacja VOCTFOUNDATION</span>
+              <button type="button" class="transfer-field-copy" data-copy="Fundacja VOCTFOUNDATION">
+                <span class="transfer-field-val">Fundacja VOCTFOUNDATION</span>
+                <span class="transfer-field-copy-action">Kopiuj</span>
+              </button>
+            </div>
+            <div class="transfer-field">
+              <span class="transfer-field-label">Adres fundacji</span>
+              <button type="button" class="transfer-field-copy" data-copy="Św. Filipa 23/3, 31-150 Kraków">
+                <span class="transfer-field-val">Św. Filipa 23/3, 31-150 Kraków</span>
+                <span class="transfer-field-copy-action">Kopiuj</span>
+              </button>
             </div>
             <div class="transfer-field">
               <span class="transfer-field-label">Tytuł przelewu</span>
-              <button type="button" class="transfer-field-copy" data-copy="Darowizna na cele statutowe · VoctEnsemble · sezon MMXXVI" data-copy-with-amount="true">
-                <span class="transfer-field-val" id="transferTitleVal">Darowizna · VoctEnsemble · sezon MMXXVI</span>
+              <button type="button" class="transfer-field-copy" data-copy="Darowizna na cele statutowe VOCTFOUNDATION">
+                <span class="transfer-field-val">Darowizna na cele statutowe VOCTFOUNDATION</span>
                 <span class="transfer-field-copy-action">Kopiuj</span>
               </button>
             </div>
@@ -5756,7 +6001,7 @@
       <p class="vault-trust">
         <strong>Fundacja VOCTFOUNDATION</strong><br>
         KRS 0001237252 · NIP 6762718992 · REGON 544621525<br>
-        Św. Filipa 23/3, 31-150 Kraków · darowizna na cele statutowe.
+        Św. Filipa 23/3, 31-150 Kraków · Darowizna na cele statutowe.
       </p>
     </footer>
   </div>
@@ -5779,6 +6024,25 @@
     <h1 class="gratitude-title" id="gratitude-title">Twój głos<br>dołączył do chóru.</h1>
     <p class="gratitude-strap">Dziękujemy. Niech ta cisza wybrzmiewa dalej — także dzięki Tobie.</p>
     <button class="gratitude-close" type="button" data-gratitude-close>Wróć do strony</button>
+  </div>
+</div>
+
+<div class="failure" id="failure" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="failure-title">
+  <div class="failure-inner">
+    <div class="failure-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 56" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3 V47"/>
+        <path d="M3.2 12.5 L12 36.5"/>
+        <path d="M20.8 12.5 L12 36.5"/>
+        <path d="M0.5 12.5 L5.5 12.5"/>
+        <path d="M18.5 12.5 L23.5 12.5"/>
+        <circle cx="12" cy="52" r="1.6" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <div class="failure-kicker micro">VoctEnsemble · sezon MMXXVI</div>
+    <h1 class="failure-title" id="failure-title">Płatność nie<br>doszła do skutku.</h1>
+    <p class="failure-strap">Przepraszamy, płatność nie mogła zostać przetworzona. Twoje środki nie zostały pobrane. Prosimy spróbować ponownie lub wybrać inną metodę.</p>
+    <button class="failure-retry" type="button" data-failure-retry>Spróbuj ponownie</button>
   </div>
 </div>
 
@@ -5832,7 +6096,7 @@
             <li><a href="mailto:booking@voctensemble.com">booking <span aria-hidden="true">→</span></a></li>
             <li><a href="mailto:patronat@voctensemble.com">patronat <span aria-hidden="true">→</span></a></li>
             <li><a href="mailto:florent.de.bazelaire@voctensemble.com">dyrekcja artystyczna <span aria-hidden="true">→</span></a></li>
-            <li><a href="#wesprzyj" data-vault-open data-amount="500">wesprzyj <span aria-hidden="true">→</span></a></li>
+            <li><a href="#wesprzyj" data-vault-open data-amount="100">wesprzyj <span aria-hidden="true">→</span></a></li>
           </ul>
           <ul class="footer-col-list footer-socials-list" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
             <li><a href="https://www.instagram.com/voctensemble/" target="_blank" rel="noopener noreferrer">instagram <span aria-hidden="true">↗</span></a></li>
@@ -5853,7 +6117,9 @@
           </span>
           <div class="footer-board">
             <span class="footer-board-label micro">Zarząd</span>
-            <span class="footer-board-name">Florent de Bazelaire<br>Anna Marcisz<br>Krystian Bugalski</span>
+            <a class="footer-board-name" href="mailto:florent.de.bazelaire@voctensemble.com" target="_blank" rel="noopener noreferrer">Florent de Bazelaire</a>
+            <a class="footer-board-name" href="mailto:anna.marcisz@voctensemble.com" target="_blank" rel="noopener noreferrer">Anna Marcisz</a>
+            <a class="footer-board-name" href="mailto:krystian.bugalski@voctensemble.com" target="_blank" rel="noopener noreferrer">Krystian Bugalski</a>
           </div>
           <div class="footer-legal">
             <span class="footer-legal-label micro">Dane osobowe</span>
@@ -5877,7 +6143,7 @@
       <div class="footer-colophon-signature micro">
         <span>MMXXVI · wszystkie wybrzmienia</span>
         <span class="footer-colophon-author">
-          Site · <a href="mailto:krystian.bugalski@voctensemble.com" rel="author">Krystian Bugalski <span aria-hidden="true">↗</span></a>
+          Site · <a href="mailto:krystbugalski@gmail.com" rel="author">Krystian Bugalski <span aria-hidden="true">↗</span></a>
         </span>
       </div>
     </div>
@@ -5947,7 +6213,8 @@
     /* ───────────────────────────────────────────────────────────────
        SKARBIEC · konfiguracja
        Wszystkie dane wpłat w jednym miejscu — łatwa aktualizacja.
-       Po założeniu Stripe wystarczy wkleić Payment Links poniżej.
+       Wpłata online idzie przez backend (Axepta BNP Paribas);
+       zrzutka, QR i przelew obsługiwane są lokalnie.
        ─────────────────────────────────────────────────────────────── */
     const VAULT_CONFIG = {
       goalAmount: 20000,
@@ -5964,20 +6231,10 @@
       zrzutka: {
         url: "https://zrzutka.pl/7dewdj",
       },
-      stripe: {
-        // Aktywuj, gdy konto Stripe jest gotowe i Payment Links wklejone poniżej.
-        enabled: false,
-        // Stripe Payment Links — utwórz w Stripe Dashboard:
-        // https://dashboard.stripe.com/payment-links
-        // Dla każdego linku włącz: BLIK · P24 · karty · Apple Pay · Google Pay · Link.
-        // W "Confirmation page" ustaw redirect: https://voctensemble.com/?donated=success
-        paymentLinks: {
-          100:   "",                          // np. "https://buy.stripe.com/xxx" — fixed 100 zł
-          250:   "",
-          500:   "",
-          2500:  "",
-          custom: "",                         // "customer chooses what to pay" — fallback dla innych kwot
-        },
+      api: {
+        // Backend Django — bramka Axepta BNP Paribas. Ścieżka względna: ten sam origin co strona.
+        // Kontrakt: POST { email, amount, currency } -> 201 { redirectUrl }.
+        initiateDonation: "/api/payments/donations/initiate/",
       },
       progress: {
         // Plik JSON aktualizowany ręcznie lub przez cron z Zrzutki.
@@ -5986,7 +6243,6 @@
       },
     };
 
-    let currentAmount = 500;
     let donationProgress = null;
 
     function initSiteCursor() {
@@ -6428,9 +6684,11 @@
     const plMoneyFormatter = new Intl.NumberFormat("pl-PL", {
       maximumFractionDigits: 0,
     });
+    const CURRENCY_SUFFIX = { PLN: "zł", EUR: "€" };
 
-    function formatMoney(amount) {
-      return `${plMoneyFormatter.format(Math.round(amount))} zł`;
+    function formatMoney(amount, currency = "PLN") {
+      const suffix = CURRENCY_SUFFIX[currency] || CURRENCY_SUFFIX.PLN;
+      return `${plMoneyFormatter.format(Math.round(amount))} ${suffix}`;
     }
 
     /* ───────────────────────────────────────────────────────────────
@@ -6548,97 +6806,256 @@
       return [nip, "PL", nrb, String(grosze), name, safeTitle, "", "", ""].join("|");
     }
 
-    // QR jest statycznym obrazem (frontend/public/qr-bank.jpg). Generowany jednorazowo
+    // QR jest statycznym obrazem (frontend/public/qr-bank.png). Generowany jednorazowo
     // przez admina fundacji w zewnętrznym generatorze (zob. qr-debug-intro w HTML).
     // Niżej już tylko podgląd raw payloadu — pozwala szybko regenerować QR przy zmianie
     // danych odbiorcy bez deployu kodu.
 
     function regenerateQR() {
-      // Sam obraz QR jest statyczny (qr-bank.jpg). Niżej tylko aktualizujemy raw payload
+      // Sam obraz QR jest statyczny (qr-bank.png). Niżej tylko aktualizujemy raw payload
       // — taki, jaki został zakodowany w obrazie (amount = 0, "open amount").
       const debugEl = document.getElementById("qrDebugPayload");
       if (debugEl) debugEl.textContent = buildPolishQRPayload(0);
     }
 
-    function selectAmount(amount, { silent = false } = {}) {
-      const safe = Math.max(1, Math.min(20000, Math.round(Number(amount) || 0)));
-      currentAmount = safe;
+    /* ───────────────────────────────────────────────────────────────
+       Wpłata online — Axepta BNP Paribas (przez backend Django)
+       Formularz jest currency-aware i samowystarczalny: PLN obsługuje
+       pełen wachlarz metod, EUR — wyłącznie karty. Reszta skarbca
+       (zrzutka, QR, przelew) pozostaje rozliczana w PLN.
+       ─────────────────────────────────────────────────────────────── */
+    const GIVE_TIERS = {
+      PLN: [50, 100, 200],
+      EUR: [20, 50, 100],
+    };
+    const GIVE_METHODS_NOTE = {
+      PLN: "Płatności w PLN obsługują BLIK, szybkie przelewy, karty oraz Apple/Google Pay.",
+      EUR: "Płatności w EUR obsługiwane są wyłącznie za pomocą kart płatniczych oraz Apple/Google Pay.",
+    };
+    const GIVE_MIN = 1;
+    const GIVE_MAX = 100000;
+    const GIVE_DEFAULT_TIER = 1; // środkowy chip — domyślna sugestia kwoty
 
-      // tier highlight
-      const tiers = document.querySelectorAll(".amount-tier");
-      tiers.forEach((tier) => {
-        const tAmount = parseInt(tier.dataset.amount || "0", 10);
-        const isActive = tAmount === safe;
-        tier.classList.toggle("is-active", isActive);
-        tier.setAttribute("aria-checked", String(isActive));
-      });
+    // Uchwyt eksponowany do skarbca: pozwala otwarciu sheetu wstępnie wybrać kwotę.
+    let giveApi = null;
 
-      // custom input
-      const customInput = document.getElementById("vaultCustomAmount");
-      if (customInput && !silent) {
-        const matchesTier = [100, 250, 500, 2500].includes(safe);
-        if (!matchesTier) {
-          if (document.activeElement !== customInput) customInput.value = String(safe);
+    function initGive() {
+      const form = document.getElementById("giveForm");
+      if (!form) return;
+
+      const currencyGroup = document.getElementById("giveCurrency");
+      const currencyOpts = Array.from(form.querySelectorAll(".give-currency-opt"));
+      const tierGroup = document.getElementById("giveTiers");
+      const tiers = Array.from(tierGroup.querySelectorAll(".give-tier"));
+      const presetTiers = tiers.filter((tier) => tier.dataset.tier !== "custom");
+      const customWrap = document.getElementById("giveCustomWrap");
+      const customInput = document.getElementById("giveCustomAmount");
+      const customSuffix = document.getElementById("giveCustomSuffix");
+      const amountCurrentEl = document.getElementById("giveAmountCurrent");
+      const emailInput = document.getElementById("giveEmail");
+      const submitBtn = document.getElementById("giveSubmit");
+      const submitText = document.getElementById("giveSubmitText");
+      const methodsNote = document.getElementById("giveMethodsNote");
+      const errorEl = document.getElementById("giveError");
+
+      const state = { currency: "PLN", tier: GIVE_DEFAULT_TIER, loading: false };
+      let noteSwapTimer = null;
+
+      const resolveAmount = () => {
+        if (state.tier === "custom") {
+          const raw = parseFloat(String(customInput.value).replace(",", "."));
+          return Number.isFinite(raw) ? Math.round(raw) : NaN;
+        }
+        return GIVE_TIERS[state.currency][state.tier];
+      };
+
+      const isValidAmount = (amount) =>
+        Number.isFinite(amount) && amount >= GIVE_MIN && amount <= GIVE_MAX;
+
+      const showError = (message) => {
+        errorEl.hidden = false;
+        errorEl.textContent = message;
+      };
+
+      const clearError = () => {
+        if (errorEl.hidden) return;
+        errorEl.hidden = true;
+        errorEl.textContent = "";
+      };
+
+      const renderAmount = () => {
+        const amount = resolveAmount();
+        amountCurrentEl.textContent = isValidAmount(amount)
+          ? formatMoney(amount, state.currency)
+          : "—";
+        if (!state.loading) {
+          submitText.textContent = isValidAmount(amount)
+            ? `Wesprzyj ${formatMoney(amount, state.currency)}`
+            : "Przejdź do płatności";
+        }
+      };
+
+      const relabelTiers = () => {
+        const values = GIVE_TIERS[state.currency];
+        presetTiers.forEach((tier) => {
+          const index = Number(tier.dataset.tier);
+          tier.textContent = formatMoney(values[index], state.currency);
+        });
+      };
+
+      const selectTier = (tier) => {
+        state.tier = tier;
+        tiers.forEach((el) => {
+          const value = el.dataset.tier === "custom" ? "custom" : Number(el.dataset.tier);
+          const active = value === tier;
+          el.classList.toggle("is-active", active);
+          el.setAttribute("aria-checked", String(active));
+        });
+        const custom = tier === "custom";
+        customWrap.hidden = !custom;
+        if (custom) requestAnimationFrame(() => customInput.focus());
+        clearError();
+        renderAmount();
+      };
+
+      const setCurrency = (currency) => {
+        if (currency === state.currency || !GIVE_TIERS[currency]) return;
+        state.currency = currency;
+
+        currencyOpts.forEach((opt) => {
+          const active = opt.dataset.currency === currency;
+          opt.classList.toggle("is-active", active);
+          opt.setAttribute("aria-checked", String(active));
+        });
+        currencyGroup.dataset.currency = currency; // CSS przesuwa "thumb"
+
+        relabelTiers();
+        customSuffix.textContent = CURRENCY_SUFFIX[currency];
+
+        // Subtelny, niemal natychmiastowy przełom tekstu o metodach płatności.
+        methodsNote.classList.add("is-swapping");
+        window.clearTimeout(noteSwapTimer);
+        noteSwapTimer = window.setTimeout(() => {
+          methodsNote.textContent = GIVE_METHODS_NOTE[currency];
+          methodsNote.classList.remove("is-swapping");
+        }, 170);
+
+        clearError();
+        renderAmount();
+      };
+
+      const setLoading = (loading) => {
+        state.loading = loading;
+        submitBtn.disabled = loading;
+        submitBtn.classList.toggle("is-loading", loading);
+        form.setAttribute("aria-busy", String(loading));
+        if (loading) {
+          submitText.textContent = "Przetwarzanie...";
         } else {
-          customInput.value = "";
+          renderAmount();
         }
-      }
+      };
 
-      // display
-      const formatted = formatMoney(safe);
-      const current = document.getElementById("amountCurrent");
-      if (current) current.textContent = formatted;
-      document.querySelectorAll("[data-amount-display]").forEach((el) => {
-        el.textContent = formatted;
+      // — interakcje —
+      currencyOpts.forEach((opt) => {
+        opt.addEventListener("click", () => setCurrency(opt.dataset.currency));
       });
 
-      // refresh QR + Stripe link
-      regenerateQR();
-      refreshStripeCTA();
-    }
+      tierGroup.addEventListener("click", (event) => {
+        const tier = event.target.closest(".give-tier");
+        if (!tier) return;
+        selectTier(tier.dataset.tier === "custom" ? "custom" : Number(tier.dataset.tier));
+      });
 
-    function refreshStripeCTA() {
-      const btn = document.getElementById("stripeCheckoutBtn");
-      const statusEl = document.getElementById("stripeStatus");
-      if (!btn) return;
+      customInput.addEventListener("input", () => {
+        clearError();
+        renderAmount();
+      });
+      customInput.addEventListener("focus", () => customInput.select());
 
-      const stripe = VAULT_CONFIG.stripe;
-      const stripeLink = stripe.enabled
-        ? (stripe.paymentLinks[currentAmount] || stripe.paymentLinks.custom || "")
-        : "";
+      emailInput.addEventListener("input", () => {
+        emailInput.removeAttribute("aria-invalid");
+        if (emailInput.value.trim()) clearError();
+      });
 
-      if (stripe.enabled && stripeLink) {
-        btn.setAttribute("aria-disabled", "false");
-        if (statusEl) {
-          statusEl.textContent = "aktywne";
-          statusEl.setAttribute("data-status", "ready");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (state.loading) return;
+        clearError();
+
+        const amount = resolveAmount();
+        const email = emailInput.value.trim();
+
+        if (!Number.isFinite(amount) || amount < GIVE_MIN) {
+          showError("Wpisz kwotę darowizny, którą chcesz przekazać.");
+          if (state.tier === "custom") customInput.focus();
+          return;
         }
-        const card = btn.closest(".method");
-        if (card) card.setAttribute("data-elevated", "true");
-      } else {
-        btn.setAttribute("aria-disabled", "true");
-        if (statusEl) {
-          statusEl.textContent = "aktywujemy w 24h";
-          statusEl.setAttribute("data-status", "pending");
+        if (amount > GIVE_MAX) {
+          showError(`Maksymalna kwota wpłaty online to ${formatMoney(GIVE_MAX, state.currency)}. Większą darowiznę prosimy przekazać przelewem.`);
+          return;
         }
-      }
-    }
+        if (!email || !emailInput.checkValidity()) {
+          emailInput.setAttribute("aria-invalid", "true");
+          showError("Podaj poprawny adres e-mail — wyślemy na niego potwierdzenie darowizny.");
+          emailInput.focus();
+          return;
+        }
 
-    function handleStripeCheckout() {
-      const stripe = VAULT_CONFIG.stripe;
-      if (!stripe.enabled) return;
-      const link = stripe.paymentLinks[currentAmount] || stripe.paymentLinks.custom;
-      if (!link) return;
-      const url = new URL(link);
-      url.searchParams.set("client_reference_id", `voct_${Date.now()}`);
-      window.location.href = url.toString();
-    }
+        setLoading(true);
+        try {
+          const response = await fetch(VAULT_CONFIG.api.initiateDonation, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+            },
+            // Endpoint jest w pełni publiczny — bez ciasteczek omijamy CSRF sesji panelu.
+            credentials: "omit",
+            body: JSON.stringify({ email, amount, currency: state.currency }),
+          });
 
-    function syncTransferTitle() {
-      const titleEl = document.getElementById("transferTitleVal");
-      if (!titleEl) return;
-      const display = VAULT_CONFIG.recipient.titleDisplay || VAULT_CONFIG.recipient.title;
-      titleEl.textContent = `${display} · ${formatMoney(currentAmount)}`;
+          if (!response.ok) {
+            throw new Error(`Donation initiate failed: HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (!data || typeof data.redirectUrl !== "string" || !data.redirectUrl) {
+            throw new Error("Donation initiate response is missing redirectUrl");
+          }
+
+          // Nawigujemy do bramki — przycisk zostaje zajęty aż do przekierowania.
+          submitText.textContent = "Przekierowanie...";
+          window.location.href = data.redirectUrl;
+        } catch (error) {
+          console.error("[VoctGive]", error);
+          setLoading(false);
+          showError("Wystąpił problem z połączeniem. Spróbuj ponownie za chwilę lub skorzystaj z przelewu poniżej.");
+        }
+      });
+
+      // — wstępny wybór kwoty z poziomu skarbca (data-amount na otwierającym linku) —
+      const preselect = (amount) => {
+        const value = Math.round(Number(amount) || 0);
+        if (state.currency !== "PLN") setCurrency("PLN");
+        const index = GIVE_TIERS.PLN.indexOf(value);
+        if (index !== -1) {
+          selectTier(index);
+        } else if (value >= GIVE_MIN) {
+          selectTier("custom");
+          customInput.value = String(value);
+          renderAmount();
+        } else {
+          selectTier(GIVE_DEFAULT_TIER);
+        }
+      };
+
+      // — stan początkowy —
+      relabelTiers();
+      selectTier(GIVE_DEFAULT_TIER);
+      methodsNote.textContent = GIVE_METHODS_NOTE[state.currency];
+
+      giveApi = { preselect };
     }
 
     function initVault() {
@@ -6651,7 +7068,7 @@
 
       const open = (presetAmount) => {
         previousActive = document.activeElement;
-        if (presetAmount) selectAmount(presetAmount);
+        if (presetAmount) giveApi?.preselect(presetAmount);
         vault.classList.add("is-open");
         vault.setAttribute("aria-hidden", "false");
         body.classList.add("vault-open");
@@ -6711,47 +7128,10 @@
         if (event.key === "Escape" && vault.classList.contains("is-open")) close();
       });
 
-      // amount tiers
-      document.querySelectorAll(".amount-tier").forEach((tier) => {
-        tier.addEventListener("click", () => {
-          const amount = parseInt(tier.dataset.amount || "0", 10);
-          if (amount > 0) selectAmount(amount);
-        });
-      });
-
-      // custom amount input
-      const customInput = document.getElementById("vaultCustomAmount");
-      if (customInput) {
-        customInput.addEventListener("input", () => {
-          const val = parseInt(customInput.value, 10);
-          if (Number.isFinite(val) && val > 0) {
-            selectAmount(val, { silent: true });
-          }
-        });
-        customInput.addEventListener("focus", () => customInput.select());
-      }
-
-      // Stripe CTA
-      const stripeBtn = document.getElementById("stripeCheckoutBtn");
-      stripeBtn?.addEventListener("click", () => {
-        if (stripeBtn.getAttribute("aria-disabled") === "true") {
-          // soft fallback — open Zrzutka
-          const zrzutkaLink = document.getElementById("zrzutkaLink");
-          zrzutkaLink?.focus?.();
-          return;
-        }
-        handleStripeCheckout();
-      });
-
       // transfer field copy buttons
       vault.querySelectorAll(".transfer-field-copy").forEach((btn) => {
         btn.addEventListener("click", async () => {
-          const raw = btn.getAttribute("data-copy") || "";
-          const withAmount = btn.getAttribute("data-copy-with-amount") === "true";
-          const display = VAULT_CONFIG.recipient.titleDisplay || VAULT_CONFIG.recipient.title;
-          const value = withAmount
-            ? `${display} · ${formatMoney(currentAmount)}`
-            : raw;
+          const value = btn.getAttribute("data-copy") || "";
           if (!value) return;
           try {
             await navigator.clipboard.writeText(value);
@@ -6765,7 +7145,7 @@
         });
       });
 
-      // QR debug — copy canonical "open-amount" payload (taki sam jak w qr-bank.jpg).
+      // QR debug — copy canonical "open-amount" payload (taki sam jak w qr-bank.png).
       const qrDebugCopy = document.getElementById("qrDebugCopy");
       qrDebugCopy?.addEventListener("click", async () => {
         const payload = buildPolishQRPayload(0);
@@ -6777,10 +7157,8 @@
         } catch (_) {}
       });
 
-      // initial state
-      selectAmount(500);
-      syncTransferTitle();
-      refreshStripeCTA();
+      // initial state — payload QR (kwota otwarta); formularz wpłaty inicjalizuje initGive().
+      regenerateQR();
     }
 
     /* ───────────────────────────────────────────────────────────────
@@ -6933,6 +7311,73 @@
       // czysta historia
       const url = new URL(location.href);
       url.searchParams.delete("donated");
+      try { history.replaceState({}, "", url.toString()); } catch (_) {}
+
+      // pokaż po preloaderze + thresholdzie
+      const reveal = () => {
+        overlay.classList.add("is-visible");
+        overlay.setAttribute("aria-hidden", "false");
+        if (window.lenis && typeof window.lenis.stop === "function") {
+          window.lenis.stop();
+        }
+      };
+
+      const waitForUI = () => {
+        if (body.classList.contains("preload-open") || body.classList.contains("threshold-open")) {
+          setTimeout(waitForUI, 300);
+        } else {
+          setTimeout(reveal, 400);
+        }
+      };
+      waitForUI();
+    }
+
+    /* ───────────────────────────────────────────────────────────────
+       FAILURE — pełnoekranowy reveal po nieudanej płatności
+       Axepta redirectuje na /?donated=failure → pokazujemy przeprosiny
+       ─────────────────────────────────────────────────────────────── */
+    function initFailure() {
+      const overlay = document.getElementById("failure");
+      if (!overlay) return;
+
+      const params = new URLSearchParams(location.search);
+      const donated = params.get("donated");
+
+      const close = () => {
+        overlay.classList.remove("is-visible");
+        overlay.setAttribute("aria-hidden", "true");
+        if (window.lenis && typeof window.lenis.start === "function") {
+          window.lenis.start();
+        }
+      };
+
+      // „Spróbuj ponownie" — zamyka overlay i odprowadza darczyńcę z powrotem
+      // do sekcji Skarbca (#wesprzyj), gdzie może ponowić wpłatę.
+      const retry = () => {
+        close();
+        const target = document.getElementById("wesprzyj");
+        if (!target) return;
+        if (window.lenis && typeof window.lenis.scrollTo === "function") {
+          window.lenis.scrollTo(target);
+        } else {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      };
+
+      overlay.querySelector("[data-failure-retry]")?.addEventListener("click", retry);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && overlay.classList.contains("is-visible")) close();
+      });
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) close();
+      });
+
+      if (donated !== "failure") return;
+
+      // czysta historia — zdejmujemy oba parametry zwrotne
+      const url = new URL(location.href);
+      url.searchParams.delete("donated");
+      url.searchParams.delete("donation");
       try { history.replaceState({}, "", url.toString()); } catch (_) {}
 
       // pokaż po preloaderze + thresholdzie
@@ -7139,7 +7584,7 @@
       // Glass header z adaptacyjnym tintem — zastępuje `mix-blend-mode: difference`
       // (które na iOS Safari rozjeżdżało paint przy animowanym dynamicznym toolbarze).
       // Modern 2026 pattern: backdrop-filter glass z tintem dopasowanym do sekcji pod headerem.
-      const darkSelectors = ".hero, .image-rite, .ensemble, .final-support, .threshold, .vault, .gratitude";
+      const darkSelectors = ".hero, .image-rite, .ensemble, .final-support, .threshold, .vault, .gratitude, .failure";
       let pending = false;
 
       const update = () => {
@@ -7226,8 +7671,10 @@
     initRiteGlow();
     initLenis();
     initChromeTone();
+    initGive();
     initVault();
     initGratitude();
+    initFailure();
     initFooterSignal();
   })();
 </script>
