@@ -120,7 +120,7 @@ class AxeptaPaymentService:
             # the donor sees the retry path, not a thank-you they didn't earn.
             'returnUrl': failure_url,
             'customer': {
-                'firstName': 'Darczyńca',
+                'firstName': 'Darczynca',
                 'lastName': 'VoctFoundation',
                 'email': donation.email,
             },
@@ -132,8 +132,9 @@ class AxeptaPaymentService:
             )
             response.raise_for_status()
         except requests.RequestException as exc:
+            error_body = exc.response.text if hasattr(exc, 'response') and exc.response is not None else str(exc)
             logger.error(
-                "Axepta payment-link request failed for donation %s: %s", donation.id, exc
+                "Axepta payment-link request failed for donation %s: %s", donation.id, exc, error_body
             )
             raise PaymentGatewayError("Could not reach the payment gateway.") from exc
 
