@@ -4766,6 +4766,468 @@
     font-weight: 400;
   }
 
+  /* vault-foot — drobne linki do dokumentów pod kartą zaufania */
+  .vault-foot-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px 24px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(244, 241, 233, 0.1);
+  }
+
+  .vault-foot-link {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: rgba(244, 241, 233, 0.6);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    transition: color 0.3s var(--ease);
+  }
+
+  .vault-foot-link:hover {
+    color: var(--candle);
+  }
+
+  /* ───────────────────────────────────────────────────────────────
+     SKARBIEC · zgoda na regulamin + nakładka z regulaminem darowizn
+     Akceptacja regulaminu jest wymaganym krokiem formularza wpłaty;
+     pełna treść otwiera się jako warstwa NAD skarbcem — darczyńca nie
+     opuszcza rytuału wpłaty. Polityka prywatności, jako odrębny
+     dokument-źródło, pozostaje pod /polityka-prywatnosci.
+     ─────────────────────────────────────────────────────────────── */
+  .give-consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 13px;
+    align-items: start;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* checkbox wizualnie ukryty, ale w pełni dostępny dla AT i klawiatury */
+  .give-consent-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .give-consent-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    border: 1px solid rgba(244, 241, 233, 0.32);
+    background: rgba(244, 241, 233, 0.02);
+    color: var(--dark);
+    transition: border-color 0.4s var(--ease), background 0.4s var(--ease);
+  }
+
+  .give-consent-check {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+    transform: scale(0.55);
+    transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+  }
+
+  .give-consent:hover .give-consent-box {
+    border-color: rgba(244, 241, 233, 0.6);
+  }
+
+  .give-consent-input:checked + .give-consent-box {
+    border-color: var(--candle);
+    background: var(--candle);
+  }
+
+  .give-consent-input:checked + .give-consent-box .give-consent-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .give-consent-input:focus-visible + .give-consent-box {
+    outline: 1px solid var(--candle);
+    outline-offset: 3px;
+  }
+
+  .give-consent-input[aria-invalid="true"] + .give-consent-box {
+    border-color: #c98e7e;
+  }
+
+  .give-consent-text {
+    color: rgba(244, 241, 233, 0.62);
+    font-size: 12.5px;
+    line-height: 1.62;
+  }
+
+  .give-consent-link {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--candle);
+    cursor: pointer;
+    font: inherit;
+    vertical-align: baseline;
+    border-bottom: 1px solid rgba(198, 164, 91, 0.42);
+    transition: border-color 0.3s var(--ease);
+  }
+
+  .give-consent-link:hover {
+    border-bottom-color: var(--candle);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .give-consent-box,
+    .give-consent-check {
+      transition: none;
+    }
+  }
+
+  /* ── nakładka z regulaminem darowizn ────────────────────────────── */
+  .regulamin {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    display: grid;
+    place-items: center;
+    padding: max(24px, 4vh) 20px;
+    visibility: hidden;
+    pointer-events: none;
+    transition: visibility 0.7s var(--ease-slow);
+  }
+
+  .regulamin.is-open {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .regulamin-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 8, 7, 0.74);
+    backdrop-filter: blur(22px) saturate(0.9);
+    -webkit-backdrop-filter: blur(22px) saturate(0.9);
+    opacity: 0;
+    transition: opacity 0.6s var(--ease-slow);
+  }
+
+  .regulamin.is-open .regulamin-backdrop {
+    opacity: 1;
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .regulamin-backdrop {
+      background: rgba(8, 8, 7, 0.92);
+    }
+  }
+
+  .regulamin-panel {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    width: min(660px, 100%);
+    max-height: min(86vh, 880px);
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(198, 164, 91, 0.2), transparent 24rem),
+      var(--dark);
+    border: 1px solid rgba(198, 164, 91, 0.22);
+    color: var(--paper);
+    opacity: 0;
+    transform: translateY(26px) scale(0.97);
+    transition: opacity 0.6s var(--ease-slow), transform 0.7s var(--ease-slow);
+  }
+
+  .regulamin.is-open .regulamin-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .regulamin-panel:focus-visible {
+    outline: none;
+  }
+
+  .regulamin-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: start;
+    padding: 28px max(24px, 3.4vw) 22px;
+    border-bottom: 1px solid rgba(244, 241, 233, 0.12);
+  }
+
+  .regulamin-head-text {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .regulamin-kicker {
+    color: rgba(244, 241, 233, 0.5);
+  }
+
+  .regulamin-title {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(22px, 2.4vw, 30px);
+    font-weight: 300;
+    line-height: 1.08;
+    letter-spacing: 0;
+  }
+
+  .regulamin-close {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border: 1px solid rgba(244, 241, 233, 0.22);
+    border-radius: 50%;
+    background: transparent;
+    color: rgba(244, 241, 233, 0.78);
+    cursor: pointer;
+    transition: border-color 0.4s var(--ease), color 0.4s var(--ease), transform 0.4s var(--ease);
+  }
+
+  .regulamin-close:hover {
+    border-color: var(--candle);
+    color: var(--candle);
+    transform: rotate(90deg);
+  }
+
+  .regulamin-close span {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 14px;
+    height: 1px;
+    background: currentColor;
+  }
+
+  .regulamin-close span:nth-child(1) { transform: translate(-50%, -50%) rotate(45deg); }
+  .regulamin-close span:nth-child(2) { transform: translate(-50%, -50%) rotate(-45deg); }
+
+  .regulamin-scroll-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .regulamin-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(244, 241, 233, 0.18) transparent;
+  }
+
+  .regulamin-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .regulamin-scroll::-webkit-scrollbar-thumb {
+    background: rgba(244, 241, 233, 0.18);
+    border-radius: 3px;
+  }
+
+  .regulamin-doc {
+    padding: 30px max(24px, 3.4vw) 44px;
+  }
+
+  .regulamin-lede {
+    margin: 0 0 30px;
+    color: rgba(244, 241, 233, 0.6);
+    font-family: var(--serif);
+    font-size: clamp(15px, 1.3vw, 17px);
+    font-style: italic;
+    line-height: 1.55;
+  }
+
+  .regulamin-section {
+    margin: 0 0 30px;
+  }
+
+  .regulamin-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .regulamin-section h3 {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 14px;
+    font-family: var(--serif);
+    font-size: clamp(17px, 1.7vw, 21px);
+    font-weight: 300;
+    line-height: 1.2;
+    color: var(--paper);
+  }
+
+  .regulamin-section h3::before {
+    content: attr(data-num);
+    flex-shrink: 0;
+    color: var(--candle);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    transform: translateY(-2px);
+  }
+
+  .regulamin-section ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: regItem;
+    display: grid;
+    gap: 11px;
+  }
+
+  .regulamin-section li {
+    position: relative;
+    counter-increment: regItem;
+    padding-left: 30px;
+    color: rgba(244, 241, 233, 0.72);
+    font-size: 13.5px;
+    line-height: 1.62;
+  }
+
+  .regulamin-section li::before {
+    content: counter(regItem) ".";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: rgba(244, 241, 233, 0.4);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .regulamin-doc a {
+    color: var(--candle);
+    border-bottom: 1px solid rgba(198, 164, 91, 0.4);
+    transition: border-color 0.3s var(--ease);
+  }
+
+  .regulamin-doc a:hover {
+    border-bottom-color: var(--candle);
+  }
+
+  .regulamin-doc strong {
+    color: var(--paper);
+    font-weight: 400;
+  }
+
+  /* dolny welon — sygnalizuje, że treść jest jeszcze przewijalna */
+  .regulamin-scroll-fade {
+    position: absolute;
+    left: 0;
+    right: 6px;
+    bottom: 0;
+    height: 56px;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, var(--dark));
+    transition: opacity 0.4s var(--ease);
+  }
+
+  .regulamin-scroll-wrap.is-end .regulamin-scroll-fade {
+    opacity: 0;
+  }
+
+  .regulamin-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 20px max(24px, 3.4vw);
+    border-top: 1px solid rgba(244, 241, 233, 0.12);
+  }
+
+  .regulamin-foot-note {
+    margin: 0;
+    color: rgba(244, 241, 233, 0.42);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    line-height: 1.6;
+    text-transform: uppercase;
+  }
+
+  .regulamin-accept {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--candle);
+    background: var(--candle);
+    color: var(--dark);
+    cursor: pointer;
+    padding: 14px 22px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    transition: background 0.4s var(--ease), border-color 0.4s var(--ease);
+  }
+
+  .regulamin-accept:hover {
+    background: #e8cf90;
+    border-color: #e8cf90;
+  }
+
+  .regulamin-accept-arrow {
+    transition: transform 0.4s var(--ease);
+  }
+
+  .regulamin-accept:hover .regulamin-accept-arrow {
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 560px) {
+    .regulamin-foot {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+
+    .regulamin-accept {
+      justify-content: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .regulamin,
+    .regulamin-backdrop,
+    .regulamin-panel,
+    .regulamin-scroll-fade,
+    .regulamin-accept,
+    .regulamin-accept-arrow,
+    .regulamin-close {
+      transition: none;
+    }
+
+    .regulamin-panel {
+      transform: none;
+    }
+  }
+
   /* ───────────────────────────────────────────────────────────────
      GRATITUDE · thank-you full-screen reveal
      ─────────────────────────────────────────────────────────────── */
@@ -5929,6 +6391,19 @@
 
             <p class="give-error" id="giveError" role="alert" hidden></p>
 
+            <label class="give-consent">
+              <input type="checkbox" id="giveConsent" name="consent" class="give-consent-input" required>
+              <span class="give-consent-box" aria-hidden="true">
+                <svg class="give-consent-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 8.4 L6.4 11.8 L13 4.6"/>
+                </svg>
+              </span>
+              <span class="give-consent-text">
+                Zapoznał(a)m się i akceptuję
+                <button type="button" class="give-consent-link" data-regulamin-open aria-haspopup="dialog" aria-controls="regulamin">Regulamin przekazywania darowizn</button>.
+              </span>
+            </label>
+
             <button type="submit" class="method-cta give-submit" id="giveSubmit">
               <span class="method-cta-text" id="giveSubmitText">Wesprzyj 100 zł</span>
               <span class="method-cta-arrow" aria-hidden="true">→</span>
@@ -6039,9 +6514,96 @@
         KRS 0001237252 · NIP 6762718992 · REGON 544621525<br>
         Św. Filipa 23/3, 31-150 Kraków · Darowizna na cele statutowe.
       </p>
+      <div class="vault-foot-links">
+        <button type="button" class="vault-foot-link" data-regulamin-open aria-haspopup="dialog" aria-controls="regulamin">Regulamin darowizn</button>
+        <a class="vault-foot-link" href="/polityka-prywatnosci" target="_blank" rel="noopener">Polityka prywatności ↗</a>
+      </div>
     </footer>
   </div>
 </aside>
+
+<div class="regulamin" id="regulamin" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="regulamin-title">
+  <div class="regulamin-backdrop" data-regulamin-dismiss aria-hidden="true"></div>
+  <div class="regulamin-panel" role="document" tabindex="-1" data-lenis-prevent>
+    <header class="regulamin-head">
+      <div class="regulamin-head-text">
+        <span class="micro regulamin-kicker">Dokument · darowizny online</span>
+        <h2 class="regulamin-title" id="regulamin-title">Regulamin przekazywania darowizn online</h2>
+      </div>
+      <button class="regulamin-close" type="button" data-regulamin-dismiss aria-label="Zamknij regulamin">
+        <span></span><span></span>
+      </button>
+    </header>
+
+    <div class="regulamin-scroll-wrap">
+      <div class="regulamin-scroll" id="regulaminScroll">
+        <div class="regulamin-doc">
+          <p class="regulamin-lede">
+            Regulamin określa zasady przekazywania darowizn online na rzecz Fundacji VoctFoundation
+            za pośrednictwem strony voctensemble.com.
+          </p>
+
+          <section class="regulamin-section">
+            <h3 data-num="§ 1">Postanowienia ogólne</h3>
+            <ol>
+              <li>Niniejszy regulamin określa zasady przekazywania darowizn online na rzecz <strong>Fundacji VoctFoundation</strong> z siedzibą w Krakowie (ul. Św. Filipa 23/3, 31-150 Kraków), wpisanej do rejestru Krajowego Rejestru Sądowego pod numerem KRS: 0001237252, NIP: 6762718992, REGON: 544621525, zwanej dalej „Fundacją”.</li>
+              <li>Zgodnie z § 5 oraz § 6 <a href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener">Statutu Fundacji</a>, opublikowanego na stronie internetowej Fundacji, wszystkie darowizny przekazywane na rzecz Fundacji są przeznaczane wyłącznie na realizację jej celów statutowych, w szczególności działalności artystycznej, w tym muzycznej, rozwoju i upowszechniania twórczości muzycznej, dokumentowania, ochrony i upowszechniania dziedzictwa muzycznego, działalności edukacyjnej i popularyzatorskiej w obszarze kultury, zwiększania dostępności kultury, wspierania młodych artystów oraz realizacji projektów artystycznych, w tym działalności zespołu-rezydenta Fundacji.</li>
+              <li>Darczyńcą może być każda pełnoletnia osoba fizyczna, osoba prawna lub jednostka organizacyjna nieposiadająca osobowości prawnej.</li>
+              <li>Zgodnie z art. 890 § 1 zd. 2 Kodeksu cywilnego, umowa darowizny środków pieniężnych staje się ważna i skuteczna w momencie spełnienia świadczenia (czyli w chwili wpłynięcia środków na rachunek Fundacji), niezależnie od formy oświadczenia woli.</li>
+            </ol>
+          </section>
+
+          <section class="regulamin-section">
+            <h3 data-num="§ 2">Zasady przekazywania darowizn i metody płatności</h3>
+            <ol>
+              <li>Przekazywanie darowizn online odbywa się za pośrednictwem formularza wsparcia dostępnego na stronie internetowej voctensemble.com.</li>
+              <li>Operatorem płatności online jest BNP Paribas Bank Polska S.A. z siedzibą w Warszawie (bramka Axepta BNP Paribas), a dla transakcji kartowych agentem rozliczeniowym jest PayU S.A. z siedzibą w Poznaniu.</li>
+              <li>Darczyńca ma możliwość przekazania darowizny z wykorzystaniem nowoczesnych, szyfrowanych metod płatności, w szczególności: kart płatniczych (Visa, Mastercard), systemu BLIK, szybkich przelewów bankowych (Pay-By-Link) oraz portfeli elektronicznych (Apple Pay, Google Pay).</li>
+              <li>Darowizny mogą być przekazywane w walutach: PLN oraz EUR. Dostępność poszczególnych metod płatności zależy od wybranej waluty.</li>
+              <li>Kliknięcie przycisku potwierdzającego chęć przekazania wsparcia w formularzu oraz dokonanie płatności jest równoznaczne z zawarciem umowy darowizny oraz akceptacją niniejszego Regulaminu.</li>
+            </ol>
+          </section>
+
+          <section class="regulamin-section">
+            <h3 data-num="§ 3">Reklamacje i zwroty</h3>
+            <ol>
+              <li>Darczyńca ma prawo zgłosić reklamację dotyczącą ewentualnych nieprawidłowości w procesie przekazywania darowizny (np. w przypadku usterek technicznych systemu płatności).</li>
+              <li>Zgłoszenia prosimy kierować drogą elektroniczną na adres e-mail: <a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a>.</li>
+              <li>Fundacja rozpatruje zgłoszenia z najwyższą starannością, niezwłocznie, nie później jednak niż w terminie 14 dni od daty ich otrzymania.</li>
+              <li>W przypadku omyłkowego wykonania wpłaty lub awarii po stronie banku Darczyńcy skutkującej podwójnym obciążeniem, Darczyńca ma prawo żądać zwrotu przekazanej darowizny w terminie 14 dni od momentu jej zrealizowania. Wniosek o zwrot należy przesłać na adres wskazany w ust. 2, podając identyfikator transakcji oraz adres e-mail użyty podczas płatności.</li>
+              <li>Mając na uwadze bezpieczeństwo finansowe Darczyńców, wszelkie zwroty środków są realizowane wyłącznie na tę samą metodę płatności (ten sam rachunek bankowy lub kartę płatniczą), przy użyciu której dokonano pierwotnej wpłaty, co wynika z przepisów prawa oraz regulaminów operatorów płatności.</li>
+            </ol>
+          </section>
+
+          <section class="regulamin-section">
+            <h3 data-num="§ 4">Dane osobowe (RODO)</h3>
+            <ol>
+              <li>Administratorem danych osobowych Darczyńców jest Fundacja VoctFoundation.</li>
+              <li>Szczegółowe informacje dotyczące przetwarzania danych osobowych, celów ich przetwarzania, ról operatorów płatności (Axepta BNP Paribas, PayU) oraz praw przysługujących Darczyńcom, znajdują się w <a href="/polityka-prywatnosci" target="_blank" rel="noopener">Polityce prywatności</a> dostępnej na stronie voctensemble.com.</li>
+            </ol>
+          </section>
+
+          <section class="regulamin-section">
+            <h3 data-num="§ 5">Postanowienia końcowe</h3>
+            <ol>
+              <li>Fundacja zastrzega sobie prawo do wprowadzania zmian w Regulaminie, o czym będzie informować poprzez aktualizację jego treści na stronie internetowej.</li>
+              <li>W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają odpowiednie przepisy prawa polskiego, w szczególności Kodeksu cywilnego.</li>
+            </ol>
+          </section>
+        </div>
+      </div>
+      <div class="regulamin-scroll-fade" aria-hidden="true"></div>
+    </div>
+
+    <footer class="regulamin-foot">
+      <p class="regulamin-foot-note">Wersja 1.0 · obowiązuje od 13 maja 2026</p>
+      <button type="button" class="regulamin-accept" id="regulaminAccept">
+        <span>Akceptuję regulamin</span>
+        <span class="regulamin-accept-arrow" aria-hidden="true">→</span>
+      </button>
+    </footer>
+  </div>
+</div>
 
 <div class="gratitude" id="gratitude" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="gratitude-title">
   <div class="gratitude-inner">
@@ -6897,6 +7459,7 @@
       const customSuffix = document.getElementById("giveCustomSuffix");
       const amountCurrentEl = document.getElementById("giveAmountCurrent");
       const emailInput = document.getElementById("giveEmail");
+      const consentInput = document.getElementById("giveConsent");
       const submitBtn = document.getElementById("giveSubmit");
       const submitText = document.getElementById("giveSubmitText");
       const methodsNote = document.getElementById("giveMethodsNote");
@@ -7022,6 +7585,13 @@
         if (emailInput.value.trim()) clearError();
       });
 
+      consentInput.addEventListener("change", () => {
+        if (consentInput.checked) {
+          consentInput.removeAttribute("aria-invalid");
+          clearError();
+        }
+      });
+
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (state.loading) return;
@@ -7043,6 +7613,12 @@
           emailInput.setAttribute("aria-invalid", "true");
           showError("Podaj poprawny adres e-mail — wyślemy na niego potwierdzenie darowizny.");
           emailInput.focus();
+          return;
+        }
+        if (!consentInput.checked) {
+          consentInput.setAttribute("aria-invalid", "true");
+          showError("Zaznacz akceptację regulaminu darowizn, aby przejść do płatności.");
+          consentInput.focus();
           return;
         }
 
@@ -7100,6 +7676,96 @@
       methodsNote.textContent = GIVE_METHODS_NOTE[state.currency];
 
       giveApi = { preselect };
+    }
+
+    /* ───────────────────────────────────────────────────────────────
+       REGULAMIN — warstwa z regulaminem darowizn nad skarbcem.
+       Otwierana z pola zgody w formularzu wpłaty oraz ze stopki skarbca.
+       „Akceptuję regulamin" zaznacza checkbox zgody i wraca do formularza
+       — darczyńca nie opuszcza rytuału wpłaty. Skarbiec pod spodem zostaje
+       wyłączony (inert) na czas otwarcia warstwy.
+       ─────────────────────────────────────────────────────────────── */
+    function initRegulamin() {
+      const overlay = document.getElementById("regulamin");
+      if (!overlay) return;
+
+      const panel = overlay.querySelector(".regulamin-panel");
+      const scroller = document.getElementById("regulaminScroll");
+      const scrollWrap = overlay.querySelector(".regulamin-scroll-wrap");
+      const acceptBtn = document.getElementById("regulaminAccept");
+      const openers = document.querySelectorAll("[data-regulamin-open]");
+      const dismissers = overlay.querySelectorAll("[data-regulamin-dismiss]");
+      const vaultSheet = document.querySelector(".vault-sheet");
+      let previousActive = null;
+
+      // Welon u dołu znika, gdy treść jest doczytana do końca.
+      const syncScrollEnd = () => {
+        if (!scroller || !scrollWrap) return;
+        const atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4;
+        scrollWrap.classList.toggle("is-end", atEnd);
+      };
+
+      const open = (trigger) => {
+        if (overlay.classList.contains("is-open")) return;
+        previousActive = trigger || document.activeElement;
+        overlay.classList.add("is-open");
+        overlay.setAttribute("aria-hidden", "false");
+        // Skarbiec pod spodem przestaje być osiągalny dla fokusa i wskaźnika.
+        if (vaultSheet) vaultSheet.inert = true;
+        if (scroller) scroller.scrollTop = 0;
+        requestAnimationFrame(syncScrollEnd);
+        setTimeout(() => panel?.focus?.({ preventScroll: true }), 80);
+      };
+
+      const close = () => {
+        if (!overlay.classList.contains("is-open")) return;
+        overlay.classList.remove("is-open");
+        overlay.setAttribute("aria-hidden", "true");
+        if (vaultSheet) vaultSheet.inert = false;
+        if (previousActive && typeof previousActive.focus === "function") {
+          previousActive.focus({ preventScroll: true });
+        }
+        previousActive = null;
+      };
+
+      openers.forEach((btn) => {
+        btn.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation(); // nie przełączaj checkboxa, gdy opener leży w <label>
+          open(btn);
+        });
+      });
+
+      dismissers.forEach((btn) => btn.addEventListener("click", () => close()));
+
+      acceptBtn?.addEventListener("click", () => {
+        const consent = document.getElementById("giveConsent");
+        if (consent) {
+          consent.checked = true;
+          consent.removeAttribute("aria-invalid");
+          consent.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        // Po akceptacji wracamy do formularza — fokus ląduje na przycisku wpłaty.
+        previousActive = document.getElementById("giveSubmit") || previousActive;
+        close();
+      });
+
+      // Esc — domyka regulamin i zatrzymuje zdarzenie, by nie zamknąć też skarbca.
+      // initRegulamin() biegnie przed initVault(), więc ten listener łapie Esc pierwszy.
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && overlay.classList.contains("is-open")) {
+          event.stopImmediatePropagation();
+          close();
+        }
+      });
+
+      // Gest „wstecz" traktujemy jak wyjście z warstwy regulaminu.
+      window.addEventListener("popstate", () => {
+        if (overlay.classList.contains("is-open")) close();
+      });
+
+      scroller?.addEventListener("scroll", syncScrollEnd, { passive: true });
+      window.addEventListener("resize", syncScrollEnd);
     }
 
     function initVault() {
@@ -7622,7 +8288,7 @@
       // Glass header z adaptacyjnym tintem — zastępuje `mix-blend-mode: difference`
       // (które na iOS Safari rozjeżdżało paint przy animowanym dynamicznym toolbarze).
       // Modern 2026 pattern: backdrop-filter glass z tintem dopasowanym do sekcji pod headerem.
-      const darkSelectors = ".hero, .image-rite, .ensemble, .final-support, .threshold, .vault, .gratitude, .failure";
+      const darkSelectors = ".hero, .image-rite, .ensemble, .final-support, .threshold, .vault, .regulamin, .gratitude, .failure";
       let pending = false;
 
       const update = () => {
@@ -7710,6 +8376,7 @@
     initLenis();
     initChromeTone();
     initGive();
+    initRegulamin();
     initVault();
     initGratitude();
     initFailure();
