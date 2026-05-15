@@ -6100,7 +6100,7 @@
     <h1 class="threshold-title" id="threshold-title">Czy wejdziesz<br>w ciszę?</h1>
     <p class="threshold-subtitle">Wybierz, jak ma cię przyjąć ta strona. Możesz to zmienić w każdej chwili.</p>
     <div class="threshold-actions">
-      <button class="threshold-btn" type="button" data-choice="silence" id="enterSilence">
+      <button class="threshold-btn plausible-event-name=enterSilence" type="button" data-choice="silence" id="enterSilence">
         <span class="threshold-btn-dots" aria-hidden="true">
           <span class="threshold-dot"></span>
           <span class="threshold-dot"></span>
@@ -6109,7 +6109,7 @@
         <span class="threshold-btn-label">Wejdź w ciszę</span>
         <span class="threshold-btn-hint">bez dźwięku</span>
       </button>
-      <button class="threshold-btn" type="button" data-choice="voice" id="enterVoice">
+      <button class="threshold-btn plausible-event-name=enterVoice" type="button" data-choice="voice" id="enterVoice">
         <span class="threshold-btn-dots" aria-hidden="true">
           <span class="threshold-dot is-live"></span>
           <span class="threshold-dot is-live"></span>
@@ -6139,8 +6139,8 @@
   </a>
   <div class="event-pill" id="countdownPill">16 maja 2026 · Warszawa</div>
   <div class="chrome-actions">
-    <button class="audio-toggle" id="audioToggle" type="button" aria-pressed="false">Cisza</button>
-    <a class="support-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj</a>
+    <button class="audio-toggle plausible-event-name=przycisk+cisza" id="audioToggle" type="button" aria-pressed="false">Cisza</button>
+    <a class="support-link plausible-event-name=skarbiec+menu" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj</a>
   </div>
 </header>
 
@@ -6178,8 +6178,8 @@
             Wesprzyj naszą misję, by muzyka miała gdzie wybrzmieć.
           </p>
           <div class="hero-actions intro-stage s7">
-            <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj cykl</a>
-            <a class="secondary-link" href="#zespol">Poznaj zespół</a>
+            <a class="primary-link plausible-event-name=skarbiec+hero" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj cykl</a>
+            <a class="secondary-link plausible-event-name=poznaj+zespol" href="#zespol">Poznaj zespół</a>
           </div>
         </div>
       </div>
@@ -6227,8 +6227,8 @@
           </div>
         </div>
         <div class="support-actions">
-          <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj cykl</a>
-          <a class="secondary-link" href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble">Napisz do nas</a>
+          <a class="primary-link plausible-event-name=skarbiec+drugi" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj cykl</a>
+          <a class="secondary-link plausible-event-name=napisz+do+nas+hero" href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble">Napisz do nas</a>
         </div>
         <div class="trust-line">Fundacja VoctFoundation · KRS 0001237252 · darowizna na cele statutowe</div>
       </div>
@@ -6616,12 +6616,12 @@
           </p>
           <div class="final-contact">
             <span class="micro">Kontakt do kierownictwa artystycznego</span>
-            <a class="final-contact-name" href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble">Florent de Bazelaire</a>
+            <a class="final-contact-name plausible-event-name=florent+mail" href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble">Florent de Bazelaire</a>
             <span class="final-contact-mail">florent.de.bazelaire@voctensemble.com</span>
           </div>
           <div class="final-actions">
-            <a class="primary-link" href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble">Napisz do nas</a>
-            <a class="secondary-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj</a>
+            <a class="primary-link plausible-event-name=napisz+do+nas+dol" href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble">Napisz do nas</a>
+            <a class="secondary-link plausible-event-name=wesprzyj+dol" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj</a>
           </div>
         </div>
 
@@ -6643,12 +6643,12 @@
             <div class="bank-row">
               <span class="currency">PLN</span>
               <span class="iban">PL26 1600 1013 1724 4184 1000 0001</span>
-              <button class="copy-account" type="button" data-copy="PL26160010131724418410000001">Kopiuj</button>
+              <button class="copy-account plausible-event-name=przelew+copy+PLN" type="button" data-copy="PL26160010131724418410000001">Kopiuj</button>
             </div>
             <div class="bank-row">
               <span class="currency">EUR</span>
               <span class="iban">PL96 1600 1013 1724 4184 1000 0002</span>
-              <button class="copy-account" type="button" data-copy="PL96160010131724418410000002">Kopiuj</button>
+              <button class="copy-account plausible-event-name=przelew+copy+EUR" type="button" data-copy="PL96160010131724418410000002">Kopiuj</button>
             </div>
             <div class="foundation-data">
               Fundacja VoctFoundation · KRS 0001237252 · NIP 6762718992 · REGON 544621525<br>
@@ -6756,11 +6756,11 @@
               </span>
               <span class="give-consent-text">
                 Zapoznał(a)m się i akceptuję
-                <button type="button" class="give-consent-link" data-regulamin-open aria-haspopup="dialog" aria-controls="regulamin">Regulamin przekazywania darowizn</button>.
+                <button type="button" class="give-consent-link plausible-event-name=regulamin+darowizn" data-regulamin-open aria-haspopup="dialog" aria-controls="regulamin">Regulamin przekazywania darowizn</button>.
               </span>
             </label>
 
-            <button type="submit" class="method-cta give-submit" id="giveSubmit">
+            <button type="submit" class="method-cta give-submit plausible-event-name=wesprzyj+Axepta" id="giveSubmit">
               <span class="method-cta-text" id="giveSubmitText">Wesprzyj 100 zł</span>
               <span class="method-cta-arrow" aria-hidden="true">→</span>
             </button>
@@ -6783,7 +6783,7 @@
           </div>
           <h3 class="method-title">Zrzutka.pl</h3>
           <p class="method-note">BLIK, karta, Apple Pay, Google Pay. Wpłaty regularne dostępne. Dołącz do społeczności słuchaczy.</p>
-          <a class="method-cta" id="zrzutkaLink" href="https://zrzutka.pl/7dewdj" target="_blank" rel="noopener">
+          <a class="method-cta plausible-event-name=zrzutka+otworz" id="zrzutkaLink" href="https://zrzutka.pl/7dewdj" target="_blank" rel="noopener">
             <span class="method-cta-text">Otwórz Zrzutkę</span>
             <span class="method-cta-arrow" aria-hidden="true">↗</span>
           </a>
@@ -6833,28 +6833,28 @@
           <div class="method-transfer-fields">
             <div class="transfer-field">
               <span class="transfer-field-label">Numer konta · PLN</span>
-              <button type="button" class="transfer-field-copy" data-copy="26160010131724418410000001">
+              <button type="button" class="transfer-field-copy plausible-event-name=skarbiec+copy+nrkonta" data-copy="26160010131724418410000001">
                 <span class="transfer-field-val">26 1600 1013 1724 4184 1000 0001</span>
                 <span class="transfer-field-copy-action">Kopiuj</span>
               </button>
             </div>
             <div class="transfer-field">
               <span class="transfer-field-label">Odbiorca</span>
-              <button type="button" class="transfer-field-copy" data-copy="Fundacja VoctFoundation">
+              <button type="button" class="transfer-field-copy plausible-event-name=skarbiec+copy+fundacja" data-copy="Fundacja VoctFoundation">
                 <span class="transfer-field-val">Fundacja VoctFoundation</span>
                 <span class="transfer-field-copy-action">Kopiuj</span>
               </button>
             </div>
             <div class="transfer-field">
               <span class="transfer-field-label">Adres fundacji</span>
-              <button type="button" class="transfer-field-copy" data-copy="Św. Filipa 23/3, 31-150 Kraków">
+              <button type="button" class="transfer-field-copy plausible-event-name=skarbiec+copy+adres" data-copy="Św. Filipa 23/3, 31-150 Kraków">
                 <span class="transfer-field-val">Św. Filipa 23/3, 31-150 Kraków</span>
                 <span class="transfer-field-copy-action">Kopiuj</span>
               </button>
             </div>
             <div class="transfer-field">
               <span class="transfer-field-label">Tytuł przelewu</span>
-              <button type="button" class="transfer-field-copy" data-copy="Darowizna na cele statutowe VoctFoundation">
+              <button type="button" class="transfer-field-copy plausible-event-name=skarbiec+copy+tytul" data-copy="Darowizna na cele statutowe VoctFoundation">
                 <span class="transfer-field-val">Darowizna na cele statutowe VoctFoundation</span>
                 <span class="transfer-field-copy-action">Kopiuj</span>
               </button>
@@ -6872,8 +6872,8 @@
         Św. Filipa 23/3, 31-150 Kraków · Darowizna na cele statutowe.
       </p>
       <div class="vault-foot-links">
-        <button type="button" class="vault-foot-link" data-regulamin-open aria-haspopup="dialog" aria-controls="regulamin">Regulamin darowizn</button>
-        <a class="vault-foot-link" href="/polityka-prywatnosci" target="_blank" rel="noopener">Polityka prywatności ↗</a>
+        <button type="button" class="vault-foot-link plausible-event-name=regulamin+darowizn" data-regulamin-open aria-haspopup="dialog" aria-controls="regulamin">Regulamin darowizn</button>
+        <a class="vault-foot-link plausible-event-name=polityka+prywatnosci" href="/polityka-prywatnosci" target="_blank" rel="noopener">Polityka prywatności ↗</a>
       </div>
     </footer>
   </div>
@@ -6997,7 +6997,7 @@
     <div class="failure-kicker micro">VoctEnsemble · cykl MMXXVI</div>
     <h1 class="failure-title" id="failure-title">Płatność nie<br>doszła do skutku.</h1>
     <p class="failure-strap">Przepraszamy, płatność nie mogła zostać przetworzona. Twoje środki nie zostały pobrane. Prosimy spróbować ponownie lub wybrać inną metodę.</p>
-    <button class="failure-retry" type="button" data-failure-retry>Spróbuj ponownie</button>
+    <button class="failure-retry plausible-event-name=sprobuj+ponownie" type="button" data-failure-retry>Spróbuj ponownie</button>
   </div>
 </div>
 
@@ -7097,12 +7097,12 @@
             </span>
             <ul class="foundation-corpus-list">
               <li>
-                <a href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener" aria-label="Statut Fundacji VoctFoundation — dokument PDF, otwiera się w nowej karcie">
+                <a href="/docs/Statut-VoctFoundation.pdf" class="plausible-event-name=statut+fundacji" target="_blank" rel="noopener" aria-label="Statut Fundacji VoctFoundation — dokument PDF, otwiera się w nowej karcie">
                   Statut fundacji <span class="doc-tag" aria-hidden="true">PDF</span>
                 </a>
               </li>
               <li>
-                <a href="/polityka-prywatnosci">Polityka prywatności</a>
+                <a href="/polityka-prywatnosci" class="plausible-event-name=polityka+prywatnosci">Polityka prywatności</a>
               </li>
             </ul>
           </div>
@@ -7115,12 +7115,12 @@
               <span class="pl">kontakt</span>
             </span>
             <ul class="foundation-vox-list">
-              <li><a href="mailto:booking@voctensemble.com">booking</a></li>
-              <li><a href="mailto:patronat@voctensemble.com">patronat</a></li>
-              <li><a href="mailto:florent.de.bazelaire@voctensemble.com">dyrekcja artystyczna</a></li>
+              <li><a href="mailto:booking@voctensemble.com" class="plausible-event-name=booking">booking</a></li>
+              <li><a href="mailto:patronat@voctensemble.com" class="plausible-event-name=patronat">patronat</a></li>
+              <li><a href="mailto:florent.de.bazelaire@voctensemble.com" class="plausible-event-name=dyrekcja">dyrekcja artystyczna</a></li>
             </ul>
             <p class="foundation-vox-rodo">
-              <span class="key">RODO</span><a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>
+              <span class="key">RODO</span><a href="mailto:rodo@voctensemble.com" class="plausible-event-name=rodo+mail">rodo@voctensemble.com</a>
             </p>
           </div>
 
@@ -7133,9 +7133,9 @@
     <div class="footer-ribbon" aria-label="Obecność w sieci">
       <span class="footer-ribbon-rule" aria-hidden="true"></span>
       <ul class="footer-ribbon-list">
-        <li><a href="https://www.instagram.com/voctensemble/" target="_blank" rel="noopener noreferrer">instagram</a></li>
-        <li><a href="https://www.facebook.com/voctensemble/" target="_blank" rel="noopener noreferrer">facebook</a></li>
-        <li><a href="https://www.youtube.com/@VoctEnsemble-nb7gh" target="_blank" rel="noopener noreferrer">youtube</a></li>
+        <li><a href="https://www.instagram.com/voctensemble/" class="plausible-event-name=instagram" target="_blank" rel="noopener noreferrer">instagram</a></li>
+        <li><a href="https://www.facebook.com/voctensemble/" class="plausible-event-name=facebook" target="_blank" rel="noopener noreferrer">facebook</a></li>
+        <li><a href="https://www.youtube.com/@VoctEnsemble-nb7gh" class="plausible-event-name=youtube" target="_blank" rel="noopener noreferrer">youtube</a></li>
       </ul>
       <span class="footer-ribbon-rule" aria-hidden="true"></span>
     </div>
@@ -7152,7 +7152,7 @@
       <div class="footer-colophon-signature micro">
         <span>MMXXVI · wszystkie wybrzmienia</span>
         <span class="footer-colophon-author">
-          Site · <a href="mailto:krystbugalski@gmail.com" rel="author">Krystian Bugalski <span aria-hidden="true">↗</span></a>
+          Site · <a href="mailto:krystbugalski@gmail.com" class="plausible-event-name=author+mail" rel="author">Krystian Bugalski <span aria-hidden="true">↗</span></a>
         </span>
       </div>
     </div>
