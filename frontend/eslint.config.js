@@ -1,18 +1,13 @@
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
-import { defineConfig, globalIgnores } from "eslint/config";
+import tseslint from "typescript-eslint";
 
-export default defineConfig([
-  globalIgnores(["dist"]),
+export default tseslint.config(
+  { ignores: ["dist", "*.tsbuildinfo"] },
   {
-    files: ["**/*.{js,jsx}"],
-    extends: [
-      js.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-    ],
+    files: ["**/*.{ts,tsx,js,jsx}"],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
@@ -22,8 +17,27 @@ export default defineConfig([
         sourceType: "module",
       },
     },
+    plugins: {
+      "react-hooks": reactHooks,
+    },
     rules: {
-      "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "error",
+      "no-unused-vars": "off",
+
+      "@typescript-eslint/no-explicit-any": "warn",
+
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrors: "none",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+          varsIgnorePattern: "^[A-Z_]",
+        },
+      ],
     },
   },
-]);
+);
