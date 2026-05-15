@@ -21,7 +21,7 @@ export default function HeroSection() {
   const [isSoundOn, setIsSoundOn] = useState(false);
 
   // Custom hooks for interactive audio-visual feedback
-  const { x: gyroX, y: gyroY } = useMouseAndGyro();
+  useMouseAndGyro();
   useScrollyAudio(isSoundOn);
 
   // ==========================================

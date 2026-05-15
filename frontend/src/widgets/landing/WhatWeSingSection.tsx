@@ -11,7 +11,6 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useCursor } from "@/app/providers/CursorProvider";
 import { ElegantHeading } from "@ui/kinematics/ElegantHeading";
 
 // ==========================================

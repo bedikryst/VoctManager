@@ -103,9 +103,6 @@ export default function WhatWeDoSection() {
     offset: ["start end", "end start"],
   });
 
-  const yParallaxFast = useTransform(scrollYProgress, [0, 1], [60, -100]);
-  const yParallaxSlow = useTransform(scrollYProgress, [0, 1], [60, -40]);
-
   const lineProgress = useTransform(scrollYProgress, [0.05, 0.12], [0, 1]);
   const horizontalProgress = useTransform(scrollYProgress, [0.12, 0.2], [0, 1]);
   const lineProgress2 = useTransform(scrollYProgress, [0.2, 0.9], [0, 1]);
