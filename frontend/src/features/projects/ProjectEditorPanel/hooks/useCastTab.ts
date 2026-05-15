@@ -41,13 +41,16 @@ export interface UseCastTabResult {
   ) => Promise<void>;
 }
 
+const EMPTY_ARTISTS: Artist[] = [];
+const EMPTY_PARTICIPATIONS: Participation[] = [];
+
 export const useCastTab = (projectId: string): UseCastTabResult => {
   const { t } = useTranslation();
 
   const artistsQuery = useProjectArtistsDictionary();
   const participationsQuery = useProjectParticipations(projectId);
-  const artists: Artist[] = artistsQuery.data ?? [];
-  const participations: Participation[] = participationsQuery.data ?? [];
+  const artists = artistsQuery.data ?? EMPTY_ARTISTS;
+  const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
 
   const createParticipationMutation = useCreateParticipation(projectId);
   const updateParticipationMutation = useUpdateParticipation(projectId);

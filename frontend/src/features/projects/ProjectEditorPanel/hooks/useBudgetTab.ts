@@ -37,6 +37,11 @@ export interface BudgetKpi {
   grandTotal: number;
 }
 
+const EMPTY_ARTISTS: Artist[] = [];
+const EMPTY_COLLABORATORS: Collaborator[] = [];
+const EMPTY_CREW_ASSIGNMENTS: CrewAssignment[] = [];
+const EMPTY_PARTICIPATIONS: Participation[] = [];
+
 export interface UseBudgetTabResult {
   isSaving: boolean;
   isDirty: boolean;
@@ -59,10 +64,11 @@ export const useBudgetTab = (
   const crewAssignmentsQuery = useProjectCrewAssignments(projectId);
   const artistsQuery = useProjectArtistsDictionary();
   const collaboratorsQuery = useProjectCollaboratorsDictionary();
-  const participations: Participation[] = participationsQuery.data ?? [];
-  const crewAssignments: CrewAssignment[] = crewAssignmentsQuery.data ?? [];
-  const artists: Artist[] = artistsQuery.data ?? [];
-  const collaborators: Collaborator[] = collaboratorsQuery.data ?? [];
+  const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
+  const crewAssignments =
+    crewAssignmentsQuery.data ?? EMPTY_CREW_ASSIGNMENTS;
+  const artists = artistsQuery.data ?? EMPTY_ARTISTS;
+  const collaborators = collaboratorsQuery.data ?? EMPTY_COLLABORATORS;
 
   const updateParticipationMutation = useUpdateParticipation(projectId);
   const updateCrewAssignmentMutation = useUpdateCrewAssignment(projectId);

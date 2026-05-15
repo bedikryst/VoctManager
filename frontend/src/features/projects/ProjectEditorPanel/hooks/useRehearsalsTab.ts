@@ -90,6 +90,12 @@ const getLocationId = (location: Rehearsal["location"]): string => {
   return typeof location === "string" ? location : location.id;
 };
 
+const EMPTY_ARTISTS: Artist[] = [];
+const EMPTY_LOCATIONS: Location[] = [];
+const EMPTY_PARTICIPATIONS: Participation[] = [];
+const EMPTY_PROJECTS: Project[] = [];
+const EMPTY_REHEARSALS: Rehearsal[] = [];
+
 export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   const { t } = useTranslation();
 
@@ -98,16 +104,16 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   const participationsQuery = useProjectParticipations(projectId);
   const rehearsalsQuery = useProjectRehearsals(projectId);
   const locationsDataQuery = useLocations();
-  const projects: import("@/shared/types").Project[] = projectsQuery.data ?? [];
-  const artists: Artist[] = artistsQuery.data ?? [];
-  const participations: Participation[] = participationsQuery.data ?? [];
-  const rehearsals: Rehearsal[] = rehearsalsQuery.data ?? [];
-  const locationsData: Location[] = locationsDataQuery.data ?? [];
+  const projects = projectsQuery.data ?? EMPTY_PROJECTS;
+  const artists = artistsQuery.data ?? EMPTY_ARTISTS;
+  const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
+  const rehearsals = rehearsalsQuery.data ?? EMPTY_REHEARSALS;
+  const locationsData = locationsDataQuery.data ?? EMPTY_LOCATIONS;
 
   const project =
     projects.find((candidate) => String(candidate.id) === String(projectId)) ??
     null;
-  const locations = locationsData ?? [];
+  const locations = locationsData;
 
   const createRehearsalMutation = useCreateRehearsal(projectId);
   const updateRehearsalMutation = useUpdateRehearsal(projectId);

@@ -26,6 +26,11 @@ import {
 
 export type AttendanceStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED" | null;
 
+const EMPTY_ARTISTS: Artist[] = [];
+const EMPTY_ATTENDANCES: Attendance[] = [];
+const EMPTY_PARTICIPATIONS: Participation[] = [];
+const EMPTY_REHEARSALS: Rehearsal[] = [];
+
 export interface AttendanceRecord {
   id: string;
   rehearsal: string;
@@ -81,10 +86,11 @@ export const useAttendanceMatrix = (
   const participationsQuery = useProjectParticipations(projectId);
   const artistsQuery = useProjectArtistsDictionary();
   const fetchedAttendancesQuery = useProjectAttendances(projectId);
-  const rehearsals: Rehearsal[] = rehearsalsQuery.data ?? [];
-  const participations: Participation[] = participationsQuery.data ?? [];
-  const artists: Artist[] = artistsQuery.data ?? [];
-  const fetchedAttendances: Attendance[] = fetchedAttendancesQuery.data ?? [];
+  const rehearsals = rehearsalsQuery.data ?? EMPTY_REHEARSALS;
+  const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
+  const artists = artistsQuery.data ?? EMPTY_ARTISTS;
+  const fetchedAttendances =
+    fetchedAttendancesQuery.data ?? EMPTY_ATTENDANCES;
 
   const createMutation = useCreateAttendance(projectId);
   const updateMutation = useUpdateAttendance(projectId);

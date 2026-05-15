@@ -77,6 +77,12 @@ export interface UseMicroCastingResult {
 }
 
 const TEMP_PREFIX = "temp-";
+const EMPTY_ARTISTS: Artist[] = [];
+const EMPTY_PARTICIPATIONS: Participation[] = [];
+const EMPTY_PIECE_CASTINGS: PieceCasting[] = [];
+const EMPTY_PIECES: Piece[] = [];
+const EMPTY_PROGRAM: ProgramItem[] = [];
+const EMPTY_VOICE_LINES: VoiceLineOption[] = [];
 
 const isTempId = (id: PieceCasting["id"]): boolean =>
   String(id).startsWith(TEMP_PREFIX);
@@ -96,12 +102,12 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const voiceLinesQuery = useProjectVoiceLinesDictionary();
   const programQuery = useProjectProgram(projectId);
   const pieceCastingsQuery = useProjectPieceCastings(projectId);
-  const artists: Artist[] = artistsQuery.data ?? [];
-  const pieces: Piece[] = piecesQuery.data ?? [];
-  const participations: Participation[] = participationsQuery.data ?? [];
-  const voiceLines: VoiceLineOption[] = voiceLinesQuery.data ?? [];
-  const program: ProgramItem[] = programQuery.data ?? [];
-  const pieceCastings: PieceCasting[] = pieceCastingsQuery.data ?? [];
+  const artists = artistsQuery.data ?? EMPTY_ARTISTS;
+  const pieces = piecesQuery.data ?? EMPTY_PIECES;
+  const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
+  const voiceLines = voiceLinesQuery.data ?? EMPTY_VOICE_LINES;
+  const program = programQuery.data ?? EMPTY_PROGRAM;
+  const pieceCastings = pieceCastingsQuery.data ?? EMPTY_PIECE_CASTINGS;
 
   const createMutation = useCreatePieceCasting(projectId);
   const updateMutation = useUpdatePieceCasting(projectId);

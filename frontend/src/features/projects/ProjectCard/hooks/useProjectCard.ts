@@ -20,7 +20,6 @@ export function useProjectCard(projectId: string) {
     mutationFn: async ({
       endpoint,
       defaultFilename,
-      loaderKey,
     }: {
       endpoint: ProjectReportEndpoint;
       defaultFilename: string;

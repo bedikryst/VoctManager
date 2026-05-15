@@ -36,6 +36,9 @@ export interface UseCrewAssignmentsResult {
   handleRemove: (id: string) => Promise<void>;
 }
 
+const EMPTY_COLLABORATORS: Collaborator[] = [];
+const EMPTY_CREW_ASSIGNMENTS: CrewAssignment[] = [];
+
 export const useCrewAssignments = (
   projectId: string,
 ): UseCrewAssignmentsResult => {
@@ -43,8 +46,9 @@ export const useCrewAssignments = (
 
   const collaboratorsQuery = useProjectCollaboratorsDictionary();
   const crewAssignmentsQuery = useProjectCrewAssignments(projectId);
-  const collaborators: Collaborator[] = collaboratorsQuery.data ?? [];
-  const crewAssignments: CrewAssignment[] = crewAssignmentsQuery.data ?? [];
+  const collaborators = collaboratorsQuery.data ?? EMPTY_COLLABORATORS;
+  const crewAssignments =
+    crewAssignmentsQuery.data ?? EMPTY_CREW_ASSIGNMENTS;
 
   const createCrewAssignmentMutation = useCreateCrewAssignment(projectId);
   const deleteCrewAssignmentMutation = useDeleteCrewAssignment(projectId);

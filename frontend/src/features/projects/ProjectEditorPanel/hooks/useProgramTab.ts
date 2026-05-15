@@ -67,6 +67,9 @@ const normalizeProgramItem = (
   };
 };
 
+const EMPTY_PIECES: Piece[] = [];
+const EMPTY_PROGRAM: ProgramItem[] = [];
+
 export const useProgramTab = (
   projectId: string,
   onDirtyStateChange?: (isDirty: boolean) => void,
@@ -76,8 +79,8 @@ export const useProgramTab = (
 
   const projectPiecesQuery = useProjectPiecesDictionary();
   const projectProgramQuery = useProjectProgram(projectId);
-  const pieces: Piece[] = projectPiecesQuery.data ?? [];
-  const fetchedProgram: ProgramItem[] = projectProgramQuery.data ?? [];
+  const pieces = projectPiecesQuery.data ?? EMPTY_PIECES;
+  const fetchedProgram = projectProgramQuery.data ?? EMPTY_PROGRAM;
 
   const createProgramMutation = useCreateProgramItem(projectId);
   const updateProgramMutation = useUpdateProgramItem(projectId);
@@ -375,6 +378,7 @@ export const useProgramTab = (
           maxKnownOrder + changedItems.length * 2 + 1,
         );
       } catch {
+        // Best-effort rollback; the original save error is reported below.
       }
 
       await queryClient.invalidateQueries({

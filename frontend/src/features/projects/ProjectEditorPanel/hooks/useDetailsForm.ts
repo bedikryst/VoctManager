@@ -90,6 +90,8 @@ const getProjectConductorId = (
     : project.conductor.id;
 };
 
+const EMPTY_PROJECTS: Project[] = [];
+
 const toZonedInputString = (
   dateString?: string | null,
   timezone = "Europe/Warsaw",
@@ -117,7 +119,7 @@ export const useDetailsForm = (
   const { t } = useTranslation();
 
   const projectsQuery = useProjects(Boolean(projectId));
-  const projects: Project[] = projectsQuery.data ?? [];
+  const projects = projectsQuery.data ?? EMPTY_PROJECTS;
 
   const project = useMemo(
     () =>
