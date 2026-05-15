@@ -5957,12 +5957,12 @@
         /* Kasujemy IO-driven translateY/opacity na rzecz mask time-based transition */
         opacity: 1;
         transform: none;
-        transition: --ink-reveal 3.0s var(--ease-slow) !important;
+        transition: --ink-reveal 7.0s var(--ease-slow) !important;
       }
 
       .manifest-line:nth-child(1).reveal { transition-delay: 0s !important; }
-      .manifest-line:nth-child(2).reveal { transition-delay: 0.45s !important; }
-      .manifest-line:nth-child(3).reveal { transition-delay: 0.8s !important; }
+      .manifest-line:nth-child(2).reveal { transition-delay: 0.7s !important; }
+      .manifest-line:nth-child(3).reveal { transition-delay: 1.1s !important; }
 
       .manifest-line.reveal.is-visible {
         --ink-reveal: 110%;
@@ -6015,8 +6015,8 @@
       }
 
       .manifest-line--closing.is-visible .reveal-italic {
-        animation: italic-word-emerge 2.5s var(--ease-slow) forwards;
-        animation-delay: 1.7s; /* Oczekuje, aż mask sweep na linii III zbliży się do słowa */
+        animation: italic-word-emerge 5.5s var(--ease-slow) forwards;
+        animation-delay: 2.5s; /* Oczekuje, aż mask sweep na linii III zbliży się do słowa */
       }
 
       @keyframes italic-word-emerge {
@@ -6256,7 +6256,7 @@
     </span>
     <div class="aether-row">
       <div class="aether-line"></div>
-      <div class="aether-knot" data-parallax="0.06">
+      <div class="aether-knot">
         <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
           <defs>
             <filter id="ethereal-glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -6361,7 +6361,7 @@
     </span>
     <div class="aether-row">
       <div class="aether-line"></div>
-      <div class="aether-knot" data-parallax="0.08">
+      <div class="aether-knot">
         <svg viewBox="0 0 200 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
           <line x1="0" y1="30" x2="200" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
           <path class="knot-wave knot-wave-top" d="M 10,30 C 55,30 70,10 100,10 C 130,10 145,30 190,30" stroke-width="0.75" stroke-opacity="0.4" />
@@ -6583,7 +6583,7 @@
     </span>
     <div class="aether-row">
       <div class="aether-line"></div>
-      <div class="aether-knot" data-parallax="0.06">
+      <div class="aether-knot" >
         <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
           <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
           <!-- Vesica piscis — dwa półokręgi tworzące migdał wokół centralnego światła -->
