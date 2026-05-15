@@ -9,17 +9,19 @@
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import api from "@/shared/api/api";
 import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 import { archiveKeys } from "@/features/archive/api/archive.queries";
 import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
+import { ArtistService } from "@/features/artists/api/artist.service";
+import { ArchiveService } from "@/features/archive/api/archive.service";
+import { ProjectService } from "@/features/projects/api/project.service";
+import { RehearsalsService } from "@/features/rehearsals/api/rehearsals.service";
 import type {
   Project,
   Artist,
   Rehearsal,
-  ProgramItem,
   Piece,
   LocationSnippet,
 } from "@/shared/types";
@@ -29,6 +31,12 @@ import type { AdminTelemetryStatsDto } from "../components/TelemetryWidget";
 import type { ProjectStatsDto } from "../components/SpotlightProjectCard";
 import type { InvitationStatsDto } from "../components/InvitationStatusWidget";
 import { parseConductorName } from "../utils/conductorParser";
+
+const EMPTY_PROJECTS: Project[] = [];
+const EMPTY_REHEARSALS: EnrichedRehearsal[] = [];
+const EMPTY_ARTISTS: Artist[] = [];
+const EMPTY_PIECES: Piece[] = [];
+const WORKSPACE_STALE_TIME = 1000 * 60 * 5;
 
 /**
  * Type Guard to distinguish between a Location ID (string) and a full LocationSnippet.
@@ -51,25 +59,23 @@ export const useAdminDashboardData = () => {
     queries: [
       {
         queryKey: projectKeys.projects.all,
-        queryFn: async () => (await api.get<Project[]>("/api/projects/")).data,
+        queryFn: ProjectService.getAll,
+        staleTime: WORKSPACE_STALE_TIME,
       },
       {
         queryKey: rehearsalKeys.rehearsals.all,
-        queryFn: async () =>
-          (await api.get<EnrichedRehearsal[]>("/api/rehearsals/")).data,
+        queryFn: RehearsalsService.getRehearsals,
+        staleTime: WORKSPACE_STALE_TIME,
       },
       {
         queryKey: artistKeys.artists.all,
-        queryFn: async () => (await api.get<Artist[]>("/api/artists/")).data,
-      },
-      {
-        queryKey: projectKeys.program.all,
-        queryFn: async () =>
-          (await api.get<ProgramItem[]>("/api/program-items/")).data,
+        queryFn: ArtistService.getAll,
+        staleTime: WORKSPACE_STALE_TIME,
       },
       {
         queryKey: archiveKeys.pieces.all,
-        queryFn: async () => (await api.get<Piece[]>("/api/pieces/")).data,
+        queryFn: ArchiveService.getPieces,
+        staleTime: WORKSPACE_STALE_TIME,
       },
     ],
     combine: (results) => ({
@@ -79,13 +85,17 @@ export const useAdminDashboardData = () => {
         projects: results[0].data ?? [],
         rehearsals: results[1].data ?? [],
         artists: results[2].data ?? [],
-        programItems: results[3].data ?? [],
-        pieces: results[4].data ?? [],
+        pieces: results[3].data ?? [],
       },
     }),
   });
 
-  const { projects, rehearsals, artists, programItems, pieces } = data;
+  const {
+    projects = EMPTY_PROJECTS,
+    rehearsals = EMPTY_REHEARSALS,
+    artists = EMPTY_ARTISTS,
+    pieces = EMPTY_PIECES,
+  } = data;
 
   // 1. TELEMETRY AGGREGATION
   const adminStats: AdminTelemetryStatsDto = useMemo(() => {
@@ -198,7 +208,7 @@ export const useAdminDashboardData = () => {
       castCount: rawNextProject.cast_total ?? 0,
       piecesCount: rawNextProject.pieces_total ?? 0,
     };
-  }, [rawNextProject, programItems, rehearsals]);
+  }, [rawNextProject]);
 
   // 5. NEXT REHEARSAL ALERT
   const nextRehearsal = useMemo(() => {
@@ -222,8 +232,13 @@ export const useAdminDashboardData = () => {
       const project = projects.find(
         (p) => String(p.id) === String(next.project),
       );
+      const location = isLocationSnippet(next.location)
+        ? next.location
+        : null;
+
       return {
         ...next,
+        location,
         projectTitle:
           project?.title ||
           t("dashboard.admin.unknown_project", "Nieznany projekt"),

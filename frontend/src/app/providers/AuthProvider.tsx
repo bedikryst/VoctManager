@@ -19,6 +19,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import api, { type AuthRequestConfig } from "@/shared/api/api";
 import i18n from "@/shared/config/i18n";
 import type { AuthProfile, AuthUser } from "@/shared/auth/auth.types";
+import { settingsKeys } from "@/features/settings/api/settings.queries";
+import type { UserMeDTO } from "@/features/settings/types/settings.dto";
+import { notificationKeys } from "@/features/notifications/api/notifications.queries";
 
 interface UserIdentityResponse {
   id: string | number;
@@ -62,16 +65,32 @@ const silentAuthCheckConfig: AuthRequestConfig = {
   skipAuthRedirect: true,
 };
 
-const buildAuthUser = async (): Promise<AuthUser> => {
-  const identityResponse = await api.get<UserIdentityResponse>(
-    "/api/users/me/",
-    silentAuthCheckConfig,
-  );
+const fetchArtistSelf = async (): Promise<ArtistSelfResponse | null> => {
+  try {
+    const response = await api.get<ArtistSelfResponse>(
+      "/api/artists/me/",
+      silentAuthCheckConfig,
+    );
 
-  const artistResponse = await api
-    .get<ArtistSelfResponse>("/api/artists/me/", silentAuthCheckConfig)
-    .then((response) => response.data)
-    .catch(() => null);
+    return response.status === 204 || !response.data ? null : response.data;
+  } catch (error: unknown) {
+    if (
+      isAxiosError(error) &&
+      (error.response?.status === 404 || error.response?.status === 204)
+    ) {
+      return null;
+    }
+
+    console.warn("Artist self profile was unavailable during auth bootstrap.", error);
+    return null;
+  }
+};
+
+const buildAuthUser = async (): Promise<AuthUser> => {
+  const [identityResponse, artistResponse] = await Promise.all([
+    api.get<UserIdentityResponse>("/api/users/me/", silentAuthCheckConfig),
+    fetchArtistSelf(),
+  ]);
 
   return {
     id: identityResponse.data.id,
@@ -88,6 +107,39 @@ const buildAuthUser = async (): Promise<AuthUser> => {
       artistResponse?.voice_type_display,
     profile: identityResponse.data.profile ?? artistResponse?.profile ?? null,
   };
+};
+
+const toUserMeDTO = (user: AuthUser): UserMeDTO => ({
+  id: user.id,
+  email: user.email,
+  first_name: user.first_name ?? "",
+  last_name: user.last_name ?? "",
+  voice_type: user.voice_type ?? null,
+  voice_type_display: user.voice_type_display ?? null,
+  profile: user.profile
+    ? {
+        role: user.profile.role,
+        is_manager: user.profile.is_manager,
+        is_artist: user.profile.is_artist,
+        is_crew: user.profile.is_crew,
+        phone_number: user.profile.phone_number ?? "",
+        language: user.profile.language ?? "pl",
+        timezone: user.profile.timezone ?? "UTC",
+        dietary_preference: user.profile.dietary_preference ?? "none",
+        dietary_notes: user.profile.dietary_notes ?? "",
+        clothing_size: user.profile.clothing_size ?? "",
+        shoe_size: user.profile.shoe_size ?? "",
+        height_cm: user.profile.height_cm ?? null,
+        calendar_token: user.profile.calendar_token ?? "",
+      }
+    : null,
+});
+
+const primeSessionIdentityCache = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  user: AuthUser,
+): void => {
+  queryClient.setQueryData<UserMeDTO>(settingsKeys.data, toUserMeDTO(user));
 };
 
 export const AuthProvider = ({
@@ -110,7 +162,9 @@ export const AuthProvider = ({
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        setUser(await buildAuthUser());
+        const authUser = await buildAuthUser();
+        primeSessionIdentityCache(queryClient, authUser);
+        setUser(authUser);
       } catch (error: unknown) {
         setUser(null);
         console.info(
@@ -122,11 +176,12 @@ export const AuthProvider = ({
     };
 
     checkAuth();
-  }, []);
+  }, [queryClient]);
 
   const refreshUser = async () => {
     try {
       const freshUser = await buildAuthUser();
+      primeSessionIdentityCache(queryClient, freshUser);
       setUser(freshUser);
     } catch (error) {
       console.error("Failed to refresh user session data", error);
@@ -139,10 +194,20 @@ export const AuthProvider = ({
   ): Promise<LoginResponse> => {
     try {
       await api.post("/api/token/", { email, password });
-      setUser(await buildAuthUser());
+      const authUser = await buildAuthUser();
+      primeSessionIdentityCache(queryClient, authUser);
+      setUser(authUser);
 
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: notificationKeys.lists(),
+          exact: true,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: notificationKeys.unreadCount(),
+          exact: true,
+        }),
+      ]);
 
       return { success: true };
     } catch (error: unknown) {

@@ -8,17 +8,18 @@
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import api from "@/shared/api/api";
 
 import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { projectKeys } from "@/features/projects/api/project.queries";
+import { ArtistService } from "@/features/artists/api/artist.service";
+import { ProjectService } from "@/features/projects/api/project.service";
+import { ScheduleService } from "@/features/schedule/api/schedule.service";
 
 import type {
   Project,
   Rehearsal,
   Participation,
   Attendance,
-  Artist,
 } from "@/shared/types";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 
@@ -26,59 +27,64 @@ export interface EnrichedRehearsal extends Rehearsal {
   absent_count?: number;
 }
 
+const EMPTY_PROJECTS: Project[] = [];
+const EMPTY_REHEARSALS: EnrichedRehearsal[] = [];
+const EMPTY_ATTENDANCES: Attendance[] = [];
+const EMPTY_PARTICIPATIONS: Participation[] = [];
+const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
+const FAST_CHANGING_STALE_TIME = 1000 * 60;
+const WORKSPACE_STALE_TIME = 1000 * 60 * 5;
+
 export const useArtistDashboardData = (artistId?: string | number) => {
   const { t } = useTranslation();
 
   const results = useQueries({
     queries: [
       {
-        queryKey: projectKeys.participations.byArtist(artistId!),
-        queryFn: async () =>
-          (
-            await api.get<Participation[]>(
-              `/api/participations/?artist=${artistId}`,
-            )
-          ).data,
+        queryKey: projectKeys.participations.byArtist(
+          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
+        ),
+        queryFn: () => ScheduleService.getParticipationsByArtist(artistId!),
         enabled: !!artistId,
+        staleTime: WORKSPACE_STALE_TIME,
       },
       {
-        queryKey: rehearsalKeys.rehearsals.byArtist(artistId!),
-        queryFn: async () =>
-          (
-            await api.get<EnrichedRehearsal[]>(
-              `/api/rehearsals/?invited_participations__artist=${artistId}`,
-            )
-          ).data,
+        queryKey: rehearsalKeys.rehearsals.byArtist(
+          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
+        ),
+        queryFn: () => ScheduleService.getRehearsalsByArtist(artistId!),
         enabled: !!artistId,
+        staleTime: WORKSPACE_STALE_TIME,
       },
       {
         queryKey: projectKeys.projects.all,
-        queryFn: async () => (await api.get<Project[]>("/api/projects/")).data,
+        queryFn: ProjectService.getAll,
+        staleTime: WORKSPACE_STALE_TIME,
       },
       {
-        queryKey: rehearsalKeys.attendances.byArtist(artistId!),
-        queryFn: async () =>
-          (
-            await api.get<Attendance[]>(
-              `/api/attendances/?participation__artist=${artistId}`,
-            )
-          ).data,
+        queryKey: rehearsalKeys.attendances.byArtist(
+          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
+        ),
+        queryFn: () => ScheduleService.getAttendancesByArtist(artistId!),
         enabled: !!artistId,
+        staleTime: FAST_CHANGING_STALE_TIME,
       },
       {
-        queryKey: artistKeys.artists.details(artistId!),
-        queryFn: async () =>
-          (await api.get<Artist>(`/api/artists/${artistId}/`)).data,
+        queryKey: artistKeys.artists.details(
+          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
+        ),
+        queryFn: () => ArtistService.getById(artistId!),
         enabled: !!artistId,
+        staleTime: WORKSPACE_STALE_TIME,
       },
     ],
   });
 
-  const isLoading = results.some((r) => r.isLoading);
-  const participations = results[0].data || [];
-  const rehearsals = results[1].data || [];
-  const projects = results[2].data || [];
-  const attendances = results[3].data || [];
+  const isLoading = results.slice(0, 4).some((result) => result.isLoading);
+  const participations = results[0].data ?? EMPTY_PARTICIPATIONS;
+  const rehearsals = results[1].data ?? EMPTY_REHEARSALS;
+  const projects = results[2].data ?? EMPTY_PROJECTS;
+  const attendances = results[3].data ?? EMPTY_ATTENDANCES;
   const artistProfile = results[4].data ?? null;
 
   const { upNextRehearsal, upNextProject } = useMemo(() => {

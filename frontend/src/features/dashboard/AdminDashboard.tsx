@@ -10,9 +10,8 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
-import api from "@/shared/api/api";
-import type { Artist } from "@/shared/types";
 import { artistKeys } from "@/features/artists/api/artist.queries";
+import { ArtistService } from "@/features/artists/api/artist.service";
 
 import { UserLocalClock } from "@/widgets/utility/UserLocalClock";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -29,9 +28,12 @@ import { SpotlightProjectCard } from "./components/SpotlightProjectCard";
 import { InvitationStatusWidget } from "./components/InvitationStatusWidget";
 import { AdminModulesDirectory } from "./components/AdminModulesDirectory";
 
+const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
+
 export default function AdminDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const adminArtistProfileId = user?.artist_profile_id;
   const {
     isLoading,
     adminStats,
@@ -43,10 +45,12 @@ export default function AdminDashboard(): React.JSX.Element {
   } = useAdminDashboardData();
 
   const { data: adminArtistProfile } = useQuery({
-    queryKey: artistKeys.artists.details(user?.artist_profile_id!),
-    queryFn: async () =>
-      (await api.get<Artist>(`/api/artists/${user?.artist_profile_id}/`)).data,
-    enabled: !!user?.artist_profile_id,
+    queryKey: artistKeys.artists.details(
+      adminArtistProfileId ?? ANONYMOUS_ARTIST_QUERY_ID,
+    ),
+    queryFn: () => ArtistService.getById(adminArtistProfileId!),
+    enabled: !!adminArtistProfileId,
+    staleTime: 1000 * 60 * 5,
   });
 
   const adminFirstNameVocative = adminArtistProfile?.first_name_vocative || null;

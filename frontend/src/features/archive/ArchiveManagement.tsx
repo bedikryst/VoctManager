@@ -167,6 +167,7 @@ export default function ArchiveManagement(): React.JSX.Element {
     setEpochFilter,
     setSearchTerm,
     setVoicingFilter,
+    t,
     voicingFilter,
   ]);
 

@@ -21,6 +21,7 @@ export const useNotificationPreferences = () => {
       const { data } = await api.get("/api/notifications/preferences/");
       return data;
     },
+    staleTime: 1000 * 60 * 5,
   });
 };
 

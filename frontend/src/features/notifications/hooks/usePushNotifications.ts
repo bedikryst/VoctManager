@@ -66,7 +66,6 @@ function detectAvailability(): PushAvailability {
 
   if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY.length < 32) {
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
       console.error(
         "[PushNotifications] VITE_VAPID_PUBLIC_KEY is missing or invalid. " +
           "Set it in frontend/.env (and pass it as a build ARG in Docker for production builds).",
@@ -173,7 +172,6 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       toast.success("Powiadomienia push aktywne na tym urządzeniu.");
       return true;
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("[PushNotifications] Subscription failed:", error);
       toast.error("Nie udało się aktywować powiadomień. Spróbuj ponownie za chwilę.");
       return false;
@@ -198,7 +196,6 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       setIsSubscribed(false);
       toast.success("Powiadomienia push wyłączone.");
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("[PushNotifications] Unsubscribe failed:", error);
       toast.error("Nie udało się wyłączyć powiadomień push.");
     }

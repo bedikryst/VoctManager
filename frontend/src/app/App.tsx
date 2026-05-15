@@ -23,6 +23,7 @@ import { Preloader } from "@/shared/ui/kinematics/Preloader";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import ProtectedRoute from "./router/ProtectedRoute";
 import ManagerRoute from "./router/ManagerRoute";
+import { PANEL_DATA_PRELOADERS } from "./router/panelDataPreloaders";
 import {
   DashboardLayout,
   type DashboardRoutePreloader,
@@ -247,7 +248,10 @@ export default function App(): React.JSX.Element {
               <Route
                 path="/panel"
                 element={
-                  <DashboardLayout routePreloaders={PANEL_ROUTE_PRELOADERS} />
+                  <DashboardLayout
+                    routePreloaders={PANEL_ROUTE_PRELOADERS}
+                    dataPreloaders={PANEL_DATA_PRELOADERS}
+                  />
                 }
               >
                 <Route index element={<DashboardHome />} />

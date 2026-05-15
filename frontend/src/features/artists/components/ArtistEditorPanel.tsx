@@ -5,7 +5,7 @@
  * @module panel/artists/ArtistEditorPanel
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,6 @@ import { Input } from "@ui/primitives/Input";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useArtistForm } from "../hooks/useArtistForm";
 import { SendNotificationModal } from "./SendNotificationModal";
-import z from "zod";
 
 interface ArtistEditorPanelProps {
   isOpen: boolean;
@@ -60,13 +59,13 @@ export default function ArtistEditorPanel({
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
   const languageValue = useWatch({ control: form.control, name: "language" });
 
-  const handleCloseRequest = () => {
+  const handleCloseRequest = useCallback(() => {
     if (isDirty) {
       setShowExitConfirm(true);
     } else {
       onClose();
     }
-  };
+  }, [isDirty, onClose]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -78,7 +77,7 @@ export default function ArtistEditorPanel({
       window.addEventListener("keydown", handleKeyDown);
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, showExitConfirm, isDirty]);
+  }, [handleCloseRequest, isOpen, showExitConfirm]);
 
   const forceClose = () => {
     setShowExitConfirm(false);
