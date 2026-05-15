@@ -5944,20 +5944,26 @@
       }
 
       /* ─── Manifest lines — ink emergence + breath ───
-         Dwie animacje na tej samej view-timeline:
-         1) manifest-ink (entry 0% → entry 38%) — soft-edge mask sweepuje
-            od lewej do prawej, "ink wynurza się z papieru". Kończy się
-            ZANIM "Odsłania." zaczyna własną italic emergence (entry 40%),
-            więc III linia ma czysty "reveal → italic rise" rytm.
+         1) IO-triggered ink reveal (--ink-reveal) poprzez CSS transition
+            trwający stałe 1.6s, odpalany po otrzymaniu klasy .is-visible.
+            Stagger 0.25s na każdej kolejnej linii.
          2) manifest-breath (entry 5% cover 60%) — wht 500→320, dynamiczne
             opadanie wagi gdy linia osiada na środku ekranu.
          Mask jest soft-edged (14% feather) dla "ink bleed" feel — nie
          hard wipe. Kąt 96deg = subtelny diagonalny tilt vs prosta 90deg. */
       .manifest-line.reveal {
-        /* Kasujemy IO-driven .reveal (opacity/translateY) — mask owna entry teraz */
+        /* Kasujemy IO-driven translateY/opacity na rzecz mask time-based transition */
         opacity: 1;
         transform: none;
-        transition: none;
+        transition: --ink-reveal 3.0s var(--ease-slow) !important;
+      }
+
+      .manifest-line:nth-child(1).reveal { transition-delay: 0s !important; }
+      .manifest-line:nth-child(2).reveal { transition-delay: 0.45s !important; }
+      .manifest-line:nth-child(3).reveal { transition-delay: 0.8s !important; }
+
+      .manifest-line.reveal.is-visible {
+        --ink-reveal: 110%;
       }
 
       .manifest-line {
@@ -5980,12 +5986,10 @@
         );
         -webkit-mask-repeat: no-repeat;
         mask-repeat: no-repeat;
-        animation:
-          manifest-breath linear both,
-          manifest-ink linear both;
-        animation-timeline: --breathe-self, --breathe-self;
-        animation-range: entry 5% cover 60%, entry 0% entry 38%;
-        will-change: font-variation-settings, mask-image;
+        animation: manifest-breath linear both;
+        animation-timeline: --breathe-self;
+        animation-range: entry 5% cover 60%;
+        will-change: font-variation-settings, mask-image, --ink-reveal;
       }
 
       @keyframes manifest-breath {
@@ -5993,20 +5997,10 @@
         100% { --wght: 320; }
       }
 
-      @keyframes manifest-ink {
-        0%   { --ink-reveal: -14%; }
-        100% { --ink-reveal: 110%; }
-      }
-
       /* ─── Manifest III — italic emergence na JEDNYM słowie ───
          "Odsłania." samo się odsłania. Italic Cormorant (osobny krój)
          wchodzi z dołu, rośnie z wght 320 do 580, z opacity 0 do 1.
-         Bez dual-layer, bez metric mismatch. */
-      .manifest-line--closing {
-        view-timeline-name: --manifest-iii;
-        view-timeline-axis: block;
-      }
-
+         Odpalane time-based gdy linia III otrzymuje .is-visible. */
       .reveal-italic {
         display: inline-block;
         font-style: italic;
@@ -6014,11 +6008,13 @@
         font-variation-settings: "wght" var(--wght-reveal);
         opacity: 0;
         transform: translateY(var(--reveal-y));
-        animation: italic-word-emerge linear both;
-        animation-timeline: --manifest-iii;
-        animation-range: entry 40% cover 75%;
         /* Cromorant italic resetuje breath manifestu — ten span ma swój własny */
         will-change: font-variation-settings, opacity, transform;
+      }
+
+      .manifest-line--closing.is-visible .reveal-italic {
+        animation: italic-word-emerge 2.5s var(--ease-slow) forwards;
+        animation-delay: 1.7s; /* Oczekuje, aż mask sweep na linii III zbliży się do słowa */
       }
 
       @keyframes italic-word-emerge {
