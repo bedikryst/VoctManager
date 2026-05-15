@@ -10,7 +10,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { MetricBlock } from "@/shared/ui/composites/MetricBlock";

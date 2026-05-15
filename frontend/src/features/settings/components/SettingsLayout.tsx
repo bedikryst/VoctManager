@@ -94,7 +94,7 @@ export default function SettingsLayout(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="mx-auto w-full max-w-5xl px-4 py-0 space-y-8">
+      <div className="mx-auto w-full max-w-5xl px-4 pt-0 pb-24 md:pb-12 space-y-8">
         <PageHeader
           roleText={t("settings.page.role", "PANEL UŻYTKOWNIKA")}
           title={t("settings.page.title", "Ustawienia")}

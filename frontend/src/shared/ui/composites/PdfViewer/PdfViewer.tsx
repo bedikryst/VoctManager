@@ -1,4 +1,4 @@
-import React, { startTransition, useCallback, useEffect, useEffectEvent, useMemo, useState } from "react";
+import React, { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -86,19 +86,22 @@ export const PdfViewer = ({
     }
   }, [resolvedFileName]);
 
-  const emitEvent = useEffectEvent((event: PdfViewerEvent) => onEvent?.(event));
+  const emitEvent = useCallback(
+    (event: PdfViewerEvent) => onEvent?.(event),
+    [onEvent],
+  );
 
-  const resolveViewerErrorMessage = useEffectEvent((reason: LoadErrorReason): string => {
+  const resolveViewerErrorMessage = useCallback((reason: LoadErrorReason): string => {
     return reason === "permission_denied"
       ? t("pdf_viewer.error_403", "You do not have permission to view this document.")
       : t("pdf_viewer.error_generic", "The document could not be loaded.");
-  });
+  }, [t]);
 
-  const flagViewerError = useEffectEvent((error: unknown) => {
+  const flagViewerError = useCallback((error: unknown) => {
     const reason = classifyLoadError(error);
     const message = error instanceof Error ? error.message : undefined;
     emitEvent({ type: "load_error", reason, message });
-  });
+  }, [emitEvent]);
 
   const changePage = useCallback((nextPage: number) => {
     if (!numPages) return;
@@ -129,11 +132,11 @@ export const PdfViewer = ({
     retryFetch();
   }, [emitEvent, retryFetch]);
 
-  const handleDocumentLoadSuccess = useEffectEvent(({ numPages: totalPages }: { numPages: number }) => {
+  const handleDocumentLoadSuccess = useCallback(({ numPages: totalPages }: { numPages: number }) => {
     setNumPages(totalPages);
     startTransition(() => setCurrentPage((page) => clampValue(page, 1, totalPages)));
     emitEvent({ type: "load_success", numPages: totalPages });
-  });
+  }, [emitEvent, setCurrentPage, setNumPages]);
 
   const handleOpenInBrowser = useCallback(() => {
     if (!blobUrl) return;
@@ -179,7 +182,7 @@ export const PdfViewer = ({
     }
   }, [documentBlob, emitEvent, flagViewerError, handleDownload, isSharing, resolvedFileName, subtitle, supportsNativeShare, title]);
 
-  const handleKeyboardShortcuts = useEffectEvent((event: KeyboardEvent) => {
+  const handleKeyboardShortcuts = useCallback((event: KeyboardEvent) => {
     if (!blobUrl || isFetchError) return;
     const target = event.target as HTMLElement | null;
     if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName || "")) return;
@@ -189,7 +192,7 @@ export const PdfViewer = ({
     if (event.key === "-" || event.key === "_") { event.preventDefault(); changeZoom(-ZOOM_STEP); return; }
     if (event.key === "+" || event.key === "=") { event.preventDefault(); changeZoom(ZOOM_STEP); return; }
     if (event.key === "0") { event.preventDefault(); resetZoom(); }
-  });
+  }, [blobUrl, changePage, changeZoom, currentPage, isFetchError, resetZoom]);
 
   useEffect(() => {
     if (docKey) emitEvent({ type: "open", docKey });

@@ -6,7 +6,7 @@
  * @module shared/ui/composites/ConfirmModal
  */
 
-import React, { useEffect, useEffectEvent, useId, useState } from "react";
+import React, { useCallback, useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
@@ -69,11 +69,11 @@ export const ConfirmModal = ({
     setMounted(true);
   }, []);
 
-  const handleEscape = useEffectEvent((event: KeyboardEvent) => {
+  const handleEscape = useCallback((event: KeyboardEvent) => {
     if (event.key === "Escape" && !isLoading) {
       onCancel();
     }
-  });
+  }, [isLoading, onCancel]);
 
   useEffect(() => {
     if (!isOpen) {

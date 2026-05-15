@@ -24,7 +24,9 @@ export const useCloseWatcher = (isOpen: boolean, onClose: () => void): void => {
       return () => {
         try {
           watcher.destroy();
-        } catch (e) {}
+        } catch {
+          // CloseWatcher cleanup is best-effort on partial browser implementations.
+        }
       };
     }
 
