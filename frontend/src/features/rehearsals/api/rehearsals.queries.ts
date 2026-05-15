@@ -44,26 +44,32 @@ export const useRehearsalsWorkspaceData = () => {
       {
         queryKey: projectKeys.projects.all,
         queryFn: RehearsalsService.getProjects,
+        staleTime: 1000 * 60 * 5,
       },
       {
         queryKey: rehearsalKeys.rehearsals.all,
         queryFn: RehearsalsService.getRehearsals,
+        staleTime: 1000 * 60 * 5,
       },
       {
         queryKey: projectKeys.participations.all,
         queryFn: RehearsalsService.getParticipations,
+        staleTime: 1000 * 60 * 5,
       },
       {
         queryKey: rehearsalKeys.attendances.all,
         queryFn: RehearsalsService.getAttendances,
+        staleTime: 1000 * 60,
       },
       {
         queryKey: artistKeys.artists.all,
         queryFn: RehearsalsService.getArtists,
+        staleTime: 1000 * 60 * 5,
       },
       {
         queryKey: ["locations", "list"],
         queryFn: RehearsalsService.getLocations,
+        staleTime: 1000 * 60 * 5,
       },
     ],
   });

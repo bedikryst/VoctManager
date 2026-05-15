@@ -11,28 +11,40 @@ import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { ScheduleService } from "./schedule.service";
 import type { ScheduleAttendanceReportDTO } from "../types/schedule.dto";
 
+const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
+
 export const useScheduleContextData = (artistId?: string | number) => {
   const results = useQueries({
     queries: [
       {
-        queryKey: rehearsalKeys.rehearsals.byArtist(artistId ?? "anonymous"),
-        queryFn: () => ScheduleService.getRehearsals(),
+        queryKey: rehearsalKeys.rehearsals.byArtist(
+          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
+        ),
+        queryFn: () => ScheduleService.getRehearsalsByArtist(artistId!),
         enabled: !!artistId,
+        staleTime: 1000 * 60 * 5,
       },
       {
         queryKey: projectKeys.projects.all,
         queryFn: ScheduleService.getProjects,
         enabled: !!artistId,
+        staleTime: 1000 * 60 * 5,
       },
       {
-        queryKey: projectKeys.participations.byArtist(artistId ?? "anonymous"),
+        queryKey: projectKeys.participations.byArtist(
+          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
+        ),
         queryFn: () => ScheduleService.getParticipationsByArtist(artistId!),
         enabled: !!artistId,
+        staleTime: 1000 * 60 * 5,
       },
       {
-        queryKey: rehearsalKeys.attendances.byArtist(artistId ?? "anonymous"),
+        queryKey: rehearsalKeys.attendances.byArtist(
+          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
+        ),
         queryFn: () => ScheduleService.getAttendancesByArtist(artistId!),
         enabled: !!artistId,
+        staleTime: 1000 * 60,
       },
     ],
   });

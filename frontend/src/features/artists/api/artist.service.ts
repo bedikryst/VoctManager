@@ -17,6 +17,11 @@ export const ArtistService = {
     return response.data;
   },
 
+  getById: async (id: string | number): Promise<Artist> => {
+    const response = await api.get<Artist>(`${BASE_URL}${id}/`);
+    return response.data;
+  },
+
   create: async (data: ArtistCreateDTO): Promise<Artist> => {
     const response = await api.post<Artist>(BASE_URL, data);
     return response.data;

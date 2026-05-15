@@ -23,6 +23,15 @@ export const ScheduleService = {
     return response.data;
   },
 
+  getRehearsalsByArtist: async (
+    artistId: string | number,
+  ): Promise<EnrichedRehearsal[]> => {
+    const response = await api.get<EnrichedRehearsal[]>(
+      `/api/rehearsals/?invited_participations__artist=${artistId}`,
+    );
+    return response.data;
+  },
+
   getProjects: async (): Promise<Project[]> => {
     const response = await api.get<Project[]>("/api/projects/");
     return response.data;

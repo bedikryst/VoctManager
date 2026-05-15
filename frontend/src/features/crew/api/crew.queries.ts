@@ -19,6 +19,7 @@ export const useCrewMembers = () => {
   return useQuery({
     queryKey: crewKeys.collaborators.all,
     queryFn: CrewService.getCrewMembers,
+    staleTime: 1000 * 60 * 5,
   });
 };
 

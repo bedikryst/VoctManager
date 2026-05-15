@@ -30,6 +30,11 @@ import {
 } from "./project.query-utils";
 
 const DISABLED_QUERY_STALE_TIME = Number.POSITIVE_INFINITY;
+const PENDING_PROJECT_QUERY_ID = "pending";
+
+interface PaginatedList<TData> {
+  results?: TData[];
+}
 
 const getDisabledListQueryConfig = <TData>() => ({
   queryFn: async (): Promise<TData[]> => [],
@@ -37,6 +42,72 @@ const getDisabledListQueryConfig = <TData>() => ({
   initialData: [] as TData[],
   initialDataUpdatedAt: 0,
 });
+
+const extractListData = <TData>(
+  data: TData[] | PaginatedList<TData> | unknown,
+): TData[] => {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (
+    data &&
+    typeof data === "object" &&
+    "results" in data &&
+    Array.isArray((data as PaginatedList<TData>).results)
+  ) {
+    return (data as PaginatedList<TData>).results ?? [];
+  }
+
+  return [];
+};
+
+const selectArtistsDictionary = (
+  data: Artist[] | PaginatedList<Artist>,
+): Artist[] => extractListData<Artist>(data);
+
+const selectArtistsMap = (
+  data: Artist[] | PaginatedList<Artist>,
+): Map<string, Artist> =>
+  new Map(
+    extractListData<Artist>(data).map((artist) => [String(artist.id), artist]),
+  );
+
+const selectPiecesDictionary = (
+  data: Piece[] | PaginatedList<Piece>,
+): Piece[] => extractListData<Piece>(data);
+
+const selectCollaboratorsDictionary = (
+  data: Collaborator[] | PaginatedList<Collaborator>,
+): Collaborator[] => extractListData<Collaborator>(data);
+
+const selectVoiceLinesDictionary = (
+  data: VoiceLineOption[] | PaginatedList<VoiceLineOption>,
+): VoiceLineOption[] => extractListData<VoiceLineOption>(data);
+
+const selectParticipations = (
+  data: Participation[] | PaginatedList<Participation>,
+): Participation[] => extractListData<Participation>(data);
+
+const selectRehearsals = (
+  data: Rehearsal[] | PaginatedList<Rehearsal>,
+): Rehearsal[] => extractListData<Rehearsal>(data);
+
+const selectCrewAssignments = (
+  data: CrewAssignment[] | PaginatedList<CrewAssignment>,
+): CrewAssignment[] => extractListData<CrewAssignment>(data);
+
+const selectProgramItems = (
+  data: ProgramItem[] | PaginatedList<ProgramItem>,
+): ProgramItem[] => extractListData<ProgramItem>(data);
+
+const selectPieceCastings = (
+  data: PieceCasting[] | PaginatedList<PieceCasting>,
+): PieceCasting[] => extractListData<PieceCasting>(data);
+
+const selectAttendances = (
+  data: Attendance[] | PaginatedList<Attendance>,
+): Attendance[] => extractListData<Attendance>(data);
 
 export const useProjects = (enabled = true) =>
   useSuspenseQuery({
@@ -58,11 +129,7 @@ export const useProjectArtistsDictionary = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<Artist>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectArtistsDictionary,
   });
 
 export const useProjectArtistsMap = (enabled = true) =>
@@ -74,14 +141,7 @@ export const useProjectArtistsMap = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<Artist>()),
-    select: (artists) => {
-      const safeArtists = Array.isArray(artists)
-        ? artists
-        : artists
-          ? [artists]
-          : [];
-      return new Map(safeArtists.map((artist) => [String(artist.id), artist]));
-    },
+    select: selectArtistsMap,
   });
 
 export const useProjectPiecesDictionary = (enabled = true) =>
@@ -93,11 +153,7 @@ export const useProjectPiecesDictionary = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<Piece>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectPiecesDictionary,
   });
 
 export const useProjectCollaboratorsDictionary = (enabled = true) =>
@@ -109,11 +165,7 @@ export const useProjectCollaboratorsDictionary = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<Collaborator>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectCollaboratorsDictionary,
   });
 
 export const useProjectVoiceLinesDictionary = (enabled = true) =>
@@ -125,105 +177,89 @@ export const useProjectVoiceLinesDictionary = (enabled = true) =>
           staleTime: STATIC_DICTIONARY_STALE_TIME,
         }
       : getDisabledListQueryConfig<VoiceLineOption>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectVoiceLinesDictionary,
   });
 
 export const useProjectParticipations = (projectId: string | undefined) =>
   useSuspenseQuery({
-    queryKey: projectKeys.participations.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.participations.byProject(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
     ...(projectId
       ? {
           queryFn: () => ProjectService.getParticipationsByProject(projectId),
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<Participation>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectParticipations,
   });
 
 export const useProjectRehearsals = (projectId: string | undefined) =>
   useSuspenseQuery({
-    queryKey: projectKeys.rehearsals.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.rehearsals.byProject(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
     ...(projectId
       ? {
           queryFn: () => ProjectService.getRehearsalsByProject(projectId),
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<Rehearsal>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectRehearsals,
   });
 
 export const useProjectCrewAssignments = (projectId: string | undefined) =>
   useSuspenseQuery({
-    queryKey: projectKeys.crewAssignments.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.crewAssignments.byProject(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
     ...(projectId
       ? {
           queryFn: () => ProjectService.getCrewAssignmentsByProject(projectId),
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<CrewAssignment>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectCrewAssignments,
   });
 
 export const useProjectProgram = (projectId: string | undefined) =>
   useSuspenseQuery({
-    queryKey: projectKeys.program.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.program.byProject(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
     ...(projectId
       ? {
           queryFn: () => ProjectService.getProgramByProject(projectId),
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<ProgramItem>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectProgramItems,
   });
 
 export const useProjectPieceCastings = (projectId: string | undefined) =>
   useSuspenseQuery({
-    queryKey: projectKeys.pieceCastings.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.pieceCastings.byProject(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
     ...(projectId
       ? {
           queryFn: () => ProjectService.getPieceCastingsByProject(projectId),
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<PieceCasting>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectPieceCastings,
   });
 
 export const useProjectAttendances = (projectId: string | undefined) =>
   useSuspenseQuery({
-    queryKey: projectKeys.attendances.byProject(projectId ?? "pending"),
+    queryKey: projectKeys.attendances.byProject(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
     ...(projectId
       ? {
           queryFn: () => ProjectService.getAttendancesByProject(projectId),
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<Attendance>()),
-    select: (data: any) => {
-      if (Array.isArray(data)) return data;
-      if (data && typeof data === "object" && Array.isArray(data.results)) return data.results;
-      return [];
-    },
+    select: selectAttendances,
   });
