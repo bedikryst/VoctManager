@@ -10,9 +10,11 @@
 import React, { Suspense, useEffect } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/app/providers/AuthProvider";
-import { isManager } from "@/shared/auth/rbac";
+import type { AuthUser } from "@/shared/auth/auth.types";
+import { isArtist, isManager } from "@/shared/auth/rbac";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
@@ -25,13 +27,25 @@ export interface DashboardRoutePreloader {
   readonly scope?: "manager";
 }
 
+export interface DashboardDataPreloader {
+  readonly preload: (context: {
+    readonly queryClient: QueryClient;
+    readonly user: AuthUser;
+  }) => Promise<unknown>;
+  readonly scope?: "artist" | "manager";
+}
+
 interface DashboardLayoutProps {
   readonly routePreloaders?: readonly DashboardRoutePreloader[];
+  readonly dataPreloaders?: readonly DashboardDataPreloader[];
 }
 
 const EMPTY_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [];
+const EMPTY_DATA_PRELOADERS: readonly DashboardDataPreloader[] = [];
 const ROUTE_PRELOAD_IDLE_TIMEOUT_MS = 2500;
 const ROUTE_PRELOAD_FALLBACK_DELAY_MS = 600;
+const DATA_PRELOAD_IDLE_TIMEOUT_MS = 1200;
+const DATA_PRELOAD_FALLBACK_DELAY_MS = 120;
 
 const DashboardRouteFallback = (): React.JSX.Element => (
   <div className="flex min-h-[420px] w-full items-center justify-center">
@@ -41,11 +55,14 @@ const DashboardRouteFallback = (): React.JSX.Element => (
 
 export const DashboardLayout = ({
   routePreloaders = EMPTY_ROUTE_PRELOADERS,
+  dataPreloaders = EMPTY_DATA_PRELOADERS,
 }: DashboardLayoutProps): React.JSX.Element => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const queryClient = useQueryClient();
+  const canPreloadArtistRoutes = isArtist(user);
   const canPreloadManagerRoutes = isManager(user);
-  
+
   const outlet = useOutlet();
 
   useEffect(() => {
@@ -90,6 +107,52 @@ export const DashboardLayout = ({
 
     return () => window.clearTimeout(timeoutId);
   }, [canPreloadManagerRoutes, routePreloaders]);
+
+  useEffect(() => {
+    if (!user || dataPreloaders.length === 0) return;
+
+    const preloadEligibleData = () => {
+      const preloadTasks = dataPreloaders
+        .filter(({ scope }) => {
+          if (scope === "manager") return canPreloadManagerRoutes;
+          if (scope === "artist") return canPreloadArtistRoutes;
+          return true;
+        })
+        .map(({ preload }) => preload({ queryClient, user }));
+
+      void Promise.allSettled(preloadTasks);
+    };
+
+    const scheduleIdleCallback =
+      typeof window.requestIdleCallback === "function"
+        ? window.requestIdleCallback.bind(window)
+        : undefined;
+    const cancelScheduledIdleCallback =
+      typeof window.cancelIdleCallback === "function"
+        ? window.cancelIdleCallback.bind(window)
+        : undefined;
+
+    if (scheduleIdleCallback && cancelScheduledIdleCallback) {
+      const idleCallbackId = scheduleIdleCallback(preloadEligibleData, {
+        timeout: DATA_PRELOAD_IDLE_TIMEOUT_MS,
+      });
+
+      return () => cancelScheduledIdleCallback(idleCallbackId);
+    }
+
+    const timeoutId = window.setTimeout(
+      preloadEligibleData,
+      DATA_PRELOAD_FALLBACK_DELAY_MS,
+    );
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    canPreloadArtistRoutes,
+    canPreloadManagerRoutes,
+    dataPreloaders,
+    queryClient,
+    user,
+  ]);
 
   return (
     <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
