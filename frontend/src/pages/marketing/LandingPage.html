@@ -590,6 +590,7 @@
     font-size: var(--micro);
     letter-spacing: 0.24em;
     line-height: 1.45;
+    padding-bottom: 8px;
     text-transform: uppercase;
   }
 
@@ -1479,7 +1480,7 @@
     font-size: 72px;
     font-weight: 300;
     letter-spacing: 0;
-    line-height: 0.98;
+    line-height: 1.2;
     overflow-wrap: break-word;
     text-wrap: balance;
   }
@@ -2722,13 +2723,22 @@
   @supports (animation-timeline: scroll()) {
     @media (prefers-reduced-motion: no-preference) {
 
-      /* Each letter scrubs wght 320→640→320 against its own slice
+      /* Each letter scrubs wght 360→560→360 against its own slice
          of the coda view-timeline. Każda kolejna litera startuje
-         8% później — fala "ciężaru" przesuwa się przez słowo. */
+         8% później — fala "ciężaru" przesuwa się przez słowo.
+         Swing zmniejszony 320→560 (zamiast 320→640) — przy Cormorant
+         400px każdy unit wght to drogie reraster glyph'u, a 200-unit
+         swing pozostaje wizualnie dramatyczny. Will-change promuje do
+         warstwy, contain ogranicza scope reflow do .coda-headline. */
+      .coda-headline {
+        contain: layout style paint;
+      }
+
       .coda-letter {
         font-variation-settings: "wght" var(--wght);
         animation: coda-letter-pulse linear both;
         animation-timeline: --coda-scroll;
+        will-change: font-variation-settings;
       }
 
       .coda-letter:nth-child(1) { animation-range: entry  0% cover 50%; }
@@ -2739,9 +2749,9 @@
       .coda-letter:nth-child(6) { animation-range: entry 40% cover 90%; }
 
       @keyframes coda-letter-pulse {
-        0%   { --wght: 320; }
-        45%  { --wght: 640; }
-        100% { --wght: 320; }
+        0%   { --wght: 360; }
+        45%  { --wght: 560; }
+        100% { --wght: 360; }
       }
 
       /* "brzmi dalej." — italic echo, wchodzi po falowaniu liter. */
@@ -2768,7 +2778,12 @@
   }
 
   /* ───────────────────────────────────────────────────────────────
-     SITE FOOTER · asymmetric grid · awwwards 2026
+     SITE FOOTER · "Inscriptio finalis" · awwwards MMXXVI
+     Diptych: lewa (Sygnał — anchor czasu) ‖ prawa (Fundatio —
+     stela inskrypcyjna). Bez generic kolumny "Relacje" — kontakt
+     spada do Fundatio jako stanza "Vox". Pod gridem: hairline
+     ribbon społecznościowy → wielki znak słowny → colophon.
+     Każda warstwa jest osobnym oddechem.
      ─────────────────────────────────────────────────────────────── */
 
   .site-footer {
@@ -2780,24 +2795,35 @@
   .site-footer-inner {
     width: min(1580px, 100%);
     margin: 0 auto;
-    padding: clamp(36px, 4vw, 56px) max(28px, 5vw) clamp(24px, 3vw, 40px);
+    padding: clamp(32px, 3.5vw, 52px) max(28px, 5vw) clamp(28px, 3vw, 44px);
+  }
+
+  /* Inskrypcja IV — kanton finalny, dopina sekwencję I/II/III
+     z aether-interlude (Lumen quaerit · Vox memoriae · Sustinete nos).
+     Cała stopka czyta się jako closing chapter, nie aneks adresowy.
+     Tight margin — po sekcji CODA mamy już ogromny oddech, więc
+     incipit siedzi blisko gridu. */
+  .site-footer-incipit {
+    display: flex;
+    justify-content: center;
+    margin-bottom: clamp(32px, 3.5vw, 56px);
+    color: var(--ink-muted);
   }
 
   .site-footer-grid {
     display: grid;
-    /* Asymmetric grid — lewa kolumna szersza (mieści Hora canonica + duży zegar),
-       środkowa wąska (sama lista linków), prawa średnia (dane fundacji).
-       Wyważona kompozycja editorialna zamiast generic 3×equal. */
-    grid-template-columns: 1.45fr 0.9fr 1.2fr;
-    gap: clamp(32px, 4.5vw, 72px);
-    margin-bottom: clamp(32px, 4vw, 56px);
+    /* Asymmetric diptych — Sygnał (zegar + hora) węższy niż Fundatio,
+       bo Fundatio niesie cztery stanze + wewnętrzny 2-col grid. */
+    grid-template-columns: 0.9fr 1.15fr;
+    gap: clamp(40px, 5.5vw, 96px);
+    margin-bottom: clamp(40px, 5vw, 72px);
     align-items: start;
   }
 
   .footer-col {
     display: grid;
     align-content: start;
-    gap: 16px;
+    gap: 18px;
     min-width: 0;
   }
 
@@ -2810,178 +2836,381 @@
 
   .footer-col-body {
     display: grid;
-    gap: 12px;
+    gap: 14px;
     color: var(--ink-soft);
     font-family: var(--sans);
     font-size: 13px;
     line-height: 1.6;
   }
 
-  .footer-col-body strong {
-    display: block;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--ink);
-    margin-bottom: 2px;
+  /* ═══════════════════════════════════════════════════════════════
+     FUNDATIO — single inscription column (right side of diptych).
+     Cztery stanze rozdzielone hairline rules:
+       1. Mark — VoctFoundation + siedziba + KRS/NIP/REGON
+       2. Consilium — zarząd jako italic inscription (nie mailto)
+       3. Corpus — dokumenty (Statut, Polityka)
+       4. Vox — kontakt (booking/patronat/dyrekcja + RODO)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* Wewnętrzny grid Fundatio — Mark i Vox full-width, Consilium + Corpus
+     w jednym rzędzie obok siebie. Wyrównuje pionowo wysokość prawej
+     kolumny do lewej (Sygnał), zamiast czterech stanz stackowanych
+     pionowo (puchnięcie po prawej). */
+  .footer-col-foundation .footer-col-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: clamp(28px, 3vw, 56px);
+    row-gap: 0;
+    align-items: start;
   }
 
-  .footer-col-text {
-    display: block;
+  .footer-col-foundation .foundation-mark,
+  .footer-col-foundation .foundation-stanza-vox {
+    grid-column: 1 / -1;
+  }
+
+  /* ─── Foundation mark — nazwa + siedziba + identyfikatory ─── */
+  .foundation-mark {
+    display: grid;
+    gap: 12px;
+    padding-bottom: clamp(20px, 2.2vw, 28px);
+  }
+
+  .foundation-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(34px, 3.4vw, 48px);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+    font-variation-settings: "wght" 380;
+  }
+
+  .foundation-seat {
+    margin: 0;
     color: var(--ink-soft);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(15px, 1.25vw, 18px);
+    font-weight: 300;
+    line-height: 1.4;
   }
 
-  .footer-col-link {
-    display: inline-block;
-    color: var(--ink);
-    font-family: var(--sans);
-    font-size: 13px;
-    line-height: 1.5;
-    border-bottom: 1px solid var(--line-strong);
-    padding-bottom: 2px;
-    transition: color 0.4s var(--ease), border-color 0.4s var(--ease);
-    width: max-content;
-  }
-
-  .footer-col-link:hover {
+  .foundation-seat .sep {
     color: var(--candle);
-    border-color: var(--candle);
+    opacity: 0.55;
+    margin: 0 0.45em;
+    font-style: normal;
   }
 
-  .footer-col-list {
+  .foundation-legal {
     list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px clamp(18px, 2.2vw, 28px);
+    color: var(--ink-soft);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  .foundation-legal li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+
+  .foundation-legal .key {
+    color: var(--ink-muted);
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .foundation-legal .val {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ─── Stanza — wspólny rytm sub-sekcji ─── */
+  .foundation-stanza {
+    display: grid;
+    gap: 10px;
+    padding: clamp(18px, 2vw, 24px) 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .foundation-stanza:last-child {
+    padding-bottom: 0;
+  }
+
+  /* Label sub-stanzy: [·] LATIN · polski hint — wzór wzięty
+     z .footer-signal-tempus (Tempus Paschae · okres wielkanocny). */
+  .foundation-stanza-label {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 9px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    line-height: 1.45;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .foundation-stanza-label .dot {
+    color: var(--candle);
+    opacity: 0.6;
+    letter-spacing: 0;
+    transform: translateY(-0.05em);
+  }
+
+  .foundation-stanza-label .latin {
+    color: var(--candle);
+    letter-spacing: 0.16em;
+  }
+
+  .foundation-stanza-label .pl {
+    color: var(--ink-muted);
+    text-transform: lowercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Consilium — zarząd jako italic inscription, świadomie BEZ linków.
+     Trzy nazwiska to nie directory — to dedykacja na cokole. */
+  .foundation-consilium-list {
     margin: 0;
     padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(16px, 1.25vw, 19px);
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+
+  /* Corpus — dokumenty. Italic serif anchors z hairline underline,
+     które rozwija się od lewej na hover (kierunek czytania). */
+  .foundation-corpus-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
     display: grid;
     gap: 8px;
   }
 
-  .footer-col-list a {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--ink-soft);
-    font-family: var(--sans);
-    font-size: 13px;
-    transition: color 0.3s var(--ease), gap 0.3s var(--ease);
-  }
-
-  .footer-col-list a:hover {
-    color: var(--ink);
-    gap: 10px;
-  }
-
-  .footer-col-body strong.footer-foundation-name {
-    font-family: var(--serif);
-    font-size: 18px;
-    font-weight: 300;
-    letter-spacing: 0.04em;
-    margin-bottom: 4px;
-    color: var(--ink);
-  }
-
-  .footer-socials-list a {
+  .foundation-corpus-list a {
     position: relative;
-    padding-bottom: 2px;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(17px, 1.3vw, 20px);
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.3;
+    width: max-content;
+    padding-bottom: 3px;
+    transition: color 0.45s var(--ease);
   }
 
-  .footer-socials-list a::after {
+  .foundation-corpus-list a::after {
     content: "";
     position: absolute;
     left: 0;
+    right: 0;
     bottom: 0;
-    width: 100%;
     height: 1px;
     background: currentColor;
-    transform: scaleX(0);
+    opacity: 0.22;
+    transform: scaleX(1);
     transform-origin: right;
-    transition: transform 0.45s var(--ease);
+    transition: transform 0.55s var(--ease-slow), opacity 0.45s var(--ease);
   }
 
-  .footer-socials-list a:hover::after {
-    transform: scaleX(1);
+  .foundation-corpus-list a:hover {
+    color: var(--candle);
+  }
+
+  .foundation-corpus-list a:hover::after {
+    opacity: 0.7;
     transform-origin: left;
   }
 
-  /* credits */
-  .footer-credit {
-    display: grid;
-    gap: 2px;
-  }
-
-  .footer-credit-role {
+  .foundation-corpus-list .doc-tag {
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 0.22em;
     color: var(--ink-muted);
+    transform: translateY(-0.22em);
+    transition: color 0.45s var(--ease);
   }
 
-  .footer-credit-name {
-    color: var(--ink);
+  .foundation-corpus-list a:hover .doc-tag {
+    color: var(--candle);
+  }
+
+  /* Vox — kontakt. Inline-list rozdzielona złotymi mid-dotami;
+     pod nią mono linijka z RODO (dane osobowe — wymóg prawny). */
+  .foundation-vox-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
     font-family: var(--sans);
     font-size: 13px;
     line-height: 1.5;
   }
 
-  a.footer-credit-name {
+  .foundation-vox-list li {
     display: inline-flex;
     align-items: baseline;
-    gap: 6px;
-    border-bottom: 1px solid transparent;
-    padding-bottom: 1px;
-    transition: color 0.4s var(--ease), border-color 0.4s var(--ease);
-    width: max-content;
+    gap: 14px;
   }
 
-  a.footer-credit-name:hover {
+  .foundation-vox-list li:not(:last-child)::after {
+    content: "·";
+    color: var(--candle);
+    opacity: 0.55;
+  }
+
+  .foundation-vox-list a {
+    position: relative;
+    color: var(--ink);
+    padding-bottom: 2px;
+    transition: color 0.35s var(--ease);
+  }
+
+  .foundation-vox-list a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.32;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.5s var(--ease-slow);
+  }
+
+  .foundation-vox-list a:hover {
+    color: var(--candle);
+  }
+
+  .foundation-vox-list a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .foundation-vox-rodo {
+    margin: 4px 0 0;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+    line-height: 1.5;
+  }
+
+  .foundation-vox-rodo .key {
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    margin-right: 10px;
+  }
+
+  .foundation-vox-rodo a {
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 1px;
+    transition: color 0.4s var(--ease), border-color 0.4s var(--ease);
+  }
+
+  .foundation-vox-rodo a:hover {
     color: var(--candle);
     border-color: var(--candle);
   }
 
-  /* board */
-  .footer-board {
+  /* ═══════════════════════════════════════════════════════════════
+     SOCIAL RIBBON — hairline strip pomiędzy gridem a wordmarkiem.
+     Trzy platformy wycentrowane między dwiema liniami; italic
+     Cormorant zamiast "follow us" buttons. Ribbon to dechtnięcie
+     przed cichym "amen" wordmarka.
+     ═══════════════════════════════════════════════════════════════ */
+  .footer-ribbon {
     display: grid;
-    padding-top: 16px;
-    margin-top: 4px;
-    border-top: 1px solid var(--line);
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: clamp(20px, 3vw, 48px);
+    margin-top: clamp(20px, 3vw, 36px);
   }
 
-  .footer-board-label {
-    color: var(--ink-muted);
-    margin-bottom: 12px;
+  .footer-ribbon-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line-strong) 50%, var(--line-strong));
+    opacity: 0.6;
   }
 
-  /* legal — sekcja RODO + polityka prywatności, ten sam wzór co board */
-  .footer-legal {
-    display: grid;
-    gap: 6px;
-    padding-top: 16px;
-    margin-top: 4px;
-    border-top: 1px solid var(--line);
+  .footer-ribbon-rule + .footer-ribbon-list + .footer-ribbon-rule {
+    background: linear-gradient(90deg, var(--line-strong), var(--line-strong) 50%, transparent);
   }
 
-  .footer-legal-label {
-    color: var(--ink-muted);
-    margin-bottom: 4px;
+  .footer-ribbon-list {
+    display: inline-flex;
+    align-items: baseline;
+    gap: clamp(20px, 2.8vw, 40px);
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
 
-  .footer-legal .footer-col-link {
-    width: max-content;
-  }
-
-  /* znacznik typu pliku przy linku do dokumentu PDF */
-  .footer-doc-tag {
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 0.16em;
-    color: var(--ink-muted);
+  .footer-ribbon-list a {
+    position: relative;
+    display: inline-block;
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(16px, 1.4vw, 20px);
+    font-weight: 300;
+    letter-spacing: 0.005em;
+    padding-bottom: 4px;
     transition: color 0.4s var(--ease);
   }
 
-  .footer-col-link:hover .footer-doc-tag {
+  .footer-ribbon-list a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.4;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.55s var(--ease-slow);
+  }
+
+  .footer-ribbon-list a:hover {
     color: var(--candle);
   }
 
-  .footer-board-name {
-    font-size: 13px;
-    color: var(--ink);
+  .footer-ribbon-list a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
   }
 
   /* ─── Sygnał — lewa kolumna · dwa bloki:
@@ -2993,7 +3222,7 @@
      "która hora" — to była JEDNA rzecz. */
   .footer-col-signal-body {
     display: grid;
-    gap: clamp(28px, 3.2vw, 48px);
+    gap: clamp(28px, 3.2vw, 32px);
   }
 
   .footer-signal-block {
@@ -3023,7 +3252,7 @@
      Italic Cormorant ~26px sentence-case, łaciński akcent candle gold,
      polski w ink-soft. Wygląda jak inskrypcja pod cyfrą. */
   .footer-signal-hora-row {
-    margin: 0 0 8px;
+    margin: 0 0 2px;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -3070,21 +3299,21 @@
      ~6 razy w roku. Bezpośrednio powiązane z brand'em Concerts Spirituels =
      muzyka roku liturgicznego. */
   .footer-signal-tempus-row {
-    margin: 8px 0 0;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0 0.45em;
-    line-height: 1.3;
+    line-height: 1;
+    margin: 0;
   }
 
   .footer-signal-tempus {
-    color: var(--ink);
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: clamp(13px, 1vw, 15px);
+    color: var(--candle);
+    font-family: var(--mono);
+    font-size: clamp(11px, 1vw, 13px);
     letter-spacing: 0;
     opacity: 0.78;
+    font-style: normal;
   }
 
   .footer-signal-tempus-pl {
@@ -3095,8 +3324,7 @@
     text-transform: lowercase;
   }
 
-  /* ─── Live clock — zmniejszone z 96 do 80 max, żeby nie konkurowało
-     z wordmarkiem 'VoctEnsemble' poniżej. Anchor lewej kolumny, ale
+  /* ─── Live clock — Anchor lewej kolumny, ale
      nie kompozycyjny rywal pieczęci. */
   .footer-signal-clock {
     color: var(--candle);
@@ -3106,8 +3334,29 @@
     font-weight: 300;
     letter-spacing: 0;
     font-variant-numeric: tabular-nums;
-    margin: 8px 0 6px;
+    margin: 3px 0 10px;
     font-variation-settings: "wght" 360;
+  }
+
+  /* Sekundy — chronograph sub-dial. Italic Cormorant tabular-nums,
+     ~0.34em głównego zegara, raised żeby siedział mniej-więcej na
+     wysokości cap line minut. Lekka opacity + osobny wght (340) żeby
+     NIE oddychał razem z głównym zegarem (mniej jitter, stabilna obecność).
+     Tabular-nums kasuje skoki szerokości przy każdym tick. */
+  .footer-signal-seconds {
+    display: inline-block;
+    margin-left: 0.16em;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.34em;
+    font-weight: 300;
+    font-variation-settings: "wght" 340;
+    color: var(--candle);
+    opacity: 0.58;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-1.2em);
   }
 
   .footer-signal-countdown {
@@ -3119,28 +3368,23 @@
     margin-top: 2px;
   }
 
-  /* Breath dla clock — uruchamia się gdy footer wchodzi do view.
-     Synchronicznie z site-footer-mark wordmarkiem — oba "wydychają"
-     wagę w tym samym rytmie. Hora canonica po zmianie na 26px italic
-     nie potrzebuje breath (zmiana wght byłaby niewidoczna na tej skali). */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .footer-col-signal {
-        view-timeline-name: --footer-signal-self;
-        view-timeline-axis: block;
-      }
+  /* Breath dla clock — TIME-BASED pulse, nie scroll-driven.
+     Powód: poprzednia wersja (entry 0% cover 60%, 460→320 monotonic)
+     kończyła animację zanim user się zatrzymał w środku ekranu — wght
+     siedział na 320 = static. Time-based 8s pulse zapewnia ciągły puls
+     "obecności" gdy user czyta footer. Browser auto-throttluje gdy
+     element off-screen — koszt minimalny. Will-change promuje do warstwy,
+     ogranicza reflow scope przy rerasteryzacji variable font. */
+  @media (prefers-reduced-motion: no-preference) {
+    .footer-signal-clock {
+      font-variation-settings: "wght" var(--wght-mark);
+      animation: footer-signal-pulse 5s ease-in-out infinite;
+      will-change: font-variation-settings;
+    }
 
-      .footer-signal-clock {
-        font-variation-settings: "wght" var(--wght);
-        animation: footer-signal-breath linear both;
-        animation-timeline: --footer-signal-self;
-        animation-range: entry 0% cover 60%;
-      }
-
-      @keyframes footer-signal-breath {
-        0%   { --wght: 460; }
-        100% { --wght: 320; }
-      }
+    @keyframes footer-signal-pulse {
+      0%, 100% { --wght-mark: 260; }
+      50%      { --wght-mark: 580; }
     }
   }
 
@@ -3178,7 +3422,18 @@
     letter-spacing: -0.035em;
     color: var(--ink);
     white-space: nowrap;
-    font-variation-settings: "wght" 320;
+    font-variation-settings: "wght" var(--wght-mark);
+  }
+
+  /* Per-letter spany (utworzone przez JS w trybie cursor-reactive desktop;
+     na mobile/touch wordmark zostaje jednym spanem, ten selektor nic nie łapie).
+     Każda litera kompiluje swój wght jako pulse(--wght-mark cascadowane z
+     parenta) + bonus z dystansu kursora. Mirror ::after czyta wagi z parenta
+     (inherit), więc oddycha calmly nawet gdy litery reagują na kursor. */
+  .site-footer-mark-letter {
+    display: inline-block;
+    font-variation-settings: "wght" calc(var(--wght-mark) + var(--wght-add));
+    will-change: font-variation-settings;
   }
 
   /* ─── Mirror — prawdziwe odbicie przy waterline ───
@@ -3223,24 +3478,19 @@
     .site-footer-mark-text::after { transition: none; }
   }
 
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .site-footer-mark {
-        view-timeline-name: --footer-mark-self;
-        view-timeline-axis: block;
-      }
+  /* Wordmark breath — time-based pulse 11s (lekko desynchroniczny od zegara
+     8s żeby oba elementy nie pulsowały w lockstep). --wght-mark inherituje
+     do letter-spanów (cursor-reactive mode) oraz do mirror ::after (calm
+     reflection). Will-change na parent + letter promuje do warstwy. */
+  @media (prefers-reduced-motion: no-preference) {
+    .site-footer-mark-text {
+      animation: footer-mark-pulse 11s ease-in-out infinite;
+      will-change: font-variation-settings;
+    }
 
-      .site-footer-mark-text {
-        font-variation-settings: "wght" var(--wght);
-        animation: footer-mark-breath linear both;
-        animation-timeline: --footer-mark-self;
-        animation-range: entry 0% cover 70%;
-      }
-
-      @keyframes footer-mark-breath {
-        0%   { --wght: 460; }
-        100% { --wght: 320; }
-      }
+    @keyframes footer-mark-pulse {
+      0%, 100% { --wght-mark: 320; }
+      50%      { --wght-mark: 480; }
     }
   }
 
@@ -3497,14 +3747,15 @@
       font-size: 44px;
     }
 
+    /* Diptych zwija się do pojedynczej kolumny — Sygnał na górze
+       (anchor czasu), Fundatio pod nim (stela inskrypcyjna). */
     .site-footer-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: 48px 40px;
+      grid-template-columns: 1fr;
+      gap: clamp(48px, 7vw, 72px);
     }
 
-    /* Fundacja banner-style: rozciąga się na całą szerokość, pod nią Kontakt + Sygnał */
-    .footer-col-foundation {
-      grid-column: 1 / -1;
+    .foundation-title {
+      font-size: clamp(34px, 7vw, 48px);
     }
 
     .coda {
@@ -3797,7 +4048,36 @@
 
     .site-footer-grid {
       grid-template-columns: 1fr;
-      gap: 38px;
+      gap: 44px;
+    }
+
+    /* Na telefonie Fundatio wraca do 1-col stacka — wąska kolumna nie
+       udźwignie Consilium obok Corpus. */
+    .footer-col-foundation .footer-col-body {
+      grid-template-columns: 1fr;
+    }
+
+    .foundation-title {
+      font-size: clamp(32px, 9vw, 44px);
+    }
+
+    .foundation-legal {
+      font-size: 10.5px;
+      gap: 8px 16px;
+    }
+
+    .footer-ribbon {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      justify-items: center;
+    }
+
+    .footer-ribbon-rule {
+      display: none;
+    }
+
+    .footer-ribbon-list {
+      gap: 18px;
     }
 
     .site-footer-colophon {
@@ -5567,6 +5847,36 @@
     initial-value: 0px;
   }
 
+  /* Wordmark "VoctEnsemble" + zegar w footerze potrzebują wht który CASCADUJE
+     do dzieci (litery wordmarka splitowane przez JS przy cursor-reactive
+     desktop). Stąd osobny --wght-mark z inherits: true. Reszta strony używa
+     scoped --wght (inherits: false) dla taniej invalidation. */
+  @property --wght-mark {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 320;
+  }
+
+  /* Per-letter bonus dla wordmarka — JS pisze tu wartość zależną od dystansu
+     kursora do litery. Scoped per element (inherits: false) → write na jedną
+     literę inwaliduje tylko ten węzeł, nie całe drzewo. */
+  @property --wght-add {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+  }
+
+  /* Manifest "ink emergence" — pozycja krawędzi mask-gradientu który
+     scrubuje się od lewej do prawej przez linię manifestu. Wartość
+     animowana 0%→110% przez scroll-driven view-timeline. Każda linia
+     manifestu ma własną instancję (inherits:false), więc nawzajem
+     nie inwalidują się. */
+  @property --ink-reveal {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: -14%;
+  }
+
   /* Inter Variable ma oś opsz — niech browser sam dobiera display vs. text. */
   html {
     font-optical-sizing: auto;
@@ -5633,20 +5943,59 @@
         100% { --wght: 320; }
       }
 
-      /* ─── Manifest lines — własny breath, większy swing ───
-         Trzy linie manifestu oddychają wyraźnie, każda osobno. */
+      /* ─── Manifest lines — ink emergence + breath ───
+         Dwie animacje na tej samej view-timeline:
+         1) manifest-ink (entry 0% → entry 38%) — soft-edge mask sweepuje
+            od lewej do prawej, "ink wynurza się z papieru". Kończy się
+            ZANIM "Odsłania." zaczyna własną italic emergence (entry 40%),
+            więc III linia ma czysty "reveal → italic rise" rytm.
+         2) manifest-breath (entry 5% cover 60%) — wht 500→320, dynamiczne
+            opadanie wagi gdy linia osiada na środku ekranu.
+         Mask jest soft-edged (14% feather) dla "ink bleed" feel — nie
+         hard wipe. Kąt 96deg = subtelny diagonalny tilt vs prosta 90deg. */
+      .manifest-line.reveal {
+        /* Kasujemy IO-driven .reveal (opacity/translateY) — mask owna entry teraz */
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+
       .manifest-line {
         view-timeline-name: --breathe-self;
         view-timeline-axis: block;
         font-variation-settings: "wght" var(--wght);
-        animation: manifest-breath linear both;
-        animation-timeline: --breathe-self;
-        animation-range: entry 5% cover 60%;
+        -webkit-mask-image: linear-gradient(
+          96deg,
+          #000 0%,
+          #000 var(--ink-reveal),
+          transparent calc(var(--ink-reveal) + 14%),
+          transparent 100%
+        );
+        mask-image: linear-gradient(
+          96deg,
+          #000 0%,
+          #000 var(--ink-reveal),
+          transparent calc(var(--ink-reveal) + 14%),
+          transparent 100%
+        );
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        animation:
+          manifest-breath linear both,
+          manifest-ink linear both;
+        animation-timeline: --breathe-self, --breathe-self;
+        animation-range: entry 5% cover 60%, entry 0% entry 38%;
+        will-change: font-variation-settings, mask-image;
       }
 
       @keyframes manifest-breath {
         0%   { --wght: 500; }
         100% { --wght: 320; }
+      }
+
+      @keyframes manifest-ink {
+        0%   { --ink-reveal: -14%; }
+        100% { --ink-reveal: 110%; }
       }
 
       /* ─── Manifest III — italic emergence na JEDNYM słowie ───
@@ -5742,7 +6091,7 @@
         <circle cx="12" cy="52" r="1.6" fill="currentColor" stroke="none"/>
       </svg>
     </div>
-    <div class="threshold-kicker micro">VoctEnsemble · próg</div>
+    <div class="threshold-kicker micro">VoctEnsemble</div>
     <h1 class="threshold-title" id="threshold-title">Czy wejdziesz<br>w ciszę?</h1>
     <p class="threshold-subtitle">Wybierz, jak ma cię przyjąć ta strona. Możesz to zmienić w każdej chwili.</p>
     <div class="threshold-actions">
@@ -5815,9 +6164,9 @@
 
         <div class="hero-side">
           <div class="hero-occasion intro-stage s5">
-            <div class="micro">Najbliższe wybrzmienie</div>
+            <div class="micro">Najbliższe wydarzenia</div>
             <strong>Liturgia 100-lecia Prowincji Polski Północnej Towarzystwa Jezusowego</strong>
-            <span class="hero-occasion-meta" id="heroCountdown">16 maja 2026 · Sanktuarium św. Andrzeja Boboli · w obecności o. gen. Arturo Sosy SJ</span>
+            <span class="hero-occasion-meta" id="heroCountdown">16 maja 2026 · Sanktuarium św. Andrzeja Boboli · w obecności o. gen. Arturo Sosy SJ i abp. Adriana Galbasa SAC</span>
           </div>
           <p class="hero-copy intro-stage s6">
             Nie szukamy publiczności. Szukamy wspólnoty słuchania.
@@ -5836,12 +6185,11 @@
     <div class="support-panel reveal">
       <div class="support-lede">
         <div class="micro">Zaplecze muzyki · cykl MMXXVI</div>
-        <h2>Muzyka brzmi lekko tylko wtedy, gdy zaplecze jest pewne.</h2>
+        <h2>Aby zabrzmiał czysty <em>głos</em>, potrzebna jest wolna przestrzeń.</h2>
         <p>
-          Próby, logistyka, światło, rejestracja, materiały i komunikacja —
-          to wszystko musi wydarzyć się przed pierwszym dźwiękiem.
-          Najbliższy etap cyklu zaczyna się od liturgii 16 maja w Sanktuarium św. Andrzeja Boboli
-          i prowadzi do kolejnych Concerts Spirituels.
+          Concerts Spirituels to długofalowy projekt artystyczny — poszukiwanie sacrum w dźwięku. 
+          Twój mecenat daje nam niezależność i wolność tworzenia. Zostań patronem fundacji i współtwórz
+           z nami przestrzeń, w której współczesna muzyka duchowa może swobodnie trwać i wybrzmiewać.
         </p>
       </div>
 
@@ -5884,7 +6232,7 @@
 
   <section class="section manifest" aria-label="Manifest chóru VoctEnsemble">
     <div class="section-grid manifest-grid">
-      <div class="section-label micro"><span>Manifest</span></div>
+      <div class="section-label micro"><span>ESSENCE</span></div>
       <div class="manifest-lines">
         <p class="manifest-line reveal">
           <span class="manifest-index">I</span>
@@ -5957,13 +6305,11 @@
     <div class="ensemble-inner section">
       <div class="ensemble-copy reveal">
         <div class="micro">Wspólnota głosów</div>
-        <h2>Jedność artystyczna<br>i ludzka harmonia.</h2>
+        <h2>Jedność artystyczna</h2>
         <p>
-          VoctEnsemble to nie tylko głosy — to wspólnota, która przez arcy-elegancką formę
-          i minimalistyczny przekaz szuka autentycznego spotkania z publicznością.
-          Dbamy o wymiar duchowy i wizualny: koncerty stają się nowoczesnymi misteriami
-          we współpracy z reżyserką świateł Adą Bystrzycką i Sebastianem Kuźmą
-          (ART Agencja Rzemieślników Teatralnych).
+          VoctEnsemble to profesjonalny zespół wokalny, który poprzez muzyczną precyzję 
+          i uważnie budowane doświadczenie zaprasza publiczność do autentycznego spotkania. 
+          Tworzymy koncerty, w których muzyka, światło i cisza współtworzą jedno doświadczenie.
         </p>
         <div class="ensemble-facts">
           <div class="fact">
@@ -5976,7 +6322,7 @@
           </div>
           <div class="fact">
             <span class="fact-num">PL · UE</span>
-            <span class="fact-label">Koncerty Duchowe, liturgie, misja humanitarna</span>
+            <span class="fact-label">Koncerty Duchowe, liturgie, projekty autorskie</span>
           </div>
         </div>
       </div>
@@ -5999,6 +6345,11 @@
           Od debiutu — <em>Kontemplacji Wcielenia</em> (2024) — przez modlitwy w intencji pokoju
           po międzynarodowe projekty interdyscyplinarne, wprowadza na polską scenę nową
           jakość estetyczną i duchową: koncert jako próg, nie performance.
+        </p>
+        
+        <p>
+          Równolegle rozwija VoctFoundation — fundację tworzącą stabilne zapleczne dla projektów artystycznych i społecznych 
+          realizowanych w interesie publicznym.
         </p>
       </div>
     </div>
@@ -6028,14 +6379,14 @@
     </div>
   </div>
 
-  <section class="section path" id="droga" aria-label="Wcześniejsze projekty">
+  <section class="section path" id="droga" aria-label="Wcześniejsze współbrzemienia">
     <div class="section-grid">
       <div class="section-label micro"><span>Z drogi</span></div>
       <div class="path-body">
         <h2 class="section-title reveal">Wcześniejsze<br>wybrzmienia.</h2>
         <p class="path-lede reveal">
-          Od dawnej polifonii po współczesne misteria — każdy koncert VoctEnsemble
-          jest osobnym progiem. Poniżej fragmenty drogi 2024–2025.
+          Od renesansowej polifonii po współczesne misteria — tworzymy koncerty, 
+          które pozostają żywe i mogą wybrzmieć na nowo w kolejnych przestrzeniach.
         </p>
 
         <div class="path-grid">
@@ -6254,9 +6605,9 @@
           <div class="micro">Patronat · darowizna · partnerstwo</div>
           <h2>Niech muzyka ma swoje miejsce.</h2>
           <p>
-            Jeśli nasza misja jest potrzebna, wesprzyj cykl Concerts Spirituels.
-            Możesz wpłacić jednorazowo, dołączyć jako patron albo porozmawiać o partnerstwie
-            instytucjonalnym bezpośrednio z kierownictwem artystycznym.
+            Koncerty Duchowe powstają dzięki tym, którzy wierzą w muzykę docierającą do głębi — 
+            zdolną poruszać, rezonować i przemieniać. Dołącz jako darczyńca, mecenas lub zaproś 
+            VoctEnsemble do swojej przestrzeni.
           </p>
           <div class="final-contact">
             <span class="micro">Kontakt do kierownictwa artystycznego</span>
@@ -6264,23 +6615,23 @@
             <span class="final-contact-mail">florent.de.bazelaire@voctensemble.com</span>
           </div>
           <div class="final-actions">
-            <a class="primary-link" href="#wesprzyj" data-vault-open data-amount="100">Otwórz skarbiec</a>
-            <a class="secondary-link" href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble">Napisz do Florenta</a>
+            <a class="primary-link" href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble">Napisz do nas</a>
+            <a class="secondary-link" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj</a>
           </div>
         </div>
 
         <div class="donation-list reveal">
           <div class="donation-row">
             <strong>100 zł</strong>
-            <span>gest obecności, który domyka realne koszty najbliższego wybrzmienia</span>
+            <span>wsparcie najbliższego wydarzenia</span>
           </div>
           <div class="donation-row">
             <strong>500 zł</strong>
-            <span>patronat indywidualny nad próbą, logistyką i pracą artystyczną</span>
+            <span>wsparcie pracy zespołu i procesu twórczego</span>
           </div>
           <div class="donation-row">
             <strong>2 500 zł</strong>
-            <span>partnerstwo programu, światła, rejestracji lub kolejnego koncertu</span>
+            <span>współtworzenie kolejnej odsłony cyklu</span>
           </div>
 
           <div class="bank-card" id="przelew" aria-label="Dane do przelewu">
@@ -6656,8 +7007,20 @@
 <footer class="site-footer" aria-label="Stopka">
   <div class="site-footer-inner">
 
+    <!-- Inskrypcja IV — kanton finalny. Dopina sekwencję I/II/III
+         (Lumen quaerit · Vox memoriae · Sustinete nos) z aether-interlude.
+         Stopka staje się closing chapter, nie aneksem adresowym. -->
+    <div class="site-footer-incipit" aria-hidden="true">
+      <span class="aether-inscription">
+        <span class="roman">IV</span>
+        <span class="dot">·</span>
+        <span class="latin">Inscriptio finalis</span>
+      </span>
+    </div>
+
     <div class="site-footer-grid">
 
+      <!-- ─── SYGNAŁ — temporal anchor (zegar + hora + tempus) ─── -->
       <div class="footer-col footer-col-signal">
         <span class="footer-col-label micro">Sygnał</span>
         <div class="footer-col-body footer-col-signal-body">
@@ -6670,13 +7033,13 @@
 
           <div class="footer-signal-block footer-signal-now">
             <span class="footer-signal-key micro">Kraków · teraz</span>
-            <span class="footer-signal-clock" id="footerClock" aria-live="off">--:--</span>
+            <span class="footer-signal-coord">50°03′41″N · 19°56′18″E</span>
+            <span class="footer-signal-clock" id="footerClock" aria-live="off">--:--<span class="footer-signal-seconds" id="footerSeconds" aria-hidden="true">--</span></span>
             <p class="footer-signal-hora-row">
               <em class="footer-signal-hora-name" id="footerHoraName" aria-live="off">—</em>
               <span class="footer-signal-hora-sep" aria-hidden="true">·</span>
               <span class="footer-signal-hora-poem" id="footerHoraPoem">—</span>
             </p>
-            <span class="footer-signal-coord">50°03′41″N · 19°56′18″E</span>
             <p class="footer-signal-tempus-row">
               <em class="footer-signal-tempus" id="footerTempus">—</em>
               <span class="footer-signal-tempus-sep" aria-hidden="true">·</span>
@@ -6687,50 +7050,88 @@
         </div>
       </div>
 
-      <div class="footer-col">
-        <span class="footer-col-label micro">Relacje</span>
-        <div class="footer-col-body">
-          <ul class="footer-col-list">
-            <li><a href="mailto:booking@voctensemble.com">booking <span aria-hidden="true">→</span></a></li>
-            <li><a href="mailto:patronat@voctensemble.com">patronat <span aria-hidden="true">→</span></a></li>
-            <li><a href="mailto:florent.de.bazelaire@voctensemble.com">dyrekcja artystyczna <span aria-hidden="true">→</span></a></li>
-            <li><a href="#wesprzyj" data-vault-open data-amount="100">wesprzyj <span aria-hidden="true">→</span></a></li>
-          </ul>
-          <ul class="footer-col-list footer-socials-list" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
-            <li><a href="https://www.instagram.com/voctensemble/" target="_blank" rel="noopener noreferrer">instagram <span aria-hidden="true">↗</span></a></li>
-            <li><a href="https://www.facebook.com/voctensemble/" target="_blank" rel="noopener noreferrer">facebook <span aria-hidden="true">↗</span></a></li>
-            <li><a href="https://www.youtube.com/@VoctEnsemble-nb7gh" target="_blank" rel="noopener noreferrer">youtube <span aria-hidden="true">↗</span></a></li>
-          </ul>
-        </div>
-      </div>
-
+      <!-- ─── FUNDATIO — single inscription column ─── -->
       <div class="footer-col footer-col-foundation">
         <span class="footer-col-label micro">Fundacja</span>
         <div class="footer-col-body">
-          <strong class="footer-foundation-name">VoctFoundation</strong>
-          <span class="footer-col-text">
-            Św. Filipa 23/3, 31-150 Kraków<br>
-            KRS 0001237252 · NIP 6762718992<br>
-            REGON 544621525
-          </span>
-          <div class="footer-board">
-            <span class="footer-board-label micro">Zarząd</span>
-            <a class="footer-board-name" href="mailto:florent.de.bazelaire@voctensemble.com" target="_blank" rel="noopener noreferrer">Florent de Bazelaire</a>
-            <a class="footer-board-name" href="mailto:anna.marcisz@voctensemble.com" target="_blank" rel="noopener noreferrer">Anna Marcisz</a>
-            <a class="footer-board-name" href="mailto:krystian.bugalski@voctensemble.com" target="_blank" rel="noopener noreferrer">Krystian Bugalski</a>
+
+          <!-- Mark: nazwa + siedziba + numery rejestrowe -->
+          <div class="foundation-mark">
+            <em class="foundation-title">VoctFoundation</em>
+            <p class="foundation-seat">
+              Św. Filipa 23/3<span class="sep" aria-hidden="true">·</span>31-150 Kraków
+            </p>
+            <ul class="foundation-legal" aria-label="Numery rejestrowe">
+              <li><span class="key">KRS</span><span class="val">0001237252</span></li>
+              <li><span class="key">NIP</span><span class="val">6762718992</span></li>
+              <li><span class="key">REGON</span><span class="val">544621525</span></li>
+            </ul>
           </div>
-          <div class="footer-legal">
-            <span class="footer-legal-label micro">Dokumenty</span>
-            <a class="footer-col-link" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener" aria-label="Statut Fundacji VoctFoundation — dokument PDF, otwiera się w nowej karcie">Statut fundacji <span class="footer-doc-tag" aria-hidden="true">PDF</span> <span aria-hidden="true">↗</span></a>
+
+          <!-- Consilium — zarząd jako italic inscription (nie mailto chips) -->
+          <div class="foundation-stanza">
+            <span class="foundation-stanza-label">
+              <span class="dot" aria-hidden="true">·</span>
+              <span class="latin">Consilium</span>
+              <span class="pl">zarząd</span>
+            </span>
+            <ul class="foundation-consilium-list">
+              <li>Florent de Bazelaire</li>
+              <li>Anna Marcisz</li>
+              <li>Krystian Bugalski</li>
+            </ul>
           </div>
-          <div class="footer-legal">
-            <span class="footer-legal-label micro">Dane osobowe</span>
-            <a class="footer-col-link" href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>
-            <a class="footer-col-link" href="/polityka-prywatnosci">Polityka prywatności <span aria-hidden="true">↗</span></a>
+
+          <!-- Corpus — Statut, Polityka prywatności -->
+          <div class="foundation-stanza">
+            <span class="foundation-stanza-label">
+              <span class="dot" aria-hidden="true">·</span>
+              <span class="latin">Corpus</span>
+              <span class="pl">dokumenty</span>
+            </span>
+            <ul class="foundation-corpus-list">
+              <li>
+                <a href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener" aria-label="Statut Fundacji VoctFoundation — dokument PDF, otwiera się w nowej karcie">
+                  Statut fundacji <span class="doc-tag" aria-hidden="true">PDF</span>
+                </a>
+              </li>
+              <li>
+                <a href="/polityka-prywatnosci">Polityka prywatności</a>
+              </li>
+            </ul>
           </div>
+
+          <!-- Vox — kontakt: booking, patronat, dyrekcja, RODO -->
+          <div class="foundation-stanza foundation-stanza-vox">
+            <span class="foundation-stanza-label">
+              <span class="dot" aria-hidden="true">·</span>
+              <span class="latin">Vox</span>
+              <span class="pl">kontakt</span>
+            </span>
+            <ul class="foundation-vox-list">
+              <li><a href="mailto:booking@voctensemble.com">booking</a></li>
+              <li><a href="mailto:patronat@voctensemble.com">patronat</a></li>
+              <li><a href="mailto:florent.de.bazelaire@voctensemble.com">dyrekcja artystyczna</a></li>
+            </ul>
+            <p class="foundation-vox-rodo">
+              <span class="key">RODO</span><a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>
+            </p>
+          </div>
+
         </div>
       </div>
 
+    </div>
+
+    <!-- ─── Hairline social ribbon — discrete strip przed wordmarkiem ─── -->
+    <div class="footer-ribbon" aria-label="Obecność w sieci">
+      <span class="footer-ribbon-rule" aria-hidden="true"></span>
+      <ul class="footer-ribbon-list">
+        <li><a href="https://www.instagram.com/voctensemble/" target="_blank" rel="noopener noreferrer">instagram</a></li>
+        <li><a href="https://www.facebook.com/voctensemble/" target="_blank" rel="noopener noreferrer">facebook</a></li>
+        <li><a href="https://www.youtube.com/@VoctEnsemble-nb7gh" target="_blank" rel="noopener noreferrer">youtube</a></li>
+      </ul>
+      <span class="footer-ribbon-rule" aria-hidden="true"></span>
     </div>
 
     <div class="site-footer-mark" aria-hidden="true">
@@ -7936,6 +8337,7 @@
 
     function initFooterSignal() {
       const clockEl = document.getElementById("footerClock");
+      const secondsEl = document.getElementById("footerSeconds");
       const countdownEl = document.getElementById("footerCountdown");
       const horaNameEl = document.getElementById("footerHoraName");
       const horaPoemEl = document.getElementById("footerHoraPoem");
@@ -7943,16 +8345,28 @@
       const tempusPlEl = document.getElementById("footerTempusPl");
 
       if (clockEl) {
-        const fmt = new Intl.DateTimeFormat("pl-PL", {
+        const fmtHM = new Intl.DateTimeFormat("pl-PL", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
           timeZone: "Europe/Warsaw",
         });
-        const tick = () => {
+        // HH:MM siedzi w pierwszym text-nodzie clockEl; sekundy w osobnym
+        // child <span>. Update minutowy modyfikuje tylko nodeValue text-nodu,
+        // żeby NIE wyczyścić spana sekund. Sekundy mają własny tick.
+        // Sekundy paddujemy ręcznie — Intl.DateTimeFormat z single-component
+        // formatter w pl-PL ma bug Chromium nie wymuszający 2-digit (zwraca
+        // "5" zamiast "05"). getSeconds() jest TZ-niezależne (sekunda to
+        // sekunda w każdej strefie, offset jest w minutach).
+        const tickMinute = () => {
           const now = new Date();
-          clockEl.textContent = fmt.format(now);
-          // Aktualizuj horę razem z zegarem — i tak są w tym samym blocku.
+          const hm = fmtHM.format(now);
+          const firstChild = clockEl.firstChild;
+          if (firstChild && firstChild.nodeType === Node.TEXT_NODE) {
+            if (firstChild.nodeValue !== hm) firstChild.nodeValue = hm;
+          } else {
+            clockEl.insertBefore(document.createTextNode(hm), clockEl.firstChild);
+          }
           if (horaNameEl && horaPoemEl) {
             const hora = horaForWarsaw(now);
             if (horaNameEl.textContent !== hora.name) horaNameEl.textContent = hora.name;
@@ -7964,13 +8378,29 @@
             if (tempusPlEl.textContent !== tempus.pl) tempusPlEl.textContent = tempus.pl;
           }
         };
-        tick();
+
+        const tickSeconds = () => {
+          if (!secondsEl) return;
+          const s = String(new Date().getSeconds()).padStart(2, "0");
+          if (secondsEl.textContent !== s) secondsEl.textContent = s;
+        };
+
+        tickMinute();
+        tickSeconds();
+
+        // Sync minute na granicę minuty, sekundy na granicę sekundy.
         const now = new Date();
         const msToNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
         setTimeout(() => {
-          tick();
-          setInterval(tick, 30000);
+          tickMinute();
+          setInterval(tickMinute, 30000);
         }, msToNextMinute + 50);
+
+        const msToNextSecond = 1000 - now.getMilliseconds();
+        setTimeout(() => {
+          tickSeconds();
+          setInterval(tickSeconds, 1000);
+        }, msToNextSecond + 10);
       }
 
       if (countdownEl) {
@@ -7987,6 +8417,128 @@
         update();
         setInterval(update, 60 * 60 * 1000);
       }
+    }
+
+    /* ───────────────────────────────────────────────────────────────
+       FOOTER WORDMARK · cursor-reactive variable font weight (desktop)
+       Każda litera "VoctEnsemble" oddycha mocniej gdy kursor jest blisko.
+       Bonus wght jest LERPOWANY (smooth approach + decay), więc po
+       odejściu kursora litery powoli wracają — nie snap. Działa jako
+       NADWARSTWA na slow time-based pulse parenta (--wght-mark
+       cascadowane przez @property inherits:true).
+
+       Performance:
+       - Desktop only (matchMedia pointer:fine + hover:hover); mobile
+         pomija split, koszt zerowy
+       - prefers-reduced-motion: reduce → skip
+       - IntersectionObserver gate: mousemove/scroll listenery PODPIĘTE
+         tylko gdy wordmark w viewporcie; off-screen = zero cost
+       - Early exit: gdy litera śpi przy targecie 0, nic nie pisze
+       - rAF zatrzymuje się gdy wszystkie litery osiągnęły target (chain
+         się sam wygasza, brak setInterval/leaks)
+       - getBoundingClientRect tylko gdy rectsDirty (scroll/resize), nie
+         co frame
+       ─────────────────────────────────────────────────────────────── */
+    function initFooterMarkCursor() {
+      const isDesktop = window.matchMedia("(pointer: fine) and (hover: hover)").matches;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!isDesktop || reduced) return;
+
+      const markEl = document.querySelector(".site-footer-mark-text");
+      if (!markEl) return;
+      // Idempotent — gdyby init został wywołany 2× (np. hot reload), nie splituj ponownie.
+      if (markEl.querySelector(".site-footer-mark-letter")) return;
+
+      const text = markEl.textContent;
+      if (!text) return;
+
+      // Split na per-letter spany. data-text na parencie zostaje (mirror::after czyta attr).
+      markEl.textContent = "";
+      const letters = [];
+      for (const ch of text) {
+        const span = document.createElement("span");
+        span.className = "site-footer-mark-letter";
+        span.textContent = ch;
+        markEl.appendChild(span);
+        letters.push(span);
+      }
+
+      const REACH = 360;     // px — promień wpływu kursora
+      const BOOST = 220;     // max wght bonus dla litery dokładnie pod kursorem
+      const LERP = 0.22;     // szybkość zbliżania current → target
+      const STILL = 0.5;     // próg "jeszcze się rusza" dla decyzji czy chainować rAF
+
+      const state = new Float32Array(letters.length);
+      const rects = new Array(letters.length);
+      let rectsDirty = true;
+      let cursorX = -9999;
+      let cursorY = -9999;
+      let active = false;
+      let raf = null;
+
+      const measure = () => {
+        for (let i = 0; i < letters.length; i++) {
+          const r = letters[i].getBoundingClientRect();
+          rects[i] = { cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+        }
+        rectsDirty = false;
+      };
+
+      const tick = () => {
+        raf = null;
+        if (!active) return;
+        if (rectsDirty) measure();
+        let stillMoving = false;
+        for (let i = 0; i < letters.length; i++) {
+          const r = rects[i];
+          const dx = cursorX - r.cx;
+          const dy = cursorY - r.cy;
+          const d = Math.hypot(dx, dy);
+          const t = d < REACH ? 1 - d / REACH : 0;
+          const target = t * t * BOOST;
+          const curr = state[i];
+          // Litera śpi przy targecie 0 → nic nie piszemy, zero invalidation.
+          if (target < 0.1 && curr < 0.1) continue;
+          const next = curr + (target - curr) * LERP;
+          state[i] = next;
+          if (Math.abs(target - next) > STILL) stillMoving = true;
+          letters[i].style.setProperty("--wght-add", next.toFixed(0));
+        }
+        if (stillMoving) raf = requestAnimationFrame(tick);
+      };
+
+      const onMove = (e) => {
+        cursorX = e.clientX;
+        cursorY = e.clientY;
+        if (!raf) raf = requestAnimationFrame(tick);
+      };
+
+      const onViewportChange = () => { rectsDirty = true; };
+
+      const io = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !active) {
+            active = true;
+            rectsDirty = true;
+            window.addEventListener("mousemove", onMove, { passive: true });
+            window.addEventListener("scroll", onViewportChange, { passive: true });
+            window.addEventListener("resize", onViewportChange);
+          } else if (!entry.isIntersecting && active) {
+            active = false;
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("scroll", onViewportChange);
+            window.removeEventListener("resize", onViewportChange);
+            if (raf) { cancelAnimationFrame(raf); raf = null; }
+            // Reset wszystkich liter do bazy.
+            for (let i = 0; i < letters.length; i++) {
+              state[i] = 0;
+              letters[i].style.removeProperty("--wght-add");
+            }
+          }
+        }
+      }, { rootMargin: "100px" });
+
+      io.observe(markEl);
     }
 
     /* ───────────────────────────────────────────────────────────────
@@ -8381,6 +8933,7 @@
     initGratitude();
     initFailure();
     initFooterSignal();
+    initFooterMarkCursor();
   })();
 </script>
 </body>
