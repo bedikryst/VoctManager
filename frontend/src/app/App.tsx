@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file App.tsx
  * @description Main application routing, global layout orchestrator, and notification registry.
  * Dynamically resolves rendering trees based on active routes (Marketing Site vs. Secure Panel).
@@ -8,18 +8,12 @@
  * @module core/App
  */
 
-import React, { Suspense, lazy, useState, useEffect } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
-import { GlobalNavbar } from "@/widgets/marketing-shell/GlobalNavbar";
-import { OverlayMenu } from "@/widgets/marketing-shell/OverlayMenu";
-import { FooterSection } from "@/widgets/marketing-shell/FooterSection";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
-import { CustomCursor } from "@/shared/ui/kinematics/CustomCursor";
-import { NoiseOverlay } from "@/shared/ui/kinematics/NoiseOverlay";
-import { Preloader } from "@/shared/ui/kinematics/Preloader";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import ProtectedRoute from "./router/ProtectedRoute";
 import ManagerRoute from "./router/ManagerRoute";
@@ -58,14 +52,6 @@ function lazyWithPreload<TComponent extends RouteComponent>(
 
   return Component;
 }
-
-// Marketing site pages are lazy-loaded while HomePage stays eager for LCP priority.
-const EnsemblePage = lazyWithPreload(() => import("@pages/marketing/EnsemblePage"));
-const ExperiencePage = lazyWithPreload(() => import("@pages/marketing/ExperiencePage"));
-const FoundationPage = lazyWithPreload(() => import("@pages/marketing/FoundationPage"));
-const DonatePage = lazyWithPreload(() => import("@pages/marketing/DonatePage"));
-const CollaborationsPage = lazyWithPreload(() => import("@pages/marketing/CollaborationsPage"));
-const ContactPage = lazyWithPreload(() => import("@pages/marketing/ContactPage"));
 
 // Auth routes are public and lazy-loaded.
 const Login = lazyWithPreload(() => import("@pages/auth/LoginPage"));
@@ -107,6 +93,9 @@ const ProjectDashboard = lazyWithPreload(() =>
 const ArchiveManagement = lazyWithPreload(
   () => import("@pages/panel/ArchivePage"),
 );
+const ScoreCompiler = lazyWithPreload(
+  () => import("@features/score-compiler/ScoreCompilerPage"),
+);
 const CrewManagement = lazyWithPreload(
   () => import("@features/crew/CrewManagement"),
 );
@@ -127,33 +116,42 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: ArtistManagement.preload },
   { scope: "manager", preload: ProjectDashboard.preload },
   { scope: "manager", preload: ArchiveManagement.preload },
+  { scope: "manager", preload: ScoreCompiler.preload },
   { scope: "manager", preload: CrewManagement.preload },
   { scope: "manager", preload: LogisticsLocationsPage.preload },
 ];
 
 export default function App(): React.JSX.Element {
   const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState<boolean>(false);
 
-  const isPanelRoute: boolean = location.pathname.startsWith("/panel");
-  const isDocumentViewerRoute: boolean =
-    location.pathname.startsWith("/documents/");
-  const isAuthRoute: boolean =
-    location.pathname === "/login" || location.pathname === "/activate";
+  // The public landing renders its own preloader, sticky chrome, custom cursor,
+  // footer and noise overlay — no marketing shell is needed at the app level.
+  // `/homepage` is the preview URL during the migration from LandingPage.html to React;
+  // production nginx still serves the static HTML at `/`.
+  const isHomeRoute: boolean =
+    location.pathname === "/" || location.pathname === "/homepage";
 
-  const shouldShowMarketingShell: boolean =
-    !isPanelRoute && !isAuthRoute && !isDocumentViewerRoute;
-
-  // DOM Theme Orchestrator
+  // DOM Theme Orchestrator — landing routes get the marketing theme (so
+  // marketing-landing.css applies); everything else falls back to the panel theme.
   useEffect(() => {
-    if (shouldShowMarketingShell) {
+    if (isHomeRoute) {
       document.body.classList.add("theme-marketing");
-      document.body.classList.remove("theme-panel", "bg-ethereal-snow", "text-ethereal-ink", "selection:bg-ethereal-gold/20");
+      document.body.classList.remove(
+        "theme-panel",
+        "bg-ethereal-snow",
+        "text-ethereal-ink",
+        "selection:bg-ethereal-gold/20",
+      );
     } else {
-      document.body.classList.add("theme-panel", "bg-ethereal-snow", "text-ethereal-ink", "selection:bg-ethereal-gold/20");
+      document.body.classList.add(
+        "theme-panel",
+        "bg-ethereal-snow",
+        "text-ethereal-ink",
+        "selection:bg-ethereal-gold/20",
+      );
       document.body.classList.remove("theme-marketing");
     }
-  }, [shouldShowMarketingShell]);
+  }, [isHomeRoute]);
 
   return (
     <CSRFProvider>
@@ -164,11 +162,6 @@ export default function App(): React.JSX.Element {
         version="weekly"
         libraries={["places", "geocoding"]}
       >
-        {shouldShowMarketingShell && <Preloader />}
-        {shouldShowMarketingShell && (
-          <GlobalNavbar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-        )}
-
         <Suspense fallback={<EtherealLoader />}>
           <Routes location={location}>
             <Route
@@ -180,50 +173,10 @@ export default function App(): React.JSX.Element {
               }
             />
             <Route
-              path="/o-zespole"
+              path="/homepage"
               element={
                 <PageTransition>
-                  <EnsemblePage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/repertuar"
-              element={
-                <PageTransition>
-                  <ExperiencePage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/fundacja"
-              element={
-                <PageTransition>
-                  <FoundationPage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/darowizna"
-              element={
-                <PageTransition>
-                  <DonatePage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/wspolpraca"
-              element={
-                <PageTransition>
-                  <CollaborationsPage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/kontakt"
-              element={
-                <PageTransition>
-                  <ContactPage />
+                  <Home />
                 </PageTransition>
               }
             />
@@ -264,6 +217,10 @@ export default function App(): React.JSX.Element {
                     path="archive-management"
                     element={<ArchiveManagement />}
                   />
+                  <Route
+                    path="score-compiler"
+                    element={<ScoreCompiler />}
+                  />
                   <Route path="crew" element={<CrewManagement />} />
                   <Route
                     path="locations"
@@ -283,14 +240,6 @@ export default function App(): React.JSX.Element {
             </Route>
           </Routes>
         </Suspense>
-
-        {shouldShowMarketingShell && <FooterSection />}
-        {shouldShowMarketingShell && (
-          <OverlayMenu isOpen={menuOpen} setIsOpen={setMenuOpen} />
-        )}
-
-        {shouldShowMarketingShell && <NoiseOverlay />}
-        {shouldShowMarketingShell && <CustomCursor />}
 
         <Toaster position="top-right" richColors closeButton duration={4000} />
       </APIProvider>

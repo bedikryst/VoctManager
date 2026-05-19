@@ -231,6 +231,17 @@ export interface Composer extends BaseModel {
   last_name: string;
   birth_year?: string;
   death_year?: string;
+  // Score Compiler enrichments (canonical identity + biography). All optional —
+  // older composers entered manually before Phase 0 won't have them.
+  full_name?: string;
+  mbid?: string | null;
+  wikidata_qid?: string;
+  nationality?: string;
+  period?: string;
+  bio?: string;
+  portrait_url?: string;
+  portrait_license?: string;
+  aliases?: string[];
 }
 
 export interface VoiceRequirement {
@@ -248,15 +259,84 @@ export interface Track extends BaseModel {
   audio_file: string; // URL string, no null
 }
 
+// ---- Score Compiler nested entities ----------------------------------------
+
+export interface Movement extends BaseModel {
+  order_index: number;
+  title: string;
+  tempo_marking?: string;
+  duration_seconds?: number | null;
+  voicing_override?: string;
+  starts_on_page?: number | null;
+}
+
+export interface Translation extends BaseModel {
+  movement?: string | null;
+  target_language: string;
+  text: string;
+  is_singable: boolean;
+}
+
+export type RecordingSource = "SPF" | "YTB" | "APL" | "OTH";
+
+export interface Recording extends BaseModel {
+  source: RecordingSource;
+  source_display?: string;
+  external_id: string;
+  url: string;
+  performer?: string;
+  year?: number | null;
+  duration_seconds?: number | null;
+  is_featured: boolean;
+}
+
+export interface ProgramNote extends BaseModel {
+  project?: string | null;
+  language: string;
+  target_tone: string;
+  word_count_target: number;
+  content: string;
+  is_approved: boolean;
+}
+
+export type IngestionStatusCode =
+  | "PEND"
+  | "EXTR"
+  | "ENRI"
+  | "GENR"
+  | "AWAI"
+  | "RDY "
+  | "FAIL";
+
+/**
+ * Lean ScoreEdition payload embedded in Piece read responses. The full
+ * detail shape (with annotations, ingestion_cost_cents, sha256, etc.) lives
+ * inside the score-compiler feature; this slim version is what the Archive
+ * card, Materials card, and AI Context tab need to render PDF links + badges.
+ */
+export interface ScoreEditionSummary extends BaseModel {
+  pdf_file?: string;
+  original_filename: string;
+  publisher?: string;
+  edition_year?: number | null;
+  editor_name?: string;
+  page_count?: number | null;
+  is_default: boolean;
+  ingestion_status: IngestionStatusCode;
+  ingestion_status_display?: string;
+}
+
 export interface Piece extends BaseModel {
   title: string;
-  composer?: string | null; // FK relation, can be null
+  // Read shape: nested composer summary (matches backend PieceSerializer).
+  // Write payloads use `composer_id` — see PieceWriteDTO in features/archive.
+  composer?: Composer | null;
   composer_name?: string;
   composer_full_name?: string;
 
   arranger?: string;
   language?: string;
-  estimated_duration?: number | null; // Numeric, can be null
+  estimated_duration?: number | null; // seconds
   voicing?: string;
   description?: string;
   sheet_music?: string; // URL string, no null
@@ -265,13 +345,30 @@ export interface Piece extends BaseModel {
   reference_recording?: string;
   reference_recording_youtube?: string;
   reference_recording_spotify?: string;
-  composition_year?: number | null; // Numeric, can be null
+  composition_year?: number | null;
   epoch?: Epoch;
   epoch_display?: string;
+
+  // Score Compiler additions — present on every piece returned by the new
+  // unified PieceSerializer, even if empty / null.
+  opus_catalog?: string;
+  musical_key?: string;
+  text_source?: string;
+  lyrics_ipa?: string;
+  mbid_work?: string | null;
+  ingestion_status?: IngestionStatusCode;
+  ingestion_status_display?: string;
 
   // Nested relations
   voice_requirements?: VoiceRequirement[];
   tracks?: Track[];
+  movements?: Movement[];
+  translations?: Translation[];
+  recordings?: Recording[];
+  program_notes?: ProgramNote[];
+  // All Score Compiler editions attached to this Piece (legacy `sheet_music`
+  // remains as the one-PDF-per-piece fallback for manually-entered records).
+  editions?: ScoreEditionSummary[];
 }
 
 export interface ProgramItem extends BaseModel {
