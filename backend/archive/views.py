@@ -13,15 +13,31 @@ Standards: SaaS 2026, RFC 7807 (Global Exception Handling), Aggregate Roots.
 ===============================================================================
 """
 
+import logging
+
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, permissions, status
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from core.permissions import IsManagerOrReadOnly  
+from core.permissions import IsManagerOrReadOnly
 
-from .models import Composer, Piece, Track, PieceVoiceRequirement
-from .serializers import ComposerSerializer, PieceSerializer, TrackSerializer, PieceVoiceRequirementSerializer
 from . import services
+from .models import (
+    Composer, IngestionStatus, Piece, PieceVoiceRequirement,
+    ScoreEdition, Track,
+)
+from .serializers import (
+    ComposerSerializer, PieceSerializer, PieceVoiceRequirementSerializer,
+    ScoreEditionDetailSerializer, ScoreEditionListSerializer,
+    ScoreEditionUploadSerializer, TrackSerializer,
+)
+from .services.ingestion import (
+    IngestionPreconditionError, start_ingestion,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class ComposerViewSet(viewsets.ModelViewSet):
@@ -39,7 +55,20 @@ class PieceViewSet(viewsets.ModelViewSet):
     Core aggregate root endpoint for managing the musical repertoire.
     Strictly delegates all state mutations to ArchiveManagementService.
     """
-    queryset = Piece.objects.select_related('composer').prefetch_related('tracks', 'voice_requirements').all()
+    queryset = (
+        Piece.objects
+        .select_related('composer')
+        .prefetch_related(
+            'tracks',
+            'voice_requirements',
+            'movements',
+            'translations',
+            'recordings',
+            'program_notes',
+            'editions',
+        )
+        .all()
+    )
     serializer_class = PieceSerializer
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
@@ -119,3 +148,151 @@ class PieceVoiceRequirementViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PieceVoiceRequirement.objects.all()
     serializer_class = PieceVoiceRequirementSerializer
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+
+
+# ===========================================================================
+# Score Package Compiler — ScoreEdition endpoint
+# ===========================================================================
+# REST surface for the conductor's review workflow (Phase 3 UI):
+#
+#   POST   /api/archive/editions/                multipart upload + dispatch
+#   GET    /api/archive/editions/                list (lean payload)
+#   GET    /api/archive/editions/{id}/           detail (full nested payload)
+#   PATCH  /api/archive/editions/{id}/           edit edition-level fields
+#   DELETE /api/archive/editions/{id}/           soft-delete
+#   POST   /api/archive/editions/{id}/approve/   mark AWAITING → READY
+#   POST   /api/archive/editions/{id}/reingest/  re-run the pipeline
+#
+# Per-field edits to piece / composer / movements / etc. go through their
+# existing dedicated endpoints (/api/pieces/, /api/composers/) — this
+# ViewSet stays focused on the edition + workflow control actions.
+# ===========================================================================
+
+class ScoreEditionViewSet(viewsets.ModelViewSet):
+    """
+    Edition lifecycle endpoint. Thin controller — delegates ingestion
+    dispatch to `services.ingestion.start_ingestion` and never calls
+    `tasks.s()` chains directly.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['ingestion_status', 'piece']
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        return (
+            ScoreEdition.objects
+            .select_related('piece', 'piece__composer', 'uploaded_by')
+            .prefetch_related(
+                'piece__movements',
+                'piece__translations',
+                'piece__recordings',
+                'piece__program_notes',
+                'annotations',
+            )
+            .order_by('-created_at')
+        )
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ScoreEditionUploadSerializer
+        if self.action == 'list':
+            return ScoreEditionListSerializer
+        return ScoreEditionDetailSerializer
+
+    def create(self, request, *args, **kwargs):
+        """
+        Upload a PDF and dispatch ingestion. The Workflow A pipeline:
+          1. Extracts text from the first pages of the PDF.
+          2. Identifies title/composer via Claude.
+          3. Resolves / creates the canonical Piece and Composer.
+          4. Generates movements, lyrics, IPA, program note.
+          5. Looks up Spotify / YouTube recordings.
+          6. Transitions status to AWAITING for conductor review.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        vd = serializer.validated_data
+
+        uploaded_file = vd['pdf_file']
+        edition = ScoreEdition.objects.create(
+            piece=None,
+            pdf_file=uploaded_file,
+            original_filename=vd.get('original_filename') or uploaded_file.name,
+            publisher=vd.get('publisher', ''),
+            edition_year=vd.get('edition_year'),
+            editor_name=vd.get('editor_name', ''),
+            is_default=vd.get('is_default', False),
+            sha256='',
+            page_count=0,
+            uploaded_by=request.user if request.user.is_authenticated else None,
+        )
+
+        try:
+            ticket = start_ingestion(edition)
+        except IngestionPreconditionError as exc:
+            logger.warning("ingestion_dispatch_failed edition=%s err=%s", edition.id, exc)
+            return Response(
+                {'detail': str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        edition.refresh_from_db()
+        body = ScoreEditionDetailSerializer(edition, context={'request': request}).data
+        body['celery_task_id'] = ticket.celery_task_id
+        return Response(body, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        # Block full PUT on file-bearing rows; PATCH only for metadata.
+        return Response(
+            {'detail': 'Full replacement not allowed. Use PATCH or upload a new edition.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def perform_destroy(self, instance: ScoreEdition) -> None:
+        # Inherit EnterpriseBaseModel soft-delete (sets is_deleted=True).
+        instance.delete()
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """
+        Conductor approves AI extractions. Flips AWAITING → READY.
+        Refuses to approve a FAILED or in-progress edition.
+        """
+        edition = self.get_object()
+        if edition.ingestion_status != IngestionStatus.AWAITING:
+            return Response(
+                {
+                    'detail': f'Cannot approve edition in status '
+                              f'{edition.get_ingestion_status_display()!r}. '
+                              f'Only AWAITING editions can be approved.',
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        edition.ingestion_status = IngestionStatus.READY
+        edition.save(update_fields=['ingestion_status', 'updated_at'])
+        return Response(
+            ScoreEditionDetailSerializer(edition, context={'request': request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'])
+    def reingest(self, request, pk=None):
+        """
+        Re-run the ingestion pipeline. Use after editing prompt text or to
+        recover from a transient external-API failure. Resets cost counter.
+
+        Pass `?force=true` to dispatch even if the edition status looks
+        mid-pipeline — useful when a previous chain died silently (Celery
+        crash / dead worker) and the row is stuck in EXTR / ENRI / GENR.
+        """
+        edition = self.get_object()
+        force = str(request.query_params.get('force', '')).lower() in ('1', 'true', 'yes')
+        try:
+            ticket = start_ingestion(edition, force=force)
+        except IngestionPreconditionError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        edition.refresh_from_db()
+        body = ScoreEditionDetailSerializer(edition, context={'request': request}).data
+        body['celery_task_id'] = ticket.celery_task_id
+        return Response(body, status=status.HTTP_202_ACCEPTED)

@@ -5,7 +5,9 @@ import uuid
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db.models import Prefetch, QuerySet
 
-from archive.models import Track
+from archive.models import (
+    ProgramNote, Recording, ScoreEdition, Track, Translation,
+)
 from roster.models import Participation, ProgramItem, ProjectPieceCasting
 
 
@@ -63,6 +65,30 @@ def get_artist_materials_queryset(user: AbstractBaseUser) -> QuerySet[Participat
                 'piece__castings',
                 queryset=castings_in_scope_qs,
                 to_attr='scope_castings',
+            ),
+            # Score Compiler enrichments — same prefetch pattern, soft-delete
+            # safe via the default manager. Used by PieceMaterialsSerializer
+            # to surface IPA, multi-language translations, AI program notes,
+            # canonical recordings and ScoreEdition PDFs to the choir.
+            Prefetch(
+                'piece__translations',
+                queryset=Translation.objects.filter(is_deleted=False),
+                to_attr='prefetched_translations',
+            ),
+            Prefetch(
+                'piece__recordings',
+                queryset=Recording.objects.filter(is_deleted=False),
+                to_attr='prefetched_recordings',
+            ),
+            Prefetch(
+                'piece__program_notes',
+                queryset=ProgramNote.objects.filter(is_deleted=False),
+                to_attr='prefetched_program_notes',
+            ),
+            Prefetch(
+                'piece__editions',
+                queryset=ScoreEdition.objects.filter(is_deleted=False),
+                to_attr='prefetched_editions',
             ),
         )
         .order_by('order')

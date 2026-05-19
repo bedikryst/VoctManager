@@ -5,14 +5,68 @@ from typing import Any
 
 from rest_framework import serializers
 
-from archive.models import Composer, Piece, Track
+from archive.models import (
+    Composer, Piece, ProgramNote, Recording, ScoreEdition, Track, Translation,
+)
 from roster.models import Participation, ProjectPieceCasting, ProgramItem, Project
 
 
 class ComposerSnippetSerializer(serializers.ModelSerializer):
+    """Composer snippet for the artist-facing materials dashboard. Includes
+    Score Compiler enrichments so the choir sees the biography/portrait when
+    learning new repertoire."""
+    full_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Composer
-        fields = ('id', 'first_name', 'last_name', 'birth_year', 'death_year')
+        fields = (
+            'id', 'first_name', 'last_name', 'full_name',
+            'birth_year', 'death_year',
+            'nationality', 'period', 'bio',
+            'portrait_url', 'mbid', 'wikidata_qid',
+        )
+
+    def get_full_name(self, obj: Composer) -> str:
+        return f"{obj.first_name} {obj.last_name}".strip()
+
+
+class TranslationSnippetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Translation
+        fields = ('id', 'target_language', 'text', 'is_singable')
+
+
+class RecordingSnippetSerializer(serializers.ModelSerializer):
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
+
+    class Meta:
+        model = Recording
+        fields = (
+            'id', 'source', 'source_display', 'external_id', 'url',
+            'performer', 'year', 'duration_seconds', 'is_featured',
+        )
+
+
+class ProgramNoteSnippetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProgramNote
+        fields = (
+            'id', 'language', 'target_tone',
+            'word_count_target', 'content', 'is_approved',
+        )
+
+
+class EditionSnippetSerializer(serializers.ModelSerializer):
+    pdf_file = serializers.FileField(read_only=True, use_url=True)
+
+    class Meta:
+        model = ScoreEdition
+        fields = (
+            'id', 'pdf_file', 'original_filename',
+            'publisher', 'edition_year', 'editor_name',
+            'page_count', 'is_default',
+            'ingestion_status', 'created_at',
+        )
 
 
 class TrackSnippetSerializer(serializers.ModelSerializer):
@@ -56,8 +110,12 @@ class PieceMaterialsSerializer(serializers.Serializer):
     Context-aware read-only serializer for a Piece in the materials tree.
 
     Avoids N+1 by reading exclusively from pre-fetched to_attr lists:
-      piece.prefetched_tracks  — set by get_artist_materials_queryset()
-      piece.scope_castings     — set by get_artist_materials_queryset()
+      piece.prefetched_tracks       — set by get_artist_materials_queryset()
+      piece.scope_castings          — set by get_artist_materials_queryset()
+      piece.prefetched_translations — set by get_artist_materials_queryset()
+      piece.prefetched_recordings   — set by get_artist_materials_queryset()
+      piece.prefetched_program_notes — set by get_artist_materials_queryset()
+      piece.prefetched_editions     — set by get_artist_materials_queryset()
 
     Required context keys:
       project_id        uuid.UUID  — slices scope_castings to this project only
@@ -100,6 +158,29 @@ class PieceMaterialsSerializer(serializers.Serializer):
             'lyrics_translation': piece.lyrics_translation,
             'reference_recording_youtube': piece.reference_recording_youtube,
             'reference_recording_spotify': piece.reference_recording_spotify,
+            # Score Compiler-populated fields. Artist-facing read-only view.
+            'opus_catalog': piece.opus_catalog,
+            'musical_key': piece.musical_key,
+            'text_source': piece.text_source,
+            'lyrics_ipa': piece.lyrics_ipa,
+            'mbid_work': str(piece.mbid_work) if piece.mbid_work else None,
+            'translations': TranslationSnippetSerializer(
+                getattr(piece, 'prefetched_translations', []),
+                many=True,
+            ).data,
+            'recordings': RecordingSnippetSerializer(
+                getattr(piece, 'prefetched_recordings', []),
+                many=True,
+            ).data,
+            'program_notes': ProgramNoteSnippetSerializer(
+                getattr(piece, 'prefetched_program_notes', []),
+                many=True,
+            ).data,
+            'editions': EditionSnippetSerializer(
+                getattr(piece, 'prefetched_editions', []),
+                many=True,
+                context=child_context,
+            ).data,
             'tracks': TrackSnippetSerializer(
                 getattr(piece, 'prefetched_tracks', []),
                 many=True,

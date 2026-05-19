@@ -16,10 +16,10 @@ import logging
 from typing import List
 from django.db import transaction
 
-from .models import Piece, PieceVoiceRequirement, Composer, Track
-from .dtos import PieceWriteDTO, VoiceRequirementDTO
-from .exceptions import PieceValidationException
-from .signals import piece_material_updated_event
+from archive.models import Piece, PieceVoiceRequirement, Composer, Track
+from archive.dtos import PieceWriteDTO, VoiceRequirementDTO
+from archive.exceptions import PieceValidationException
+from archive.signals import piece_material_updated_event
 
 logger = logging.getLogger(__name__)
 

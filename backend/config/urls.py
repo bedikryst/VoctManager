@@ -19,7 +19,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from .auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, LogoutView
 
 from roster.views import ArtistViewSet, CollaboratorViewSet, CrewAssignmentViewSet, ProgramItemViewSet, ProjectViewSet, ParticipationViewSet, RehearsalViewSet, AttendanceViewSet, ProjectPieceCastingViewSet, get_voice_lines, get_voice_types
-from archive.views import ComposerViewSet, PieceViewSet, TrackViewSet, PieceVoiceRequirementViewSet
+from archive.views import ComposerViewSet, PieceViewSet, ScoreEditionViewSet, TrackViewSet, PieceVoiceRequirementViewSet
 from core.views import (
     ActivateAccountView,
     CSRFCookieView,
@@ -54,6 +54,9 @@ router.register(r'composers', ComposerViewSet, basename='composer')
 router.register(r'pieces', PieceViewSet, basename='piece')
 router.register(r'tracks', TrackViewSet, basename='track')
 router.register(r'piece-voice-requirements', PieceVoiceRequirementViewSet, basename='piece-voice-requirement')
+
+# --- Score Package Compiler Endpoints ---
+router.register(r'archive/editions', ScoreEditionViewSet, basename='score-edition')
 
 # --- System & Notifications ---
 router.register(r'notifications', NotificationViewSet, basename='notification')

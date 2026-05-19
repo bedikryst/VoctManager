@@ -19,8 +19,42 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
     # Set default types and values
     DEBUG=(bool, False),
-    ALLOWED_HOSTS=(list, ['localhost']),
-    CORS_ALLOWED_ORIGINS=(list, ['http://localhost:5173']),
+    ALLOWED_HOSTS=(
+        list,
+        [
+            'localhost',
+            '127.0.0.1',
+            'web',
+            'voctensemble.com',
+            'www.voctensemble.com',
+            'voctensemble.pl',
+            'www.voctensemble.pl',
+            'voctfoundation.pl',
+            'www.voctfoundation.pl',
+            'voctfoundation.com',
+            'www.voctfoundation.com',
+            'voctfoundation.org',
+            'www.voctfoundation.org',
+        ],
+    ),
+    CORS_ALLOWED_ORIGINS=(
+        list,
+        [
+            'http://localhost',
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            'https://voctensemble.com',
+            'https://www.voctensemble.com',
+            'https://voctensemble.pl',
+            'https://www.voctensemble.pl',
+            'https://voctfoundation.pl',
+            'https://www.voctfoundation.pl',
+            'https://voctfoundation.com',
+            'https://www.voctfoundation.com',
+            'https://voctfoundation.org',
+            'https://www.voctfoundation.org',
+        ],
+    ),
     DB_PORT=(str, '5432'),
     CONN_MAX_AGE=(int, 600)
 )
@@ -196,7 +230,7 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_USE_SESSIONS = False
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_DOMAIN = env('CSRF_COOKIE_DOMAIN', default='.voctensemble.com')
+CSRF_COOKIE_DOMAIN = env('CSRF_COOKIE_DOMAIN', default=None) or None
 
 # --- CELERY & REDIS ---
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://redis:6379/0')
@@ -223,6 +257,69 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="VoctManager <noreply@voc
 
 # --- BUSINESS LOGIC DEFAULTS ---
 DEFAULT_ARTIST_PASSWORD = env('DEFAULT_ARTIST_PASSWORD', default='secure_password123')
+
+# --- AI / ANTHROPIC (Score Package Compiler) ---
+# API key for Claude (Anthropic). The AI client wrapper raises if missing
+# when first instantiated. Leave blank to disable ingestion features in dev.
+ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
+
+# Hard ceiling, in USD cents, the ingestion pipeline may spend per ScoreEdition.
+# Tasks check this BEFORE issuing each Claude call and refuse to proceed if
+# the entity's `ingestion_cost_cents` has hit it. 50¢ ~= one full pipeline run
+# on a 4-page Magnificat movement with cache hits on the system prompt.
+INGESTION_COST_CEILING_CENTS = env.int('INGESTION_COST_CEILING_CENTS', default=200)
+
+# --- EXTERNAL DATA SOURCES (Score Package Compiler enrichment) ---
+# MusicBrainz and Wikidata require no auth — only a polite User-Agent.
+# MusicBrainz enforces this header; requests without it are rate-limited harder.
+EXTERNAL_API_USER_AGENT = env(
+    'EXTERNAL_API_USER_AGENT',
+    default='VoctManager/1.0 ( https://voctensemble.com )',
+)
+
+# Spotify Web API — Client Credentials Flow only (no user auth needed for search).
+SPOTIFY_CLIENT_ID = env('SPOTIFY_CLIENT_ID', default='')
+SPOTIFY_CLIENT_SECRET = env('SPOTIFY_CLIENT_SECRET', default='')
+
+# YouTube Data API v3 — Public API key from Google Cloud Console.
+# Default tier: 10,000 quota units/day; one search.list call costs 100 units.
+YOUTUBE_API_KEY = env('YOUTUBE_API_KEY', default='')
+
+# --- CACHE (shared by external API clients) ---
+# Redis-backed cache: reuses the same Redis instance Celery uses (DB 1 keeps
+# the cache namespace separate from Celery's task queue on DB 0).
+#
+# The default cache URL is built from REDIS_PASSWORD + REDIS_HOST + REDIS_PORT
+# rather than parsed from CELERY_BROKER_URL — this is more predictable across
+# environments where the broker URL is mangled by docker-compose substitution
+# or shell quoting, and it handles the common .env pattern where REDIS_PASSWORD
+# is a standalone variable.
+#
+# Without this, in any environment with Redis auth enabled, Celery would
+# connect fine while Django's cache layer would fail with
+# `redis.exceptions.AuthenticationError: Authentication required`.
+#
+# Override with CACHE_URL explicitly in .env to point at a different Redis.
+# Defensive: a literal-empty `CACHE_URL=` line in .env falls through to the
+# default, since django-environ otherwise treats it as a valid empty string.
+REDIS_PASSWORD = env('REDIS_PASSWORD', default='')
+REDIS_HOST = env('REDIS_HOST', default='redis')
+REDIS_PORT = env('REDIS_PORT', default='6379')
+
+def _build_default_cache_url() -> str:
+    auth = f':{REDIS_PASSWORD}@' if REDIS_PASSWORD else ''
+    return f'redis://{auth}{REDIS_HOST}:{REDIS_PORT}/1'
+
+CACHE_URL = env('CACHE_URL', default='').strip() or _build_default_cache_url()
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': CACHE_URL,
+        'TIMEOUT': 60 * 60 * 24 * 30,  # 30 days default — external metadata changes slowly
+        'KEY_PREFIX': 'voct',
+    },
+}
 
 # --- OBSERVABILITY & LOGGING ---
 LOGGING = {
