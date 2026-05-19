@@ -154,12 +154,10 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [x] **Event-Driven Notifications:** Async notification routing with Resend (email) and Firebase (push) providers.
 - [x] **Containerization & Orchestration:** Docker & Docker Compose with zero-parity between Dev and Prod environments.
 - [x] **Asynchronous Processing:** Celery + Redis for background tasks (document generation, batch notifications, data export).
-- [x] **Score Compiler — Foundations:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`), tiered Claude wrapper with adaptive thinking + cost tracking + prompt caching, and Redis-cached external clients (MusicBrainz, Wikidata, Spotify, YouTube).
-- [ ] **Score Compiler — Ingestion Pipeline:** Celery chain that extracts PDF metadata, resolves composers/works against MusicBrainz, generates program notes + IPA + singing translations, and surfaces a conductor review screen.
-- [ ] **Score Compiler — Concert Assembly:** WeasyPrint + pypdf workflow producing a polished concert binder (cover, TOC, per-piece front matter, original scores) on demand.
-- [ ] **Score Compiler — Annotation Editor:** PDF.js + Konva overlay for in-browser markup (highlight, comment, freehand, page reorder) with versioned, layer-aware persistence and export-time flattening.
-- [ ] **Observability & APM:** Sentry for error tracking, Prometheus + Grafana for metrics and dashboards.
-- [ ] **Distributed Tracing:** OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
+- [x] **Error Tracking:** Sentry SDK wired into Django for production error capture and release-health monitoring.
+- [x] **AI Score Compiler — Schema & Ingestion Pipeline:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus the live Celery ingestion chain — a tiered Claude wrapper (adaptive thinking, cost tracking, prompt caching) that extracts PDF metadata, resolves composers/works against MusicBrainz & Wikidata, generates program notes + IPA + singing translations, and surfaces a conductor review screen. External clients (MusicBrainz, Wikidata, Spotify, YouTube) are Redis-cached.
+- [ ] **AI Score Compiler — Concert Assembly & Annotation:** WeasyPrint + pypdf concert-binder generation (cover, TOC, per-piece front matter, original scores) plus a PDF.js + Konva in-browser annotation overlay (highlight, comment, freehand, page reorder) with versioned, layer-aware persistence and export-time flattening.
+- [ ] **Metrics & Distributed Tracing:** Prometheus + Grafana dashboards and OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
 - [ ] **Automated Testing:** PyTest coverage for critical business paths (contract generation, payroll calculations, casting algorithms).
 - [ ] **CI/CD Pipelines:** GitHub Actions for automated lint, build, test, and zero-downtime deploys.
 - [ ] **Advanced Caching:** Redis cluster for session management and distributed cache invalidation.
