@@ -1,5 +1,7 @@
 # ⚛️ VoctManager – Frontend Application
 
+🌍 *Read this in other languages: [English](README.md), [Polski](README.pl.md).*
+
 ![Vite 7](https://img.shields.io/badge/Vite_7-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
 ![React 19](https://img.shields.io/badge/React_19.2-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![TypeScript 5.9](https://img.shields.io/badge/TypeScript_5.9-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
@@ -18,10 +20,10 @@ The frontend strictly follows the [Feature-Sliced Design](https://feature-sliced
 ```text
 src/
 ├── app/              ← Application shell (highest layer)
-│   ├── providers/    # Top-level providers (Query, Auth, Router, i18n)
-│   ├── router/       # Route definitions and lazy route boundaries
-│   ├── store/        # App-level Zustand stores
-│   └── styles/       # Global Tailwind v4 layer + Ethereal design tokens
+│   ├── providers/    # Top-level providers (AuthProvider, CSRFProvider, CursorProvider)
+│   ├── router/       # Route guards (ProtectedRoute, ManagerRoute) + panel data preloaders
+│   ├── store/        # App-level Zustand store (useAppStore)
+│   └── styles/       # Global Tailwind v4 layer + Ethereal/marketing design tokens
 │
 ├── pages/            ← Route-level compositions
 │   ├── auth/         # Login, password reset, account activation
@@ -56,7 +58,7 @@ src/
     ├── api/          # Axios client, interceptors, generated OpenAPI types
     ├── assets/       # Static assets (audio samples, illustrations)
     ├── auth/         # JWT decode, session helpers
-    ├── config/       # Env config, route maps, navigation manifest
+    ├── config/       # i18n setup + centralized locales, navigation manifest
     ├── hooks/        # Cross-domain hooks (useDebounce, useMediaQuery…)
     ├── lib/          # Pure utilities (date, currency, file helpers)
     ├── types/        # Global TypeScript types
@@ -101,13 +103,13 @@ Used **only** for global UI state that cannot reasonably live in URL or context:
 
 ## 🛣️ Routing & Code-Splitting
 
-Routes are defined in [`app/router/`](src/app/router/) using **React Router v7**. Every panel route is lazy-loaded behind a `<Suspense>` boundary that renders `<EtherealLoader>` — never a generic spinner. This keeps the initial JS bundle small and guarantees a stable, on-brand loading state.
+The route table lives in [`app/App.tsx`](src/app/App.tsx) using **React Router v7**; access guards (`ProtectedRoute`, `ManagerRoute`) and idle panel-chunk preloaders live in [`app/router/`](src/app/router/). Every panel route is lazy-loaded behind a `<Suspense>` boundary that renders `<EtherealLoader>` — never a generic spinner. Public marketing routes (`/`, `/home`) and auth routes resolve against an outer `<Suspense fallback={null}>` so the SaaS loader never flashes on public surfaces. This keeps the initial JS bundle small and guarantees a stable, on-brand loading state.
 
 ---
 
 ## 🌍 Internationalization
 
-The platform ships with **i18next v26** + `react-i18next` v17, supporting English, French, and Polish. Translations are colocated with their features (`features/<domain>/locales/`) and extracted via:
+The platform ships with **i18next v26** + `react-i18next` v17, supporting English, French, and Polish. Translations are centralized in [`shared/config/locales/{en,fr,pl}/translation.json`](src/shared/config/locales/) and loaded synchronously at boot (no Suspense flash). Language is resolved via `localStorage` → browser default, with `pl` as fallback. Keys are re-extracted via:
 
 ```bash
 npm run extract-i18n
@@ -123,7 +125,7 @@ npm run extract-i18n
 * **No magic Tailwind values.** Use Ethereal tokens (`text-ethereal-gold`, `z-nav-dock`, `shadow-glass-ethereal`) defined in `app/styles/index.css`.
 * **React list keys** must be stable database identifiers (`artist.id`), never array indices — prevents UI corruption during soft-deletion and reordering.
 * **File header comment** required on every file (see project-root `CLAUDE.md` §5).
-* **Environment variables** — copy `.env.example` to `.env` and point `VITE_API_BASE_URL` at your backend (default: `http://localhost:8000/api/`).
+* **Environment variables** — copy `.env.example` to `.env` and point `VITE_API_URL` at your backend origin (default: `http://localhost:8000`; the `/api/` suffix is appended by the Axios client).
 
 ---
 

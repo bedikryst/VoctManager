@@ -53,12 +53,21 @@ graph TD
         Celery -->|WeasyPrint PDF Gen| Ext[File System / S3]
     end
 
+    subgraph AIScoreCompiler[AI Score Package Compiler]
+        Celery -->|PDF ingestion| Claude["Tiered Claude Pipeline<br/>Haiku 4.5 · Sonnet 4.6 · Opus 4.7"]
+        Claude -->|Tool-orchestrated lookups| ExtMeta["MusicBrainz · Wikidata<br/>Spotify · YouTube"]
+        ExtMeta -.->|cached responses| Redis
+        Claude -->|Provenance-stamped fields| DB
+    end
+
     classDef default fill:#1f2937,stroke:#4b5563,stroke-width:1px,color:#f3f4f6;
     classDef highlight fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#ffffff;
     classDef db fill:#059669,stroke:#1d4ed8,stroke-width:2px,color:#ffffff;
+    classDef ai fill:#D97757,stroke:#b85c3e,stroke-width:2px,color:#ffffff;
 
     class React,StateManager,Gunicorn highlight;
     class DB,Redis db;
+    class Claude,ExtMeta ai;
 ```
 
 ---
@@ -182,6 +191,14 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 
 ---
 
+## 🤖 AI Score Package Compiler
+
+| Score Ingestion (Upload & Tiered Analysis) | Conductor Review (AI-Extracted Repertoire) |
+|:---:|:---:|
+| <img src="docs/assets/score-compiler-upload.png" width="400" alt="Score Compiler upload zone — placeholder: replace with screenshot of the PDF drag-and-drop ingestion screen showing live tiered-Claude status"/> | <img src="docs/assets/score-compiler-review.png" width="400" alt="Conductor review modal — placeholder: replace with screenshot of AI-extracted composer/work/program-note fields with confidence scores"/> |
+
+---
+
 ## 📸 System Interface (Ethereal Design System)
 
 | Main Dashboard (Staggered Bento OS) | Project & Logistics Editor |
@@ -191,6 +208,8 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 | <img src="docs/assets/locations.png" width="400" alt="Locations Management view"/> | <img src="docs/assets/notifications.png" width="400" alt="Notifications Center"/> |
 | **System Settings** | **Knowledge Base** |
 | <img src="docs/assets/settings.png" width="400" alt="System Settings view"/> | <img src="docs/assets/chorister.png" width="400" alt="Knowledge base"/> |
+| **Locations Atlas (Map View)** | **Sheet Music Archive** |
+| <img src="docs/assets/locations-atlas.png" width="400" alt="Locations Atlas map view — placeholder: replace with screenshot of the Google Maps-backed venue atlas"/> | <img src="docs/assets/archive-pieces.png" width="400" alt="Sheet music archive — placeholder: replace with screenshot of the repertoire archive (pieces, editions, recordings)"/> |
 
 ---
 
