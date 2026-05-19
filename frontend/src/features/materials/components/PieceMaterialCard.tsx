@@ -20,6 +20,7 @@ import {
   Text,
 } from "@/shared/ui/primitives/typography";
 import { getReferenceRecordingLinks } from "@/features/archive/constants/referenceRecordings";
+import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
 import { EducationalAudioPlayer } from "./EducationalAudioPlayer";
 import { PieceDivisiRoster } from "./PieceDivisiRoster";
 import { PieceLyricsViewer } from "./PieceLyricsViewer";
@@ -45,6 +46,14 @@ export const PieceMaterialCard = ({
     reference_recording: undefined,
     reference_recording_youtube: piece.reference_recording_youtube || undefined,
     reference_recording_spotify: piece.reference_recording_spotify || undefined,
+    recordings: piece.recordings,
+  });
+  // Unifies legacy `sheet_music` and the new ScoreEdition list. The choir
+  // gets every available PDF (Bärenreiter, IMSLP, custom arrangement) — the
+  // default edition surfaces first.
+  const pdfLinks = getPiecePdfLinks({
+    sheet_music: piece.sheet_music,
+    editions: piece.editions,
   });
 
   const handleAudioPlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
@@ -60,7 +69,7 @@ export const PieceMaterialCard = ({
 
   const hasBadges =
     isEncored ||
-    (!isArchived && piece.sheet_music) ||
+    (!isArchived && pdfLinks.length > 0) ||
     (!isArchived && piece.tracks.length > 0) ||
     isArchived;
 
@@ -137,10 +146,16 @@ export const PieceMaterialCard = ({
                 </Eyebrow>
               </span>
             )}
-            {!isArchived && piece.sheet_music && (
+            {!isArchived && pdfLinks.length > 0 && (
               <span className="inline-flex items-center px-2 py-0.5 bg-ethereal-sage/10 rounded border border-ethereal-sage/20">
                 <Eyebrow color="incense">
-                  {t("materials.piece.pdf_badge", "PDF")}
+                  {pdfLinks.length > 1
+                    ? t(
+                        "materials.piece.pdf_badge_multi",
+                        "PDF ({{count}})",
+                        { count: pdfLinks.length },
+                      )
+                    : t("materials.piece.pdf_badge", "PDF")}
                 </Eyebrow>
               </span>
             )}
@@ -201,26 +216,71 @@ export const PieceMaterialCard = ({
                 </div>
               ) : (
                 <div className="p-4 md:p-6 space-y-6">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {piece.sheet_music ? (
-                      <a
-                        href={piece.sheet_music}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 px-5 py-3 bg-ethereal-sage hover:bg-ethereal-sage/90 active:scale-95 rounded-xl transition-all shadow-glass-solid"
-                      >
-                        <Download
-                          size={15}
-                          className="text-white"
-                          aria-hidden="true"
-                        />
-                        <Eyebrow color="white">
-                          {t(
-                            "materials.piece.download_pdf",
-                            "Pobierz Partyturę (PDF)",
-                          )}
-                        </Eyebrow>
-                      </a>
+                  <div className="flex flex-col gap-3">
+                    {pdfLinks.length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        {pdfLinks.map((pdf, idx) => (
+                          <a
+                            key={pdf.id}
+                            href={pdf.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all shadow-glass-solid active:scale-95 ${
+                              idx === 0
+                                ? "bg-ethereal-sage hover:bg-ethereal-sage/90"
+                                : "bg-ethereal-alabaster hover:bg-ethereal-marble/50 border border-ethereal-marble"
+                            }`}
+                          >
+                            <Download
+                              size={15}
+                              className={
+                                idx === 0
+                                  ? "text-white"
+                                  : "text-ethereal-graphite"
+                              }
+                              aria-hidden="true"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <Eyebrow
+                                color={idx === 0 ? "white" : "default"}
+                                className="block"
+                              >
+                                {idx === 0
+                                  ? t(
+                                      "materials.piece.download_pdf",
+                                      "Pobierz Partyturę (PDF)",
+                                    )
+                                  : pdf.label}
+                              </Eyebrow>
+                              {idx === 0 && pdfLinks.length > 1 && (
+                                <Text
+                                  size="xs"
+                                  color="parchment-muted"
+                                  className="block mt-0.5"
+                                >
+                                  {pdf.label}
+                                </Text>
+                              )}
+                              {pdf.is_default && pdfLinks.length > 1 && (
+                                <Text
+                                  size="xs"
+                                  color={
+                                    idx === 0
+                                      ? "parchment-muted"
+                                      : "muted"
+                                  }
+                                  className="block mt-0.5"
+                                >
+                                  {t(
+                                    "materials.piece.default_edition",
+                                    "Domyślne wydanie",
+                                  )}
+                                </Text>
+                              )}
+                            </div>
+                          </a>
+                        ))}
+                      </div>
                     ) : (
                       <div className="flex items-center justify-center gap-2 px-5 py-3 bg-ethereal-marble/40 border border-ethereal-marble rounded-xl cursor-not-allowed">
                         <FileText
@@ -235,32 +295,47 @@ export const PieceMaterialCard = ({
                     )}
 
                     {referenceLinks.length > 0 && (
-                      <a
-                        href={referenceLinks[0].url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl transition-all border border-ethereal-marble shadow-glass-solid bg-ethereal-alabaster hover:bg-ethereal-marble/50 active:scale-95"
-                      >
-                        {referenceLinks[0].platform === "youtube" ? (
-                          <Youtube
-                            size={15}
-                            className="text-ethereal-crimson"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <Music2
-                            size={15}
-                            className="text-ethereal-sage"
-                            aria-hidden="true"
-                          />
-                        )}
-                        <Eyebrow color="default">
-                          {t(
-                            "materials.piece.listen_reference",
-                            "Posłuchaj Referencji",
-                          )}
-                        </Eyebrow>
-                      </a>
+                      <div className="flex flex-wrap gap-2">
+                        {referenceLinks.map((ref, idx) => (
+                          <a
+                            key={`${ref.platform}-${idx}`}
+                            href={ref.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all border border-ethereal-marble shadow-glass-solid bg-ethereal-alabaster hover:bg-ethereal-marble/50 active:scale-95"
+                            title={
+                              ref.performer
+                                ? `${ref.performer}${ref.year ? ` · ${ref.year}` : ""}`
+                                : undefined
+                            }
+                          >
+                            {ref.platform === "youtube" ? (
+                              <Youtube
+                                size={14}
+                                className="text-ethereal-crimson"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Music2
+                                size={14}
+                                className="text-ethereal-sage"
+                                aria-hidden="true"
+                              />
+                            )}
+                            <Eyebrow color="default">
+                              {ref.is_featured
+                                ? t(
+                                    "materials.piece.listen_reference_featured",
+                                    "Najlepsze · {{label}}",
+                                    { label: ref.label },
+                                  )
+                                : ref.performer
+                                  ? `${ref.label} · ${ref.performer}`
+                                  : ref.label}
+                            </Eyebrow>
+                          </a>
+                        ))}
+                      </div>
                     )}
                   </div>
 
@@ -352,6 +427,9 @@ export const PieceMaterialCard = ({
                   <PieceLyricsViewer
                     originalLyrics={piece.lyrics_original}
                     translationNotes={piece.lyrics_translation}
+                    lyricsIpa={piece.lyrics_ipa}
+                    translations={piece.translations}
+                    programNotes={piece.program_notes}
                   />
                 </div>
               )}

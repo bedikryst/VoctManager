@@ -457,6 +457,71 @@ export default function PieceDetailsForm({
         </div>
       </GlassCard>
 
+      {/* ── Identyfikatory utworu (Score Compiler-extracted) ── */}
+      <GlassCard variant="ethereal" className="p-6 md:p-8 space-y-6">
+        <SectionHeader
+          title={t(
+            "archive.form.sections.identifiers",
+            "Identyfikatory utworu",
+          )}
+          icon={<Music size={16} aria-hidden="true" />}
+        />
+        <Text size="xs" color="muted">
+          {t(
+            "archive.form.identifiers_hint",
+            "Pola wypełniane automatycznie przez Score Package Compiler. Edytuj ręcznie, jeśli AI wyciągnął niepoprawnie.",
+          )}
+        </Text>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Input
+            label={t("archive.form.fields.opus_catalog", "Opus / katalog")}
+            type="text"
+            value={formData.opus_catalog || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, opus_catalog: e.target.value })
+            }
+            placeholder="np. BWV 243, Op. 37 No. 6"
+            disabled={isSubmitting}
+          />
+          <Input
+            label={t("archive.form.fields.musical_key", "Tonacja")}
+            type="text"
+            value={formData.musical_key || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, musical_key: e.target.value })
+            }
+            placeholder="np. D-dur"
+            disabled={isSubmitting}
+          />
+        </div>
+        <Input
+          label={t("archive.form.fields.text_source", "Źródło tekstu")}
+          type="text"
+          value={formData.text_source || ""}
+          onChange={(e) =>
+            setFormData({ ...formData, text_source: e.target.value })
+          }
+          placeholder="np. Magnificat (Łk 1,46-55)"
+          disabled={isSubmitting}
+        />
+        <Textarea
+          label={t(
+            "archive.form.fields.lyrics_ipa",
+            "Transkrypcja IPA (wymowa)",
+          )}
+          value={formData.lyrics_ipa || ""}
+          onChange={(e) =>
+            setFormData({ ...formData, lyrics_ipa: e.target.value })
+          }
+          rows={4}
+          placeholder={t(
+            "archive.form.placeholders.lyrics_ipa",
+            "Wymowa w IPA wyciągnięta przez AI. Edytuj, jeśli jest niepoprawna.",
+          )}
+          disabled={isSubmitting}
+        />
+      </GlassCard>
+
       {/* ── Materiały i teksty ── */}
       <GlassCard variant="ethereal" className="p-6 md:p-8 space-y-6">
         <SectionHeader

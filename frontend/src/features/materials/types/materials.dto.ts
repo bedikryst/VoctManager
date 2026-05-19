@@ -9,8 +9,68 @@ export interface MaterialsComposer {
   id: string;
   first_name: string;
   last_name: string;
+  full_name?: string;
   birth_year: string;
   death_year: string;
+  // Score Compiler enrichments (may be empty for manually-entered composers).
+  nationality?: string;
+  period?: string;
+  bio?: string;
+  portrait_url?: string;
+  mbid?: string | null;
+  wikidata_qid?: string;
+}
+
+export interface MaterialsTranslation {
+  id: string;
+  target_language: string;
+  text: string;
+  is_singable: boolean;
+}
+
+export type MaterialsRecordingSource = "SPF" | "YTB" | "APL" | "OTH";
+
+export interface MaterialsRecording {
+  id: string;
+  source: MaterialsRecordingSource;
+  source_display: string;
+  external_id: string;
+  url: string;
+  performer: string;
+  year: number | null;
+  duration_seconds: number | null;
+  is_featured: boolean;
+}
+
+export interface MaterialsProgramNote {
+  id: string;
+  language: string;
+  target_tone: string;
+  word_count_target: number;
+  content: string;
+  is_approved: boolean;
+}
+
+export type MaterialsIngestionStatus =
+  | "PEND"
+  | "EXTR"
+  | "ENRI"
+  | "GENR"
+  | "AWAI"
+  | "RDY "
+  | "FAIL";
+
+export interface MaterialsEdition {
+  id: string;
+  pdf_file: string;
+  original_filename: string;
+  publisher: string;
+  edition_year: number | null;
+  editor_name: string;
+  page_count: number | null;
+  is_default: boolean;
+  ingestion_status: MaterialsIngestionStatus;
+  created_at: string;
 }
 
 export interface MaterialsLocation {
@@ -51,6 +111,16 @@ export interface MaterialsPiece {
   lyrics_translation: string;
   reference_recording_youtube: string;
   reference_recording_spotify: string;
+  // Score Compiler-populated artist-facing fields.
+  opus_catalog?: string;
+  musical_key?: string;
+  text_source?: string;
+  lyrics_ipa?: string;
+  mbid_work?: string | null;
+  translations?: MaterialsTranslation[];
+  recordings?: MaterialsRecording[];
+  program_notes?: MaterialsProgramNote[];
+  editions?: MaterialsEdition[];
   tracks: MaterialsTrack[];
   castings: MaterialsCasting[];
   my_casting: MaterialsCasting | null;

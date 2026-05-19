@@ -16,6 +16,7 @@ import {
   Headphones,
   LayoutDashboard,
   Music,
+  ScanSearch,
   Users,
   Wrench,
   MapPin,
@@ -129,6 +130,15 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
         icon: Music,
         labelKey: t("dashboard.layout.links.archive"),
         isPinned: true,
+      },
+      {
+        to: "/panel/score-compiler",
+        icon: ScanSearch,
+        labelKey: t(
+          "dashboard.layout.links.score_compiler",
+          "Score Compiler",
+        ),
+        isPinned: false,
       },
     ],
   },

@@ -10,10 +10,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { X, FileText, Headphones } from "lucide-react";
+import { X, FileText, Headphones, Sparkles } from "lucide-react";
 
 import PieceDetailsForm from "./PieceDetailsForm";
 import TrackUploadManager from "./TrackUploadManager";
+import { ArchiveAIContextTab } from "./ArchiveAIContextTab";
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
 import { Heading } from "@ui/primitives/typography";
@@ -144,6 +145,20 @@ export default function ArchiveEditorPanel({
                     <Headphones size={14} aria-hidden="true" />{" "}
                     {t("archive.editor.tabs.tracks", "Ścieżki MP3")}
                   </button>
+                  <button
+                    onClick={() => onTabChange("AI_CONTEXT")}
+                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${
+                      activeTab === "AI_CONTEXT"
+                        ? "bg-ethereal-alabaster text-ethereal-gold shadow-glass-ethereal border border-ethereal-incense/20"
+                        : "text-ethereal-graphite hover:text-ethereal-ink hover:bg-ethereal-alabaster/40 border border-transparent"
+                    }`}
+                  >
+                    <Sparkles size={14} aria-hidden="true" />{" "}
+                    {t(
+                      "archive.editor.tabs.ai_context",
+                      "Kontekst AI",
+                    )}
+                  </button>
                 </div>
               </div>
             )}
@@ -173,6 +188,9 @@ export default function ArchiveEditorPanel({
                     pieceId={piece.id}
                     voiceLines={voiceLines}
                   />
+                )}
+                {activeTab === "AI_CONTEXT" && piece && (
+                  <ArchiveAIContextTab piece={piece} />
                 )}
               </div>
             </div>

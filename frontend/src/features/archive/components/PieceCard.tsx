@@ -19,12 +19,14 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Sparkles,
   Youtube,
 } from "lucide-react";
 
 import type { EnrichedPiece } from "../types/archive.dto";
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
 import { getReferenceRecordingLinks } from "@/features/archive/constants/referenceRecordings";
+import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
@@ -82,11 +84,35 @@ export default function PieceCard({
   const composer = piece.composer;
   const pieceTracks = piece.tracks || [];
   const referenceLinks = getReferenceRecordingLinks(piece);
+  const pdfLinks = getPiecePdfLinks(piece);
   const minutesLabel = t("archive.form.units.minutes_short", "min");
   const secondsLabel = t("archive.form.units.seconds_short", "sek");
 
   const getEpochLabel = (value: string) =>
     epochOptions.find((epoch) => epoch.value === value)?.label || value;
+
+  // A piece is "AI-enriched" when any Score-Compiler relation made it through
+  // the ingestion pipeline. We can't rely on `ingestion_status` alone — every
+  // Piece defaults to PEND, including ones entered manually in the Archive.
+  const hasAIContent = Boolean(
+    piece.mbid_work ||
+      piece.lyrics_ipa ||
+      (piece.translations && piece.translations.length > 0) ||
+      (piece.program_notes && piece.program_notes.length > 0) ||
+      (piece.recordings && piece.recordings.length > 0),
+  );
+  const aiStatusTone =
+    piece.ingestion_status === "RDY "
+      ? "bg-ethereal-sage/10 text-ethereal-sage border-ethereal-sage/20"
+      : piece.ingestion_status === "AWAI"
+        ? "bg-ethereal-gold/10 text-ethereal-gold border-ethereal-gold/20"
+        : "bg-ethereal-amethyst/10 text-ethereal-amethyst border-ethereal-amethyst/20";
+  const aiStatusLabel =
+    piece.ingestion_status === "RDY "
+      ? t("archive.card.ai_ready", "AI ✓")
+      : piece.ingestion_status === "AWAI"
+        ? t("archive.card.ai_awaiting", "AI · review")
+        : t("archive.card.ai_enriched", "AI");
 
   return (
     <GlassCard
@@ -157,14 +183,38 @@ export default function PieceCard({
 
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="hidden md:flex gap-2">
-            {piece.sheet_music && (
-              <Eyebrow className="!mb-0 px-2.5 py-1.5 bg-ethereal-amethyst/10 text-ethereal-amethyst rounded-lg border border-ethereal-amethyst/20 shadow-sm flex items-center gap-1.5">
-                <FileText size={10} /> PDF
+            {pdfLinks.length > 0 && (
+              <Eyebrow
+                className="!mb-0 px-2.5 py-1.5 bg-ethereal-amethyst/10 text-ethereal-amethyst rounded-lg border border-ethereal-amethyst/20 shadow-sm flex items-center gap-1.5"
+                title={
+                  pdfLinks.length > 1
+                    ? t(
+                        "archive.card.pdf_multiple_tooltip",
+                        "{{count}} wydań nutowych",
+                        { count: pdfLinks.length },
+                      )
+                    : undefined
+                }
+              >
+                <FileText size={10} aria-hidden="true" />
+                PDF
+                {pdfLinks.length > 1 ? ` (${pdfLinks.length})` : ""}
               </Eyebrow>
             )}
             {pieceTracks.length > 0 && (
               <Eyebrow className="!mb-0 px-2.5 py-1.5 bg-ethereal-sage/10 text-ethereal-sage rounded-lg border border-ethereal-sage/20 shadow-sm flex items-center gap-1.5">
                 <Headphones size={10} /> Audio ({pieceTracks.length})
+              </Eyebrow>
+            )}
+            {hasAIContent && (
+              <Eyebrow
+                className={`!mb-0 px-2.5 py-1.5 rounded-lg border shadow-sm flex items-center gap-1.5 ${aiStatusTone}`}
+                title={t(
+                  "archive.card.ai_tooltip",
+                  "Metadane uzupełnione przez Score Package Compiler",
+                )}
+              >
+                <Sparkles size={10} aria-hidden="true" /> {aiStatusLabel}
               </Eyebrow>
             )}
           </div>
@@ -323,30 +373,53 @@ export default function PieceCard({
               {referenceLinks.length > 0 && (
                 <div className="border-t border-ethereal-incense/20 pt-8 mb-8">
                   <div className="flex flex-wrap gap-3">
-                    {referenceLinks.map((link) => (
-                      <a
-                        key={`${piece.id}-${link.platform}`}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-[10px] font-bold antialiased uppercase tracking-[0.15em] transition-colors border shadow-sm active:scale-95 ${
-                          link.platform === "youtube"
-                            ? "text-ethereal-crimson hover:text-red-700 bg-ethereal-alabaster hover:bg-ethereal-crimson/10 border-ethereal-crimson/20"
-                            : "text-ethereal-sage hover:text-emerald-800 bg-ethereal-alabaster hover:bg-ethereal-sage/10 border-ethereal-sage/20"
-                        }`}
-                      >
-                        {link.platform === "youtube" ? (
-                          <Youtube size={16} />
-                        ) : (
-                          <Headphones size={16} />
-                        )}
-                        {link.platform === "youtube"
-                          ? t("archive.card.reference.youtube", "Nagranie referencyjne YouTube")
+                    {referenceLinks.map((link, idx) => {
+                      const isYouTube = link.platform === "youtube";
+                      const tone = isYouTube
+                        ? "text-ethereal-crimson hover:text-red-700 bg-ethereal-alabaster hover:bg-ethereal-crimson/10 border-ethereal-crimson/20"
+                        : "text-ethereal-sage hover:text-emerald-800 bg-ethereal-alabaster hover:bg-ethereal-sage/10 border-ethereal-sage/20";
+                      const label =
+                        link.platform === "youtube"
+                          ? t(
+                              "archive.card.reference.youtube",
+                              "Nagranie referencyjne YouTube",
+                            )
                           : link.platform === "spotify"
-                            ? t("archive.card.reference.spotify", "Nagranie referencyjne Spotify")
-                            : t("archive.card.reference.generic", "Nagranie referencyjne")}
-                      </a>
-                    ))}
+                            ? t(
+                                "archive.card.reference.spotify",
+                                "Nagranie referencyjne Spotify",
+                              )
+                            : link.platform === "apple"
+                              ? t(
+                                  "archive.card.reference.apple",
+                                  "Nagranie Apple Music",
+                                )
+                              : t(
+                                  "archive.card.reference.generic",
+                                  "Nagranie referencyjne",
+                                );
+                      return (
+                        <a
+                          key={`${piece.id}-${link.platform}-${idx}`}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-[10px] font-bold antialiased uppercase tracking-[0.15em] transition-colors border shadow-sm active:scale-95 ${tone}`}
+                          title={
+                            link.performer
+                              ? `${link.performer}${link.year ? ` · ${link.year}` : ""}`
+                              : undefined
+                          }
+                        >
+                          {isYouTube ? (
+                            <Youtube size={16} aria-hidden="true" />
+                          ) : (
+                            <Headphones size={16} aria-hidden="true" />
+                          )}
+                          {label}
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}

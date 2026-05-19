@@ -46,33 +46,31 @@ export const useArchiveData = () => {
     title: string;
   } | null>(null);
 
-  // 3. Derived State (Client-side Filtering & Enrichment)
+  // 3. Derived State (Client-side Filtering)
+  // PieceSerializer now embeds the composer as a nested object directly, so
+  // there's no manual enrichment step any more — the `composers` list is
+  // still fetched for the filter dropdown, not for joining.
   const displayPieces: EnrichedPiece[] = useMemo(() => {
-    return pieces
-      .map((piece) => ({
-        ...piece,
-        composer: composers.find((c) => c.id === piece.composer) || undefined,
-      }))
-      .filter((piece) => {
-        const matchesSearch =
-          normalizedSearchTerm.length === 0 ||
-          piece.title.toLowerCase().includes(normalizedSearchTerm) ||
-          piece.composer_name?.toLowerCase().includes(normalizedSearchTerm);
-        const matchesEpoch = epochFilter ? piece.epoch === epochFilter : true;
-        const matchesComposer = composerFilter
-          ? piece.composer?.id === composerFilter
-          : true;
-        const matchesVoicing = voicingFilter
-          ? piece.voicing === voicingFilter
-          : true;
+    return pieces.filter((piece) => {
+      const matchesSearch =
+        normalizedSearchTerm.length === 0 ||
+        piece.title.toLowerCase().includes(normalizedSearchTerm) ||
+        piece.composer_name?.toLowerCase().includes(normalizedSearchTerm) ||
+        piece.composer_full_name?.toLowerCase().includes(normalizedSearchTerm);
+      const matchesEpoch = epochFilter ? piece.epoch === epochFilter : true;
+      const matchesComposer = composerFilter
+        ? piece.composer?.id === composerFilter
+        : true;
+      const matchesVoicing = voicingFilter
+        ? piece.voicing === voicingFilter
+        : true;
 
-        return (
-          matchesSearch && matchesEpoch && matchesComposer && matchesVoicing
-        );
-      });
+      return (
+        matchesSearch && matchesEpoch && matchesComposer && matchesVoicing
+      );
+    });
   }, [
     pieces,
-    composers,
     normalizedSearchTerm,
     epochFilter,
     composerFilter,
@@ -97,9 +95,10 @@ export const useArchiveData = () => {
   const libraryStats = useMemo(() => {
     const uniqueComposers = new Set(
       pieces
-        .map(
-          (piece) =>
-            piece.composer || piece.composer_name || piece.composer_full_name,
+        .map((piece) =>
+          piece.composer?.id ??
+          piece.composer_name ??
+          piece.composer_full_name,
         )
         .filter((value): value is string => Boolean(value)),
     );

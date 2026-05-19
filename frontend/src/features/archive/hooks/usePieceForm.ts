@@ -80,6 +80,10 @@ const normalizeFormState = (value: PieceFormState) => ({
       ? ""
       : String(value.composition_year),
   epoch: value.epoch || "",
+  opus_catalog: value.opus_catalog || "",
+  musical_key: value.musical_key || "",
+  text_source: value.text_source || "",
+  lyrics_ipa: value.lyrics_ipa || "",
 });
 
 export const usePieceForm = (
@@ -136,6 +140,10 @@ export const usePieceForm = (
       reference_recording_spotify: piece?.reference_recording_spotify || "",
       composition_year: piece?.composition_year || "",
       epoch: piece?.epoch || "",
+      opus_catalog: piece?.opus_catalog || "",
+      musical_key: piece?.musical_key || "",
+      text_source: piece?.text_source || "",
+      lyrics_ipa: piece?.lyrics_ipa || "",
     };
   }, [piece, initialSearchContext]);
 
@@ -236,6 +244,10 @@ export const usePieceForm = (
       reference_recording_spotify: "",
       composition_year: "",
       epoch: "",
+      opus_catalog: "",
+      musical_key: "",
+      text_source: "",
+      lyrics_ipa: "",
     });
     setRequirements([]);
     setSelectedFile(null);
@@ -324,6 +336,10 @@ export const usePieceForm = (
           ? Number(formData.composition_year)
           : null,
         epoch: formData.epoch || "",
+        opus_catalog: formData.opus_catalog || "",
+        musical_key: formData.musical_key || "",
+        text_source: formData.text_source || "",
+        lyrics_ipa: formData.lyrics_ipa || "",
         voice_requirements: requirements.length > 0 ? requirements : undefined,
         sheet_music: selectedFile || undefined,
       };

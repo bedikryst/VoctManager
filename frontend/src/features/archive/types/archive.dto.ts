@@ -4,7 +4,7 @@
  * Strictly mirrors the backend Django DTOs to ensure type safety across the network boundary.
  */
 
-import type { Piece, Composer } from "@/shared/types";
+import type { Piece } from "@/shared/types";
 
 export interface VoiceRequirementDTO {
   voice_line: string;
@@ -20,6 +20,9 @@ export interface ComposerWriteDTO {
 
 export interface PieceWriteDTO {
   title: string;
+  // Backend accepts either `composer` (legacy, aliased server-side to
+  // `composer_id`) or `composer_id` directly. We keep the legacy key so the
+  // write path stays stable across the read-shape refactor.
   composer?: string;
   arranger?: string;
   language?: string;
@@ -34,14 +37,20 @@ export interface PieceWriteDTO {
   epoch?: string;
   voice_requirements?: VoiceRequirementDTO[];
 
+  // Score Compiler-populated fields the manager can edit by hand from the
+  // Archive editor (e.g. fixing an AI mis-extraction without re-ingesting).
+  opus_catalog?: string;
+  musical_key?: string;
+  text_source?: string;
+  lyrics_ipa?: string;
+
   // File payload for multipart/form-data
   sheet_music?: File;
 }
 
 /**
- * View Model for the UI.
- * Replaces the string ID of the composer with the actual Composer object.
+ * Historical name kept for call-site stability. PieceSerializer now embeds
+ * the composer object directly, so EnrichedPiece is just an alias for the
+ * canonical shared/types Piece — no manual join needed any more.
  */
-export interface EnrichedPiece extends Omit<Piece, "composer"> {
-  composer?: Composer | null;
-}
+export type EnrichedPiece = Piece;
