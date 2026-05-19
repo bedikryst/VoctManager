@@ -53,3 +53,7 @@ requests==2.31.0
 python-magic==0.4.27
 
 pywebpush>=2.0.0
+
+# AI / Score Package Compiler
+anthropic>=0.88.0
+pypdf>=5.0.0

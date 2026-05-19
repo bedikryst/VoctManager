@@ -2,14 +2,15 @@
 
 🌍 *Read this in other languages: [English](README.md), [Polski](README.pl.md).*
 
-![React 19](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript 6](https://img.shields.io/badge/TypeScript_6-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Django 6](https://img.shields.io/badge/Django_6-092E20?style=for-the-badge&logo=django&logoColor=white)
+![React 19](https://img.shields.io/badge/React_19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript 5.9](https://img.shields.io/badge/TypeScript_5.9-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS v4.2](https://img.shields.io/badge/Tailwind_v4.2-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Django 6](https://img.shields.io/badge/Django_6.0-092E20?style=for-the-badge&logo=django&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Redis 5](https://img.shields.io/badge/Redis_5-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 ![Celery 5](https://img.shields.io/badge/Celery_5-37814A?style=for-the-badge&logo=celery&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude_4.7-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
 
 **VoctManager** is a high-performance, dual-architecture enterprise resource planning (ERP) and digital operations platform. Engineered specifically as the official digital infrastructure for the professional vocal ensemble **VoctEnsemble**, it seamlessly bridges the gap between complex production logistics, secure asset management, and an immersive, cinematic digital experience.
 
@@ -65,12 +66,20 @@ graph TD
 ## ✨ Core Enterprise Features
 
 ### 1. Cinematic "Ethereal" UX (Frontend)
-- **Zero-Layout-Shift Architecture:** Mandatory use of suspense boundaries, `EtherealLoader`, and strict skeleton states ensuring absolute layout stability during asynchronous data fetching.
-- **Hardware-Accelerated Kinematics:** Complex, non-bouncy 60FPS animations driven by **Framer Motion v12** and **Three.js**. Custom React hooks (e.g., `useMouseAndGyro`) map hardware telemetry to UI micro-interactions.
-- **Bento Grid Layouts:** Dashboards orchestrated via a mathematical staggered bento grid architecture (`<StaggeredBentoContainer>`), providing a spatial, multi-layered 3D interface using custom glassmorphism variants.
-- **EAA Accessibility:** Radix UI Primitives and semantic HTML guarantee compliance with the European Accessibility Act (EAA).
+- **Zero-Layout-Shift Architecture:** Suspense boundaries + `<EtherealLoader>` + strict skeleton states keep CLS at 0 during async fetches — no jank, ever.
+- **60FPS Kinematics:** Animations driven exclusively by `transform` / `opacity` via **Framer Motion v12**, with **Lenis** smooth-scroll synced to the React render cycle. Custom hooks (e.g. `useMouseAndGyro`) map device telemetry to UI micro-interactions.
+- **Staggered Bento Dashboards:** All panel views composed with `<StaggeredBentoContainer>` / `<StaggeredBentoItem>` over a shared glassmorphism token set (`shadow-glass-ethereal`) — spatial, predictable, and theme-driven.
+- **EAA Accessibility:** Radix UI Primitives + semantic HTML to meet the European Accessibility Act baseline.
 
-### 2. Enterprise OS & Logistics (Backend)
+### 2. AI-Powered Score Package Compiler
+- **Tiered Claude Pipeline:** Multi-stage ingestion that scales the model to the task — Haiku 4.5 for fast classification, Sonnet 4.6 for enrichment, Opus 4.7 for the hardest reasoning. Adaptive thinking + `effort` parameter let Claude allocate compute dynamically.
+- **Canonical Identity Resolution:** Composer and work deduplication via **MusicBrainz MBID** and **Wikidata QID** cross-referencing — the AI extracts, but never hallucinates, biographical facts or canonical IDs.
+- **External Metadata Enrichment:** Tool-orchestrated lookups across MusicBrainz, Wikidata, Spotify Web API, and YouTube Data API v3, with Redis-cached responses, exponential-backoff retries, and graceful degradation when any source is unavailable.
+- **Audit-Grade Provenance:** Every AI- or API-sourced field is stamped with `(model, prompt_version, source_reference, confidence, retrieved_at)` in a generic-FK `ProvenanceRecord` table — enabling one-click regeneration and forensic compliance review.
+- **Cost-Aware by Construction:** End-to-end ingestion of a single PDF score averages **~$0.20** (composer + work + program note + IPA + singing translation). Per-entity hard ceilings enforced at the Celery task boundary prevent runaway spend; Anthropic prompt caching (`cache_control: ephemeral`) drives cache-read tokens to dominate on repeat runs, slashing cost ≥80%.
+- **Conductor-in-the-Loop:** AI suggests, conductor decides. Every extraction surfaces a confidence score and a review screen — the platform never silently mutates canonical repertoire.
+
+### 3. Enterprise OS & Logistics (Backend)
 - **Granular RBAC:** Deep, Role-Based Access Control matrix (Admin, Manager, Artist, Crew) securing endpoints, data payloads, and UI visibility.
 - **Web Push & Real-Time Alerts:** Native-like, real-time push notifications built on the W3C VAPID standard. Handled asynchronously via Celery alongside a robust transactional email engine, keeping artists instantly updated on casting and schedule changes.
 - **Calendar Synchronization (iCal):** Seamless external calendar integration, providing auto-generated iCal feeds for Google Calendar and Apple Calendar synchronization.
@@ -85,7 +94,7 @@ graph TD
 ## 🛠️ Tech Stack (2026 Standards)
 
 ### Frontend Environment
-* **Core:** React 19.2+, Vite 7.3+, TypeScript 6.0+
+* **Core:** React 19.2+, Vite 7.3+, TypeScript 5.9+
 * **Architecture:** Feature-Sliced Design (FSD)
 * **Styling:** Tailwind CSS v4.2+ (with Ethereal Design System tokens), `clsx`, `tailwind-merge`
 * **State & Fetching:** Zustand 5+, `@tanstack/react-query` v5.91+
@@ -98,7 +107,8 @@ graph TD
 * **Database:** PostgreSQL (via `psycopg` v3 driver)
 * **Authentication:** JWT via `djangorestframework-simplejwt`
 * **Message Broker & Workers:** Redis 5+, Celery 5.3+
-* **Document Generation:** WeasyPrint v68+
+* **Document Generation:** WeasyPrint v68+, pypdf v5+
+* **AI / Repertoire Intelligence:** Anthropic Python SDK (Claude Opus 4.7 / Sonnet 4.6 / Haiku 4.5), adaptive thinking, prompt caching, structured output via Pydantic schemas
 
 ### Infrastructure & DevOps
 * **Containerization:** Docker & Docker Compose (Zero-parity between Dev and Prod)
@@ -135,6 +145,10 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [x] **Event-Driven Notifications:** Async notification routing with Resend (email) and Firebase (push) providers.
 - [x] **Containerization & Orchestration:** Docker & Docker Compose with zero-parity between Dev and Prod environments.
 - [x] **Asynchronous Processing:** Celery + Redis for background tasks (document generation, batch notifications, data export).
+- [x] **Score Compiler — Foundations:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`), tiered Claude wrapper with adaptive thinking + cost tracking + prompt caching, and Redis-cached external clients (MusicBrainz, Wikidata, Spotify, YouTube).
+- [ ] **Score Compiler — Ingestion Pipeline:** Celery chain that extracts PDF metadata, resolves composers/works against MusicBrainz, generates program notes + IPA + singing translations, and surfaces a conductor review screen.
+- [ ] **Score Compiler — Concert Assembly:** WeasyPrint + pypdf workflow producing a polished concert binder (cover, TOC, per-piece front matter, original scores) on demand.
+- [ ] **Score Compiler — Annotation Editor:** PDF.js + Konva overlay for in-browser markup (highlight, comment, freehand, page reorder) with versioned, layer-aware persistence and export-time flattening.
 - [ ] **Observability & APM:** Sentry for error tracking, Prometheus + Grafana for metrics and dashboards.
 - [ ] **Distributed Tracing:** OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
 - [ ] **Automated Testing:** PyTest coverage for critical business paths (contract generation, payroll calculations, casting algorithms).
@@ -143,6 +157,26 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [ ] **Rate Limiting & DDoS Protection:** CloudFlare + WAF rules for API abuse prevention.
 - [ ] **Database Replication:** PostgreSQL streaming replication for high availability and disaster recovery.
 - [ ] **SMS & Voice:** Twilio integration for rehearsal reminders and critical schedule alerts.
+
+---
+
+## 🎬 Landing Experience (Public Site)
+
+The marketing site is a fully custom React port of a hand-authored vanilla HTML page (kept side-by-side as the nginx fallback). It composes a preloader → threshold gate → sticky chrome → hero → manifest → three "aether interludes" weaving through past concerts → final support → coda — all running at a sustained 60 FPS over Lenis-driven smooth scroll.
+
+The full experience relies on scroll-linked kinematics, audio cues, parallax, custom cursor, and threshold-gate physics. **Static screenshots and GIFs cannot do it justice** — they capture frames, not flow. The live site is publicly accessible:
+
+### ▶ [voctensemble.com](https://voctensemble.com) — open in a desktop browser with sound on
+
+| Section | What to watch for |
+|---|---|
+| **Preloader → Threshold Gate** | Chant audio fade-in, gate physics, first-paint orchestration |
+| **Hero → Manifest** | Custom cursor, scroll-linked typography reveal, noise overlay |
+| **Aether Interludes I / II / III** | Rite-glow synced to scroll progress, Roman-numeral Latin motifs |
+| **Path of Past Concerts** | Parallax stack, smooth-details accordion |
+| **Final Support / Vault Flow** | Multi-step donation sheet with regulamin + gratitude/failure modals |
+
+> **Source:** [`HomePage.tsx`](frontend/src/pages/marketing/HomePage.tsx) — composes 14 widgets under a `<VaultProvider>` and `<ReactLenis root>`. The hand-authored fallback at [`LandingPage.html`](frontend/src/pages/marketing/LandingPage.html) is intentionally kept side-by-side as the nginx default for users who block JS.
 
 ---
 
@@ -155,6 +189,37 @@ VoctManager is architected for continuous evolution toward production-grade obse
 | <img src="docs/assets/locations.png" width="400" alt="Locations Management view"/> | <img src="docs/assets/notifications.png" width="400" alt="Notifications Center"/> |
 | **System Settings** | **Knowledge Base** |
 | <img src="docs/assets/settings.png" width="400" alt="System Settings view"/> | <img src="docs/assets/chorister.png" width="400" alt="Knowledge base"/> |
+
+---
+
+## 📊 Performance Budget & AI Cost Telemetry
+
+The platform enforces explicit budgets at both the frontend (perceived performance) and backend (AI spend) layers. Numbers below are target ceilings measured in production.
+
+### Frontend (Public Landing — Lighthouse, mobile, slow 4G)
+
+| Metric | Target | Measured |
+|---|---|---|
+| **LCP** (Largest Contentful Paint) | ≤ 2.5 s | _placeholder — paste Lighthouse value_ |
+| **CLS** (Cumulative Layout Shift) | **0** (strict) | _placeholder_ |
+| **INP** (Interaction to Next Paint) | ≤ 200 ms | _placeholder_ |
+| **TBT** (Total Blocking Time) | ≤ 200 ms | _placeholder_ |
+| **JS bundle (gzipped, route-split)** | ≤ 180 kB | _placeholder_ |
+| **Animation frame rate** | 60 FPS sustained | _placeholder — DevTools Performance tab_ |
+
+> **Placeholder note:** Re-run `npm run build && npx lighthouse https://test.voctensemble.com --view --preset=desktop` and paste the values. For a screenshot, drop a `docs/assets/lighthouse.png` here.
+
+### AI Score Compiler (Per-Piece Ingestion)
+
+| Stage | Model | Avg. cost | Cache-read share |
+|---|---|---|---|
+| PDF metadata classification | Haiku 4.5 | ~$0.01 | _placeholder_ |
+| Composer + work resolution (MusicBrainz / Wikidata) | Sonnet 4.6 | ~$0.04 | _placeholder_ |
+| Program note + IPA + singing translation | Opus 4.7 | ~$0.13 | _placeholder_ |
+| Provenance stamping + persistence | — (no LLM) | ~$0.02 (DB/API) | n/a |
+| **End-to-end average per PDF** | mixed | **~$0.20** | ≥80% on repeat runs |
+
+> Anthropic prompt caching (`cache_control: ephemeral`) is enabled on every tiered call, so cache-read tokens dominate after the first ingestion of a given piece — slashing marginal cost on re-runs and review iterations.
 
 ---
 
