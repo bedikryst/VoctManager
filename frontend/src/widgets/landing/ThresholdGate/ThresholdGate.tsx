@@ -31,12 +31,21 @@ function wantsDonationFromUrl(): boolean {
   );
 }
 
+// Bypass the gate via `?nogate` so synthetic auditors (PageSpeed Insights,
+// Lighthouse CI) that cannot pre-seed localStorage still measure the real
+// page instead of the fixed-overlay modal. Skipping = silence mode, which is
+// the autoplay-policy default anyway (audio needs a user gesture to start).
+function wantsGateSkipFromUrl(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).has("nogate");
+}
+
 export function ThresholdGate({ audio }: ThresholdGateProps): React.JSX.Element | null {
   const { read, write } = useAudioChoice();
   const innerRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<"open" | "hiding" | "removed">(() => {
     if (typeof window === "undefined") return "open";
-    if (wantsDonationFromUrl()) return "removed";
+    if (wantsDonationFromUrl() || wantsGateSkipFromUrl()) return "removed";
     const saved = read();
     return saved === "silence" || saved === "voice" ? "removed" : "open";
   });
