@@ -126,10 +126,10 @@ export default function App(): React.JSX.Element {
 
   // The public landing renders its own preloader, sticky chrome, custom cursor,
   // footer and noise overlay — no marketing shell is needed at the app level.
-  // `/homepage` is the preview URL during the migration from LandingPage.html to React;
-  // production nginx still serves the static HTML at `/`.
+  // `/home` is the React port preview URL during the migration from LandingPage.html;
+  // production nginx still serves the stable static HTML at `/`.
   const isHomeRoute: boolean =
-    location.pathname === "/" || location.pathname === "/homepage";
+    location.pathname === "/" || location.pathname === "/home";
 
   // DOM Theme Orchestrator — landing routes get the marketing theme (so
   // marketing-landing.css applies); everything else falls back to the panel theme.
@@ -173,7 +173,7 @@ export default function App(): React.JSX.Element {
               }
             />
             <Route
-              path="/homepage"
+              path="/home"
               element={
                 <PageTransition>
                   <Home />
