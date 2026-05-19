@@ -2,7 +2,7 @@
   /* =========================================
      TYPOGRAPHY TOKENS (High-End 2026)
      ========================================= */
-  --font-sans: "Outfit", "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif:
     "Cormorant Garamond", "Cinzel", "Cormorant", ui-serif, Georgia, serif;
 
@@ -186,7 +186,18 @@ html.lenis body {
   pointer-events: none;
 }
 html {
+  /*
+   * Defense-in-depth against the body.threshold-open overflow:hidden toggle:
+   *  - `scrollbar-gutter: stable` reserves space for the scrollbar so its
+   *    appearance/disappearance never narrows the viewport.
+   *  - `overflow-y: scroll` belt-and-suspenders for browsers that ignore
+   *    `scrollbar-gutter` when classic scrollbars are not the default
+   *    (notably Chromium on certain platforms / overlay-scrollbar modes).
+   * Together these keep the viewport width pinned across modal lifecycles,
+   * eliminating the CLS chain rooted at `.threshold::after`.
+   */
   scrollbar-gutter: stable;
+  overflow-y: scroll;
 }
 
 /* ========================================== */

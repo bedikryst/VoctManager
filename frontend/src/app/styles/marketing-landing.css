@@ -392,6 +392,19 @@
       var(--dark);
     color: var(--paper);
     transition: opacity 1.1s var(--ease-slow), visibility 1.1s var(--ease-slow), filter 1.1s var(--ease-slow);
+    /*
+     * `contain` isolates the threshold gate's huge breathing rings (52vmax)
+     * from the document's layout / paint graph. Without it, every frame of
+     * the breathing animation forced Chrome to reconsider whether surrounding
+     * elements need restyle — driving Style&Layout main-thread time and
+     * contributing to CLS chains on close.
+     *  - `layout` decouples the gate's internal layout from the page.
+     *  - `paint` clips drawing to the gate's box (no overflow ink).
+     * `size` and `style` are intentionally omitted: place-items:center needs
+     * to see the gate's intrinsic dimensions; `style` containment can break
+     * counters / quotes if anything downstream relies on them.
+     */
+    contain: layout paint;
   }
 
   .threshold.is-hidden {
@@ -408,6 +421,13 @@
     border: 1px solid rgba(244, 241, 233, 0.16);
     border-radius: 50%;
     animation: thresholdRing 9s var(--ease-slow) infinite;
+    /*
+     * Promote the rings to their own compositor layer so the breathing
+     * scale animation runs entirely on the GPU and never round-trips
+     * through layout. Critical because each ring is 34vmax / 52vmax —
+     * geometric updates at that size on the main thread are expensive.
+     */
+    will-change: transform, opacity;
   }
 
   .threshold::before {
