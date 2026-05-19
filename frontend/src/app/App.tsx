@@ -155,94 +155,110 @@ export default function App(): React.JSX.Element {
 
   return (
     <CSRFProvider>
-      <APIProvider
-        apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
-        onLoad={() => console.log("Maps API Core Initialized")}
-        solutionChannel="GMP_visgl_reactgooglemaps_v1_0"
-        version="weekly"
-        libraries={["places", "geocoding"]}
-      >
-        <Suspense fallback={<EtherealLoader />}>
-          <Routes location={location}>
-            <Route
-              path="/"
-              element={
-                <PageTransition>
-                  <Home />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/home"
-              element={
-                <PageTransition>
-                  <Home />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <PageTransition>
-                  <Login />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/activate"
-              element={
-                <PageTransition>
-                  <Activate />
-                </PageTransition>
-              }
-            />
+      {/*
+       * Suspense strategy — EtherealLoader is panel-only.
+       *  - Marketing routes (`/`, `/home`) own their preloader (<Preloader />)
+       *    inside HomePage and do not lazy-load anything at the route boundary.
+       *  - Auth lazy routes (`/login`, `/activate`) and `/documents/*` suspend
+       *    against the outer boundary with a `null` fallback, so no global
+       *    spinner ever flashes on public or full-screen authed surfaces.
+       *  - Only `/panel/*` lazy chunks resolve against the inner boundary
+       *    that renders <EtherealLoader />.
+       *
+       * Google Maps APIProvider is scoped inside <ProtectedRoute> so the ~350 kB
+       * Maps SDK never ships to public marketing routes — only to authenticated
+       * panel surfaces that actually use it (features/logistics/*).
+       */}
+      <Suspense fallback={null}>
+        <Routes location={location}>
+          <Route
+            path="/"
+            element={
+              <PageTransition>
+                <Home />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/home"
+            element={
+              <PageTransition>
+                <Home />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <PageTransition>
+                <Login />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/activate"
+            element={
+              <PageTransition>
+                <Activate />
+              </PageTransition>
+            }
+          />
 
-            <Route element={<ProtectedRoute />}>
-              <Route
-                path="/panel"
-                element={
+          <Route
+            element={
+              <APIProvider
+                apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
+                solutionChannel="GMP_visgl_reactgooglemaps_v1_0"
+                version="weekly"
+                libraries={["places", "geocoding"]}
+              >
+                <ProtectedRoute />
+              </APIProvider>
+            }
+          >
+            <Route
+              path="/panel"
+              element={
+                <Suspense fallback={<EtherealLoader />}>
                   <DashboardLayout
                     routePreloaders={PANEL_ROUTE_PRELOADERS}
                     dataPreloaders={PANEL_DATA_PRELOADERS}
                   />
-                }
-              >
-                <Route index element={<DashboardHome />} />
-                <Route element={<ManagerRoute />}>
-                  <Route path="contracts" element={<Contracts />} />
-                  <Route path="rehearsals" element={<Rehearsals />} />
-                  <Route path="artists" element={<ArtistManagement />} />
-                  <Route path="projects" element={<ProjectDashboard />} />
-                  <Route
-                    path="archive-management"
-                    element={<ArchiveManagement />}
-                  />
-                  <Route
-                    path="score-compiler"
-                    element={<ScoreCompiler />}
-                  />
-                  <Route path="crew" element={<CrewManagement />} />
-                  <Route
-                    path="locations"
-                    element={<LogisticsLocationsPage />}
-                  />
-                </Route>
-                <Route path="resources" element={<ChoristerHubPage />} />
-                <Route path="materials" element={<Materials />} />
-                <Route path="schedule" element={<Schedule />} />
-                <Route path="settings" element={<SettingsPage />} />
+                </Suspense>
+              }
+            >
+              <Route index element={<DashboardHome />} />
+              <Route element={<ManagerRoute />}>
+                <Route path="contracts" element={<Contracts />} />
+                <Route path="rehearsals" element={<Rehearsals />} />
+                <Route path="artists" element={<ArtistManagement />} />
+                <Route path="projects" element={<ProjectDashboard />} />
+                <Route
+                  path="archive-management"
+                  element={<ArchiveManagement />}
+                />
+                <Route path="score-compiler" element={<ScoreCompiler />} />
+                <Route path="crew" element={<CrewManagement />} />
+                <Route
+                  path="locations"
+                  element={<LogisticsLocationsPage />}
+                />
               </Route>
-
-              <Route
-                path="/documents/:docType/:docId"
-                element={<DocumentViewerPage />}
-              />
+              <Route path="resources" element={<ChoristerHubPage />} />
+              <Route path="materials" element={<Materials />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
-          </Routes>
-        </Suspense>
 
-        <Toaster position="top-right" richColors closeButton duration={4000} />
-      </APIProvider>
+            <Route
+              path="/documents/:docType/:docId"
+              element={<DocumentViewerPage />}
+            />
+          </Route>
+        </Routes>
+      </Suspense>
+
+      <Toaster position="top-right" richColors closeButton duration={4000} />
     </CSRFProvider>
   );
 }

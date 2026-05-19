@@ -168,6 +168,8 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 
 ### ▶ [voctensemble.com](https://voctensemble.com) — open in a desktop browser with sound on
 
+> The stable production landing at `/` is the hand-authored vanilla [`LandingPage.html`](frontend/src/pages/marketing/LandingPage.html). The React port lives at [`/home`](https://voctensemble.com/home) (preview path while the migration finalizes) — same composition, now driven by `<ReactLenis>`, Framer Motion v12, and Suspense-aware code splitting.
+
 | Section | What to watch for |
 |---|---|
 | **Preloader → Threshold Gate** | Chant audio fade-in, gate physics, first-paint orchestration |
@@ -196,18 +198,27 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 
 The platform enforces explicit budgets at both the frontend (perceived performance) and backend (AI spend) layers. Numbers below are target ceilings measured in production.
 
-### Frontend (Public Landing — Lighthouse, mobile, slow 4G)
+### Frontend Lighthouse (measured via [pagespeed.web.dev](https://pagespeed.web.dev/) — deterministic, server-side)
 
-| Metric | Target | Measured |
-|---|---|---|
-| **LCP** (Largest Contentful Paint) | ≤ 2.5 s | _placeholder — paste Lighthouse value_ |
-| **CLS** (Cumulative Layout Shift) | **0** (strict) | _placeholder_ |
-| **INP** (Interaction to Next Paint) | ≤ 200 ms | _placeholder_ |
-| **TBT** (Total Blocking Time) | ≤ 200 ms | _placeholder_ |
-| **JS bundle (gzipped, route-split)** | ≤ 180 kB | _placeholder_ |
-| **Animation frame rate** | 60 FPS sustained | _placeholder — DevTools Performance tab_ |
+Two routes are measured separately — the stable static landing at `/` and the React port at `/home` (preview during the HTML → React migration):
 
-> **Placeholder note:** Re-run `npm run build && npx lighthouse https://test.voctensemble.com --view --preset=desktop` and paste the values. For a screenshot, drop a `docs/assets/lighthouse.png` here.
+| Route | Performance | Accessibility | Best Practices | SEO |
+|---|---|---|---|---|
+| `/` &nbsp;(`LandingPage.html`, vanilla) | **98** | 91 | **100** | 92 |
+| `/home` &nbsp;(`HomePage.tsx`, React SPA) | _placeholder — measure after migration_ | _placeholder_ | _placeholder_ | _placeholder_ |
+
+<sub>Local Lighthouse scores vary by hardware (CPU throttling). For portfolio-grade reproducibility, measure via PageSpeed Insights — it runs on Google's infrastructure and gives the same number to every viewer.</sub>
+
+<img src="docs/assets/lighthouse.png" width="600" alt="Lighthouse audit screenshot — placeholder: replace with PageSpeed Insights export"/>
+
+**Render-time targets enforced regardless of route:**
+
+| Metric | Target |
+|---|---|
+| **CLS** (Cumulative Layout Shift) | **0** (strict — `<EtherealLoader>` + skeleton states) |
+| **INP** (Interaction to Next Paint) | ≤ 200 ms |
+| **JS bundle (gzipped, route-split)** | ≤ 180 kB per route chunk |
+| **Animation frame rate** | 60 FPS sustained (transform / opacity only) |
 
 ### AI Score Compiler (Per-Piece Ingestion)
 
