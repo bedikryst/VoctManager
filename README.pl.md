@@ -16,8 +16,7 @@
 
 Platforma ściśle przestrzega architektury **Feature-Sliced Design (FSD)**, co zapewnia ogromną skalowalność, separację domeny i solidną długoterminową utrzymywalność.
 
-🌐 **Wersja Publiczna Live:** [test.voctensemble.com](https://test.voctensemble.com)
-🔐 **Panel Enterprise (Demo):** [test.voctensemble.com/panel](https://test.voctensemble.com/panel)
+🌐 **Wersja Publiczna Live:** [test.voctensemble.com](https://voctensemble.com)
 
 ---
 
