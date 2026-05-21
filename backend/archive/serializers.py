@@ -413,9 +413,10 @@ class PieceSerializer(serializers.ModelSerializer):
             try:
                 dto = VoiceRequirementDTO(**requirement)
             except PydanticValidationError as exc:
-                # Pydantic's structured error list is passed through to the client; DRF
-                # serializes it as-is, so bridge the pydantic↔DRF error-detail types.
-                raise serializers.ValidationError({str(index): cast("list[Any]", exc.errors())}) from exc
+                # Surface pydantic's field errors without echoing raw input / docs URLs /
+                # ctx — keeps the response JSON-safe and avoids leaking submitted values.
+                clean_errors = exc.errors(include_url=False, include_input=False, include_context=False)
+                raise serializers.ValidationError({str(index): cast("list[Any]", clean_errors)}) from exc
 
             if dto.voice_line in seen_voice_lines:
                 duplicate_voice_lines.add(dto.voice_line)
