@@ -26,6 +26,7 @@ export interface ProjectCreateDTO {
   dress_code_female?: string | null;
   spotify_playlist_url?: string | null;
   description?: string | null;
+  status?: ProjectStatus;
   run_sheet?: RunSheetItem[];
 }
 
@@ -37,7 +38,7 @@ export interface ParticipationCreateDTO {
   artist: string;
   project: string;
   status: ParticipationStatus;
-  fee?: number | null;
+  fee?: string | number | null;
 }
 
 export type ParticipationUpdateDTO = Partial<ParticipationCreateDTO>;
@@ -47,7 +48,7 @@ export interface CrewAssignmentCreateDTO {
   project: string;
   role_description?: string;
   status?: CrewAssignmentStatus;
-  fee?: number | null;
+  fee?: string | number | null;
 }
 
 export type CrewAssignmentUpdateDTO = Partial<CrewAssignmentCreateDTO>;
@@ -72,7 +73,6 @@ export interface RehearsalUpdateDTO {
 }
 
 export interface ProgramItemCreateDTO {
-  title: string;
   project: string;
   piece: string;
   order: number;
@@ -95,6 +95,8 @@ export interface AttendanceCreateDTO {
   rehearsal: string;
   participation: string;
   status: Attendance["status"];
+  minutes_late?: number | null;
+  excuse_note?: string | null;
 }
 
 export interface AttendanceUpdateDTO {

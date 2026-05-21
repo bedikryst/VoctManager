@@ -7,7 +7,7 @@
 
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AudioLines, Library, Zap } from "lucide-react";
+import { AudioLines } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
@@ -15,7 +15,6 @@ import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Eyebrow, Text, Unit } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { ResonancePillar } from "@/shared/ui/kinematics/ResonancePillar";
-import { KineticGlow } from "@/shared/ui/kinematics/KineticGlow";
 
 export interface VoiceStatsDto {
   S: number;

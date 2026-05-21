@@ -14,6 +14,16 @@ import {
   type LocationDto,
 } from "../types/logistics.dto";
 
+const toLocationFormValues = (location: LocationDto | null): LocationFormValues => ({
+  name: location?.name || "",
+  category: location?.category || "CONCERT_HALL",
+  formatted_address: location?.formatted_address || "",
+  google_place_id: location?.google_place_id || null,
+  latitude: location?.latitude == null ? null : Number(location.latitude),
+  longitude: location?.longitude == null ? null : Number(location.longitude),
+  internal_notes: location?.internal_notes || "",
+});
+
 export const useLocationForm = (
   location: LocationDto | null,
   onClose: () => void,
@@ -24,20 +34,12 @@ export const useLocationForm = (
 
   const form = useForm<LocationFormValues>({
     resolver: zodResolver(locationFormSchema),
-    defaultValues: {
-      name: location?.name || "",
-      category: location?.category || "CONCERT_HALL",
-      formatted_address: location?.formatted_address || "",
-      google_place_id: location?.google_place_id || null,
-      latitude: location?.latitude || null,
-      longitude: location?.longitude || null,
-      internal_notes: location?.internal_notes || "",
-    },
+    defaultValues: toLocationFormValues(location),
   });
 
   useEffect(() => {
     if (location) {
-      form.reset(location);
+      form.reset(toLocationFormValues(location));
     }
   }, [location, form]);
 

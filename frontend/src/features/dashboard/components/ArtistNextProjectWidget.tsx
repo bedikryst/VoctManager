@@ -11,7 +11,6 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   Music,
-  Calendar,
   Clock,
   Download,
   ArrowRight,
@@ -21,7 +20,6 @@ import {
 
 import { EventCard } from "@/shared/ui/composites/EventCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -29,7 +27,6 @@ import { downloadFile } from "@/shared/lib/io/downloadFile";
 import api from "@/shared/api/api";
 import type { Project } from "@/shared/types";
 
-// Definicja ścisłego kontraktu DTO
 export interface UpcomingProjectDto {
   type: "PROJECT";
   date: Date;

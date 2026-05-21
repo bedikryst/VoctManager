@@ -1,23 +1,23 @@
 // chorister-hub/types/chorister-hub.dto.ts
 // Strict TypeScript DTOs for the Chorister Hub feature domain.
 
-export type DocumentRole = 'ARTIST' | 'MANAGER' | 'ADMIN';
+export type DocumentRole = "ARTIST" | "MANAGER" | "CREW";
 
 export type DocumentIconKey =
-  | 'BookOpen'
-  | 'Shirt'
-  | 'FileText'
-  | 'Shield'
-  | 'HeartPulse'
-  | 'Music'
-  | 'Users'
-  | 'Briefcase'
-  | 'MapPin'
-  | 'Landmark'
-  | 'GraduationCap'
-  | 'ScrollText'
-  | 'Scale'
-  | 'Mic2';
+  | "BookOpen"
+  | "Shirt"
+  | "FileText"
+  | "Shield"
+  | "HeartPulse"
+  | "Music"
+  | "Users"
+  | "Briefcase"
+  | "MapPin"
+  | "Landmark"
+  | "GraduationCap"
+  | "ScrollText"
+  | "Scale"
+  | "Mic2";
 
 export interface DocumentFileDTO {
   id: string;
@@ -59,6 +59,14 @@ export interface DocumentCategoryUpdateDTO {
   icon_key?: DocumentIconKey;
   order?: number;
   allowed_roles?: DocumentRole[];
+}
+
+export interface DocumentUploadDTO {
+  title: string;
+  description: string;
+  file: File;
+  allowed_roles: DocumentRole[];
+  order: number;
 }
 
 export interface VocalLineEntry {

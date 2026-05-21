@@ -1,14 +1,10 @@
 // src/features/notifications/api/preferences.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/api";
-
-export interface NotificationPreference {
-  notification_type: string;
-  email_enabled: boolean;
-  push_enabled: boolean;
-  sms_enabled: boolean;
-  label?: string;
-}
+import type {
+  NotificationPreferenceDTO,
+  NotificationPreferenceUpdateDTO,
+} from "../types/notifications.dto";
 
 export const preferenceKeys = {
   all: ["notification-preferences"] as const,
@@ -17,7 +13,7 @@ export const preferenceKeys = {
 export const useNotificationPreferences = () => {
   return useQuery({
     queryKey: preferenceKeys.all,
-    queryFn: async (): Promise<NotificationPreference[]> => {
+    queryFn: async (): Promise<NotificationPreferenceDTO[]> => {
       const { data } = await api.get("/api/notifications/preferences/");
       return data;
     },
@@ -30,7 +26,7 @@ export const useUpdatePreference = () => {
 
   return useMutation({
     mutationFn: async (
-      updated: Partial<NotificationPreference> & { notification_type: string },
+      updated: NotificationPreferenceUpdateDTO,
     ) => {
       const { data } = await api.patch(
         `/api/notifications/preferences/${updated.notification_type}/`,
@@ -40,12 +36,12 @@ export const useUpdatePreference = () => {
     },
     onMutate: async (newPref) => {
       await queryClient.cancelQueries({ queryKey: preferenceKeys.all });
-      const previous = queryClient.getQueryData<NotificationPreference[]>(
+      const previous = queryClient.getQueryData<NotificationPreferenceDTO[]>(
         preferenceKeys.all,
       );
 
       if (previous) {
-        queryClient.setQueryData<NotificationPreference[]>(
+        queryClient.setQueryData<NotificationPreferenceDTO[]>(
           preferenceKeys.all,
           previous.map((p) =>
             p.notification_type === newPref.notification_type

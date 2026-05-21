@@ -18,6 +18,7 @@ const buildPieceFormData = (dto: PieceWriteDTO): FormData => {
   const formData = new FormData();
   const nullableFieldNames = new Set([
     "composer",
+    "composer_id",
     "estimated_duration",
     "composition_year",
   ]);

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Text, Metric, Eyebrow } from '@/shared/ui/primitives/typography';
+import { Text, Eyebrow } from '@/shared/ui/primitives/typography';
 import { cn } from '@/shared/lib/utils';
 import type { VocalLineEntry } from '../types/chorister-hub.dto';
 

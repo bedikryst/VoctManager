@@ -13,7 +13,6 @@ import {
   PROJECT_FILTER,
   type ProjectFilterId,
 } from "../constants/projectDomain";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 

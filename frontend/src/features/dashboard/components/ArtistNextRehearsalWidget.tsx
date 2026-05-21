@@ -11,7 +11,6 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Calendar,
   Clock,
   CheckCircle2,
   XCircle,
@@ -21,7 +20,6 @@ import {
 
 import { EventCard } from "@/shared/ui/composites/EventCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -30,7 +28,6 @@ import { useUpsertScheduleAttendance } from "../../schedule/api/schedule.queries
 import { AbsenceReportForm, type AbsenceFormValues } from "./AbsenceReportForm";
 import type { Rehearsal, Attendance } from "@/shared/types";
 
-// Definicja kontraktu danych (DTO) dla wyabstrahowanego widżetu
 export interface UpcomingRehearsalDto {
   type: "REHEARSAL";
   date: Date;

@@ -675,7 +675,7 @@
       -webkit-backdrop-filter 0.55s var(--ease);
   }
 
-  /* Veil for legibility over the hero — fades out when chrome activates into glass. */
+  /* Dark veil for legibility — only over dark surfaces; off over the light paper hero. */
   .chrome::before {
     content: "";
     position: absolute;
@@ -683,12 +683,12 @@
     z-index: -1;
     pointer-events: none;
     background: linear-gradient(180deg, rgba(8, 8, 7, 0.34) 0%, rgba(8, 8, 7, 0) 100%);
-    opacity: 1;
+    opacity: 0;
     transition: opacity 0.55s var(--ease);
   }
 
-  .chrome.is-active::before {
-    opacity: 0;
+  .chrome.is-on-dark:not(.is-active)::before {
+    opacity: 1;
   }
 
   /* Active glass — light surface (over jasne sekcje). */
@@ -711,9 +711,14 @@
     color: var(--paper);
   }
 
-  /* Idle over hero: text is already light via base; veil handles contrast. */
+  /* Idle over the dark sections: light text + veil handles contrast. */
   .chrome:not(.is-active).is-on-dark {
     color: var(--paper);
+  }
+
+  /* Idle over the light paper hero: crisp ink, no veil. */
+  .chrome:not(.is-active):not(.is-on-dark) {
+    color: var(--ink);
   }
 
   .chrome > * {
@@ -905,19 +910,28 @@
     box-shadow: 0 0 12px rgba(198, 164, 91, 0.7);
   }
 
+  /* ─── Hero "Świetlisty fresk" ───
+     Full-bleed image treated as light, not a photograph: lifted to a luminous warm
+     alabaster near-monochrome, edges dissolving into the paper so image and page are one
+     surface. The liturgy lives in a lit left zone (paper scrim → crisp ink type), the
+     fresco stays clear toward the right/centre. The only motions are a slow push-in and
+     one breathing raking light.
+     z-stack: media(0) → light + veil(1) → content(2) → descend(3). */
   .hero {
     position: relative;
-    min-height: 100svh;
     display: grid;
-    align-items: end;
+    align-items: center;
+    min-height: 100svh;
     overflow: hidden;
-    color: var(--paper);
-    background: var(--dark);
+    color: var(--ink);
+    background: var(--paper);
+    isolation: isolate;
   }
 
   .hero-media {
     position: absolute;
     inset: 0;
+    z-index: 0;
   }
 
   .hero-media video,
@@ -925,156 +939,169 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: saturate(0.76) contrast(1.08) brightness(0.64);
-    transform: scale(1.06);
+    object-position: 50% 42%;
+    /* luminous fresco — lifted, warm, near-monochrome; reads as light + stone, not a snapshot */
+    filter: grayscale(0.15) saturate(0.46) sepia(0.22) brightness(1.1) contrast(0.9);
+    transform: scale(1.05);
     will-change: transform;
-    animation: heroKenBurns 38s ease-in-out infinite alternate;
+    animation: heroKenBurns 52s ease-in-out infinite alternate;
   }
 
   @keyframes heroKenBurns {
-    0% { transform: scale(1.06) translate3d(0, 0, 0); }
-    50% { transform: scale(1.12) translate3d(-1.4%, -0.8%, 0); }
-    100% { transform: scale(1.08) translate3d(1.2%, 0.6%, 0); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .hero-media video,
-    .hero-media img {
-      animation: none;
-      transform: scale(1.02);
-    }
+    0% { transform: scale(1.05) translate3d(0, 0, 0); }
+    100% { transform: scale(1.12) translate3d(1.4%, -1%, 0); }
   }
 
   .hero-media video {
     display: block;
   }
 
-  .hero::before {
-    content: "";
+  /* The raking clerestory light — the single permitted "effect", breathing slowly. */
+  .hero-light {
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(circle at 70% 35%, transparent 0, rgba(8, 8, 7, 0.16) 26rem, rgba(8, 8, 7, 0.62) 58rem),
-      linear-gradient(180deg, rgba(8, 8, 7, 0.34) 0%, rgba(8, 8, 7, 0.08) 38%, rgba(8, 8, 7, 0.88) 100%);
     z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(
+      52% 60% at 22% 4%,
+      rgba(var(--candle-rgb), 0.24),
+      transparent 64%
+    );
+    opacity: 0.85;
+    will-change: opacity, transform;
+    animation: heroLightBreath 15s var(--ease-slow) infinite alternate;
   }
 
-  .hero::after {
-    content: "";
+  @keyframes heroLightBreath {
+    0% { opacity: 0.55; transform: translate3d(0, 0, 0) scale(1); }
+    100% { opacity: 1; transform: translate3d(0.6%, -0.8%, 0) scale(1.05); }
+  }
+
+  /* Unifying washes: top scrim (chrome legibility) + left scrim (type lives here, image
+     stays clear to the right) + an edge vignette dissolving the photo into the paper. */
+  .hero-veil {
     position: absolute;
-    left: max(28px, 5vw);
-    right: max(28px, 5vw);
-    bottom: 34px;
-    height: 1px;
-    z-index: 2;
-    background: rgba(244, 241, 233, 0.3);
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(244, 241, 233, 0.74) 0%, rgba(244, 241, 233, 0) 16%),
+      linear-gradient(
+        90deg,
+        rgba(244, 241, 233, 0.95) 0%,
+        rgba(244, 241, 233, 0.7) 24%,
+        rgba(244, 241, 233, 0.18) 50%,
+        rgba(244, 241, 233, 0) 66%
+      ),
+      radial-gradient(128% 116% at 46% 44%, transparent 48%, rgba(244, 241, 233, 0.92) 100%);
   }
 
   .hero-inner {
     position: relative;
     z-index: 2;
-    width: min(1580px, 100%);
+    width: min(1240px, 100%);
     margin: 0 auto;
-    padding: 150px max(28px, 5vw) 74px;
-  }
-
-  .hero-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 450px);
-    gap: clamp(48px, 8vw, 130px);
-    align-items: end;
+    padding: clamp(120px, 15vh, 184px) max(28px, 6vw) clamp(48px, 9vh, 96px);
   }
 
   .hero-kicker {
-    margin-bottom: 36px;
-    color: rgba(244, 241, 233, 0.72);
+    margin: 0 0 clamp(26px, 4.5vh, 48px);
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
   }
 
   .hero-title {
     margin: 0;
-    max-width: 1050px;
+    max-width: 14ch;
     font-family: var(--serif);
-    font-size: var(--h1);
+    font-size: clamp(56px, 9vw, 142px);
     font-weight: 300;
-    letter-spacing: 0;
-    line-height: 0.9;
+    letter-spacing: -0.012em;
+    line-height: 0.88;
+    color: var(--ink);
   }
 
   .hero-title span {
     display: block;
   }
 
-  .hero-title em {
-    font-style: normal;
-    color: #e6d8b4;
+  /* "Z ciszy" — the antecedent voice, receded a touch into ink-soft. */
+  .hero-title-anteced {
+    color: var(--ink-soft);
   }
 
-  .hero-side {
-    display: grid;
-    gap: 28px;
-    align-content: end;
+  .hero-title em {
+    font-style: normal;
+    color: var(--ink);
   }
 
   .hero-strap {
-    max-width: 38rem;
-    margin: 38px 0 0;
-    color: rgba(244, 241, 233, 0.84);
+    max-width: 30rem;
+    margin: clamp(28px, 4.5vh, 50px) 0 0;
+    color: var(--ink-muted);
     font-family: var(--serif);
-    font-size: clamp(20px, 1.9vw, 28px);
+    font-style: italic;
+    font-size: clamp(18px, 1.7vw, 25px);
     font-weight: 300;
-    line-height: 1.35;
+    line-height: 1.4;
   }
 
   .hero-strap-name {
+    font-style: normal;
     white-space: nowrap;
-    color: var(--paper);
-    border-bottom: 1px solid rgba(244, 241, 233, 0.36);
-    padding-bottom: 2px;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 1px;
   }
 
-  .hero-occasion {
-    display: grid;
-    gap: 14px;
-    border-top: 1px solid rgba(244, 241, 233, 0.36);
-    padding-top: 28px;
-    color: rgba(244, 241, 233, 0.74);
-  }
-
-  .hero-occasion .micro {
-    color: rgba(244, 241, 233, 0.5);
-  }
-
-  .hero-occasion strong {
-    color: var(--paper);
-    font-family: var(--serif);
-    font-size: clamp(24px, 2.4vw, 36px);
-    font-weight: 300;
-    line-height: 1.15;
-    letter-spacing: 0;
-  }
-
-  .hero-occasion-meta {
-    display: block;
-    color: rgba(244, 241, 233, 0.68);
+  /* A single quiet invitation to descend — ink in the lit left zone, drawing the eye in. */
+  .hero-descend {
+    position: absolute;
+    left: max(28px, 6vw);
+    bottom: clamp(26px, 5vh, 48px);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--ink-muted);
     font-family: var(--mono);
     font-size: 10px;
-    letter-spacing: 0.18em;
-    line-height: 1.7;
+    letter-spacing: 0.32em;
     text-transform: uppercase;
+    transition: color 0.6s var(--ease);
   }
 
-  .hero-copy {
-    max-width: 36rem;
-    margin: 0;
-    color: rgba(244, 241, 233, 0.74);
+  .hero-descend::before {
+    content: "";
+    width: clamp(40px, 6vw, 92px);
+    height: 1px;
+    background: var(--line-strong);
+    transform-origin: left center;
+    transition: transform 0.7s var(--ease), background 0.6s var(--ease);
   }
 
-  .hero-actions {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    flex-wrap: wrap;
-    margin-top: 8px;
+  .hero-descend:hover {
+    color: var(--ink-soft);
+  }
+
+  .hero-descend:hover::before {
+    transform: scaleX(1.4);
+    background: var(--candle);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-media video,
+    .hero-media img {
+      animation: none;
+      transform: scale(1.03);
+    }
+
+    .hero-light {
+      animation: none;
+      opacity: 0.7;
+    }
   }
 
   .text-link,
@@ -3608,7 +3635,6 @@
       letter-spacing: 0.16em;
     }
 
-    .hero-grid,
     .support-panel,
     .section-grid,
     .director-grid,
@@ -3619,10 +3645,6 @@
 
     .hero-inner {
       padding-top: 132px;
-    }
-
-    .hero-side {
-      max-width: 460px;
     }
 
     .section {
@@ -3728,39 +3750,31 @@
       font-size: 18px;
     }
 
-    .hero::before {
-      background:
-        radial-gradient(circle at 50% 25%, transparent 0, rgba(8, 8, 7, 0.25) 20rem, rgba(8, 8, 7, 0.88) 45rem),
-        linear-gradient(180deg, rgba(8, 8, 7, 0.2) 0%, rgba(8, 8, 7, 0.65) 45%, rgba(8, 8, 7, 0.96) 100%);
+    /* Mobile: type is full-width, so the legibility scrim shifts to the top instead of the
+       left, leaving the fresco breathing in the lower half. */
+    .hero {
+      align-items: start;
     }
 
-    .hero-media video,
+    .hero-veil {
+      background:
+        linear-gradient(
+          180deg,
+          rgba(244, 241, 233, 0.95) 0%,
+          rgba(244, 241, 233, 0.82) 30%,
+          rgba(244, 241, 233, 0.3) 52%,
+          rgba(244, 241, 233, 0) 68%
+        ),
+        radial-gradient(140% 120% at 50% 30%, transparent 52%, rgba(244, 241, 233, 0.9) 100%);
+    }
 
     .hero-inner {
-      padding: 112px max(22px, 5vw) 46px;
-    }
-
-    .hero-grid {
-      gap: 34px;
-    }
-
-    .hero-side {
-      gap: 20px;
-    }
-
-    .hero-occasion {
-      padding-top: 20px;
-      gap: 10px;
+      padding: 116px max(22px, 5vw) 0;
     }
 
     .hero-strap {
       margin-top: 22px;
       font-size: 17px;
-    }
-
-    .hero-copy {
-      font-size: 14px;
-      line-height: 1.55;
     }
 
     .support-link {
@@ -3788,7 +3802,6 @@
       line-height: 0.9;
     }
 
-    .hero-actions,
     .final-actions {
       align-items: stretch;
       flex-direction: column;
@@ -3831,16 +3844,6 @@
     .brand-glyph-halo {
       width: 32px;
       height: 32px;
-    }
-
-    .hero-occasion strong {
-      font-size: 21px;
-      line-height: 1.2;
-    }
-
-    .hero-occasion-meta {
-      font-size: 9.5px;
-      letter-spacing: 0.16em;
     }
 
     .path-card {
@@ -5971,5 +5974,3 @@
       transform: none;
     }
   }
-
-</style>

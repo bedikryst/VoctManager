@@ -334,12 +334,16 @@ const ReviewBody = ({
   const onSubmit = handleSubmit(async (values) => {
     if (!edition) return;
     try {
-      const piecePatch: PiecePatchDTO = pickDirty(
+      const piecePatch = pickDirty(
         values,
         dirtyFields,
         PIECE_FIELDS,
-      );
-      const editionPatch = pickDirty(values, dirtyFields, EDITION_FIELDS);
+      ) as PiecePatchDTO;
+      const editionPatch = pickDirty(
+        values,
+        dirtyFields,
+        EDITION_FIELDS,
+      ) as ScoreEditionPatchDTO;
 
       // Fold the split-input duration back into total seconds. Treat 0 mins +
       // 0 secs as "clear the field" → null, matching the Archive form.
@@ -1176,16 +1180,16 @@ const RecordingRow = ({
  * empty strings to undefined for optional text fields so the PATCH stays
  * minimal. Numeric coercion already happened in the Zod schema.
  */
-function pickDirty<TKey extends string>(
+function pickDirty(
   values: ReviewFormValues,
   dirty: Partial<Record<keyof ReviewFormValues, boolean | object>>,
-  fields: readonly TKey[],
-): Record<TKey, unknown> {
-  const out: Record<string, unknown> = {};
+  fields: readonly (keyof ReviewFormValues)[],
+): Partial<ReviewFormValues> {
+  const out: Record<string, ReviewFormValues[keyof ReviewFormValues]> = {};
   for (const f of fields) {
-    if (dirty[f as keyof ReviewFormValues]) {
-      out[f] = values[f as keyof ReviewFormValues];
+    if (dirty[f]) {
+      out[f] = values[f];
     }
   }
-  return out as Record<TKey, unknown>;
+  return out as Partial<ReviewFormValues>;
 }

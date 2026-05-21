@@ -1,4 +1,3 @@
-import React from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/primitives/Button";

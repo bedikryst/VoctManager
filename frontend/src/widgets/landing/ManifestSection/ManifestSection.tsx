@@ -11,7 +11,7 @@ import { MANIFEST_LINES } from "@/features/landing/constants/manifestLines";
 
 export function ManifestSection(): React.JSX.Element {
   return (
-    <section className="section manifest" aria-label="Manifest chóru VoctEnsemble">
+    <section className="section manifest" id="manifest" aria-label="Manifest chóru VoctEnsemble">
       <div className="section-grid manifest-grid">
         <div className="section-label micro">
           <span>ESSENCE</span>

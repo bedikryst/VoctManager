@@ -13,8 +13,8 @@ import {
   useRegisterPushDevice,
   useUnregisterPushDevice,
   useSendTestPush,
-  type PushDevicePayload,
 } from "@/features/notifications/api/devices";
+import type { WebPushSubscribeDTO } from "../types/notifications.dto";
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
@@ -36,11 +36,15 @@ export interface UsePushNotificationsReturn {
   sendTest: () => Promise<void>;
 }
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+  const output = new Uint8Array(rawData.length);
+  for (let index = 0; index < rawData.length; index += 1) {
+    output[index] = rawData.charCodeAt(index);
+  }
+  return output;
 }
 
 function detectAvailability(): PushAvailability {
@@ -115,7 +119,7 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
 
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGED") {
-        const payload = event.data.subscription as PushDevicePayload;
+        const payload = event.data.subscription as WebPushSubscribeDTO;
         registerMutation.mutate(payload);
       }
     };

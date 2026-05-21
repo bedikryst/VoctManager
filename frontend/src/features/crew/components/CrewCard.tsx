@@ -148,7 +148,7 @@ const CrewCardComponent = ({
             <ContactRow
               icon={<Mail size={14} strokeWidth={1.5} />}
               href={person.email ? `mailto:${person.email}` : undefined}
-              value={person.email}
+              value={person.email ?? undefined}
               fallback={t("crew.card.no_email", "Brak e-mail")}
             />
             <ContactRow

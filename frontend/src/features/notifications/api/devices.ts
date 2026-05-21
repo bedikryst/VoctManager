@@ -7,16 +7,11 @@
  */
 import { useMutation } from "@tanstack/react-query";
 import api from "@/shared/api/api";
-
-export interface PushDevicePayload {
-  endpoint: string;
-  p256dh_key: string;
-  auth_key: string;
-}
+import type { WebPushSubscribeDTO } from "../types/notifications.dto";
 
 export const useRegisterPushDevice = () => {
   return useMutation({
-    mutationFn: async (payload: PushDevicePayload) => {
+    mutationFn: async (payload: WebPushSubscribeDTO) => {
       const { data } = await api.post("/api/notifications/devices/", payload);
       return data;
     },

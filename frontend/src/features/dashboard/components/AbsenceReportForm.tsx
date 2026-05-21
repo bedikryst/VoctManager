@@ -11,13 +11,10 @@ import * as z from "zod";
 import { Send, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-// Ethereal UI Primitives - delegacja zarządzania wariantami poprzez CVA
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Caption } from "@/shared/ui/primitives/typography";
-import type { AttendanceStatus } from "@/shared/types";
 
-// Dynamiczny schemat Zod pozwalający na wstrzyknięcie funkcji translacji
 const createAbsenceSchema = (t: (key: string, defaultText: string) => string) =>
   z.object({
     status: z.enum(["ABSENT", "LATE"] as const),
@@ -68,9 +65,6 @@ export function AbsenceReportForm({
     >
       <div className="flex flex-col gap-2">
         <div className="flex gap-3">
-          {/* Zwykły select został zaktualizowany pod kątem i18n. 
-            W przyszłości warto również i ten element wyabstrahować do CVA (np. Select.tsx).
-          */}
           <select
             {...register("status")}
             className="w-1/3 px-3 py-2 text-xs font-bold text-ethereal-ink bg-ethereal-marble border border-ethereal-incense/20 rounded-lg outline-none focus:ring-2 focus:ring-ethereal-gold/20 appearance-none shadow-glass-solid cursor-pointer"

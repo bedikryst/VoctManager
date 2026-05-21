@@ -17,7 +17,7 @@ import type { Artist, ParticipationStatus, PieceCasting } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Text } from "@/shared/ui/primitives/typography";
 
 interface DraggableArtistProps {
   participationId: string;

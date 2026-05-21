@@ -1,6 +1,6 @@
 import React from "react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Heading, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Calendar } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 

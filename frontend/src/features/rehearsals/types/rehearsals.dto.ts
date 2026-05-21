@@ -14,5 +14,10 @@ export const attendanceUpsertSchema = z.object({
   excuse_note: z.string().nullable().optional(),
 });
 
-export type AttendanceUpsertDTO = z.infer<typeof attendanceUpsertSchema>;
+export type AttendanceUpsertDTO = Omit<
+  z.infer<typeof attendanceUpsertSchema>,
+  "status"
+> & {
+  status: AttendanceStatus;
+};
 export type ProjectTabType = "ACTIVE" | "ARCHIVE";

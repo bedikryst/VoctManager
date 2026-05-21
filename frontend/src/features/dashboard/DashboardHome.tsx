@@ -8,7 +8,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 

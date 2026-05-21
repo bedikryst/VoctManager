@@ -43,7 +43,7 @@ export const StickyHeader = forwardRef<HTMLElement, StickyHeaderProps>(function 
   };
 
   return (
-    <header className="chrome is-on-dark" aria-label="Nawigacja" ref={ref}>
+    <header className="chrome" aria-label="Nawigacja" ref={ref}>
       <a className="brand" href="#top" aria-label="VoctEnsemble">
         <span className="brand-glyph-wrap" aria-hidden="true">
           <span className="brand-glyph-halo" />

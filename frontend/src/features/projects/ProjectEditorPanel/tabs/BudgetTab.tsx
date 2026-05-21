@@ -23,11 +23,6 @@ import {
   Metric,
   Unit,
 } from "@/shared/ui/primitives/typography";
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
-
 interface BudgetTabProps {
   projectId: string;
   onDirtyStateChange?: (isDirty: boolean) => void;

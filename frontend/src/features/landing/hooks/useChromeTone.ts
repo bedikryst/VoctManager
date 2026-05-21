@@ -11,7 +11,7 @@
 import { useEffect } from "react";
 
 const DARK_SELECTORS =
-  ".hero, .image-rite, .ensemble, .final-support, .threshold, .vault, .regulamin, .gratitude, .failure";
+  ".image-rite, .ensemble, .final-support, .threshold, .vault, .regulamin, .gratitude, .failure";
 
 export function useChromeTone(
   chromeRef: React.RefObject<HTMLElement | null>,

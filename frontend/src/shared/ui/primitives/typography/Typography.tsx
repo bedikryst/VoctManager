@@ -74,9 +74,18 @@ export const typographyVariants = cva("transition-colors duration-500", {
   },
 });
 
+type TypographyDomProps = Omit<
+  React.HTMLAttributes<HTMLElement>,
+  "color"
+> &
+  Pick<
+    React.AnchorHTMLAttributes<HTMLAnchorElement>,
+    "href" | "target" | "rel"
+  > &
+  Pick<React.LabelHTMLAttributes<HTMLLabelElement>, "htmlFor">;
+
 export interface TypographyProps
-  extends
-    Omit<React.HTMLAttributes<HTMLElement>, "color">,
+  extends TypographyDomProps,
     VariantProps<typeof typographyVariants> {
   as?: React.ElementType;
 }

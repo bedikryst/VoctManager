@@ -7,7 +7,7 @@
 
 import React from "react";
 import { cn } from "@/shared/lib/utils";
-import { Eyebrow, Metric, Text, Unit } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Metric, Unit } from "@/shared/ui/primitives/typography";
 
 export interface MetricBlockProps extends React.HTMLAttributes<HTMLElement> {
   label: string;

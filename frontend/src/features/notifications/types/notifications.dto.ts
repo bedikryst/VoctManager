@@ -185,3 +185,45 @@ export type NotificationDTO = BaseNotification &
 export interface UnreadCountResponse {
   unread_count: number;
 }
+
+export interface NotificationPreferenceDTO {
+  notification_type: NotificationType;
+  email_enabled: boolean;
+  push_enabled: boolean;
+  sms_enabled: boolean;
+  label?: string;
+}
+
+export type NotificationPreferenceUpdateDTO =
+  Partial<
+    Pick<
+      NotificationPreferenceDTO,
+      "email_enabled" | "push_enabled" | "sms_enabled"
+    >
+  > & {
+    notification_type: NotificationType;
+  };
+
+export interface PushDeviceRegisterDTO {
+  registration_token: string;
+  device_type?: "WEB" | "IOS" | "ANDROID";
+}
+
+export interface WebPushSubscribeDTO {
+  endpoint: string;
+  p256dh_key: string;
+  auth_key: string;
+}
+
+export interface SendToArtistPayload {
+  artist_id: string;
+  title: string;
+  message: string;
+  level: NotificationLevel;
+  cta_url?: string | null;
+  cta_label?: string | null;
+}
+
+export interface SendToArtistResponse {
+  status: "dispatched";
+}

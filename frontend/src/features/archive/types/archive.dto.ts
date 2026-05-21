@@ -4,10 +4,10 @@
  * Strictly mirrors the backend Django DTOs to ensure type safety across the network boundary.
  */
 
-import type { Piece } from "@/shared/types";
+import type { Epoch, Piece, VoiceLine } from "@/shared/types";
 
 export interface VoiceRequirementDTO {
-  voice_line: string;
+  voice_line: VoiceLine;
   quantity: number;
 }
 
@@ -23,7 +23,8 @@ export interface PieceWriteDTO {
   // Backend accepts either `composer` (legacy, aliased server-side to
   // `composer_id`) or `composer_id` directly. We keep the legacy key so the
   // write path stays stable across the read-shape refactor.
-  composer?: string;
+  composer?: string | null;
+  composer_id?: string | null;
   arranger?: string;
   language?: string;
   estimated_duration?: number | null;
@@ -34,7 +35,7 @@ export interface PieceWriteDTO {
   reference_recording_youtube?: string;
   reference_recording_spotify?: string;
   composition_year?: number | null;
-  epoch?: string;
+  epoch?: Epoch | "";
   voice_requirements?: VoiceRequirementDTO[];
 
   // Score Compiler-populated fields the manager can edit by hand from the

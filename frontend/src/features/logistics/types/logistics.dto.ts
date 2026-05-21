@@ -30,9 +30,16 @@ export type LocationFormValues = z.infer<typeof locationFormSchema>;
 
 export type LocationCreateDto = LocationFormValues;
 
-export interface LocationDto extends LocationFormValues {
+export interface LocationDto {
   id: string;
+  name: string;
+  category: LocationCategory;
+  formatted_address: string;
+  google_place_id?: string | null;
+  latitude: string | null;
+  longitude: string | null;
   timezone: string;
+  internal_notes: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

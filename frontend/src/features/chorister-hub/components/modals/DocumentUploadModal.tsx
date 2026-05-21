@@ -40,7 +40,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const uploadSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),
   description: z.string().max(2000),
-  allowed_roles: z.array(z.enum(["ARTIST", "MANAGER", "ADMIN"] as const)),
+  allowed_roles: z.array(z.enum(["ARTIST", "MANAGER", "CREW"] as const)),
   order: z.number().int().min(0),
 });
 

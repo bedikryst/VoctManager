@@ -1,12 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { Shirt, Utensils, Ruler, CheckCircle2, Footprints } from "lucide-react";
+import { Shirt, Ruler, CheckCircle2, Footprints } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Input } from "@ui/primitives/Input";
 import { Select } from "@ui/primitives/Select";
-import { Textarea } from "@ui/primitives/Textarea";
 import { Button } from "@ui/primitives/Button";
 import { Text, Caption } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";

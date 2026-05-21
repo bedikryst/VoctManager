@@ -107,8 +107,6 @@ export const buildOptimisticProgramItem = (
   project: data.project,
   piece: data.piece,
   piece_id: data.piece,
-  title: data.title,
-  piece_title: data.title,
   order: data.order,
   is_encore: data.is_encore,
 });

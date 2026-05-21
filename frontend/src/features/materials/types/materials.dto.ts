@@ -9,7 +9,7 @@ export interface MaterialsComposer {
   id: string;
   first_name: string;
   last_name: string;
-  full_name?: string;
+  full_name: string;
   birth_year: string;
   death_year: string;
   // Score Compiler enrichments (may be empty for manually-entered composers).
@@ -112,15 +112,15 @@ export interface MaterialsPiece {
   reference_recording_youtube: string;
   reference_recording_spotify: string;
   // Score Compiler-populated artist-facing fields.
-  opus_catalog?: string;
-  musical_key?: string;
-  text_source?: string;
-  lyrics_ipa?: string;
-  mbid_work?: string | null;
-  translations?: MaterialsTranslation[];
-  recordings?: MaterialsRecording[];
-  program_notes?: MaterialsProgramNote[];
-  editions?: MaterialsEdition[];
+  opus_catalog: string;
+  musical_key: string;
+  text_source: string;
+  lyrics_ipa: string;
+  mbid_work: string | null;
+  translations: MaterialsTranslation[];
+  recordings: MaterialsRecording[];
+  program_notes: MaterialsProgramNote[];
+  editions: MaterialsEdition[];
   tracks: MaterialsTrack[];
   castings: MaterialsCasting[];
   my_casting: MaterialsCasting | null;

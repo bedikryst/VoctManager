@@ -103,7 +103,7 @@ const categorySchema = z.object({
     "Mic2",
   ] as const),
   allowed_roles: z
-    .array(z.enum(["ARTIST", "MANAGER", "ADMIN"] as const)),
+    .array(z.enum(["ARTIST", "MANAGER", "CREW"] as const)),
   order: z.number().int().min(0),
 });
 
@@ -168,7 +168,10 @@ export const CategoryFormModal = ({
 
   const handleFormSubmit = (values: CategoryFormValues) => {
     const finalRoles = values.allowed_roles.includes("ARTIST") ? ["ARTIST"] : ["MANAGER"];
-    onSubmit({ ...values, allowed_roles: finalRoles as any }, editingCategory?.id);
+    onSubmit(
+      { ...values, allowed_roles: finalRoles as DocumentRole[] },
+      editingCategory?.id,
+    );
   };
 
   return (

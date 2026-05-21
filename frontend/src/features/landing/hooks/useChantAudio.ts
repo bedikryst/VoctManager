@@ -33,7 +33,7 @@ interface AudioGraph {
   context: AudioContext;
   gain: GainNode;
   analyser: AnalyserNode;
-  buffer: Uint8Array;
+  buffer: Uint8Array<ArrayBuffer>;
 }
 
 function isReducedMotion(): boolean {

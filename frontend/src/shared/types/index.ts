@@ -54,15 +54,20 @@ export type Epoch =
 export type VoiceLine =
   | "S1"
   | "S2"
+  | "S3"
   | "A1"
   | "A2"
+  | "A3"
   | "T1"
   | "T2"
+  | "T3"
   | "B1"
   | "B2"
+  | "B3"
   | "SOLO"
   | "VP"
   | "TUTTI"
+  | "BACK"
   | "ACC"
   | "PRON";
 
@@ -85,7 +90,7 @@ export interface Artist extends BaseModel {
   first_name: string;
   last_name: string;
   first_name_vocative?: string;
-  email: string;
+  email?: string;
   phone_number?: string;
   voice_type: VoiceType;
   voice_type_display?: string;
@@ -182,7 +187,7 @@ export interface Attendance extends BaseModel {
 export interface Collaborator extends BaseModel {
   first_name: string;
   last_name: string;
-  email?: string;
+  email?: string | null;
   phone_number?: string;
   company_name?: string;
   specialty: CollaboratorSpecialty;
@@ -324,6 +329,7 @@ export interface ScoreEditionSummary extends BaseModel {
   is_default: boolean;
   ingestion_status: IngestionStatusCode;
   ingestion_status_display?: string;
+  created_at: string;
 }
 
 export interface Piece extends BaseModel {
@@ -360,15 +366,15 @@ export interface Piece extends BaseModel {
   ingestion_status_display?: string;
 
   // Nested relations
-  voice_requirements?: VoiceRequirement[];
-  tracks?: Track[];
-  movements?: Movement[];
-  translations?: Translation[];
-  recordings?: Recording[];
-  program_notes?: ProgramNote[];
+  voice_requirements: VoiceRequirement[];
+  tracks: Track[];
+  movements: Movement[];
+  translations: Translation[];
+  recordings: Recording[];
+  program_notes: ProgramNote[];
   // All Score Compiler editions attached to this Piece (legacy `sheet_music`
   // remains as the one-PDF-per-piece fallback for manually-entered records).
-  editions?: ScoreEditionSummary[];
+  editions: ScoreEditionSummary[];
 }
 
 export interface ProgramItem extends BaseModel {

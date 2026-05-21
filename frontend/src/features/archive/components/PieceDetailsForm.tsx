@@ -261,7 +261,12 @@ export default function PieceDetailsForm({
             <Select
               label={t("archive.form.fields.epoch", "Epoka muzyczna")}
               value={formData.epoch}
-              onChange={(e) => setFormData({ ...formData, epoch: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  epoch: e.target.value as typeof formData.epoch,
+                })
+              }
               disabled={isSubmitting}
             >
               <option value="">{t("archive.form.placeholders.epoch", "— Wybierz epokę —")}</option>
@@ -382,7 +387,7 @@ export default function PieceDetailsForm({
                     onClick={() =>
                       setRequirements([
                         ...requirements,
-                        { voice_line: String(voiceLine.value), quantity: 1 },
+                        { voice_line: voiceLine.value, quantity: 1 },
                       ])
                     }
                     className="px-4 py-2 bg-ethereal-alabaster/80 border border-ethereal-incense/20 text-ethereal-graphite hover:text-ethereal-gold hover:border-ethereal-gold/30 hover:bg-ethereal-gold/5 text-[9px] font-medium antialiased uppercase tracking-widest rounded-xl transition-all shadow-glass-ethereal flex items-center gap-1.5 active:scale-95"

@@ -20,6 +20,10 @@ import {
   PdfViewer,
   type PdfViewerEvent,
 } from "@/shared/ui/composites/PdfViewer";
+import {
+  buildDocumentViewerPath,
+  type DocumentDescriptor,
+} from "@/pages/panel/DocumentViewerPage/types";
 
 type CloseWatcherHandle = {
   onclose: (() => void) | null;
@@ -45,6 +49,8 @@ export interface PdfViewerModalProps {
   fullViewHref?: string;
   /** Optional state payload for the full view route. */
   fullViewHint?: unknown;
+  /** Typed descriptor for the deep-linkable full document viewer route. */
+  fullView?: DocumentDescriptor;
   /** Telemetry seam forwarded to the underlying PdfViewer. No transport bundled. */
   onEvent?: (event: PdfViewerEvent) => void;
   onClose: () => void;
@@ -59,6 +65,7 @@ export const PdfViewerModal = ({
   docKey,
   fullViewHref,
   fullViewHint,
+  fullView,
   onEvent,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
@@ -90,7 +97,11 @@ export const PdfViewerModal = ({
     };
   }, [isOpen, onClose]);
 
-  const fullViewSlot = fullViewHref ? (
+  const resolvedFullViewHref =
+    fullViewHref ?? (fullView ? buildDocumentViewerPath(fullView) : undefined);
+  const resolvedFullViewHint = fullViewHint ?? fullView?.hint;
+
+  const fullViewSlot = resolvedFullViewHref ? (
     <Button
       asChild
       variant="ghost"
@@ -98,8 +109,8 @@ export const PdfViewerModal = ({
       className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10 hover:text-white"
     >
       <Link
-        to={fullViewHref}
-        state={fullViewHint}
+        to={resolvedFullViewHref}
+        state={resolvedFullViewHint}
         onClick={handleFullViewClick}
         aria-label={t("pdf_viewer.open_full_view", "Open full view")}
       >

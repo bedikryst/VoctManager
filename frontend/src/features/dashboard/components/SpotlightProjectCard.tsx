@@ -15,12 +15,7 @@ import {
   type ArtifactMetric,
 } from "@/shared/ui/composites/ArtifactCard";
 import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
-import {
-  Eyebrow,
-  Unit,
-  Emphasis,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { Eyebrow, Emphasis } from "@/shared/ui/primitives/typography";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 
 export interface ProjectStatsDto {

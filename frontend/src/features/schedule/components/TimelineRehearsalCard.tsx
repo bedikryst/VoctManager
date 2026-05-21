@@ -69,7 +69,7 @@ export const TimelineRehearsalCard = ({
     enableReportingMode,
   } = useTimelineRehearsalCard(event, onSubmitReport, onToggle, isExpanded);
 
-  const maskedStatus = currentMaskedStatus === "EXCUSED" ? "ABSENT" : currentMaskedStatus;
+  const maskedStatus = currentMaskedStatus;
 
   return (
     <motion.div

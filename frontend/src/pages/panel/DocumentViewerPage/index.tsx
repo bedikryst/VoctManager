@@ -19,7 +19,6 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { ProjectService } from "@/features/projects/api/project.service";
 import { ScheduleService } from "@/features/schedule/api/schedule.service";

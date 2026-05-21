@@ -4,7 +4,7 @@
  * @module shared/ui/primitives/Textarea
  */
 
-import React, { TextareaHTMLAttributes, forwardRef, useId } from "react";
+import { forwardRef, useId, type TextareaHTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 import { Eyebrow } from "@/shared/ui/primitives/typography";

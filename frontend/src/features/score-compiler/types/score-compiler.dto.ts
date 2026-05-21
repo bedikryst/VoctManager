@@ -1,23 +1,21 @@
 /**
  * @file score-compiler.dto.ts
  * @description Score Package Compiler — DTOs mirroring the backend serializers.
- * The canonical Piece + nested entities now live in shared/types (the
- * PieceSerializer is the single source of truth across Archive + Score
- * Compiler + Materials); this file re-exports them under the historical
- * "DTO" names and adds only the ScoreEdition-specific shapes.
+ * Shared nested entities live in shared/types. ScoreEdition-specific list,
+ * detail, and write payloads stay here because the backend uses dedicated
+ * serializers for the review workflow.
  * @architecture Enterprise SaaS 2026
  * @module features/score-compiler/types/score-compiler.dto
  */
 
 import type {
-  Composer,
   IngestionStatusCode,
   Movement,
-  Piece,
   ProgramNote,
   Recording,
   RecordingSource,
   Translation,
+  VoiceRequirement,
 } from "@/shared/types";
 
 // ===========================================================================
@@ -30,8 +28,46 @@ export type MovementDTO = Movement;
 export type TranslationDTO = Translation;
 export type RecordingDTO = Recording;
 export type ProgramNoteDTO = ProgramNote;
-export type ComposerSummaryDTO = Composer;
-export type PieceSummaryDTO = Piece;
+
+export interface ComposerSummaryDTO {
+  id: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  birth_year: string;
+  death_year: string;
+  nationality?: string;
+  period?: string;
+  bio?: string;
+  portrait_url?: string;
+  portrait_license?: string;
+  mbid?: string | null;
+  wikidata_qid?: string;
+}
+
+export interface PieceSummaryDTO {
+  id: string;
+  title: string;
+  composer: ComposerSummaryDTO | null;
+  opus_catalog: string;
+  musical_key: string;
+  language: string;
+  estimated_duration: number | null;
+  voicing: string;
+  text_source: string;
+  lyrics_original: string;
+  lyrics_translation: string;
+  lyrics_ipa: string;
+  composition_year: number | null;
+  epoch: string;
+  mbid_work: string | null;
+  ingestion_status: IngestionStatus;
+  voice_requirements: VoiceRequirement[];
+  movements: MovementDTO[];
+  translations: TranslationDTO[];
+  recordings: RecordingDTO[];
+  program_notes: ProgramNoteDTO[];
+}
 
 export type AnnotationTypeCode = "HL" | "CM" | "FH" | "ST";
 
@@ -79,7 +115,7 @@ export interface ScoreEditionDetailDTO {
   editor_name: string;
   is_default: boolean;
   sha256: string;
-  uploaded_by: string | null;
+  uploaded_by: number | null;
   piece: PieceSummaryDTO | null;
   annotations: AnnotationDTO[];
   ingestion_status: IngestionStatus;

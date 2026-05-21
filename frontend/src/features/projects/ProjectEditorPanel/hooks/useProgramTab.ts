@@ -156,7 +156,6 @@ export const useProgramTab = (
         ) + 1;
 
       await createProgramMutation.mutateAsync({
-        title: targetPiece.title,
         project: projectId,
         piece: pieceId,
         order: nextOrder,
