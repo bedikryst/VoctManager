@@ -6,7 +6,6 @@ from rest_framework.test import APITestCase
 
 from .services import UserIdentityService
 
-
 User = get_user_model()
 
 

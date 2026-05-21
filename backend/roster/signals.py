@@ -9,10 +9,12 @@ Core (IAM) Bounded Context and the Roster application.
 Enforces the Single Source of Truth (SSoT) paradigm without tight coupling.
 """
 import logging
-from django.dispatch import receiver
-from django.db import transaction
 
-from core.signals import user_pii_updated, user_email_changed, account_soft_deleted
+from django.db import transaction
+from django.dispatch import receiver
+
+from core.signals import account_soft_deleted, user_email_changed, user_pii_updated
+
 from .models import Artist
 
 logger = logging.getLogger(__name__)

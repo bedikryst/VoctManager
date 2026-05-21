@@ -25,16 +25,25 @@ from core.permissions import IsManagerOrReadOnly
 
 from . import services
 from .models import (
-    Composer, IngestionStatus, Piece, PieceVoiceRequirement,
-    ScoreEdition, Track,
+    Composer,
+    IngestionStatus,
+    Piece,
+    PieceVoiceRequirement,
+    ScoreEdition,
+    Track,
 )
 from .serializers import (
-    ComposerSerializer, PieceSerializer, PieceVoiceRequirementSerializer,
-    ScoreEditionDetailSerializer, ScoreEditionListSerializer,
-    ScoreEditionUploadSerializer, TrackSerializer,
+    ComposerSerializer,
+    PieceSerializer,
+    PieceVoiceRequirementSerializer,
+    ScoreEditionDetailSerializer,
+    ScoreEditionListSerializer,
+    ScoreEditionUploadSerializer,
+    TrackSerializer,
 )
 from .services.ingestion import (
-    IngestionPreconditionError, start_ingestion,
+    IngestionPreconditionError,
+    start_ingestion,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,9 +82,9 @@ class PieceViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
     def create(self, request, *args, **kwargs) -> Response:
-        serializer = self.get_serializer(data=request.data)
+        serializer = PieceSerializer(data=request.data, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
-        
+
         dto = serializer.to_dto()
         sheet_music = serializer.validated_data.get('sheet_music')
         
@@ -88,9 +97,9 @@ class PieceViewSet(viewsets.ModelViewSet):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = PieceSerializer(instance, data=request.data, partial=partial, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
-        
+
         dto = serializer.to_dto(instance=instance)
         
         update_sheet_music = 'sheet_music' in serializer.validated_data
@@ -188,6 +197,7 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
                 'piece__translations',
                 'piece__recordings',
                 'piece__program_notes',
+                'piece__voice_requirements',
                 'annotations',
             )
             .order_by('-created_at')

@@ -4,13 +4,12 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
-import magic
 import os
 from uuid import UUID
 
 from django.http import FileResponse
 from django.utils.text import slugify
-from rest_framework import viewsets, status, views
+from rest_framework import status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -18,20 +17,22 @@ from rest_framework.response import Response
 
 from core.constants import AppRole
 from core.permissions import IsManagerOrReadOnly
-from .models import DocumentCategory, Document
-from .serializers import (
-    DocumentCategorySerializer,
-    DocumentCategoryCreateSerializer,
-    DocumentCategoryUpdateSerializer,
-    DocumentUploadSerializer,
-    DocumentSerializer,
-)
+
 from .dtos import DocumentCategoryCreateDTO, DocumentCategoryUpdateDTO, DocumentCreateDTO
+from .file_detection import FileTypeDetectionUnavailableError, detect_mime_from_buffer
+from .models import Document, DocumentCategory
+from .serializers import (
+    DocumentCategoryCreateSerializer,
+    DocumentCategorySerializer,
+    DocumentCategoryUpdateSerializer,
+    DocumentSerializer,
+    DocumentUploadSerializer,
+)
 from .services import (
-    DocumentService,
     ArtistMetricsService,
     DocumentCategoryNotFoundError,
     DocumentNotFoundError,
+    DocumentService,
 )
 
 logger = logging.getLogger(__name__)
@@ -81,7 +82,7 @@ class DocumentCategoryViewSet(viewsets.ViewSet):
         out = DocumentCategorySerializer(category, context={'request': request})
         return Response(out.data, status=status.HTTP_201_CREATED)
 
-    def partial_update(self, request: Request, pk: str = None) -> Response:
+    def partial_update(self, request: Request, pk: str) -> Response:
         serializer = DocumentCategoryUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -94,7 +95,7 @@ class DocumentCategoryViewSet(viewsets.ViewSet):
         out = DocumentCategorySerializer(category, context={'request': request})
         return Response(out.data)
 
-    def destroy(self, request: Request, pk: str = None) -> Response:
+    def destroy(self, request: Request, pk: str) -> Response:
         try:
             DocumentService.delete_category(UUID(pk))
         except DocumentCategoryNotFoundError:
@@ -103,7 +104,7 @@ class DocumentCategoryViewSet(viewsets.ViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'], url_path='documents')
-    def upload_document(self, request: Request, pk: str = None) -> Response:
+    def upload_document(self, request: Request, pk: str) -> Response:
         serializer = DocumentUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -111,7 +112,14 @@ class DocumentCategoryViewSet(viewsets.ViewSet):
         uploaded_file = data['file']
         chunk = uploaded_file.read(2048)
         uploaded_file.seek(0)
-        detected_mime = magic.from_buffer(chunk, mime=True)
+        try:
+            detected_mime = detect_mime_from_buffer(chunk)
+        except FileTypeDetectionUnavailableError:
+            return Response(
+                {'detail': 'File type detection is unavailable on this server.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         dto = DocumentCreateDTO(
             category_id=UUID(pk),
             title=data['title'],
@@ -135,7 +143,7 @@ class DocumentCategoryViewSet(viewsets.ViewSet):
         return Response(out.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['delete'], url_path=r'documents/(?P<doc_id>[^/.]+)')
-    def delete_document(self, request: Request, pk: str = None, doc_id: str = None) -> Response:
+    def delete_document(self, request: Request, pk: str, doc_id: str) -> Response:
         try:
             DocumentService.delete_document(UUID(doc_id))
         except DocumentNotFoundError:
@@ -151,7 +159,7 @@ class DocumentDownloadView(views.APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request, pk: UUID) -> Response:
+    def get(self, request: Request, pk: UUID) -> Response | FileResponse:
         try:
             document = Document.objects.select_related('category').get(
                 id=pk, is_deleted=False
@@ -173,7 +181,7 @@ class DocumentDownloadView(views.APIView):
         except (FileNotFoundError, OSError):
             return Response({'detail': 'File not found on storage.'}, status=status.HTTP_404_NOT_FOUND)
 
-        filename = os.path.basename(document.file.name)
+        filename = os.path.basename(document.file.name or '')
         response = FileResponse(
             file_handle,
             content_type=document.mime_type or 'application/octet-stream',

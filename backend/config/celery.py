@@ -12,6 +12,7 @@ to run independently from the main web server threads.
 """
 
 import os
+
 from celery import Celery
 
 # Set the default Django settings module for the 'celery' program.

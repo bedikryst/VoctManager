@@ -11,7 +11,7 @@ Description:
          instance via `client.messages.parse(output_format=...)`. Bad JSON
          is the SDK's problem, not ours.
       2. **Cost tracking** — every call returns a `CallCost` with USD and
-         cents, attributing cache reads at 0.1× input. Persisted to
+         cents, attributing cache reads at 0.1x input. Persisted to
          `ScoreEdition.ingestion_cost_cents`.
       3. **Cost ceiling** — `enforce_ceiling()` raises `CostCeilingExceeded`
          before a runaway loop drains the API account.
@@ -32,8 +32,8 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_UP
-from typing import Final, Type, TypeVar
+from decimal import ROUND_UP, Decimal
+from typing import Final, TypeVar
 
 import anthropic
 from django.conf import settings
@@ -71,8 +71,8 @@ class AIModel:
 class _ModelPricing:
     input_per_1m: Decimal
     output_per_1m: Decimal
-    cache_write_5m_per_1m: Decimal   # 1.25× input
-    cache_read_per_1m: Decimal       # 0.1× input
+    cache_write_5m_per_1m: Decimal   # 1.25x input
+    cache_read_per_1m: Decimal       # 0.1x input
 
 
 _PRICING: Final[dict[str, _ModelPricing]] = {
@@ -133,7 +133,7 @@ class AIClientError(Exception):
     (Anthropic still charges for input + truncated output tokens).
     """
 
-    def __init__(self, message: str, *, cost: 'CallCost | None' = None) -> None:
+    def __init__(self, message: str, *, cost: CallCost | None = None) -> None:
         super().__init__(message)
         self.cost = cost
 
@@ -245,7 +245,7 @@ class AIClient:
         model: str,
         prompt: Prompt,
         user_content: str | list[dict],
-        output_schema: Type[T],
+        output_schema: type[T],
         max_tokens: int = DEFAULT_MAX_TOKENS,
         effort: str = DEFAULT_EFFORT,
         enable_thinking: bool = True,

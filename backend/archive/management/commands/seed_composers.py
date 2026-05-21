@@ -1,6 +1,8 @@
 import json
 import os
+
 from django.core.management.base import BaseCommand
+
 from archive.models import Composer
 
 
@@ -12,7 +14,7 @@ class Command(BaseCommand):
         json_file_path = os.path.join(os.path.dirname(__file__), '..', '..', 'seed_composers.json')
         
         # Load data from JSON
-        with open(json_file_path, 'r', encoding='utf-8') as f:
+        with open(json_file_path, encoding='utf-8') as f:
             composers_data = json.load(f)
         
         # Seed composers

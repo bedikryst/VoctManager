@@ -13,12 +13,12 @@ Standards: SaaS 2026, DDD (Domain-Driven Design), Event-Driven Architecture.
 """
 
 import logging
-from typing import List
+
 from django.db import transaction
 
-from archive.models import Piece, PieceVoiceRequirement, Composer, Track
 from archive.dtos import PieceWriteDTO, VoiceRequirementDTO
 from archive.exceptions import PieceValidationException
+from archive.models import Composer, Piece, PieceVoiceRequirement, Track
 from archive.signals import piece_material_updated_event
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class ArchiveManagementService:
     """
 
     @staticmethod
-    def _sync_piece_voice_requirements(piece: Piece, requirements: List[VoiceRequirementDTO]) -> None:
+    def _sync_piece_voice_requirements(piece: Piece, requirements: list[VoiceRequirementDTO]) -> None:
         """
         Internal domain logic to atomically replace voice requirements.
         Relies on Soft Deletion to safely circumvent UniqueConstraints.
@@ -88,6 +88,10 @@ class ArchiveManagementService:
                 ),
                 composition_year=dto.composition_year,
                 epoch=cls._normalize_blank_text(dto.epoch),
+                opus_catalog=cls._normalize_blank_text(dto.opus_catalog),
+                musical_key=cls._normalize_blank_text(dto.musical_key),
+                text_source=cls._normalize_blank_text(dto.text_source),
+                lyrics_ipa=cls._normalize_blank_text(dto.lyrics_ipa),
                 sheet_music=sheet_music_file
             )
             
@@ -128,6 +132,10 @@ class ArchiveManagementService:
             )
             piece.composition_year = dto.composition_year
             piece.epoch = cls._normalize_blank_text(dto.epoch)
+            piece.opus_catalog = cls._normalize_blank_text(dto.opus_catalog)
+            piece.musical_key = cls._normalize_blank_text(dto.musical_key)
+            piece.text_source = cls._normalize_blank_text(dto.text_source)
+            piece.lyrics_ipa = cls._normalize_blank_text(dto.lyrics_ipa)
             
             if update_sheet_music:
                 piece.sheet_music = sheet_music_file

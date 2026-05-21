@@ -1,6 +1,7 @@
 # notifications/email_tasks.py
 import logging
-from typing import Any, Dict
+from typing import Any
+
 from celery import shared_task
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ def send_transactional_email_task(
     recipient_email: str,
     subject: str,
     template_name: str,
-    context: Dict[str, Any],
+    context: dict[str, Any],
     fallback_language: str = 'en',
     email_type: str = 'CRITICAL_SECURITY'
 ):
@@ -51,7 +52,7 @@ def send_notification_email_task(
     recipient_id: str,
     notification_type: str,
     template_name: str,
-    metadata: Dict[str, Any],
+    metadata: dict[str, Any],
     email_type: str = 'OPERATIONAL'
 ):
     """

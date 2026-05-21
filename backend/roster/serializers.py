@@ -9,13 +9,23 @@ Handles pure data transformation (Object <-> JSON).
 Delegates role-based data exposure to explicitly defined serializers routed via ViewSets.
 """
 import zoneinfo
+
 from rest_framework import serializers
-from .models import (
-    Artist, Collaborator, CrewAssignment, Project, Participation, 
-    ProgramItem, Rehearsal, Attendance, ProjectPieceCasting
-)
-from logistics.models import Location
+
 from core.serializers import UserProfileSerializer
+from logistics.models import Location
+
+from .models import (
+    Artist,
+    Attendance,
+    Collaborator,
+    CrewAssignment,
+    Participation,
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+    Rehearsal,
+)
 
 # --- 1. ARTIST SERIALIZERS ---
 

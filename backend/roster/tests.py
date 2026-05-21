@@ -31,6 +31,7 @@ class ArtistProvisioningTests(TestCase):
             artist = ArtistHRService.provision_artist(dto)
 
         self.assertEqual(artist.email, "ada@example.com")
+        assert artist.user is not None  # provisioning always links a user; narrows for the type checker
         self.assertFalse(artist.user.is_active)
         signal_enqueue_mock.assert_not_called()
         provisioning_enqueue_mock.assert_called_once()

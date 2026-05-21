@@ -6,14 +6,14 @@
 @architecture Enterprise SaaS 2026
 @module notifications/router
 """
-from typing import Any, Dict
+from typing import Any
 
 from .email_tasks import send_notification_email_task
 from .models import NotificationLevel, NotificationPreference, NotificationType
 from .tasks import send_push_notification_task
 
 # Per-type override map. Falls back to system_notification for everything else.
-_EMAIL_TEMPLATE_MAP: Dict[str, str] = {
+_EMAIL_TEMPLATE_MAP: dict[str, str] = {
     NotificationType.CUSTOM_ADMIN_MESSAGE: "custom_admin_message",
 }
 
@@ -26,7 +26,7 @@ class NotificationRouter:
         cls,
         recipient_id: str,
         notification_type: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         level: str = NotificationLevel.INFO,
     ) -> None:
         """

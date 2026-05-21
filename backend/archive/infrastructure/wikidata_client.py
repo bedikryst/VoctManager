@@ -25,12 +25,13 @@ Standards: SaaS 2026, attribution-aware, gracefully degraded on missing data.
 from __future__ import annotations
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from archive.dtos import ComposerLookupResult
 from archive.infrastructure._http import (
-    ExternalAPIError, ExternalAPIUnavailable, cached_get_json,
+    ExternalAPIError,
+    ExternalAPIUnavailable,
+    cached_get_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ class WikidataClient:
     SOURCE = "wiki"
 
     @classmethod
-    def enrich_composer_by_mbid(cls, mbid: UUID) -> Optional[ComposerLookupResult]:
+    def enrich_composer_by_mbid(cls, mbid: UUID) -> ComposerLookupResult | None:
         """
         Look up a composer's Wikidata entity via their MusicBrainz mbid
         (Wikidata property P434), then return bio + portrait + dates.
@@ -57,7 +58,7 @@ class WikidataClient:
         return cls._entity_to_composer(qid)
 
     @classmethod
-    def enrich_composer_by_name(cls, name: str) -> Optional[ComposerLookupResult]:
+    def enrich_composer_by_name(cls, name: str) -> ComposerLookupResult | None:
         """
         Fallback: search Wikidata by name when we don't have a mbid yet.
         Less reliable than the mbid path — only use when MusicBrainz has
@@ -73,7 +74,7 @@ class WikidataClient:
     # -- internals ----------------------------------------------------------
 
     @classmethod
-    def _find_qid_by_mbid(cls, mbid: UUID) -> Optional[str]:
+    def _find_qid_by_mbid(cls, mbid: UUID) -> str | None:
         # Wikidata Query Service (SPARQL) is canonical but heavy.
         # The Action API search via haswbstatement is lighter for this lookup.
         params = {
@@ -100,7 +101,7 @@ class WikidataClient:
         return None
 
     @classmethod
-    def _search_qid_by_name(cls, name: str) -> Optional[str]:
+    def _search_qid_by_name(cls, name: str) -> str | None:
         params = {
             'action': 'wbsearchentities',
             'search': name,
@@ -122,7 +123,7 @@ class WikidataClient:
         return hits[0].get('id') if hits else None
 
     @classmethod
-    def _entity_to_composer(cls, qid: str) -> Optional[ComposerLookupResult]:
+    def _entity_to_composer(cls, qid: str) -> ComposerLookupResult | None:
         params = {
             'action': 'wbgetentities',
             'ids': qid,
@@ -178,7 +179,7 @@ class WikidataClient:
         )
 
     @classmethod
-    def _fetch_wikipedia_summary(cls, title: str) -> Optional[str]:
+    def _fetch_wikipedia_summary(cls, title: str) -> str | None:
         # The REST summary endpoint URL-encodes the title via path segment.
         url = f"{cls.WIKIPEDIA_SUMMARY}/{title.replace(' ', '_')}"
         data = cls._get(url, params=None)
@@ -213,7 +214,7 @@ class WikidataClient:
         return label.strip() or qid
 
     @classmethod
-    def _get(cls, url: str, params: Optional[dict]) -> Optional[dict]:
+    def _get(cls, url: str, params: dict | None) -> dict | None:
         try:
             result = cached_get_json(source=cls.SOURCE, url=url, params=params)
             return result.data
@@ -229,7 +230,7 @@ class WikidataClient:
 # Claim parsers — Wikidata's JSON shape is nested and verbose
 # ---------------------------------------------------------------------------
 
-def _claim_year(claim_list: Optional[list]) -> Optional[int]:
+def _claim_year(claim_list: list | None) -> int | None:
     if not claim_list:
         return None
     try:
@@ -243,7 +244,7 @@ def _claim_year(claim_list: Optional[list]) -> Optional[int]:
     return None
 
 
-def _claim_country(claim_list: Optional[list]) -> str:
+def _claim_country(claim_list: list | None) -> str:
     """Return the bare country Q-id (e.g. 'Q34266'). Callers resolve to a label."""
     if not claim_list:
         return ""
@@ -253,7 +254,7 @@ def _claim_country(claim_list: Optional[list]) -> str:
         return ""
 
 
-def _claim_image(claim_list: Optional[list]) -> str:
+def _claim_image(claim_list: list | None) -> str:
     if not claim_list:
         return ""
     try:
@@ -265,7 +266,7 @@ def _claim_image(claim_list: Optional[list]) -> str:
     return f"https://commons.wikimedia.org/wiki/Special:FilePath/{filename.replace(' ', '_')}"
 
 
-def _period_from_birth_year(year: Optional[int]) -> str:
+def _period_from_birth_year(year: int | None) -> str:
     """Map a composer's birth year to our EpochChoices code."""
     if year is None:
         return ""

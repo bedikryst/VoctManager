@@ -7,16 +7,16 @@
 Database models for HR and Logistics entities.
 """
 import uuid
-import zoneinfo
-from django.utils import timezone
-from django.db import models
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
+from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
+from core.models import EnterpriseBaseModel
 
 DEFAULT_EVENT_TIMEZONE = 'Europe/Warsaw'
 
@@ -234,7 +234,7 @@ class Rehearsal(EnterpriseBaseModel):
     focus = models.CharField(max_length=200, blank=True, verbose_name=_("Rehearsal Focus"))
     is_mandatory = models.BooleanField(default=True, verbose_name=_("Is Mandatory"))
     invited_participations = models.ManyToManyField(
-        'Participation', blank=True, related_name='invited_rehearsals', verbose_name=_("Invited Singers")
+        Participation, blank=True, related_name='invited_rehearsals', verbose_name=_("Invited Singers")
     )
     
     class Meta:

@@ -12,11 +12,21 @@ management for audio tracks and divis/vocal requirements.
 """
 
 from django.contrib import admin
+
 from .models import (
-    Composer, Piece, Track, PieceVoiceRequirement,
-    Movement, ScoreEdition, Translation, Recording,
-    Annotation, ProgramNote, ProvenanceRecord,
+    Annotation,
+    Composer,
+    Movement,
+    Piece,
+    PieceVoiceRequirement,
+    ProgramNote,
+    ProvenanceRecord,
+    Recording,
+    ScoreEdition,
+    Track,
+    Translation,
 )
+
 
 @admin.register(Composer)
 class ComposerAdmin(admin.ModelAdmin):

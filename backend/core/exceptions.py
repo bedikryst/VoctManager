@@ -1,9 +1,10 @@
 # backend/core/exceptions.py
 import logging
-from rest_framework.views import exception_handler
-from rest_framework.response import Response
-from rest_framework import status
+
 from pydantic import ValidationError
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import exception_handler
 
 from archive.exceptions import ArchiveDomainException
 from roster.exceptions import RosterDomainException
@@ -54,7 +55,7 @@ def enterprise_exception_handler(exc, context) -> Response | None:
             "detail": str(exc),
             "instance": request_path
         }
-        logger.warning(f"Domain Rule Broken on {request_path}: {str(exc)}")
+        logger.warning(f"Domain Rule Broken on {request_path}: {exc!s}")
         return Response(payload, status=status.HTTP_400_BAD_REQUEST)
 
     response = exception_handler(exc, context)

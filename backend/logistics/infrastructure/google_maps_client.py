@@ -1,8 +1,8 @@
-import time
 import logging
+import time
+
 import requests
 from django.conf import settings
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class GoogleMapsClient:
     TIMEZONE_API_URL = "https://maps.googleapis.com/maps/api/timezone/json"
 
     @classmethod
-    def get_timezone(cls, latitude: float, longitude: float) -> Optional[str]:
+    def get_timezone(cls, latitude: float, longitude: float) -> str | None:
         """
         Fetches the IANA timezone string for given coordinates.
         Returns None if the API fails or the key is missing.

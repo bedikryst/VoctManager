@@ -1,17 +1,24 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.db.models import Prefetch, QuerySet
 
 from archive.models import (
-    ProgramNote, Recording, ScoreEdition, Track, Translation,
+    ProgramNote,
+    Recording,
+    ScoreEdition,
+    Track,
+    Translation,
 )
 from roster.models import Participation, ProgramItem, ProjectPieceCasting
 
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
-def get_artist_materials_queryset(user: AbstractBaseUser) -> QuerySet[Participation]:
+
+def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
     """
     CQRS Read Model for the Artist Materials Dashboard.
 

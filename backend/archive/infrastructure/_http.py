@@ -25,8 +25,9 @@ import hashlib
 import json
 import logging
 import time
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional
+from typing import Any
 
 import requests
 from django.conf import settings
@@ -87,8 +88,8 @@ def cached_get_json(
     *,
     source: str,
     url: str,
-    params: Optional[Mapping[str, Any]] = None,
-    headers: Optional[Mapping[str, str]] = None,
+    params: Mapping[str, Any] | None = None,
+    headers: Mapping[str, str] | None = None,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     max_retries: int = DEFAULT_MAX_RETRIES,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
@@ -118,7 +119,7 @@ def cached_get_json(
     if headers:
         merged_headers.update(headers)
 
-    last_exc: Optional[Exception] = None
+    last_exc: Exception | None = None
     for attempt in range(max_retries + 1):
         t0 = time.monotonic()
         try:
@@ -192,7 +193,7 @@ def _sleep_backoff(attempt: int) -> None:
     time.sleep(_backoff_seconds(attempt))
 
 
-def _retry_after_seconds(response: requests.Response) -> Optional[float]:
+def _retry_after_seconds(response: requests.Response) -> float | None:
     """Parse the Retry-After header (seconds only — we ignore HTTP-date variants)."""
     value = response.headers.get('Retry-After')
     if not value:

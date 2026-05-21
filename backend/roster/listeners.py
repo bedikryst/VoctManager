@@ -13,11 +13,13 @@ Standards: SaaS 2026, Loose Coupling, Event-Driven Architecture.
 """
 
 import logging
+
 from django.dispatch import receiver
 
 from archive.signals import piece_material_updated_event
+from notifications.models import NotificationLevel, NotificationType
 from notifications.tasks import send_bulk_notifications_task
-from notifications.models import NotificationType, NotificationLevel
+
 from .models import Participation
 
 logger = logging.getLogger(__name__)

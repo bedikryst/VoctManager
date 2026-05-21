@@ -1,6 +1,8 @@
 # notifications/serializers.py
 from rest_framework import serializers
-from .models import Notification
+
+from .models import DeviceType, Notification, NotificationType
+
 
 class NotificationSerializer(serializers.ModelSerializer):
     """
@@ -23,7 +25,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 class PushDeviceRegisterSerializer(serializers.Serializer):
     """Validates FCM token registration payload (iOS / Android)."""
     registration_token = serializers.CharField(min_length=10)
-    device_type = serializers.CharField(default="WEB", max_length=50)
+    device_type = serializers.ChoiceField(choices=DeviceType.choices, default=DeviceType.WEB)
 
 
 class WebPushSubscribeSerializer(serializers.Serializer):
@@ -34,7 +36,7 @@ class WebPushSubscribeSerializer(serializers.Serializer):
 
 class NotificationPreferenceUpdateSerializer(serializers.Serializer):
     """Validates granular preference update payload."""
-    notification_type = serializers.CharField(max_length=50)
+    notification_type = serializers.ChoiceField(choices=NotificationType.choices)
     email_enabled = serializers.BooleanField(required=False, allow_null=True)
     push_enabled = serializers.BooleanField(required=False, allow_null=True)
     sms_enabled = serializers.BooleanField(required=False, allow_null=True)

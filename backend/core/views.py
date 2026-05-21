@@ -4,31 +4,30 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 from django.contrib.auth import get_user_model, logout, update_session_auth_hash
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.password_validation import validate_password
-
-from rest_framework import generics, status, views
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.throttling import UserRateThrottle
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.http import HttpResponse, JsonResponse
+from django.middleware.csrf import get_token
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from pydantic import ValidationError
+from rest_framework import generics, status, views
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 
-from .ical_service import ICalGeneratorService
-from .serializers import UserMeSerializer, UserProfileSerializer
 from .dtos import (
-    UserPreferencesUpdateDTO,
-    UserPasswordChangeDTO,
-    UserEmailChangeDTO,
-    UserAccountDeletionDTO,
     UserAccountActivationDTO,
+    UserAccountDeletionDTO,
+    UserEmailChangeDTO,
+    UserPasswordChangeDTO,
+    UserPreferencesUpdateDTO,
 )
-from .services import UserIdentityService, UserPreferencesService
-from .exceptions import InvalidCredentialsException, EmailAlreadyInUseException
+from .exceptions import EmailAlreadyInUseException, InvalidCredentialsException
+from .ical_service import ICalGeneratorService
 from .models import UserProfile
-from django.middleware.csrf import get_token
+from .serializers import UserMeSerializer, UserProfileSerializer
+from .services import UserIdentityService, UserPreferencesService
 
 User = get_user_model()
 
@@ -109,11 +108,25 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
         Updates user preferences using strict Pydantic DTO validation before hitting the database.
         """
         try:
-            profile_data = request.data.get('profile', {})
+            profile = getattr(request.user, 'profile', None)
+            profile_data = request.data.get('profile') or {}
+            if not isinstance(profile_data, dict):
+                return Response(
+                    {"validation_errors": {"profile": ["Expected an object."]}},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             payload = {
                 "first_name": request.data.get('first_name', request.user.first_name),
                 "last_name": request.data.get('last_name', request.user.last_name),
-                **profile_data
+                "phone_number": getattr(profile, 'phone_number', ''),
+                "language": getattr(profile, 'language', 'en'),
+                "timezone": getattr(profile, 'timezone', 'Europe/Warsaw'),
+                "dietary_preference": getattr(profile, 'dietary_preference', 'none'),
+                "dietary_notes": getattr(profile, 'dietary_notes', ''),
+                "clothing_size": getattr(profile, 'clothing_size', ''),
+                "shoe_size": getattr(profile, 'shoe_size', ''),
+                "height_cm": getattr(profile, 'height_cm', None),
+                **profile_data,
             }
             # The DTO will automatically fail-fast if data is malformed
             dto = UserPreferencesUpdateDTO(**payload)

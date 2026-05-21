@@ -13,11 +13,19 @@ with comprehensive list displays, dynamic buttons, and relational filtering.
 
 from django.contrib import admin
 from django.utils.html import format_html
+
 from .models import (
-    Artist, Project, Participation, ProgramItem, 
-    Rehearsal, Attendance, ProjectPieceCasting, 
-    Collaborator, CrewAssignment
+    Artist,
+    Attendance,
+    Collaborator,
+    CrewAssignment,
+    Participation,
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+    Rehearsal,
 )
+
 
 @admin.register(Artist)
 class ArtistAdmin(admin.ModelAdmin):
@@ -53,6 +61,7 @@ class ParticipationAdmin(admin.ModelAdmin):
     list_filter = ('status', 'project')
     search_fields = ('artist__first_name', 'artist__last_name', 'project__title')
     
+    @admin.display(description="Dokumenty")
     def download_pdf_button(self, obj):
         """Generates a direct download button for the artist's PDF legal contract."""
         return format_html(
@@ -62,7 +71,6 @@ class ParticipationAdmin(admin.ModelAdmin):
             '📄 Pobierz Umowę</a>',
             obj.id
         )
-    download_pdf_button.short_description = "Dokumenty"
 
 
 @admin.register(ProjectPieceCasting)

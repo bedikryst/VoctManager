@@ -5,6 +5,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+
 class VoiceLine(models.TextChoices):
     """Standardized vocal lines and roles used across the entire VoctManager system."""
     SOPRANO_1 = 'S1', _('Soprano 1')

@@ -26,13 +26,14 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Optional
 
 from django.conf import settings
 
 from archive.dtos import RecordingLookupResult, RecordingSearchResult
 from archive.infrastructure._http import (
-    ExternalAPIError, ExternalAPIUnavailable, cached_get_json,
+    ExternalAPIError,
+    ExternalAPIUnavailable,
+    cached_get_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,9 +87,9 @@ class YouTubeClient:
             return empty
 
         video_ids = [
-            (item.get('id') or {}).get('videoId')
+            video_id
             for item in items
-            if (item.get('id') or {}).get('videoId')
+            if (video_id := (item.get('id') or {}).get('videoId'))
         ]
         if not video_ids:
             return empty
@@ -131,7 +132,7 @@ class YouTubeClient:
 
         duration_seconds = _parse_iso8601_duration(details.get('duration'))
 
-        year: Optional[int] = None
+        year: int | None = None
         published = snippet.get('publishedAt') or ''
         if len(published) >= 4:
             try:
@@ -152,7 +153,7 @@ class YouTubeClient:
         )
 
     @classmethod
-    def _get(cls, url: str, params: dict) -> Optional[dict]:
+    def _get(cls, url: str, params: dict) -> dict | None:
         try:
             result = cached_get_json(
                 source=cls.SOURCE,
@@ -177,7 +178,7 @@ class YouTubeClient:
 _ISO8601_DURATION = re.compile(r'^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$')
 
 
-def _parse_iso8601_duration(value: Optional[str]) -> Optional[int]:
+def _parse_iso8601_duration(value: str | None) -> int | None:
     if not value:
         return None
     match = _ISO8601_DURATION.match(value)

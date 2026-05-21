@@ -11,15 +11,24 @@ into JSON representations, optimizing nested queries for the frontend.
 """
 
 import json
-from django.db import transaction
+from typing import Any, cast
+
+from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
 
-from .models import (
-    Annotation, Composer, Movement, Piece, PieceVoiceRequirement,
-    ProgramNote, Recording, ScoreEdition, Track, Translation,
-)
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
-
+from .models import (
+    Annotation,
+    Composer,
+    Movement,
+    Piece,
+    PieceVoiceRequirement,
+    ProgramNote,
+    Recording,
+    ScoreEdition,
+    Track,
+    Translation,
+)
 
 _LEGACY_REFERENCE_RECORDING = object()
 
@@ -161,6 +170,7 @@ class _PieceEditionSummarySerializer(serializers.ModelSerializer):
 class _PieceSummarySerializer(serializers.ModelSerializer):
     """Slim piece payload embedded in ScoreEdition.detail responses."""
     composer = _ComposerSummarySerializer(read_only=True)
+    voice_requirements = PieceVoiceRequirementSerializer(many=True, read_only=True)
     movements = MovementSerializer(many=True, read_only=True)
     translations = TranslationSerializer(many=True, read_only=True)
     recordings = RecordingSerializer(many=True, read_only=True)
@@ -170,10 +180,10 @@ class _PieceSummarySerializer(serializers.ModelSerializer):
         model = Piece
         fields = [
             'id', 'title', 'composer', 'opus_catalog', 'musical_key',
-            'language', 'voicing', 'text_source',
+            'language', 'estimated_duration', 'voicing', 'text_source',
             'lyrics_original', 'lyrics_translation', 'lyrics_ipa',
             'composition_year', 'epoch', 'mbid_work',
-            'ingestion_status',
+            'ingestion_status', 'voice_requirements',
             'movements', 'translations', 'recordings', 'program_notes',
         ]
 
@@ -311,10 +321,7 @@ class PieceSerializer(serializers.ModelSerializer):
         return f"{obj.composer.first_name} {obj.composer.last_name}".strip()
 
     def to_internal_value(self, data):
-        if hasattr(data, 'copy'):
-            data = data.copy()
-        else:
-            data = dict(data)
+        data = data.copy() if hasattr(data, 'copy') else dict(data)
 
         # Back-compat: legacy write payloads send `composer: <uuid>`; the new
         # nested-read shape requires `composer_id` on write. Alias one to
@@ -390,11 +397,38 @@ class PieceSerializer(serializers.ModelSerializer):
         else:
             parsed_data = value
 
-        # Validate the structure eagerly
         if not isinstance(parsed_data, list):
             raise serializers.ValidationError("Requirements data must be a list of objects.")
+
+        validated_requirements = []
+        seen_voice_lines: set[str] = set()
+        duplicate_voice_lines: set[str] = set()
+
+        for index, requirement in enumerate(parsed_data):
+            if not isinstance(requirement, dict):
+                raise serializers.ValidationError({
+                    str(index): "Requirement entries must be objects."
+                })
+
+            try:
+                dto = VoiceRequirementDTO(**requirement)
+            except PydanticValidationError as exc:
+                # Pydantic's structured error list is passed through to the client; DRF
+                # serializes it as-is, so bridge the pydantic↔DRF error-detail types.
+                raise serializers.ValidationError({str(index): cast("list[Any]", exc.errors())}) from exc
+
+            if dto.voice_line in seen_voice_lines:
+                duplicate_voice_lines.add(dto.voice_line)
+            seen_voice_lines.add(dto.voice_line)
+            validated_requirements.append(dto.model_dump())
+
+        if duplicate_voice_lines:
+            duplicate_list = ", ".join(sorted(duplicate_voice_lines))
+            raise serializers.ValidationError(
+                f"requirements_data contains duplicate voice lines: {duplicate_list}."
+            )
             
-        return parsed_data
+        return validated_requirements
 
     def to_dto(self, instance=None) -> PieceWriteDTO:
         """
@@ -408,10 +442,10 @@ class PieceSerializer(serializers.ModelSerializer):
         if 'requirements_data' in vd and vd['requirements_data'] is not None:
             req_dtos = [
                 VoiceRequirementDTO(
-                    voice_line=req.get('voice_line'), 
-                    quantity=int(req.get('quantity', 1))
+                    voice_line=req['voice_line'],
+                    quantity=req['quantity']
                 )
-                for req in vd['requirements_data'] if req.get('voice_line')
+                for req in vd['requirements_data']
             ]
 
         # Handle fallback for updates
@@ -445,5 +479,9 @@ class PieceSerializer(serializers.ModelSerializer):
             ),
             composition_year=vd.get('composition_year', getattr(instance, 'composition_year', None)),
             epoch=vd.get('epoch', getattr(instance, 'epoch', '')),
+            opus_catalog=vd.get('opus_catalog', getattr(instance, 'opus_catalog', '')),
+            musical_key=vd.get('musical_key', getattr(instance, 'musical_key', '')),
+            text_source=vd.get('text_source', getattr(instance, 'text_source', '')),
+            lyrics_ipa=vd.get('lyrics_ipa', getattr(instance, 'lyrics_ipa', '')),
             voice_requirements=req_dtos
         )

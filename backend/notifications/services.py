@@ -15,7 +15,7 @@ Standards: SaaS 2026, ACID Compliant, Zero-State Leakage, Celery Safe-Serializat
 """
 
 import logging
-from typing import Optional
+
 from django.db import transaction
 
 from .dtos import NotificationCreateDTO, NotificationPreferenceUpdateDTO
@@ -30,7 +30,7 @@ class NotificationService:
     """
 
     @classmethod
-    def create_notification(cls, dto: NotificationCreateDTO) -> Optional[Notification]:
+    def create_notification(cls, dto: NotificationCreateDTO) -> Notification | None:
         """
         Provisions a new notification entity synchronously and registers 
         asynchronous side-effects (e.g., operational emails) upon transaction commit.
@@ -98,7 +98,7 @@ class NotificationPreferenceService:
         """
         Updates or creates granular notification channel preferences for a user.
         """
-        preference, created = NotificationPreference.objects.update_or_create(
+        preference, _created = NotificationPreference.objects.update_or_create(
             user_id=dto.user_id,
             notification_type=dto.notification_type,
             defaults={

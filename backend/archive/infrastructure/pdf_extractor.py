@@ -23,7 +23,9 @@ Standards: SaaS 2026, pypdf 5+ (the modern fork, PyPDF2 is retired).
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import io
 import logging
 from dataclasses import dataclass
 from typing import BinaryIO
@@ -68,7 +70,7 @@ def extract(file_handle: BinaryIO) -> ExtractedPdf:
         sha = hashlib.sha256(raw).hexdigest()
 
         try:
-            reader = PdfReader(_BytesReader(raw))
+            reader = PdfReader(io.BytesIO(raw))
         except PdfReadError as exc:
             raise PdfExtractionError(f"pypdf could not parse PDF: {exc}") from exc
 
@@ -92,10 +94,9 @@ def extract(file_handle: BinaryIO) -> ExtractedPdf:
             front_matter_text=front_matter_text,
         )
     finally:
-        try:
+        # FieldFile may not be seekable post-read; safe to swallow.
+        with contextlib.suppress(OSError, ValueError):
             file_handle.seek(start_pos)
-        except (OSError, ValueError):
-            pass  # FieldFile may not be seekable post-read; safe to swallow.
 
 
 def _extract_front_matter(reader: PdfReader, max_pages: int) -> str:
@@ -121,31 +122,3 @@ def _extract_front_matter(reader: PdfReader, max_pages: int) -> str:
         total_chars += len(text)
 
     return '\n\n'.join(chunks)
-
-
-class _BytesReader:
-    """Minimal BinaryIO-shaped wrapper so we can hash + parse in one read."""
-    def __init__(self, data: bytes) -> None:
-        self._data = data
-        self._pos = 0
-
-    def read(self, size: int = -1) -> bytes:
-        if size < 0 or self._pos + size > len(self._data):
-            chunk = self._data[self._pos:]
-            self._pos = len(self._data)
-            return chunk
-        chunk = self._data[self._pos:self._pos + size]
-        self._pos += size
-        return chunk
-
-    def seek(self, offset: int, whence: int = 0) -> int:
-        if whence == 0:
-            self._pos = offset
-        elif whence == 1:
-            self._pos += offset
-        elif whence == 2:
-            self._pos = len(self._data) + offset
-        return self._pos
-
-    def tell(self) -> int:
-        return self._pos

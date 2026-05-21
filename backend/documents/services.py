@@ -4,19 +4,23 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
+from typing import ClassVar
 from uuid import UUID
-from django.core.files.uploadedfile import UploadedFile
-from django.db.models import Count, Q, Prefetch
 
-from .models import DocumentCategory, Document
+from django.core.files.uploadedfile import UploadedFile
+from django.db.models import Count, Prefetch, Q
+from django.utils.functional import Promise
+
+from core.constants import AppRole, VoiceLine
+
 from .dtos import (
+    ArtistIdentityMetricsDTO,
     DocumentCategoryCreateDTO,
     DocumentCategoryUpdateDTO,
     DocumentCreateDTO,
     VocalLineEntryDTO,
-    ArtistIdentityMetricsDTO,
 )
-from core.constants import AppRole, VoiceLine
+from .models import Document, DocumentCategory
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +155,9 @@ class ArtistMetricsService:
     This service intentionally imports from `roster` as a read-only analytics layer.
     """
 
-    _VOICE_LINE_LABELS: dict[str, str] = {
+    # Labels stay lazy here so translation resolves in the active request language;
+    # they are materialized to concrete strings at the DTO boundary below.
+    _VOICE_LINE_LABELS: ClassVar[dict[str, str | Promise]] = {
         vl.value: vl.label for vl in VoiceLine
     }
 
@@ -186,7 +192,7 @@ class ArtistMetricsService:
         vocal_distribution = [
             VocalLineEntryDTO(
                 voice_line=entry['voice_line'],
-                voice_line_display=cls._VOICE_LINE_LABELS.get(entry['voice_line'], entry['voice_line']),
+                voice_line_display=str(cls._VOICE_LINE_LABELS.get(entry['voice_line'], entry['voice_line'])),
                 count=entry['count'],
             )
             for entry in casting_counts

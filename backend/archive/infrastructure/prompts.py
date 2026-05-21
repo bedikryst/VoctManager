@@ -163,7 +163,8 @@ EXTRACT_AND_TRANSLATE_LYRICS = Prompt(
         "    the language: Italianate Latin for Latin texts, German "
         "    Bühnendeutsch for German, Parisian French for French.\n"
         "  - Output one IPA line per text line. Maintain alignment exactly.\n"
-        "  - Mark stressed syllables with the IPA primary stress mark (ˈ).\n\n"
+        # The glyph below IS the IPA primary stress mark the model must emit verbatim.
+        "  - Mark stressed syllables with the IPA primary stress mark (ˈ).\n\n"  # noqa: RUF001
 
         "Translation rules:\n"
         "  - Default to literal/prose translation (is_singable=false) for "

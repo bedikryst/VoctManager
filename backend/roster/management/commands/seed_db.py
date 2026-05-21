@@ -9,25 +9,34 @@ Bypasses service layers to remain resilient against refactoring.
 
 import random
 from datetime import timedelta
-from django.utils import timezone
-from django.db import transaction
-from django.core.management.base import BaseCommand
-from django.contrib.auth import get_user_model
 
-# Core
-from core.constants import VoiceLine, DietaryChoices, ClothingSizeChoices, AppRole
-from core.models import UserProfile
+from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.utils import timezone
 
 # Archive
-from archive.models import Composer, Piece, PieceVoiceRequirement, EpochChoices
+from archive.models import Composer, EpochChoices, Piece, PieceVoiceRequirement
+
+# Core
+from core.constants import AppRole, ClothingSizeChoices, DietaryChoices, VoiceLine
+from core.models import UserProfile
 
 # Logistics
 from logistics.models import Location
 
 # Roster
 from roster.models import (
-    Artist, Project, Participation, VoiceType, ProgramItem, 
-    Rehearsal, Attendance, Collaborator, CrewAssignment, ProjectPieceCasting
+    Artist,
+    Attendance,
+    Collaborator,
+    CrewAssignment,
+    Participation,
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+    Rehearsal,
+    VoiceType,
 )
 
 User = get_user_model()
@@ -289,12 +298,16 @@ class Command(BaseCommand):
                 
                 # Assign artists to specific vocal divis in pieces
                 for p in participations:
-                    v_line = None
-                    if p.artist.voice_type == VoiceType.SOPRANO: v_line = VoiceLine.SOPRANO_1
-                    elif p.artist.voice_type == VoiceType.ALTO: v_line = VoiceLine.ALTO_1
-                    elif p.artist.voice_type == VoiceType.TENOR: v_line = VoiceLine.TENOR_1
-                    elif p.artist.voice_type == VoiceType.BASS: v_line = VoiceLine.BASS_1
-                    else: v_line = VoiceLine.SOPRANO_2
+                    if p.artist.voice_type == VoiceType.SOPRANO:
+                        v_line = VoiceLine.SOPRANO_1
+                    elif p.artist.voice_type == VoiceType.ALTO:
+                        v_line = VoiceLine.ALTO_1
+                    elif p.artist.voice_type == VoiceType.TENOR:
+                        v_line = VoiceLine.TENOR_1
+                    elif p.artist.voice_type == VoiceType.BASS:
+                        v_line = VoiceLine.BASS_1
+                    else:
+                        v_line = VoiceLine.SOPRANO_2
 
                     ProjectPieceCasting.objects.get_or_create(
                         participation=p, piece=piece,

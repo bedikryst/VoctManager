@@ -1,15 +1,12 @@
-from rest_framework import viewsets, status
-from rest_framework.response import Response
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-from .models import Location
-from .serializers import (
-    LocationSerializer, 
-    LocationCreateSerializer, 
-    LocationUpdateSerializer
-)
 from .dtos import LocationCreateDTO, LocationUpdateDTO
+from .models import Location
+from .serializers import LocationCreateSerializer, LocationSerializer, LocationUpdateSerializer
 from .services import LogisticsService
+
 
 class LocationViewSet(viewsets.ModelViewSet):
     """

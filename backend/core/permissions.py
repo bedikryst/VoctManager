@@ -4,7 +4,8 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 from rest_framework import permissions
-from django.db import models
+
+from core.models import UserProfile
 
 
 class BaseEnterprisePermission(permissions.BasePermission):
@@ -13,7 +14,7 @@ class BaseEnterprisePermission(permissions.BasePermission):
     Prevents AttributeError when handling unauthenticated requests or broken relations.
     """
 
-    def _get_profile(self, request) -> models.Model | None:
+    def _get_profile(self, request) -> UserProfile | None:
         if not request.user or not request.user.is_authenticated:
             return None
         return getattr(request.user, 'profile', None)

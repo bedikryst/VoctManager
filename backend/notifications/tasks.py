@@ -13,13 +13,13 @@ Standards: SaaS 2026, Scalable Fan-Out, Strict Payload Rehydration.
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Union
-from uuid import UUID
-from celery import shared_task, group
+from typing import Any
 
-from .services import NotificationService
+from celery import group, shared_task
+
 from .dtos import NotificationCreateDTO
 from .models import NotificationLevel
+from .services import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,10 @@ logger = logging.getLogger(__name__)
 )
 def send_notification_task(
     self, 
-    recipient_id: Union[int, str, UUID], 
+    recipient_id: int | str,
     notification_type: str, 
     level: str = NotificationLevel.INFO, 
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 ) -> None:
     """
     Entry boundary. Rehydrates payloads into strictly validated DTOs and delegates to service.
@@ -63,7 +63,7 @@ def send_notification_task(
 def route_notification_task(
     recipient_id: str,
     notification_type: str,
-    metadata: Dict[str, Any],
+    metadata: dict[str, Any],
     level: str = NotificationLevel.INFO,
 ) -> None:
     """
@@ -92,7 +92,7 @@ def send_push_notification_task(
     self,
     recipient_id: str,
     notification_type: str,
-    metadata: Dict[str, Any],
+    metadata: dict[str, Any],
     level: str = NotificationLevel.INFO,
 ) -> None:
     """
@@ -116,10 +116,10 @@ def send_push_notification_task(
 
 @shared_task(name="notifications.send_bulk_notifications")
 def send_bulk_notifications_task(
-    recipient_ids: List[Union[int, str, UUID]], 
+    recipient_ids: list[int | str], 
     notification_type: str, 
     level: str = NotificationLevel.INFO, 
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 ) -> None:
     """
     Optimized Fan-Out orchestrator for broadcast events.

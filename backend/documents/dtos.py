@@ -3,9 +3,39 @@
 # Chorister Hub Data Transfer Objects (DTOs)
 # Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from core.constants import AppRole, VoiceLine
+
+from .models import DocumentIconKey
+
+APP_ROLE_VALUES = frozenset(AppRole.values)
+DOCUMENT_ICON_VALUES = frozenset(DocumentIconKey.values)
+VOICE_LINE_VALUES = frozenset(VoiceLine.values)
+
+
+def _require_choice(value: str, allowed_values: frozenset[str], field_name: str) -> str:
+    if value not in allowed_values:
+        allowed = ", ".join(sorted(allowed_values))
+        raise ValueError(f"{field_name} must be one of: {allowed}.")
+    return value
+
+
+def _validate_roles(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for value in values:
+        _require_choice(value, APP_ROLE_VALUES, "allowed_roles")
+        if value in seen:
+            duplicates.add(value)
+        seen.add(value)
+
+    if duplicates:
+        duplicate_list = ", ".join(sorted(duplicates))
+        raise ValueError(f"allowed_roles contains duplicates: {duplicate_list}.")
+    return values
 
 
 class DocumentsBaseDTO(BaseModel):
@@ -20,13 +50,33 @@ class DocumentCategoryCreateDTO(DocumentsBaseDTO):
     order: int = Field(default=0, ge=0)
     allowed_roles: list[str] = Field(..., min_length=1)
 
+    @field_validator("icon_key")
+    @classmethod
+    def validate_icon_key(cls, value: str) -> str:
+        return _require_choice(value, DOCUMENT_ICON_VALUES, "icon_key")
+
+    @field_validator("allowed_roles")
+    @classmethod
+    def validate_allowed_roles(cls, value: list[str]) -> list[str]:
+        return _validate_roles(value)
+
 
 class DocumentCategoryUpdateDTO(DocumentsBaseDTO):
-    name: Optional[str] = Field(None, min_length=1, max_length=120)
-    description: Optional[str] = Field(None, max_length=2000)
-    icon_key: Optional[str] = Field(None, max_length=20)
-    order: Optional[int] = Field(None, ge=0)
-    allowed_roles: Optional[list[str]] = None
+    name: str | None = Field(None, min_length=1, max_length=120)
+    description: str | None = Field(None, max_length=2000)
+    icon_key: str | None = Field(None, max_length=20)
+    order: int | None = Field(None, ge=0)
+    allowed_roles: list[str] | None = Field(None, min_length=1)
+
+    @field_validator("icon_key")
+    @classmethod
+    def validate_icon_key(cls, value: str | None) -> str | None:
+        return _require_choice(value, DOCUMENT_ICON_VALUES, "icon_key") if value is not None else value
+
+    @field_validator("allowed_roles")
+    @classmethod
+    def validate_allowed_roles(cls, value: list[str] | None) -> list[str] | None:
+        return _validate_roles(value) if value is not None else value
 
 
 class DocumentCreateDTO(DocumentsBaseDTO):
@@ -35,7 +85,12 @@ class DocumentCreateDTO(DocumentsBaseDTO):
     description: str = Field(default='', max_length=2000)
     allowed_roles: list[str] = Field(default_factory=list)
     order: int = Field(default=0, ge=0)
-    uploaded_by_id: Optional[int] = None
+    uploaded_by_id: int | None = None
+
+    @field_validator("allowed_roles")
+    @classmethod
+    def validate_allowed_roles(cls, value: list[str]) -> list[str]:
+        return _validate_roles(value)
 
 
 class ArtistMetricsQueryDTO(DocumentsBaseDTO):
@@ -48,14 +103,19 @@ class VocalLineEntryDTO(BaseModel):
 
     voice_line: str
     voice_line_display: str
-    count: int
+    count: int = Field(..., ge=0)
+
+    @field_validator("voice_line")
+    @classmethod
+    def validate_voice_line(cls, value: str) -> str:
+        return _require_choice(value, VOICE_LINE_VALUES, "voice_line")
 
 
 class ArtistIdentityMetricsDTO(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    total_concerts: int
-    active_seasons: int
+    total_concerts: int = Field(..., ge=0)
+    active_seasons: int = Field(..., ge=0)
     season_years: list[int]
     vocal_line_distribution: list[VocalLineEntryDTO]
-    first_project_year: Optional[int]
+    first_project_year: int | None

@@ -1,9 +1,12 @@
 # core/ical_service.py
-import uuid
 from datetime import timedelta
+
 from django.utils import timezone
-from django.utils.translation import gettext as _, override
-from roster.models import Project, Rehearsal, Participation
+from django.utils.translation import gettext as _
+from django.utils.translation import override
+
+from roster.models import Participation, Project, Rehearsal
+
 
 class ICalGeneratorService:
     """

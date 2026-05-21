@@ -12,15 +12,15 @@ Standards: SaaS 2026, Cloud-Native Storage Ready, Soft-Delete Compliant.
 ===============================================================================
 """
 
-from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
-from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
 from core.constants import VoiceLine
+from core.models import EnterpriseBaseModel
 
 
 def validate_file_size(value) -> None:
@@ -351,7 +351,8 @@ class ScoreEdition(EnterpriseBaseModel):
 
     def __str__(self) -> str:
         suffix = f" ({self.publisher})" if self.publisher else ""
-        return f"{self.piece.title}{suffix}"
+        title = self.piece.title if self.piece else _("Unassigned edition")
+        return f"{title}{suffix}"
 
 
 class Translation(EnterpriseBaseModel):
@@ -388,7 +389,7 @@ class Translation(EnterpriseBaseModel):
         ]
 
     def __str__(self) -> str:
-        scope = self.movement.title if self.movement_id else self.piece.title
+        scope = self.movement.title if self.movement else self.piece.title
         return f"{scope} [{self.target_language}]"
 
 
@@ -511,7 +512,7 @@ class ProgramNote(EnterpriseBaseModel):
         ]
 
     def __str__(self) -> str:
-        scope = f"{self.project.title} / " if self.project_id else ""
+        scope = f"{self.project.title} / " if self.project else ""
         return f"{scope}{self.piece.title} ({self.language})"
 
 

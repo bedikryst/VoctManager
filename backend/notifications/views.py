@@ -1,31 +1,34 @@
 # notifications/views.py
 import logging
+
 from django.utils import timezone
-from rest_framework import viewsets, status, views
+from rest_framework import status, views, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
 
-from .models import Notification, NotificationPreference, NotificationType, NotificationLevel
 from core.constants import AppRole
-from .serializers import (
-    NotificationSerializer,
-    PushDeviceRegisterSerializer,
-    WebPushSubscribeSerializer,
-    NotificationPreferenceUpdateSerializer,
-    SendToArtistSerializer,
-)
+from core.request_utils import request_user
+
 from .dtos import (
+    CustomAdminMessageMetadata,
+    NotificationCreateDTO,
+    NotificationPreferenceUpdateDTO,
+    NotificationReadReceiptMetadata,
     PushDeviceRegisterDTO,
     WebPushSubscribeDTO,
-    NotificationPreferenceUpdateDTO,
-    CustomAdminMessageMetadata,
-    NotificationReadReceiptMetadata,
-    NotificationCreateDTO,
+)
+from .models import Notification, NotificationLevel, NotificationPreference, NotificationType
+from .push_service import PushDispatcherService
+from .serializers import (
+    NotificationPreferenceUpdateSerializer,
+    NotificationSerializer,
+    PushDeviceRegisterSerializer,
+    SendToArtistSerializer,
+    WebPushSubscribeSerializer,
 )
 from .services import NotificationPreferenceService
-from .push_service import PushDispatcherService
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +42,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Ensure users can only access their own notifications."""
-        return Notification.objects.filter(recipient=self.request.user)
+        return Notification.objects.filter(recipient=request_user(self.request))
 
     @action(detail=False, methods=['get'], url_path='unread-count')
     def unread_count(self, request: Request) -> Response:
@@ -51,7 +54,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({"unread_count": count}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['patch'], url_path='mark-read')
-    def mark_read(self, request: Request, pk: str = None) -> Response:
+    def mark_read(self, request: Request, pk: str) -> Response:
         """Marks a specific notification as read. Dispatches read receipt for CUSTOM_ADMIN_MESSAGE."""
         notification = self.get_object()
         if not notification.is_read:
@@ -81,7 +84,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
                 artist_name=artist_name or artist.email,
                 artist_id=str(artist.id),
                 original_title=meta.get('title', ''),
-                read_at=notification.read_at.isoformat(),
+                read_at=(notification.read_at or timezone.now()).isoformat(),
             )
             dto = NotificationCreateDTO(
                 recipient_id=str(sender_id),
@@ -118,11 +121,12 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         if not artist.user_id:
             return Response({"detail": "Artist has no linked user account."}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-        sender_name = request.user.get_full_name() or request.user.email
+        sender = request_user(request)
+        sender_name = sender.get_full_name() or sender.email
         meta = CustomAdminMessageMetadata(
             title=data['title'],
             message=data['message'],
-            sender_id=str(request.user.id),
+            sender_id=str(sender.id),
             sender_name=sender_name,
             level=data['level'],
             cta_url=data.get('cta_url') or None,
@@ -163,31 +167,32 @@ class PushDeviceViewSet(viewsets.ViewSet):
         - Web Push (VAPID): payload contains endpoint + p256dh_key + auth_key
         - FCM (mobile): payload contains registration_token + device_type
         """
+        user_id = request_user(request).id
         if 'endpoint' in request.data:
-            serializer = WebPushSubscribeSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            dto = WebPushSubscribeDTO(
-                user_id=request.user.id,
-                endpoint=serializer.validated_data['endpoint'],
-                p256dh_key=serializer.validated_data['p256dh_key'],
-                auth_key=serializer.validated_data['auth_key'],
+            web_serializer = WebPushSubscribeSerializer(data=request.data)
+            web_serializer.is_valid(raise_exception=True)
+            web_dto = WebPushSubscribeDTO(
+                user_id=user_id,
+                endpoint=web_serializer.validated_data['endpoint'],
+                p256dh_key=web_serializer.validated_data['p256dh_key'],
+                auth_key=web_serializer.validated_data['auth_key'],
             )
-            PushDispatcherService.register_web_push(dto)
+            PushDispatcherService.register_web_push(web_dto)
         else:
-            serializer = PushDeviceRegisterSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            dto = PushDeviceRegisterDTO(
-                user_id=request.user.id,
-                registration_token=serializer.validated_data['registration_token'],
-                device_type=serializer.validated_data.get('device_type', 'WEB'),
+            fcm_serializer = PushDeviceRegisterSerializer(data=request.data)
+            fcm_serializer.is_valid(raise_exception=True)
+            fcm_dto = PushDeviceRegisterDTO(
+                user_id=user_id,
+                registration_token=fcm_serializer.validated_data['registration_token'],
+                device_type=fcm_serializer.validated_data.get('device_type', 'WEB'),
             )
-            PushDispatcherService.register_device(dto)
+            PushDispatcherService.register_device(fcm_dto)
 
         return Response(status=status.HTTP_201_CREATED)
 
-    def destroy(self, request: Request, pk: str = None) -> Response:
+    def destroy(self, request: Request, pk: str) -> Response:
         """Unregisters a push subscription. pk is the endpoint URL or FCM token."""
-        PushDispatcherService.unregister_device(user_id=request.user.id, token=pk)
+        PushDispatcherService.unregister_device(user_id=str(request_user(request).id), token=pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def test_push(self, request: Request) -> Response:
@@ -236,7 +241,7 @@ class NotificationPreferenceAPIView(views.APIView):
             NotificationType.CONTRACT_ISSUED.value,
         }
 
-        prefs = {p.notification_type: p for p in NotificationPreference.objects.filter(user=request.user)}
+        prefs = {p.notification_type: p for p in NotificationPreference.objects.filter(user=request_user(request))}
         data = []
         for choice in NotificationType:
             if choice.value in MANAGER_ONLY and not is_manager:
@@ -256,7 +261,7 @@ class NotificationPreferenceAPIView(views.APIView):
             })
         return Response(data)
     
-    def patch(self, request: Request, notification_type: str = None) -> Response:
+    def patch(self, request: Request, notification_type: str | None = None) -> Response:
         """Updates specific notification channels based on notification_type."""
         data = request.data.copy()
         if notification_type and 'notification_type' not in data:
@@ -266,7 +271,7 @@ class NotificationPreferenceAPIView(views.APIView):
         serializer.is_valid(raise_exception=True)
         
         dto = NotificationPreferenceUpdateDTO(
-            user_id=request.user.id,
+            user_id=request_user(request).id,
             **serializer.validated_data
         )
         

@@ -10,8 +10,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Tuple
+from typing import Any
 
 from django.utils.translation import gettext as _
 
@@ -38,7 +39,7 @@ class PushContext:
     """Inputs handed to every per-type composer. Frozen for safety."""
     notification_type: str
     level: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     is_manager: bool
 
 
@@ -51,9 +52,9 @@ class PushPayload:
     tag: str
     notification_type: str
     level: str
-    actions: Tuple[PushAction, ...] = field(default_factory=tuple)
+    actions: tuple[PushAction, ...] = field(default_factory=tuple)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "title": _truncate(self.title, _MAX_TITLE_LEN),
             "body": _truncate(self.body, _MAX_BODY_LEN),
@@ -466,7 +467,7 @@ def _compose_custom_admin_message(ctx: PushContext) -> PushPayload:
     body = f"{subject} — {message}" if message else subject
     cta_url = m.get("cta_url") or _settings_notifications_url()
 
-    actions = (_open_action(),)
+    actions: tuple[PushAction, ...] = (_open_action(),)
     if m.get("cta_label"):
         actions = (PushAction(action="cta", title=str(m["cta_label"])), _dismiss_action())
 
@@ -521,7 +522,7 @@ def _compose_default(ctx: PushContext) -> PushPayload:
 
 _Composer = Callable[[PushContext], PushPayload]
 
-_COMPOSERS: Dict[str, _Composer] = {
+_COMPOSERS: dict[str, _Composer] = {
     NotificationType.PROJECT_INVITATION: _compose_project_invitation,
     NotificationType.PROJECT_UPDATED: _compose_project_updated,
     NotificationType.PROJECT_CANCELLED: _compose_project_cancelled,
@@ -556,7 +557,7 @@ class PushPayloadBuilder:
         cls,
         notification_type: str,
         level: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         *,
         is_manager: bool,
     ) -> PushPayload:
@@ -569,7 +570,7 @@ class PushPayloadBuilder:
         composer = _COMPOSERS.get(notification_type, _compose_default)
         try:
             return composer(ctx)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning(
                 "[PushPayloadBuilder] Composer for %s failed (%s); using default.",
                 notification_type, exc,

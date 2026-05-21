@@ -3,11 +3,14 @@
 # Chorister Hub DRF Serializers
 # Standard: Enterprise SaaS 2026
 # ==========================================
-import magic
+from typing import Any, cast
+
 from rest_framework import serializers
 
 from core.constants import AppRole
-from .models import DocumentCategory, Document, DocumentIconKey
+
+from .file_detection import FileTypeDetectionUnavailableError, detect_mime_from_buffer
+from .models import Document, DocumentCategory, DocumentIconKey
 
 _ALLOWED_MIME_TYPES: frozenset[str] = frozenset({
     'application/pdf',
@@ -63,9 +66,11 @@ class DocumentCategorySerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-    def get_documents(self, obj: DocumentCategory) -> list[dict]:
+    def get_documents(self, obj: DocumentCategory) -> list[dict[str, Any]]:
         docs = obj.documents.all()
-        return DocumentSerializer(docs, many=True, context=self.context).data
+        # `many=True` yields a ReturnList at runtime; drf-stubs still types `.data` as
+        # ReturnDict, so narrow it to the real shape for the OpenAPI schema and callers.
+        return cast("list[dict[str, Any]]", DocumentSerializer(docs, many=True, context=self.context).data)
 
 
 class DocumentCategoryCreateSerializer(serializers.Serializer):
@@ -114,7 +119,13 @@ class DocumentUploadSerializer(serializers.Serializer):
         chunk = value.read(_MAGIC_CHUNK_BYTES)
         value.seek(0)
 
-        detected_mime = magic.from_buffer(chunk, mime=True)
+        try:
+            detected_mime = detect_mime_from_buffer(chunk)
+        except FileTypeDetectionUnavailableError as exc:
+            raise serializers.ValidationError(
+                "File type detection is unavailable on this server."
+            ) from exc
+
         if detected_mime not in _ALLOWED_MIME_TYPES:
             raise serializers.ValidationError(
                 f"File type '{detected_mime}' is not permitted. "

@@ -28,7 +28,6 @@ from __future__ import annotations
 import base64
 import logging
 import time
-from typing import Optional
 
 import requests
 from django.conf import settings
@@ -36,7 +35,9 @@ from django.core.cache import cache
 
 from archive.dtos import RecordingLookupResult, RecordingSearchResult
 from archive.infrastructure._http import (
-    ExternalAPIError, ExternalAPIUnavailable, cached_get_json,
+    ExternalAPIError,
+    ExternalAPIUnavailable,
+    cached_get_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -128,7 +129,7 @@ class SpotifyClient:
             (a.get('name') or '').strip() for a in artists if a.get('name')
         )
         album = track.get('album') or {}
-        year: Optional[int] = None
+        year: int | None = None
         release_date = album.get('release_date') or ''
         if release_date:
             try:
@@ -149,7 +150,7 @@ class SpotifyClient:
         )
 
     @classmethod
-    def _get_access_token(cls) -> Optional[str]:
+    def _get_access_token(cls) -> str | None:
         cached_token = cache.get(cls._TOKEN_CACHE_KEY)
         if cached_token:
             return cached_token
@@ -161,7 +162,7 @@ class SpotifyClient:
             return None
 
         basic = base64.b64encode(
-            f'{client_id}:{client_secret}'.encode('utf-8')
+            f'{client_id}:{client_secret}'.encode()
         ).decode('ascii')
 
         try:

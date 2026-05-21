@@ -9,42 +9,73 @@ Strictly handles HTTP protocol parsing, RBAC-based QuerySet routing, and Respons
 Delegates ALL state-mutating business logic to the Service Layer.
 """
 import io
-from django.db.models import Q, Count, Prefetch
+
+from django.db.models import Count, Prefetch, Q
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
-from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, permissions, status
+from pydantic import ValidationError
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
-from pydantic import ValidationError
-from django.utils import timezone
 
-from archive.models import Track, PieceVoiceRequirement
+from archive.models import PieceVoiceRequirement, Track
 from core.constants import VoiceLine
-from core.permissions import IsManager, IsManagerOrReadOnly, IsOwnerOrManager
-
-from .infrastructure.document_generator import DocumentGenerator
+from core.permissions import IsManager, IsManagerOrReadOnly
+from core.request_utils import request_user
 
 from .dashboard_serializers import ParticipationMaterialsSerializer
 from .dtos import (
-    ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO,
-    ProjectCreateDTO, ProjectUpdateDTO,
-    RehearsalCreateDTO, RehearsalUpdateDTO
+    ArtistCreateDTO,
+    AttendanceRecordDTO,
+    ParticipationStatusUpdateDTO,
+    ProjectBulkFeeDTO,
+    ProjectCreateDTO,
+    ProjectUpdateDTO,
+    RehearsalCreateDTO,
+    RehearsalUpdateDTO,
 )
-from .queries import get_artist_materials_queryset
-from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService, CastingAndCrewService, ParticipationService
+from .exceptions import ArtistProvisioningException, AttendanceValidationException, CastingValidationException
+from .infrastructure.document_generator import DocumentGenerator
 
 # Models & Exceptions
-from .models import Artist, CrewAssignment, Project, Participation, ProgramItem, Rehearsal, Attendance, VoiceType, ProjectPieceCasting, Collaborator
-from .exceptions import ArtistProvisioningException, AttendanceValidationException, CastingValidationException
+from .models import (
+    Artist,
+    Attendance,
+    Collaborator,
+    CrewAssignment,
+    Participation,
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+    Rehearsal,
+    VoiceType,
+)
+from .queries import get_artist_materials_queryset
 
 # Serializers
 from .serializers import (
-    CollaboratorSerializer, CrewAssignmentSerializer, ArtistMeSerializer,
-    ProgramItemSerializer, ProjectSerializer, RehearsalSerializer, 
-    AttendanceSerializer, ProjectPieceCastingSerializer, ArtistBasicSerializer, 
-    ArtistDetailedSerializer, ParticipationBasicSerializer, ParticipationDetailedSerializer, 
+    ArtistBasicSerializer,
+    ArtistDetailedSerializer,
+    ArtistMeSerializer,
+    AttendanceSerializer,
+    CollaboratorSerializer,
+    CrewAssignmentSerializer,
+    ParticipationBasicSerializer,
+    ParticipationDetailedSerializer,
+    ProgramItemSerializer,
+    ProjectPieceCastingSerializer,
+    ProjectSerializer,
+    RehearsalSerializer,
 )
+from .services import (
+    ArtistHRService,
+    CastingAndCrewService,
+    ParticipationService,
+    ProjectManagementService,
+    RehearsalOperationsService,
+)
+
 
 def _is_manager(user) -> bool:
     """Helper for evaluating manager privileges safely."""
@@ -63,11 +94,13 @@ class ArtistViewSet(viewsets.ModelViewSet):
         # Data Partitioning: Managers see everyone, Artists see restricted subsets or everyone (depending on biz rules). 
         # Here we allow seeing all active artists, but serializers will strip sensitive data.
         qs = Artist.objects.select_related('user').all()
-        return qs if _is_manager(self.request.user) else qs.filter(user=self.request.user)
+        return qs if _is_manager(self.request.user) else qs.filter(user=request_user(self.request))
     
     def get_serializer_class(self):
-        if _is_manager(self.request.user): return ArtistDetailedSerializer
-        if self.action == 'me': return ArtistMeSerializer
+        if _is_manager(self.request.user):
+            return ArtistDetailedSerializer
+        if self.action == 'me':
+            return ArtistMeSerializer
         return ArtistBasicSerializer
     
     def create(self, request, *args, **kwargs) -> Response:
@@ -119,7 +152,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status']
 
     def get_queryset(self):
-        user = self.request.user
+        user = request_user(self.request)
         now = timezone.now()
         
         _active_parts = Q(participations__is_deleted=False)
@@ -192,7 +225,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get', 'post', 'delete'], url_path='score_pdf',
             permission_classes=[permissions.IsAuthenticated])
-    def score_pdf(self, request, pk=None) -> Response:
+    def score_pdf(self, request, pk=None) -> Response | FileResponse:
         """
         Manages the project score PDF.
         GET  — All authenticated users who have access to this project.
@@ -341,7 +374,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     filterset_fields = ['project', 'artist', 'status']
 
     def get_queryset(self):
-        user = self.request.user
+        user = request_user(self.request)
         qs = Participation.objects.select_related('artist__user', 'artist', 'project').all()
         return qs if _is_manager(user) else qs.filter(artist__user=user)
 
@@ -365,7 +398,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         hierarchy, including tracks and castings, resolved in a fixed number of
         SQL queries via pre-fetched to_attr lists.
         """
-        queryset = get_artist_materials_queryset(request.user)
+        queryset = get_artist_materials_queryset(request_user(request))
         serializer = ParticipationMaterialsSerializer(
             queryset,
             many=True,
@@ -397,11 +430,12 @@ class ParticipationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        new_status = request.data.get('status')
-        if not new_status:
-            return Response({"error": "The 'status' field is required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            dto = ParticipationStatusUpdateDTO(**request.data)
+        except ValidationError as e:
+            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
 
-        updated_participation = ParticipationService.update_status_by_artist(participation, new_status)
+        updated_participation = ParticipationService.update_status_by_artist(participation, dto.status)
         
         return Response(self.get_serializer(updated_participation).data, status=status.HTTP_200_OK)
     
@@ -415,8 +449,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Attendance.objects.select_related('rehearsal', 'rehearsal__project', 'participation', 'participation__artist', 'participation__artist__user')
-        if _is_manager(self.request.user): return qs
-        return qs.filter(participation__artist__user=self.request.user)
+        if _is_manager(self.request.user):
+            return qs
+        return qs.filter(participation__artist__user=request_user(self.request))
 
     def create(self, request, *args, **kwargs) -> Response:
         try:
@@ -441,13 +476,14 @@ class RehearsalViewSet(viewsets.ModelViewSet):
     filterset_fields = ['project', 'invited_participations__artist']
 
     def get_queryset(self):
-        user = self.request.user
+        user = request_user(self.request)
         absent_annotation = Count('attendances', filter=Q(attendances__status__in=['ABSENT', 'EXCUSED']))
         qs = Rehearsal.objects.select_related('project').prefetch_related(
             'invited_participations', 'invited_participations__artist'
         ).annotate(absent_count=absent_annotation)
 
-        if _is_manager(user): return qs
+        if _is_manager(user):
+            return qs
         return qs.filter(project__participations__artist__user=user).filter(
             Q(invited_participations__isnull=True) | Q(invited_participations__artist__user=user)
         ).distinct()

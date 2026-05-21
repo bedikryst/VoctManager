@@ -4,12 +4,14 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import uuid
+
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
-from .constants import AppRole, DietaryChoices, ClothingSizeChoices
+from .constants import AppRole, ClothingSizeChoices, DietaryChoices
+
 
 class SoftDeleteQuerySet(models.QuerySet):
     """
@@ -82,6 +84,7 @@ class UserProfile(EnterpriseBaseModel):
     class LanguageChoices(models.TextChoices):
         ENGLISH = 'en', _('English')
         POLISH = 'pl', _('Polish')
+        FRENCH = 'fr', _('French')
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

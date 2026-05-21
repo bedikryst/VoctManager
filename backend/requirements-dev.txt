@@ -1,0 +1,8 @@
+-r requirements.txt
+
+# Static analysis and type checking
+ruff==0.15.12
+mypy==2.0.0
+django-stubs[compatible-mypy]==6.0.4
+djangorestframework-stubs[compatible-mypy]==3.17.0
+types-requests>=2.32.0

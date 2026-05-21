@@ -9,48 +9,66 @@ Encapsulates all database transactions, state mutations, and side-effects.
 Views MUST delegate all business logic to these stateless classes.
 """
 import logging
-import unicodedata
+from datetime import date, datetime, time
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
-from typing import Optional, List, Dict, Any
-from django.conf import settings
-from django.utils import timezone
-from django.db import transaction
+
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.utils import timezone
+
 from core.exceptions import EmailAlreadyInUseException
-from notifications.email_service import EmailType
-
-
-from core.models import UserProfile
-from notifications.tasks import send_notification_task, send_bulk_notifications_task
-from notifications.email_tasks import send_transactional_email_task
-from notifications.models import NotificationType, NotificationLevel
-from notifications.services import NotificationRecipientPolicy
+from core.services import UserIdentityService
+from logistics.models import Location
 from notifications.dtos import (
+    AbsenceStatusMetadata,
     ManagerActionMetadata,
-    ProjectInvitationMetadata, 
+    PieceCastingMetadata,
+    ProjectInvitationMetadata,
     ProjectUpdatedMetadata,
+    RehearsalCancelledMetadata,
     RehearsalScheduledMetadata,
     RehearsalUpdatedMetadata,
-    RehearsalCancelledMetadata,
-    PieceCastingMetadata,
-    CrewAssignedMetadata,
-    AbsenceStatusMetadata
 )
+from notifications.models import NotificationLevel, NotificationType
+from notifications.services import NotificationRecipientPolicy
+from notifications.tasks import send_bulk_notifications_task, send_notification_task
 
-from core.services import UserIdentityService
-from .models import (
-    Artist, Project, Participation, ProgramItem, 
-    ProjectPieceCasting, Rehearsal, Attendance, CrewAssignment
+from .dtos import (
+    ArtistCreateDTO,
+    AttendanceRecordDTO,
+    ProjectBulkFeeDTO,
+    ProjectCreateDTO,
+    ProjectUpdateDTO,
+    RehearsalCreateDTO,
+    RehearsalUpdateDTO,
 )
-from logistics.models import Location
-from .dtos import RehearsalCreateDTO, RehearsalUpdateDTO, ArtistCreateDTO, AttendanceRecordDTO, ProjectBulkFeeDTO, ProjectUpdateDTO, ProjectCreateDTO
-from .exceptions import ArtistProvisioningException, AttendanceValidationException, ParticipationException, CastingValidationException
-from typing import Tuple
+from .exceptions import (
+    ArtistProvisioningException,
+    AttendanceValidationException,
+    CastingValidationException,
+    ParticipationException,
+)
+from .models import (
+    Artist,
+    Attendance,
+    CrewAssignment,
+    Participation,
+    Project,
+    ProjectPieceCasting,
+    Rehearsal,
+)
 
 logger = logging.getLogger(__name__)
-User = get_user_model()
 
-def resolve_location_and_timezone(location_id: Optional[UUID], fallback_timezone: str) -> Tuple[Optional[Location], str]:
+# Bind the concrete user model under TYPE_CHECKING so annotations resolve, while
+# keeping the dynamic swappable-model lookup at runtime.
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+else:
+    User = get_user_model()
+
+def resolve_location_and_timezone(location_id: UUID | None, fallback_timezone: str) -> tuple[Location | None, str]:
     """
     Enforces Single Source of Truth for timezones based on the Logistics module.
     """
@@ -64,7 +82,21 @@ def resolve_location_and_timezone(location_id: Optional[UUID], fallback_timezone
     except Location.DoesNotExist:
         logger.warning(f"Location with ID {location_id} not found. Using fallback timezone.")
         return None, fallback_timezone
-    
+
+
+def _format_change_value(value: object) -> str:
+    """Renders an audit-trail value for human-readable change logs (single source of truth)."""
+    if isinstance(value, datetime):
+        return value.strftime('%d.%m.%Y %H:%M')
+    if isinstance(value, date):
+        return value.strftime('%d.%m.%Y')
+    if isinstance(value, time):
+        return value.strftime('%H:%M')
+    if value is None:
+        return "None"
+    return str(value)
+
+
 class ArtistHRService:
     """Service handling HR operations, onboarding, and artist lifecycles."""
 
@@ -118,8 +150,8 @@ class ArtistHRService:
             artist.delete() 
             
             # 2. Blokada logowania (Zatrzymuje autoryzację JWT/Sesji)
-            if artist.user_id:
-                user = artist.user
+            user = artist.user
+            if user is not None:
                 user.is_active = False
                 user.save(update_fields=['is_active'])
             
@@ -133,8 +165,8 @@ class ArtistHRService:
             artist.restore() 
             
             # 2. Odblokowanie logowania
-            if artist.user_id:
-                user = artist.user
+            user = artist.user
+            if user is not None:
                 user.is_active = True
                 user.save(update_fields=['is_active'])
             
@@ -187,7 +219,7 @@ class ProjectManagementService:
 
         with transaction.atomic():
             # Resolve location and timezone if location_id was provided in the update DTO
-            if dto.location_id is not None:
+            if 'location_id' in dto.model_fields_set:
                 location, resolved_timezone = resolve_location_and_timezone(
                     dto.location_id, 
                     dto.timezone or project.timezone
@@ -205,20 +237,13 @@ class ProjectManagementService:
                     changes.append("Conductor updated")
                 update_data['conductor_id'] = dto.conductor
 
-            from datetime import datetime, date, time
-            def fmt(v):
-                if isinstance(v, datetime): return v.strftime('%d.%m.%Y %H:%M')
-                if isinstance(v, date): return v.strftime('%d.%m.%Y')
-                if isinstance(v, time): return v.strftime('%H:%M')
-                if v is None: return "None"
-                return str(v)
-
             for attr, value in update_data.items():
-                if attr in ['location', 'timezone']: continue
+                if attr in ('location', 'timezone'):
+                    continue
                 old_value = getattr(project, attr)
                 if old_value != value:
                     field_name = FIELD_NAMES.get(attr, attr.title())
-                    changes.append(f"{field_name}: {fmt(old_value)} ➔ {fmt(value)}")
+                    changes.append(f"{field_name}: {_format_change_value(old_value)} ➔ {_format_change_value(value)}")
                 setattr(project, attr, value)
                 
             project.save()
@@ -235,7 +260,11 @@ class ProjectManagementService:
                     changes=unique_changes
                 ).model_dump(mode="json")
                 
-                level = NotificationLevel.URGENT if any(k in changes for k in ["Date", "Call-time"]) else NotificationLevel.WARNING
+                level = (
+                    NotificationLevel.URGENT
+                    if any(any(label in change for label in ("Date", "Call-time")) for change in changes)
+                    else NotificationLevel.WARNING
+                )
                 
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                     recipient_ids=recipient_ids,
@@ -268,7 +297,7 @@ class ProjectManagementService:
                     metadata=metadata
                 ))
     @staticmethod
-    def create_or_restore_participation(validated_data: Dict[str, Any]) -> Participation:
+    def create_or_restore_participation(validated_data: dict[str, Any]) -> Participation:
         """
         Enterprise Upsert Pattern: Checks for an archived (soft-deleted) participation first.
         If found, restores it to preserve history and avoid constraint collisions. 
@@ -351,7 +380,8 @@ class ManagerNotificationHelper:
             )
 
 class RehearsalOperationsService:
-    def schedule_rehearsal(dto: RehearsalCreateDTO, invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
+    @staticmethod
+    def schedule_rehearsal(dto: RehearsalCreateDTO, invited_participations: list[Participation] | None = None) -> Rehearsal:
         
         with transaction.atomic():
             create_data = dto.model_dump(exclude={'location_id'})
@@ -385,7 +415,7 @@ class RehearsalOperationsService:
         return rehearsal
 
     @staticmethod
-    def update_rehearsal(rehearsal: Rehearsal, dto: RehearsalUpdateDTO, invited_participations: Optional[List[Participation]] = None) -> Rehearsal:
+    def update_rehearsal(rehearsal: Rehearsal, dto: RehearsalUpdateDTO, invited_participations: list[Participation] | None = None) -> Rehearsal:
         FIELD_NAMES = {
             "date_time": "Date / Time", "location_id": "Location",
             "focus": "Focus / Plan", "is_mandatory": "Mandatory Status"
@@ -394,7 +424,7 @@ class RehearsalOperationsService:
         update_data = dto.model_dump(exclude={'location_id'}, exclude_unset=True)
         
         with transaction.atomic():
-            if dto.location_id is not None:
+            if 'location_id' in dto.model_fields_set:
                 location, resolved_timezone = resolve_location_and_timezone(
                     dto.location_id, 
                     dto.timezone or rehearsal.timezone
@@ -407,20 +437,13 @@ class RehearsalOperationsService:
                     new_loc = location.name if location else "None"
                     changes.append(f"Location: {old_loc} ➔ {new_loc}")
 
-            from datetime import datetime, date, time
-            def fmt(v):
-                if isinstance(v, datetime): return v.strftime('%d.%m.%Y %H:%M')
-                if isinstance(v, date): return v.strftime('%d.%m.%Y')
-                if isinstance(v, time): return v.strftime('%H:%M')
-                if v is None: return "None"
-                return str(v)
-
             for attr, value in update_data.items():
-                if attr in ['location', 'timezone']: continue
+                if attr in ('location', 'timezone'):
+                    continue
                 old_value = getattr(rehearsal, attr)
                 if old_value != value:
                     field_name = FIELD_NAMES.get(attr, attr.title())
-                    changes.append(f"{field_name}: {fmt(old_value)} ➔ {fmt(value)}")
+                    changes.append(f"{field_name}: {_format_change_value(old_value)} ➔ {_format_change_value(value)}")
                 setattr(rehearsal, attr, value)
                 
             rehearsal.save()
@@ -442,7 +465,7 @@ class RehearsalOperationsService:
                     message=f"Details for a rehearsal in the project '{rehearsal.project.title}' have been updated."
                 ).model_dump(mode="json")
                 
-                level = NotificationLevel.URGENT if "Date / Time" in changes else (NotificationLevel.WARNING if changes else NotificationLevel.INFO)
+                level = NotificationLevel.URGENT if any("Date / Time" in change for change in changes) else NotificationLevel.WARNING
                 
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                     recipient_ids=recipient_ids,
@@ -493,7 +516,7 @@ class RehearsalOperationsService:
 
 
         with transaction.atomic():
-            attendance, created = Attendance.objects.update_or_create(
+            attendance, _created = Attendance.objects.update_or_create(
                 rehearsal=rehearsal,
                 participation=participation,
                 defaults={'status': dto.status, 'minutes_late': dto.minutes_late, 'excuse_note': dto.excuse_note}
@@ -550,13 +573,13 @@ class ParticipationService:
             transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
                 notification_type=NotificationType.PARTICIPATION_RESPONSE,
                 metadata=metadata,
-                level=NotificationLevel.WARNING if new_status == 'DECLINED' else NotificationLevel.INFO
+                level=NotificationLevel.WARNING if new_status == Participation.Status.DECLINED else NotificationLevel.INFO
             ))
         return participation
 
 class CastingAndCrewService:
     @staticmethod
-    def assign_piece_casting(validated_data: Dict[str, Any]) -> ProjectPieceCasting:
+    def assign_piece_casting(validated_data: dict[str, Any]) -> ProjectPieceCasting:
         participation = validated_data.get('participation')
         if participation and participation.status != Participation.Status.CONFIRMED:
             raise CastingValidationException(
@@ -586,7 +609,7 @@ class CastingAndCrewService:
         return casting
 
     @staticmethod
-    def update_piece_casting(casting: ProjectPieceCasting, validated_data: Dict[str, Any]) -> ProjectPieceCasting:
+    def update_piece_casting(casting: ProjectPieceCasting, validated_data: dict[str, Any]) -> ProjectPieceCasting:
         changes = []
         with transaction.atomic():
             for attr, value in validated_data.items():
@@ -644,7 +667,7 @@ class CastingAndCrewService:
                 ))
 
     @staticmethod
-    def assign_crew(validated_data: Dict[str, Any]) -> CrewAssignment:
+    def assign_crew(validated_data: dict[str, Any]) -> CrewAssignment:
         """
         Assigns a collaborator to a crew role within a project.
         NOTE: By design (2026 Business Rules), Crew members do not possess UserProfiles 

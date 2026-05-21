@@ -1,11 +1,12 @@
 import logging
-from uuid import UUID
 from decimal import Decimal
-from typing import Optional
+from uuid import UUID
+
 from django.db import transaction
-from .models import Location
+
 from .dtos import LocationCreateDTO, LocationUpdateDTO
 from .infrastructure.google_maps_client import GoogleMapsClient
+from .models import Location
 
 logger = logging.getLogger(__name__)
 
@@ -51,35 +52,56 @@ class LogisticsService:
         Updates an existing location. Re-evaluates timezone only if coordinates change.
         """
         location = Location.objects.get(id=location_id)
+        fields_set = dto.model_fields_set
         
-        def _to_decimal(val: Optional[Decimal]) -> Optional[Decimal]:
+        def _to_decimal(val: Decimal | None) -> Decimal | None:
             return Decimal(str(val)) if val is not None else None
 
+        new_latitude = dto.latitude if 'latitude' in fields_set else location.latitude
+        new_longitude = dto.longitude if 'longitude' in fields_set else location.longitude
+
         coordinates_changed = (
-            _to_decimal(location.latitude) != _to_decimal(dto.latitude) or 
-            _to_decimal(location.longitude) != _to_decimal(dto.longitude)
+            ('latitude' in fields_set or 'longitude' in fields_set)
+            and (
+                _to_decimal(location.latitude) != _to_decimal(new_latitude)
+                or _to_decimal(location.longitude) != _to_decimal(new_longitude)
+            )
         )
 
         resolved_timezone = location.timezone
 
         # 1. Fetch timezone if coordinates changed (Network call outside DB transaction)
-        if coordinates_changed and dto.latitude is not None and dto.longitude is not None:
-            fetched_tz = GoogleMapsClient.get_timezone(float(dto.latitude), float(dto.longitude))
+        if coordinates_changed and new_latitude is not None and new_longitude is not None:
+            fetched_tz = GoogleMapsClient.get_timezone(float(new_latitude), float(new_longitude))
             if fetched_tz:
                 resolved_timezone = fetched_tz
                 logger.info(f"Updated timezone to '{fetched_tz}' for location '{location.name}'")
 
         # 2. Persist changes
         with transaction.atomic():
-            location.name = dto.name
-            location.category = dto.category
-            location.formatted_address = dto.formatted_address
-            location.latitude = dto.latitude
-            location.longitude = dto.longitude
-            location.internal_notes = dto.internal_notes
-            location.is_active = dto.is_active
-            location.timezone = resolved_timezone
-            location.save()
+            update_fields: set[str] = set()
+
+            for field_name in (
+                'name',
+                'category',
+                'formatted_address',
+                'google_place_id',
+                'latitude',
+                'longitude',
+                'internal_notes',
+                'is_active',
+            ):
+                if field_name in fields_set:
+                    setattr(location, field_name, getattr(dto, field_name))
+                    update_fields.add(field_name)
+
+            if coordinates_changed and location.timezone != resolved_timezone:
+                location.timezone = resolved_timezone
+                update_fields.add('timezone')
+
+            if update_fields:
+                update_fields.add('updated_at')
+                location.save(update_fields=list(update_fields))
 
         return location
 

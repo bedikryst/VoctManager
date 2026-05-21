@@ -6,9 +6,15 @@ from typing import Any
 from rest_framework import serializers
 
 from archive.models import (
-    Composer, Piece, ProgramNote, Recording, ScoreEdition, Track, Translation,
+    Composer,
+    Piece,
+    ProgramNote,
+    Recording,
+    ScoreEdition,
+    Track,
+    Translation,
 )
-from roster.models import Participation, ProjectPieceCasting, ProgramItem, Project
+from roster.models import Participation, ProgramItem, Project, ProjectPieceCasting
 
 
 class ComposerSnippetSerializer(serializers.ModelSerializer):

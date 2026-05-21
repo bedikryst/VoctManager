@@ -13,12 +13,14 @@ Standards: SaaS 2026, Event-Driven Architecture (EDA) compatibility.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any, ClassVar
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.conf import settings
 from django.utils import translation
-from django.contrib.auth import get_user_model
+from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
@@ -40,7 +42,7 @@ class NotificationTemplateRegistry:
     Decoupled from ORM models to prevent circular imports and allow the 
     Django 'makemessages' utility to correctly index strings for localization.
     """
-    SUBJECTS = {
+    SUBJECTS: ClassVar[dict[str, str | Promise]] = {
         'PROJECT_INVITATION': _('You have a new project invitation'),
         'PROJECT_UPDATED': _('Project Details Updated'),
         'PROJECT_CANCELLED': _('Project Cancelled'),
@@ -80,7 +82,7 @@ class EmailDispatcherService:
         recipient_email: str, 
         subject: str, 
         template_name: str, 
-        context: Dict[str, Any],
+        context: dict[str, Any],
         fallback_language: str = 'en',
         email_type: str = EmailType.CRITICAL_SECURITY
     ) -> None:
@@ -103,7 +105,7 @@ class EmailDispatcherService:
         recipient_id: str,
         notification_type: str, 
         template_name: str, 
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         email_type: str = EmailType.OPERATIONAL
     ) -> None:
         """
@@ -169,7 +171,7 @@ class EmailDispatcherService:
         recipient_email: str, 
         subject: str, 
         template_name: str, 
-        context: Dict[str, Any],
+        context: dict[str, Any],
         email_type: str
     ) -> None:
         """

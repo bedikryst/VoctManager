@@ -22,14 +22,16 @@ Standards: SaaS 2026, deterministic dedup, MBID-first.
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 import time
-from typing import Optional
 from uuid import UUID
 
 from archive.dtos import ComposerLookupResult, WorkLookupResult
 from archive.infrastructure._http import (
-    ExternalAPIError, ExternalAPIUnavailable, cached_get_json,
+    ExternalAPIError,
+    ExternalAPIUnavailable,
+    cached_get_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,9 +58,9 @@ class MusicBrainzClient:
         cls,
         *,
         title: str,
-        composer_name: Optional[str] = None,
+        composer_name: str | None = None,
         limit: int = 5,
-    ) -> Optional[WorkLookupResult]:
+    ) -> WorkLookupResult | None:
         """
         Search for a work by title (+ optional composer name disambiguation).
         Returns the highest-scoring match, or None if nothing scores above 70.
@@ -98,7 +100,7 @@ class MusicBrainzClient:
         return cls._parse_work(top, score=score)
 
     @classmethod
-    def get_work(cls, mbid: UUID) -> Optional[WorkLookupResult]:
+    def get_work(cls, mbid: UUID) -> WorkLookupResult | None:
         """Direct lookup by canonical mbid (cheapest path when we already have it)."""
         params = {'fmt': 'json', 'inc': 'artist-rels'}
         data = cls._get(f'/work/{mbid}', params)
@@ -114,7 +116,7 @@ class MusicBrainzClient:
         *,
         name: str,
         limit: int = 8,
-    ) -> Optional[ComposerLookupResult]:
+    ) -> ComposerLookupResult | None:
         """
         Search MusicBrainz artists by name. Returns the highest-scoring
         Person match above threshold, or None.
@@ -167,7 +169,7 @@ class MusicBrainzClient:
     # -- internals ----------------------------------------------------------
 
     @classmethod
-    def _get(cls, path: str, params: dict) -> Optional[dict]:
+    def _get(cls, path: str, params: dict) -> dict | None:
         cls._respect_rate_limit()
         try:
             result = cached_get_json(
@@ -203,21 +205,19 @@ class MusicBrainzClient:
         return value
 
     @staticmethod
-    def _parse_work(data: dict, *, score: int) -> Optional[WorkLookupResult]:
+    def _parse_work(data: dict, *, score: int) -> WorkLookupResult | None:
         try:
             mbid = UUID(data['id'])
         except (KeyError, ValueError):
             return None
 
-        composer_mbid: Optional[UUID] = None
+        composer_mbid: UUID | None = None
         composer_name = ""
         for rel in data.get('relations', []) or []:
             if rel.get('type') == 'composer' and rel.get('artist'):
                 artist = rel['artist']
-                try:
+                with contextlib.suppress(TypeError, ValueError):
                     composer_mbid = UUID(artist.get('id'))
-                except (TypeError, ValueError):
-                    pass
                 composer_name = artist.get('name', '') or composer_name
                 break
 
@@ -243,7 +243,7 @@ class MusicBrainzClient:
         )
 
     @staticmethod
-    def _parse_composer(data: dict) -> Optional[ComposerLookupResult]:
+    def _parse_composer(data: dict) -> ComposerLookupResult | None:
         try:
             mbid = UUID(data['id'])
         except (KeyError, ValueError):
@@ -284,7 +284,7 @@ class MusicBrainzClient:
         )
 
 
-def _year(date_str: Optional[str]) -> Optional[int]:
+def _year(date_str: str | None) -> int | None:
     """Parse a YYYY or YYYY-MM-DD string into the year, or None."""
     if not date_str:
         return None

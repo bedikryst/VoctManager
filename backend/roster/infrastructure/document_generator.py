@@ -10,12 +10,12 @@ the future.
 
 from __future__ import annotations
 
-from collections import defaultdict
-from typing import Any, Dict, Iterator
-from urllib.parse import quote_plus, urljoin
 import zoneinfo
+from collections import defaultdict
+from collections.abc import Iterator
+from typing import Any
+from urllib.parse import quote_plus, urljoin
 
-import weasyprint
 from django.db.models import QuerySet
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -33,7 +33,9 @@ from roster.models import (
 )
 
 _VOICE_LINE_ORDER = {value: idx for idx, value in enumerate(VoiceLine.values)}
-_VOICE_TYPE_ORDER = {
+# Keyed by VoiceType (a str-valued TextChoices), so the keys double as plain strings
+# for ordering lookups by the serialized voice-type value.
+_VOICE_TYPE_ORDER: dict[str, int] = {
     VoiceType.SOPRANO: 0,
     VoiceType.MEZZO: 1,
     VoiceType.ALTO: 2,
@@ -43,6 +45,22 @@ _VOICE_TYPE_ORDER = {
     VoiceType.BASS: 6,
     VoiceType.CONDUCTOR: 7,
 }
+
+
+class DocumentRenderDependencyError(RuntimeError):
+    """Raised when the PDF rendering engine is installed without native runtime libraries."""
+
+
+def _render_pdf(html_string: str, base_url: str | None = None) -> bytes:
+    try:
+        from weasyprint import HTML
+    except (ImportError, OSError) as exc:
+        raise DocumentRenderDependencyError(
+            "WeasyPrint cannot load its native rendering dependencies. "
+            "Install Pango, Cairo, GDK-PixBuf, and Fontconfig for the host operating system."
+        ) from exc
+
+    return HTML(string=html_string, base_url=base_url).write_pdf()
 
 
 class DocumentGenerator:
@@ -69,7 +87,7 @@ class DocumentGenerator:
             base_url=base_url,
         )
         html_string = render_to_string('projects/call_sheet_pdf.html', context)
-        return weasyprint.HTML(string=html_string, base_url=base_url).write_pdf()
+        return _render_pdf(html_string, base_url=base_url)
 
     @staticmethod
     def generate_participation_contract_pdf(participation: Participation) -> bytes:
@@ -88,7 +106,7 @@ class DocumentGenerator:
         }
 
         html_string = render_to_string('contracts/contract_pdf.html', context)
-        return weasyprint.HTML(string=html_string).write_pdf()
+        return _render_pdf(html_string)
 
     @staticmethod
     def generate_crew_contract_pdf(assignment: CrewAssignment) -> bytes:
@@ -107,7 +125,7 @@ class DocumentGenerator:
         }
 
         html_string = render_to_string('contracts/contract_pdf.html', context)
-        return weasyprint.HTML(string=html_string).write_pdf()
+        return _render_pdf(html_string)
 
     @staticmethod
     def generate_zaiks_csv_iterator(program_items: QuerySet[ProgramItem]) -> Iterator[str]:
@@ -132,15 +150,20 @@ class DocumentGenerator:
     @staticmethod
     def generate_dtp_export_text(project: Project, participations: QuerySet[Participation]) -> str:
         """Generates a cleanly formatted text artifact tailored for Graphic Design (DTP)."""
-        groups: Dict[str, list[Artist]] = {'Soprany': [], 'Alty': [], 'Tenory': [], 'Basy': [], 'Inne': []}
+        groups: dict[str, list[Artist]] = {'Soprany': [], 'Alty': [], 'Tenory': [], 'Basy': [], 'Inne': []}
         
         for p in participations:
             vt = p.artist.voice_type or ''
-            if vt.startswith('S'): groups['Soprany'].append(p.artist)
-            elif vt.startswith('A') or vt == 'MEZ': groups['Alty'].append(p.artist)
-            elif vt.startswith('T') or vt == 'CT': groups['Tenory'].append(p.artist)
-            elif vt.startswith('B'): groups['Basy'].append(p.artist)
-            else: groups['Inne'].append(p.artist)
+            if vt.startswith('S'):
+                groups['Soprany'].append(p.artist)
+            elif vt.startswith('A') or vt == 'MEZ':
+                groups['Alty'].append(p.artist)
+            elif vt.startswith('T') or vt == 'CT':
+                groups['Tenory'].append(p.artist)
+            elif vt.startswith('B'):
+                groups['Basy'].append(p.artist)
+            else:
+                groups['Inne'].append(p.artist)
 
         context = {
             'project': project,
@@ -458,7 +481,7 @@ class DocumentGenerator:
             rehearsal.location.timezone if rehearsal.location else project.timezone
         )
         local_datetime = DocumentGenerator._localize(rehearsal.date_time, rehearsal_timezone)
-        invited_participations = list(getattr(rehearsal, 'invited_participations').all())
+        invited_participations = list(rehearsal.invited_participations.all())
         scope_label = (
             f'Wybrani artysci ({len(invited_participations)})'
             if invited_participations
@@ -528,7 +551,7 @@ class DocumentGenerator:
         return mapping
 
     @staticmethod
-    def _normalize_run_sheet(run_sheet: list[dict[str, Any]]) -> list[dict[str, str]]:
+    def _normalize_run_sheet(run_sheet: list[Any]) -> list[dict[str, str]]:
         normalized = []
         for item in run_sheet or []:
             if not isinstance(item, dict):

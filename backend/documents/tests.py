@@ -1,21 +1,23 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
 from rest_framework import status
-from .models import DocumentCategory, Document
+from rest_framework.test import APITestCase
+
 from core.constants import AppRole
+
+from .models import Document, DocumentCategory
 
 User = get_user_model()
 
 
-class DocumentCategoryTests(TestCase):
+class DocumentCategoryTests(APITestCase):
     def setUp(self):
-        self.client = APIClient()
         self.artist_user = User.objects.create_user(
+            username='artist',
             email='artist@example.com',
             password='password123',
         )
         self.manager_user = User.objects.create_user(
+            username='manager',
             email='manager@example.com',
             password='password123',
             is_staff=True,

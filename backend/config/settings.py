@@ -7,10 +7,11 @@ Strictly typed environment variables via django-environ.
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
+
 import environ
 import sentry_sdk
-from datetime import timedelta
 
 # Base directory path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -347,7 +348,7 @@ LOGGING = {
     },
     'loggers': {
         'django.db.backends': {
-            'level': 'WARNING', # Zmiana na DEBUG pokaże logi SQL w konsoli
+            'level': 'WARNING', 
             'handlers': ['console'],
             'propagate': False,
         },

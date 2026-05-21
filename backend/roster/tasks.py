@@ -6,11 +6,13 @@ Utilizes Celery and Redis to handle resource-intensive operations.
 
 import io
 import zipfile
+
 import weasyprint
 from celery import shared_task
-from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.template.loader import render_to_string
+
 from .models import Participation
 
 
@@ -26,11 +28,12 @@ def generate_project_zip_task(self, project_id):
         project_id=project_id
     ).select_related('artist', 'project')
 
-    if not participations.exists():
+    first_participation = participations.first()
+    if first_participation is None:
         return {"error": "no_artists_in_project"}
 
     # Project entity is already loaded by select_related, no need for another query
-    project = participations.first().project
+    project = first_participation.project
     safe_title = project.title.replace(' ', '_').replace('/', '-')
 
     zip_buffer = io.BytesIO()

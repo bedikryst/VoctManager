@@ -3,12 +3,11 @@
 # Knowledge Base & Chorister Hub Domain Models
 # Standard: Enterprise SaaS 2026
 # ==========================================
-from django.db import models
 from django.conf import settings
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from core.models import EnterpriseBaseModel
-from core.constants import AppRole
 
 
 class DocumentIconKey(models.TextChoices):

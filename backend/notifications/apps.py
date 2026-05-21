@@ -1,8 +1,10 @@
+import os
+
 import firebase_admin
-from firebase_admin import credentials
 from django.apps import AppConfig
 from django.conf import settings
-import os
+from firebase_admin import credentials
+
 
 class NotificationsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

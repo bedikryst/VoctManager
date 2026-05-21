@@ -6,33 +6,43 @@ This module defines the routing structure using Django Rest Framework's DefaultR
 It automatically maps viewsets to standard RESTful endpoints (GET, POST, PATCH, DELETE).
 """
 
-from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-
-from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
+from django.contrib import admin
+from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from rest_framework.routers import DefaultRouter
 
-from .auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, LogoutView
-
-from roster.views import ArtistViewSet, CollaboratorViewSet, CrewAssignmentViewSet, ProgramItemViewSet, ProjectViewSet, ParticipationViewSet, RehearsalViewSet, AttendanceViewSet, ProjectPieceCastingViewSet, get_voice_lines, get_voice_types
-from archive.views import ComposerViewSet, PieceViewSet, ScoreEditionViewSet, TrackViewSet, PieceVoiceRequirementViewSet
+from archive.views import ComposerViewSet, PieceViewSet, PieceVoiceRequirementViewSet, ScoreEditionViewSet, TrackViewSet
 from core.views import (
     ActivateAccountView,
-    CSRFCookieView,
-    CurrentUserRetrieveUpdateView, 
-    ChangePasswordView, 
+    CalendarFeedView,
     ChangeEmailRequestView,
+    ChangePasswordView,
+    CSRFCookieView,
+    CurrentUserRetrieveUpdateView,
     ExportUserDataView,
     RequestAccountDeletionView,
     ResetCalendarTokenView,
-    CalendarFeedView
 )
-from notifications.views import NotificationViewSet, NotificationPreferenceAPIView, PushDeviceViewSet
-from documents.views import DocumentCategoryViewSet, ArtistMetricsAPIView, DocumentDownloadView
+from documents.views import ArtistMetricsAPIView, DocumentCategoryViewSet, DocumentDownloadView
+from notifications.views import NotificationPreferenceAPIView, NotificationViewSet, PushDeviceViewSet
+from roster.views import (
+    ArtistViewSet,
+    AttendanceViewSet,
+    CollaboratorViewSet,
+    CrewAssignmentViewSet,
+    ParticipationViewSet,
+    ProgramItemViewSet,
+    ProjectPieceCastingViewSet,
+    ProjectViewSet,
+    RehearsalViewSet,
+    get_voice_lines,
+    get_voice_types,
+)
+
+from .auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, LogoutView
+
 __author__ = "Krystian Bugalski"
 
 # Initialize the REST Framework Router

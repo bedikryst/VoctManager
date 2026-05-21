@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from .models import Location, LocationCategory
+
 
 class LocationSerializer(serializers.ModelSerializer):
     """
@@ -22,10 +24,10 @@ class LocationCreateSerializer(serializers.Serializer):
     """
     name = serializers.CharField(max_length=255)
     category = serializers.ChoiceField(choices=LocationCategory.choices)
-    google_place_id = serializers.CharField(max_length=512, required=False, allow_null=True)
+    google_place_id = serializers.CharField(max_length=512, required=False, allow_null=True, allow_blank=True)
     formatted_address = serializers.CharField()
-    latitude = serializers.DecimalField(max_digits=12, decimal_places=9, required=False, allow_null=True)
-    longitude = serializers.DecimalField(max_digits=12, decimal_places=9, required=False, allow_null=True)
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
     internal_notes = serializers.CharField(required=False, allow_blank=True, default="")
 
 class LocationUpdateSerializer(serializers.Serializer):
@@ -36,8 +38,8 @@ class LocationUpdateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
     category = serializers.ChoiceField(choices=LocationCategory.choices)
     formatted_address = serializers.CharField()
-    google_place_id = serializers.CharField(max_length=512, required=False, allow_null=True)
-    latitude = serializers.DecimalField(max_digits=12, decimal_places=9, required=False, allow_null=True)
-    longitude = serializers.DecimalField(max_digits=12, decimal_places=9, required=False, allow_null=True)
+    google_place_id = serializers.CharField(max_length=512, required=False, allow_null=True, allow_blank=True)
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
     internal_notes = serializers.CharField(required=False, allow_blank=True, default="")
     is_active = serializers.BooleanField(default=True)

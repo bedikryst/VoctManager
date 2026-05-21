@@ -3,10 +3,25 @@
 # Archive Data Transfer Objects (DTOs)
 # Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
-from typing import Literal, Optional, List
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
+
+from core.constants import VoiceLine
+
+from .models import EpochChoices
+
+EPOCH_VALUES = frozenset(EpochChoices.values)
+VOICE_LINE_VALUES = frozenset(VoiceLine.values)
+
+
+def _require_choice(value: str, allowed_values: frozenset[str], field_name: str) -> str:
+    if value not in allowed_values:
+        allowed = ", ".join(sorted(allowed_values))
+        raise ValueError(f"{field_name} must be one of: {allowed}.")
+    return value
 
 class EnterpriseBaseDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra='forbid')
@@ -16,33 +31,67 @@ class VoiceRequirementDTO(EnterpriseBaseDTO):
     # Enterprise constraint: you cannot require 0 or negative singers
     quantity: int = Field(..., ge=1)
 
+    @field_validator("voice_line")
+    @classmethod
+    def validate_voice_line(cls, value: str) -> str:
+        return _require_choice(value, VOICE_LINE_VALUES, "voice_line")
+
 class PieceWriteDTO(EnterpriseBaseDTO):
     """Immutable data transfer object for creating or updating a musical piece."""
     title: str = Field(..., min_length=1, max_length=200)
     
     # UUID typing ensures valid identifiers before database hits
-    composer_id: Optional[UUID] = None
+    composer_id: UUID | None = None
     
-    arranger: Optional[str] = Field(None, max_length=150)
-    language: Optional[str] = Field(None, max_length=50)
+    arranger: str | None = Field(None, max_length=150)
+    language: str | None = Field(None, max_length=50)
     
     # Duration cannot be negative
-    estimated_duration: Optional[int] = Field(None, ge=0, description="Duration in seconds")
+    estimated_duration: int | None = Field(None, ge=0, description="Duration in seconds")
     voicing: str = Field(default="", max_length=50)
     description: str = Field(default="")
     
-    lyrics_original: Optional[str] = None
-    lyrics_translation: Optional[str] = None
+    lyrics_original: str | None = None
+    lyrics_translation: str | None = None
     
     # HttpUrl automatically validates standard URL schemas!
-    reference_recording_youtube: Optional[HttpUrl] = None
-    reference_recording_spotify: Optional[HttpUrl] = None
+    reference_recording_youtube: HttpUrl | None = None
+    reference_recording_spotify: HttpUrl | None = None
     
     # Basic sanity check for composition years
-    composition_year: Optional[int] = Field(None, ge=500, le=2100)
-    epoch: Optional[str] = Field(None, max_length=4)
+    composition_year: int | None = Field(None, ge=500, le=2100)
+    epoch: str | None = Field(None, max_length=4)
+
+    opus_catalog: str = Field(default="", max_length=40)
+    musical_key: str = Field(default="", max_length=20)
+    text_source: str = Field(default="", max_length=200)
+    lyrics_ipa: str | None = None
     
-    voice_requirements: Optional[List[VoiceRequirementDTO]] = None
+    voice_requirements: list[VoiceRequirementDTO] | None = None
+
+    @field_validator("epoch")
+    @classmethod
+    def validate_epoch(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return value
+        return _require_choice(value, EPOCH_VALUES, "epoch")
+
+    @model_validator(mode="after")
+    def validate_unique_voice_requirements(self):
+        if not self.voice_requirements:
+            return self
+
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for requirement in self.voice_requirements:
+            if requirement.voice_line in seen:
+                duplicates.add(requirement.voice_line)
+            seen.add(requirement.voice_line)
+
+        if duplicates:
+            duplicate_list = ", ".join(sorted(duplicates))
+            raise ValueError(f"voice_requirements contains duplicate voice lines: {duplicate_list}.")
+        return self
 
 
 # ===========================================================================
@@ -97,27 +146,27 @@ class ExtractedWorkIdentity(BaseModel):
         description="Composer's full name as printed (e.g. 'Johann Sebastian Bach'). "
                     "If only initials are printed, return them verbatim."
     )
-    composer_birth_year: Optional[int] = Field(
+    composer_birth_year: int | None = Field(
         default=None,
         description="Composer's birth year if printed on the score, else null."
     )
-    opus_catalog: Optional[str] = Field(
+    opus_catalog: str | None = Field(
         default=None,
         description="Opus or catalog identifier (e.g. 'BWV 243', 'Op. 110 No. 2', 'K. 626')."
     )
-    musical_key: Optional[str] = Field(
+    musical_key: str | None = Field(
         default=None,
         description="Musical key (e.g. 'D major', 'F# minor'). Null if not stated."
     )
-    voicing: Optional[str] = Field(
+    voicing: str | None = Field(
         default=None,
         description="Voicing notation (e.g. 'SATB', 'SSAATTBB', 'SATB + orch'). Null if not stated."
     )
-    language: Optional[str] = Field(
+    language: str | None = Field(
         default=None,
         description="Primary sung language of the text (e.g. 'Latin', 'German', 'English')."
     )
-    text_source: Optional[str] = Field(
+    text_source: str | None = Field(
         default=None,
         description="Source of the text being set (e.g. 'Luke 1:46-55', 'Psalm 23', 'liturgical Latin')."
     )
@@ -134,11 +183,11 @@ class ExtractedMovement(BaseModel):
 
     order_index: int = Field(ge=0, description="Zero-based index of this movement.")
     title: str = Field(description="Movement title, including any incipit (e.g. 'Et exsultavit spiritus meus').")
-    tempo_marking: Optional[str] = Field(
+    tempo_marking: str | None = Field(
         default=None,
         description="Tempo marking if printed (e.g. 'Allegro', 'Adagio molto'). Null if absent."
     )
-    starts_on_page: Optional[int] = Field(
+    starts_on_page: int | None = Field(
         default=None, ge=1,
         description="1-based page number in the source PDF where this movement begins, if determinable."
     )
@@ -148,7 +197,7 @@ class ExtractedMovementList(BaseModel):
     """Detected movements for a Piece. Single-movement works return one entry."""
     model_config = ConfigDict(extra='forbid')
 
-    movements: List[ExtractedMovement] = Field(description="Movements in performance order.")
+    movements: list[ExtractedMovement] = Field(description="Movements in performance order.")
 
 
 class GeneratedProgramNote(BaseModel):
@@ -187,7 +236,7 @@ class LyricsExtractionResult(BaseModel):
     ipa_transcription: str = Field(
         description="IPA pronunciation guide for the sung text, aligned line-by-line with sung_text."
     )
-    translations: List[TranslationPayload] = Field(
+    translations: list[TranslationPayload] = Field(
         default_factory=list,
         description="Zero or more translations into the requested target languages."
     )
@@ -197,12 +246,12 @@ class LyricsExtractionResult(BaseModel):
 
 class ComposerLookupResult(EnterpriseBaseDTO):
     """Canonical composer metadata fetched from MusicBrainz / Wikidata."""
-    mbid: Optional[UUID] = None
+    mbid: UUID | None = None
     wikidata_qid: str = ""
     canonical_first_name: str = ""
     canonical_last_name: str = ""
-    birth_year: Optional[int] = None
-    death_year: Optional[int] = None
+    birth_year: int | None = None
+    death_year: int | None = None
     nationality: str = ""
     period: str = ""              # EpochChoices value
     bio: str = ""
@@ -219,7 +268,7 @@ class WorkLookupResult(EnterpriseBaseDTO):
     """
     mbid: UUID
     canonical_title: str
-    composer_mbid: Optional[UUID] = None
+    composer_mbid: UUID | None = None
     composer_name: str = ""
     opus_catalog: str = ""
     musical_key: str = ""
@@ -235,8 +284,8 @@ class RecordingLookupResult(EnterpriseBaseDTO):
     url: str
     title: str = ""
     performer: str = ""           # artist / channel name
-    year: Optional[int] = None
-    duration_seconds: Optional[int] = None
+    year: int | None = None
+    duration_seconds: int | None = None
     relevance_rank: int = 0       # 0 = top hit, 1 = next, …
 
 

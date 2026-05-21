@@ -5,27 +5,37 @@
 # ==========================================
 import logging
 import uuid
-from typing import Optional, Dict, Any
+from typing import TYPE_CHECKING, Any
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
-from django.utils import timezone
 from django.db import transaction
-from django.conf import settings
-from django.utils.translation import gettext as _, override
-from .signals import account_soft_deleted, user_email_changed, user_pii_updated
+from django.utils import timezone
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.translation import gettext as _
+from django.utils.translation import override
 
-from .models import UserProfile
-from .dtos import UserPreferencesUpdateDTO, UserPasswordChangeDTO, UserEmailChangeDTO, UserAccountDeletionDTO
-from .exceptions import InvalidCredentialsException, EmailAlreadyInUseException
+from notifications.email_service import EmailType
 
 # Enterprise Imports for Notifications
 from notifications.email_tasks import send_transactional_email_task
-from notifications.email_service import EmailType
+
+from .dtos import UserAccountDeletionDTO, UserEmailChangeDTO, UserPasswordChangeDTO, UserPreferencesUpdateDTO
+from .exceptions import EmailAlreadyInUseException, InvalidCredentialsException
+from .models import UserProfile
+from .signals import account_soft_deleted, user_email_changed, user_pii_updated
 
 logger = logging.getLogger(__name__)
-User = get_user_model()
+
+# `get_user_model()` returns a runtime value mypy cannot use as a type. Bind the
+# concrete model under TYPE_CHECKING so annotations resolve, while keeping the
+# dynamic swappable-model lookup at runtime.
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+else:
+    User = get_user_model()
 
 
 class UserIdentityService:
@@ -61,8 +71,8 @@ class UserIdentityService:
             user.set_unusable_password()
             user.save()
 
-            # Explicit Profile Creation
-            profile = UserProfile.objects.create(
+            # Explicit Profile Creation (side-effecting; the instance is not needed here)
+            UserProfile.objects.create(
                 user=user,
                 language=language
             )
@@ -284,7 +294,7 @@ class UserPreferencesService:
         return profile
 
     @staticmethod
-    def generate_gdpr_export(user: User, profile_data: dict) -> Dict[str, Any]:
+    def generate_gdpr_export(user: User, profile_data: dict) -> dict[str, Any]:
         """
         Compiles user data for GDPR Right to Data Portability. 
         Requires pre-serialized profile data to avoid circular dependencies with Views.

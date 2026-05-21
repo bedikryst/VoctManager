@@ -40,7 +40,8 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any, BinaryIO, cast
 from uuid import UUID
 
 from celery import chain, shared_task
@@ -49,31 +50,49 @@ from django.db import transaction
 from django.db.models import F
 
 from archive.dtos import (
-    ExtractedMovementList, ExtractedWorkIdentity,
-    GeneratedProgramNote, LyricsExtractionResult,
+    ExtractedMovementList,
+    ExtractedWorkIdentity,
+    GeneratedProgramNote,
+    LyricsExtractionResult,
 )
 from archive.infrastructure.ai_client import (
-    AIClient, AIClientError, AIClientPermanentError, AIModel,
+    AIClient,
+    AIClientError,
+    AIClientPermanentError,
+    AIModel,
     CostCeilingExceeded,
 )
 from archive.infrastructure.musicbrainz_client import MusicBrainzClient
 from archive.infrastructure.pdf_extractor import (
-    ExtractedPdf, PdfExtractionError, extract as extract_pdf,
+    ExtractedPdf,
+    PdfExtractionError,
+)
+from archive.infrastructure.pdf_extractor import (
+    extract as extract_pdf,
 )
 from archive.infrastructure.prompts import (
-    DETECT_MOVEMENTS, EXTRACT_AND_TRANSLATE_LYRICS,
-    EXTRACT_WORK_IDENTITY, GENERATE_PROGRAM_NOTE,
+    DETECT_MOVEMENTS,
+    EXTRACT_AND_TRANSLATE_LYRICS,
+    EXTRACT_WORK_IDENTITY,
+    GENERATE_PROGRAM_NOTE,
 )
 from archive.infrastructure.spotify_client import SpotifyClient
 from archive.infrastructure.wikidata_client import WikidataClient
 from archive.infrastructure.youtube_client import YouTubeClient
 from archive.models import (
-    IngestionStatus, Movement, Piece, ProgramNote, Recording,
-    RecordingSource, ScoreEdition, Translation,
+    IngestionStatus,
+    Movement,
+    Piece,
+    ProgramNote,
+    Recording,
+    RecordingSource,
+    ScoreEdition,
+    Translation,
 )
 from archive.services import provenance
 from archive.services.resolvers import (
-    resolve_or_create_composer, resolve_or_create_piece,
+    resolve_or_create_composer,
+    resolve_or_create_piece,
 )
 
 logger = logging.getLogger(__name__)
@@ -118,7 +137,7 @@ def _guarded(func: Callable) -> Callable:
       * CostCeilingExceeded → graceful FAILED transition
       * AIClientPermanentError → graceful FAILED transition (no autoretry —
         4xx means the request is malformed and repeating it just wastes
-        worker cycles, e.g. autoretrying a 400 'unsupported parameter' 3×).
+        worker cycles, e.g. autoretrying a 400 'unsupported parameter' 3x).
       * AIClientError with .cost attached → bill the failed attempt to the
         entity before re-raising, so Celery autoretry sees the updated
         ingestion_cost_cents and our hard cap stays honest.
@@ -183,7 +202,9 @@ def extract_pdf_text(self, payload: dict) -> dict:
 
     try:
         with edition.pdf_file.open('rb') as fh:
-            result: ExtractedPdf = extract_pdf(fh)
+            # An opened Django FieldFile is a binary stream; bridge it to the
+            # storage-agnostic extractor that works in terms of BinaryIO.
+            result: ExtractedPdf = extract_pdf(cast("BinaryIO", fh))
     except PdfExtractionError as exc:
         return _fail(edition, f'pdf_extraction_failed: {exc}', payload)
 
@@ -604,7 +625,13 @@ def _fail(edition: ScoreEdition, reason: str, payload: dict) -> dict:
 
 __all__ = [
     'build_ingestion_chain',
-    'extract_pdf_text', 'identify_work', 'resolve_composer_and_piece',
-    'detect_movements', 'extract_lyrics', 'generate_program_note',
-    'lookup_spotify', 'lookup_youtube', 'finalize_edition',
+    'detect_movements',
+    'extract_lyrics',
+    'extract_pdf_text',
+    'finalize_edition',
+    'generate_program_note',
+    'identify_work',
+    'lookup_spotify',
+    'lookup_youtube',
+    'resolve_composer_and_piece',
 ]

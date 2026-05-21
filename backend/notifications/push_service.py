@@ -12,12 +12,12 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import translation
-
 from firebase_admin import messaging
 from firebase_admin.exceptions import FirebaseError
 from pywebpush import WebPushException, webpush
@@ -35,8 +35,9 @@ _VAPID_CLAIMS = {
     "sub": f"mailto:{getattr(settings, 'VAPID_CONTACT_EMAIL', 'noreply@voct.pl')}"
 }
 
-# RFC 8030 Web Push urgency. Mapped from NotificationLevel.
-_VAPID_URGENCY = {
+# RFC 8030 Web Push urgency. Mapped from NotificationLevel (a str-valued TextChoices,
+# so the keys double as plain strings for lookups by the serialized level value).
+_VAPID_URGENCY: dict[str, str] = {
     NotificationLevel.INFO: "normal",
     NotificationLevel.WARNING: "high",
     NotificationLevel.URGENT: "high",
@@ -61,7 +62,7 @@ class _DispatchTarget:
     user_id: str
     language: str
     is_manager: bool
-    devices: Tuple[PushDevice, ...]
+    devices: tuple[PushDevice, ...]
 
 
 class PushDispatcherService:
@@ -83,7 +84,7 @@ class PushDispatcherService:
         cls,
         recipient_id: str,
         notification_type: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         level: str = NotificationLevel.INFO,
     ) -> None:
         """
@@ -175,7 +176,7 @@ class PushDispatcherService:
     # ------------------------------------------------------------------ #
 
     @classmethod
-    def _resolve_target(cls, recipient_id: str) -> Optional[_DispatchTarget]:
+    def _resolve_target(cls, recipient_id: str) -> _DispatchTarget | None:
         try:
             user = User.objects.select_related("profile").get(id=recipient_id)
         except User.DoesNotExist:
@@ -215,14 +216,14 @@ class PushDispatcherService:
     @classmethod
     def _send_vapid_batch(
         cls,
-        devices: List[PushDevice],
+        devices: list[PushDevice],
         payload: PushPayload,
     ) -> None:
         body = json.dumps(payload.to_dict(), ensure_ascii=False)
         urgency = _VAPID_URGENCY.get(payload.level, "normal")
         ttl = _URGENT_TTL if payload.level == NotificationLevel.URGENT else _DEFAULT_TTL
 
-        stale_ids: List[int] = []
+        stale_ids: list[UUID] = []
 
         for device in devices:
             if not device.p256dh_key or not device.auth_key:
@@ -267,7 +268,7 @@ class PushDispatcherService:
     @classmethod
     def _send_fcm_batch(
         cls,
-        devices: List[PushDevice],
+        devices: list[PushDevice],
         payload: PushPayload,
     ) -> None:
         tokens = [d.registration_token for d in devices]
@@ -324,7 +325,7 @@ class PushDispatcherService:
         if response.failure_count == 0:
             return
 
-        stale_tokens: List[str] = []
+        stale_tokens: list[str] = []
         for idx, resp in enumerate(response.responses):
             if resp.success:
                 continue

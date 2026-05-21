@@ -30,13 +30,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 from django.db import transaction
 
 from archive.dtos import (
-    ComposerLookupResult, ExtractedWorkIdentity, WorkLookupResult,
+    ComposerLookupResult,
+    ExtractedWorkIdentity,
+    WorkLookupResult,
 )
 from archive.models import Composer, IngestionStatus, Piece, ProvenanceSource
 from archive.services import provenance
@@ -59,8 +60,8 @@ class ResolveOutcome:
 def resolve_or_create_composer(
     *,
     extracted: ExtractedWorkIdentity,
-    mbz_result: Optional[ComposerLookupResult] = None,
-    wiki_result: Optional[ComposerLookupResult] = None,
+    mbz_result: ComposerLookupResult | None = None,
+    wiki_result: ComposerLookupResult | None = None,
 ) -> ResolveOutcome:
     """
     Pick or create the canonical `Composer` row for a freshly-extracted work.
@@ -90,10 +91,10 @@ def resolve_or_create_composer(
 
 def _find_existing_composer(
     *,
-    mbz: Optional[ComposerLookupResult],
-    wiki: Optional[ComposerLookupResult],
+    mbz: ComposerLookupResult | None,
+    wiki: ComposerLookupResult | None,
     extracted: ExtractedWorkIdentity,
-) -> Optional[Composer]:
+) -> Composer | None:
     # 1. MBID — canonical, never collides.
     if mbz and mbz.mbid:
         match = Composer.objects.filter(mbid=mbz.mbid).first()
@@ -135,8 +136,8 @@ def _find_existing_composer(
 def _merge_composer(
     *,
     composer: Composer,
-    mbz: Optional[ComposerLookupResult],
-    wiki: Optional[ComposerLookupResult],
+    mbz: ComposerLookupResult | None,
+    wiki: ComposerLookupResult | None,
     extracted: ExtractedWorkIdentity,
 ) -> tuple[str, ...]:
     """Populate blank fields on an existing composer — never overwrite."""
@@ -170,16 +171,15 @@ def _merge_composer(
             ('nationality',      wiki.nationality,      ProvenanceSource.WIKIDATA, wiki.wikidata_qid),
             ('period',           wiki.period,           ProvenanceSource.WIKIDATA, wiki.wikidata_qid),
         ]
-    if mbz and mbz.aliases:
-        # Only set aliases if currently empty.
-        if not composer.aliases:
-            composer.aliases = list(mbz.aliases)
-            merged.append('aliases')
-            provenance.record_external(
-                target=composer, field_name='aliases',
-                source=ProvenanceSource.MUSICBRAINZ,
-                source_reference=str(mbz.mbid) if mbz.mbid else '',
-            )
+    # Only set aliases if currently empty.
+    if mbz and mbz.aliases and not composer.aliases:
+        composer.aliases = list(mbz.aliases)
+        merged.append('aliases')
+        provenance.record_external(
+            target=composer, field_name='aliases',
+            source=ProvenanceSource.MUSICBRAINZ,
+            source_reference=str(mbz.mbid) if mbz.mbid else '',
+        )
 
     for field, value, src, ref in fill_pairs:
         if not value:
@@ -214,14 +214,14 @@ def _merge_composer(
         )
 
     if merged:
-        composer.save(update_fields=merged + ['updated_at'])
+        composer.save(update_fields=[*merged, 'updated_at'])
     return tuple(merged)
 
 
 def _create_composer(
     *,
-    mbz: Optional[ComposerLookupResult],
-    wiki: Optional[ComposerLookupResult],
+    mbz: ComposerLookupResult | None,
+    wiki: ComposerLookupResult | None,
     extracted: ExtractedWorkIdentity,
 ) -> Composer:
     last_name, first_name = _resolve_canonical_name(
@@ -267,7 +267,7 @@ def resolve_or_create_piece(
     *,
     composer_id: UUID,
     extracted: ExtractedWorkIdentity,
-    mbz_work: Optional[WorkLookupResult] = None,
+    mbz_work: WorkLookupResult | None = None,
 ) -> ResolveOutcome:
     """
     Pick or create the canonical `Piece` row. Caller must have already
@@ -290,9 +290,9 @@ def resolve_or_create_piece(
 def _find_existing_piece(
     *,
     composer_id: UUID,
-    mbz_work: Optional[WorkLookupResult],
+    mbz_work: WorkLookupResult | None,
     extracted: ExtractedWorkIdentity,
-) -> Optional[Piece]:
+) -> Piece | None:
     # 1. MBID work — canonical.
     if mbz_work and mbz_work.mbid:
         match = Piece.objects.filter(mbid_work=mbz_work.mbid).first()
@@ -328,7 +328,7 @@ def _find_existing_piece(
 def _merge_piece(
     *,
     piece: Piece,
-    mbz_work: Optional[WorkLookupResult],
+    mbz_work: WorkLookupResult | None,
     extracted: ExtractedWorkIdentity,
 ) -> tuple[str, ...]:
     """Populate blank fields on an existing piece — never overwrite."""
@@ -374,14 +374,14 @@ def _merge_piece(
         )
 
     if merged:
-        piece.save(update_fields=list(set(merged)) + ['updated_at'])
+        piece.save(update_fields=[*set(merged), 'updated_at'])
     return tuple(set(merged))
 
 
 def _create_piece(
     *,
     composer_id: UUID,
-    mbz_work: Optional[WorkLookupResult],
+    mbz_work: WorkLookupResult | None,
     extracted: ExtractedWorkIdentity,
 ) -> Piece:
     title = (mbz_work.canonical_title if mbz_work else extracted.title).strip()
@@ -413,8 +413,8 @@ def _create_piece(
 
 def _resolve_canonical_name(
     *,
-    mbz: Optional[ComposerLookupResult],
-    wiki: Optional[ComposerLookupResult],
+    mbz: ComposerLookupResult | None,
+    wiki: ComposerLookupResult | None,
     extracted: ExtractedWorkIdentity,
 ) -> tuple[str, str]:
     """Returns (last_name, first_name). Prefer MBZ → Wiki → AI extraction."""
@@ -437,10 +437,10 @@ def _resolve_canonical_name(
 
 def _resolve_birth_year(
     *,
-    mbz: Optional[ComposerLookupResult],
-    wiki: Optional[ComposerLookupResult],
+    mbz: ComposerLookupResult | None,
+    wiki: ComposerLookupResult | None,
     extracted: ExtractedWorkIdentity,
-) -> Optional[int]:
+) -> int | None:
     for src in (mbz, wiki):
         if src and src.birth_year:
             return src.birth_year
@@ -449,9 +449,9 @@ def _resolve_birth_year(
 
 def _resolve_death_year(
     *,
-    mbz: Optional[ComposerLookupResult],
-    wiki: Optional[ComposerLookupResult],
-) -> Optional[int]:
+    mbz: ComposerLookupResult | None,
+    wiki: ComposerLookupResult | None,
+) -> int | None:
     for src in (mbz, wiki):
         if src and src.death_year:
             return src.death_year
