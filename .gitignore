@@ -64,7 +64,6 @@ voct_data/
 # --- Other ---
 gemini/
 gemini.md
-.github/
 .prettierignore
 
 .continue/

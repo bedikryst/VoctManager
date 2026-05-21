@@ -1,0 +1,87 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'backend/**'
+      - 'pyproject.toml'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'pyproject.toml'
+      - '.github/workflows/backend-ci.yml'
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint & type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - name: Install dev dependencies
+        run: pip install -r backend/requirements-dev.txt
+      - name: Ruff (lint)
+        run: python -m ruff check backend
+      # mypy reads [tool.mypy] from pyproject.toml (files = ["backend"]) and resolves
+      # the Django settings graph via config.typecheck_settings (inert secrets, no DB).
+      - name: Mypy (type-check)
+        run: python -m mypy
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: voct_user
+          POSTGRES_PASSWORD: voct_pass
+          POSTGRES_DB: voct_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings
+      # Inert secrets — a throwaway CI database, never real credentials.
+      SECRET_KEY: ci-test-secret-key
+      AXEPTA_MERCHANT_ID: ci
+      AXEPTA_SERVICE_ID: ci
+      AXEPTA_TOKEN: ci
+      AXEPTA_MAC_KEY: ci
+      AXEPTA_API_URL: https://example.invalid
+      DB_NAME: voct_db
+      DB_USER: voct_user
+      DB_PASSWORD: voct_pass
+      DB_HOST: localhost
+      DB_PORT: '5432'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      # System libraries pulled in transitively by python-magic and WeasyPrint.
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmagic1 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 libcairo2
+      - name: Install dependencies
+        run: pip install -r backend/requirements-dev.txt
+      - name: Run Django test suite
+        working-directory: backend
+        run: python manage.py test --verbosity=2

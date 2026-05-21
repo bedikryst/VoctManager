@@ -1,0 +1,13 @@
+# Local pre-commit gate. One-time setup:
+#   pip install -r backend/requirements-dev.txt   # (includes pre-commit)
+#   pre-commit install
+#
+# Ruff runs here for instant feedback. Mypy and the test suite run in CI
+# (.github/workflows/backend-ci.yml) because they need the full Django env.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff
+        name: ruff (lint + autofix)
+        args: [--fix]
