@@ -17,6 +17,11 @@ concurrency:
   group: backend-ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Opt the bundled JS actions into Node 24 ahead of GitHub's June 2026 default
+  # (silences the Node 20 deprecation warning). Safe to drop once that lands.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   quality:
     name: Lint & type-check
@@ -55,14 +60,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DJANGO_SETTINGS_MODULE: config.settings
-      # Inert secrets — a throwaway CI database, never real credentials.
-      SECRET_KEY: ci-test-secret-key
-      AXEPTA_MERCHANT_ID: ci
-      AXEPTA_SERVICE_ID: ci
-      AXEPTA_TOKEN: ci
-      AXEPTA_MAC_KEY: ci
-      AXEPTA_API_URL: https://example.invalid
+      # test_settings inherits the inert secrets from typecheck_settings; only the
+      # throwaway database credentials need to reach Django here.
+      DJANGO_SETTINGS_MODULE: config.test_settings
       DB_NAME: voct_db
       DB_USER: voct_user
       DB_PASSWORD: voct_pass

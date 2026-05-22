@@ -41,7 +41,7 @@ class DocumentCategoryTests(APITestCase):
 
     def test_artist_cannot_see_manager_category(self):
         self.client.force_authenticate(user=self.artist_user)
-        response = self.client.get('/api/v1/documents/categories/')
+        response = self.client.get('/api/documents/categories/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         slugs = [cat['slug'] for cat in response.data]
         self.assertIn('artist-visible', slugs)
@@ -52,7 +52,7 @@ class DocumentCategoryTests(APITestCase):
 
     def test_is_manager_sees_all_categories(self):
         self.client.force_authenticate(user=self.manager_user)
-        response = self.client.get('/api/v1/documents/categories/')
+        response = self.client.get('/api/documents/categories/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         slugs = [cat['slug'] for cat in response.data]
         self.assertIn('artist-visible', slugs)

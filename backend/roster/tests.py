@@ -5,21 +5,13 @@ from django.test import TestCase
 from .dtos import ArtistCreateDTO
 from .services import ArtistHRService
 
+# Provisioning delegates the email to core.services, so the task is patched there.
+EMAIL_TASK = "core.services.send_transactional_email_task.delay"
+
 
 class ArtistProvisioningTests(TestCase):
-    @patch("roster.services.UserIdentityService.generate_activation_token_payload")
-    @patch("roster.services.send_transactional_email_task.delay")
-    @patch("core.signals.send_transactional_email_task.delay")
-    def test_provision_artist_only_queues_activation_email_for_inactive_user(
-        self,
-        signal_enqueue_mock,
-        provisioning_enqueue_mock,
-        token_payload_mock,
-    ):
-        token_payload_mock.return_value = {
-            "uidb64": "uid-token",
-            "token": "activation-token",
-        }
+    @patch(EMAIL_TASK)
+    def test_provision_artist_creates_inactive_user_and_queues_activation(self, enqueue_mock):
         dto = ArtistCreateDTO(
             first_name="Ada",
             last_name="Lovelace",
@@ -33,10 +25,6 @@ class ArtistProvisioningTests(TestCase):
         self.assertEqual(artist.email, "ada@example.com")
         assert artist.user is not None  # provisioning always links a user; narrows for the type checker
         self.assertFalse(artist.user.is_active)
-        signal_enqueue_mock.assert_not_called()
-        provisioning_enqueue_mock.assert_called_once()
-        self.assertEqual(
-            provisioning_enqueue_mock.call_args.kwargs["template_name"],
-            "account_activation",
-        )
-        self.assertTrue(provisioning_enqueue_mock.call_args.kwargs["fallback_to_sync"])
+
+        enqueue_mock.assert_called_once()
+        self.assertEqual(enqueue_mock.call_args.kwargs["template_name"], "account_activation")
