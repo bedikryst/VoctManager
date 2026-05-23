@@ -175,7 +175,15 @@
   .chrome.is-solid::before { opacity: 0; }
 
   .chrome-brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--serif); font-size: 21px; font-weight: 300; letter-spacing: .03em; color: inherit; }
-  .chrome-brand svg { width: 17px; height: 40px; color: var(--candle); flex-shrink: 0; }
+  .chrome-brand .brand-mark {
+    width: 17px; height: 40px; flex-shrink: 0;
+    background: var(--candle);
+    -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
+    mask: url(/logo-mark.png) center / contain no-repeat;
+    transition: background-color .5s var(--ease);
+  }
+  /* On the light solid bar the gold mark is washed out — switch to ink, matching the wordmark. */
+  .chrome.is-solid .chrome-brand .brand-mark { background: var(--ink); }
 
   .chrome-nav { display: flex; align-items: center; gap: clamp(16px, 2.4vw, 34px); }
   .chrome-nav a {
@@ -191,9 +199,68 @@
   .chrome-nav a:hover::after, .chrome-nav a[aria-current="page"]::after { transform: scaleX(1); }
   .chrome-nav a[aria-current="page"] { opacity: 1; color: var(--candle); }
   .chrome-nav .nav-support { color: var(--candle); opacity: 1; }
+  /* ─── Mobile menu: bar-height panel sliding in from the right; recolors with the surface. ─── */
+  /* Trigger: a refined two-line mark that recolors with the bar. */
+  .nav-toggle {
+    display: none; position: relative; width: 26px; height: 14px;
+    border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0;
+  }
+  .nav-toggle::before, .nav-toggle::after {
+    content: ""; position: absolute; right: 0; height: 1px; background: currentColor; transition: width .35s var(--ease);
+  }
+  .nav-toggle::before { top: 4px; width: 26px; }
+  .nav-toggle::after { top: 10px; width: 15px; }
+  .nav-toggle:hover::after { width: 26px; }
+  .nav-menu {
+    --menu-fg: var(--paper); --menu-bg: rgba(16, 15, 13, 0.94); --menu-line: rgba(244, 241, 233, 0.14);
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; align-items: center;
+    padding: 0 max(22px, 5vw);
+    background: var(--menu-bg); color: var(--menu-fg);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
+    border-bottom: 1px solid var(--menu-line);
+    transform: translateX(100%); visibility: hidden;
+    transition: transform .5s var(--ease), background-color .5s var(--ease), color .5s var(--ease), visibility 0s linear .5s;
+  }
+  .chrome.menu-open .nav-menu { transform: none; visibility: visible; transition-delay: 0s; }
+  /* Light surface (bar solid) → light panel. */
+  .chrome.is-solid .nav-menu { --menu-fg: var(--ink); --menu-bg: rgba(244, 241, 233, 0.97); --menu-line: rgba(22, 21, 20, 0.1); }
+  /* Hide the bar's own brand/trigger while open so the panel doesn't show them bleeding through. */
+  .chrome.menu-open .chrome-brand,
+  .chrome.menu-open .nav-toggle { opacity: 0; pointer-events: none; transition: opacity .25s var(--ease); }
+  .nav-menu-links {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; justify-content: safe center;
+    gap: clamp(10px, 3vw, 20px);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .nav-menu-links::-webkit-scrollbar { display: none; }
+  .nav-menu a {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--menu-fg); opacity: .8; white-space: nowrap; transition: opacity .3s var(--ease), color .3s var(--ease);
+  }
+  .nav-menu a:hover { opacity: 1; }
+  /* Current page: a fine gold underline ("you are here"), distinct from the gold CTA. */
+  .nav-menu a[aria-current="page"] { opacity: 1; color: var(--candle); }
+  /* Wesprzyj: the single CTA — outlined gold pill. */
+  .nav-menu .nav-support {
+    color: var(--candle); opacity: 1; border: 1px solid var(--candle); border-radius: 999px; padding: 5px 12px;
+    transition: background-color .3s var(--ease), color .3s var(--ease);
+  }
+  .nav-menu .nav-support:hover { background: var(--candle); color: var(--menu-bg); }
+  .menu-close {
+    flex-shrink: 0; margin-left: clamp(10px, 3vw, 18px);
+    border: 0; background: transparent; color: var(--menu-fg); cursor: pointer;
+    font-family: var(--mono); font-size: 16px; line-height: 1; padding: 6px 0 6px 4px; opacity: .55;
+    transition: opacity .3s var(--ease);
+  }
+  .menu-close:hover { opacity: 1; }
   @media (max-width: 760px) {
-    .chrome-nav { gap: 14px; }
-    .chrome-nav .nav-hideable { display: none; }
+    .chrome-nav { display: none; }
+    .nav-toggle { display: inline-flex; }
+  }
+  @media (min-width: 761px) {
+    .nav-menu { display: none; }
   }
 
   /* ─────────────── Hero ─────────────── */
@@ -316,10 +383,11 @@
   }
   .milestones li {
     display: grid;
-    grid-template-columns: minmax(92px, .28fr) 1fr;
-    gap: clamp(20px, 4vw, 56px);
+    grid-template-columns: max-content clamp(200px, 24vw, 320px) 1fr;
+    gap: clamp(16px, 2.4vw, 36px);
     padding: clamp(24px, 4vw, 42px) 0;
     border-top: 1px solid var(--line);
+    align-items: start;
   }
   .milestone-date {
     font-family: var(--mono);
@@ -354,8 +422,14 @@
     text-transform: uppercase;
     color: var(--ink-muted);
   }
+
+  .milestone-media { margin-top: 0px; margin-bottom: 0px; }
+
+  .milestone-media img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; object-position: center; display: block; }
+
   @media (max-width: 700px) {
     .milestones li { grid-template-columns: 1fr; gap: 10px; }
+    .milestone-media { display: none; }
   }
 
   /* Foundation mission and legal facts */
@@ -463,6 +537,7 @@
   .reveal[data-d="2"] { transition-delay: .16s; }
   .reveal[data-d="3"] { transition-delay: .24s; }
   .reveal[data-d="4"] { transition-delay: .32s; }
+  .line { display: block; overflow: hidden; }
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -498,15 +573,23 @@
 
 <header class="chrome" id="chrome" aria-label="Nawigacja">
   <a class="chrome-brand" href="/" aria-label="VoctEnsemble — strona główna">
-    <svg viewBox="0 0 24 56" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M12 3 V47"/><path d="M3.2 12.5 L12 36.5"/><path d="M20.8 12.5 L12 36.5"/><path d="M0.5 12.5 L5.5 12.5"/><path d="M18.5 12.5 L23.5 12.5"/><circle cx="12" cy="52" r="1.6" fill="currentColor" stroke="none"/>
-    </svg>
+    <span class="brand-mark" aria-hidden="true"></span>
     <span>VoctEnsemble</span>
   </a>
   <nav class="chrome-nav">
     <a href="/o-nas" aria-current="page">O nas</a>
-    <a class="nav-hideable" href="/koncerty">Koncerty</a>
+    <a href="/koncerty">Koncerty</a>
     <a class="nav-support" href="/?donate">Wesprzyj</a>
+  </nav>
+  <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Menu"></button>
+  <nav class="nav-menu" id="navMenu" aria-label="Nawigacja">
+    <div class="nav-menu-links">
+      <a href="/">Główna</a>
+      <a href="/o-nas" aria-current="page">O nas</a>
+      <a href="/koncerty">Koncerty</a>
+      <a class="nav-support" href="/?donate">Wesprzyj</a>
+    </div>
+    <button class="menu-close" id="menuClose" type="button" aria-label="Zamknij menu">✕</button>
   </nav>
 </header>
 
@@ -516,15 +599,18 @@
   <section class="hero" aria-label="O nas">
     <div class="hero-media" aria-hidden="true" data-parallax="0.18">
       <picture>
-        <source media="(max-width: 880px)" srcset="/photos/chor-nawa-800.webp">
-        <img src="/photos/chor-nawa-1920.webp" alt="" loading="eager" fetchpriority="high" decoding="async">
+        <source media="(max-width: 880px)" srcset="/photos/o-nas-hero-800.webp">
+        <img src="/photos/o-nas-hero-1920.webp" alt="" loading="eager" fetchpriority="high" decoding="async">
       </picture>
     </div>
     <div class="hero-inner">
-      <p class="eyebrow"><span class="lat">De nobis</span> &nbsp;·&nbsp; O nas</p>
-      <h1>Głosy, które<br>uczą się <em>ciszy.</em></h1>
-      <p class="hero-lede">VoctEnsemble to krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Tworzymy koncerty duchowe, liturgie i projekty, w których muzyka sakralna spotyka współczesną wrażliwość.</p>
-      <span class="scroll-cue">Zejdź niżej</span>
+      <p class="eyebrow reveal"><span class="lat">De nobis</span> &nbsp;·&nbsp; O nas</p>
+      <h1>
+        <span class="line"><span class="reveal">Głosy, które</span></span>
+        <span class="line"><span class="reveal" data-d="1">uczą się <em>ciszy.</em></span></span>
+      </h1>
+      <p class="hero-lede reveal" data-d="2">VoctEnsemble to krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Tworzymy koncerty duchowe, liturgie i projekty, w których muzyka sakralna spotyka współczesną wrażliwość.</p>
+      <span class="scroll-cue reveal" data-d="3">Zejdź niżej</span>
     </div>
   </section>
 
@@ -623,6 +709,9 @@
       <ol class="milestones">
         <li class="reveal" data-d="1">
           <span class="milestone-date">2024</span>
+          <figure class="milestone-media">
+            <img src="/photos/o-nas-wcielenie-800.webp" alt="" loading="lazy" decoding="async">
+          </figure>
           <div class="milestone-body">
             <span class="milestone-place">Bazylika NSPJ · Kraków</span>
             <h3>Kontemplacja Wcielenia</h3>
@@ -631,6 +720,9 @@
         </li>
         <li class="reveal" data-d="2">
           <span class="milestone-date">2024</span>
+          <figure class="milestone-media">
+            <img src="/photos/o-nas-wolanie-gor-800.webp" alt="" loading="lazy" decoding="async">
+          </figure>
           <div class="milestone-body">
             <span class="milestone-place">Centrum Kongresowe · Szczawnica</span>
             <h3>Wołanie Gór</h3>
@@ -639,6 +731,9 @@
         </li>
         <li class="reveal" data-d="3">
           <span class="milestone-date">2024</span>
+          <figure class="milestone-media">
+            <img src="/photos/o-nas-9-kart-800.webp" alt="" loading="lazy" decoding="async">
+          </figure>
           <div class="milestone-body">
             <span class="milestone-place">Kraków · Łódź</span>
             <h3>9 Kart z Księgi Psalmów</h3>
@@ -647,6 +742,9 @@
         </li>
         <li class="reveal" data-d="1">
           <span class="milestone-date">2025</span>
+          <figure class="milestone-media">
+            <img src="/photos/o-nas-ukraina-800.webp" alt="" loading="lazy" decoding="async">
+          </figure>
           <div class="milestone-body">
             <span class="milestone-place">Bazylika Mariacka · Kraków</span>
             <h3>Hymn Poległym</h3>
@@ -655,6 +753,9 @@
         </li>
         <li class="reveal" data-d="2">
           <span class="milestone-date">2025</span>
+          <figure class="milestone-media">
+            <img src="/photos/o-nas-epitafium-800.webp" alt="" loading="lazy" decoding="async">
+          </figure>
           <div class="milestone-body">
             <span class="milestone-place">Mistrzejowice · Niedzica</span>
             <h3>Aeternam — Epitafium dla Gazy</h3>
@@ -663,6 +764,9 @@
         </li>
         <li class="reveal" data-d="3">
           <span class="milestone-date">2026</span>
+          <figure class="milestone-media">
+            <img src="/photos/o-nas-bobola-800.webp" alt="" loading="lazy" decoding="async">
+          </figure>
           <div class="milestone-body">
             <span class="milestone-place">Sanktuarium Narodowe św. Andrzeja Boboli · Warszawa</span>
             <h3>Uroczystość św. Andrzeja Boboli</h3>
@@ -670,8 +774,8 @@
           </div>
         </li>
       </ol>
-      <div class="prose reveal" data-d="4">
-        <p><a class="inline" href="/koncerty">Zobacz repertuar i szczegóły koncertów →</a></p>
+      <div class="prose reveal" style="padding-top: 10px;" data-d="4">
+        <p><a class="inline"  href="/koncerty">Zobacz repertuar i szczegóły koncertów →</a></p>
       </div>
     </div>
   </section>
@@ -850,6 +954,21 @@
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
+
+    // Mobile menu: bar-height panel sliding in from the right (opens on trigger; closes via ✕, link or Esc).
+    const navToggle = document.getElementById("navToggle");
+    const navMenu = document.getElementById("navMenu");
+    if (chrome && navToggle && navMenu) {
+      const setMenu = (open) => {
+        chrome.classList.toggle("menu-open", open);
+        navToggle.setAttribute("aria-expanded", String(open));
+      };
+      navToggle.addEventListener("click", () => setMenu(true));
+      navMenu.querySelectorAll("a, .menu-close").forEach((el) => el.addEventListener("click", () => setMenu(false)));
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && chrome.classList.contains("menu-open")) { setMenu(false); navToggle.focus(); }
+      });
+    }
 
     // Reveal on scroll.
     if (!reduce && "IntersectionObserver" in window) {
