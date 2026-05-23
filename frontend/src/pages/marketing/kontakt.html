@@ -142,7 +142,7 @@
   .chrome.menu-open .nav-menu { transform: none; visibility: visible; transition-delay: 0s; }
   .chrome.is-solid .nav-menu { --menu-fg: var(--ink); --menu-bg: rgba(244, 241, 233, 0.97); --menu-line: rgba(22, 21, 20, 0.1); }
   .chrome.menu-open .chrome-brand, .chrome.menu-open .nav-toggle { opacity: 0; pointer-events: none; transition: opacity .25s var(--ease); }
-  .nav-menu-links { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: safe center; gap: clamp(10px, 3vw, 20px); overflow-x: auto; scrollbar-width: none; }
+  .nav-menu-links { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; overflow-x: auto; scrollbar-width: none; }
   .nav-menu-links::-webkit-scrollbar { display: none; }
   .nav-menu a { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--menu-fg); opacity: .8; white-space: nowrap; transition: opacity .3s var(--ease), color .3s var(--ease); }
   .nav-menu a:hover { opacity: 1; }
