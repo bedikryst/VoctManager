@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /panel
+Disallow: /api/
+Disallow: /documents/
+
+Sitemap: https://voctensemble.com/sitemap.xml

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>VoctEnsemble — Cisza, głos, światło</title>
-<meta name="description" content="VoctEnsemble pod kierownictwem Florenta de Bazelaire. Najbliższe wybrzmienie: 16 maja 2026, Warszawa. Wesprzyj Concerts Spirituels.">
+<meta name="description" content="VoctEnsemble — zespół-rezydent Fundacji VoctFoundation. Koncerty Duchowe: muzyka sakralna od renesansu po współczesność, pod kierownictwem Florenta de Bazelaire.">
 <meta name="theme-color" content="#f4f1e9">
 <meta name="color-scheme" content="light">
 <meta name="format-detection" content="telephone=no">
@@ -749,7 +749,7 @@
     right: 0;
     z-index: 50;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr auto;
     align-items: center;
     gap: 24px;
     padding: calc(env(safe-area-inset-top, 0px) + 24px) max(28px, 5vw) 22px;
@@ -915,27 +915,6 @@
     }
   }
 
-  .event-pill {
-    justify-self: center;
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .event-pill::before,
-  .event-pill::after {
-    content: "";
-    width: 42px;
-    height: 1px;
-    background: currentColor;
-    opacity: 0.46;
-  }
-
   .chrome-actions {
     justify-self: end;
     display: flex;
@@ -1011,15 +990,27 @@
     inset: 0;
   }
 
-  .hero-media video,
-  .hero-media img {
+  .hero-media img,
+  .hero-media video {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     filter: saturate(0.76) contrast(1.08) brightness(0.64);
+  }
+
+  .hero-media img {
     transform: scale(1.06);
     will-change: transform;
     animation: heroKenBurns 38s ease-in-out infinite alternate;
+  }
+
+  /* Opcjonalne slow-motion wideo (np. Florent dyrygujący) leży NA zdjęciu-posterze:
+     zdjęcie zostaje jako LCP i fallback (brak autoplay / reduced-motion / błąd wideo). */
+  .hero-media video {
+    transform: scale(1.04);
+    will-change: transform;
   }
 
   @keyframes heroKenBurns {
@@ -1029,15 +1020,13 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hero-media video,
     .hero-media img {
       animation: none;
       transform: scale(1.02);
     }
-  }
-
-  .hero-media video {
-    display: block;
+    .hero-media video {
+      display: none;
+    }
   }
 
   .hero::before {
@@ -1050,17 +1039,6 @@
     z-index: 1;
   }
 
-  .hero::after {
-    content: "";
-    position: absolute;
-    left: max(28px, 5vw);
-    right: max(28px, 5vw);
-    bottom: 34px;
-    height: 1px;
-    z-index: 2;
-    background: rgba(244, 241, 233, 0.3);
-  }
-
   .hero-inner {
     position: relative;
     z-index: 2;
@@ -1070,10 +1048,8 @@
   }
 
   .hero-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 450px);
-    gap: clamp(48px, 8vw, 130px);
-    align-items: end;
+    display: block;
+    max-width: 1180px;
   }
 
   .hero-kicker {
@@ -1100,20 +1076,25 @@
     color: #e6d8b4;
   }
 
-  .hero-side {
-    display: grid;
-    gap: 28px;
-    align-content: end;
+  .hero-response {
+    max-width: 30ch;
+    margin: clamp(22px, 2.8vw, 40px) 0 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(23px, 2.9vw, 38px);
+    line-height: 1.2;
+    color: rgba(244, 241, 233, 0.94);
   }
 
   .hero-strap {
-    max-width: 38rem;
-    margin: 38px 0 0;
-    color: rgba(244, 241, 233, 0.84);
+    max-width: 40rem;
+    margin: clamp(20px, 2.2vw, 32px) 0 0;
+    color: rgba(244, 241, 233, 0.72);
     font-family: var(--serif);
-    font-size: clamp(20px, 1.9vw, 28px);
+    font-size: clamp(18px, 1.7vw, 24px);
     font-weight: 300;
-    line-height: 1.35;
+    line-height: 1.4;
   }
 
   .hero-strap-name {
@@ -1123,41 +1104,45 @@
     padding-bottom: 2px;
   }
 
-  .hero-occasion {
-    display: grid;
-    gap: 14px;
-    border-top: 1px solid rgba(244, 241, 233, 0.36);
-    padding-top: 28px;
-    color: rgba(244, 241, 233, 0.74);
+  .hero-rail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px 32px;
+    max-width: 1180px;
+    margin-top: clamp(44px, 8vh, 92px);
+    padding-top: 22px;
+    border-top: 1px solid rgba(244, 241, 233, 0.22);
   }
 
-  .hero-occasion .micro {
-    color: rgba(244, 241, 233, 0.5);
-  }
-
-  .hero-occasion strong {
-    color: var(--paper);
-    font-family: var(--serif);
-    font-size: clamp(24px, 2.4vw, 36px);
-    font-weight: 300;
-    line-height: 1.15;
-    letter-spacing: 0;
-  }
-
-  .hero-occasion-meta {
-    display: block;
-    color: rgba(244, 241, 233, 0.68);
+  .hero-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
     font-family: var(--mono);
     font-size: 10px;
-    letter-spacing: 0.18em;
-    line-height: 1.7;
+    letter-spacing: 0.26em;
     text-transform: uppercase;
+    color: rgba(244, 241, 233, 0.58);
   }
 
-  .hero-copy {
-    max-width: 36rem;
-    margin: 0;
-    color: rgba(244, 241, 233, 0.74);
+  .hero-cue::after {
+    content: "";
+    width: 42px;
+    height: 1px;
+    background: currentColor;
+    transform-origin: left;
+    animation: heroCue 3.6s var(--ease-slow) infinite;
+  }
+
+  @keyframes heroCue {
+    0%, 100% { transform: scaleX(0.35); opacity: 0.3; }
+    50% { transform: scaleX(1); opacity: 0.7; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-cue::after { animation: none; opacity: 0.6; }
   }
 
   .hero-actions {
@@ -1165,7 +1150,7 @@
     align-items: center;
     gap: 24px;
     flex-wrap: wrap;
-    margin-top: 8px;
+    margin-top: 0;
   }
 
   .text-link,
@@ -3222,11 +3207,9 @@
     transform-origin: left;
   }
 
-  /* ─── Sygnał — lewa kolumna · dwa bloki:
-     1) Najbliższe wybrzmienie (statyczna data + countdown)
-     2) Kraków · teraz (live clock + hora canonica + GPS + tempus)
-     Bez horizontal rules — odstęp pionowy jako jedyny separator.
-     Hora canonica jest teraz SATELITĄ zegara (nie osobnym blokiem),
+  /* ─── Sygnał — lewa kolumna · Kraków · teraz
+     (live clock + hora canonica + GPS + tempus).
+     Hora canonica jest SATELITĄ zegara (nie osobnym blokiem),
      bo średniowieczny mnich nie patrzył osobno na zegar i osobno na
      "która hora" — to była JEDNA rzecz. */
   .footer-col-signal-body {
@@ -3247,8 +3230,7 @@
     color: var(--ink-muted);
   }
 
-  .footer-signal-coord,
-  .footer-signal-time {
+  .footer-signal-coord {
     color: var(--ink);
     font-family: var(--mono);
     font-size: 10.5px;
@@ -3366,15 +3348,6 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
     transform: translateY(-1.2em);
-  }
-
-  .footer-signal-countdown {
-    color: var(--ink-muted);
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-top: 2px;
   }
 
   /* Breath dla clock — TIME-BASED pulse, nie scroll-driven.
@@ -3685,10 +3658,6 @@
       padding: 24px 22px;
     }
 
-    .event-pill {
-      display: none;
-    }
-
     .chrome-actions {
       gap: 14px;
     }
@@ -3699,7 +3668,6 @@
       letter-spacing: 0.16em;
     }
 
-    .hero-grid,
     .support-panel,
     .section-grid,
     .director-grid,
@@ -3710,10 +3678,6 @@
 
     .hero-inner {
       padding-top: 132px;
-    }
-
-    .hero-side {
-      max-width: 460px;
     }
 
     .section {
@@ -3831,17 +3795,12 @@
       padding: 112px max(22px, 5vw) 46px;
     }
 
-    .hero-grid {
-      gap: 34px;
+    .hero-rail {
+      margin-top: clamp(34px, 6vh, 56px);
     }
 
-    .hero-side {
-      gap: 20px;
-    }
-
-    .hero-occasion {
-      padding-top: 20px;
-      gap: 10px;
+    .hero-cue {
+      display: none;
     }
 
     .hero-strap {
@@ -3849,9 +3808,8 @@
       font-size: 17px;
     }
 
-    .hero-copy {
-      font-size: 14px;
-      line-height: 1.55;
+    .hero-response {
+      font-size: clamp(20px, 5.4vw, 26px);
     }
 
     .support-link {
@@ -3922,16 +3880,6 @@
     .brand-glyph-halo {
       width: 32px;
       height: 32px;
-    }
-
-    .hero-occasion strong {
-      font-size: 21px;
-      line-height: 1.2;
-    }
-
-    .hero-occasion-meta {
-      font-size: 9.5px;
-      letter-spacing: 0.16em;
     }
 
     .path-card {
@@ -6137,10 +6085,11 @@
     </span>
     <span>VoctEnsemble</span>
   </a>
-  <div class="event-pill" id="countdownPill">16 maja 2026 · Warszawa</div>
   <div class="chrome-actions">
     <button class="audio-toggle plausible-event-name=przycisk+cisza" id="audioToggle" type="button" aria-pressed="false">Cisza</button>
     <a class="support-link plausible-event-name=skarbiec+menu" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj</a>
+    <a class="support-link plausible-event-name=o+nas" href="/o-nas" aria-current="page">O nas</a>
+    <a class="support-link plausible-event-name=koncerty" href="/koncerty">Koncerty</a>
   </div>
 </header>
 
@@ -6155,33 +6104,24 @@
 
     <div class="hero-inner">
       <div class="hero-grid">
-        <div>
-          <div class="hero-kicker micro intro-stage">Concerts Spirituels · MMXXVI</div>
-          <h1 class="hero-title">
-            <span class="intro-stage s2">Z ciszy</span>
-            <span class="intro-stage s3"><em>głos.</em></span>
-          </h1>
-          <p class="hero-strap intro-stage s4">
-            Cykl liturgii i koncertów duchowych — kierownictwo artystyczne: 
-            <span class="hero-strap-name">Florent&nbsp;de&nbsp;Bazelaire</span>.
-          </p>
-        </div>
+        <div class="hero-kicker micro intro-stage">Concerts Spirituels</div>
+        <h1 class="hero-title">
+          <span class="intro-stage s2">Z ciszy</span>
+          <span class="intro-stage s3"><em>głos.</em></span>
+        </h1>
+        <p class="hero-response intro-stage s4">Nie szukamy publiczności — szukamy wspólnoty słuchania.</p>
+        <p class="hero-strap intro-stage s5">
+          Koncert jako próg, nie spektakl — muzyka sakralna jako doświadczenie obecności, od renesansu po współczesne misteria. Kierownictwo artystyczne:
+          <span class="hero-strap-name">Florent&nbsp;de&nbsp;Bazelaire</span>.
+        </p>
+      </div>
 
-        <div class="hero-side">
-          <div class="hero-occasion intro-stage s5">
-            <div class="micro">Najbliższe wydarzenia</div>
-            <strong>Uroczystość św. Andrzeja Boboli oraz jubileusz 100-lecia obu Polskich Prowincji Towarzystwa Jezusowego</strong>
-            <span class="hero-occasion-meta" id="heroCountdown">16 maja 2026 · Sanktuarium św. Andrzeja Boboli · w obecności o. gen. Arturo Sosy SJ i abp. Adriana Galbasa SAC</span>
-          </div>
-          <p class="hero-copy intro-stage s6">
-            Nie szukamy publiczności. Szukamy wspólnoty słuchania.
-            Wesprzyj naszą misję, by muzyka miała gdzie wybrzmieć.
-          </p>
-          <div class="hero-actions intro-stage s7">
-            <a class="primary-link plausible-event-name=skarbiec+hero" href="#wesprzyj" data-vault-open data-amount="100">Wesprzyj cykl</a>
-            <a class="secondary-link plausible-event-name=poznaj+zespol" href="#zespol">Poznaj zespół</a>
-          </div>
+      <div class="hero-rail intro-stage s6">
+        <div class="hero-actions">
+          <a class="primary-link plausible-event-name=hero+poznaj+nas" href="/o-nas">Poznaj nas</a>
+          <a class="secondary-link plausible-event-name=hero+koncerty" href="/koncerty">Koncerty Duchowe</a>
         </div>
+        <span class="hero-cue" aria-hidden="true">Zejdź w głąb</span>
       </div>
     </div>
   </section>
@@ -7031,12 +6971,6 @@
         <span class="footer-col-label micro">Sygnał</span>
         <div class="footer-col-body footer-col-signal-body">
 
-          <div class="footer-signal-block footer-signal-event">
-            <span class="footer-signal-key micro">Najbliższe wybrzmienie</span>
-            <span class="footer-signal-time">16.V.MMXXVI · 18:00 CEST</span>
-            <span class="footer-signal-countdown" id="footerCountdown">—</span>
-          </div>
-
           <div class="footer-signal-block footer-signal-now">
             <span class="footer-signal-key micro">Kraków · teraz</span>
             <span class="footer-signal-coord">50°03′41″N · 19°56′18″E</span>
@@ -7160,7 +7094,7 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.2.3/dist/lenis.min.js" defer></script>
+<script src="/vendor/lenis.min.js" defer></script>
 <script>
   (() => {
     const body = document.body;
@@ -7170,8 +7104,6 @@
     const enterSilence = document.getElementById("enterSilence");
     const enterVoice = document.getElementById("enterVoice");
     const audioToggle = document.getElementById("audioToggle");
-    const countdownPill = document.getElementById("countdownPill");
-    const heroCountdown = document.getElementById("heroCountdown");
     const storageKey = "voct.demo.audio";
     const PREF_TTL_MS = 3 * 60 * 60 * 1000; // wybór dźwięku pamiętamy 3h, potem ponownie zapytamy
 
@@ -7207,7 +7139,6 @@
       },
     };
 
-    const eventDate = new Date("2026-05-16T18:00:00+02:00");
     let audio = null;
     let audioOn = false;
     let fadeFrame = null;
@@ -7320,30 +7251,6 @@
       if (document.readyState === "complete") close();
       else window.addEventListener("load", close, { once: true });
       setTimeout(close, 4200);
-    }
-
-    function setCountdown() {
-      const now = new Date();
-      const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const days = Math.round((eventDay - today) / 86400000);
-      const venue = "Sanktuarium św. Andrzeja Boboli · w obecności o. gen. Arturo Sosy SJ";
-      let pillLabel = "16 maja 2026 · Warszawa";
-      let heroLabel = `16 maja 2026 · ${venue}`;
-
-      if (days > 1) {
-        pillLabel = `za ${days} dni · Warszawa`;
-        heroLabel = `za ${days} dni · ${venue}`;
-      } else if (days === 1) {
-        pillLabel = "jutro · Warszawa";
-        heroLabel = `jutro · ${venue}`;
-      } else if (days === 0) {
-        pillLabel = "dziś · Warszawa";
-        heroLabel = `dziś · ${venue}`;
-      }
-
-      if (countdownPill) countdownPill.textContent = pillLabel;
-      if (heroCountdown) heroCountdown.textContent = heroLabel;
     }
 
     function ensureAudio() {
@@ -8245,6 +8152,11 @@
         if (event.key === "Escape" && vault.classList.contains("is-open")) close();
       });
 
+      // Deep-link z podstron: „Wesprzyj" (/?donate) otwiera skarbiec po wejściu na landing.
+      if (new URLSearchParams(location.search).has("donate")) {
+        open(100);
+      }
+
       // transfer field copy buttons
       vault.querySelectorAll(".transfer-field-copy").forEach((btn) => {
         btn.addEventListener("click", async () => {
@@ -8279,7 +8191,7 @@
     }
 
     /* ───────────────────────────────────────────────────────────────
-       FOOTER SIGNAL — live clock (Europe/Warsaw) + countdown + hora canonica
+       FOOTER SIGNAL — live clock (Europe/Warsaw) + hora canonica
        ─────────────────────────────────────────────────────────────── */
 
     // Osiem monastycznych godzin kanonicznych według reguły benedyktyńskiej.
@@ -8344,7 +8256,6 @@
     function initFooterSignal() {
       const clockEl = document.getElementById("footerClock");
       const secondsEl = document.getElementById("footerSeconds");
-      const countdownEl = document.getElementById("footerCountdown");
       const horaNameEl = document.getElementById("footerHoraName");
       const horaPoemEl = document.getElementById("footerHoraPoem");
       const tempusEl = document.getElementById("footerTempus");
@@ -8409,20 +8320,6 @@
         }, msToNextSecond + 10);
       }
 
-      if (countdownEl) {
-        const update = () => {
-          const now = new Date();
-          const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          const days = Math.round((eventDay - today) / 86400000);
-          if (days > 1) countdownEl.textContent = `za ${days} dni`;
-          else if (days === 1) countdownEl.textContent = "jutro";
-          else if (days === 0) countdownEl.textContent = "dziś";
-          else countdownEl.textContent = "wybrzmiało";
-        };
-        update();
-        setInterval(update, 60 * 60 * 1000);
-      }
     }
 
     /* ───────────────────────────────────────────────────────────────
@@ -8924,7 +8821,6 @@
       window.lenis = lenis;
     }
 
-    setCountdown();
     initThreshold();
     initReveals();
     initProgress();
