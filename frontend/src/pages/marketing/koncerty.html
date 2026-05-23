@@ -215,7 +215,7 @@
   @keyframes cuepulse { 0%,100%{ transform: scaleX(.4); opacity: .3 } 50%{ transform: scaleX(1); opacity: .7 } }
 
   /* Concert hero enters voice by voice with CSS-only motion. */
-  .line { display: block; overflow: hidden; }
+  .line { display: block; overflow: hidden; padding-bottom: 0.15em; margin-bottom: -0.15em; }
   @media (prefers-reduced-motion: no-preference) {
     .intro-rise { opacity: 0; animation: introRise 1.15s var(--ease-slow) both; }
     .intro-rise[data-r="2"] { animation-delay: .12s; }
@@ -433,7 +433,7 @@
   <!-- Intro -->
   <section class="intro" aria-label="Koncerty Duchowe">
     <div class="intro-media" aria-hidden="true" data-parallax="0.16">
-      <img src="/photos/koncerty-hero-1920.webp" srcset="/photos/koncerty-hero-800.webp 800w, /photos/koncerty-hero-1920.webp 1920w" alt="" loading="eager" fetchpriority="high" decoding="async">
+      <img src="/photos/koncerty-hero-1920.webp" srcset="/photos/koncerty-hero-1920.webp 800w, /photos/koncerty-hero-1920.webp 1920w" alt="" loading="eager" fetchpriority="high" decoding="async">
     </div>
     <div class="intro-inner">
       <p class="eyebrow intro-rise" data-r="1"><span class="lat">Via</span> &nbsp;·&nbsp; Droga koncertów</p>
