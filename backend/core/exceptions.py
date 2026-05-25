@@ -23,18 +23,25 @@ class InvalidCredentialsException(CoreDomainException):
 class EmailAlreadyInUseException(CoreDomainException):
     pass
 
+
+def format_pydantic_validation_errors(exc: ValidationError) -> list[dict[str, str]]:
+    """Returns client-safe Pydantic errors without echoing submitted values."""
+    errors: list[dict[str, str]] = []
+    for error in exc.errors(include_url=False, include_input=False, include_context=False):
+        field = ".".join(str(loc) for loc in error.get("loc", []))
+        errors.append({
+            "field": field,
+            "message": str(error.get("msg", "")),
+            "type": str(error.get("type", "")),
+        })
+    return errors
+
+
 def enterprise_exception_handler(exc, context) -> Response | None:
     request_path = context['request'].path
 
     if isinstance(exc, ValidationError):
-        errors = []
-        for error in exc.errors():
-            field = ".".join([str(loc) for loc in error.get("loc", [])])
-            errors.append({
-                "field": field,
-                "message": error.get("msg"),
-                "type": error.get("type")
-            })
+        errors = format_pydantic_validation_errors(exc)
             
         payload = {
             "type": "/errors/unprocessable-entity",

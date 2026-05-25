@@ -35,11 +35,42 @@ def _validate_timezone(value: str) -> str:
     return value
 
 
-def _blankable_string(value: str | None) -> str:
-    return "" if value is None else value
+def _strip_required_text(value: object) -> object:
+    if not isinstance(value, str):
+        return value
+    stripped = value.strip()
+    if not stripped:
+        raise ValueError("Value cannot be blank.")
+    return stripped
+
+
+def _blankable_string(value: object) -> object:
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        return value
+    return value.strip()
+
+
+def _blankable_optional_string(value: object) -> object:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return value
+    stripped = value.strip()
+    return stripped or None
+
+
+def _normalize_run_sheet(value: object) -> object:
+    if value is None:
+        return ()
+    if isinstance(value, list | tuple):
+        return tuple(value)
+    return value
+
 
 class EnterpriseBaseDTO(BaseModel):
-    model_config = ConfigDict(frozen=True, extra='forbid')
+    model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 
 class ArtistCreateDTO(EnterpriseBaseDTO):
@@ -53,6 +84,16 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     vocal_range_bottom: str | None = Field(None, max_length=5)
     vocal_range_top: str | None = Field(None, max_length=5)
     language: str = Field(default='en', max_length=10)
+
+    @field_validator("first_name", "last_name", mode="before")
+    @classmethod
+    def normalize_required_text(cls, value: object) -> object:
+        return _strip_required_text(value)
+
+    @field_validator("first_name_vocative", "phone_number", "vocal_range_bottom", "vocal_range_top", mode="before")
+    @classmethod
+    def normalize_optional_text(cls, value: object) -> object:
+        return _blankable_optional_string(value)
 
     @field_validator("voice_type")
     @classmethod
@@ -78,6 +119,11 @@ class AttendanceRecordDTO(EnterpriseBaseDTO):
     @classmethod
     def validate_status(cls, value: str) -> str:
         return _require_choice(value, ATTENDANCE_STATUS_VALUES, "status")
+
+    @field_validator("excuse_note", mode="before")
+    @classmethod
+    def normalize_excuse_note(cls, value: object) -> object:
+        return _blankable_string(value)
 
 
 class ParticipationStatusUpdateDTO(EnterpriseBaseDTO):
@@ -109,7 +155,12 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     dress_code_female: str = Field(default='', max_length=100)
     status: str = Field(default='DRAFT', max_length=10)
     spotify_playlist_url: str = Field(default='', max_length=500)
-    run_sheet: list[dict[str, Any]] = Field(default_factory=list)
+    run_sheet: tuple[dict[str, Any], ...] = Field(default_factory=tuple)
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def normalize_title(cls, value: object) -> object:
+        return _strip_required_text(value)
 
     @field_validator("timezone")
     @classmethod
@@ -129,8 +180,13 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
         mode="before",
     )
     @classmethod
-    def normalize_blankable_strings(cls, value: str | None) -> str:
+    def normalize_blankable_strings(cls, value: object) -> object:
         return _blankable_string(value)
+
+    @field_validator("run_sheet", mode="before")
+    @classmethod
+    def normalize_run_sheet(cls, value: object) -> object:
+        return _normalize_run_sheet(value)
 
 
 class ProjectUpdateDTO(EnterpriseBaseDTO):
@@ -146,7 +202,14 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     dress_code_female: str | None = Field(None, max_length=100)
     status: str | None = Field(None, max_length=10)
     spotify_playlist_url: str | None = None
-    run_sheet: list[dict[str, Any]] | None = None
+    run_sheet: tuple[dict[str, Any], ...] | None = None
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def normalize_title(cls, value: object) -> object:
+        if value is None:
+            return value
+        return _strip_required_text(value)
 
     @field_validator("timezone")
     @classmethod
@@ -166,13 +229,13 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
         mode="before",
     )
     @classmethod
-    def normalize_nullable_blankable_strings(cls, value: str | None) -> str:
+    def normalize_nullable_blankable_strings(cls, value: object) -> object:
         return _blankable_string(value)
 
     @field_validator("run_sheet", mode="before")
     @classmethod
-    def normalize_nullable_run_sheet(cls, value: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
-        return [] if value is None else value
+    def normalize_nullable_run_sheet(cls, value: object) -> object:
+        return _normalize_run_sheet(value)
 
     @model_validator(mode="after")
     def reject_null_for_required_fields(self):
@@ -198,7 +261,7 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
 
     @field_validator("focus", mode="before")
     @classmethod
-    def normalize_focus(cls, value: str | None) -> str:
+    def normalize_focus(cls, value: object) -> object:
         return _blankable_string(value)
 
 
@@ -217,7 +280,7 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
 
     @field_validator("focus", mode="before")
     @classmethod
-    def normalize_focus(cls, value: str | None) -> str:
+    def normalize_focus(cls, value: object) -> object:
         return _blankable_string(value)
 
     @model_validator(mode="after")

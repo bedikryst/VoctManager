@@ -7,28 +7,36 @@ from .models import LocationCategory
 LOCATION_CATEGORY_VALUES = frozenset(LocationCategory.values)
 
 
-def _strip_required(value: str) -> str:
+def _strip_required(value: object) -> object:
+    if not isinstance(value, str):
+        return value
     stripped = value.strip()
     if not stripped:
         raise ValueError("Value cannot be blank.")
     return stripped
 
 
-def _blank_to_none(value: str | None) -> str | None:
+def _blank_to_none(value: object) -> object:
     if value is None:
         return None
+    if not isinstance(value, str):
+        return value
     stripped = value.strip()
     return stripped or None
 
 
-def _blank_to_empty(value: str | None) -> str:
-    return "" if value is None else value
+def _blank_to_empty(value: object) -> object:
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        return value
+    return value.strip()
 
 
 class LogisticsBaseDTO(BaseModel):
     """Base DTO for validated logistics service payloads."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 
 class LocationCreateDTO(LogisticsBaseDTO):
@@ -44,17 +52,17 @@ class LocationCreateDTO(LogisticsBaseDTO):
 
     @field_validator("name", "formatted_address", mode="before")
     @classmethod
-    def normalize_required_text(cls, value: str) -> str:
+    def normalize_required_text(cls, value: object) -> object:
         return _strip_required(value)
 
     @field_validator("google_place_id", mode="before")
     @classmethod
-    def normalize_google_place_id(cls, value: str | None) -> str | None:
+    def normalize_google_place_id(cls, value: object) -> object:
         return _blank_to_none(value)
 
     @field_validator("internal_notes", mode="before")
     @classmethod
-    def normalize_internal_notes(cls, value: str | None) -> str:
+    def normalize_internal_notes(cls, value: object) -> object:
         return _blank_to_empty(value)
 
     @field_validator("category")
@@ -80,19 +88,19 @@ class LocationUpdateDTO(LogisticsBaseDTO):
 
     @field_validator("name", "formatted_address", mode="before")
     @classmethod
-    def normalize_required_text(cls, value: str | None) -> str | None:
+    def normalize_required_text(cls, value: object) -> object:
         if value is None:
             return value
         return _strip_required(value)
 
     @field_validator("google_place_id", mode="before")
     @classmethod
-    def normalize_google_place_id(cls, value: str | None) -> str | None:
+    def normalize_google_place_id(cls, value: object) -> object:
         return _blank_to_none(value)
 
     @field_validator("internal_notes", mode="before")
     @classmethod
-    def normalize_internal_notes(cls, value: str | None) -> str:
+    def normalize_internal_notes(cls, value: object) -> object:
         return _blank_to_empty(value)
 
     @field_validator("category")

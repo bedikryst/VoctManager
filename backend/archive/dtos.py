@@ -24,7 +24,7 @@ def _require_choice(value: str, allowed_values: frozenset[str], field_name: str)
     return value
 
 class EnterpriseBaseDTO(BaseModel):
-    model_config = ConfigDict(frozen=True, extra='forbid')
+    model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 class VoiceRequirementDTO(EnterpriseBaseDTO):
     voice_line: str = Field(..., min_length=1, max_length=12)
@@ -67,7 +67,7 @@ class PieceWriteDTO(EnterpriseBaseDTO):
     text_source: str = Field(default="", max_length=200)
     lyrics_ipa: str | None = None
     
-    voice_requirements: list[VoiceRequirementDTO] | None = None
+    voice_requirements: tuple[VoiceRequirementDTO, ...] | None = None
 
     @field_validator("epoch")
     @classmethod
@@ -95,12 +95,12 @@ class PieceWriteDTO(EnterpriseBaseDTO):
 
 
 # ===========================================================================
-# Score Package Compiler — ingestion pipeline DTOs (added 2026-05)
+# Score Package Compiler - ingestion pipeline DTOs (added 2026-05)
 # ===========================================================================
 # Two categories below:
-#   1. AI structured-output schemas — sent to Claude via `output_config.format`.
+#   1. AI structured-output schemas - sent to Claude via `output_config.format`.
 #      Claude is forced to satisfy them; the SDK validates before returning.
-#   2. Internal value objects — frozen DTOs passed between Celery tasks.
+#   2. Internal value objects - frozen DTOs passed between Celery tasks.
 # ===========================================================================
 
 
@@ -109,29 +109,29 @@ class PieceWriteDTO(EnterpriseBaseDTO):
 class CallCost(EnterpriseBaseDTO):
     """Cost of a single Claude API call, including cache attribution."""
     model: str
-    input_tokens: int = 0
-    output_tokens: int = 0
-    cache_creation_input_tokens: int = 0
-    cache_read_input_tokens: int = 0
-    total_usd: Decimal
-    total_cents: int
+    input_tokens: int = Field(default=0, ge=0)
+    output_tokens: int = Field(default=0, ge=0)
+    cache_creation_input_tokens: int = Field(default=0, ge=0)
+    cache_read_input_tokens: int = Field(default=0, ge=0)
+    total_usd: Decimal = Field(..., ge=Decimal("0"))
+    total_cents: int = Field(..., ge=0)
 
 
 class ProvenanceClaim(EnterpriseBaseDTO):
     """
     Describes where a single field's value came from. Persisted as a
-    ProvenanceRecord row downstream — kept as a DTO until the Celery task
+    ProvenanceRecord row downstream - kept as a DTO until the Celery task
     that owns the database write is ready to commit.
     """
     field_name: str
     source: str           # ProvenanceSource enum value
     source_reference: str = ""
-    confidence: float = 1.0
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     prompt_version: str = ""
     model_version: str = ""
 
 
-# --- AI structured-output schemas (NOT frozen — SDK populates them) ---------
+# --- AI structured-output schemas (NOT frozen - SDK populates them) ---------
 
 class ExtractedWorkIdentity(BaseModel):
     """
@@ -274,7 +274,7 @@ class WorkLookupResult(EnterpriseBaseDTO):
     musical_key: str = ""
     language: str = ""
     work_type: str = ""           # e.g. 'Mass', 'Motet', 'Anthem' (from MB type/attributes)
-    score: int = 0                # MB's search score 0-100 (higher = better match)
+    score: int = Field(default=0, ge=0, le=100)  # MB's search score 0-100 (higher = better match)
 
 
 class RecordingLookupResult(EnterpriseBaseDTO):
@@ -285,8 +285,8 @@ class RecordingLookupResult(EnterpriseBaseDTO):
     title: str = ""
     performer: str = ""           # artist / channel name
     year: int | None = None
-    duration_seconds: int | None = None
-    relevance_rank: int = 0       # 0 = top hit, 1 = next, …
+    duration_seconds: int | None = Field(None, ge=0)
+    relevance_rank: int = Field(default=0, ge=0)  # 0 = top hit, 1 = next result
 
 
 class RecordingSearchResult(EnterpriseBaseDTO):

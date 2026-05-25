@@ -6,7 +6,7 @@
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .models import DeviceType, NotificationLevel, NotificationType
 
@@ -23,7 +23,7 @@ def _require_choice(value: str, allowed_values: frozenset[str], field_name: str)
 
 class EnterpriseBaseDTO(BaseModel):
     """Base payload model ensuring immutability for Celery serialization."""
-    model_config = ConfigDict(frozen=True, extra='forbid')
+    model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 # ==========================================
 # METADATA SCHEMAS (STRICT TYPING)
@@ -44,7 +44,7 @@ class ProjectUpdatedMetadata(EnterpriseBaseDTO):
     project_id: UUID | None = None 
     project_name: str
     message: str | None = None
-    changes: list[str] | None = None
+    changes: tuple[str, ...] | None = None
 
 # --- Rehearsals ---
 class RehearsalScheduledMetadata(EnterpriseBaseDTO):
@@ -56,7 +56,7 @@ class RehearsalScheduledMetadata(EnterpriseBaseDTO):
 class RehearsalUpdatedMetadata(EnterpriseBaseDTO):
     rehearsal_id: UUID
     project_name: str
-    changes: list[str]
+    changes: tuple[str, ...]
     message: str | None = None
 
 class RehearsalCancelledMetadata(EnterpriseBaseDTO):
@@ -69,7 +69,7 @@ class PieceCastingMetadata(EnterpriseBaseDTO):
     piece_title: str
     voice_line: str | None = None
     message: str | None = None
-    changes: list[str] | None = None
+    changes: tuple[str, ...] | None = None
 
 # --- HR & Logistics ---
 class CrewAssignedMetadata(EnterpriseBaseDTO):
@@ -94,7 +94,7 @@ class ManagerActionMetadata(EnterpriseBaseDTO):
 
 
 class CustomAdminMessageMetadata(EnterpriseBaseDTO):
-    """Payload for direct manager → artist messages. Carries sender context for read receipts."""
+    """Payload for direct manager-to-artist messages. Carries sender context for read receipts."""
     title: str = Field(..., max_length=120)
     message: str = Field(..., max_length=2000)
     sender_id: str | UUID
@@ -202,7 +202,7 @@ class NotificationCreateDTO(EnterpriseBaseDTO):
 
 class PushDeviceRegisterDTO(BaseModel):
     """DTO for FCM token registration (iOS / Android)."""
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, validate_by_name=True, validate_by_alias=True)
 
     user_id: int | str
     registration_token: str = Field(..., min_length=10, description="The client-provided FCM token.")
@@ -216,17 +216,17 @@ class PushDeviceRegisterDTO(BaseModel):
 
 class WebPushSubscribeDTO(BaseModel):
     """DTO for Web Push (VAPID) subscription registration from browser clients."""
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, validate_by_name=True, validate_by_alias=True)
 
     user_id: int | str
-    endpoint: str = Field(..., description="Browser-assigned push endpoint URL.")
-    p256dh_key: str = Field(..., description="ECDH public key for payload encryption.")
-    auth_key: str = Field(..., description="Auth secret for payload encryption.")
+    endpoint: str = Field(..., min_length=1, description="Browser-assigned push endpoint URL.")
+    p256dh_key: str = Field(..., min_length=10, description="ECDH public key for payload encryption.")
+    auth_key: str = Field(..., min_length=10, description="Auth secret for payload encryption.")
 
 
 class NotificationPreferenceUpdateDTO(BaseModel):
     """DTO for granular mutation of user notification preferences."""
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, validate_by_name=True, validate_by_alias=True)
 
     user_id: int | str
     notification_type: str = Field(..., description="Target business event category.")
@@ -238,4 +238,10 @@ class NotificationPreferenceUpdateDTO(BaseModel):
     @classmethod
     def validate_notification_type(cls, value: str) -> str:
         return _require_choice(value, NOTIFICATION_TYPE_VALUES, "notification_type")
+
+    @model_validator(mode="after")
+    def require_at_least_one_channel(self):
+        if self.email_enabled is None and self.push_enabled is None and self.sms_enabled is None:
+            raise ValueError("At least one notification channel toggle must be provided.")
+        return self
 

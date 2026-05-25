@@ -23,7 +23,7 @@ from .dtos import (
     UserPasswordChangeDTO,
     UserPreferencesUpdateDTO,
 )
-from .exceptions import EmailAlreadyInUseException, InvalidCredentialsException
+from .exceptions import EmailAlreadyInUseException, InvalidCredentialsException, format_pydantic_validation_errors
 from .ical_service import ICalGeneratorService
 from .models import UserProfile
 from .serializers import UserMeSerializer, UserProfileSerializer
@@ -59,7 +59,7 @@ class ActivateAccountView(views.APIView):
             dto = UserAccountActivationDTO(**request.data)
             validate_password(dto.new_password)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
         except DjangoValidationError as e:
             return Response(
                 {"validation_errors": {"new_password": list(e.messages)}},
@@ -131,7 +131,7 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
             # The DTO will automatically fail-fast if data is malformed
             dto = UserPreferencesUpdateDTO(**payload)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         # Delegate persistence to the Service Layer
         UserPreferencesService.update_user_preferences(request.user, dto)
@@ -152,7 +152,7 @@ class ChangePasswordView(views.APIView):
         try:
             dto = UserPasswordChangeDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             UserIdentityService.change_user_password(request.user, dto)
@@ -182,7 +182,7 @@ class ChangeEmailRequestView(views.APIView):
             }
             dto = UserEmailChangeDTO(**payload)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             updated_user = UserIdentityService.process_email_change(request.user, dto)
@@ -234,7 +234,7 @@ class RequestAccountDeletionView(views.APIView):
         try:
             dto = UserAccountDeletionDTO(current_password=request.data.get('password'))
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             UserIdentityService.process_account_soft_deletion(request.user, dto)

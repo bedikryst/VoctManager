@@ -201,8 +201,8 @@ class ArtistMetricsAPIView(views.APIView):
         artist_profile = getattr(request.user, 'artist_profile', None)
 
         if artist_profile is None:
-            return Response(ArtistMetricsService.get_empty_metrics().model_dump())
+            return Response(ArtistMetricsService.get_empty_metrics().model_dump(mode="json"))
 
         metrics = ArtistMetricsService.get_metrics_for_artist(artist_profile.id)
 
-        return Response(metrics.model_dump())
+        return Response(metrics.model_dump(mode="json"))

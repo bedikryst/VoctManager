@@ -94,7 +94,7 @@ class DocumentService:
             description=dto.description,
             icon_key=dto.icon_key,
             order=dto.order,
-            allowed_roles=dto.allowed_roles,
+            allowed_roles=list(dto.allowed_roles),
         )
 
     @staticmethod
@@ -104,7 +104,7 @@ class DocumentService:
         except DocumentCategory.DoesNotExist:
             raise DocumentCategoryNotFoundError(f"DocumentCategory {category_id} not found.")
 
-        patch_data = dto.model_dump(exclude_none=True)
+        patch_data = dto.model_dump(exclude_none=True, mode="json")
         for field, value in patch_data.items():
             setattr(category, field, value)
         category.save()
@@ -135,7 +135,7 @@ class DocumentService:
             file=file,
             file_size_bytes=file_size_bytes,
             mime_type=mime_type,
-            allowed_roles=dto.allowed_roles,
+            allowed_roles=list(dto.allowed_roles),
             order=dto.order,
             uploaded_by_id=dto.uploaded_by_id,
         )

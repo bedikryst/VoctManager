@@ -20,12 +20,39 @@ def _require_choice(value: str, allowed_values: frozenset[str], field_name: str)
         raise ValueError(f"{field_name} must be one of: {allowed}.")
     return value
 
+
+def _strip_required_text(value: object) -> object:
+    if not isinstance(value, str):
+        return value
+    stripped = value.strip()
+    if not stripped:
+        raise ValueError("Value cannot be blank.")
+    return stripped
+
+
+def _blank_to_none(value: object) -> object:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return value
+    stripped = value.strip()
+    return stripped or None
+
+
+def _blank_to_empty(value: object) -> object:
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        return value
+    return value.strip()
+
+
 class EnterpriseBaseDTO(BaseModel):
     """
     Base DTO enforcing immutability and rejecting undefined fields.
     Prevents API payload pollution (Mass Assignment Vulnerabilities).
     """
-    model_config = ConfigDict(frozen=True, extra='forbid')
+    model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 
 class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
@@ -42,9 +69,25 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     # Automatically validates that height is physically realistic
     height_cm: int | None = Field(None, ge=100, le=250)
 
+    @field_validator("first_name", "last_name", mode="before")
+    @classmethod
+    def normalize_required_text(cls, value: object) -> object:
+        return _strip_required_text(value)
+
+    @field_validator("phone_number", mode="before")
+    @classmethod
+    def normalize_phone_number(cls, value: object) -> object:
+        return _blank_to_none(value)
+
+    @field_validator("dietary_notes", "clothing_size", "shoe_size", mode="before")
+    @classmethod
+    def normalize_blankable_text(cls, value: object) -> object:
+        return _blank_to_empty(value)
+
     @field_validator("language")
     @classmethod
     def validate_language(cls, value: str) -> str:
+        value = value.lower()
         return _require_choice(value, SUPPORTED_LANGUAGE_CODES, "language")
 
     @field_validator("timezone")
@@ -59,11 +102,13 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     @field_validator("dietary_preference")
     @classmethod
     def validate_dietary_preference(cls, value: str) -> str:
+        value = value.lower()
         return _require_choice(value, DIETARY_CHOICE_VALUES, "dietary_preference")
 
     @field_validator("clothing_size")
     @classmethod
     def validate_clothing_size(cls, value: str) -> str:
+        value = value.lower()
         if value == "":
             return value
         return _require_choice(value, CLOTHING_SIZE_VALUES, "clothing_size")

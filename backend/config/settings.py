@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     'logistics',
     'documents',
     'payments',
+    'contact',
 ]
 
 # --- AUTHENTICATION BACKENDS ---
@@ -192,6 +193,8 @@ REST_FRAMEWORK = {
         # kept generous enough for shared NAT (e.g. concert-venue Wi-Fi).
         'donation_initiate': '2000/hour',
         'donation_status': '60/minute',
+        # Public contact form: persists a row + sends one e-mail per hit.
+        'contact': '40/hour',
     }
 }
 

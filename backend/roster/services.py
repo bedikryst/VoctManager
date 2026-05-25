@@ -181,6 +181,7 @@ class ProjectManagementService:
         with transaction.atomic():
             # 1. Extract and map data, explicitly excluding location_id from the dump
             create_data = dto.model_dump(exclude={'location_id', 'conductor'})
+            create_data['run_sheet'] = list(dto.run_sheet)
             
             # 2. Resolve Domain Logistics
             location, resolved_timezone = resolve_location_and_timezone(dto.location_id, dto.timezone)
@@ -216,6 +217,8 @@ class ProjectManagementService:
             exclude={'location_id', 'conductor'},
             exclude_unset=True,
         )
+        if 'run_sheet' in dto.model_fields_set:
+            update_data['run_sheet'] = list(dto.run_sheet or ())
 
         with transaction.atomic():
             # Resolve location and timezone if location_id was provided in the update DTO

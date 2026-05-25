@@ -23,7 +23,7 @@ def _require_choice(value: str, allowed_values: frozenset[str], field_name: str)
     return value
 
 
-def _validate_roles(values: list[str]) -> list[str]:
+def _validate_roles(values: tuple[str, ...]) -> tuple[str, ...]:
     seen: set[str] = set()
     duplicates: set[str] = set()
     for value in values:
@@ -39,7 +39,7 @@ def _validate_roles(values: list[str]) -> list[str]:
 
 
 class DocumentsBaseDTO(BaseModel):
-    model_config = ConfigDict(frozen=True, extra='forbid')
+    model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 
 class DocumentCategoryCreateDTO(DocumentsBaseDTO):
@@ -48,7 +48,7 @@ class DocumentCategoryCreateDTO(DocumentsBaseDTO):
     description: str = Field(default='', max_length=2000)
     icon_key: str = Field(..., max_length=20)
     order: int = Field(default=0, ge=0)
-    allowed_roles: list[str] = Field(..., min_length=1)
+    allowed_roles: tuple[str, ...] = Field(..., min_length=1)
 
     @field_validator("icon_key")
     @classmethod
@@ -57,7 +57,7 @@ class DocumentCategoryCreateDTO(DocumentsBaseDTO):
 
     @field_validator("allowed_roles")
     @classmethod
-    def validate_allowed_roles(cls, value: list[str]) -> list[str]:
+    def validate_allowed_roles(cls, value: tuple[str, ...]) -> tuple[str, ...]:
         return _validate_roles(value)
 
 
@@ -66,7 +66,7 @@ class DocumentCategoryUpdateDTO(DocumentsBaseDTO):
     description: str | None = Field(None, max_length=2000)
     icon_key: str | None = Field(None, max_length=20)
     order: int | None = Field(None, ge=0)
-    allowed_roles: list[str] | None = Field(None, min_length=1)
+    allowed_roles: tuple[str, ...] | None = Field(None, min_length=1)
 
     @field_validator("icon_key")
     @classmethod
@@ -75,7 +75,7 @@ class DocumentCategoryUpdateDTO(DocumentsBaseDTO):
 
     @field_validator("allowed_roles")
     @classmethod
-    def validate_allowed_roles(cls, value: list[str] | None) -> list[str] | None:
+    def validate_allowed_roles(cls, value: tuple[str, ...] | None) -> tuple[str, ...] | None:
         return _validate_roles(value) if value is not None else value
 
 
@@ -83,13 +83,13 @@ class DocumentCreateDTO(DocumentsBaseDTO):
     category_id: UUID
     title: str = Field(..., min_length=1, max_length=255)
     description: str = Field(default='', max_length=2000)
-    allowed_roles: list[str] = Field(default_factory=list)
+    allowed_roles: tuple[str, ...] = Field(default_factory=tuple)
     order: int = Field(default=0, ge=0)
     uploaded_by_id: int | None = None
 
     @field_validator("allowed_roles")
     @classmethod
-    def validate_allowed_roles(cls, value: list[str]) -> list[str]:
+    def validate_allowed_roles(cls, value: tuple[str, ...]) -> tuple[str, ...]:
         return _validate_roles(value)
 
 
@@ -99,7 +99,7 @@ class ArtistMetricsQueryDTO(DocumentsBaseDTO):
 
 
 class VocalLineEntryDTO(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     voice_line: str
     voice_line_display: str
@@ -112,10 +112,10 @@ class VocalLineEntryDTO(BaseModel):
 
 
 class ArtistIdentityMetricsDTO(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     total_concerts: int = Field(..., ge=0)
     active_seasons: int = Field(..., ge=0)
-    season_years: list[int]
-    vocal_line_distribution: list[VocalLineEntryDTO]
+    season_years: tuple[int, ...]
+    vocal_line_distribution: tuple[VocalLineEntryDTO, ...]
     first_project_year: int | None

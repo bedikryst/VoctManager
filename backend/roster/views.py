@@ -21,6 +21,7 @@ from rest_framework.response import Response
 
 from archive.models import PieceVoiceRequirement, Track
 from core.constants import VoiceLine
+from core.exceptions import format_pydantic_validation_errors
 from core.permissions import IsManager, IsManagerOrReadOnly
 from core.request_utils import request_user
 
@@ -107,7 +108,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
         try:
             dto = ArtistCreateDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             artist = ArtistHRService.provision_artist(dto)
@@ -195,7 +196,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         try:
             dto = ProjectCreateDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
             
         project = ProjectManagementService.create_project_with_creator(user=request.user, dto=dto)
         return Response(self.get_serializer(project).data, status=status.HTTP_201_CREATED)
@@ -205,7 +206,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         try:
             dto = ProjectUpdateDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
             
         updated_project = ProjectManagementService.update_project(project, dto)
         return Response(self.get_serializer(updated_project).data, status=status.HTTP_200_OK)
@@ -411,7 +412,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         try:
             dto = ProjectBulkFeeDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         updated_count = ProjectManagementService.update_project_bulk_fee(dto)
         return Response({"detail": f"Successfully updated {updated_count} records.", "updated_count": updated_count}, status=status.HTTP_200_OK)
@@ -433,7 +434,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         try:
             dto = ParticipationStatusUpdateDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         updated_participation = ParticipationService.update_status_by_artist(participation, dto.status)
         
@@ -461,7 +462,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 **request.data
             )
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
         try:
             attendance = RehearsalOperationsService.record_attendance(dto)
             return Response(self.get_serializer(attendance).data, status=status.HTTP_201_CREATED)
@@ -531,7 +532,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         try:
             dto = RehearsalCreateDTO(**self._build_create_dto_payload(serializer.validated_data))
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         # 3. Extract validated Many-To-Many relations
         invited = serializer.validated_data.get('invited_participations', None)
@@ -549,7 +550,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         try:
             dto = RehearsalUpdateDTO(**self._build_update_dto_payload(serializer.validated_data))
         except ValidationError as e:
-            return Response({"validation_errors": e.errors()}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         invited = serializer.validated_data.get('invited_participations', None)
         

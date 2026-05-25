@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from core.constants import AppRole
 
+from .dtos import DocumentCategoryCreateDTO
 from .models import Document, DocumentCategory
 
 User = get_user_model()
@@ -57,3 +59,16 @@ class DocumentCategoryTests(APITestCase):
         slugs = [cat['slug'] for cat in response.data]
         self.assertIn('artist-visible', slugs)
         self.assertIn('manager-only', slugs)
+
+
+class DocumentDtoTests(SimpleTestCase):
+    def test_allowed_roles_are_immutable_inside_dto(self):
+        dto = DocumentCategoryCreateDTO(
+            name="Knowledge Base",
+            slug="knowledge-base",
+            icon_key="BookOpen",
+            allowed_roles=[AppRole.ARTIST],
+        )
+
+        self.assertEqual(dto.allowed_roles, (AppRole.ARTIST,))
+        self.assertFalse(hasattr(dto.allowed_roles, "append"))

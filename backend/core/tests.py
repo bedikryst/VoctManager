@@ -3,11 +3,13 @@ from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, SimpleTestCase, TestCase
+from pydantic import ValidationError
 from rest_framework.test import APITestCase
 
 from .constants import AppRole
-from .exceptions import EmailAlreadyInUseException
+from .dtos import UserPasswordChangeDTO, UserPreferencesUpdateDTO
+from .exceptions import EmailAlreadyInUseException, format_pydantic_validation_errors
 from .models import UserProfile
 from .permissions import IsManager, IsManagerOrReadOnly
 from .services import UserIdentityService
@@ -17,6 +19,35 @@ User = get_user_model()
 # The email task is dispatched through the service module, so it must be patched where
 # it is *looked up* (core.services) — not where it is defined (notifications.email_tasks).
 EMAIL_TASK = "core.services.send_transactional_email_task.delay"
+
+
+class PydanticDtoHardeningTests(SimpleTestCase):
+    def test_preferences_dto_normalizes_text_boundaries(self):
+        dto = UserPreferencesUpdateDTO(
+            first_name="  Ada  ",
+            last_name="  Lovelace  ",
+            phone_number="   ",
+            dietary_notes="  no peanuts  ",
+            clothing_size=" M ",
+            shoe_size=" 42 ",
+        )
+
+        self.assertEqual(dto.first_name, "Ada")
+        self.assertEqual(dto.last_name, "Lovelace")
+        self.assertIsNone(dto.phone_number)
+        self.assertEqual(dto.dietary_notes, "no peanuts")
+        self.assertEqual(dto.clothing_size, "m")
+        self.assertEqual(dto.shoe_size, "42")
+
+    def test_validation_error_formatter_does_not_echo_submitted_values(self):
+        with self.assertRaises(ValidationError) as error_context:
+            UserPasswordChangeDTO(old_password="", new_password="short")
+
+        errors = format_pydantic_validation_errors(error_context.exception)
+
+        self.assertTrue(errors)
+        self.assertNotIn("input", errors[0])
+        self.assertEqual(set(errors[0]), {"field", "message", "type"})
 
 
 class UserProvisioningServiceTests(TestCase):
