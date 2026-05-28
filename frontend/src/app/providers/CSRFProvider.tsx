@@ -1,10 +1,9 @@
 /**
  * @file CSRFProvider.tsx
  * @description Warms the Django CSRF cookie once on app boot. Fire-and-forget by
- * design: rendering is NEVER blocked on the token fetch. The public marketing
- * surface is read-only at first paint, and every mutation that needs CSRF
- * (donation flow, login) is gated behind user interaction that takes far longer
- * than the bootstrap round-trip — so the cookie is always set in time.
+ * design: rendering is never blocked on the token fetch. Auth mutations are
+ * gated behind user interaction that takes longer than the bootstrap round-trip,
+ * so the cookie is available without delaying the panel shell.
  * @architecture Enterprise SaaS 2026
  * @module app/providers/CSRFProvider
  */
@@ -24,10 +23,7 @@ export const CSRFProvider = ({
   children: ReactNode;
 }): React.JSX.Element => {
   useEffect(() => {
-    // Background warm-up — we deliberately do not await or block on this.
-    // Blocking previously flashed the panel <EtherealLoader> over the public
-    // landing and added a backend round-trip to FCP/LCP on cold (incognito)
-    // visits, double-stacking with the marketing <Preloader>.
+    // Background warm-up; the panel shell must not wait for this request.
     void api.get("/api/csrf/", csrfRequestConfig).catch((error: unknown) => {
       console.error("CSRF bootstrap request failed.", error);
     });

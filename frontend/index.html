@@ -4,15 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo_biale.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VoctEnsemble | Formacja Wokalna</title>
+    <title>VoctManager | Panel</title>
+    <meta name="robots" content="noindex,nofollow" />
 
     <!--
-      Self-hosted variable fonts — GDPR-compliant, zero data transfer to third-party
+      Self-hosted variable fonts: GDPR-compliant, zero data transfer to third-party
       providers (Google / Bunny / Adobe). Variable wght = single file per family
       covers the full weight range. Unicode-range subsetting splits latin / latin-ext
       so the browser only downloads what the page actually renders.
-      Mirrors the strategy used in LandingPage.html for a consistent typographic
-      stack across the static landing and the React SPA.
+      Mirrors the Astro public site strategy for a consistent typographic stack.
     -->
     <link
       rel="preload"
@@ -113,22 +113,22 @@
 
     <meta
       name="description"
-      content="Nowoczesna formacja wokalna pod kierownictwem Florenta de Bazelaire. Odkryj harmonię i duchowy wymiar muzyki sakralnej poprzez unikalne Koncerty Duchowe."
+      content="Secure VoctManager panel for projects, schedules, materials, logistics, and ensemble operations."
     />
     <meta
       name="keywords"
-      content="VoctEnsemble, formacja wokalna, zespół wokalny, muzyka sakralna, polifonia, Koncerty Duchowe, Florent de Bazelaire, śpiew, muzyka dawna"
+      content="VoctManager, panel, ensemble operations, project management, logistics"
     />
 
     <meta property="og:type" content="website" />
 
-    <meta property="og:title" content="VoctEnsemble | Formacja Wokalna" />
+    <meta property="og:title" content="VoctManager | Panel" />
     <meta
       property="og:description"
-      content="Nowoczesna formacja wokalna pod kierownictwem Florenta de Bazelaire. Odkryj harmonię i duchowy wymiar muzyki sakralnej."
+      content="Secure operational panel for VoctManager."
     />
 
-    <meta property="og:image" content="/og-image.jpg" />
+    <meta property="og:image" content="/logo_biale.png" />
     <meta property="og:locale" content="pl_PL" />
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -139,10 +139,10 @@
       Google Maps API is NOT loaded here. It is only used inside the authenticated
       panel (features/logistics/*), so <APIProvider> from @vis.gl/react-google-maps
       mounts the script on demand when a panel route renders. This keeps ~350 kB of
-      Maps JS off the public marketing routes.
+      Maps JS out of the initial panel shell.
     -->
   </head>
-  <body class="antialiased overflow-x-hidden theme-marketing">
+  <body class="antialiased overflow-x-hidden theme-panel">
     <div id="root" class="min-h-screen w-full"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

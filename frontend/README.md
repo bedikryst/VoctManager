@@ -9,7 +9,9 @@
 ![Framer Motion v12](https://img.shields.io/badge/Framer_Motion_v12-black?style=for-the-badge&logo=framer&logoColor=blue)
 ![TanStack Query v5](https://img.shields.io/badge/TanStack_Query_v5-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
 
-This directory contains the source code for the Single Page Application of the **VoctManager** platform. The codebase is engineered around three non-negotiable goals: **strict Feature-Sliced Design**, **zero-layout-shift UX at 60 FPS**, and **aggressive server-state caching** via TanStack Query.
+This directory contains the source code for the **authenticated Single Page Application** of the **VoctManager** platform — the operational ERP panel (`/panel/*`) plus the public auth flows (`/login`, `/activate`, `/documents/*`). The codebase is engineered around three non-negotiable goals: **strict Feature-Sliced Design**, **zero-layout-shift UX at 60 FPS**, and **aggressive server-state caching** via TanStack Query.
+
+> **Public marketing site has moved.** The voctensemble.com landing + subpages (`/`, `/koncerty`, `/o-nas`, `/kontakt`, `/polityka-prywatnosci`) are now a separate Astro app under [`../web/`](../web/) — see [web/README.md](../web/README.md). The SPA no longer ships the marketing surface, the Threshold gate, the donation Vault, or the audio engine; those live in Astro islands now. The two builds share the Django backend at `/api/*`.
 
 ---
 
@@ -23,16 +25,14 @@ src/
 │   ├── providers/    # Top-level providers (AuthProvider, CSRFProvider, CursorProvider)
 │   ├── router/       # Route guards (ProtectedRoute, ManagerRoute) + panel data preloaders
 │   ├── store/        # App-level Zustand store (useAppStore)
-│   └── styles/       # Global Tailwind v4 layer + Ethereal/marketing design tokens
+│   └── styles/       # Global Tailwind v4 layer + Ethereal design tokens
 │
 ├── pages/            ← Route-level compositions
 │   ├── auth/         # Login, password reset, account activation
-│   ├── marketing/    # Public landing (HomePage.tsx — React port of LandingPage.html)
 │   └── panel/        # Authenticated ERP panel routes
 │
 ├── widgets/          ← Composite UI blocks built from features + shared
 │   ├── domain/       # Cross-feature domain widgets (dashboards, summary cards)
-│   ├── landing/      # Landing-only widgets (HeroSection, AetherInterlude, VaultModal…)
 │   ├── panel-shell/  # Panel chrome (sidebar, navbar, breadcrumbs)
 │   └── utility/      # Generic widgets (error boundaries, empty states)
 │
@@ -44,14 +44,13 @@ src/
 │   ├── contracts/    # Contract generation & WeasyPrint download
 │   ├── crew/         # Stage crew, technical staff
 │   ├── dashboard/    # Bento dashboard data hooks
-│   ├── landing/      # Landing hooks/providers (useChantAudio, VaultContext…)
 │   ├── logistics/    # Locations, travel, venue management
 │   ├── materials/    # Sheet music + reference audio distribution
 │   ├── notifications/# Web push (VAPID) + transactional email log
 │   ├── projects/     # Concert projects, casting, run sheets
 │   ├── rehearsals/   # Rehearsal scheduling + attendance
 │   ├── schedule/     # iCal sync, calendar feed
-│   ├── score-compiler/# AI Score Package Compiler UI (NEW)
+│   ├── score-compiler/# AI Score Package Compiler UI
 │   └── settings/     # User & system settings
 │
 └── shared/           ← Reusable building blocks (lowest layer)
@@ -96,14 +95,13 @@ Used **only** for global UI state that cannot reasonably live in URL or context:
 
 1. **Tailwind CSS v4.2+** — utility-first; the entire Ethereal design system (color tokens, z-index scale, shadows, noise utility) is defined in [`app/styles/index.css`](src/app/styles/index.css). Raw HTML typography and ad-hoc glassmorphism (`bg-white/10`) are **prohibited** — see the project-root `CLAUDE.md` for the No-Raw-HTML mandate.
 2. **Framer Motion v12+** — all declarative entrance animations, gestures, and scroll-linked kinematics. Animations are restricted to `transform` and `opacity` only, ensuring hardware acceleration and a sustained 60 FPS.
-3. **Lenis v1.3+** — smooth scrolling at the window level, mounted via `<ReactLenis root>` on the marketing landing. Lenis ticks are synchronized with React's render cycle so Framer Motion springs stay physically coherent.
-4. **Radix UI Primitives** — accessible foundations for Dialog, Tooltip, Switch, Slot. Combined with semantic HTML to meet the European Accessibility Act baseline.
+3. **Radix UI Primitives** — accessible foundations for Dialog, Tooltip, Switch, Slot. Combined with semantic HTML to meet the European Accessibility Act baseline. (Smooth scrolling via Lenis lives in the Astro public site at [`../web/`](../web/) — the panel uses the platform's native scroll.)
 
 ---
 
 ## 🛣️ Routing & Code-Splitting
 
-The route table lives in [`app/App.tsx`](src/app/App.tsx) using **React Router v7**; access guards (`ProtectedRoute`, `ManagerRoute`) and idle panel-chunk preloaders live in [`app/router/`](src/app/router/). Every panel route is lazy-loaded behind a `<Suspense>` boundary that renders `<EtherealLoader>` — never a generic spinner. Public marketing routes (`/`, `/home`) and auth routes resolve against an outer `<Suspense fallback={null}>` so the SaaS loader never flashes on public surfaces. This keeps the initial JS bundle small and guarantees a stable, on-brand loading state.
+The route table lives in [`app/App.tsx`](src/app/App.tsx) using **React Router v7**; access guards (`ProtectedRoute`, `ManagerRoute`) and idle panel-chunk preloaders live in [`app/router/`](src/app/router/). Every panel route is lazy-loaded behind a `<Suspense>` boundary that renders `<EtherealLoader>` — never a generic spinner. The auth routes (`/login`, `/activate`) and the full-screen `/documents/:docType/:docId` route resolve against an outer `<Suspense fallback={null}>` so the SaaS loader never flashes on those surfaces. Hitting `/` on the SPA build redirects to `/panel` — production nginx serves the Astro public site at `/` instead. This keeps the initial JS bundle small and guarantees a stable, on-brand loading state.
 
 ---
 
@@ -148,7 +146,7 @@ Run from the `frontend/` directory:
 
 * **Core:** `react@19.2`, `react-dom@19.2`, `react-router-dom@7`, `vite@7.3`, `typescript@5.9`
 * **State & data:** `@tanstack/react-query@5.91+`, `zustand@5+`, `axios@1.13+`
-* **UI / motion:** `framer-motion@12+`, `lenis@1.3+`, `@radix-ui/react-*`, `lucide-react`
+* **UI / motion:** `framer-motion@12+`, `@radix-ui/react-*`, `lucide-react`
 * **Forms & validation:** `react-hook-form@7.74+`, `zod@4.3+`, `@hookform/resolvers@5+`
 * **Interaction:** `@dnd-kit/core@6+`, `@dnd-kit/sortable@10+` (TouchSensor-ready)
 * **PDF & maps:** `react-pdf@10+`, `@vis.gl/react-google-maps`

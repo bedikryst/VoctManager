@@ -9,7 +9,9 @@
 ![Framer Motion v12](https://img.shields.io/badge/Framer_Motion_v12-black?style=for-the-badge&logo=framer&logoColor=blue)
 ![TanStack Query v5](https://img.shields.io/badge/TanStack_Query_v5-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
 
-Ten katalog zawiera kod źródłowy aplikacji jednostronicowej (SPA) platformy **VoctManager**. Baza kodu jest zbudowana wokół trzech bezkompromisowych celów: **ścisłego Feature-Sliced Design**, **UX bez przesunięć układu (zero-layout-shift) przy 60 FPS** oraz **agresywnego buforowania stanu serwera** przez TanStack Query.
+Ten katalog zawiera kod źródłowy **uwierzytelnionej aplikacji jednostronicowej (SPA)** platformy **VoctManager** — operacyjnego panelu ERP (`/panel/*`) oraz publicznych ścieżek autoryzacji (`/login`, `/activate`, `/documents/*`). Baza kodu jest zbudowana wokół trzech bezkompromisowych celów: **ścisłego Feature-Sliced Design**, **UX bez przesunięć układu (zero-layout-shift) przy 60 FPS** oraz **agresywnego buforowania stanu serwera** przez TanStack Query.
+
+> **Publiczna strona marketingowa została przeniesiona.** Landing voctensemble.com + podstrony (`/`, `/koncerty`, `/o-nas`, `/kontakt`, `/polityka-prywatnosci`) są teraz osobną aplikacją Astro w [`../web/`](../web/) — patrz [web/README.md](../web/README.md). SPA nie zawiera już powierzchni marketingowej, bramy progowej (Threshold), lejka datków (Vault) ani silnika audio; te żyją obecnie jako wyspy Astro. Oba buildy współdzielą backend Django pod `/api/*`.
 
 ---
 
@@ -23,16 +25,14 @@ src/
 │   ├── providers/    # Providery najwyższego poziomu (AuthProvider, CSRFProvider, CursorProvider)
 │   ├── router/       # Strażnicy tras (ProtectedRoute, ManagerRoute) + preloadery danych panelu
 │   ├── store/        # Store Zustand na poziomie aplikacji (useAppStore)
-│   └── styles/       # Globalna warstwa Tailwind v4 + tokeny Ethereal/marketing
+│   └── styles/       # Globalna warstwa Tailwind v4 + tokeny Ethereal
 │
 ├── pages/            ← Kompozycje na poziomie tras
 │   ├── auth/         # Logowanie, reset hasła, aktywacja konta
-│   ├── marketing/    # Publiczny landing (HomePage.tsx — port React z LandingPage.html)
 │   └── panel/        # Uwierzytelnione trasy panelu ERP
 │
 ├── widgets/          ← Złożone bloki UI budowane z features + shared
 │   ├── domain/       # Widgety domenowe cross-feature (dashboardy, karty podsumowań)
-│   ├── landing/      # Widgety tylko dla landingu (HeroSection, AetherInterlude, VaultModal…)
 │   ├── panel-shell/  # Chrome panelu (sidebar, navbar, breadcrumbs)
 │   └── utility/      # Widgety generyczne (error boundaries, stany puste)
 │
@@ -44,14 +44,13 @@ src/
 │   ├── contracts/    # Generowanie umów i pobieranie WeasyPrint
 │   ├── crew/         # Ekipa sceniczna, personel techniczny
 │   ├── dashboard/    # Hooki danych dashboardu Bento
-│   ├── landing/      # Hooki/providery landingu (useChantAudio, VaultContext…)
 │   ├── logistics/    # Lokalizacje, podróże, zarządzanie miejscami
 │   ├── materials/    # Dystrybucja nut + audio referencyjnego
 │   ├── notifications/# Web push (VAPID) + log emaili transakcyjnych
 │   ├── projects/     # Projekty koncertowe, casting, arkusze produkcyjne
 │   ├── rehearsals/   # Planowanie prób + obecność
 │   ├── schedule/     # Synchronizacja iCal, feed kalendarza
-│   ├── score-compiler/# UI Kompilatora Pakietów Partytur AI (NOWE)
+│   ├── score-compiler/# UI Kompilatora Pakietów Partytur AI
 │   └── settings/     # Ustawienia użytkownika i systemu
 │
 └── shared/           ← Reużywalne bloki budulcowe (najniższa warstwa)
@@ -96,14 +95,13 @@ Używany **wyłącznie** dla globalnego stanu UI, którego nie da się rozsądni
 
 1. **Tailwind CSS v4.2+** — utility-first; cały system projektowy Ethereal (tokeny kolorów, skala z-index, cienie, utility szumu) jest zdefiniowany w [`app/styles/index.css`](src/app/styles/index.css). Surowa typografia HTML i doraźny glassmorphism (`bg-white/10`) są **zabronione** — patrz `CLAUDE.md` w korzeniu projektu dla mandatu No-Raw-HTML.
 2. **Framer Motion v12+** — wszystkie deklaratywne animacje wejścia, gesty i kinematyka powiązana ze scrollem. Animacje ograniczone wyłącznie do `transform` i `opacity`, zapewniając akcelerację sprzętową i utrzymane 60 FPS.
-3. **Lenis v1.3+** — płynne przewijanie na poziomie okna, montowane przez `<ReactLenis root>` na landingu marketingowym. Tiki Lenis są zsynchronizowane z cyklem renderowania React, aby sprężyny Framer Motion pozostały fizycznie spójne.
-4. **Primitywy Radix UI** — dostępne fundamenty dla Dialog, Tooltip, Switch, Slot. W połączeniu z semantycznym HTML spełniają bazowe wymogi Europejskiego Aktu o Dostępności.
+3. **Primitywy Radix UI** — dostępne fundamenty dla Dialog, Tooltip, Switch, Slot. W połączeniu z semantycznym HTML spełniają bazowe wymogi Europejskiego Aktu o Dostępności. (Płynne przewijanie Lenis żyje w aplikacji Astro [`../web/`](../web/) — panel używa natywnego przewijania platformy.)
 
 ---
 
 ## 🛣️ Routing i podział kodu
 
-Tablica tras znajduje się w [`app/App.tsx`](src/app/App.tsx) przy użyciu **React Router v7**; strażnicy dostępu (`ProtectedRoute`, `ManagerRoute`) i bezczynne preloadery chunków panelu żyją w [`app/router/`](src/app/router/). Każda trasa panelu jest lazy-loadowana za granicą `<Suspense>` renderującą `<EtherealLoader>` — nigdy generycznego spinnera. Publiczne trasy marketingowe (`/`, `/home`) i trasy auth rozwiązują się względem zewnętrznego `<Suspense fallback={null}>`, więc loader SaaS nigdy nie miga na powierzchniach publicznych. Utrzymuje to mały początkowy bundle JS i gwarantuje stabilny, zgodny z marką stan ładowania.
+Tablica tras znajduje się w [`app/App.tsx`](src/app/App.tsx) przy użyciu **React Router v7**; strażnicy dostępu (`ProtectedRoute`, `ManagerRoute`) i bezczynne preloadery chunków panelu żyją w [`app/router/`](src/app/router/). Każda trasa panelu jest lazy-loadowana za granicą `<Suspense>` renderującą `<EtherealLoader>` — nigdy generycznego spinnera. Trasy autoryzacji (`/login`, `/activate`) i pełnoekranowa trasa `/documents/:docType/:docId` rozwiązują się względem zewnętrznego `<Suspense fallback={null}>`, więc loader SaaS nigdy nie miga na tych powierzchniach. Trafienie w `/` w buildzie SPA przekierowuje na `/panel` — produkcyjny nginx serwuje pod `/` aplikację Astro. Utrzymuje to mały początkowy bundle JS i gwarantuje stabilny, zgodny z marką stan ładowania.
 
 ---
 
@@ -148,7 +146,7 @@ Uruchamiane z katalogu `frontend/`:
 
 * **Rdzeń:** `react@19.2`, `react-dom@19.2`, `react-router-dom@7`, `vite@7.3`, `typescript@5.9`
 * **Stan i dane:** `@tanstack/react-query@5.91+`, `zustand@5+`, `axios@1.13+`
-* **UI / ruch:** `framer-motion@12+`, `lenis@1.3+`, `@radix-ui/react-*`, `lucide-react`
+* **UI / ruch:** `framer-motion@12+`, `@radix-ui/react-*`, `lucide-react`
 * **Formularze i walidacja:** `react-hook-form@7.74+`, `zod@4.3+`, `@hookform/resolvers@5+`
 * **Interakcja:** `@dnd-kit/core@6+`, `@dnd-kit/sortable@10+` (gotowe na TouchSensor)
 * **PDF i mapy:** `react-pdf@10+`, `@vis.gl/react-google-maps`

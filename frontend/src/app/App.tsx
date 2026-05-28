@@ -1,7 +1,7 @@
 /**
  * @file App.tsx
  * @description Main application routing, global layout orchestrator, and notification registry.
- * Dynamically resolves rendering trees based on active routes (Marketing Site vs. Secure Panel).
+ * Dynamically resolves rendering trees for the secure panel and public auth routes.
  * Implements Persistent App Shell architecture for the Dashboard with local route
  * suspension and idle preloading for panel modules.
  * @architecture Enterprise 2026 Standards
@@ -9,7 +9,7 @@
  */
 
 import React, { Suspense, lazy, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
@@ -22,8 +22,6 @@ import {
   DashboardLayout,
   type DashboardRoutePreloader,
 } from "@/widgets/panel-shell/DashboardLayout";
-
-import Home from "@pages/marketing/HomePage";
 
 import { CSRFProvider } from "@/app/providers/CSRFProvider";
 
@@ -100,7 +98,7 @@ const CrewManagement = lazyWithPreload(
   () => import("@features/crew/CrewManagement"),
 );
 
-// Standalone, fullscreen authed route — sibling of the dashboard shell, not nested in it.
+// Standalone, fullscreen authed route; sibling of the dashboard shell, not nested in it.
 const DocumentViewerPage = lazyWithPreload(
   () => import("@pages/panel/DocumentViewerPage"),
 );
@@ -124,69 +122,37 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
 export default function App(): React.JSX.Element {
   const location = useLocation();
 
-  // The public landing renders its own preloader, sticky chrome, custom cursor,
-  // footer and noise overlay — no marketing shell is needed at the app level.
-  // `/home` is the React port preview URL during the migration from LandingPage.html;
-  // production nginx still serves the stable static HTML at `/`.
-  const isHomeRoute: boolean =
-    location.pathname === "/" || location.pathname === "/home";
-
-  // DOM Theme Orchestrator — landing routes get the marketing theme (so
-  // marketing-landing.css applies); everything else falls back to the panel theme.
   useEffect(() => {
-    if (isHomeRoute) {
-      document.body.classList.add("theme-marketing");
-      document.body.classList.remove(
-        "theme-panel",
-        "bg-ethereal-snow",
-        "text-ethereal-ink",
-        "selection:bg-ethereal-gold/20",
-      );
-    } else {
-      document.body.classList.add(
-        "theme-panel",
-        "bg-ethereal-snow",
-        "text-ethereal-ink",
-        "selection:bg-ethereal-gold/20",
-      );
-      document.body.classList.remove("theme-marketing");
-    }
-  }, [isHomeRoute]);
+    document.body.classList.add(
+      "theme-panel",
+      "bg-ethereal-snow",
+      "text-ethereal-ink",
+      "selection:bg-ethereal-gold/20",
+    );
+    document.body.classList.remove(
+      "theme-marketing",
+      "page-o-nas",
+      "page-kontakt",
+      "page-koncerty",
+    );
+  }, [location.pathname]);
 
   return (
     <CSRFProvider>
       {/*
-       * Suspense strategy — EtherealLoader is panel-only.
-       *  - Marketing routes (`/`, `/home`) own their preloader (<Preloader />)
-       *    inside HomePage and do not lazy-load anything at the route boundary.
+       * Suspense strategy: EtherealLoader is panel-only.
        *  - Auth lazy routes (`/login`, `/activate`) and `/documents/*` suspend
        *    against the outer boundary with a `null` fallback, so no global
-       *    spinner ever flashes on public or full-screen authed surfaces.
+       *    spinner flashes on public auth or full-screen authed surfaces.
        *  - Only `/panel/*` lazy chunks resolve against the inner boundary
        *    that renders <EtherealLoader />.
        *
-       * Google Maps APIProvider is scoped inside <ProtectedRoute> so the ~350 kB
-       * Maps SDK never ships to public marketing routes — only to authenticated
-       * panel surfaces that actually use it (features/logistics/*).
+       * Google Maps APIProvider is scoped inside <ProtectedRoute>, so the Maps
+       * SDK ships only to authenticated panel surfaces that use logistics maps.
        */}
       <Suspense fallback={null}>
         <Routes location={location}>
-          <Route
-            path="/"
-            element={
-              <PageTransition>
-                <Home />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/home"
-            element={
-              <PageTransition>
-                <Home />
-              </PageTransition>
-            }
-          />
+          <Route path="/" element={<Navigate to="/panel" replace />} />
           <Route
             path="/login"
             element={
@@ -255,6 +221,8 @@ export default function App(): React.JSX.Element {
               element={<DocumentViewerPage />}
             />
           </Route>
+
+          <Route path="*" element={<Navigate to="/panel" replace />} />
         </Routes>
       </Suspense>
 

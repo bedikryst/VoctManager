@@ -22,7 +22,7 @@ services:
       # /var/www/certbot, nginx (in container) serves it for ACME validation.
       - /var/www/certbot:/var/www/certbot:ro
       - ./infra/maintenance:/usr/share/nginx/html/maintenance:ro
-      - ./frontend/src/pages/marketing:/usr/share/nginx/html/marketing:ro
+      - ./web/dist:/usr/share/nginx/html/marketing:ro
     build:
       context: ./frontend
       dockerfile: Dockerfile
