@@ -69,7 +69,7 @@ Każda wyspa Astro to **osobny root React** — providery z jednej nie sięgają
 * **Strony są statyczne.** `build.format: "file"` emituje `index.html`, `koncerty.html`, `kontakt.html`, `o-nas.html` do `dist/`. Produkcyjny nginx (`../infra/nginx/prod.conf`) używa `try_files /<page>.html` dla czystych URL.
 * **`/_astro/*`** to content-addressed, serwowane z `Cache-Control: public, max-age=31536000, immutable`.
 * **`/home`** — legacy SPA preview path; permanent redirect do `/` przez nginx.
-* **`docker-compose.prod.yml`** montuje `dist/` jako `/usr/share/nginx/html/marketing:ro`. Build musi działać na hoście (lub w CI) — kontener nie zawiera Node.
+* **Deploy produkcyjny jest w pełni Dockerised.** `frontend/Dockerfile` to multi-stage build z `context: <repo root>` — Stage 1 buduje panel SPA, Stage 2 (`web-builder`) uruchamia `npm ci` + `npm run build` dla tej aplikacji Astro, Stage 3 (runtime nginx) kopiuje *oba* drzewa dist do `/usr/share/nginx/html/app` i `/usr/share/nginx/html/marketing`. Brak host bind-mountu `web/dist`; brak Node na hoście. `docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend` to jedna komenda. **Host buildu musi jednak zawierać `web/src/assets/photos/` wypełnione oryginalnymi JPG-ami** (są gitignorowane — należą do współtwórców). Brakujące zdjęcie wywala stage Astro z czytelnym błędem `[photos] No image "<name>"`.
 
 ---
 

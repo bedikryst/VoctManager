@@ -28,8 +28,13 @@ Platforma jest zbudowana na wysoko zdekomponowanej architekturze zaprojektowanej
 graph TD
     Client([Przeglądarka / Mobile]) -->|HTTPS| Nginx[Nginx Reverse Proxy]
 
-    subgraph Frontend
-        Nginx -->|Serwuje statyczne UI| React[React SPA]
+    subgraph PublicWeb [Strona Publiczna &nbsp;·&nbsp; web/]
+        Nginx -->|Statyczny HTML + _astro/*| Astro[Astro 6 · Islands]
+        Astro -->|/api/payments · /api/contact| Gunicorn
+    end
+
+    subgraph Panel [Panel uwierzytelniony &nbsp;·&nbsp; frontend/]
+        Nginx -->|/panel · /login · /documents| React[React SPA]
         React -->|TanStack Query v5 / Zustand| StateManager[Stan i Pamięć podręczna]
     end
 
@@ -73,11 +78,20 @@ graph TD
 
 ## ✨ Podstawowe Funkcje Enterprise
 
-### 1. Kinowy UX "Ethereal" (Frontend)
+### 1. Dwa frontendy — Panel (React SPA) + Strona publiczna (Astro)
+
+Platforma dostarcza **dwa niezależne frontendy** współdzielące jeden backend Django:
+
+* **Panel SPA — [`frontend/`](frontend/README.pl.md):** uwierzytelniony ERP dla menedżerów, artystów i ekipy (`/panel/*`). React 19 + TanStack Query + Framer Motion, ścisły FSD, system projektowy Ethereal. Odpowiada za kinową, glassmorphic powierzchnię operacyjną.
+* **Strona publiczna — [`web/`](web/README.pl.md):** landing voctensemble.com / voctfoundation.pl + podstrony (`/`, `/koncerty`, `/o-nas`, `/kontakt`, `/polityka-prywatnosci`). **Astro 6** (statyczny HTML + wyspy React + natywne View Transitions), płynne przewijanie Lenis, art-direction sakralny minimalizm w duchu *„Nawy światła"*. Crawlable i gotowe pod Ad Grants z założenia.
+
+Filary inżynieryjne frontendu:
+
 - **Architektura Zero-Layout-Shift:** Boundary suspense + `<EtherealLoader>` + rygorystyczne stany skeleton utrzymują CLS na poziomie 0 podczas asynchronicznego pobierania danych — zero przeskoków, zawsze.
-- **Kinematyka 60FPS:** Animacje napędzane wyłącznie przez `transform` / `opacity` za pomocą **Framer Motion v12**, z płynnym przewijaniem **Lenis** zsynchronizowanym z cyklem renderowania React. Autorskie hooki (np. `useMouseAndGyro`) mapują telemetrię urządzenia na mikrointerakcje UI.
+- **Kinematyka 60FPS:** Animacje napędzane wyłącznie przez `transform` / `opacity` za pomocą **Framer Motion v12** (panel) i ręcznie pisanej choreografii CSS + pętli rAF w JS (strona publiczna). Strona publiczna używa **Lenis v1.3+** smooth-scrolla na poziomie okna zsynchronizowanego z View Transitions; panel korzysta z natywnego scrolla platformy.
+- **Kinowe przejścia między stronami:** Strona publiczna Astro komponuje natywne keyframes `::view-transition-old/new(root)` (sakralny fade + Y-drift + blur, 320ms / 540ms) z shared `view-transition-name: voct-brand`, więc znak świecy morphuje płynnie między nawigacjami zamiast cross-fadeu.
 - **Stopniowane panele Bento:** Wszystkie widoki panelu komponowane przez `<StaggeredBentoContainer>` / `<StaggeredBentoItem>` na wspólnym zestawie tokenów glassmorphism (`shadow-glass-ethereal`) — przestrzenne, przewidywalne, sterowane motywem.
-- **Dostępność EAA:** Primitywy Radix UI + semantyczny HTML spełniające bazowe wymogi Europejskiego Aktu o Dostępności.
+- **Dostępność EAA:** Primitywy Radix UI + semantyczny HTML spełniające bazowe wymogi Europejskiego Aktu o Dostępności; strona publiczna dodaje opt-outy `prefers-reduced-motion` na każdej animowanej powierzchni.
 
 ### 2. Kompilator Pakietów Partytur napędzany AI
 - **Wielopoziomowy pipeline Claude:** Wieloetapowe przetwarzanie skalujące model do zadania — Haiku 4.5 do szybkiej klasyfikacji, Sonnet 4.6 do wzbogacania, Opus 4.7 do najtrudniejszego rozumowania. Adaptacyjne myślenie + parametr `effort` pozwalają Claude dynamicznie alokować moc obliczeniową.
@@ -101,13 +115,20 @@ graph TD
 
 ## 🛠️ Stos technologiczny (standardy 2026)
 
-### Środowisko frontendu
+### Panel SPA — [`frontend/`](frontend/README.pl.md)
 * **Rdzeń:** React 19.2+, Vite 7.3+, TypeScript 5.9+
 * **Architektura:** Feature-Sliced Design (FSD)
 * **Styling:** Tailwind CSS v4.2+ (z tokenami Ethereal Design System), `clsx`, `tailwind-merge`
 * **Stan i pobieranie:** Zustand 5+, `@tanstack/react-query` v5.91+
 * **Ruch i interakcje:** Framer Motion v12+, `@dnd-kit/core` v6+ (TouchSensor)
 * **Formularze:** React Hook Form v7+ z Zod v4.3+
+
+### Strona publiczna (Astro) — [`web/`](web/README.pl.md)
+* **Rdzeń:** Astro 6.3+ (`build.format: "file"`), `@astrojs/react` 5+, React 19, TypeScript 6+
+* **Architektura:** Wyspy Astro — domyślnie server-rendered HTML, React hydratowany tylko dla lejka datków Vault, bramy audio Threshold, sticky chrome i kursora
+* **Styling:** Ręcznie pisany CSS w duchu sakralnego minimalizmu — bez Tailwinda, bez żadnego zewnętrznego frameworku CSS. Tokeny przez CSS custom properties (`--candle`, `--ink`, `--paper`), self-hostowane fonty zmienne (ścisłe RODO, zero third-party)
+* **Ruch:** `lenis@1.3+` smooth-scroll na poziomie okna, natywne API View Transitions, pipeline reveal sterowany IntersectionObserver, parallax JS rAF (cross-browser fallback dla częściowego wsparcia `animation-timeline`)
+* **Treść:** Astro Content Collections (`concerts.yaml`, `repertoire.yaml`) + ręcznie kuratorowane moduły TS (manifest, paths)
 
 ### Środowisko backendowe
 * **Rdzeń:** Python 3.12+, Django 6.0+, Django REST Framework (DRF) 3.16+
@@ -167,25 +188,28 @@ VoctManager jest zaprojektowany do ciągłej ewolucji w kierunku obserwowalnośc
 
 ---
 
-## 🎬 Doświadczenie Landing (Strona Publiczna)
+## 🎬 Strona publiczna — `web/` (Astro)
 
-Strona marketingowa to w pełni autorski port React ręcznie napisanej strony vanilla HTML (trzymanej obok jako fallback nginx). Komponuje sekwencję: preloader → brama progowa → przyklejony chrome → hero → manifest → trzy „interludia eteryczne" przeplatające minione koncerty → finałowe wsparcie → coda — wszystko działające przy utrzymanych 60 FPS na płynnym przewijaniu Lenis.
+Publiczna powierzchnia voctensemble.com / voctfoundation.pl to aplikacja **Astro 6** zbudowana wokół art-directionu sakralnego minimalizmu („Nawa światła") — domyślnie server-rendered HTML, wyspy React hydratowane tylko tam, gdzie naprawdę żyje stan. Komponuje sekwencję: rytualny preloader (raz na sesję) → brama progowa → sticky chrome → hero → manifest → trzy „interludia eteryczne" przeplatające minione koncerty → finałowe wsparcie → coda. Choreografia działa przy utrzymanych 60 FPS na płynnym przewijaniu Lenis, z natywnym API View Transitions dla przejść między stronami.
 
-Pełne doświadczenie opiera się na kinematyce powiązanej ze scrollem, sygnałach audio, paralaksie, autorskim kursorze i fizyce bramy progowej. **Statyczne zrzuty ekranu i GIF-y nie oddają tego sprawiedliwie** — łapią klatki, nie przepływ. Strona live jest publicznie dostępna:
+Pełne doświadczenie opiera się na kinematyce powiązanej ze scrollem, sygnałach audio, paralaksie, autorskim kursorze z magnetic snap, View Transitions i fizyce bramy progowej. **Statyczne zrzuty ekranu i GIF-y nie oddają tego sprawiedliwie** — łapią klatki, nie przepływ. Strona live jest publicznie dostępna:
 
 ### ▶ [voctensemble.com](https://voctensemble.com) — otwórz w przeglądarce desktopowej z włączonym dźwiękiem
 
-> Stabilny landing produkcyjny pod `/` to ręcznie napisany vanilla [`LandingPage.html`](frontend/src/pages/marketing/LandingPage.html). Port React znajduje się pod [`/home`](https://voctensemble.com/home) (ścieżka podglądowa na czas finalizacji migracji) — ta sama kompozycja, teraz napędzana przez `<ReactLenis>`, Framer Motion v12 i podział kodu świadomy Suspense.
+> **Dlaczego osobna aplikacja Astro?** Powłoka CSR panelu była regresją SEO/perf dla strony fundacji starającej się o Google Ad Grants. Astro emituje crawlable statyczny HTML, wysyła React tylko tam, gdzie potrzebny (lejek datków Vault, brama audio, sticky chrome), i używa natywnego API View Transitions dla przejść na poziomie Awwwards bez narzutu CSR runtime. Źródło prawdy: [`web/README.pl.md`](web/README.pl.md).
 
 | Sekcja | Na co zwrócić uwagę |
 |---|---|
-| **Preloader → Brama progowa** | Wybrzmienie chorału, fizyka bramy, orkiestracja pierwszego paintu |
-| **Hero → Manifest** | Autorski kursor, odsłanianie typografii powiązane ze scrollem, nakładka szumu |
-| **Interludia eteryczne I / II / III** | Rite-glow zsynchronizowany z postępem scrolla, motywy łacińskie z cyframi rzymskimi |
-| **Ścieżka minionych koncertów** | Stos paralaksy, akordeon smooth-details |
-| **Finałowe wsparcie / Przepływ Skarbca** | Wieloetapowy panel darowizny z regulaminem + modale wdzięczności/niepowodzenia |
+| **Preloader → Brama progowa** | Sakralny rytuał (raz na sesję), wybór audio w localStorage, orkiestracja pierwszego paintu |
+| **Hero → Manifest** | Autorski kursor z magnetic snap, oddech variable-font wght + per-word stagger, złoty bloom emanujący z tekstu |
+| **Interludia eteryczne I / II / III** | Audio-reaktywna intensywność splotów (analizer Web Audio), motywy łacińskie z cyframi rzymskimi |
+| **Ścieżka minionych koncertów** | Stos paralaksy (cross-browser JS), akordeon smooth-details |
+| **Finałowe wsparcie / Przepływ Skarbca** | Wieloetapowy panel darowizny, redirect bramki Axepta, modale wdzięczności/niepowodzenia |
+| **Nawigacja między stronami** | Natywne keyframes `::view-transition-*` z shared `voct-brand`, znak świecy morphujący między stronami |
 
-> **Źródło:** [`HomePage.tsx`](frontend/src/pages/marketing/HomePage.tsx) — komponuje 14 widgetów pod `<VaultProvider>` i `<ReactLenis root>`. Ręcznie napisany fallback [`LandingPage.html`](frontend/src/pages/marketing/LandingPage.html) jest celowo trzymany obok jako domyślny dla nginx dla użytkowników blokujących JS.
+> **Źródło:** [`web/src/pages/index.astro`](web/src/pages/index.astro) — komponuje 9 sekcji i 6 wysp React (Preloader, ThresholdGate, AudioController, StickyHeader, SiteCursor, SiteFooter, VaultIsland). Podstrony (`/koncerty`, `/o-nas`, `/kontakt`) reużywają `SiteChrome` + `SiteFooter` i montują tylko wyspę Vault dla datków w miejscu.
+
+> **Źródłowe zdjęcia strony publicznej** (`web/src/assets/photos/*.jpg`) są celowo gitignorowane — to 5-12 MB oryginałów należących do współtwórców, wgrywanych bezpośrednio na host buildu. Patrz [`web/README.pl.md`](web/README.pl.md) §Konwencje dla kontraktu deploya.
 
 ---
 

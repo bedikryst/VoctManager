@@ -28,8 +28,13 @@ The platform is built on a highly decoupled architecture designed for high avail
 graph TD
     Client([Web Browser / Mobile]) -->|HTTPS| Nginx[Nginx Reverse Proxy]
 
-    subgraph Frontend
-        Nginx -->|Serves Static UI| React[React SPA]
+    subgraph PublicWeb [Public Site &nbsp;·&nbsp; web/]
+        Nginx -->|Static HTML + _astro/*| Astro[Astro 6 · Islands]
+        Astro -->|/api/payments · /api/contact| Gunicorn
+    end
+
+    subgraph Panel [Authenticated Panel &nbsp;·&nbsp; frontend/]
+        Nginx -->|/panel · /login · /documents| React[React SPA]
         React -->|TanStack Query v5 / Zustand| StateManager[State & Cache]
     end
 
@@ -73,11 +78,20 @@ graph TD
 
 ## ✨ Core Enterprise Features
 
-### 1. Cinematic "Ethereal" UX (Frontend)
+### 1. Dual Frontend — Panel (React SPA) + Public Site (Astro)
+
+The platform ships **two independent frontends** that share a single Django backend:
+
+* **Panel SPA — [`frontend/`](frontend/README.md):** authenticated ERP for managers, artists, and crew (`/panel/*`). React 19 + TanStack Query + Framer Motion, strict FSD, Ethereal design system. Owns the cinematic, glassmorphic operational surface.
+* **Public site — [`web/`](web/README.md):** the voctensemble.com / voctfoundation.pl landing + subpages (`/`, `/koncerty`, `/o-nas`, `/kontakt`, `/polityka-prywatnosci`). **Astro 6** (static HTML + React islands + native View Transitions), Lenis smooth-scroll, sacred-minimalism art direction in the spirit of *"Nawa światła"*. Crawlable and Ad-Grants-ready by construction.
+
+Frontend engineering pillars:
+
 - **Zero-Layout-Shift Architecture:** Suspense boundaries + `<EtherealLoader>` + strict skeleton states keep CLS at 0 during async fetches — no jank, ever.
-- **60FPS Kinematics:** Animations driven exclusively by `transform` / `opacity` via **Framer Motion v12**, with **Lenis** smooth-scroll synced to the React render cycle. Custom hooks (e.g. `useMouseAndGyro`) map device telemetry to UI micro-interactions.
+- **60FPS Kinematics:** Animations driven exclusively by `transform` / `opacity` via **Framer Motion v12** (panel) and hand-authored CSS choreography + JS rAF loops (public site). The public site runs **Lenis v1.3+** window-level smooth-scroll synced to View Transitions; the panel uses native platform scrolling.
+- **Cinematic Page Transitions:** The Astro public site composes native `::view-transition-old/new(root)` keyframes (sacred fade + Y-drift + blur, 320ms / 540ms) with a shared `view-transition-name: voct-brand` so the candle mark morphs across navigations instead of cross-fading.
 - **Staggered Bento Dashboards:** All panel views composed with `<StaggeredBentoContainer>` / `<StaggeredBentoItem>` over a shared glassmorphism token set (`shadow-glass-ethereal`) — spatial, predictable, and theme-driven.
-- **EAA Accessibility:** Radix UI Primitives + semantic HTML to meet the European Accessibility Act baseline.
+- **EAA Accessibility:** Radix UI Primitives + semantic HTML to meet the European Accessibility Act baseline; the public site adds `prefers-reduced-motion` opt-outs on every animated surface.
 
 ### 2. AI-Powered Score Package Compiler
 - **Tiered Claude Pipeline:** Multi-stage ingestion that scales the model to the task — Haiku 4.5 for fast classification, Sonnet 4.6 for enrichment, Opus 4.7 for the hardest reasoning. Adaptive thinking + `effort` parameter let Claude allocate compute dynamically.
@@ -101,13 +115,20 @@ graph TD
 
 ## 🛠️ Tech Stack (2026 Standards)
 
-### Frontend Environment
+### Panel SPA — [`frontend/`](frontend/README.md)
 * **Core:** React 19.2+, Vite 7.3+, TypeScript 5.9+
 * **Architecture:** Feature-Sliced Design (FSD)
 * **Styling:** Tailwind CSS v4.2+ (with Ethereal Design System tokens), `clsx`, `tailwind-merge`
 * **State & Fetching:** Zustand 5+, `@tanstack/react-query` v5.91+
 * **Motion & Interactions:** Framer Motion v12+, `@dnd-kit/core` v6+ (TouchSensor)
 * **Forms:** React Hook Form v7+ combined with Zod v4.3+
+
+### Public Site (Astro) — [`web/`](web/README.md)
+* **Core:** Astro 6.3+ (`build.format: "file"`), `@astrojs/react` 5+, React 19, TypeScript 6+
+* **Architecture:** Astro islands — server-rendered HTML by default, React hydrated only for the donation Vault, audio Threshold gate, sticky chrome, and site cursor
+* **Styling:** Hand-authored sacred-minimalism CSS — no Tailwind here, no third-party CSS framework. CSS custom-property tokens (`--candle`, `--ink`, `--paper`), self-hosted variable fonts (GDPR-strict, zero third-party)
+* **Motion:** `lenis@1.3+` window-level smooth-scroll, native View Transitions API, IntersectionObserver-driven reveal pipeline, JS rAF parallax (cross-browser fallback for partial `animation-timeline` support)
+* **Content:** Astro Content Collections (`concerts.yaml`, `repertoire.yaml`) + hand-curated TS modules (manifest, paths)
 
 ### Backend Environment
 * **Core:** Python 3.12+, Django 6.0+, Django REST Framework (DRF) 3.16+
@@ -166,25 +187,28 @@ VoctManager is architected for continuous evolution toward production-grade obse
 
 ---
 
-## 🎬 Landing Experience (Public Site)
+## 🎬 Public Site — `web/` (Astro)
 
-The marketing site is a fully custom React port of a hand-authored vanilla HTML page (kept side-by-side as the nginx fallback). It composes a preloader → threshold gate → sticky chrome → hero → manifest → three "aether interludes" weaving through past concerts → final support → coda — all running at a sustained 60 FPS over Lenis-driven smooth scroll.
+The voctensemble.com / voctfoundation.pl public surface is an **Astro 6** app built around a sacred-minimalism art direction ("Nawa światła") — server-rendered HTML by default, React islands hydrated only where genuine state lives. It composes a once-per-session preloader → threshold gate → sticky chrome → hero → manifest → three "aether interludes" weaving through past concerts → final support → coda. Choreography runs at a sustained 60 FPS over Lenis-driven smooth scroll, with native View Transitions API for between-page swaps.
 
-The full experience relies on scroll-linked kinematics, audio cues, parallax, custom cursor, and threshold-gate physics. **Static screenshots and GIFs cannot do it justice** — they capture frames, not flow. The live site is publicly accessible:
+The full experience relies on scroll-linked kinematics, audio cues, parallax, custom cursor, magnetic-snap hover, View Transitions, and threshold-gate physics. **Static screenshots and GIFs cannot do it justice** — they capture frames, not flow. The live site is publicly accessible:
 
 ### ▶ [voctensemble.com](https://voctensemble.com) — open in a desktop browser with sound on
 
-> The stable production landing at `/` is the hand-authored vanilla [`LandingPage.html`](frontend/src/pages/marketing/LandingPage.html). The React port lives at [`/home`](https://voctensemble.com/home) (preview path while the migration finalizes) — same composition, now driven by `<ReactLenis>`, Framer Motion v12, and Suspense-aware code splitting.
+> **Why a separate Astro app?** The panel CSR shell was a SEO/perf regression for a charity site chasing Google Ad Grants. Astro emits crawlable static HTML, ships React only where needed (donation Vault, audio gate, sticky chrome), and uses the platform's native View Transitions API for Awwwards-grade cross-page animation without a CSR runtime tax. Source-of-truth docs: [`web/README.md`](web/README.md).
 
 | Section | What to watch for |
 |---|---|
-| **Preloader → Threshold Gate** | Chant audio fade-in, gate physics, first-paint orchestration |
-| **Hero → Manifest** | Custom cursor, scroll-linked typography reveal, noise overlay |
-| **Aether Interludes I / II / III** | Rite-glow synced to scroll progress, Roman-numeral Latin motifs |
-| **Path of Past Concerts** | Parallax stack, smooth-details accordion |
-| **Final Support / Vault Flow** | Multi-step donation sheet with regulamin + gratitude/failure modals |
+| **Preloader → Threshold Gate** | Sacred rite (once-per-session), localStorage-gated audio choice, first-paint orchestration |
+| **Hero → Manifest** | Custom cursor with magnetic snap, variable-font wght breath + per-word stagger, text-emanating gold bloom |
+| **Aether Interludes I / II / III** | Audio-reactive knot intensity (Web Audio analyser), Roman-numeral Latin motifs |
+| **Path of Past Concerts** | Parallax stack (cross-browser JS), smooth-details accordion |
+| **Final Support / Vault Flow** | Multi-step donation sheet, Axepta gateway redirect, gratitude/failure result modals |
+| **Cross-page navigation** | Native `::view-transition-*` keyframes with shared `voct-brand` candle mark morphing between pages |
 
-> **Source:** [`HomePage.tsx`](frontend/src/pages/marketing/HomePage.tsx) — composes 14 widgets under a `<VaultProvider>` and `<ReactLenis root>`. The hand-authored fallback at [`LandingPage.html`](frontend/src/pages/marketing/LandingPage.html) is intentionally kept side-by-side as the nginx default for users who block JS.
+> **Source:** [`web/src/pages/index.astro`](web/src/pages/index.astro) — composes 9 section components and 6 React islands (Preloader, ThresholdGate, AudioController, StickyHeader, SiteCursor, SiteFooter, VaultIsland). Subpages (`/koncerty`, `/o-nas`, `/kontakt`) reuse `SiteChrome` + `SiteFooter` and mount only the Vault island for in-place donations.
+
+> **Public-site source photos** (`web/src/assets/photos/*.jpg`) are intentionally gitignored — they're 5-12 MB collaborator-owned originals uploaded directly to the build host. See [`web/README.md`](web/README.md) §Conventions for the deploy contract.
 
 ---
 
@@ -218,18 +242,19 @@ The platform enforces explicit budgets at both the frontend (perceived performan
 
 The cinematic entry gate is bypassed with `?nogate` so the auditor measures the page itself, not the modal overlay.
 
-| Route | Performance | Accessibility | Best Practices | SEO | Source |
-|---|:---:|:---:|:---:|:---:|---|
-| `/home` &nbsp;(`HomePage.tsx`, React 19 SPA) | **90** | 91 | 96 | 92 | [PageSpeed Insights ↗](https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fvoctensemble.com%2Fhome%3Fnogate) |
-| `/` &nbsp;(`LandingPage.html`, vanilla static) | 98 | 91 | 100 | 92 | local Lighthouse\* |
+| Route | Stack | Notes |
+|---|---|---|
+| `/` &nbsp;(homepage, sacred-minimalism rite) | Astro 6 static HTML + React islands | Once-per-session preloader, audio gate, donation Vault — islands hydrate only when needed. JS budget per page ≈ 80 kB gzipped. |
+| `/koncerty`, `/o-nas`, `/kontakt` | Astro 6 static HTML + Vault island only | Server-rendered content, the donation Vault is `client:idle`; the Threshold gate and audio engine are scoped to `/`. |
+| `/panel/*` | React 19 SPA (lazy-loaded) | `<EtherealLoader>` Suspense fallback; Maps SDK (~350 kB) scoped to logistics routes only. |
 
-<sub>\*The static landing uses its own inline vanilla entry-gate (separate localStorage key) that PageSpeed cannot pre-dismiss, so its score is from local Lighthouse rather than PageSpeed. Both routes share the same foundation — self-hosted variable fonts (zero third-party CDN), `scrollbar-gutter: stable` for layout stability, and `transform`/`opacity`-only animation. The static page scores higher because a single hand-authored HTML page ships no SPA runtime; the React port trades ~8 performance points for component reuse, type safety, and multi-page maintainability across the VoctEnsemble + VoctFoundation surface — a deliberate architectural call.</sub>
+<sub>The Astro public site is built around the same foundation as the prior hand-authored landing — self-hosted variable fonts (zero third-party CDN), `scrollbar-gutter: stable` for layout stability, `transform`/`opacity`-only animation — and trades the SPA runtime tax for static HTML + selective hydration. AVIF/WebP responsive images via the Astro asset pipeline (1920px WebP fallback `<img src>`); ambient audio (`/ambient.m4a`) lazy-loaded only on `"voice"` choice.</sub>
 
 **Render-time targets enforced regardless of route:**
 
 | Metric | Target | Notes |
 |---|---|---|
-| **CLS** (Cumulative Layout Shift) | < 0.1 | Measured **0.003** on `/home` — pinned via `scrollbar-gutter: stable` + `contain` on full-viewport overlays |
+| **CLS** (Cumulative Layout Shift) | < 0.1 | Astro static HTML + `scrollbar-gutter: stable` + `contain` on full-viewport overlays keep the public site at effectively 0; the panel SPA holds < 0.1 via Suspense skeletons. |
 | **INP** (Interaction to Next Paint) | ≤ 200 ms | |
 | **JS bundle (gzipped, route-split)** | ≤ 180 kB per route chunk | Maps SDK (~350 kB) scoped to authenticated panel only |
 | **Animation frame rate** | 60 FPS sustained | `transform` / `opacity` only |
@@ -283,15 +308,22 @@ The project utilizes Docker Compose for a standardized development environment.
    make superuser
    ```
 
-5. **Frontend Development Server (Optional for UI engineering):**
+5. **Frontend Development Servers (Optional for UI engineering):**
+   The two frontends are independent — run whichever surface you're building. They both proxy to the same Django backend.
+
    ```bash
-   cd frontend
-   npm install
-   npm run dev
+   # Authenticated panel SPA (frontend/) — port 5173
+   cd frontend && npm install && npm run dev
+
+   # Public Astro site (web/) — port 4321
+   cd web && npm install && npm run dev
    ```
 
+   > For `web/` you must first place the source photos under `web/src/assets/photos/` (gitignored — they live on the build host only; see [`web/README.md`](web/README.md) §Conventions). The Astro build will throw a clear `[photos] No image …` error if a referenced photo is missing.
+
    * API Access: `http://localhost:8000/api/`
-   * Frontend Application: `http://localhost:5173`
+   * Panel SPA: `http://localhost:5173/panel`
+   * Public Astro site: `http://localhost:4321`
 
 ### 📖 API Documentation
 The backend provides fully interactive, automatically generated OpenAPI (Swagger) documentation. Once the containers are running, access it at:

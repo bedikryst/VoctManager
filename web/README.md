@@ -123,7 +123,7 @@ Each Astro island is a **separate React root** — context providers from one do
 * **Pages are static.** `build.format: "file"` emits `index.html`, `koncerty.html`, `kontakt.html`, `o-nas.html` to `dist/`. Production nginx (`../infra/nginx/prod.conf`) routes `try_files /<page>.html` for each clean URL.
 * **`/_astro/*`** is content-addressed and served with `Cache-Control: public, max-age=31536000, immutable`.
 * **`/home` legacy** — old SPA preview path; permanently redirects to `/` via nginx.
-* **`docker-compose.prod.yml`** mounts this directory's `dist/` as `/usr/share/nginx/html/marketing:ro`. The build must run on the host (or in CI) — the container does not bundle Node.
+* **Production deploy is Dockerised end-to-end.** `frontend/Dockerfile` runs as a multi-stage build with `context: <repo root>` — Stage 1 builds the panel SPA, Stage 2 (`web-builder`) runs `npm ci` + `npm run build` for this Astro app, Stage 3 (nginx runtime) copies *both* dist trees into `/usr/share/nginx/html/app` and `/usr/share/nginx/html/marketing`. No `web/dist` host bind-mount; no Node on the host. `docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend` is the single command. **The build host must, however, contain `web/src/assets/photos/` populated with the original JPGs** (they are .gitignored — collaborator-owned). A missing photo fails the Astro stage with a clear `[photos] No image "<name>"` error.
 
 ---
 
