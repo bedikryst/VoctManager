@@ -331,6 +331,35 @@ The backend provides fully interactive, automatically generated OpenAPI (Swagger
 
 ---
 
+## 🚢 Production Deployment
+
+Prod is single-command. `frontend/Dockerfile` is a **3-stage multi-stage build** rooted at the repo root:
+
+```
+panel-builder  (node:22-alpine) → frontend/ → /app/dist (Vite + React SPA)
+web-builder    (node:22-alpine) → web/      → /app/dist (Astro + Sharp image pipeline)
+runtime        (nginx:1.27)     → COPY from both → /usr/share/nginx/html/{app,marketing}
+```
+
+The nginx container therefore ships **both** the panel SPA and the Astro public site baked in — no `npm` on the host, no `web/dist` bind-mount.
+
+```bash
+# One-off, on first deploy (or whenever photos change):
+mkdir -p ~/VoctManager/web/src/assets/photos/
+# rsync / scp / sftp the original JPGs here — they are .gitignored and live
+# only on the build host (collaborator-owned, 5-12 MB each).
+
+# Every deploy:
+cd ~/VoctManager
+git pull
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+**Build-host requirements:** Docker + Compose v2, ≥ ~3 GB free RAM during build (rollup graph for the panel SPA peaks at ~2 GB; Sharp for the Astro pipeline adds ~500 MB). No Node.js, no npm, no host-side lockfile. The root `.dockerignore` keeps `voct_data/`, `**/node_modules`, `.git`, etc. out of the build context so context transfer stays under a few MB. If the photos directory is missing or incomplete, the Astro stage fails fast with `[photos] No image "<name>"`.
+
+---
+
 ## 👨‍💻 Engineering Leadership
 
 **Krystian Bugalski**  

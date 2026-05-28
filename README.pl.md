@@ -243,18 +243,19 @@ Platforma wymusza jawne budżety zarówno na warstwie frontendu (postrzegana wyd
 
 Kinowa brama wejściowa jest pomijana parametrem `?nogate`, aby audytor mierzył samą stronę, a nie nakładkę modalu.
 
-| Trasa | Performance | Accessibility | Best Practices | SEO | Źródło |
-|---|:---:|:---:|:---:|:---:|---|
-| `/home` &nbsp;(`HomePage.tsx`, React 19 SPA) | **90** | 91 | 96 | 92 | [PageSpeed Insights ↗](https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fvoctensemble.com%2Fhome%3Fnogate) |
-| `/` &nbsp;(`LandingPage.html`, vanilla static) | 98 | 91 | 100 | 92 | lokalny Lighthouse\* |
+| Trasa | Stos | Uwagi |
+|---|---|---|
+| `/` &nbsp;(strona główna, sakralny rytuał) | Astro 6 statyczny HTML + wyspy React | Preloader raz-na-sesję, brama audio, lejek datków Vault — wyspy hydratują się tylko gdy potrzebne. Budżet JS per strona ≈ 80 kB gzipped. |
+| `/koncerty`, `/o-nas`, `/kontakt` | Astro 6 statyczny HTML + tylko wyspa Vault | Server-rendered treść, lejek datków jest `client:idle`; brama Threshold i silnik audio są ograniczone do `/`. |
+| `/panel/*` | React 19 SPA (lazy-loaded) | Fallback `<EtherealLoader>` w Suspense; Maps SDK (~350 kB) ograniczone tylko do tras logistycznych. |
 
-<sub>\*Statyczny landing używa własnej, wbudowanej bramy vanilla (osobny klucz localStorage), której PageSpeed nie potrafi pominąć z góry, więc jego wynik pochodzi z lokalnego Lighthouse, a nie z PageSpeed. Obie trasy dzielą ten sam fundament — samodzielnie hostowane fonty zmienne (zero zewnętrznych CDN), `scrollbar-gutter: stable` dla stabilności układu oraz animacje wyłącznie na `transform`/`opacity`. Statyczna strona uzyskuje wyższy wynik, bo pojedyncza ręcznie napisana strona HTML nie ładuje runtime SPA; port React wymienia ~8 punktów wydajności na reużywalność komponentów, bezpieczeństwo typów i utrzymywalność wielostronicowego serwisu VoctEnsemble + VoctFoundation — to świadoma decyzja architektoniczna.</sub>
+<sub>Publiczna strona Astro jest zbudowana na tym samym fundamencie co poprzedni autorski landing — self-hostowane fonty zmienne (zero zewnętrznych CDN), `scrollbar-gutter: stable` dla stabilności układu, animacje wyłącznie na `transform`/`opacity` — i wymienia narzut runtime SPA na statyczny HTML + selektywną hydratację. Obrazy responsywne AVIF/WebP przez pipeline assetów Astro (1920px fallback WebP `<img src>`); ambient audio (`/ambient.m4a`) lazy-loaded tylko przy wyborze `"voice"`.</sub>
 
 **Cele czasu renderowania wymuszane niezależnie od trasy:**
 
 | Metryka | Cel | Uwagi |
 |---|---|---|
-| **CLS** (Cumulative Layout Shift) | < 0,1 | Zmierzone **0,003** na `/home` — przypięte przez `scrollbar-gutter: stable` + `contain` na pełnoekranowych nakładkach |
+| **CLS** (Cumulative Layout Shift) | < 0,1 | Statyczny HTML Astro + `scrollbar-gutter: stable` + `contain` na pełnoekranowych nakładkach utrzymują publiczną stronę efektywnie na 0; panel SPA trzyma się < 0,1 przez skeletons Suspense. |
 | **INP** (Interaction to Next Paint) | ≤ 200 ms | |
 | **Bundle JS (gzip, dzielony per trasa)** | ≤ 180 kB na chunk trasy | SDK Map (~350 kB) ograniczony wyłącznie do uwierzytelnionego panelu |
 | **Liczba klatek animacji** | utrzymane 60 FPS | wyłącznie `transform` / `opacity` |
@@ -308,19 +309,55 @@ Projekt wykorzystuje Docker Compose do standaryzowanego środowiska deweloperski
    make superuser
    ```
 
-5. **Lokalny serwer frontendowy (opcjonalnie dla inżynierii UI):**
+5. **Lokalne serwery dev frontendu (opcjonalnie dla inżynierii UI):**
+   Oba frontendy są niezależne — uruchom ten, nad którym pracujesz. Oba proxują do tego samego backendu Django.
+
    ```bash
-   cd frontend
-   npm install
-   npm run dev
+   # Uwierzytelniony panel SPA (frontend/) — port 5173
+   cd frontend && npm install && npm run dev
+
+   # Publiczna strona Astro (web/) — port 4321
+   cd web && npm install && npm run dev
    ```
 
+   > Dla `web/` najpierw musisz umieścić źródłowe zdjęcia w `web/src/assets/photos/` (gitignorowane — żyją tylko na hoście buildu; patrz [`web/README.pl.md`](web/README.pl.md) §Konwencje). Build Astro rzuci czytelny błąd `[photos] No image …`, jeśli któreś zdjęcie jest brakujące.
+
    * API: `http://localhost:8000/api/`
-   * Frontend: `http://localhost:5173`
+   * Panel SPA: `http://localhost:5173/panel`
+   * Publiczna strona Astro: `http://localhost:4321`
 
 ### 📖 Dokumentacja API
 Backend udostępnia w pełni interaktywną, automatycznie generowaną dokumentację OpenAPI (Swagger). Po uruchomieniu kontenerów jest dostępna pod adresem:
 👉 **[http://localhost:8000/api/docs](http://localhost:8000/api/docs)**
+
+---
+
+## 🚢 Wdrożenie produkcyjne
+
+Prod to jedna komenda. `frontend/Dockerfile` to **3-etapowy multi-stage build** zakorzeniony w root repo:
+
+```
+panel-builder  (node:22-alpine) → frontend/ → /app/dist (Vite + React SPA)
+web-builder    (node:22-alpine) → web/      → /app/dist (Astro + pipeline obrazków Sharp)
+runtime        (nginx:1.27)     → COPY z obu → /usr/share/nginx/html/{app,marketing}
+```
+
+Kontener nginx więc dostarcza **oba** — panel SPA i publiczną stronę Astro — wpieczone w image. Brak `npm` na hoście, brak bind-mountu `web/dist`.
+
+```bash
+# Jednorazowo, przy pierwszym deployu (lub gdy zmieniają się zdjęcia):
+mkdir -p ~/VoctManager/web/src/assets/photos/
+# rsync / scp / sftp wgraj tutaj oryginalne JPG-i — są gitignorowane i żyją
+# tylko na hoście buildu (należą do współtwórców, 5-12 MB każde).
+
+# Każdy deploy:
+cd ~/VoctManager
+git pull
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+**Wymagania hosta buildu:** Docker + Compose v2, ≥ ~3 GB wolnego RAM w trakcie buildu (graf rollup dla panelu SPA peakuje na ~2 GB; Sharp dla pipeline'u Astro dodaje ~500 MB). Brak Node.js, brak npm, brak host-side lockfile. Root `.dockerignore` trzyma `voct_data/`, `**/node_modules`, `.git` itd. poza kontekstem buildu, więc transfer kontekstu zostaje pod kilkoma MB. Jeśli katalog ze zdjęciami nie istnieje lub jest niekompletny, stage Astro wywala się szybko z `[photos] No image "<name>"`.
 
 ---
 
