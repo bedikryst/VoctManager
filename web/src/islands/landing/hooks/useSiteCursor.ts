@@ -1,19 +1,38 @@
 /**
  * @file useSiteCursor.ts
- * @description Custom site cursor with lerp easing. Adds `has-custom-cursor` to body
- * (CSS hides the native cursor for fine pointers only). Cursor adopts `is-pointer`
- * state over interactive elements.
+ * @description Custom site cursor with lerp easing + magnetic snap + click feedback.
+ *
+ *  Awwwards-grade refinements layered onto the original lerp follower:
+ *   • Magnetic snap (15% weight) — over interactive elements the target nudges toward the
+ *     element's centre, so the cursor settles ON the link/button instead of next to it.
+ *     Subtle enough not to feel "draggy" — just polished.
+ *   • Click feedback (`.is-down`) — `mousedown` adds the class, `mouseup` clears it; CSS
+ *     contracts the ring + expands the inner dot for tactile pressure.
+ *   • Reduced-motion + coarse-pointer + no-hover → opt out entirely (no body class, no DOM).
+ *
+ *  CSS hides the native cursor only when `has-custom-cursor` is set, and only inside the
+ *  `(pointer: fine) and (hover: hover)` media query, so touch users keep their OS cursor.
  * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useSiteCursor
  */
 
 import { useEffect } from "react";
 
+const INTERACTIVE_SELECTOR =
+  'a, button, input, textarea, select, summary, [role="button"], [role="link"]';
+
+// Magnetic snap pulls the cursor 15% toward the element centre — strong enough to read
+// as "settled on" the link, gentle enough that fast cross-screen sweeps don't feel sticky.
+const MAGNETIC_WEIGHT = 0.15;
+
 export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const el = cursorRef.current;
     if (!el) return;
     if (!window.matchMedia("(pointer: fine) and (hover: hover)").matches) return;
+    // Honour the platform-level reduced-motion preference — a lerp-following cursor is
+    // motion, even subtle. Users who opted out should see the native pointer untouched.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     document.body.classList.add("has-custom-cursor");
 
@@ -31,16 +50,23 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
     };
 
     const move = (event: MouseEvent) => {
-      targetX = event.clientX;
-      targetY = event.clientY;
       const target = event.target;
-      const interactive =
-        target instanceof Element &&
-        Boolean(
-          target.closest(
-            'a, button, input, textarea, select, summary, [role="button"], [role="link"]',
-          ),
-        );
+      const interactiveEl =
+        target instanceof Element ? target.closest<HTMLElement>(INTERACTIVE_SELECTOR) : null;
+      const interactive = Boolean(interactiveEl);
+
+      if (interactive && interactiveEl) {
+        // Magnetic snap: bias the target toward the element centre. Cursor's actual position
+        // still tracks the mouse — but it lands ON the link's heart, not next to it.
+        const rect = interactiveEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        targetX = event.clientX + (cx - event.clientX) * MAGNETIC_WEIGHT;
+        targetY = event.clientY + (cy - event.clientY) * MAGNETIC_WEIGHT;
+      } else {
+        targetX = event.clientX;
+        targetY = event.clientY;
+      }
       el.classList.toggle("is-pointer", interactive);
       if (raf === null) render();
     };
@@ -51,15 +77,25 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
     const enter = () => {
       el.style.opacity = "";
     };
+    // Click feedback — adds `.is-down` for the duration of the press. CSS contracts the
+    // ring and expands the inner dot, reading as a tactile press without firing animation.
+    const down = () => el.classList.add("is-down");
+    const up = () => el.classList.remove("is-down");
 
     window.addEventListener("mousemove", move, { passive: true });
     window.addEventListener("mouseleave", leave);
     window.addEventListener("mouseenter", enter);
+    window.addEventListener("mousedown", down);
+    window.addEventListener("mouseup", up);
+    window.addEventListener("blur", up); // dropped focus mid-press → clear state
 
     return () => {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseleave", leave);
       window.removeEventListener("mouseenter", enter);
+      window.removeEventListener("mousedown", down);
+      window.removeEventListener("mouseup", up);
+      window.removeEventListener("blur", up);
       if (raf !== null) window.cancelAnimationFrame(raf);
       document.body.classList.remove("has-custom-cursor");
     };

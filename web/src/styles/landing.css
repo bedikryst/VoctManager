@@ -244,6 +244,25 @@
     background: rgba(244, 241, 233, 0.92);
   }
 
+  /* Click feedback — ring contracts, dot swells. The transition shares the same easing
+     as the hover state above so press/release reads as one continuous gesture. */
+  .site-cursor.is-down {
+    transform-origin: center;
+    border-color: rgba(244, 241, 233, 0.85);
+  }
+  .site-cursor.is-down::after {
+    transform: scale(1.55);
+    opacity: 0.95;
+    background: rgba(226, 205, 149, 1);
+  }
+  .site-cursor.is-pointer.is-down {
+    width: 44px;
+    height: 44px;
+  }
+  .site-cursor.is-pointer.is-down::after {
+    transform: scale(0.9);
+  }
+
   @media (pointer: fine) and (hover: hover) {
     .has-custom-cursor .site-cursor {
       display: flex;

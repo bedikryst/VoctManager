@@ -127,7 +127,23 @@ const ogImage = new URL(image, SITE).href;
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (fine && !reduce) {
-        let lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
+        // Awwwards-grade cinematic feel without lag:
+        //   • lerp 0.085 (≈10% slower than default 0.1) — the sacred tone reads as "deliberate",
+        //     but stays well above the 0.05 threshold where users start perceiving lag.
+        //   • duration 1.6s for programmatic scrollTo (vs default 1.2) — when an anchor jumps,
+        //     it should travel like a slow camera dolly, not a cut.
+        //   • easing: expo-out — same family the section-glow + manifest transitions already use,
+        //     so wheel-driven scroll, anchor jumps, and reveal kinematics share one ease.
+        //   • wheelMultiplier 0.9 — slightly tames over-eager trackpads on macOS without numbing
+        //     ordinary mouse wheels; touchMultiplier 1.6 keeps mobile flicks responsive.
+        let lenis = new Lenis({
+          lerp: 0.085,
+          duration: 1.6,
+          easing: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+          wheelMultiplier: 0.9,
+          touchMultiplier: 1.6,
+          smoothWheel: true,
+        });
         // Expose the shared instance so page scripts (e.g. landing anchor smooth-scroll)
         // route through it instead of spawning a second, fighting RAF loop.
         (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
