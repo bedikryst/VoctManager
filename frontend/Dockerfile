@@ -3,11 +3,21 @@
 # VoctManager Frontend — Production Build
 # Standard: Enterprise SaaS 2026
 # ==========================================
+# Build context is the REPO ROOT (`context: .` in docker-compose.yml) so this
+# single Dockerfile can produce both frontends in one nginx image:
+#   • panel SPA      → /usr/share/nginx/html/app        (served at /panel, /login, /documents)
+#   • Astro public  → /usr/share/nginx/html/marketing  (served at /, /koncerty, /o-nas, /kontakt, /polityka-prywatnosci)
+#
+# The public site needs `web/src/assets/photos/` populated on the build host before
+# `docker compose build` (the photos are .gitignored — collaborator-owned originals
+# uploaded manually). A missing photo will fail the Astro build with a clear
+# `[photos] No image "<name>"` error. See web/README.md §Conventions.
+# ==========================================
 
 # ==========================================
-# Stage 1: Build Environment (Node.js 22 LTS)
+# Stage 1: Panel SPA builder (Vite + React)
 # ==========================================
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS panel-builder
 
 WORKDIR /app
 
@@ -19,7 +29,7 @@ ENV CI=true \
 
 # Copy lockfile + manifest first to maximize Docker layer cache hits when
 # only application source changes.
-COPY package.json package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 
 # BuildKit cache mount — persists ~/.npm between builds. The lockfile drives
 # determinism via `npm ci`; the cache only affects download speed.
@@ -27,7 +37,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     npm ci --prefer-offline --no-audit --no-fund
 
 # Copy the application source after deps so source edits don't bust the deps layer.
-COPY . .
+COPY frontend/ ./
 
 # Vite resolves these at build time and bakes them into the static bundle.
 ARG VITE_API_URL
@@ -53,17 +63,53 @@ RUN npm run build
 
 
 # ==========================================
-# Stage 2: Production Server (Nginx)
+# Stage 2: Astro public-site builder (Astro 6 + Sharp image pipeline)
+# ==========================================
+FROM node:22-alpine AS web-builder
+
+WORKDIR /app
+
+ENV CI=true \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_UPDATE_NOTIFIER=false
+
+# Astro's image pipeline uses Sharp, which needs libvips. The node:22-alpine
+# image ships pre-built vips bindings for Sharp via npm, so no extra apk packages
+# are needed in this lane; if a future Astro version drops Alpine prebuilts, add
+# `RUN apk add --no-cache vips-dev build-base python3` here.
+
+COPY web/package.json web/package-lock.json ./
+
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --prefer-offline --no-audit --no-fund
+
+# Copy the rest of the public-site source. `web/src/assets/photos/` is part of
+# this context iff the operator placed the original JPGs on the build host —
+# they are .gitignored, so CI/build hosts must seed them out-of-band.
+COPY web/ ./
+
+# Astro static build → emits `dist/index.html`, `dist/koncerty.html`, etc.,
+# plus content-addressed assets under `dist/_astro/`.
+RUN npm run build
+
+
+# ==========================================
+# Stage 3: Production Server (Nginx) — serves BOTH builds
 # ==========================================
 FROM nginx:1.27-alpine AS runtime
 
 LABEL org.opencontainers.image.title="voctmanager-frontend" \
-      org.opencontainers.image.description="VoctManager SaaS — production frontend bundle served by Nginx." \
+      org.opencontainers.image.description="VoctManager SaaS — panel SPA + Astro public site, served by Nginx." \
       org.opencontainers.image.source="https://github.com/bedikryst/VoctManager" \
       org.opencontainers.image.licenses="Proprietary"
 
-# Copy the compiled static assets. Target path mirrors the `root` in prod.conf.
-COPY --from=builder /app/dist /usr/share/nginx/html/app
+# Panel SPA → mirrors `root /usr/share/nginx/html/app` in infra/nginx/prod.conf
+COPY --from=panel-builder /app/dist /usr/share/nginx/html/app
+
+# Astro public site → mirrors `root /usr/share/nginx/html/marketing` in prod.conf;
+# this replaces the previous host-side bind mount of `./web/dist`.
+COPY --from=web-builder /app/dist /usr/share/nginx/html/marketing
 
 EXPOSE 80
 

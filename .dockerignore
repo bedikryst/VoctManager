@@ -1,0 +1,81 @@
+# =====================================================================
+# Root .dockerignore — keeps the build context lean so frontend/Dockerfile
+# (multi-stage panel SPA + Astro public site, context: repo root) doesn't
+# upload 10+ GB of voct_data, node_modules, and .git over the wire.
+# =====================================================================
+
+# VCS
+.git
+.gitignore
+.gitattributes
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files — secrets stay on the host; the Dockerfile receives
+# every VITE_* / PUBLIC_* explicitly via build ARGs in docker-compose.
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+frontend/.env.local
+web/.env
+web/.env.production
+
+# ---- Node / npm artefacts (will be installed fresh inside the image) ----
+**/node_modules
+**/npm-debug.log
+**/yarn-error.log
+**/pnpm-debug.log
+
+# ---- Frontend build / cache ----
+frontend/dist
+frontend/.vite
+frontend/coverage
+
+# ---- Web (Astro) build / cache ----
+# Astro's dist/ is regenerated inside the image by the web-builder stage.
+# .astro is its generated content-collection types cache; also regenerated.
+web/dist
+web/.astro
+
+# ---- Python / Django (the backend has its OWN Dockerfile + context: ./backend,
+# but anything that would slip into this root context should still be excluded
+# in case the root image ever needs to reach in.) ----
+**/__pycache__
+**/*.pyc
+backend/venv
+backend/env
+backend/.pytest_cache
+backend/htmlcov
+backend/.mypy_cache
+backend/.ruff_cache
+backend/db.sqlite3
+**/*.sqlite3
+backend/media
+backend/static
+backend/staticfiles
+
+# ---- Host-side runtime data (Compose bind-mounts) — never enters the image ----
+voct_data/
+
+# ---- Tooling caches ----
+.parcel-cache
+.cache
+.turbo
+.next
+.output
+
+# ---- Documentation that doesn't belong in the runtime image ----
+docs/
+*.md
+!frontend/README.md
+!web/README.md
+# (the two READMEs above are kept only because some tooling reads metadata
+# from them — strip them if image size matters more than introspection.)

@@ -22,10 +22,16 @@ services:
       # /var/www/certbot, nginx (in container) serves it for ACME validation.
       - /var/www/certbot:/var/www/certbot:ro
       - ./infra/maintenance:/usr/share/nginx/html/maintenance:ro
-      - ./web/dist:/usr/share/nginx/html/marketing:ro
+      # The Astro public site at /usr/share/nginx/html/marketing is baked INTO
+      # the image by frontend/Dockerfile (web-builder stage). No host mount
+      # needed — `docker compose -f docker-compose.prod.yml build frontend`
+      # produces both the panel SPA and the public site in a single nginx image.
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      # Build context = repo root so the Dockerfile sees both frontend/ and web/.
+      # Photos under web/src/assets/photos/ must be present on the build host
+      # (gitignored — see web/README.md §Conventions).
+      context: .
+      dockerfile: frontend/Dockerfile
       args:
         - VITE_GOOGLE_MAPS_FRONTEND_KEY=${VITE_GOOGLE_MAPS_FRONTEND_KEY}
         - VITE_GOOGLE_MAP_ID=${VITE_GOOGLE_MAP_ID}
