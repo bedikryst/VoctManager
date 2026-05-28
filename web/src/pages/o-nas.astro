@@ -1,0 +1,515 @@
+---
+/**
+ * @file o-nas.astro
+ * @description Public "About us" page (/o-nas). VoctEnsemble identity: origin manifest,
+ *  ensemble split, pull-quote plate, working method, concert milestones, VoctFoundation legal
+ *  section, governance board, CTA. Full-bleed media via <BleedImage>; in-flow media via
+ *  <Picture> (AVIF+WebP, build-time). Reveal + heading-breath are native scroll-driven (zero JS).
+ * @architecture Astro islands 2026
+ * @module pages/o-nas
+ */
+import { getImage, Picture } from "astro:assets";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteChrome from "../components/SiteChrome.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import BleedImage from "../components/BleedImage.astro";
+import { photo, bleedPair } from "../lib/photos";
+import { VaultIsland } from "../islands/landing/VaultIsland";
+import "../styles/vault.css";
+
+const hero = bleedPair("o-nas-hero");
+const plate = bleedPair("swiatlo-krzyz");
+const florent = photo("florent");
+
+const msWcielenie = photo("o-nas-wcielenie");
+const msWolanieGor = photo("o-nas-wolanie-gor");
+const ms9Kart = photo("o-nas-9-kart");
+const msUkraina = photo("o-nas-ukraina");
+const msEpitafium = photo("o-nas-epitafium");
+const msBobola = photo("o-nas-bobola");
+
+const title = "O nas — VoctEnsemble | Fundacja VoctFoundation";
+const description =
+  "VoctEnsemble — krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Koncerty duchowe, liturgie i muzyka sakralna od renesansu po współczesny minimalizm.";
+
+const milestones = [
+  {
+    year: "2024", place: "Bazylika NSPJ · Kraków", title: "Kontemplacja Wcielenia",
+    img: msWcielenie, d: "1",
+    body: "Debiut cyklu Koncertów Duchowych: renesans, barok i współczesność ułożone wokół tajemnicy Bożego Narodzenia oraz Wcielenia.",
+  },
+  {
+    year: "2024", place: "Centrum Kongresowe · Szczawnica", title: "Wołanie Gór",
+    img: msWolanieGor, d: "2",
+    body: "Koncert na dwanaście głosów i skrzypce z Radu Ropotanem: muzyka sakralna, przyroda i pieśni zakorzenione w krajobrazie Pienin.",
+  },
+  {
+    year: "2024", place: "Kraków · Łódź", title: "9 Kart z Księgi Psalmów",
+    img: ms9Kart, d: "3",
+    body: "Program zbudowany z psalmów: od pokuty i dziękczynienia po radość uwielbienia, z muzyką Allegriego, Bacha, Rossiego, Brucknera i Stanforda.",
+  },
+  {
+    year: "2025", place: "Bazylika Mariacka · Kraków", title: "Hymn Poległym",
+    img: msUkraina, d: "1",
+    body: "Koncert duchowy jako hołd dla tych, którzy oddali życie w obronie wolności, oraz modlitwa o pokój dla Ukrainy i przyszłych pokoleń.",
+  },
+  {
+    year: "2025", place: "Mistrzejowice · Niedzica", title: "Aeternam — Epitafium dla Gazy",
+    img: msEpitafium, d: "2",
+    body: "Program pamięci i współczucia wobec cierpienia cywilów: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti i Tavener prowadzący od lamentu ku modlitwie.",
+  },
+  {
+    year: "2026", place: "Sanktuarium Narodowe św. Andrzeja Boboli · Warszawa",
+    title: "Uroczystość św. Andrzeja Boboli", img: msBobola, d: "3",
+    body: "Oprawa liturgii w dniu 100-lecia polskich prowincji jezuickich, podczas Mszy św. celebrowanej przez abp. Adriana Galbasa z homilią o. Artura Sosy SJ.",
+  },
+] as const;
+
+const goals = [
+  "Twórczość muzyczna: produkcja, koprodukcja, organizacja i prezentacja projektów w kraju i za granicą.",
+  "Dziedzictwo: dokumentowanie, archiwizowanie i udostępnianie muzyki oraz praktyk wykonawczych.",
+  "Edukacja i dostępność: popularyzowanie kultury oraz wspieranie uczestnictwa w niej.",
+  "Młodzi artyści: rozwój, promocja, mentoring, rezydencje i projekty wykonawcze.",
+  "Współpraca: praca z artystami, instytucjami kultury, uczelniami, mediami i organizacjami społecznymi.",
+] as const;
+
+const board = [
+  {
+    name: "Florent de Bazelaire", role: "Kierownictwo artystyczne · dyrygent",
+    vision: "Odpowiada za profil artystyczny, repertuar, pracę nad brzmieniem i długą linię rozwoju zespołu.",
+  },
+  {
+    name: "Anna Marcisz", role: "Produkcja · relacje · komunikacja",
+    vision: "Prowadzi organizację projektów, kontakt z partnerami, wizerunek zespołu i rytm pracy poza sceną.",
+  },
+  {
+    name: "Krystian Bugalski", role: "Digital · technologia · stabilność",
+    vision: "Odpowiada za obecność cyfrową, narzędzia, publikację, bezpieczeństwo i stabilność infrastruktury fundacji.",
+  },
+] as const;
+
+const method = [
+  { n: "01", h: "Repertuar", p: "Program układamy jak dramaturgię: tekst, epoka, tonacja, faktura i kolejność wejść mają prowadzić słuchacza, nie imponować listą nazwisk." },
+  { n: "02", h: "Przestrzeń", p: "Brzmienie dopasowujemy do miejsca. Bazylika, sanktuarium, sala koncertowa i synagoga nie są neutralnym tłem, tylko częścią interpretacji." },
+  { n: "03", h: "Cisza", p: "Pauza jest pełnoprawnym materiałem. Pozwala wybrzmieć tekstowi, akordowi i temu, co dzieje się w człowieku po ostatnim dźwięku." },
+  { n: "04", h: "Światło", p: "Światło porządkuje uwagę. Nie dekoruje muzyki, lecz pomaga jej odsłaniać proporcje, napięcia i duchowy ciężar programu." },
+] as const;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "MusicGroup",
+  name: "VoctEnsemble",
+  url: "https://voctensemble.com/o-nas",
+  genre: ["Sacred music", "Choral music", "Early music"],
+  foundingLocation: { "@type": "Place", name: "Kraków, Polska" },
+  member: board.map((b) => ({ "@type": "Person", name: b.name, jobTitle: b.role })),
+  subOrganization: {
+    "@type": "Organization",
+    name: "Fundacja VoctFoundation",
+    identifier: "KRS 0001237252",
+  },
+};
+
+const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp" })).src;
+---
+
+<BaseLayout title={title} description={description} path="/o-nas" image={ogImage} bodyClass="page-o-nas">
+  <Fragment slot="head">
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <a class="skip-link" href="#tresc">Przejdź do treści</a>
+  <SiteChrome current="/o-nas" />
+
+  <main id="tresc">
+    {/* ── Hero ─────────────────────────────────────────────────────────── */}
+    <section class="hero" aria-label="O nas">
+      <div class="hero-media" aria-hidden="true">
+        <BleedImage desktop={hero.desktop} mobile={hero.mobile} alt="" position="center 30%" eager animate />
+      </div>
+      <div class="hero-inner">
+        <p class="eyebrow reveal"><span class="lat">De nobis</span>  ·  O nas</p>
+        <h1>
+          <span class="line"><span class="reveal">Głosy, które</span></span>
+          <span class="line"><span class="reveal" data-d="1">uczą się <em>ciszy.</em></span></span>
+        </h1>
+        <p class="hero-lede reveal" data-d="2">
+          VoctEnsemble to krakowska formacja wokalna i zespół-rezydent Fundacji
+          VoctFoundation. Tworzymy koncerty duchowe, liturgie i projekty, w których muzyka
+          sakralna spotyka współczesną wrażliwość.
+        </p>
+        <span class="scroll-cue reveal" data-d="3">Zejdź niżej</span>
+      </div>
+    </section>
+
+    {/* ── Origin ───────────────────────────────────────────────────────── */}
+    <section class="band" aria-label="Skąd się wzięliśmy">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow"><span class="lat">Initium</span>  ·  Początek</span>
+        </div>
+        <div class="manifest">
+          <div class="manifest-lines">
+            <p class="reveal" data-d="1">Nie zaczęliśmy od instytucji.</p>
+            <p class="reveal" data-d="2">Zaczęliśmy od <em>słuchania</em>.</p>
+            <p class="reveal" data-d="3">Od pragnienia, by sacrum miało dziś żywy głos.</p>
+          </div>
+          <p class="manifest-coda reveal" data-d="4">
+            VoctEnsemble powstał z potrzeby wspólnego śpiewu: muzyki, która nie odtwarza
+            przeszłości jak eksponatu, lecz przywraca jej oddech w konkretnym miejscu, czasie
+            i człowieku. Z ciszy bierzemy nie efekt, ale metodę pracy.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Ensemble ─────────────────────────────────────────────────────── */}
+    <section class="band band-soft" aria-label="Kim jesteśmy">
+      <div class="wrap split">
+        <div class="split-text">
+          <div class="section-head reveal">
+            <span class="eyebrow"><span class="lat">Voces</span>  ·  Zespół</span>
+            <h2>Krakowski zespół wokalny prowadzony jak kameralna wspólnota.</h2>
+          </div>
+          <div class="prose reveal" data-d="1">
+            <p class="lead">
+              Na scenie najczęściej spotyka się dwanaście głosów: profesjonalnych i
+              pre-profesjonalnych muzyków, dla których precyzja jest początkiem, nie celem.
+            </p>
+            <p>
+              Pod kierownictwem Florenta de Bazelaire pracujemy nad brzmieniem, w którym
+              dyscyplina nie odbiera muzyce czułości. Nazwa VoctEnsemble łączy <em>voces</em>,
+              <em>octo</em> i <em>ensemble</em>, ale dziś ważniejsze jest to, co ta nazwa
+              obiecuje: głosy słuchające siebie nawzajem.
+            </p>
+            <p>
+              Śpiewamy muzykę sakralną od renesansu i baroku po współczesny minimalizm:
+              Victorię, Monteverdiego, Bacha, Pärta, Pendereckiego, Vivancosa, Tavenera.
+              Repertuar traktujemy jak rozmowę epok, a nie katalog stylów.
+            </p>
+          </div>
+        </div>
+        <figure class="split-media reveal" data-d="2">
+          <span class="frame-rule" aria-hidden="true"></span>
+          <Picture
+            src={florent}
+            formats={["avif", "webp"]}
+            widths={[540, 800, 1080]}
+            sizes="(max-width: 880px) 90vw, 45vw"
+            alt="Florent de Bazelaire prowadzący VoctEnsemble"
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption>Florent de Bazelaire · kierownictwo artystyczne</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    {/* ── Pull-quote plate ─────────────────────────────────────────────── */}
+    <section class="plate" aria-label="Idea">
+      <div class="plate-media" aria-hidden="true">
+        <BleedImage desktop={plate.desktop} mobile={plate.mobile} alt="" position="center" />
+      </div>
+      <blockquote class="reveal">
+        Koncert jako próg, nie spektakl.
+        <cite>VoctEnsemble</cite>
+      </blockquote>
+    </section>
+
+    {/* ── Method ───────────────────────────────────────────────────────── */}
+    <section class="band" aria-label="Jak pracujemy">
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">Modus</span>  ·  Jak pracujemy</span>
+          <h2>Nie budujemy programu z utworów. Budujemy drogę słuchania.</h2>
+        </div>
+        <div class="method-grid">
+          {
+            method.map((m, i) => (
+              <article class="method-card reveal" data-d={String(i + 1)}>
+                <span class="m-num">{m.n}</span>
+                <h3>{m.h}</h3>
+                <p>{m.p}</p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ── Milestones ───────────────────────────────────────────────────── */}
+    <section class="band band-soft" aria-label="Droga koncertów">
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">Via</span>  ·  Co już wybrzmiało</span>
+          <h2>Krótka droga, ale już zapisana miejscami i intencjami.</h2>
+        </div>
+        <ol class="milestones">
+          {
+            milestones.map((m) => (
+              <li class="reveal" data-d={m.d}>
+                <span class="milestone-date">{m.year}</span>
+                <figure class="milestone-media">
+                  <Picture
+                    src={m.img}
+                    formats={["avif", "webp"]}
+                    widths={[320, 480, 640]}
+                    sizes="(max-width: 700px) 0px, clamp(200px, 24vw, 320px)"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </figure>
+                <div class="milestone-body">
+                  <span class="milestone-place">{m.place}</span>
+                  <h3>{m.title}</h3>
+                  <p>{m.body}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="prose reveal" style="padding-top: 10px" data-d="4">
+          <p><a class="inline" href="/koncerty">Zobacz repertuar i szczegóły koncertów →</a></p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Foundation ───────────────────────────────────────────────────── */}
+    <section class="band" id="fundacja" aria-label="Fundacja VoctFoundation">
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">Fundatio</span>  ·  Fundacja</span>
+          <h2>Forma, która pozwala muzyce mieć ciągłość.</h2>
+        </div>
+        <div class="prose measure reveal" data-d="1">
+          <p class="lead">
+            VoctFoundation jest prawnym i organizacyjnym zapleczem działalności artystycznej.
+            To dzięki niej zespół może myśleć nie tylko o kolejnym koncercie, ale o archiwum,
+            edukacji, produkcji i długim trwaniu repertuaru.
+          </p>
+          <p>
+            Statutowo Fundacja działa w obszarze <strong>kultury, sztuki, ochrony dóbr kultury
+            i dziedzictwa narodowego</strong>. Może prowadzić projekty artystyczne i
+            interdyscyplinarne, utrwalać nagrania, wspierać młodych artystów oraz działać przez
+            stały zespół artystyczny w formule zespołu-rezydenta.
+          </p>
+        </div>
+        <ol class="goals reveal" data-d="2" aria-label="Cele statutowe Fundacji">
+          {
+            goals.map((g, i) => (
+              <li>
+                <span class="g-num">{String(i + 1).padStart(2, "0")}</span>
+                <span>{g}</span>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="legal-card reveal" data-d="3">
+          <div class="legal-grid">
+            <div><span class="k">KRS</span><span class="v">0001237252</span></div>
+            <div><span class="k">NIP</span><span class="v">6762718992</span></div>
+            <div><span class="k">REGON</span><span class="v">544621525</span></div>
+          </div>
+          <p class="legal-note">
+            Dochody Fundacji przeznaczane są w całości na realizację celów statutowych. Nie
+            podlegają podziałowi między fundatora, członków organów ani osoby związane z
+            Fundacją; działalność gospodarcza, jeżeli jest prowadzona, pozostaje pomocnicza
+            wobec misji statutowej.
+          </p>
+          <div class="legal-foot">
+            <span>Fundacja VoctFoundation · ul. Św. Filipa 23/3, 31-150 Kraków</span>
+            <a class="btn" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener">
+              Statut fundacji ↗
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Governance ───────────────────────────────────────────────────── */}
+    <section class="band band-deep" aria-label="Zarząd fundacji">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow"><span class="lat">Consilium</span>  ·  Zarząd</span>
+          <h2>Odpowiedzialność rozpisana na trzy głosy.</h2>
+        </div>
+        <p class="board-intro reveal" data-d="1">
+          Fundacja nie ma być dekoracją wokół zespołu. Ma utrzymać jakość artystyczną,
+          organizacyjną i cyfrową tak, aby projekty mogły dojrzewać, wracać i zostawiać po
+          sobie ślad.
+        </p>
+        <div class="board">
+          {
+            board.map((b, i) => (
+              <article class="board-card reveal" data-d={String(i + 1)}>
+                <h3>{b.name}</h3>
+                <p class="role">{b.role}</p>
+                <p class="vision">{b.vision}</p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ── CTA ──────────────────────────────────────────────────────────── */}
+    <section class="band cta-band" aria-label="Zaproszenie do kontaktu">
+      <div class="wrap reveal">
+        <h2>Zaproście nas do przestrzeni, która potrzebuje głosu.</h2>
+        <p>
+          Koncert duchowy, oprawa liturgii, ważna uroczystość, mecenat albo współpraca
+          artystyczna. Odpowiemy konkretnie i bez zbędnego dystansu.
+        </p>
+        <div class="btn-row">
+          <a class="btn btn-gold" href="/kontakt">Napisz do nas</a>
+          <a class="btn" href="/koncerty">Koncerty Duchowe</a>
+          <a class="btn" href="/?donate" data-vault-open="100">Wesprzyj fundację</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+
+  <VaultIsland client:idle />
+  <script>
+    import "../scripts/vault-triggers.ts";
+  </script>
+</BaseLayout>
+
+<style>
+  /* Hero */
+  .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 max(28px, 5vw) clamp(64px, 9vw, 112px); color: var(--paper); overflow: hidden; isolation: isolate; }
+  .hero-media { position: absolute; inset: 0; z-index: -2; }
+  .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.42) 0%, rgba(8,8,7,.1) 38%, rgba(8,8,7,.72) 100%), linear-gradient(72deg, rgba(8,8,7,.6) 0%, rgba(8,8,7,.16) 44%, transparent 70%); }
+  .hero-inner { max-width: 1180px; width: 100%; margin: 0 auto; }
+  .hero h1 { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(54px, 10vw, 138px); letter-spacing: -.01em; margin: 18px 0 0; }
+  .hero h1 em { color: var(--candle); }
+  .hero-lede { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(20px, 2.3vw, 30px); line-height: 1.42; max-width: 30ch; margin: 26px 0 0; color: rgba(244,241,233,.9); }
+  .scroll-cue { margin-top: 40px; font-family: var(--mono); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244,241,233,.62); display: inline-flex; align-items: center; gap: 10px; }
+  .scroll-cue::after { content: ""; width: 38px; height: 1px; background: currentColor; opacity: .6; animation: cuepulse 3.4s var(--ease-slow) infinite; }
+
+  /* Sections / layout */
+  section { position: relative; }
+  .band { padding: clamp(84px, 13vw, 184px) max(28px, 5vw); }
+  .band-soft { background: var(--paper-soft); }
+  .band-deep { background: var(--paper-deep); }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .measure { max-width: 720px; }
+
+  .section-head { margin: 0 0 clamp(40px, 6vw, 80px); }
+  .section-head .eyebrow { display: block; margin-bottom: 22px; }
+  .section-head h2 { font-family: var(--serif); font-weight: 300; line-height: 1.04; font-size: clamp(36px, 5.6vw, 76px); letter-spacing: -.01em; color: var(--ink); margin: 0; max-width: 18ch; }
+
+  .prose p { margin: 0 0 20px; font-size: clamp(16px, 1.25vw, 18px); color: var(--ink-soft); }
+  .prose p.lead { font-family: var(--serif); font-style: italic; font-size: clamp(21px, 2.1vw, 28px); line-height: 1.5; color: var(--ink); margin-bottom: 28px; }
+  .prose strong { font-weight: 500; color: var(--ink); }
+  .prose a.inline { border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .prose a.inline:hover { color: var(--candle-blue); border-bottom-color: var(--candle-blue); }
+
+  /* Manifest */
+  .manifest { display: grid; grid-template-columns: 1.2fr .8fr; gap: clamp(40px, 6vw, 96px); align-items: end; }
+  .manifest-lines { display: grid; gap: clamp(14px, 2.4vw, 28px); }
+  .manifest-lines p { font-family: var(--serif); font-weight: 300; line-height: 1.05; font-size: clamp(34px, 5.6vw, 70px); color: var(--ink); margin: 0; letter-spacing: -.01em; }
+  .manifest-lines p em { color: var(--candle); }
+  .manifest .manifest-coda { font-size: clamp(15px, 1.25vw, 18px); color: var(--ink-muted); letter-spacing: .01em; line-height: 1.8; margin: 0 0 8px; max-width: 42ch; }
+  @media (max-width: 880px) {
+    .manifest { grid-template-columns: 1fr; gap: 32px; align-items: start; }
+    .manifest-lines p { font-size: clamp(32px, 8vw, 52px); }
+  }
+
+  /* Split text + image */
+  .split { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(36px, 5vw, 84px); align-items: center; }
+  .split-media { position: relative; margin-inline: 40px; }
+  .split-media :global(picture) { display: block; }
+  .split-media :global(img) { width: 100%; height: auto; display: block; aspect-ratio: 4 / 5; object-fit: cover; }
+  .split-media figcaption { margin-top: 12px; font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted); }
+  .split-media .frame-rule { position: absolute; left: -1px; top: -1px; width: 34px; height: 34px; border-top: 1px solid var(--candle); border-left: 1px solid var(--candle); opacity: .8; z-index: 1; }
+  @media (max-width: 880px) { .split { grid-template-columns: 1fr; gap: 34px; } }
+
+  /* Method */
+  .method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(22px, 3vw, 42px); }
+  .method-card { display: grid; gap: 16px; padding-top: 24px; border-top: 1px solid var(--line-strong); }
+  .method-card .m-num { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .method-card h3 { margin: 0; font-family: var(--serif); font-size: clamp(24px, 2.5vw, 34px); font-weight: 300; line-height: 1.1; color: var(--ink); }
+  .method-card p { margin: 0; color: var(--ink-muted); font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.75; }
+  @media (max-width: 980px) { .method-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 620px) { .method-grid { grid-template-columns: 1fr; } }
+
+  /* Milestones */
+  .milestones { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line); }
+  .milestones li { display: grid; grid-template-columns: max-content clamp(200px, 24vw, 320px) 1fr; gap: clamp(16px, 2.4vw, 36px); padding: clamp(24px, 4vw, 42px) 0; border-top: 1px solid var(--line); align-items: start; }
+  .milestone-date { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--candle); }
+  .milestone-body { display: grid; gap: 9px; }
+  .milestone-body h3 { margin: 0; font-family: var(--serif); font-size: clamp(26px, 3vw, 42px); font-weight: 300; line-height: 1.08; color: var(--ink); }
+  .milestone-body p { margin: 0; max-width: 68ch; color: var(--ink-soft); font-size: clamp(15px, 1.18vw, 17px); line-height: 1.75; }
+  .milestone-place { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); }
+  /* Frame owns the ratio (3:2) and clips — so any source crop renders identically,
+     regardless of the uploaded photo's intrinsic dimensions. */
+  .milestone-media { margin-inline: 40px; aspect-ratio: 3 / 2; overflow: hidden; }
+  .milestone-media :global(picture) { display: block; width: 100%; height: 100%; }
+  .milestone-media :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+  @media (max-width: 700px) {
+    .milestones li { grid-template-columns: 1fr; gap: 10px; }
+    .milestone-media { display: none; }
+  }
+
+  /* Foundation */
+  .goals { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 2px; }
+  .goals li { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: baseline; padding: 16px 0; border-top: 1px solid var(--line); font-size: clamp(15px, 1.2vw, 17px); color: var(--ink-soft); }
+  .goals li:last-child { border-bottom: 1px solid var(--line); }
+  .goals .g-num { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--candle); }
+  .legal-card { margin-top: clamp(36px, 5vw, 56px); background: var(--paper); border: 1px solid var(--line); padding: clamp(26px, 3.4vw, 40px); display: grid; gap: 22px; }
+  .legal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .legal-grid div { display: grid; gap: 4px; }
+  .legal-grid .k { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-muted); }
+  .legal-grid .v { font-family: var(--mono); font-size: 15px; color: var(--ink); letter-spacing: .02em; }
+  .legal-foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 22px; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); letter-spacing: .03em; }
+  .legal-note { margin: 0; max-width: 78ch; color: var(--ink-muted); font-size: 14px; line-height: 1.75; }
+  @media (max-width: 620px) { .legal-grid { grid-template-columns: 1fr; gap: 14px; } }
+
+  /* Governance */
+  .board-intro { max-width: 720px; margin: calc(clamp(40px, 6vw, 80px) * -0.45) 0 clamp(38px, 5vw, 64px); color: var(--ink-soft); font-size: clamp(16px, 1.25vw, 18px); }
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(24px, 4vw, 56px); }
+  .board-card { display: grid; gap: 18px; padding-top: 26px; border-top: 1px solid var(--line-strong); }
+  .board-card h3 { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 3vw, 42px); line-height: 1.05; color: var(--ink); margin: 0; }
+  .board-card .role { font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; line-height: 1.7; text-transform: uppercase; color: var(--candle); }
+  .board-card .vision { font-size: 15px; line-height: 1.8; color: var(--ink-muted); margin: 0; }
+  @media (max-width: 860px) { .board { grid-template-columns: 1fr; gap: 34px; } }
+
+  /* Plate */
+  .plate { position: relative; min-height: 70svh; display: flex; align-items: center; padding: clamp(64px,9vw,120px) max(28px,5vw); color: var(--paper); overflow: hidden; isolation: isolate; }
+  .plate-media { position: absolute; inset: 0; z-index: -2; }
+  .plate::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.5), rgba(8,8,7,.34)); }
+  .plate blockquote { margin: 0; max-width: 24ch; font-family: var(--serif); font-style: italic; font-weight: 300; line-height: 1.18; font-size: clamp(30px, 5vw, 64px); }
+  .plate cite { display: block; margin-top: 22px; font-style: normal; font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.7); }
+  /* Smaller quote on phones → shorter band. */
+  @media (max-width: 760px) { .plate { min-height: 28svh; } }
+
+  /* CTA */
+  .cta-band { text-align: center; }
+  .cta-band h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(40px, 7vw, 92px); line-height: 1; color: var(--ink); margin: 0 0 14px; letter-spacing: -.01em; }
+  .cta-band p { max-width: 46ch; margin: 0 auto 38px; color: var(--ink-soft); }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+  .btn { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; padding: 16px 30px; border: 1px solid var(--ink); color: var(--ink); transition: background-color .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease); }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn-gold { border-color: var(--candle); color: var(--ink); background: var(--candle); }
+  .btn-gold:hover { background: transparent; color: var(--ink); border-color: var(--candle); }
+
+  /* Variable-font heading breath (native, sparing). */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .hero h1, .section-head h2, .manifest-lines p {
+        font-variation-settings: "wght" var(--wght);
+        animation: headingBreath linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 55%;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-cue::after { animation: none; }
+  }
+  @keyframes cuepulse { 0%, 100% { transform: scaleX(.4); opacity: .3; } 50% { transform: scaleX(1); opacity: .7; } }
+</style>

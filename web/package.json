@@ -1,0 +1,26 @@
+{
+  "name": "voct-web",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VoctEnsemble / VoctFoundation public marketing site — Astro (islands + native View Transitions). Separate build from the panel SPA; shares the Django backend.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/react": "^5.0.5",
+    "astro": "^6.3.8",
+    "lenis": "^1.3.23",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
+  }
+}

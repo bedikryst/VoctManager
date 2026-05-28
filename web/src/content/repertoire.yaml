@@ -1,0 +1,219 @@
+# Five-century repertoire catalog. Eras render in `order`; within an era, entries render in
+# the order listed. `works` is a list of { title, year? } so the year keeps its own styling.
+# Note: titles/years are quoted because many contain commas (YAML flow-map separators).
+
+- id: renesans
+  order: 1
+  title: Renesans
+  span: XV–XVI w.
+  entries:
+    - composer: "Gibbons, Orlando"
+      years: "1583–1625"
+      works:
+        - { title: "Drop, drop, slow tears", year: "1623" }
+        - { title: "O clap your hands", year: "ok. 1622" }
+    - composer: "Handl, Jacob (Gallus)"
+      years: "1550–1591"
+      works:
+        - { title: "Canite tuba", year: "1590" }
+    - composer: "Josquin des Prez"
+      years: "ok. 1450–1521"
+      works:
+        - { title: "O salutaris hostia", year: "pocz. XVI w." }
+    - composer: "Lasso, Orlando di"
+      years: "1532–1594"
+      works:
+        - { title: "Laudate Dominum omnes gentes", year: "1574" }
+    - composer: "Palestrina, Giovanni Pierluigi da"
+      years: "1525–1594"
+      works:
+        - { title: "Super flumina Babylonis", year: "1581" }
+    - composer: "Victoria, Tomás Luis de"
+      years: "1548–1611"
+      works:
+        - { title: "Alma Redemptoris Mater", year: "1581" }
+    - composer: "Zieleński, Mikołaj"
+      years: "1560–1620"
+      works:
+        - { title: "Vox in Rama", year: "1611" }
+
+- id: barok
+  order: 2
+  title: Barok
+  span: XVII – poł. XVIII w.
+  entries:
+    - composer: "Allegri, Gregorio"
+      years: "1582–1652"
+      works:
+        - { title: "Miserere mei, Deus", year: "ok. 1638" }
+    - composer: "Bach, Johann Sebastian"
+      years: "1685–1750"
+      works:
+        - { title: "Singet dem Herrn ein neues Lied, BWV 225", year: "ok. 1727" }
+    - composer: "Händel, George Frideric"
+      years: "1685–1759"
+      works:
+        - { title: "Hallelujah", year: "1741" }
+    - composer: "Lotti, Antonio"
+      years: "1667–1740"
+      works:
+        - { title: "Crucifixus", year: "ok. 1717–19" }
+    - composer: "Monteverdi, Claudio"
+      years: "1567–1643"
+      works:
+        - { title: "Cantate Domino", year: "1620" }
+        - { title: "Quel augellin che canta", year: "1603" }
+    - composer: "Rossi, Salomone"
+      years: "1570–1630"
+      works:
+        - { title: "Barukh haba beshem Adonai", year: "1622" }
+    - composer: "Schütz, Heinrich"
+      years: "1585–1672"
+      works:
+        - { title: "Jauchzet dem Herrn, SWV 36", year: "1619" }
+
+- id: klasycyzm-romantyzm
+  order: 3
+  title: Klasycyzm i romantyzm
+  span: XVIII – pocz. XX w.
+  entries:
+    - composer: "Bairstow, Edward C."
+      years: "1874–1946"
+      works:
+        - { title: "I sat down", year: "1925" }
+    - composer: "Bruckner, Anton"
+      years: "1824–1896"
+      works:
+        - { title: "Os justi, WAB 30", year: "1879" }
+    - composer: "Elgar, Edward"
+      years: "1857–1934"
+      works:
+        - { title: "Lux aeterna", year: "1899 / aranż. J. Cameron" }
+    - composer: "Fauré, Gabriel"
+      years: "1845–1924"
+      works:
+        - { title: "Pie Jesu", year: "1887–90 / aranż. B. Smith" }
+    - composer: "Mozart, Wolfgang Amadeus"
+      years: "1756–1791"
+      works:
+        - { title: "Ave verum corpus", year: "1791" }
+    - composer: "Rachmaninow, Siergiej"
+      years: "1873–1943"
+      works:
+        - { title: "Ektenia Pokoju", year: "1910" }
+    - composer: "Sibelius, Jean"
+      years: "1865–1957"
+      works:
+        - { title: "Be Still My Soul", year: "1899 / aranż. Matheson" }
+    - composer: "Stanford, Charles Villiers"
+      years: "1852–1924"
+      works:
+        - { title: "Beati quorum via, Op. 38 No. 3", year: "ok. 1888–90" }
+    - composer: "Vaughan Williams, Ralph"
+      years: "1872–1958"
+      works:
+        - { title: "The Lark Ascending", year: "1914 / aranż. P. Drayton" }
+
+- id: wspolczesnosc
+  order: 4
+  title: Współczesność
+  span: XX–XXI w.
+  entries:
+    - composer: "Dubra, Rihards"
+      years: "ur. 1964"
+      works:
+        - { title: "O Crux ave", year: "1995" }
+    - composer: "Ešenvalds, Ēriks"
+      years: "ur. 1977"
+      works:
+        - { title: "O salutaris hostia", year: "2005" }
+        - { title: "Stars", year: "2011" }
+    - composer: "Frisina, Marco"
+      years: "ur. 1954"
+      works:
+        - { title: "Anima Christi", year: "2000" }
+    - composer: "Gjeilo, Ola"
+      years: "ur. 1978"
+      works:
+        - { title: "Northern lights", year: "2012" }
+        - { title: "Serenity", year: "2010" }
+    - composer: "Górecki, Henryk Mikołaj"
+      years: "1933–2010"
+      works:
+        - { title: "Sanctus, Sanctus, Sanctus", year: "1986" }
+    - composer: "Havrylets, Hanna"
+      years: "1958–2022"
+      works:
+        - { title: "Prayer / Молитва до Пресвятої Богородиці", year: "2004" }
+    - composer: "Kramarz, Mariusz"
+      works:
+        - { title: "Gdy śliczna Panna", year: "aranż. współczesna" }
+    - composer: "Kusz, Dawid OP"
+      works:
+        - { title: "Alleluja laterańskie", year: "pocz. XXI w." }
+    - composer: "MacIntyre, David"
+      years: "ur. 1952"
+      works:
+        - { title: "Ave Maria", year: "1994" }
+    - composer: "Pärt, Arvo"
+      years: "ur. 1935"
+      works:
+        - { title: "Da Pacem Domine", year: "2004" }
+        - { title: "Nunc dimittis", year: "2001" }
+        - { title: "The Deer's Cry", year: "2007" }
+    - composer: "Penderecki, Krzysztof"
+      years: "1933–2020"
+      works:
+        - { title: "O gloriosa Virginum", year: "2009" }
+    - composer: "Rutter, John"
+      years: "ur. 1945"
+      works:
+        - { title: "A Ukrainian Prayer", year: "2022" }
+    - composer: "Sandström, Jan"
+      years: "1942–2019"
+      works:
+        - { title: "Es ist ein Ros' entsprungen", year: "1990" }
+    - composer: "Shaw, Caroline"
+      years: "ur. 1982"
+      works:
+        - { title: "and the swallow", year: "2017" }
+    - composer: "Steven, Ken"
+      years: "ur. 1993"
+      works:
+        - { title: "Dawn and Dusk", year: "2020" }
+    - composer: "Stopford, Philip W. J."
+      years: "ur. 1977"
+      works:
+        - { title: "Lully, Lullay", year: "2008" }
+    - composer: "Sykulski, Jacek"
+      years: "ur. 1964"
+      works:
+        - { title: "Stoi lód na prośnie", year: "2017" }
+    - composer: "Tavener, John"
+      years: "1944–2013"
+      works:
+        - { title: "A Hymn to the Mother of God", year: "1985" }
+        - { title: "Mother of God, here I stand", year: "2003" }
+        - { title: "Song for Athene", year: "1993" }
+    - composer: "Vivancos, Bernat"
+      years: "ur. 1973"
+      works:
+        - { title: "A Child is born", year: "2001" }
+        - { title: "Aeternam", year: "2014" }
+        - { title: "Le cri des bergers", year: "2004" }
+    - composer: "Williams, John"
+      years: "ur. 1932"
+      works:
+        - { title: "Hymn to the Fallen", year: "1998" }
+
+- id: tradycja
+  order: 5
+  title: Tradycja
+  span: anonim · ludowe
+  entries:
+    - composer: "Anonim / tradycyjne"
+      works:
+        - { title: "Gaudete", year: "XVI w. / aranż. B. Kay" }
+        - { title: "O Virgo Splendens", year: "Llibre Vermell" }
+        - { title: "Salve Regina", year: "trad. Oksytania" }
+        - { title: "Tantum ergo", year: "polifonia korsykańska" }

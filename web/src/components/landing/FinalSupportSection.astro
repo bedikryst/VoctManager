@@ -1,0 +1,109 @@
+---
+/**
+ * @file FinalSupportSection.astro
+ * @description Closing patronage section over the krzyż-światło backdrop: direct-contact card
+ *  (Florent's email), donation tier rows, and a bank-card with copyable IBANs (PLN + EUR) and
+ *  foundation address. The "Wesprzyj" trigger dispatches `voct:open-vault` (handled by the
+ *  vault island in Faza 3c); IBAN copy is delegated in scripts/landing.ts (`data-copy`).
+ * @architecture Astro islands 2026
+ * @module components/landing/FinalSupportSection
+ */
+import BleedImage from "../BleedImage.astro";
+import { bleedPair } from "../../lib/photos";
+
+const bg = bleedPair("swiatlo-krzyz");
+
+const ROWS = [
+  { amount: "100 zł", text: "wsparcie najbliższego wydarzenia" },
+  { amount: "500 zł", text: "wsparcie pracy zespołu i procesu twórczego" },
+  { amount: "2 500 zł", text: "współtworzenie kolejnej odsłony cyklu" },
+] as const;
+---
+
+<section class="final-support" id="wesprzyj" aria-label="Wesprzyj VoctEnsemble">
+  <div class="final-support-media" aria-hidden="true">
+    <BleedImage desktop={bg.desktop} mobile={bg.mobile} alt="" position="center" />
+  </div>
+  <div class="section">
+    <div class="final-grid">
+      <div class="final-copy reveal">
+        <div class="micro">Patronat · darowizna · partnerstwo</div>
+        <h2>Niech muzyka ma swoje miejsce.</h2>
+        <p>
+          Koncerty Duchowe powstają dzięki tym, którzy wierzą w muzykę docierającą
+          do głębi — zdolną poruszać, rezonować i przemieniać. Dołącz jako darczyńca,
+          mecenas lub zaproś VoctEnsemble do swojej przestrzeni.
+        </p>
+        <div class="final-contact">
+          <span class="micro">Kontakt do kierownictwa artystycznego</span>
+          <a
+            class="final-contact-name plausible-event-name=florent+mail"
+            href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble"
+          >
+            Florent de Bazelaire
+          </a>
+          <span class="final-contact-mail">florent.de.bazelaire@voctensemble.com</span>
+        </div>
+        <div class="final-actions">
+          <a
+            class="primary-link plausible-event-name=napisz+do+nas+dol"
+            href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble"
+          >
+            Napisz do nas
+          </a>
+          <a
+            class="secondary-link plausible-event-name=wesprzyj+dol"
+            href="#wesprzyj"
+            data-no-lenis
+            data-vault-open="100"
+          >
+            Wesprzyj
+          </a>
+        </div>
+      </div>
+
+      <div class="donation-list reveal">
+        {
+          ROWS.map((row) => (
+            <div class="donation-row">
+              <strong>{row.amount}</strong>
+              <span>{row.text}</span>
+            </div>
+          ))
+        }
+
+        <div class="bank-card" id="przelew" aria-label="Dane do przelewu">
+          <div class="bank-row">
+            <span class="currency">PLN</span>
+            <span class="iban">PL26 1600 1013 1724 4184 1000 0001</span>
+            <button
+              type="button"
+              class="copy-account plausible-event-name=przelew+copy+PLN"
+              data-copy="PL26160010131724418410000001"
+            >
+              Kopiuj
+            </button>
+          </div>
+          <div class="bank-row">
+            <span class="currency">EUR</span>
+            <span class="iban">PL96 1600 1013 1724 4184 1000 0002</span>
+            <button
+              type="button"
+              class="copy-account plausible-event-name=przelew+copy+EUR"
+              data-copy="PL96160010131724418410000002"
+            >
+              Kopiuj
+            </button>
+          </div>
+          <div class="foundation-data">
+            Fundacja VoctFoundation · KRS 0001237252 · NIP 6762718992 · REGON 544621525
+            <br />
+            Tytuł przelewu: Darowizna na cele statutowe VoctFoundation
+            <br />
+            Św. Filipa 23 / 3, 31-150 Kraków, Polska
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

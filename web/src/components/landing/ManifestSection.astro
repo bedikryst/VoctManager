@@ -1,0 +1,44 @@
+---
+/**
+ * @file ManifestSection.astro
+ * @description Three-stanza ensemble manifest. Redesigned for minimalist, premium, 
+ * Awwwards-level aesthetics with rigid editorial grid and kinetic typography.
+ * @architecture Astro islands 2026
+ * @module components/landing/ManifestSection
+ */
+import { MANIFEST_LINES } from "../../data/landing/manifestLines";
+---
+
+<section class="section manifest" id="manifest" aria-label="Manifest chóru VoctEnsemble">
+  {/* Pure text-emanating glow — the light comes FROM the words, not from a backdrop shaft.
+      "Sacrum nie zdobi, odsłania." (sacred doesn't ornament — it reveals): the text itself
+      is the source. See setupManifestRake in landing.ts for the per-line gold bloom + wght
+      breath + per-word stagger choreography. */}
+  <div class="manifest-container">
+    <div class="manifest-top reveal">
+      <div class="manifest-meta-col">
+        <span class="manifest-label">01</span>
+        <span class="manifest-label">Manifest</span>
+      </div>
+      <div class="manifest-meta-col" style="text-align: right;">
+        <span class="manifest-label">VoctEnsemble</span>
+      </div>
+    </div>
+
+    <div class="manifest-content">
+      {
+        MANIFEST_LINES.map((line) => (
+          <div class:list={["manifest-line-group", "reveal", { "is-closing": line.closing }]}>
+            <div class="manifest-roman">{line.index}</div>
+            <p class="manifest-statement">
+              <span class="manifest-text-inner">{line.text}</span>
+              {line.emphasis && (
+                <span class="manifest-emphasis">{line.emphasis}</span>
+              )}
+            </p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

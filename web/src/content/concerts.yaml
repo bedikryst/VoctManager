@@ -1,0 +1,155 @@
+# Concert "stations" — the Concerts Spirituels cycle. Add a new concert by appending an
+# entry; order drives the sequence (Via rail) and the page layout. Images are bare photo()
+# names under src/assets/photos (bg expects -desktop / -mobile crops).
+
+- id: wcielenie
+  order: 1
+  roman: "I"
+  latin: Incarnatio
+  title: Kontemplacja Wcielenia
+  meta: "Bazylika NSPJ, Kraków · 20 stycznia 2024"
+  viaDate: sty 2024
+  viaStep: "16%"
+  accent: "#c6a45b"
+  essence: "Nie koncert kolędowy, lecz próba wejścia w tajemnicę Wcielenia: od zapowiedzi Izajasza po kantyk Symeona, od zimowego półmroku Sandströma po jasność Monteverdiego."
+  facts:
+    - 4 / 8 / 12 głosów
+    - Renesans — XXI w.
+    - Debiut cyklu
+  bg: st-wcielenie-bg
+  poster: poster-wcielenie
+  posterAlt: Plakat koncertu Kontemplacja Wcielenia
+  realizacja: "Realizacja: Ars Sonora Studio"
+  spotify: https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
+  program:
+    - { composer: "Jan Sandström", work: "Es ist ein Ros' entsprungen" }
+    - { composer: "Bernat Vivancos", work: "Le cri des bergers" }
+    - { composer: "Jacob Handl (Gallus)", work: "Canite tuba" }
+    - { composer: "Bernat Vivancos", work: "A Child is born" }
+    - { composer: "Tomás Luis de Victoria", work: "Alma Redemptoris Mater" }
+    - { composer: "Krzysztof Penderecki", work: "O gloriosa Virginum" }
+    - { composer: "Mariusz Kramarz", work: "Gdy śliczna Panna" }
+    - { composer: "Philip Stopford", work: "Lully, Lullay" }
+    - { composer: "Arvo Pärt", work: "Nunc dimittis" }
+    - { composer: "Claudio Monteverdi", work: "Cantate Domino" }
+    - { composer: "Gaudete", work: "aranż. Brian Kay · bis", bis: true }
+
+- id: wolanie-gor
+  order: 2
+  roman: "II"
+  latin: Terra
+  title: Wołanie Gór
+  meta: "Centrum Kongresowe, Szczawnica · 1 czerwca 2024"
+  viaDate: cze 2024
+  viaStep: "33%"
+  accent: "#7d9890"
+  reverse: true
+  essence: "Góry nie były dekoracją programu, ale jego oddechem. Dwanaście głosów i skrzypce Radu Ropotana prowadziły od sakralnej polifonii ku pieśniom, w których krajobraz staje się pamięcią wspólnoty."
+  facts:
+    - 12 głosów i skrzypce
+    - Pieniny
+    - Polska · Korsyka · Francja · Wyspy Brytyjskie
+  bg: st-wolanie-bg
+  poster: poster-wolanie
+  posterAlt: Plakat koncertu Wołanie Gór
+  spotify: https://open.spotify.com/playlist/6yCPC7QDiot7MqzgdASkAP
+
+- id: 9-kart
+  order: 3
+  roman: "III"
+  latin: Psalmi
+  title: 9 Kart z Księgi Psalmów
+  meta: "Bazylika NSPJ, Kraków · Archikatedra, Łódź · 2024"
+  viaDate: "2024"
+  viaStep: "50%"
+  accent: "#bfa05f"
+  essence: "Psalm jest miejscem, gdzie człowiek nie musi upraszczać siebie przed Bogiem. Pokuta, wdzięczność, mądrość i radość weszły tu kolejno: od Miserere Allegriego po świetliste Singet dem Herrn Bacha."
+  facts:
+    - 9 psalmów
+    - 6 / 8 / 9 / 12 głosów
+    - Rytm call & response
+  bg: st-9-kart-bg
+  poster: poster-9-kart
+  posterAlt: Plakat koncertu 9 Kart z Księgi Psalmów
+  spotify: https://open.spotify.com/playlist/6quiVYU28Sl3Fx17VZulSc
+  program:
+    - { composer: "Gregorio Allegri", work: "Miserere · Ps 51" }
+    - { composer: "Orlando di Lasso", work: "Laudate Dominum · Ps 117" }
+    - { composer: "Anton Bruckner", work: "Os justi · Ps 37" }
+    - { composer: "Charles V. Stanford", work: "Beati quorum via · Ps 119" }
+    - { composer: "J. S. Bach", work: "Singet dem Herrn · Ps 149" }
+    - { composer: "Orlando Gibbons", work: "O clap your hands · Ps 47" }
+    - { composer: "Salomone Rossi", work: "Barukh habba beshem Adonai · Ps 118" }
+    - { composer: "Heinrich Schütz", work: "Jauchzet dem Herrn · Ps 100" }
+    - { composer: "Claudio Monteverdi", work: "Cantate Domino · Ps 98" }
+
+- id: hymn-poleglym
+  order: 4
+  roman: "IV"
+  latin: Memoria
+  title: Hymn Poległym
+  meta: "Bazylika Mariacka, Kraków · 22 lutego 2025"
+  viaDate: lut 2025
+  viaStep: "67%"
+  accent: "#5e6e84"
+  variant: memoriam
+  essence: "Hołd tym, którzy oddali życie w obronie Ukrainy, i modlitwa o pokój dla tych, którzy żyją dalej z ciężarem wojny. Program miał nie opowiadać tragedii, lecz stworzyć dla niej przestrzeń pamięci."
+  facts:
+    - Bazylika Mariacka
+    - Modlitwa o pokój
+    - Pamięć Ukrainy
+  bg: st-hymn-bg
+  poster: poster-hymn
+  posterAlt: Plakat koncertu Hymn Poległym
+  spotify: https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM
+
+- id: aeternam
+  order: 5
+  roman: "V"
+  latin: Lamentum
+  title: Aeternam — Epitafium dla Gazy
+  meta: "Mistrzejowice, Kraków · Niedzica · jesień 2025"
+  viaDate: jesień 2025
+  viaStep: "83%"
+  accent: "#4f5d77"
+  variant: memoriam
+  essence: "Wobec cierpienia mieszkańców Gazy wybraliśmy język współczucia, nie komentarza. Program prowadził od Aeternam Vivancosa i lamentu Vox in Rama ku modlitwom Pärta, Havrylets, Gjeilo, Lottiego i Tavenera."
+  facts:
+    - 4 / 8 / 12 głosów
+    - Lament i modlitwa
+    - Kraków · Niedzica
+  bg: st-aeternam-bg
+  poster: poster-aeternam
+  posterAlt: Plakat koncertu Aeternam — Epitafium dla Gazy
+  spotify: https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM?si=417e9288f94a4201&pt=99e96a55d7b2cb60c5ac46b8a007f36e
+  links:
+    - { label: Relacja prasowa ↗, href: "https://krakow.gosc.pl/doc/9466268.Niedzica-Koncert-dedykowany-Strefie-Gazy" }
+    - { label: Onet / KAI ↗, href: "https://www.onet.pl/informacje/kai/muzyczna-modlitwa-w-niedzicy-koncert-dla-strefy-gazy/l3pn8kc,30bc1058" }
+  program:
+    - { composer: "Bernat Vivancos", work: "Aeternam" }
+    - { composer: "Mikołaj Zieleński", work: "Vox in Rama · lament" }
+    - { composer: "Arvo Pärt", work: "modlitwa o pokój" }
+    - { composer: "Hanna Havrylets", work: "modlitwa o pokój" }
+    - { composer: "Ola Gjeilo", work: "modlitwa o pokój" }
+    - { composer: "Antonio Lotti", work: "Crucifixus · ogniwo pasyjne" }
+    - { composer: "John Tavener", work: "dwa utwory · finał" }
+
+- id: bobola
+  order: 6
+  roman: "VI"
+  latin: Liturgia
+  title: Uroczystość św. Andrzeja Boboli
+  meta: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa · 16 maja 2026"
+  viaDate: maj 2026
+  viaStep: "100%"
+  accent: "#c6a45b"
+  variant: liturgy
+  essence: "Tu muzyka nie była koncertem, ale służbą liturgii. W 100-lecie obu polskich prowincji Towarzystwa Jezusowego śpiew wpisywał się w obrzęd, któremu przewodniczył abp Adrian Galbas; homilię wygłosił o. Arturo Sosa SJ."
+  facts:
+    - Warszawa
+    - 16 maja 2026
+    - 100-lecie prowincji jezuickich
+  bg: st-liturgia-bg
+  links:
+    - { label: Transmisja Mszy ↗, href: "https://tv-trwam.pl/epg/audycja/prg.209058-tv-trwam-cvk-260516180045" }
+    - { label: Fotorelacja (Episkopat) ↗, href: "https://flic.kr/s/aHBqjCU2Dw" }

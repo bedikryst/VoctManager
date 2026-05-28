@@ -1,0 +1,168 @@
+---
+/**
+ * @file index.astro
+ * @description Public landing (`/`) — full faithful port of the hand-authored LandingPage.html
+ *  to Astro. Static sections (hero → coda) are server-rendered `.astro`; the genuinely stateful
+ *  pieces are React islands (Preloader, SiteCursor, StickyHeader, SiteFooter). Motion that the
+ *  SPA expressed as hooks and the CSS expressed via dead `animation-timeline` is re-implemented
+ *  cross-browser in scripts/landing.ts; parallax reuses the global BaseLayout controller.
+ *
+ *  Reveal: this page opts OUT of the global `.is-in` controller (`reveal={false}`) and ships its
+ *  own `.is-visible`/`.is-settled` system from the unlayered landing.css. The `voct-motion` gate
+ *  below keeps content visible when JS is off or motion is reduced (no flash-then-hide).
+ *
+ *  Donation vault + audio gate land in Faza 3b/3c; their triggers already dispatch the
+ *  `voct:open-vault` / `voct:toggle-audio` window events that those islands will consume.
+ * @architecture Astro islands 2026
+ * @module pages/index
+ */
+import { getImage } from "astro:assets";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { bleedPair } from "../lib/photos";
+import "../styles/landing.css";
+
+import HeroSection from "../components/landing/HeroSection.astro";
+import ManifestSection from "../components/landing/ManifestSection.astro";
+import AetherInterlude from "../components/landing/AetherInterlude.astro";
+import ImageRiteSection from "../components/landing/ImageRiteSection.astro";
+import EnsembleSection from "../components/landing/EnsembleSection.astro";
+import DirectorSection from "../components/landing/DirectorSection.astro";
+import PathSection from "../components/landing/PathSection.astro";
+import FinalSupportSection from "../components/landing/FinalSupportSection.astro";
+import CodaSection from "../components/landing/CodaSection.astro";
+
+import { AudioController } from "../islands/landing/AudioController";
+import { Preloader } from "../islands/landing/Preloader";
+import { SiteCursor } from "../islands/landing/SiteCursor";
+import { StickyHeader } from "../islands/landing/StickyHeader";
+import { SiteFooter } from "../islands/landing/SiteFooter";
+import { VaultIsland } from "../islands/landing/VaultIsland";
+
+const title = "VoctEnsemble — Z ciszy głos. Koncerty Duchowe";
+const description =
+  "Profesjonalny zespół wokalny VoctEnsemble pod dyrekcją Florenta de Bazelaire. Koncert jako próg, nie spektakl — muzyka sakralna od renesansu po współczesne misteria. Projekt Fundacji VoctFoundation.";
+
+const ogImage = (
+  await getImage({ src: bleedPair("chor-poklon").desktop, width: 1200, format: "webp" })
+).src;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "MusicGroup",
+  name: "VoctEnsemble",
+  url: "https://voctensemble.com",
+  genre: ["Sacred music", "Choral music", "Polifonia"],
+  description:
+    "Profesjonalny zespół wokalny wykonujący muzykę sakralną — cykl Koncerty Duchowe. Rezydujący zespół Fundacji VoctFoundation.",
+  founder: { "@type": "Person", name: "Florent de Bazelaire" },
+  funder: {
+    "@type": "NGO",
+    name: "VoctFoundation",
+    identifier: "KRS 0001237252",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Św. Filipa 23/3",
+      postalCode: "31-150",
+      addressLocality: "Kraków",
+      addressCountry: "PL",
+    },
+  },
+  sameAs: [
+    "https://www.instagram.com/voctensemble/",
+    "https://www.facebook.com/voctensemble/",
+    "https://www.youtube.com/@VoctEnsemble-nb7gh",
+  ],
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path="/"
+  image={ogImage}
+  bodyClass="theme-marketing"
+  reveal={false}
+>
+  <Fragment slot="head">
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    {/* Hide reveals only when motion + JS are live (no flash-then-hide for no-JS / reduced).
+        `data-astro-rerun` re-fires on every ClientRouter swap into "/" (e.g. coming back from
+        a subpage) so the .voct-motion gate is re-armed even after navigation. */}
+    <script is:inline data-astro-rerun>
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("voct-motion");
+      }
+    </script>
+    {/* Once-per-session preloader gate. The rite is a *session* event — sessionStorage
+        gates it across ClientRouter swaps back to "/", but a hard or soft reload should
+        feel like a fresh start. So: on the first execution of THIS document (detected via
+        `performance.timeOrigin` not matching the last stored stamp) AND when the browser
+        reports a reload, the seen-flag is cleared. ClientRouter swaps share the same
+        document and timeOrigin, so the stamp guard prevents the rerun-fired script from
+        erasing the flag mid-session every time the user comes home. */}
+    <script is:inline data-astro-rerun>
+      try {
+        const stamp = String(performance.timeOrigin || 0);
+        const STORE = window.sessionStorage;
+        const lastStamp = STORE.getItem("voct.preloader.last-load") || "";
+        if (stamp !== lastStamp) {
+          const nav = performance.getEntriesByType("navigation")[0];
+          if (nav && nav.type === "reload") {
+            STORE.removeItem("voct.preloader.seen");
+          }
+          STORE.setItem("voct.preloader.last-load", stamp);
+        }
+        if (STORE.getItem("voct.preloader.seen") === "1") {
+          document.documentElement.classList.add("preloader-skip");
+        }
+      } catch (_) { /* private mode — preloader will just play again */ }
+    </script>
+  </Fragment>
+
+  <div class="voct-landing">
+    <a class="skip-link" href="#main">Przejdź do treści</a>
+
+    <SiteCursor client:load />
+    <Preloader client:load />
+    <AudioController client:load />
+
+    <StickyHeader client:load />
+
+    <main id="main">
+      <HeroSection />
+      <ManifestSection />
+      <AetherInterlude variant="passage" roman="I" latin="Lumen quaerit" />
+      <ImageRiteSection />
+      <EnsembleSection />
+      <DirectorSection />
+      <AetherInterlude variant="memory" roman="II" latin="Vox memoriae" />
+      <PathSection />
+      <AetherInterlude variant="offering" roman="III" latin="Sustinete nos" />
+      <FinalSupportSection />
+    </main>
+
+    <CodaSection />
+    <SiteFooter client:visible />
+
+    <VaultIsland client:idle />
+  </div>
+
+  <style is:global>
+    /* Reveal hidden-state gate: only engage when JS marked motion live (mirrors base.css's
+       reveal-ready trick, but for the landing's own unlayered `.reveal` system). */
+    html:not(.voct-motion) .voct-landing .reveal {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    /* Once-per-session preloader skip: hide the SSR'd overlay BEFORE first paint for
+       returning visitors. The body.preload-open scroll-lock is also neutralised so the
+       page is immediately interactive on a ClientRouter return to "/". */
+    html.preloader-skip .preloader { display: none !important; }
+    html.preloader-skip body.preload-open { overflow: visible !important; }
+  </style>
+
+  <script>
+    import "../scripts/landing.ts";
+  </script>
+</BaseLayout>

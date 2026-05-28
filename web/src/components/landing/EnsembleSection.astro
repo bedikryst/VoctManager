@@ -1,0 +1,48 @@
+---
+/**
+ * @file EnsembleSection.astro
+ * @description "Jedność artystyczna" — ensemble portrait over a dark full-bleed choir image
+ *  (<BleedImage>, parallax) with three fact tiles. Dimming filter in landing.css
+ *  (.ensemble-media .bleed img).
+ * @architecture Astro islands 2026
+ * @module components/landing/EnsembleSection
+ */
+import BleedImage from "../BleedImage.astro";
+import { bleedPair } from "../../lib/photos";
+
+const ensemble = bleedPair("chor-nawa");
+
+const FACTS = [
+  { num: "12+", label: "głosów na scenie" },
+  { num: "2024", label: "debiut · Kontemplacja Wcielenia" },
+  { num: "PL · UE", label: "Koncerty Duchowe, liturgie, projekty autorskie" },
+] as const;
+---
+
+<section class="ensemble" id="zespol" aria-label="Zespół">
+  <div class="ensemble-media" aria-hidden="true">
+    <BleedImage desktop={ensemble.desktop} mobile={ensemble.mobile} alt="" position="center 32%" />
+  </div>
+  <div class="ensemble-inner section">
+    <div class="ensemble-copy reveal">
+      <div class="micro">Wspólnota głosów</div>
+      <h2>Jedność artystyczna</h2>
+      <p>
+        VoctEnsemble to profesjonalny zespół wokalny, który poprzez muzyczną
+        precyzję i uważnie budowane doświadczenie zaprasza publiczność do
+        autentycznego spotkania. Tworzymy koncerty, w których muzyka, światło
+        i cisza współtworzą jedno doświadczenie.
+      </p>
+      <div class="ensemble-facts">
+        {
+          FACTS.map((fact) => (
+            <div class="fact">
+              <span class="fact-num">{fact.num}</span>
+              <span class="fact-label">{fact.label}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

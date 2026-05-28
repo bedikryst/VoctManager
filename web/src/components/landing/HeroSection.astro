@@ -1,0 +1,49 @@
+---
+/**
+ * @file HeroSection.astro
+ * @description Opening threshold — full-bleed sacred fresco via <BleedImage> (art-directed
+ *  AVIF/WebP, Ken Burns, parallax). hero-grid holds the kicker → h1 → response → strap braid;
+ *  hero-rail holds the CTA anchors + downward cue. The kinetic "breath" on .hero-title is driven
+ *  by scripts/landing.ts; the dark dimming filter is applied in landing.css (.hero-media .bleed img).
+ * @architecture Astro islands 2026
+ * @module components/landing/HeroSection
+ */
+import BleedImage from "../BleedImage.astro";
+import { bleedPair } from "../../lib/photos";
+
+const hero = bleedPair("chor-poklon");
+---
+
+<section class="hero" id="top" aria-label="VoctEnsemble">
+  <div class="hero-media" aria-hidden="true">
+    <BleedImage desktop={hero.desktop} mobile={hero.mobile} alt="" eager animate />
+  </div>
+
+  <div class="hero-inner">
+    <div class="hero-grid">
+      <div class="hero-kicker micro intro-stage">Concerts Spirituels</div>
+      <h1 class="hero-title">
+        <span class="intro-stage s2">Z ciszy</span>
+        <span class="intro-stage s3"><em>głos.</em></span>
+      </h1>
+      <p class="hero-response intro-stage s4">
+        Nie szukamy publiczności — szukamy wspólnoty słuchania.
+      </p>
+      <p class="hero-strap intro-stage s5">
+        Koncert jako próg, nie spektakl — muzyka sakralna jako doświadczenie obecności, od
+        renesansu po współczesne misteria. Kierownictwo artystyczne:
+        <span class="hero-strap-name">Florent&nbsp;de&nbsp;Bazelaire</span>.
+      </p>
+    </div>
+
+    <div class="hero-rail intro-stage s6">
+      <div class="hero-actions">
+        <a class="primary-link plausible-event-name=hero+poznaj+nas" href="/o-nas">Poznaj nas</a>
+        <a class="secondary-link plausible-event-name=hero+koncerty" href="/koncerty">
+          Koncerty Duchowe
+        </a>
+      </div>
+      <span class="hero-cue" aria-hidden="true">Zejdź w głąb</span>
+    </div>
+  </div>
+</section>

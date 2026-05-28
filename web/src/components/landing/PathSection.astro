@@ -1,0 +1,76 @@
+---
+/**
+ * @file PathSection.astro
+ * @description "Wcześniejsze wybrzmienia" — catalog grid of past Concerts Spirituels. Posters
+ *  are optimized <Picture> from src/assets (resolved by `photo(path.poster)`). Each card's native
+ *  <details> snap open/close is upgraded to an animated, exclusive accordion by scripts/landing.ts.
+ * @architecture Astro islands 2026
+ * @module components/landing/PathSection
+ */
+import { Picture } from "astro:assets";
+import { PATHS } from "../../data/landing/paths";
+import { photo } from "../../lib/photos";
+---
+
+<section class="section path" id="droga" aria-label="Wcześniejsze współbrzemienia">
+  <div class="section-grid">
+    <div class="section-label micro"><span>Z drogi</span></div>
+    <div class="path-body">
+      <h2 class="section-title reveal">Wcześniejsze<br />wybrzmienia.</h2>
+      <p class="path-lede reveal">
+        Od renesansowej polifonii po współczesne misteria — tworzymy koncerty, które
+        pozostają żywe i mogą wybrzmieć na nowo w kolejnych przestrzeniach.
+      </p>
+      <div class="path-grid">
+        {
+          PATHS.map((path) => (
+            <article class="path-card reveal">
+              <figure class="path-card-poster" aria-hidden="true">
+                <Picture
+                  src={photo(path.poster)}
+                  formats={["avif", "webp"]}
+                  widths={[320, 480, 640]}
+                  sizes="(max-width: 980px) 86vw, 30vw"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <div class="path-card-body">
+                <div class="path-card-meta">
+                  <span class="path-card-year">{path.year}</span>
+                  <span class="path-card-tag">{path.tag}</span>
+                </div>
+                <h3 class="path-card-title">{path.title}</h3>
+                <p class="path-card-place">{path.place}</p>
+                <p class="path-card-note">{path.note}</p>
+                <details class="path-card-detail">
+                  <summary>
+                    <span>{path.detail.summary}</span>
+                    <span class="path-detail-icon" aria-hidden="true" />
+                  </summary>
+                  {path.detail.content.works && (
+                    <ol class="path-works">
+                      {path.detail.content.works.map((work) => (
+                        <li class:list={[{ "path-works-bis": work.bis }]}>
+                          {work.text}
+                          {work.italic && <em>{work.italic}</em>}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                  {path.detail.content.paragraphs?.map((paragraph) => (
+                    <p class="path-detail-text">{paragraph}</p>
+                  ))}
+                  {path.detail.content.note && (
+                    <p class="path-works-note">{path.detail.content.note}</p>
+                  )}
+                </details>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

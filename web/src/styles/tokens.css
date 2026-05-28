@@ -1,0 +1,46 @@
+/**
+ * @file tokens.css
+ * @description Shared design tokens for the public site — the light "paper" marketing
+ *  world (kontakt / o-nas / landing). Dark surfaces (koncerty stations) override locally.
+ *  Lifted from the per-page CSS that the React port had duplicated under `body.page-*`;
+ *  here they live once on :root.
+ * @architecture Astro islands 2026
+ * @module styles/tokens
+ */
+
+:root {
+  /* ── Palette ──────────────────────────────────────────────────────────── */
+  --paper: #f4f1e9;
+  --paper-soft: #ebe6da;
+  --paper-deep: #e3dccd;
+  --ink: #161514;
+  --ink-soft: #34302b;
+  --ink-muted: #746d62;
+  --line: rgba(22, 21, 20, 0.16);
+  --line-strong: rgba(22, 21, 20, 0.34);
+  --candle: #c6a45b;
+  --candle-blue: #1b2d60;
+  --night: #100f0d;
+  --sage: #5d6b54;
+  --crimson: #8c3b3b;
+
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --serif: "Cormorant Garamond", Georgia, serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --ease: cubic-bezier(0.22, 0.61, 0.16, 1);
+  --ease-slow: cubic-bezier(0.16, 0.84, 0.24, 1);
+}
+
+/* Animatable axis for the variable-font heading "breath" (driven by view timelines). */
+@property --wght {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 400;
+}
+@keyframes headingBreath {
+  0% { --wght: 640; }
+  100% { --wght: 300; }
+}

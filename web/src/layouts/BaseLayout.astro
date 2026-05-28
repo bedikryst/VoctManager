@@ -1,0 +1,211 @@
+---
+/**
+ * @file BaseLayout.astro
+ * @description Document shell for every public page. Owns <head> (per-page SEO/OG/canonical),
+ *  global styles, native cross-document transitions (<ClientRouter />), and the Lenis
+ *  smooth-scroll lifecycle (fine-pointer + motion-allowed only, re-anchored on navigation).
+ * @architecture Astro islands 2026
+ * @module layouts/BaseLayout
+ */
+import { ClientRouter } from "astro:transitions";
+import "../styles/tokens.css";
+import "../styles/base.css";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Absolute path of this page, e.g. "/kontakt" — drives canonical + og:url. */
+  path: string;
+  /** OG/Twitter share image (absolute path under the public root). */
+  image?: string;
+  /** Optional class on <body> for page-level theming hooks. */
+  bodyClass?: string;
+  /**
+   * Enables the global one-shot reveal controller (adds `reveal-ready`, IO toggles `.is-in`).
+   * The landing opts OUT (`false`) — it ships its own reveal system (`.is-visible`/`.is-settled`)
+   * scoped to its unlayered stylesheet, which the global `.is-in` rules would otherwise clobber.
+   * Parallax stays active regardless (same `data-parallax` contract). Subpages keep the default.
+   */
+  reveal?: boolean;
+}
+
+const SITE = "https://voctensemble.com";
+const {
+  title,
+  description,
+  path,
+  image = "/photos/kontakt-hero-1920.webp",
+  bodyClass = "",
+  reveal = true,
+} = Astro.props;
+
+const canonical = new URL(path, SITE).href;
+const ogImage = new URL(image, SITE).href;
+---
+
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/logo_icon.png" />
+    <link rel="apple-touch-icon" href="/logo_icon.png" />
+    <meta name="theme-color" content="#100f0d" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Self-hosted critical fonts — preloaded, GDPR-safe. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/CormorantGaramond-Variable.latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/Inter-Variable.latin.woff2"
+      crossorigin
+    />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="VoctEnsemble" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="pl_PL" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Native cross-page transitions (View Transition API). -->
+    <ClientRouter />
+
+    {/* Apply reveal hidden-state before first paint (JS + motion only) → no flash-then-hide.
+        Skipped when reveal={false} (landing) so the global `.is-in` controller stays dormant.
+        `data-astro-rerun` re-executes this on every ClientRouter swap, otherwise navigating
+        away from the landing (where reveal-ready is intentionally NOT set) into a subpage
+        would arrive with the class missing → setupReveals would early-return and the hero
+        would not animate (the "no reveal on subpages" bug). */}
+    {
+      reveal && (
+        <script is:inline data-astro-rerun>
+          if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            document.documentElement.classList.add("reveal-ready");
+          }
+        </script>
+      )
+    }
+    {/* Landing opts out of the reveal pipeline — strip the class on swap into "/" so the
+        landing's own .is-visible/.is-settled system isn't fighting the global :is-in rules. */}
+    {
+      !reveal && (
+        <script is:inline data-astro-rerun>
+          document.documentElement.classList.remove("reveal-ready");
+        </script>
+      )
+    }
+
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <slot />
+
+    <script>
+      // Lenis smooth scroll — only on fine pointers with motion allowed.
+      // Resilient to ClientRouter navigations: one RAF loop, instance recreated
+      // and scroll re-anchored on swap.
+      import Lenis from "lenis";
+
+      const fine = window.matchMedia("(pointer: fine) and (hover: hover)").matches;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (fine && !reduce) {
+        let lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
+        // Expose the shared instance so page scripts (e.g. landing anchor smooth-scroll)
+        // route through it instead of spawning a second, fighting RAF loop.
+        (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
+        const raf = (time: number) => {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        };
+        requestAnimationFrame(raf);
+
+        // On view-transition swap, the document scroll resets to top; keep Lenis in sync.
+        document.addEventListener("astro:after-swap", () => {
+          lenis.scrollTo(0, { immediate: true });
+        });
+      }
+
+      // One-shot reveal — animates once on enter, then persists. Re-scans after each
+      // ClientRouter navigation (fresh DOM). Above-the-fold nodes intersect immediately.
+      const setupReveals = () => {
+        if (!document.documentElement.classList.contains("reveal-ready")) return;
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-in");
+                io.unobserve(entry.target);
+              }
+            }
+          },
+          { rootMargin: "0px 0px -8% 0px", threshold: 0.1 },
+        );
+        document.querySelectorAll(".reveal:not(.is-in)").forEach((el) => io.observe(el));
+      };
+      document.addEventListener("astro:page-load", setupReveals);
+
+      // Parallax — JS-driven (cross-browser; scroll-timeline CSS is still partial in FF/Safari).
+      // One rAF-throttled scroll loop; layers refreshed per navigation. The image is taller than
+      // its frame and centered, so the clamped drift never exposes an edge.
+      let layers: HTMLElement[] = [];
+      let pTicking = false;
+      const applyParallax = () => {
+        pTicking = false;
+        const vh = window.innerHeight;
+        for (const el of layers) {
+          const frame = el.parentElement;
+          if (!frame) continue;
+          const r = frame.getBoundingClientRect();
+          if (r.bottom < -200 || r.top > vh + 200) continue;
+          const speed = parseFloat(el.dataset.parallax || "0.16") || 0.16;
+          const scale = parseFloat(el.dataset.parallaxScale || "1") || 1;
+          // Room to drift without exposing an edge: either the image is taller than its
+          // frame, or an inset:0 layer is scaled up (e.g. blurred station backdrops).
+          const cap =
+            scale > 1
+              ? ((frame.offsetHeight * (scale - 1)) / 2) * 0.85
+              : Math.max(0, el.offsetHeight - frame.offsetHeight) / 2;
+          const base = scale > 1 ? 0 : -cap; // scaled layers are centered; tall imgs top-aligned
+          let drift = (r.top + r.height / 2 - vh / 2) * -speed;
+          if (drift > cap) drift = cap;
+          else if (drift < -cap) drift = -cap;
+          const scalePart = scale !== 1 ? ` scale(${scale})` : "";
+          el.style.transform = `translate3d(0, ${(base + drift).toFixed(1)}px, 0)${scalePart}`;
+        }
+      };
+      const onParallax = () => {
+        if (!pTicking) {
+          pTicking = true;
+          requestAnimationFrame(applyParallax);
+        }
+      };
+      if (!reduce) {
+        window.addEventListener("scroll", onParallax, { passive: true });
+        window.addEventListener("resize", onParallax, { passive: true });
+      }
+      document.addEventListener("astro:page-load", () => {
+        if (reduce) return;
+        layers = [...document.querySelectorAll<HTMLElement>("[data-parallax]")];
+        applyParallax();
+      });
+    </script>
+  </body>
+</html>

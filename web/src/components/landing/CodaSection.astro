@@ -1,0 +1,22 @@
+---
+/**
+ * @file CodaSection.astro
+ * @description Per-letter variable-font weight cascade closing the page ("Cisza" · "brzmi
+ *  dalej"). The wave + tail emergence are driven by scripts/landing.ts (the original CSS
+ *  `animation-timeline` choreography is inert in the target browser); the static fallback
+ *  weight (320) and visible tail apply where motion is reduced or scripting is unavailable.
+ * @architecture Astro islands 2026
+ * @module components/landing/CodaSection
+ */
+const LETTERS = ["C", "i", "s", "z", "a"] as const;
+---
+
+<section class="coda" aria-label="Muzyka brzmi dalej">
+  <div class="coda-container">
+    <p class="coda-headline" aria-label="Cisza">
+      {LETTERS.map((letter) => <span class="coda-letter" aria-hidden="true">{letter}</span>)}
+      <span class="coda-letter coda-letter--punct" aria-hidden="true">.</span>
+    </p>
+    <p class="coda-tail">brzmi dalej</p>
+  </div>
+</section>

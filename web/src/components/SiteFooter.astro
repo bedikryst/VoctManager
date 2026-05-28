@@ -1,0 +1,77 @@
+---
+/**
+ * @file SiteFooter.astro
+ * @description Shared marketing footer (Fundacja identity · site map · contact/socials).
+ *  Lifted from MarketingFooter.tsx + the footer CSS the SPA duplicated per page.
+ * @architecture Astro islands 2026
+ * @module components/SiteFooter
+ */
+const year = new Date().getFullYear();
+---
+
+<footer class="site-foot">
+  <div class="foot-grid">
+    <div class="foot-col">
+      <h4>Fundacja</h4>
+      <p class="foot-mark">VoctFoundation</p>
+      <p class="foot-legal">
+        ul. Św. Filipa 23/3 · 31-150 Kraków<br />
+        KRS 0001237252 · NIP 6762718992<br />
+        REGON 544621525<br />
+        Darowizna na cele statutowe.
+      </p>
+    </div>
+
+    <div class="foot-col">
+      <h4>Strona</h4>
+      <ul>
+        <li><a href="/">Strona główna</a></li>
+        <li><a href="/o-nas">O nas</a></li>
+        <li><a href="/koncerty">Koncerty</a></li>
+        <li><a href="/kontakt">Kontakt</a></li>
+        <li><a href="/?donate" data-vault-open="100">Wesprzyj</a></li>
+        <li><a href="/polityka-prywatnosci">Polityka prywatności</a></li>
+      </ul>
+    </div>
+
+    <div class="foot-col">
+      <h4>Kontakt i media</h4>
+      <ul>
+        <li><a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a></li>
+        <li><a href="mailto:patronat@voctensemble.com">patronat@voctensemble.com</a></li>
+        <li>
+          <a href="https://www.instagram.com/voctensemble/" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
+        </li>
+        <li>
+          <a href="https://www.facebook.com/voctensemble/" target="_blank" rel="noopener noreferrer">Facebook ↗</a>
+        </li>
+        <li>
+          <a href="https://www.youtube.com/@VoctEnsemble-nb7gh" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot-base">
+    <span>© {year} Fundacja VoctFoundation</span>
+    <span>
+      Realizacja · <a href="mailto:krystbugalski@gmail.com" rel="author">Krystian Bugalski ↗</a>
+    </span>
+    <a href="/">voctensemble.com</a>
+  </div>
+</footer>
+
+<style>
+  .site-foot { background: var(--night); color: rgba(244, 241, 233, .72); padding: clamp(56px, 7vw, 88px) max(28px, 5vw) 40px; }
+  .foot-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(32px, 5vw, 64px); }
+  .foot-col h4 { font-family: var(--mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: rgba(244, 241, 233, .46); margin: 0 0 18px; font-weight: 400; }
+  .foot-mark { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--paper); margin: 0 0 12px; }
+  .foot-legal { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); }
+  .foot-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .foot-col ul a { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: rgba(244, 241, 233, .78); transition: color .3s var(--ease); }
+  .foot-col ul a:hover { color: var(--candle); }
+  .foot-base { max-width: 1180px; margin: clamp(44px, 6vw, 68px) auto 0; padding-top: 22px; border-top: 1px solid rgba(244, 241, 233, .12); display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244, 241, 233, .46); }
+  .foot-base a { color: inherit; transition: color .3s var(--ease); }
+  .foot-base a:hover { color: var(--candle); }
+  @media (max-width: 760px) { .foot-grid { grid-template-columns: 1fr; gap: 36px; } }
+</style>

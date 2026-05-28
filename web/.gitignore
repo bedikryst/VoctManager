@@ -1,0 +1,19 @@
+# build output
+dist/
+# generated types
+.astro/
+# deps
+node_modules/
+# env & local
+.env
+.env.production
+*.local
+# os / editor
+.DS_Store
+
+# Source photos — collaborator-owned, deployed manually to the server.
+# These are large originals (5–12 MB each) consumed by the Astro asset pipeline;
+# the user uploads them out-of-band so the repo stays slim and the rights holders'
+# files do not enter source control. Astro reads from src/assets/photos/ at build
+# time (see lib/photos.ts), so the directory must exist on the build host.
+src/assets/photos/

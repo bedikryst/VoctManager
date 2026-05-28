@@ -1,0 +1,189 @@
+---
+/**
+ * @file SiteChrome.astro
+ * @description Shared marketing navigation (header). Lifted from MarketingChrome.tsx +
+ *  the chrome CSS the SPA duplicated in every page stylesheet — now scoped once here.
+ *  The scroll/menu behavior is a tiny document-delegated script (no per-element rebinding),
+ *  so it survives ClientRouter swaps without leaking listeners.
+ * @architecture Astro islands 2026
+ * @module components/SiteChrome
+ */
+interface Props {
+  /** Path of the current page so the matching nav link gets aria-current. */
+  current?: string;
+  /** "dark" pages (koncerty) get a night solid header + an is-light state over paper sections. */
+  tone?: "light" | "dark";
+}
+const { current, tone = "light" } = Astro.props;
+
+const links = [
+  { href: "/o-nas", label: "O nas" },
+  { href: "/koncerty", label: "Koncerty" },
+] as const;
+---
+
+<header class="chrome" id="chrome" data-tone={tone} aria-label="Nawigacja">
+  {/* view-transition-name: voct-brand → the brand mark becomes a shared element
+      across navigations, morphing smoothly between pages instead of cross-fading
+      with the page root. The landing StickyHeader carries the same name. */}
+  <a class="chrome-brand" href="/" aria-label="VoctEnsemble — strona główna" style="view-transition-name: voct-brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span>VoctEnsemble</span>
+  </a>
+
+  <nav class="chrome-nav" aria-label="Nawigacja główna">
+    {
+      links.map((l) => (
+        <a href={l.href} aria-current={current === l.href ? "page" : undefined}>
+          {l.label}
+        </a>
+      ))
+    }
+    <a class="nav-support" href="/?donate" data-vault-open="100">Wesprzyj</a>
+  </nav>
+
+  <button
+    class="nav-toggle"
+    id="navToggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="navMenu"
+    aria-label="Menu"></button>
+
+  <nav class="nav-menu" id="navMenu" aria-label="Nawigacja mobilna">
+    <div class="nav-menu-links">
+      <a href="/">Główna</a>
+      {
+        links.map((l) => (
+          <a href={l.href} aria-current={current === l.href ? "page" : undefined}>
+            {l.label}
+          </a>
+        ))
+      }
+      <a class="nav-support" href="/?donate" data-vault-open="100">Wesprzyj</a>
+    </div>
+    <button class="menu-close" id="menuClose" type="button" aria-label="Zamknij menu">✕</button>
+  </nav>
+</header>
+
+<style>
+  .chrome { position: fixed; inset: 0 0 auto 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px max(28px, 5vw); color: var(--paper); background: transparent; border-bottom: 1px solid transparent; transition: color .5s var(--ease), background-color .5s var(--ease), border-color .5s var(--ease), padding .5s var(--ease), backdrop-filter .5s var(--ease); }
+  .chrome::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(8,8,7,.5) 0%, rgba(8,8,7,0) 100%); opacity: 1; transition: opacity .5s var(--ease); }
+  .chrome.is-solid { background-color: rgba(244, 241, 233, 0.82); backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5); border-bottom-color: rgba(22, 21, 20, 0.08); color: var(--ink); padding-top: 16px; padding-bottom: 14px; }
+  .chrome.is-solid::before { opacity: 0; }
+
+  .chrome-brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--serif); font-size: 21px; font-weight: 300; letter-spacing: .03em; color: inherit; }
+  .chrome-brand .brand-mark { width: 17px; height: 40px; flex-shrink: 0; background: var(--candle); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; transition: background-color .5s var(--ease); }
+  .chrome.is-solid .chrome-brand .brand-mark { background: var(--ink); }
+
+  .chrome-nav { display: flex; align-items: center; gap: clamp(16px, 2.4vw, 34px); }
+  .chrome-nav a { font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: inherit; opacity: .82; position: relative; padding-bottom: 3px; transition: opacity .35s var(--ease); }
+  .chrome-nav a::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
+  .chrome-nav a:hover { opacity: 1; }
+  .chrome-nav a:hover::after, .chrome-nav a[aria-current="page"]::after { transform: scaleX(1); }
+  .chrome-nav a[aria-current="page"] { opacity: 1; color: var(--candle); }
+  .chrome-nav .nav-support { color: var(--candle); opacity: 1; }
+
+  /* Mobile menu */
+  .nav-toggle { display: none; position: relative; width: 26px; height: 14px; border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; }
+  .nav-toggle::before, .nav-toggle::after { content: ""; position: absolute; right: 0; height: 1px; background: currentColor; transition: width .35s var(--ease); }
+  .nav-toggle::before { top: 4px; width: 26px; }
+  .nav-toggle::after { top: 10px; width: 15px; }
+  .nav-toggle:hover::after { width: 26px; }
+
+  .nav-menu {
+    --menu-fg: var(--paper); --menu-bg: rgba(16, 15, 13, 0.94); --menu-line: rgba(244, 241, 233, 0.14);
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; align-items: center;
+    padding: 0 max(22px, 5vw);
+    background: var(--menu-bg); color: var(--menu-fg);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
+    border-bottom: 1px solid var(--menu-line);
+    transform: translateX(100%); visibility: hidden;
+    transition: transform .5s var(--ease), background-color .5s var(--ease), color .5s var(--ease), visibility 0s linear .5s;
+  }
+  .chrome.menu-open .nav-menu { transform: none; visibility: visible; transition-delay: 0s; }
+  .chrome.is-solid .nav-menu { --menu-fg: var(--ink); --menu-bg: rgba(244, 241, 233, 0.97); --menu-line: rgba(22, 21, 20, 0.1); }
+  .chrome.menu-open .chrome-brand, .chrome.menu-open .nav-toggle { opacity: 0; pointer-events: none; transition: opacity .25s var(--ease); }
+  .nav-menu-links { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; overflow-x: auto; scrollbar-width: none; }
+  .nav-menu-links::-webkit-scrollbar { display: none; }
+  .nav-menu a { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--menu-fg); opacity: .8; white-space: nowrap; transition: opacity .3s var(--ease), color .3s var(--ease); }
+  .nav-menu a:hover { opacity: 1; }
+  .nav-menu a[aria-current="page"] { opacity: 1; color: var(--candle); }
+  .nav-menu .nav-support { color: var(--candle); opacity: 1; border: 1px solid var(--candle); border-radius: 999px; padding: 5px 12px; transition: background-color .3s var(--ease), color .3s var(--ease); }
+  .nav-menu .nav-support:hover { background: var(--candle); color: var(--menu-bg); }
+  .menu-close { flex-shrink: 0; margin-left: clamp(10px, 3vw, 18px); border: 0; background: transparent; color: var(--menu-fg); cursor: pointer; font-family: var(--mono); font-size: 16px; line-height: 1; padding: 6px 0 6px 4px; opacity: .55; transition: opacity .3s var(--ease); }
+  .menu-close:hover { opacity: 1; }
+
+  @media (max-width: 760px) {
+    .chrome-nav { display: none; }
+    .nav-toggle { display: inline-flex; }
+  }
+  @media (min-width: 761px) {
+    .nav-menu { display: none; }
+  }
+
+  /* ── Dark-tone pages (koncerty) ─────────────────────────────────────────
+     Solid header is night (not paper); when a light section scrolls under it,
+     the page toggles .is-light to flip to the paper treatment. */
+  .chrome[data-tone="dark"].is-solid {
+    background-color: rgba(16, 15, 13, 0.72);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border-bottom-color: rgba(244, 241, 233, 0.12);
+    color: var(--paper);
+  }
+  .chrome[data-tone="dark"].is-solid .chrome-brand .brand-mark { background: var(--candle); }
+
+  .chrome[data-tone="dark"].is-light {
+    background-color: rgba(244, 241, 233, 0.82);
+    backdrop-filter: blur(20px) saturate(1.1);
+    -webkit-backdrop-filter: blur(20px) saturate(1.1);
+    border-bottom-color: rgba(22, 21, 20, 0.1);
+    color: var(--ink);
+  }
+  .chrome[data-tone="dark"].is-light::before { opacity: 0; }
+  .chrome[data-tone="dark"].is-light .chrome-brand .brand-mark { background: var(--ink); }
+  .chrome[data-tone="dark"].is-light .nav-menu {
+    --menu-fg: var(--ink);
+    --menu-bg: rgba(244, 241, 233, 0.97);
+    --menu-line: rgba(22, 21, 20, 0.1);
+  }
+</style>
+
+<script>
+  // Document-delegated so it binds once and survives ClientRouter DOM swaps.
+  if (!(window as unknown as { __voctChrome?: boolean }).__voctChrome) {
+    (window as unknown as { __voctChrome?: boolean }).__voctChrome = true;
+
+    const chrome = () => document.getElementById("chrome");
+    const toggle = () => document.getElementById("navToggle");
+
+    const syncSolid = () => {
+      const c = chrome();
+      if (c) c.classList.toggle("is-solid", window.scrollY > window.innerHeight * 0.5);
+    };
+    const openMenu = () => {
+      chrome()?.classList.add("menu-open");
+      toggle()?.setAttribute("aria-expanded", "true");
+    };
+    const closeMenu = () => {
+      chrome()?.classList.remove("menu-open");
+      toggle()?.setAttribute("aria-expanded", "false");
+    };
+
+    window.addEventListener("scroll", syncSolid, { passive: true });
+    // Re-evaluate tone after each navigation (new page starts scrolled to top).
+    document.addEventListener("astro:page-load", syncSolid);
+
+    document.addEventListener("click", (e) => {
+      const t = e.target as Element | null;
+      if (!t) return;
+      if (t.closest("#navToggle")) openMenu();
+      else if (t.closest("#menuClose") || t.closest(".nav-menu a")) closeMenu();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeMenu();
+    });
+  }
+</script>
