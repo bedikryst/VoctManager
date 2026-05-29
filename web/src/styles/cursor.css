@@ -15,6 +15,40 @@
   cursor: none !important;
 }
 
+/* Native `<video controls>` injects shadow-DOM-like media controls (play/pause, scrubber,
+   volume, fullscreen) styled by user-agent CSS with `cursor: pointer`. Document-level
+   `cursor: none` does NOT inherit through these vendor pseudo-elements — Chromium/Safari
+   expose them as `::-webkit-media-controls-*`, Firefox keeps them entirely unstyleable.
+   We override the WebKit family aggressively so the OS hand stops appearing over the
+   timeline + buttons. Firefox falls through (its native controls keep their hand cursor
+   — accepted degradation; the custom cursor still overlays elsewhere). */
+.has-custom-cursor video,
+.has-custom-cursor video::-webkit-media-controls,
+.has-custom-cursor video::-webkit-media-controls-enclosure,
+.has-custom-cursor video::-webkit-media-controls-panel,
+.has-custom-cursor video::-webkit-media-controls-overlay-play-button,
+.has-custom-cursor video::-webkit-media-controls-play-button,
+.has-custom-cursor video::-webkit-media-controls-timeline,
+.has-custom-cursor video::-webkit-media-controls-timeline-container,
+.has-custom-cursor video::-webkit-media-controls-current-time-display,
+.has-custom-cursor video::-webkit-media-controls-time-remaining-display,
+.has-custom-cursor video::-webkit-media-controls-mute-button,
+.has-custom-cursor video::-webkit-media-controls-volume-slider,
+.has-custom-cursor video::-webkit-media-controls-volume-slider-container,
+.has-custom-cursor video::-webkit-media-controls-volume-control-container,
+.has-custom-cursor video::-webkit-media-controls-fullscreen-button,
+.has-custom-cursor video::-webkit-media-controls-toggle-closed-captions-button,
+/* The "three lines / dots" overflow button that appears in corners when the panel
+   can't fit every control. Different Chrome versions expose it under either name. */
+.has-custom-cursor video::-webkit-media-controls-overflow-button,
+.has-custom-cursor video::-webkit-media-controls-overflow-menu-button,
+.has-custom-cursor video::-webkit-media-controls-overflow-menu-list,
+.has-custom-cursor video::-webkit-media-controls-overflow-menu-list-item,
+.has-custom-cursor video::-webkit-media-controls-cast-button,
+.has-custom-cursor video::-webkit-media-controls-picture-in-picture-button {
+  cursor: none !important;
+}
+
 .site-cursor {
   position: fixed;
   left: 0;
@@ -38,6 +72,14 @@
     opacity 0.28s var(--ease, ease),
     border-color 0.28s var(--ease, ease),
     background-color 0.28s var(--ease, ease);
+}
+
+/* Second pseudo slot. Hidden by default — used only by states that need a two-part glyph
+   (pause = two bars, download = vertical line + triangle). When display:block kicks in
+   for those states, the pseudo joins the flex container and lays out next to ::after. */
+.site-cursor::before {
+  content: "";
+  display: none;
 }
 
 .site-cursor::after {
@@ -78,6 +120,207 @@
 }
 .site-cursor.is-pointer.is-down::after {
   transform: scale(0.9);
+}
+
+/* ── Video state — small ring with ▶ glyph (idle) or ⏸ bars (playing) ─────
+   Triggered by JS when the mouse is over any <video>. Replaces the OS hand cursor
+   (killed by the media-controls rules above) with a contemplative media mark. mix-blend
+   normal so the glyph reads cleanly over both dark and bright frames instead of inverting
+   unpredictably with the footage. Sized only ~10px larger than the default ring — small
+   enough to keep precision over the scrubber, distinct enough to signal "media surface". */
+.site-cursor.is-video {
+  width: 44px;
+  height: 44px;
+  border-color: rgba(226, 205, 149, 0.88);
+  background: rgba(8, 8, 7, 0.42);
+  opacity: 1;
+  mix-blend-mode: normal;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* Idle (paused) — single ▶ triangle via the classic CSS border-trick. `margin-left`
+   nudges the optical centre rightward because the visual mass of a right-pointing
+   triangle sits left of its geometric centre. */
+.site-cursor.is-video::after {
+  width: 0;
+  height: 0;
+  border-radius: 0;
+  background: transparent;
+  border-left: 10px solid rgba(232, 207, 144, 0.96);
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  margin-left: 2px;
+  transform: scale(1);
+  opacity: 1;
+  transition: transform 0.22s var(--ease, ease), border-left-color 0.28s var(--ease, ease);
+}
+
+/* Playing — both pseudo slots become vertical bars (⏸). ::before joins the flex
+   container as the left bar, ::after morphs from triangle to right bar. Gap on the
+   cursor itself adds the breathing space between them. JS tracks video.paused via
+   play/pause/ended listeners so the swap fires immediately, not on next mousemove. */
+.site-cursor.is-video.is-playing {
+  gap: 4px;
+}
+
+.site-cursor.is-video.is-playing::before {
+  display: block;
+  width: 3px;
+  height: 13px;
+  background: rgba(232, 207, 144, 0.96);
+  border-radius: 1px;
+}
+
+.site-cursor.is-video.is-playing::after {
+  width: 3px;
+  height: 13px;
+  border: 0;
+  border-radius: 1px;
+  background: rgba(232, 207, 144, 0.96);
+  margin: 0;
+  transform: scale(1);
+}
+
+.site-cursor.is-video.is-down {
+  border-color: rgba(244, 241, 233, 0.92);
+}
+
+.site-cursor.is-video.is-down::after {
+  transform: scale(0.78);
+}
+
+.site-cursor.is-video.is-playing.is-down::before,
+.site-cursor.is-video.is-playing.is-down::after {
+  transform: scaleY(0.85);
+}
+
+/* ── Download state — ring with vertical line + ↓ chevron ─────────────────
+   Triggered when the mouse is over `<a download>` or any element marked
+   `data-cursor="download"`. Distinct from .is-pointer (link/button) to signal
+   "this will save a file, not navigate." Same blending strategy as .is-video
+   (mix-blend normal + soft backdrop blur) so the gold glyph stays legible over
+   any card background. Flex direction column stacks ::before (line) above
+   ::after (downward triangle), forming the universal download icon. */
+.site-cursor.is-download {
+  width: 44px;
+  height: 44px;
+  flex-direction: column;
+  gap: 0;
+  border-color: var(--candle-blue);
+  background: rgba(244, 241, 233, 0.06);
+  opacity: 1;
+  mix-blend-mode: normal;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.site-cursor.is-download::before {
+  display: block;
+  width: 1.5px;
+  height: 10px;
+  background: var(--candle-blue);
+  border-radius: 0;
+}
+
+.site-cursor.is-download::after {
+  width: 0;
+  height: 0;
+  border-radius: 0;
+  background: transparent;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--candle-blue);
+  margin: -1px 0 0;
+  transform: translateY(0);
+}
+
+/* Press-down: the whole arrow lurches downward — tactile "save now" feedback. */
+.site-cursor.is-download.is-down {
+  border-color: rgba(244, 241, 233, 0.94);
+}
+
+.site-cursor.is-download.is-down::before,
+.site-cursor.is-download.is-down::after {
+  transform: translateY(2px);
+}
+
+/* ── Autoscroll state — middle-click pinned scroll gauge ──────────────────
+   Triggered when JS intercepts a middle-button mousedown on inert content.
+   The cursor pins to the anchor (lerp skipped) and becomes a *live gauge*:
+   a gold dot at the centre (the pivot), plus two thin gold strokes that grow
+   OUT from the dot in the direction the user is pushing the mouse. Length
+   scales 1:1 with scroll intensity — so the visual is the controller.
+   JS keeps two CSS vars (--ascroll-up, --ascroll-down) in sync with the
+   normalised scroll-speed past the deadzone. The native autoscroll widget
+   is suppressed via preventDefault upstream; Lenis is paused for the duration
+   so its lerp loop doesn't fight our discrete scrollBy ticks. */
+.site-cursor.is-autoscroll {
+  width: 52px;
+  height: 52px;
+  border-color: rgba(232, 207, 144, 0.74);
+  /* The anchor dot lives in the centre as a hard gold radial — the exact pivot. */
+  background:
+    radial-gradient(circle at 50% 50%, rgba(232, 207, 144, 0.98) 0, rgba(232, 207, 144, 0.98) 2.5px, transparent 3.2px),
+    rgba(8, 8, 7, 0.46);
+  opacity: 1;
+  mix-blend-mode: normal;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  /* Subtle breath so the ring itself feels alive even when scroll intensity is zero. */
+  animation: autoscrollRingBreath 2.4s ease-in-out infinite;
+}
+
+@keyframes autoscrollRingBreath {
+  0%, 100% { border-color: rgba(232, 207, 144, 0.58); box-shadow: 0 0 0 0 rgba(232, 207, 144, 0); }
+  50%      { border-color: rgba(232, 207, 144, 0.96); box-shadow: 0 0 0 4px rgba(232, 207, 144, 0.06); }
+}
+
+/* Upper trail — gold gradient stroke from centre toward the top of the ring.
+   `scaleY` is driven by --ascroll-up (0 → 1+); origin at the dot so it grows
+   AWAY from the pivot. Linear gradient fades toward the tip so the stroke reads
+   as a brush stroke, not a hard rectangle. */
+.site-cursor.is-autoscroll::before {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 1.5px;
+  height: 19px;
+  background: linear-gradient(0deg, rgba(232, 207, 144, 0.96) 0%, rgba(232, 207, 144, 0.16) 100%);
+  border-radius: 1px;
+  transform: translateX(-50%) scaleY(var(--ascroll-up, 0));
+  transform-origin: bottom center;
+  transition: transform 0.08s linear;
+  margin-bottom: 3.5px; /* spacing from the centre dot */
+}
+
+/* Lower trail — mirror of upper, grows downward when --ascroll-down > 0. */
+.site-cursor.is-autoscroll::after {
+  width: 1.5px;
+  height: 19px;
+  border-radius: 1px;
+  border: 0;
+  background: linear-gradient(180deg, rgba(232, 207, 144, 0.96) 0%, rgba(232, 207, 144, 0.16) 100%);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: 3.5px 0 0;
+  transform: translateX(-50%) scaleY(var(--ascroll-down, 0));
+  transform-origin: top center;
+  transition: transform 0.08s linear;
+  opacity: 1;
+}
+
+/* Exit press — both trails flash brighter on the click that ends autoscroll mode.
+   Tactile "released" cue. */
+.site-cursor.is-autoscroll.is-down::before,
+.site-cursor.is-autoscroll.is-down::after {
+  filter: brightness(1.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-cursor.is-autoscroll { animation: none; }
 }
 
 @media (pointer: fine) and (hover: hover) {
