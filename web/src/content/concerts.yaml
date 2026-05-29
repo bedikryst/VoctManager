@@ -21,7 +21,7 @@
   posterAlt: Plakat koncertu Kontemplacja Wcielenia
   realizacja: "Realizacja: Ars Sonora Studio"
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
-  hasPage: true
+  # hasPage: true
   inscriptio: "Et egredietur virga de radice Iesse"
   inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
   inscriptioRef: "Iz 11, 1"
