@@ -2,8 +2,9 @@
 /**
  * @file DirectorSection.astro
  * @description Florent de Bazelaire — artistic direction. Side-by-side portrait (<Picture>,
- *  optimized AVIF/WebP) + bio. The reveal-img scale-down on enter applies to the rendered img
- *  via landing.css (.reveal-img img); the audio-on "breathe" glow lands in Faza 3b.
+ *  optimized AVIF/WebP) + bio. Lives inside the dark "wnętrze chóru" sequence
+ *  (ImageRite → Ensemble → Director) — the .director-dark wrapper turns the section dark
+ *  and is also registered in StickyHeader's DARK_SELECTORS so the chrome inverts here.
  * @architecture Astro islands 2026
  * @module components/landing/DirectorSection
  */
@@ -13,7 +14,7 @@ import { photo } from "../../lib/photos";
 const florent = photo("florent");
 ---
 
-<section class="section" aria-label="Kierownictwo artystyczne">
+<section class="section director-dark" aria-label="Kierownictwo artystyczne">
   <div class="director-grid">
     <div class="portrait reveal reveal-img">
       <Picture

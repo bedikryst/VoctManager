@@ -1,0 +1,18 @@
+---
+/**
+ * @file MotionGate.astro
+ * @description Adds `voct-motion` to the documentElement when JS is live AND the user
+ *  hasn't requested reduced motion. The landing's reveal/transform hidden-state rules
+ *  in landing.css are gated on this class so they engage ONLY when motion is allowed —
+ *  preventing the "flash-then-hide" no-JS / reduced-motion path. `data-astro-rerun`
+ *  re-fires on every ClientRouter swap back into "/" so the gate is re-armed.
+ * @architecture Astro islands 2026
+ * @module components/landing/MotionGate
+ */
+---
+
+<script is:inline data-astro-rerun>
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.documentElement.classList.add("voct-motion");
+  }
+</script>

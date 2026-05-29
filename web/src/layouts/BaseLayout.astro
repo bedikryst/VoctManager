@@ -10,6 +10,10 @@
 import { ClientRouter } from "astro:transitions";
 import "../styles/tokens.css";
 import "../styles/base.css";
+import "../styles/cursor.css";
+import "../styles/transitions.css";
+import { ScrollTopButton } from "../islands/landing/ScrollTopButton";
+import { SiteCursor } from "../islands/landing/SiteCursor";
 
 interface Props {
   title: string;
@@ -116,6 +120,8 @@ const ogImage = new URL(image, SITE).href;
   </head>
   <body class={bodyClass}>
     <slot />
+    <SiteCursor client:load transition:persist="site-cursor" />
+    <ScrollTopButton client:idle transition:persist="scroll-top" />
 
     <script>
       // Lenis smooth scroll — only on fine pointers with motion allowed.
@@ -156,6 +162,25 @@ const ogImage = new URL(image, SITE).href;
         // On view-transition swap, the document scroll resets to top; keep Lenis in sync.
         document.addEventListener("astro:after-swap", () => {
           lenis.scrollTo(0, { immediate: true });
+        });
+      }
+
+      // Hide the native cursor for the duration of a view-transition swap. The pseudo-
+      // element snapshot layer that View Transitions renders does NOT inherit the
+      // page's `cursor: none` from `.has-custom-cursor`, so without this the system
+      // pointer flashes back during the crossfade. Setting `cursor: none` inline on the
+      // html element applies to the transition overlay too (it's part of the same
+      // document root). Skip on touch / reduced-motion (custom cursor isn't enabled there).
+      const cursorFine = window.matchMedia("(pointer: fine) and (hover: hover)").matches;
+      const cursorReduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (cursorFine && !cursorReduce) {
+        document.addEventListener("astro:before-preparation", () => {
+          if (document.body.classList.contains("has-custom-cursor")) {
+            document.documentElement.style.cursor = "none";
+          }
+        });
+        document.addEventListener("astro:after-swap", () => {
+          document.documentElement.style.cursor = "";
         });
       }
 

@@ -86,7 +86,7 @@ Dwa endpointy konsumowane:
 
 ## 🚦 Konwencje i wytyczne
 
-* **Zdjęcia żyją poza repo.** `src/assets/photos/` jest gitignorowane (`web/.gitignore`) — oryginały to 5-12 MB JPG-i należące do artystów. Wgrywaj ręcznie na build host przed `npm run build`. `lib/photos.ts` rozwiązuje je po bare name (`photo("chor-poklon")`, `bleedPair("koncerty-hero")`).
+* **Zdjęcia żyją poza repo.** `src/assets/photos/` jest gitignorowane (`web/.gitignore`) — oryginały to 5-12 MB JPG-i należące do artystów. Wgrywaj ręcznie na build host przed `npm run build`. `lib/photos.ts` rozwiązuje je po bare name (`photo("hero-landing")`, `bleedPair("koncerty-hero")`).
 * **Full-bleed obrazki** idą przez `<BleedImage desktop mobile alt position … />` — emituje AVIF + WebP w responsive widths z 1920px WebP fallback `<img src>`. In-flow obrazki używają Astro `<Picture>`.
 * **Brak zewnętrznych framework'ów CSS.** Tokeny w `tokens.css`, primitivy w `base.css`, art-directed CSS per strona / sekcja. Tailwind nie jest tu zainstalowany.
 * **Brak `any`.** Strict TypeScript. Bramka `astro check` musi zostać przy `0 errors / 0 warnings`.

@@ -1,18 +1,10 @@
 ---
 /**
  * @file index.astro
- * @description Public landing (`/`) — full faithful port of the hand-authored LandingPage.html
- *  to Astro. Static sections (hero → coda) are server-rendered `.astro`; the genuinely stateful
- *  pieces are React islands (Preloader, SiteCursor, StickyHeader, SiteFooter). Motion that the
- *  SPA expressed as hooks and the CSS expressed via dead `animation-timeline` is re-implemented
- *  cross-browser in scripts/landing.ts; parallax reuses the global BaseLayout controller.
- *
- *  Reveal: this page opts OUT of the global `.is-in` controller (`reveal={false}`) and ships its
- *  own `.is-visible`/`.is-settled` system from the unlayered landing.css. The `voct-motion` gate
- *  below keeps content visible when JS is off or motion is reduced (no flash-then-hide).
- *
- *  Donation vault + audio gate land in Faza 3b/3c; their triggers already dispatch the
- *  `voct:open-vault` / `voct:toggle-audio` window events that those islands will consume.
+ * @description Public landing (`/`). Reads as a partytura: metadata, jsonLd, then the
+ *  rite as three movements braided by AetherInterlude (I · Lumen, II · Vox, III · Sustinete).
+ *  Session/motion plumbing lives behind named components (PreloaderGate, MotionGate,
+ *  VaultBuffer) so this file stays declarative.
  * @architecture Astro islands 2026
  * @module pages/index
  */
@@ -28,12 +20,15 @@ import ImageRiteSection from "../components/landing/ImageRiteSection.astro";
 import EnsembleSection from "../components/landing/EnsembleSection.astro";
 import DirectorSection from "../components/landing/DirectorSection.astro";
 import PathSection from "../components/landing/PathSection.astro";
+import SilenceMoment from "../components/landing/SilenceMoment.astro";
 import FinalSupportSection from "../components/landing/FinalSupportSection.astro";
 import CodaSection from "../components/landing/CodaSection.astro";
+import MotionGate from "../components/landing/MotionGate.astro";
+import PreloaderGate from "../components/landing/PreloaderGate.astro";
+import VaultBuffer from "../components/landing/VaultBuffer.astro";
 
 import { AudioController } from "../islands/landing/AudioController";
 import { Preloader } from "../islands/landing/Preloader";
-import { SiteCursor } from "../islands/landing/SiteCursor";
 import { StickyHeader } from "../islands/landing/StickyHeader";
 import { SiteFooter } from "../islands/landing/SiteFooter";
 import { VaultIsland } from "../islands/landing/VaultIsland";
@@ -43,7 +38,7 @@ const description =
   "Profesjonalny zespół wokalny VoctEnsemble pod dyrekcją Florenta de Bazelaire. Koncert jako próg, nie spektakl — muzyka sakralna od renesansu po współczesne misteria. Projekt Fundacji VoctFoundation.";
 
 const ogImage = (
-  await getImage({ src: bleedPair("chor-poklon").desktop, width: 1200, format: "webp" })
+  await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
 ).src;
 
 const jsonLd = {
@@ -85,44 +80,14 @@ const jsonLd = {
 >
   <Fragment slot="head">
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-    {/* Hide reveals only when motion + JS are live (no flash-then-hide for no-JS / reduced).
-        `data-astro-rerun` re-fires on every ClientRouter swap into "/" (e.g. coming back from
-        a subpage) so the .voct-motion gate is re-armed even after navigation. */}
-    <script is:inline data-astro-rerun>
-      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        document.documentElement.classList.add("voct-motion");
-      }
-    </script>
-    {/* Once-per-session preloader gate. The rite is a *session* event — sessionStorage
-        gates it across ClientRouter swaps back to "/", but a hard or soft reload should
-        feel like a fresh start. So: on the first execution of THIS document (detected via
-        `performance.timeOrigin` not matching the last stored stamp) AND when the browser
-        reports a reload, the seen-flag is cleared. ClientRouter swaps share the same
-        document and timeOrigin, so the stamp guard prevents the rerun-fired script from
-        erasing the flag mid-session every time the user comes home. */}
-    <script is:inline data-astro-rerun>
-      try {
-        const stamp = String(performance.timeOrigin || 0);
-        const STORE = window.sessionStorage;
-        const lastStamp = STORE.getItem("voct.preloader.last-load") || "";
-        if (stamp !== lastStamp) {
-          const nav = performance.getEntriesByType("navigation")[0];
-          if (nav && nav.type === "reload") {
-            STORE.removeItem("voct.preloader.seen");
-          }
-          STORE.setItem("voct.preloader.last-load", stamp);
-        }
-        if (STORE.getItem("voct.preloader.seen") === "1") {
-          document.documentElement.classList.add("preloader-skip");
-        }
-      } catch (_) { /* private mode — preloader will just play again */ }
-    </script>
+    <MotionGate />
+    <PreloaderGate />
+    <VaultBuffer />
   </Fragment>
 
   <div class="voct-landing">
     <a class="skip-link" href="#main">Przejdź do treści</a>
 
-    <SiteCursor client:load />
     <Preloader client:load />
     <AudioController client:load />
 
@@ -131,17 +96,28 @@ const jsonLd = {
     <main id="main">
       <HeroSection />
       <ManifestSection />
-      <AetherInterlude variant="passage" roman="I" latin="Lumen quaerit" />
-      <ImageRiteSection />
-      <EnsembleSection />
-      <DirectorSection />
-      <AetherInterlude variant="memory" roman="II" latin="Vox memoriae" />
-      <PathSection />
-      <AetherInterlude variant="offering" roman="III" latin="Sustinete nos" />
-      <FinalSupportSection />
+
+      <section class="movement" data-movement="lumen" aria-label="I · Lumen quaerit">
+        <AetherInterlude variant="passage" roman="I" latin="Lumen quaerit" />
+        <ImageRiteSection />
+        <EnsembleSection />
+        <DirectorSection />
+      </section>
+
+      <section class="movement" data-movement="vox" aria-label="II · Vox memoriae">
+        <AetherInterlude variant="memory" roman="II" latin="Vox memoriae" />
+        <SilenceMoment />
+        <PathSection />
+      </section>
+
+      <section class="movement" data-movement="sustinete" aria-label="III · Sustinete nos">
+        <AetherInterlude variant="offering" roman="III" latin="Sustinete nos" />
+        <FinalSupportSection />
+      </section>
+
+      <CodaSection />
     </main>
 
-    <CodaSection />
     <SiteFooter client:visible />
 
     <VaultIsland client:idle />

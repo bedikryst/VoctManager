@@ -20,6 +20,8 @@
 
 interface LenisLike {
   scrollTo: (target: number | string | HTMLElement, opts?: { offset?: number }) => void;
+  stop?: () => void;
+  start?: () => void;
 }
 
 const reduceMotion = (): boolean =>
@@ -432,6 +434,108 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
   });
 }
 
+// ── Silence moment: one enforced beat of stillness, once per session ────────────────────────
+// Triggered when [data-silence-sentinel] enters the viewport center while the visitor is
+// scrolling down. Halts Lenis, blocks wheel/touch/scroll-keys for DWELL_MS, then releases.
+// Reduced motion + replays in same session: line shows ambiently (no lock).
+function setupSilenceMoment(root: HTMLElement, reduce: boolean): void {
+  const moment = root.querySelector<HTMLElement>("[data-silence]");
+  if (!moment) return;
+
+  const SESSION_KEY = "voct.silence.heard";
+
+  let alreadyHeard = false;
+  try {
+    alreadyHeard = window.sessionStorage.getItem(SESSION_KEY) === "1";
+  } catch (_) {
+    /* private mode: treat as fresh */
+  }
+
+  if (reduce || alreadyHeard) {
+    moment.classList.add("is-listening", "is-settled");
+    return;
+  }
+
+  const sentinel = moment.querySelector<HTMLElement>("[data-silence-sentinel]");
+  if (!sentinel) return;
+
+  let lastY = window.scrollY;
+  let scrollingDown = true;
+  const onScroll = (): void => {
+    const y = window.scrollY;
+    scrollingDown = y >= lastY;
+    lastY = y;
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  let armed = true;
+  const io = new IntersectionObserver(
+    (entries) => {
+      if (!armed) return;
+      const entry = entries[0];
+      if (!entry || !entry.isIntersecting) return;
+      if (!scrollingDown) return;
+      armed = false;
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      runSilence(moment);
+    },
+    // Trigger when the sentinel sits in a thin band across the middle of the viewport.
+    { threshold: 0, rootMargin: "-48% 0px -48% 0px" },
+  );
+  io.observe(sentinel);
+
+  cleanups.push(() => {
+    armed = false;
+    io.disconnect();
+    window.removeEventListener("scroll", onScroll);
+  });
+}
+
+const DWELL_MS = 2800;
+
+const SCROLL_KEYS = new Set([
+  "ArrowDown",
+  "ArrowUp",
+  "PageDown",
+  "PageUp",
+  "Home",
+  "End",
+  " ",
+  "Spacebar",
+]);
+
+function runSilence(moment: HTMLElement): void {
+  const lenis = (window as unknown as { __lenis?: LenisLike }).__lenis;
+  lenis?.stop?.();
+
+  const block = (event: Event): void => {
+    event.preventDefault();
+  };
+  const blockKey = (event: KeyboardEvent): void => {
+    if (SCROLL_KEYS.has(event.key)) event.preventDefault();
+  };
+
+  window.addEventListener("wheel", block, { passive: false });
+  window.addEventListener("touchmove", block, { passive: false });
+  window.addEventListener("keydown", blockKey, true);
+
+  moment.classList.add("is-listening");
+
+  window.setTimeout(() => {
+    window.removeEventListener("wheel", block);
+    window.removeEventListener("touchmove", block);
+    window.removeEventListener("keydown", blockKey, true);
+    lenis?.start?.();
+    moment.classList.add("is-settled");
+    try {
+      window.sessionStorage.setItem("voct.silence.heard", "1");
+    } catch (_) {
+      /* private mode: line stays ambient for this session anyway */
+    }
+  }, DWELL_MS);
+}
+
 // ── Interactions: IBAN copy buttons + vault-open dispatch from static sections ──────────────
 // Vault lives in its own React island (Faza 3c); static "Wesprzyj" triggers reach it over the
 // `voct:open-vault` event. Until that island exists the dispatch is a graceful no-op.
@@ -479,6 +583,7 @@ function bind(): void {
   setupLenisAnchors();
   setupKinetic(root, reduce);
   setupManifestRake(root, reduce);
+  setupSilenceMoment(root, reduce);
   setupInteractions(root);
 }
 

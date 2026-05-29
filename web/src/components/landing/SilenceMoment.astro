@@ -1,0 +1,35 @@
+---
+/**
+ * @file SilenceMoment.astro
+ * @description One enforced beat of stillness between Vox memoriae (II) and the catalog of
+ *  past concerts. When the sentinel reaches viewport center, Lenis stops, wheel + touchmove
+ *  + scroll-keys are intercepted, a single Florent line fades in, dwells for ~2.8s, then
+ *  scroll resumes — once per browser session. Reduced-motion + no-JS visitors see the line
+ *  statically (gated by html.voct-motion in landing.css).
+ * @architecture Astro islands 2026
+ * @module components/landing/SilenceMoment
+ */
+---
+
+<section class="silence-moment" data-silence aria-label="Chwila ciszy">
+  <div class="silence-sentinel" data-silence-sentinel aria-hidden="true"></div>
+  <div class="silence-inner">
+    <svg
+      class="silence-ornament"
+      viewBox="0 0 120 12"
+      fill="none"
+      stroke="currentColor"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <line x1="0" y1="6" x2="50" y2="6" stroke-width="0.5" stroke-opacity="0.45" />
+      <circle cx="60" cy="6" r="1.6" fill="currentColor" stroke="none" />
+      <line x1="70" y1="6" x2="120" y2="6" stroke-width="0.5" stroke-opacity="0.45" />
+    </svg>
+
+    <p class="silence-line">
+      W&nbsp;ciszy <em>rodzi się</em> muzyka.
+    </p>
+    <p class="silence-attrib">Florent de Bazelaire</p>
+  </div>
+</section>

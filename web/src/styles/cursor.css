@@ -1,0 +1,98 @@
+/**
+ * @file cursor.css
+ * @description Custom site cursor styles — extracted from landing.css so subpages can use
+ *  the same cursor without importing the 6000-line landing arkusz. Mirrors the same tokens
+ *  (--ease, --candle, --paper) which are defined globally in base.css/landing.css.
+ *  Behaviour:
+ *  - Native pointer hidden only under `.has-custom-cursor` body class (set by useSiteCursor).
+ *  - Cursor displayed only on `(pointer: fine) and (hover: hover)` — touch users untouched.
+ *  - `.is-pointer` (over interactive element), `.is-down` (mousedown) reflect interaction state.
+ * @architecture Astro islands 2026
+ * @module styles/cursor
+ */
+.has-custom-cursor,
+.has-custom-cursor * {
+  cursor: none !important;
+}
+
+.site-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 150;
+  display: none;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(244, 241, 233, 0.58);
+  border-radius: 999px;
+  background: rgba(198, 164, 91, 0.08);
+  opacity: 0.78;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  transform: translate3d(-120px, -120px, 0) translate(-50%, -50%);
+  transition:
+    width 0.28s var(--ease, ease),
+    height 0.28s var(--ease, ease),
+    opacity 0.28s var(--ease, ease),
+    border-color 0.28s var(--ease, ease),
+    background-color 0.28s var(--ease, ease);
+}
+
+.site-cursor::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(226, 205, 149, 0.88);
+  transition: transform 0.22s var(--ease, ease), opacity 0.22s var(--ease, ease);
+}
+
+.site-cursor.is-pointer {
+  width: 58px;
+  height: 58px;
+  border-color: rgba(226, 205, 149, 0.84);
+  background: rgba(244, 241, 233, 0.06);
+  opacity: 0.95;
+}
+
+.site-cursor.is-pointer::after {
+  opacity: 0.7;
+  transform: scale(0.36);
+  background: rgba(244, 241, 233, 0.92);
+}
+
+.site-cursor.is-down {
+  transform-origin: center;
+  border-color: rgba(244, 241, 233, 0.85);
+}
+.site-cursor.is-down::after {
+  transform: scale(1.55);
+  opacity: 0.95;
+  background: rgba(226, 205, 149, 1);
+}
+.site-cursor.is-pointer.is-down {
+  width: 44px;
+  height: 44px;
+}
+.site-cursor.is-pointer.is-down::after {
+  transform: scale(0.9);
+}
+
+@media (pointer: fine) and (hover: hover) {
+  .has-custom-cursor .site-cursor {
+    display: flex;
+  }
+}
+
+/* View Transitions API renders old/new page snapshots on a pseudo-element overlay layer
+   that doesn't inherit the document's `cursor: none`. Explicitly hide the system cursor
+   on those layers so the swap doesn't flash a native pointer between custom cursor states. */
+.has-custom-cursor::view-transition,
+.has-custom-cursor::view-transition-group(root),
+.has-custom-cursor::view-transition-image-pair(root),
+.has-custom-cursor::view-transition-old(root),
+.has-custom-cursor::view-transition-new(root) {
+  cursor: none;
+}

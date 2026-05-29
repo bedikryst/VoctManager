@@ -222,6 +222,86 @@ button { font: inherit; }
   }
 }
 
+/* ── Scroll-to-top — global, votive bottom-right mark ──────────────────────
+   Appears after 1.5 viewport heights of scroll. Thin gold hairline + small
+   upward chevron — reads as a votive mark, not a SaaS chip. Gold (--candle)
+   carries on parchment and dark alike, so no blend-mode tricks are needed.
+   Hover/focus reveals the "wróć w ciszę" hint to the left. */
+.scroll-top {
+  position: fixed;
+  right: clamp(20px, 3vw, 36px);
+  bottom: clamp(20px, 3vw, 36px);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--candle);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.scroll-top.is-visible {
+  opacity: 0.65;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.scroll-top:hover,
+.scroll-top:focus-visible {
+  opacity: 1;
+}
+.scroll-top:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 6px;
+}
+
+.scroll-top-mark {
+  width: 12px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  transition: transform 0.4s var(--ease);
+}
+.scroll-top-mark svg { width: 12px; height: 40px; display: block; }
+.scroll-top:hover .scroll-top-mark,
+.scroll-top:focus-visible .scroll-top-mark {
+  transform: translateY(-3px);
+}
+
+.scroll-top-hint {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: inherit;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  white-space: nowrap;
+}
+.scroll-top:hover .scroll-top-hint,
+.scroll-top:focus-visible .scroll-top-hint {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 720px) {
+  .scroll-top-hint { display: none; }
+  .scroll-top { right: 16px; bottom: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-top,
+  .scroll-top-hint,
+  .scroll-top-mark { transition: none; }
+}
+
 /* ── Brand glyph (shared) ──────────────────────────────────────────────────
    The candle mark used by ThresholdGate, VaultModal, GratitudeModal,
    FailureModal and the QR placeholder. Same masking strategy as the chrome

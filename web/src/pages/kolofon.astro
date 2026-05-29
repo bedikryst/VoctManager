@@ -1,0 +1,395 @@
+---
+/**
+ * @file kolofon.astro
+ * @description Public colophon — quiet destination linked from every page footer (not in main
+ *  nav). One client-generated sigil at center, then five short blocks: konstrukcja (build),
+ *  fontes (fonts), corpus (legal), auctor (author), gratia (collaborators). The sigil is per-
+ *  visitor (lib/sigil.ts seeded from localStorage), regenerated on every render so we never
+ *  store any visual — same visit, same seal. Tone: dark hero → parchment body, matches the
+ *  pattern from `/koncerty/[id]`.
+ * @architecture Astro islands 2026
+ * @module pages/kolofon
+ */
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteChrome from "../components/SiteChrome.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { VaultIsland } from "../islands/landing/VaultIsland";
+import "../styles/vault.css";
+
+const title = "Kolofon — VoctEnsemble · VoctFoundation";
+const description =
+  "Kolofon strony VoctEnsemble — fonty, konstrukcja, prawa, autorzy. Pieczęć rzemiosła w jednym miejscu.";
+---
+
+<BaseLayout title={title} description={description} path="/kolofon" bodyClass="page-kolofon">
+  <a class="skip-link" href="#tresc">Przejdź do treści</a>
+  <SiteChrome current="/kolofon" tone="dark" />
+
+  <main id="tresc">
+    {/* ── Hero: small, dark, restrained ───────────────────────────────────── */}
+    <section class="kol-hero" aria-label="Kolofon">
+      <div class="kol-hero-inner">
+        <p class="kol-eyebrow micro">
+          <span class="lat">Colophon</span>
+          <span class="kol-dot" aria-hidden="true">·</span>
+          <span>Pieczęć rzemiosła</span>
+        </p>
+        <h1 class="kol-title">Kolofon.</h1>
+        <p class="kol-lede">
+          Krótka inskrypcja na końcu książki, w której drukarz zapisywał miejsce i&nbsp;czas
+          oraz to, kto utwór wydał. Tu robimy to samo — w&nbsp;swoim rzemiośle.
+        </p>
+      </div>
+    </section>
+
+    {/* ── Sigil — per-visit deterministic SVG ─────────────────────────────── */}
+    <section class="kol-band kol-band-deep kol-seal" aria-label="Pieczęć Twojej wizyty">
+      <div class="kol-wrap kol-narrow">
+        <span class="kol-section-label micro">
+          <span class="lat">Sigillum</span>
+          <span class="kol-dot" aria-hidden="true">·</span>
+          <span>Pieczęć wizyty</span>
+        </span>
+        <figure class="kol-seal-figure">
+          <div class="kol-seal-mount" data-sigil-mount aria-label="Pieczęć Twojej wizyty">
+            {/* Client-side fallback: an anchor circle so the layout never collapses
+                if JS is unavailable. The sigil script replaces innerHTML. */}
+            <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" fill="none">
+              <circle cx="110" cy="110" r="92" stroke-width="0.6" stroke-opacity="0.4" />
+              <circle cx="110" cy="110" r="2" fill="currentColor" stroke="none" />
+            </svg>
+          </div>
+          <figcaption class="kol-seal-caption micro">
+            wygenerowana z&nbsp;tej wizyty · nowa przy każdej powracającej
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    {/* ── Konstrukcja — build philosophy + tooling ────────────────────────── */}
+    <section class="kol-band kol-band-soft" aria-label="Konstrukcja strony">
+      <div class="kol-wrap">
+        <span class="kol-section-label micro">
+          <span class="lat">Constructio</span>
+          <span class="kol-dot" aria-hidden="true">·</span>
+          <span>Konstrukcja</span>
+        </span>
+        <p class="kol-lead">
+          Strona zbudowana w Astro 5 z wyspami React tam, gdzie potrzebny jest stan po
+          stronie klienta. Bez framework UI, bez Tailwind — CSS pisany pod konkretną
+          stronę, nie pod re-use. Każda decyzja świadoma, nie konwencja.
+        </p>
+        <dl class="kol-defs">
+          <div class="kol-def">
+            <dt>Framework</dt>
+            <dd>Astro · static SSG + hydratowane wyspy React</dd>
+          </div>
+          <div class="kol-def">
+            <dt>Płynność scrolla</dt>
+            <dd>Lenis · samodzielnie hostowane (zerowe third-party requests)</dd>
+          </div>
+          <div class="kol-def">
+            <dt>Animacja</dt>
+            <dd>CSS variable-font breath + IntersectionObserver, bez framer-motion</dd>
+          </div>
+          <div class="kol-def">
+            <dt>Dane</dt>
+            <dd>Astro Content Collections · YAML + Zod walidacja</dd>
+          </div>
+          <div class="kol-def">
+            <dt>Obrazy</dt>
+            <dd>AVIF + WebP w wielu rozmiarach, build-time przez Astro</dd>
+          </div>
+          <div class="kol-def">
+            <dt>RODO</dt>
+            <dd>brak third-party · brak Google Analytics · brak Mety pixel</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    {/* ── Fontes — fonts credits ──────────────────────────────────────────── */}
+    <section class="kol-band kol-band-soft kol-band-rule-top" aria-label="Fonty">
+      <div class="kol-wrap">
+        <span class="kol-section-label micro">
+          <span class="lat">Fontes</span>
+          <span class="kol-dot" aria-hidden="true">·</span>
+          <span>Fonty</span>
+        </span>
+        <ul class="kol-fonts">
+          <li class="kol-font kol-font--cormorant" tabindex="0">
+            <span class="kol-font-sample">Cormorant Garamond</span>
+            <span class="kol-font-meta micro">Christian Thalmann · garaldyckie pismo do oddychania</span>
+          </li>
+          <li class="kol-font kol-font--inter" tabindex="0">
+            <span class="kol-font-sample">Inter</span>
+            <span class="kol-font-meta micro">Rasmus Andersson · sans-serif do czytania</span>
+          </li>
+          <li class="kol-font kol-font--plex" tabindex="0">
+            <span class="kol-font-sample">IBM Plex Mono</span>
+            <span class="kol-font-meta micro">Bold Monday dla IBM · monospace na meta i&nbsp;daty</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    {/* ── Corpus — foundation legal ───────────────────────────────────────── */}
+    <section class="kol-band kol-band-soft kol-band-rule-top" aria-label="Fundacja">
+      <div class="kol-wrap">
+        <span class="kol-section-label micro">
+          <span class="lat">Corpus</span>
+          <span class="kol-dot" aria-hidden="true">·</span>
+          <span>Fundacja</span>
+        </span>
+        <p class="kol-lead kol-lead-tight">
+          Fundacja VoctFoundation — organizacja pożytku publicznego z siedzibą w&nbsp;Krakowie,
+          wspierająca działalność artystyczną VoctEnsemble oraz inne inicjatywy kulturalne.
+        </p>
+        <dl class="kol-defs kol-defs-tight">
+          <div class="kol-def">
+            <dt>Siedziba</dt>
+            <dd>ul. Św. Filipa 23/3 · 31-150 Kraków</dd>
+          </div>
+          <div class="kol-def">
+            <dt>KRS</dt>
+            <dd>0001237252</dd>
+          </div>
+          <div class="kol-def">
+            <dt>NIP</dt>
+            <dd>6762718992</dd>
+          </div>
+          <div class="kol-def">
+            <dt>REGON</dt>
+            <dd>544621525</dd>
+          </div>
+          <div class="kol-def">
+            <dt>Zarząd</dt>
+            <dd>Florent de Bazelaire · Anna Marcisz · Krystian Bugalski</dd>
+          </div>
+          <div class="kol-def">
+            <dt>Statut</dt>
+            <dd>
+              <a href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener" class="kol-link">
+                Statut Fundacji VoctFoundation (PDF) <span aria-hidden="true">↗</span>
+              </a>
+            </dd>
+          </div>
+          <div class="kol-def">
+            <dt>Polityka</dt>
+            <dd>
+              <a href="/polityka-prywatnosci" class="kol-link">Polityka prywatności</a>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    {/* ── Auctor — author block ───────────────────────────────────────────── */}
+    <section class="kol-band kol-band-soft kol-band-rule-top" aria-label="Autor strony">
+      <div class="kol-wrap">
+        <span class="kol-section-label micro">
+          <span class="lat">Auctor</span>
+          <span class="kol-dot" aria-hidden="true">·</span>
+          <span>Autor</span>
+        </span>
+        <p class="kol-author-name">Krystian Bugalski</p>
+        <p class="kol-author-role">projekt · kod · obecność cyfrowa</p>
+        <p class="kol-author-contact">
+          <a href="mailto:krystbugalski@gmail.com" rel="author" class="kol-link">
+            krystbugalski@gmail.com <span aria-hidden="true">↗</span>
+          </a>
+        </p>
+      </div>
+    </section>
+
+    {/* ── Memoriae — factual credits for past concerts (not personal endorsements) ─── */}
+    <section class="kol-band kol-band-soft kol-band-rule-top kol-gratia" aria-label="Współrealizatorzy minionych koncertów">
+      <div class="kol-wrap">
+        <span class="kol-section-label micro">
+          <span class="lat">Memoriae</span>
+          <span class="kol-dot" aria-hidden="true">·</span>
+          <span>Współrealizatorzy minionych koncertów</span>
+        </span>
+        <p class="kol-lead kol-lead-tight">
+          Twórczynie i twórcy, których praca składała się na kolejne koncerty cyklu
+          — credits z plakatów i programów, ułożone tu jako wpis archiwalny.
+        </p>
+        <ul class="kol-collab">
+          <li>
+            <span class="kol-collab-name">Jakub Garbacz · Ars Sonora Studio</span>
+            <span class="kol-collab-role micro">realizacja nagrań · Kontemplacja Wcielenia, 2024</span>
+          </li>
+          <li>
+            <span class="kol-collab-name">Ada Bystrzycka · Multiscena</span>
+            <span class="kol-collab-role micro">reżyseria świateł · wybrane koncerty 2024–2025</span>
+          </li>
+          <li>
+            <span class="kol-collab-name">Sebastian Kuźma · ART Agencja Rzemieślników Teatralnych</span>
+            <span class="kol-collab-role micro">animacja wizualna · wybrane koncerty 2024–2025</span>
+          </li>
+          <li>
+            <span class="kol-collab-name">Radu Ropotan</span>
+            <span class="kol-collab-role micro">skrzypce · Wołanie Gór, 2024</span>
+          </li>
+          <li>
+            <span class="kol-collab-name">Krzysztof Michałek · Michał Piechnik</span>
+            <span class="kol-collab-role micro">organy · Hymn Poległym, 2025</span>
+          </li>
+          <li>
+            <span class="kol-collab-name">Fundacja Carpe Diem · Ośrodek Kultury Norwida</span>
+            <span class="kol-collab-role micro">współorganizacja · wybrane wydarzenia</span>
+          </li>
+        </ul>
+        <p class="kol-mmxxvi micro">MMXXVI · wszystkie wybrzmienia</p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+
+  <VaultIsland client:idle />
+  <script>
+    import "../scripts/vault-triggers.ts";
+    import { buildSigilSvg, getOrCreateVisitSeed } from "../lib/sigil";
+    const mount = document.querySelector<HTMLElement>("[data-sigil-mount]");
+    if (mount) {
+      mount.innerHTML = buildSigilSvg(getOrCreateVisitSeed(), { size: 220 });
+    }
+  </script>
+</BaseLayout>
+
+<style>
+  .page-kolofon { background: var(--paper, #f4f1e9); color: var(--ink, #161514); }
+  main { display: block; }
+  .skip-link { position: absolute; left: -9999px; }
+  .skip-link:focus { left: 16px; top: 16px; background: var(--paper); color: var(--ink); padding: 10px 14px; border-radius: 4px; z-index: 99; }
+
+  /* Hero */
+  .kol-hero { background: var(--dark, #080807); color: var(--paper); padding: clamp(120px, 16vw, 200px) max(28px, 5vw) clamp(64px, 9vw, 100px); }
+  .kol-hero-inner { max-width: 760px; margin: 0 auto; }
+  .kol-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244, 241, 233, .68); margin: 0 0 28px; }
+  .kol-eyebrow .lat { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 16px; color: var(--candle); }
+  .kol-title { font-family: var(--serif); font-weight: 300; line-height: .95; font-size: clamp(56px, 8vw, 120px); letter-spacing: -.01em; margin: 0; color: var(--paper); }
+  .kol-lede { margin: clamp(28px, 4vw, 44px) 0 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(18px, 1.8vw, 24px); line-height: 1.5; color: rgba(244, 241, 233, .82); max-width: 50ch; }
+  .kol-dot { color: rgba(244, 241, 233, .42); }
+
+  /* Bands */
+  .kol-band { padding: clamp(72px, 11vw, 140px) max(28px, 5vw); position: relative; }
+  .kol-band-soft { background: var(--paper, #f4f1e9); color: var(--ink, #161514); }
+  .kol-band-deep { background: var(--dark, #080807); color: var(--paper, #f4f1e9); }
+  .kol-band-rule-top { padding-top: clamp(48px, 7vw, 84px); }
+  .kol-band-rule-top::before { content: ""; display: block; width: 60px; height: 1px; background: var(--line, rgba(22,21,20,.16)); margin-bottom: clamp(48px, 7vw, 84px); }
+  .kol-wrap { max-width: 1180px; margin: 0 auto; }
+  .kol-narrow { max-width: 760px; margin: 0 auto; }
+
+  .kol-section-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--candle); margin: 0 0 28px; }
+  .kol-section-label .lat { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 14px; }
+  .kol-band-deep .kol-section-label { color: var(--candle); }
+
+  /* Sigil */
+  .kol-seal { padding-bottom: clamp(72px, 11vw, 140px); }
+  .kol-seal-figure { display: flex; flex-direction: column; align-items: center; gap: 28px; margin: 36px 0 0; color: var(--candle); }
+  .kol-seal-mount { width: 220px; height: 220px; display: block; }
+  .kol-seal-mount :global(svg) { width: 100%; height: 100%; display: block; }
+  .kol-seal-caption { max-width: 38ch; text-align: center; color: rgba(244, 241, 233, .56); }
+
+  /* Body lead + definition lists */
+  .kol-lead { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(20px, 2.2vw, 28px); line-height: 1.5; color: var(--ink); max-width: 30ch; margin: 0 0 clamp(40px, 5vw, 56px); letter-spacing: -.005em; }
+  .kol-lead-tight { font-size: clamp(18px, 1.8vw, 22px); line-height: 1.6; max-width: 38ch; }
+
+  .kol-defs { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(20px, 3vw, 32px) clamp(28px, 4vw, 56px); margin: 0; padding: 0; max-width: 880px; }
+  .kol-defs-tight { gap: clamp(16px, 2vw, 24px) clamp(28px, 4vw, 56px); }
+  .kol-def { display: grid; grid-template-columns: max-content 1fr; gap: clamp(16px, 2vw, 28px); align-items: baseline; padding-top: 14px; border-top: 1px solid var(--line, rgba(22,21,20,.16)); }
+  .kol-def dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-muted, #746d62); margin: 0; min-width: 88px; }
+  .kol-def dd { margin: 0; font-family: var(--serif); font-size: clamp(15px, 1.3vw, 18px); line-height: 1.5; color: var(--ink, #161514); }
+
+  /* Fonts list — hover/focus demonstrates each font's variable-axis signature */
+  .kol-fonts { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(28px, 4vw, 44px); max-width: 760px; }
+  .kol-fonts li.kol-font {
+    display: grid;
+    gap: 6px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line, rgba(22,21,20,.16));
+    cursor: default;
+    outline: none;
+  }
+  .kol-fonts li.kol-font:focus-visible { outline: 1px solid var(--candle); outline-offset: 6px; border-radius: 2px; }
+
+  .kol-font-sample {
+    display: inline-block;
+    font-size: clamp(28px, 3.4vw, 44px);
+    line-height: 1.1;
+    color: var(--ink);
+    transition:
+      font-variation-settings 1.1s var(--ease-slow, ease),
+      letter-spacing 1.1s var(--ease-slow, ease),
+      font-style 0.5s var(--ease, ease);
+    will-change: font-variation-settings;
+  }
+  .kol-font-meta { color: var(--ink-muted, #746d62); transition: color 0.5s var(--ease, ease); }
+  .kol-font:hover .kol-font-meta,
+  .kol-font:focus-visible .kol-font-meta { color: var(--candle); }
+
+  /* Cormorant Garamond — italic axis is its signature, weight breathes wider on attention */
+  .kol-font--cormorant .kol-font-sample {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-variation-settings: "wght" 320;
+    letter-spacing: -0.005em;
+  }
+  .kol-font--cormorant:hover .kol-font-sample,
+  .kol-font--cormorant:focus-visible .kol-font-sample {
+    font-variation-settings: "wght" 560;
+    letter-spacing: 0.008em;
+  }
+
+  /* Inter — variable wght + slnt; on attention straightens slightly heavier with a slant */
+  .kol-font--inter .kol-font-sample {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-variation-settings: "wght" 320, "slnt" 0;
+    letter-spacing: -0.01em;
+  }
+  .kol-font--inter:hover .kol-font-sample,
+  .kol-font--inter:focus-visible .kol-font-sample {
+    font-variation-settings: "wght" 620, "slnt" -6;
+    letter-spacing: 0.005em;
+  }
+
+  /* IBM Plex Mono — weight + tracking shift; monospaced characters keep their grid */
+  .kol-font--plex .kol-font-sample {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-variation-settings: "wght" 380;
+    letter-spacing: 0;
+  }
+  .kol-font--plex:hover .kol-font-sample,
+  .kol-font--plex:focus-visible .kol-font-sample {
+    font-variation-settings: "wght" 600;
+    letter-spacing: 0.05em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kol-font-sample { transition: none; }
+  }
+
+  /* Author block */
+  .kol-author-name { font-family: var(--serif); font-weight: 300; font-size: clamp(36px, 5vw, 60px); line-height: 1.05; letter-spacing: -.01em; color: var(--ink); margin: 0; }
+  .kol-author-role { margin: 12px 0 0; font-family: var(--mono); font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .kol-author-contact { margin: clamp(20px, 3vw, 28px) 0 0; font-family: var(--serif); font-size: clamp(18px, 1.6vw, 22px); color: var(--ink); }
+
+  /* Collaborators */
+  .kol-collab { list-style: none; margin: 0 0 clamp(36px, 5vw, 56px); padding: 0; display: grid; gap: clamp(14px, 2vw, 20px); max-width: 760px; }
+  .kol-collab li { display: grid; grid-template-columns: 1fr max-content; gap: 16px; padding-top: 12px; border-top: 1px solid var(--line, rgba(22,21,20,.16)); align-items: baseline; }
+  .kol-collab-name { font-family: var(--serif); font-size: clamp(18px, 1.8vw, 22px); color: var(--ink); }
+  .kol-collab-role { color: var(--ink-muted, #746d62); text-align: right; }
+  .kol-mmxxvi { color: var(--ink-muted, #746d62); margin: 0; letter-spacing: .26em; }
+
+  /* Links */
+  .kol-link { color: var(--ink); border-bottom: 1px solid var(--line-strong, rgba(22,21,20,.34)); padding-bottom: 1px; transition: color .3s var(--ease, ease), border-color .3s var(--ease, ease); }
+  .kol-link:hover { color: var(--candle); border-bottom-color: var(--candle); }
+
+  @media (max-width: 720px) {
+    .kol-defs { grid-template-columns: 1fr; }
+    .kol-collab li { grid-template-columns: 1fr; gap: 4px; }
+    .kol-collab-role { text-align: left; }
+  }
+</style>

@@ -1,0 +1,29 @@
+---
+/**
+ * @file VaultBuffer.astro
+ * @description Captures `voct:open-vault` events fired BEFORE VaultIsland hydrates.
+ *  VaultIsland loads `client:idle`, so a fast donation-CTA click on the first paint
+ *  (or on slow CPU / cold cache) can dispatch the event into the void. This inline
+ *  script registers a temporary listener that stashes each event's detail on
+ *  `window.__voctVaultBuffer`; the island's bridge drains and replays the LAST entry
+ *  on mount, then releases the listener. Last-write-wins is intentional — a user who
+ *  hammers two CTAs only ever sees one vault open.
+ * @architecture Astro islands 2026
+ * @module components/landing/VaultBuffer
+ */
+---
+
+<script is:inline>
+  (function () {
+    var buffer = [];
+    window.__voctVaultBuffer = buffer;
+    var onOpen = function (event) {
+      buffer.push((event && event.detail) || {});
+    };
+    window.addEventListener("voct:open-vault", onOpen);
+    window.__voctVaultBufferRelease = function () {
+      window.removeEventListener("voct:open-vault", onOpen);
+      window.__voctVaultBufferRelease = undefined;
+    };
+  })();
+</script>

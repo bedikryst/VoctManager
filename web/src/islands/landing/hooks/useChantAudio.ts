@@ -26,6 +26,9 @@ export interface ChantAudio {
   readonly stop: () => Promise<void>;
   readonly toggle: () => Promise<void>;
   readonly armAutoResume: () => void;
+  /** Ramp the gain to a target value over `durationMs` without touching state.
+   *  Use for soft fades around lifecycle events (Astro view-transition swap). */
+  readonly fadeGain: (target: number, durationMs?: number) => Promise<void>;
 }
 
 interface AudioGraph {
@@ -186,9 +189,16 @@ export function useChantAudio(): ChantAudio {
     resumeAbortRef.current = ac;
     let starting = false;
     const tryResume = async () => {
-      if (starting || !isOnRef.current) return;
+      if (starting) return;
       starting = true;
       ac.abort();
+      // The saved "voice" choice IS the prior expressed intent — restore "on" intent
+      // synchronously so the rest of the pipeline behaves as if start() ran. (Without this
+      // the `!isOnRef.current` early-out aborted every gesture-driven resume after reload,
+      // so returning "voice" users always landed muted.)
+      isOnRef.current = true;
+      document.body.classList.add("audio-on");
+      setState("loading");
       try {
         const graph = buildGraph();
         if (!graph) throw new Error("No audio graph");
@@ -199,6 +209,9 @@ export function useChantAudio(): ChantAudio {
         setState("playing");
       } catch (error) {
         console.warn("[VoctAudio] resume deferred:", (error as Error)?.message ?? error);
+        isOnRef.current = false;
+        document.body.classList.remove("audio-on");
+        setState("silent");
         starting = false;
         armAutoResume();
       }
@@ -272,5 +285,6 @@ export function useChantAudio(): ChantAudio {
     stop,
     toggle,
     armAutoResume,
+    fadeGain: fadeTo,
   };
 }

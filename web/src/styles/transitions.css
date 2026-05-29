@@ -1,0 +1,81 @@
+/**
+ * @file transitions.css
+ * @description Premium View Transitions choreography — soft crossfade instead of Astro's
+ *  default brutal cut. Old page fades out 320ms; new page fades in 360ms with an 80ms head
+ *  start so the layers cross-dissolve through ~80ms of overlap (the same easing family the
+ *  rest of the site uses for kinematics). Persisted elements (site-cursor, scroll-top, brand
+ *  mark) carry their own transition-names and are exempt from the root fade — they morph in
+ *  place. Reduced-motion users get an instant swap (no animation), preserving accessibility.
+ * @architecture Astro islands 2026
+ * @module styles/transitions
+ */
+
+/* Root crossfade — z-index inversion approach.
+   By default the browser stacks NEW on top of OLD; both have an opacity animation that
+   leaves a brief gap during which BOTH pseudo-elements are partially transparent and the
+   default html background (white) shows through. Solution: put NEW at the back, fully
+   opaque the entire time; OLD goes ON TOP and fades out, revealing NEW underneath. At
+   every moment of the animation, NEW is fully drawn — no white gap is possible.
+   Side effect: the brand mark transition (named) inherits the same defaults; its own
+   pair below restores a true crossfade for that specific element. */
+@keyframes voct-fade-out {
+  to { opacity: 0; }
+}
+
+::view-transition-old(root) {
+  z-index: 2;
+  animation: voct-fade-out 380ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+  animation: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+
+/* Transition stack bedrock — the topmost pseudo-element of the view-transition tree.
+   Its children (old/new root snapshots) render ON TOP, but the moment either snapshot
+   has a transparent/incomplete area (the typical micro-gap during snapshot construction
+   or animation tail), THIS background shows through.
+   On pages with paper body (--paper #f4f1e9) the gap looked like a white-ish flash; pages
+   with `body.page-koncerty { background: var(--night) }` had no flash because their
+   body bg matched. Setting a dark bedrock on the transition layer guarantees no flash
+   regardless of destination page body color. */
+::view-transition {
+  background-color: #080807;
+}
+
+/* HTML fallback — covers the slimmest window where ::view-transition itself isn't yet
+   composited. Same dark tone for visual continuity. */
+html {
+  background-color: #080807;
+}
+
+/* Brand mark (chrome-brand carries `view-transition-name: voct-brand`) — instead of the
+   default scale+morph, give it a quiet 280ms fade that matches the root crossfade rhythm
+   so the brand reads as "continuous presence", not "thing that jumped". */
+::view-transition-old(voct-brand),
+::view-transition-new(voct-brand) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.16, 1);
+}
+
+/* Persisted islands carry `view-transition-name` derived from `transition:persist="…"`:
+   site-cursor and scroll-top. They are NOT animated by the root fade — they live above the
+   transition stack and morph in place via their own React state.
+   For these, the auto-generated view-transition-name is the persist value. */
+::view-transition-group(site-cursor),
+::view-transition-group(scroll-top) {
+  animation-duration: 1ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(voct-brand),
+  ::view-transition-new(voct-brand) {
+    animation-duration: 1ms;
+    animation-name: -ua-view-transition-fade-in;
+  }
+}

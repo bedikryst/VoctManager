@@ -29,6 +29,7 @@ const concerts = (await getCollection("concerts")).sort((a, b) => a.data.order -
 const stations = await Promise.all(
   concerts.map(async (c) => ({
     ...c.data,
+    id: c.id,
     // Station backdrops are heavily blurred → one small optimized source is plenty.
     bgSrc: (await getImage({ src: bleedPair(c.data.bg).desktop, width: 1100, format: "webp" })).src,
     posterImg: c.data.poster ? photo(c.data.poster) : null,
@@ -210,6 +211,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                   </div>
                 )}
                 <div class="station-actions reveal" data-d="3">
+                  {s.hasPage && (
+                    <a class="pill" href={`/koncerty/${s.id}`}>
+                      Otwórz stronę koncertu →
+                    </a>
+                  )}
                   {s.spotify && (
                     <a class="pill" href={s.spotify} target="_blank" rel="noopener noreferrer">
                       ▸ Posłuchaj programu

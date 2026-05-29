@@ -36,6 +36,13 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
 
     document.body.classList.add("has-custom-cursor");
 
+    // SiteCursor is persisted across ClientRouter swaps (transition:persist) so its useEffect
+    // runs only once — BUT Astro replaces body.className entirely with the new page's
+    // bodyClass on swap, wiping our `has-custom-cursor` class. Without this listener the
+    // native pointer flashes back on the very first navigation. Re-apply on every swap.
+    const onAfterSwap = () => document.body.classList.add("has-custom-cursor");
+    document.addEventListener("astro:after-swap", onAfterSwap);
+
     let targetX = -120;
     let targetY = -120;
     let currentX = -120;
@@ -96,6 +103,7 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       window.removeEventListener("mousedown", down);
       window.removeEventListener("mouseup", up);
       window.removeEventListener("blur", up);
+      document.removeEventListener("astro:after-swap", onAfterSwap);
       if (raf !== null) window.cancelAnimationFrame(raf);
       document.body.classList.remove("has-custom-cursor");
     };

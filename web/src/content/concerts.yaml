@@ -20,19 +20,94 @@
   poster: poster-wcielenie
   posterAlt: Plakat koncertu Kontemplacja Wcielenia
   realizacja: "Realizacja: Ars Sonora Studio"
-  spotify: https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
+  # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
+  hasPage: true
+  inscriptio: "Et egredietur virga de radice Iesse"
+  inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
+  inscriptioRef: "Iz 11, 1"
+  reflection: >-
+    Wcielenie stanowi coś niewysłowionego, co z biegiem czasu często staje się dla nas
+    powszednim. Kiedy uświadamiamy sobie znaczenie tej tajemnicy, możemy odzyskać zmysł
+    obecności Boga w naszym życiu. Repertuar — od proroctw Izajasza po kantyk Symeona,
+    od zimowego półmroku Sandströma po jasność Monteverdiego — układa się jako droga
+    do samej istoty tego, co niewysłowione.
+  reflectionAttribution: "Florent de Bazelaire · 20 stycznia 2024"
+  pullQuote:
+    text: >-
+      Le cri des bergers to pieśń samotności. To także krzyk udręki, cierpienia i
+      niepewności; w gruncie rzeczy jest to zagubiona melodia, która rozbrzmiewa
+      wewnątrz nas. Jeśli wsłuchamy się w to „echo milczenia", możemy przekształcić
+      milczenie w magię, magię w dźwięk i przekształcić to w piękno.
+    attribution: "Bernat Vivancos"
+    about: "o utworze Le cri des bergers"
   program:
-    - { composer: "Jan Sandström", work: "Es ist ein Ros' entsprungen" }
-    - { composer: "Bernat Vivancos", work: "Le cri des bergers" }
-    - { composer: "Jacob Handl (Gallus)", work: "Canite tuba" }
-    - { composer: "Bernat Vivancos", work: "A Child is born" }
-    - { composer: "Tomás Luis de Victoria", work: "Alma Redemptoris Mater" }
-    - { composer: "Krzysztof Penderecki", work: "O gloriosa Virginum" }
-    - { composer: "Mariusz Kramarz", work: "Gdy śliczna Panna" }
-    - { composer: "Philip Stopford", work: "Lully, Lullay" }
-    - { composer: "Arvo Pärt", work: "Nunc dimittis" }
-    - { composer: "Claudio Monteverdi", work: "Cantate Domino" }
-    - { composer: "Gaudete", work: "aranż. Brian Kay · bis", bis: true }
+    - composer: "Jan Sandström"
+      years: "1942–2019"
+      work: "Es ist ein Ros' entsprungen"
+      year: "1990"
+      inscriptio: "Et egredietur virga de radice Iesse"
+      inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
+      inscriptioRef: "Iz 11, 1"
+    - composer: "Bernat Vivancos"
+      years: "ur. 1973"
+      work: "Le cri des bergers"
+      year: "2004"
+      inscriptio: "Pastores erant in regione eadem vigilantes"
+      inscriptioPl: "Pasterze trzymali straż nocną nad swoją trzodą"
+      inscriptioRef: "Łk 2, 8"
+    - composer: "Jacob Handl (Gallus)"
+      years: "1550–1591"
+      work: "Canite tuba"
+      year: "1590"
+      inscriptio: "Canite tuba in Sion · Ecce Deus salvator noster adveniet"
+      inscriptioPl: "Trąbcie w róg na Syjonie · Oto przychodzi Bóg, Zbawiciel nasz"
+      inscriptioRef: "Za 9, 14"
+    - composer: "Bernat Vivancos"
+      years: "ur. 1973"
+      work: "A Child is born"
+      year: "2001"
+      inscriptioPl: "tekst: H. M. MacGill (1876)"
+    - composer: "Tomás Luis de Victoria"
+      years: "1548–1611"
+      work: "Alma Redemptoris Mater"
+      year: "1581"
+      inscriptio: "Alma Redemptoris Mater"
+      inscriptioPl: "Czcigodna Matko Odkupiciela · antyfona maryjna"
+    - composer: "Krzysztof Penderecki"
+      years: "1933–2020"
+      work: "O gloriosa Virginum"
+      year: "2009"
+      inscriptio: "O gloriosa Virginum"
+      inscriptioPl: "O najchwalebniejsza z dziewic"
+    - composer: "Mariusz Kramarz"
+      work: "Gdy śliczna Panna"
+      inscriptioPl: "aranżacja współczesna kolędy polskiej"
+    - composer: "Philip Stopford"
+      years: "ur. 1977"
+      work: "Lully, Lullay"
+      year: "2008"
+      inscriptio: "Coventry Carol — Rzeź Niewiniątek"
+      inscriptioPl: "kołysanka matki za skazane dziecko · Mt 2, 16"
+    - composer: "Arvo Pärt"
+      years: "ur. 1935"
+      work: "Nunc dimittis"
+      year: "2001"
+      inscriptio: "Nunc dimittis servum tuum, Domine"
+      inscriptioPl: "Teraz, o Władco, pozwól odejść słudze Twemu · kantyk Symeona"
+      inscriptioRef: "Łk 2, 29–32"
+    - composer: "Claudio Monteverdi"
+      years: "1567–1643"
+      work: "Cantate Domino"
+      year: "1620"
+      inscriptio: "Cantate Domino canticum novum"
+      inscriptioPl: "Śpiewajcie Panu pieśń nową"
+      inscriptioRef: "Ps 98 (97)"
+    - composer: "Gaudete"
+      work: "aranż. Brian Kay"
+      year: "XVI w."
+      inscriptio: "Gaudete, gaudete! Christus est natus"
+      inscriptioPl: "Radujcie się! Chrystus się narodził"
+      bis: true
 
 - id: wolanie-gor
   order: 2
@@ -52,7 +127,7 @@
   bg: st-wolanie-bg
   poster: poster-wolanie
   posterAlt: Plakat koncertu Wołanie Gór
-  spotify: https://open.spotify.com/playlist/6yCPC7QDiot7MqzgdASkAP
+  # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6yCPC7QDiot7MqzgdASkAP
 
 - id: 9-kart
   order: 3
@@ -71,7 +146,7 @@
   bg: st-9-kart-bg
   poster: poster-9-kart
   posterAlt: Plakat koncertu 9 Kart z Księgi Psalmów
-  spotify: https://open.spotify.com/playlist/6quiVYU28Sl3Fx17VZulSc
+  # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6quiVYU28Sl3Fx17VZulSc
   program:
     - { composer: "Gregorio Allegri", work: "Miserere · Ps 51" }
     - { composer: "Orlando di Lasso", work: "Laudate Dominum · Ps 117" }
@@ -101,7 +176,7 @@
   bg: st-hymn-bg
   poster: poster-hymn
   posterAlt: Plakat koncertu Hymn Poległym
-  spotify: https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM
+  # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM
 
 - id: aeternam
   order: 5
@@ -121,7 +196,7 @@
   bg: st-aeternam-bg
   poster: poster-aeternam
   posterAlt: Plakat koncertu Aeternam — Epitafium dla Gazy
-  spotify: https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM?si=417e9288f94a4201&pt=99e96a55d7b2cb60c5ac46b8a007f36e
+  # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM?si=417e9288f94a4201&pt=99e96a55d7b2cb60c5ac46b8a007f36e
   links:
     - { label: Relacja prasowa ↗, href: "https://krakow.gosc.pl/doc/9466268.Niedzica-Koncert-dedykowany-Strefie-Gazy" }
     - { label: Onet / KAI ↗, href: "https://www.onet.pl/informacje/kai/muzyczna-modlitwa-w-niedzicy-koncert-dla-strefy-gazy/l3pn8kc,30bc1058" }

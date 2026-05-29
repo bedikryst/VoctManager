@@ -17,7 +17,7 @@ import { useAudioChoice } from "./hooks/useAudioChoice";
 
 // Sections whose surface is dark enough that the glass chrome must invert to its light brand.
 const DARK_SELECTORS =
-  ".image-rite, .ensemble, .final-support, .threshold, .vault, .regulamin, .gratitude, .failure";
+  ".image-rite, .ensemble, .director-dark, .final-support, .threshold, .vault, .regulamin, .gratitude, .failure";
 
 export function StickyHeader(): React.JSX.Element {
   const { read } = useAudioChoice();

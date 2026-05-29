@@ -34,11 +34,40 @@ const concerts = defineCollection({
     realizacja: z.string().optional(),
     spotify: z.string().url().optional(),
     links: z.array(z.object({ label: z.string(), href: z.string().url() })).default([]),
+    /** When true, /koncerty/[id] generates a dedicated page for this entry. */
+    hasPage: z.boolean().default(false),
+    /** Florent-authored single reflection paragraph (concert page). */
+    reflection: z.string().optional(),
+    /** Author attribution for the reflection paragraph. */
+    reflectionAttribution: z.string().optional(),
+    /** Latin epigraph that opens the concert page (typically a biblical source). */
+    inscriptio: z.string().optional(),
+    /** Polish translation of inscriptio. */
+    inscriptioPl: z.string().optional(),
+    /** Biblical / source reference for the inscription (e.g. "Iz 11,1"). */
+    inscriptioRef: z.string().optional(),
+    /** Optional in-page pull-quote (composer or director on a single work). */
+    pullQuote: z
+      .object({
+        text: z.string(),
+        attribution: z.string(),
+        about: z.string().optional(),
+      })
+      .optional(),
     program: z
       .array(
         z.object({
           composer: z.string(),
+          /** Composer life-dates as a single string, e.g. "1942–2019". */
+          years: z.string().optional(),
           work: z.string(),
+          /** Year of composition. */
+          year: z.string().optional(),
+          /** Liturgical incipit / source verse in Latin (concert page only). */
+          inscriptio: z.string().optional(),
+          /** Polish translation of inscriptio. */
+          inscriptioPl: z.string().optional(),
+          inscriptioRef: z.string().optional(),
           bis: z.boolean().default(false),
         }),
       )

@@ -1,50 +1,44 @@
 ---
 /**
  * @file PathSection.astro
- * @description "Wcześniejsze wybrzmienia" — catalog grid of past Concerts Spirituels. Posters
- *  are optimized <Picture> from src/assets (resolved by `photo(path.poster)`). Each card's native
- *  <details> snap open/close is upgraded to an animated, exclusive accordion by scripts/landing.ts.
+ * @description "Wcześniejsze wybrzmienia" — typographic register of past Concerts Spirituels.
+ *  Read as a memorium on an altar, not as a portfolio grid: roman numeral + year + tag in the
+ *  left rail, title + place in the right rail, optional expandable repertoire/programme below.
+ *  Hairline rules separate entries. No poster images — the rite doesn't market itself by face.
+ *  Each entry's native <details> snap open/close is upgraded to an animated, exclusive
+ *  accordion by scripts/landing.ts (same `.path-card-detail` hook so the JS contract holds).
  * @architecture Astro islands 2026
  * @module components/landing/PathSection
  */
-import { Picture } from "astro:assets";
 import { PATHS } from "../../data/landing/paths";
-import { photo } from "../../lib/photos";
+
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
 ---
 
-<section class="section path" id="droga" aria-label="Wcześniejsze współbrzemienia">
+<section class="section path" id="droga" aria-label="Wcześniejsze wybrzmienia">
   <div class="section-grid">
     <div class="section-label micro"><span>Z drogi</span></div>
     <div class="path-body">
       <h2 class="section-title reveal">Wcześniejsze<br />wybrzmienia.</h2>
       <p class="path-lede reveal">
-        Od renesansowej polifonii po współczesne misteria — tworzymy koncerty, które
-        pozostają żywe i mogą wybrzmieć na nowo w kolejnych przestrzeniach.
+        Od renesansowej polifonii po współczesne misteria — koncerty, które pozostają
+        żywe i mogą wybrzmieć na nowo w kolejnych przestrzeniach.
       </p>
-      <div class="path-grid">
+
+      <ol class="path-register" aria-label="Lista wcześniejszych koncertów">
         {
-          PATHS.map((path) => (
-            <article class="path-card reveal">
-              <figure class="path-card-poster" aria-hidden="true">
-                <Picture
-                  src={photo(path.poster)}
-                  formats={["avif", "webp"]}
-                  widths={[320, 480, 640]}
-                  sizes="(max-width: 980px) 86vw, 30vw"
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                />
-              </figure>
-              <div class="path-card-body">
-                <div class="path-card-meta">
-                  <span class="path-card-year">{path.year}</span>
-                  <span class="path-card-tag">{path.tag}</span>
-                </div>
-                <h3 class="path-card-title">{path.title}</h3>
-                <p class="path-card-place">{path.place}</p>
-                <p class="path-card-note">{path.note}</p>
-                <details class="path-card-detail">
+          PATHS.map((path, i) => (
+            <li class="path-entry reveal">
+              <div class="path-entry-rail">
+                <span class="path-entry-roman">{ROMAN[i]}</span>
+                <span class="path-entry-year">{path.year}</span>
+                <span class="path-entry-tag">{path.tag}</span>
+              </div>
+              <div class="path-entry-body">
+                <h3 class="path-entry-title">{path.title}</h3>
+                <p class="path-entry-place">{path.place}</p>
+                <p class="path-entry-summary">{path.note}</p>
+                <details class="path-card-detail path-entry-detail">
                   <summary>
                     <span>{path.detail.summary}</span>
                     <span class="path-detail-icon" aria-hidden="true" />
@@ -67,10 +61,10 @@ import { photo } from "../../lib/photos";
                   )}
                 </details>
               </div>
-            </article>
+            </li>
           ))
         }
-      </div>
+      </ol>
     </div>
   </div>
 </section>

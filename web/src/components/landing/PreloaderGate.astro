@@ -1,0 +1,40 @@
+---
+/**
+ * @file PreloaderGate.astro
+ * @description Once-per-session preloader gate executed before first paint.
+ *
+ *  The rite is a *session* event — sessionStorage gates it across ClientRouter swaps
+ *  back to "/", but a hard or soft reload should feel like a fresh start. Because
+ *  `data-astro-rerun` re-fires this script on every swap (sharing the same document
+ *  and `performance.timeOrigin`), we stamp the last-seen timeOrigin and only act on
+ *  reload-typed navigation when the stamp changes — i.e. when THIS document execution
+ *  is genuinely new. Without the stamp guard a ClientRouter swap mid-session would
+ *  clear the seen flag and the preloader would replay on the next visit home.
+ *
+ *  When the seen flag is present we add `html.preloader-skip` before paint; the SSR'd
+ *  overlay is hidden by the companion CSS in index.astro so returning visitors never
+ *  see it flash before React decides to skip it.
+ * @architecture Astro islands 2026
+ * @module components/landing/PreloaderGate
+ */
+---
+
+<script is:inline data-astro-rerun>
+  try {
+    const stamp = String(performance.timeOrigin || 0);
+    const STORE = window.sessionStorage;
+    const lastStamp = STORE.getItem("voct.preloader.last-load") || "";
+    if (stamp !== lastStamp) {
+      const nav = performance.getEntriesByType("navigation")[0];
+      if (nav && nav.type === "reload") {
+        STORE.removeItem("voct.preloader.seen");
+      }
+      STORE.setItem("voct.preloader.last-load", stamp);
+    }
+    if (STORE.getItem("voct.preloader.seen") === "1") {
+      document.documentElement.classList.add("preloader-skip");
+    }
+  } catch (_) {
+    /* private mode — preloader will just play again */
+  }
+</script>

@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 
 import { horaForWarsaw, type CanonicalHour } from "../lib/horaeCanonicae";
-import { tempusForDate, type Tempus } from "../lib/tempusLiturgicus";
+import { tempusForDate, type Tempus } from "../../../lib/tempusLiturgicus";
 
 const HM_FORMAT = new Intl.DateTimeFormat("pl-PL", {
   hour: "2-digit",

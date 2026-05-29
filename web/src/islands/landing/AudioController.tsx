@@ -13,12 +13,23 @@
 import { useEffect, useRef } from "react";
 
 import { ThresholdGate } from "./ThresholdGate";
+import { useAudioChoice } from "./hooks/useAudioChoice";
 import { useChantAudio } from "./hooks/useChantAudio";
 
 export function AudioController(): React.JSX.Element {
   const audio = useChantAudio();
   const audioRef = useRef(audio);
   audioRef.current = audio;
+  const { write } = useAudioChoice();
+  // Track the prior isOn so a swap into "playing"/"silent" overwrites the saved threshold choice
+  // (latest action wins): if the user entered with silence but later toggled audio on via the
+  // header, the next visit should auto-resume to "voice" — and vice versa.
+  const lastIsOnRef = useRef(audio.isOn);
+  useEffect(() => {
+    if (audio.isOn === lastIsOnRef.current) return;
+    lastIsOnRef.current = audio.isOn;
+    write(audio.isOn ? "voice" : "silence");
+  }, [audio.isOn, write]);
 
   // Broadcast the live on/off truth so the StickyHeader label tracks it.
   useEffect(() => {
@@ -33,6 +44,20 @@ export function AudioController(): React.JSX.Element {
     };
     window.addEventListener("voct:toggle-audio", onToggle);
     return () => window.removeEventListener("voct:toggle-audio", onToggle);
+  }, []);
+
+  // Soft fade before an Astro view-transition swap. AudioController is mounted only on "/", so
+  // navigation to a subpage triggers an unmount whose cleanup pauses + closes the audio context
+  // synchronously — which is audible. Listening for `astro:before-preparation` lets us ramp gain
+  // to zero ahead of the swap; by the time cleanup runs, the audio is already inaudible. The
+  // saved "voice" choice in localStorage is untouched, so armAutoResume on return still works.
+  useEffect(() => {
+    const onBeforeSwap = (): void => {
+      if (!audioRef.current.isOn) return;
+      void audioRef.current.fadeGain(0, 450);
+    };
+    document.addEventListener("astro:before-preparation", onBeforeSwap);
+    return () => document.removeEventListener("astro:before-preparation", onBeforeSwap);
   }, []);
 
   return <ThresholdGate audio={audio} />;

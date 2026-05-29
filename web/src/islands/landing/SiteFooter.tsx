@@ -2,21 +2,15 @@
  * @file SiteFooter.tsx
  * @description Closing chapter — "Inscriptio finalis": Sygnał (Warsaw clock, canonical hour,
  * liturgical tempus) and Fundatio (foundation identity, board, documents, contacts).
- * Hairline social ribbon → giant cursor-reactive wordmark → colophon.
+ * Hairline social ribbon → colophon. The Coda owns the final "amen"; the footer is chrome,
+ * not monument.
  * @architecture Enterprise SaaS 2026
  * @module widgets/landing/SiteFooter
  */
 
-import { useRef } from "react";
-
-import { useFooterMarkBreath } from "./hooks/useFooterMarkBreath";
-import { useFooterMarkCursor } from "./hooks/useFooterMarkCursor";
 import { useLiturgicalClock } from "./hooks/useLiturgicalClock";
 
 export function SiteFooter(): React.JSX.Element {
-  const markRef = useRef<HTMLSpanElement>(null);
-  useFooterMarkBreath(markRef);
-  useFooterMarkCursor(markRef);
   const clock = useLiturgicalClock();
 
   return (
@@ -232,15 +226,15 @@ export function SiteFooter(): React.JSX.Element {
           <span className="footer-ribbon-rule" aria-hidden="true" />
         </div>
 
-        <div className="site-footer-mark" aria-hidden="true">
-          <span className="site-footer-mark-text" data-text="VoctEnsemble" ref={markRef}>
-            VoctEnsemble
-          </span>
-        </div>
-
         <div className="site-footer-colophon">
           <div className="footer-colophon-fonts micro">
-            <span className="footer-colophon-label">Colophon</span>
+            <a
+              className="footer-colophon-label"
+              href="/kolofon"
+              aria-label="Kolofon — fonty, prawa, autorzy"
+            >
+              Colophon <span aria-hidden="true">↗</span>
+            </a>
             <span>
               <em>Cormorant Garamond</em> · Inter · IBM Plex Mono
             </span>
