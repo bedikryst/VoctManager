@@ -1091,8 +1091,13 @@
     position: relative;
     z-index: 2;
     width: min(1580px, 100%);
+    min-height: 100svh;
     margin: 0 auto;
-    padding: clamp(96px, 11vh, 132px) max(28px, 5vw) clamp(48px, 6vh, 72px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: clamp(24px, 4vh, 40px);
+    padding: clamp(96px, 11vh, 132px) max(28px, 5vw) clamp(24px, 4vh, 48px);
   }
 
   .hero-grid {
@@ -1589,7 +1594,7 @@
   .manifest .reveal {
     opacity: 0;
     transform: translateY(40px);
-    transition: opacity 1.2s var(--ease), transform 1.2s var(--ease);
+    transition: opacity 2.2s var(--ease), transform 2.2s var(--ease);
   }
 
   .manifest .reveal.is-visible {
@@ -1601,8 +1606,8 @@
      Line III pushed from 0.8s/1.6s to 1.6s/2.4s: prior pace landed the closing stanza on top of
      the reader. The reveal must feel withheld, not delivered. */
   .manifest-line-group:nth-child(1).is-visible { transition-delay: 0.1s; }
-  .manifest-line-group:nth-child(2).is-visible { transition-delay: 0.3s; }
-  .manifest-line-group:nth-child(3).is-visible { transition-delay: 1.6s; transition-duration: 2.4s; }
+  .manifest-line-group:nth-child(2).is-visible { transition-delay: 0.8s; }
+  .manifest-line-group:nth-child(3).is-visible { transition-delay: 1s; transition-duration: 3.4s; }
 
   /* Desktop Staggering Layout */
   @media (min-width: 768px) {
@@ -1633,7 +1638,7 @@
         /* Range pushed (was entry 20% cover 50%): blur clears later, so "Odsłania"
            materialises through the closing scroll instead of fully resolving by the
            time the reader's eye lands on it. Same effect, slower bloom. */
-        animation-range: entry 35% cover 75%;
+        animation-range: entry 35% cover 65%;
       }
 
       @keyframes emphasis-flare {
@@ -3939,9 +3944,6 @@
       align-items: start;
     }
 
-    .hero-inner {
-      padding: 116px max(22px, 5vw) 0;
-    }
 
     /* Title scaled down a touch on the smallest viewports so the headline does not bleed
        into the body paragraph below. The clamp in :root caps at 92px; here we anchor the
