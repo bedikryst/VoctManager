@@ -45,6 +45,7 @@ from .services.ingestion import (
     IngestionPreconditionError,
     start_ingestion,
 )
+from .signals import piece_material_updated_event
 
 logger = logging.getLogger(__name__)
 
@@ -84,35 +85,20 @@ class PieceViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs) -> Response:
         serializer = PieceSerializer(data=request.data, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
-
         dto = serializer.to_dto()
-        sheet_music = serializer.validated_data.get('sheet_music')
-        
-        # 100% Logic delegation to Service Layer
-        piece = services.ArchiveManagementService.create_piece(dto=dto, sheet_music_file=sheet_music)
-        
+        piece = services.ArchiveManagementService.create_piece(dto=dto)
         return Response(self.get_serializer(piece).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs) -> Response:
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        
-        serializer = PieceSerializer(instance, data=request.data, partial=partial, context=self.get_serializer_context())
-        serializer.is_valid(raise_exception=True)
-
-        dto = serializer.to_dto(instance=instance)
-        
-        update_sheet_music = 'sheet_music' in serializer.validated_data
-        sheet_music = serializer.validated_data.get('sheet_music')
-
-        # 100% Logic delegation to Service Layer
-        piece = services.ArchiveManagementService.update_piece(
-            piece=instance, 
-            dto=dto, 
-            sheet_music_file=sheet_music, 
-            update_sheet_music=update_sheet_music
+        serializer = PieceSerializer(
+            instance, data=request.data, partial=partial,
+            context=self.get_serializer_context(),
         )
-
+        serializer.is_valid(raise_exception=True)
+        dto = serializer.to_dto(instance=instance)
+        piece = services.ArchiveManagementService.update_piece(piece=instance, dto=dto)
         return Response(self.get_serializer(piece).data)
 
 
@@ -225,8 +211,20 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         vd = serializer.validated_data
 
         uploaded_file = vd['pdf_file']
+        # Optional: pre-attached piece when uploading from inside an
+        # existing-piece editor. The pipeline's resolver step then skips
+        # MusicBrainz lookup and reuses this FK.
+        target_piece = None
+        if vd.get('piece_id'):
+            try:
+                target_piece = Piece.objects.get(id=vd['piece_id'])
+            except Piece.DoesNotExist:
+                return Response(
+                    {'detail': f"Piece {vd['piece_id']} not found."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         edition = ScoreEdition.objects.create(
-            piece=None,
+            piece=target_piece,
             pdf_file=uploaded_file,
             original_filename=vd.get('original_filename') or uploaded_file.name,
             publisher=vd.get('publisher', ''),
@@ -281,6 +279,12 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
             )
         edition.ingestion_status = IngestionStatus.READY
         edition.save(update_fields=['ingestion_status', 'updated_at'])
+        # Notify project participants — approval is when materials become safe
+        # to circulate (vs AWAITING which is mid-review and may still hallucinate).
+        if edition.piece_id:
+            piece_material_updated_event.send(
+                sender=self.__class__, piece=edition.piece,
+            )
         return Response(
             ScoreEditionDetailSerializer(edition, context={'request': request}).data,
             status=status.HTTP_200_OK,

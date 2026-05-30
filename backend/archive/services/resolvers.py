@@ -39,7 +39,7 @@ from archive.dtos import (
     ExtractedWorkIdentity,
     WorkLookupResult,
 )
-from archive.models import Composer, IngestionStatus, Piece, ProvenanceSource
+from archive.models import Composer, Piece, ProvenanceSource
 from archive.services import provenance
 
 logger = logging.getLogger(__name__)
@@ -395,7 +395,6 @@ def _create_piece(
         voicing=extracted.voicing or '',
         text_source=extracted.text_source or '',
         mbid_work=(mbz_work.mbid if mbz_work else None),
-        ingestion_status=IngestionStatus.EXTRACTING,
     )
 
     if mbz_work and mbz_work.mbid:

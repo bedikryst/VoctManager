@@ -18,7 +18,7 @@ export interface TimelineEvent {
   rawObj: Project | EnrichedRehearsal;
   date_time: Date;
   title: string;
-  location: string | LocationSnippet | null | undefined;
+  location: LocationSnippet | null | undefined;
   focus?: string | null;
   is_mandatory?: boolean;
   status?: AttendanceStatus | null;

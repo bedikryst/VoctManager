@@ -1,0 +1,129 @@
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     KINETIC TYPOGRAPHY Â· MMXXVI
+     Variable-axis choreography scrubbed against scroll & view timelines.
+     Cormorant Garamond wght 300â€“700 (osobny plik italic) + Inter opsz auto.
+     CSS-WG L5 primitives: @property, animation-timeline, view-timeline.
+     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+  @property --wght {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 320;
+  }
+
+  @property --wght-em {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 360;
+  }
+
+  @property --wght-reveal {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 320;
+  }
+
+  @property --reveal-y {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  /* Wordmark "VoctEnsemble" + zegar w footerze potrzebujÄ… wht ktĂłry CASCADUJE
+     do dzieci (litery wordmarka splitowane przez JS przy cursor-reactive
+     desktop). StÄ…d osobny --wght-mark z inherits: true. Reszta strony uĹĽywa
+     scoped --wght (inherits: false) dla taniej invalidation. */
+  @property --wght-mark {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 320;
+  }
+
+  /* Per-letter bonus dla wordmarka â€” JS pisze tu wartoĹ›Ä‡ zaleĹĽnÄ… od dystansu
+     kursora do litery. Scoped per element (inherits: false) â†’ write na jednÄ…
+     literÄ™ inwaliduje tylko ten wÄ™zeĹ‚, nie caĹ‚e drzewo. */
+  @property --wght-add {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+  }
+
+  /* Manifest "ink emergence" â€” pozycja krawÄ™dzi mask-gradientu ktĂłry
+     scrubuje siÄ™ od lewej do prawej przez liniÄ™ manifestu. WartoĹ›Ä‡
+     animowana 0%â†’110% przez scroll-driven view-timeline. KaĹĽda linia
+     manifestu ma wĹ‚asnÄ… instancjÄ™ (inherits:false), wiÄ™c nawzajem
+     nie inwalidujÄ… siÄ™. */
+  @property --ink-reveal {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: -14%;
+  }
+
+  /* Inter Variable ma oĹ› opsz â€” niech browser sam dobiera display vs. text. */
+  html {
+    font-optical-sizing: auto;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+
+      /* â”€â”€â”€ Hero "oddech" â”€â”€â”€
+         WiÄ™kszy swing: 540 â†’ 300 na tytule, 620 â†’ 300 na akcencie zĹ‚otym.
+         Cormorant variable obsĹ‚uguje 300-700, wiÄ™c mamy zapas. */
+      .hero-title,
+      .hero-title > span {
+        font-variation-settings: "wght" var(--wght);
+        animation: hero-breath linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 90vh;
+        will-change: font-variation-settings;
+      }
+
+      .hero-title em {
+        font-variation-settings: "wght" var(--wght-em);
+        animation: hero-breath-em linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 90vh;
+        will-change: font-variation-settings;
+      }
+
+      @keyframes hero-breath {
+        0%   { --wght: 540; }
+        55%  { --wght: 380; }
+        100% { --wght: 300; }
+      }
+
+      @keyframes hero-breath-em {
+        0%   { --wght-em: 620; }
+        55%  { --wght-em: 380; }
+        100% { --wght-em: 300; }
+      }
+
+      /* â”€â”€â”€ Editorial headings â€” view-timeline lokalny per element â”€â”€â”€
+         KaĹĽdy heading scrubuje wagÄ™ przeciw swojej wĹ‚asnej przeprawie
+         przez viewport. Wchodzi mocniejszy (520), oddaje wagÄ™ do 320
+         gdy zatrzymuje siÄ™ na Ĺ›rodku â€” jak gĹ‚os ktĂłry wĹ‚aĹ›nie wybrzmiaĹ‚.
+         Wykluczone:
+         - threshold/vault/gratitude (overlaye, view-timeline by nie zaskoczyĹ‚)
+         - path-card-title (5 kart Ă— text-reshape per frame = niepotrzebny koszt)
+         - hero-strap/occasion (jednoczesnie z .hero-title te same klatki). */
+      .support-lede h2,
+      .ensemble h2,
+      .path h2,
+      .section-title,
+      .final-support h2 {
+        view-timeline-name: --breathe-self;
+        view-timeline-axis: block;
+        font-variation-settings: "wght" var(--wght);
+        animation: heading-breath linear both;
+        animation-timeline: --breathe-self;
+        animation-range: entry 0% cover 55%;
+      }
+
+      @keyframes heading-breath {
+        0%   { --wght: 520; }
+        100% { --wght: 320; }
+      }
+
+    }
+  }

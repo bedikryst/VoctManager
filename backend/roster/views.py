@@ -19,7 +19,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
-from archive.models import PieceVoiceRequirement, Track
+from archive.models import PieceVoiceRequirement, Recording, ScoreEdition, Track
 from core.constants import VoiceLine
 from core.exceptions import format_pydantic_validation_errors
 from core.permissions import IsManager, IsManagerOrReadOnly
@@ -315,6 +315,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     'piece__voice_requirements',
                     queryset=PieceVoiceRequirement.objects.filter(is_deleted=False).order_by('voice_line'),
                     to_attr='prefetched_voice_requirements',
+                ),
+                Prefetch(
+                    'piece__editions',
+                    queryset=ScoreEdition.objects.filter(is_deleted=False).order_by('-is_default', '-created_at'),
+                    to_attr='prefetched_editions',
+                ),
+                Prefetch(
+                    'piece__recordings',
+                    queryset=Recording.objects.filter(is_deleted=False).order_by('-is_featured', 'source'),
+                    to_attr='prefetched_recordings',
                 ),
             )
             .order_by('order')

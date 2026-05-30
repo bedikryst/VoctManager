@@ -38,11 +38,8 @@ const EMPTY_ARTISTS: Artist[] = [];
 const EMPTY_PIECES: Piece[] = [];
 const WORKSPACE_STALE_TIME = 1000 * 60 * 5;
 
-/**
- * Type Guard to distinguish between a Location ID (string) and a full LocationSnippet.
- */
 const isLocationSnippet = (
-  loc: string | LocationSnippet | null | undefined,
+  loc: LocationSnippet | null | undefined,
 ): loc is LocationSnippet => {
   return typeof loc === "object" && loc !== null && "id" in loc;
 };
@@ -189,7 +186,7 @@ export const useAdminDashboardData = () => {
       id: String(rawNextProject.id),
       title: rawNextProject.title,
       conductor: parseConductorName(rawNextProject.conductor_name) || undefined,
-      locationId: isLocationSnippet(loc) ? loc.id : (loc ?? undefined),
+      locationId: isLocationSnippet(loc) ? loc.id : undefined,
       locationFallbackName: isLocationSnippet(loc) ? loc.name : undefined,
       startDate: rawNextProject.date_time,
       status: rawNextProject.status?.toLowerCase() as

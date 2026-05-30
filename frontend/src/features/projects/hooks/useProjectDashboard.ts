@@ -90,7 +90,7 @@ const isArtistReference = (value: Project["conductor"]): value is Artist =>
 
 const isLocationReference = (
   value: Project["location"],
-): value is Exclude<Project["location"], string | null> =>
+): value is NonNullable<Project["location"]> =>
   typeof value === "object" && value !== null && isNonEmptyString(value.id);
 
 const buildArtistDisplayName = (
@@ -110,10 +110,6 @@ const resolveProjectLocation = (
 ): Project["location"] => {
   if (!project.location) {
     return null;
-  }
-
-  if (typeof project.location === "string") {
-    return locationMap.get(project.location) ?? project.location;
   }
 
   if (!isLocationReference(project.location)) {

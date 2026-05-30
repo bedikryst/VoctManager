@@ -1,11 +1,15 @@
 /**
  * @file usePieceForm.ts
- * @description Manages archive piece form state, dirty detection, and dependent write flows.
- * Restores inline composer creation by orchestrating the existing composers endpoint before piece persistence.
+ * @description Manual create/edit form state for Piece metadata.
+ * Composer inline-creation is orchestrated here (fetch the new composer
+ * first, then attach its UUID to the piece payload).
+ *
+ * PDFs do NOT flow through this hook — they are uploaded as ScoreEditions
+ * via the dedicated EditionUploadZone, which dispatches the AI pipeline.
  * @architecture Enterprise SaaS 2026
  */
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
@@ -45,9 +49,7 @@ const EMPTY_COMPOSER_DRAFT: ComposerDraftState = {
   death_year: "",
 };
 
-const normalizeComposerDraft = (
-  value: ComposerDraftState,
-): ComposerDraftState => ({
+const normalizeComposerDraft = (value: ComposerDraftState): ComposerDraftState => ({
   first_name: value.first_name.trim(),
   last_name: value.last_name.trim(),
   birth_year: value.birth_year.trim(),
@@ -64,7 +66,7 @@ const normalizeRequirements = (
 
 const normalizeFormState = (value: PieceFormState) => ({
   title: value.title || "",
-  composer: value.composer || "",
+  composer_id: value.composer_id || "",
   arranger: value.arranger || "",
   language: value.language || "",
   durationMins: value.durationMins || "",
@@ -72,9 +74,6 @@ const normalizeFormState = (value: PieceFormState) => ({
   voicing: value.voicing || "",
   description: value.description || "",
   lyrics_original: value.lyrics_original || "",
-  lyrics_translation: value.lyrics_translation || "",
-  reference_recording_youtube: value.reference_recording_youtube || "",
-  reference_recording_spotify: value.reference_recording_spotify || "",
   composition_year:
     value.composition_year === null || value.composition_year === undefined
       ? ""
@@ -98,8 +97,7 @@ export const usePieceForm = (
   const createMutation = useCreatePiece();
   const updateMutation = useUpdatePiece();
 
-  const [submitAction, setSubmitAction] =
-    useState<SubmitAction>("SAVE_AND_CLOSE");
+  const [submitAction, setSubmitAction] = useState<SubmitAction>("SAVE_AND_CLOSE");
 
   const initialComposerSearch = useMemo(
     () =>
@@ -111,7 +109,7 @@ export const usePieceForm = (
 
   const initialRequirements = useMemo<VoiceRequirementDTO[]>(
     () =>
-      piece?.voice_requirements?.map((requirement) => ({
+      piece?.voice_requirements_read?.map((requirement) => ({
         voice_line: requirement.voice_line,
         quantity: requirement.quantity,
       })) || [],
@@ -120,13 +118,12 @@ export const usePieceForm = (
 
   const initialFormData = useMemo<PieceFormState>(() => {
     const totalSeconds = piece?.estimated_duration || 0;
-    const mins =
-      totalSeconds > 0 ? Math.floor(totalSeconds / 60).toString() : "";
+    const mins = totalSeconds > 0 ? Math.floor(totalSeconds / 60).toString() : "";
     const secs = totalSeconds > 0 ? (totalSeconds % 60).toString() : "";
 
     return {
       title: piece?.title || initialSearchContext || "",
-      composer: piece?.composer?.id || "",
+      composer_id: piece?.composer?.id || "",
       arranger: piece?.arranger || "",
       language: piece?.language || "",
       durationMins: mins,
@@ -134,10 +131,6 @@ export const usePieceForm = (
       voicing: piece?.voicing || "",
       description: piece?.description || "",
       lyrics_original: piece?.lyrics_original || "",
-      lyrics_translation: piece?.lyrics_translation || "",
-      reference_recording_youtube:
-        piece?.reference_recording_youtube || piece?.reference_recording || "",
-      reference_recording_spotify: piece?.reference_recording_spotify || "",
       composition_year: piece?.composition_year || "",
       epoch: piece?.epoch || "",
       opus_catalog: piece?.opus_catalog || "",
@@ -148,8 +141,6 @@ export const usePieceForm = (
   }, [piece, initialSearchContext]);
 
   const [formData, setFormData] = useState<PieceFormState>(initialFormData);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [requirements, setRequirements] =
     useState<VoiceRequirementDTO[]>(initialRequirements);
   const [isAddingComposer, setIsAddingComposer] = useState(false);
@@ -159,10 +150,7 @@ export const usePieceForm = (
   const [isCompDropdownOpen, setIsCompDropdownOpen] = useState(false);
 
   const filteredComposers = useMemo(() => {
-    if (!compSearchTerm) {
-      return composers;
-    }
-
+    if (!compSearchTerm) return composers;
     return composers.filter((composer) =>
       `${composer.first_name || ""} ${composer.last_name}`
         .toLowerCase()
@@ -175,7 +163,6 @@ export const usePieceForm = (
       JSON.stringify({
         formData: normalizeFormState(initialFormData),
         requirements: normalizeRequirements(initialRequirements),
-        selectedFile: null,
         isAddingComposer: false,
         newComposerData: EMPTY_COMPOSER_DRAFT,
       }),
@@ -187,31 +174,21 @@ export const usePieceForm = (
       JSON.stringify({
         formData: normalizeFormState(formData),
         requirements: normalizeRequirements(requirements),
-        selectedFile: selectedFile
-          ? {
-              name: selectedFile.name,
-              size: selectedFile.size,
-              lastModified: selectedFile.lastModified,
-            }
-          : null,
         isAddingComposer,
         newComposerData: normalizeComposerDraft(newComposerData),
       }),
-    [formData, requirements, selectedFile, isAddingComposer, newComposerData],
+    [formData, requirements, isAddingComposer, newComposerData],
   );
 
   const isDirty = currentSnapshot !== initialSnapshot;
 
   useEffect(() => {
-    if (onDirtyStateChange) {
-      onDirtyStateChange(isDirty);
-    }
+    onDirtyStateChange?.(isDirty);
   }, [isDirty, onDirtyStateChange]);
 
   useEffect(() => {
     setFormData(initialFormData);
     setRequirements(initialRequirements);
-    setSelectedFile(null);
     setIsAddingComposer(false);
     setNewComposerData(EMPTY_COMPOSER_DRAFT);
     setCompSearchTerm(initialComposerSearch);
@@ -220,18 +197,15 @@ export const usePieceForm = (
   }, [initialFormData, initialRequirements, initialComposerSearch]);
 
   const handleRequirementChange = (index: number, delta: number) => {
-    const nextRequirements = [...requirements];
-    nextRequirements[index].quantity = Math.max(
-      1,
-      nextRequirements[index].quantity + delta,
-    );
-    setRequirements(nextRequirements);
+    const next = [...requirements];
+    next[index].quantity = Math.max(1, next[index].quantity + delta);
+    setRequirements(next);
   };
 
   const resetCreateFlow = () => {
     setFormData({
       title: initialSearchContext,
-      composer: "",
+      composer_id: "",
       arranger: "",
       language: "",
       durationMins: "",
@@ -239,9 +213,6 @@ export const usePieceForm = (
       voicing: "",
       description: "",
       lyrics_original: "",
-      lyrics_translation: "",
-      reference_recording_youtube: "",
-      reference_recording_spotify: "",
       composition_year: "",
       epoch: "",
       opus_catalog: "",
@@ -250,25 +221,18 @@ export const usePieceForm = (
       lyrics_ipa: "",
     });
     setRequirements([]);
-    setSelectedFile(null);
     setIsAddingComposer(false);
     setNewComposerData(EMPTY_COMPOSER_DRAFT);
     setCompSearchTerm("");
     setIsCompDropdownOpen(false);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   };
 
   const createComposerIfNeeded = async (): Promise<string | undefined> => {
     if (!isAddingComposer) {
-      return formData.composer || undefined;
+      return formData.composer_id || undefined;
     }
-
-    const composerDraft = normalizeComposerDraft(newComposerData);
-
-    if (!composerDraft.last_name) {
+    const draft = normalizeComposerDraft(newComposerData);
+    if (!draft.last_name) {
       throw new Error(
         t(
           "archive.form.toast.composer_required",
@@ -276,28 +240,21 @@ export const usePieceForm = (
         ),
       );
     }
-
     const composerPayload: ComposerWriteDTO = {
-      last_name: composerDraft.last_name,
-      first_name: composerDraft.first_name || undefined,
-      birth_year: composerDraft.birth_year || undefined,
-      death_year: composerDraft.death_year || undefined,
+      last_name: draft.last_name,
+      first_name: draft.first_name || undefined,
+      birth_year: draft.birth_year || undefined,
+      death_year: draft.death_year || undefined,
     };
+    const created = await createComposerMutation.mutateAsync(composerPayload);
+    const label = `${created.last_name} ${created.first_name || ""}`.trim();
 
-    const createdComposer =
-      await createComposerMutation.mutateAsync(composerPayload);
-    const createdComposerLabel =
-      `${createdComposer.last_name} ${createdComposer.first_name || ""}`.trim();
-
-    setFormData((currentValue) => ({
-      ...currentValue,
-      composer: createdComposer.id,
-    }));
-    setCompSearchTerm(createdComposerLabel);
+    setFormData((current) => ({ ...current, composer_id: created.id }));
+    setCompSearchTerm(label);
     setIsAddingComposer(false);
     setNewComposerData(EMPTY_COMPOSER_DRAFT);
 
-    return createdComposer.id;
+    return created.id;
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -310,7 +267,7 @@ export const usePieceForm = (
         : t("archive.form.toast.updating", "Aktualizowanie metadanych..."),
     );
 
-    const calculatedDuration =
+    const durationSeconds =
       parseInt(formData.durationMins || "0", 10) * 60 +
       parseInt(formData.durationSecs || "0", 10);
 
@@ -319,19 +276,13 @@ export const usePieceForm = (
 
       const payload: PieceWriteDTO = {
         title: formData.title as string,
-        composer: composerId || "",
+        composer_id: composerId ?? null,
         arranger: formData.arranger || "",
         language: formData.language || "",
-        estimated_duration:
-          calculatedDuration > 0 ? calculatedDuration : null,
+        estimated_duration: durationSeconds > 0 ? durationSeconds : null,
         voicing: formData.voicing || "",
         description: formData.description || "",
         lyrics_original: formData.lyrics_original || "",
-        lyrics_translation: formData.lyrics_translation || "",
-        reference_recording_youtube:
-          formData.reference_recording_youtube || "",
-        reference_recording_spotify:
-          formData.reference_recording_spotify || "",
         composition_year: formData.composition_year
           ? Number(formData.composition_year)
           : null,
@@ -341,7 +292,6 @@ export const usePieceForm = (
         text_source: formData.text_source || "",
         lyrics_ipa: formData.lyrics_ipa || "",
         voice_requirements: requirements.length > 0 ? requirements : undefined,
-        sheet_music: selectedFile || undefined,
       };
 
       if (isCreate) {
@@ -356,7 +306,7 @@ export const usePieceForm = (
         onSuccess?.(newPiece as EnrichedPiece, submitAction);
       } else {
         const updatedPiece = await updateMutation.mutateAsync({
-          id: piece!.id,
+          id: String(piece!.id),
           data: payload,
         });
         toast.success(
@@ -365,16 +315,17 @@ export const usePieceForm = (
         );
         onSuccess?.(updatedPiece as EnrichedPiece, submitAction);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        (error as Error)?.message ||
+        t(
+          "archive.form.toast.save_error_desc",
+          "Sprawdź poprawność danych i spróbuj ponownie.",
+        );
       toast.error(t("archive.form.toast.save_error_title", "Błąd zapisu."), {
         id: toastId,
-        description:
-          error?.response?.data?.detail ||
-          error?.message ||
-          t(
-            "archive.form.toast.save_error_desc",
-            "Sprawdź poprawność danych i spróbuj ponownie.",
-          ),
+        description: message,
       });
     }
   };
@@ -384,9 +335,6 @@ export const usePieceForm = (
     setFormData,
     requirements,
     setRequirements,
-    selectedFile,
-    setSelectedFile,
-    fileInputRef,
     isSubmitting:
       createComposerMutation.isPending ||
       createMutation.isPending ||

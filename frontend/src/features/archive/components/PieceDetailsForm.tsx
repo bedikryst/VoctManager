@@ -16,7 +16,6 @@ import {
   Trash2,
   Clock,
   Music,
-  Youtube,
   AlignLeft,
 } from "lucide-react";
 
@@ -31,6 +30,21 @@ import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Eyebrow, Text } from "@ui/primitives/typography";
 import { usePieceForm, SubmitAction } from "../hooks/usePieceForm";
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
+
+/**
+ * Voice lines that make sense for divisi (one Sx/Ax/Tx/Bx slot = "I need
+ * N singers on this part"). The rest of the VoiceLine enum (TUTTI,
+ * BACKGROUND, ACCOMPANIMENT, PRONUNCIATION, VOCAL_PERCUSSION) describes
+ * rehearsal-track or recording-context concepts — not staffing needs —
+ * and would confuse the conductor if offered here as "+ Add" buttons.
+ */
+const CHORAL_DIVISI_LINES: ReadonlySet<string> = new Set([
+  "S1", "S2", "S3",
+  "A1", "A2", "A3",
+  "T1", "T2", "T3",
+  "B1", "B2", "B3",
+  "SOLO",
+]);
 
 interface PieceDetailsFormProps {
   piece: EnrichedPiece | null;
@@ -57,9 +71,6 @@ export default function PieceDetailsForm({
     setFormData,
     requirements,
     setRequirements,
-    selectedFile,
-    setSelectedFile,
-    fileInputRef,
     isSubmitting,
     submitAction,
     setSubmitAction,
@@ -183,7 +194,7 @@ export default function PieceDetailsForm({
                   value={compSearchTerm}
                   onChange={(e) => {
                     setCompSearchTerm(e.target.value);
-                    setFormData((prev) => ({ ...prev, composer: "" }));
+                    setFormData((prev) => ({ ...prev, composer_id: "" }));
                     setIsCompDropdownOpen(true);
                   }}
                   onFocus={() => setIsCompDropdownOpen(true)}
@@ -203,7 +214,7 @@ export default function PieceDetailsForm({
                     >
                       <div
                         onMouseDown={() => {
-                          setFormData((prev) => ({ ...prev, composer: "" }));
+                          setFormData((prev) => ({ ...prev, composer_id: "" }));
                           setCompSearchTerm("");
                           setIsCompDropdownOpen(false);
                         }}
@@ -219,7 +230,7 @@ export default function PieceDetailsForm({
                               `${composer.last_name} ${composer.first_name || ""}`.trim();
                             setFormData((prev) => ({
                               ...prev,
-                              composer: String(composer.id),
+                              composer_id: String(composer.id),
                             }));
                             setCompSearchTerm(composerLabel);
                             setIsCompDropdownOpen(false);
@@ -373,6 +384,7 @@ export default function PieceDetailsForm({
 
             <div className="flex flex-wrap gap-2.5">
               {voiceLines
+                .filter((voiceLine) => CHORAL_DIVISI_LINES.has(String(voiceLine.value)))
                 .filter(
                   (voiceLine) =>
                     !requirements.some(
@@ -527,91 +539,35 @@ export default function PieceDetailsForm({
         />
       </GlassCard>
 
-      {/* ── Materiały i teksty ── */}
-      <GlassCard variant="ethereal" className="p-6 md:p-8 space-y-6">
+      {/* ── Lyrics + AI-uploaded materials hint ── */}
+      <GlassCard variant="ethereal" className="p-6 md:p-8 space-y-4">
         <SectionHeader
-          title={t("archive.form.sections.materials", "Materiały i teksty")}
+          title={t("archive.form.sections.lyrics", "Tekst oryginalny")}
           icon={<AlignLeft size={16} />}
         />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Textarea
-            label={t("archive.form.fields.lyrics_original", "Tekst oryginalny")}
-            value={formData.lyrics_original}
-            onChange={(e) =>
-              setFormData({ ...formData, lyrics_original: e.target.value })
-            }
-            rows={5}
-            placeholder={t("archive.form.placeholders.lyrics_original", "Wklej oryginalny tekst utworu...")}
-            disabled={isSubmitting}
-          />
-          <Textarea
-            label={t("archive.form.fields.lyrics_translation", "Tłumaczenie (notatki)")}
-            value={formData.lyrics_translation}
-            onChange={(e) =>
-              setFormData({ ...formData, lyrics_translation: e.target.value })
-            }
-            rows={5}
-            placeholder={t("archive.form.placeholders.lyrics_translation", "Wklej polskie tłumaczenie...")}
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <Eyebrow as="label" color="muted" className="mb-2 ml-1 flex items-center gap-1.5 block">
-              <Youtube size={14} className="text-ethereal-crimson" aria-hidden="true" />{" "}
-              {t("archive.form.fields.reference_youtube", "Referencja YouTube")}
-            </Eyebrow>
-            <Input
-              type="url"
-              value={formData.reference_recording_youtube}
-              onChange={(e) =>
-                setFormData({ ...formData, reference_recording_youtube: e.target.value })
-              }
-              placeholder={t("archive.form.placeholders.reference_youtube", "https://youtube.com/watch?v=...")}
-              disabled={isSubmitting}
-            />
-          </div>
-          <div>
-            <Eyebrow as="label" color="muted" className="mb-2 ml-1 flex items-center gap-1.5 block">
-              <Music size={14} className="text-ethereal-sage" aria-hidden="true" />{" "}
-              {t("archive.form.fields.reference_spotify", "Referencja Spotify")}
-            </Eyebrow>
-            <Input
-              type="url"
-              value={formData.reference_recording_spotify}
-              onChange={(e) =>
-                setFormData({ ...formData, reference_recording_spotify: e.target.value })
-              }
-              placeholder={t("archive.form.placeholders.reference_spotify", "https://open.spotify.com/track/...")}
-              disabled={isSubmitting}
-            />
-          </div>
-        </div>
-
-        {/* ── Sheet music PDF ── */}
-        <div className="p-6 border border-ethereal-incense/20 rounded-2xl bg-ethereal-alabaster/40 shadow-glass-ethereal">
-          <Eyebrow as="label" color="muted" className="mb-3 block">
-            {t("archive.form.fields.sheet_music", "Partytura / nuty (opcjonalnie PDF)")}
-          </Eyebrow>
-          {piece?.sheet_music && !selectedFile && (
-            <Text size="xs" color="sage" className="mb-4 flex items-center gap-2">
-              <CheckCircle2 size={14} aria-hidden="true" />{" "}
-              {t("archive.form.status.sheet_music_attached", "Dokument nutowy jest już załączony w bazie.")}
-            </Text>
+        <Textarea
+          label={t(
+            "archive.form.fields.lyrics_original",
+            "Tekst oryginalny (źródło dla IPA i tłumaczeń)",
           )}
-          <input
-            type="file"
-            accept="application/pdf"
-            ref={fileInputRef}
-            onChange={(e) =>
-              setSelectedFile(e.target.files ? e.target.files[0] : null)
-            }
-            className="w-full mt-1 text-sm text-ethereal-graphite file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-[9px] file:font-medium file:antialiased file:uppercase file:tracking-widest file:bg-ethereal-gold/10 file:text-ethereal-gold hover:file:bg-ethereal-gold/20 cursor-pointer border border-ethereal-incense/20 rounded-xl bg-ethereal-alabaster/60 backdrop-blur-sm shadow-glass-ethereal transition-all"
-            disabled={isSubmitting}
-          />
-        </div>
+          value={formData.lyrics_original}
+          onChange={(e) =>
+            setFormData({ ...formData, lyrics_original: e.target.value })
+          }
+          rows={6}
+          placeholder={t(
+            "archive.form.placeholders.lyrics_original",
+            "Wklej oryginalny tekst utworu — IPA, tłumaczenia i nagrania referencyjne uzupełni AI po wgraniu PDF-u w zakładce «AI».",
+          )}
+          disabled={isSubmitting}
+        />
+        <Text size="xs" color="muted" className="flex items-center gap-2">
+          <Music size={12} aria-hidden="true" />
+          {t(
+            "archive.form.materials_hint",
+            "PDF partytury, tłumaczenia i nagrania referencyjne dodajesz w zakładce «AI» — pipeline AI wyciągnie je z wgranego pliku.",
+          )}
+        </Text>
       </GlassCard>
 
       {/* ── Sticky footer ── */}

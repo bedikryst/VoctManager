@@ -20,11 +20,9 @@ import type {
 
 interface PieceLyricsViewerProps {
   originalLyrics?: string | null;
-  /** Legacy single-string translation field on Piece. */
-  translationNotes?: string | null;
-  /** Score Compiler IPA transcription. */
+  /** AI-extracted IPA transcription. */
   lyricsIpa?: string | null;
-  /** Multilingual translations from the Score Compiler (en, pl, fr, …). */
+  /** Multilingual translations from the AI pipeline (en, pl, fr, …). */
   translations?: MaterialsTranslation[];
   /** Audience-facing program notes. */
   programNotes?: MaterialsProgramNote[];
@@ -32,7 +30,6 @@ interface PieceLyricsViewerProps {
 
 export const PieceLyricsViewer = ({
   originalLyrics,
-  translationNotes,
   lyricsIpa,
   translations,
   programNotes,
@@ -49,7 +46,6 @@ export const PieceLyricsViewer = ({
 
   const hasAnything =
     Boolean(originalLyrics) ||
-    Boolean(translationNotes) ||
     Boolean(lyricsIpa) ||
     cleanedTranslations.length > 0 ||
     cleanedProgramNotes.length > 0;
@@ -175,28 +171,6 @@ export const PieceLyricsViewer = ({
                       </Text>
                     </article>
                   ))}
-                </div>
-              )}
-
-              {/* Legacy single-string translation — only show when no
-                  multilingual translations[] are present (otherwise the new
-                  ones supersede). */}
-              {translationNotes && cleanedTranslations.length === 0 && (
-                <div>
-                  <div className="border-b border-ethereal-marble pb-2 mb-3">
-                    <Eyebrow color="muted">
-                      {t(
-                        "materials.piece.translation_notes",
-                        "Tłumaczenie",
-                      )}
-                    </Eyebrow>
-                  </div>
-                  <Text
-                    color="graphite"
-                    className="whitespace-pre-wrap leading-relaxed font-serif italic"
-                  >
-                    {translationNotes}
-                  </Text>
                 </div>
               )}
 

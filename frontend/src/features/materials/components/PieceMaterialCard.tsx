@@ -43,18 +43,11 @@ export const PieceMaterialCard = ({
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   const referenceLinks = getReferenceRecordingLinks({
-    reference_recording: undefined,
-    reference_recording_youtube: piece.reference_recording_youtube || undefined,
-    reference_recording_spotify: piece.reference_recording_spotify || undefined,
     recordings: piece.recordings,
   });
-  // Unifies legacy `sheet_music` and the new ScoreEdition list. The choir
-  // gets every available PDF (Bärenreiter, IMSLP, custom arrangement) — the
-  // default edition surfaces first.
-  const pdfLinks = getPiecePdfLinks({
-    sheet_music: piece.sheet_music,
-    editions: piece.editions,
-  });
+  // Every available PDF (Bärenreiter, IMSLP, custom arrangement). The default
+  // edition surfaces first.
+  const pdfLinks = getPiecePdfLinks({ editions: piece.editions });
 
   const handleAudioPlay = (e: React.SyntheticEvent<HTMLAudioElement>) => {
     const target = e.currentTarget;
@@ -426,7 +419,6 @@ export const PieceMaterialCard = ({
 
                   <PieceLyricsViewer
                     originalLyrics={piece.lyrics_original}
-                    translationNotes={piece.lyrics_translation}
                     lyricsIpa={piece.lyrics_ipa}
                     translations={piece.translations}
                     programNotes={piece.program_notes}

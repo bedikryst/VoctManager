@@ -95,10 +95,6 @@ export const getLocationLabel = (
     return null;
   }
 
-  if (typeof location === "string") {
-    return location.trim().length > 0 ? location : null;
-  }
-
   if (!isLocationSnippet(location)) {
     return null;
   }

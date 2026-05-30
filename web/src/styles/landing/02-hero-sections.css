@@ -1,0 +1,444 @@
+  /* â”€â”€â”€ Hero "Ĺšwietlisty fresk" â”€â”€â”€
+     Full-bleed image treated as light, not a photograph: lifted to a luminous warm
+     alabaster near-monochrome, edges dissolving into the paper so image and page are one
+     surface. The liturgy lives in a lit left zone (paper scrim â†’ crisp ink type), the
+     fresco stays clear toward the right/centre. The only motions are a slow push-in and
+     one breathing raking light.
+     z-stack: media(0) â†’ light + veil(1) â†’ content(2) â†’ descend(3). */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: grid;
+    align-items: end;
+    overflow: hidden;
+    color: var(--paper);
+    background: var(--dark);
+  }
+
+  .hero-media {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Geometry, Ken Burns + reduced-motion are owned by <BleedImage>; the landing only keeps
+     the dark sacred dimming on the rendered image. */
+  .hero-media .bleed img {
+    filter: saturate(0.76) contrast(1.08) brightness(0.64);
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 70% 35%, transparent 0, rgba(8, 8, 7, 0.16) 26rem, rgba(8, 8, 7, 0.62) 58rem),
+      linear-gradient(180deg, rgba(8, 8, 7, 0.34) 0%, rgba(8, 8, 7, 0.08) 38%, rgba(8, 8, 7, 0.88) 100%);
+    z-index: 1;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    width: min(1580px, 100%);
+    min-height: 100svh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: clamp(20px, 6vh, 80px);
+    padding: clamp(96px, 11vh, 132px) max(28px, 5vw) clamp(18px, 3vh, 32px);
+  }
+
+  .hero-grid {
+    display: block;
+    max-width: 1180px;
+  }
+
+  .hero-kicker {
+    margin-bottom: 36px;
+    color: rgba(244, 241, 233, 0.72);
+  }
+
+  .hero-title {
+    margin: 0;
+    max-width: 1050px;
+    font-family: var(--serif);
+    font-size: var(--h1);
+    font-weight: 300;
+    letter-spacing: 0;
+    line-height: 0.9;
+  }
+
+  .hero-title span {
+    display: block;
+  }
+
+  .hero-title em {
+    font-style: normal;
+    color: #e6d8b4;
+  }
+
+  .hero-response {
+    max-width: 30ch;
+    margin: clamp(18px, 2.2vw, 32px) 0 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(20px, 2.4vw, 30px);
+    line-height: 1.2;
+    color: rgba(244, 241, 233, 0.94);
+  }
+
+  .hero-strap {
+    max-width: 40rem;
+    margin: clamp(16px, 1.8vw, 26px) 0 0;
+    color: rgba(244, 241, 233, 0.72);
+    font-family: var(--serif);
+    font-size: clamp(16px, 1.4vw, 21px);
+    font-weight: 300;
+    line-height: 1.4;
+  }
+
+  .hero-strap-name {
+    white-space: nowrap;
+    color: var(--paper);
+    border-bottom: 1px solid rgba(244, 241, 233, 0.36);
+    padding-bottom: 2px;
+  }
+
+  .hero-rail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 18px 32px;
+    margin-top: 0;
+    padding-top: 18px;
+    border-top: 1px solid rgba(244, 241, 233, 0.22);
+  }
+
+  .hero-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: rgba(244, 241, 233, 0.58);
+  }
+
+  .hero-cue::after {
+    content: "";
+    width: 42px;
+    height: 1px;
+    background: currentColor;
+    transform-origin: left;
+    animation: heroCue 3.6s var(--ease-slow) infinite;
+  }
+
+  @keyframes heroCue {
+    0%, 100% { transform: scaleX(0.35); opacity: 0.3; }
+    50% { transform: scaleX(1); opacity: 0.7; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-cue::after { animation: none; opacity: 0.6; }
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 0;
+  }
+
+  .text-link,
+  .primary-link,
+  .secondary-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 46px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* Hero CTAs: "Poznaj nas" and "Koncerty Duchowe" are NOT a primary/secondary hierarchy —
+     they are two parallel invitations to subpages. Symmetric treatment: persistent hairline
+     underline at rest (soft, 0.35 opacity), arrow on the right, hover intensifies the rule
+     and slides the arrow + warms the colour to candle gold. The previous version had a
+     drawn-on-hover underline under primary AND a persistent border under secondary, which
+     inverted the visual weight — secondary read as primary. Fixed by unifying. */
+  .primary-link,
+  .secondary-link {
+    position: relative;
+    padding-bottom: 8px;
+    color: inherit;
+    gap: 12px;
+    transition: color 0.45s var(--ease);
+  }
+
+  .primary-link::before,
+  .secondary-link::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.35;
+    transition: opacity 0.45s var(--ease);
+  }
+
+  .primary-link::after,
+  .secondary-link::after {
+    content: "\2192";
+    display: inline-block;
+    font-family: var(--serif);
+    font-size: 1.3em;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: none;
+    transition: transform 0.4s var(--ease);
+  }
+
+  .primary-link:hover,
+  .secondary-link:hover {
+    color: var(--candle);
+  }
+
+  .primary-link:hover::before,
+  .secondary-link:hover::before {
+    opacity: 1;
+  }
+
+  .primary-link:hover::after,
+  .secondary-link:hover::after {
+    transform: translateX(6px);
+  }
+
+  .text-link {
+    min-height: auto;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 8px;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+  }
+
+  .section {
+    position: relative;
+    width: min(1580px, 100%);
+    margin: 0 auto;
+    padding: var(--space-xxl) max(28px, 5vw);
+  }
+
+  .section.compact {
+    padding-top: var(--space-xl);
+    padding-bottom: var(--space-xl);
+  }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: minmax(160px, 0.32fr) minmax(0, 1fr);
+    gap: clamp(42px, 8vw, 150px);
+  }
+
+  .section-label {
+    position: sticky;
+    top: 130px;
+    height: max-content;
+    color: var(--ink-muted);
+  }
+
+  .section-label span {
+    display: block;
+    width: max-content;
+    border-top: 1px solid var(--line-strong);
+    padding-top: 18px;
+  }
+
+  .section-title {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: var(--h2);
+    font-weight: 300;
+    letter-spacing: 0;
+    line-height: 0.96;
+  }
+
+  .section-title em {
+    color: var(--ink-muted);
+    font-style: normal;
+  }
+
+  .intro-copy {
+    max-width: 62rem;
+    margin: 42px 0 0;
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-size: clamp(27px, 3vw, 46px);
+    font-weight: 300;
+    line-height: 1.12;
+  }
+
+  .intro-copy em {
+    color: var(--ink-muted);
+    font-style: normal;
+  }
+
+  .support-early {
+    background: linear-gradient(180deg, rgba(235, 230, 218, 0.92), rgba(244, 241, 233, 0.92));
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .support-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 0.84fr) minmax(380px, 0.76fr);
+    gap: clamp(44px, 7vw, 112px);
+    align-items: end;
+  }
+
+  .support-lede {
+    max-width: 52rem;
+  }
+
+  .support-lede h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(44px, 5.8vw, 92px);
+    font-weight: 300;
+    line-height: 0.98;
+  }
+
+  .support-lede p {
+    max-width: 46rem;
+    margin: 36px 0 0;
+    color: var(--ink-soft);
+    font-size: clamp(17px, 1.45vw, 22px);
+    line-height: 1.55;
+  }
+
+  .support-ask {
+    border-left: 1px solid var(--line-strong);
+    padding-left: clamp(28px, 4vw, 56px);
+  }
+
+  .support-ask .goal {
+    margin-bottom: 26px;
+  }
+
+  .support-ask .goal span {
+    display: block;
+    color: var(--ink-muted);
+  }
+
+  .support-ask .goal strong {
+    display: block;
+    margin-top: 8px;
+    font-family: var(--serif);
+    font-size: clamp(46px, 5.5vw, 84px);
+    font-weight: 300;
+    line-height: 0.92;
+  }
+
+  .progress {
+    margin: 26px 0 0;
+  }
+
+  .progress-rail {
+    position: relative;
+    height: 2px;
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    background: linear-gradient(90deg, var(--candle), #e8cf90);
+    transform-origin: left center;
+    transition: width 1.6s var(--ease-slow);
+  }
+
+  .progress-fill::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--candle);
+    transform: translateY(-50%);
+    box-shadow: 0 0 22px rgba(198, 164, 91, 0.62);
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 18px;
+    margin-top: 12px;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .progress-status {
+    color: var(--ink);
+  }
+
+  .uses {
+    display: grid;
+    gap: 15px;
+    margin: 30px 0 34px;
+  }
+
+  .use-row {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 18px;
+    border-top: 1px solid var(--line);
+    padding-top: 15px;
+  }
+
+  .use-row .sum {
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .use-row .text {
+    color: var(--ink-soft);
+  }
+
+  .support-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .trust-line {
+    margin-top: 28px;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    line-height: 1.7;
+    text-transform: uppercase;
+  }

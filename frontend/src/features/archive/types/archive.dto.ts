@@ -1,7 +1,9 @@
 /**
  * @file archive.dto.ts
  * @description Data Transfer Objects for the Archive domain.
- * Strictly mirrors the backend Django DTOs to ensure type safety across the network boundary.
+ * Mirrors backend [archive.dtos.PieceWriteDTO] for the manager-edit form.
+ * Sub-entities (editions, recordings, translations, movements, program_notes)
+ * have their own dedicated endpoints and are NOT written via this DTO.
  */
 
 import type { Epoch, Piece, VoiceLine } from "@/shared/types";
@@ -20,10 +22,7 @@ export interface ComposerWriteDTO {
 
 export interface PieceWriteDTO {
   title: string;
-  // Backend accepts either `composer` (legacy, aliased server-side to
-  // `composer_id`) or `composer_id` directly. We keep the legacy key so the
-  // write path stays stable across the read-shape refactor.
-  composer?: string | null;
+  /** UUID of the composer FK. `null` clears it (e.g. traditional/anonymous works). */
   composer_id?: string | null;
   arranger?: string;
   language?: string;
@@ -31,27 +30,61 @@ export interface PieceWriteDTO {
   voicing?: string;
   description?: string;
   lyrics_original?: string;
-  lyrics_translation?: string;
-  reference_recording_youtube?: string;
-  reference_recording_spotify?: string;
+  lyrics_ipa?: string;
   composition_year?: number | null;
   epoch?: Epoch | "";
-  voice_requirements?: VoiceRequirementDTO[];
-
-  // Score Compiler-populated fields the manager can edit by hand from the
-  // Archive editor (e.g. fixing an AI mis-extraction without re-ingesting).
   opus_catalog?: string;
   musical_key?: string;
   text_source?: string;
-  lyrics_ipa?: string;
-
-  // File payload for multipart/form-data
-  sheet_music?: File;
+  /** JSON list of `{voice_line, quantity}` — replaces full divisi atomically. */
+  voice_requirements?: VoiceRequirementDTO[];
 }
 
 /**
- * Historical name kept for call-site stability. PieceSerializer now embeds
- * the composer object directly, so EnrichedPiece is just an alias for the
- * canonical shared/types Piece — no manual join needed any more.
+ * Subset of `PieceWriteDTO` the AI Review tab uses for inline patches.
+ * Excludes voice_requirements (managed via dedicated DivisiEditor) and
+ * description (only edited from the Metadata tab). Title is required there
+ * but optional here so individual fields can patch without re-sending it.
+ */
+export interface PiecePatchDTO {
+  title?: string;
+  opus_catalog?: string;
+  musical_key?: string;
+  language?: string;
+  voicing?: string;
+  text_source?: string;
+  composition_year?: number | null;
+  estimated_duration?: number | null;
+  lyrics_original?: string;
+  lyrics_ipa?: string;
+  voice_requirements?: VoiceRequirementDTO[];
+}
+
+/**
+ * Historical alias kept for call-site stability. Read responses are
+ * `shared/types/Piece` — no extra client-side enrichment needed.
  */
 export type EnrichedPiece = Piece;
+
+// ===========================================================================
+// ScoreEdition — DTOs for upload + workflow control
+// ===========================================================================
+
+export interface ScoreEditionUploadDTO {
+  pdf_file: File;
+  original_filename?: string;
+  publisher?: string;
+  edition_year?: number | null;
+  editor_name?: string;
+  is_default?: boolean;
+  /** If set, the resolver step is skipped — the upload attaches as another
+   *  edition of this existing piece. */
+  piece_id?: string;
+}
+
+export interface ScoreEditionPatchDTO {
+  publisher?: string;
+  edition_year?: number | null;
+  editor_name?: string;
+  is_default?: boolean;
+}

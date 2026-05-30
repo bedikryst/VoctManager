@@ -16,6 +16,7 @@ import {
 import { useVoiceLines } from "@/shared/api/options.queries";
 import type { Piece } from "@/shared/types";
 import { EnrichedPiece } from "../types/archive.dto";
+import { hasPdf } from "../constants/piecePdfs";
 
 export const useArchiveData = () => {
   const { t } = useTranslation();
@@ -46,17 +47,19 @@ export const useArchiveData = () => {
     title: string;
   } | null>(null);
 
-  // 3. Derived State (Client-side Filtering)
-  // PieceSerializer now embeds the composer as a nested object directly, so
-  // there's no manual enrichment step any more — the `composers` list is
-  // still fetched for the filter dropdown, not for joining.
+  // PieceSerializer embeds composer as a nested object directly — no manual
+  // enrichment, just a fetch for the filter dropdown.
   const displayPieces: EnrichedPiece[] = useMemo(() => {
     return pieces.filter((piece) => {
+      const composerLabel = piece.composer
+        ? `${piece.composer.first_name ?? ""} ${piece.composer.last_name}`
+            .toLowerCase()
+            .trim()
+        : "";
       const matchesSearch =
         normalizedSearchTerm.length === 0 ||
         piece.title.toLowerCase().includes(normalizedSearchTerm) ||
-        piece.composer_name?.toLowerCase().includes(normalizedSearchTerm) ||
-        piece.composer_full_name?.toLowerCase().includes(normalizedSearchTerm);
+        composerLabel.includes(normalizedSearchTerm);
       const matchesEpoch = epochFilter ? piece.epoch === epochFilter : true;
       const matchesComposer = composerFilter
         ? piece.composer?.id === composerFilter
@@ -91,15 +94,10 @@ export const useArchiveData = () => {
     [pieces],
   );
 
-  // 4. Derived State (Library Statistics)
   const libraryStats = useMemo(() => {
     const uniqueComposers = new Set(
       pieces
-        .map((piece) =>
-          piece.composer?.id ??
-          piece.composer_name ??
-          piece.composer_full_name,
-        )
+        .map((piece) => piece.composer?.id)
         .filter((value): value is string => Boolean(value)),
     );
     const uniqueVoicings = new Set(
@@ -110,16 +108,11 @@ export const useArchiveData = () => {
 
     return {
       totalPieces: pieces.length,
-      withPdf: pieces.filter((p) => !!p.sheet_music).length,
+      withPdf: pieces.filter((p) => hasPdf(p)).length,
       piecesWithAudio: pieces.filter((p) => (p.tracks?.length ?? 0) > 0).length,
       totalAudio: pieces.reduce((sum, p) => sum + (p.tracks?.length || 0), 0),
       withReferenceLinks: pieces.filter(
-        (p) =>
-          Boolean(
-            p.reference_recording ||
-              p.reference_recording_youtube ||
-              p.reference_recording_spotify,
-          ),
+        (p) => (p.recordings?.length ?? 0) > 0,
       ).length,
       uniqueComposers: uniqueComposers.size,
       uniqueVoicings: uniqueVoicings.size,

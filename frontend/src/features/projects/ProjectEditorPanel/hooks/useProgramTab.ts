@@ -53,16 +53,15 @@ const normalizeProgramItem = (
   item: ProgramItem,
   pieces: Piece[],
 ): ProgramTabItem => {
-  const pieceId = String(item.piece_id ?? item.piece);
+  const pieceId = String(item.piece);
   const matchedPiece = pieces.find((piece) => String(piece.id) === pieceId);
 
   return {
     id: String(item.id),
     order: item.order,
-    piece: String(item.piece),
-    piece_id: item.piece_id ? String(item.piece_id) : undefined,
-    piece_title:
-      item.piece_title ?? item.title ?? matchedPiece?.title ?? "Untitled piece",
+    piece: pieceId,
+    piece_id: pieceId,
+    piece_title: item.piece_title ?? matchedPiece?.title ?? "Untitled piece",
     is_encore: item.is_encore,
   };
 };

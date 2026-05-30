@@ -1,0 +1,147 @@
+  /* ═══════════════════════════════════════════════════════════════════════════
+     MOBILE ART-DIRECTION LAYER · Faza 1 · MMXXVI
+     Phones are the dominant arrival (post-concert), so the critical-path sections
+     are COMPOSED for the vertical, thumb-held format here — they are no longer a
+     collapsed desktop grid. Scoped to --bp-sm (640px); desktop + tablet untouched.
+     Pure layout, no markup change, no new build tooling. This block is deliberately
+     the last word in the cascade so each rule wins over the earlier reactive ≤640
+     patches at equal specificity.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  @media (max-width: 640px) {
+
+    /* ── Director · cinematic title-card ──────────────────────────────────────
+       The 3:4 portrait at full phone width stood ~520px tall and shoved the bio
+       under the fold before a word was read. It now bleeds edge-to-edge as a
+       height-capped fresco band; the name lands beneath it like a film title,
+       then the bio reads as one editorial column. */
+    .director-grid {
+      gap: 0;
+    }
+
+    .director-dark .portrait {
+      margin-inline: calc(-1 * var(--gutter));
+      aspect-ratio: 4 / 5;
+      max-height: 60svh;
+    }
+
+    .director-dark .portrait img {
+      object-position: 50% 26%;
+    }
+
+    .director-copy {
+      margin-top: clamp(26px, 7vw, 38px);
+    }
+
+    /* Role becomes a ceremonial gold-ruled eyebrow rather than a faint grey label. */
+    .director-dark .director-copy .role {
+      display: inline-block;
+      border-top: 1px solid var(--candle);
+      padding-top: 13px;
+      color: rgba(232, 207, 144, 0.9);
+    }
+
+    .director-dark .director-copy h2 {
+      margin: 16px 0 24px;
+      font-size: clamp(46px, 13vw, 72px);
+      line-height: 0.9;
+    }
+
+    .director-copy p {
+      font-size: 16px;
+      line-height: 1.62;
+    }
+
+    /* ── Ensemble · facts as a liturgical register ────────────────────────────
+       The three facts stop being stacked stat-blocks and read as register rows:
+       big serif numeral, mono gloss on the same baseline, hairline-ruled. */
+    .ensemble-facts {
+      gap: 0;
+      margin-top: 44px;
+    }
+
+    .fact {
+      grid-template-columns: minmax(82px, auto) 1fr;
+      align-items: baseline;
+      gap: 20px;
+      padding: 18px 0;
+      border-top: 1px solid rgba(244, 241, 233, 0.16);
+    }
+
+    .fact:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .fact-num {
+      font-size: clamp(32px, 9vw, 44px);
+    }
+
+    /* ── Final support · readable ledger + honest tap targets ─────────────────
+       The IBAN "Kopiuj" control was a 10px text button — below the ~44px floor
+       for a confident thumb tap. It becomes a bordered chip; the bank + donation
+       rows get vertical breathing room so the ledger reads on a small screen.
+       The CTA language (parallel hairline-underline invitations) is intentional
+       and left untouched. */
+    .copy-account {
+      display: inline-flex;
+      align-items: center;
+      width: max-content;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid rgba(244, 241, 233, 0.32);
+      border-radius: 2px;
+    }
+
+    .bank-row {
+      gap: 12px;
+      padding: 20px 0;
+    }
+
+    .donation-row {
+      gap: 6px;
+      padding: 20px 0;
+    }
+
+    /* ── Vertical rhythm · close the desktop-scale voids ──────────────────────
+       The page's section padding and inter-line gaps were tuned for a wide
+       canvas. On the phone the type is small while the gaps stayed 64–140px, so
+       the manifesto and the silence beat read as a few tiny words adrift in a
+       void — sparse, not sacred. We tighten the gaps and give the manifest
+       statements real presence so air and type stay in proportion. */
+    .manifest {
+      padding-top: clamp(72px, 16vw, 96px);
+      padding-bottom: clamp(72px, 16vw, 96px);
+    }
+
+    .manifest-container {
+      gap: clamp(40px, 11vw, 56px);
+    }
+
+    .manifest-content {
+      gap: clamp(38px, 10vw, 52px);
+    }
+
+    /* Statements step up so they read as declarations, not captions. */
+    .manifest-statement {
+      font-size: clamp(42px, 11vw, 56px);
+      line-height: 1.06;
+    }
+
+    .manifest-line-group.is-closing .manifest-emphasis {
+      margin-top: clamp(26px, 7vw, 40px);
+    }
+
+    /* The silence beat keeps its breath but stops being a 280px void. */
+    .silence-moment {
+      padding-top: clamp(84px, 18vw, 116px);
+      padding-bottom: clamp(84px, 18vw, 116px);
+    }
+
+    .silence-inner {
+      gap: clamp(22px, 6vw, 32px);
+    }
+
+    .silence-ornament {
+      width: clamp(120px, 32vw, 160px);
+    }
+  }

@@ -150,14 +150,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           pillClass: infoPill,
           readBg: infoReadBg,
         };
-      case "CREW_ASSIGNED":
-        return {
-          icon: UserCheck,
-          color: "text-cyan-600",
-          bg: "bg-cyan-50 border-cyan-100",
-          pillClass: infoPill,
-          readBg: infoReadBg,
-        };
       case "PARTICIPATION_RESPONSE":
         return {
           icon: UserCheck,
@@ -217,11 +209,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       return navigate(isAdmin ? "/panel/rehearsals" : "/panel/schedule");
     }
 
-    if (
-      type.includes("PROJECT") ||
-      type.includes("CASTING") ||
-      type === "CREW_ASSIGNED"
-    ) {
+    if (type.includes("PROJECT") || type.includes("CASTING")) {
       return navigate(isAdmin ? "/panel/projects" : "/panel/schedule");
     }
 
@@ -270,13 +258,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       break;
     case "MATERIAL_UPLOADED":
       pieceTitle = notification.metadata.piece_title;
-      break;
-    case "CREW_ASSIGNED":
-      projectName = notification.metadata.project_name;
-      message = t("notifications.crew_role", {
-        defaultValue: "Przypisana rola: {{role}}",
-        role: notification.metadata.role,
-      });
       break;
     case "ABSENCE_APPROVED":
     case "ABSENCE_REJECTED":

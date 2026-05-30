@@ -14,7 +14,6 @@ export type NotificationType =
   | "PIECE_CASTING_ASSIGNED"
   | "PIECE_CASTING_UPDATED"
   | "MATERIAL_UPLOADED"
-  | "CREW_ASSIGNED"
   | "CONTRACT_ISSUED"
   | "ABSENCE_REQUESTED"
   | "ABSENCE_APPROVED"
@@ -75,12 +74,6 @@ export interface MaterialUploadedMetadata {
   piece_id: string;
   piece_title: string;
   message?: string;
-}
-
-export interface CrewAssignedMetadata {
-  project_id: string;
-  project_name: string;
-  role: string;
 }
 
 export interface AbsenceStatusMetadata {
@@ -151,7 +144,6 @@ export type NotificationDTO = BaseNotification &
         metadata: PieceCastingMetadata;
       }
     | { notification_type: "MATERIAL_UPLOADED"; metadata: MaterialUploadedMetadata }
-    | { notification_type: "CREW_ASSIGNED"; metadata: CrewAssignedMetadata }
     | {
         notification_type:
           | "ABSENCE_APPROVED"

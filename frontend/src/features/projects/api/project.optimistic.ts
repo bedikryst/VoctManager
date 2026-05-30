@@ -44,7 +44,8 @@ export const buildOptimisticProject = (
   date_time: data.date_time,
   timezone: data.timezone,
   call_time: data.call_time ?? null,
-  location: data.location_id ?? null,
+  // Optimistic stub: backend will replace with the LocationSnippet on refetch.
+  location: null,
   conductor: data.conductor ?? null,
   conductor_name: null,
   dress_code_male: data.dress_code_male ?? null,
@@ -69,7 +70,8 @@ export const buildOptimisticRehearsal = (
   project: data.project_id,
   date_time: data.date_time,
   timezone: data.timezone,
-  location: data.location_id ?? null,
+  // Optimistic stub: backend resolves the LocationSnippet on refetch.
+  location: null,
   focus: data.focus ?? "",
   is_mandatory: data.is_mandatory,
   invited_participations: data.invited_participations ?? [],
@@ -106,7 +108,6 @@ export const buildOptimisticProgramItem = (
   id: optimisticId,
   project: data.project,
   piece: data.piece,
-  piece_id: data.piece,
   order: data.order,
   is_encore: data.is_encore,
 });

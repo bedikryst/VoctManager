@@ -73,9 +73,7 @@ const getProjectLocationId = (
     return null;
   }
 
-  return typeof project.location === "string"
-    ? project.location
-    : project.location.id;
+  return project.location.id;
 };
 
 const getProjectConductorId = (

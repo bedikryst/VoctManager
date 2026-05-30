@@ -73,9 +73,13 @@ class ScoreEditionInline(admin.TabularInline):
 
 @admin.register(Piece)
 class PieceAdmin(admin.ModelAdmin):
-    """Admin view for managing musical pieces, sheet music, and historical metadata."""
-    list_display = ('title', 'composer', 'epoch', 'composition_year', 'arranger', 'voicing', 'ingestion_status')
-    list_filter = ('epoch', 'language', 'composer', 'ingestion_status')
+    """Admin view for managing musical pieces and historical metadata.
+
+    PDFs live on ScoreEdition (inline below). Ingestion status is per-edition
+    — see the ScoreEdition admin or inline.
+    """
+    list_display = ('title', 'composer', 'epoch', 'composition_year', 'arranger', 'voicing')
+    list_filter = ('epoch', 'language', 'composer')
     search_fields = ('title', 'composer__last_name', 'arranger', 'opus_catalog', 'mbid_work')
     inlines = [PieceVoiceRequirementInline, MovementInline, ScoreEditionInline, TrackInline]
     readonly_fields = ('mbid_work',)

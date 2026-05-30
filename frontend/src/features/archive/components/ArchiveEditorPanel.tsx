@@ -14,11 +14,12 @@ import { X, FileText, Headphones, Sparkles } from "lucide-react";
 
 import PieceDetailsForm from "./PieceDetailsForm";
 import TrackUploadManager from "./TrackUploadManager";
-import { ArchiveAIContextTab } from "./ArchiveAIContextTab";
+import { ArchiveAIReviewTab } from "./ArchiveAIReviewTab";
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
 import { Heading } from "@ui/primitives/typography";
 import type { Composer, VoiceLineOption } from "@/shared/types";
+import { INGESTION_STATUS } from "@/shared/types";
 import type { EnrichedPiece } from "../types/archive.dto";
 import { ArchiveTabId } from "../constants/archiveDomain";
 
@@ -47,6 +48,13 @@ export default function ArchiveEditorPanel({
   const [isFormDirty, setIsFormDirty] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
+
+  // Count editions awaiting conductor review — drives the AWAI chip on the
+  // AI tab, so the conductor sees "2 editions need approval" without opening
+  // the tab first.
+  const awaitingCount = (piece?.editions ?? []).filter(
+    (e) => e.ingestion_status === INGESTION_STATUS.AWAITING,
+  ).length;
 
   useEffect(() => {
     setMounted(true);
@@ -147,16 +155,25 @@ export default function ArchiveEditorPanel({
                   </button>
                   <button
                     onClick={() => onTabChange("AI_CONTEXT")}
-                    className={`px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${
+                    className={`relative px-5 py-2.5 text-[9px] font-bold antialiased uppercase tracking-widest rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${
                       activeTab === "AI_CONTEXT"
                         ? "bg-ethereal-alabaster text-ethereal-gold shadow-glass-ethereal border border-ethereal-incense/20"
                         : "text-ethereal-graphite hover:text-ethereal-ink hover:bg-ethereal-alabaster/40 border border-transparent"
                     }`}
                   >
                     <Sparkles size={14} aria-hidden="true" />{" "}
-                    {t(
-                      "archive.editor.tabs.ai_context",
-                      "Kontekst AI",
+                    {t("archive.editor.tabs.ai_assistant", "Asystent AI")}
+                    {awaitingCount > 0 && (
+                      <span
+                        className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ethereal-gold px-1.5 text-[8px] font-bold text-white"
+                        aria-label={t(
+                          "archive.editor.tabs.ai_assistant_badge_aria",
+                          "{{count}} wydań czeka na zatwierdzenie",
+                          { count: awaitingCount },
+                        )}
+                      >
+                        {awaitingCount}
+                      </span>
                     )}
                   </button>
                 </div>
@@ -190,7 +207,7 @@ export default function ArchiveEditorPanel({
                   />
                 )}
                 {activeTab === "AI_CONTEXT" && piece && (
-                  <ArchiveAIContextTab piece={piece} />
+                  <ArchiveAIReviewTab piece={piece} />
                 )}
               </div>
             </div>

@@ -1,73 +1,57 @@
 /**
  * @file archive.service.ts
- * @description Pure HTTP service for the Archive domain.
- * Encapsulates the complex logic of constructing multipart/form-data payloads.
+ * @description Pure HTTP service for the Archive domain — Pieces, Composers,
+ * Tracks, and ScoreEditions. JSON-only writes for Piece metadata (the legacy
+ * multipart write was needed for `sheet_music`, now removed from the model).
+ * PDFs flow through the dedicated upload endpoint, which dispatches the AI
+ * ingestion pipeline server-side.
  */
 
 import api from "@/shared/api/api";
-import type { Piece, Composer, Track } from "@/shared/types";
-import type { ComposerWriteDTO, PieceWriteDTO } from "../types/archive.dto";
+import type {
+  Composer,
+  Piece,
+  ScoreEditionSummary,
+  Track,
+} from "@/shared/types";
+import type {
+  ComposerWriteDTO,
+  PiecePatchDTO,
+  PieceWriteDTO,
+  ScoreEditionPatchDTO,
+  ScoreEditionUploadDTO,
+} from "../types/archive.dto";
 
 const PIECES_URL = "/api/pieces/";
 const COMPOSERS_URL = "/api/composers/";
+const TRACKS_URL = "/api/tracks/";
+const EDITIONS_URL = "/api/archive/editions/";
 
-/**
- * Helper utility to serialize standard DTOs into FormData for file uploads.
- */
-const buildPieceFormData = (dto: PieceWriteDTO): FormData => {
-  const formData = new FormData();
-  const nullableFieldNames = new Set([
-    "composer",
-    "composer_id",
-    "estimated_duration",
-    "composition_year",
-  ]);
-
-  Object.entries(dto).forEach(([key, value]) => {
-    if (value === undefined) return;
-
-    if (value === null) {
-      if (nullableFieldNames.has(key)) {
-        formData.append(key, "");
-      }
-      return;
-    }
-
-    if (key === "voice_requirements") {
-      formData.append("requirements_data", JSON.stringify(value));
-    } else if (key === "sheet_music" && value instanceof File) {
-      formData.append("sheet_music", value);
-    } else {
-      formData.append(key, String(value));
-    }
-  });
-
-  return formData;
-};
+/** Full edition detail returned by upload/retrieve/approve/reingest. */
+export interface ScoreEditionDetail extends ScoreEditionSummary {
+  sha256: string;
+  uploaded_by: number | null;
+  /** Present on POST responses (upload, reingest) only. */
+  celery_task_id?: string;
+}
 
 export const ArchiveService = {
-  // --- PIECES ---
+  // ---- Pieces -----------------------------------------------------------
   getPieces: async (): Promise<Piece[]> => {
     const response = await api.get<Piece[]>(PIECES_URL);
     return response.data;
   },
 
   createPiece: async (data: PieceWriteDTO): Promise<Piece> => {
-    const payload = buildPieceFormData(data);
-    const response = await api.post<Piece>(PIECES_URL, payload, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.post<Piece>(PIECES_URL, data);
     return response.data;
   },
 
   updatePiece: async (
     id: string,
-    data: Partial<PieceWriteDTO>,
+    data: PiecePatchDTO | PieceWriteDTO,
   ): Promise<Piece> => {
-    const payload = buildPieceFormData(data as PieceWriteDTO);
-    const response = await api.patch<Piece>(`${PIECES_URL}${id}/`, payload, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.patch<Piece>(`${PIECES_URL}${id}/`, data);
     return response.data;
   },
 
@@ -75,7 +59,7 @@ export const ArchiveService = {
     await api.delete(`${PIECES_URL}${id}/`);
   },
 
-  // --- COMPOSERS ---
+  // ---- Composers --------------------------------------------------------
   getComposers: async (): Promise<Composer[]> => {
     const response = await api.get<Composer[]>(COMPOSERS_URL);
     return response.data;
@@ -83,6 +67,12 @@ export const ArchiveService = {
 
   createComposer: async (data: ComposerWriteDTO): Promise<Composer> => {
     const response = await api.post<Composer>(COMPOSERS_URL, data);
+    return response.data;
+  },
+
+  // ---- Rehearsal tracks -------------------------------------------------
+  getTracksByPiece: async (pieceId: string | number): Promise<Track[]> => {
+    const response = await api.get<Track[]>(`${TRACKS_URL}?piece=${pieceId}`);
     return response.data;
   },
 
@@ -96,17 +86,64 @@ export const ArchiveService = {
     formData.append("voice_part", voiceLine);
     formData.append("audio_file", file);
 
-    const response = await api.post<Track>("/api/tracks/", formData, {
+    const response = await api.post<Track>(TRACKS_URL, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   },
+
   deleteTrack: async (trackId: string): Promise<void> => {
-    await api.delete(`/api/tracks/${trackId}/`);
+    await api.delete(`${TRACKS_URL}${trackId}/`);
   },
 
-  getTracksByPiece: async (pieceId: string | number): Promise<Track[]> => {
-    const response = await api.get<Track[]>(`/api/tracks/?piece=${pieceId}`);
+  // ---- Score editions (PDF upload + ingestion workflow) -----------------
+  uploadEdition: async (
+    dto: ScoreEditionUploadDTO,
+    onProgress?: (loaded: number, total: number) => void,
+  ): Promise<ScoreEditionDetail> => {
+    const form = new FormData();
+    form.append("pdf_file", dto.pdf_file);
+    if (dto.original_filename) form.append("original_filename", dto.original_filename);
+    if (dto.publisher) form.append("publisher", dto.publisher);
+    if (dto.edition_year != null) form.append("edition_year", String(dto.edition_year));
+    if (dto.editor_name) form.append("editor_name", dto.editor_name);
+    if (dto.is_default != null) form.append("is_default", String(dto.is_default));
+    if (dto.piece_id) form.append("piece_id", dto.piece_id);
+
+    const response = await api.post<ScoreEditionDetail>(EDITIONS_URL, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (event) => {
+        if (onProgress && event.total) onProgress(event.loaded, event.total);
+      },
+    });
+    return response.data;
+  },
+
+  patchEdition: async (
+    id: string,
+    dto: ScoreEditionPatchDTO,
+  ): Promise<ScoreEditionDetail> => {
+    const response = await api.patch<ScoreEditionDetail>(`${EDITIONS_URL}${id}/`, dto);
+    return response.data;
+  },
+
+  deleteEdition: async (id: string): Promise<void> => {
+    await api.delete(`${EDITIONS_URL}${id}/`);
+  },
+
+  approveEdition: async (id: string): Promise<ScoreEditionDetail> => {
+    const response = await api.post<ScoreEditionDetail>(`${EDITIONS_URL}${id}/approve/`);
+    return response.data;
+  },
+
+  reingestEdition: async (
+    id: string,
+    force = false,
+  ): Promise<ScoreEditionDetail> => {
+    const url = force
+      ? `${EDITIONS_URL}${id}/reingest/?force=true`
+      : `${EDITIONS_URL}${id}/reingest/`;
+    const response = await api.post<ScoreEditionDetail>(url);
     return response.data;
   },
 };

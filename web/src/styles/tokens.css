@@ -32,7 +32,30 @@
   /* ── Motion ───────────────────────────────────────────────────────────── */
   --ease: cubic-bezier(0.22, 0.61, 0.16, 1);
   --ease-slow: cubic-bezier(0.16, 0.84, 0.24, 1);
+
+  /* ── Layout rhythm ────────────────────────────────────────────────────────
+     One source of truth for the page gutter. Sections used `max(28px, 5vw)`
+     inline; `--gutter` makes that reusable so a full-bleed element can break
+     out with `margin-inline: calc(-1 * var(--gutter))` and land flush with the
+     viewport edge regardless of breakpoint. */
+  --gutter: max(28px, 5vw);
 }
+
+/* ── Canonical breakpoint scale ───────────────────────────────────────────────
+   The marketing site standardises on FOUR layout breakpoints. CSS cannot read a
+   custom property inside an `@media` condition (and switching the build to
+   Lightning CSS `@custom-media` would reprocess every hand-tuned stylesheet, a
+   regression risk not worth the cosmetic win), so these live as a documented
+   convention — every layout `@media` in landing.css should snap to one of them
+   rather than inventing a fresh number:
+
+     --bp-xs   480px   small phones — last-resort tightening only
+     --bp-sm   640px   phones — the primary mobile art-direction layer
+     --bp-md   768px   large phones / small tablets — nav + two-rail collapse
+     --bp-lg   980px   tablets — desktop multi-column grids fold to one column
+
+   `prefers-reduced-motion` / `pointer: coarse` queries are orthogonal and keep
+   their own conditions. */
 
 /* Animatable axis for the variable-font heading "breath" (driven by view timelines). */
 @property --wght {

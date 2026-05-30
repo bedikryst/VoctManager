@@ -269,10 +269,26 @@ def identify_work(self, payload: dict) -> dict:
 @shared_task(name='archive.resolve_composer_and_piece', **_TASK_KW)
 @_guarded
 def resolve_composer_and_piece(self, payload: dict) -> dict:
-    """Phase 3 — canonicalize via MusicBrainz + Wikidata, then dedup against DB."""
+    """Phase 3 — canonicalize via MusicBrainz + Wikidata, then dedup against DB.
+
+    Fast path: if the edition was uploaded with `piece_id` pre-attached (e.g.
+    "add another edition to this existing Bach Magnificat"), trust the FK and
+    skip the resolver — the conductor already disambiguated.
+    """
     edition = _load_edition(payload['edition_id'])
     edition.ingestion_status = IngestionStatus.ENRICHING
     edition.save(update_fields=['ingestion_status', 'updated_at'])
+
+    if edition.piece is not None:
+        payload['piece_id'] = str(edition.piece.id)
+        payload['composer_id'] = (
+            str(edition.piece.composer_id) if edition.piece.composer_id else ''
+        )
+        logger.info(
+            "ingest.resolver_skipped edition=%s piece=%s reason=pre_attached",
+            edition.id, edition.piece.id,
+        )
+        return payload
 
     extracted = ExtractedWorkIdentity.model_validate(payload['identity'])
 

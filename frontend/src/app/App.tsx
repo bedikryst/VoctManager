@@ -91,9 +91,6 @@ const ProjectDashboard = lazyWithPreload(() =>
 const ArchiveManagement = lazyWithPreload(
   () => import("@pages/panel/ArchivePage"),
 );
-const ScoreCompiler = lazyWithPreload(
-  () => import("@features/score-compiler/ScoreCompilerPage"),
-);
 const CrewManagement = lazyWithPreload(
   () => import("@features/crew/CrewManagement"),
 );
@@ -114,7 +111,6 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: ArtistManagement.preload },
   { scope: "manager", preload: ProjectDashboard.preload },
   { scope: "manager", preload: ArchiveManagement.preload },
-  { scope: "manager", preload: ScoreCompiler.preload },
   { scope: "manager", preload: CrewManagement.preload },
   { scope: "manager", preload: LogisticsLocationsPage.preload },
 ];
@@ -203,7 +199,6 @@ export default function App(): React.JSX.Element {
                   path="archive-management"
                   element={<ArchiveManagement />}
                 />
-                <Route path="score-compiler" element={<ScoreCompiler />} />
                 <Route path="crew" element={<CrewManagement />} />
                 <Route
                   path="locations"

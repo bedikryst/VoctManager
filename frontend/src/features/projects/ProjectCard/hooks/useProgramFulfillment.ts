@@ -46,8 +46,7 @@ export const useProgramFulfillment = (project: Project) => {
   const totalConcertDurationSeconds = useMemo<number>(() => {
     if (!project.program) return 0;
     return project.program.reduce((sum, item) => {
-      const pieceId = item.piece_id || item.piece;
-      const pieceObj = piecesMap.get(String(pieceId));
+      const pieceObj = piecesMap.get(String(item.piece_id));
       return sum + (pieceObj?.estimated_duration || 0);
     }, 0);
   }, [project.program, piecesMap]);
@@ -70,10 +69,10 @@ export const useProgramFulfillment = (project: Project) => {
     return [...project.program]
       .sort((a, b) => a.order - b.order)
       .map((item) => {
-        const pieceId = String(item.piece_id || item.piece);
+        const pieceId = String(item.piece_id);
         const pieceObj = piecesMap.get(pieceId);
         const requirements: VoiceRequirement[] =
-          pieceObj?.voice_requirements || [];
+          pieceObj?.voice_requirements_read || [];
 
         let statusVariant: "success" | "danger" | "neutral" = "neutral";
         let statusText = t("projects.program.no_reqs", "Brak wymagań");
@@ -103,9 +102,9 @@ export const useProgramFulfillment = (project: Project) => {
         }
 
         return {
-          id: item.id || `program-item-${pieceId}-${item.order}`,
+          id: `program-item-${pieceId}-${item.order}`,
           pieceId,
-          title: item.piece_title || pieceObj?.title || "",
+          title: item.title || pieceObj?.title || "",
           order: item.order,
           statusVariant,
           statusText,

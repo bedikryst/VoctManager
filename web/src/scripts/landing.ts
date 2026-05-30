@@ -28,6 +28,8 @@ const reduceMotion = (): boolean =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const finePointer = (): boolean =>
   window.matchMedia("(pointer: fine) and (hover: hover)").matches;
+const coarsePointer = (): boolean =>
+  window.matchMedia("(pointer: coarse), (hover: none)").matches;
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -250,6 +252,13 @@ function setupLenisAnchors(): void {
 function setupKinetic(root: HTMLElement, reduce: boolean): void {
   if (reduce) return;
 
+  // Per-letter variable-font weaving is the one genuinely expensive scroll effect: each tick
+  // re-rasters six Cormorant glyphs in the Coda. On a fine pointer (desktop) that's budgeted;
+  // on a coarse pointer the wave is imperceptible at phone scale yet re-rasters mid native
+  // momentum-scroll — the documented stutter. So on touch we keep the cheap one-element hero
+  // breath + heading settle, and drop the Coda per-letter wave (the tail fade still runs).
+  const heavyKinetic = !coarsePointer();
+
   const heroTitle = root.querySelector<HTMLElement>(".hero-title");
   const heroEm = root.querySelector<HTMLElement>(".hero-title em");
   const headings = Array.from(
@@ -271,33 +280,42 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
   const update = (): void => {
     ticking = false;
     const vh = window.innerHeight || document.documentElement.clientHeight;
+    const scrollY = window.scrollY;
 
+    // READ phase — gather every layout measurement up front. Mixing a getBoundingClientRect()
+    // read after a font-variation-settings write (below) forces a synchronous reflow on each
+    // iteration; batching the reads keeps the whole frame to a single layout pass.
+    const headingRects = headings.map((h) => h.getBoundingClientRect());
+    const codaRect = coda && (codaLetters.length || codaTail) ? coda.getBoundingClientRect() : null;
+
+    // WRITE phase — only style mutations from here down.
     // Hero "breath" — scrubbed against the first 90vh of root scroll.
     if (heroTitle) {
-      const p = clamp01(window.scrollY / (vh * 0.9));
+      const p = clamp01(scrollY / (vh * 0.9));
       wght(heroTitle, breath3(p, 540, 380, 300));
       if (heroEm) wght(heroEm, breath3(p, 620, 380, 300));
     }
 
     // Editorial headings — heavier on entry, settling to 320 as they cross the viewport.
-    for (const h of headings) {
-      const rect = h.getBoundingClientRect();
-      if (rect.bottom < -100 || rect.top > vh + 100) continue;
+    headings.forEach((h, i) => {
+      const rect = headingRects[i];
+      if (rect.bottom < -100 || rect.top > vh + 100) return;
       const p = clamp01((vh - rect.top) / (vh * 0.75));
       wght(h, 520 - 200 * p);
-    }
+    });
 
     // Coda — per-letter weight wave (360 → 560 → 360) staggered across the section's pass,
     // then the italic tail emerges. Approximates the `--coda-scroll` view-timeline ranges.
-    if (coda && codaLetters.length) {
-      const rect = coda.getBoundingClientRect();
-      const pCoda = clamp01((vh - rect.top) / (vh + rect.height));
-      codaLetters.forEach((letter, i) => {
-        const start = 0.05 + i * 0.06;
-        const end = start + 0.42;
-        const local = clamp01((pCoda - start) / (end - start));
-        wght(letter, 360 + 200 * Math.sin(local * Math.PI));
-      });
+    if (codaRect) {
+      const pCoda = clamp01((vh - codaRect.top) / (vh + codaRect.height));
+      if (heavyKinetic) {
+        codaLetters.forEach((letter, i) => {
+          const start = 0.05 + i * 0.06;
+          const end = start + 0.42;
+          const local = clamp01((pCoda - start) / (end - start));
+          wght(letter, 360 + 200 * Math.sin(local * Math.PI));
+        });
+      }
       if (codaTail) {
         const t = clamp01((pCoda - 0.4) / 0.3);
         codaTail.style.opacity = String(t);
@@ -364,13 +382,18 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
   const passed = new Array<boolean>(lines.length).fill(false);
 
   let ticking = false;
+  let active = false;
   const update = (): void => {
     ticking = false;
+    if (!active) return;
     const vh = window.innerHeight || document.documentElement.clientHeight;
     const beamY = vh * 0.45;
     const reach = vh * 0.3;
+    // READ phase: measure every line before writing colour / wght / textShadow below, so one
+    // line's style writes don't force a reflow on the next line's rect read.
+    const rects = lines.map((line) => line.getBoundingClientRect());
     lines.forEach((line, i) => {
-      const r = line.getBoundingClientRect();
+      const r = rects[i];
       const cy = r.top + r.height / 2;
       const d = Math.abs(cy - beamY);
       let lit = d < reach ? 1 - d / reach : 0;
@@ -420,120 +443,45 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
     });
   };
 
-  const onScroll = (): void => {
+  const schedule = (): void => {
     if (ticking) return;
     ticking = true;
     window.requestAnimationFrame(update);
   };
+  const onScroll = (): void => {
+    if (!active) return;
+    schedule();
+  };
+  // Only spend frames on the raking light while the manifest is in (or near) view; off-screen
+  // the scroll handler early-returns and the lines hold their last settled state.
+  const io = new IntersectionObserver(
+    (entries) => {
+      active = entries[0]?.isIntersecting ?? false;
+      if (active) schedule();
+    },
+    { rootMargin: "25% 0px 25% 0px" },
+  );
+  io.observe(manifest);
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);
-  update();
   cleanups.push(() => {
+    io.disconnect();
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("resize", onScroll);
   });
 }
 
-// ── Silence moment: one enforced beat of stillness, once per session ────────────────────────
-// Triggered when [data-silence-sentinel] enters the viewport center while the visitor is
-// scrolling down. Halts Lenis, blocks wheel/touch/scroll-keys for DWELL_MS, then releases.
-// Reduced motion + replays in same session: line shows ambiently (no lock).
-function setupSilenceMoment(root: HTMLElement, reduce: boolean): void {
+// ── Silence moment: an ambient sacred beat (no scroll-lock, ever) ────────────────────────────
+// Previously this halted scroll for ~2.8s as an "enforced stillness". On touch — and in desktop
+// DevTools device emulation, where `pointer` can still report `fine` — that reads as a frozen or
+// broken page (the visitor swipes/scrolls and nothing moves). The lock is removed entirely: the
+// silence line and its ornament reveal in place as the section is reached (the existing reveal
+// IntersectionObserver in setupReveal drives the `.silence-*` `.reveal` nodes), and the page
+// never hijacks the visitor's scroll. The visual beat remains; the hostage moment is gone.
+function setupSilenceMoment(root: HTMLElement, _reduce: boolean): void {
   const moment = root.querySelector<HTMLElement>("[data-silence]");
   if (!moment) return;
-
-  const SESSION_KEY = "voct.silence.heard";
-
-  let alreadyHeard = false;
-  try {
-    alreadyHeard = window.sessionStorage.getItem(SESSION_KEY) === "1";
-  } catch (_) {
-    /* private mode: treat as fresh */
-  }
-
-  if (reduce || alreadyHeard) {
-    moment.classList.add("is-listening", "is-settled");
-    return;
-  }
-
-  const sentinel = moment.querySelector<HTMLElement>("[data-silence-sentinel]");
-  if (!sentinel) return;
-
-  let lastY = window.scrollY;
-  let scrollingDown = true;
-  const onScroll = (): void => {
-    const y = window.scrollY;
-    scrollingDown = y >= lastY;
-    lastY = y;
-  };
-  window.addEventListener("scroll", onScroll, { passive: true });
-
-  let armed = true;
-  const io = new IntersectionObserver(
-    (entries) => {
-      if (!armed) return;
-      const entry = entries[0];
-      if (!entry || !entry.isIntersecting) return;
-      if (!scrollingDown) return;
-      armed = false;
-      io.disconnect();
-      window.removeEventListener("scroll", onScroll);
-      runSilence(moment);
-    },
-    // Trigger when the sentinel sits in a thin band across the middle of the viewport.
-    { threshold: 0, rootMargin: "-48% 0px -48% 0px" },
-  );
-  io.observe(sentinel);
-
-  cleanups.push(() => {
-    armed = false;
-    io.disconnect();
-    window.removeEventListener("scroll", onScroll);
-  });
-}
-
-const DWELL_MS = 2800;
-
-const SCROLL_KEYS = new Set([
-  "ArrowDown",
-  "ArrowUp",
-  "PageDown",
-  "PageUp",
-  "Home",
-  "End",
-  " ",
-  "Spacebar",
-]);
-
-function runSilence(moment: HTMLElement): void {
-  const lenis = (window as unknown as { __lenis?: LenisLike }).__lenis;
-  lenis?.stop?.();
-
-  const block = (event: Event): void => {
-    event.preventDefault();
-  };
-  const blockKey = (event: KeyboardEvent): void => {
-    if (SCROLL_KEYS.has(event.key)) event.preventDefault();
-  };
-
-  window.addEventListener("wheel", block, { passive: false });
-  window.addEventListener("touchmove", block, { passive: false });
-  window.addEventListener("keydown", blockKey, true);
-
-  moment.classList.add("is-listening");
-
-  window.setTimeout(() => {
-    window.removeEventListener("wheel", block);
-    window.removeEventListener("touchmove", block);
-    window.removeEventListener("keydown", blockKey, true);
-    lenis?.start?.();
-    moment.classList.add("is-settled");
-    try {
-      window.sessionStorage.setItem("voct.silence.heard", "1");
-    } catch (_) {
-      /* private mode: line stays ambient for this session anyway */
-    }
-  }, DWELL_MS);
+  moment.classList.add("is-listening", "is-settled");
 }
 
 // ── Interactions: IBAN copy buttons + vault-open dispatch from static sections ──────────────

@@ -1,0 +1,417 @@
+  @media (max-width: 980px) {
+    .chrome {
+      grid-template-columns: 1fr auto;
+      padding: 24px 22px;
+    }
+
+    .event-pill {
+      display: none;
+    }
+
+    .chrome-actions {
+      gap: 14px;
+    }
+
+    .audio-toggle {
+      padding: 6px 11px;
+      font-size: 9px;
+      letter-spacing: 0.16em;
+    }
+
+    .support-panel,
+    .section-grid,
+    .director-grid,
+    .program-grid,
+    .final-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-inner {
+      padding-top: 132px;
+    }
+
+    .section {
+      padding-top: 104px;
+      padding-bottom: 104px;
+    }
+
+    .section-label {
+      position: relative;
+      top: auto;
+    }
+
+    .support-ask {
+      border-left: 0;
+      border-top: 1px solid var(--line-strong);
+      padding: 34px 0 0;
+    }
+
+    .manifest {
+      padding-top: 104px;
+      padding-bottom: 112px;
+    }
+
+    /* Diptych zwija siÄ™ do pojedynczej kolumny â€” SygnaĹ‚ na gĂłrze
+       (anchor czasu), Fundatio pod nim (stela inskrypcyjna). */
+    .site-footer-grid {
+      grid-template-columns: 1fr;
+      gap: clamp(48px, 7vw, 72px);
+    }
+
+    .foundation-title {
+      font-size: clamp(34px, 7vw, 48px);
+    }
+
+    .coda {
+      padding-top: clamp(60px, 10vw, 96px);
+      padding-bottom: clamp(60px, 10vw, 96px);
+    }
+
+    .ensemble-facts {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      margin-top: 40px;
+      padding-top: 24px;
+    }
+
+    .path-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .path-card {
+      border-right: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      --h1: clamp(58px, 19vw, 92px);
+      --space-xxl: 124px;
+    }
+
+    .chrome {
+      padding: 20px 18px;
+      gap: 14px;
+    }
+
+    .chrome-actions {
+      gap: 12px;
+    }
+
+    .audio-toggle {
+      padding: 5px 9px;
+      font-size: 8.5px;
+      letter-spacing: 0.14em;
+      gap: 6px;
+    }
+
+    .audio-toggle::before {
+      width: 5px;
+      height: 5px;
+    }
+
+    .brand {
+      font-size: 18px;
+    }
+
+    /* ── Hero · sacred poster (mobile recomposition · Faza 2) ─────────────────
+       The desktop hero reads as luminous alabaster fresco; the phone is led the
+       other way — a lit threshold in the dark. The fresco breathes across the
+       upper half of the screen and the liturgy gathers at the foot like an
+       inscription (kicker → title → response → strap → CTA + descend cue), in
+       the thumb zone. The scrim is therefore FOOT-heavy (legibility where the
+       text now lives) with a low warm bloom behind the gold "głos.", rather than
+       the old top-anchored scrim that assumed text sat near the top. */
+    .hero::before {
+      background:
+        radial-gradient(ellipse 92% 40% at 50% 90%, rgba(198, 164, 91, 0.17), transparent 72%),
+        linear-gradient(
+          180deg,
+          rgba(8, 8, 7, 0.44) 0%,
+          rgba(8, 8, 7, 0.20) 30%,
+          rgba(8, 8, 7, 0.34) 54%,
+          rgba(8, 8, 7, 0.78) 80%,
+          rgba(8, 8, 7, 0.95) 100%
+        );
+    }
+
+    .hero {
+      align-items: end;
+    }
+
+    /* Gather the braid at the foot; the fresco owns the top ~half. flex-end keeps
+       it pinned low, the generous top padding guarantees clearance from the fixed
+       chrome on shorter devices. */
+    .hero-inner {
+      justify-content: flex-end;
+      gap: clamp(16px, 3.2vh, 28px);
+      padding: clamp(112px, 16vh, 168px) max(22px, 5vw) clamp(22px, 3.4vh, 36px);
+    }
+
+    .hero-kicker {
+      margin-bottom: 0;
+    }
+
+    /* One controlled type step (not two competing clamps): 360→430px lands a
+       comfortable ~60–72px so "głos." never crushes onto the response line. */
+    .hero-title {
+      font-size: clamp(56px, 16vw, 80px);
+      line-height: 0.88;
+    }
+
+    .hero-response {
+      font-size: clamp(19px, 5.2vw, 23px);
+    }
+
+    /* The strap drops to a quiet inscription beneath the response — present for
+       message + SEO, but no longer competing with the title for weight. */
+    .hero-strap {
+      margin-top: 12px;
+      font-size: 15.5px;
+      line-height: 1.5;
+      color: rgba(244, 241, 233, 0.6);
+    }
+
+    /* CTA rail in the thumb zone: stack the descend cue under the actions so
+       neither is cramped against a screen edge. */
+    .hero-rail {
+      margin-top: 6px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+      padding-bottom: 0;
+    }
+
+    .hero-actions .primary-link,
+    .hero-actions .secondary-link {
+      font-size: 11px;
+    }
+
+    .support-link {
+      font-size: 9px;
+    }
+
+    .threshold-actions {
+      grid-template-columns: 1fr;
+    }
+
+    .threshold-btn + .threshold-btn {
+      border-left: 0;
+      border-top: 1px solid rgba(244, 241, 233, 0.18);
+    }
+
+    .threshold-btn {
+      padding: 22px 16px;
+    }
+
+    .threshold-btn-label {
+      font-size: 22px;
+    }
+
+    .final-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .primary-link,
+    .secondary-link,
+    .text-link {
+      width: max-content;
+      max-width: 100%;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    .use-row,
+    .bank-row,
+    .donation-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .copy-account {
+      width: max-content;
+    }
+
+    .image-rite {
+      min-height: 78svh;
+    }
+
+    .brand-glyph-wrap {
+      width: 18px;
+      height: 34px;
+    }
+
+    .brand-glyph {
+      width: 14px;
+      height: 34px;
+    }
+
+    .brand-glyph-halo {
+      width: 32px;
+      height: 32px;
+    }
+
+    .path-card {
+      padding: 20px 18px 26px;
+    }
+
+    /* Mobile: zwarty repertuar â€” krĂłtszy footprint po rozwiniÄ™ciu details.
+       Mniejszy font + ciaĹ›niejsze odstÄ™py + dwie kolumny dla bardzo krĂłtkich pozycji
+       z list-grid auto-fill, gdy elementy siÄ™ mieszczÄ…. */
+    .path-works {
+      font-size: 12.5px;
+      line-height: 1.4;
+      gap: 5px;
+    }
+
+    .path-works li {
+      padding-left: 13px;
+    }
+
+    .path-works-note,
+    .path-detail-text {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .path-card-detail-body {
+      padding-bottom: 10px;
+    }
+
+    .section {
+      padding-top: 84px;
+      padding-bottom: 84px;
+    }
+
+    .ensemble-inner {
+      padding-top: 96px;
+      padding-bottom: 96px;
+    }
+
+    .final-support .section {
+      padding-top: 96px;
+      padding-bottom: 96px;
+    }
+
+    .neuma-interlude {
+      padding: 36px 20px;
+    }
+
+    .neuma {
+      width: min(260px, 100%);
+    }
+
+    .threshold-mark {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 28px;
+    }
+
+    .threshold-mark .brand-glyph-shape {
+      width: 19px;
+      height: 44px;
+    }
+
+    .threshold-mark-halo {
+      width: 70px;
+      height: 70px;
+    }
+
+    .threshold-title {
+      margin: 22px 0 16px;
+    }
+
+    .threshold-subtitle {
+      margin-bottom: 38px;
+      max-width: 22rem;
+      font-size: 14px;
+    }
+
+    .threshold-inner {
+      width: min(540px, calc(100vw - 32px));
+    }
+
+    .program-note,
+    .trust-line {
+      font-size: 9.5px;
+      letter-spacing: 0.12em;
+    }
+
+    .site-footer-inner {
+      padding-left: 22px;
+      padding-right: 22px;
+    }
+
+    .site-footer-grid {
+      grid-template-columns: 1fr;
+      gap: 44px;
+    }
+
+    /* Na telefonie Fundatio wraca do 1-col stacka â€” wÄ…ska kolumna nie
+       udĹşwignie Consilium obok Corpus. */
+    .footer-col-foundation .footer-col-body {
+      grid-template-columns: 1fr;
+    }
+
+    .foundation-title {
+      font-size: clamp(32px, 9vw, 44px);
+    }
+
+    .foundation-legal {
+      font-size: 10.5px;
+      gap: 8px 16px;
+    }
+
+    .footer-ribbon {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      justify-items: center;
+    }
+
+    .footer-ribbon-rule {
+      display: none;
+    }
+
+    .footer-ribbon-list {
+      gap: 18px;
+    }
+
+    .site-footer-colophon {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .footer-colophon-signature {
+      justify-content: flex-start;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .coda {
+      padding-top: clamp(48px, 10vw, 80px);
+      padding-bottom: clamp(48px, 10vw, 80px);
+    }
+
+    .coda-headline {
+      font-size: clamp(76px, 22vw, 150px);
+    }
+
+    .coda-tail {
+      font-size: clamp(24px, 7vw, 50px);
+    }
+
+    .donation-row strong {
+      font-size: 24px;
+    }
+
+    .bank-row .iban {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+    }
+  }
+
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     SKARBIEC Â· wesparcie Â· sliding sheet
+     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

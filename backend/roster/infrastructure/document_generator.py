@@ -386,16 +386,31 @@ class DocumentGenerator:
         piece = item.piece
         tracks = list(getattr(piece, 'prefetched_tracks', []))
         voice_requirements = list(getattr(piece, 'prefetched_voice_requirements', []))
-        reference_links = []
-        if piece.reference_recording_youtube:
-            reference_links.append({'label': 'YouTube', 'url': piece.reference_recording_youtube})
-        if piece.reference_recording_spotify:
-            reference_links.append({'label': 'Spotify', 'url': piece.reference_recording_spotify})
+        editions = list(getattr(piece, 'prefetched_editions', None) or piece.editions.all())
+        recordings = list(getattr(piece, 'prefetched_recordings', None) or piece.recordings.all())
+
+        # Default edition first; otherwise the most-recent edition with a PDF.
+        editions_sorted = sorted(
+            (e for e in editions if e.pdf_file),
+            key=lambda e: (0 if e.is_default else 1, -(e.created_at.timestamp() if e.created_at else 0)),
+        )
+        primary_edition = editions_sorted[0] if editions_sorted else None
+        sheet_music_url = (
+            DocumentGenerator._build_file_url(primary_edition.pdf_file, base_url)
+            if primary_edition else ''
+        )
+
+        # Reference links — featured recordings first, then platform-grouped.
+        reference_links: list[dict[str, str]] = []
+        for rec in sorted(recordings, key=lambda r: (0 if r.is_featured else 1, r.get_source_display())):
+            if not rec.url:
+                continue
+            reference_links.append({'label': rec.get_source_display(), 'url': rec.url})
 
         material_badges = []
         if item.is_encore:
             material_badges.append('BIS')
-        if piece.sheet_music:
+        if sheet_music_url:
             material_badges.append('Nuty PDF')
         if tracks:
             material_badges.append('Tracki')
@@ -420,7 +435,7 @@ class DocumentGenerator:
             'voicing': piece.voicing,
             'voice_requirements_summary': voice_requirements_summary,
             'description': piece.description,
-            'sheet_music_url': DocumentGenerator._build_file_url(piece.sheet_music, base_url),
+            'sheet_music_url': sheet_music_url,
             'reference_links': reference_links,
             'track_count': len(track_labels),
             'track_summary': ', '.join(track_labels),

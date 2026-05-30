@@ -1,13 +1,31 @@
 /**
  * @file archive.queries.ts
- * @description React Query hooks for the Archive domain server state.
- * Handles caching, invalidation, and write orchestration through global query keys.
+ * @description TanStack Query hooks for the unified Archive domain.
+ * One feature, one cache namespace. Edition mutations invalidate the pieces
+ * list so newly-resolved pieces appear (and per-edition status badges live
+ * in sync) without ever needing a manual refresh.
+ *
+ * In-progress edition list polls every 3s so the upload zone in Archive
+ * shows AI extraction phases ticking through (EXTR → ENRI → GENR → AWAI).
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ArchiveService } from "./archive.service";
-import type { ComposerWriteDTO, PieceWriteDTO } from "../types/archive.dto";
+import {
+  ArchiveService,
+  type ScoreEditionDetail,
+} from "./archive.service";
+import {
+  isIngestionInProgress,
+  type Piece,
+} from "@/shared/types";
+import type {
+  ComposerWriteDTO,
+  PiecePatchDTO,
+  PieceWriteDTO,
+  ScoreEditionPatchDTO,
+  ScoreEditionUploadDTO,
+} from "../types/archive.dto";
 
 export const archiveKeys = {
   pieces: {
@@ -16,7 +34,6 @@ export const archiveKeys = {
   },
   composers: {
     all: ["composers"] as const,
-    details: (id: string | number) => ["composers", String(id)] as const,
   },
   tracks: {
     all: ["tracks"] as const,
@@ -25,71 +42,117 @@ export const archiveKeys = {
   },
 };
 
-export const usePieces = () => {
-  return useQuery({
+const POLL_IN_PROGRESS_MS = 3_000;
+
+// ===========================================================================
+// Pieces
+// ===========================================================================
+
+const anyPieceIngesting = (pieces: Piece[] | undefined): boolean =>
+  !!pieces?.some((p) =>
+    p.editions?.some((e) => isIngestionInProgress(e.ingestion_status)),
+  );
+
+export const usePieces = () =>
+  useQuery({
     queryKey: archiveKeys.pieces.all,
     queryFn: ArchiveService.getPieces,
     staleTime: 1000 * 60 * 5,
+    refetchInterval: (query) =>
+      anyPieceIngesting(query.state.data as Piece[] | undefined)
+        ? POLL_IN_PROGRESS_MS
+        : false,
   });
-};
 
-export const useComposers = () => {
-  return useQuery({
+export const useComposers = () =>
+  useQuery({
     queryKey: archiveKeys.composers.all,
     queryFn: ArchiveService.getComposers,
     staleTime: 1000 * 60 * 60,
   });
-};
 
 export const useCreatePiece = () => {
-  const queryClient = useQueryClient();
-
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: PieceWriteDTO) => ArchiveService.createPiece(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
     },
   });
 };
 
 export const useCreateComposer = () => {
-  const queryClient = useQueryClient();
-
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: ComposerWriteDTO) => ArchiveService.createComposer(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: archiveKeys.composers.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
     },
   });
 };
 
+/**
+ * Update piece metadata. Optimistically merges the patch into the cached
+ * pieces list so the conductor sees changes land instantly; rolls back on
+ * server error.
+ */
 export const useUpdatePiece = () => {
-  const queryClient = useQueryClient();
-
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<PieceWriteDTO> }) =>
-      ArchiveService.updatePiece(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: PiecePatchDTO | PieceWriteDTO;
+    }) => ArchiveService.updatePiece(id, data),
+    onMutate: async ({ id, data }) => {
+      await qc.cancelQueries({ queryKey: archiveKeys.pieces.all });
+      const previous = qc.getQueryData<Piece[]>(archiveKeys.pieces.all);
+      if (previous) {
+        qc.setQueryData<Piece[]>(
+          archiveKeys.pieces.all,
+          previous.map((p) =>
+            String(p.id) === String(id) ? { ...p, ...data } : p,
+          ),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(archiveKeys.pieces.all, context.previous);
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
     },
   });
 };
 
 export const useDeletePiece = () => {
-  const queryClient = useQueryClient();
-
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ArchiveService.deletePiece(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: archiveKeys.pieces.all });
-      queryClient.invalidateQueries({ queryKey: archiveKeys.tracks.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.tracks.all });
     },
   });
 };
 
-export const useUploadTrack = () => {
-  const queryClient = useQueryClient();
+// ===========================================================================
+// Tracks
+// ===========================================================================
 
+export const useTracks = (pieceId: string | number) =>
+  useQuery({
+    queryKey: archiveKeys.tracks.byPiece(pieceId),
+    queryFn: () => ArchiveService.getTracksByPiece(pieceId),
+  });
+
+export const useUploadTrack = () => {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       pieceId,
@@ -101,27 +164,106 @@ export const useUploadTrack = () => {
       file: File;
     }) => ArchiveService.uploadTrack(pieceId, voiceLine, file),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: archiveKeys.pieces.all });
-      queryClient.invalidateQueries({ queryKey: archiveKeys.tracks.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.tracks.all });
     },
   });
 };
 
 export const useDeleteTrack = () => {
-  const queryClient = useQueryClient();
-
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (trackId: string) => ArchiveService.deleteTrack(trackId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: archiveKeys.pieces.all });
-      queryClient.invalidateQueries({ queryKey: archiveKeys.tracks.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.tracks.all });
     },
   });
 };
 
-export const useTracks = (pieceId: string | number) => {
-  return useQuery({
-    queryKey: archiveKeys.tracks.byPiece(pieceId),
-    queryFn: () => ArchiveService.getTracksByPiece(pieceId),
+// ===========================================================================
+// Score editions (PDF upload + AI workflow)
+// ===========================================================================
+
+/**
+ * Upload a PDF, dispatch the AI pipeline server-side, optimistically
+ * surface the new edition on the pieces list. After upload returns, the
+ * list polling above keeps the per-edition ingestion_status fresh until
+ * each edition reaches AWAITING / READY / FAILED.
+ */
+export const useUploadEdition = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      dto,
+      onProgress,
+    }: {
+      dto: ScoreEditionUploadDTO;
+      onProgress?: (loaded: number, total: number) => void;
+    }) => ArchiveService.uploadEdition(dto, onProgress),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
+export const usePatchEdition = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: ScoreEditionPatchDTO }) =>
+      ArchiveService.patchEdition(id, dto),
+    onMutate: async ({ id, dto }) => {
+      await qc.cancelQueries({ queryKey: archiveKeys.pieces.all });
+      const previous = qc.getQueryData<Piece[]>(archiveKeys.pieces.all);
+      if (previous) {
+        qc.setQueryData<Piece[]>(
+          archiveKeys.pieces.all,
+          previous.map((piece) => ({
+            ...piece,
+            editions: (piece.editions ?? []).map((e) =>
+              String(e.id) === String(id) ? { ...e, ...dto } : e,
+            ),
+          })),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(archiveKeys.pieces.all, context.previous);
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
+export const useDeleteEdition = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ArchiveService.deleteEdition(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: archiveKeys.pieces.all }),
+  });
+};
+
+export const useApproveEdition = () => {
+  const qc = useQueryClient();
+  return useMutation<ScoreEditionDetail, Error, string>({
+    mutationFn: (id) => ArchiveService.approveEdition(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: archiveKeys.pieces.all }),
+  });
+};
+
+export const useReingestEdition = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    ScoreEditionDetail,
+    Error,
+    { id: string; force?: boolean }
+  >({
+    mutationFn: ({ id, force = false }) =>
+      ArchiveService.reingestEdition(id, force),
+    onSuccess: () => qc.invalidateQueries({ queryKey: archiveKeys.pieces.all }),
   });
 };

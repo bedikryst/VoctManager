@@ -111,38 +111,31 @@ class Composer(EnterpriseBaseModel):
 
 class Piece(EnterpriseBaseModel):
     """
-    Aggregate Root entity for the musical repertoire.
-    Orchestrates related sub-entities (Tracks, Voice Requirements).
+    Aggregate Root for the musical repertoire.
+
+    PDFs of this work live in [ScoreEdition] (one Piece → many editions,
+    e.g. Bärenreiter, IMSLP scan, custom arrangement). Reference recordings
+    live in [Recording]. Translations live in [Translation]. Ingestion status
+    is per-edition — derived in the serializer if a piece-level signal is
+    needed.
     """
     title = models.CharField(max_length=200, verbose_name=_("Title"))
     composer = models.ForeignKey(
-        Composer, 
-        on_delete=models.RESTRICT, 
-        null=True, 
-        blank=True, 
-        related_name='pieces', 
-        verbose_name=_("Composer")
+        Composer,
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name='pieces',
+        verbose_name=_("Composer"),
     )
     arranger = models.CharField(max_length=150, blank=True, verbose_name=_("Arranger"))
     language = models.CharField(max_length=50, blank=True, help_text=_("e.g. Latin, English"), verbose_name=_("Language"))
     estimated_duration = models.PositiveIntegerField(blank=True, null=True, help_text=_("Duration in seconds"), verbose_name=_("Estimated Duration"))
     voicing = models.CharField(max_length=50, blank=True, help_text=_("e.g. SSAATTBB"), verbose_name=_("Voicing"))
     description = models.TextField(blank=True, verbose_name=_("Notes / Description"))
-    
-    # Cloud-Native Note: When django-storages is configured in settings.py, 
-    # FileField automatically routes these uploads to AWS S3 / GCP Storage.
-    sheet_music = models.FileField(
-        upload_to='sheet_music/', 
-        blank=True, 
-        validators=[FileExtensionValidator(['pdf']), validate_file_size], 
-        verbose_name=_("Sheet Music (PDF)")
-    )
 
-    lyrics_original = models.TextField(blank=True, help_text=_("Original language text"), verbose_name=_("Lyrics (Original)"))
-    lyrics_translation = models.TextField(blank=True, help_text=_("Translated text"), verbose_name=_("Lyrics (Translation)"))
-    reference_recording_youtube = models.URLField(blank=True, help_text=_("YouTube URL"), verbose_name=_("Recording (YouTube)"))
-    reference_recording_spotify = models.URLField(blank=True, help_text=_("Spotify URL"), verbose_name=_("Recording (Spotify)"))
-    
+    lyrics_original = models.TextField(blank=True, help_text=_("Original sung text"), verbose_name=_("Lyrics (Original)"))
+
     composition_year = models.IntegerField(blank=True, null=True, verbose_name=_("Year of Composition"))
     epoch = models.CharField(max_length=4, choices=EpochChoices.choices, blank=True, verbose_name=_("Epoch"))
 
@@ -167,11 +160,6 @@ class Piece(EnterpriseBaseModel):
         blank=True,
         help_text=_("IPA pronunciation guide for the sung text"),
         verbose_name=_("Lyrics (IPA)"),
-    )
-    ingestion_status = models.CharField(
-        max_length=4, choices=IngestionStatus.choices,
-        default=IngestionStatus.PENDING, db_index=True,
-        verbose_name=_("Ingestion Status"),
     )
 
     class Meta:

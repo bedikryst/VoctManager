@@ -28,6 +28,7 @@ import type {
   PieceCasting,
   ProgramItem,
   VoiceLineOption,
+  VoiceRequirement,
 } from "@/shared/types";
 import {
   projectKeys,
@@ -244,7 +245,8 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
       const piece = pieces.find(
         (candidate) => String(candidate.id) === pieceId,
       );
-      const requirements = piece?.voice_requirements ?? [];
+      const requirements: VoiceRequirement[] =
+        piece?.voice_requirements_read ?? [];
 
       if (requirements.length === 0) {
         statuses[pieceId] = "FREE";

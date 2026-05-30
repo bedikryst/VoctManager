@@ -106,12 +106,8 @@ export interface MaterialsPiece {
   estimated_duration: number | null;
   voicing: string;
   epoch: string;
-  sheet_music: string;
   lyrics_original: string;
-  lyrics_translation: string;
-  reference_recording_youtube: string;
-  reference_recording_spotify: string;
-  // Score Compiler-populated artist-facing fields.
+  // AI-enriched fields (may be empty for manually-entered pieces).
   opus_catalog: string;
   musical_key: string;
   text_source: string;

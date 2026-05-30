@@ -144,13 +144,6 @@ class PieceMaterialsSerializer(serializers.Serializer):
             (c for c in my_piece_castings if c.piece_id == piece.pk), None
         )
 
-        request = self.context.get('request')
-        sheet_music_url: str = (
-            request.build_absolute_uri(piece.sheet_music.url)
-            if request and piece.sheet_music
-            else (piece.sheet_music.url if piece.sheet_music else '')
-        )
-
         return {
             'id': str(piece.id),
             'title': piece.title,
@@ -159,12 +152,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
             'estimated_duration': piece.estimated_duration,
             'voicing': piece.voicing,
             'epoch': piece.epoch,
-            'sheet_music': sheet_music_url,
             'lyrics_original': piece.lyrics_original,
-            'lyrics_translation': piece.lyrics_translation,
-            'reference_recording_youtube': piece.reference_recording_youtube,
-            'reference_recording_spotify': piece.reference_recording_spotify,
-            # Score Compiler-populated fields. Artist-facing read-only view.
             'opus_catalog': piece.opus_catalog,
             'musical_key': piece.musical_key,
             'text_source': piece.text_source,

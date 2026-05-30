@@ -1,0 +1,810 @@
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     SITE FOOTER Â· "Inscriptio finalis" Â· awwwards MMXXVI
+     Diptych: lewa (SygnaĹ‚ â€” anchor czasu) â€– prawa (Fundatio â€”
+     stela inskrypcyjna). Bez generic kolumny "Relacje" â€” kontakt
+     spada do Fundatio jako stanza "Vox". Pod gridem: hairline
+     ribbon spoĹ‚ecznoĹ›ciowy â†’ wielki znak sĹ‚owny â†’ colophon.
+     KaĹĽda warstwa jest osobnym oddechem.
+     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+  .site-footer {
+    position: relative;
+    background:
+      radial-gradient(120% 62% at 50% 0%, rgb(var(--candle-rgb) / 0.085), transparent 64%),
+      linear-gradient(180deg, var(--paper) 0%, var(--paper) 36%, var(--paper-soft) 100%);
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+
+  .site-footer-inner {
+    width: min(1580px, 100%);
+    margin: 0 auto;
+    padding: clamp(32px, 3.5vw, 52px) max(28px, 5vw) clamp(28px, 3vw, 44px);
+  }
+
+  /* Inskrypcja IV â€” kanton finalny, dopina sekwencjÄ™ I/II/III
+     z aether-interlude (Lumen quaerit Â· Vox memoriae Â· Sustinete nos).
+     CaĹ‚a stopka czyta siÄ™ jako closing chapter, nie aneks adresowy.
+     Tight margin â€” po sekcji CODA mamy juĹĽ ogromny oddech, wiÄ™c
+     incipit siedzi blisko gridu. */
+  .site-footer-incipit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(20px, 4vw, 44px);
+    margin-bottom: clamp(40px, 4.5vw, 64px);
+    color: var(--ink-muted);
+  }
+
+  .footer-incipit-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line-strong));
+    opacity: 0.6;
+  }
+
+  .footer-incipit-rule:last-child {
+    background: linear-gradient(270deg, transparent, var(--line-strong));
+  }
+
+  .site-footer-grid {
+    display: grid;
+    /* Asymmetric diptych â€” SygnaĹ‚ Ĺ›ciĹ›niÄ™ty do wÄ…skiej szpalty (zegar
+       ~230px), Fundatio bierze resztÄ™. */
+    grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
+    gap: clamp(40px, 5.5vw, 96px);
+    margin-bottom: clamp(40px, 5vw, 72px);
+    align-items: start;
+  }
+
+  .footer-col {
+    display: grid;
+    align-content: start;
+    gap: 18px;
+    min-width: 0;
+  }
+
+  .footer-col-label {
+    color: var(--ink-muted);
+    border-top: 1px solid var(--line-strong);
+    padding-top: 12px;
+    width: max-content;
+  }
+
+  .footer-col-body {
+    display: grid;
+    gap: 14px;
+    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     FUNDATIO â€” single inscription column (right side of diptych).
+     Cztery stanze rozdzielone hairline rules:
+       1. Mark â€” VoctFoundation + siedziba + KRS/NIP/REGON
+       2. Consilium â€” zarzÄ…d jako italic inscription (nie mailto)
+       3. Corpus â€” dokumenty (Statut, Polityka)
+       4. Vox â€” kontakt (booking/patronat/dyrekcja + RODO)
+     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+  /* WewnÄ™trzny grid Fundatio â€” Mark i Vox full-width, Consilium + Corpus
+     w jednym rzÄ™dzie obok siebie. WyrĂłwnuje pionowo wysokoĹ›Ä‡ prawej
+     kolumny do lewej (SygnaĹ‚), zamiast czterech stanz stackowanych
+     pionowo (puchniÄ™cie po prawej). */
+  .footer-col-foundation .footer-col-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: clamp(28px, 3vw, 56px);
+    row-gap: 0;
+    align-items: start;
+  }
+
+  .footer-col-foundation .foundation-mark,
+  .footer-col-foundation .foundation-stanza-vox {
+    grid-column: 1 / -1;
+  }
+
+  /* â”€â”€â”€ Foundation mark â€” nazwa + siedziba + identyfikatory â”€â”€â”€ */
+  .foundation-mark {
+    display: grid;
+    gap: 12px;
+    padding-bottom: clamp(20px, 2.2vw, 28px);
+  }
+
+  .foundation-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(34px, 3.4vw, 48px);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+    font-variation-settings: "wght" 380;
+  }
+
+  .foundation-seat {
+    margin: 0;
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(15px, 1.25vw, 18px);
+    font-weight: 300;
+    line-height: 1.4;
+  }
+
+  .foundation-seat .sep {
+    color: var(--candle);
+    opacity: 0.55;
+    margin: 0 0.45em;
+    font-style: normal;
+  }
+
+  .foundation-legal {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px clamp(18px, 2.2vw, 28px);
+    color: var(--ink-soft);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  .foundation-legal li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+
+  .foundation-legal .key {
+    color: var(--ink-muted);
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .foundation-legal .val {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* â”€â”€â”€ Stanza â€” wspĂłlny rytm sub-sekcji â”€â”€â”€ */
+  .foundation-stanza {
+    display: grid;
+    gap: 10px;
+    padding: clamp(18px, 2vw, 24px) 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .foundation-stanza:last-child {
+    padding-bottom: 0;
+  }
+
+  /* Label sub-stanzy: [Â·] LATIN Â· polski hint â€” wzĂłr wziÄ™ty
+     z .footer-signal-tempus (Tempus Paschae Â· okres wielkanocny). */
+  .foundation-stanza-label {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 9px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    line-height: 1.45;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .foundation-stanza-label .dot {
+    color: var(--candle);
+    opacity: 0.6;
+    letter-spacing: 0;
+    transform: translateY(-0.05em);
+  }
+
+  .foundation-stanza-label .latin {
+    color: var(--candle);
+    letter-spacing: 0.16em;
+  }
+
+  .foundation-stanza-label .pl {
+    color: var(--ink-muted);
+    text-transform: lowercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Consilium â€” zarzÄ…d jako italic inscription, Ĺ›wiadomie BEZ linkĂłw.
+     Trzy nazwiska to nie directory â€” to dedykacja na cokole. */
+  .foundation-consilium-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(16px, 1.25vw, 19px);
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+
+  /* Corpus â€” dokumenty. Italic serif anchors z hairline underline,
+     ktĂłre rozwija siÄ™ od lewej na hover (kierunek czytania). */
+  .foundation-corpus-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+
+  .foundation-corpus-list a {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(17px, 1.3vw, 20px);
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.3;
+    width: max-content;
+    padding-bottom: 3px;
+    transition: color 0.45s var(--ease);
+  }
+
+  .foundation-corpus-list a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.22;
+    transform: scaleX(1);
+    transform-origin: right;
+    transition: transform 0.55s var(--ease-slow), opacity 0.45s var(--ease);
+  }
+
+  .foundation-corpus-list a:hover {
+    color: var(--candle);
+  }
+
+  .foundation-corpus-list a:hover::after {
+    opacity: 0.7;
+    transform-origin: left;
+  }
+
+  .foundation-corpus-list .doc-tag {
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: var(--ink-muted);
+    transform: translateY(-0.22em);
+    transition: color 0.45s var(--ease);
+  }
+
+  .foundation-corpus-list a:hover .doc-tag {
+    color: var(--candle);
+  }
+
+  /* Vox â€” kontakt. Inline-list rozdzielona zĹ‚otymi mid-dotami;
+     pod niÄ… mono linijka z RODO (dane osobowe â€” wymĂłg prawny). */
+  .foundation-vox-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .foundation-vox-list li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .foundation-vox-list li:not(:last-child)::after {
+    content: "Â·";
+    color: var(--candle);
+    opacity: 0.55;
+  }
+
+  .foundation-vox-list a {
+    position: relative;
+    color: var(--ink);
+    padding-bottom: 2px;
+    transition: color 0.35s var(--ease);
+  }
+
+  .foundation-vox-list a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.32;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.5s var(--ease-slow);
+  }
+
+  .foundation-vox-list a:hover {
+    color: var(--candle);
+  }
+
+  .foundation-vox-list a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .foundation-vox-rodo {
+    margin: 4px 0 0;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+    line-height: 1.5;
+  }
+
+  .foundation-vox-rodo .key {
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    margin-right: 10px;
+  }
+
+  .foundation-vox-rodo a {
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 1px;
+    transition: color 0.4s var(--ease), border-color 0.4s var(--ease);
+  }
+
+  .foundation-vox-rodo a:hover {
+    color: var(--candle);
+    border-color: var(--candle);
+  }
+
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SOCIAL RIBBON â€” hairline strip pomiÄ™dzy gridem a wordmarkiem.
+     Trzy platformy wycentrowane miÄ™dzy dwiema liniami; italic
+     Cormorant zamiast "follow us" buttons. Ribbon to dechtniÄ™cie
+     przed cichym "amen" wordmarka.
+     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  .footer-ribbon {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: clamp(20px, 3vw, 48px);
+    margin-top: clamp(20px, 3vw, 36px);
+  }
+
+  .footer-ribbon-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line-strong) 50%, var(--line-strong));
+    opacity: 0.6;
+  }
+
+  .footer-ribbon-rule + .footer-ribbon-list + .footer-ribbon-rule {
+    background: linear-gradient(90deg, var(--line-strong), var(--line-strong) 50%, transparent);
+  }
+
+  .footer-ribbon-list {
+    display: inline-flex;
+    align-items: baseline;
+    gap: clamp(20px, 2.8vw, 40px);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .footer-ribbon-list a {
+    position: relative;
+    display: inline-block;
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(16px, 1.4vw, 20px);
+    font-weight: 300;
+    letter-spacing: 0.005em;
+    padding-bottom: 4px;
+    transition: color 0.4s var(--ease);
+  }
+
+  .footer-ribbon-list a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.4;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.55s var(--ease-slow);
+  }
+
+  .footer-ribbon-list a:hover {
+    color: var(--candle);
+  }
+
+  .footer-ribbon-list a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* â”€â”€â”€ SygnaĹ‚ â€” lewa kolumna Â· dwa bloki:
+     1) NajbliĹĽsze wybrzmienie (statyczna data + countdown)
+     2) KrakĂłw Â· teraz (live clock + hora canonica + GPS + tempus)
+     Bez horizontal rules â€” odstÄ™p pionowy jako jedyny separator.
+     Hora canonica jest teraz SATELITÄ„ zegara (nie osobnym blokiem),
+     bo Ĺ›redniowieczny mnich nie patrzyĹ‚ osobno na zegar i osobno na
+     "ktĂłra hora" â€” to byĹ‚a JEDNA rzecz. */
+  .footer-col-signal {
+    align-self: stretch;
+    grid-template-rows: auto 1fr;
+  }
+
+  .footer-col-signal-body {
+    align-self: center;
+    display: grid;
+    gap: clamp(28px, 3.2vw, 32px);
+  }
+
+  .footer-signal-block {
+    display: grid;
+    gap: 4px;
+  }
+
+  .footer-signal-now {
+    gap: 2px;
+  }
+
+  .footer-signal-key {
+    color: var(--ink-muted);
+  }
+
+  .footer-signal-coord,
+  .footer-signal-time {
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  /* â”€â”€â”€ Hora canonica â€” satellite zegara â”€â”€â”€
+     Sit RIGHT under the clock â€” zegar to anchor, hora to jego nazwa.
+     Italic Cormorant ~26px sentence-case, Ĺ‚aciĹ„ski akcent candle gold,
+     polski w ink-soft. WyglÄ…da jak inskrypcja pod cyfrÄ…. */
+  .footer-signal-hora-row {
+    margin: 0 0 2px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.45em;
+    line-height: 1.3;
+  }
+
+  .footer-signal-hora-name {
+    color: var(--candle);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(22px, 2vw, 30px);
+    font-weight: 400;
+    letter-spacing: 0.005em;
+  }
+
+  .footer-signal-hora-sep {
+    color: var(--candle);
+    opacity: 0.55;
+    font-size: clamp(16px, 1.4vw, 20px);
+    transform: translateY(-0.08em);
+  }
+
+  /* Tempus row separator â€” italic Ĺ‚aciĹ„ski + mono polski majÄ… rĂłĹĽne baseline.
+     Dot lekko niĹĽej ĹĽeby optycznie usiadĹ‚ miÄ™dzy nimi zamiast wisieÄ‡ nad. */
+  .footer-signal-tempus-sep {
+    color: var(--candle);
+    opacity: 0.55;
+    font-size: clamp(12px, 1vw, 14px);
+    transform: translateY(0.06em);
+  }
+
+  .footer-signal-hora-poem {
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(15px, 1.2vw, 18px);
+    letter-spacing: 0;
+  }
+
+  /* â”€â”€â”€ Tempus â€” okres roku liturgicznego â”€â”€â”€
+     NajgĹ‚Ä™bsza warstwa czasu w kolumnie: zegar (instant) â†’ hora (3h) â†’
+     miejsce â†’ tempus (1-2 miesiÄ…ce). Progresywne oddalanie. Zmienia siÄ™
+     ~6 razy w roku. BezpoĹ›rednio powiÄ…zane z brand'em Concerts Spirituels =
+     muzyka roku liturgicznego. */
+  .footer-signal-tempus-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.45em;
+    line-height: 1;
+    margin: 0;
+  }
+
+  .footer-signal-tempus {
+    color: var(--candle);
+    font-family: var(--mono);
+    font-size: clamp(11px, 1vw, 13px);
+    letter-spacing: 0;
+    opacity: 0.78;
+    font-style: normal;
+  }
+
+  .footer-signal-tempus-pl {
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: lowercase;
+  }
+
+  /* â”€â”€â”€ Live clock â€” Anchor lewej kolumny, ale
+     nie kompozycyjny rywal pieczÄ™ci. */
+  .footer-signal-clock {
+    color: var(--candle);
+    font-family: var(--serif);
+    font-size: clamp(48px, 5.5vw, 80px);
+    line-height: 0.95;
+    font-weight: 300;
+    letter-spacing: 0;
+    /* lining-nums â€” wymusza wersaliki cyfr zamiast figur tekstowych
+       Cormoranta; bez tego "12:36" czytaĹ‚o siÄ™ jak "I 2:36" (wÄ…ska,
+       wpĂłĹ‚-wysoka jedynka). tabular-nums trzyma staĹ‚Ä… szerokoĹ›Ä‡ â€” zegar
+       nie skacze przy kaĹĽdym ticku. */
+    font-variant-numeric: lining-nums tabular-nums;
+    margin: 10px 0 10px;
+    font-variation-settings: "wght" 380;
+  }
+
+  /* Sekundy â€” chronograph sub-dial. Italic Cormorant tabular-nums,
+     ~0.34em gĹ‚Ăłwnego zegara, raised ĹĽeby siedziaĹ‚ mniej-wiÄ™cej na
+     wysokoĹ›ci cap line minut. Lekka opacity + osobny wght (340) ĹĽeby
+     NIE oddychaĹ‚ razem z gĹ‚Ăłwnym zegarem (mniej jitter, stabilna obecnoĹ›Ä‡).
+     Tabular-nums kasuje skoki szerokoĹ›ci przy kaĹĽdym tick. */
+  .footer-signal-seconds {
+    display: inline-block;
+    margin-left: 0.16em;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.34em;
+    font-weight: 300;
+    font-variation-settings: "wght" 340;
+    color: var(--candle);
+    opacity: 0.58;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-1.2em);
+  }
+
+  .footer-signal-countdown {
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* Breath dla clock â€” TIME-BASED pulse, nie scroll-driven.
+     PowĂłd: poprzednia wersja (entry 0% cover 60%, 460â†’320 monotonic)
+     koĹ„czyĹ‚a animacjÄ™ zanim user siÄ™ zatrzymaĹ‚ w Ĺ›rodku ekranu â€” wght
+     siedziaĹ‚ na 320 = static. Time-based 8s pulse zapewnia ciÄ…gĹ‚y puls
+     "obecnoĹ›ci" gdy user czyta footer. Browser auto-throttluje gdy
+     element off-screen â€” koszt minimalny. Will-change promuje do warstwy,
+     ogranicza reflow scope przy rerasteryzacji variable font. */
+  @media (prefers-reduced-motion: no-preference) {
+    .footer-signal-clock {
+      font-variation-settings: "wght" var(--wght-mark);
+      animation: footer-signal-pulse 9s ease-in-out infinite;
+      will-change: font-variation-settings;
+    }
+
+    @keyframes footer-signal-pulse {
+      0%, 100% { --wght-mark: 260; }
+      50%      { --wght-mark: 580; }
+    }
+  }
+
+  /* colophon */
+  .site-footer-colophon {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: baseline;
+    padding-top: 24px;
+    color: var(--ink-muted);
+  }
+
+  .footer-colophon-fonts {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: baseline;
+  }
+
+  .footer-colophon-label {
+    color: var(--ink);
+    font-weight: 400;
+  }
+
+  .footer-colophon-fonts em {
+    color: var(--ink-soft);
+    font-style: italic;
+    font-family: var(--serif);
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 400;
+  }
+
+  .footer-colophon-signature {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: baseline;
+    justify-content: flex-end;
+  }
+
+  .footer-colophon-author {
+    color: var(--ink-soft);
+  }
+
+  .footer-colophon-author a {
+    color: var(--ink);
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 1px;
+    transition: color 0.3s var(--ease);
+  }
+
+  .footer-colophon-author a:hover {
+    color: var(--candle);
+  }
+
+  .intro-stage {
+    opacity: 0;
+    transform: translateY(30px);
+    filter: blur(10px);
+    transition:
+      opacity 1.4s var(--ease-slow),
+      transform 1.4s var(--ease-slow),
+      filter 1.4s var(--ease-slow);
+  }
+
+  .intro-stage.s2 { transition-delay: 0.12s; }
+  .intro-stage.s3 { transition-delay: 0.26s; }
+  .intro-stage.s4 { transition-delay: 0.44s; }
+  .intro-stage.s5 { transition-delay: 0.62s; }
+  .intro-stage.s6 { transition-delay: 0.8s; }
+  .intro-stage.s7 { transition-delay: 0.98s; }
+
+  body:not(.preload-open):not(.threshold-open) .intro-stage {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+
+  @media (pointer: coarse), (hover: none) {
+    .intro-stage {
+      transform: translateY(18px);
+      filter: none;
+      transition: opacity 1s var(--ease-slow), transform 1s var(--ease-slow);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .intro-stage {
+      opacity: 1;
+      transform: none;
+      filter: none;
+      transition: none;
+    }
+  }
+
+  /* .reveal â€” wejĹ›cie do viewportu (IntersectionObserver).
+     WyciÄ™ty filter: blur â€” Gaussian blur jest jednÄ… z najdroĹĽszych operacji GPU,
+     a przy dĹ‚ugich sekcjach z wieloma reveal'ami jednoczeĹ›nie powodowaĹ‚ drop frames.
+     Zamiast tego: wiÄ™kszy translate i delikatne scale dla "gĹ‚Ä™bi" zamiast blura.
+     Blur zostaje TYLKO w jednorazowym .intro-stage przy load â€” tam mamy budĹĽet. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(42px) scale(0.985);
+    transition:
+      opacity 1.1s var(--ease-slow),
+      transform 1.1s var(--ease-slow);
+  }
+
+  @media (pointer: coarse), (hover: none) {
+    .reveal {
+      transform: translateY(22px) scale(1);
+      transition:
+        opacity 0.85s var(--ease-slow),
+        transform 0.85s var(--ease-slow);
+    }
+
+    .reveal-img img {
+      transform: scale(1.06);
+      transition: transform 1.2s var(--ease-slow);
+    }
+  }
+
+  .reveal-img {
+    overflow: hidden;
+  }
+
+  .reveal-img img {
+    transform: scale(1.12);
+    transition: transform 1.8s var(--ease-slow);
+    will-change: transform;
+  }
+
+  .reveal-img.is-visible img {
+    transform: scale(1);
+  }
+
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .reveal.is-settled {
+    transition: none;
+    will-change: auto;
+  }
+
+  .reveal-img.is-settled img {
+    transition: none;
+    will-change: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    .reveal-img img {
+      transform: none;
+    }
+
+    .reveal {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }

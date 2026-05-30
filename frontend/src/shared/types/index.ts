@@ -86,7 +86,7 @@ export interface VoiceTypeOption {
 // ==========================================
 
 export interface Artist extends BaseModel {
-  user?: string | null; // FK relation, can be null
+  user?: string | null;
   first_name: string;
   last_name: string;
   first_name_vocative?: string;
@@ -95,9 +95,9 @@ export interface Artist extends BaseModel {
   voice_type: VoiceType;
   voice_type_display?: string;
   is_active: boolean;
-  username?: string;
+  username?: string | null;
   is_manager?: boolean;
-  sight_reading_skill?: number | null; // Numeric, can be null
+  sight_reading_skill?: number | null;
   vocal_range_bottom?: string;
   vocal_range_top?: string;
 }
@@ -111,25 +111,41 @@ export interface RunSheetItem {
   details?: string;
 }
 
+/**
+ * Read-only snippet returned by `LocationSnippetSerializer`. Used inline on
+ * Project / Rehearsal payloads. For the full Location record (address,
+ * coords, notes) use `Location`.
+ */
 export interface LocationSnippet {
   id: string;
   name: string;
   category: LocationCategory | string;
   timezone: string;
-  formatted_address?: string | null;
-  google_place_id?: string | null;
-  latitude?: string | number | null;
-  longitude?: string | number | null;
+}
+
+/**
+ * Snippet shape returned inline on Project.program (built by
+ * ProjectSerializer.get_program). Does NOT carry an id / project / piece FK —
+ * those are only present on the full `ProgramItem` row from
+ * /api/program-items/.
+ */
+export interface ProjectProgramItem {
+  order: number;
+  piece_id: string | number;
+  title: string;
+  is_encore: boolean;
 }
 
 export interface Project extends BaseModel {
   title: string;
   date_time: string;
   timezone: string;
-  call_time?: string | null; // DateTime, can be null
+  call_time?: string | null;
   dress_code_male?: string | null;
   dress_code_female?: string | null;
-  location?: string | LocationSnippet | null;
+  location?: LocationSnippet | null;
+  // Read shape from API is the FK id (or null). Some frontend hooks enrich
+  // this into the full Artist after joining against the artists dictionary.
   conductor?: string | Artist | null;
   conductor_name?: string | null;
   description?: string | null;
@@ -137,7 +153,7 @@ export interface Project extends BaseModel {
   score_pdf?: string | null;
   status: ProjectStatus;
   run_sheet?: RunSheetItem[];
-  program?: ProgramItem[];
+  program?: ProjectProgramItem[];
   cast?: Array<{
     id: string;
     first_name: string;
@@ -166,21 +182,24 @@ export interface Participation extends BaseModel {
 }
 
 export interface Rehearsal extends BaseModel {
-  project: string; // Foreign Key ID
+  project: string;
   date_time: string;
   timezone: string;
-  location?: string | LocationSnippet | null;
+  location?: LocationSnippet | null;
   focus?: string;
   is_mandatory: boolean;
   invited_participations?: string[];
   absent_count?: number;
 }
 
-export interface Attendance extends BaseModel {
-  rehearsal: string; // Foreign Key ID
-  participation: string; // Foreign Key ID
-  status: AttendanceStatus | null;
-  minutes_late?: number | null; // Numeric, can be null
+// Backend Attendance is a plain models.Model (no soft-delete / timestamps in
+// the API response), and status always has a default — so it's never null.
+export interface Attendance {
+  id: string;
+  rehearsal: string;
+  participation: string;
+  status: AttendanceStatus;
+  minutes_late?: number | null;
   excuse_note?: string | null;
 }
 
@@ -193,12 +212,14 @@ export interface Collaborator extends BaseModel {
   specialty: CollaboratorSpecialty;
 }
 
-export interface CrewAssignment extends BaseModel {
-  collaborator: string; // Foreign Key ID
-  project: string; // Foreign Key ID
+// Backend CrewAssignment is a plain models.Model — no soft-delete fields.
+export interface CrewAssignment {
+  id: string;
+  collaborator: string;
+  project: string;
   role_description?: string;
   status: CrewAssignmentStatus;
-  fee?: string | number | null; // Decimal, can be null
+  fee?: string | number | null;
 }
 
 // ==========================================
@@ -242,31 +263,42 @@ export interface Composer extends BaseModel {
   mbid?: string | null;
   wikidata_qid?: string;
   nationality?: string;
-  period?: string;
+  period?: Epoch | "";
   bio?: string;
   portrait_url?: string;
   portrait_license?: string;
   aliases?: string[];
 }
 
+// Backend PieceVoiceRequirement model extends EnterpriseBaseModel but the
+// serializer only exposes the 5 fields below.
 export interface VoiceRequirement {
   id?: string;
-  piece?: string; // Foreign Key ID
+  piece?: string;
   voice_line: VoiceLine;
   voice_line_display?: string;
   quantity: number;
 }
 
-export interface Track extends BaseModel {
-  piece: string; // Foreign Key ID
+// Backend Track model extends EnterpriseBaseModel but TrackSerializer only
+// exposes the 5 fields below.
+export interface Track {
+  id: string;
+  piece: string;
   voice_part: VoiceLine;
   voice_part_display?: string;
-  audio_file: string; // URL string, no null
+  audio_file: string;
 }
 
 // ---- Score Compiler nested entities ----------------------------------------
 
-export interface Movement extends BaseModel {
+// Backend Movement / Translation / Recording / ProgramNote models extend
+// EnterpriseBaseModel, but their respective read serializers only expose the
+// explicit fields listed below (no created_at / updated_at / is_deleted in
+// the API response).
+
+export interface Movement {
+  id: string;
   order_index: number;
   title: string;
   tempo_marking?: string;
@@ -275,7 +307,8 @@ export interface Movement extends BaseModel {
   starts_on_page?: number | null;
 }
 
-export interface Translation extends BaseModel {
+export interface Translation {
+  id: string;
   movement?: string | null;
   target_language: string;
   text: string;
@@ -284,7 +317,8 @@ export interface Translation extends BaseModel {
 
 export type RecordingSource = "SPF" | "YTB" | "APL" | "OTH";
 
-export interface Recording extends BaseModel {
+export interface Recording {
+  id: string;
   source: RecordingSource;
   source_display?: string;
   external_id: string;
@@ -295,7 +329,8 @@ export interface Recording extends BaseModel {
   is_featured: boolean;
 }
 
-export interface ProgramNote extends BaseModel {
+export interface ProgramNote {
+  id: string;
   project?: string | null;
   language: string;
   target_tone: string;
@@ -314,10 +349,35 @@ export type IngestionStatusCode =
   | "FAIL";
 
 /**
- * Lean ScoreEdition payload embedded in Piece read responses. The full
- * detail shape (with annotations, ingestion_cost_cents, sha256, etc.) lives
- * inside the score-compiler feature; this slim version is what the Archive
- * card, Materials card, and AI Context tab need to render PDF links + badges.
+ * Status codes as named constants. Always prefer these over string literals —
+ * the backend stores 'RDY ' (with trailing space, max_length=4) and getting
+ * the spacing wrong silently breaks comparisons.
+ */
+export const INGESTION_STATUS = {
+  PENDING: "PEND",
+  EXTRACTING: "EXTR",
+  ENRICHING: "ENRI",
+  GENERATING: "GENR",
+  AWAITING: "AWAI",
+  READY: "RDY ",
+  FAILED: "FAIL",
+} as const satisfies Record<string, IngestionStatusCode>;
+
+export const INGESTION_TERMINAL_STATUSES: ReadonlySet<IngestionStatusCode> =
+  new Set([
+    INGESTION_STATUS.AWAITING,
+    INGESTION_STATUS.READY,
+    INGESTION_STATUS.FAILED,
+  ]);
+
+export const isIngestionInProgress = (status: IngestionStatusCode): boolean =>
+  !INGESTION_TERMINAL_STATUSES.has(status);
+
+/**
+ * ScoreEdition summary embedded in Piece read responses. Carries enough to
+ * render PDF download links, status chips, and the per-edition cost report.
+ * The full review payload (annotations, sha256) is fetched separately by the
+ * AI Review tab when a specific edition is opened.
  */
 export interface ScoreEditionSummary extends BaseModel {
   pdf_file?: string;
@@ -329,67 +389,68 @@ export interface ScoreEditionSummary extends BaseModel {
   is_default: boolean;
   ingestion_status: IngestionStatusCode;
   ingestion_status_display?: string;
-  created_at: string;
+  ingestion_cost_cents?: number;
+  ingestion_error?: string;
 }
 
 export interface Piece extends BaseModel {
   title: string;
-  // Read shape: nested composer summary (matches backend PieceSerializer).
-  // Write payloads use `composer_id` — see PieceWriteDTO in features/archive.
+  // Read shape: nested composer object. Write payloads use `composer_id`
+  // (see PieceWriteDTO in features/archive).
   composer?: Composer | null;
-  composer_name?: string;
-  composer_full_name?: string;
 
   arranger?: string;
   language?: string;
   estimated_duration?: number | null; // seconds
   voicing?: string;
   description?: string;
-  sheet_music?: string; // URL string, no null
   lyrics_original?: string;
-  lyrics_translation?: string;
-  reference_recording?: string;
-  reference_recording_youtube?: string;
-  reference_recording_spotify?: string;
+
   composition_year?: number | null;
-  epoch?: Epoch;
+  epoch?: Epoch | "";
   epoch_display?: string;
 
-  // Score Compiler additions — present on every piece returned by the new
-  // unified PieceSerializer, even if empty / null.
+  // AI/external-source identifiers.
   opus_catalog?: string;
   musical_key?: string;
   text_source?: string;
   lyrics_ipa?: string;
   mbid_work?: string | null;
+
+  // Derived from editions[] by the backend serializer — never stored on Piece.
   ingestion_status?: IngestionStatusCode;
   ingestion_status_display?: string;
 
-  // Nested relations
-  voice_requirements: VoiceRequirement[];
+  // Nested relations — read-only on this serializer; each has its own write endpoint.
   tracks: Track[];
+  voice_requirements_read?: VoiceRequirement[];
   movements: Movement[];
   translations: Translation[];
   recordings: Recording[];
   program_notes: ProgramNote[];
-  // All Score Compiler editions attached to this Piece (legacy `sheet_music`
-  // remains as the one-PDF-per-piece fallback for manually-entered records).
   editions: ScoreEditionSummary[];
 }
 
-export interface ProgramItem extends BaseModel {
+/**
+ * Full ProgramItem row returned by /api/program-items/. The lite shape
+ * embedded inline on Project.program lives under `ProjectProgramItem`.
+ * Backend ProgramItem is a plain models.Model so there are no soft-delete
+ * or timestamp fields in the API response.
+ */
+export interface ProgramItem {
+  id: string;
   project: string | number;
   piece: string | number;
-  piece_id?: string | number;
-  title?: string;
   piece_title?: string;
   order: number;
   is_encore: boolean;
 }
 
-export interface PieceCasting extends BaseModel {
-  participation: string; // Foreign Key ID
-  piece: string; // Foreign Key ID
+// Backend ProjectPieceCasting is a plain models.Model — no soft-delete fields.
+export interface PieceCasting {
+  id: string;
+  participation: string;
+  piece: string;
   voice_line: VoiceLine;
   gives_pitch: boolean;
   notes?: string;

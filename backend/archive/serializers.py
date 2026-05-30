@@ -3,11 +3,20 @@
 # Archive API Serializers
 # ==========================================
 """
-REST API Serializers for the Archive application.
-@author Krystian Bugalski
+REST API serializers for the Archive bounded context.
 
-Handles the conversion of complex Django models (Composer, Piece, Track)
-into JSON representations, optimizing nested queries for the frontend.
+Read shape: PieceSerializer embeds composer + all AI-enriched relations
+(movements, translations, recordings, program_notes, editions). One JSON
+shape across every consumer — the Archive list, the AI Review tab, the
+Materials dashboard.
+
+Write shape: PATCH `/api/pieces/{id}/` accepts the JSON subset described by
+[archive.dtos.PieceWriteDTO] plus `composer_id` (UUID). Sub-entities (PDF
+editions, recordings, translations) have their own endpoints — never
+mutated through PieceSerializer.
+
+Ingestion status is computed at read-time from the attached editions —
+a Piece has no status of its own. See [_aggregate_ingestion_status].
 """
 
 import json
@@ -20,6 +29,7 @@ from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .models import (
     Annotation,
     Composer,
+    IngestionStatus,
     Movement,
     Piece,
     PieceVoiceRequirement,
@@ -30,26 +40,63 @@ from .models import (
     Translation,
 )
 
-_LEGACY_REFERENCE_RECORDING = object()
+# Lowest-status-wins across all attached editions; mirrors what the conductor
+# would naturally describe ("we're still extracting" beats "one of three is done").
+# Sorted from in-progress → terminal — first match returned.
+_INGESTION_STATUS_PRIORITY: tuple[str, ...] = (
+    IngestionStatus.EXTRACTING,
+    IngestionStatus.ENRICHING,
+    IngestionStatus.GENERATING,
+    IngestionStatus.PENDING,
+    IngestionStatus.FAILED,
+    IngestionStatus.AWAITING,
+    IngestionStatus.READY,
+)
 
 
-def _blank_to_none(value):
-    """Converts empty strings to None for DTO fields that require semantic nullability."""
-    return None if value in (None, '') else value
+def _aggregate_ingestion_status(piece: Piece) -> str:
+    """Derive a single piece-level ingestion status from its editions.
+
+    Pieces with no editions are 'PEND' (manually entered, no AI run yet) so
+    that the UI can still show a neutral chip. With editions present, we pick
+    the lowest-progress status across all of them — that matches the user's
+    mental model: "this piece is whatever the worst-positioned PDF is."
+    """
+    editions = getattr(piece, '_prefetched_editions', None)
+    if editions is None:
+        editions = list(piece.editions.all())
+    if not editions:
+        return IngestionStatus.PENDING
+
+    present = {e.ingestion_status for e in editions}
+    for status_value in _INGESTION_STATUS_PRIORITY:
+        if status_value in present:
+            return status_value
+    return IngestionStatus.PENDING
 
 
 class ComposerSerializer(serializers.ModelSerializer):
     """Serializes Composer entities and their biographical metadata."""
+    full_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Composer
-        fields = '__all__'
+        fields = [
+            'id', 'first_name', 'last_name', 'full_name',
+            'birth_year', 'death_year',
+            'nationality', 'period', 'bio',
+            'portrait_url', 'portrait_license',
+            'mbid', 'wikidata_qid', 'aliases',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'mbid', 'wikidata_qid', 'created_at', 'updated_at']
+
+    def get_full_name(self, obj: Composer) -> str:
+        return f"{obj.first_name} {obj.last_name}".strip()
 
 
 class TrackSerializer(serializers.ModelSerializer):
-    """
-    Serializes individual rehearsal tracks.
-    Injects human-readable display values for vocal lines.
-    """
+    """Serializes individual rehearsal tracks with human-readable voice line."""
     voice_part_display = serializers.CharField(source='get_voice_part_display', read_only=True)
     audio_file = serializers.FileField(use_url=True)
 
@@ -59,7 +106,7 @@ class TrackSerializer(serializers.ModelSerializer):
 
 
 class PieceVoiceRequirementSerializer(serializers.ModelSerializer):
-    """Serializes vocal arrangement requirements for a specific piece."""
+    """Serializes vocal arrangement requirements (divisi) for a specific piece."""
     voice_line_display = serializers.CharField(source='get_voice_line_display', read_only=True)
 
     class Meta:
@@ -67,20 +114,12 @@ class PieceVoiceRequirementSerializer(serializers.ModelSerializer):
         fields = ['id', 'piece', 'voice_line', 'voice_line_display', 'quantity']
 
 
-
-
 # ===========================================================================
-# Score Package Compiler — read-only nested serializers
+# AI-enriched nested entities — read-only inside Piece responses
 # ===========================================================================
-# These power the conductor's review screen (Phase 3). Writes use:
-#   * /api/archive/editions/        — multipart upload + ingestion dispatch
-#   * /api/pieces/{id}/             — existing PieceSerializer for piece edits
-#   * /api/composers/{id}/          — existing ComposerSerializer for composer edits
-# Nested entities (movements, translations, recordings, program notes) are
-# read-only in the edition serializer; mutations go through their own future
-# endpoints once the UI calls for inline editing.
-# ===========================================================================
-
+# All four (Movement, Translation, Recording, ProgramNote) are populated by
+# the Score Compiler pipeline. They have dedicated future write endpoints —
+# inline editing inside Piece would conflate write semantics.
 
 class MovementSerializer(serializers.ModelSerializer):
     """One movement within a multi-movement Piece."""
@@ -128,28 +167,16 @@ class AnnotationSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_by']
 
 
-class _ComposerSummarySerializer(serializers.ModelSerializer):
-    """Slim composer payload embedded in ScoreEdition.detail responses."""
-    full_name = serializers.SerializerMethodField()
+# ===========================================================================
+# Edition serializers (read + write + upload)
+# ===========================================================================
 
-    class Meta:
-        model = Composer
-        fields = ['id', 'first_name', 'last_name', 'full_name',
-                  'birth_year', 'death_year', 'nationality', 'period',
-                  'bio', 'portrait_url', 'portrait_license',
-                  'mbid', 'wikidata_qid']
+class PieceEditionSummarySerializer(serializers.ModelSerializer):
+    """Lean ScoreEdition payload embedded in Piece read responses.
 
-    def get_full_name(self, obj: Composer) -> str:
-        return f"{obj.first_name} {obj.last_name}".strip()
-
-
-class _PieceEditionSummarySerializer(serializers.ModelSerializer):
-    """
-    Lean ScoreEdition payload embedded in Piece read responses.
-
-    Powers the Archive PDF badge + AI Context "Editions" section + Materials
-    PDF download list. The full review-modal-grade ScoreEditionDetailSerializer
-    lives separately and is fetched on demand by the Score Compiler.
+    Powers the PDF download list and per-edition status chips inside the
+    Archive editor. The full review payload (with annotations + sha256) is
+    only served from the ScoreEdition detail endpoint.
     """
     pdf_file = serializers.FileField(read_only=True, use_url=True)
     ingestion_status_display = serializers.CharField(
@@ -162,38 +189,14 @@ class _PieceEditionSummarySerializer(serializers.ModelSerializer):
             'id', 'pdf_file', 'original_filename', 'publisher',
             'edition_year', 'editor_name', 'page_count',
             'is_default', 'ingestion_status', 'ingestion_status_display',
-            'created_at',
+            'ingestion_cost_cents', 'ingestion_error',
+            'created_at', 'updated_at',
         ]
         read_only_fields = fields
 
 
-class _PieceSummarySerializer(serializers.ModelSerializer):
-    """Slim piece payload embedded in ScoreEdition.detail responses."""
-    composer = _ComposerSummarySerializer(read_only=True)
-    voice_requirements = PieceVoiceRequirementSerializer(many=True, read_only=True)
-    movements = MovementSerializer(many=True, read_only=True)
-    translations = TranslationSerializer(many=True, read_only=True)
-    recordings = RecordingSerializer(many=True, read_only=True)
-    program_notes = ProgramNoteSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Piece
-        fields = [
-            'id', 'title', 'composer', 'opus_catalog', 'musical_key',
-            'language', 'estimated_duration', 'voicing', 'text_source',
-            'lyrics_original', 'lyrics_translation', 'lyrics_ipa',
-            'composition_year', 'epoch', 'mbid_work',
-            'ingestion_status', 'voice_requirements',
-            'movements', 'translations', 'recordings', 'program_notes',
-        ]
-
-
 class ScoreEditionListSerializer(serializers.ModelSerializer):
-    """
-    Lean payload for the list view (used by the editions table on the
-    conductor's review dashboard). Avoids hydrating movements/translations
-    /recordings — those are only needed on the detail view.
-    """
+    """Lean ScoreEdition list payload — used by the Archive upload queue."""
     piece_title = serializers.CharField(source='piece.title', read_only=True, default='')
     composer_name = serializers.SerializerMethodField()
     ingestion_status_display = serializers.CharField(
@@ -220,13 +223,8 @@ class ScoreEditionListSerializer(serializers.ModelSerializer):
 
 
 class ScoreEditionDetailSerializer(serializers.ModelSerializer):
-    """
-    Full payload for the conductor's review screen — embeds composer,
-    piece, movements, translations, recordings, program notes, and the
-    PDF file URL.
-    """
+    """Full ScoreEdition payload — includes annotations and SHA-256."""
     pdf_file = serializers.FileField(read_only=True, use_url=True)
-    piece = _PieceSummarySerializer(read_only=True)
     annotations = AnnotationSerializer(many=True, read_only=True)
     ingestion_status_display = serializers.CharField(
         source='get_ingestion_status_display', read_only=True,
@@ -253,33 +251,60 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
 
 
 class ScoreEditionUploadSerializer(serializers.Serializer):
-    """
-    Multipart upload payload. Caller posts a PDF file + optional metadata;
-    the view creates the ScoreEdition row and dispatches the ingestion
-    pipeline. Returns the ScoreEditionDetailSerializer payload.
-    """
+    """Multipart payload — pdf_file plus optional descriptive metadata."""
     pdf_file = serializers.FileField(required=True)
     original_filename = serializers.CharField(max_length=255, required=False, allow_blank=True)
     publisher = serializers.CharField(max_length=120, required=False, allow_blank=True)
     edition_year = serializers.IntegerField(required=False, allow_null=True)
     editor_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
     is_default = serializers.BooleanField(required=False, default=False)
+    # When uploading a PDF for an *existing* Piece, the resolver step is
+    # skipped — the caller already knows the work identity. Untyped Pieces
+    # (no PDFs yet) get this from the manual-create flow; AI-discovered
+    # Pieces get it from the resolver. Either way the FK is set explicitly.
+    piece_id = serializers.UUIDField(required=False, allow_null=True)
+
+
+# ===========================================================================
+# Piece — the aggregate root serializer
+# ===========================================================================
+
+# Fields the manager can edit by hand from the Archive editor.
+# Sub-entities (editions, recordings, translations, movements, program_notes)
+# go through their own endpoints.
+_PIECE_WRITABLE_FIELDS: tuple[str, ...] = (
+    'title',
+    'composer_id',
+    'arranger',
+    'language',
+    'estimated_duration',
+    'voicing',
+    'description',
+    'lyrics_original',
+    'lyrics_ipa',
+    'composition_year',
+    'epoch',
+    'opus_catalog',
+    'musical_key',
+    'text_source',
+    'voice_requirements',
+)
+
 
 class PieceSerializer(serializers.ModelSerializer):
     """
-    Main serializer for musical pieces.
+    Single read+write serializer for the Piece aggregate root.
 
-    Read shape: `composer` is the nested summary object (matching what the
-    Score Compiler returns from `_PieceSummarySerializer`), plus the four
-    Score-Compiler relations are embedded (`movements`, `translations`,
-    `recordings`, `program_notes`). One DTO across both surfaces.
+    Read shape: nested composer + all AI-enriched relations + editions list.
+    Ingestion status is derived from editions.
 
-    Write shape: callers POST/PATCH `composer_id` (UUID) — DRF maps it to the
-    `composer` FK transparently. Old write payloads using `composer: <uuid>`
-    keep working via `to_internal_value` aliasing below.
+    Write shape: send any subset of [_PIECE_WRITABLE_FIELDS] as JSON.
+    `composer_id` (UUID) sets the composer FK. `voice_requirements` is a
+    JSON list of `{voice_line, quantity}` objects — replaces the prior
+    `requirements_data` write-only field with a same-named, same-shape field
+    that round-trips cleanly with the read payload.
     """
-    tracks = TrackSerializer(many=True, read_only=True)
-    composer = _ComposerSummarySerializer(read_only=True)
+    composer = ComposerSerializer(read_only=True)
     composer_id = serializers.PrimaryKeyRelatedField(
         source='composer',
         queryset=Composer.objects.all(),
@@ -287,202 +312,154 @@ class PieceSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
-    composer_name = serializers.CharField(source='composer.last_name', read_only=True)
-    composer_full_name = serializers.SerializerMethodField()
-    voice_requirements = PieceVoiceRequirementSerializer(many=True, read_only=True)
 
-    # Score Compiler — AI-enriched and externally-sourced relations.
+    tracks = TrackSerializer(many=True, read_only=True)
+    voice_requirements_read = PieceVoiceRequirementSerializer(
+        source='voice_requirements', many=True, read_only=True,
+    )
+    voice_requirements = serializers.JSONField(write_only=True, required=False)
+
     movements = MovementSerializer(many=True, read_only=True)
     translations = TranslationSerializer(many=True, read_only=True)
     recordings = RecordingSerializer(many=True, read_only=True)
     program_notes = ProgramNoteSerializer(many=True, read_only=True)
-    # All ScoreEditions attached to this Piece (legacy `sheet_music` is one
-    # PDF per piece; the new flow allows multiple — Bärenreiter, IMSLP, etc.).
-    editions = _PieceEditionSummarySerializer(many=True, read_only=True)
+    editions = PieceEditionSummarySerializer(many=True, read_only=True)
 
-    # URL generation for static file serving
-    sheet_music = serializers.FileField(use_url=True, required=False)
     epoch_display = serializers.CharField(source='get_epoch_display', read_only=True)
-    ingestion_status_display = serializers.CharField(
-        source='get_ingestion_status_display', read_only=True,
-    )
-    reference_recording = serializers.URLField(write_only=True, required=False, allow_blank=True)
-
-    # Write-only field for handling nested requirement mutations
-    requirements_data = serializers.JSONField(write_only=True, required=False, allow_null=True)
+    ingestion_status = serializers.SerializerMethodField()
+    ingestion_status_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Piece
-        fields = '__all__'
-
-    def get_composer_full_name(self, obj: Piece) -> str:
-        if not obj.composer:
-            return ''
-        return f"{obj.composer.first_name} {obj.composer.last_name}".strip()
-
-    def to_internal_value(self, data):
-        data = data.copy() if hasattr(data, 'copy') else dict(data)
-
-        # Back-compat: legacy write payloads send `composer: <uuid>`; the new
-        # nested-read shape requires `composer_id` on write. Alias one to
-        # the other without breaking existing clients.
-        if 'composer_id' not in data and 'composer' in data:
-            value = data.get('composer')
-            # Distinguish "id string" from "nested object" — if a client ever
-            # round-trips the read payload back as a write, ignore the nested.
-            if isinstance(value, str) or value is None:
-                data['composer_id'] = value
-                data.pop('composer', None)
-            elif isinstance(value, dict):
-                data.pop('composer', None)
-
-        nullable_fields = (
-            'composer_id',
-            'composition_year',
-            'estimated_duration',
-        )
-
-        blank_string_fields = (
+        fields = [
+            'id',
+            'title',
+            'composer', 'composer_id',
             'arranger',
             'language',
-            'epoch',
-            'lyrics_original',
-            'lyrics_translation',
-            'reference_recording',
-            'reference_recording_youtube',
-            'reference_recording_spotify',
+            'estimated_duration',
             'voicing',
             'description',
-        )
+            'lyrics_original',
+            'lyrics_ipa',
+            'composition_year',
+            'epoch', 'epoch_display',
+            'opus_catalog',
+            'musical_key',
+            'text_source',
+            'mbid_work',
+            # Derived
+            'ingestion_status', 'ingestion_status_display',
+            # Read-only nested relations
+            'tracks',
+            'voice_requirements',          # write-only
+            'voice_requirements_read',     # read-only mirror
+            'movements',
+            'translations',
+            'recordings',
+            'program_notes',
+            'editions',
+            # Audit
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'id', 'mbid_work', 'created_at', 'updated_at',
+        ]
 
-        for field in nullable_fields:
-            if field in data and data.get(field) == '':
-                data[field] = None
+    # ---- Derived fields ----------------------------------------------------
 
-        for field in blank_string_fields:
-            if field in data and data.get(field) is None:
-                data[field] = ''
+    def get_ingestion_status(self, obj: Piece) -> str:
+        return _aggregate_ingestion_status(obj)
 
-        return super().to_internal_value(data)
+    def get_ingestion_status_display(self, obj: Piece) -> str:
+        code = _aggregate_ingestion_status(obj)
+        return str(dict(IngestionStatus.choices).get(code, code))
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['reference_recording'] = (
-            representation.get('reference_recording_youtube')
-            or representation.get('reference_recording_spotify')
-        )
-        return representation
+    # ---- Write validation --------------------------------------------------
 
-    def validate(self, attrs):
-        legacy_reference = attrs.pop('reference_recording', _LEGACY_REFERENCE_RECORDING)
-        if legacy_reference is not _LEGACY_REFERENCE_RECORDING and legacy_reference:
-            has_explicit_reference = bool(attrs.get('reference_recording_youtube') or attrs.get('reference_recording_spotify'))
-            if not has_explicit_reference:
-                attrs['reference_recording_youtube'] = legacy_reference
-        return attrs
-    
-    def validate_requirements_data(self, value):
+    def validate_voice_requirements(self, value: Any) -> list[dict[str, Any]] | None:
+        """Validate the list-of-{voice_line, quantity} payload via Pydantic.
+
+        Multipart uploads serialise nested JSON as a string; accept both raw
+        lists and JSON strings so the form doesn't have to know the transport.
         """
-        Parses raw multipart/form-data JSON strings into native Python lists.
-        Handles the validation edge cases before the View ever sees it.
-        """
-        if value is None:
+        if value is None or value == '':
             return None
-            
+
         if isinstance(value, str):
             try:
-                parsed_data = json.loads(value)
-            except json.JSONDecodeError:
-                raise serializers.ValidationError("Invalid JSON format for requirements_data.")
-        else:
-            parsed_data = value
+                value = json.loads(value)
+            except json.JSONDecodeError as exc:
+                raise serializers.ValidationError(
+                    'voice_requirements must be valid JSON.',
+                ) from exc
 
-        if not isinstance(parsed_data, list):
-            raise serializers.ValidationError("Requirements data must be a list of objects.")
+        if not isinstance(value, list):
+            raise serializers.ValidationError(
+                'voice_requirements must be a list of {voice_line, quantity} objects.',
+            )
 
-        validated_requirements = []
-        seen_voice_lines: set[str] = set()
-        duplicate_voice_lines: set[str] = set()
-
-        for index, requirement in enumerate(parsed_data):
+        validated: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for index, requirement in enumerate(value):
             if not isinstance(requirement, dict):
                 raise serializers.ValidationError({
-                    str(index): "Requirement entries must be objects."
+                    str(index): 'Requirement entries must be objects.',
                 })
-
             try:
                 dto = VoiceRequirementDTO(**requirement)
             except PydanticValidationError as exc:
-                # Surface pydantic's field errors without echoing raw input / docs URLs /
-                # ctx — keeps the response JSON-safe and avoids leaking submitted values.
-                clean_errors = exc.errors(include_url=False, include_input=False, include_context=False)
-                raise serializers.ValidationError({str(index): cast("list[Any]", clean_errors)}) from exc
+                clean = exc.errors(include_url=False, include_input=False, include_context=False)
+                raise serializers.ValidationError({str(index): cast("list[Any]", clean)}) from exc
+            if dto.voice_line in seen:
+                duplicates.add(dto.voice_line)
+            seen.add(dto.voice_line)
+            validated.append(dto.model_dump())
 
-            if dto.voice_line in seen_voice_lines:
-                duplicate_voice_lines.add(dto.voice_line)
-            seen_voice_lines.add(dto.voice_line)
-            validated_requirements.append(dto.model_dump())
-
-        if duplicate_voice_lines:
-            duplicate_list = ", ".join(sorted(duplicate_voice_lines))
+        if duplicates:
             raise serializers.ValidationError(
-                f"requirements_data contains duplicate voice lines: {duplicate_list}."
+                f"voice_requirements contains duplicate voice lines: "
+                f"{', '.join(sorted(duplicates))}.",
             )
-            
-        return validated_requirements
+        return validated
 
-    def to_dto(self, instance=None) -> PieceWriteDTO:
-        """
-        Enterprise Factory Pattern: Assembles the DTO directly from validated data.
-        Keeps the ViewSet ultra-thin.
-        """
+    # ---- DTO assembly ------------------------------------------------------
+
+    def to_dto(self, instance: Piece | None = None) -> PieceWriteDTO:
+        """Assemble a PieceWriteDTO from validated data, defaulting from the instance for PATCH."""
         vd = self.validated_data
-        
-        # Build Requirements DTOs
-        req_dtos = None
-        if 'requirements_data' in vd and vd['requirements_data'] is not None:
-            req_dtos = [
-                VoiceRequirementDTO(
-                    voice_line=req['voice_line'],
-                    quantity=req['quantity']
-                )
-                for req in vd['requirements_data']
-            ]
 
-        # Handle fallback for updates
+        req_dtos: tuple[VoiceRequirementDTO, ...] | None = None
+        if 'voice_requirements' in vd and vd['voice_requirements'] is not None:
+            req_dtos = tuple(
+                VoiceRequirementDTO(voice_line=req['voice_line'], quantity=req['quantity'])
+                for req in vd['voice_requirements']
+            )
+
         composer_id = None
         if 'composer' in vd:
             composer_id = vd['composer'].id if vd['composer'] else None
-        elif instance and instance.composer_id:
+        elif instance is not None and instance.composer_id:
             composer_id = instance.composer_id
 
+        def pick(field: str, default: Any) -> Any:
+            return vd.get(field, getattr(instance, field, default) if instance else default)
+
         return PieceWriteDTO(
-            title=vd.get('title', instance.title if instance else ''),
+            title=pick('title', ''),
             composer_id=composer_id,
-            arranger=vd.get('arranger', getattr(instance, 'arranger', '')),
-            language=vd.get('language', getattr(instance, 'language', '')),
-            estimated_duration=vd.get('estimated_duration', getattr(instance, 'estimated_duration', None)),
-            voicing=vd.get('voicing', getattr(instance, 'voicing', '')),
-            description=vd.get('description', getattr(instance, 'description', '')),
-            lyrics_original=vd.get('lyrics_original', getattr(instance, 'lyrics_original', '')),
-            lyrics_translation=vd.get('lyrics_translation', getattr(instance, 'lyrics_translation', '')),
-            reference_recording_youtube=_blank_to_none(
-                vd.get(
-                    'reference_recording_youtube',
-                    getattr(instance, 'reference_recording_youtube', ''),
-                )
-            ),
-            reference_recording_spotify=_blank_to_none(
-                vd.get(
-                    'reference_recording_spotify',
-                    getattr(instance, 'reference_recording_spotify', ''),
-                )
-            ),
-            composition_year=vd.get('composition_year', getattr(instance, 'composition_year', None)),
-            epoch=vd.get('epoch', getattr(instance, 'epoch', '')),
-            opus_catalog=vd.get('opus_catalog', getattr(instance, 'opus_catalog', '')),
-            musical_key=vd.get('musical_key', getattr(instance, 'musical_key', '')),
-            text_source=vd.get('text_source', getattr(instance, 'text_source', '')),
-            lyrics_ipa=vd.get('lyrics_ipa', getattr(instance, 'lyrics_ipa', '')),
-            voice_requirements=req_dtos
+            arranger=pick('arranger', ''),
+            language=pick('language', ''),
+            estimated_duration=pick('estimated_duration', None),
+            voicing=pick('voicing', ''),
+            description=pick('description', ''),
+            lyrics_original=pick('lyrics_original', ''),
+            lyrics_ipa=pick('lyrics_ipa', ''),
+            composition_year=pick('composition_year', None),
+            epoch=pick('epoch', ''),
+            opus_catalog=pick('opus_catalog', ''),
+            musical_key=pick('musical_key', ''),
+            text_source=pick('text_source', ''),
+            voice_requirements=req_dtos,
         )

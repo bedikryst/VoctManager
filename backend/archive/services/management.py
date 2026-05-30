@@ -3,16 +3,23 @@
 Archive Management Service
 ===============================================================================
 Domain: Archive (Repertoire & Materials)
-Description: 
-    Enterprise domain service governing the lifecycle of the musical repertoire.
-    Strictly adheres to Bounded Context principles by delegating cross-domain 
-    side-effects to event listeners via django.dispatch.Signal.
+Description:
+    Orchestrates Piece + Track mutations inside the Archive aggregate.
 
-Standards: SaaS 2026, DDD (Domain-Driven Design), Event-Driven Architecture.
+    Piece-level PDFs live in [ScoreEdition] (not on Piece directly) — uploading
+    a PDF goes through [services.ingestion.start_ingestion] which dispatches
+    the AI pipeline. Manual Piece creation here covers folk songs and other
+    repertoire where no PDF / no AI extraction is needed.
+
+    Material-update notifications fire from edition approval ([views.ScoreEditionViewSet.approve])
+    and Track creation here — both moments where the chorus gets fresh content.
+
+Standards: SaaS 2026, DDD, Event-Driven (`piece_material_updated_event`).
 ===============================================================================
 """
 
 import logging
+from collections.abc import Sequence
 
 from django.db import transaction
 
@@ -25,159 +32,106 @@ logger = logging.getLogger(__name__)
 
 
 class ArchiveManagementService:
-    """
-    Orchestrates mutations within the Archive aggregate root.
-    Maintains transactional integrity for pieces and their vocal requirements.
-    """
+    """Mutations on the Piece aggregate plus rehearsal Tracks."""
 
     @staticmethod
-    def _sync_piece_voice_requirements(piece: Piece, requirements: list[VoiceRequirementDTO]) -> None:
-        """
-        Internal domain logic to atomically replace voice requirements.
-        Relies on Soft Deletion to safely circumvent UniqueConstraints.
-        """
+    def _sync_piece_voice_requirements(
+        piece: Piece,
+        requirements: Sequence[VoiceRequirementDTO],
+    ) -> None:
+        """Atomically replace voice requirements — soft-delete preserves the unique constraint."""
         piece.voice_requirements.all().delete()
-        
+
         new_requirements = [
-            PieceVoiceRequirement(
-                piece=piece,
-                voice_line=req.voice_line,
-                quantity=req.quantity
-            )
+            PieceVoiceRequirement(piece=piece, voice_line=req.voice_line, quantity=req.quantity)
             for req in requirements
         ]
         PieceVoiceRequirement.objects.bulk_create(new_requirements)
-        logger.debug(f"[ArchiveService] Synchronized {len(new_requirements)} voice requirements for '{piece.title}'")
 
     @staticmethod
     def _normalize_blank_text(value: str | None) -> str:
-        """
-        Guarantees non-null writes for model fields that allow blank strings but disallow NULL.
-        Keeps the aggregate root resilient even if upstream serialization changes.
-        """
         return value or ""
 
     @classmethod
-    def create_piece(cls, dto: PieceWriteDTO, sheet_music_file=None) -> Piece:
-        """
-        Provisions a new musical piece and its underlying requirements.
-        """
-        composer = None
-        if dto.composer_id:
-            try:
-                composer = Composer.objects.get(id=dto.composer_id, is_deleted=False)
-            except Composer.DoesNotExist:
-                raise PieceValidationException(f"Composer with ID {dto.composer_id} does not exist or is deleted.")
+    def _apply_piece_fields(cls, piece: Piece, dto: PieceWriteDTO) -> None:
+        """Single source of truth for Piece field assignment from a DTO."""
+        piece.title = dto.title
+        piece.arranger = cls._normalize_blank_text(dto.arranger)
+        piece.language = cls._normalize_blank_text(dto.language)
+        piece.estimated_duration = dto.estimated_duration
+        piece.voicing = cls._normalize_blank_text(dto.voicing)
+        piece.description = cls._normalize_blank_text(dto.description)
+        piece.lyrics_original = cls._normalize_blank_text(dto.lyrics_original)
+        piece.composition_year = dto.composition_year
+        piece.epoch = cls._normalize_blank_text(dto.epoch)
+        piece.opus_catalog = cls._normalize_blank_text(dto.opus_catalog)
+        piece.musical_key = cls._normalize_blank_text(dto.musical_key)
+        piece.text_source = cls._normalize_blank_text(dto.text_source)
+        piece.lyrics_ipa = cls._normalize_blank_text(dto.lyrics_ipa)
 
-        with transaction.atomic():
-            piece = Piece.objects.create(
-                title=dto.title,
-                composer=composer,
-                arranger=cls._normalize_blank_text(dto.arranger),
-                language=cls._normalize_blank_text(dto.language),
-                estimated_duration=dto.estimated_duration,
-                voicing=cls._normalize_blank_text(dto.voicing),
-                description=cls._normalize_blank_text(dto.description),
-                lyrics_original=cls._normalize_blank_text(dto.lyrics_original),
-                lyrics_translation=cls._normalize_blank_text(dto.lyrics_translation),
-                reference_recording_youtube=cls._normalize_blank_text(
-                    str(dto.reference_recording_youtube) if dto.reference_recording_youtube else None
-                ),
-                reference_recording_spotify=cls._normalize_blank_text(
-                    str(dto.reference_recording_spotify) if dto.reference_recording_spotify else None
-                ),
-                composition_year=dto.composition_year,
-                epoch=cls._normalize_blank_text(dto.epoch),
-                opus_catalog=cls._normalize_blank_text(dto.opus_catalog),
-                musical_key=cls._normalize_blank_text(dto.musical_key),
-                text_source=cls._normalize_blank_text(dto.text_source),
-                lyrics_ipa=cls._normalize_blank_text(dto.lyrics_ipa),
-                sheet_music=sheet_music_file
-            )
-            
-            if dto.voice_requirements is not None:
-                cls._sync_piece_voice_requirements(piece, dto.voice_requirements)
-                
-        logger.info(f"[ArchiveService] Provisioned new repertoire piece: '{piece.title}'")
-        return piece
+    @staticmethod
+    def _resolve_composer(composer_id) -> Composer | None:
+        if not composer_id:
+            return None
+        try:
+            return Composer.objects.get(id=composer_id, is_deleted=False)
+        except Composer.DoesNotExist as exc:
+            raise PieceValidationException(
+                f"Composer with ID {composer_id} does not exist or is deleted."
+            ) from exc
 
     @classmethod
-    def update_piece(cls, piece: Piece, dto: PieceWriteDTO, sheet_music_file=None, update_sheet_music: bool = False) -> Piece:
-        """
-        Mutates an existing piece. Broadcasts a domain event if critical materials 
-        are updated, allowing decoupled systems to react asynchronously.
-        """
-        composer = None
-        if dto.composer_id:
-            try:
-                composer = Composer.objects.get(id=dto.composer_id, is_deleted=False)
-            except Composer.DoesNotExist:
-                raise PieceValidationException(f"Composer with ID {dto.composer_id} does not exist.")
+    def create_piece(cls, dto: PieceWriteDTO) -> Piece:
+        """Provision a new piece manually (no PDF, no AI). PDFs go through the ingestion pipeline."""
+        composer = cls._resolve_composer(dto.composer_id)
 
         with transaction.atomic():
-            piece.title = dto.title
-            piece.composer = composer
-            piece.arranger = cls._normalize_blank_text(dto.arranger)
-            piece.language = cls._normalize_blank_text(dto.language)
-            piece.estimated_duration = dto.estimated_duration
-            piece.voicing = cls._normalize_blank_text(dto.voicing)
-            piece.description = cls._normalize_blank_text(dto.description)
-            piece.lyrics_original = cls._normalize_blank_text(dto.lyrics_original)
-            piece.lyrics_translation = cls._normalize_blank_text(dto.lyrics_translation)
-            piece.reference_recording_youtube = cls._normalize_blank_text(
-                str(dto.reference_recording_youtube) if dto.reference_recording_youtube else None
-            )
-            piece.reference_recording_spotify = cls._normalize_blank_text(
-                str(dto.reference_recording_spotify) if dto.reference_recording_spotify else None
-            )
-            piece.composition_year = dto.composition_year
-            piece.epoch = cls._normalize_blank_text(dto.epoch)
-            piece.opus_catalog = cls._normalize_blank_text(dto.opus_catalog)
-            piece.musical_key = cls._normalize_blank_text(dto.musical_key)
-            piece.text_source = cls._normalize_blank_text(dto.text_source)
-            piece.lyrics_ipa = cls._normalize_blank_text(dto.lyrics_ipa)
-            
-            if update_sheet_music:
-                piece.sheet_music = sheet_music_file
-
+            piece = Piece(composer=composer)
+            cls._apply_piece_fields(piece, dto)
             piece.save()
 
             if dto.voice_requirements is not None:
                 cls._sync_piece_voice_requirements(piece, dto.voice_requirements)
 
-            # --- DOMAIN EVENT DISPATCHING ---
-            # Using on_commit ensures the event is only broadcasted if the DB transaction 
-            # successfully commits, preventing false-positive notifications.
-            if update_sheet_music and sheet_music_file:
-                transaction.on_commit(
-                    lambda: piece_material_updated_event.send(sender=cls.__class__, piece=piece)
-                )
-
-        logger.info(f"[ArchiveService] Updated repertoire piece: '{piece.title}'")
+        logger.info("piece.created id=%s title=%r", piece.id, piece.title)
         return piece
-    
+
+    @classmethod
+    def update_piece(cls, piece: Piece, dto: PieceWriteDTO) -> Piece:
+        """Update piece metadata. Does not touch PDFs (those live on ScoreEdition)."""
+        composer = cls._resolve_composer(dto.composer_id)
+
+        with transaction.atomic():
+            piece.composer = composer
+            cls._apply_piece_fields(piece, dto)
+            piece.save()
+
+            if dto.voice_requirements is not None:
+                cls._sync_piece_voice_requirements(piece, dto.voice_requirements)
+
+        logger.info("piece.updated id=%s title=%r", piece.id, piece.title)
+        return piece
+
     @classmethod
     def create_track(cls, validated_data: dict) -> Track:
-        """
-        Provisions a new rehearsal track.
-        Future-proofed for launching async Celery tasks (e.g. MP3 compression/normalization).
-        """
+        """Provision a new rehearsal track and notify project participants on commit."""
         with transaction.atomic():
             track = Track.objects.create(**validated_data)
-            
-            # FUTURE ENTERPRISE IMPLEMENTATION:
-            # transaction.on_commit(lambda: process_audio_file_task.delay(track.id))
-            
-            logger.info(f"[ArchiveService] Track created for piece '{track.piece.title}' (Line: {track.voice_part})")
+            transaction.on_commit(
+                lambda: piece_material_updated_event.send(
+                    sender=cls.__class__, piece=track.piece,
+                ),
+            )
+            logger.info(
+                "track.created piece=%s voice_part=%s",
+                track.piece_id, track.voice_part,
+            )
             return track
 
     @classmethod
     def delete_track(cls, track: Track) -> None:
-        """
-        Soft-deletes an audio track. 
-        Maintains referential integrity and audit trails.
-        """
+        """Soft-delete an audio track."""
         with transaction.atomic():
             track_name = str(track)
             track.delete()
-            logger.info(f"[ArchiveService] Track removed: {track_name}")
+            logger.info("track.deleted %s", track_name)

@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from core.constants import VoiceLine
 
@@ -37,36 +37,30 @@ class VoiceRequirementDTO(EnterpriseBaseDTO):
         return _require_choice(value, VOICE_LINE_VALUES, "voice_line")
 
 class PieceWriteDTO(EnterpriseBaseDTO):
-    """Immutable data transfer object for creating or updating a musical piece."""
+    """Immutable data transfer object for creating or updating a musical piece.
+
+    PDFs live on [ScoreEdition], reference recordings on [Recording],
+    translations on [Translation] — none of those are written through here.
+    """
     title: str = Field(..., min_length=1, max_length=200)
-    
-    # UUID typing ensures valid identifiers before database hits
     composer_id: UUID | None = None
-    
+
     arranger: str | None = Field(None, max_length=150)
     language: str | None = Field(None, max_length=50)
-    
-    # Duration cannot be negative
     estimated_duration: int | None = Field(None, ge=0, description="Duration in seconds")
     voicing: str = Field(default="", max_length=50)
     description: str = Field(default="")
-    
+
     lyrics_original: str | None = None
-    lyrics_translation: str | None = None
-    
-    # HttpUrl automatically validates standard URL schemas!
-    reference_recording_youtube: HttpUrl | None = None
-    reference_recording_spotify: HttpUrl | None = None
-    
-    # Basic sanity check for composition years
+    lyrics_ipa: str | None = None
+
     composition_year: int | None = Field(None, ge=500, le=2100)
     epoch: str | None = Field(None, max_length=4)
 
     opus_catalog: str = Field(default="", max_length=40)
     musical_key: str = Field(default="", max_length=20)
     text_source: str = Field(default="", max_length=200)
-    lyrics_ipa: str | None = None
-    
+
     voice_requirements: tuple[VoiceRequirementDTO, ...] | None = None
 
     @field_validator("epoch")

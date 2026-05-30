@@ -30,6 +30,8 @@ import {
   ListOrdered,
 } from "lucide-react";
 
+import type { VoiceRequirement } from "@/shared/types";
+
 import { useMicroCasting } from "../hooks/useMicroCasting";
 import { getPrimaryReferenceRecording } from "@/features/archive/constants/referenceRecordings";
 import { DraggableArtist } from "./components/DraggableArtist";
@@ -116,7 +118,8 @@ export const MicroCastingTab = ({
   const referenceUrl = selectedPiece
     ? getPrimaryReferenceRecording(selectedPiece)
     : null;
-  const requirements = selectedPiece?.voice_requirements || [];
+  const requirements: VoiceRequirement[] =
+    selectedPiece?.voice_requirements_read || [];
 
   const unassignedParticipations = projectParticipations.filter(
     (part) =>
@@ -345,20 +348,22 @@ export const MicroCastingTab = ({
                 )}
               </Select>
 
-              {selectedPiece && (
-                <div className="flex flex-col gap-1 border-t border-ethereal-incense/15 pt-3">
-                  <Text size="sm" weight="bold" className="truncate">
-                    {selectedPiece.title}
-                  </Text>
-                  {(selectedPiece.composer_full_name ||
-                    selectedPiece.composer_name) && (
-                    <Eyebrow color="muted">
-                      {selectedPiece.composer_full_name ||
-                        selectedPiece.composer_name}
-                    </Eyebrow>
-                  )}
-                </div>
-              )}
+              {selectedPiece && (() => {
+                const composer = selectedPiece.composer;
+                const composerLabel = composer
+                  ? `${composer.first_name ?? ""} ${composer.last_name}`.trim()
+                  : "";
+                return (
+                  <div className="flex flex-col gap-1 border-t border-ethereal-incense/15 pt-3">
+                    <Text size="sm" weight="bold" className="truncate">
+                      {selectedPiece.title}
+                    </Text>
+                    {composerLabel && (
+                      <Eyebrow color="muted">{composerLabel}</Eyebrow>
+                    )}
+                  </div>
+                );
+              })()}
             </GlassCard>
 
             <GlassCard

@@ -57,12 +57,19 @@ const toAttendanceRecord = (attendance: Attendance): AttendanceRecord => ({
   status: attendance.status,
 });
 
-const toAttendanceEntity = (attendance: AttendanceRecord): Attendance => ({
-  id: attendance.id,
-  rehearsal: attendance.rehearsal,
-  participation: attendance.participation,
-  status: attendance.status,
-});
+// Local AttendanceRecord uses a nullable status to model the "cleared" cell;
+// the backend Attendance row only exists with a concrete status. Rows whose
+// local status is null have no backend counterpart, so we filter them before
+// hydrating the query cache.
+const toAttendanceEntity = (attendance: AttendanceRecord): Attendance | null =>
+  attendance.status === null
+    ? null
+    : {
+        id: attendance.id,
+        rehearsal: attendance.rehearsal,
+        participation: attendance.participation,
+        status: attendance.status,
+      };
 
 export interface UseAttendanceMatrixResult {
   projectRehearsals: Rehearsal[];
@@ -175,7 +182,9 @@ export const useAttendanceMatrix = (
 
           queryClient.setQueryData<Attendance[]>(
             attendanceQueryKey,
-            nextState.map(toAttendanceEntity),
+            nextState
+              .map(toAttendanceEntity)
+              .filter((entity): entity is Attendance => entity !== null),
           );
 
           return nextState;
@@ -213,6 +222,8 @@ export const useAttendanceMatrix = (
           !currentRecord.id.startsWith("temp-")
         ) {
           await deleteMutation.mutateAsync(currentRecord.id);
+        } else if (nextStatus === null) {
+          // Cleared cell with no persisted row — nothing to send.
         } else if (currentRecord?.id && !currentRecord.id.startsWith("temp-")) {
           await updateMutation.mutateAsync({
             id: currentRecord.id,

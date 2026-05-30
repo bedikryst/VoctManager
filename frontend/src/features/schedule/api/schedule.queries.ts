@@ -126,7 +126,6 @@ export const useUpsertScheduleAttendance = () => {
             participation: String(payload.participation),
             status: payload.status,
             excuse_note: payload.excuse_note,
-            created_at: new Date().toISOString(),
           };
           return [...old, optimisticRecord];
         },

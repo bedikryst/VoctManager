@@ -1,0 +1,130 @@
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     CODA Â· pre-footer Â· per-letter wght cascade (Awwwards MMXXVI)
+     "CISZA." â€” kaĹĽda litera ma wĹ‚asnÄ… fazÄ™ breath, kaskada przesuwa
+     siÄ™ lewoâ†’prawo wraz ze scrollem. Cormorant variable wght
+     320â†’640â†’320. Bez 3D, bez blur, bez mix-blend-mode â€” caĹ‚y efekt
+     siedzi w jednej osi typograficznej.
+     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+  .coda {
+    position: relative;
+    padding: clamp(110px, 16vw, 220px) max(28px, 5vw);
+    background:
+      radial-gradient(circle at 50% 110%, rgba(198, 164, 91, 0.18), transparent 42rem),
+      linear-gradient(180deg, var(--paper-soft) 0%, var(--paper) 100%);
+    border-top: 1px solid var(--line);
+    overflow: hidden;
+    view-timeline-name: --coda-scroll;
+    view-timeline-axis: block;
+  }
+
+  .coda-container {
+    position: relative;
+    margin: 0 auto;
+    width: min(1580px, 100%);
+    display: grid;
+    gap: clamp(8px, 1.4vw, 20px);
+  }
+
+  .coda-headline {
+    margin: 0;
+    font-family: var(--serif);
+    /* Capped max 400 -> 280: at 400px every wght tick re-rasters six glyphs against
+       a cold cache, which is the user-reported "Cisza" stutter. 280 is still huge and
+       dramatic but caches far better; the closure reads less as standing ovation
+       and more as final breath, which matches Coda's intent anyway. */
+    font-size: clamp(120px, 22vw, 280px);
+    font-weight: 300;
+    line-height: 0.86;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    font-feature-settings: "liga", "kern";
+  }
+
+  .coda-letter {
+    display: inline-block;
+    font-variation-settings: "wght" 320;
+    /* contain: paint scopes the wght re-raster to each glyph box so a swing on one
+       letter doesn't invalidate paint on the next. */
+    contain: paint;
+  }
+
+  .coda-letter--punct {
+    color: var(--candle);
+    margin-left: -0.02em;
+  }
+
+  .coda-tail {
+    margin: 0;
+    font-family: var(--serif);
+    font-style: italic;
+    /* Promoted from clamp(30, 6vw, 96) -> clamp(40, 8vw, 140): the Coda must claim
+       the closure. "brzmi dalej" is the page's final breath; it cannot read as
+       a smaller appendage to "Cisza." — it has to be the gold gesture itself. */
+    font-size: clamp(40px, 8vw, 140px);
+    font-weight: 360;
+    line-height: 1;
+    letter-spacing: 0.005em;
+    color: var(--candle);
+    text-align: center;
+    opacity: 0;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+
+      /* Perf-hardened wght scrub. `will-change: font-variation-settings` was a hint
+         the browser cannot honour — wght is a paint-not-composite property, so the
+         "promotion" was misleading and added overhead. Removed. The swing is also
+         halved (380->480->380, 100 units instead of 200): at 280px Cormorant each
+         wght unit triggers a glyph re-raster, and 100 units lands as a quieter
+         breath that still reads as "ciężar" without choking GPU on slow scroll. */
+      .coda-headline {
+        contain: layout style paint;
+      }
+
+      .coda-letter {
+        font-variation-settings: "wght" var(--wght);
+        animation: coda-letter-pulse linear both;
+        animation-timeline: --coda-scroll;
+      }
+
+      .coda-letter:nth-child(1) { animation-range: entry  0% cover 50%; }
+      .coda-letter:nth-child(2) { animation-range: entry  8% cover 58%; }
+      .coda-letter:nth-child(3) { animation-range: entry 16% cover 66%; }
+      .coda-letter:nth-child(4) { animation-range: entry 24% cover 74%; }
+      .coda-letter:nth-child(5) { animation-range: entry 32% cover 82%; }
+      .coda-letter:nth-child(6) { animation-range: entry 40% cover 90%; }
+
+      @keyframes coda-letter-pulse {
+        0%   { --wght: 380; }
+        45%  { --wght: 480; }
+        100% { --wght: 380; }
+      }
+
+      /* "brzmi dalej." â€” italic echo, wchodzi po falowaniu liter. */
+      .coda-tail {
+        animation: coda-tail-emerge linear both;
+        animation-timeline: --coda-scroll;
+        animation-range: entry 50% cover 95%;
+      }
+
+      @keyframes coda-tail-emerge {
+        0%   { opacity: 0; transform: translateY(18px); }
+        40%  { opacity: 1; transform: translateY(0); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+    }
+  }
+
+  @supports not (animation-timeline: scroll()) {
+    .coda-tail { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .coda-tail { opacity: 1; }
+  }

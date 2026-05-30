@@ -1,0 +1,1070 @@
+  /* Dark Director — wnętrze chóru sequence (ImageRite -> Ensemble -> Director).
+     The .section element is max-width-constrained, so we bleed the dark surface
+     to viewport edges via an absolutely-positioned ::before. Text + portrait
+     tones swap to the light-on-dark palette; the existing portrait gradient
+     already plays well on ink, no separate dark variant needed for the photo. */
+  .director-dark {
+    position: relative;
+    isolation: isolate;
+    color: rgba(244, 241, 233, 0.78);
+  }
+
+  .director-dark::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    left: calc(50% - 50vw);
+    width: 100vw;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(232, 207, 144, 0.05), transparent 60%),
+      linear-gradient(180deg, var(--night) 0%, var(--ink) 100%);
+  }
+
+  /* Internal punctuation inside the dark sequence — a hairline gold rule centered at the
+     top of Director signals "new breath, same room" without breaking the dark tone. The
+     dark Director sits BELOW Ensemble (also dark); without this beat the two read as one
+     long slab. Width clamps so it stays a calligraphic mark, not a separator bar. */
+  .director-dark::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: clamp(120px, 20vw, 280px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--candle) 50%, transparent);
+    opacity: 0.32;
+  }
+
+  .director-dark .director-copy .role {
+    color: rgba(244, 241, 233, 0.46);
+  }
+
+  .director-dark .director-copy h2 {
+    color: var(--paper);
+  }
+
+  /* Manuscript inicjał: the "F" in "Florent" carries the same gold italic as the
+     Manifest III emphasis and the Coda tail — three sparing moments of candle
+     gold across the whole landing. Uses ::first-letter so no markup change. */
+  .director-dark .director-copy h2::first-letter {
+    color: var(--candle);
+  }
+
+  .director-dark .director-copy p {
+    color: rgba(244, 241, 233, 0.74);
+  }
+
+  .director-dark .director-copy em {
+    color: var(--candle);
+  }
+
+  /* Portrait frame edge softens on dark — was using paper-soft, switches to a
+     near-ink fill so the empty bottom (cover crop) doesn't read as a bright slab. */
+  .director-dark .portrait {
+    background: rgba(244, 241, 233, 0.04);
+  }
+
+  .director-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.75fr) minmax(0, 0.78fr);
+    gap: clamp(48px, 8vw, 128px);
+    align-items: center;
+  }
+
+  .portrait {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: var(--paper-soft);
+  }
+
+  .portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 35%;
+    filter: saturate(0.74) contrast(1.06) brightness(0.92);
+  }
+
+  .portrait img {
+    transition: filter 1.2s var(--ease);
+  }
+
+  .portrait::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 38%, rgba(232, 207, 144, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 50%, transparent 26%, rgba(8, 8, 7, 0.45) 76%, rgba(8, 8, 7, 0.72) 100%);
+    opacity: 0.55;
+    transition: opacity 1s var(--ease);
+  }
+
+  body.theme-marketing.audio-on .portrait::before {
+    animation: portraitBreathe 5.2s ease-in-out infinite;
+  }
+
+  body.theme-marketing.audio-on .portrait img {
+    animation: portraitGlow 5.2s ease-in-out infinite;
+  }
+
+  @keyframes portraitBreathe {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.9; }
+  }
+
+  @keyframes portraitGlow {
+    0%, 100% { filter: saturate(0.74) contrast(1.06) brightness(0.86); }
+    50% { filter: saturate(0.92) contrast(1.06) brightness(1.04); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.theme-marketing.audio-on .portrait::before,
+    body.theme-marketing.audio-on .portrait img {
+      animation: none;
+    }
+  }
+
+  .portrait::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent 45%, rgba(8, 8, 7, 0.34));
+  }
+
+  .director-copy .role {
+    color: var(--ink-muted);
+  }
+
+  .director-copy h2 {
+    margin: 34px 0;
+    font-family: var(--serif);
+    font-size: var(--h2);
+    font-weight: 300;
+    line-height: 0.92;
+  }
+
+  .director-copy p {
+    max-width: 44rem;
+    margin: 0 0 18px;
+    color: var(--ink-soft);
+    font-size: clamp(17px, 1.35vw, 21px);
+  }
+
+  .director-copy p:last-child {
+    margin-bottom: 0;
+  }
+
+  .director-copy em {
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .program {
+    background: var(--paper-soft);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .program-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.58fr) minmax(0, 1fr);
+    gap: clamp(48px, 8vw, 120px);
+    align-items: center;
+  }
+
+  .album-map {
+    position: relative;
+    width: min(520px, 100%);
+    margin: 0 auto;
+    aspect-ratio: 0.93;
+    overflow: hidden;
+    background: var(--dark);
+  }
+
+  .album-map img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.86) contrast(1.04) brightness(0.9);
+  }
+
+  .program-copy h2 {
+    margin: 0;
+    max-width: 760px;
+    font-family: var(--serif);
+    font-size: clamp(42px, 5.4vw, 88px);
+    font-weight: 300;
+    line-height: 0.98;
+  }
+
+  .program-copy p {
+    max-width: 46rem;
+    margin: 34px 0 0;
+    color: var(--ink-soft);
+    font-size: clamp(17px, 1.35vw, 21px);
+  }
+
+  .program-note {
+    max-width: 44rem;
+    margin: 32px 0 0;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    line-height: 1.8;
+    text-transform: uppercase;
+  }
+
+  .ensemble {
+    position: relative;
+    overflow: hidden;
+    color: var(--paper);
+    background: var(--dark);
+  }
+
+  .ensemble-media {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Geometry + parallax owned by <BleedImage>; landing keeps only the sacred dimming. */
+  .ensemble-media .bleed img {
+    filter: saturate(0.72) contrast(1.06) brightness(0.62);
+  }
+
+  .ensemble::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 24% 50%, transparent 0, rgba(8, 8, 7, 0.22) 22rem, rgba(8, 8, 7, 0.78) 56rem),
+      linear-gradient(180deg, rgba(8, 8, 7, 0.5), rgba(8, 8, 7, 0.78));
+  }
+
+  .ensemble-inner {
+    position: relative;
+    z-index: 1;
+    padding-top: var(--space-xxl);
+    padding-bottom: var(--space-xxl);
+  }
+
+  .ensemble-copy {
+    max-width: 720px;
+  }
+
+  .ensemble-copy .micro {
+    color: rgba(244, 241, 233, 0.5);
+  }
+
+  .ensemble-copy h2 {
+    margin: 22px 0 32px;
+    font-family: var(--serif);
+    font-size: clamp(46px, 6vw, 96px);
+    font-weight: 300;
+    line-height: 0.96;
+  }
+
+  .ensemble-copy p {
+    max-width: 44rem;
+    margin: 0;
+    color: rgba(244, 241, 233, 0.78);
+    font-size: clamp(17px, 1.35vw, 21px);
+    line-height: 1.55;
+    font-weight: 100;
+  }
+
+  .ensemble-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(20px, 4vw, 56px);
+    margin-top: 56px;
+    border-top: 1px solid rgba(244, 241, 233, 0.22);
+    padding-top: 28px;
+  }
+
+  .fact {
+    display: grid;
+    gap: 8px;
+  }
+
+  .fact-num {
+    font-family: var(--serif);
+    font-size: clamp(28px, 3vw, 46px);
+    font-weight: 300;
+    line-height: 1;
+    color: var(--paper);
+  }
+
+  .fact-label {
+    color: rgba(244, 241, 233, 0.62);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+
+  .path {
+    background: var(--paper-soft);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    width: 100%;
+    max-width: none;
+  }
+
+  .path .section-grid {
+    width: min(1580px, 100%);
+    margin: 0 auto;
+  }
+
+  .path-lede {
+    max-width: 46rem;
+    margin: 28px 0 0;
+    color: var(--ink-soft);
+    font-size: clamp(17px, 1.35vw, 21px);
+    line-height: 1.55;
+  }
+
+  /* Typographic register — read as a memorium on an altar, not a portfolio grid.
+     Each entry is a two-rail row: left rail holds the roman numeral + year + tag
+     (mono, small, calligraphic spacing); right rail holds the title + place +
+     summary + expandable details. Hairline rules between entries. No posters —
+     the sacred rite is not a thumbnail catalogue. */
+  .path-register {
+    list-style: none;
+    margin: clamp(48px, 6vw, 88px) 0 0;
+    padding: 0;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .path-entry {
+    display: grid;
+    grid-template-columns: minmax(140px, 0.32fr) minmax(0, 1fr);
+    gap: clamp(24px, 5vw, 80px);
+    padding: clamp(28px, 4vw, 56px) 0 clamp(32px, 4.5vw, 64px);
+    border-bottom: 1px solid var(--line);
+    transition: background 0.55s var(--ease);
+  }
+
+  .path-entry:hover {
+    background: rgba(198, 164, 91, 0.035);
+  }
+
+  .path-entry-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(8px, 1vw, 14px);
+    padding-top: clamp(8px, 1vw, 14px);
+  }
+
+  .path-entry-roman {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(22px, 2vw, 30px);
+    font-weight: 300;
+    line-height: 1;
+    color: var(--candle);
+    letter-spacing: 0;
+  }
+
+  .path-entry-year {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--ink);
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+
+  .path-entry-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    line-height: 1.5;
+  }
+
+  .path-entry-body {
+    display: grid;
+    align-content: start;
+    gap: clamp(10px, 1vw, 16px);
+  }
+
+  .path-entry-title {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(32px, 4.4vw, 64px);
+    font-weight: 300;
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    transition: color 0.5s var(--ease), font-variation-settings 0.5s var(--ease);
+  }
+
+  .path-entry:hover .path-entry-title {
+    color: var(--candle);
+  }
+
+  .path-entry-place {
+    margin: 0;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    line-height: 1.55;
+  }
+
+  .path-entry-summary {
+    margin: clamp(6px, 0.6vw, 10px) 0 0;
+    max-width: 42rem;
+    color: var(--ink-soft);
+    font-size: clamp(15px, 1.15vw, 17px);
+    line-height: 1.6;
+  }
+
+  /* Mobile: collapse the two-rail layout to a single column. Roman + year + tag
+     ride along the top of each entry as a slimmer header band. */
+  @media (max-width: 720px) {
+    .path-entry {
+      grid-template-columns: 1fr;
+      gap: clamp(14px, 3vw, 20px);
+    }
+    .path-entry-rail {
+      flex-direction: row;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 14px;
+      padding-top: 0;
+    }
+    .path-entry-roman {
+      font-size: 22px;
+    }
+  }
+
+  .path-card-detail {
+    margin-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+
+  .path-card-detail > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0;
+    cursor: pointer;
+    list-style: none;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: color 0.4s var(--ease);
+  }
+
+  .path-card-detail > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .path-card-detail > summary:hover {
+    color: var(--candle);
+  }
+
+  .path-detail-icon {
+    position: relative;
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+
+  .path-detail-icon::before,
+  .path-detail-icon::after {
+    content: "";
+    position: absolute;
+    background: currentColor;
+    transition: transform 0.45s var(--ease);
+  }
+
+  .path-detail-icon::before {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    transform: translateY(-50%);
+  }
+
+  .path-detail-icon::after {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+  }
+
+  .path-card-detail[open] .path-detail-icon::after {
+    transform: translateX(-50%) scaleY(0);
+  }
+
+  .path-card-detail[open] > summary {
+    color: var(--ink);
+  }
+
+  .path-card-detail-body {
+    padding-bottom: 14px;
+  }
+
+  .path-works {
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 7px;
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .path-works li {
+    position: relative;
+    padding-left: 16px;
+  }
+
+  .path-works li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 7px;
+    height: 1px;
+    background: var(--ink-muted);
+  }
+
+  .path-works em {
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .path-works-bis {
+    margin-top: 6px;
+    padding-top: 9px;
+    border-top: 1px solid var(--line);
+    color: var(--candle);
+  }
+
+  .path-works-bis::before {
+    background: var(--candle);
+  }
+
+  .path-detail-text {
+    margin: 4px 0 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .path-detail-text + .path-detail-text,
+  .path-detail-text + .path-works-note,
+  .path-works + .path-works-note {
+    margin-top: 14px;
+  }
+
+  .path-works-note {
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    line-height: 1.75;
+    text-transform: uppercase;
+  }
+
+
+  /* --knot-intensity: 0..1, sterowane przez AnalyserNode gdy audio gra.
+     inherits: false = JS pisze tylko na 3 elementach .aether-knot,
+     nie inwaliduje stylu caĹ‚ego drzewa DOM jak przy ustawieniu na :root. */
+  @property --knot-intensity {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+  }
+
+  .aether-interlude {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(14px, 1.6vw, 22px);
+    width: 100%;
+    /* Variant default — overridden per data-variant below. Passage (I, light->dark)
+       gets significantly more breath because it carries the page's most dramatic
+       tonal cut. */
+    --interlude-pad: clamp(60px, 10vw, 120px);
+    padding: var(--interlude-pad) 0;
+    pointer-events: none;
+    color: var(--candle);
+    /* content-visibility: auto â€” gdy interlude poza viewportem, browser
+       pomija jego paint + style recalc. Z intrinsic-size scrollbar nie skacze.
+       contain: paint = SVG glow nie eksportuje paint poza box. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 240px;
+    contain: paint;
+  }
+
+  /* Entry animacja interludĂłw obsĹ‚ugiwana przez istniejÄ…cy IntersectionObserver
+     (`.reveal` + `.is-visible`). Wolniejszy + wiÄ™kszy travel â€” interluda to "oddech",
+     ma siÄ™ materializowaÄ‡ z manuskryptu, nie wchodziÄ‡ jak karta. */
+  .aether-interlude.reveal {
+    transform: translateY(64px);
+    transition:
+      opacity 2.2s var(--ease-slow),
+      transform 2.2s var(--ease-slow);
+  }
+  .aether-interlude.reveal.is-visible {
+    transform: translateY(0);
+  }
+
+  /* Sekcja po interludzie: bez wĹ‚asnego border-top â€” aether-line interludu
+     JEST jedynÄ… liniÄ… granicznÄ…. WczeĹ›niej dwie linie (aether-line w Ĺ›rodku
+     interludu + border-top sekcji) wisiaĹ‚y na rĂłĹĽnej wysokoĹ›ci Y i siÄ™
+     "rozjeĹĽdĹĽaĹ‚y". Teraz interlude to samodzielny moment oddechu z wĹ‚asnÄ…
+     sygnaturÄ… linii. */
+  .aether-interlude + .image-rite,
+  .aether-interlude + .ensemble,
+  .aether-interlude + .final-support,
+  .aether-interlude + .path,
+  .aether-interlude + .section {
+    margin-top: -32px;
+    border-top: none;
+  }
+
+  /* Inskrypcja: I Â· Lumen quaerit / II Â· Vox memoriae / III Â· Sustinete nos */
+  .aether-inscription {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 11px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    opacity: 0.74;
+  }
+
+  .aether-inscription .roman {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0;
+    transform: translateY(1px);
+  }
+
+  .aether-inscription .dot {
+    letter-spacing: 0;
+    opacity: 0.55;
+  }
+
+  .aether-inscription .latin {
+    font-style: italic;
+    font-weight: 300;
+  }
+
+  .aether-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: clamp(16px, 4vw, 36px);
+  }
+
+  .aether-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, currentColor 50%, currentColor);
+    opacity: 0.24;
+  }
+
+  .aether-line:last-child {
+    background: linear-gradient(270deg, transparent, currentColor 50%, currentColor);
+  }
+
+  .aether-knot {
+    position: relative;
+    width: 180px;
+    height: 60px;
+    flex-shrink: 0;
+    overflow: visible;
+    /* Audio-reactive bloom â€” TANIO:
+       - brightness() to GPU-cheap przeksztaĹ‚cenie matrixowe
+       - drop-shadow() WYRZUCONE (Gaussian blur per frame = CPU)
+       - bloom realizuje sibling ::after z prerendered radial-gradient,
+         ktĂłry zmienia tylko opacity (compositor-only update). */
+    filter: brightness(calc(1 + var(--knot-intensity, 0) * 0.5));
+    /* Bez transition: AnalyserNode smoothingTimeConstant=0.85 juĹĽ smooth'uje;
+       CSS transition na wĹ‚aĹ›ciwoĹ›ci aktualizowanej 30Hz to wasteful work. */
+  }
+
+  .aether-knot::after {
+    content: "";
+    position: absolute;
+    inset: -45% -15%;
+    background: radial-gradient(closest-side,
+      rgba(var(--candle-rgb), 0.55),
+      rgba(var(--candle-rgb), 0.18) 45%,
+      transparent 75%);
+    opacity: var(--knot-intensity, 0);
+    pointer-events: none;
+    z-index: -1;
+    /* Promote na wĹ‚asnÄ… GPU layer: opacity wtedy = czysty compositor update. */
+    will-change: opacity;
+  }
+
+  .aether-knot svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     I Â· Lumen quaerit â€” wschodzÄ…ce smugi Ĺ›wiatĹ‚a
+     Pionowe wisps wynurzajÄ…ce siÄ™ z poziomej linii ku centralnemu blaskowi.
+     Metafora: pojedynczy pĹ‚omieĹ„, oddech wstÄ™pujÄ…cy ku Ĺ›wiatĹ‚u.
+     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* Passage (I) carries the page's most dramatic tonal cut — light parchment to
+     deep night ink. The default interlude band was ~200px tall and read as a
+     decorative paseczek before a wall. Stretching its breath to ~60vh and giving
+     the knot a taller stage lets the threshold actually feel passed-through. */
+  .aether-interlude[data-variant="passage"] {
+    --interlude-pad: clamp(160px, 26vh, 320px);
+    min-height: 60vh;
+  }
+  .aether-interlude[data-variant="passage"] .aether-knot {
+    width: 220px;
+    height: 80px;
+  }
+
+  .ascend-wisp {
+    transform-origin: 90px 50px; /* anchor u podstawy */
+    opacity: 0;
+  }
+  .aether-interlude[data-variant="passage"] .ascend-wisp {
+    animation: wispAscend 5.4s ease-in-out infinite;
+  }
+  .aether-interlude[data-variant="passage"] .ascend-wisp.w2 { animation-delay: 0.9s; }
+  .aether-interlude[data-variant="passage"] .ascend-wisp.w3 { animation-delay: 1.8s; }
+
+  @keyframes wispAscend {
+    0%   { transform: translateY(6px)  scaleY(0.6); opacity: 0; }
+    35%  { opacity: 0.55; }
+    65%  { opacity: 0.55; }
+    100% { transform: translateY(-4px) scaleY(1.15); opacity: 0; }
+  }
+
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     II Â· Vox memoriae â€” koncentryczne krÄ™gi rozchodzÄ…ce siÄ™ z centrum
+     Trzy ringi z opĂłĹşnieniem â€” fala dĹşwiÄ™kowa pamiÄ™ci, ktĂłra rozprzestrzenia
+     siÄ™ w czasie i zanika.
+     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* Memory (II) carries the second-most-dramatic tonal cut — Director dark to
+     SilenceMoment light. Stretching its breath to ~60vh matches Passage (I) so
+     both major thresholds feel equally bridged. Echo rings get a slightly larger
+     stage so the concentric "voice memoriae" still reads at the bigger height. */
+  .aether-interlude[data-variant="memory"] {
+    --interlude-pad: clamp(160px, 26vh, 320px);
+    min-height: 60vh;
+  }
+  .aether-interlude[data-variant="memory"] .aether-knot {
+    width: 220px;
+    height: 80px;
+  }
+  .aether-interlude[data-variant="memory"] .aether-line {
+    opacity: 0.12;
+  }
+  .echo-ring {
+    transform-origin: 90px 30px;
+    opacity: 0;
+  }
+  .aether-interlude[data-variant="memory"] .echo-ring {
+    animation: echoRingExpand 6s ease-out infinite;
+  }
+  .aether-interlude[data-variant="memory"] .echo-ring.r2 { animation-delay: 2s; }
+  .aether-interlude[data-variant="memory"] .echo-ring.r3 { animation-delay: 4s; }
+
+  @keyframes echoRingExpand {
+    0%   { transform: scale(0.4); opacity: 0; }
+    15%  { opacity: 0.55; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     III Â· Sustinete nos â€” vesica piscis
+     Dwa pĂłĹ‚okrÄ™gi przenikajÄ…ce siÄ™ wokĂłĹ‚ centralnego Ĺ›wiatĹ‚a â€” uniwersalny
+     znak wsparcia, porozumienia, "ram trzymajÄ…cych".
+     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  .aether-interlude[data-variant="offering"] .aether-line {
+    opacity: 0.22;
+  }
+  .vesica-half {
+    transform-origin: 90px 30px;
+    opacity: 0.32;
+  }
+  .aether-interlude[data-variant="offering"] .vesica-half {
+    animation: vesicaBreathe 7s ease-in-out infinite;
+  }
+  .aether-interlude[data-variant="offering"] .vesica-half.v-right {
+    /* Lekkie przesuniÄ™cie fazowe â€” vesica oddycha, nie pulsuje synchronicznie */
+    animation-delay: 0.6s;
+  }
+
+  @keyframes vesicaBreathe {
+    0%, 100% { transform: scale(0.92); opacity: 0.22; }
+    50%      { transform: scale(1.05); opacity: 0.5; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ascend-wisp, .echo-ring, .vesica-half { animation: none; opacity: 0.3; }
+  }
+
+  .knot-wave {
+    transform-origin: 90px 30px;
+  }
+
+  .knot-wave-top {
+    animation: breatheWave 8s ease-in-out infinite;
+  }
+
+  .knot-wave-bottom {
+    animation: breatheWave 8s ease-in-out infinite reverse;
+  }
+
+  .knot-harmonic-top {
+    animation: breatheHarmonic 5s ease-in-out infinite alternate-reverse;
+  }
+
+  .knot-harmonic-bottom {
+    animation: breatheHarmonic 6s ease-in-out infinite alternate;
+  }
+
+  .knot-light {
+    transform-origin: 90px 30px;
+    animation: pulseLight 4s ease-in-out infinite;
+  }
+
+  .knot-particle {
+    transform-origin: 90px 30px;
+  }
+
+  .kp-1 {
+    animation: pulseSpark 3s ease-in-out infinite 1s;
+  }
+
+  .kp-2 {
+    animation: pulseSpark 4s ease-in-out infinite 2s;
+  }
+
+  @keyframes breatheWave {
+    0%, 100% { transform: scaleY(0.85); opacity: 0.3; }
+    50% { transform: scaleY(1.15); opacity: 0.6; }
+  }
+
+  @keyframes breatheHarmonic {
+    0% { transform: scaleY(0.7); opacity: 0.15; }
+    100% { transform: scaleY(1.3); opacity: 0.4; }
+  }
+
+  @keyframes pulseLight {
+    0%, 100% { transform: scale(0.8); opacity: 0.6; }
+    50% { transform: scale(1.4); opacity: 1; }
+  }
+
+  @keyframes pulseSpark {
+    0%, 100% { opacity: 0.1; }
+    50% { opacity: 0.8; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .knot-wave, .knot-light, .knot-particle { animation: none; }
+  }
+
+  .final-support {
+    position: relative;
+    overflow: hidden;
+    color: var(--paper);
+  }
+
+  /* Full-bleed backdrop (<BleedImage>, parallax) + dark scrim â€” replaces the old CSS
+     background-image so the photo runs through Astro's image pipeline. */
+  .final-support-media {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .final-support-media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(8, 8, 7, 0.78), rgba(8, 8, 7, 0.88));
+  }
+
+  .final-support .section {
+    position: relative;
+    z-index: 1;
+    padding-top: var(--space-xxl);
+    padding-bottom: var(--space-xxl);
+  }
+
+  .final-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(380px, 0.72fr);
+    gap: clamp(48px, 8vw, 130px);
+    align-items: end;
+  }
+
+  .final-copy h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(48px, 6.5vw, 108px);
+    font-weight: 300;
+    line-height: 0.95;
+  }
+
+  .final-copy p {
+    max-width: 44rem;
+    margin: 40px 0 0;
+    color: rgba(244, 241, 233, 0.74);
+    font-size: clamp(17px, 1.35vw, 21px);
+    font-weight: 100;
+  }
+
+  .donation-list {
+    display: grid;
+    gap: 0;
+    border-top: 1px solid rgba(244, 241, 233, 0.28);
+  }
+
+  .donation-row {
+    display: grid;
+    grid-template-columns: 105px minmax(0, 1fr);
+    gap: 24px;
+    border-bottom: 1px solid rgba(244, 241, 233, 0.22);
+    padding: 22px 0;
+  }
+
+  .donation-row strong {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  .donation-row span {
+    color: rgba(244, 241, 233, 0.74);
+  }
+
+  .bank-card {
+    margin-top: 34px;
+    border-top: 1px solid rgba(244, 241, 233, 0.28);
+  }
+
+  .bank-row {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: center;
+    border-bottom: 1px solid rgba(244, 241, 233, 0.18);
+    padding: 18px 0;
+  }
+
+  .bank-row .currency {
+    color: rgba(244, 241, 233, 0.62);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .bank-row .iban {
+    overflow-wrap: anywhere;
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .copy-account {
+    border: 0;
+    border-bottom: 1px solid rgba(244, 241, 233, 0.46);
+    padding: 0 0 7px;
+    background: transparent;
+    color: rgba(244, 241, 233, 0.76);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .foundation-data {
+    margin-top: 28px;
+    color: rgba(244, 241, 233, 0.58);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+    text-transform: uppercase;
+  }
+
+  .final-contact {
+    display: grid;
+    gap: 6px;
+    margin-top: 42px;
+    border-top: 1px solid rgba(244, 241, 233, 0.22);
+    padding-top: 26px;
+    max-width: 32rem;
+  }
+
+  .final-contact .micro {
+    color: rgba(244, 241, 233, 0.5);
+  }
+
+  .final-contact-name {
+    color: var(--paper);
+    font-family: var(--serif);
+    font-size: clamp(26px, 2.4vw, 38px);
+    font-weight: 300;
+    line-height: 1;
+    border-bottom: 1px solid rgba(244, 241, 233, 0.36);
+    padding-bottom: 6px;
+    width: max-content;
+    transition: border-color 0.45s var(--ease);
+  }
+
+  .final-contact-name:hover {
+    border-color: var(--paper);
+  }
+
+  .final-contact-mail {
+    color: rgba(244, 241, 233, 0.66);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+
+  .final-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-top: 32px;
+  }
