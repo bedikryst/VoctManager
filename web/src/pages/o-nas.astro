@@ -13,7 +13,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import BleedImage from "../components/BleedImage.astro";
-import { photo, bleedPair } from "../lib/photos";
+import { photo, photoOptional, bleedPair } from "../lib/photos";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import "../styles/vault.css";
 
@@ -77,14 +77,17 @@ const board = [
   {
     name: "Florent de Bazelaire", role: "Kierownictwo artystyczne · dyrygent",
     vision: "Odpowiada za profil artystyczny, repertuar, pracę nad brzmieniem i długą linię rozwoju zespołu.",
+    img: photoOptional("o-nas-florent"),
   },
   {
     name: "Anna Marcisz", role: "Produkcja · relacje · komunikacja",
     vision: "Prowadzi organizację projektów, kontakt z partnerami, wizerunek zespołu i rytm pracy poza sceną.",
+    img: photoOptional("o-nas-ania"),
   },
   {
     name: "Krystian Bugalski", role: "Digital · technologia · stabilność",
     vision: "Odpowiada za obecność cyfrową, narzędzia, publikację, bezpieczeństwo i stabilność infrastruktury fundacji.",
+    img: photoOptional("o-nas-krystian"),
   },
 ] as const;
 
@@ -388,6 +391,19 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           {
             board.map((b, i) => (
               <article class="board-card reveal" data-d={String(i + 1)}>
+                {b.img && (
+                  <figure class="board-portrait">
+                    <Picture
+                      src={b.img}
+                      formats={["avif", "webp"]}
+                      widths={[240, 360, 480]}
+                      sizes="(max-width: 860px) 90vw, 30vw"
+                      alt={`${b.name} — ${b.role}`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                )}
                 <h3>{b.name}</h3>
                 <p class="role">{b.role}</p>
                 <p class="vision">{b.vision}</p>
@@ -533,7 +549,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .board-card h3 { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 3vw, 42px); line-height: 1.05; color: var(--ink); margin: 0; }
   .board-card .role { font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; line-height: 1.7; text-transform: uppercase; color: var(--candle); }
   .board-card .vision { font-size: 15px; line-height: 1.8; color: var(--ink-muted); margin: 0; }
-  @media (max-width: 860px) { .board { grid-template-columns: 1fr; gap: 34px; } }
+  /* Optional portrait — only present when src/assets/photos/o-nas-<name>.* exists (photoOptional). */
+  .board-portrait { position: relative; margin: 0 0 4px; aspect-ratio: 4 / 5; overflow: hidden; background: rgba(22, 21, 20, 0.05); }
+  .board-portrait :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; display: block; filter: saturate(0.88) contrast(1.02); }
+  .board-portrait::after { content: ""; position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-top: 1px solid var(--candle); border-left: 1px solid var(--candle); opacity: .8; }
+  @media (max-width: 860px) { .board { grid-template-columns: 1fr; gap: 34px; } .board-portrait { max-width: 360px; } }
 
   /* Plate */
   .plate { position: relative; min-height: 70svh; display: flex; align-items: center; padding: clamp(64px,9vw,120px) max(28px,5vw); color: var(--paper); overflow: hidden; isolation: isolate; }

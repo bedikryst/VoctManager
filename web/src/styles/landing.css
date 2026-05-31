@@ -19,3 +19,5 @@
 @import "./landing/09-kinetic.css"; /* variable-font kinetic @property / @supports choreography */
 @import "./landing/10-silence.css"; /* silence moment */
 @import "./landing/11-mobile.css"; /* mobile art-direction layer (Faza 1/2/3) */
+@import "./landing/12-listen.css"; /* Posłuchaj — opt-in listening beat (movement II) */
+@import "./landing/13-spine.css"; /* movement spine — right-edge I·II·III orientation */

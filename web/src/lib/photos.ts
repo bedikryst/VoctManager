@@ -34,6 +34,15 @@ export function photo(name: string): ImageMetadata {
 }
 
 /**
+ * Non-throwing variant of {@link photo}: returns the image if present, else `undefined`.
+ * Use for optional art — e.g. board portraits that only render once the file is uploaded —
+ * so a missing asset renders nothing instead of breaking the build.
+ */
+export function photoOptional(name: string): ImageMetadata | undefined {
+  return byName.get(name);
+}
+
+/**
  * Resolve an art-directed full-bleed pair from a base name. `desktop` is `<base>-desktop`
  * (falling back to `<base>`); `mobile` is `<base>-mobile` (falling back to desktop). Tolerates
  * a missing mobile crop so a desktop-only upload still builds.

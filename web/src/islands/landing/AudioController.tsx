@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react";
 
 import { ThresholdGate } from "./ThresholdGate";
 import { useAudioChoice } from "./hooks/useAudioChoice";
-import { useChantAudio } from "./hooks/useChantAudio";
+import { TARGET_GAIN, useChantAudio } from "./hooks/useChantAudio";
 
 export function AudioController(): React.JSX.Element {
   const audio = useChantAudio();
@@ -44,6 +44,28 @@ export function AudioController(): React.JSX.Element {
     };
     window.addEventListener("voct:toggle-audio", onToggle);
     return () => window.removeEventListener("voct:toggle-audio", onToggle);
+  }, []);
+
+  // Duck the ambient bed while a foreground listening moment (ListenMoment) plays, then restore.
+  // Non-invasive: never flips the saved threshold choice or the header label — this is a
+  // temporary gain dip, not a state change, so the ambient on/off intent is preserved. No-ops
+  // when the ambient is off, so the excerpt can also play standalone.
+  useEffect(() => {
+    const onDuck = (event: Event): void => {
+      if (!audioRef.current.isOn) return;
+      const gain = (event as CustomEvent<{ gain?: number }>).detail?.gain ?? 0.05;
+      void audioRef.current.fadeGain(gain, 600);
+    };
+    const onRestore = (): void => {
+      if (!audioRef.current.isOn) return;
+      void audioRef.current.fadeGain(TARGET_GAIN, 900);
+    };
+    window.addEventListener("voct:audio-duck", onDuck);
+    window.addEventListener("voct:audio-restore", onRestore);
+    return () => {
+      window.removeEventListener("voct:audio-duck", onDuck);
+      window.removeEventListener("voct:audio-restore", onRestore);
+    };
   }, []);
 
   // Soft fade before an Astro view-transition swap. AudioController is mounted only on "/", so

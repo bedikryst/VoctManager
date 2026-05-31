@@ -1,0 +1,175 @@
+  /* ── Posłuchaj · Vox ──────────────────────────────────────────────────────────────────
+     One opt-in listening beat in movement II, between SilenceMoment and PathSection: the
+     voice rising out of the enforced stillness. Light parchment to match both neighbours;
+     candle-gold waveform; every rule a hairline. ListenMoment (island) renders nothing until
+     /audio/vox-excerpt.* is reachable, so these rules only ever style a present player. */
+  .listen {
+    position: relative;
+    padding: clamp(72px, 9vw, 132px) max(28px, 5vw);
+    background: var(--paper);
+    isolation: isolate;
+    --vox-level: 0;
+  }
+
+  .listen-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: clamp(20px, 2.6vw, 32px);
+  }
+
+  .listen-eyebrow {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .listen-eyebrow .lat {
+    color: var(--candle);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .listen-line {
+    margin: 0;
+    max-width: 18ch;
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(24px, 3.4vw, 44px);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .listen-line em {
+    font-style: italic;
+    color: var(--candle);
+  }
+
+  .listen-player {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: clamp(16px, 2.4vw, 28px);
+    margin-top: clamp(6px, 1vw, 12px);
+  }
+
+  .listen-btn {
+    position: relative;
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(198, 164, 91, 0.55);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--candle);
+    cursor: pointer;
+    transition:
+      background-color 0.5s var(--ease),
+      border-color 0.5s var(--ease),
+      transform 0.5s var(--ease);
+  }
+
+  /* Glow breathes with the live RMS level (--vox-level set by the island's draw loop). */
+  .listen-btn::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 calc(12px + var(--vox-level) * 26px) rgba(198, 164, 91, calc(0.16 + var(--vox-level) * 0.5));
+    transition: box-shadow 0.12s linear;
+  }
+
+  .listen-btn:hover {
+    background: rgba(198, 164, 91, 0.08);
+  }
+
+  .listen-btn:focus-visible {
+    outline: 1px solid var(--candle);
+    outline-offset: 5px;
+  }
+
+  .listen-btn svg {
+    position: relative;
+    width: 20px;
+    height: 20px;
+  }
+
+  .listen-graph {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 10px;
+  }
+
+  .listen-wave {
+    width: 100%;
+    height: clamp(44px, 6vw, 60px);
+    display: block;
+  }
+
+  .listen-rail {
+    position: relative;
+    display: block;
+    height: 1px;
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .listen-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left center;
+    background: linear-gradient(90deg, var(--candle), #e8cf90);
+    will-change: transform;
+  }
+
+  .listen-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 18px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .listen-time {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 560px) {
+    .listen-player {
+      flex-direction: column;
+      gap: 18px;
+    }
+    .listen-graph {
+      width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .listen-btn::before {
+      box-shadow: 0 0 14px rgba(198, 164, 91, 0.22);
+    }
+  }

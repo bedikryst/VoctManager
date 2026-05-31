@@ -32,6 +32,8 @@ import { Preloader } from "../islands/landing/Preloader";
 import { StickyHeader } from "../islands/landing/StickyHeader";
 import { SiteFooter } from "../islands/landing/SiteFooter";
 import { VaultIsland } from "../islands/landing/VaultIsland";
+import { ListenMoment } from "../islands/landing/ListenMoment";
+import { MovementSpine } from "../islands/landing/MovementSpine";
 
 const title = "VoctEnsemble — Z ciszy głos. Koncerty Duchowe";
 const description =
@@ -92,25 +94,27 @@ const jsonLd = {
     <AudioController client:load />
 
     <StickyHeader client:load />
+    <MovementSpine client:idle />
 
     <main id="main">
       <HeroSection />
       <ManifestSection />
 
-      <section class="movement" data-movement="lumen" aria-label="I · Lumen quaerit">
+      <section class="movement" id="ruch-i" data-movement="lumen" aria-label="I · Lumen quaerit">
         <AetherInterlude variant="passage" roman="I" latin="Lumen quaerit" />
         <ImageRiteSection />
         <EnsembleSection />
         <DirectorSection />
       </section>
 
-      <section class="movement" data-movement="vox" aria-label="II · Vox memoriae">
+      <section class="movement" id="ruch-ii" data-movement="vox" aria-label="II · Vox memoriae">
         <AetherInterlude variant="memory" roman="II" latin="Vox memoriae" />
         <SilenceMoment />
+        <ListenMoment client:visible />
         <PathSection />
       </section>
 
-      <section class="movement" data-movement="sustinete" aria-label="III · Sustinete nos">
+      <section class="movement" id="ruch-iii" data-movement="sustinete" aria-label="III · Sustinete nos">
         <AetherInterlude variant="offering" roman="III" latin="Sustinete nos" />
         <FinalSupportSection />
       </section>
