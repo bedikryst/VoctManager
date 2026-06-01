@@ -182,7 +182,12 @@ export function GiveForm(): React.JSX.Element {
   );
 
   return (
-    <form className="give-form" onSubmit={onSubmit} noValidate aria-busy={loading}>
+    <form
+      className="give-form"
+      onSubmit={onSubmit}
+      noValidate
+      aria-busy={loading}
+    >
       <div className="give-field">
         <div className="give-label-row">
           <span className="give-label micro">Kwota darowizny</span>
@@ -190,7 +195,37 @@ export function GiveForm(): React.JSX.Element {
             {amountLabel}
           </span>
         </div>
-        <div className="give-tiers" role="radiogroup" aria-label="Sugerowana kwota darowizny">
+        <div
+          className="give-currency"
+          data-currency={state.currency}
+          role="radiogroup"
+          aria-label="Waluta darowizny"
+        >
+          <button
+            type="button"
+            className={`give-currency-opt${state.currency === "PLN" ? " is-active" : ""}`}
+            role="radio"
+            aria-checked={state.currency === "PLN"}
+            onClick={() => setCurrency("PLN")}
+          >
+            PLN
+          </button>
+          <button
+            type="button"
+            className={`give-currency-opt${state.currency === "EUR" ? " is-active" : ""}`}
+            role="radio"
+            aria-checked={state.currency === "EUR"}
+            onClick={() => setCurrency("EUR")}
+          >
+            EUR
+          </button>
+          <div className="give-currency-thumb" aria-hidden="true" />
+        </div>
+        <div
+          className="give-tiers"
+          role="radiogroup"
+          aria-label="Sugerowana kwota darowizny"
+        >
           {GIVE_TIERS[state.currency].map((value, index) => (
             <button
               key={index}
@@ -221,14 +256,17 @@ export function GiveForm(): React.JSX.Element {
                 type="number"
                 inputMode="decimal"
                 min="1"
-                max="100000"
+                max={GIVE_MAX}
                 step="1"
                 placeholder="0"
                 autoComplete="off"
                 aria-label="Własna kwota darowizny"
                 value={state.customAmount}
                 onChange={(event) => {
-                  setState((prev) => ({ ...prev, customAmount: event.target.value }));
+                  setState((prev) => ({
+                    ...prev,
+                    customAmount: event.target.value,
+                  }));
                   setError(null);
                 }}
                 onFocus={(event) => event.currentTarget.select()}
@@ -332,15 +370,10 @@ export function GiveForm(): React.JSX.Element {
       <div className="give-fineprint">
         <p className="give-methods-note">{GIVE_METHODS_NOTE[state.currency]}</p>
         <p className="give-descriptor">
-          Tytuł transakcji: <strong>Darowizna na cele statutowe VoctFoundation</strong>
+          Tytuł transakcji:{" "}
+          <strong>Darowizna na cele statutowe VoctFoundation</strong>
         </p>
       </div>
-      {/* setCurrency is part of the form contract; the PLN/EUR toggle UI stays disabled in the
-          source, but the handler remains available for when it's re-enabled. */}
-      <span hidden aria-hidden="true">
-        {state.currency === "PLN" ? "PLN" : "EUR"}
-        <button type="button" hidden onClick={() => setCurrency("PLN")} />
-      </span>
     </form>
   );
 }

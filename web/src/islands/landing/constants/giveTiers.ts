@@ -13,7 +13,7 @@ export const GIVE_TIERS: Readonly<Record<GiveCurrency, readonly number[]>> = {
 };
 
 export const GIVE_METHODS_NOTE: Readonly<Record<GiveCurrency, string>> = {
-  PLN: "Płatności w PLN aktualnie obsługują BLIK oraz szybkie przelewy.",
+  PLN: "Płatności w PLN obsługują BLIK, karty płatnicze, Apple/Google Pay oraz szybkie przelewy.",
   EUR: "Płatności w EUR obsługiwane są wyłącznie za pomocą kart płatniczych oraz Apple/Google Pay.",
 };
 
