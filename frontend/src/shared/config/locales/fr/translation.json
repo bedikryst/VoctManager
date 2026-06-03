@@ -1431,7 +1431,8 @@
       "status_done": "Projet marqué comme terminé",
       "status_update_failed": "Impossible de mettre à jour le statut.",
       "toggle": "Basculer la vue des détails du projet",
-      "updating_status": "Mise à jour du statut..."
+      "updating_status": "Mise à jour du statut...",
+      "open": "Ouvrir le projet {{title}}"
     },
     "cast": {
       "aria_label": "Gérer la distribution vocale",
@@ -1862,6 +1863,20 @@
       "delete_error_title": "Erreur de suppression",
       "delete_loading": "Suppression du projet...",
       "delete_success": "Projet supprimé avec succès"
+    },
+    "hub": {
+      "tabs": {
+        "overview": "Aperçu"
+      },
+      "tabs_aria": "Sections du projet",
+      "back": "Événements",
+      "no_date": "Date non définie"
+    },
+    "row": {
+      "edit_title": "Titre du projet",
+      "title_placeholder": "Titre",
+      "title_required": "Le titre est requis",
+      "delete_aria": "Supprimer le projet {{title}}"
     }
   },
   "rehearsals": {

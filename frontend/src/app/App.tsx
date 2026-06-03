@@ -9,7 +9,14 @@
  */
 
 import React, { Suspense, lazy, useEffect } from "react";
-import { Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  createRoutesFromElements,
+  Route,
+  Outlet,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { Toaster } from "sonner";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
@@ -88,8 +95,53 @@ const ProjectDashboard = lazyWithPreload(() =>
     default: m.ProjectDashboard,
   })),
 );
+const ProjectHubLayout = lazyWithPreload(
+  () => import("@features/projects/ProjectHubLayout"),
+);
+const ProjectOverviewPage = lazyWithPreload(
+  () => import("@features/projects/ProjectOverviewPage"),
+);
+const ProjectNewPage = lazyWithPreload(
+  () => import("@features/projects/ProjectNewPage"),
+);
+const ProjectProgramPage = lazyWithPreload(
+  () => import("@features/projects/ProjectProgramPage"),
+);
+const ProjectCastPage = lazyWithPreload(
+  () => import("@features/projects/ProjectCastPage"),
+);
+const ProjectDivisiPage = lazyWithPreload(
+  () => import("@features/projects/ProjectDivisiPage"),
+);
+const ProjectRehearsalsPage = lazyWithPreload(
+  () => import("@features/projects/ProjectRehearsalsPage"),
+);
+const ProjectAttendancePage = lazyWithPreload(
+  () => import("@features/projects/ProjectAttendancePage"),
+);
+const ProjectCrewPage = lazyWithPreload(
+  () => import("@features/projects/ProjectCrewPage"),
+);
+const ProjectBudgetPage = lazyWithPreload(
+  () => import("@features/projects/ProjectBudgetPage"),
+);
+const ProjectDetailsPage = lazyWithPreload(
+  () => import("@features/projects/ProjectDetailsPage"),
+);
 const ArchiveManagement = lazyWithPreload(
   () => import("@pages/panel/ArchivePage"),
+);
+const ArchiveReviewPage = lazyWithPreload(
+  () => import("@features/archive/ArchiveReviewPage"),
+);
+const ArchiveNewPiecePage = lazyWithPreload(
+  () => import("@features/archive/ArchiveNewPiecePage"),
+);
+const ArchiveEditPiecePage = lazyWithPreload(
+  () => import("@features/archive/ArchiveEditPiecePage"),
+);
+const ArchiveComposersPage = lazyWithPreload(
+  () => import("@features/archive/ArchiveComposersPage"),
 );
 const CrewManagement = lazyWithPreload(
   () => import("@features/crew/CrewManagement"),
@@ -110,12 +162,45 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: Rehearsals.preload },
   { scope: "manager", preload: ArtistManagement.preload },
   { scope: "manager", preload: ProjectDashboard.preload },
+  { scope: "manager", preload: ProjectHubLayout.preload },
+  { scope: "manager", preload: ProjectOverviewPage.preload },
+  { scope: "manager", preload: ProjectNewPage.preload },
+  { scope: "manager", preload: ProjectProgramPage.preload },
+  { scope: "manager", preload: ProjectCastPage.preload },
+  { scope: "manager", preload: ProjectDivisiPage.preload },
+  { scope: "manager", preload: ProjectRehearsalsPage.preload },
+  { scope: "manager", preload: ProjectAttendancePage.preload },
+  { scope: "manager", preload: ProjectCrewPage.preload },
+  { scope: "manager", preload: ProjectBudgetPage.preload },
+  { scope: "manager", preload: ProjectDetailsPage.preload },
   { scope: "manager", preload: ArchiveManagement.preload },
+  { scope: "manager", preload: ArchiveReviewPage.preload },
+  { scope: "manager", preload: ArchiveNewPiecePage.preload },
+  { scope: "manager", preload: ArchiveEditPiecePage.preload },
+  { scope: "manager", preload: ArchiveComposersPage.preload },
   { scope: "manager", preload: CrewManagement.preload },
   { scope: "manager", preload: LogisticsLocationsPage.preload },
 ];
 
-export default function App(): React.JSX.Element {
+/**
+ * Root layout for the data router. Hosts the app-wide CSRF provider, the
+ * outer (null) Suspense boundary, the toast portal and the panel body-class
+ * effect, then yields to the matched route via `<Outlet>`. Migrated off the
+ * declarative `<BrowserRouter>` so feature routes can use `useBlocker`
+ * (e.g. the Project Hub's unsaved-changes guard) — unavailable in declarative
+ * routers.
+ *
+ * Suspense strategy: EtherealLoader is panel-only.
+ *  - Auth lazy routes (`/login`, `/activate`) and `/documents/*` suspend
+ *    against this outer boundary with a `null` fallback, so no global spinner
+ *    flashes on public auth or full-screen authed surfaces.
+ *  - Only `/panel/*` lazy chunks resolve against the inner boundary that
+ *    renders <EtherealLoader />.
+ *
+ * Google Maps APIProvider is scoped inside <ProtectedRoute>, so the Maps SDK
+ * ships only to authenticated panel surfaces that use logistics maps.
+ */
+function RootLayout(): React.JSX.Element {
   const location = useLocation();
 
   useEffect(() => {
@@ -135,93 +220,117 @@ export default function App(): React.JSX.Element {
 
   return (
     <CSRFProvider>
-      {/*
-       * Suspense strategy: EtherealLoader is panel-only.
-       *  - Auth lazy routes (`/login`, `/activate`) and `/documents/*` suspend
-       *    against the outer boundary with a `null` fallback, so no global
-       *    spinner flashes on public auth or full-screen authed surfaces.
-       *  - Only `/panel/*` lazy chunks resolve against the inner boundary
-       *    that renders <EtherealLoader />.
-       *
-       * Google Maps APIProvider is scoped inside <ProtectedRoute>, so the Maps
-       * SDK ships only to authenticated panel surfaces that use logistics maps.
-       */}
       <Suspense fallback={null}>
-        <Routes location={location}>
-          <Route path="/" element={<Navigate to="/panel" replace />} />
-          <Route
-            path="/login"
-            element={
-              <PageTransition>
-                <Login />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/activate"
-            element={
-              <PageTransition>
-                <Activate />
-              </PageTransition>
-            }
-          />
-
-          <Route
-            element={
-              <APIProvider
-                apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
-                solutionChannel="GMP_visgl_reactgooglemaps_v1_0"
-                version="weekly"
-                libraries={["places", "geocoding"]}
-              >
-                <ProtectedRoute />
-              </APIProvider>
-            }
-          >
-            <Route
-              path="/panel"
-              element={
-                <Suspense fallback={<EtherealLoader />}>
-                  <DashboardLayout
-                    routePreloaders={PANEL_ROUTE_PRELOADERS}
-                    dataPreloaders={PANEL_DATA_PRELOADERS}
-                  />
-                </Suspense>
-              }
-            >
-              <Route index element={<DashboardHome />} />
-              <Route element={<ManagerRoute />}>
-                <Route path="contracts" element={<Contracts />} />
-                <Route path="rehearsals" element={<Rehearsals />} />
-                <Route path="artists" element={<ArtistManagement />} />
-                <Route path="projects" element={<ProjectDashboard />} />
-                <Route
-                  path="archive-management"
-                  element={<ArchiveManagement />}
-                />
-                <Route path="crew" element={<CrewManagement />} />
-                <Route
-                  path="locations"
-                  element={<LogisticsLocationsPage />}
-                />
-              </Route>
-              <Route path="resources" element={<ChoristerHubPage />} />
-              <Route path="materials" element={<Materials />} />
-              <Route path="schedule" element={<Schedule />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-
-            <Route
-              path="/documents/:docType/:docId"
-              element={<DocumentViewerPage />}
-            />
-          </Route>
-
-          <Route path="*" element={<Navigate to="/panel" replace />} />
-        </Routes>
+        <Outlet />
       </Suspense>
-
       <Toaster position="top-right" richColors closeButton duration={4000} />
     </CSRFProvider>
   );
 }
+
+export const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<RootLayout />}>
+      <Route path="/" element={<Navigate to="/panel" replace />} />
+      <Route
+        path="/login"
+        element={
+          <PageTransition>
+            <Login />
+          </PageTransition>
+        }
+      />
+      <Route
+        path="/activate"
+        element={
+          <PageTransition>
+            <Activate />
+          </PageTransition>
+        }
+      />
+
+      <Route
+        element={
+          <APIProvider
+            apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
+            solutionChannel="GMP_visgl_reactgooglemaps_v1_0"
+            version="weekly"
+            libraries={["places", "geocoding"]}
+          >
+            <ProtectedRoute />
+          </APIProvider>
+        }
+      >
+        <Route
+          path="/panel"
+          element={
+            <Suspense fallback={<EtherealLoader />}>
+              <DashboardLayout
+                routePreloaders={PANEL_ROUTE_PRELOADERS}
+                dataPreloaders={PANEL_DATA_PRELOADERS}
+              />
+            </Suspense>
+          }
+        >
+          <Route index element={<DashboardHome />} />
+          <Route element={<ManagerRoute />}>
+            <Route path="contracts" element={<Contracts />} />
+            <Route path="rehearsals" element={<Rehearsals />} />
+            <Route path="artists" element={<ArtistManagement />} />
+            <Route path="projects" element={<ProjectDashboard />} />
+            <Route path="projects/new" element={<ProjectNewPage />} />
+            <Route path="projects/:id" element={<ProjectHubLayout />}>
+              <Route index element={<ProjectOverviewPage />} />
+              <Route path="program" element={<ProjectProgramPage />} />
+              <Route path="cast" element={<ProjectCastPage />} />
+              <Route path="divisi" element={<ProjectDivisiPage />} />
+              <Route
+                path="casting"
+                element={<Navigate to="../divisi" replace />}
+              />
+              <Route path="rehearsals" element={<ProjectRehearsalsPage />} />
+              <Route path="attendance" element={<ProjectAttendancePage />} />
+              <Route path="crew" element={<ProjectCrewPage />} />
+              <Route path="budget" element={<ProjectBudgetPage />} />
+              <Route path="details" element={<ProjectDetailsPage />} />
+              <Route
+                path="settings"
+                element={<Navigate to="../details" replace />}
+              />
+            </Route>
+            <Route path="archive-management" element={<ArchiveManagement />} />
+            <Route
+              path="archive-management/composers"
+              element={<ArchiveComposersPage />}
+            />
+            <Route
+              path="archive-management/new"
+              element={<ArchiveNewPiecePage />}
+            />
+            <Route
+              path="archive-management/:id/edit"
+              element={<ArchiveEditPiecePage />}
+            />
+            <Route
+              path="archive-management/:id/review"
+              element={<ArchiveReviewPage />}
+            />
+            <Route path="crew" element={<CrewManagement />} />
+            <Route path="locations" element={<LogisticsLocationsPage />} />
+          </Route>
+          <Route path="resources" element={<ChoristerHubPage />} />
+          <Route path="materials" element={<Materials />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+
+        <Route
+          path="/documents/:docType/:docId"
+          element={<DocumentViewerPage />}
+        />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/panel" replace />} />
+    </Route>,
+  ),
+);

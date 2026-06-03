@@ -7,13 +7,13 @@
 
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { CursorProvider } from "./app/providers/CursorProvider";
 import { AuthProvider } from "./app/providers/AuthProvider";
 import "./shared/config/i18n";
-import App from "./app/App";
+import { router } from "./app/App";
 import "./app/styles/index.css";
 
 const queryClient = new QueryClient({
@@ -33,11 +33,9 @@ ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <CursorProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </BrowserRouter>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </CursorProvider>
     </QueryClientProvider>
   </React.StrictMode>,

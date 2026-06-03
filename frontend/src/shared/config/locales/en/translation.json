@@ -1412,7 +1412,8 @@
       "status_done": "Project marked as completed",
       "status_update_failed": "Failed to update status.",
       "toggle": "Toggle project details view",
-      "updating_status": "Updating status..."
+      "updating_status": "Updating status...",
+      "open": "Open project {{title}}"
     },
     "cast": {
       "aria_label": "Manage vocal cast",
@@ -1833,6 +1834,20 @@
       "delete_error_title": "Deletion error",
       "delete_loading": "Deleting project...",
       "delete_success": "Project deleted successfully"
+    },
+    "hub": {
+      "tabs": {
+        "overview": "Overview"
+      },
+      "tabs_aria": "Project sections",
+      "back": "Events",
+      "no_date": "Date not set"
+    },
+    "row": {
+      "edit_title": "Project title",
+      "title_placeholder": "Title",
+      "title_required": "Title is required",
+      "delete_aria": "Delete project {{title}}"
     }
   },
   "rehearsals": {

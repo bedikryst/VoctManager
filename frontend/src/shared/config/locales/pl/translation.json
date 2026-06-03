@@ -1444,7 +1444,8 @@
       "status_done": "Projekt oznaczony jako zrealizowany",
       "status_update_failed": "Nie udało się zmienić statusu.",
       "toggle": "Przełącz widok szczegółów projektu",
-      "updating_status": "Aktualizowanie statusu..."
+      "updating_status": "Aktualizowanie statusu...",
+      "open": "Otwórz projekt {{title}}"
     },
     "cast": {
       "aria_label": "Zarządzaj obsadą wokalną",
@@ -1877,6 +1878,20 @@
       "delete_error_title": "Błąd usuwania",
       "delete_loading": "Usuwanie projektu...",
       "delete_success": "Projekt usunięty pomyślnie"
+    },
+    "hub": {
+      "tabs": {
+        "overview": "Przegląd"
+      },
+      "tabs_aria": "Sekcje projektu",
+      "back": "Wydarzenia",
+      "no_date": "Termin nieustalony"
+    },
+    "row": {
+      "edit_title": "Tytuł projektu",
+      "title_placeholder": "Tytuł",
+      "title_required": "Tytuł jest wymagany",
+      "delete_aria": "Usuń projekt {{title}}"
     }
   },
   "rehearsals": {
