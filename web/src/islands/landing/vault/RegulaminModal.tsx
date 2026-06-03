@@ -24,7 +24,7 @@ const SECTIONS: readonly RegulaminSection[] = [
     title: "Postanowienia ogólne",
     items: [
       <>
-        Niniejszy regulamin określa zasady przekazywania darowizn online na rzecz{" "}
+        Niniejszy regulamin określa zasady przekazywania darowizn na rzecz{" "}
         <strong>Fundacji VoctFoundation</strong> z siedzibą w Krakowie (ul. Św. Filipa 23/3,
         31-150 Kraków), wpisanej do rejestru Krajowego Rejestru Sądowego pod numerem KRS:
         0001237252, NIP: 6762718992, REGON: 544621525, zwanej dalej „Fundacją”.
@@ -53,6 +53,7 @@ const SECTIONS: readonly RegulaminSection[] = [
       "Przekazywanie darowizn online odbywa się za pośrednictwem formularza wsparcia dostępnego na stronie internetowej voctensemble.com.",
       "Operatorem płatności online jest BNP Paribas Bank Polska S.A. z siedzibą w Warszawie (bramka Axepta BNP Paribas), a dla transakcji kartowych agentem rozliczeniowym jest PayU S.A. z siedzibą w Poznaniu.",
       "Darczyńca ma możliwość przekazania darowizny z wykorzystaniem nowoczesnych, szyfrowanych metod płatności, w szczególności: kart płatniczych (Visa, Mastercard), systemu BLIK, szybkich przelewów bankowych (Pay-By-Link) oraz portfeli elektronicznych (Apple Pay, Google Pay).",
+      "Niezależnie od płatności online, Darczyńca może przekazać darowiznę zwykłym przelewem bankowym bezpośrednio na rachunek Fundacji — jednorazowo lub w formie zlecenia stałego (przelewu cyklicznego), które Darczyńca ustanawia, zmienia i odwołuje samodzielnie w swojej bankowości; Fundacja nie przechowuje w tym celu danych karty ani zgody na obciążenia. Darowiznę można również przekazać za pośrednictwem serwisu zbiórkowego Zrzutka.pl, na zasadach określonych w regulaminie tego serwisu.",
       "Darowizny mogą być przekazywane w walutach: PLN oraz EUR. Dostępność poszczególnych metod płatności zależy od wybranej waluty.",
       "Kliknięcie przycisku potwierdzającego chęć przekazania wsparcia w formularzu oraz dokonanie płatności jest równoznaczne z zawarciem umowy darowizny oraz akceptacją niniejszego Regulaminu.",
     ],
@@ -136,9 +137,9 @@ export function RegulaminModal(): React.JSX.Element {
       <div className="regulamin-panel" role="document" tabIndex={-1} data-lenis-prevent ref={panelRef}>
         <header className="regulamin-head">
           <div className="regulamin-head-text">
-            <span className="micro regulamin-kicker">Dokument · darowizny online</span>
+            <span className="micro regulamin-kicker">Dokument · darowizny</span>
             <h2 className="regulamin-title" id="regulamin-title">
-              Regulamin przekazywania darowizn online
+              Regulamin przekazywania darowizn
             </h2>
           </div>
           <button
@@ -156,8 +157,9 @@ export function RegulaminModal(): React.JSX.Element {
           <div className="regulamin-scroll" ref={scrollRef} onScroll={syncScrollEnd}>
             <div className="regulamin-doc">
               <p className="regulamin-lede">
-                Regulamin określa zasady przekazywania darowizn online na rzecz Fundacji
-                VoctFoundation za pośrednictwem strony voctensemble.com.
+                Regulamin określa zasady przekazywania darowizn na rzecz Fundacji
+                VoctFoundation za pośrednictwem strony voctensemble.com — w formie płatności
+                online oraz przelewu bankowego.
               </p>
 
               {SECTIONS.map((section) => (
@@ -170,13 +172,31 @@ export function RegulaminModal(): React.JSX.Element {
                   </ol>
                 </section>
               ))}
+
+              <details className="regulamin-history">
+                <summary>
+                  <span>Historia wersji</span>
+                  <span className="regulamin-history-icon" aria-hidden="true" />
+                </summary>
+                <ul className="regulamin-history-list">
+                  <li>
+                    <strong>Wersja 1.1 · 3 czerwca 2026</strong> — Uzupełniono § 2 o sposoby
+                    przekazania darowizny poza bramką płatności online: zwykły przelew bankowy
+                    (jednorazowy oraz w formie zlecenia stałego) i serwis zbiórkowy Zrzutka.pl.
+                  </li>
+                  <li>
+                    <strong>Wersja 1.0 · 13 maja 2026</strong> — Pierwotna wersja Regulaminu,
+                    opublikowana wraz z uruchomieniem strony voctensemble.com.
+                  </li>
+                </ul>
+              </details>
             </div>
           </div>
           <div className="regulamin-scroll-fade" aria-hidden="true" />
         </div>
 
         <footer className="regulamin-foot">
-          <p className="regulamin-foot-note">Wersja 1.0 · obowiązuje od 13 maja 2026</p>
+          <p className="regulamin-foot-note">Wersja 1.1 · obowiązuje od 3 czerwca 2026</p>
           <button type="button" className="regulamin-accept" onClick={acceptRegulamin}>
             <span>Akceptuję regulamin</span>
             <span className="regulamin-accept-arrow" aria-hidden="true">

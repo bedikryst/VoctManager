@@ -369,8 +369,63 @@
   footer a { border-bottom: none; }
   footer a:hover { color: var(--ink); border-bottom: none; }
 
+  /* Historia zmian — domyślnie zwinięta, by nie rozrastała się z czasem */
+  details.changelog {
+    margin: 8px 0 16px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  details.changelog > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 0;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    transition: color 0.35s var(--ease);
+  }
+
+  details.changelog > summary::-webkit-details-marker { display: none; }
+  details.changelog > summary:hover { color: var(--ink); }
+
+  .changelog-icon {
+    position: relative;
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+
+  .changelog-icon::before,
+  .changelog-icon::after {
+    content: "";
+    position: absolute;
+    background: var(--candle);
+    transition: transform 0.3s var(--ease);
+  }
+
+  .changelog-icon::before { left: 0; right: 0; top: 50%; height: 1px; transform: translateY(-50%); }
+  .changelog-icon::after { top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); }
+  details.changelog[open] .changelog-icon::after { transform: translateX(-50%) scaleY(0); }
+
+  .changelog-list {
+    margin: 0;
+    padding: 4px 0 22px 22px;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     a { transition: none; }
+    details.changelog > summary,
+    .changelog-icon::before,
+    .changelog-icon::after {
+      transition: none;
+    }
   }
 </style>
 </head>
@@ -394,7 +449,7 @@
 <main>
   <p class="doc-eyebrow">Dokument · RODO</p>
   <h1 class="doc-title">Polityka prywatności</h1>
-  <p class="doc-meta">Wersja 1.0 · obowiązuje od 13 maja 2026</p>
+  <p class="doc-meta">Wersja 1.1 · obowiązuje od 3 czerwca 2026</p>
 
   <p class="doc-lede">
     Strona <em>voctensemble.com</em> jest witryną informacyjną oraz kanałem przyjmowania darowizn
@@ -485,30 +540,28 @@
     <p>
       Korzystamy z bramki płatniczej <strong>Axepta BNP Paribas</strong>, której operatorem jest
       <em>BNP Paribas Bank Polska S.A.</em> Dla transakcji kartowych agentem rozliczeniowym jest
-      <em>PayU S.A.</em> Płatność jest obsługiwana w dwóch trybach — w zależności od tego, który
-      jest dostępny w danym momencie:
+      <em>PayU S.A.</em> Płatność przebiega w modelu przekierowania na bezpieczną stronę operatora:
     </p>
     <ul>
       <li>
-        <strong>Tryb wbudowany (embedded, REST API)</strong> — formularz płatności pojawia się
-        bezpośrednio w interfejsie naszej strony. Wprowadzone dane (kod BLIK, dane karty, wybór
-        banku przy szybkim przelewie) są przekazywane przez nasz serwer aplikacyjny szyfrowanym 
-        kanałem do REST API bramki — bez utrwalania pełnych danych płatniczych po naszej stronie.
+        Po wybraniu kwoty i podaniu adresu e-mail nasz serwer przekazuje do bramki wyłącznie
+        <strong>kwotę, walutę, adres e-mail oraz identyfikator darowizny</strong> i otrzymuje
+        w zamian jednorazowy link do strony płatności.
       </li>
       <li>
-        <strong>Tryb przekierowania (redirect)</strong> — używany jako wariant zastępczy. Po
-        kliknięciu „Wesprzyj" zostajesz przekierowany na podstronę operatora bramki, gdzie
-        wprowadzasz dane płatnicze, i wracasz na naszą stronę z potwierdzeniem transakcji.
+        Zostajesz przekierowany na <strong>hostowaną stronę płatności operatora</strong>, gdzie
+        bezpośrednio wprowadzasz dane płatnicze (kod BLIK, dane karty, wybór banku przy szybkim
+        przelewie). Po zakończeniu wracasz na naszą stronę z informacją o statusie transakcji.
       </li>
     </ul>
     <p>
-      Niezależnie od trybu, <strong>Fundacja nie przechowuje pełnych danych kart płatniczych</strong>
-      ani danych logowania do bankowości elektronicznej. Dane karty są w czasie rzeczywistym
-      <em>tokenizowane</em> i przekazywane do bramki, która przejmuje ciężar autoryzacji oraz
-      obowiązki bezpieczeństwa zgodnie z normą <strong>PCI DSS</strong>. Po stronie Fundacji 
-      zachowujemy wyłącznie: imię i nazwisko (lub pseudonim) darczyńcy, adres e-mail, kwotę, datę, 
-      identyfikator transakcji oraz jej status — w zakresie niezbędnym do ewidencji księgowej i 
-      wystawienia potwierdzenia darowizny.
+      Pełne dane płatnicze (numer karty, kod BLIK, dane logowania do bankowości) wprowadzasz
+      wyłącznie na stronie operatora — <strong>nie przechodzą one przez serwery Fundacji ani nie są
+      przez nas przechowywane</strong>. To operator tokenizuje je oraz przejmuje ciężar autoryzacji
+      i obowiązki bezpieczeństwa zgodnie z normą <strong>PCI DSS</strong>. Po stronie Fundacji
+      zachowujemy wyłącznie: adres e-mail darczyńcy, kwotę, walutę, datę, identyfikator transakcji
+      oraz jej status — w zakresie niezbędnym do ewidencji księgowej i wystawienia potwierdzenia
+      darowizny.
     </p>
 
     <h3>Zrzutka.pl</h3>
@@ -517,10 +570,24 @@
       jest <em>Zrzutka Sp. z o.o.</em>
     </p>
 
-    <h3>Przelew bankowy</h3>
+    <h3>Przelew bankowy (jednorazowy lub zlecenie stałe)</h3>
     <p>
       Dane wynikają z polecenia przelewu (nadawca, tytuł, kwota) i trafiają do nas wyłącznie
-      za pośrednictwem banku prowadzącego nasz rachunek.
+      za pośrednictwem banku prowadzącego nasz rachunek. Dotyczy to także przelewów cyklicznych
+      (zleceń stałych): ich ustanowienie, zmiana i odwołanie odbywają się w całości w bankowości
+      Darczyńcy — nie przechowujemy w tym celu danych Twojej karty ani zgody na obciążanie, a samo
+      zlecenie pozostaje pod Twoją wyłączną kontrolą.
+    </p>
+
+    <h3>Zgłoszenie mecenatu (formularz wsparcia regularnego)</h3>
+    <p>
+      Jeśli zdecydujesz się dołączyć do grona mecenasów i wypełnisz formularz w sekcji
+      „Mecenat", przetwarzamy podane przez Ciebie <strong>imię, nazwisko oraz adres e-mail</strong>.
+      Zapisujemy je wyłącznie po to, aby skontaktować się z Tobą w sprawie regularnego wsparcia.
+      Formularz <strong>nie zbiera żadnych danych płatniczych</strong> — samo wsparcie odbywa się
+      przelewem (zleceniem stałym), który ustanawiasz i kontrolujesz w swojej bankowości. Twoje
+      dane przechowujemy na naszych serwerach w Unii Europejskiej; wewnętrzne powiadomienie o nowym
+      zgłoszeniu, które wysyłamy do siebie, <strong>nie zawiera Twoich danych osobowych</strong>.
     </p>
 
     <h3>Korespondencja e-mail</h3>
@@ -558,6 +625,12 @@
       <li>
         <strong>Wystawienie zaświadczenia o darowiźnie</strong> — art. 6 ust. 1 lit. c RODO,
         wykonanie obowiązków wynikających z przepisów podatkowych.
+      </li>
+      <li>
+        <strong>Kontakt w sprawie mecenatu</strong> — art. 6 ust. 1 lit. a RODO (Twoja zgoda
+        wyrażona w formularzu). Zgodę możesz wycofać w każdej chwili, pisząc na
+        <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>; wycofanie nie wpływa na
+        zgodność z prawem przetwarzania, którego dokonano przed wycofaniem.
       </li>
       <li>
         <strong>Ustalenie, dochodzenie lub obrona roszczeń</strong> — art. 6 ust. 1 lit. f RODO,
@@ -633,8 +706,8 @@
     </p>
     <p>
       Operator bramki płatniczej (BNP Paribas Bank Polska S.A.) oraz agent rozliczeniowy
-      kart (PayU S.A.) są podmiotami z siedzibą w Polsce. Mogą oni jednak — w ramach własnych 
-      systemów antyfraudowych — przetwarzać dane również poza EOG, za co odpowiadają na zasadach 
+      kart (PayU S.A.) są podmiotami z siedzibą w Polsce. Mogą oni jednak — w ramach własnych
+      systemów antyfraudowych — przetwarzać dane również poza EOG, za co odpowiadają na zasadach
       określonych w swoich politykach prywatności.
     </p>
   </section>
@@ -647,9 +720,13 @@
       <li><strong>Dane darczyńców (dokumentacja księgowa i dowody wpłat)</strong> — przez 5 lat, 
         licząc od początku roku następującego po roku obrotowym, którego dane dotyczą. 
         Obowiązek ten wynika wprost z art. 74 ustawy o rachunkowości oraz przepisów Ordynacji podatkowej.</li>
-      <li><strong>Korespondencja e-mail</strong> — do czasu zakończenia sprawy, nie dłużej niż 3 lata 
-        od ostatniej wymiany wiadomości. Okres ten może ulec wydłużeniu do czasu przedawnienia ewentualnych 
+      <li><strong>Korespondencja e-mail</strong> — do czasu zakończenia sprawy, nie dłużej niż 3 lata
+        od ostatniej wymiany wiadomości. Okres ten może ulec wydłużeniu do czasu przedawnienia ewentualnych
         roszczeń, jeśli korespondencja stanowi dowód w sprawie.</li>
+      <li><strong>Zgłoszenia mecenatu</strong> — do czasu zakończenia kontaktu w sprawie mecenatu lub
+        wycofania zgody. Jeśli nawiążemy stałą współpracę, dane przechodzą w reżim przechowywania
+        dla darczyńców (dokumentacja księgowa, 5 lat); w przeciwnym razie usuwamy je niezwłocznie
+        po zakończeniu kontaktu.</li>
       <li><strong>Preferencja audio</strong> w localStorage — 3 godziny od zapisu lub do czasu
         wyczyszczenia danych przeglądarki przez użytkownika.</li>
     </ul>
@@ -730,10 +807,10 @@
 
     <h3>Techniczne skrypty i pliki cookies bramki płatniczej</h3>
     <p>
-      W momencie, w którym wybierzesz metodę płatności i przejdziesz do formularza darowizny,
-      w przeglądarce ładują się <strong>techniczne biblioteki JavaScript dostarczane przez
-      BNP Paribas / PayU</strong>. Mogą one ustawić pliki cookies lub korzystać z innych
-      mechanizmów przechowywania danych w przeglądarce w celach:
+      Po kliknięciu „Wesprzyj" zostajesz przekierowany na hostowaną stronę płatności operatora.
+      To na tej stronie — już poza serwisem voctensemble.com — ładują się <strong>techniczne
+      biblioteki JavaScript dostarczane przez BNP Paribas / PayU</strong>, które mogą ustawić pliki
+      cookies lub korzystać z innych mechanizmów przechowywania danych w przeglądarce w celach:
     </p>
     <ul>
       <li>autoryzacji i utrzymania sesji płatności,</li>
@@ -746,7 +823,8 @@
       płatności i nie wymagają odrębnej zgody. Administratorem danych przetwarzanych przez te
       skrypty są <em>BNP Paribas Bank Polska S.A.</em> oraz — w przypadku płatności kartą —
       <em>PayU S.A.</em>, na zasadach opisanych w ich politykach prywatności (linki w sekcji
-      „Odbiorcy danych"). Nie pojawiają się one, dopóki nie rozpoczniesz procesu darowizny.
+      „Odbiorcy danych"). Nie pojawiają się one na naszej stronie — działają wyłącznie na stronie
+      operatora po przekierowaniu, gdy rozpoczynasz proces płatności.
     </p>
   </section>
 
@@ -758,13 +836,14 @@
         nie pozwoli na nieszyfrowane połączenie z naszą domeną.</li>
       <li>
         <strong>Nie przechowujemy pełnych danych kart płatniczych ani kodów BLIK</strong> na
-        serwerach Fundacji. Dane są w czasie rzeczywistym tokenizowane i przekazywane szyfrowanym
-        kanałem do bramki Axepta BNP Paribas / PayU.
+        serwerach Fundacji — wprowadzasz je bezpośrednio na hostowanej stronie operatora
+        (Axepta BNP Paribas / PayU), który tokenizuje je i odpowiada za ich bezpieczeństwo zgodnie
+        z normą PCI DSS.
       </li>
       <li>
-        W zakresie, w jakim nasz serwer aplikacyjny pośredniczy w transmisji danych płatniczych
-        (tryb embedded REST API), komunikacja odbywa się wyłącznie szyfrowanym TLS, a dane są
-        natychmiast po przekazaniu do bramki usuwane z pamięci procesu i nie są utrwalane na dysku.
+        Nasz serwer nie pośredniczy w transmisji danych płatniczych — do bramki przekazujemy
+        jedynie kwotę, walutę, adres e-mail oraz identyfikator darowizny, wyłącznie szyfrowanym
+        połączeniem TLS, w celu wygenerowania linku do strony płatności.
       </li>
       <li>Adresy e-mail przechowywane są w skrzynkach pocztowych zabezpieczonych mechanizmami
         uwierzytelniania wieloskładnikowego.</li>
@@ -779,13 +858,26 @@
       Każda zmiana jest oznaczona nowym numerem wersji i datą obowiązywania (u góry tego dokumentu).
     </p>
 
-    <h3>Historia zmian</h3>
-    <ul>
-      <li>
-        <strong>1.0 · 13 maja 2026</strong> — Wersja pierwotna polityki, opublikowana wraz
-        z uruchomieniem witryny voctensemble.com.
-      </li>
-    </ul>
+    <details class="changelog">
+      <summary>
+        <span>Historia zmian</span>
+        <span class="changelog-icon" aria-hidden="true"></span>
+      </summary>
+      <ul class="changelog-list">
+        <li>
+          <strong>1.1 · 3 czerwca 2026</strong> — Doprecyzowano opis przebiegu płatności online:
+          płatność odbywa się w modelu przekierowania na hostowaną stronę operatora, a pełne dane
+          płatnicze nie przechodzą przez serwery Fundacji. Dodano informację o przelewach cyklicznych
+          (zleceniach stałych) jako formie wsparcia regularnego. Dodano obsługę formularza mecenatu
+          (zapisywanie zgłoszeń: imię, nazwisko, e-mail — na podstawie zgody; dane przechowywane
+          na serwerach w Unii Europejskiej).
+        </li>
+        <li>
+          <strong>1.0 · 13 maja 2026</strong> — Wersja pierwotna polityki, opublikowana wraz
+          z uruchomieniem witryny voctensemble.com.
+        </li>
+      </ul>
+    </details>
 
     <p>
       Pełną historię zmian możesz zawsze otrzymać, pisząc na

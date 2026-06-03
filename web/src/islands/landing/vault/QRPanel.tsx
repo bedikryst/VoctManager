@@ -2,7 +2,8 @@
  * @file QRPanel.tsx
  * @description Bank-QR panel inside the donation vault. The QR image is a static asset
  *  (/qr-bank.png) generated out-of-band; we also expose the canonical Polish 2D (KIR) payload
- *  for debug/regeneration. Web/Astro port of the SPA widget.
+ *  for debug/regeneration. Also carries the recurring-support copy: the same account details
+ *  set up as a standing order (zlecenie stałe) — donor-controlled, no card stored. Web/Astro port.
  * @architecture Astro islands 2026
  * @module islands/landing/vault/QRPanel
  */
@@ -12,57 +13,7 @@ import { useMemo, useState } from "react";
 import { BrandGlyph } from "../BrandGlyph";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { buildPolishQRPayload } from "../lib/polishQR";
-
-interface TransferField {
-  readonly label: string;
-  readonly value: string;
-  readonly display: string;
-  readonly eventName: string;
-}
-
-const TRANSFER_FIELDS: readonly TransferField[] = [
-  {
-    label: "Numer konta · PLN",
-    value: "26160010131724418410000001",
-    display: "26 1600 1013 1724 4184 1000 0001",
-    eventName: "skarbiec+copy+nrkonta",
-  },
-  {
-    label: "Odbiorca",
-    value: "Fundacja VoctFoundation",
-    display: "Fundacja VoctFoundation",
-    eventName: "skarbiec+copy+fundacja",
-  },
-  {
-    label: "Adres fundacji",
-    value: "Św. Filipa 23/3, 31-150 Kraków",
-    display: "Św. Filipa 23/3, 31-150 Kraków",
-    eventName: "skarbiec+copy+adres",
-  },
-  {
-    label: "Tytuł przelewu",
-    value: "Darowizna na cele statutowe VoctFoundation",
-    display: "Darowizna na cele statutowe VoctFoundation",
-    eventName: "skarbiec+copy+tytul",
-  },
-];
-
-function TransferFieldButton({ field }: { readonly field: TransferField }): React.JSX.Element {
-  const { copied, copy } = useCopyToClipboard();
-  return (
-    <div className="transfer-field">
-      <span className="transfer-field-label">{field.label}</span>
-      <button
-        type="button"
-        className={`transfer-field-copy plausible-event-name=${field.eventName}`}
-        onClick={() => void copy(field.value)}
-      >
-        <span className="transfer-field-val">{field.display}</span>
-        <span className="transfer-field-copy-action">{copied ? "Skopiowano" : "Kopiuj"}</span>
-      </button>
-    </div>
-  );
-}
+import { BANK_TRANSFER_FIELDS, TransferFieldButton } from "./transferFields";
 
 export function QRPanel(): React.JSX.Element {
   const [imageMissing, setImageMissing] = useState(false);
@@ -124,9 +75,24 @@ export function QRPanel(): React.JSX.Element {
       </details>
 
       <div className="method-transfer-fields">
-        {TRANSFER_FIELDS.map((field) => (
+        {BANK_TRANSFER_FIELDS.map((field) => (
           <TransferFieldButton key={field.label} field={field} />
         ))}
+      </div>
+
+      <div className="transfer-recurring">
+        <span className="transfer-recurring-label">
+          <span className="transfer-recurring-dot" aria-hidden="true" />
+          Wsparcie co miesiąc · zlecenie stałe
+        </span>
+        <p className="transfer-recurring-note">
+          Chcesz wspierać cykl regularnie? Skopiuj powyższe dane i w swojej aplikacji bankowej
+          ustaw je jako <strong>zlecenie stałe</strong> (zakładka „zlecenia stałe" /
+          „płatności cykliczne") — np. 25, 50 lub 100&nbsp;zł miesięcznie. Kod QR powyżej tworzy
+          przelew jednorazowy; zlecenie cykliczne wpisuje się ręcznie. Pozostaje ono w pełni pod
+          Twoją kontrolą — zmienisz je lub odwołasz w każdej chwili w bankowości, bez kontaktu
+          z nami. Bez prowizji i bez przekazywania danych karty.
+        </p>
       </div>
     </article>
   );

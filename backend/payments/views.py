@@ -17,11 +17,16 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .models import Donation
-from .serializers import DonationStatusSerializer, InitiateDonationSerializer
+from .serializers import (
+    DonationStatusSerializer,
+    InitiateDonationSerializer,
+    PatronInterestSerializer,
+)
 from .services import (
     AxeptaPaymentService,
     DonationNotFoundError,
     InvalidWebhookSignatureError,
+    PatronageService,
     PaymentGatewayError,
     WebhookAmountMismatchError,
     WebhookPayloadError,
@@ -83,6 +88,36 @@ class InitiateDonationView(APIView):
             )
 
         return Response({'redirectUrl': redirect_url}, status=status.HTTP_201_CREATED)
+
+
+class PatronInterestView(APIView):
+    """
+    Public endpoint behind the vault's Mecenat form: persists a `PatronLead` and
+    notifies the foundation so it can reach out. Mirrors `InitiateDonationView`'s
+    stance — `AllowAny`, no authentication (cross-origin cookie-less POST), and a
+    dedicated throttle scope. The notification e-mail is best-effort: the lead is
+    saved first, so a transport failure never costs the capture or 500s the donor.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'patron_interest'
+
+    def post(self, request: Request) -> Response:
+        serializer = PatronInterestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lead = serializer.save()
+
+        try:
+            PatronageService.notify_foundation(lead)
+        except Exception:
+            # Best-effort: the lead is already persisted, so a notification
+            # failure must never break capture or surface as an error to the donor.
+            logger.exception(
+                "Patron lead %s saved but the notification e-mail failed.", lead.id
+            )
+
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class DonationStatusView(APIView):

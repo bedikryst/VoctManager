@@ -23,7 +23,9 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from .models import Donation, DonationStatus
+from notifications.email_service import EmailDispatcherService, EmailType
+
+from .models import Donation, DonationStatus, PatronLead
 
 logger = logging.getLogger(__name__)
 
@@ -315,3 +317,33 @@ class AxeptaPaymentService:
             if update_fields:
                 update_fields.add('updated_at')
                 donation.save(update_fields=list(update_fields))
+
+
+class PatronageService:
+    """
+    Patronage (mecenat) lead handling. Unlike `AxeptaPaymentService` this never
+    talks to a payment gateway — patronage runs on a donor-controlled bank standing
+    order. Its only side effect is an internal notification so the foundation knows
+    to reach out.
+    """
+
+    @staticmethod
+    def notify_foundation(lead: PatronLead) -> None:
+        """
+        Pings the foundation's inbox that a new patronage lead arrived. Deliberately
+        content-free: it carries no name, e-mail or identifier, so the lead's personal
+        data never leaves the EU database and the e-mail provider processes none of it —
+        the foundation reads the details in the Django admin. Raises on transport
+        failure; the caller swallows it (the lead is already persisted).
+        """
+        # `lead` is taken (not its fields) so the call site reads naturally and a
+        # future switch back to a detailed notification is a one-line change.
+        logger.info("Patron lead %s captured; pinging foundation inbox.", lead.id)
+        EmailDispatcherService.dispatch(
+            recipient_email=settings.PATRON_NOTIFICATION_EMAIL,
+            subject="Nowe zgłoszenie mecenasa",
+            template_name='patron_lead_notification',
+            context={},
+            fallback_language='pl',
+            email_type=EmailType.OPERATIONAL,
+        )

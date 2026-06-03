@@ -5,7 +5,7 @@
 # ==========================================
 from django.contrib import admin
 
-from .models import Donation
+from .models import Donation, PatronLead
 
 
 @admin.register(Donation)
@@ -29,4 +29,25 @@ class DonationAdmin(admin.ModelAdmin):
     def has_add_permission(self, request) -> bool:
         # Donations originate only from the public API + gateway flow; a
         # hand-created row would have no corresponding Axepta transaction.
+        return False
+
+
+@admin.register(PatronLead)
+class PatronLeadAdmin(admin.ModelAdmin):
+    """
+    Hand-managed view onto patronage leads. `status` and `note` are the working
+    fields the foundation advances as it contacts each prospective patron; the
+    contact details the visitor supplied are immutable.
+    """
+    list_display = ('first_name', 'last_name', 'email', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('first_name', 'last_name', 'email')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    list_editable = ('status',)
+    readonly_fields = ('id', 'first_name', 'last_name', 'email', 'created_at', 'updated_at')
+
+    def has_add_permission(self, request) -> bool:
+        # Leads originate only from the public Mecenat form (consent captured there);
+        # a hand-created row would have no lawful basis recorded.
         return False

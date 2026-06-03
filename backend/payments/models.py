@@ -98,3 +98,48 @@ class Donation(EnterpriseBaseModel):
         """
         factor = Decimal(10) ** CURRENCY_MINOR_UNIT_EXPONENT[self.currency]
         return int((self.amount * factor).quantize(Decimal('1')))
+
+
+class PatronLeadStatus(models.TextChoices):
+    """Lifecycle of a patronage expression of interest — advanced by hand."""
+    NEW = 'NEW', _('New')
+    CONTACTED = 'CONTACTED', _('Contacted')
+    ACTIVE = 'ACTIVE', _('Active patron')
+    ARCHIVED = 'ARCHIVED', _('Archived')
+
+
+class PatronLead(EnterpriseBaseModel):
+    """
+    A visitor's expression of interest in becoming a recurring patron (mecenat),
+    captured from the public donation vault.
+
+    Holds NO payment data — patronage runs on a donor-controlled bank standing
+    order — only the contact details the person volunteered, plus a hand-managed
+    `status` and free-text `note`. A row only ever exists because the visitor gave
+    explicit consent to be contacted (enforced by `PatronInterestSerializer`), so
+    `created_at` doubles as the consent timestamp for RODO accountability.
+    """
+    first_name = models.CharField(max_length=100, verbose_name=_("First Name"))
+    last_name = models.CharField(max_length=100, verbose_name=_("Last Name"))
+    email = models.EmailField(verbose_name=_("Email"))
+    status = models.CharField(
+        max_length=10,
+        choices=PatronLeadStatus.choices,
+        default=PatronLeadStatus.NEW,
+        db_index=True,
+        verbose_name=_("Status"),
+    )
+    note = models.TextField(blank=True, verbose_name=_("Internal note"))
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = _('Patron Lead')
+        verbose_name_plural = _('Patron Leads')
+        indexes = [
+            # Declared explicitly because this model overrides Meta and so does
+            # not inherit EnterpriseBaseModel.Meta's equivalent composite index.
+            models.Index(fields=['is_deleted', '-created_at'], name='payments_patron_isdel_idx'),
+        ]
+
+    def __str__(self) -> str:
+        return f"PatronLead {self.first_name} {self.last_name} <{self.email}> ({self.status})"

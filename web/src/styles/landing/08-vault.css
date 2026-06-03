@@ -157,6 +157,57 @@
   .vault-close span:nth-child(1) { transform: translate(-50%, -50%) rotate(45deg); }
   .vault-close span:nth-child(2) { transform: translate(-50%, -50%) rotate(-45deg); }
 
+  /* ── Górny przełącznik intencji: Jednorazowo / Mecenat ─────────────── */
+  .vault-seg-wrap {
+    padding: 22px max(28px, 4vw) 6px;
+  }
+
+  .vault-seg {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid rgba(244, 241, 233, 0.18);
+    background: rgba(244, 241, 233, 0.02);
+  }
+
+  .vault-seg-thumb {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 50%;
+    background: var(--candle);
+    transition: transform 0.55s var(--ease-slow);
+  }
+
+  .vault-seg-thumb[data-active="mecenat"] {
+    transform: translateX(100%);
+  }
+
+  .vault-seg-tab {
+    position: relative;
+    z-index: 1;
+    border: 0;
+    background: transparent;
+    color: rgba(244, 241, 233, 0.6);
+    cursor: pointer;
+    padding: 13px 16px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    transition: color 0.45s var(--ease);
+  }
+
+  .vault-seg-tab:hover {
+    color: var(--paper);
+  }
+
+  .vault-seg-tab[aria-selected="true"] {
+    color: var(--dark);
+  }
+
   .vault-progress {
     padding: 24px max(28px, 4vw);
     border-bottom: 1px solid rgba(244, 241, 233, 0.12);
@@ -400,7 +451,7 @@
     font-family: var(--serif);
     font-size: clamp(16px, 1.6vw, 20px);
     font-weight: 300;
-    padding: 9px 0;
+    padding: 5px;
     transition: border-color 0.4s var(--ease);
   }
 
@@ -903,6 +954,311 @@
 
   .transfer-field-copy:hover .transfer-field-copy-action {
     color: var(--candle);
+  }
+
+  /* wsparcie cykliczne — zlecenie stałe na te same dane przelewu */
+  .transfer-recurring {
+    margin-top: 8px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(244, 241, 233, 0.1);
+    display: grid;
+    gap: 9px;
+  }
+
+  .transfer-recurring-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--candle);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .transfer-recurring-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--candle);
+    box-shadow: 0 0 10px rgba(198, 164, 91, 0.62);
+  }
+
+  .transfer-recurring-note {
+    margin: 0;
+    color: rgba(244, 241, 233, 0.66);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .transfer-recurring-note strong {
+    color: var(--paper);
+    font-weight: 400;
+  }
+
+  /* ── Mecenat · wsparcie regularne (zlecenie stałe) ──────────────────── */
+  .mecenat {
+    padding: 8px max(28px, 4vw) 28px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .mecenat-card {
+    border-color: rgba(198, 164, 91, 0.34);
+    background:
+      linear-gradient(135deg, rgba(198, 164, 91, 0.07), transparent 60%),
+      rgba(244, 241, 233, 0.02);
+  }
+
+  .mecenat-card:hover {
+    border-color: rgba(198, 164, 91, 0.5);
+  }
+
+  .mecenat-card .method-tag-dot {
+    background: var(--candle);
+    box-shadow: 0 0 10px rgba(198, 164, 91, 0.62);
+  }
+
+  .mecenat-block {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mecenat-sublabel {
+    color: rgba(244, 241, 233, 0.5);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .mecenat-benefits {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 9px;
+  }
+
+  .mecenat-benefits li {
+    position: relative;
+    padding-left: 20px;
+    color: rgba(244, 241, 233, 0.74);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .mecenat-benefits li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--candle);
+  }
+
+  .mecenat-how {
+    margin: 0;
+    color: rgba(244, 241, 233, 0.66);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .mecenat-how strong {
+    color: var(--paper);
+    font-weight: 400;
+  }
+
+  .mecenat-contact {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mecenat-contact a {
+    width: max-content;
+    max-width: 100%;
+    color: var(--candle);
+    border-bottom: 1px solid rgba(198, 164, 91, 0.4);
+    padding-bottom: 1px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    word-break: break-all;
+    transition: border-color 0.3s var(--ease);
+  }
+
+  .mecenat-contact a:hover {
+    border-bottom-color: var(--candle);
+  }
+
+  .mecenat-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 2px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(244, 241, 233, 0.1);
+  }
+
+  .mecenat-name-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .mecenat-card .method-cta {
+    border-color: var(--candle);
+    color: var(--candle);
+    background: rgba(198, 164, 91, 0.08);
+  }
+
+  .mecenat-card .method-cta:hover {
+    background: var(--candle);
+    color: var(--dark);
+  }
+
+  .mecenat-fineprint {
+    margin: 0;
+    color: rgba(244, 241, 233, 0.42);
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+
+  .mecenat-confirm {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: start;
+    margin-top: 2px;
+    padding: 18px 20px;
+    border: 1px solid rgba(198, 164, 91, 0.34);
+    background: rgba(198, 164, 91, 0.06);
+  }
+
+  .mecenat-confirm-mark {
+    color: var(--candle);
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  .mecenat-confirm-text {
+    margin: 0;
+    color: rgba(244, 241, 233, 0.78);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .mecenat-confirm-text a {
+    color: var(--candle);
+    border-bottom: 1px solid rgba(198, 164, 91, 0.4);
+  }
+
+  /* ── Regulamin · zwijana historia wersji ───────────────────────────── */
+  .regulamin-history {
+    margin-top: 10px;
+    border-top: 1px solid rgba(244, 241, 233, 0.12);
+  }
+
+  .regulamin-history > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 0 0;
+    cursor: pointer;
+    list-style: none;
+    color: rgba(244, 241, 233, 0.5);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    transition: color 0.3s var(--ease);
+  }
+
+  .regulamin-history > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .regulamin-history > summary:hover {
+    color: var(--candle);
+  }
+
+  .regulamin-history-icon {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+  }
+
+  .regulamin-history-icon::before,
+  .regulamin-history-icon::after {
+    content: "";
+    position: absolute;
+    background: var(--candle);
+    transition: transform 0.3s var(--ease);
+  }
+
+  .regulamin-history-icon::before {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    transform: translateY(-50%);
+  }
+
+  .regulamin-history-icon::after {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+  }
+
+  .regulamin-history[open] .regulamin-history-icon::after {
+    transform: translateX(-50%) scaleY(0);
+  }
+
+  .regulamin-history-list {
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 11px;
+  }
+
+  .regulamin-history-list li {
+    color: rgba(244, 241, 233, 0.6);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  .regulamin-history-list strong {
+    color: var(--paper);
+    font-weight: 400;
+  }
+
+  @media (max-width: 640px) {
+    .mecenat {
+      padding-left: 22px;
+      padding-right: 22px;
+    }
+
+    .mecenat-name-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vault-seg-thumb,
+    .vault-seg-tab,
+    .mecenat-contact a,
+    .mecenat-card .method-cta,
+    .regulamin-history > summary,
+    .regulamin-history-icon::before,
+    .regulamin-history-icon::after {
+      transition: none;
+    }
   }
 
   .vault-foot {

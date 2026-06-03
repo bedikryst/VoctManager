@@ -192,6 +192,10 @@ REST_FRAMEWORK = {
         # kept generous enough for shared NAT (e.g. concert-venue Wi-Fi).
         'donation_initiate': '2000/hour',
         'donation_status': '60/minute',
+        # The Mecenat form writes a row and sends one e-mail per hit; the e-mail
+        # only ever reaches the foundation's own inbox, so the abuse surface is
+        # inbox/DB flooding. Capped low, but loose enough for shared NAT.
+        'patron_interest': '60/hour',
     }
 }
 
@@ -255,6 +259,11 @@ ANYMAIL = {
 }
 EMAIL_BACKEND = "anymail.backends.resend.EmailBackend" if env("RESEND_API_KEY", default="") else "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="VoctManager <noreply@voctensemble.com>")
+
+# Inbox pinged when a visitor submits the public Mecenat (patronage) form. The
+# notification is deliberately content-free — no lead PII leaves the EU database —
+# so the e-mail provider never processes the data subject's personal data.
+PATRON_NOTIFICATION_EMAIL = env("PATRON_NOTIFICATION_EMAIL", default="krystian.bugalski@voctensemble.com")
 
 # --- BUSINESS LOGIC DEFAULTS ---
 DEFAULT_ARTIST_PASSWORD = env('DEFAULT_ARTIST_PASSWORD', default='secure_password123')

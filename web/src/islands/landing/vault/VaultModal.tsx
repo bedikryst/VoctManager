@@ -1,14 +1,15 @@
 /**
  * @file VaultModal.tsx
- * @description The donation "skarbiec" sliding sheet — three payment methods side by side:
- *  Axepta online form (GiveForm), Zrzutka.pl, bank QR + IBAN. Manages browser-history
- *  integration (back closes), Lenis stop/start while open (via the shared instance), the
+ * @description The donation "skarbiec" sliding sheet. A top segmented toggle splits two
+ *  intents: "Jednorazowo" (one-off — Axepta form, Zrzutka, bank QR, with the campaign
+ *  progress rail) and "Mecenat" (recurring — the standing-order patronage panel, no rail).
+ *  Manages browser-history integration (back closes), Lenis stop/start while open, the
  *  progress rail, and the `body.vault-open` flag for chrome theming. Web/Astro port.
  * @architecture Astro islands 2026
  * @module islands/landing/vault/VaultModal
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { BrandGlyph } from "../BrandGlyph";
 import { VAULT_CONFIG } from "../constants/vaultConfig";
@@ -19,6 +20,7 @@ import { useLenisLock } from "../hooks/useLenisLock";
 import { formatMoney } from "../lib/formatMoney";
 import { useVault } from "../providers/VaultContext";
 import { GiveForm } from "./GiveForm";
+import { MecenatPanel } from "./MecenatPanel";
 import { QRPanel } from "./QRPanel";
 import { ZrzutkaPanel } from "./ZrzutkaPanel";
 
@@ -26,6 +28,7 @@ export function VaultModal(): React.JSX.Element {
   const { isOpen, close, openRegulamin } = useVault();
   const sheetRef = useRef<HTMLDivElement>(null);
   const progress = useDonationProgress();
+  const [tab, setTab] = useState<"once" | "mecenat">("once");
 
   useBodyClass(isOpen ? "vault-open" : null);
   useFocusTrap(sheetRef, isOpen, { onEscape: close });
@@ -72,47 +75,83 @@ export function VaultModal(): React.JSX.Element {
           </button>
         </header>
 
-        <section className="vault-progress" aria-label="Postęp zbiórki">
-          <div className="vault-progress-rail">
-            <div
-              className="vault-progress-fill"
-              data-percent={progress ? Math.round(progress.percent) : 0}
-              style={{ width: `${fillWidth}%` }}
-            />
+        <div className="vault-seg-wrap">
+          <div className="vault-seg" role="tablist" aria-label="Forma wsparcia">
+            <button
+              type="button"
+              role="tab"
+              id="vault-tab-once"
+              aria-selected={tab === "once"}
+              aria-controls="vault-panel-once"
+              className="vault-seg-tab plausible-event-name=vault+tab+jednorazowo"
+              onClick={() => setTab("once")}
+            >
+              Jednorazowo
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="vault-tab-mecenat"
+              aria-selected={tab === "mecenat"}
+              aria-controls="vault-panel-mecenat"
+              className="vault-seg-tab plausible-event-name=vault+tab+mecenat"
+              onClick={() => setTab("mecenat")}
+            >
+              Mecenat
+            </button>
+            <div className="vault-seg-thumb" data-active={tab} aria-hidden="true" />
           </div>
-          <div className="vault-progress-meta">
-            <span>Zbiórka otwarta · cykl Concerts Spirituels</span>
-            <span>
-              <strong>cel {formatMoney(VAULT_CONFIG.goalAmount, "PLN")}</strong>
-            </span>
-          </div>
-        </section>
+        </div>
 
-        <section className="methods" aria-label="Wybierz drogę wsparcia">
-          <div className="methods-label micro">Wybierz drogę</div>
-          <div className="methods-grid">
-            <article className="method" data-method="axepta" data-elevated="true">
-              <div className="method-head">
-                <div className="method-tag">
-                  <span className="method-tag-dot" aria-hidden="true" />
-                  <span className="micro">natychmiast · bezpiecznie</span>
-                </div>
-                <span className="method-status" data-status="ready">
-                  dostępne
+        {tab === "once" ? (
+          <div id="vault-panel-once" role="tabpanel" aria-labelledby="vault-tab-once">
+            <section className="vault-progress" aria-label="Postęp zbiórki">
+              <div className="vault-progress-rail">
+                <div
+                  className="vault-progress-fill"
+                  data-percent={progress ? Math.round(progress.percent) : 0}
+                  style={{ width: `${fillWidth}%` }}
+                />
+              </div>
+              <div className="vault-progress-meta">
+                <span>Zbiórka otwarta · cykl Concerts Spirituels</span>
+                <span>
+                  <strong>cel {formatMoney(VAULT_CONFIG.goalAmount, "PLN")}</strong>
                 </span>
               </div>
-              <h3 className="method-title">Wpłać online</h3>
-              <p className="method-note">
-                Bezpośrednio na konto Fundacji — przez bramkę Axepta BNP Paribas. Bez
-                pośredników, bez zakładania konta.
-              </p>
-              <GiveForm />
-            </article>
+            </section>
 
-            <ZrzutkaPanel />
-            <QRPanel />
+            <section className="methods" aria-label="Wybierz drogę wsparcia">
+              <div className="methods-label micro">Wybierz drogę</div>
+              <div className="methods-grid">
+                <article className="method" data-method="axepta" data-elevated="true">
+                  <div className="method-head">
+                    <div className="method-tag">
+                      <span className="method-tag-dot" aria-hidden="true" />
+                      <span className="micro">natychmiast · bezpiecznie</span>
+                    </div>
+                    <span className="method-status" data-status="ready">
+                      dostępne
+                    </span>
+                  </div>
+                  <h3 className="method-title">Wpłać online</h3>
+                  <p className="method-note">
+                    Bezpośrednio na konto Fundacji — przez bramkę Axepta BNP Paribas. Bez
+                    pośredników, bez zakładania konta.
+                  </p>
+                  <GiveForm />
+                </article>
+
+                <ZrzutkaPanel />
+                <QRPanel />
+              </div>
+            </section>
           </div>
-        </section>
+        ) : (
+          <div id="vault-panel-mecenat" role="tabpanel" aria-labelledby="vault-tab-mecenat">
+            <MecenatPanel />
+          </div>
+        )}
 
         <footer className="vault-foot">
           <p className="vault-trust">
