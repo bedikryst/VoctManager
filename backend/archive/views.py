@@ -15,6 +15,8 @@ Standards: SaaS 2026, RFC 7807 (Global Exception Handling), Aggregate Roots.
 
 import logging
 
+from django.db import transaction
+from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -24,6 +26,8 @@ from rest_framework.response import Response
 from core.permissions import IsManagerOrReadOnly
 
 from . import services
+from .infrastructure.musicbrainz_client import MusicBrainzClient
+from .infrastructure.wikidata_client import WikidataClient
 from .models import (
     Composer,
     IngestionStatus,
@@ -53,11 +57,166 @@ logger = logging.getLogger(__name__)
 class ComposerViewSet(viewsets.ModelViewSet):
     """
     Endpoint for managing musical composers and arrangers.
-    Read-only for Artists. Write access exclusively for Managers.
+
+    Read access: any authenticated user. Write/merge/refresh actions:
+    managers only. The list endpoint annotates `pieces_count` so the
+    composers page can show "Bach: 12 utworów" without a separate query.
     """
-    queryset = Composer.objects.all()
     serializer_class = ComposerSerializer
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+
+    def get_queryset(self):
+        return Composer.objects.annotate(
+            pieces_count_annotated=Count(
+                'pieces', filter=Q(pieces__is_deleted=False),
+            ),
+        ).order_by('last_name', 'first_name')
+
+    # -----------------------------------------------------------------
+    # Custom actions
+    # -----------------------------------------------------------------
+
+    @action(detail=True, methods=['post'], url_path='merge_into/(?P<target_id>[^/.]+)')
+    def merge_into(self, request, pk=None, target_id=None):
+        """
+        Move every Piece + ProvenanceRecord from this composer (source) onto
+        `target_id`, then soft-delete the source. Used to consolidate
+        duplicates the AI pipeline failed to dedupe (e.g. "J.S. Bach" and
+        "Johann Sebastian Bach").
+
+        Refuses to merge a composer into itself or into a deleted target.
+        """
+        source = self.get_object()
+        if str(source.id) == str(target_id):
+            return Response(
+                {'detail': 'Cannot merge a composer into itself.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            target = Composer.objects.get(id=target_id, is_deleted=False)
+        except Composer.DoesNotExist:
+            return Response(
+                {'detail': f'Target composer {target_id} not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        with transaction.atomic():
+            reassigned = Piece.objects.filter(composer=source).update(
+                composer=target,
+            )
+            source.delete()
+
+        logger.info(
+            "composer.merged source=%s target=%s pieces_moved=%d",
+            source.id, target.id, reassigned,
+        )
+        target.refresh_from_db()
+        # Re-annotate so pieces_count reflects the merged total.
+        annotated = (
+            Composer.objects
+            .filter(id=target.id)
+            .annotate(
+                pieces_count_annotated=Count(
+                    'pieces', filter=Q(pieces__is_deleted=False),
+                ),
+            )
+            .first()
+        )
+        return Response(
+            ComposerSerializer(annotated or target).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'], url_path='refresh_mb')
+    def refresh_mb(self, request, pk=None):
+        """
+        Re-run MusicBrainz + Wikidata enrichment for this composer. Populates
+        ONLY blank fields — never overwrites a conductor's manual edit.
+
+        Useful when the AI pipeline ran before Wikidata coverage caught up,
+        or when a composer was added manually and you want to attach the
+        canonical biographical data.
+        """
+        composer = self.get_object()
+        full_name = f"{composer.first_name} {composer.last_name}".strip()
+        if not full_name:
+            return Response(
+                {'detail': 'Composer has no name — cannot resolve.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        mbz = (
+            MusicBrainzClient.search_composer(name=full_name)
+            if not composer.mbid
+            else None
+        )
+        wiki = None
+        if composer.mbid:
+            wiki = WikidataClient.enrich_composer_by_mbid(composer.mbid)
+        elif mbz and mbz.mbid:
+            wiki = WikidataClient.enrich_composer_by_mbid(mbz.mbid)
+        else:
+            wiki = WikidataClient.enrich_composer_by_name(full_name)
+
+        update_fields: list[str] = []
+
+        if not composer.mbid and mbz and mbz.mbid:
+            composer.mbid = mbz.mbid
+            update_fields.append('mbid')
+
+        if wiki:
+            if not composer.wikidata_qid and wiki.wikidata_qid:
+                composer.wikidata_qid = wiki.wikidata_qid
+                update_fields.append('wikidata_qid')
+            for attr in ('bio', 'portrait_url', 'portrait_license', 'nationality', 'period'):
+                value = getattr(wiki, attr, '')
+                if value and not getattr(composer, attr):
+                    setattr(composer, attr, value)
+                    update_fields.append(attr)
+            if wiki.birth_year and not composer.birth_year:
+                composer.birth_year = str(wiki.birth_year)
+                update_fields.append('birth_year')
+            if wiki.death_year and not composer.death_year:
+                composer.death_year = str(wiki.death_year)
+                update_fields.append('death_year')
+
+        if update_fields:
+            composer.save(update_fields=[*update_fields, 'updated_at'])
+
+        logger.info(
+            "composer.refreshed id=%s fields_filled=%s",
+            composer.id, update_fields,
+        )
+
+        # Re-annotate so pieces_count is included in the response.
+        annotated = (
+            self.get_queryset().filter(id=composer.id).first()
+        )
+        return Response(
+            {
+                'composer': ComposerSerializer(annotated or composer).data,
+                'fields_filled': update_fields,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """Refuse to delete composers that still own pieces — safer than
+        cascading the FK or silently orphaning sub-entities."""
+        composer = self.get_object()
+        pieces_count = composer.pieces.filter(is_deleted=False).count()
+        if pieces_count > 0:
+            return Response(
+                {
+                    'detail': (
+                        f'Cannot delete composer with {pieces_count} associated pieces. '
+                        f'Reassign or merge first.'
+                    ),
+                    'pieces_count': pieces_count,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        return super().destroy(request, *args, **kwargs)
 
 
 class PieceViewSet(viewsets.ModelViewSet):

@@ -76,8 +76,15 @@ def _aggregate_ingestion_status(piece: Piece) -> str:
 
 
 class ComposerSerializer(serializers.ModelSerializer):
-    """Serializes Composer entities and their biographical metadata."""
+    """Serializes Composer entities and their biographical metadata.
+
+    `pieces_count` is annotated by ComposerViewSet.get_queryset; falls back
+    to a property lookup when this serializer is used outside the viewset
+    (e.g. embedded in PieceSerializer responses).
+    """
     full_name = serializers.SerializerMethodField()
+    pieces_count = serializers.SerializerMethodField()
+    is_orphan = serializers.SerializerMethodField()
 
     class Meta:
         model = Composer
@@ -87,12 +94,28 @@ class ComposerSerializer(serializers.ModelSerializer):
             'nationality', 'period', 'bio',
             'portrait_url', 'portrait_license',
             'mbid', 'wikidata_qid', 'aliases',
+            'pieces_count', 'is_orphan',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'mbid', 'wikidata_qid', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id', 'mbid', 'wikidata_qid',
+            'pieces_count', 'is_orphan',
+            'created_at', 'updated_at',
+        ]
 
     def get_full_name(self, obj: Composer) -> str:
         return f"{obj.first_name} {obj.last_name}".strip()
+
+    def get_pieces_count(self, obj: Composer) -> int:
+        # Prefer the annotated value when present (composer list view).
+        annotated = getattr(obj, 'pieces_count_annotated', None)
+        if annotated is not None:
+            return annotated
+        # Fallback: live count. OK for single-composer detail responses.
+        return obj.pieces.filter(is_deleted=False).count()
+
+    def get_is_orphan(self, obj: Composer) -> bool:
+        return self.get_pieces_count(obj) == 0
 
 
 class TrackSerializer(serializers.ModelSerializer):
