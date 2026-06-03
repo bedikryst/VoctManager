@@ -198,18 +198,15 @@ export const ArchiveSearchBar = ({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Caption color="muted">
-          {hasActiveFilters
-            ? t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
-                visible: visibleCount,
-                total: totalCount,
-              })
-            : t("archive.search.summary_total", "{{total}} utworów", {
-                total: totalCount,
-              })}
-        </Caption>
-        {activeFilters.length > 0 && (
+      {/* Active filter chips — total/visible counts live in the header stat strip */}
+      {activeFilters.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Caption color="muted">
+            {t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
+              visible: visibleCount,
+              total: totalCount,
+            })}
+          </Caption>
           <div className="flex flex-wrap gap-1.5">
             {activeFilters.map((filterToken) => (
               <button
@@ -223,8 +220,8 @@ export const ArchiveSearchBar = ({
               </button>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

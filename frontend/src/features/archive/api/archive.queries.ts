@@ -64,6 +64,29 @@ export const usePieces = () =>
         : false,
   });
 
+/**
+ * Single-piece fetch for the dedicated review route. Polls when any edition
+ * of this piece is still mid-pipeline so the conductor sees AI status flip
+ * to AWAITING the moment it's ready to verify.
+ */
+export const usePiece = (id: string | null) =>
+  useQuery({
+    queryKey: id ? archiveKeys.pieces.details(id) : ["pieces", "none"],
+    queryFn: () => ArchiveService.getPiece(id!),
+    enabled: Boolean(id),
+    refetchInterval: (query) => {
+      const data = query.state.data as Piece | undefined;
+      const anyInProgress = data?.editions?.some(
+        (e) =>
+          e.ingestion_status === "PEND" ||
+          e.ingestion_status === "EXTR" ||
+          e.ingestion_status === "ENRI" ||
+          e.ingestion_status === "GENR",
+      );
+      return anyInProgress ? POLL_IN_PROGRESS_MS : false;
+    },
+  });
+
 export const useComposers = () =>
   useQuery({
     queryKey: archiveKeys.composers.all,
@@ -87,6 +110,83 @@ export const useCreateComposer = () => {
     mutationFn: (data: ComposerWriteDTO) => ArchiveService.createComposer(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
+/**
+ * Patch a Composer. Optimistically updates the composers list cache so
+ * inline pencil edits land instantly; rolls back on server error and
+ * invalidates pieces (composer info embeds in PieceSerializer responses).
+ */
+export const useUpdateComposer = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof ArchiveService.updateComposer>[1];
+    }) => ArchiveService.updateComposer(id, data),
+    onMutate: async ({ id, data }) => {
+      await qc.cancelQueries({ queryKey: archiveKeys.composers.all });
+      const previous = qc.getQueryData(archiveKeys.composers.all);
+      qc.setQueryData<unknown>(archiveKeys.composers.all, (current: unknown) => {
+        if (!Array.isArray(current)) return current;
+        return current.map((c) =>
+          (c as { id: string }).id === id ? { ...c, ...data } : c,
+        );
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(archiveKeys.composers.all, context.previous);
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
+export const useDeleteComposer = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ArchiveService.deleteComposer(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
+    },
+  });
+};
+
+export const useMergeComposers = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sourceId,
+      targetId,
+    }: {
+      sourceId: string;
+      targetId: string;
+    }) => ArchiveService.mergeComposer(sourceId, targetId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
+export const useRefreshComposerFromMb = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ArchiveService.refreshComposerFromMb(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
     },
   });
 };

@@ -1,16 +1,19 @@
 /**
  * @file ArchiveManagement.tsx
  * @description Operational controller for the repertoire library.
- * Layout philosophy (rev. 2026-05-30): dense, action-first, library-like.
- * No bento decoration — stats live in a one-line strip in the header, the
- * heavy hero / metrics cards are gone, the drag-drop upload only appears
- * when the conductor explicitly asks for it (drawer triggered from the
- * primary CTA).
+ * Layout philosophy (rev. 2026-05-30): no side panel anywhere. Three states,
+ * three patterns:
  *
- * Three states:
- *   1. Fresh archive (zero pieces) → ArchiveWelcomeState.
- *   2. Has awaiting editions → AwaitingBanner at top with deep-link.
- *   3. Normal browsing → search-first bar + dense rows.
+ *   1. Glance — compact PieceRow list with inline pencil edits for trivial
+ *      single-line fields (title, year, voicing). Hover delete.
+ *   2. Expand — click row → accordion shows composer / divisi / PDFs /
+ *      tracks + CTAs. ~80% of conductor interactions land here.
+ *   3. Deep work — dedicated routes for focused tasks:
+ *        /panel/archive-management/new          → manual create
+ *        /panel/archive-management/:id/review   → AI verification with PDF preview
+ *
+ * Upload zone stays in a drawer triggered by the header CTA. Fresh-archive
+ * empty state hosts the drop zone inline as the dominant CTA.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/ArchiveManagement
  */
@@ -19,10 +22,10 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   useDeferredValue,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Plus, UploadCloud } from "lucide-react";
@@ -34,9 +37,9 @@ import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { INGESTION_STATUS } from "@/shared/types";
 
-import ArchiveEditorPanel from "./components/ArchiveEditorPanel";
 import { ArchiveAwaitingBanner } from "./components/ArchiveAwaitingBanner";
 import { ArchiveEmptyState } from "./components/ArchiveEmptyState";
+import { ArchiveTabs } from "./components/ArchiveTabs";
 import {
   ArchiveSearchBar,
   type ArchiveActiveFilter,
@@ -46,10 +49,7 @@ import { ArchiveWelcomeState } from "./components/ArchiveWelcomeState";
 import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
 import { PieceRow } from "./components/PieceRow";
 import { useArchiveData } from "./hooks/useArchiveData";
-import type { EnrichedPiece } from "./types/archive.dto";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
-import { ARCHIVE_TABS, type ArchiveTabId } from "./constants/archiveDomain";
 
 const formatCoverage = (value: number, total: number): number => {
   if (total === 0) return 0;
@@ -58,13 +58,13 @@ const formatCoverage = (value: number, total: number): number => {
 
 export default function ArchiveManagement(): React.JSX.Element {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const epochOptions = getArchiveEpochOptions(t);
 
   const {
     isLoading,
     isError,
     composers,
-    voiceLines,
     libraryStats,
     availableVoicings,
     displayPieces,
@@ -159,15 +159,7 @@ export default function ArchiveManagement(): React.JSX.Element {
     voicingFilter,
   ]);
 
-  // ---- Editor panel state ------------------------------------------------
-  const closeResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<ArchiveTabId>(ARCHIVE_TABS.DETAILS);
-  const [editingPiece, setEditingPiece] = useState<EnrichedPiece | null>(null);
-  const [initialSearchContext, setInitialSearchContext] = useState<string>("");
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
-
-  useBodyScrollLock(isPanelOpen || pieceToDelete !== null);
 
   useEffect(() => {
     if (isError) {
@@ -183,69 +175,28 @@ export default function ArchiveManagement(): React.JSX.Element {
     }
   }, [isError, t]);
 
-  useEffect(
-    () => () => {
-      if (closeResetTimeoutRef.current) {
-        clearTimeout(closeResetTimeoutRef.current);
-      }
+  const navigateToNew = useCallback(() => {
+    navigate("/panel/archive-management/new");
+  }, [navigate]);
+
+  const navigateToReview = useCallback(
+    (pieceId: string) => {
+      navigate(`/panel/archive-management/${pieceId}/review`);
     },
-    [],
+    [navigate],
   );
 
-  const openPanel = useCallback(
-    (
-      piece: EnrichedPiece | null = null,
-      tab: ArchiveTabId = ARCHIVE_TABS.DETAILS,
-      context: string = "",
-    ) => {
-      if (closeResetTimeoutRef.current) {
-        clearTimeout(closeResetTimeoutRef.current);
-        closeResetTimeoutRef.current = null;
-      }
-      setEditingPiece(piece);
-      setActiveTab(tab);
-      setInitialSearchContext(context);
-      setIsPanelOpen(true);
-    },
-    [],
-  );
-
-  const closePanel = useCallback(() => {
-    setIsPanelOpen(false);
-    if (closeResetTimeoutRef.current) {
-      clearTimeout(closeResetTimeoutRef.current);
-    }
-    closeResetTimeoutRef.current = setTimeout(() => {
-      setEditingPiece(null);
-      setInitialSearchContext("");
-      closeResetTimeoutRef.current = null;
-    }, 300);
-  }, []);
-
-  const handleDeleteConfirm = async () => {
-    const deletedId = pieceToDelete?.id;
-    await executeDelete();
-    if (editingPiece?.id && editingPiece.id === deletedId) {
-      closePanel();
-    }
-  };
-
-  // ---- Empty state gating ------------------------------------------------
   if (isLoading && displayPieces.length === 0) {
     return <EtherealLoader />;
   }
 
   const isFreshArchive = !isLoading && totalPieces === 0;
 
-  // Count derived from full pieces list (not filtered) so the banner is
-  // visible even when the conductor has a search active that hides the AWAI ones.
-  const awaitingCount = libraryStats.totalPieces > 0
-    ? deferredPieces.filter((p) =>
-        (p.editions ?? []).some(
-          (e) => e.ingestion_status === INGESTION_STATUS.AWAITING,
-        ),
-      ).length
-    : 0;
+  const awaitingCount = deferredPieces.filter((p) =>
+    (p.editions ?? []).some(
+      (e) => e.ingestion_status === INGESTION_STATUS.AWAITING,
+    ),
+  ).length;
 
   const firstAwaitingPiece = deferredPieces.find((p) =>
     (p.editions ?? []).some(
@@ -274,7 +225,7 @@ export default function ArchiveManagement(): React.JSX.Element {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => openPanel()}
+                  onClick={navigateToNew}
                   leftIcon={<Plus size={14} aria-hidden="true" />}
                 >
                   {t("archive.dashboard.add_manual", "Dodaj ręcznie")}
@@ -284,28 +235,27 @@ export default function ArchiveManagement(): React.JSX.Element {
           }
         />
 
+        {!isFreshArchive && <ArchiveTabs />}
+
         {!isFreshArchive && (
           <ArchiveStatStrip
             totalPieces={totalPieces}
             pdfCoverage={pdfCoverage}
             awaitingCount={awaitingCount}
             onJumpToAwaiting={() =>
-              firstAwaitingPiece &&
-              openPanel(firstAwaitingPiece, ARCHIVE_TABS.AI_CONTEXT)
+              firstAwaitingPiece && navigateToReview(String(firstAwaitingPiece.id))
             }
           />
         )}
 
         {isFreshArchive ? (
-          <ArchiveWelcomeState onAddManually={() => openPanel()} />
+          <ArchiveWelcomeState onAddManually={navigateToNew} />
         ) : (
           <>
             {awaitingCount > 0 && (
               <ArchiveAwaitingBanner
                 pieces={deferredPieces}
-                onOpenReview={(piece) =>
-                  openPanel(piece, ARCHIVE_TABS.AI_CONTEXT)
-                }
+                onOpenReview={(piece) => navigateToReview(String(piece.id))}
               />
             )}
 
@@ -335,7 +285,6 @@ export default function ArchiveManagement(): React.JSX.Element {
                   <PieceRow
                     key={piece.id}
                     piece={piece}
-                    onOpen={(p) => openPanel(p)}
                     onDelete={(p) =>
                       handleDeleteRequest(String(p.id), p.title)
                     }
@@ -346,25 +295,12 @@ export default function ArchiveManagement(): React.JSX.Element {
               <ArchiveEmptyState
                 searchTerm={normalizedSearchTerm}
                 hasActiveFilters={hasActiveFilters}
-                onCreatePiece={() =>
-                  openPanel(null, ARCHIVE_TABS.DETAILS, normalizedSearchTerm)
-                }
+                onCreatePiece={navigateToNew}
                 onResetFilters={resetFilters}
               />
             )}
           </>
         )}
-
-        <ArchiveEditorPanel
-          isOpen={isPanelOpen}
-          onClose={closePanel}
-          piece={editingPiece}
-          activeTab={activeTab}
-          onTabChange={(tab) => setActiveTab(tab as ArchiveTabId)}
-          composers={composers}
-          voiceLines={voiceLines}
-          initialSearchContext={initialSearchContext}
-        />
 
         <EditionUploadDrawer
           isOpen={isUploadOpen}
@@ -378,7 +314,9 @@ export default function ArchiveManagement(): React.JSX.Element {
             "archive.delete_modal.desc",
             "Ten krok usunie bezpowrotnie metadane utworu i powiązane pliki zarządzane w archiwum.",
           )}
-          onConfirm={handleDeleteConfirm}
+          onConfirm={async () => {
+            await executeDelete();
+          }}
           onCancel={() => setPieceToDelete(null)}
           isLoading={isDeleting}
         />

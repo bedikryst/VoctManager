@@ -42,6 +42,11 @@ export const ArchiveService = {
     return response.data;
   },
 
+  getPiece: async (id: string): Promise<Piece> => {
+    const response = await api.get<Piece>(`${PIECES_URL}${id}/`);
+    return response.data;
+  },
+
   createPiece: async (data: PieceWriteDTO): Promise<Piece> => {
     const response = await api.post<Piece>(PIECES_URL, data);
     return response.data;
@@ -65,8 +70,47 @@ export const ArchiveService = {
     return response.data;
   },
 
+  getComposer: async (id: string): Promise<Composer> => {
+    const response = await api.get<Composer>(`${COMPOSERS_URL}${id}/`);
+    return response.data;
+  },
+
   createComposer: async (data: ComposerWriteDTO): Promise<Composer> => {
     const response = await api.post<Composer>(COMPOSERS_URL, data);
+    return response.data;
+  },
+
+  updateComposer: async (
+    id: string,
+    data: Partial<ComposerWriteDTO> & {
+      nationality?: string;
+      period?: string;
+    },
+  ): Promise<Composer> => {
+    const response = await api.patch<Composer>(`${COMPOSERS_URL}${id}/`, data);
+    return response.data;
+  },
+
+  deleteComposer: async (id: string): Promise<void> => {
+    await api.delete(`${COMPOSERS_URL}${id}/`);
+  },
+
+  /** Reassigns this composer's pieces onto `targetId`, then soft-deletes the source. */
+  mergeComposer: async (sourceId: string, targetId: string): Promise<Composer> => {
+    const response = await api.post<Composer>(
+      `${COMPOSERS_URL}${sourceId}/merge_into/${targetId}/`,
+    );
+    return response.data;
+  },
+
+  /** Re-runs MB + Wikidata enrichment, filling only blank fields. */
+  refreshComposerFromMb: async (
+    id: string,
+  ): Promise<{ composer: Composer; fields_filled: string[] }> => {
+    const response = await api.post<{
+      composer: Composer;
+      fields_filled: string[];
+    }>(`${COMPOSERS_URL}${id}/refresh_mb/`);
     return response.data;
   },
 
