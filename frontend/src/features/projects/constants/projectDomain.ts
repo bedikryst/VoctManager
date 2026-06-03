@@ -3,7 +3,7 @@
  * @description Centralized domain constants for the Project module.
  * Ensures type safety and eliminates "magic strings" across the application.
  * @architecture Enterprise SaaS 2026
- * @module panel/projects/constants
+ * @module features/projects/constants
  */
 
 export const PROJECT_TABS = {

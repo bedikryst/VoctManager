@@ -5,7 +5,7 @@
  * @module features/projects/api
  */
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import type {
   Artist,
@@ -40,6 +40,13 @@ const getDisabledListQueryConfig = <TData>() => ({
   queryFn: async (): Promise<TData[]> => [],
   staleTime: DISABLED_QUERY_STALE_TIME,
   initialData: [] as TData[],
+  initialDataUpdatedAt: 0,
+});
+
+const getDisabledDetailQueryConfig = <TData>() => ({
+  queryFn: async (): Promise<TData | null> => null,
+  staleTime: DISABLED_QUERY_STALE_TIME,
+  initialData: null as TData | null,
   initialDataUpdatedAt: 0,
 });
 
@@ -119,6 +126,37 @@ export const useProjects = (enabled = true) =>
         }
       : getDisabledListQueryConfig<Project>()),
   });
+
+/**
+ * Canonical single-project fetch backing the Project Hub. Reads `GET /api/projects/:id/`
+ * so a deep-link (or F5) resolves the project on its own, independent of whether
+ * the list query is loaded or paginated. Seeds `initialData` from the list cache so
+ * navigating in from the dashboard paints instantly with no suspense flash, while a
+ * cold load still suspends on the dedicated request. The detail cache is already kept
+ * warm by the Project mutations (`projectKeys.projects.details`).
+ */
+export const useProject = (projectId: string | undefined) => {
+  const queryClient = useQueryClient();
+
+  return useSuspenseQuery({
+    queryKey: projectKeys.projects.details(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
+    ...(projectId
+      ? {
+          queryFn: (): Promise<Project | null> =>
+            ProjectService.getById(projectId),
+          staleTime: PROJECT_RELATION_STALE_TIME,
+          initialData: (): Project | undefined =>
+            queryClient
+              .getQueryData<Project[]>(projectKeys.projects.all)
+              ?.find((project) => String(project.id) === String(projectId)),
+          initialDataUpdatedAt: () =>
+            queryClient.getQueryState(projectKeys.projects.all)?.dataUpdatedAt,
+        }
+      : getDisabledDetailQueryConfig<Project>()),
+  });
+};
 
 export const useProjectArtistsDictionary = (enabled = true) =>
   useSuspenseQuery({

@@ -2,7 +2,7 @@
  * @file useProjectCard.ts
  * @description Custom hook managing the asynchronous document generation and download lifecycle.
  * @architecture Enterprise SaaS 2026
- * @module panel/projects/ProjectCard/hooks/useProjectCard
+ * @module features/projects/ProjectCard/hooks/useProjectCard
  */
 
 import { useMutation } from "@tanstack/react-query";
@@ -38,8 +38,9 @@ export function useProjectCard(projectId: string) {
         }
       }
 
+      const contentType = response.headers["content-type"];
       const blob = new Blob([response.data], {
-        type: response.headers["content-type"],
+        type: typeof contentType === "string" ? contentType : undefined,
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");

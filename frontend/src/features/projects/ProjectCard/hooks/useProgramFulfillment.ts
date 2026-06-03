@@ -2,7 +2,7 @@
  * @file useProgramFulfillment.ts
  * @description Hook managing complex business logic for project casting fulfillment and duration.
  * @architecture Enterprise SaaS 2026
- * @module panel/projects/ProjectCard/hooks/useProgramFulfillment
+ * @module features/projects/ProjectCard/hooks/useProgramFulfillment
  */
 
 import { useMemo } from "react";
@@ -19,7 +19,7 @@ export interface EnrichedProgramItem {
   pieceId: string;
   title: string;
   order: number;
-  statusVariant: "success" | "danger" | "neutral";
+  statusVariant: "success" | "warning" | "neutral";
   statusText: string;
 }
 
@@ -74,7 +74,7 @@ export const useProgramFulfillment = (project: Project) => {
         const requirements: VoiceRequirement[] =
           pieceObj?.voice_requirements_read || [];
 
-        let statusVariant: "success" | "danger" | "neutral" = "neutral";
+        let statusVariant: "success" | "warning" | "neutral" = "neutral";
         let statusText = t("projects.program.no_reqs", "Brak wymagań");
 
         if (requirements.length > 0) {
@@ -93,7 +93,7 @@ export const useProgramFulfillment = (project: Project) => {
           });
 
           if (missingTotal > 0) {
-            statusVariant = "danger";
+            statusVariant = "warning";
             statusText = t("projects.program.unfulfilled", "Nieobsadzony");
           } else {
             statusVariant = "success";

@@ -1,22 +1,21 @@
 /**
  * @file SpotifyWidget.tsx
- * @description Embedded media player widget interfacing with the Spotify Embed API.
- * Implements strict dimension constraints to bypass iframe responsive reflow issues.
+ * @description Embedded Spotify reference player for the Overview. Wrapped in the
+ * shared WidgetCard so its title sits a consistent distance from the embed.
  * @architecture Enterprise SaaS 2026
- * @module panel/projects/ProjectCard/components/SpotifyWidget
+ * @module features/projects/ProjectCard/widgets/SpotifyWidget
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Music, ExternalLink } from "lucide-react";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+
+import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
 import { Button } from "@/shared/ui/primitives/Button";
-import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Text } from "@/shared/ui/primitives/typography";
 
 interface SpotifyWidgetProps {
   playlistUrl?: string | null;
-  theme?: "light" | "dark";
 }
 
 const getSpotifyEmbedUrl = (url?: string | null): string | null => {
@@ -52,27 +51,18 @@ const getSpotifyEmbedUrl = (url?: string | null): string | null => {
 
 export function SpotifyWidget({
   playlistUrl,
-  theme = "light",
 }: SpotifyWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
   const embedUrl = getSpotifyEmbedUrl(playlistUrl);
-  const isDark = theme === "dark";
 
   return (
-    <GlassCard
-      variant={isDark ? "dark" : "solid"}
-      padding="md"
-      isHoverable={false}
-      className="flex flex-col gap-4"
+    <WidgetCard
+      title={t("projects.spotify.title", "Referencje do odsłuchu")}
+      icon={<Music size={15} aria-hidden="true" />}
+      bodyClassName="gap-3"
     >
-      <SectionHeader
-        title={t("projects.spotify.title", "Referencje do odsłuchu")}
-        icon={<Music size={16} aria-hidden="true" />}
-        className="mb-0 pb-0"
-      />
-
       {embedUrl ? (
-        <div className="flex flex-col gap-3">
+        <>
           <iframe
             src={embedUrl}
             title={t("projects.spotify.iframe_title", "Playlista Spotify")}
@@ -80,11 +70,7 @@ export function SpotifyWidget({
             height="152"
             frameBorder="0"
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            style={{
-              minHeight: "152px",
-              border: "none",
-              background: "transparent",
-            }}
+            style={{ minHeight: "152px", border: "none", background: "transparent" }}
             className="block rounded-xl shadow-sm"
           />
           <Button asChild variant="secondary" fullWidth>
@@ -97,11 +83,11 @@ export function SpotifyWidget({
               {t("projects.spotify.open_app", "Otwórz w aplikacji")}
             </a>
           </Button>
-        </div>
+        </>
       ) : (
-        <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-ethereal-incense/20 bg-ethereal-alabaster/45">
+        <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-ethereal-ink/8 bg-ethereal-alabaster/45 text-center">
           <Music
-            size={28}
+            size={26}
             className="text-ethereal-incense/30"
             aria-hidden="true"
           />
@@ -110,6 +96,6 @@ export function SpotifyWidget({
           </Text>
         </div>
       )}
-    </GlassCard>
+    </WidgetCard>
   );
 }

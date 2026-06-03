@@ -74,6 +74,11 @@ export const ProjectService = {
     return response.data.results ?? response.data ?? [];
   },
 
+  getById: async (id: string | number): Promise<Project> => {
+    const response = await api.get<Project>(`${PROJECTS_BASE_URL}${id}/`);
+    return response.data;
+  },
+
   create: async (data: ProjectCreateDTO): Promise<Project> => {
     const response = await api.post<Project>(PROJECTS_BASE_URL, data);
     return response.data;

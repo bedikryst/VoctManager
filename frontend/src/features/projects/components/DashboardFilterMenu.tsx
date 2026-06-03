@@ -3,7 +3,7 @@
  * @description Segmented filter control for project lifecycle views.
  * Aligns dashboard filtering with shared glass and typography primitives.
  * @architecture Enterprise SaaS 2026
- * @module panel/projects/components/DashboardFilterMenu
+ * @module features/projects/components/DashboardFilterMenu
  */
 
 import React, { useMemo } from "react";

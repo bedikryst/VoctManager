@@ -1,25 +1,23 @@
 /**
  * @file ProjectDashboard.tsx
- * @description Master controller for the Project operations dashboard.
- * Keeps the page shell declarative and delegates data orchestration to feature hooks.
+ * @description Master controller for the Project operations list.
+ * Renders projects as a dense, scannable row list (archive PieceRow model);
+ * each row inline-edits its title and navigates to the project hub
+ * (`/panel/projects/:id`) for all deep editing. No slide-over panel.
  * @architecture Enterprise SaaS 2026
- * @module panel/projects/ProjectDashboard
+ * @module features/projects/ProjectDashboard
  */
 
-import React, { memo, useDeferredValue, Suspense } from "react";
+import React, { memo, useDeferredValue, Suspense, useCallback } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Layers, Plus } from "lucide-react";
 
 import { useProjectDashboard } from "./hooks/useProjectDashboard";
-import { ProjectCard } from "./ProjectCard/ProjectCard";
-import { ProjectEditorPanel } from "./ProjectEditorPanel/ProjectEditorPanel";
+import { ProjectRow } from "./components/ProjectRow";
 import { DashboardFilterMenu } from "./components/DashboardFilterMenu";
 
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
@@ -30,101 +28,95 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import type { Project } from "@/shared/types";
 
-const MemoizedProjectCard = memo(ProjectCard);
+const MemoizedProjectRow = memo(ProjectRow);
 
-const DashboardGrid = ({
+const DashboardList = ({
   filteredProjects,
-  openPanel,
-  setProjectToDelete,
+  onNewProject,
+  onDelete,
 }: {
   filteredProjects: Project[];
-  openPanel: (project?: Project | null) => void;
-  setProjectToDelete: (id: string | null) => void;
+  onNewProject: () => void;
+  onDelete: (id: string) => void;
 }) => {
   const { t } = useTranslation();
   const deferredProjects = useDeferredValue(filteredProjects);
 
   if (deferredProjects.length === 0) {
     return (
-      <StaggeredBentoItem>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <GlassCard
-            variant="light"
-            padding="lg"
-            isHoverable={false}
-            className="flex flex-col items-center justify-center gap-4 text-center"
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <GlassCard
+          variant="light"
+          padding="lg"
+          isHoverable={false}
+          className="flex flex-col items-center justify-center gap-4 text-center"
+        >
+          <div
+            className="rounded-full border border-ethereal-incense/15 bg-ethereal-alabaster/70 p-4 text-ethereal-graphite/55"
+            aria-hidden="true"
           >
-            <div
-              className="rounded-full border border-ethereal-incense/15 bg-ethereal-alabaster/70 p-4 text-ethereal-graphite/55"
-              aria-hidden="true"
-            >
-              <Layers size={32} />
-            </div>
-            <div className="space-y-2">
-              <Eyebrow color="muted">
-                {t(
-                  "projects.dashboard.empty_title",
-                  "Brak projektów w tym widoku",
-                )}
-              </Eyebrow>
-              <Text className="mx-auto max-w-md" color="graphite">
-                {t(
-                  "projects.dashboard.empty_desc",
-                  "Rozpocznij planowanie nowego wydarzenia, korzystając z akcji tworzenia projektu.",
-                )}
-              </Text>
-            </div>
-            <Button
-              variant="secondary"
-              onClick={() => openPanel(null)}
-              leftIcon={<Plus size={16} aria-hidden="true" />}
-            >
-              {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
-            </Button>
-          </GlassCard>
-        </motion.div>
-      </StaggeredBentoItem>
+            <Layers size={32} />
+          </div>
+          <div className="space-y-2">
+            <Eyebrow color="muted">
+              {t(
+                "projects.dashboard.empty_title",
+                "Brak projektów w tym widoku",
+              )}
+            </Eyebrow>
+            <Text className="mx-auto max-w-md" color="graphite">
+              {t(
+                "projects.dashboard.empty_desc",
+                "Rozpocznij planowanie nowego wydarzenia, korzystając z akcji tworzenia projektu.",
+              )}
+            </Text>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={onNewProject}
+            leftIcon={<Plus size={16} aria-hidden="true" />}
+          >
+            {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
+          </Button>
+        </GlassCard>
+      </motion.div>
     );
   }
 
   return (
-    <>
-      {deferredProjects.map((project, index) => (
-        <StaggeredBentoItem key={project.id}>
-          <MemoizedProjectCard
-            project={project}
-            index={index}
-            onEdit={openPanel}
-            onDelete={setProjectToDelete}
-          />
-        </StaggeredBentoItem>
+    <div className="flex flex-col gap-2">
+      {deferredProjects.map((project) => (
+        <MemoizedProjectRow
+          key={project.id}
+          project={project}
+          onDelete={onDelete}
+        />
       ))}
-    </>
+    </div>
   );
 };
 
 export const ProjectDashboard = (): React.JSX.Element => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const {
     filteredProjects,
     listFilter,
     setListFilter,
-    isPanelOpen,
-    activeTab,
-    setActiveTab,
-    editingProject,
     projectToDelete,
     setProjectToDelete,
     isDeleting,
-    openPanel,
-    closePanel,
-    handleProjectPersisted,
     executeDelete,
   } = useProjectDashboard();
 
+  const goToNewProject = useCallback(
+    () => navigate("/panel/projects/new"),
+    [navigate],
+  );
+
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-24 sm:px-0">
+      <div className="relative mx-auto flex max-w-5xl flex-col gap-5 px-4 pb-24 pt-6 sm:px-0">
         <PageHeader
           size="standard"
           roleText={t("projects.dashboard.header_badge", "Centrum Dowodzenia")}
@@ -133,7 +125,7 @@ export const ProjectDashboard = (): React.JSX.Element => {
           rightContent={
             <Button
               variant="primary"
-              onClick={() => openPanel(null)}
+              onClick={goToNewProject}
               leftIcon={<Plus size={16} aria-hidden="true" />}
             >
               {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
@@ -145,7 +137,7 @@ export const ProjectDashboard = (): React.JSX.Element => {
           <Button
             variant="primary"
             fullWidth
-            onClick={() => openPanel(null)}
+            onClick={goToNewProject}
             leftIcon={<Plus size={16} aria-hidden="true" />}
           >
             {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
@@ -157,30 +149,13 @@ export const ProjectDashboard = (): React.JSX.Element => {
           onFilterChange={setListFilter}
         />
 
-        <StaggeredBentoContainer className="grid grid-cols-1 gap-6">
-          <Suspense
-            fallback={
-              <StaggeredBentoItem>
-                <EtherealLoader className="h-64" />
-              </StaggeredBentoItem>
-            }
-          >
-            <DashboardGrid
-              filteredProjects={filteredProjects}
-              openPanel={openPanel}
-              setProjectToDelete={setProjectToDelete}
-            />
-          </Suspense>
-        </StaggeredBentoContainer>
-
-        <ProjectEditorPanel
-          isOpen={isPanelOpen}
-          onClose={closePanel}
-          project={editingProject}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onProjectPersisted={handleProjectPersisted}
-        />
+        <Suspense fallback={<EtherealLoader className="h-64" />}>
+          <DashboardList
+            filteredProjects={filteredProjects}
+            onNewProject={goToNewProject}
+            onDelete={setProjectToDelete}
+          />
+        </Suspense>
 
         <ConfirmModal
           isOpen={projectToDelete !== null}
