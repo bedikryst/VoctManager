@@ -14,7 +14,7 @@ export const typographyVariants = cva("transition-colors duration-500", {
     variant: {
       body: "font-sans leading-relaxed",
       heading: "font-serif tracking-tight",
-      eyebrow: "font-sans uppercase tracking-[0.2em] xl:tracking-[0.4em]",
+      eyebrow: "font-sans uppercase tracking-[0.14em]",
       metric: "font-serif font-light tracking-tight",
       emphasis: "font-serif italic tracking-wide",
       unit: "font-serif italic tracking-normal",

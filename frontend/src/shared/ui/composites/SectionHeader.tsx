@@ -32,7 +32,7 @@ export function SectionHeader({
           {icon}
         </div>
       )}
-      <Eyebrow as="h2" color="muted">
+      <Eyebrow as="h2" color="graphite">
         {title}
       </Eyebrow>
 

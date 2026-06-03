@@ -23,7 +23,7 @@ import { motion, useMotionValue, useMotionTemplate } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
 
 const glassCardVariants = cva(
-  "group relative isolate overflow-hidden rounded-[2.5rem] transform-gpu contain-paint",
+  "group relative isolate overflow-hidden rounded-3xl transform-gpu contain-paint",
   {
     variants: {
       variant: {
@@ -32,7 +32,7 @@ const glassCardVariants = cva(
         surface:
           "bg-ethereal-ink/40 backdrop-blur-xl border border-white/5 shadow-glass-ethereal",
         solid:
-          "bg-ethereal-alabaster/70 border border-ethereal-ink/10 shadow-glass-solid",
+          "bg-ethereal-alabaster border border-ethereal-ink/6 shadow-glass-solid",
         dark: "bg-ethereal-ink/90 backdrop-blur-ethereal border border-ethereal-incense/20 text-ethereal-marble shadow-glass-solid",
         outline:
           "bg-transparent border border-ethereal-incense/30 hover:border-ethereal-gold hover:shadow-glass-outline-hover",
@@ -45,9 +45,9 @@ const glassCardVariants = cva(
       },
       padding: {
         none: "p-0",
-        sm: "p-4",
-        md: "p-6 md:p-8",
-        lg: "p-8 md:p-12",
+        sm: "p-3.5",
+        md: "p-5 md:p-6",
+        lg: "p-7 md:p-10",
       },
       animationEngine: {
         css: "transition-[transform,box-shadow,border-color,background-color] duration-700 ease-out",

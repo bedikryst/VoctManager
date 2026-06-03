@@ -20,11 +20,11 @@ const badgeVariants = cva(
         warning:
           "bg-ethereal-gold/10 text-ethereal-gold border-ethereal-gold/40 shadow-sm",
         danger:
-          "bg-ethereal-incense/10 text-ethereal-incense border-ethereal-incense/30 shadow-sm",
+          "bg-ethereal-crimson/10 text-ethereal-crimson border-ethereal-crimson/30 shadow-sm",
         amethyst:
           "bg-ethereal-amethyst/10 text-ethereal-amethyst border-ethereal-amethyst/30 shadow-sm",
         neutral:
-          "bg-ethereal-alabaster text-ethereal-graphite border-ethereal-incense/20",
+          "bg-ethereal-ink/4 text-ethereal-graphite border-ethereal-ink/8",
         brand:
           "bg-ethereal-ink/5 text-ethereal-ink border-ethereal-incense/30 backdrop-blur-sm",
         outline:

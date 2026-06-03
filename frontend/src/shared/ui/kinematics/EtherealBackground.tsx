@@ -18,7 +18,7 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-ethereal-alabaster"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-ethereal-canvas"
       aria-hidden="true"
     >
       <div
@@ -30,7 +30,7 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
         }}
       >
         {/* LAYER 0: Ambient Darkening (Overall Page Dimming) */}
-        <div className="absolute inset-0 z-[1] bg-ethereal-ink/[0.06]" />
+        <div className="absolute inset-0 z-[1] bg-ethereal-ink/3" />
 
         {/* LAYER 1: The Oculus Vignette (Chiaroscuro Base) */}
         <div className="absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_top,transparent_10%,rgba(22,20,18,0.08)_100%)]" />
