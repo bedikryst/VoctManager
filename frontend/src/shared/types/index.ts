@@ -257,8 +257,8 @@ export interface Composer extends BaseModel {
   last_name: string;
   birth_year?: string;
   death_year?: string;
-  // Score Compiler enrichments (canonical identity + biography). All optional —
-  // older composers entered manually before Phase 0 won't have them.
+  // AI enrichments (canonical identity + biography). All optional —
+  // composers entered manually pre-pipeline won't have them.
   full_name?: string;
   mbid?: string | null;
   wikidata_qid?: string;
@@ -268,6 +268,9 @@ export interface Composer extends BaseModel {
   portrait_url?: string;
   portrait_license?: string;
   aliases?: string[];
+  // Server-annotated fields exposed by the composer list endpoint.
+  pieces_count?: number;
+  is_orphan?: boolean;
 }
 
 // Backend PieceVoiceRequirement model extends EnterpriseBaseModel but the
