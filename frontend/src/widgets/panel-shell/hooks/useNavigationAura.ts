@@ -34,6 +34,15 @@ export const useNavigationAura = (user: AuthUser | null) => {
     );
   }, [navGroups]);
 
+  // Flat list of every authorized destination. The mobile dock shows only
+  // `pinnedItems` on a phone, but expands to the full set on wider touch
+  // screens (tablets), so the bar fills the width instead of stranding a
+  // narrow pill in the middle.
+  const allItems = useMemo(
+    () => navGroups.flatMap((group) => group.links),
+    [navGroups],
+  );
+
   // 4. Identity Metadata Projections
   const userFullName = useMemo(() => {
     if (!user) return t("dashboard.layout.roles.guest", "Guest");
@@ -67,6 +76,7 @@ export const useNavigationAura = (user: AuthUser | null) => {
   return {
     navGroups,
     pinnedItems,
+    allItems,
     userFullName,
     roleLabel,
     initials,

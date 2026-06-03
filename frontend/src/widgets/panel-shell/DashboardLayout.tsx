@@ -65,6 +65,13 @@ export const DashboardLayout = ({
 
   const outlet = useOutlet();
 
+  // Collapse a project hub's sub-routes (its tabs) into a single transition key, so
+  // switching tabs keeps the hub mounted — header, tab bar and loaded data persist
+  // instead of the whole shell exiting + re-animating. Every other route keeps its
+  // full-path key and transitions normally.
+  const projectHubMatch = /^(\/panel\/projects\/[^/]+)/.exec(location.pathname);
+  const transitionKey = projectHubMatch ? projectHubMatch[1] : location.pathname;
+
   useEffect(() => {
     document.body.classList.add("admin-mode");
     return () => document.body.classList.remove("admin-mode");
@@ -160,14 +167,14 @@ export const DashboardLayout = ({
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-4 sm:px-6 md:pl-[104px] md:pr-8 md:pt-8 lg:pr-12"
+        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 fine-pointer:pb-4 fine-pointer:pl-sidebar fine-pointer:pr-8 fine-pointer:pt-8"
         id="main-content"
       >
         <div className="mx-auto flex h-full w-full max-w-7xl flex-col relative">
           <Suspense fallback={<DashboardRouteFallback />}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
-                key={location.pathname}
+                key={transitionKey}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}

@@ -91,7 +91,7 @@ export const DesktopSidebar = ({
             animate={{ opacity: 1, scaleX: 1 }}
             exit={{ opacity: 0, scaleX: 0.5 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-y-0 left-0 z-30 w-[800px] pointer-events-none hidden md:block origin-left mix-blend-multiply"
+            className="fixed inset-y-0 left-0 z-30 w-[800px] pointer-events-none hidden fine-pointer:block origin-left mix-blend-multiply"
             style={{
               background:
                 "linear-gradient(to right, rgba(22, 20, 18, 0.12) 0%, rgba(22, 20, 18, 0.04) 40%, transparent 100%)",
@@ -121,7 +121,7 @@ export const DesktopSidebar = ({
         padding="none"
         aria-expanded={isExpanded}
         isHoverable={false}
-        className="fixed bottom-4 left-4 top-4 z-60 hidden md:flex flex-col w-70 border-none will-change-[clip-path,box-shadow]"
+        className="fixed bottom-4 left-4 top-4 z-60 hidden fine-pointer:flex flex-col w-70 border-none will-change-[clip-path,box-shadow]"
       >
         <div className="flex flex-col h-full w-70 p-4 relative">
           {/* STRATUM: LOGO */}

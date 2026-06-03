@@ -9,6 +9,7 @@
   /* =========================================
      ETHEREAL UI COLOR PALETTE
      ========================================= */
+  --color-ethereal-canvas: #eae7df;
   --color-ethereal-alabaster: #f6f5f2;
   --color-ethereal-parchment: #e6e3da;
   --color-ethereal-marble: #fdfdfd;
@@ -28,16 +29,20 @@
      GLASSMORPHISM & KINEMATICS TOKENS
      ========================================= */
   --blur-ethereal: 24px;
-  --color-glass-surface: rgba(253, 253, 253, 0.45);
-  --color-glass-border: rgba(194, 168, 120, 0.25);
+  --color-glass-surface: rgba(253, 253, 253, 0.62);
+  --color-glass-border: rgba(194, 168, 120, 0.28);
 
   --shadow-glass-ethereal:
     inset 0 1px 1px rgba(255, 255, 255, 0.9),
-    0 8px 32px rgba(166, 146, 121, 0.08);
+    0 1px 2px rgba(22, 20, 18, 0.04),
+    0 12px 32px -10px rgba(120, 104, 82, 0.18);
   --shadow-glass-ethereal-hover:
     inset 0 1px 1px rgba(255, 255, 255, 1),
-    0 12px 40px rgba(166, 146, 121, 0.15);
-  --shadow-glass-solid: 0 4px 16px rgba(166, 146, 121, 0.04);
+    0 2px 4px rgba(22, 20, 18, 0.05),
+    0 22px 48px -14px rgba(120, 104, 82, 0.28);
+  --shadow-glass-solid:
+    0 1px 2px rgba(22, 20, 18, 0.05),
+    0 10px 30px -12px rgba(120, 104, 82, 0.16);
   --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
 
   --shadow-button-primary:
@@ -60,6 +65,20 @@
 }
 
 /* ========================================== */
+/* INPUT-MODALITY VARIANT                      */
+/* Gate the app shell by input device, NOT by  */
+/* viewport width. A mouse/trackpad (fine +    */
+/* hover) gets the hover-driven DesktopSidebar; */
+/* every touch surface — iPad portrait AND      */
+/* landscape, regardless of width — falls back  */
+/* to MobileNavigation, since the sidebar's     */
+/* hover-to-expand is unreachable without a     */
+/* pointer. `fine-pointer:` is the mouse state; */
+/* the touch state is the unprefixed base.      */
+/* ========================================== */
+@custom-variant fine-pointer (@media (hover: hover) and (pointer: fine));
+
+/* ========================================== */
 /* BASE LAYER: Enterprise Normalization 2026  */
 /* ========================================== */
 @layer base {
@@ -68,7 +87,7 @@
   }
 
   body.theme-panel {
-    background-color: var(--color-ethereal-alabaster);
+    background-color: var(--color-ethereal-canvas);
     background-attachment: fixed;
 
     /* Zaawansowane funkcje typograficzne dla chórów (np. ligatury do starych fontów) */

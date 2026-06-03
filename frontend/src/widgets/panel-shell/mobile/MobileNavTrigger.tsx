@@ -32,7 +32,7 @@ const DOCK_TRANSITION: Transition = {
 
 const dockSlotVariants = cva(
   [
-    "relative grid h-11 w-11 place-items-center rounded-[14px]",
+    "relative grid h-11 w-11 shrink-0 place-items-center rounded-[14px]",
     "outline-none transition-[background-color,color,transform] duration-200",
     "focus-visible:ring-2 focus-visible:ring-ethereal-gold/60",
     "active:scale-[0.94]",
@@ -58,7 +58,7 @@ export const MobileNavTrigger = ({
   onOpen,
   aura,
 }: MobileNavTriggerProps): React.JSX.Element => {
-  const { pinnedItems, t } = aura;
+  const { allItems, t } = aura;
 
   return (
     <motion.div
@@ -66,24 +66,26 @@ export const MobileNavTrigger = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 16 }}
       transition={DOCK_TRANSITION}
-      className="pointer-events-none fixed inset-x-0 bottom-5 z-nav-dock flex justify-center px-4 md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-5 z-nav-dock flex justify-center px-4 fine-pointer:hidden"
     >
       <nav
         aria-label={t("dashboard.layout.nav.main_menu", "Primary navigation")}
         className={cn(
-          "pointer-events-auto flex items-center gap-1 rounded-[22px] px-2 py-1.5",
+          "pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-[22px] px-2 py-1.5 no-scrollbar",
           "border border-glass-border bg-ethereal-alabaster/92 backdrop-blur-md",
           "shadow-[0_10px_32px_-12px_rgba(22,20,18,0.18),0_2px_6px_rgba(22,20,18,0.06)]",
         )}
       >
-        {pinnedItems.map(({ icon: Icon, to, labelKey }) => (
+        {allItems.map(({ icon: Icon, to, labelKey, isPinned }) => (
           <NavLink
             key={to}
             to={to}
             end={to === "/panel"}
             aria-label={t(labelKey)}
             onClick={() => hapticsService.playEtherealTick()}
-            className={({ isActive }) => cn(dockSlotVariants({ isActive }))}
+            className={({ isActive }) =>
+              cn(dockSlotVariants({ isActive }), !isPinned && "max-sm:hidden")
+            }
           >
             {({ isActive }) => (
               <Icon
@@ -97,10 +99,10 @@ export const MobileNavTrigger = ({
 
         <span
           aria-hidden="true"
-          className="mx-1 h-5 w-px bg-ethereal-graphite/12"
+          className="mx-1 h-5 w-px shrink-0 bg-ethereal-graphite/12"
         />
 
-        <div className="grid h-11 w-11 place-items-center">
+        <div className="grid h-11 w-11 shrink-0 place-items-center">
           <NotificationCenter />
         </div>
 
@@ -110,7 +112,7 @@ export const MobileNavTrigger = ({
           aria-label={t("dashboard.layout.actions.open_menu", "Open menu")}
           aria-haspopup="dialog"
           className={cn(
-            "grid h-11 w-11 place-items-center rounded-[14px]",
+            "grid h-11 w-11 shrink-0 place-items-center rounded-[14px]",
             "text-ethereal-graphite/65 outline-none",
             "transition-[background-color,color,transform] duration-200",
             "hover:bg-ethereal-graphite/[0.04] hover:text-ethereal-ink",

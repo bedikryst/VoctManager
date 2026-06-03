@@ -107,7 +107,7 @@ export const MobileNavSheet = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={SCRIM_TRANSITION}
-        className="fixed inset-0 z-nav-sheet bg-ethereal-ink/45 backdrop-blur-[4px] md:hidden"
+        className="fixed inset-0 z-nav-sheet bg-ethereal-ink/45 backdrop-blur-[4px] fine-pointer:hidden"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -125,7 +125,7 @@ export const MobileNavSheet = ({
           "overflow-hidden rounded-t-[26px] border-t border-glass-border",
           "bg-ethereal-alabaster outline-none",
           "shadow-[0_-12px_40px_-8px_rgba(22,20,18,0.18)]",
-          "md:hidden",
+          "fine-pointer:hidden",
         )}
         style={{ y, contain: "paint" }}
         drag="y"
