@@ -14,6 +14,7 @@ import { projectKeys } from "@/features/projects/api/project.queries";
 import { ArtistService } from "@/features/artists/api/artist.service";
 import { ProjectService } from "@/features/projects/api/project.service";
 import { ScheduleService } from "@/features/schedule/api/schedule.service";
+import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
 
 import type {
   Project,
@@ -81,6 +82,12 @@ export const useArtistDashboardData = (artistId?: string | number) => {
   });
 
   const isLoading = results.slice(0, 4).some((result) => result.isLoading);
+  const isError = results.slice(0, 4).some((result) => result.isError);
+  const refetch = (): void => {
+    results.forEach((result) => {
+      void result.refetch();
+    });
+  };
   const participations = results[0].data ?? EMPTY_PARTICIPATIONS;
   const rehearsals = results[1].data ?? EMPTY_REHEARSALS;
   const projects = results[2].data ?? EMPTY_PROJECTS;
@@ -95,7 +102,9 @@ export const useArtistDashboardData = (artistId?: string | number) => {
     const myProjectIds = activeParticipations.map((p) => String(p.project));
 
     const myProjects = projects.filter(
-      (p) => myProjectIds.includes(String(p.id)) && p.status !== "CANC",
+      (p) =>
+        myProjectIds.includes(String(p.id)) &&
+        p.status !== PROJECT_STATUS.CANCELLED,
     );
 
     const displayThreshold = new Date(now.getTime() - 2 * 60 * 60 * 1000);
@@ -161,5 +170,13 @@ export const useArtistDashboardData = (artistId?: string | number) => {
 
   const firstNameVocative = artistProfile?.first_name_vocative || null;
 
-  return { isLoading, upNextRehearsal, upNextProject, greeting, firstNameVocative };
+  return {
+    isLoading,
+    isError,
+    refetch,
+    upNextRehearsal,
+    upNextProject,
+    greeting,
+    firstNameVocative,
+  };
 };

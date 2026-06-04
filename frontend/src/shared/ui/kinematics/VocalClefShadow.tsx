@@ -1,19 +1,32 @@
 /**
  * @file VocalClefShadow.tsx
- * @description A highly subtle, historically accurate C-Clef (Alto/Tenor clef).
- * Crafted with calligraphic precision for the Ethereal UI design language.
+ * @description A subtle, historically resonant C-clef (alto/tenor) watermark
+ * for the Ethereal UI. Callers may pass `className` to retune placement, tone
+ * or opacity (merged via cn/twMerge, so the override wins). It participates in a
+ * parent framer-motion hidden/visible orchestration when one is present (e.g.
+ * the EtherealBackground intro draw-in), and renders settled when standalone.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/kinematics/VocalClefShadow
  */
 
 import React from "react";
 import { motion } from "framer-motion";
+import { cn } from "@/shared/lib/utils";
+
+interface VocalClefShadowProps {
+  /** Override merged via cn/twMerge — wins over base position, tone and opacity. */
+  className?: string;
+}
 
 export const VocalClefShadow = React.memo(
-  (): React.JSX.Element => (
+  ({ className }: VocalClefShadowProps): React.JSX.Element => (
     <motion.div
-      className="absolute left-[1%] top-1/2 z-[1] -translate-y-1/2 text-ethereal-ink/5 mix-blend-overlay"
-      // Hardware acceleration applied exclusively during the animation phase
+      className={cn(
+        "absolute left-[1%] top-1/2 z-1 -translate-y-1/2 text-ethereal-ink/5 mix-blend-overlay",
+        className,
+      )}
+      // Animates only when a parent supplies a hidden/visible orchestration
+      // (e.g. the EtherealBackground intro); standalone it renders settled.
       variants={{
         hidden: { opacity: 0, scale: 0.95, filter: "blur(8px)" },
         visible: {
@@ -33,8 +46,8 @@ export const VocalClefShadow = React.memo(
         aria-hidden="true"
         className="drop-shadow-[0_0_12px_rgba(194,168,120,0.15)]"
       >
-        {/* A stylised, historically resonant C-Clef. 
-        Path 1: The Left Pillar (Virga) - solid and grounded 
+        {/* A stylised, historically resonant C-Clef.
+        Path 1: The Left Pillar (Virga) - solid and grounded
       */}
         <path
           d="M 18 25 C 18 23 20 20 24 20 C 28 20 30 23 30 25 V 125 C 30 127 28 130 24 130 C 20 130 18 127 18 125 Z"

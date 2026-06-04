@@ -8,8 +8,12 @@
 
   /* =========================================
      ETHEREAL UI COLOR PALETTE
+     Canvas is intentionally a few shades deeper than the card
+     surfaces (alabaster/marble) so panels separate by VALUE, not
+     by shadow alone. This is the structural fix for the old
+     "everything melts together" low-contrast field.
      ========================================= */
-  --color-ethereal-canvas: #eae7df;
+  --color-ethereal-canvas: #e7e1d3;
   --color-ethereal-alabaster: #f6f5f2;
   --color-ethereal-parchment: #e6e3da;
   --color-ethereal-marble: #fdfdfd;
@@ -56,7 +60,7 @@
      ========================================= */
   --spacing-nav-dock: 3rem;
   --spacing-sheet-expanded: 85dvh;
-  --spacing-sidebar: 120px;
+  --spacing-sidebar: 104px;
 
   --z-nav-dock: 70;
   --z-nav-sheet: 80;
@@ -90,7 +94,7 @@
     background-color: var(--color-ethereal-canvas);
     background-attachment: fixed;
 
-    /* Zaawansowane funkcje typograficzne dla chórów (np. ligatury do starych fontów) */
+    /* High-quality typographic defaults for long-form repertoire metadata. */
     font-variant-ligatures: common-ligatures contextual;
     -webkit-font-variant-ligatures: common-ligatures contextual;
     font-feature-settings:

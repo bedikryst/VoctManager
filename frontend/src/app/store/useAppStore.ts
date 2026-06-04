@@ -16,6 +16,9 @@ export interface AppState {
   isLoaded: boolean;
   setIsLoaded: (status: boolean) => void;
 
+  // Gates the EtherealBackground's one-time intro draw-in. Set true once the
+  // stave/clef animation has played; persists for the session (cleared on full
+  // reload), so subsequent route changes skip straight to the settled state.
   isAuraStabilized: boolean;
   stabilizeAura: () => void;
 }

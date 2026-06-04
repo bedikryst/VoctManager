@@ -167,18 +167,18 @@ export const DashboardLayout = ({
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 fine-pointer:pb-4 fine-pointer:pl-sidebar fine-pointer:pr-8 fine-pointer:pt-8"
+        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 fine-pointer:pb-6 fine-pointer:pl-[calc(var(--spacing-sidebar)+1.5rem)] fine-pointer:pr-6 fine-pointer:pt-6"
         id="main-content"
       >
-        <div className="mx-auto flex h-full w-full max-w-7xl flex-col relative">
+        <div className="relative mx-auto flex h-full w-full max-w-[1500px] flex-col">
           <Suspense fallback={<DashboardRouteFallback />}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={transitionKey}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                 className="flex-1 flex flex-col w-full h-full"
               >
                 {outlet}

@@ -56,7 +56,8 @@ export function NextRehearsalAlert({
         isHoverable={false}
         className={cn(
           "group/alert z-10",
-          "hover:border-ethereal-gold/30 hover:shadow-[0_16px_48px_rgba(166,146,121,0.15)]",
+          // Unified interactive-tile hover: gold border + elevation shadow, no lift.
+          "hover:border-ethereal-gold/30 hover:shadow-glass-ethereal-hover",
         )}
         backgroundElement={<KineticGlow variant="sage" position="left" />}
       >

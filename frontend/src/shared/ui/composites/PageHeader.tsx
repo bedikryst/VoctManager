@@ -11,7 +11,7 @@ import { cn } from "@/shared/lib/utils";
 import { Eyebrow, Heading, Emphasis } from "@/shared/ui/primitives/typography";
 
 const pageHeaderVariants = cva(
-  "flex flex-col gap-6 md:flex-row md:items-end justify-between w-full",
+  "flex w-full flex-col gap-6 md:flex-row md:items-end md:justify-between",
   {
     variants: {
       size: {
@@ -48,33 +48,26 @@ export function PageHeader({
 
   return (
     <header className={cn(pageHeaderVariants({ size }), className)} {...props}>
-      <div className="max-w-2xl">
+      <div className="min-w-0 max-w-3xl">
         {roleText && (
           <div className="mb-4 flex items-center gap-4">
             <div
-              className="h-[1px] w-12 shrink-0 bg-ethereal-gold/30"
+              className="h-px w-12 shrink-0 bg-ethereal-gold/30"
               aria-hidden="true"
             />
-            <Eyebrow color="muted">
-              {roleText}
-            </Eyebrow>
+            <Eyebrow color="muted">{roleText}</Eyebrow>
           </div>
         )}
 
-        <Heading
-          as="h1"
-          size={isDashboard ? "huge" : "3xl"}
-          weight="medium"
-        >
-          {title}{" "}
-          {titleHighlight && (
-            <Emphasis>{titleHighlight}</Emphasis>
-          )}
+        <Heading as="h1" size={isDashboard ? "huge" : "3xl"} weight="medium">
+          {title} {titleHighlight && <Emphasis>{titleHighlight}</Emphasis>}
         </Heading>
       </div>
 
       {rightContent && (
-        <div className="hidden pb-2 md:block">{rightContent}</div>
+        <div className="flex w-full items-center md:w-auto md:shrink-0 md:pb-1">
+          {rightContent}
+        </div>
       )}
     </header>
   );

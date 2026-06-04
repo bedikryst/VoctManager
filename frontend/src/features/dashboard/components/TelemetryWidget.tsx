@@ -126,7 +126,10 @@ export function TelemetryWidget({
 
           <div
             className="flex items-baseline gap-1"
-            aria-label="Total ensemble voices"
+            aria-label={t(
+              "dashboard.admin.satb_total_aria",
+              "Łączna liczba głosów w zespole",
+            )}
           >
             <Text className="tabular-nums">{stats.satb.Total}</Text>
             <Unit size="sm" color="muted">

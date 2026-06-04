@@ -43,14 +43,14 @@ export const InvitationStatusWidget = ({
         variant="light"
         padding="none"
         withNoise
-        isHoverable
+        isHoverable={false}
         onClick={() => setIsModalOpen(true)}
         aria-haspopup="dialog"
         aria-label={t(
           "dashboard.admin.inv_open_details_aria",
           "Otwórz szczegółową listę zaproszeń",
         )}
-        className="flex h-full flex-col gap-6 p-6 md:p-8"
+        className="flex h-full cursor-pointer flex-col gap-6 p-6 md:p-8 hover:border-ethereal-gold/30 hover:shadow-glass-ethereal-hover"
       >
         <div className="flex items-center justify-between">
           <SectionHeader

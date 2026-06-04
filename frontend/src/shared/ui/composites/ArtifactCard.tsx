@@ -71,7 +71,8 @@ export function ArtifactCard({
     <GlassCard
       variant="light"
       padding="none"
-      className="group flex h-full min-h-[400px] w-full flex-col transition-all duration-[1200ms] ease-[0.16,1,0.3,1] hover:shadow-glass-ethereal-hover"
+      isHoverable={false}
+      className="group flex h-full min-h-[400px] w-full flex-col hover:border-ethereal-gold/30 hover:shadow-glass-ethereal-hover"
       backgroundElement={
         <div className="pointer-events-none absolute -right-32 -top-32 h-[800px] w-[800px] rounded-full bg-gradient-to-br from-ethereal-gold/15 via-ethereal-incense/5 to-transparent blur-[160px] transition-transform duration-[3000ms] ease-out group-hover:scale-[1.3] group-hover:translate-x-10" />
       }

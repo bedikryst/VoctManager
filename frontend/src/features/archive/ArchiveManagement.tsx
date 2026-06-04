@@ -214,10 +214,11 @@ export default function ArchiveManagement(): React.JSX.Element {
           titleHighlight={t("archive.dashboard.title_highlight", "repertuaru")}
           rightContent={
             !isFreshArchive ? (
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <Button
                   variant="primary"
                   onClick={() => setIsUploadOpen(true)}
+                  fullWidth
                   leftIcon={<UploadCloud size={14} aria-hidden="true" />}
                 >
                   {t("archive.dashboard.upload_pdf", "Wgraj PDF")}
@@ -226,6 +227,7 @@ export default function ArchiveManagement(): React.JSX.Element {
                   variant="outline"
                   size="sm"
                   onClick={navigateToNew}
+                  fullWidth
                   leftIcon={<Plus size={14} aria-hidden="true" />}
                 >
                   {t("archive.dashboard.add_manual", "Dodaj ręcznie")}

@@ -40,7 +40,7 @@ const glassCardVariants = cva(
           "bg-glass-surface/50 backdrop-blur-[4px] border border-glass-border shadow-glass-ethereal",
       },
       isHoverable: {
-        true: "hover:-translate-y-2 hover:scale-[1.002] cursor-pointer hover:shadow-glass-ethereal-hover will-change-transform",
+        true: "hover:-translate-y-1 cursor-pointer hover:shadow-glass-ethereal-hover will-change-transform",
         false: "",
       },
       padding: {

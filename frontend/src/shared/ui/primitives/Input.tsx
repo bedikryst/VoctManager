@@ -69,10 +69,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative flex items-center">
           {leftIcon && (
             <div
-              className="absolute left-0 flex items-center justify-center text-ethereal-incense"
+              className="absolute left-3 flex items-center justify-center text-ethereal-incense"
               aria-hidden="true"
             >
-              {/* Refactored to eliminate 'any' type violation */}
               {React.isValidElement(leftIcon)
                 ? React.cloneElement(
                     leftIcon as React.ReactElement<{
@@ -92,8 +91,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={hasError ? errorId : undefined}
             className={cn(
               inputVariants({ variant, hasError, className }),
-              leftIcon ? "ml-5" : "px-4",
-              rightElement ? "pr-12" : "px-4",
+              leftIcon ? "pl-10" : "pl-4",
+              rightElement ? "pr-12" : "pr-4",
               "py-3",
             )}
             {...props}

@@ -26,13 +26,21 @@ import { UserLocalClock } from "@/widgets/utility/UserLocalClock";
 import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
 import { ArtistEmptyState } from "./components/ArtistEmptyState";
+import { DashboardErrorState } from "./components/DashboardErrorState";
 
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  const { isLoading, upNextRehearsal, upNextProject, greeting, firstNameVocative } =
-    useArtistDashboardData(user?.artist_profile_id ?? undefined);
+  const {
+    isLoading,
+    isError,
+    refetch,
+    upNextRehearsal,
+    upNextProject,
+    greeting,
+    firstNameVocative,
+  } = useArtistDashboardData(user?.artist_profile_id ?? undefined);
 
   if (isLoading) {
     return (
@@ -44,8 +52,12 @@ export default function ArtistDashboard(): React.JSX.Element {
     );
   }
 
+  if (isError) {
+    return <DashboardErrorState onRetry={refetch} />;
+  }
+
   return (
-    <StaggeredBentoContainer className="mx-auto w-full max-w-[1600px] px-0 pb-24 md:px-6 lg:px-10">
+    <StaggeredBentoContainer className="mx-auto w-full max-w-400 px-0 pb-24 md:px-6 lg:px-10">
       {/* HEADER STRATUM */}
       <StaggeredBentoItem>
         <PageHeader

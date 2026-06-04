@@ -94,21 +94,21 @@ export function SpotlightProjectCard({
       id: "cast",
       label: t("dashboard.admin.spotlight.cast", "Obsada"),
       value: projectStats.castCount,
-      unit: "voices",
+      unit: t("dashboard.admin.spotlight.unit_cast", "głosów"),
       icon: <Users />,
     },
     {
       id: "program",
       label: t("dashboard.admin.spotlight.program", "Repertuar"),
       value: projectStats.piecesCount,
-      unit: "scores",
+      unit: t("dashboard.admin.spotlight.unit_program", "partytur"),
       icon: <Music />,
     },
     {
       id: "remaining",
       label: t("dashboard.admin.spotlight.remaining", "Do Premiery"),
       value: projectStats.rehearsalsRemaining,
-      unit: "rehearsals",
+      unit: t("dashboard.admin.spotlight.unit_remaining", "prób"),
       icon: <Calendar />,
       accentColor: "gold",
     },
@@ -163,7 +163,7 @@ export function SpotlightProjectCard({
 
   return (
     <ArtifactCard
-      to={`/panel/projects`}
+      to={`/panel/projects/${project.id}`}
       ariaLabel={t(
         "dashboard.admin.aria_open_project",
         "Otwórz szczegóły dyrektywy: {{title}}",

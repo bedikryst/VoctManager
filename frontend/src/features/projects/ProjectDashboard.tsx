@@ -17,6 +17,7 @@ import { Layers, Plus } from "lucide-react";
 import { useProjectDashboard } from "./hooks/useProjectDashboard";
 import { ProjectRow } from "./components/ProjectRow";
 import { DashboardFilterMenu } from "./components/DashboardFilterMenu";
+import { PROJECT_FILTER, type ProjectFilterId } from "./constants/projectDomain";
 
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -101,6 +102,7 @@ export const ProjectDashboard = (): React.JSX.Element => {
   const navigate = useNavigate();
   const {
     filteredProjects,
+    projectStats,
     listFilter,
     setListFilter,
     projectToDelete,
@@ -113,10 +115,15 @@ export const ProjectDashboard = (): React.JSX.Element => {
     () => navigate("/panel/projects/new"),
     [navigate],
   );
+  const filterCounts: Record<ProjectFilterId, number> = {
+    [PROJECT_FILTER.ACTIVE]: projectStats.activeCount,
+    [PROJECT_FILTER.DONE]: projectStats.archivedCount,
+    [PROJECT_FILTER.ALL]: projectStats.totalCount,
+  };
 
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-5xl flex-col gap-5 px-4 pb-24 pt-6 sm:px-0">
+      <div className="relative mx-auto flex max-w-6xl flex-col gap-5 px-4 pb-24 pt-6 sm:px-0">
         <PageHeader
           size="standard"
           roleText={t("projects.dashboard.header_badge", "Centrum Dowodzenia")}
@@ -133,21 +140,20 @@ export const ProjectDashboard = (): React.JSX.Element => {
           }
         />
 
-        <div className="md:hidden">
-          <Button
-            variant="primary"
-            fullWidth
-            onClick={goToNewProject}
-            leftIcon={<Plus size={16} aria-hidden="true" />}
-          >
-            {t("projects.dashboard.btn_new_project", "Nowy Projekt")}
-          </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <DashboardFilterMenu
+            currentFilter={listFilter}
+            counts={filterCounts}
+            onFilterChange={setListFilter}
+          />
+          <Text size="sm" color="graphite" className="tabular-nums">
+            <Text as="span" size="sm" weight="semibold">
+              {projectStats.visibleCount}
+            </Text>{" "}
+            {t("projects.dashboard.visible_count", "widocznych")} /{" "}
+            {projectStats.totalCount}
+          </Text>
         </div>
-
-        <DashboardFilterMenu
-          currentFilter={listFilter}
-          onFilterChange={setListFilter}
-        />
 
         <Suspense fallback={<EtherealLoader className="h-64" />}>
           <DashboardList

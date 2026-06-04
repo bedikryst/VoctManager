@@ -1,9 +1,13 @@
 import { useCallback, useRef, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-// Expand delay: prevents accidental hover expansion while moving the mouse.
-// The sidebar is immediately clickable in collapsed state; it only expands
-// after deliberate sustained hover (intent confirmation pattern).
+// Hover-intent timing — deliberately long. The collapsed rail is already fully
+// usable: tooltips appear instantly (delayDuration ~10ms) and every icon is
+// clickable in place. Expansion is an opt-in "browse" peek, not the nav path —
+// and since the expanded panel overlays content (fixed, no reflow) rather than
+// pushing it, a short delay would balloon the rail over the page on every
+// routine click-to-navigate. 1700ms sits above a natural aiming pause, so the
+// panel only opens on sustained, intentional hover.
 const HOVER_ENTER_DELAY_MS = 1700;
 const HOVER_LEAVE_DELAY_MS = 380;
 const COMPACT_WIDTH_PX = 88;
@@ -42,9 +46,6 @@ export const useSidebarKinematics = () => {
     isHoveredRef.current = true;
     clearCollapseTimer();
 
-    // Schedule expansion only after sustained hover — icons remain clickable
-    // immediately in the collapsed pill, this just delays the visual expansion
-    // until the user's intent is clear (not an accidental pass-through).
     expandTimerRef.current = setTimeout(() => {
       if (isHoveredRef.current) {
         setIsExpanded(true);
@@ -55,7 +56,7 @@ export const useSidebarKinematics = () => {
 
   const handleMouseLeave = useCallback(() => {
     isHoveredRef.current = false;
-    clearExpandTimer(); // Cancel any pending expansion
+    clearExpandTimer();
 
     collapseTimerRef.current = setTimeout(() => {
       if (!isHoveredRef.current) {
@@ -65,7 +66,7 @@ export const useSidebarKinematics = () => {
     }, HOVER_LEAVE_DELAY_MS);
   }, [clearExpandTimer, syncLayoutVariable]);
 
-  // Collapse immediately on route change to prevent "stuck open" sidebar
+  // Collapse immediately on route change to prevent a stale expanded rail.
   useEffect(() => {
     if (!isHoveredRef.current && isExpanded) {
       clearExpandTimer();

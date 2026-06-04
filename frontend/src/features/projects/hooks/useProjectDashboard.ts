@@ -25,6 +25,12 @@ import { compareProjectDateDesc } from "../lib/projectPresentation";
 
 interface UseProjectDashboardReturn {
   filteredProjects: Project[];
+  projectStats: {
+    activeCount: number;
+    archivedCount: number;
+    totalCount: number;
+    visibleCount: number;
+  };
   listFilter: ProjectFilterId;
   setListFilter: (filter: ProjectFilterId) => void;
   projectToDelete: string | null;
@@ -72,6 +78,19 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
     [listFilter, projects],
   );
 
+  const projectStats = useMemo(() => {
+    const activeCount = projects.filter(
+      (project) => !isArchiveStatus(project.status || PROJECT_STATUS.DRAFT),
+    ).length;
+
+    return {
+      activeCount,
+      archivedCount: projects.length - activeCount,
+      totalCount: projects.length,
+      visibleCount: filteredProjects.length,
+    };
+  }, [projects, filteredProjects.length]);
+
   const setListFilter = useCallback((filter: ProjectFilterId): void => {
     startTransition(() => {
       setListFilterState(filter);
@@ -108,6 +127,7 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
 
   return {
     filteredProjects,
+    projectStats,
     listFilter,
     setListFilter,
     projectToDelete,

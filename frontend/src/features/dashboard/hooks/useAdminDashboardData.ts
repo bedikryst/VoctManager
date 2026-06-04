@@ -52,7 +52,7 @@ export interface EnrichedRehearsal extends Rehearsal {
 export const useAdminDashboardData = () => {
   const { t } = useTranslation();
 
-  const { isLoading, isError, data } = useQueries({
+  const { isLoading, isError, refetch, data } = useQueries({
     queries: [
       {
         queryKey: projectKeys.projects.all,
@@ -78,6 +78,11 @@ export const useAdminDashboardData = () => {
     combine: (results) => ({
       isLoading: results.some((q) => q.isPending || q.isLoading),
       isError: results.some((q) => q.isError),
+      refetch: () => {
+        results.forEach((q) => {
+          void q.refetch();
+        });
+      },
       data: {
         projects: results[0].data ?? [],
         rehearsals: results[1].data ?? [],
@@ -97,7 +102,9 @@ export const useAdminDashboardData = () => {
   // 1. TELEMETRY AGGREGATION
   const adminStats: AdminTelemetryStatsDto = useMemo(() => {
     const activeProjects = projects.filter(
-      (p) => p.status === "ACTIVE" || p.status === "DRAFT",
+      (p) =>
+        p.status === PROJECT_STATUS.ACTIVE ||
+        p.status === PROJECT_STATUS.DRAFT,
     ).length;
 
     const totalPieces = pieces.length;
@@ -162,7 +169,11 @@ export const useAdminDashboardData = () => {
     todayStart.setHours(0, 0, 0, 0);
 
     const upcoming = projects.filter((p) => {
-      if (p.status === "DONE" || p.status === "CANC") return false;
+      if (
+        p.status === PROJECT_STATUS.DONE ||
+        p.status === PROJECT_STATUS.CANCELLED
+      )
+        return false;
       if (!p.date_time) return false;
 
       const projDate = new Date(p.date_time);
@@ -256,6 +267,7 @@ export const useAdminDashboardData = () => {
   return {
     isLoading,
     isError,
+    refetch,
     adminStats,
     invitationStats,
     nextProject,

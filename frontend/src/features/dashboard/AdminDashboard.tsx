@@ -27,6 +27,7 @@ import { TelemetryWidget } from "./components/TelemetryWidget";
 import { SpotlightProjectCard } from "./components/SpotlightProjectCard";
 import { InvitationStatusWidget } from "./components/InvitationStatusWidget";
 import { AdminModulesDirectory } from "./components/AdminModulesDirectory";
+import { DashboardErrorState } from "./components/DashboardErrorState";
 
 const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
 
@@ -36,6 +37,8 @@ export default function AdminDashboard(): React.JSX.Element {
   const adminArtistProfileId = user?.artist_profile_id;
   const {
     isLoading,
+    isError,
+    refetch,
     adminStats,
     invitationStats,
     nextProject,
@@ -65,6 +68,10 @@ export default function AdminDashboard(): React.JSX.Element {
     );
   }
 
+  if (isError) {
+    return <DashboardErrorState onRetry={refetch} />;
+  }
+
   return (
     <StaggeredBentoContainer className="mx-auto w-full max-w-400 px-0 pb-24 md:px-6 lg:px-10">
       {/* HEADER STRATUM */}
@@ -83,29 +90,29 @@ export default function AdminDashboard(): React.JSX.Element {
       </StaggeredBentoItem>
 
       {/* CORE BENTO GRID */}
-      <div className="grid grid-cols-1 gap-4 xl:gap-8 md:grid-cols-12 xl:grid-cols-13">
+      <div className="grid grid-cols-1 gap-4 xl:gap-8 lg:grid-cols-12 xl:grid-cols-13">
         {nextRehearsal && (
-          <StaggeredBentoItem className="col-span-1 md:col-span-12 xl:col-span-13">
+          <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
             <NextRehearsalAlert rehearsal={nextRehearsal} />
           </StaggeredBentoItem>
         )}
 
-        <StaggeredBentoItem className="col-span-1 md:col-span-5 lg:min-h-100">
+        <StaggeredBentoItem className="col-span-1 lg:col-span-5 lg:min-h-100">
           <TelemetryWidget adminStats={adminStats} />
         </StaggeredBentoItem>
 
-        <StaggeredBentoItem className="col-span-1 md:col-span-7 xl:col-span-8 lg:min-h-100">
+        <StaggeredBentoItem className="col-span-1 lg:col-span-7 xl:col-span-8 lg:min-h-100">
           <SpotlightProjectCard
             project={nextProject}
             stats={nextProjectStats}
           />
         </StaggeredBentoItem>
 
-        <StaggeredBentoItem className="col-span-1 md:col-span-12 xl:col-span-13">
+        <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
           <InvitationStatusWidget stats={invitationStats} />
         </StaggeredBentoItem>
 
-        <StaggeredBentoItem className="mt-4 col-span-1 md:col-span-12 xl:col-span-13">
+        <StaggeredBentoItem className="mt-4 col-span-1 lg:col-span-12 xl:col-span-13">
           <SectionHeader
             title={t("dashboard.admin.directory_sub", "06 Modułów")}
             withFluidDivider={false}
