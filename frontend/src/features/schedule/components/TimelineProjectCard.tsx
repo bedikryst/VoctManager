@@ -463,7 +463,6 @@ export const TimelineProjectCard = ({
                       {proj.spotify_playlist_url ? (
                         <SpotifyWidget
                           playlistUrl={proj.spotify_playlist_url}
-                          theme="dark"
                         />
                       ) : (
                         <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-5 text-center flex flex-col items-center justify-center min-h-36">

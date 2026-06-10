@@ -22,7 +22,8 @@ export type NotificationType =
   | "PARTICIPATION_RESPONSE"
   | "ATTENDANCE_SUBMITTED"
   | "CUSTOM_ADMIN_MESSAGE"
-  | "NOTIFICATION_READ_RECEIPT";
+  | "NOTIFICATION_READ_RECEIPT"
+  | "MESSAGE_RECEIVED";
 
 // ==========================================
 // STRICT METADATA PAYLOADS
@@ -106,6 +107,15 @@ export interface NotificationReadReceiptMetadata {
   read_at: string;
 }
 
+export interface MessageReceivedMetadata {
+  thread_id: string;
+  title: string;
+  sender_name: string;
+  message: string;
+  snippet: string;
+  cta_url?: string;
+}
+
 export type DefaultMetadata = Record<string, unknown>;
 
 // ==========================================
@@ -171,6 +181,10 @@ export type NotificationDTO = BaseNotification &
     | {
         notification_type: "NOTIFICATION_READ_RECEIPT";
         metadata: NotificationReadReceiptMetadata;
+      }
+    | {
+        notification_type: "MESSAGE_RECEIVED";
+        metadata: MessageReceivedMetadata;
       }
   );
 

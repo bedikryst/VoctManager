@@ -986,6 +986,7 @@
         "crew": "Ekipa Techniczna",
         "locations": "Lokalizacje",
         "materials": "Materiały Ćwiczeniowe",
+        "messages": "Wiadomości",
         "projects": "Zarządzanie Projektami",
         "resources": "Materiały & Wiedza",
         "schedule": "Mój Kalendarz"
@@ -2206,6 +2207,7 @@
         "PARTICIPATION_RESPONSE": "Odpowiedź artysty",
         "ATTENDANCE_SUBMITTED": "Informacja o frekwencji",
         "CUSTOM_ADMIN_MESSAGE": "Bezpośrednia wiadomość",
+        "MESSAGE_RECEIVED": "Nowa wiadomość",
         "NOTIFICATION_READ_RECEIPT": "Wiadomość odczytana"
       }
     }

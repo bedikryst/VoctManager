@@ -15,6 +15,7 @@ import {
   BookMarked,
   Headphones,
   LayoutDashboard,
+  MessageCircle,
   Music,
   Users,
   Wrench,
@@ -88,6 +89,12 @@ export const ADMIN_NAV_GROUPS: readonly NavGroup[] = [
         to: "/panel/rehearsals",
         icon: CalendarCheck,
         labelKey: t("dashboard.layout.links.attendance"),
+        isPinned: true,
+      },
+      {
+        to: "/panel/messages",
+        icon: MessageCircle,
+        labelKey: t("dashboard.layout.links.messages"),
         isPinned: true,
       },
     ],
@@ -172,6 +179,12 @@ export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
   {
     labelKey: t("dashboard.layout.groups.my_zone"),
     links: [
+      {
+        to: "/panel/messages",
+        icon: MessageCircle,
+        labelKey: t("dashboard.layout.links.messages"),
+        isPinned: true,
+      },
       {
         to: "/panel/schedule",
         icon: Calendar,

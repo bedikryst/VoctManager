@@ -79,6 +79,9 @@ const Materials = lazyWithPreload(() =>
 const ChoristerHubPage = lazyWithPreload(
   () => import("@features/chorister-hub/ChoristerHubPage"),
 );
+const MessagesPage = lazyWithPreload(
+  () => import("@features/messages/MessagesPage"),
+);
 
 // Manager-only feature trees remain lazy, then preload only for manager sessions.
 const Contracts = lazyWithPreload(
@@ -155,6 +158,7 @@ const DocumentViewerPage = lazyWithPreload(
 const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: DashboardHome.preload },
   { preload: SettingsPage.preload },
+  { preload: MessagesPage.preload },
   { preload: ChoristerHubPage.preload },
   { preload: Materials.preload },
   { preload: Schedule.preload },
@@ -322,6 +326,9 @@ export const router = createBrowserRouter(
           <Route path="materials" element={<Materials />} />
           <Route path="schedule" element={<Schedule />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="messages" element={<MessagesPage />} />
+          <Route path="messages/channel/:channelId" element={<MessagesPage />} />
+          <Route path="messages/:threadId" element={<MessagesPage />} />
         </Route>
 
         <Route

@@ -21,6 +21,7 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 import { hapticsService } from "@/shared/lib/hardware/hapticsService";
 import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
+import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
 import { useNavigationAura } from "../hooks/useNavigationAura";
 
 const DOCK_TRANSITION: Transition = {
@@ -88,11 +89,14 @@ export const MobileNavTrigger = ({
             }
           >
             {({ isActive }) => (
-              <Icon
-                size={20}
-                strokeWidth={isActive ? 2.25 : 1.75}
-                aria-hidden="true"
-              />
+              <>
+                <Icon
+                  size={20}
+                  strokeWidth={isActive ? 2.25 : 1.75}
+                  aria-hidden="true"
+                />
+                {to === "/panel/messages" && <UnreadMessagesBadge />}
+              </>
             )}
           </NavLink>
         ))}

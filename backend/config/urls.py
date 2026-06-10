@@ -26,6 +26,7 @@ from core.views import (
     ResetCalendarTokenView,
 )
 from documents.views import ArtistMetricsAPIView, DocumentCategoryViewSet, DocumentDownloadView
+from messaging.views import ProjectChannelViewSet, ThreadViewSet
 from notifications.views import NotificationPreferenceAPIView, NotificationViewSet, PushDeviceViewSet
 from roster.views import (
     ArtistViewSet,
@@ -70,6 +71,10 @@ router.register(r'archive/editions', ScoreEditionViewSet, basename='score-editio
 
 # --- System & Notifications ---
 router.register(r'notifications', NotificationViewSet, basename='notification')
+
+# --- Messaging (async conductor ↔ chorister threads) ---
+router.register(r'messaging/threads', ThreadViewSet, basename='messaging-thread')
+router.register(r'messaging/channels', ProjectChannelViewSet, basename='messaging-channel')
 
 # --- Chorister Hub & Knowledge Base ---
 router.register(r'documents/categories', DocumentCategoryViewSet, basename='document-category')

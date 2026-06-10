@@ -482,6 +482,51 @@ def _compose_custom_admin_message(ctx: PushContext) -> PushPayload:
     )
 
 
+def _compose_message_received(ctx: PushContext) -> PushPayload:
+    """New message in a conversation thread. Sender → title; subject + snippet → body."""
+    m = ctx.metadata
+    sender = m.get("sender_name") or _("your management team")
+    subject = m.get("title") or _("New message")
+    snippet = m.get("snippet") or m.get("message") or ""
+    thread_id = m.get("thread_id") or ""
+
+    body = f"{subject} — {snippet}" if snippet else subject
+
+    return PushPayload(
+        title=_("Message from %(sender)s") % {"sender": sender},
+        body=body,
+        url=f"/panel/messages/{thread_id}" if thread_id else "/panel/messages",
+        tag=f"message:{thread_id}",
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        actions=(_open_action(),),
+    )
+
+
+def _compose_channel_message(ctx: PushContext) -> PushPayload:
+    """New message in a project group channel. Project = title; sender + snippet = body."""
+    m = ctx.metadata
+    project = m.get("project_name") or _("your project")
+    sender = m.get("sender_name") or _("a participant")
+    snippet = m.get("snippet") or ""
+    channel_id = m.get("channel_id") or ""
+
+    body = (
+        _("%(sender)s: %(snippet)s") % {"sender": sender, "snippet": snippet}
+        if snippet
+        else _("%(sender)s sent a message.") % {"sender": sender}
+    )
+    return PushPayload(
+        title=str(project),
+        body=body,
+        url=f"/panel/messages/channel/{channel_id}" if channel_id else "/panel/messages",
+        tag=f"channel:{channel_id}",
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        actions=(_open_action(),),
+    )
+
+
 def _compose_system_alert(ctx: PushContext) -> PushPayload:
     m = ctx.metadata
     title = m.get("title") or _("System notice")
@@ -541,6 +586,8 @@ _COMPOSERS: dict[str, _Composer] = {
     NotificationType.PARTICIPATION_RESPONSE: _compose_participation_response,
     NotificationType.ATTENDANCE_SUBMITTED: _compose_attendance_submitted,
     NotificationType.CUSTOM_ADMIN_MESSAGE: _compose_custom_admin_message,
+    NotificationType.MESSAGE_RECEIVED: _compose_message_received,
+    NotificationType.CHANNEL_MESSAGE: _compose_channel_message,
     NotificationType.SYSTEM_ALERT: _compose_system_alert,
 }
 

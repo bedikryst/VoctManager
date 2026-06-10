@@ -104,6 +104,7 @@ Frontend engineering pillars:
 ### 3. Enterprise OS & Logistics (Backend)
 - **Granular RBAC:** Deep, Role-Based Access Control matrix (Admin, Manager, Artist, Crew) securing endpoints, data payloads, and UI visibility.
 - **Web Push & Real-Time Alerts:** Native-like, real-time push notifications built on the W3C VAPID standard. Handled asynchronously via Celery alongside a robust transactional email engine, keeping artists instantly updated on casting and schedule changes.
+- **Internal Messaging:** Async two-way conversation threads between choristers and the conducting/management pool, delivered in-app + email + push with unread badges and a unified inbox. Deliberately **not** a real-time chat (no presence/typing) — the store (`messaging` app) is decoupled from delivery (`notifications`), so each message reuses the existing notification pipeline.
 - **Calendar Synchronization (iCal):** Seamless external calendar integration, providing auto-generated iCal feeds for Google Calendar and Apple Calendar synchronization.
 - **Optimistic UI:** Aggressive server-state caching using **@tanstack/react-query v5.91+**, delivering a zero-latency feel for critical mutations (e.g., attendance confirmation, casting updates).
 - **Asynchronous Document Engine:** Production workflows, such as dynamic Contract generation and Run Sheet compilation, are offloaded to **Celery workers** and **WeasyPrint**, guaranteeing the main thread remains unblocked.

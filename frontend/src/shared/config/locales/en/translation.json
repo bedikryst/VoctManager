@@ -954,6 +954,7 @@
         "crew": "Technical Crew",
         "locations": "Locations",
         "materials": "Practice Materials",
+        "messages": "Messages",
         "projects": "Project Management",
         "resources": "Resources & Knowledge",
         "schedule": "My Schedule"
@@ -2160,6 +2161,7 @@
         "PARTICIPATION_RESPONSE": "Artist Project Response",
         "ATTENDANCE_SUBMITTED": "Artist Attendance Info",
         "CUSTOM_ADMIN_MESSAGE": "Direct Message from Management",
+        "MESSAGE_RECEIVED": "New Message",
         "NOTIFICATION_READ_RECEIPT": "Message Read by Artist"
       }
     }

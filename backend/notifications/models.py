@@ -56,6 +56,8 @@ class NotificationType(models.TextChoices):
     # --- DIRECT MESSAGING ---
     CUSTOM_ADMIN_MESSAGE = 'CUSTOM_ADMIN_MESSAGE', _('Direct Message from Management')
     NOTIFICATION_READ_RECEIPT = 'NOTIFICATION_READ_RECEIPT', _('Message Read by Artist')
+    MESSAGE_RECEIVED = 'MESSAGE_RECEIVED', _('New Message in Conversation')
+    CHANNEL_MESSAGE = 'CHANNEL_MESSAGE', _('New Message in Project Channel')
 
 class Notification(EnterpriseBaseModel):
     """

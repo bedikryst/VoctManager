@@ -7,6 +7,7 @@ import { cva } from "class-variance-authority";
 
 import { useNavigationAura } from "./hooks/useNavigationAura";
 import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
+import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { cn } from "@/shared/lib/utils";
 import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKinematics";
@@ -217,6 +218,9 @@ export const DesktopSidebar = ({
                                     strokeWidth={isActive ? 2.5 : 1.5}
                                     className="transition-all duration-300"
                                   />
+                                  {link.to === "/panel/messages" && (
+                                    <UnreadMessagesBadge className="right-2.5 top-1.5 ring-white/60" />
+                                  )}
                                 </div>
                                 <motion.div
                                   initial={false}

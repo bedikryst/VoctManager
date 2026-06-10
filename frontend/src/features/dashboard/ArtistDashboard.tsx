@@ -27,6 +27,7 @@ import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidge
 import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
 import { ArtistEmptyState } from "./components/ArtistEmptyState";
 import { DashboardErrorState } from "./components/DashboardErrorState";
+import { UnreadMessagesAlert } from "./components/UnreadMessagesAlert";
 
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -75,6 +76,8 @@ export default function ArtistDashboard(): React.JSX.Element {
 
       {/* CORE BENTO GRID */}
       <div className="grid grid-cols-1 gap-4 xl:gap-8 lg:grid-cols-12 xl:grid-cols-13">
+        <UnreadMessagesAlert className="col-span-1 lg:col-span-12 xl:col-span-13" />
+
         {!upNextRehearsal && !upNextProject && (
           <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
             <SectionHeader

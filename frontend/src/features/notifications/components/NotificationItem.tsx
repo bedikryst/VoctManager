@@ -13,6 +13,7 @@ import {
   Headphones,
   ChevronRight,
   ClipboardCheck,
+  MessageCircle,
 } from "lucide-react";
 
 import type { NotificationDTO } from "../types/notifications.dto";
@@ -166,6 +167,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           pillClass: infoPill,
           readBg: infoReadBg,
         };
+      case "MESSAGE_RECEIVED":
+        return {
+          icon: MessageCircle,
+          color: "text-cyan-600",
+          bg: "bg-cyan-50 border-cyan-100",
+          pillClass: infoPill,
+          readBg: infoReadBg,
+        };
       case "SYSTEM_ALERT":
         return {
           icon: AlertTriangle,
@@ -190,6 +199,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
   const navigateToContext = () => {
     const type = notification.notification_type;
+
+    if (notification.notification_type === "MESSAGE_RECEIVED") {
+      return navigate(`/panel/messages/${notification.metadata.thread_id}`);
+    }
 
     if (type === "MATERIAL_UPLOADED") {
       return navigate(
@@ -269,6 +282,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       projectName = notification.metadata.project_name;
       subLabel = notification.metadata.artist_name;
       message = notification.metadata.action_details;
+      break;
+    case "MESSAGE_RECEIVED":
+      projectName = notification.metadata.title;
+      subLabel = notification.metadata.sender_name;
+      message = notification.metadata.snippet;
       break;
   }
 

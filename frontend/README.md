@@ -46,6 +46,7 @@ src/
 │   ├── dashboard/    # Bento dashboard data hooks
 │   ├── logistics/    # Locations, travel, venue management
 │   ├── materials/    # Sheet music + reference audio distribution
+│   ├── messages/     # Async conductor/chorister conversation threads
 │   ├── notifications/# Web push (VAPID) + transactional email log
 │   ├── projects/     # Concert projects, casting, run sheets
 │   ├── rehearsals/   # Rehearsal scheduling + attendance

@@ -58,6 +58,7 @@ class NotificationTemplateRegistry:
         'ATTENDANCE_SUBMITTED': _('Attendance Submitted'),
         'CUSTOM_ADMIN_MESSAGE': _('New message from management'),
         'NOTIFICATION_READ_RECEIPT': _('Your message has been read'),
+        'MESSAGE_RECEIVED': _('New message in your conversation'),
     }
 
     @classmethod

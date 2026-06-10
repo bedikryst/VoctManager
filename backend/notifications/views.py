@@ -228,12 +228,19 @@ class NotificationPreferenceAPIView(views.APIView):
             NotificationType.ABSENCE_REQUESTED.value,
         }
 
+        # Project-channel push is an opt-in per channel (ChannelMembership.push_enabled),
+        # not a global preference — keep it out of the preferences matrix.
+        HIDDEN_FROM_PREFS = {
+            NotificationType.CHANNEL_MESSAGE.value,
+        }
+
         DEFAULT_EMAIL_TRUE = {
             NotificationType.PROJECT_INVITATION.value,
             NotificationType.PROJECT_CANCELLED.value,
             NotificationType.REHEARSAL_SCHEDULED.value,
             NotificationType.REHEARSAL_UPDATED.value,
             NotificationType.REHEARSAL_CANCELLED.value,
+            NotificationType.MESSAGE_RECEIVED.value,
         }
 
         DEFAULT_PUSH_FALSE = {
@@ -244,6 +251,8 @@ class NotificationPreferenceAPIView(views.APIView):
         prefs = {p.notification_type: p for p in NotificationPreference.objects.filter(user=request_user(request))}
         data = []
         for choice in NotificationType:
+            if choice.value in HIDDEN_FROM_PREFS:
+                continue
             if choice.value in MANAGER_ONLY and not is_manager:
                 continue
 

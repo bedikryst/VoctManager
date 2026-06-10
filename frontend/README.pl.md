@@ -46,6 +46,7 @@ src/
 │   ├── dashboard/    # Hooki danych dashboardu Bento
 │   ├── logistics/    # Lokalizacje, podróże, zarządzanie miejscami
 │   ├── materials/    # Dystrybucja nut + audio referencyjnego
+│   ├── messages/     # Asynchroniczne wątki rozmów dyrygent/chórzysta
 │   ├── notifications/# Web push (VAPID) + log emaili transakcyjnych
 │   ├── projects/     # Projekty koncertowe, casting, arkusze produkcyjne
 │   ├── rehearsals/   # Planowanie prób + obecność

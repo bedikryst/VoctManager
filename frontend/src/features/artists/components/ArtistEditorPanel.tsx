@@ -18,7 +18,7 @@ import { Button } from "@ui/primitives/Button";
 import { Input } from "@ui/primitives/Input";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useArtistForm } from "../hooks/useArtistForm";
-import { SendNotificationModal } from "./SendNotificationModal";
+import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
 
 interface ArtistEditorPanelProps {
   isOpen: boolean;
@@ -124,15 +124,15 @@ export default function ArtistEditorPanel({
                     type="button"
                     onClick={() => setShowNotifyModal(true)}
                     title={t(
-                      "artists.editor.send_notification",
-                      "Wyślij powiadomienie",
+                      "artists.editor.message_artist",
+                      "Napisz wiadomość",
                     )}
                     className="flex items-center gap-1.5 text-xs font-semibold text-ethereal-amethyst bg-white hover:bg-ethereal-amethyst/10 border border-ethereal-amethyst/30 shadow-sm transition-all px-3 py-2 rounded-xl active:scale-95"
                   >
                     <Send size={14} />
                     {t(
-                      "artists.editor.send_notification",
-                      "Wyślij powiadomienie",
+                      "artists.editor.message_artist",
+                      "Napisz wiadomość",
                     )}
                   </button>
                 )}
@@ -479,10 +479,12 @@ export default function ArtistEditorPanel({
             />
 
             {artist && (
-              <SendNotificationModal
+              <NewThreadModal
                 isOpen={showNotifyModal}
                 onClose={() => setShowNotifyModal(false)}
-                artist={artist}
+                isManager
+                presetArtistId={artist.id}
+                presetArtistName={`${artist.first_name} ${artist.last_name}`}
               />
             )}
           </motion.div>

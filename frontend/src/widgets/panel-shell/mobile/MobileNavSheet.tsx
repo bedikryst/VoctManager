@@ -34,6 +34,7 @@ import {
   Label,
 } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
+import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { useNavigationAura } from "../hooks/useNavigationAura";
 
@@ -226,7 +227,7 @@ export const MobileNavSheet = ({
                               )}
                               <span
                                 className={cn(
-                                  "grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors duration-200",
+                                  "relative grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors duration-200",
                                   isActive
                                     ? "bg-ethereal-gold/10 text-ethereal-gold"
                                     : "text-ethereal-graphite/60 group-hover/m-link:text-ethereal-ink",
@@ -237,6 +238,9 @@ export const MobileNavSheet = ({
                                   strokeWidth={isActive ? 2.25 : 1.75}
                                   aria-hidden="true"
                                 />
+                                {link.to === "/panel/messages" && (
+                                  <UnreadMessagesBadge className="right-0 top-0" />
+                                )}
                               </span>
                               <Label
                                 size="base"

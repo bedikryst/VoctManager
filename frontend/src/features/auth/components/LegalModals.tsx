@@ -113,6 +113,33 @@ export const LegalModal: React.FC<LegalModalProps> = ({
   );
 };
 
+/*
+ * ───────────────────────────────────────────────────────────────────────────
+ * RODO — BRUDNOPIS (do dokończenia później; NIE jest to jeszcze treść prawna)
+ * To jest polityka prywatności *aplikacji panelu* — osobny dokument niż RODO
+ * strony publicznej (web/). Poniżej notatki Claude'a do sekcji o KOMUNIKACJI
+ * WEWNĘTRZNEJ (moduł `messaging` + `notifications`), do spisania na czysto:
+ *
+ * 1. Nowa kategoria danych: TREŚĆ WIADOMOŚCI w aplikacji (wątki chórzysta↔zarząd).
+ *    To dane osobowe (treść korespondencji). Przechowywana w bazie (messaging_*).
+ * 2. Cel + podstawa: komunikacja organizacyjna zespołu. Prawdopodobnie art. 6 ust.1
+ *    lit. f RODO (prawnie uzasadniony interes) — DO POTWIERDZENIA z prawnikiem.
+ * 3. Metadane: znacznik odczytu (last_read_at) per uczestnik; przypisanie wątku
+ *    do dyrygenta (assignee). Powiadomienia o nowej wiadomości (in-app/e-mail/push).
+ * 4. Odbiorcy/podmioty przetwarzające (kanały dostarczania powiadomień):
+ *      • e-mail → ESP Resend (treść powiadomienia / fragment wiadomości w mailu),
+ *      • Web Push → VAPID (self-hosted),
+ *      • mobile Push → Google FCM = TRANSFER do Google (do ujawnienia w polityce).
+ *    Sama treść wątku NIE jest wysyłana do WhatsApp/third-party (świadomie odrzucone).
+ * 5. Retencja + prawo do usunięcia: przy usunięciu konta (sygnał
+ *    `account_soft_deleted`) treść wiadomości jest zacierana ("[treść usunięta]"),
+ *    a wątki, w których użytkownik był artystą, są soft-deletowane
+ *    (impl: backend/messaging/signals.py). Do opisania okresu retencji wątków
+ *    aktywnych uczestników (obecnie: bezterminowo do usunięcia konta).
+ * 6. TODO: dodać widoczną sekcję "Komunikacja wewnętrzna" do PrivacyContent +
+ *    klucze i18n (pl/en/fr); wzmianka o push przez Google FCM przy "recipients".
+ * ───────────────────────────────────────────────────────────────────────────
+ */
 const PrivacyContent: React.FC = () => {
   const { t } = useTranslation();
 

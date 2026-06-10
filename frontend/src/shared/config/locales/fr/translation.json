@@ -973,6 +973,7 @@
         "crew": "Équipe Technique",
         "locations": "Lieux",
         "materials": "Matériel d'étude",
+        "messages": "Messages",
         "projects": "Gestion des Projets",
         "resources": "Base de Connaissances",
         "schedule": "Mon Calendrier"
@@ -2191,6 +2192,7 @@
         "PARTICIPATION_RESPONSE": "Réponse de l'artiste au projet",
         "ATTENDANCE_SUBMITTED": "Infos de présence de l'artiste",
         "CUSTOM_ADMIN_MESSAGE": "Message direct de la direction",
+        "MESSAGE_RECEIVED": "Nouveau message",
         "NOTIFICATION_READ_RECEIPT": "Message lu par l'artiste"
       }
     }

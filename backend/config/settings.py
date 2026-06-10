@@ -93,6 +93,7 @@ INSTALLED_APPS = [
     'roster',
     'archive',
     'notifications',
+    'messaging',
     'logistics',
     'documents',
     'payments',

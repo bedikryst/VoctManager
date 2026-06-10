@@ -1,0 +1,17 @@
+{% load i18n %}
+VoctManager — {% blocktranslate trimmed with sender=metadata.sender_name %}New message from {{ sender }}{% endblocktranslate %}
+
+---
+
+{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name_vocative|default:first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+
+{{ metadata.title }}
+
+{{ metadata.message }}
+
+{% translate "Open conversation" %}:
+{{ metadata.cta_url|default:site_url }}
+
+---
+{% translate "With warmest regards," %}
+{% translate "The VoctEnsemble Team" %}

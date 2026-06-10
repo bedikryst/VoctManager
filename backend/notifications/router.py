@@ -15,6 +15,7 @@ from .tasks import send_push_notification_task
 # Per-type override map. Falls back to system_notification for everything else.
 _EMAIL_TEMPLATE_MAP: dict[str, str] = {
     NotificationType.CUSTOM_ADMIN_MESSAGE: "custom_admin_message",
+    NotificationType.MESSAGE_RECEIVED: "message_received",
 }
 
 
