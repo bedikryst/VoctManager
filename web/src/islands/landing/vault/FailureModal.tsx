@@ -90,9 +90,10 @@ export function FailureModal(): React.JSX.Element | null {
           <BrandGlyph />
         </div>
         <div className="failure-kicker micro">VoctEnsemble · cykl MMXXVI</div>
-        <h1 className="failure-title" id="failure-title">
+        {/* Not an <h1>: the page's h1 is the hero title — overlays must not add more. */}
+        <p className="failure-title" id="failure-title">
           Płatność nie<br />doszła do skutku.
-        </h1>
+        </p>
         <p className="failure-strap">
           Przepraszamy, płatność nie mogła zostać przetworzona. Twoje środki nie zostały
           pobrane. Prosimy spróbować ponownie lub wybrać inną metodę.

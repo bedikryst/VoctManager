@@ -197,6 +197,9 @@ REST_FRAMEWORK = {
         # only ever reaches the foundation's own inbox, so the abuse surface is
         # inbox/DB flooding. Capped low, but loose enough for shared NAT.
         'patron_interest': '60/hour',
+        # Read-only public aggregate (settled donations) behind a 60s response
+        # cache; the limit only guards against deliberate cache-busting floods.
+        'donation_progress': '60/minute',
     }
 }
 
@@ -412,6 +415,15 @@ AXEPTA_FAILURE_RETURN_URL = env('AXEPTA_FAILURE_RETURN_URL', default='https://vo
 # any source IP not in this list. Leave empty to rely on signature verification
 # alone (the canonical IP allowlist belongs at the nginx tier).
 AXEPTA_WEBHOOK_ALLOWED_IPS = env.list('AXEPTA_WEBHOOK_ALLOWED_IPS', default=[])
+
+# --- DONATION PROGRESS (public aggregate behind the landing vault) ---
+# Campaign goal (PLN) reported by /api/payments/donations/progress/ so the
+# landing's progress rail and the backend cannot drift apart.
+DONATION_GOAL_PLN = env.int('DONATION_GOAL_PLN', default=20000)
+# Conservative static rate used ONLY to fold (rare) EUR donations into the PLN
+# progress total. Display approximation, not financial reporting — accounting
+# uses the gateway settlement records, never this.
+DONATION_EUR_TO_PLN_RATE = env('DONATION_EUR_TO_PLN_RATE', default='4.00')
 
 FIREBASE_CREDENTIALS_PATH = os.getenv('FIREBASE_CREDENTIALS_PATH')
 VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')

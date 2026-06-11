@@ -5,5 +5,5 @@
   "updatedAt": "2026-05-11T18:00:00+02:00",
   "currency": "PLN",
   "source": "zrzutka.pl/7dewdj",
-  "_note": "Edytuj raised / donors ręcznie albo podłącz cron z Zrzutki. Strona odświeża dane przy każdym otwarciu (cache: no-store)."
+  "_note": "BASELINE OFFLINE: tylko zrzutka + przelewy ręczne. Wpłaty online (Axepta) dolicza automatycznie /api/payments/donations/progress/ — NIE wpisuj ich tutaj, bo policzą się podwójnie. Strona sumuje oba źródła przy każdym otwarciu."
 }

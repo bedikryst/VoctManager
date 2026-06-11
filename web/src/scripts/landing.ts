@@ -340,27 +340,24 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
 }
 
 // ── Manifest "raking light" ─────────────────────────────────────────────────────────────────
-// The Nawa metaphor made literal: one slow shaft of warm light holds at ~40% of the viewport;
+// The Nawa metaphor made literal: one slow shaft of warm light holds at ~45% of the viewport;
 // as you scroll, each manifest line passes through it, lifts out of half-light to full ink
 // (with a faint gold bloom at the peak), and stays gently lit once the light has passed —
-// "sacrum nie zdobi, odsłania". The closing italic word blooms when the beam rests on it.
-// Replaces the dead `animation-timeline` ink choreography; reduced motion → static full ink (CSS).
+// "sacrum nie zdobi, odsłania". LIGHT ONLY: colour and text-shadow, never the weight axis —
+// animating wght changes glyph advance widths and reflows the whole line (the "jumping text"
+// defect). The answer group ("Odsłania.") is entirely class-driven: its entrance + one-shot
+// bloom live in CSS, keyed to `.is-lit`/`.is-settled` set here.
 function setupManifestRake(root: HTMLElement, reduce: boolean): void {
   if (reduce) return;
   const manifest = root.querySelector<HTMLElement>(".manifest");
   if (!manifest) return;
-  // ManifestSection.astro markup: `.manifest-line-group` > `.manifest-roman` + `.manifest-statement`
-  // > `.manifest-text-inner` + (optional) `.manifest-emphasis` on `.is-closing`. The earlier
-  // implementation queried `.manifest-stanza` / `.manifest-phrase` / `.manifest-number` and
-  // therefore did nothing — the raking-light + ink-emergence choreography was dead code.
-  // The glow now emanates from the words themselves (textShadow + wght breath + per-word
-  // stagger) — there is no backdrop light shaft. Sacred minimalism: the text IS the source.
   const lines = Array.from(manifest.querySelectorAll<HTMLElement>(".manifest-line-group"));
   if (!lines.length) return;
 
   // Split each statement into word-spans once so the active line can stagger words in
-  // under the raking light (Awwwards-grade kinetic typography, 2026: variable-font weight
-  // + per-word entry instead of single opacity-fade). Preserves whitespace between words.
+  // under the raking light (opacity + lift per word — no blur, no weight axis).
+  // Preserves whitespace between words. The answer group has no .manifest-text-inner,
+  // so it is naturally skipped here.
   lines.forEach((line) => {
     const text = line.querySelector<HTMLElement>(".manifest-text-inner");
     if (!text || text.dataset.split === "1") return;
@@ -377,9 +374,16 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
   });
 
   const LIT_COLOR = [22, 21, 20]; // var(--ink)
-  const DIM_COLOR = [200, 195, 185]; // light beige, fades into var(--paper)
+  const DIM_COLOR = [138, 131, 118]; // readable half-light (old 200,195,185 was ghost-gray)
   const SETTLED = 0.32;
   const passed = new Array<boolean>(lines.length).fill(false);
+
+  // Touch: the cursorless rake read as a defect — stop a swipe mid-section and the
+  // unlit stanzas sat in flat gray with the emphasis half-blurred, looking like text
+  // that failed to load. On coarse pointers the rake degrades to a binary reveal:
+  // a line lights fully (class-driven, CSS transitions) once its top crosses 85% of
+  // the viewport and stays lit. No per-frame color/wght/textShadow writes at all.
+  const coarse = coarsePointer();
 
   let ticking = false;
   let active = false;
@@ -394,6 +398,13 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
     const rects = lines.map((line) => line.getBoundingClientRect());
     lines.forEach((line, i) => {
       const r = rects[i];
+      if (coarse) {
+        if (!passed[i] && r.top < vh * 0.85) {
+          passed[i] = true;
+          line.classList.add("is-lit", "is-settled");
+        }
+        return;
+      }
       const cy = r.top + r.height / 2;
       const d = Math.abs(cy - beamY);
       let lit = d < reach ? 1 - d / reach : 0;
@@ -401,18 +412,17 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
       if (passed[i]) lit = Math.max(lit, SETTLED);
 
       // `is-lit` arms the per-word stagger; `is-settled` keeps words present after the beam
-      // has passed (CSS handles the rest — both states unblur + drop translateY/opacity).
-      line.classList.toggle("is-lit", lit > 0.34);
+      // has passed. The answer's lit threshold is higher: it resolves only when the beam
+      // actually rests on it — a beat after stanza III, never alongside it.
+      const isAnswer = line.classList.contains("manifest-answer");
+      line.classList.toggle("is-lit", lit > (isAnswer ? 0.55 : 0.34));
       line.classList.toggle("is-settled", passed[i]);
+      if (isAnswer) return; // entrance + bloom are class-driven in CSS — no inline writes
 
       const statement = line.querySelector<HTMLElement>(".manifest-statement");
       if (statement) {
         const c = LIT_COLOR.map((v, k) => Math.round(DIM_COLOR[k] + (v - DIM_COLOR[k]) * lit));
         statement.style.color = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
-        // wght breath: rests at 320, peaks 480 at the beam, decays to ~360 settled — gives the
-        // line an audible "inhale" as the light meets it. Cormorant Garamond Variable supports 300-700.
-        const peak = 320 + lit * 160;
-        statement.style.setProperty("--wght", peak.toFixed(0));
         const bloom = lit > 0.62 ? (lit - 0.62) / 0.38 : 0;
         statement.style.textShadow =
           bloom > 0
@@ -423,22 +433,6 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
       const roman = line.querySelector<HTMLElement>(".manifest-roman");
       if (roman) {
         roman.style.opacity = (0.22 + lit * 0.55).toFixed(3);
-        roman.style.transform = `scale(${(1 + lit * 0.04).toFixed(3)})`;
-      }
-
-      if (line.classList.contains("is-closing")) {
-        const em = line.querySelector<HTMLElement>(".manifest-emphasis");
-        if (em) {
-          // The closing "Odsłania." gets a larger wght swing + letter-spacing breath — it's the
-          // pivot of the manifest (sacrum nie zdobi → odsłania). Peaks late, stays expanded.
-          em.style.fontVariationSettings = `"wght" ${(360 + lit * 200).toFixed(0)}`;
-          em.style.letterSpacing = `${(-0.005 + lit * 0.02).toFixed(4)}em`;
-          const bloom = lit > 0.4 ? (lit - 0.4) / 0.6 : 0;
-          em.style.textShadow =
-            bloom > 0
-              ? `0 0 ${(bloom * 22).toFixed(0)}px rgba(198, 164, 91, ${(bloom * 0.45).toFixed(2)})`
-              : "none";
-        }
       }
     });
   };
@@ -468,6 +462,56 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
     io.disconnect();
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("resize", onScroll);
+  });
+}
+
+// ── Interlude breath: scroll-driven knot bloom while the ambient is silent ──────────────────
+// The aether knots are audio-reactive (--knot-intensity, written by useChantAudio's analyser),
+// but only visitors who chose voice ever saw them alive — for everyone else they sat inert.
+// Silent visits now drive the same custom property from smoothed scroll velocity, so the
+// bloom + brightness flare with movement through the rite and dim like an ember at rest.
+// Ownership: the analyser keeps the var whenever the ambient plays (body.audio-on guards
+// every write here), so the two drivers never fight.
+function setupInterludeBreath(root: HTMLElement, reduce: boolean): void {
+  if (reduce) return;
+  const knots = Array.from(root.querySelectorAll<HTMLElement>(".aether-knot"));
+  if (!knots.length) return;
+
+  let lastY = window.scrollY;
+  let level = 0;
+  let raf: number | null = null;
+
+  const tick = (): void => {
+    raf = null;
+    if (document.body.classList.contains("audio-on")) {
+      level = 0;
+      return; // analyser owns --knot-intensity while the ambient plays
+    }
+    const y = window.scrollY;
+    const velocity = Math.min(1, Math.abs(y - lastY) / 28);
+    lastY = y;
+    // Attack fast, release slow — flare with the gesture, fade like a candle.
+    level += (velocity - level) * (velocity > level ? 0.3 : 0.045);
+    const settled = level < 0.006;
+    const value = settled ? "0" : level.toFixed(3);
+    const vh = window.innerHeight;
+    for (const knot of knots) {
+      const r = knot.getBoundingClientRect();
+      if (r.bottom < -120 || r.top > vh + 120) continue;
+      knot.style.setProperty("--knot-intensity", value);
+    }
+    if (!settled) raf = window.requestAnimationFrame(tick);
+  };
+
+  const onScroll = (): void => {
+    if (raf === null) raf = window.requestAnimationFrame(tick);
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  cleanups.push(() => {
+    window.removeEventListener("scroll", onScroll);
+    if (raf !== null) window.cancelAnimationFrame(raf);
+    knots.forEach((knot) => knot.style.setProperty("--knot-intensity", "0"));
   });
 }
 
@@ -531,6 +575,7 @@ function bind(): void {
   setupLenisAnchors();
   setupKinetic(root, reduce);
   setupManifestRake(root, reduce);
+  setupInterludeBreath(root, reduce);
   setupSilenceMoment(root, reduce);
   setupInteractions(root);
 }

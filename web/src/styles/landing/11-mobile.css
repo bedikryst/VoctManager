@@ -127,8 +127,10 @@
       line-height: 1.06;
     }
 
-    .manifest-line-group.is-closing .manifest-emphasis {
-      margin-top: clamp(26px, 7vw, 40px);
+    /* The answer rides closer to stanza III on phones — same negative-pull device
+       as desktop, scaled to the tighter mobile stanza gap. */
+    .manifest-line-group.manifest-answer {
+      margin-top: calc(-1 * clamp(14px, 4vw, 24px));
     }
 
     /* The silence beat keeps its breath but stops being a 280px void. */

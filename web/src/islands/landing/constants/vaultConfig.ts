@@ -20,7 +20,13 @@ export interface VaultConfig {
   readonly currency: "PLN";
   readonly recipient: VaultRecipient;
   readonly zrzutka: { readonly url: string };
-  readonly api: { readonly initiateDonation: string; readonly patronInterest: string };
+  readonly api: {
+    readonly initiateDonation: string;
+    readonly patronInterest: string;
+    /** Live aggregate of SETTLED gateway donations (sum + distinct donors). */
+    readonly progress: string;
+  };
+  /** Static offline baseline (zrzutka + manual bank transfers), merged with the API. */
   readonly progress: { readonly source: string };
 }
 
@@ -42,6 +48,7 @@ export const VAULT_CONFIG: VaultConfig = {
   api: {
     initiateDonation: "/api/payments/donations/initiate/",
     patronInterest: "/api/payments/patronage/interest/",
+    progress: "/api/payments/donations/progress/",
   },
   progress: {
     source: "/donation-progress.json",

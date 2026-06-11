@@ -431,6 +431,39 @@
     line-height: 1.6;
   }
 
+  /* ── The open card: "Następne wybrzmienie" ─────────────────────────────────
+     Continues the register after the past concerts — same grid (shares
+     .path-entry), but reads as a page still being written: ghosted numeral,
+     candle-toned tag, a permanent faint gold wash instead of the hover one.
+     This is where the page's narrative resolves: pamięć → następny zależy
+     od Ciebie. */
+  .path-next {
+    background: linear-gradient(90deg, rgba(198, 164, 91, 0.05), rgba(198, 164, 91, 0.015));
+    border-bottom: 1px solid rgba(198, 164, 91, 0.3);
+  }
+
+  .path-next .path-entry-roman {
+    opacity: 0.5;
+  }
+
+  .path-next .path-entry-tag {
+    color: var(--candle);
+  }
+
+  .path-next .path-entry-title {
+    color: var(--ink-soft);
+  }
+
+  .path-next:hover .path-entry-title {
+    color: var(--candle);
+  }
+
+  .path-next-cta {
+    justify-self: start;
+    margin-top: clamp(10px, 1.2vw, 18px);
+    color: var(--candle);
+  }
+
   /* Mobile: collapse the two-rail layout to a single column. Roman + year + tag
      ride along the top of each entry as a slimmer header band. */
   @media (max-width: 720px) {
@@ -654,7 +687,7 @@
     align-items: baseline;
     gap: 11px;
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: 11.5px;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     opacity: 0.74;
@@ -663,7 +696,7 @@
   .aether-inscription .roman {
     font-family: var(--serif);
     font-style: italic;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 300;
     letter-spacing: 0;
     transform: translateY(1px);
@@ -700,8 +733,12 @@
 
   .aether-knot {
     position: relative;
-    width: 180px;
-    height: 60px;
+    /* Enlarged (180×60 → clamp): at reading distance the hairline knots were nearly
+       invisible — the interlude band read as blank paper. Now that the bloom is also
+       scroll-driven (setupInterludeBreath), the knot is the interlude's living center
+       and earns the larger stage. Clamp keeps it phone-safe. */
+    width: clamp(200px, 24vw, 280px);
+    height: clamp(66px, 8vw, 94px);
     flex-shrink: 0;
     overflow: visible;
     /* Audio-reactive bloom â€” TANIO:
@@ -751,8 +788,8 @@
     min-height: 60vh;
   }
   .aether-interlude[data-variant="passage"] .aether-knot {
-    width: 220px;
-    height: 80px;
+    width: clamp(240px, 30vw, 360px);
+    height: clamp(86px, 11vw, 130px);
   }
 
   .ascend-wisp {
@@ -786,8 +823,8 @@
     min-height: 60vh;
   }
   .aether-interlude[data-variant="memory"] .aether-knot {
-    width: 220px;
-    height: 80px;
+    width: clamp(240px, 30vw, 360px);
+    height: clamp(86px, 11vw, 130px);
   }
   .aether-interlude[data-variant="memory"] .aether-line {
     opacity: 0.12;

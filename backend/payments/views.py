@@ -4,9 +4,13 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
+from decimal import ROUND_DOWN, Decimal
 from uuid import UUID
 
 from django.conf import settings
+from django.db.models import Count, Sum
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import status
 from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.permissions import AllowAny
@@ -16,7 +20,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .models import Donation
+from .models import Donation, DonationCurrency, DonationStatus
 from .serializers import (
     DonationStatusSerializer,
     InitiateDonationSerializer,
@@ -138,6 +142,50 @@ class DonationStatusView(APIView):
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(DonationStatusSerializer(donation).data)
+
+
+class DonationProgressView(APIView):
+    """
+    Public, PII-free aggregate behind the landing vault's progress rail: the sum
+    and distinct-donor count of SETTLED donations, plus the campaign goal. The
+    frontend merges this with its static offline baseline (zrzutka + manual bank
+    transfers), so each gateway payment moves the rail without any manual edit.
+
+    EUR donations are folded in at a conservative static display rate
+    (`DONATION_EUR_TO_PLN_RATE`) — this endpoint is presentation, not accounting.
+    The response is cached for 60s: the donor who just paid sees the rail move on
+    their next visit, while the aggregate query runs at most once a minute.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'donation_progress'
+
+    @method_decorator(cache_page(60))
+    def get(self, request: Request) -> Response:
+        rows = (
+            Donation.objects
+            .filter(status=DonationStatus.SETTLED)
+            .values('currency')
+            .annotate(total=Sum('amount'), donors=Count('email', distinct=True))
+        )
+
+        eur_rate = Decimal(settings.DONATION_EUR_TO_PLN_RATE)
+        raised = Decimal('0')
+        donors = 0
+        for row in rows:
+            total = row['total'] or Decimal('0')
+            if row['currency'] == DonationCurrency.EUR:
+                total *= eur_rate
+            raised += total
+            donors += row['donors']
+
+        return Response({
+            'raised': int(raised.quantize(Decimal('1'), rounding=ROUND_DOWN)),
+            'donors': donors,
+            'goal': settings.DONATION_GOAL_PLN,
+            'currency': DonationCurrency.PLN.value,
+        })
 
 
 class AxeptaWebhookView(APIView):

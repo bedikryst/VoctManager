@@ -14,8 +14,6 @@
       linear-gradient(180deg, var(--paper-soft) 0%, var(--paper) 100%);
     border-top: 1px solid var(--line);
     overflow: hidden;
-    view-timeline-name: --coda-scroll;
-    view-timeline-axis: block;
   }
 
   .coda-container {
@@ -71,60 +69,18 @@
     letter-spacing: 0.005em;
     color: var(--candle);
     text-align: center;
+  }
+
+  /* The per-letter wave + tail emergence are owned by setupKinetic (landing.ts) —
+     the earlier `@supports (animation-timeline)` CSS choreography here double-drove
+     the same letters once browsers shipped native scroll-driven animations (the JS
+     inline writes won, the CSS animation re-rastered glyphs for nothing). Removed.
+     The tail hides only while the JS driver is live (html.voct-motion), so no-JS and
+     reduced-motion visitors always see "brzmi dalej". */
+  html.voct-motion .coda-tail {
     opacity: 0;
   }
 
-  @supports (animation-timeline: scroll()) {
-    @media (prefers-reduced-motion: no-preference) {
-
-      /* Perf-hardened wght scrub. `will-change: font-variation-settings` was a hint
-         the browser cannot honour — wght is a paint-not-composite property, so the
-         "promotion" was misleading and added overhead. Removed. The swing is also
-         halved (380->480->380, 100 units instead of 200): at 280px Cormorant each
-         wght unit triggers a glyph re-raster, and 100 units lands as a quieter
-         breath that still reads as "ciężar" without choking GPU on slow scroll. */
-      .coda-headline {
-        contain: layout style paint;
-      }
-
-      .coda-letter {
-        font-variation-settings: "wght" var(--wght);
-        animation: coda-letter-pulse linear both;
-        animation-timeline: --coda-scroll;
-      }
-
-      .coda-letter:nth-child(1) { animation-range: entry  0% cover 50%; }
-      .coda-letter:nth-child(2) { animation-range: entry  8% cover 58%; }
-      .coda-letter:nth-child(3) { animation-range: entry 16% cover 66%; }
-      .coda-letter:nth-child(4) { animation-range: entry 24% cover 74%; }
-      .coda-letter:nth-child(5) { animation-range: entry 32% cover 82%; }
-      .coda-letter:nth-child(6) { animation-range: entry 40% cover 90%; }
-
-      @keyframes coda-letter-pulse {
-        0%   { --wght: 380; }
-        45%  { --wght: 480; }
-        100% { --wght: 380; }
-      }
-
-      /* "brzmi dalej." â€” italic echo, wchodzi po falowaniu liter. */
-      .coda-tail {
-        animation: coda-tail-emerge linear both;
-        animation-timeline: --coda-scroll;
-        animation-range: entry 50% cover 95%;
-      }
-
-      @keyframes coda-tail-emerge {
-        0%   { opacity: 0; transform: translateY(18px); }
-        40%  { opacity: 1; transform: translateY(0); }
-        100% { opacity: 1; transform: translateY(0); }
-      }
-    }
-  }
-
-  @supports not (animation-timeline: scroll()) {
-    .coda-tail { opacity: 1; }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .coda-tail { opacity: 1; }
+    html.voct-motion .coda-tail { opacity: 1; }
   }

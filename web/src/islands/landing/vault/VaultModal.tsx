@@ -114,9 +114,15 @@ export function VaultModal(): React.JSX.Element {
                 />
               </div>
               <div className="vault-progress-meta">
-                <span>Zbiórka otwarta · cykl Concerts Spirituels</span>
+                {/* Donors lead when known — the count is the social proof; an early-stage
+                    bar percentage alone reads as emptiness, not momentum. */}
                 <span>
-                  <strong>cel {formatMoney(VAULT_CONFIG.goalAmount, "PLN")}</strong>
+                  {progress && progress.donors > 0
+                    ? `Zbiórka otwarta · ${progress.donors === 1 ? "1 darczyńca" : `${progress.donors} darczyńców`}`
+                    : "Zbiórka otwarta · cykl Concerts Spirituels"}
+                </span>
+                <span>
+                  <strong>cel {formatMoney(progress?.goal ?? VAULT_CONFIG.goalAmount, "PLN")}</strong>
                 </span>
               </div>
             </section>

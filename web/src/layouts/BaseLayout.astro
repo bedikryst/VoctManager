@@ -20,8 +20,10 @@ interface Props {
   description: string;
   /** Absolute path of this page, e.g. "/kontakt" — drives canonical + og:url. */
   path: string;
-  /** OG/Twitter share image (absolute path under the public root). */
-  image?: string;
+  /** OG/Twitter share image (absolute path under the build root). Required — the old
+      default pointed at /photos/…, a directory that does not exist in public/, so any
+      page relying on it shipped a 404 og:image. Every page now passes a real image. */
+  image: string;
   /** Optional class on <body> for page-level theming hooks. */
   bodyClass?: string;
   /**
@@ -38,7 +40,7 @@ const {
   title,
   description,
   path,
-  image = "/photos/kontakt-hero-1920.webp",
+  image,
   bodyClass = "",
   reveal = true,
 } = Astro.props;
@@ -60,12 +62,29 @@ const ogImage = new URL(image, SITE).href;
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
 
-    <!-- Self-hosted critical fonts — preloaded, GDPR-safe. -->
+    <!-- Self-hosted critical fonts — preloaded, GDPR-safe. The latin-ext subsets are
+         preloaded FIRST: this is a Polish-language site, so the diacritics (ą ć ę ł ń ó ś ż)
+         that live in latin-ext appear in every headline — without these preloads the hero's
+         "ł" in "głos" arrived by late discovery and repainted after first render. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/CormorantGaramond-Variable.latin-ext.woff2"
+      crossorigin
+    />
     <link
       rel="preload"
       as="font"
       type="font/woff2"
       href="/fonts/CormorantGaramond-Variable.latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/Inter-Variable.latin-ext.woff2"
       crossorigin
     />
     <link
@@ -87,6 +106,21 @@ const ogImage = new URL(image, SITE).href;
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+
+    <!-- Plausible Analytics — cookieless, EU-hosted (see /polityka-prywatnosci). The
+         `tagged-events` variant reports the `plausible-event-name=…` classes already wired
+         on CTAs/gate/vault. Auto-tracks pushState, so ClientRouter swaps count as pageviews.
+         Production only: in dev the data would be localhost noise. -->
+    {
+      import.meta.env.PROD && (
+        <script
+          is:inline
+          defer
+          data-domain="voctensemble.com"
+          src="https://plausible.io/js/script.tagged-events.js"
+        />
+      )
+    }
 
     <!-- Native cross-page transitions (View Transition API). -->
     <ClientRouter />

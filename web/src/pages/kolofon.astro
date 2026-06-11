@@ -10,18 +10,30 @@
  * @architecture Astro islands 2026
  * @module pages/kolofon
  */
+import { getImage } from "astro:assets";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { VaultIsland } from "../islands/landing/VaultIsland";
+import { bleedPair } from "../lib/photos";
 import "../styles/vault.css";
 
 const title = "Kolofon — VoctEnsemble · VoctFoundation";
 const description =
   "Kolofon strony VoctEnsemble — fonty, konstrukcja, prawa, autorzy. Pieczęć rzemiosła w jednym miejscu.";
+
+const ogImage = (
+  await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
+).src;
 ---
 
-<BaseLayout title={title} description={description} path="/kolofon" bodyClass="page-kolofon">
+<BaseLayout
+  title={title}
+  description={description}
+  path="/kolofon"
+  image={ogImage}
+  bodyClass="page-kolofon"
+>
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
   <SiteChrome current="/kolofon" tone="dark" />
 

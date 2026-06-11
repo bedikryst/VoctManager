@@ -64,66 +64,12 @@
     font-optical-sizing: auto;
   }
 
-  @supports (animation-timeline: scroll()) {
-    @media (prefers-reduced-motion: no-preference) {
-
-      /* â”€â”€â”€ Hero "oddech" â”€â”€â”€
-         WiÄ™kszy swing: 540 â†’ 300 na tytule, 620 â†’ 300 na akcencie zĹ‚otym.
-         Cormorant variable obsĹ‚uguje 300-700, wiÄ™c mamy zapas. */
-      .hero-title,
-      .hero-title > span {
-        font-variation-settings: "wght" var(--wght);
-        animation: hero-breath linear both;
-        animation-timeline: scroll(root);
-        animation-range: 0 90vh;
-        will-change: font-variation-settings;
-      }
-
-      .hero-title em {
-        font-variation-settings: "wght" var(--wght-em);
-        animation: hero-breath-em linear both;
-        animation-timeline: scroll(root);
-        animation-range: 0 90vh;
-        will-change: font-variation-settings;
-      }
-
-      @keyframes hero-breath {
-        0%   { --wght: 540; }
-        55%  { --wght: 380; }
-        100% { --wght: 300; }
-      }
-
-      @keyframes hero-breath-em {
-        0%   { --wght-em: 620; }
-        55%  { --wght-em: 380; }
-        100% { --wght-em: 300; }
-      }
-
-      /* â”€â”€â”€ Editorial headings â€” view-timeline lokalny per element â”€â”€â”€
-         KaĹĽdy heading scrubuje wagÄ™ przeciw swojej wĹ‚asnej przeprawie
-         przez viewport. Wchodzi mocniejszy (520), oddaje wagÄ™ do 320
-         gdy zatrzymuje siÄ™ na Ĺ›rodku â€” jak gĹ‚os ktĂłry wĹ‚aĹ›nie wybrzmiaĹ‚.
-         Wykluczone:
-         - threshold/vault/gratitude (overlaye, view-timeline by nie zaskoczyĹ‚)
-         - path-card-title (5 kart Ă— text-reshape per frame = niepotrzebny koszt)
-         - hero-strap/occasion (jednoczesnie z .hero-title te same klatki). */
-      .support-lede h2,
-      .ensemble h2,
-      .path h2,
-      .section-title,
-      .final-support h2 {
-        view-timeline-name: --breathe-self;
-        view-timeline-axis: block;
-        font-variation-settings: "wght" var(--wght);
-        animation: heading-breath linear both;
-        animation-timeline: --breathe-self;
-        animation-range: entry 0% cover 55%;
-      }
-
-      @keyframes heading-breath {
-        0%   { --wght: 520; }
-        100% { --wght: 320; }
-      }
-
-    }
-  }
+  /* ── Single kinetic driver ─────────────────────────────────────────────────
+     The hero breath, editorial-heading settle and coda wave are owned by ONE
+     system: scripts/landing.ts (setupKinetic), which writes inline
+     `font-variation-settings` on a rAF scroll loop with touch heuristics and
+     batched reads. The earlier `@supports (animation-timeline: scroll())` CSS
+     choreography here was written when native scroll-driven animations were
+     unsupported — by 2026 they run in Chrome/Edge/Firefox, so both systems were
+     driving the same glyphs every frame (the CSS animation churned --wght while
+     the JS inline writes won the cascade). Removed; JS is the only driver. */

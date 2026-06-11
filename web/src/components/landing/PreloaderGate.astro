@@ -31,7 +31,16 @@
       }
       STORE.setItem("voct.preloader.last-load", stamp);
     }
-    if (STORE.getItem("voct.preloader.seen") === "1") {
+    // Intent-carrying URLs (donation deep links, gateway returns, synthetic auditors)
+    // skip the rite before paint — mirrors wantsRiteSkipFromUrl in Preloader.tsx.
+    const params = new URLSearchParams(location.search);
+    const intent =
+      location.hash === "#wesprzyj" ||
+      location.hash === "#przelew" ||
+      params.has("donate") ||
+      params.has("donated") ||
+      params.has("nogate");
+    if (intent || STORE.getItem("voct.preloader.seen") === "1") {
       document.documentElement.classList.add("preloader-skip");
     }
   } catch (_) {

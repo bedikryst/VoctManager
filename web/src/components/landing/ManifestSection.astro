@@ -1,19 +1,18 @@
 ---
 /**
  * @file ManifestSection.astro
- * @description Three-stanza ensemble manifest. Redesigned for minimalist, premium, 
- * Awwwards-level aesthetics with rigid editorial grid and kinetic typography.
+ * @description Three-stanza ensemble manifest + the answer line. Rigid editorial grid;
+ *  the raking light (setupManifestRake in landing.ts) lifts each stanza from half-light
+ *  to full ink as it crosses the beam — colour and a faint gold bloom only, never the
+ *  weight axis (wght animation reflows glyph widths, which read as the text "jumping").
+ *  "Odsłania." is its own group: it arms independently, after stanza III has settled.
  * @architecture Astro islands 2026
  * @module components/landing/ManifestSection
  */
-import { MANIFEST_LINES } from "../../data/landing/manifestLines";
+import { MANIFEST_ANSWER, MANIFEST_LINES } from "../../data/landing/manifestLines";
 ---
 
 <section class="section manifest" id="manifest" aria-label="Manifest chóru VoctEnsemble">
-  {/* Pure text-emanating glow — the light comes FROM the words, not from a backdrop shaft.
-      "Sacrum nie zdobi, odsłania." (sacred doesn't ornament — it reveals): the text itself
-      is the source. See setupManifestRake in landing.ts for the per-line gold bloom + wght
-      breath + per-word stagger choreography. */}
   <div class="manifest-container">
     <div class="manifest-top reveal">
       <div class="manifest-meta-col">
@@ -28,17 +27,22 @@ import { MANIFEST_LINES } from "../../data/landing/manifestLines";
     <div class="manifest-content">
       {
         MANIFEST_LINES.map((line) => (
-          <div class:list={["manifest-line-group", "reveal", { "is-closing": line.closing }]}>
+          <div class="manifest-line-group reveal">
             <div class="manifest-roman">{line.index}</div>
             <p class="manifest-statement">
               <span class="manifest-text-inner">{line.text}</span>
-              {line.emphasis && (
-                <span class="manifest-emphasis">{line.emphasis}</span>
-              )}
             </p>
           </div>
         ))
       }
+
+      {/* The answer — no numeral (it is not a fourth thesis), its own beam trigger. */}
+      <div class="manifest-line-group manifest-answer reveal">
+        <div class="manifest-roman" aria-hidden="true"></div>
+        <p class="manifest-statement manifest-answer-statement">
+          <em class="manifest-emphasis">{MANIFEST_ANSWER}</em>
+        </p>
+      </div>
     </div>
   </div>
 </section>

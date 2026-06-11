@@ -25,7 +25,7 @@ const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as c
         żywe i mogą wybrzmieć na nowo w kolejnych przestrzeniach.
       </p>
 
-      <ol class="path-register" aria-label="Lista wcześniejszych koncertów">
+      <ol class="path-register" aria-label="Wcześniejsze koncerty cyklu">
         {
           PATHS.map((path, i) => (
             <li class="path-entry reveal">
@@ -65,6 +65,35 @@ const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as c
           ))
         }
       </ol>
+
+      {/* The register's open card — the narrative payoff of the whole section:
+          manifest → memory of past concerts → the next one depends on you. The
+          numeral continues the sequence; the entry stays "unwritten" until the
+          listeners write it. When a concert is scheduled, this card becomes its
+          announcement (title, date, place) and a new blank one takes its seat. */}
+      <aside class="path-entry path-next reveal" aria-label="Następny koncert cyklu">
+        <div class="path-entry-rail">
+          <span class="path-entry-roman">{ROMAN[PATHS.length]}</span>
+          <span class="path-entry-year">MMXXVI</span>
+          <span class="path-entry-tag">powstaje teraz</span>
+        </div>
+        <div class="path-entry-body">
+          <h3 class="path-entry-title">Następne wybrzmienie.</h3>
+          <p class="path-entry-place">Termin i przestrzeń wyznaczą darczyńcy</p>
+          <p class="path-entry-summary">
+            Ten koncert istnieje już w partyturach i próbach — brakuje mu tylko
+            przestrzeni, w której wybrzmi. Każda darowizna przybliża jego datę.
+          </p>
+          <a
+            class="primary-link path-next-cta plausible-event-name=path+next+wesprzyj"
+            href="#wesprzyj"
+            data-no-lenis
+            data-vault-open="100"
+          >
+            Pomóż mu wybrzmieć
+          </a>
+        </div>
+      </aside>
     </div>
   </div>
 </section>

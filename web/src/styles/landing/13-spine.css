@@ -101,6 +101,15 @@
     }
   }
 
+  /* 1201–1439px: the gutter is too narrow for the latin inscription — the active
+     "Lumen quaerit" label was overlapping the director copy and the bank card. Keep
+     the roman + tick (they fit the 5vw gutter); the latin name returns at ≥1440px. */
+  @media (max-width: 1439.98px) {
+    .movement-spine-latin {
+      display: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .movement-spine,
     .movement-spine a,

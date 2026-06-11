@@ -83,9 +83,10 @@ export function GratitudeModal(): React.JSX.Element | null {
           <BrandGlyph />
         </div>
         <div className="gratitude-kicker micro">VoctEnsemble · cykl MMXXVI</div>
-        <h1 className="gratitude-title" id="gratitude-title">
+        {/* Not an <h1>: the page's h1 is the hero title — overlays must not add more. */}
+        <p className="gratitude-title" id="gratitude-title">
           Twój głos<br />dołączył do chóru.
-        </h1>
+        </p>
         <p className="gratitude-strap">
           Dziękujemy. Niech ta muzyka wybrzmiewa dalej — także dzięki Tobie.
         </p>
