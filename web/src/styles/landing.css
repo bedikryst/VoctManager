@@ -11,7 +11,7 @@
 @import "./landing/01-foundation.css"; /* header, tokens, preloader, chrome, threshold, brand glyph */
 @import "./landing/02-hero-sections.css"; /* hero, CTA links, section/support/intro primitives */
 @import "./landing/03-manifest-rite.css"; /* manifest + image-rite (light) */
-@import "./landing/04-rooms-interludes.css"; /* director, ensemble, path, aether interludes, final-support */
+@import "./landing/04-rooms-interludes.css"; /* director, ensemble, path, final-support (aether interludes live in AetherInterlude.astro) */
 @import "./landing/05-coda.css"; /* coda — per-letter wght cascade */
 @import "./landing/06-footer.css"; /* site footer — inscriptio finalis */
 @import "./landing/07-responsive.css"; /* tablet (980) + phone (640) reactive media blocks */

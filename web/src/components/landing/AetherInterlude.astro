@@ -1,10 +1,33 @@
 ---
 /**
  * @file AetherInterlude.astro
- * @description Liturgical interlude between sections (I · Lumen quaerit, II · Vox memoriae,
- *  III · Sustinete nos). Renders an aether-knot SVG keyed to its variant — ascending wisps,
- *  concentric echo rings, or a vesica piscis. The `#ethereal-glow` filter is defined once in
- *  the "passage" SVG and referenced by id from the others (all three render on the page).
+ * @description Liturgical interlude between movements (I · Lumen quaerit, II · Vox memoriae,
+ *  III · Sustinete nos) — an illuminated-manuscript threshold. Each variant is a hand-drawn
+ *  aether knot that WRITES ITSELF on reveal (stroke-dash choreography), breathes perpetually,
+ *  and blooms with the chant (`--knot-intensity`, written by the audio analyser or the
+ *  scroll-breath fallback in landing.ts). A ghost folio numeral floats behind the knot and
+ *  the latin inscription receives a one-shot gilding sweep as the threshold materialises.
+ *
+ *  Variant geometry:
+ *   - passage  — breath waves part around a candle flame; a ray ascends; incense motes rise.
+ *   - memory   — a chant tetragram (four-line staff) carries diamond neumes that glow in
+ *                sequence outward from the flame, in time with expanding echo rings.
+ *   - offering — two circles draw themselves into a vesica piscis; the mandorla at their
+ *                intersection pulses like a shared, held breath.
+ *
+ *  Contracts honoured (do not break):
+ *   - `.aether-knot` + `--knot-intensity` — landing.ts setupInterludeBreath / audio analyser
+ *     write the custom property on this element only (registered `inherits: false`).
+ *   - `.reveal` / `.is-visible` — the landing IntersectionObserver drives the entrance.
+ *   - `html.voct-motion` — hidden pre-reveal states engage ONLY under this gate (JS live and
+ *     no reduced-motion), so no-JS and reduced-motion visitors always see the drawn state.
+ *   - Sibling margin rules (`.aether-interlude + section`) — the knot baseline IS the
+ *     boundary line of the following section.
+ *
+ *  Performance ethos (matches the landing): infinite animations are transform/opacity only,
+ *  the bloom is a prerendered radial gradient flipped via opacity (compositor-only), glow is
+ *  built from layered gradient circles — no per-frame Gaussian blur anywhere. Stroke-draw and
+ *  letter-spacing/gild transitions are one-shot, paid once at reveal.
  * @architecture Astro islands 2026
  * @module components/landing/AetherInterlude
  */
@@ -24,52 +47,99 @@ const { variant, roman, latin } = Astro.props;
     <span class="latin">{latin}</span>
   </span>
   <div class="aether-row">
+    <span class="aether-numeral">{roman}</span>
     <div class="aether-line"></div>
     <div class="aether-knot">
       {
         variant === "passage" && (
-          <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 240 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <defs>
-              <filter id="ethereal-glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
+              <linearGradient id="ag-ray" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0" stop-color="currentColor" stop-opacity="0.6" />
+                <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+              </linearGradient>
+              <radialGradient id="ag-halo-passage">
+                <stop offset="0" stop-color="currentColor" stop-opacity="0.55" />
+                <stop offset="0.45" stop-color="currentColor" stop-opacity="0.16" />
+                <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+              </radialGradient>
             </defs>
-            <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
-            <path class="knot-wave knot-wave-top" d="M 0,30 C 45,30 60,10 90,10 C 120,10 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
-            <path class="knot-wave knot-wave-bottom" d="M 0,30 C 45,30 60,50 90,50 C 120,50 135,30 180,30" stroke-width="0.75" stroke-opacity="0.5" />
-            <path class="knot-wave knot-harmonic-top" d="M 20,30 C 50,30 65,20 90,20 C 115,20 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
-            <path class="knot-wave knot-harmonic-bottom" d="M 20,30 C 50,30 65,40 90,40 C 115,40 130,30 160,30" stroke-width="0.5" stroke-opacity="0.3" />
-            <line class="ascend-wisp w1" x1="90" y1="50" x2="90" y2="34" stroke-width="0.6" stroke-opacity="0.6" />
-            <line class="ascend-wisp w2" x1="85" y1="50" x2="85" y2="40" stroke-width="0.35" stroke-opacity="0.4" />
-            <line class="ascend-wisp w3" x1="95" y1="50" x2="95" y2="40" stroke-width="0.35" stroke-opacity="0.4" />
-            <circle class="knot-light" cx="90" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
+            <path class="knot-draw d-base" pathLength="1" d="M 120 40 H 240" stroke-width="0.5" stroke-opacity="0.2" />
+            <path class="knot-draw d-base" pathLength="1" d="M 120 40 H 0" stroke-width="0.5" stroke-opacity="0.2" />
+            <path class="knot-draw d-wave knot-wave knot-wave-top" pathLength="1" d="M 0 40 C 60 40 80 14 120 14 C 160 14 180 40 240 40" stroke-width="0.8" stroke-opacity="0.55" />
+            <path class="knot-draw d-wave knot-wave knot-wave-bottom" pathLength="1" d="M 0 40 C 60 40 80 66 120 66 C 160 66 180 40 240 40" stroke-width="0.8" stroke-opacity="0.55" />
+            <path class="knot-draw d-harmonic knot-wave knot-harmonic-top" pathLength="1" d="M 26 40 C 72 40 90 24 120 24 C 150 24 168 40 214 40" stroke-width="0.5" stroke-opacity="0.35" />
+            <path class="knot-draw d-harmonic knot-wave knot-harmonic-bottom" pathLength="1" d="M 26 40 C 72 40 90 56 120 56 C 150 56 168 40 214 40" stroke-width="0.5" stroke-opacity="0.35" />
+            <line class="lumen-ray" x1="120" y1="38" x2="120" y2="4" stroke="url(#ag-ray)" stroke-width="0.8" />
+            <circle class="lumen-mote lm-1" cx="120" cy="35" r="1" fill="currentColor" stroke="none" />
+            <circle class="lumen-mote lm-2" cx="114.5" cy="37" r="0.7" fill="currentColor" stroke="none" />
+            <circle class="lumen-mote lm-3" cx="125.5" cy="37" r="0.7" fill="currentColor" stroke="none" />
+            <g class="aether-flame">
+              <circle class="flame-halo" cx="120" cy="40" r="12" fill="url(#ag-halo-passage)" stroke="none" />
+              <circle class="flame-ring" cx="120" cy="40" r="4.5" stroke-width="0.4" stroke-opacity="0.45" />
+              <circle class="flame-core" cx="120" cy="40" r="1.8" fill="currentColor" stroke="none" />
+            </g>
           </svg>
         )
       }
       {
         variant === "memory" && (
-          <svg viewBox="0 0 200 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="0" y1="30" x2="200" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
-            <path class="knot-wave knot-wave-top" d="M 10,30 C 55,30 70,10 100,10 C 130,10 145,30 190,30" stroke-width="0.75" stroke-opacity="0.4" />
-            <path class="knot-wave knot-wave-bottom" d="M 10,30 C 55,30 70,50 100,50 C 130,50 145,30 190,30" stroke-width="0.75" stroke-opacity="0.4" />
-            <circle class="echo-ring r1" cx="100" cy="30" r="6" fill="none" stroke-width="0.5" />
-            <circle class="echo-ring r2" cx="100" cy="30" r="11" fill="none" stroke-width="0.45" />
-            <circle class="echo-ring r3" cx="100" cy="30" r="17" fill="none" stroke-width="0.4" />
-            <circle class="knot-light" cx="100" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
+          <svg viewBox="0 0 240 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <defs>
+              <radialGradient id="ag-halo-memory">
+                <stop offset="0" stop-color="currentColor" stop-opacity="0.55" />
+                <stop offset="0.45" stop-color="currentColor" stop-opacity="0.16" />
+                <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <path class="knot-draw d-staff st-1" pathLength="1" d="M 10 28 H 230" stroke-width="0.5" stroke-opacity="0.13" />
+            <path class="knot-draw d-staff st-2" pathLength="1" d="M 10 36 H 230" stroke-width="0.5" stroke-opacity="0.13" />
+            <path class="knot-draw d-staff st-3" pathLength="1" d="M 10 44 H 230" stroke-width="0.5" stroke-opacity="0.13" />
+            <path class="knot-draw d-staff st-4" pathLength="1" d="M 10 52 H 230" stroke-width="0.5" stroke-opacity="0.13" />
+            <path class="neume nm-1" d="M 94 32 L 95.7 34 L 94 36 L 92.3 34 Z" fill="currentColor" stroke="none" />
+            <path class="neume nm-2" d="M 76 28 L 77.7 30 L 76 32 L 74.3 30 Z" fill="currentColor" stroke="none" />
+            <path class="neume nm-3" d="M 58 36 L 59.7 38 L 58 40 L 56.3 38 Z" fill="currentColor" stroke="none" />
+            <path class="neume nm-4" d="M 42 44 L 43.7 46 L 42 48 L 40.3 46 Z" fill="currentColor" stroke="none" />
+            <path class="neume nm-1" d="M 146 32 L 147.7 34 L 146 36 L 144.3 34 Z" fill="currentColor" stroke="none" />
+            <path class="neume nm-2" d="M 164 28 L 165.7 30 L 164 32 L 162.3 30 Z" fill="currentColor" stroke="none" />
+            <path class="neume nm-3" d="M 182 36 L 183.7 38 L 182 40 L 180.3 38 Z" fill="currentColor" stroke="none" />
+            <path class="neume nm-4" d="M 198 44 L 199.7 46 L 198 48 L 196.3 46 Z" fill="currentColor" stroke="none" />
+            <circle class="echo-ring er-1" cx="120" cy="40" r="7" stroke-width="0.5" />
+            <circle class="echo-ring er-2" cx="120" cy="40" r="13" stroke-width="0.45" />
+            <circle class="echo-ring er-3" cx="120" cy="40" r="20" stroke-width="0.4" />
+            <g class="aether-flame">
+              <circle class="flame-halo" cx="120" cy="40" r="12" fill="url(#ag-halo-memory)" stroke="none" />
+              <circle class="flame-ring" cx="120" cy="40" r="4.5" stroke-width="0.4" stroke-opacity="0.45" />
+              <circle class="flame-core" cx="120" cy="40" r="1.8" fill="currentColor" stroke="none" />
+            </g>
           </svg>
         )
       }
       {
         variant === "offering" && (
-          <svg viewBox="0 0 180 60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="0" y1="30" x2="180" y2="30" stroke-width="0.5" stroke-opacity="0.2" />
-            <circle class="vesica-half v-left" cx="80" cy="30" r="14" fill="none" stroke-width="0.6" />
-            <circle class="vesica-half v-right" cx="100" cy="30" r="14" fill="none" stroke-width="0.6" />
-            <circle class="knot-light" cx="90" cy="30" r="2" fill="currentColor" stroke="none" filter="url(#ethereal-glow)" />
+          <svg viewBox="0 0 240 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <defs>
+              <radialGradient id="ag-halo-offering">
+                <stop offset="0" stop-color="currentColor" stop-opacity="0.55" />
+                <stop offset="0.45" stop-color="currentColor" stop-opacity="0.16" />
+                <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient id="ag-mandorla" gradientUnits="userSpaceOnUse" cx="120" cy="40" r="17">
+                <stop offset="0" stop-color="currentColor" stop-opacity="0.3" />
+                <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <path class="knot-draw d-base" pathLength="1" d="M 120 40 H 240" stroke-width="0.5" stroke-opacity="0.2" />
+            <path class="knot-draw d-base" pathLength="1" d="M 120 40 H 0" stroke-width="0.5" stroke-opacity="0.2" />
+            <circle class="knot-draw d-vesica vesica-half v-left" pathLength="1" cx="111" cy="40" r="18" stroke-width="0.8" />
+            <circle class="knot-draw d-vesica vesica-half v-right" pathLength="1" cx="129" cy="40" r="18" stroke-width="0.8" />
+            <path class="mandorla-glow" d="M 120 24.4 A 18 18 0 0 1 120 55.6 A 18 18 0 0 1 120 24.4 Z" fill="url(#ag-mandorla)" stroke="none" />
+            <path class="knot-draw d-mandorla mandorla-line" pathLength="1" d="M 120 24.4 A 18 18 0 0 1 120 55.6 A 18 18 0 0 1 120 24.4 Z" stroke-width="0.45" stroke-opacity="0.5" />
+            <g class="aether-flame">
+              <circle class="flame-halo" cx="120" cy="40" r="12" fill="url(#ag-halo-offering)" stroke="none" />
+              <circle class="flame-ring" cx="120" cy="40" r="4.5" stroke-width="0.4" stroke-opacity="0.45" />
+              <circle class="flame-core" cx="120" cy="40" r="1.8" fill="currentColor" stroke="none" />
+            </g>
           </svg>
         )
       }
@@ -77,3 +147,539 @@ const { variant, roman, latin } = Astro.props;
     <div class="aether-line"></div>
   </div>
 </div>
+
+<style is:global>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Aether Interlude — illuminated thresholds between the rite's movements.
+     Styles are co-located here (is:global, deduped by Astro across the three
+     renders); landing.css 04-rooms-interludes.css points at this file.
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* --knot-intensity: 0..1, written by the AnalyserNode while the ambient plays,
+     or by the scroll-breath fallback. inherits: false = JS touches only the three
+     .aether-knot elements without invalidating style on the whole tree. */
+  @property --knot-intensity {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+  }
+
+  .aether-interlude {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(18px, 2vw, 30px);
+    width: 100%;
+    --interlude-pad: clamp(70px, 11vw, 130px);
+    padding: var(--interlude-pad) 0;
+    pointer-events: none;
+    color: var(--candle);
+    /* content-visibility: auto — offscreen interludes skip paint + style recalc.
+       contain: paint keeps the knot bloom from exporting paint beyond the box
+       (the band's padding leaves it ample room). */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 420px;
+    contain: paint;
+  }
+
+  /* Entrance — the interlude materialises out of the manuscript, slower and with
+     more travel than content reveals. The stroke-draw choreography below rides on
+     the same .is-visible flip. */
+  .aether-interlude.reveal {
+    transform: translateY(56px);
+    transition:
+      opacity 2.4s var(--ease-slow),
+      transform 2.4s var(--ease-slow);
+  }
+  .aether-interlude.reveal.is-visible {
+    transform: translateY(0);
+  }
+
+  /* The section after an interlude carries no border-top of its own — the aether
+     baseline IS the boundary line. Two lines at different Y used to drift apart. */
+  .aether-interlude + .image-rite,
+  .aether-interlude + .ensemble,
+  .aether-interlude + .final-support,
+  .aether-interlude + .path,
+  .aether-interlude + .section {
+    margin-top: -32px;
+    border-top: none;
+  }
+
+  /* ── Ghost folio numeral — a watermark pressed into the parchment, optically
+     centred on the flame: like a filigree in paper, it ignores the ruling and the
+     knot is inked over it. Anchored to the row (not the band) so flex centring
+     can't drift it; -47% (not -50%) compensates Cormorant's tall ascent, which
+     leaves caps ~0.03em above the line-box centre. First child of the row, so
+     DOM order keeps it painting beneath the lines and the knot. ── */
+  .aether-numeral {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -47%);
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(150px, 24vh, 280px);
+    line-height: 1;
+    color: var(--candle);
+    opacity: 0.07;
+    user-select: none;
+    transition:
+      opacity 3.2s var(--ease-slow) 0.4s,
+      transform 3.2s var(--ease-slow) 0.4s;
+  }
+  html.voct-motion .aether-interlude:not(.is-visible) .aether-numeral {
+    opacity: 0;
+    transform: translate(-50%, -42%) scale(0.97);
+  }
+
+  /* ── Inscription: I · Lumen quaerit / II · Vox memoriae / III · Sustinete nos.
+     Letter-spacing settles from wide to rest (one-shot), flanked by two diamond
+     fleurons that ignite last — the scribe's seals. ── */
+  .aether-inscription {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    opacity: 0.78;
+    transition: letter-spacing 2.8s var(--ease-slow);
+  }
+  html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription {
+    letter-spacing: 0.5em;
+  }
+
+  .aether-inscription::before,
+  .aether-inscription::after {
+    content: "";
+    align-self: center;
+    width: 4px;
+    height: 4px;
+    background: currentColor;
+    opacity: 0.38;
+    transform: rotate(45deg);
+    transition:
+      transform 1.4s var(--ease-slow) 1.8s,
+      opacity 1.4s var(--ease-slow) 1.8s;
+  }
+  html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription::before,
+  html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription::after {
+    transform: rotate(45deg) scale(0);
+    opacity: 0;
+  }
+
+  .aether-inscription .roman {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 17px;
+    font-weight: 300;
+    letter-spacing: 0;
+    transform: translateY(1px);
+  }
+
+  .aether-inscription .dot {
+    letter-spacing: 0;
+    opacity: 0.55;
+  }
+
+  .aether-inscription .latin {
+    font-style: italic;
+    font-weight: 300;
+  }
+
+  /* Gilding sweep — a highlight passes once through the latin words as the
+     threshold reveals, like gold leaf catching candlelight. One-shot paint on a
+     tiny strip; gated on voct-motion so reduced-motion never sees the sweep. */
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .aether-inscription .latin {
+      background: linear-gradient(105deg, var(--candle) 38%, #efe0ae 50%, var(--candle) 62%);
+      background-size: 320% 100%;
+      background-position: 115% 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      transition: background-position 2.6s var(--ease) 1.5s;
+    }
+    html.voct-motion .aether-interlude.is-visible .latin {
+      background-position: -15% 0;
+    }
+  }
+
+  /* ── Row: hairline rules grow outward from the knot; each ends in a diamond
+     finial mirroring the inscription fleurons and the memory neumes. ── */
+  .aether-row {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: clamp(18px, 4vw, 40px);
+  }
+
+  .aether-line {
+    position: relative;
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, currentColor 60%);
+    opacity: 0.22;
+    transition:
+      transform 2.2s var(--ease-slow) 0.15s,
+      opacity 2.2s var(--ease-slow) 0.15s;
+  }
+  .aether-line:first-child {
+    transform-origin: right center;
+  }
+  .aether-line:last-child {
+    background: linear-gradient(270deg, transparent, currentColor 60%);
+    transform-origin: left center;
+  }
+  html.voct-motion .aether-interlude:not(.is-visible) .aether-line {
+    transform: scaleX(0.3);
+    opacity: 0;
+  }
+
+  .aether-line::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    background: currentColor;
+    transform: translateY(-50%) rotate(45deg);
+    opacity: 0.5;
+  }
+  .aether-line:first-child::after {
+    right: 0;
+  }
+  .aether-line:last-child::after {
+    left: 0;
+  }
+
+  /* ── The knot: the interlude's living center. Audio/scroll intensity drives a
+     brightness flare (GPU-cheap matrix op), a gentle physical swell, and the
+     prerendered bloom on ::after (compositor-only opacity flip). ── */
+  .aether-knot {
+    position: relative;
+    width: clamp(230px, 28vw, 330px);
+    height: clamp(78px, 9.5vw, 112px);
+    flex-shrink: 0;
+    filter: brightness(calc(1 + var(--knot-intensity, 0) * 0.55));
+    transform: scale(calc(1 + var(--knot-intensity, 0) * 0.05));
+    /* No transition: the analyser's smoothingTimeConstant already smooths; a CSS
+       transition on a 30Hz-updated property is wasted work. */
+  }
+
+  .aether-knot::after {
+    content: "";
+    position: absolute;
+    inset: -45% -15%;
+    background: radial-gradient(
+      closest-side,
+      rgba(var(--candle-rgb), 0.55),
+      rgba(var(--candle-rgb), 0.18) 45%,
+      transparent 75%
+    );
+    opacity: var(--knot-intensity, 0);
+    pointer-events: none;
+    z-index: -1;
+    will-change: opacity;
+  }
+
+  .aether-knot svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Stroke-draw choreography: every .knot-draw path carries pathLength="1" and
+     writes itself in when .is-visible lands. Hidden state engages only under
+     html.voct-motion, so no-JS / reduced-motion always sees the drawn knot. ── */
+  .aether-knot .knot-draw {
+    stroke-dasharray: 1 1;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1.6s var(--ease-slow);
+  }
+  html.voct-motion .aether-interlude:not(.is-visible) .knot-draw {
+    stroke-dashoffset: 1;
+  }
+  .aether-knot .d-base {
+    transition-duration: 1.1s;
+    transition-delay: 0.1s;
+  }
+  .aether-knot .d-wave {
+    transition-duration: 1.9s;
+    transition-delay: 0.5s;
+  }
+  .aether-knot .d-harmonic {
+    transition-duration: 1.9s;
+    transition-delay: 0.9s;
+  }
+  .aether-knot .d-staff {
+    transition-duration: 1.4s;
+  }
+  .aether-knot .st-1 { transition-delay: 0.3s; }
+  .aether-knot .st-2 { transition-delay: 0.45s; }
+  .aether-knot .st-3 { transition-delay: 0.6s; }
+  .aether-knot .st-4 { transition-delay: 0.75s; }
+  .aether-knot .d-vesica {
+    transition-duration: 2.1s;
+  }
+  .aether-knot .v-left { transition-delay: 0.5s; }
+  .aether-knot .v-right { transition-delay: 0.75s; }
+  .aether-knot .d-mandorla {
+    transition-duration: 1.6s;
+    transition-delay: 1.6s;
+  }
+
+  /* ── The flame — shared central light: gradient halo + corona ring + core.
+     Blooms into place last; then breathes in 4.6s phase with the brand glyph. ── */
+  .aether-flame {
+    transform-origin: 120px 40px;
+    transition:
+      transform 1.8s var(--ease-slow) 1.15s,
+      opacity 1.8s var(--ease-slow) 1.15s;
+  }
+  html.voct-motion .aether-interlude:not(.is-visible) .aether-flame {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  .flame-core {
+    transform-origin: 120px 40px;
+    animation: aetherFlameCore 4.6s ease-in-out infinite;
+  }
+  .flame-halo {
+    transform-origin: 120px 40px;
+    animation: aetherFlameHalo 4.6s ease-in-out infinite;
+  }
+  .flame-ring {
+    transform-origin: 120px 40px;
+    animation: aetherFlameHalo 4.6s ease-in-out infinite;
+    animation-delay: -2.3s;
+  }
+
+  @keyframes aetherFlameCore {
+    0%, 100% { transform: scale(0.85); opacity: 0.7; }
+    50% { transform: scale(1.3); opacity: 1; }
+  }
+
+  @keyframes aetherFlameHalo {
+    0%, 100% { transform: scale(0.94); opacity: 0.55; }
+    50% { transform: scale(1.12); opacity: 1; }
+  }
+
+  /* ── Breath waves (passage) ── */
+  .knot-wave {
+    transform-origin: 120px 40px;
+  }
+  .knot-wave-top {
+    animation: aetherWave 8s ease-in-out infinite;
+  }
+  .knot-wave-bottom {
+    animation: aetherWave 8s ease-in-out infinite reverse;
+  }
+  .knot-harmonic-top {
+    animation: aetherHarmonic 5s ease-in-out infinite alternate-reverse;
+  }
+  .knot-harmonic-bottom {
+    animation: aetherHarmonic 6s ease-in-out infinite alternate;
+  }
+
+  @keyframes aetherWave {
+    0%, 100% { transform: scaleY(0.85); opacity: 0.55; }
+    50% { transform: scaleY(1.15); opacity: 1; }
+  }
+
+  @keyframes aetherHarmonic {
+    0% { transform: scaleY(0.7); opacity: 0.4; }
+    100% { transform: scaleY(1.3); opacity: 1; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     I · Lumen quaerit — the page's most dramatic tonal cut (parchment to night).
+     A ~60vh breath so the threshold is passed THROUGH, not glanced at.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .aether-interlude[data-variant="passage"],
+  .aether-interlude[data-variant="memory"] {
+    --interlude-pad: clamp(160px, 26vh, 320px);
+    min-height: 60vh;
+    contain-intrinsic-size: auto 62vh;
+  }
+  .aether-interlude[data-variant="passage"] .aether-knot,
+  .aether-interlude[data-variant="memory"] .aether-knot {
+    width: clamp(260px, 32vw, 400px);
+    height: clamp(88px, 10.6vw, 132px);
+  }
+
+  /* The ascending ray rises out of the flame once the knot has drawn. */
+  .lumen-ray {
+    transform-origin: 120px 38px;
+    animation: aetherRay 7s ease-in-out infinite;
+    transition: transform 2.4s var(--ease-slow) 1.4s;
+  }
+  html.voct-motion .aether-interlude:not(.is-visible) .lumen-ray {
+    transform: scaleY(0);
+  }
+
+  @keyframes aetherRay {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Incense motes — single sparks rising from the flame, fading like ash light. */
+  .lumen-mote {
+    opacity: 0;
+  }
+  .aether-interlude[data-variant="passage"] .lumen-mote {
+    animation: aetherMote 7s ease-in-out infinite;
+    animation-fill-mode: backwards;
+  }
+  .aether-interlude[data-variant="passage"] .lm-2 { animation-delay: 2.3s; }
+  .aether-interlude[data-variant="passage"] .lm-3 { animation-delay: 4.6s; }
+
+  @keyframes aetherMote {
+    0% { transform: translateY(0); opacity: 0; }
+    18% { opacity: 0.85; }
+    60% { opacity: 0.4; }
+    100% { transform: translateY(-30px); opacity: 0; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     II · Vox memoriae — a chant staff remembered. Neumes glow in sequence outward
+     from the flame while echo rings carry the phrase into silence.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .aether-interlude[data-variant="memory"] .aether-line {
+    opacity: 0.12;
+  }
+
+  .neume {
+    opacity: 0;
+    animation: aetherNeume 6s ease-in-out infinite;
+    animation-fill-mode: backwards;
+  }
+  .aether-knot .nm-1 { animation-delay: 0.55s; }
+  .aether-knot .nm-2 { animation-delay: 0.95s; }
+  .aether-knot .nm-3 { animation-delay: 1.35s; }
+  .aether-knot .nm-4 { animation-delay: 1.75s; }
+
+  @keyframes aetherNeume {
+    0%, 100% { opacity: 0.18; }
+    8% { opacity: 0.18; }
+    16% { opacity: 0.9; }
+    30% { opacity: 0.32; }
+    55% { opacity: 0.18; }
+  }
+
+  .echo-ring {
+    transform-origin: 120px 40px;
+    opacity: 0;
+    animation: aetherEcho 6s ease-out infinite;
+  }
+  .aether-knot .er-2 { animation-delay: 2s; }
+  .aether-knot .er-3 { animation-delay: 4s; }
+
+  @keyframes aetherEcho {
+    0% { transform: scale(0.35); opacity: 0; }
+    15% { opacity: 0.5; }
+    100% { transform: scale(1.85); opacity: 0; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     III · Sustinete nos — vesica piscis. Two circles share one center of gravity;
+     their breathing pulls them together and apart while the mandorla holds light.
+     Also a true threshold now: it precedes the final dark room.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .aether-interlude[data-variant="offering"] {
+    --interlude-pad: clamp(120px, 18vh, 220px);
+    min-height: 44vh;
+    contain-intrinsic-size: auto 46vh;
+  }
+  .aether-interlude[data-variant="offering"] .aether-numeral {
+    font-size: clamp(110px, 16vh, 200px);
+  }
+
+  .vesica-half {
+    transform-origin: 120px 40px;
+    opacity: 0.55;
+  }
+  .aether-interlude[data-variant="offering"] .vesica-half {
+    animation: aetherVesica 7.5s ease-in-out infinite;
+    animation-fill-mode: backwards;
+  }
+  .aether-interlude[data-variant="offering"] .v-right {
+    animation-delay: 0.65s;
+  }
+
+  @keyframes aetherVesica {
+    0%, 100% { transform: scale(0.97); opacity: 0.45; }
+    50% { transform: scale(1.035); opacity: 0.8; }
+  }
+
+  .mandorla-glow {
+    opacity: 0.7;
+    animation: aetherMandorla 7.5s ease-in-out infinite;
+  }
+
+  @keyframes aetherMandorla {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 0.95; }
+  }
+
+  /* ── Mobile: shorter breaths, smaller folio numerals. ── */
+  @media (max-width: 640px) {
+    .aether-interlude[data-variant="passage"],
+    .aether-interlude[data-variant="memory"] {
+      --interlude-pad: clamp(110px, 18vh, 200px);
+      min-height: 48vh;
+      contain-intrinsic-size: auto 50vh;
+    }
+    .aether-interlude[data-variant="offering"] {
+      min-height: 38vh;
+      contain-intrinsic-size: auto 40vh;
+    }
+    .aether-numeral {
+      font-size: clamp(110px, 30vw, 170px);
+    }
+    .aether-interlude[data-variant="offering"] .aether-numeral {
+      font-size: clamp(90px, 24vw, 140px);
+    }
+  }
+
+  /* ── Reduced motion: everything rests in its drawn, settled state. ──
+     (html.voct-motion is never set here, so no hidden pre-reveal states apply;
+     this block only silences the perpetual breathing.) */
+  @media (prefers-reduced-motion: reduce) {
+    .aether-interlude :is(
+      .knot-wave,
+      .flame-core,
+      .flame-halo,
+      .flame-ring,
+      .lumen-ray,
+      .lumen-mote,
+      .neume,
+      .echo-ring,
+      .vesica-half,
+      .mandorla-glow
+    ) {
+      animation: none;
+    }
+    .aether-interlude .lumen-mote { opacity: 0; }
+    .aether-interlude .lumen-ray { opacity: 0.45; }
+    .aether-interlude .neume { opacity: 0.3; }
+    .aether-interlude .echo-ring { opacity: 0.18; }
+    .aether-interlude .vesica-half { opacity: 0.55; }
+    .aether-interlude .mandorla-glow { opacity: 0.6; }
+  }
+</style>
