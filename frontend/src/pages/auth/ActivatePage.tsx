@@ -1,36 +1,48 @@
 /**
  * @file ActivatePage.tsx
- * @description Final account activation screen for invited artists.
- * Completely decoupled from business logic via useAccountActivation hook.
+ * @description The invited member's first crossing into VoctManager. Where the
+ * login is a quick "return", activation is a welcome — so it earns more
+ * ceremony: a dark Nave rail introducing the ensemble on the left, and a
+ * coaching-rich password setup on the right (live strength + requirement read).
+ * Business logic stays fully in `useAccountActivation`.
  * @architecture Enterprise SaaS 2026
- * @module pages/public/ActivatePage
+ * @module pages/auth/ActivatePage
  */
 
-import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
-  ArrowLeft,
+  Check,
   CheckCircle2,
+  Copy,
   KeyRound,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+
 import { useAccountActivation } from "@features/auth/hooks/useAccountActivation";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
+import { PasswordInput } from "@/shared/ui/primitives/PasswordInput";
+import { PasswordStrengthMeter } from "@/shared/ui/composites/PasswordStrengthMeter";
 import { Heading } from "@/shared/ui/primitives/typography/Heading";
 import { Text } from "@/shared/ui/primitives/typography/Text";
 import { Eyebrow } from "@/shared/ui/primitives/typography/Eyebrow";
+import { EASE } from "@/shared/ui/kinematics/motion-presets";
+import { AuthShell } from "@features/auth/components/AuthShell";
+import { AuthBrand } from "@features/auth/components/AuthBrand";
 import { LegalModal } from "@features/auth/components/LegalModals";
-import { AuthLanguageSwitcher } from "@features/auth/components/AuthLanguageSwitcher";
+import { PasswordRequirements } from "@features/auth/components/PasswordRequirements";
+import { cn } from "@/shared/lib/utils";
 
 export default function ActivatePage(): React.JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
   const [legalModalState, setLegalModalState] = useState<{
     isOpen: boolean;
     type: "privacy" | "terms";
@@ -45,13 +57,12 @@ export default function ActivatePage(): React.JSX.Element {
     activatedData,
     isSubmitting,
     hasActivationParams,
+    inviteeName,
     handleSubmit,
   } = useAccountActivation();
 
-  useEffect(() => {
-    document.body.classList.add("admin-mode");
-    return () => document.body.classList.remove("admin-mode");
-  }, []);
+  const meetsLength = password.length >= 8;
+  const meetsMatch = confirmPassword.length > 0 && password === confirmPassword;
 
   const activationHighlights = [
     {
@@ -79,51 +90,83 @@ export default function ActivatePage(): React.JSX.Element {
     setLegalModalState({ isOpen: true, type });
   };
 
+  const handleCopyLogin = async () => {
+    if (!activatedData) return;
+    try {
+      await navigator.clipboard.writeText(activatedData.email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* Clipboard unavailable — the login stays visible to copy by hand. */
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-transparent selection:bg-ethereal-gold/30">
-      <div className="absolute top-8 left-8 z-10">
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-ethereal-graphite hover:text-ethereal-gold transition-colors"
+    <AuthShell backLabel={t("auth.activate.back_to_home")}>
+      <div className="w-full max-w-5xl">
+        {/* Compact crown for small screens — the dark rail is desktop-only. */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: EASE.buttery }}
+          className="mb-8 flex flex-col items-center text-center lg:hidden"
         >
-          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-          <span>{t("auth.activate.back_to_home")}</span>
-        </Link>
-      </div>
+          <AuthBrand size="lg" />
+          <Eyebrow color="incense-muted" as="p" className="mt-5">
+            {t("auth.activate.badge")}
+          </Eyebrow>
+          <Heading as="h1" size="4xl" color="default" className="mt-2 leading-tight">
+            {inviteeName ? (
+              <>
+                {t("auth.activate.greeting_word", "Witaj")},{" "}
+                <span className="italic text-ethereal-gold">{inviteeName}</span>
+              </>
+            ) : (
+              <>
+                {t("auth.activate.title_1")}{" "}
+                <span className="italic text-ethereal-gold">
+                  {t("auth.activate.title_2")}
+                </span>
+              </>
+            )}
+          </Heading>
+        </motion.div>
 
-      <div className="absolute top-8 right-8 z-10 flex flex-col items-end gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-ethereal-graphite/50">
-          {t("auth.activate.badge")}
-        </span>
-        <AuthLanguageSwitcher />
-      </div>
-
-      <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col items-center justify-center px-6 py-24 lg:px-10">
-        <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 items-stretch">
+        <div className="grid w-full items-stretch gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+          {/* ── Left: the Nave rail (desktop) — welcome the new member ── */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.7, ease: EASE.buttery }}
+            className="hidden lg:block"
           >
             <GlassCard
               variant="dark"
               padding="lg"
               isHoverable={false}
-              className="h-full flex flex-col"
+              className="h-full"
             >
-              <Eyebrow color="parchment-muted" as="p" className="mb-4">
-                {t("auth.activate.subtitle")}
+              <AuthBrand tone="marble" align="left" size="lg" className="mb-8" />
+
+              <Eyebrow color="parchment-muted" as="p" className="mb-3">
+                {t("auth.activate.badge")}
               </Eyebrow>
-              <Heading
-                as="h1"
-                size="5xl"
-                color="marble"
-                className="leading-none"
-              >
-                {t("auth.activate.title_1")}
-                <span className="ml-2 italic text-ethereal-gold">
-                  {t("auth.activate.title_2")}
-                </span>
+              <Heading as="h1" size="5xl" color="marble" className="leading-none">
+                {inviteeName ? (
+                  <>
+                    {t("auth.activate.greeting_word", "Witaj")},
+                    <span className="ml-2 italic text-ethereal-gold">
+                      {inviteeName}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {t("auth.activate.title_1")}
+                    <span className="ml-2 italic text-ethereal-gold">
+                      {t("auth.activate.title_2")}
+                    </span>
+                  </>
+                )}
               </Heading>
               <Text
                 size="base"
@@ -132,7 +175,11 @@ export default function ActivatePage(): React.JSX.Element {
               >
                 {t("auth.activate.description")}
               </Text>
-              <div className="mt-8 grid gap-4 flex-1">
+
+              <Eyebrow color="parchment-muted" as="p" className="mt-9 mb-4">
+                {t("auth.activate.features_title", "Co czeka na Ciebie w środku")}
+              </Eyebrow>
+              <div className="grid gap-3">
                 {activationHighlights.map(
                   ({ title, description, icon: Icon }) => (
                     <div
@@ -171,29 +218,27 @@ export default function ActivatePage(): React.JSX.Element {
             </GlassCard>
           </motion.div>
 
+          {/* ── Right: the act — set the password, or the welcome ── */}
           <motion.div
             initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.55,
-              delay: 0.08,
-              ease: [0.16, 1, 0.3, 1],
-            }}
+            transition={{ duration: 0.7, delay: 0.1, ease: EASE.buttery }}
           >
             <GlassCard
               variant="ethereal"
               padding="lg"
               glow
               isHoverable={false}
-              className="relative h-full flex flex-col"
+              className="relative h-full"
             >
               <div
                 className="absolute inset-x-0 -top-6 h-px bg-linear-to-r from-transparent via-ethereal-gold/60 to-transparent"
                 aria-hidden="true"
               />
+
               {!activatedData ? (
                 <>
-                  <div className="mb-8">
+                  <div className="mb-7">
                     <Eyebrow color="incense-muted" as="p" className="mb-3">
                       {t("auth.activate.form.subtitle")}
                     </Eyebrow>
@@ -224,11 +269,7 @@ export default function ActivatePage(): React.JSX.Element {
                         >
                           {t("auth.activate.form.security_title")}
                         </Text>
-                        <Text
-                          size="sm"
-                          color="graphite"
-                          className="mt-1.5 leading-6"
-                        >
+                        <Text size="sm" color="graphite" className="mt-1.5 leading-6">
                           {t("auth.activate.form.security_desc")}
                         </Text>
                       </div>
@@ -237,64 +278,52 @@ export default function ActivatePage(): React.JSX.Element {
 
                   {!hasActivationParams && (
                     <div className="mb-6 rounded-2xl border border-amber-200/70 bg-amber-50/80 p-4">
-                      <Text size="sm" className="text-amber-900 leading-6">
+                      <Text size="sm" className="leading-6 text-amber-900">
                         {t("auth.activate.form.missing_params")}
                       </Text>
                     </div>
                   )}
 
                   <form className="space-y-5" onSubmit={handleSubmit}>
-                    <div>
-                      <label
-                        htmlFor="new-password"
-                        className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite ml-1"
-                      >
-                        {t("auth.activate.form.new_password")}
-                      </label>
-                      <input
+                    <div className="space-y-1">
+                      <PasswordInput
                         id="new-password"
                         name="new-password"
-                        type="password"
+                        label={t("auth.activate.form.new_password")}
                         autoComplete="new-password"
                         required
                         disabled={isSubmitting || !hasActivationParams}
                         value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        className="appearance-none block w-full px-4 py-3 bg-white/40 backdrop-blur-sm border border-ethereal-incense/20 rounded-xl shadow-sm placeholder-ethereal-graphite/40 text-ethereal-ink focus:outline-none focus:ring-2 focus:ring-ethereal-gold/40 focus:border-ethereal-gold/50 text-sm font-medium transition-all disabled:opacity-50"
+                        onChange={setPassword}
                         placeholder={t(
                           "auth.activate.form.new_password_placeholder",
                         )}
                       />
+                      <PasswordStrengthMeter password={password} />
                     </div>
 
-                    <div>
-                      <label
-                        htmlFor="confirm-password"
-                        className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite ml-1"
-                      >
-                        {t("auth.activate.form.confirm_password")}
-                      </label>
-                      <input
-                        id="confirm-password"
-                        name="confirm-password"
-                        type="password"
-                        autoComplete="new-password"
-                        required
-                        disabled={isSubmitting || !hasActivationParams}
-                        value={confirmPassword}
-                        onChange={(event) =>
-                          setConfirmPassword(event.target.value)
-                        }
-                        className="appearance-none block w-full px-4 py-3 bg-white/40 backdrop-blur-sm border border-ethereal-incense/20 rounded-xl shadow-sm placeholder-ethereal-graphite/40 text-ethereal-ink focus:outline-none focus:ring-2 focus:ring-ethereal-gold/40 focus:border-ethereal-gold/50 text-sm font-medium transition-all disabled:opacity-50"
-                        placeholder={t(
-                          "auth.activate.form.confirm_password_placeholder",
-                        )}
-                      />
-                    </div>
+                    <PasswordInput
+                      id="confirm-password"
+                      name="confirm-password"
+                      label={t("auth.activate.form.confirm_password")}
+                      autoComplete="new-password"
+                      required
+                      disabled={isSubmitting || !hasActivationParams}
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      placeholder={t(
+                        "auth.activate.form.confirm_password_placeholder",
+                      )}
+                    />
+
+                    <PasswordRequirements
+                      password={password}
+                      confirmPassword={confirmPassword}
+                    />
 
                     <label
                       htmlFor="terms-accepted"
-                      className="flex items-start gap-3 cursor-pointer rounded-2xl border border-ethereal-incense/15 bg-white/30 p-4 transition-colors hover:bg-white/50"
+                      className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ethereal-incense/15 bg-white/30 p-4 transition-colors hover:bg-white/50"
                     >
                       <div className="relative mt-0.5 shrink-0">
                         <input
@@ -305,33 +334,27 @@ export default function ActivatePage(): React.JSX.Element {
                           disabled={isSubmitting}
                           className="peer sr-only"
                         />
-                        <div className="h-4 w-4 rounded border border-ethereal-incense/40 bg-white/60 transition-all peer-checked:border-ethereal-gold peer-checked:bg-ethereal-gold flex items-center justify-center">
-                          <svg
-                            className={`h-2.5 w-2.5 text-white transition-opacity duration-150 ${termsAccepted ? "opacity-100" : "opacity-0"}`}
-                            viewBox="0 0 12 10"
-                            fill="none"
+                        <div className="flex h-4 w-4 items-center justify-center rounded border border-ethereal-incense/40 bg-white/60 transition-all peer-checked:border-ethereal-gold peer-checked:bg-ethereal-gold">
+                          <Check
+                            className={cn(
+                              "h-2.5 w-2.5 text-white transition-opacity duration-150",
+                              termsAccepted ? "opacity-100" : "opacity-0",
+                            )}
+                            strokeWidth={3}
                             aria-hidden="true"
-                          >
-                            <path
-                              d="M1 5l3.5 3.5L11 1"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          />
                         </div>
                       </div>
                       <Text
                         size="sm"
                         color="graphite"
-                        className="leading-6 select-none"
+                        className="select-none leading-6"
                       >
                         {t("auth.activate.form.terms_prefix")}{" "}
                         <button
                           type="button"
                           onClick={(e) => handleOpenLegalModal("terms", e)}
-                          className="text-ethereal-gold hover:text-ethereal-ink transition-colors font-medium underline underline-offset-4"
+                          className="font-medium text-ethereal-gold underline underline-offset-4 transition-colors hover:text-ethereal-ink"
                         >
                           {t("auth.activate.form.terms_link")}
                         </button>{" "}
@@ -339,7 +362,7 @@ export default function ActivatePage(): React.JSX.Element {
                         <button
                           type="button"
                           onClick={(e) => handleOpenLegalModal("privacy", e)}
-                          className="text-ethereal-gold hover:text-ethereal-ink transition-colors font-medium underline underline-offset-4"
+                          className="font-medium text-ethereal-gold underline underline-offset-4 transition-colors hover:text-ethereal-ink"
                         >
                           {t("auth.activate.form.privacy_link")}
                         </button>
@@ -358,11 +381,7 @@ export default function ActivatePage(): React.JSX.Element {
                               className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-crimson"
                               aria-hidden="true"
                             />
-                            <Text
-                              size="sm"
-                              color="crimson"
-                              className="leading-6"
-                            >
+                            <Text size="sm" color="crimson" className="leading-6">
                               {t(formError, formError)}
                             </Text>
                           </div>
@@ -378,10 +397,10 @@ export default function ActivatePage(): React.JSX.Element {
                       isLoading={isSubmitting}
                       disabled={
                         isSubmitting ||
-                        !password ||
-                        !confirmPassword ||
                         !hasActivationParams ||
-                        !termsAccepted
+                        !termsAccepted ||
+                        !meetsLength ||
+                        !meetsMatch
                       }
                     >
                       {isSubmitting
@@ -394,12 +413,21 @@ export default function ActivatePage(): React.JSX.Element {
                 <div className="flex h-full flex-col justify-center">
                   <div className="rounded-3xl border border-ethereal-sage/30 bg-ethereal-sage/5 p-6">
                     <div className="flex items-start gap-4">
-                      <div className="shrink-0 rounded-2xl bg-ethereal-sage/15 p-3">
+                      <motion.div
+                        initial={{ scale: 0.6, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 320,
+                          damping: 18,
+                        }}
+                        className="shrink-0 rounded-2xl bg-ethereal-sage/15 p-3"
+                      >
                         <CheckCircle2
                           className="h-7 w-7 text-ethereal-sage"
                           aria-hidden="true"
                         />
-                      </div>
+                      </motion.div>
                       <div>
                         <Eyebrow color="sage" as="p" className="mb-3">
                           {t("auth.activate.success.subtitle")}
@@ -407,45 +435,61 @@ export default function ActivatePage(): React.JSX.Element {
                         <Heading as="h2" size="4xl" color="default">
                           {t("auth.activate.success.title")}
                         </Heading>
-                        <Text
-                          size="sm"
-                          color="graphite"
-                          className="mt-3 leading-7"
-                        >
+                        <Text size="sm" color="graphite" className="mt-3 leading-7">
                           {t("auth.activate.success.desc_1")}
                           <span className="font-semibold text-ethereal-ink">
                             {activatedData.email}
                           </span>
                           {t("auth.activate.success.desc_2")}
                         </Text>
+
                         <div className="mt-5 mb-4 rounded-xl border border-ethereal-incense/20 bg-white/70 p-4 shadow-glass-solid">
-                          <Text
-                            size="xs"
-                            weight="bold"
-                            color="graphite"
-                            className="mb-1 uppercase tracking-[0.2em]"
-                          >
-                            {t("auth.activate.success.your_username")}
-                          </Text>
-                          <Text
-                            size="md"
-                            weight="bold"
-                            color="gold"
-                            className="font-mono tracking-tight"
-                          >
-                            {activatedData.email}
-                          </Text>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <Text
+                                size="xs"
+                                weight="bold"
+                                color="graphite"
+                                className="mb-1 uppercase tracking-[0.2em]"
+                              >
+                                {t("auth.activate.success.your_username")}
+                              </Text>
+                              <Text
+                                size="md"
+                                weight="bold"
+                                color="gold"
+                                className="truncate font-mono tracking-tight"
+                              >
+                                {activatedData.email}
+                              </Text>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleCopyLogin}
+                              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-white/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ethereal-graphite transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+                            >
+                              {copied ? (
+                                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                              )}
+                              {copied
+                                ? t("auth.activate.success.copied", "Skopiowano")
+                                : t(
+                                    "auth.activate.success.copy_login",
+                                    "Skopiuj login",
+                                  )}
+                            </button>
+                          </div>
                         </div>
-                        <Text
-                          size="xs"
-                          color="graphite"
-                          className="leading-relaxed"
-                        >
+
+                        <Text size="xs" color="graphite" className="leading-relaxed">
                           {t("auth.activate.success.instruction")}
                         </Text>
                       </div>
                     </div>
                   </div>
+
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                     <Button
                       type="button"
@@ -480,6 +524,6 @@ export default function ActivatePage(): React.JSX.Element {
         }
         type={legalModalState.type}
       />
-    </div>
+    </AuthShell>
   );
 }

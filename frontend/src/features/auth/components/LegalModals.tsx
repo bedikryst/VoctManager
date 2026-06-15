@@ -70,7 +70,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </Heading>
                 <Eyebrow color="muted" className="mt-1">
                   {t("auth.legal.common.last_updated", {
-                    date: "26.04.2026",
+                    date: "15.06.2026",
                   })}
                 </Eyebrow>
               </div>
@@ -114,31 +114,16 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 };
 
 /*
- * ───────────────────────────────────────────────────────────────────────────
- * RODO — BRUDNOPIS (do dokończenia później; NIE jest to jeszcze treść prawna)
- * To jest polityka prywatności *aplikacji panelu* — osobny dokument niż RODO
- * strony publicznej (web/). Poniżej notatki Claude'a do sekcji o KOMUNIKACJI
- * WEWNĘTRZNEJ (moduł `messaging` + `notifications`), do spisania na czysto:
+ * Privacy policy for the *panel application* (a separate document from the public
+ * site's RODO under web/). The "Internal communication" disclosures below
+ * (messaging + notifications) are written to match the actual implementation:
+ * see backend/messaging/signals.py for the erasure behaviour ("[treść usunięta]"),
+ * and config/settings.py for the notification processors (Anymail/Resend e-mail,
+ * Google Firebase/FCM mobile push, self-hosted VAPID web push).
  *
- * 1. Nowa kategoria danych: TREŚĆ WIADOMOŚCI w aplikacji (wątki chórzysta↔zarząd).
- *    To dane osobowe (treść korespondencji). Przechowywana w bazie (messaging_*).
- * 2. Cel + podstawa: komunikacja organizacyjna zespołu. Prawdopodobnie art. 6 ust.1
- *    lit. f RODO (prawnie uzasadniony interes) — DO POTWIERDZENIA z prawnikiem.
- * 3. Metadane: znacznik odczytu (last_read_at) per uczestnik; przypisanie wątku
- *    do dyrygenta (assignee). Powiadomienia o nowej wiadomości (in-app/e-mail/push).
- * 4. Odbiorcy/podmioty przetwarzające (kanały dostarczania powiadomień):
- *      • e-mail → ESP Resend (treść powiadomienia / fragment wiadomości w mailu),
- *      • Web Push → VAPID (self-hosted),
- *      • mobile Push → Google FCM = TRANSFER do Google (do ujawnienia w polityce).
- *    Sama treść wątku NIE jest wysyłana do WhatsApp/third-party (świadomie odrzucone).
- * 5. Retencja + prawo do usunięcia: przy usunięciu konta (sygnał
- *    `account_soft_deleted`) treść wiadomości jest zacierana ("[treść usunięta]"),
- *    a wątki, w których użytkownik był artystą, są soft-deletowane
- *    (impl: backend/messaging/signals.py). Do opisania okresu retencji wątków
- *    aktywnych uczestników (obecnie: bezterminowo do usunięcia konta).
- * 6. TODO: dodać widoczną sekcję "Komunikacja wewnętrzna" do PrivacyContent +
- *    klucze i18n (pl/en/fr); wzmianka o push przez Google FCM przy "recipients".
- * ───────────────────────────────────────────────────────────────────────────
+ * ⚠ NOT yet reviewed by a lawyer. The legal basis (art. 6 ust. 1 lit. f RODO) and
+ * the US-transfer mechanism (Data Privacy Framework / standard contractual clauses)
+ * must be confirmed by counsel before this is relied on as final legal text.
  */
 const PrivacyContent: React.FC = () => {
   const { t } = useTranslation();
@@ -206,6 +191,45 @@ const PrivacyContent: React.FC = () => {
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.privacy.internal_comm_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.privacy.internal_comm_desc")}
+      </Text>
+      <Text size="md" color="graphite" className="mt-3">
+        {t("auth.legal.privacy.internal_comm_retention")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.privacy.transfers_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.privacy.transfers_desc")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.privacy.retention_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.privacy.retention_desc")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.privacy.analytics_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.privacy.analytics_desc")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
         {t("auth.legal.privacy.your_rights_title")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
@@ -252,6 +276,15 @@ const TermsContent: React.FC = () => {
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.terms.data_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.terms.data_desc")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
         {t("auth.legal.terms.support_title")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
@@ -265,6 +298,24 @@ const TermsContent: React.FC = () => {
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
         {t("auth.legal.terms.blocking_desc")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.terms.changes_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.terms.changes_desc")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.terms.governing_law_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.terms.governing_law_desc")}
       </Text>
     </div>
   </div>

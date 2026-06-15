@@ -1,35 +1,37 @@
 /**
- * @file Login.tsx
- * @description Authentication gateway for the VoctManager Dashboard.
- * Refactored to fully embody Ethereal UI standards (Glassmorphism),
- * strictly adhere to the "NO-RAW-HTML" mandate, and utilize Kinematics.
- * @architecture Enterprise 2026 Standards
- * @module pages/Login
- * @author Krystian Bugalski & Ethereal UI System
+ * @file LoginPage.tsx
+ * @description Authentication threshold for the VoctManager panel. A single
+ * elevated card on the shared Nave-of-Light field — the calm "return" gesture
+ * for members already inside the ensemble. Built entirely on Ethereal
+ * primitives (no raw inputs) and the shared AuthShell so it reads as one
+ * vestibule with the activation screen.
+ * @architecture Enterprise SaaS 2026
+ * @module pages/auth/LoginPage
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, KeyRound, LifeBuoy, Mail } from "lucide-react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
+import { PasswordInput } from "@/shared/ui/primitives/PasswordInput";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
-import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
-import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
-import { VocalClefShadow } from "@/shared/ui/kinematics/VocalClefShadow";
+import { EASE } from "@/shared/ui/kinematics/motion-presets";
+import { AuthShell } from "@features/auth/components/AuthShell";
+import { AuthBrand } from "@features/auth/components/AuthBrand";
 import { LegalModal } from "@features/auth/components/LegalModals";
-import { AuthLanguageSwitcher } from "@features/auth/components/AuthLanguageSwitcher";
 
-export default function Login(): React.JSX.Element {
+export default function LoginPage(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [helpOpen, setHelpOpen] = useState<boolean>(false);
 
   const [legalModalState, setLegalModalState] = useState<{
     isOpen: boolean;
@@ -41,14 +43,11 @@ export default function Login(): React.JSX.Element {
   const location = useLocation();
   const { t } = useTranslation();
 
-  useEffect(() => {
-    document.body.classList.add("admin-mode");
-    return () => document.body.classList.remove("admin-mode");
-  }, []);
-
   const from =
     (location.state as { from?: { pathname: string } })?.from?.pathname ||
     "/panel";
+
+  const supportEmail = t("auth.legal.privacy.contact_email");
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>,
@@ -62,9 +61,7 @@ export default function Login(): React.JSX.Element {
     if (result.success) {
       navigate(from, { replace: true });
     } else {
-      setError(
-        result.error || t("auth.login.error_default"),
-      );
+      setError(result.error || t("auth.login.error_default"));
       setIsSubmitting(false);
     }
   };
@@ -78,168 +75,179 @@ export default function Login(): React.JSX.Element {
   };
 
   return (
-    <PageTransition>
-      <div className="relative min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 overflow-hidden">
-        <EtherealBackground />
-        <div className="absolute top-0 right-0 opacity-10 pointer-events-none translate-x-1/4 -translate-y-1/4">
-          <VocalClefShadow />
-        </div>
+    <AuthShell backLabel={t("auth.login.back_to_lobby")}>
+      <div className="w-full max-w-[26rem]">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: EASE.buttery }}
+          className="mb-9 flex flex-col items-center"
+        >
+          <AuthBrand tagline={t("auth.login.subtitle")} />
+        </motion.div>
 
-        <div className="absolute top-8 left-8 z-20">
-          <Link
-            to="/"
-            className="group flex items-center gap-2 hover:opacity-80 transition-opacity"
+        <motion.div
+          initial={{ opacity: 0, y: 26 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.12, ease: EASE.buttery }}
+        >
+          <GlassCard
+            variant="ethereal"
+            padding="lg"
+            glow
+            isHoverable={false}
+            className="shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_2px_6px_-2px_rgba(22,20,18,0.08),0_30px_64px_-22px_rgba(120,104,82,0.5)]"
           >
-            <ArrowLeft
-              className="w-4 h-4 text-ethereal-graphite group-hover:text-ethereal-gold transition-colors"
-              aria-hidden="true"
-            />
-            <Eyebrow className="group-hover:text-ethereal-gold transition-colors">
-              {t("auth.login.back_to_lobby")}
-            </Eyebrow>
-          </Link>
-        </div>
-
-        <div className="absolute top-8 right-8 z-20">
-          <AuthLanguageSwitcher />
-        </div>
-
-        <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center mb-8"
-          >
-            <Heading
-              size="huge"
-              weight="medium"
-              className="text-ethereal-ink mb-3"
-            >
-              Voct
-              <span className="italic text-ethereal-gold pr-2">Manager</span>
+            <Heading as="h1" size="2xl" color="default" className="mb-7">
+              {t("auth.login.welcome", "Witaj ponownie")}
             </Heading>
-            <Eyebrow color="muted">
-              {t("auth.login.subtitle")}
-            </Eyebrow>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <GlassCard
-              variant="ethereal"
-              padding="lg"
-              glow={true}
-              isHoverable={false}
-            >
-              <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-                <div>
-                  <Eyebrow as="label" className="block mb-2 ml-1">
-                    {t("auth.login.email_label")}
-                  </Eyebrow>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    disabled={isSubmitting}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("auth.login.email_placeholder")}
-                  />
-                </div>
+            <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                label={t("auth.login.email_label")}
+                autoComplete="email"
+                required
+                disabled={isSubmitting}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t("auth.login.email_placeholder")}
+                leftIcon={<Mail className="h-4 w-4" />}
+              />
 
-                <div>
-                  <Eyebrow as="label" className="block mb-2 ml-1">
-                    {t("auth.login.password_label")}
-                  </Eyebrow>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    disabled={isSubmitting}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t("auth.login.password_placeholder")}
-                  />
-                </div>
+              <PasswordInput
+                id="password"
+                name="password"
+                label={t("auth.login.password_label")}
+                autoComplete="current-password"
+                required
+                disabled={isSubmitting}
+                value={password}
+                onChange={setPassword}
+                placeholder={t("auth.login.password_placeholder")}
+                capsLockHint
+              />
 
-                <div aria-live="polite">
-                  <AnimatePresence>
-                    {error && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="bg-ethereal-crimson-light/80 backdrop-blur-md border-l-4 border-ethereal-crimson p-4 rounded-r-xl shadow-sm mb-4 overflow-hidden"
-                      >
-                        <div className="flex">
-                          <div className="flex-shrink-0">
-                            <AlertCircle
-                              className="h-5 w-5 text-ethereal-crimson"
-                              aria-hidden="true"
-                            />
-                          </div>
-                          <div className="ml-3">
-                            <Text className="text-ethereal-crimson font-medium text-sm">
-                              {error}
-                            </Text>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+              <div aria-live="polite">
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-start gap-3 rounded-2xl border border-ethereal-crimson/20 bg-ethereal-crimson/5 p-4">
+                        <AlertCircle
+                          className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-crimson"
+                          aria-hidden="true"
+                        />
+                        <Text size="sm" color="crimson" className="leading-6">
+                          {error}
+                        </Text>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-                <div className="pt-2">
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    fullWidth
-                    size="lg"
-                    isLoading={isSubmitting}
-                    disabled={!email || !password || isSubmitting}
+              <div className="pt-1">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  fullWidth
+                  size="lg"
+                  isLoading={isSubmitting}
+                  disabled={!email || !password || isSubmitting}
+                >
+                  {isSubmitting
+                    ? t("auth.login.submitting")
+                    : t("auth.login.submit_button")}
+                </Button>
+              </div>
+            </form>
+
+            {/* Access recovery — accounts are provisioned by the board, so there
+                is no self-service reset; we point members to the right humans. */}
+            <div className="mt-7 border-t border-ethereal-incense/10 pt-5">
+              <button
+                type="button"
+                onClick={() => setHelpOpen((open) => !open)}
+                aria-expanded={helpOpen}
+                className="flex w-full items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/55 transition-colors hover:text-ethereal-gold"
+              >
+                <LifeBuoy className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("auth.login.access_trouble", "Problem z dostępem do konta?")}
+              </button>
+
+              <AnimatePresence>
+                {helpOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.35, ease: EASE.buttery }}
+                    className="overflow-hidden"
                   >
-                    {isSubmitting
-                      ? t("auth.login.submitting")
-                      : t("auth.login.submit_button")}
-                  </Button>
-                </div>
-              </form>
+                    <div className="mt-4 space-y-3 rounded-2xl border border-ethereal-incense/15 bg-white/40 p-4">
+                      <Link
+                        to="/reset-password"
+                        className="flex items-center justify-center gap-2 rounded-xl border border-ethereal-gold/30 bg-ethereal-gold/10 px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-ethereal-graphite transition-colors hover:bg-ethereal-gold/20 hover:text-ethereal-ink"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
+                        {t("auth.login.access_reset_cta", "Zresetuj hasło")}
+                      </Link>
+                      <Text size="sm" color="graphite" className="leading-6">
+                        {t("auth.login.access_help", {
+                          defaultValue:
+                            "Nie masz jeszcze dostępu? Konta w VoctManagerze zakłada zarząd zespołu — napisz na {{email}}, a pomożemy Ci wejść do panelu.",
+                          email: supportEmail,
+                        })}
+                      </Text>
+                      <a
+                        href={`mailto:${supportEmail}`}
+                        className="inline-flex items-center gap-2 text-xs font-medium text-ethereal-gold underline decoration-ethereal-gold/40 underline-offset-4 transition-colors hover:text-ethereal-ink"
+                      >
+                        <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+                        {t("auth.login.access_contact_cta", "Napisz do zarządu")}
+                      </a>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              <div className="mt-8 flex flex-col items-center gap-2">
-                <Eyebrow color="muted" className="text-[9px] opacity-60">
-                  {t("auth.login.footer_security")}
-                </Eyebrow>
+              <div className="mt-5 flex flex-col items-center gap-2.5">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={(e) => handleOpenLegalModal("terms", e)}
-                    className="text-[10px] text-ethereal-graphite/60 hover:text-ethereal-gold transition-colors uppercase tracking-widest font-medium"
+                    className="text-[10px] font-medium uppercase tracking-widest text-ethereal-graphite/55 transition-colors hover:text-ethereal-gold"
                   >
                     {t("auth.login.terms_link")}
                   </button>
-                  <span className="text-ethereal-graphite/30 text-[10px]" aria-hidden="true">
+                  <span
+                    className="text-[10px] text-ethereal-graphite/25"
+                    aria-hidden="true"
+                  >
                     •
                   </span>
                   <button
                     type="button"
                     onClick={(e) => handleOpenLegalModal("privacy", e)}
-                    className="text-[10px] text-ethereal-graphite/60 hover:text-ethereal-gold transition-colors uppercase tracking-widest font-medium"
+                    className="text-[10px] font-medium uppercase tracking-widest text-ethereal-graphite/55 transition-colors hover:text-ethereal-gold"
                   >
                     {t("auth.login.privacy_link")}
                   </button>
                 </div>
+                <Eyebrow color="muted" className="text-[9px] opacity-45">
+                  {t("auth.login.footer_security")}
+                </Eyebrow>
               </div>
-            </GlassCard>
-          </motion.div>
-        </div>
+            </div>
+          </GlassCard>
+        </motion.div>
       </div>
 
       <LegalModal
@@ -249,6 +257,6 @@ export default function Login(): React.JSX.Element {
         }
         type={legalModalState.type}
       />
-    </PageTransition>
+    </AuthShell>
   );
 }

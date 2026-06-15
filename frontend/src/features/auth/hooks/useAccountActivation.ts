@@ -6,7 +6,8 @@
 
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { isAxiosError } from "axios";
 import { authService } from "../api/auth.service";
 
@@ -35,6 +36,7 @@ const getActivationErrorMessage = (error: unknown): string => {
 
 export const useAccountActivation = () => {
   const [searchParams] = useSearchParams();
+  const { i18n } = useTranslation();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -54,6 +56,24 @@ export const useAccountActivation = () => {
 
   const hasActivationParams =
     activationContext.uidb64.length > 0 && activationContext.token.length > 0;
+
+  // Resolve the invitee's name from the signed link so the screen can greet
+  // them before they set a password. Read-only; failure falls back to generic.
+  const previewQuery = useQuery({
+    queryKey: ["activation-preview", activationContext.uidb64, activationContext.token],
+    queryFn: () => authService.previewActivation(activationContext),
+    enabled: hasActivationParams,
+    retry: false,
+    staleTime: Infinity,
+  });
+
+  const invitee = previewQuery.data;
+  const resolvedName = invitee
+    ? i18n.language?.startsWith("pl")
+      ? invitee.first_name_vocative || invitee.first_name
+      : invitee.first_name
+    : "";
+  const inviteeName = resolvedName.trim() || null;
 
   const activationMutation = useMutation({
     mutationFn: authService.activateAccount,
@@ -101,6 +121,7 @@ export const useAccountActivation = () => {
     activatedData,
     isSubmitting: activationMutation.isPending,
     hasActivationParams,
+    inviteeName,
     handleSubmit,
   };
 };
