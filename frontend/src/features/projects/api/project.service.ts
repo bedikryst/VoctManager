@@ -68,6 +68,17 @@ export type ProjectReportEndpoint =
   | "export_zaiks"
   | "export_dtp";
 
+/** One programme piece in the conductor's readiness heatmap. */
+export interface ProjectReadinessSummaryEntry {
+  piece_id: string;
+  piece_title: string;
+  order: number;
+  total_cast: number;
+  ready: number;
+  in_progress: number;
+  not_started: number;
+}
+
 export const ProjectService = {
   getAll: async (): Promise<Project[]> => {
     const response = await api.get(PROJECTS_BASE_URL);
@@ -77,6 +88,15 @@ export const ProjectService = {
   getById: async (id: string | number): Promise<Project> => {
     const response = await api.get<Project>(`${PROJECTS_BASE_URL}${id}/`);
     return response.data;
+  },
+
+  getReadinessSummary: async (
+    projectId: string | number,
+  ): Promise<ProjectReadinessSummaryEntry[]> => {
+    const response = await api.get<ProjectReadinessSummaryEntry[]>(
+      `${PROJECTS_BASE_URL}${projectId}/readiness-summary/`,
+    );
+    return response.data ?? [];
   },
 
   create: async (data: ProjectCreateDTO): Promise<Project> => {

@@ -34,6 +34,11 @@ export const projectKeys = {
     byProject: (projectId: string | number) =>
       ["program", { project: String(projectId) }] as const,
   },
+  readiness: {
+    all: ["readiness"] as const,
+    byProject: (projectId: string | number) =>
+      ["readiness", { project: String(projectId) }] as const,
+  },
   pieceCastings: {
     all: ["pieceCastings"] as const,
     byProject: (projectId: string | number) =>

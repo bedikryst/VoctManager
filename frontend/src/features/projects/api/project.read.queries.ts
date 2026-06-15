@@ -21,7 +21,10 @@ import type {
   VoiceLineOption,
 } from "@/shared/types";
 
-import { ProjectService } from "./project.service";
+import {
+  ProjectService,
+  type ProjectReadinessSummaryEntry,
+} from "./project.service";
 import { projectKeys } from "./project.query-keys";
 import {
   FAST_CHANGING_STALE_TIME,
@@ -300,4 +303,17 @@ export const useProjectAttendances = (projectId: string | undefined) =>
         }
       : getDisabledListQueryConfig<Attendance>()),
     select: selectAttendances,
+  });
+
+export const useProjectReadinessSummary = (projectId: string | undefined) =>
+  useSuspenseQuery({
+    queryKey: projectKeys.readiness.byProject(
+      projectId ?? PENDING_PROJECT_QUERY_ID,
+    ),
+    ...(projectId
+      ? {
+          queryFn: () => ProjectService.getReadinessSummary(projectId),
+          staleTime: FAST_CHANGING_STALE_TIME,
+        }
+      : getDisabledListQueryConfig<ProjectReadinessSummaryEntry>()),
   });

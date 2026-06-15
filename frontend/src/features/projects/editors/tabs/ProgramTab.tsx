@@ -49,6 +49,8 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { useProgramTab } from "../hooks/useProgramTab";
+import { useProjectReadinessSummary } from "../../api/project.read.queries";
+import type { ProjectReadinessSummaryEntry } from "../../api/project.service";
 import type { ProgramTabItem } from "../types";
 
 interface ProgramTabProps {
@@ -123,10 +125,58 @@ const buildMetaLine = (piece: Piece | undefined, t: TFunction): string => {
   return parts.join(" · ");
 };
 
+/**
+ * Compact readiness strip: how much of the cast reported "I know my part"
+ * (sage) vs "practising" (gold) from chorister self-reports in the Songbook.
+ */
+function ReadinessStrip({
+  readiness,
+  t,
+}: {
+  readiness: ProjectReadinessSummaryEntry;
+  t: TFunction;
+}): React.JSX.Element | null {
+  if (readiness.total_cast === 0) return null;
+
+  const readyPct = (readiness.ready / readiness.total_cast) * 100;
+  const practisingPct = (readiness.in_progress / readiness.total_cast) * 100;
+  const tooltip = t(
+    "projects.program.readiness.tooltip",
+    "Gotowość zespołu — zna partię: {{ready}}, ćwiczy: {{practising}}, nie zaczęło: {{untouched}}",
+    {
+      ready: readiness.ready,
+      practising: readiness.in_progress,
+      untouched: readiness.not_started,
+    },
+  );
+
+  return (
+    <div className="mt-1 flex items-center gap-1.5" title={tooltip}>
+      <div className="flex h-1 w-24 overflow-hidden rounded-full bg-ethereal-marble/90">
+        <div
+          className="h-full bg-ethereal-sage"
+          style={{ width: `${readyPct}%` }}
+        />
+        <div
+          className="h-full bg-ethereal-gold/70"
+          style={{ width: `${practisingPct}%` }}
+        />
+      </div>
+      <span className="text-[10px] font-semibold tabular-nums text-ethereal-graphite/60">
+        {t("projects.program.readiness.count", "{{ready}}/{{total}} zna partię", {
+          ready: readiness.ready,
+          total: readiness.total_cast,
+        })}
+      </span>
+    </div>
+  );
+}
+
 interface SortablePieceItemProps {
   item: ProgramTabItem;
   index: number;
   pieceObj?: Piece;
+  readiness?: ProjectReadinessSummaryEntry;
   onToggleEncore: (item: ProgramTabItem) => void;
   onDelete: (id: string) => void;
   t: TFunction;
@@ -136,6 +186,7 @@ function SortablePieceItem({
   item,
   index,
   pieceObj,
+  readiness,
   onToggleEncore,
   onDelete,
   t,
@@ -212,6 +263,7 @@ function SortablePieceItem({
               {meta}
             </Text>
           )}
+          {readiness && <ReadinessStrip readiness={readiness} t={t} />}
         </div>
 
         <div className="flex shrink-0 items-center">
@@ -289,6 +341,18 @@ export const ProgramTab = ({
     handleSaveChanges,
   } = useProgramTab(projectId, onDirtyStateChange);
 
+  const { data: readinessSummary } = useProjectReadinessSummary(projectId);
+  const readinessByPiece = React.useMemo(
+    () =>
+      new Map(
+        (readinessSummary ?? []).map((entry) => [
+          String(entry.piece_id),
+          entry,
+        ]),
+      ),
+    [readinessSummary],
+  );
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -364,6 +428,9 @@ export const ProgramTab = ({
                         item={item}
                         index={index}
                         pieceObj={pieceObj}
+                        readiness={readinessByPiece.get(
+                          String(item.piece_id || item.piece),
+                        )}
                         onToggleEncore={handleToggleEncore}
                         onDelete={handleDeleteItem}
                         t={t}

@@ -1,295 +1,380 @@
 /**
  * @file NotificationCenter.tsx
- * @description Synchronized Overlay Notification Widget.
- * Perfected Chiaroscuro glassmorphism via isolated Stacking Contexts and
- * direct Polymorphic Tweening to prevent browser backdrop-filter culling.
+ * @description Bell trigger + a responsive notification surface in the Ethereal
+ * language. On a fine pointer it slides out as a left drawer beside the sidebar;
+ * on touch it rises as a draggable bottom-sheet. Both share one body (header +
+ * unread/earlier sections + empty/loading states). Real enter/exit animations:
+ * the scrim and panel are direct `AnimatePresence` children (motion elements),
+ * not wrapped in a static div, so closing animates instead of snapping.
+ * @module features/notifications/components
  * @architecture Enterprise SaaS 2026
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import type { Transition } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useDragControls,
+  useMotionValue,
+  type PanInfo,
+  type Transition,
+} from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Bell, Check, X, BellRing } from "lucide-react";
+import { Bell, BellOff, BellRing, Check, X } from "lucide-react";
 
 import {
   useNotifications,
   useUnreadNotificationCount,
   useMarkAllNotificationsRead,
 } from "../api/notifications.queries";
+import type { NotificationDTO } from "../types/notifications.dto";
 import { NotificationItem } from "./NotificationItem";
 
-import { Heading, Text, Label } from "@/shared/ui/primitives/typography";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Divider } from "@/shared/ui/primitives/Divider";
+import { Heading, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
-
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useIsFinePointer } from "@/shared/lib/dom/useMediaQuery";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
+import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 
 interface NotificationCenterProps {
   className?: string;
+  /**
+   * `"icon"` (default) = a square bell button that fills its container (sidebar
+   * footer). `"tab"` = a labelled, full-height bottom-tab-bar cell with the bell
+   * + count rendered inline — so notifications live on the always-visible bar.
+   */
+  variant?: "icon" | "tab";
+  /** Tab label (only used by `variant="tab"`). */
+  label?: string;
 }
 
-const ETHEREAL_SPRING: Transition = {
+const DRAWER_SPRING: Transition = {
   type: "spring",
   stiffness: 400,
   damping: 40,
   mass: 0.8,
 };
 
-const BACKDROP_TRANSITION: Transition = {
-  duration: 0.4,
-  ease: [0.16, 1, 0.3, 1],
+const SHEET_SPRING: Transition = {
+  type: "spring",
+  stiffness: 340,
+  damping: 36,
+  mass: 0.8,
 };
+
+const SCRIM_TRANSITION: Transition = {
+  duration: 0.18,
+  ease: [0.22, 1, 0.36, 1],
+};
+
+const SWIPE_OFFSET_THRESHOLD = 90;
+const SWIPE_VELOCITY_THRESHOLD = 420;
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   className,
+  variant = "icon",
+  label,
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const drawerRef = useRef<HTMLDivElement>(null);
+  const isFinePointer = useIsFinePointer();
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
+  const y = useMotionValue(0);
 
   const { data: unreadCount = 0 } = useUnreadNotificationCount(!!user);
   const { data: notifications = [], isLoading } = useNotifications(!!user);
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+  const close = useCallback(() => setIsOpen(false), []);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
-    };
+  useBodyScrollLock(isOpen);
+  useCloseWatcher(isOpen, close);
+  useFocusTrap(panelRef, isOpen);
 
-    document.addEventListener("keydown", handleKeyDown);
-    drawerRef.current?.focus();
+  const { unread, earlier } = useMemo(() => {
+    const unreadList: NotificationDTO[] = [];
+    const earlierList: NotificationDTO[] = [];
+    for (const item of notifications) {
+      (item.is_read ? earlierList : unreadList).push(item);
+    }
+    return { unread: unreadList, earlier: earlierList };
+  }, [notifications]);
 
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen]);
-
-  const handleClose = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setIsOpen(false);
+  const handleDragEnd = (
+    _: PointerEvent | MouseEvent | TouchEvent,
+    info: PanInfo,
+  ) => {
+    if (
+      info.offset.y > SWIPE_OFFSET_THRESHOLD ||
+      info.velocity.y > SWIPE_VELOCITY_THRESHOLD
+    ) {
+      close();
+    }
   };
 
-  const renderSynchronizedPortal = () => {
-    if (typeof document === "undefined") return null;
+  const renderSection = (
+    label: string,
+    items: readonly NotificationDTO[],
+    withCount: boolean,
+  ): React.JSX.Element => (
+    <div className="mb-1.5 last:mb-0">
+      <div className="flex items-center gap-2 px-3 pb-1.5 pt-3">
+        <Eyebrow
+          size="caption"
+          color="muted"
+          weight="medium"
+          className="tracking-[0.18em]"
+        >
+          {label}
+        </Eyebrow>
+        {withCount && (
+          <span className="grid h-4 min-w-4 place-items-center rounded-full bg-ethereal-gold/15 px-1 text-[10px] font-semibold text-ethereal-gold">
+            {items.length}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col gap-0.5">
+        {items.map((item) => (
+          <NotificationItem
+            key={item.id}
+            notification={item}
+            onClosePanel={close}
+          />
+        ))}
+      </div>
+    </div>
+  );
 
-    return createPortal(
-      <AnimatePresence>
-        {isOpen && (
-          <div className="fixed inset-0 z-[100] pointer-events-none">
-            <motion.div
-              initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-              animate={{ opacity: 1, backdropFilter: "blur(2px)" }}
-              exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-              transition={BACKDROP_TRANSITION}
-              onClick={handleClose}
-              className="absolute inset-0 bg-ethereal-ink/5 pointer-events-auto cursor-pointer"
+  const header = (
+    <div className="flex shrink-0 items-center justify-between gap-3 px-5 pt-4 pb-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ethereal-gold/30 bg-gradient-to-br from-ethereal-gold/20 to-transparent">
+          <Bell size={17} strokeWidth={2} className="text-ethereal-gold" aria-hidden="true" />
+        </div>
+        <div className="flex min-w-0 flex-col">
+          <Heading size="lg" className="leading-tight text-ethereal-ink">
+            {t("notifications.title")}
+          </Heading>
+          <Eyebrow size="caption" color="muted" className="mt-0.5 tracking-[0.1em]">
+            {unreadCount > 0
+              ? `${unreadCount} ${t("notifications.unread")}`
+              : t("notifications.all_read", "Wszystko przeczytane")}
+          </Eyebrow>
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1">
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            onClick={() => markAllRead()}
+            title={t("notifications.mark_all_read")}
+            aria-label={t("notifications.mark_all_read")}
+            className="grid h-9 w-9 place-items-center rounded-lg text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-ink/[0.05] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+          >
+            <Check size={16} strokeWidth={2} aria-hidden="true" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={close}
+          aria-label={t("common.close", "Zamknij")}
+          className="grid h-9 w-9 place-items-center rounded-lg text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+        >
+          <X size={16} strokeWidth={2} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const body = (
+    <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
+      {isLoading ? (
+        <div className="flex h-40 items-center justify-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 2.4, ease: "linear" }}
+          >
+            <BellRing size={22} className="text-ethereal-gold/40" aria-hidden="true" />
+          </motion.div>
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-3 px-6 text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-full border border-ethereal-gold/20 bg-ethereal-alabaster">
+            <BellOff
+              size={22}
+              strokeWidth={1.5}
+              className="text-ethereal-graphite/40"
               aria-hidden="true"
             />
-
-            <GlassCard
-              as={motion.div}
-              ref={drawerRef}
-              tabIndex={-1}
-              role="dialog"
-              aria-modal="true"
-              aria-label={t("notifications.title")}
-              variant="ethereal"
-              withNoise={true}
-              isHoverable={false}
-              glow={false}
-              padding="none"
-              initial={{
-                x: -16,
-                scale: 0.96,
-                opacity: 0,
-                backdropFilter: "blur(0px)",
-              }}
-              animate={{
-                x: 0,
-                scale: 1,
-                opacity: 1,
-                backdropFilter: "blur(32px)",
-              }}
-              exit={{
-                x: -16,
-                scale: 0.96,
-                opacity: 0,
-                backdropFilter: "blur(0px)",
-              }}
-              transition={ETHEREAL_SPRING}
-              style={{ originX: 0, originY: 0.5 }}
-              className="absolute bottom-4 left-4 top-4 w-[280px] z-10 pointer-events-auto flex flex-col rounded-[24px] border border-white/40 shadow-[var(--shadow-ethereal-deep)] outline-none"
-            >
-              {/* Header Stratum */}
-              <div className="relative flex flex-col p-5 pb-4 flex-shrink-0 bg-white/5 rounded-t-[24px]">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-gradient-to-br from-ethereal-gold/20 to-transparent border border-ethereal-gold/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
-                      <Bell
-                        className="text-ethereal-gold"
-                        size={18}
-                        strokeWidth={2}
-                      />
-                    </div>
-                    <Heading
-                      size="xl"
-                      className="leading-tight text-ethereal-ink"
-                    >
-                      {t("notifications.title")}
-                    </Heading>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={() => markAllRead()}
-                        className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-black/5 text-ethereal-graphite/60 transition-colors hover:bg-black/10 hover:text-ethereal-ink outline-none"
-                        title={t("notifications.mark_all_read")}
-                      >
-                        <Check size={16} strokeWidth={2} />
-                      </button>
-                    )}
-                    <button
-                      onClick={handleClose}
-                      className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-black/5 text-ethereal-graphite/60 transition-colors hover:bg-red-500/10 hover:text-red-500 outline-none"
-                      aria-label={t("common.close")}
-                    >
-                      <X size={16} strokeWidth={2.5} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 px-1 pt-5">
-                  <span className="relative flex h-2 w-2">
-                    {unreadCount > 0 && (
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ethereal-gold opacity-75" />
-                    )}
-                    <span
-                      className={cn(
-                        "relative inline-flex rounded-full h-2 w-2",
-                        unreadCount > 0 ? "bg-ethereal-gold" : "",
-                      )}
-                    />
-                  </span>
-                  <Text size="xs" color="muted" weight="medium">
-                    {unreadCount > 0
-                      ? `${unreadCount} ${t("notifications.unread")}`
-                      : ""}
-                  </Text>
-                </div>
-                <Divider
-                  variant="fade"
-                  position="absolute-bottom"
-                  className="opacity-40"
-                />
-              </div>
-
-              {/* List Stratum */}
-              <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-2 [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden rounded-b-[24px]">
-                {isLoading ? (
-                  <div className="flex h-32 items-center justify-center">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 3,
-                        ease: "linear",
-                      }}
-                    >
-                      <BellRing
-                        size={24}
-                        className="text-ethereal-gold opacity-40"
-                      />
-                    </motion.div>
-                  </div>
-                ) : notifications.length > 0 ? (
-                  notifications.map((notif) => (
-                    <NotificationItem
-                      key={notif.id}
-                      notification={notif}
-                      onClosePanel={handleClose}
-                    />
-                  ))
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.4 }}
-                    className="flex h-full min-h-[200px] flex-col items-center justify-center px-4"
-                  >
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/5 border border-black/5 mb-3 shadow-[var(--shadow-ethereal-soft)]">
-                      <Bell
-                        size={20}
-                        strokeWidth={1.5}
-                        className="text-ethereal-graphite/40"
-                      />
-                    </div>
-                    <Heading
-                      size="lg"
-                      color="default"
-                      className="opacity-80 text-center"
-                    >
-                      {t("notifications.empty_title")}
-                    </Heading>
-                    <Text
-                      size="base"
-                      color="muted"
-                      className="mt-1 text-center"
-                    >
-                      {t("notifications.empty_subtitle")}
-                    </Text>
-                  </motion.div>
-                )}
-              </div>
-            </GlassCard>
           </div>
-        )}
-      </AnimatePresence>,
-      document.body,
-    );
-  };
+          <div>
+            <Heading size="md" className="text-ethereal-ink">
+              {t("notifications.empty_title")}
+            </Heading>
+            <Text size="sm" color="muted" className="mt-1">
+              {t("notifications.empty_subtitle")}
+            </Text>
+          </div>
+        </div>
+      ) : (
+        <>
+          {unread.length > 0 &&
+            renderSection(
+              t("notifications.section_new", "Nowe"),
+              unread,
+              true,
+            )}
+          {earlier.length > 0 &&
+            renderSection(
+              t("notifications.section_earlier", "Wcześniejsze"),
+              earlier,
+              false,
+            )}
+        </>
+      )}
+    </div>
+  );
+
+  const countBadge = unreadCount > 0 && (
+    <motion.span
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0, opacity: 0 }}
+      className={cn(
+        "absolute flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-ethereal-gold px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_10px_rgba(194,168,120,0.5)] ring-2 ring-ethereal-alabaster",
+        variant === "tab" ? "-right-2 -top-1" : "right-1.5 top-1",
+      )}
+    >
+      {unreadCount > 99 ? "99+" : unreadCount}
+    </motion.span>
+  );
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          "relative flex h-full w-full items-center justify-center rounded-[12px] text-ethereal-graphite/60 transition-colors outline-none hover:bg-white/10 hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/50",
-          className,
-        )}
-      >
-        <Bell size={18} strokeWidth={2} />
-        <AnimatePresence>
-          {unreadCount > 0 && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="absolute right-2 top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-ethereal-gold px-1 shadow-[0_0_10px_rgba(194,168,120,0.5)] ring-2 ring-white/10"
-            >
-              <Label
-                size="xs"
-                color="white"
-                weight="bold"
-                className="text-[10px] leading-none"
-              >
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </Label>
-            </motion.div>
+      {variant === "tab" ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          aria-label={label ?? t("notifications.title")}
+          aria-haspopup="dialog"
+          className={cn(
+            "relative flex flex-1 select-none flex-col items-center justify-center gap-1.5 rounded-xl pt-2 pb-1 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.95]",
+            unreadCount > 0
+              ? "text-ethereal-gold"
+              : "text-ethereal-graphite/55 hover:text-ethereal-ink",
+            className,
           )}
-        </AnimatePresence>
-      </button>
+        >
+          <span className="relative flex h-8 items-center justify-center">
+            <Bell
+              size={21}
+              strokeWidth={unreadCount > 0 ? 2.25 : 1.75}
+              aria-hidden="true"
+            />
+            <AnimatePresence>{countBadge}</AnimatePresence>
+          </span>
+          <span className="max-w-full truncate text-[10.5px] font-medium leading-none tracking-tight">
+            {label ?? t("notifications.title")}
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          aria-label={t("notifications.title")}
+          aria-haspopup="dialog"
+          className={cn(
+            "relative flex h-full w-full items-center justify-center rounded-[12px] text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-ink/[0.05] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+            className,
+          )}
+        >
+          <Bell size={18} strokeWidth={2} aria-hidden="true" />
+          <AnimatePresence>{countBadge}</AnimatePresence>
+        </button>
+      )}
 
-      {renderSynchronizedPortal()}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                key="notif-scrim"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={SCRIM_TRANSITION}
+                onClick={close}
+                aria-hidden="true"
+                className={cn(
+                  "fixed inset-0 z-[99]",
+                  isFinePointer
+                    ? "bg-ethereal-ink/10"
+                    : "bg-ethereal-ink/45 backdrop-blur-[3px]",
+                )}
+              />
+            )}
+
+            {isOpen &&
+              (isFinePointer ? (
+                <motion.div
+                  key="notif-drawer"
+                  ref={panelRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={t("notifications.title")}
+                  initial={{ opacity: 0, x: -16, scale: 0.98 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: -16, scale: 0.98 }}
+                  transition={DRAWER_SPRING}
+                  style={{ originX: 0, originY: 0.5 }}
+                  className="fixed bottom-4 left-4 top-4 z-[100] flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[26px] border border-ethereal-gold/20 bg-ethereal-alabaster shadow-[0_28px_70px_-20px_rgba(22,20,18,0.4)] outline-none"
+                >
+                  {header}
+                  <div className="mx-3 h-px shrink-0 bg-ethereal-graphite/10" />
+                  {body}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="notif-sheet"
+                  ref={panelRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={t("notifications.title")}
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%", transition: { duration: 0.2, ease: "circIn" } }}
+                  transition={SHEET_SPRING}
+                  style={{ y, contain: "paint" }}
+                  drag="y"
+                  dragControls={dragControls}
+                  dragListener={false}
+                  dragConstraints={{ top: 0, bottom: 0 }}
+                  dragElastic={0.05}
+                  onDragEnd={handleDragEnd}
+                  className="fixed inset-x-0 bottom-0 z-[100] flex max-h-[85dvh] flex-col overflow-hidden rounded-t-[26px] border-t border-glass-border bg-ethereal-alabaster shadow-[0_-12px_40px_-8px_rgba(22,20,18,0.2)] outline-none"
+                >
+                  <div
+                    className="flex w-full shrink-0 cursor-grab justify-center py-3 touch-none active:cursor-grabbing"
+                    onPointerDown={(event) => dragControls.start(event)}
+                    aria-hidden="true"
+                  >
+                    <span className="block h-[3px] w-9 rounded-full bg-ethereal-graphite/15" />
+                  </div>
+                  {header}
+                  <div className="mx-3 h-px shrink-0 bg-ethereal-graphite/10" />
+                  {body}
+                </motion.div>
+              ))}
+          </AnimatePresence>,
+          document.body,
+        )}
     </>
   );
 };
