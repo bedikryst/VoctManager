@@ -288,12 +288,30 @@
       "archived_success": "Artiste archivé",
       "archiving": "Archivage de l'artiste...",
       "toggle_error_desc": "Impossible de modifier le statut de l'artiste."
+    },
+    "dossier": {
+      "earnings": "Règlements",
+      "earnings_paid": "Versé",
+      "earnings_outstanding": "À verser",
+      "earnings_projects": "{{n}} proj."
+    }
+  },
+  "password": {
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe",
+    "caps_lock": "Verr. Maj activé",
+    "strength": {
+      "weak": "Faible",
+      "fair": "Moyen",
+      "good": "Bon",
+      "strong": "Fort"
     }
   },
   "auth": {
     "activate": {
       "back_to_home": "Retour à la page d'accueil",
       "badge": "Activation d'invitation",
+      "features_title": "Ce qui vous attend à l'intérieur",
       "description": "Complétez l'étape finale d'intégration pour sécuriser votre compte et accéder à l'espace de travail opérationnel utilisé pour les projets, les répétitions et la coordination de l'ensemble.",
       "features": {
         "access": {
@@ -335,12 +353,21 @@
         "return_home": "Retour à l'accueil",
         "subtitle": "Activation terminée",
         "title": "Votre panneau est prêt",
+        "copy_login": "Copier l'identifiant",
+        "copied": "Copié",
         "your_username": "Votre nom d'utilisateur pour vous connecter"
       },
+      "greeting_word": "Bienvenue",
       "title_1": "Activez votre",
       "title_2": "panneau artiste"
     },
     "login": {
+      "welcome": "Bon retour",
+      "heading": "Connectez-vous au panneau",
+      "access_trouble": "Problème d'accès à votre compte ?",
+      "access_reset_cta": "Réinitialiser le mot de passe",
+      "access_help": "Vous n'avez pas encore accès ? Les comptes VoctManager sont créés par le bureau — écrivez à {{email}} et nous vous aiderons à entrer.",
+      "access_contact_cta": "Écrire au bureau",
       "back_to_lobby": "Retour à l'accueil",
       "email_label": "Adresse e-mail",
       "email_placeholder": "ex. jean.dupont@voctensemble.pl",
@@ -351,8 +378,46 @@
       "privacy_link": "Politique de confidentialité",
       "submit_button": "Autoriser l'accès",
       "submitting": "Autorisation en cours...",
-      "subtitle": "Panneau d'administration et RH",
+      "subtitle": "L'espace de l'ensemble VoctEnsemble",
       "terms_link": "Conditions d'utilisation"
+    },
+    "requirements": {
+      "length": "Au moins 8 caractères",
+      "match": "Les mots de passe correspondent"
+    },
+    "reset": {
+      "request_eyebrow": "Récupération du compte",
+      "request_title": "Réinitialiser le mot de passe",
+      "request_description": "Saisissez l'adresse e-mail liée à votre compte. S'il existe, nous enverrons un lien pour définir un nouveau mot de passe.",
+      "submit_request": "Envoyer le lien",
+      "submitting_request": "Envoi…",
+      "sent_eyebrow": "Lien envoyé",
+      "sent_title": "Consultez votre boîte mail",
+      "sent_desc": "Si un compte existe pour cette adresse, nous y avons envoyé un lien de réinitialisation. Vérifiez aussi vos spams.",
+      "confirm_eyebrow": "Nouveau mot de passe",
+      "confirm_title": "Définir un nouveau mot de passe",
+      "confirm_description": "Choisissez un nouveau mot de passe sécurisé pour votre compte.",
+      "new_password": "Nouveau mot de passe",
+      "new_password_placeholder": "Créez un mot de passe sécurisé",
+      "confirm_password": "Confirmer le mot de passe",
+      "confirm_password_placeholder": "Répétez le mot de passe",
+      "submit_confirm": "Définir le mot de passe",
+      "submitting_confirm": "Enregistrement…",
+      "success_eyebrow": "Terminé",
+      "success_title": "Votre mot de passe a été modifié",
+      "success_desc": "Votre nouveau mot de passe est actif. Connectez-vous pour accéder au panneau.",
+      "go_to_login": "Aller à la connexion",
+      "back_to_login": "Retour à la connexion",
+      "errors": {
+        "invalid_link": "Ce lien de réinitialisation est invalide.",
+        "expired_link": "Ce lien de réinitialisation a expiré. Veuillez en demander un nouveau.",
+        "reset_failed": "Échec de la réinitialisation. Veuillez réessayer.",
+        "request_failed": "Échec de l'envoi du lien. Veuillez réessayer.",
+        "email_required": "Veuillez saisir votre adresse e-mail.",
+        "incomplete_link": "Il manque des paramètres dans le lien de réinitialisation.",
+        "password_too_short": "Le mot de passe doit comporter au moins 8 caractères.",
+        "password_mismatch": "Les mots de passe ne correspondent pas."
+      }
     },
     "legal": {
       "common": {
@@ -362,8 +427,8 @@
       },
       "privacy": {
         "administrator": "Responsable du traitement",
-        "administrator_desc": "Le responsable du traitement de vos données est la Fondation \"VoctFoundation\" basée à Cracovie (31-150), ul. Św. Filipa 23/3. Pour toute question concernant la protection des données, contactez : kontakt@voctensemble.com.",
-        "contact_email": "voctensemble@gmail.com",
+        "administrator_desc": "Le responsable du traitement de vos données est la Fondation \"VoctFoundation\" basée à Cracovie (31-150), ul. Św. Filipa 23/3. Pour toute question concernant la protection des données, contactez : rodo@voctensemble.com.",
+        "contact_email": "rodo@voctensemble.com",
         "goals_and_basis": "Objectifs et base juridique du traitement",
         "goals_items": {
           "account": {
@@ -379,24 +444,33 @@
             "title": "Logistique et production"
           }
         },
-        "reporting": "Toute erreur de fonctionnement du système, incohérence dans les horaires ou problème d'accès doit être signalé à : voctensemble@gmail.com.",
+        "reporting": "Toute erreur de fonctionnement du système, incohérence dans les horaires ou problème d'accès doit être signalé à : kontakt@voctensemble.com.",
         "reporting_title": "Signalement de problèmes et support",
         "security_and_tech": "Technologies et sécurité (JWT)",
         "security_desc": "L'application utilise la technologie JWT (JSON Web Token) stockée dans la mémoire du navigateur (LocalStorage) uniquement pour maintenir les sessions de connexion et assurer un accès sécurisé aux données. Nous n'utilisons pas de cookies de suivi.",
         "subtitle": "Politique de confidentialité",
         "title": "Politique de confidentialité",
         "your_rights": "Vos droits",
-        "your_rights_desc": "Vous avez le droit d'accéder à vos données, de les rectifier, de les supprimer, de restreindre le traitement, de les transférer et de vous opposer au traitement. Vous avez également le droit de déposer une plainte auprès du Président de l'Office pour la protection des données personnelles (UODO).",
+        "your_rights_desc": "Vous avez le droit d'accéder à vos données, de les rectifier, de les supprimer, de restreindre le traitement, de les transférer et de vous opposer au traitement. Pour exercer ces droits, écrivez à rodo@voctensemble.com. Vous avez également le droit de déposer une plainte auprès du Président de l'Office pour la protection des données personnelles (UODO).",
         "your_rights_title": "Vos droits",
         "recipients": "Destinataires des données",
-        "recipients_desc": "Nous confions vos données à des prestataires de confiance : DigitalOcean (infrastructure serveur) et Google (services de cartographie). L'utilisation de widgets audio peut entraîner un transfert technique de données vers les États-Unis en vertu du Data Privacy Framework.",
-        "recipients_title": "Destinataires des données"
+        "recipients_desc": "Nous confions vos données à des prestataires de confiance — agissant sur nos instructions en tant que sous-traitants ou en tant que responsables distincts : un prestataire d'infrastructure serveur (hébergement), Google (services de cartographie et notifications push mobiles via Firebase Cloud Messaging) et Resend (envoi d'e-mails transactionnels). Les notifications web push sont gérées en interne (norme VAPID) et les polices sont servies localement. Lorsqu'une playlist de référence est associée à un projet, sa vue d'ensemble intègre un lecteur Spotify — son chargement transmet des données techniques (par ex. votre adresse IP) à Spotify selon la politique de ce service.",
+        "internal_comm_title": "Communication interne",
+        "internal_comm_desc": "L'application propose une messagerie interne (fils de discussion individuels avec le bureau et canaux par projet). Le contenu des messages constitue une donnée personnelle et est conservé dans notre base uniquement pour la coordination organisationnelle et artistique de l'ensemble (art. 6, par. 1, point f du RGPD — intérêt légitime). Nous traitons également les métadonnées associées : un indicateur de lecture pour chaque message et l'attribution d'un fil à un membre du bureau. Les notifications de nouveaux messages sont transmises par les canaux décrits dans la section « Destinataires des données » ; le contenu des conversations n'est jamais partagé avec des messageries externes.",
+        "internal_comm_retention": "Lors de la suppression de votre compte, le contenu de vos messages est définitivement effacé et vos fils de discussion ainsi que vos adhésions aux canaux sont supprimés.",
+        "recipients_title": "Destinataires des données",
+        "transfers_title": "Transferts hors EEE",
+        "transfers_desc": "Nous maintenons notre infrastructure principale dans l'Union européenne et limitons au strict nécessaire les transferts hors de l'Espace économique européen. Certains services de notification et de contenu intégré peuvent néanmoins traiter des données hors EEE : les notifications push mobiles (Google Firebase Cloud Messaging), l'envoi d'e-mails (Resend) et le lecteur Spotify intégré. Ces transferts reposent sur une décision d'adéquation, le Data Privacy Framework UE–États-Unis ou des clauses contractuelles types (CCT).",
+        "retention_title": "Durée de conservation",
+        "retention_desc": "Nous conservons les données de votre compte et de votre profil (nom, e-mail, téléphone, photo de profil, données logistiques, jeton de calendrier, etc.) tant que votre compte existe. Lors de sa suppression (droit à l'effacement), nous anonymisons votre identité, supprimons votre profil et votre photo, effaçons définitivement le contenu de vos messages et supprimons vos fils de discussion et adhésions aux canaux. Les données opérationnelles liées au travail de l'ensemble (par ex. participation aux projets et présence) sont anonymisées ou supprimées en conséquence. Font exception les données que nous devons conserver pour respecter des obligations légales — en particulier les documents de règlement, soumis aux durées de conservation légales en matière comptable et fiscale. Les jetons d'authentification sont de courte durée et les journaux techniques du serveur ne sont conservés que le temps nécessaire à la sécurité.",
+        "analytics_title": "Analyses internes et décisions automatisées",
+        "analytics_desc": "Pour faciliter l'organisation de l'ensemble, nous présentons au bureau des indicateurs agrégés issus de votre activité (par ex. statistiques de présence ou historique des distributions). Ils servent uniquement à des fins organisationnelles et artistiques. Nous ne prenons à votre égard aucune décision automatisée produisant des effets juridiques ou vous affectant de manière significative (art. 22 RGPD) — les décisions de distribution et de participation sont prises par des personnes."
       },
       "terms": {
         "blocking_account": "Responsabilité et blocage de compte",
-        "blocking_desc": "La Fondation se réserve le droit de suspendre temporairement ou de supprimer définitivement le compte d'un utilisateur en cas de violation de confidentialité ou de violation flagrante des règles de travail en équipe. La Fondation ne peut être tenue responsable des interruptions dues à la faute de fournisseurs externes.",
+        "blocking_desc": "La Fondation se réserve le droit de suspendre temporairement ou de supprimer définitivement le compte d'un utilisateur en cas de violation de confidentialité ou de violation flagrante des règles de travail en équipe. Le panneau est fourni pour les besoins opérationnels de la Fondation « en l'état », et nous ne garantissons pas une disponibilité ininterrompue. La Fondation ne peut être tenue responsable des interruptions dues à la faute de fournisseurs externes.",
         "character_and_usage": "Nature du système",
-        "character_desc": "VoctManager est un outil opérationnel interne de la Fondation. L'accès est accordé individuellement. Il est interdit de partager les identifiants d'accès et les liens iCal personnels avec des tiers.",
+        "character_desc": "Le présent Règlement définit les règles d'utilisation du panneau VoctManager ; en l'utilisant, vous les acceptez. VoctManager est un outil opérationnel interne de la Fondation, et l'accès est accordé individuellement. Vous êtes responsable de la confidentialité de vos identifiants ; il est interdit de partager les identifiants d'accès ou les liens iCal personnels avec des tiers.",
         "confidentiality": "Confidentialité et NDA",
         "confidentiality_desc": "Les informations sur les tarifs, les plans de production, les lieux de répétition et les distributions sont soumises au secret professionnel. Il est interdit de publier des captures d'écran de l'intérieur de l'application sur les réseaux sociaux sans l'approbation du Conseil.",
         "intellectual_property": "Propriété intellectuelle et matériels",
@@ -406,6 +480,12 @@
         "support_desc_suffix": ".",
         "subtitle": "Conditions d'utilisation",
         "title": "Conditions d'utilisation",
+        "data_title": "Données personnelles",
+        "data_desc": "Le traitement de vos données personnelles dans le panneau est décrit dans la Politique de confidentialité. En utilisant VoctManager, vous confirmez en avoir pris connaissance. Pour les questions de protection des données, écrivez à rodo@voctensemble.com.",
+        "changes_title": "Modifications du Règlement",
+        "changes_desc": "Le présent Règlement peut être mis à jour lorsque la portée ou le fonctionnement du panneau évolue. Nous annoncerons les changements importants dans l'application ou par e-mail. La poursuite de l'utilisation du panneau après l'entrée en vigueur des changements vaut acceptation.",
+        "governing_law_title": "Droit applicable",
+        "governing_law_desc": "Le présent Règlement est régi par le droit polonais. Le RGPD s'applique à la protection des données personnelles. Les éventuels litiges sont tranchés par les tribunaux de droit commun compétents en Pologne.",
         "title_highlight": "VoctManager"
       }
     },
@@ -491,6 +571,7 @@
   "common": {
     "actions": {
       "cancel": "Annuler",
+      "clear": "Effacer",
       "close": "Fermer",
       "close_panel": "Fermer le panneau (ESC)",
       "confirmDelete": "Oui, supprimer le compte",
@@ -565,138 +646,161 @@
     "specialty_other": "Autre"
   },
   "contracts": {
-    "actions": {
-      "bulk_apply": "Appliquer aux sélectionnés",
-      "bulk_badge": "Évaluation groupée",
-      "bulk_description": "Appliquez le même tarif à tous les membres de la distribution sélectionnés.",
-      "bulk_disabled_reason": "Sélectionnez d'abord les membres de la distribution",
-      "bulk_fee_error": "Entrez une valeur de rémunération valide.",
-      "bulk_hint": "Cela remplacera les tarifs individuels",
-      "bulk_label": "Montant du tarif",
-      "bulk_placeholder": "Saisir le tarif...",
-      "bulk_title": "Injection groupée de tarifs",
-      "cast_count_one": "{{count}} contrat de distribution",
-      "cast_count_many": "{{count}} contrats de distribution",
-      "cast_count_other": "{{count}} contrats de distribution",
-      "currency_label": "PLN",
-      "export_badge": "Prêt pour export",
-      "export_description": "Générez des PDFs pour les contrats sélectionnés",
-      "export_missing_one": "{{count}} évaluation manquante",
-      "export_missing_many": "{{count}} évaluations manquantes",
-      "export_missing_other": "{{count}} évaluations manquantes",
-      "export_ready": "Prêt pour export",
-      "export_title": "Exports de documents"
-    },
-    "empty": {
-      "idle_description": "Le cockpit financier est prêt. Choisissez un événement ci-dessus pour inspecter la couverture, mettre à jour les valeurs de rémunération et préparer les packages de contrats exportables.",
-      "idle_eyebrow": "Vue du portefeuille",
-      "idle_title": "Sélectionnez un projet pour ouvrir le registre de règlement.",
-      "no_personnel_description": "Assignez d'abord le personnel dans l'espace du projet. Une fois que les enregistrements existent ici, vous pouvez définir les rémunérations et générer les contrats PDF.",
-      "no_personnel_eyebrow": "Aucun enregistrement pour l'instant",
-      "no_personnel_title": "Ce projet n'a pas d'équipe d'interprètes ou d'équipe technique assignée."
-    },
-    "error": {
-      "action": "Réessayer la synchronisation",
-      "description": "Impossible de récupérer les données des contrats. Vérifiez votre connexion.",
-      "eyebrow": "Erreur de synchronisation",
-      "title": "Échec du chargement des contrats"
-    },
     "header": {
       "badge": "Opérations financières",
-      "refresh": "Actualiser les données",
+      "title": "Centre des",
+      "title_highlight": "règlements",
+      "refresh": "Actualiser",
       "syncing": "Synchronisation",
-      "title": "Contrats et",
-      "title_highlight": "Paie"
-    },
-    "hero": {
-      "active_projects": "actifs",
-      "cast": "distribution",
-      "context_badge_active": "Contexte de règlement actif",
-      "context_badge_idle": "Espace de travail des opérations financières",
-      "context_location": "Localisation",
-      "context_location_placeholder": "Le lieu de l'événement et le contexte logistique apparaîtront ici.",
-      "context_mix": "Mix du personnel",
-      "context_schedule": "Calendrier",
-      "context_schedule_placeholder": "Sélectionnez un événement pour activer l'espace de règlement.",
-      "contract_records": "enregistrements",
-      "crew": "équipe",
-      "description_default": "Choisissez un projet pour gérer les frais de distribution, la rémunération de l'équipe et les PDFs prêts pour les contrats dans un espace cohérent.",
-      "description_selected": "Contrôlez les évaluations, la préparation des paiements et les exports de documents pour la production sélectionnée sans quitter la surface du registre.",
-      "draft_projects": "brouillons",
-      "portfolio_projects": "projets dans le portefeuille",
-      "selector_description": "L'événement sélectionné devient le contexte opérationnel pour les évaluations, les vérifications de budget et la génération de PDF.",
-      "selector_eyebrow": "Étendue du projet",
-      "selector_label": "Contexte de règlement",
-      "selector_placeholder": "Choisissez un événement du portefeuille",
-      "stat_budget": "Posture budgétaire",
-      "stat_completion": "Couverture d'évaluation",
-      "stat_contracts": "Contrats",
-      "title_default": "Cockpit des contrats et de la paie"
+      "mix": "{{cast}} distribution · {{crew}} équipe"
     },
     "loader": {
-      "message": "Chargement des registres de règlement..."
+      "message": "Chargement des registres de règlement…"
     },
-    "metrics": {
-      "global_archive": "Projets archivés",
-      "global_archive_desc": "Productions terminées encore disponibles pour les exports historiques.",
-      "global_budget": "Budget global",
-      "global_budget_desc": "Budget total sur tous les projets actifs",
-      "global_coverage": "Taux de couverture",
-      "global_coverage_desc": "Pourcentage de contrats avec tarifs",
-      "global_live": "Projets en cours",
-      "global_live_desc": "Productions actives en cours",
-      "project_budget": "Budget du projet",
-      "project_budget_desc": "Coût total estimé pour cette production",
-      "project_missing": "Évaluations manquantes",
-      "project_missing_desc": "Contrats sans tarifs",
-      "project_mix": "Mix distribution/équipe",
-      "project_mix_desc": "Répartition des coûts du personnel",
-      "project_priced": "Contrats tarifés",
-      "project_priced_desc": "Contrats avec tarifs assignés"
-    },
-    "row": {
-      "cast_record": "Enregistrement de contrat de distribution",
-      "crew_record": "Enregistrement de contrat d'équipe",
-      "currency_label": "PLN",
-      "current_fee": "Tarif actuel : {{amount}}",
-      "download_pdf": "PDF",
-      "fee_placeholder": "0.00",
-      "invalid_fee": "Entrez une valeur de rémunération valide.",
-      "missing_fee": "Tarif manquant",
-      "save": "Enregistrer",
-      "saved": "Enregistré"
-    },
-    "sections": {
-      "cast_description": "Gérez les tarifs pour les interprètes du chœur et les solistes",
-      "cast_title": "Distribution vocale",
-      "crew_description": "Gardez les contrats techniques et logistiques alignés avec le même workflow de rémunération et d'export.",
-      "crew_title": "Équipe technique"
-    },
-    "table": {
-      "all_priced": "Tous tarifés",
-      "documents": "Documents",
-      "missing_valuations": "évaluations manquantes",
-      "performer": "Interprète",
-      "records": "Enregistrements",
-      "remuneration": "Rémunération",
-      "role": "Rôle"
-    },
-    "toast": {
-      "bulk_applying": "Application des tarifs groupés...",
-      "bulk_error": "Erreur serveur pendant l'opération groupée.",
-      "bulk_success_one": "1 contrat mis à jour.",
-      "bulk_success_few": "{{count}} contrats mis à jour.",
-      "bulk_success_many": "{{count}} contrats mis à jour.",
-      "bulk_success_other": "{{count}} contrats mis à jour.",
-      "pdf_error": "Erreur de génération : {{message}}",
-      "pdf_generating": "Génération du PDF pour {{name}}...",
-      "pdf_success": "Document généré avec succès.",
-      "save_error": "Impossible d'enregistrer la rémunération pour : {{name}}."
+    "error": {
+      "eyebrow": "Aucune donnée",
+      "title": "Impossible de charger les règlements.",
+      "description": "Les données des projets, de la distribution ou de l'équipe ne sont pas arrivées. Réessayez la synchronisation.",
+      "action": "Relancer la synchronisation"
     },
     "warning": {
-      "action": "Réessayer la synchronisation",
-      "description": "Certaines données peuvent être obsolètes. Actualisez pour obtenir les dernières.",
-      "title": "Avertissement de synchronisation"
+      "title": "Certaines données sont obsolètes.",
+      "description": "Le tableau de bord fonctionne, mais une source ne s'est pas actualisée. Lancez une synchronisation manuelle.",
+      "action": "Réessayer"
+    },
+    "summary": {
+      "outstanding": "À payer",
+      "all_settled": "Réglé",
+      "all_settled_note": "Tous les cachets de ce périmètre sont réglés.",
+      "outstanding_note": "En attente de paiement : {{n}}",
+      "outstanding_note_missing": "{{owed}} en attente de paiement · {{missing}} sans cachet",
+      "committed": "Budget des cachets",
+      "priced": "Chiffrés",
+      "paid": "Payés",
+      "scope_portfolio": "Tout le portefeuille"
+    },
+    "rail": {
+      "title": "Projets",
+      "search": "Rechercher un projet…",
+      "all_projects": "Tous les projets",
+      "all_outstanding": "{{n}} avec soldes",
+      "all_clear": "Tout est réglé",
+      "mix": "{{cast}} distribution · {{crew}} équipe",
+      "missing": "{{n}} sans cachet",
+      "empty": "aucun personnel",
+      "settled": "réglé",
+      "no_match": "Aucun projet ne correspond à cette recherche."
+    },
+    "payables": {
+      "title": "À régler",
+      "unpriced": "Sans cachet",
+      "pay": "Payé",
+      "open": "Ouvrir dans le projet",
+      "open_short": "Chiffrer",
+      "paid_toast": "{{name}} marqué comme payé.",
+      "clear_eyebrow": "Tout est en ordre",
+      "clear_title": "Tous les cachets sont réglés.",
+      "clear_desc": "Aucun projet n'a de cachet ouvert ni de paiement en attente. Choisissez un projet à gauche pour voir le détail ou générer les contrats.",
+      "none_in_filter": "Aucun élément dans ce filtre."
+    },
+    "filters": {
+      "all": "Tous",
+      "all_short": "Tout",
+      "unpriced": "Sans cachet",
+      "unpaid": "À payer",
+      "aria": "Filtre des règlements"
+    },
+    "bulk": {
+      "label": "Cachet",
+      "placeholder": "p. ex. 500",
+      "apply": "Appliquer",
+      "hint": "Fixe un cachet unique pour le groupe choisi (ignore les déjà payés).",
+      "target_label": "Cachet groupé pour"
+    },
+    "ledger": {
+      "col_person": "Personne",
+      "col_role": "Rôle",
+      "col_fee": "Cachet",
+      "col_actions": "Règlement",
+      "missing": "{{n}} sans cachet",
+      "owed": "{{n}} à payer",
+      "settled": "Réglé",
+      "empty_filter": "Aucun élément pour le filtre choisi."
+    },
+    "sections": {
+      "cast": "Distribution",
+      "crew": "Équipe"
+    },
+    "row": {
+      "currency": "PLN",
+      "fee_placeholder": "0,00",
+      "fee_aria": "Cachet pour {{name}}",
+      "invalid_fee": "Saisissez un montant valide.",
+      "save": "Enregistrer le cachet",
+      "paid": "Payé",
+      "to_pay": "À payer",
+      "mark_paid": "Marquer comme payé",
+      "mark_unpaid": "Annuler le paiement",
+      "pay_blocked": "Chiffrez d'abord le cachet",
+      "pdf_blocked": "Le chiffrage débloque le contrat PDF",
+      "download_pdf": "Télécharger le contrat PDF",
+      "paid_on": "Payé le {{date}}"
+    },
+    "empty": {
+      "no_personnel_eyebrow": "Aucun personnel",
+      "no_personnel_title": "Ce projet n'a ni distribution ni équipe assignée.",
+      "no_personnel_description": "Assignez d'abord des personnes dans l'espace du projet. Une fois les enregistrements présents ici, vous pourrez fixer les cachets, marquer les paiements et générer les contrats PDF."
+    },
+    "status": {
+      "confirmed": "Confirmé",
+      "declined": "Refusé",
+      "pending": "En attente"
+    },
+    "project_status": {
+      "active": "Actif",
+      "archived": "Archivé",
+      "cancelled": "Annulé",
+      "draft": "Brouillon"
+    },
+    "toast": {
+      "bulk_applying": "Application d'un cachet commun…",
+      "bulk_success": "{{count}} cachets mis à jour.",
+      "bulk_error": "Impossible d'appliquer le cachet groupé.",
+      "pdf_generating": "Génération du contrat pour {{name}}…",
+      "pdf_success": "Contrat PDF prêt.",
+      "pdf_error": "Échec de la génération du PDF : {{message}}",
+      "save_error": "Impossible d'enregistrer le cachet pour {{name}}.",
+      "payment_error": "Impossible de changer le statut de paiement."
+    },
+    "unknown_artist": "Artiste inconnu",
+    "unknown_collaborator": "Collaborateur inconnu",
+    "unknown_voice": "Voix inconnue",
+    "unknown_specialty": "Spécialité inconnue",
+    "csv": {
+      "person": "Personne",
+      "kind": "Type",
+      "role": "Rôle",
+      "project": "Projet",
+      "event_date": "Date de l'événement",
+      "amount": "Montant (PLN)",
+      "paid": "Payé",
+      "paid_date": "Date de paiement",
+      "status": "Statut",
+      "yes": "Oui",
+      "no": "Non",
+      "export": "Export CSV",
+      "hint": "Liste complète des règlements pour la comptabilité (CSV)",
+      "done": "Liste des règlements exportée."
+    },
+    "mark_all": {
+      "button": "Marquer payé",
+      "hint": "Marque tous les cachets chiffrés et impayés du projet comme payés.",
+      "applying": "Marquage des cachets comme payés…",
+      "done": "{{count}} cachets marqués comme payés.",
+      "partial": "{{ok}} sur {{total}} marqués — {{failed}} échoués.",
+      "confirm_title": "Marquer tout le projet comme payé ?",
+      "confirm_desc": "{{count}} cachets chiffrés et impayés (distribution et équipe) seront marqués payés. Vous pouvez annuler chacun individuellement.",
+      "confirm_cta": "Marquer payé"
     }
   },
   "crew": {
@@ -953,7 +1057,37 @@
     "layout": {
       "actions": {
         "logout": "Déconnexion",
-        "settings": "Paramètres"
+        "open_menu": "Menu",
+        "pin": "Épingler le panneau",
+        "settings": "Paramètres",
+        "unpin": "Détacher le panneau"
+      },
+      "command": {
+        "actions": {
+          "mark_attendance": "Marquer la présence",
+          "new_artist": "Nouvel artiste",
+          "new_project": "Nouveau projet",
+          "report_absence": "Signaler une absence"
+        },
+        "current": "Ici",
+        "hint_close": "fermer",
+        "hint_move": "naviguer",
+        "hint_select": "aller",
+        "no_results": "Aucun résultat",
+        "no_results_hint": "Essayez une autre expression",
+        "open": "Rechercher",
+        "pin_project": "Épingler le projet",
+        "placeholder": "Rechercher ou aller à…",
+        "sections": {
+          "actions": "Actions rapides",
+          "artists": "Artistes",
+          "navigation": "Navigation",
+          "pinned": "Épinglés",
+          "projects": "Projets",
+          "recent": "Récents"
+        },
+        "title": "Accès rapide",
+        "unpin_project": "Détacher le projet"
       },
       "groups": {
         "artist_zone": "Zone Artiste",
@@ -977,6 +1111,16 @@
         "projects": "Gestion des Projets",
         "resources": "Base de Connaissances",
         "schedule": "Mon Calendrier"
+      },
+      "mobile_tabs": {
+        "alerts": "Alertes",
+        "attendance": "Présences",
+        "dashboard": "Accueil",
+        "materials": "Matériel",
+        "messages": "Chat",
+        "more": "Plus",
+        "projects": "Projets",
+        "schedule": "Agenda"
       },
       "nav": {
         "main_menu": "Menu principal"
@@ -1327,7 +1471,10 @@
       "status_updated": "Statut de participation mis à jour",
       "title": "Nouvelle invitation au projet"
     },
+    "all_read": "Tout est à jour",
     "mark_all_read": "Marquer tout comme lu",
+    "section_earlier": "Plus anciennes",
+    "section_new": "Nouvelles",
     "send_modal": {
       "cta_label": "Libellé du bouton (CTA)",
       "cta_label_placeholder": "ex. Voir les détails",

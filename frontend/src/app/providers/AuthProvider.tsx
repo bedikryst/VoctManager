@@ -17,6 +17,7 @@ import React, {
 import { isAxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import api, { type AuthRequestConfig } from "@/shared/api/api";
+import { clearPersistedQueryCache } from "@/shared/api/queryPersistence";
 import i18n from "@/shared/config/i18n";
 import type { AuthProfile, AuthUser } from "@/shared/auth/auth.types";
 import { settingsKeys } from "@/features/settings/api/settings.queries";
@@ -122,6 +123,8 @@ const toUserMeDTO = (user: AuthUser): UserMeDTO => ({
         is_manager: user.profile.is_manager,
         is_artist: user.profile.is_artist,
         is_crew: user.profile.is_crew,
+        avatar_url: user.profile.avatar_url ?? null,
+        avatar_thumb_url: user.profile.avatar_thumb_url ?? null,
         phone_number: user.profile.phone_number ?? "",
         language: user.profile.language ?? "pl",
         timezone: user.profile.timezone ?? "UTC",
@@ -231,6 +234,8 @@ export const AuthProvider = ({
     } finally {
       setUser(null);
       queryClient.clear();
+      // Drop the offline snapshot too — no cached data may survive logout.
+      clearPersistedQueryCache();
       window.location.href = "/login";
     }
   };

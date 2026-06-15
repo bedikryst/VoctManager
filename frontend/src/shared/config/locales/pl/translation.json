@@ -292,12 +292,30 @@
       "archived_success": "Artysta zarchiwizowany",
       "archiving": "Archiwizowanie artysty...",
       "toggle_error_desc": "Nie udało się zmienić statusu artysty."
+    },
+    "dossier": {
+      "earnings": "Rozliczenia",
+      "earnings_paid": "Wypłacono",
+      "earnings_outstanding": "Do wypłaty",
+      "earnings_projects": "{{n}} proj."
+    }
+  },
+  "password": {
+    "show": "Pokaż hasło",
+    "hide": "Ukryj hasło",
+    "caps_lock": "Caps Lock jest włączony",
+    "strength": {
+      "weak": "Słabe",
+      "fair": "Przeciętne",
+      "good": "Dobre",
+      "strong": "Mocne"
     }
   },
   "auth": {
     "activate": {
       "back_to_home": "Powrót na stronę główną",
       "badge": "Aktywacja zaproszenia",
+      "features_title": "Co czeka na Ciebie w środku",
       "description": "Dokończ ostatni krok wdrożenia, aby zabezpieczyć konto i uzyskać dostęp do panelu używanego do projektów, prób i koordynacji zespołu.",
       "features": {
         "access": {
@@ -339,12 +357,21 @@
         "return_home": "Wróć na stronę główną",
         "subtitle": "Aktywacja zakończona",
         "title": "Twój panel jest gotowy",
+        "copy_login": "Skopiuj login",
+        "copied": "Skopiowano",
         "your_username": "Twój login do panelu"
       },
+      "greeting_word": "Witaj",
       "title_1": "Aktywuj swój",
       "title_2": "panel artysty"
     },
     "login": {
+      "welcome": "Witaj ponownie",
+      "heading": "Zaloguj się do panelu",
+      "access_trouble": "Problem z dostępem do konta?",
+      "access_reset_cta": "Zresetuj hasło",
+      "access_help": "Nie masz jeszcze dostępu? Konta w VoctManagerze zakłada zarząd zespołu — napisz na {{email}}, a pomożemy Ci wejść do panelu.",
+      "access_contact_cta": "Napisz do zarządu",
       "back_to_lobby": "Powrót do przedsionka",
       "email_label": "Adres e-mail",
       "email_placeholder": "np. jan.kowalski@voctensemble.pl",
@@ -355,8 +382,46 @@
       "privacy_link": "Politykę Prywatności",
       "submit_button": "Autoryzuj dostęp",
       "submitting": "Autoryzacja...",
-      "subtitle": "Panel Administracyjny & Kadrowy",
+      "subtitle": "Panel zespołu VoctEnsemble",
       "terms_link": "Regulamin serwisu"
+    },
+    "requirements": {
+      "length": "Co najmniej 8 znaków",
+      "match": "Hasła są zgodne"
+    },
+    "reset": {
+      "request_eyebrow": "Odzyskiwanie dostępu",
+      "request_title": "Zresetuj hasło",
+      "request_description": "Podaj adres e-mail powiązany z kontem. Jeśli istnieje, wyślemy link do ustawienia nowego hasła.",
+      "submit_request": "Wyślij link resetujący",
+      "submitting_request": "Wysyłanie…",
+      "sent_eyebrow": "Link wysłany",
+      "sent_title": "Sprawdź skrzynkę",
+      "sent_desc": "Jeśli konto powiązane z tym adresem istnieje, wysłaliśmy na nie link do zresetowania hasła. Sprawdź też folder ze spamem.",
+      "confirm_eyebrow": "Nowe hasło",
+      "confirm_title": "Ustaw nowe hasło",
+      "confirm_description": "Wybierz nowe, bezpieczne hasło do swojego konta.",
+      "new_password": "Nowe hasło",
+      "new_password_placeholder": "Utwórz bezpieczne hasło",
+      "confirm_password": "Potwierdź hasło",
+      "confirm_password_placeholder": "Powtórz hasło",
+      "submit_confirm": "Ustaw nowe hasło",
+      "submitting_confirm": "Zapisywanie…",
+      "success_eyebrow": "Gotowe",
+      "success_title": "Hasło zostało zmienione",
+      "success_desc": "Twoje nowe hasło jest aktywne. Zaloguj się, aby wejść do panelu.",
+      "go_to_login": "Przejdź do logowania",
+      "back_to_login": "Powrót do logowania",
+      "errors": {
+        "invalid_link": "Ten link resetujący jest nieprawidłowy.",
+        "expired_link": "Ten link resetujący wygasł. Poproś o nowy.",
+        "reset_failed": "Nie udało się zresetować hasła. Spróbuj ponownie.",
+        "request_failed": "Nie udało się wysłać linku. Spróbuj ponownie.",
+        "email_required": "Podaj adres e-mail.",
+        "incomplete_link": "Brakuje parametrów w linku resetującym.",
+        "password_too_short": "Hasło musi mieć co najmniej 8 znaków.",
+        "password_mismatch": "Hasła nie są identyczne."
+      }
     },
     "legal": {
       "common": {
@@ -366,8 +431,8 @@
       },
       "privacy": {
         "administrator": "Administrator Danych",
-        "administrator_desc": "Administratorem Twoich danych jest Fundacja \"VoctFoundation\" z siedzibą w Krakowie (31-150), ul. Św. Filipa 23/3. Kontakt w sprawach ochrony danych: kontakt@voctensemble.com.",
-        "contact_email": "voctensemble@gmail.com",
+        "administrator_desc": "Administratorem Twoich danych jest Fundacja \"VoctFoundation\" z siedzibą w Krakowie (31-150), ul. Św. Filipa 23/3. Kontakt w sprawach ochrony danych: rodo@voctensemble.com.",
+        "contact_email": "rodo@voctensemble.com",
         "goals_and_basis": "Cele i Podstawy Przetwarzania",
         "goals_items": {
           "account": {
@@ -383,24 +448,33 @@
             "title": "Logistyka i Produkcja"
           }
         },
-        "reporting": "Wszelkie błędy w działaniu systemu, nieścisłości w grafikach lub problemy z dostępem należy zgłaszać pod adresem: voctensemble@gmail.com.",
+        "reporting": "Wszelkie błędy w działaniu systemu, nieścisłości w grafikach lub problemy z dostępem należy zgłaszać pod adresem: kontakt@voctensemble.com.",
         "reporting_title": "Zgłaszanie Problemów i Wsparcie",
         "security_and_tech": "Technologie i Bezpieczeństwo (JWT)",
         "security_desc": "Aplikacja wykorzystuje technologię JWT (JSON Web Token) przechowywaną w pamięci przeglądarki (LocalStorage) wyłącznie w celu utrzymania sesji logowania oraz zapewnienia bezpieczeństwa dostępu do danych. Nie stosujemy ciasteczek śledzących.",
         "subtitle": "Polityka Prywatności",
         "title": "Polityka Prywatności",
         "your_rights": "Twoje Prawa",
-        "your_rights_desc": "Masz prawo do: wglądu w swoje dane, ich sprostowania, usunięcia, ograniczenia przetwarzania, przenoszenia danych oraz wniesienia sprzeciwu. Przysługuje Ci również prawo do wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych (PUODO).",
+        "your_rights_desc": "Masz prawo do: wglądu w swoje dane, ich sprostowania, usunięcia, ograniczenia przetwarzania, przenoszenia danych oraz wniesienia sprzeciwu. Aby skorzystać z tych praw, napisz na rodo@voctensemble.com. Przysługuje Ci również prawo do wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych (PUODO).",
         "your_rights_title": "Twoje Prawa",
         "recipients": "Odbiorcy Danych",
-        "recipients_desc": "Dane powierzamy sprawdzonym dostawcom: DigitalOcean (infrastruktura serwerowa) oraz Google (usługi map). Korzystanie z widgetów audio może wiązać się z transferem technicznym danych do USA w oparciu o Data Privacy Framework.",
-        "recipients_title": "Odbiorcy Danych"
+        "recipients_desc": "Dane powierzamy zaufanym dostawcom — działającym na nasze zlecenie jako podmioty przetwarzające lub jako odrębni administratorzy: dostawcy infrastruktury serwerowej (hosting), Google (usługi map oraz powiadomienia push na urządzenia mobilne — Firebase Cloud Messaging) oraz Resend (wysyłka transakcyjnych wiadomości e-mail). Powiadomienia web push obsługujemy samodzielnie (standard VAPID), a czcionki serwujemy lokalnie. Jeżeli do projektu dołączono playlistę, w jego widoku osadzamy odtwarzacz Spotify — jego wyświetlenie przekazuje dane techniczne (np. adres IP) do Spotify na zasadach opisanych w polityce tej usługi.",
+        "internal_comm_title": "Komunikacja Wewnętrzna",
+        "internal_comm_desc": "Aplikacja udostępnia wewnętrzne wątki wiadomości (rozmowy 1:1 z zarządem oraz kanały projektowe). Treść wiadomości stanowi dane osobowe i jest przechowywana w naszej bazie wyłącznie w celu koordynacji organizacyjnej i artystycznej zespołu (art. 6 ust. 1 lit. f RODO — prawnie uzasadniony interes). Przetwarzamy też powiązane metadane: znacznik odczytu wiadomości oraz przypisanie wątku do członka zarządu. Powiadomienia o nowych wiadomościach dostarczamy kanałami opisanymi w sekcji „Odbiorcy Danych”; sama treść rozmów nie jest udostępniana zewnętrznym komunikatorom.",
+        "internal_comm_retention": "Przy usunięciu konta treść Twoich wiadomości jest trwale zacierana, a Twoje wątki oraz członkostwa w kanałach — usuwane.",
+        "recipients_title": "Odbiorcy Danych",
+        "transfers_title": "Transfery poza EOG",
+        "transfers_desc": "Naszą główną infrastrukturę utrzymujemy w Unii Europejskiej, a przekazywanie danych poza Europejski Obszar Gospodarczy ograniczamy do niezbędnego minimum. Część usług powiadomień i treści osadzonych może jednak wiązać się z przetwarzaniem danych poza EOG: powiadomienia push na urządzenia mobilne (Google Firebase Cloud Messaging), wysyłka wiadomości e-mail (Resend) oraz osadzony odtwarzacz Spotify. Takie transfery odbywają się na podstawie decyzji o adekwatności, Ram Ochrony Danych UE–USA (Data Privacy Framework) lub standardowych klauzul umownych (SCC).",
+        "retention_title": "Czas Przechowywania",
+        "retention_desc": "Dane Twojego konta i profilu (m.in. imię i nazwisko, adres e-mail, telefon, zdjęcie profilowe, dane logistyczne, token kalendarza) przechowujemy przez czas posiadania konta. Po jego usunięciu (prawo do bycia zapomnianym) anonimizujemy Twoją tożsamość, usuwamy profil i zdjęcie, trwale zacieramy treść Twoich wiadomości oraz usuwamy Twoje wątki i członkostwa w kanałach. Dane operacyjne związane z pracą zespołu (np. udział w projektach i frekwencja) są odpowiednio anonimizowane lub usuwane. Wyjątkiem są zapisy, które musimy zachować dla wypełnienia obowiązków prawnych — w szczególności dokumentacja rozliczeń podlega ustawowym okresom przechowywania wynikającym z przepisów o rachunkowości i prawa podatkowego. Tokeny uwierzytelniające są krótkotrwałe, a techniczne logi serwera przechowujemy jedynie przez czas niezbędny dla bezpieczeństwa.",
+        "analytics_title": "Analityka Wewnętrzna i Decyzje Automatyczne",
+        "analytics_desc": "Aby wspierać organizację pracy zespołu, prezentujemy zarządowi zagregowane wskaźniki wynikające z Twojej aktywności (np. statystyki frekwencji czy historię obsad). Służą one wyłącznie celom organizacyjnym i artystycznym. Nie podejmujemy wobec Ciebie zautomatyzowanych decyzji wywołujących skutki prawne lub w podobny sposób istotnie na Ciebie wpływających (art. 22 RODO) — decyzje o obsadach i udziale podejmują ludzie."
       },
       "terms": {
         "blocking_account": "Odpowiedzialność i Blokowanie Konta",
-        "blocking_desc": "Fundacja zastrzega sobie prawo do czasowego zawieszenia lub trwałego usunięcia konta Użytkownika w przypadku naruszenia zasad poufności lub rażącego naruszenia regulaminu pracy zespołu. Fundacja nie odpowiada za przerwy techniczne wynikające z winy dostawców zewnętrznych.",
+        "blocking_desc": "Fundacja zastrzega sobie prawo do czasowego zawieszenia lub trwałego usunięcia konta Użytkownika w przypadku naruszenia zasad poufności lub rażącego naruszenia regulaminu pracy zespołu. Panel udostępniany jest na potrzeby operacyjne Fundacji w modelu „takim, jaki jest” i nie gwarantujemy jego nieprzerwanej dostępności. Fundacja nie odpowiada za przerwy techniczne wynikające z winy dostawców zewnętrznych.",
         "character_and_usage": "Charakter Systemu",
-        "character_desc": "VoctManager jest wewnętrznym narzędziem operacyjnym Fundacji. Dostęp do niego jest przyznawany indywidualnie. Zakazuje się udostępniania danych dostępowych oraz personalnych linków iCal osobom trzecim.",
+        "character_desc": "Niniejszy Regulamin określa zasady korzystania z panelu VoctManager. Korzystając z panelu, akceptujesz jego postanowienia. VoctManager jest wewnętrznym narzędziem operacyjnym Fundacji, a dostęp do niego przyznawany jest indywidualnie. Odpowiadasz za zachowanie poufności swoich danych logowania; zakazuje się udostępniania danych dostępowych oraz personalnych linków iCal osobom trzecim.",
         "confidentiality": "Poufność i NDA",
         "confidentiality_desc": "Informacje o stawkach, planach produkcyjnych, lokalizacjach prób oraz obsadach są objęte tajemnicą zawodową. Zabrania się publikowania zrzutów ekranu z wnętrza aplikacji w mediach społecznościowych bez zgody Zarządu.",
         "intellectual_property": "Własność Intelektualna i Materiały",
@@ -410,6 +484,12 @@
         "support_desc_suffix": ".",
         "subtitle": "Regulamin serwisu",
         "title": "Regulamin serwisu",
+        "data_title": "Dane Osobowe",
+        "data_desc": "Zasady przetwarzania Twoich danych osobowych w panelu opisuje Polityka Prywatności. Korzystając z VoctManagera, potwierdzasz zapoznanie się z nią. W sprawach ochrony danych pisz na rodo@voctensemble.com.",
+        "changes_title": "Zmiany Regulaminu",
+        "changes_desc": "Regulamin może być aktualizowany, gdy zmienia się zakres lub sposób działania panelu. O istotnych zmianach poinformujemy w aplikacji lub e-mailem. Dalsze korzystanie z panelu po wejściu zmian w życie oznacza ich akceptację.",
+        "governing_law_title": "Prawo Właściwe",
+        "governing_law_desc": "Regulamin podlega prawu polskiemu. W zakresie ochrony danych osobowych stosuje się RODO. Ewentualne spory rozstrzygają właściwe sądy powszechne w Polsce.",
         "title_highlight": "VoctManager"
       }
     },
@@ -495,6 +575,7 @@
   "common": {
     "actions": {
       "cancel": "Anuluj",
+      "clear": "Wyczyść",
       "close": "Zamknij",
       "close_panel": "Zamknij panel (ESC)",
       "confirmDelete": "Tak, usuń konto",
@@ -569,140 +650,161 @@
     "specialty_other": "Inne"
   },
   "contracts": {
-    "actions": {
-      "bulk_apply": "Zastosuj wycenę",
-      "bulk_badge": "Masowe wyceny",
-      "bulk_description": "Operacja dotyczy tylko kontraktów chóru. Przydatne, gdy produkcja stosuje wspólną stawkę podstawową.",
-      "bulk_disabled_reason": "Masowe wyceny są możliwe, gdy co najmniej jeden wykonawca jest przypisany do projektu.",
-      "bulk_fee_error": "Wpisz poprawną wartość wynagrodzenia.",
-      "bulk_hint": "Możesz nadal dopracowywać stawki w pojedynczych rekordach poniżej.",
-      "bulk_label": "Stawka brutto",
-      "bulk_placeholder": "0.00",
-      "bulk_title": "Zastosuj jedną stawkę dla całej obsady.",
-      "cast_count_one": "{{count}} rekord kontraktu chóru",
-      "cast_count_few": "{{count}} rekordy umów chóru",
-      "cast_count_many": "{{count}} rekordów umów chóru",
-      "cast_count_other": "{{count}} rekordów umów chóru",
-      "currency_label": "PLN",
-      "export_badge": "Eksport projektu",
-      "export_description": "Przygotuj pakiet ZIP z umowami PDF w tle dla całego wydarzenia.",
-      "export_missing_one": "{{count}} brakująca wycena",
-      "export_missing_few": "{{count}} brakujące wyceny",
-      "export_missing_many": "{{count}} brakujących wycen",
-      "export_missing_other": "{{count}} brakujących wycen",
-      "export_ready": "Zestaw gotowy do eksportu",
-      "export_title": "Wygeneruj pakiet umów dla wybranego projektu."
-    },
-    "empty": {
-      "idle_description": "Panel finansowy jest gotów. Wybierz projekt powyżej, aby sprawdzić pokrycie, zaktualizować wartości wynagrodzeń i przygotować pakiety umów eksportowych.",
-      "idle_eyebrow": "Widok portfolio",
-      "idle_title": "Wybierz projekt, aby otworzyć rejestr rozliczeń.",
-      "no_personnel_description": "Najpierw przypisz pracowników w obszarze roboczym projektu. Po dodaniu rekordów możesz zdefiniować wynagrodzenia i wygenerować umowy PDF.",
-      "no_personnel_eyebrow": "Brak rekordów",
-      "no_personnel_title": "Ten projekt nie ma przypisanej obsady ani ekipy technicznej."
-    },
-    "error": {
-      "action": "Ponów synchronizację",
-      "description": "Dane projektu, obsady lub ekipy nie dotarły z API. Spróbuj ponownie zsynchronizować pulpit.",
-      "eyebrow": "Rejestr nieosiągalny",
-      "title": "Nie udało się załadować obszaru rozliczeń."
-    },
     "header": {
-      "badge": "Finanse",
-      "refresh": "Odśwież dane",
+      "badge": "Operacje finansowe",
+      "title": "Centrum",
+      "title_highlight": "Rozliczeń",
+      "refresh": "Odśwież",
       "syncing": "Synchronizacja",
-      "title": "Umowy i",
-      "title_highlight": "Płace"
-    },
-    "hero": {
-      "active_projects": "aktywne",
-      "cast": "obsada",
-      "context_badge_active": "Aktywny kontekst rozliczeń",
-      "context_badge_idle": "Panel finansowy",
-      "context_location": "Lokalizacja",
-      "context_location_placeholder": "Tutaj pojawi się konferencja i lokalizacja wydarzenia.",
-      "context_mix": "Mix personelu",
-      "context_schedule": "Harmonogram",
-      "context_schedule_placeholder": "Wybierz wydarzenie, aby aktywować obszar rozliczeń.",
-      "contract_records": "rekordy",
-      "crew": "ekipa",
-      "description_default": "Wybierz projekt, aby zarządzać stawkami, wynagrodzeniami ekipy i PDF-ami umów w jednym miejscu.",
-      "description_selected": "Kontroluj wynagrodzenia, gotowość wypłat i eksport dokumentów bez opuszczania widoku rozliczeń.",
-      "draft_projects": "szkice",
-      "portfolio_projects": "projekty w portfolio",
-      "selector_description": "Wybrany projekt staje się kontekstem operacyjnym dla wycen, kontroli budżetu i generowania PDF.",
-      "selector_eyebrow": "Zakres projektu",
-      "selector_label": "Kontekst rozliczeń",
-      "selector_placeholder": "Wybierz projekt z portfolio",
-      "stat_budget": "Pozycja budżetowa",
-      "stat_completion": "Pokrycie wycen",
-      "stat_contracts": "Umowy",
-      "title_default": "Kokpit umów i płac"
+      "mix": "{{cast}} obsada · {{crew}} ekipa"
     },
     "loader": {
-      "message": "Wczytywanie rejestrów rozliczeń..."
+      "message": "Wczytuję rejestry rozliczeń…"
     },
-    "metrics": {
-      "global_archive": "Projekty archiwalne",
-      "global_archive_desc": "Zakończone produkcje dostępne historycznie.",
-      "global_budget": "Globalny budżet",
-      "global_budget_desc": "Wszystkie wynagrodzenia wprowadzone do platformy.",
-      "global_coverage": "Pokrycie wycen",
-      "global_coverage_desc": "Ile z całego portfolio zostało już wycenione.",
-      "global_live": "Projekty aktywne",
-      "global_live_desc": "Szkice i wydarzenia dostępne do bieżących rozliczeń.",
-      "project_budget": "Budżet personalny",
-      "project_budget_desc": "Bieżący budżet brutto dla obsady i ekipy.",
-      "project_missing": "Brakujące wyceny",
-      "project_missing_desc": "Te rekordy blokują bezpośrednie generowanie PDF-ów.",
-      "project_mix": "Skład personelu",
-      "project_mix_desc": "Obsada wobec ekipy w aktywnym rejestrze.",
-      "project_priced": "Wycenione umowy",
-      "project_priced_desc": "Umowy z określoną stawką."
-    },
-    "row": {
-      "cast_record": "Rekord umowy chóru",
-      "crew_record": "Rekord umowy ekipy",
-      "currency_label": "PLN",
-      "current_fee": "Aktualna stawka: {{amount}}",
-      "download_pdf": "PDF",
-      "fee_placeholder": "0.00",
-      "invalid_fee": "Wpisz poprawną wartość wynagrodzenia.",
-      "missing_fee": "Brak Stawki",
-      "save": "Zapisz",
-      "saved": "Zapisano"
-    },
-    "sections": {
-      "cast_description": "Zarządzaj wynagrodzeniami wokalnymi, pokryciem wycen i generowaniem umów PDF dla artystów.",
-      "cast_title": "Rejestr obsady",
-      "crew_description": "Utrzymuj umowy techniczne i logistyczne w tym samym obiegu płatności i eksportu.",
-      "crew_title": "Rejestr ekipy"
-    },
-    "table": {
-      "all_priced": "Wszystkie rekordy wycenione",
-      "documents": "Dokumenty",
-      "missing_valuations": "brakujących wycen",
-      "performer": "Wykonawca",
-      "records": "rekordy",
-      "remuneration": "Wynagrodzenie",
-      "role": "Rola"
-    },
-    "toast": {
-      "bulk_applying": "Aplikowanie masowych stawek...",
-      "bulk_error": "Błąd serwera podczas operacji masowej.",
-      "bulk_success_one": "Zaktualizowano 1 umowę.",
-      "bulk_success_few": "Zaktualizowano {{count}} umowy.",
-      "bulk_success_many": "Zaktualizowano {{count}} umów.",
-      "bulk_success_other": "Zaktualizowano {{count}} umów.",
-      "pdf_error": "Błąd generowania: {{message}}",
-      "pdf_generating": "Generowanie PDF dla {{name}}...",
-      "pdf_success": "Dokument został pomyślnie wygenerowany.",
-      "save_error": "Nie udało się zapisać wynagrodzenia dla: {{name}}."
+    "error": {
+      "eyebrow": "Brak danych",
+      "title": "Nie udało się wczytać rozliczeń.",
+      "description": "Dane projektów, obsady lub ekipy nie dotarły z serwera. Spróbuj zsynchronizować ponownie.",
+      "action": "Ponów synchronizację"
     },
     "warning": {
-      "action": "Ponów synchronizację",
-      "description": "Panel jest używalny, jednak niektóre źródła nie odświeżyły się poprawnie. Wykonaj ręczną synchronizację.",
-      "title": "Dane książki są niespójne."
+      "title": "Część danych jest nieaktualna.",
+      "description": "Pulpit działa, ale jedno ze źródeł nie odświeżyło się. Uruchom ręczną synchronizację.",
+      "action": "Ponów"
+    },
+    "summary": {
+      "outstanding": "Do zapłaty",
+      "all_settled": "Rozliczono",
+      "all_settled_note": "Wszystkie honoraria w tym zakresie są rozliczone.",
+      "outstanding_note": "Oczekujących wypłat: {{n}}",
+      "outstanding_note_missing": "{{owed}} osób oczekuje na wypłatę · {{missing}} bez wyceny",
+      "committed": "Budżet honorariów",
+      "priced": "Wycenione",
+      "paid": "Zapłacone",
+      "scope_portfolio": "Całe portfolio"
+    },
+    "rail": {
+      "title": "Projekty",
+      "search": "Szukaj projektu…",
+      "all_projects": "Wszystkie projekty",
+      "all_outstanding": "{{n}} z zaległościami",
+      "all_clear": "Wszystko rozliczone",
+      "mix": "{{cast}} obsada · {{crew}} ekipa",
+      "missing": "{{n}} bez wyceny",
+      "empty": "brak obsady",
+      "settled": "rozliczono",
+      "no_match": "Brak projektów dla tego zapytania."
+    },
+    "payables": {
+      "title": "Do rozliczenia",
+      "unpriced": "Brak wyceny",
+      "pay": "Zapłacone",
+      "open": "Otwórz w projekcie",
+      "open_short": "Wyceń",
+      "paid_toast": "Oznaczono {{name}} jako zapłacone.",
+      "clear_eyebrow": "Czysto",
+      "clear_title": "Wszystkie honoraria są rozliczone.",
+      "clear_desc": "Żaden projekt nie ma otwartych wycen ani zaległych wypłat. Wybierz projekt z lewej, aby przejrzeć szczegóły lub wygenerować umowy.",
+      "none_in_filter": "Brak pozycji w tym filtrze."
+    },
+    "filters": {
+      "all": "Wszyscy",
+      "all_short": "Wszystko",
+      "unpriced": "Bez wyceny",
+      "unpaid": "Do zapłaty",
+      "aria": "Filtr rozliczeń"
+    },
+    "bulk": {
+      "label": "Stawka",
+      "placeholder": "np. 500",
+      "apply": "Zastosuj",
+      "hint": "Ustawia jedną stawkę dla wybranej grupy (pomija już zapłacone).",
+      "target_label": "Stawka zbiorcza dla"
+    },
+    "ledger": {
+      "col_person": "Osoba",
+      "col_role": "Rola",
+      "col_fee": "Honorarium",
+      "col_actions": "Rozliczenie",
+      "missing": "{{n}} bez wyceny",
+      "owed": "{{n}} do zapłaty",
+      "settled": "Rozliczone",
+      "empty_filter": "Brak pozycji dla wybranego filtra."
+    },
+    "sections": {
+      "cast": "Obsada",
+      "crew": "Ekipa"
+    },
+    "row": {
+      "currency": "PLN",
+      "fee_placeholder": "0,00",
+      "fee_aria": "Honorarium dla {{name}}",
+      "invalid_fee": "Podaj poprawną kwotę.",
+      "save": "Zapisz honorarium",
+      "paid": "Zapłacone",
+      "to_pay": "Do zapłaty",
+      "mark_paid": "Oznacz jako zapłacone",
+      "mark_unpaid": "Cofnij oznaczenie zapłaty",
+      "pay_blocked": "Najpierw wyceń honorarium",
+      "pdf_blocked": "Wycena odblokuje umowę PDF",
+      "download_pdf": "Pobierz umowę PDF",
+      "paid_on": "Zapłacono {{date}}"
+    },
+    "empty": {
+      "no_personnel_eyebrow": "Brak obsady",
+      "no_personnel_title": "Ten projekt nie ma przypisanej obsady ani ekipy.",
+      "no_personnel_description": "Najpierw przypisz osoby w panelu projektu. Gdy pojawią się tutaj rekordy, ustalisz honoraria, oznaczysz płatności i wygenerujesz umowy PDF."
+    },
+    "status": {
+      "confirmed": "Potwierdzony",
+      "declined": "Odrzucony",
+      "pending": "Oczekuje"
+    },
+    "project_status": {
+      "active": "Aktywny",
+      "archived": "Zarchiwizowany",
+      "cancelled": "Anulowany",
+      "draft": "Szkic"
+    },
+    "toast": {
+      "bulk_applying": "Ustawiam wspólną stawkę…",
+      "bulk_success": "Zaktualizowano {{count}} honorariów.",
+      "bulk_error": "Nie udało się ustawić zbiorczej stawki.",
+      "pdf_generating": "Generuję umowę dla {{name}}…",
+      "pdf_success": "Umowa PDF gotowa.",
+      "pdf_error": "Nie udało się wygenerować PDF: {{message}}",
+      "save_error": "Nie udało się zapisać honorarium dla {{name}}.",
+      "payment_error": "Nie udało się zmienić statusu płatności."
+    },
+    "unknown_artist": "Nieznany artysta",
+    "unknown_collaborator": "Nieznany współpracownik",
+    "unknown_voice": "Nieznany głos",
+    "unknown_specialty": "Nieznana specjalność",
+    "csv": {
+      "person": "Osoba",
+      "kind": "Typ",
+      "role": "Rola",
+      "project": "Projekt",
+      "event_date": "Data wydarzenia",
+      "amount": "Kwota (PLN)",
+      "paid": "Zapłacono",
+      "paid_date": "Data płatności",
+      "status": "Status",
+      "yes": "Tak",
+      "no": "Nie",
+      "export": "Eksport CSV",
+      "hint": "Pełna lista rozliczeń do księgowości (CSV)",
+      "done": "Wyeksportowano listę rozliczeń."
+    },
+    "mark_all": {
+      "button": "Oznacz zapłacone",
+      "hint": "Oznacza wszystkie wycenione, niezapłacone honoraria w projekcie jako zapłacone.",
+      "applying": "Oznaczam honoraria jako zapłacone…",
+      "done": "Oznaczono {{count}} honorariów jako zapłacone.",
+      "partial": "Oznaczono {{ok}} z {{total}} — {{failed}} nie powiodło się.",
+      "confirm_title": "Oznaczyć cały projekt jako zapłacony?",
+      "confirm_desc": "Zostanie oznaczonych {{count}} wycenionych, niezapłaconych honorariów (obsada i ekipa). Możesz cofnąć każde pojedynczo.",
+      "confirm_cta": "Oznacz zapłacone"
     }
   },
   "crew": {
@@ -966,7 +1068,37 @@
     "layout": {
       "actions": {
         "logout": "Wyloguj",
-        "settings": "Ustawienia"
+        "open_menu": "Menu",
+        "pin": "Przypnij panel",
+        "settings": "Ustawienia",
+        "unpin": "Odepnij panel"
+      },
+      "command": {
+        "actions": {
+          "mark_attendance": "Oznacz obecność",
+          "new_artist": "Nowy artysta",
+          "new_project": "Nowy projekt",
+          "report_absence": "Zgłoś nieobecność"
+        },
+        "current": "Tutaj",
+        "hint_close": "zamknij",
+        "hint_move": "nawigacja",
+        "hint_select": "przejdź",
+        "no_results": "Brak wyników",
+        "no_results_hint": "Spróbuj innej frazy",
+        "open": "Szukaj",
+        "pin_project": "Przypnij projekt",
+        "placeholder": "Szukaj lub przejdź do…",
+        "sections": {
+          "actions": "Szybkie akcje",
+          "artists": "Artyści",
+          "navigation": "Nawigacja",
+          "pinned": "Przypięte",
+          "projects": "Projekty",
+          "recent": "Ostatnie"
+        },
+        "title": "Szybkie przejście",
+        "unpin_project": "Odepnij projekt"
       },
       "groups": {
         "artist_zone": "Strefa Artysty",
@@ -990,6 +1122,16 @@
         "projects": "Zarządzanie Projektami",
         "resources": "Materiały & Wiedza",
         "schedule": "Mój Kalendarz"
+      },
+      "mobile_tabs": {
+        "alerts": "Alerty",
+        "attendance": "Obecności",
+        "dashboard": "Pulpit",
+        "materials": "Materiały",
+        "messages": "Czat",
+        "more": "Więcej",
+        "projects": "Projekty",
+        "schedule": "Kalendarz"
       },
       "nav": {
         "main_menu": "Menu główne"
@@ -1340,7 +1482,10 @@
       "status_updated": "Zaktualizowano status uczestnictwa",
       "title": "Nowe zaproszenie do projektu"
     },
+    "all_read": "Wszystko przeczytane",
     "mark_all_read": "Oznacz wszystkie jako przeczytane",
+    "section_earlier": "Wcześniejsze",
+    "section_new": "Nowe",
     "send_modal": {
       "cta_label": "Etykieta przycisku (CTA)",
       "cta_label_placeholder": "np. Zobacz szczegóły",

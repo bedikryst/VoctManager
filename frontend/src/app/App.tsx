@@ -61,6 +61,9 @@ function lazyWithPreload<TComponent extends RouteComponent>(
 // Auth routes are public and lazy-loaded.
 const Login = lazyWithPreload(() => import("@pages/auth/LoginPage"));
 const Activate = lazyWithPreload(() => import("@pages/auth/ActivatePage"));
+const ResetPassword = lazyWithPreload(
+  () => import("@pages/auth/ResetPasswordPage"),
+);
 
 // Secure shell entry points are lazy-loaded and warmed after the dashboard shell mounts.
 const DashboardHome = lazyWithPreload(
@@ -71,10 +74,16 @@ const LogisticsLocationsPage = lazyWithPreload(
   () => import("@pages/panel/LogisticsLocationsPage"),
 );
 const Schedule = lazyWithPreload(() => import("@features/schedule/Schedule"));
+const MaterialsLayout = lazyWithPreload(
+  () => import("@features/materials/MaterialsLayout"),
+);
 const Materials = lazyWithPreload(() =>
   import("@features/materials/Materials").then((m) => ({
     default: m.Materials,
   })),
+);
+const PiecePage = lazyWithPreload(
+  () => import("@features/materials/PiecePage"),
 );
 const ChoristerHubPage = lazyWithPreload(
   () => import("@features/chorister-hub/ChoristerHubPage"),
@@ -160,7 +169,9 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: SettingsPage.preload },
   { preload: MessagesPage.preload },
   { preload: ChoristerHubPage.preload },
+  { preload: MaterialsLayout.preload },
   { preload: Materials.preload },
+  { preload: PiecePage.preload },
   { preload: Schedule.preload },
   { scope: "manager", preload: Contracts.preload },
   { scope: "manager", preload: Rehearsals.preload },
@@ -252,6 +263,14 @@ export const router = createBrowserRouter(
           </PageTransition>
         }
       />
+      <Route
+        path="/reset-password"
+        element={
+          <PageTransition>
+            <ResetPassword />
+          </PageTransition>
+        }
+      />
 
       <Route
         element={
@@ -323,9 +342,13 @@ export const router = createBrowserRouter(
             <Route path="locations" element={<LogisticsLocationsPage />} />
           </Route>
           <Route path="resources" element={<ChoristerHubPage />} />
-          <Route path="materials" element={<Materials />} />
+          <Route path="materials" element={<MaterialsLayout />}>
+            <Route index element={<Materials />} />
+            <Route path=":projectId/:pieceId" element={<PiecePage />} />
+          </Route>
           <Route path="schedule" element={<Schedule />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/:section" element={<SettingsPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="messages/channel/:channelId" element={<MessagesPage />} />
           <Route path="messages/:threadId" element={<MessagesPage />} />

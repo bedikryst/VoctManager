@@ -50,10 +50,13 @@
   --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
 
   --shadow-button-primary:
-    inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 12px rgba(22, 20, 18, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(22, 20, 18, 0.14),
+    0 6px 16px -4px rgba(120, 104, 82, 0.45);
   --shadow-button-primary-hover:
-    inset 0 1px 1px rgba(255, 255, 255, 0.2),
-    0 8px 24px rgba(194, 168, 120, 0.25);
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(22, 20, 18, 0.16),
+    0 12px 28px -6px rgba(194, 168, 120, 0.5);
 
   /* =========================================
      SPATIAL, LAYOUT & Z-INDEX TOKENS 
@@ -110,6 +113,22 @@
 
     @apply text-ethereal-ink font-sans antialiased selection:bg-ethereal-gold/20 selection:text-ethereal-ink;
   }
+
+  /* Neutralise the browser autofill wash (Chrome's blue / Safari's yellow) so
+     saved credentials keep the Ethereal input surface instead of a foreign
+     tint. The 9999s transition is the canonical hack to defer the UA repaint. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-ethereal-ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-ethereal-marble) inset;
+    caret-color: var(--color-ethereal-ink);
+    border-radius: inherit;
+    transition: background-color 9999s ease-out 0s;
+  }
+
   * {
     scrollbar-width: thin;
     scrollbar-color: color-mix(

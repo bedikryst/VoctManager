@@ -87,6 +87,7 @@ export interface VoiceTypeOption {
 
 export interface Artist extends BaseModel {
   user?: string | null;
+  avatar_thumb_url?: string | null;
   first_name: string;
   last_name: string;
   first_name_vocative?: string;
@@ -176,6 +177,9 @@ export interface Participation extends BaseModel {
   project: string;
   status: ParticipationStatus;
   fee?: string | number | null;
+  // Settlement state — mutated only through the dedicated `payment` action.
+  is_paid?: boolean;
+  paid_at?: string | null;
   artist_name?: string;
   project_name?: string;
   artist_voice_type_display?: string;
@@ -220,6 +224,11 @@ export interface CrewAssignment {
   role_description?: string;
   status: CrewAssignmentStatus;
   fee?: string | number | null;
+  // Settlement state — mutated only through the dedicated `payment` action.
+  is_paid?: boolean;
+  paid_at?: string | null;
+  collaborator_name?: string;
+  collaborator_specialty_display?: string;
 }
 
 // ==========================================

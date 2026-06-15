@@ -282,12 +282,30 @@
       "archived_success": "Artist archived",
       "archiving": "Archiving artist...",
       "toggle_error_desc": "Failed to change the artist's status."
+    },
+    "dossier": {
+      "earnings": "Settlements",
+      "earnings_paid": "Paid out",
+      "earnings_outstanding": "Outstanding",
+      "earnings_projects": "{{n}} proj."
+    }
+  },
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password",
+    "caps_lock": "Caps Lock is on",
+    "strength": {
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
     }
   },
   "auth": {
     "activate": {
       "back_to_home": "Back to homepage",
       "badge": "Invite Activation",
+      "features_title": "What awaits you inside",
       "description": "Complete the final onboarding step to secure your account and enter the operational workspace used for projects, rehearsals, and ensemble coordination.",
       "features": {
         "access": {
@@ -329,12 +347,21 @@
         "return_home": "Return home",
         "subtitle": "Activation complete",
         "title": "Your panel is ready",
+        "copy_login": "Copy login",
+        "copied": "Copied",
         "your_username": "Your username to log in"
       },
+      "greeting_word": "Welcome",
       "title_1": "Activate your",
       "title_2": "artist panel"
     },
     "login": {
+      "welcome": "Welcome back",
+      "heading": "Sign in to the panel",
+      "access_trouble": "Trouble accessing your account?",
+      "access_reset_cta": "Reset password",
+      "access_help": "Don't have access yet? Accounts in VoctManager are created by the ensemble's board — email {{email}} and we'll help you in.",
+      "access_contact_cta": "Email the board",
       "back_to_lobby": "Back to lobby",
       "email_label": "Email address",
       "email_placeholder": "e.g. john.doe@voctensemble.pl",
@@ -345,8 +372,46 @@
       "privacy_link": "Privacy Policy",
       "submit_button": "Authorize access",
       "submitting": "Authorizing...",
-      "subtitle": "Administration & HR Panel",
+      "subtitle": "The VoctEnsemble workspace",
       "terms_link": "Terms of Service"
+    },
+    "requirements": {
+      "length": "At least 8 characters",
+      "match": "Passwords match"
+    },
+    "reset": {
+      "request_eyebrow": "Account recovery",
+      "request_title": "Reset your password",
+      "request_description": "Enter the email linked to your account. If it exists, we'll send a link to set a new password.",
+      "submit_request": "Send reset link",
+      "submitting_request": "Sending…",
+      "sent_eyebrow": "Link sent",
+      "sent_title": "Check your inbox",
+      "sent_desc": "If an account exists for this address, we've sent it a link to reset the password. Check your spam folder too.",
+      "confirm_eyebrow": "New password",
+      "confirm_title": "Set a new password",
+      "confirm_description": "Choose a new, secure password for your account.",
+      "new_password": "New password",
+      "new_password_placeholder": "Create a secure password",
+      "confirm_password": "Confirm password",
+      "confirm_password_placeholder": "Repeat the password",
+      "submit_confirm": "Set new password",
+      "submitting_confirm": "Saving…",
+      "success_eyebrow": "Done",
+      "success_title": "Your password has been changed",
+      "success_desc": "Your new password is active. Sign in to enter the panel.",
+      "go_to_login": "Go to login",
+      "back_to_login": "Back to login",
+      "errors": {
+        "invalid_link": "This reset link is invalid.",
+        "expired_link": "This reset link has expired. Please request a new one.",
+        "reset_failed": "We couldn't reset your password. Please try again.",
+        "request_failed": "We couldn't send the link. Please try again.",
+        "email_required": "Please enter your email address.",
+        "incomplete_link": "The reset link is missing parameters.",
+        "password_too_short": "The password must be at least 8 characters.",
+        "password_mismatch": "The passwords do not match."
+      }
     },
     "legal": {
       "common": {
@@ -356,8 +421,8 @@
       },
       "privacy": {
         "administrator": "Data Administrator",
-        "administrator_desc": "The administrator of your data is the Foundation \"VoctFoundation\" based in Krakow (31-150), ul. Św. Filipa 23/3. For data protection inquiries, contact: kontakt@voctensemble.com.",
-        "contact_email": "voctensemble@gmail.com",
+        "administrator_desc": "The administrator of your data is the Foundation \"VoctFoundation\" based in Krakow (31-150), ul. Św. Filipa 23/3. For data protection inquiries, contact: rodo@voctensemble.com.",
+        "contact_email": "rodo@voctensemble.com",
         "goals_and_basis": "Goals and Legal Basis for Processing",
         "goals_items": {
           "account": {
@@ -373,24 +438,33 @@
             "title": "Logistics and Production"
           }
         },
-        "reporting": "Report any system errors, inconsistencies in schedules, or access issues to: voctensemble@gmail.com.",
+        "reporting": "Report any system errors, inconsistencies in schedules, or access issues to: kontakt@voctensemble.com.",
         "reporting_title": "Reporting Issues and Support",
         "security_and_tech": "Technologies and Security (JWT)",
         "security_desc": "The application uses JWT (JSON Web Token) technology stored in the browser's memory (LocalStorage) solely to maintain login sessions and ensure secure data access. We do not use tracking cookies.",
         "subtitle": "Privacy Policy",
         "title": "Privacy Policy",
         "your_rights": "Your Rights",
-        "your_rights_desc": "You have the right to: access your data, correct it, delete it, restrict processing, data portability, and object to processing. You also have the right to lodge a complaint with the President of the Office for Personal Data Protection (PUODO).",
+        "your_rights_desc": "You have the right to: access your data, correct it, delete it, restrict processing, data portability, and object to processing. To exercise these rights, write to rodo@voctensemble.com. You also have the right to lodge a complaint with the President of the Office for Personal Data Protection (PUODO).",
         "your_rights_title": "Your Rights",
         "recipients": "Data Recipients",
-        "recipients_desc": "We entrust data to trusted providers: DigitalOcean (server infrastructure) and Google (map services). Use of audio widgets may involve technical data transfer to the USA under the Data Privacy Framework.",
-        "recipients_title": "Data Recipients"
+        "recipients_desc": "We entrust data to trusted providers — acting on our instructions as processors or as separate controllers: a server infrastructure provider (hosting), Google (map services and mobile push notifications via Firebase Cloud Messaging) and Resend (transactional email delivery). Web push notifications are handled in-house (the VAPID standard) and fonts are served locally. When a project has a reference playlist attached, its overview embeds a Spotify player — loading it sends technical data (e.g. your IP address) to Spotify under that service's own policy.",
+        "internal_comm_title": "Internal Communication",
+        "internal_comm_desc": "The application provides internal messaging (one-to-one threads with the board and per-project channels). Message content is personal data and is stored in our database solely to coordinate the ensemble's organisational and artistic work (Art. 6(1)(f) GDPR — legitimate interest). We also process related metadata: a read marker for each message and the assignment of a thread to a board member. Notifications about new messages are delivered through the channels listed under ‘Data Recipients’; the conversation content itself is never shared with external messengers.",
+        "internal_comm_retention": "When you delete your account, the content of your messages is permanently erased and your threads and channel memberships are removed.",
+        "recipients_title": "Data Recipients",
+        "transfers_title": "Transfers Outside the EEA",
+        "transfers_desc": "We keep our core infrastructure in the European Union and limit transfers outside the European Economic Area to what is necessary. Some notification and embedded-content services may nonetheless process data outside the EEA: mobile push notifications (Google Firebase Cloud Messaging), email delivery (Resend) and the embedded Spotify player. Such transfers rely on an adequacy decision, the EU–US Data Privacy Framework, or standard contractual clauses (SCC).",
+        "retention_title": "Data Retention",
+        "retention_desc": "We keep your account and profile data (e.g. name, email, phone, profile photo, logistics details, calendar token) for as long as your account exists. When you delete it (right to erasure), we anonymise your identity, delete your profile and photo, permanently erase the content of your messages, and remove your threads and channel memberships. Operational records tied to the ensemble's work (e.g. project participation and attendance) are anonymised or removed accordingly. The exception is data we must keep to meet legal obligations — in particular settlement records, which are subject to the statutory retention periods under accounting and tax law. Authentication tokens are short-lived, and technical server logs are kept only for as long as security requires.",
+        "analytics_title": "Internal Analytics and Automated Decisions",
+        "analytics_desc": "To support the ensemble's organisation, we present aggregated indicators derived from your activity to the board (e.g. attendance statistics or casting history). These serve organisational and artistic purposes only. We do not make automated decisions about you that produce legal effects or similarly significantly affect you (Art. 22 GDPR) — casting and participation decisions are made by people."
       },
       "terms": {
         "blocking_account": "Responsibility and Account Blocking",
-        "blocking_desc": "The Foundation reserves the right to temporarily suspend or permanently delete a User's account in case of confidentiality violation or gross breach of team working rules. The Foundation is not liable for downtime resulting from external providers' fault.",
+        "blocking_desc": "The Foundation reserves the right to temporarily suspend or permanently delete a User's account in case of confidentiality violation or gross breach of team working rules. The panel is provided for the Foundation's operational needs on an \"as is\" basis, and we do not guarantee uninterrupted availability. The Foundation is not liable for downtime resulting from external providers' fault.",
         "character_and_usage": "System Character and Usage Rules",
-        "character_desc": "VoctManager is an internal operational tool of the Foundation. Access is granted individually. It is prohibited to share access credentials and personal iCal links with third parties.",
+        "character_desc": "These Terms set out the rules for using the VoctManager panel; by using the panel, you accept them. VoctManager is an internal operational tool of the Foundation, and access is granted individually. You are responsible for keeping your login credentials confidential; sharing access credentials or personal iCal links with third parties is prohibited.",
         "confidentiality": "Confidentiality and NDA",
         "confidentiality_desc": "Information about rates, production plans, rehearsal locations, and cast assignments is subject to professional secrecy. Taking screenshots of the application's interior and sharing them on social media without Board approval is prohibited.",
         "intellectual_property": "Intellectual Property and Materials",
@@ -400,6 +474,12 @@
         "support_desc_suffix": ".",
         "subtitle": "Terms of Service",
         "title": "Terms of Service",
+        "data_title": "Personal Data",
+        "data_desc": "How your personal data is processed in the panel is described in the Privacy Policy. By using VoctManager you confirm that you have read it. For data-protection matters, write to rodo@voctensemble.com.",
+        "changes_title": "Changes to the Terms",
+        "changes_desc": "These Terms may be updated when the scope or operation of the panel changes. We will announce significant changes in the application or by email. Continued use of the panel after changes take effect constitutes acceptance.",
+        "governing_law_title": "Governing Law",
+        "governing_law_desc": "These Terms are governed by Polish law. The GDPR applies to the protection of personal data. Any disputes are resolved by the competent common courts in Poland.",
         "title_highlight": "VoctManager"
       }
     },
@@ -485,6 +565,7 @@
   "common": {
     "actions": {
       "cancel": "Cancel",
+      "clear": "Clear",
       "close": "Close",
       "close_panel": "Close panel (ESC)",
       "confirmDelete": "Yes, Delete Account",
@@ -559,134 +640,161 @@
     "specialty_other": "Other"
   },
   "contracts": {
-    "actions": {
-      "bulk_apply": "Apply valuation",
-      "bulk_badge": "Bulk valuation",
-      "bulk_description": "This action affects cast contracts only. It is useful when the production uses a shared standard fee before individual adjustments.",
-      "bulk_disabled_reason": "Bulk valuation activates after at least one cast record is assigned to the project.",
-      "bulk_fee_error": "Enter a valid remuneration value.",
-      "bulk_hint": "You can still refine individual remuneration values inside each record below.",
-      "bulk_label": "Gross fee",
-      "bulk_placeholder": "0.00",
-      "bulk_title": "Apply one remuneration amount across the vocal roster.",
-      "cast_count_one": "{{count}} cast records",
-      "cast_count_other": "{{count}} cast records",
-      "currency_label": "PLN",
-      "export_badge": "Project export",
-      "export_description": "Use the background export pipeline to prepare the ZIP package with contract PDFs for the whole event.",
-      "export_missing_one": "{{count}} valuations missing",
-      "export_missing_other": "{{count}} valuations missing",
-      "export_ready": "Ledger ready for export",
-      "export_title": "Generate a contract package for the selected project."
-    },
-    "empty": {
-      "idle_description": "The finance cockpit is ready. Pick an event above to inspect coverage, update remuneration values, and prepare exportable contract packages.",
-      "idle_eyebrow": "Portfolio view",
-      "idle_title": "Select a project to open the settlement ledger.",
-      "no_personnel_description": "Assign personnel in the project workspace first. Once records exist here, you can define remunerations and generate PDF contracts.",
-      "no_personnel_eyebrow": "No records yet",
-      "no_personnel_title": "This project has no assigned cast or crew."
-    },
-    "error": {
-      "action": "Retry synchronization",
-      "description": "Project, cast, or crew data did not arrive from the API. Retry synchronization to restore the contracts dashboard.",
-      "eyebrow": "Ledger unavailable",
-      "title": "The settlement workspace could not be loaded."
-    },
     "header": {
       "badge": "Finance operations",
-      "refresh": "Refresh data",
-      "syncing": "Synchronizing",
-      "title": "Contracts and",
-      "title_highlight": "Payroll"
-    },
-    "hero": {
-      "active_projects": "active",
-      "cast": "cast",
-      "context_badge_active": "Active settlement context",
-      "context_badge_idle": "Finance operations workspace",
-      "context_location": "Location",
-      "context_location_placeholder": "Event venue and logistics context will appear here.",
-      "context_mix": "Personnel mix",
-      "context_schedule": "Schedule",
-      "context_schedule_placeholder": "Select an event to activate the settlement workspace.",
-      "contract_records": "records",
-      "crew": "crew",
-      "description_default": "Choose a project to manage cast fees, crew remuneration, and contract-ready PDFs in one coherent workspace.",
-      "description_selected": "Control valuations, payout readiness, and document exports for the selected production without leaving the ledger surface.",
-      "draft_projects": "draft",
-      "portfolio_projects": "projects in portfolio",
-      "selector_description": "The selected event becomes the operational context for valuations, budget checks, and PDF generation.",
-      "selector_eyebrow": "Project scope",
-      "selector_label": "Settlement context",
-      "selector_placeholder": "Choose an event from the portfolio",
-      "stat_budget": "Budget posture",
-      "stat_completion": "Valuation coverage",
-      "stat_contracts": "Contracts",
-      "title_default": "Contracts and payroll cockpit"
+      "title": "Settlements",
+      "title_highlight": "Hub",
+      "refresh": "Refresh",
+      "syncing": "Syncing",
+      "mix": "{{cast}} cast · {{crew}} crew"
     },
     "loader": {
-      "message": "Loading settlement ledgers..."
+      "message": "Loading settlement ledgers…"
     },
-    "metrics": {
-      "global_archive": "Archived projects",
-      "global_archive_desc": "Completed productions still available for historical exports.",
-      "global_budget": "Global budget",
-      "global_budget_desc": "All remunerations already introduced into the platform.",
-      "global_coverage": "Valuation coverage",
-      "global_coverage_desc": "How much of the entire portfolio is already priced.",
-      "global_live": "Live projects",
-      "global_live_desc": "Draft and active events available for ongoing settlements.",
-      "project_budget": "Personnel budget",
-      "project_budget_desc": "Current gross budget across cast and crew.",
-      "project_missing": "Missing valuations",
-      "project_missing_desc": "These records still block direct PDF generation.",
-      "project_mix": "Personnel mix",
-      "project_mix_desc": "Cast versus crew headcount in the active ledger.",
-      "project_priced": "Priced contracts",
-      "project_priced_desc": "Contracts with a defined remuneration value."
-    },
-    "row": {
-      "cast_record": "Cast contract record",
-      "crew_record": "Crew contract record",
-      "currency_label": "PLN",
-      "current_fee": "Current fee: {{amount}}",
-      "download_pdf": "PDF",
-      "fee_placeholder": "0.00",
-      "invalid_fee": "Enter a valid remuneration value.",
-      "missing_fee": "Missing Fee",
-      "save": "Save",
-      "saved": "Saved"
-    },
-    "sections": {
-      "cast_description": "Manage vocal remuneration, track valuation coverage, and generate individual contract PDFs for the artistic roster.",
-      "cast_title": "Cast ledger",
-      "crew_description": "Keep technical and logistics contracts aligned with the same remuneration and export workflow.",
-      "crew_title": "Crew ledger"
-    },
-    "table": {
-      "all_priced": "All records priced",
-      "documents": "Documents",
-      "missing_valuations": "missing valuations",
-      "performer": "Performer",
-      "records": "records",
-      "remuneration": "Remuneration",
-      "role": "Role"
-    },
-    "toast": {
-      "bulk_applying": "Applying bulk rates...",
-      "bulk_error": "Server error during bulk operation.",
-      "bulk_success_one": "1 contract updated.",
-      "bulk_success_other": "{{count}} contracts updated.",
-      "pdf_error": "Generation error: {{message}}",
-      "pdf_generating": "Generating PDF for {{name}}...",
-      "pdf_success": "Document generated successfully.",
-      "save_error": "Failed to save compensation for: {{name}}."
+    "error": {
+      "eyebrow": "No data",
+      "title": "The settlements workspace could not be loaded.",
+      "description": "Project, cast or crew data did not arrive from the server. Try synchronizing again.",
+      "action": "Retry synchronization"
     },
     "warning": {
-      "action": "Retry sync",
-      "description": "The dashboard is still usable, but one or more data sources failed to refresh. Run a manual sync to reconcile the latest project, cast, and crew records.",
-      "title": "Some ledger data is out of sync."
+      "title": "Some data is out of date.",
+      "description": "The dashboard still works, but one source failed to refresh. Run a manual sync.",
+      "action": "Retry"
+    },
+    "summary": {
+      "outstanding": "Outstanding",
+      "all_settled": "Settled",
+      "all_settled_note": "Every fee in this scope is settled.",
+      "outstanding_note": "Awaiting payment: {{n}}",
+      "outstanding_note_missing": "{{owed}} awaiting payment · {{missing}} unpriced",
+      "committed": "Fee budget",
+      "priced": "Priced",
+      "paid": "Paid",
+      "scope_portfolio": "Whole portfolio"
+    },
+    "rail": {
+      "title": "Projects",
+      "search": "Search projects…",
+      "all_projects": "All projects",
+      "all_outstanding": "{{n}} with balances",
+      "all_clear": "All settled",
+      "mix": "{{cast}} cast · {{crew}} crew",
+      "missing": "{{n}} unpriced",
+      "empty": "no personnel",
+      "settled": "settled",
+      "no_match": "No projects match this search."
+    },
+    "payables": {
+      "title": "To settle",
+      "unpriced": "Unpriced",
+      "pay": "Paid",
+      "open": "Open in project",
+      "open_short": "Price",
+      "paid_toast": "Marked {{name}} as paid.",
+      "clear_eyebrow": "All clear",
+      "clear_title": "Every fee is settled.",
+      "clear_desc": "No project has open valuations or outstanding payouts. Pick a project on the left to review details or generate contracts.",
+      "none_in_filter": "No items in this filter."
+    },
+    "filters": {
+      "all": "Everyone",
+      "all_short": "All",
+      "unpriced": "Unpriced",
+      "unpaid": "To pay",
+      "aria": "Settlement filter"
+    },
+    "bulk": {
+      "label": "Rate",
+      "placeholder": "e.g. 500",
+      "apply": "Apply",
+      "hint": "Sets one rate across the chosen group (skips already paid).",
+      "target_label": "Bulk rate for"
+    },
+    "ledger": {
+      "col_person": "Person",
+      "col_role": "Role",
+      "col_fee": "Fee",
+      "col_actions": "Settlement",
+      "missing": "{{n}} unpriced",
+      "owed": "{{n}} to pay",
+      "settled": "Settled",
+      "empty_filter": "No items for the selected filter."
+    },
+    "sections": {
+      "cast": "Cast",
+      "crew": "Crew"
+    },
+    "row": {
+      "currency": "PLN",
+      "fee_placeholder": "0.00",
+      "fee_aria": "Fee for {{name}}",
+      "invalid_fee": "Enter a valid amount.",
+      "save": "Save fee",
+      "paid": "Paid",
+      "to_pay": "To pay",
+      "mark_paid": "Mark as paid",
+      "mark_unpaid": "Revert payment",
+      "pay_blocked": "Price the fee first",
+      "pdf_blocked": "Pricing unlocks the contract PDF",
+      "download_pdf": "Download contract PDF",
+      "paid_on": "Paid {{date}}"
+    },
+    "empty": {
+      "no_personnel_eyebrow": "No personnel",
+      "no_personnel_title": "This project has no assigned cast or crew.",
+      "no_personnel_description": "Assign people in the project workspace first. Once records appear here you can set fees, mark payments and generate contract PDFs."
+    },
+    "status": {
+      "confirmed": "Confirmed",
+      "declined": "Declined",
+      "pending": "Pending"
+    },
+    "project_status": {
+      "active": "Active",
+      "archived": "Archived",
+      "cancelled": "Cancelled",
+      "draft": "Draft"
+    },
+    "toast": {
+      "bulk_applying": "Applying a shared rate…",
+      "bulk_success": "Updated {{count}} fees.",
+      "bulk_error": "Could not apply the bulk rate.",
+      "pdf_generating": "Generating contract for {{name}}…",
+      "pdf_success": "Contract PDF ready.",
+      "pdf_error": "PDF generation failed: {{message}}",
+      "save_error": "Could not save the fee for {{name}}.",
+      "payment_error": "Could not change the payment status."
+    },
+    "unknown_artist": "Unknown artist",
+    "unknown_collaborator": "Unknown collaborator",
+    "unknown_voice": "Unknown voice",
+    "unknown_specialty": "Unknown specialty",
+    "csv": {
+      "person": "Person",
+      "kind": "Type",
+      "role": "Role",
+      "project": "Project",
+      "event_date": "Event date",
+      "amount": "Amount (PLN)",
+      "paid": "Paid",
+      "paid_date": "Payment date",
+      "status": "Status",
+      "yes": "Yes",
+      "no": "No",
+      "export": "Export CSV",
+      "hint": "Full settlement list for accounting (CSV)",
+      "done": "Settlement list exported."
+    },
+    "mark_all": {
+      "button": "Mark paid",
+      "hint": "Marks every priced, unpaid fee in the project as paid.",
+      "applying": "Marking fees as paid…",
+      "done": "Marked {{count}} fees as paid.",
+      "partial": "Marked {{ok}} of {{total}} — {{failed}} failed.",
+      "confirm_title": "Mark the whole project as paid?",
+      "confirm_desc": "{{count}} priced, unpaid fees (cast and crew) will be marked paid. You can revert each individually.",
+      "confirm_cta": "Mark paid"
     }
   },
   "crew": {
@@ -934,7 +1042,37 @@
     "layout": {
       "actions": {
         "logout": "Log out",
-        "settings": "Settings"
+        "open_menu": "Menu",
+        "pin": "Pin panel",
+        "settings": "Settings",
+        "unpin": "Unpin panel"
+      },
+      "command": {
+        "actions": {
+          "mark_attendance": "Mark attendance",
+          "new_artist": "New artist",
+          "new_project": "New project",
+          "report_absence": "Report absence"
+        },
+        "current": "Here",
+        "hint_close": "close",
+        "hint_move": "navigate",
+        "hint_select": "go",
+        "no_results": "No results",
+        "no_results_hint": "Try a different phrase",
+        "open": "Search",
+        "pin_project": "Pin project",
+        "placeholder": "Search or jump to…",
+        "sections": {
+          "actions": "Quick actions",
+          "artists": "Artists",
+          "navigation": "Navigation",
+          "pinned": "Pinned",
+          "projects": "Projects",
+          "recent": "Recent"
+        },
+        "title": "Quick jump",
+        "unpin_project": "Unpin project"
       },
       "groups": {
         "artist_zone": "Artist Zone",
@@ -958,6 +1096,16 @@
         "projects": "Project Management",
         "resources": "Resources & Knowledge",
         "schedule": "My Schedule"
+      },
+      "mobile_tabs": {
+        "alerts": "Alerts",
+        "attendance": "Attendance",
+        "dashboard": "Home",
+        "materials": "Materials",
+        "messages": "Chat",
+        "more": "More",
+        "projects": "Projects",
+        "schedule": "Schedule"
       },
       "nav": {
         "main_menu": "Main menu"
@@ -1308,7 +1456,10 @@
       "status_updated": "Participation status updated",
       "title": "New project invitation"
     },
+    "all_read": "All caught up",
     "mark_all_read": "Mark all as read",
+    "section_earlier": "Earlier",
+    "section_new": "New",
     "send_modal": {
       "cta_label": "Button Label",
       "cta_label_placeholder": "e.g. View Details",

@@ -100,7 +100,7 @@ export const ConfirmModal = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-ethereal-ink/40 backdrop-blur-sm cursor-none"
+            className="absolute inset-0 bg-ethereal-ink/40 backdrop-blur-sm"
             onClick={!isLoading ? onCancel : undefined}
             aria-hidden="true"
           />

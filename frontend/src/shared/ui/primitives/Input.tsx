@@ -15,7 +15,7 @@ const inputVariants = cva(
     variants: {
       variant: {
         glass:
-          "bg-ethereal-marble/80 backdrop-blur-md border border-ethereal-gold/30 text-ethereal-ink shadow-[inset_0_2px_4px_rgba(22,20,18,0.04)] placeholder:text-ethereal-incense focus:bg-ethereal-marble focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20 hover:border-ethereal-gold/50",
+          "bg-ethereal-marble/90 backdrop-blur-md border border-ethereal-gold/35 text-ethereal-ink shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] placeholder:text-ethereal-incense focus:bg-ethereal-marble focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20 hover:border-ethereal-gold/55",
         dark: "bg-ethereal-ink/80 backdrop-blur-xl border border-ethereal-gold/20 text-ethereal-alabaster shadow-2xl placeholder:text-ethereal-incense focus:bg-ethereal-ink focus:border-ethereal-gold/60 focus:ring-ethereal-gold/20 hover:border-ethereal-gold/40",
         ghost:
           "bg-transparent border-transparent text-ethereal-ink placeholder:text-ethereal-incense hover:bg-ethereal-parchment/40 focus:bg-ethereal-marble/80 focus:border-ethereal-gold/30",
