@@ -1,492 +1,228 @@
-import React, { useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+/**
+ * @file Rehearsals.tsx
+ * @description Centrum Obecności — the conductor's rehearsal command centre.
+ * Composes the cross-project pulse, a context navigator (project + rehearsals),
+ * and a switchable workspace: "Odprawa" for taking/reading attendance and
+ * "Frekwencja" for reliability analytics. Scheduling/CRUD lives in the project
+ * hub; this surface is purely operational + analytical.
+ * @architecture Enterprise SaaS 2026
+ */
+
+import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import {
-  CheckCircle2,
-  Clock,
-  Archive,
-  Users,
-  TrendingUp,
-  UserMinus,
-  ChevronRight,
-} from "lucide-react";
+import { ListChecks, MousePointerClick, TrendingUp } from "lucide-react";
 
-import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
-import { LocationPreview } from "@/features/logistics/components/LocationPreview";
-import { useRehearsalsData } from "./hooks/useRehearsalsData";
+import { cn } from "@/shared/lib/utils";
 import { useLocationResolver } from "@/features/logistics/hooks/useLocationResolver";
-import {
-  formatLocalizedDate,
-  formatLocalizedTime,
-} from "@/shared/lib/time/intl";
-
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
-import { Badge } from "@/shared/ui/primitives/Badge";
-import { Button } from "@/shared/ui/primitives/Button";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import {
-  Caption,
-  Eyebrow,
-  Heading,
-  Text,
-} from "@/shared/ui/primitives/typography";
-import { ArtistRow } from "./components/ArtistRow";
+  StaggeredBentoContainer,
+  StaggeredBentoItem,
+} from "@/shared/ui/composites/StaggeredBento";
 
-const VOICE_LABELS: Record<string, string> = {
-  S: "rehearsals.voices.sopranos",
-  A: "rehearsals.voices.altos",
-  T: "rehearsals.voices.tenors",
-  B: "rehearsals.voices.basses",
-  M: "rehearsals.voices.mezzos",
-  C: "rehearsals.voices.countertenors",
-  BAR: "rehearsals.voices.baritones",
-};
-
-const VOICE_FALLBACKS: Record<string, string> = {
-  S: "Soprany",
-  A: "Alty",
-  T: "Tenory",
-  B: "Basy",
-  M: "Mezzosoprany",
-  C: "Kontratenory",
-  BAR: "Barytony",
-};
+import { useRehearsalsData, type RehearsalView } from "./hooks/useRehearsalsData";
+import { useRehearsalAnalytics } from "./hooks/useRehearsalAnalytics";
+import { RehearsalPulseBar } from "./components/RehearsalPulseBar";
+import { RehearsalRail } from "./components/RehearsalRail";
+import { RehearsalInspector } from "./components/RehearsalInspector";
+import { ReliabilityBoard } from "./components/ReliabilityBoard";
 
 export default function Rehearsals(): React.JSX.Element {
   const { t } = useTranslation();
   const {
     isLoading,
     isError,
+    view,
+    setView,
+    isRollCall,
+    setIsRollCall,
+    showOnlyUnmarked,
+    setShowOnlyUnmarked,
     projectTab,
     setProjectTab,
     displayProjects,
     selectedProjectId,
     setSelectedProjectId,
+    selectedProject,
     projectRehearsals,
+    rehearsalTallies,
     activeRehearsalId,
     setActiveRehearsalId,
     activeRehearsal,
     invitedParticipations,
+    voiceGroups,
+    projectParticipations,
     artistMap,
     attendanceMap,
+    attendanceIndex,
     stats,
+    pulse,
+    goToRehearsal,
     isMarkingAll,
     handleMarkAllPresent,
   } = useRehearsalsData();
 
   const { getLocationName } = useLocationResolver();
 
+  // Selecting a rehearsal anywhere (rail row, trend bar) lands in roll-call.
+  const openRehearsal = (rehearsalId: string): void => {
+    setActiveRehearsalId(rehearsalId);
+    setView("ROLL_CALL");
+  };
+
+  const analytics = useRehearsalAnalytics(
+    projectRehearsals,
+    projectParticipations,
+    attendanceIndex,
+    artistMap,
+  );
+
   useEffect(() => {
     if (isError)
-      toast.error(
-        t("rehearsals.toast.sync_error_title", "Błąd synchronizacji"),
-        {
-          description: t(
-            "rehearsals.toast.sync_error_desc",
-            "Nie udało się załadować danych.",
-          ),
-        },
-      );
+      toast.error(t("rehearsals.toast.sync_error_title", "Błąd synchronizacji"), {
+        description: t("rehearsals.toast.sync_error_desc", "Nie udało się załadować danych."),
+      });
   }, [isError, t]);
-
-  const sectionalDetails = useMemo(() => {
-    if (!activeRehearsal?.invited_participations?.length)
-      return t("rehearsals.dashboard.tutti", "Tutti (Cały Zespół)");
-
-    const voices = new Set<string>();
-    invitedParticipations.forEach((p) => {
-      const artist = artistMap.get(String(p.artist));
-      if (artist?.voice_type)
-        voices.add(artist.voice_type.charAt(0).toUpperCase());
-    });
-
-    const voiceDict: Record<string, string> = {
-      S: t("rehearsals.voices.sopranos", "Soprany"),
-      A: t("rehearsals.voices.altos", "Alty"),
-      T: t("rehearsals.voices.tenors", "Tenory"),
-      B: t("rehearsals.voices.basses", "Basy"),
-      M: t("rehearsals.voices.mezzos", "Mezzosoprany"),
-      C: t("rehearsals.voices.countertenors", "Kontratenory"),
-      BAR: t("rehearsals.voices.baritones", "Barytony"),
-    };
-
-    const names = Array.from(voices).map((v) => voiceDict[v] ?? v);
-    return `${t("rehearsals.dashboard.only", "Tylko:")} ${names.join(", ")}`;
-  }, [activeRehearsal, invitedParticipations, artistMap, t]);
-
-  const attendanceRateAccent =
-    stats.rate >= 80 ? "gold" : stats.rate >= 50 ? "default" : "crimson";
 
   if (isLoading && displayProjects.length === 0) {
     return <EtherealLoader />;
   }
 
+  const VIEWS: Array<{ id: RehearsalView; label: string; icon: React.ReactNode }> = [
+    {
+      id: "ROLL_CALL",
+      label: t("rehearsals.views.roll_call", "Odprawa"),
+      icon: <ListChecks size={14} aria-hidden="true" />,
+    },
+    {
+      id: "RELIABILITY",
+      label: t("rehearsals.views.reliability", "Frekwencja"),
+      icon: <TrendingUp size={14} aria-hidden="true" />,
+    },
+  ];
+
+  const viewSwitch = (
+    <div
+      role="tablist"
+      aria-label={t("rehearsals.views.label", "Widok")}
+      className="flex w-full gap-1 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1 md:w-auto"
+    >
+      {VIEWS.map((item) => {
+        const isActive = view === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => setView(item.id)}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors md:flex-none",
+              isActive
+                ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
+                : "text-ethereal-graphite hover:text-ethereal-ink",
+            )}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <PageTransition>
-      <div className="space-y-10 pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <PageHeader
-          size="standard"
-          roleText={t("rehearsals.dashboard.subtitle", "Moduł Inspektora")}
-          title={t("rehearsals.dashboard.title", "Dziennik")}
-          titleHighlight={t(
-            "rehearsals.dashboard.title_highlight",
-            "Obecności",
-          )}
-        />
-
-        {/* ── Project Context ──────────────────────────────────── */}
-        <section>
-          <div className="flex items-center justify-between mb-5">
-            <SectionHeader
-              title={t(
-                "rehearsals.dashboard.project_context",
-                "Kontekst Projektu",
-              )}
-              withFluidDivider={false}
-              className="pb-0 mb-0"
+      <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 px-4 pb-24 pt-6 sm:px-6">
+        <StaggeredBentoContainer className="!flex flex-col gap-5">
+          <StaggeredBentoItem>
+            <PageHeader
+              size="standard"
+              roleText={t("rehearsals.dashboard.subtitle", "Moduł Dyrygenta")}
+              title={t("rehearsals.dashboard.title", "Dziennik")}
+              titleHighlight={t("rehearsals.dashboard.title_highlight", "Obecności")}
+              rightContent={viewSwitch}
             />
+          </StaggeredBentoItem>
 
-            <div className="flex items-center gap-1 p-1 rounded-2xl bg-ethereal-alabaster border border-ethereal-incense/15">
-              {(["ACTIVE", "ARCHIVE"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setProjectTab(tab)}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
-                    projectTab === tab
-                      ? "bg-ethereal-marble shadow-glass-solid text-ethereal-ink border border-ethereal-incense/20"
-                      : "text-ethereal-graphite hover:text-ethereal-ink"
-                  }`}
-                >
-                  {tab === "ARCHIVE" && (
-                    <Archive size={10} aria-hidden="true" />
-                  )}
-                  {tab === "ACTIVE"
-                    ? t("rehearsals.tabs.active", "Aktywne")
-                    : t("rehearsals.tabs.archive", "Archiwum")}
-                </button>
-              ))}
-            </div>
-          </div>
+          <StaggeredBentoItem>
+            <RehearsalPulseBar
+              pulse={pulse}
+              onOpenNext={() =>
+                pulse.next &&
+                goToRehearsal(pulse.next.project.id, pulse.next.rehearsal.id)
+              }
+            />
+          </StaggeredBentoItem>
 
-          <div className="relative group">
-            <div className="flex overflow-x-auto gap-4 py-4 -my-4 no-scrollbar snap-x items-stretch">
-              {displayProjects.length === 0 ? (
-                <Caption className="italic">
-                  {t(
-                    "rehearsals.dashboard.no_projects",
-                    "Brak projektów w tej zakładce.",
-                  )}
-                </Caption>
-              ) : (
-                displayProjects.map((project) => {
-                  const isSelected = selectedProjectId === String(project.id);
-                  return (
-                    <GlassCard
-                      key={project.id}
-                      as="button"
-                      onClick={() => setSelectedProjectId(String(project.id))}
-                      variant={isSelected ? "solid" : "light"}
-                      padding="sm"
-                      animationEngine="css"
-                      className={`snap-start w-[260px] sm:w-[calc(50%-8px)] md:w-[calc(33.333%-11px)] lg:w-[calc(25%-12px)] shrink-0 ${
-                        isSelected ? "ring-1 ring-ethereal-gold/40" : ""
-                      }`}
-                    >
-                      <Caption className="block mb-1.5 text-left">
-                        {formatLocalizedDate(
-                          project.date_time,
-                          undefined,
-                          undefined,
-                          project.timezone,
-                        )}
-                      </Caption>
-                      <Text
-                        size="sm"
-                        weight="semibold"
-                        className="truncate block text-left"
-                      >
-                        {project.title}
-                      </Text>
-                    </GlassCard>
-                  );
-                })
-              )}
-            </div>
-            {displayProjects.length > 4 && (
-              <div className="absolute top-0 right-0 bottom-4 w-16 bg-gradient-to-l from-ethereal-alabaster to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-end pr-1">
-                <ChevronRight className="text-ethereal-graphite/50 w-6 h-6" />
+          <StaggeredBentoItem>
+            <div className="grid gap-5 lg:grid-cols-12">
+              <div className="lg:col-span-4 lg:sticky lg:top-6 lg:self-start">
+                <RehearsalRail
+                  projectTab={projectTab}
+                  onProjectTab={setProjectTab}
+                  displayProjects={displayProjects}
+                  selectedProjectId={selectedProjectId}
+                  onSelectProject={setSelectedProjectId}
+                  projectRehearsals={projectRehearsals}
+                  rehearsalTallies={rehearsalTallies}
+                  activeRehearsalId={activeRehearsalId}
+                  onSelectRehearsal={openRehearsal}
+                  getLocationName={getLocationName}
+                />
               </div>
-            )}
-          </div>
-        </section>
 
-        {/* ── Rehearsal Selector + Inspector ───────────────────── */}
-        {selectedProjectId && projectRehearsals.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="space-y-6"
-          >
-            {/* Time chips */}
-            <div className="relative group">
-              <div className="flex overflow-x-auto gap-4 py-4 -my-4 no-scrollbar snap-x items-stretch">
-                {projectRehearsals.map((reh) => {
-                  const isSelected =
-                    String(activeRehearsalId) === String(reh.id);
-                  const isPast = new Date(reh.date_time) < new Date();
-                  return (
-                    <GlassCard
-                      key={reh.id}
-                      as="button"
-                      onClick={() => setActiveRehearsalId(String(reh.id))}
-                      variant={isSelected ? "solid" : "light"}
-                      padding="sm"
-                      animationEngine="css"
-                      className={`snap-start w-[200px] sm:w-[calc(50%-8px)] md:w-[calc(33.333%-11px)] lg:w-[calc(25%-12px)] shrink-0 text-left ${
-                        isSelected ? "ring-1 ring-ethereal-gold/40" : ""
-                      }`}
-                    >
-                      <Caption
-                        color={isSelected ? "gold" : "muted"}
-                        className="block mb-0.5"
-                      >
-                        {formatLocalizedDate(
-                          reh.date_time,
-                          { day: "numeric", month: "short" },
-                          undefined,
-                          reh.timezone,
-                        )}
-                      </Caption>
-                      <Heading
-                        as="p"
-                        size="lg"
-                        weight="bold"
-                        color={isPast && !isSelected ? "graphite" : "default"}
-                        className="leading-none mb-1"
-                      >
-                        {formatLocalizedTime(
-                          reh.date_time,
-                          { hour: "2-digit", minute: "2-digit" },
-                          undefined,
-                          reh.timezone,
-                        )}
-                      </Heading>
-                      <Caption
-                        color="muted"
-                        className="truncate max-w-full block"
-                      >
-                        {getLocationName(
-                          reh.location,
-                          t("rehearsals.dashboard.no_location", "Brak lok."),
-                        )}
-                      </Caption>
-                    </GlassCard>
-                  );
-                })}
+              <div className="lg:col-span-8">
+                {view === "RELIABILITY" ? (
+                  <ReliabilityBoard
+                    analytics={analytics}
+                    projectTitle={selectedProject?.title ?? ""}
+                    onOpenRehearsal={openRehearsal}
+                  />
+                ) : activeRehearsal ? (
+                  <RehearsalInspector
+                    rehearsal={activeRehearsal}
+                    voiceGroups={voiceGroups}
+                    invitedCount={invitedParticipations.length}
+                    artistMap={artistMap}
+                    attendanceMap={attendanceMap}
+                    stats={stats}
+                    isRollCall={isRollCall}
+                    onToggleRollCall={() => setIsRollCall(!isRollCall)}
+                    showOnlyUnmarked={showOnlyUnmarked}
+                    onToggleOnlyUnmarked={() => setShowOnlyUnmarked(!showOnlyUnmarked)}
+                    isMarkingAll={isMarkingAll}
+                    onMarkAllPresent={handleMarkAllPresent}
+                  />
+                ) : (
+                  <StatePanel
+                    icon={<MousePointerClick size={22} aria-hidden="true" />}
+                    title={
+                      selectedProjectId
+                        ? t("rehearsals.empty.pick_rehearsal_title", "Wybierz próbę")
+                        : t("rehearsals.empty.pick_project_title", "Wybierz projekt")
+                    }
+                    description={
+                      selectedProjectId
+                        ? t(
+                            "rehearsals.empty.pick_rehearsal_desc",
+                            "Wskaż próbę z listy po lewej, aby rozpocząć odprawę i odnotować obecność.",
+                          )
+                        : t(
+                            "rehearsals.empty.pick_project_desc",
+                            "Wybierz projekt z listy po lewej, aby zobaczyć jego próby.",
+                          )
+                    }
+                  />
+                )}
               </div>
-              {projectRehearsals.length > 4 && (
-                <div className="absolute top-0 right-0 bottom-4 w-16 bg-gradient-to-l from-ethereal-alabaster to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-end pr-1">
-                  <ChevronRight className="text-ethereal-graphite/50 w-6 h-6" />
-                </div>
-              )}
             </div>
-
-            {/* Active rehearsal inspector */}
-            {activeRehearsal && (
-              <GlassCard variant="solid" padding="none" isHoverable={false}>
-                {/* ── Inspector header ── */}
-                <div className="p-6 md:p-8 border-b border-ethereal-incense/10">
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <Badge
-                          variant={
-                            activeRehearsal.invited_participations?.length
-                              ? "amethyst"
-                              : "brand"
-                          }
-                        >
-                          {activeRehearsal.invited_participations?.length
-                            ? t(
-                                "rehearsals.dashboard.sectional",
-                                "Próba Sekcyjna",
-                              )
-                            : t(
-                                "rehearsals.dashboard.tutti_badge",
-                                "Próba Tutti",
-                              )}
-                        </Badge>
-                        <Badge variant="neutral">{sectionalDetails}</Badge>
-                      </div>
-
-                      <Text
-                        size="lg"
-                        weight="semibold"
-                        className="mb-5 leading-tight block"
-                      >
-                        {activeRehearsal.focus ??
-                          t(
-                            "rehearsals.dashboard.general_work",
-                            "Praca Bieżąca",
-                          )}
-                      </Text>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ethereal-alabaster border border-ethereal-incense/15">
-                          <Clock
-                            size={12}
-                            className="text-ethereal-gold shrink-0"
-                            aria-hidden="true"
-                          />
-                          <Caption>
-                            {formatLocalizedDate(
-                              activeRehearsal.date_time,
-                              {
-                                weekday: "long",
-                                day: "numeric",
-                                month: "long",
-                              },
-                              undefined,
-                              activeRehearsal.timezone,
-                            )}
-                          </Caption>
-                        </div>
-
-                        <div className="flex items-center px-3 py-1.5 rounded-xl bg-ethereal-alabaster border border-ethereal-incense/15">
-                          <DualTimeDisplay
-                            value={activeRehearsal.date_time}
-                            timeZone={activeRehearsal.timezone}
-                            className="border-none bg-transparent p-0"
-                            typography="sans"
-                            size="sm"
-                          />
-                        </div>
-
-                        <LocationPreview
-                          locationRef={activeRehearsal.location}
-                          fallback={t(
-                            "rehearsals.dashboard.no_location",
-                            "Brak lok.",
-                          )}
-                          variant="minimal"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Stats strip */}
-                    <div className="flex flex-wrap bg-ethereal-alabaster rounded-2xl border border-ethereal-incense/15 overflow-hidden shrink-0 divide-x divide-ethereal-incense/10">
-                      <MetricBlock
-                        label={t("rehearsals.stats.rate", "Frekwencja")}
-                        value={`${stats.rate}%`}
-                        icon={<TrendingUp />}
-                        accentColor={attendanceRateAccent}
-                        className="px-6 py-4"
-                      />
-                      <MetricBlock
-                        label={t("rehearsals.stats.present", "Obecni")}
-                        value={stats.present + stats.late}
-                        unit={`/ ${stats.total}`}
-                        icon={<Users />}
-                        className="px-6 py-4"
-                      />
-                      <MetricBlock
-                        label={t("rehearsals.stats.absent", "Braki")}
-                        value={stats.absent + stats.excused}
-                        icon={<UserMinus />}
-                        accentColor="crimson"
-                        className="px-6 py-4"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Actions toolbar ── */}
-                <div className="flex justify-end px-6 py-3 border-b border-ethereal-incense/10 bg-ethereal-marble/30">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleMarkAllPresent}
-                    disabled={
-                      isMarkingAll ||
-                      invitedParticipations.length === 0 ||
-                      stats.none === 0
-                    }
-                    isLoading={isMarkingAll}
-                    leftIcon={
-                      !isMarkingAll ? <CheckCircle2 size={15} /> : undefined
-                    }
-                  >
-                    {t(
-                      "rehearsals.dashboard.bulk_fill",
-                      'Uzupełnij luki ({{count}}) jako "Obecny"',
-                      { count: stats.none },
-                    )}
-                  </Button>
-                </div>
-
-                {/* ── Attendance roster ── */}
-                <div className="overflow-x-hidden overflow-y-auto max-h-[60vh]">
-                  {(["S", "A", "T", "B", "M", "C", "BAR"] as const).map(
-                    (voiceGroup) => {
-                      const groupParts = invitedParticipations.filter((p) => {
-                        const artist = artistMap.get(String(p.artist));
-                        if (!artist?.voice_type) return false;
-
-                        // Handling "BAR" and others that might be longer than 1 char
-                        if (voiceGroup === "BAR")
-                          return artist.voice_type === "BAR";
-                        if (voiceGroup === "M")
-                          return artist.voice_type === "MEZ";
-                        if (voiceGroup === "C")
-                          return artist.voice_type === "CT";
-
-                        return artist.voice_type.startsWith(voiceGroup);
-                      });
-                      if (groupParts.length === 0) return null;
-
-                      return (
-                        <div key={voiceGroup}>
-                          <div className="sticky top-0 z-10 bg-ethereal-alabaster/95 backdrop-blur-sm px-6 py-2.5 border-b border-ethereal-incense/10">
-                            <Eyebrow color="gold">
-                              {t(
-                                VOICE_LABELS[voiceGroup],
-                                VOICE_FALLBACKS[voiceGroup],
-                              )}
-                            </Eyebrow>
-                          </div>
-
-                          <div className="flex flex-col">
-                            {groupParts.map((part) => {
-                              const artist = artistMap.get(String(part.artist));
-                              if (!artist) return null;
-                              return (
-                                <ArtistRow
-                                  key={part.id}
-                                  part={part}
-                                  artist={artist}
-                                  existingRecord={attendanceMap.get(
-                                    String(part.id),
-                                  )}
-                                  rehearsalId={activeRehearsal.id}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    },
-                  )}
-                </div>
-              </GlassCard>
-            )}
-          </motion.div>
-        )}
+          </StaggeredBentoItem>
+        </StaggeredBentoContainer>
       </div>
     </PageTransition>
   );
