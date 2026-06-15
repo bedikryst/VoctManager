@@ -309,6 +309,49 @@ The project utilizes Docker Compose for a standardized development environment.
    make superuser
    ```
 
+   **Seeder Details (`make seed`):**
+   
+   The seeder generates a rich, realistic test database for local development, demos, and QA. It covers all application contexts:
+   - **logistics:** 5 locations (concert halls, church, studio, rehearsal room, tour stop)
+   - **archive:** 10 composers, 10 pieces with movements, translations, recordings, score editions (PDF), audio tracks, program notes
+   - **roster:** 28 singers (full vocal spectrum), 2 conductors, 5 collaborators (crew), 6 projects in every lifecycle state, castings, rehearsals, attendance, piece readiness
+   - **documents:** Knowledge Base (categories + role-gated documents)
+   - **messaging:** 1:1 threads (artist ↔ management), project channels with messages
+   - **payments:** donations, patron leads
+   - **notifications:** inbox items, push devices, delivery preferences
+   
+   The seeder is **idempotent** — re-running it does not duplicate data. Default login credentials:
+   ```
+   admin / admin123     (Administrator)
+   manager / manager123 (Production Manager)
+   ```
+   
+   **Available Flags:**
+   ```bash
+   python manage.py seed_db [OPTIONS]
+   
+   --artists N      number of singers to generate (default 28)
+   --seed N         RNG seed for reproducibility (default 2026)
+   --clear          hard-wipe previously-seeded data before re-seeding
+   --no-media       skip generating files (audio, PDFs, documents) — faster
+   --quiet          only print the final summary
+   ```
+   
+   **Examples:**
+   ```bash
+   # Default — full dataset, 28 singers, placeholder media
+   python manage.py seed_db
+   
+   # Small dataset without files (fast)
+   python manage.py seed_db --artists 12 --no-media
+   
+   # Reset and reseed
+   python manage.py seed_db --clear
+   
+   # Reproducible seed (same RNG → identical names/data)
+   python manage.py seed_db --seed 2026
+   ```
+
 5. **Frontend Development Servers (Optional for UI engineering):**
    The two frontends are independent — run whichever surface you're building. They both proxy to the same Django backend.
 

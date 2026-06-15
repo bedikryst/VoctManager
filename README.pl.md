@@ -310,6 +310,49 @@ Projekt wykorzystuje Docker Compose do standaryzowanego środowiska deweloperski
    make superuser
    ```
 
+   **Szczegóły seedera (`make seed`):**
+   
+   Seeder generuje bogatą, realistyczną bazę testową dla lokalnego development, demów i QA. Pokrywa wszystkie konteksty aplikacji:
+   - **logistics:** 5 lokalizacji (filharmonia, kościół, studio, sala prób, trasa)
+   - **archive:** 10 kompozytorów, 10 utworów z ruchami, tłumaczeniami, nagraniami, edycjami nut (PDF), ścieżkami audio, notami programowymi
+   - **roster:** 28 śpiewaków (pełny spektrum głosów), 2 dyrygentów, 5 współpracowników (ekipa), 6 projektów w każdym stanie cyklu życia, obsadzenie, próby, obecności, gotowość do repertuaru
+   - **documents:** baza wiedzy (kategorie + dokumenty z dostępem opartym na rolach)
+   - **messaging:** wątki 1:1 (artista ↔ zarząd), kanały projektów z wiadomościami
+   - **payments:** darowizny, leady mecenasów
+   - **notifications:** skrzynka odbiorcy, urządzenia push, preferencje dostarczania
+   
+   Seeder jest **idempotentny** — re-uruchomienie go nie duplikuje danych. Logowanie domyślne:
+   ```
+   admin / admin123     (Administrator)
+   manager / manager123 (Production Manager)
+   ```
+   
+   **Dostępne flagi:**
+   ```bash
+   python manage.py seed_db [OPTIONS]
+   
+   --artists N      liczba śpiewaków (domyślnie 28)
+   --seed N         seed RNG dla powtarzalności (domyślnie 2026)
+   --clear          twardy reset poprzednich danych przed seedowaniem
+   --no-media       bez generowania plików (audio, PDF, dokumentów) — szybciej
+   --quiet          tylko finalne podsumowanie
+   ```
+   
+   **Przykłady:**
+   ```bash
+   # Domyślnie — pełny dataset, 28 śpiewaków, placeholder media
+   python manage.py seed_db
+   
+   # Mały dataset bez plików (szybko)
+   python manage.py seed_db --artists 12 --no-media
+   
+   # Reset + nowa baza
+   python manage.py seed_db --clear
+   
+   # Powtarzalny seed (ten sam RNG → identyczne dane nazwiska/imiona)
+   python manage.py seed_db --seed 2026
+   ```
+
 5. **Lokalne serwery dev frontendu (opcjonalnie dla inżynierii UI):**
    Oba frontendy są niezależne — uruchom ten, nad którym pracujesz. Oba proxują do tego samego backendu Django.
 
