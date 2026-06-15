@@ -37,6 +37,7 @@ from notifications.tasks import send_bulk_notifications_task, send_notification_
 from .dtos import (
     ArtistCreateDTO,
     AttendanceRecordDTO,
+    PieceReadinessUpdateDTO,
     ProjectBulkFeeDTO,
     ProjectCreateDTO,
     ProjectUpdateDTO,
@@ -54,6 +55,7 @@ from .models import (
     Attendance,
     CrewAssignment,
     Participation,
+    PieceReadiness,
     Project,
     ProjectPieceCasting,
     Rehearsal,
@@ -224,16 +226,25 @@ class ProjectManagementService:
             # Resolve location and timezone if location_id was provided in the update DTO
             if 'location_id' in dto.model_fields_set:
                 location, resolved_timezone = resolve_location_and_timezone(
-                    dto.location_id, 
+                    dto.location_id,
                     dto.timezone or project.timezone
                 )
-                update_data['location'] = location
-                update_data['timezone'] = resolved_timezone
-                
+
                 if project.location_id != (location.id if location else None):
                     old_loc = project.location.name if project.location else "None"
                     new_loc = location.name if location else "None"
                     changes.append(f"Location: {old_loc} ➔ {new_loc}")
+
+                # The apply loop below deliberately skips 'location'/'timezone',
+                # so the resolved FK + timezone must be persisted on the instance
+                # here — otherwise the location move is silently dropped.
+                project.location = location
+                project.timezone = resolved_timezone
+                update_data.pop('timezone', None)
+            elif 'timezone' in update_data:
+                # Standalone timezone change (no location move) — also skipped by
+                # the loop, so apply it directly.
+                project.timezone = update_data['timezone']
 
             if 'conductor' in dto.model_fields_set:
                 if project.conductor_id != dto.conductor:
@@ -358,11 +369,33 @@ class ProjectManagementService:
     def update_project_bulk_fee(dto: ProjectBulkFeeDTO) -> int:
         if dto.new_fee < 0:
             raise ParticipationException("Fee cannot be negative.")
-        
-        count = Participation.objects.filter(project_id=dto.project_id, is_deleted=False).update(
-            fee=dto.new_fee, updated_at=timezone.now()
+
+        # A standard cast rate must never rewrite money already settled (that would
+        # silently desync the recorded fee from what was actually paid), nor price
+        # artists who declined. Both are excluded; individual fees stay editable.
+        count = (
+            Participation.objects
+            .filter(project_id=dto.project_id, is_deleted=False, is_paid=False)
+            .exclude(status=Participation.Status.DECLINED)
+            .update(fee=dto.new_fee, updated_at=timezone.now())
         )
         logger.info(f"Bulk fee updated to {dto.new_fee} for project {dto.project_id} ({count} participants affected).")
+        return count
+
+    @staticmethod
+    def update_project_crew_bulk_fee(dto: ProjectBulkFeeDTO) -> int:
+        """Applies one standard rate across a project's crew, skipping already-settled rows."""
+        if dto.new_fee < 0:
+            raise ParticipationException("Fee cannot be negative.")
+
+        # CrewAssignment is a plain model (no soft-delete / no decline state); only
+        # guard against overwriting a fee already marked paid.
+        count = (
+            CrewAssignment.objects
+            .filter(project_id=dto.project_id, is_paid=False)
+            .update(fee=dto.new_fee)
+        )
+        logger.info(f"Bulk crew fee updated to {dto.new_fee} for project {dto.project_id} ({count} assignments affected).")
         return count
 
 class ManagerNotificationHelper:
@@ -579,6 +612,73 @@ class ParticipationService:
                 level=NotificationLevel.WARNING if new_status == Participation.Status.DECLINED else NotificationLevel.INFO
             ))
         return participation
+
+class PieceReadinessService:
+    """Practice-readiness self reports (chorister Songbook checklist)."""
+
+    @staticmethod
+    def upsert_readiness(participation: Participation, dto: PieceReadinessUpdateDTO) -> PieceReadiness:
+        """
+        Idempotent upsert of the artist's readiness status for one piece.
+        Caller is responsible for ownership checks (artist can only touch own rows).
+        """
+        entry, _created = PieceReadiness.objects.update_or_create(
+            participation=participation,
+            piece_id=dto.piece,
+            defaults={'status': dto.status},
+        )
+        return entry
+
+    @staticmethod
+    def get_project_readiness_summary(project: Project) -> list[dict[str, Any]]:
+        """
+        Conductor-facing aggregate: per program piece, how many cast singers are
+        ready / practising / untouched. Castings without a readiness row count
+        as NOT_STARTED.
+        """
+        program_items = list(
+            project.program_items.select_related('piece').order_by('order')
+        )
+        piece_ids = [item.piece_id for item in program_items]
+
+        castings = ProjectPieceCasting.objects.filter(
+            piece_id__in=piece_ids,
+            participation__project=project,
+            participation__is_deleted=False,
+        ).exclude(participation__status=Participation.Status.DECLINED)
+
+        cast_totals: dict[UUID, int] = {}
+        for casting in castings:
+            cast_totals[casting.piece_id] = cast_totals.get(casting.piece_id, 0) + 1
+
+        readiness_rows = PieceReadiness.objects.filter(
+            participation__project=project,
+            participation__is_deleted=False,
+            piece_id__in=piece_ids,
+        ).values('piece_id', 'status')
+
+        counts: dict[UUID, dict[str, int]] = {}
+        for row in readiness_rows:
+            bucket = counts.setdefault(row['piece_id'], {})
+            bucket[row['status']] = bucket.get(row['status'], 0) + 1
+
+        summary: list[dict[str, Any]] = []
+        for item in program_items:
+            bucket = counts.get(item.piece_id, {})
+            ready = bucket.get(PieceReadiness.Status.READY, 0)
+            in_progress = bucket.get(PieceReadiness.Status.IN_PROGRESS, 0)
+            total = cast_totals.get(item.piece_id, 0)
+            summary.append({
+                'piece_id': str(item.piece_id),
+                'piece_title': item.piece.title,
+                'order': item.order,
+                'total_cast': total,
+                'ready': ready,
+                'in_progress': in_progress,
+                'not_started': max(total - ready - in_progress, 0),
+            })
+        return summary
+
 
 class CastingAndCrewService:
     @staticmethod

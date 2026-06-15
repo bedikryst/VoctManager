@@ -23,7 +23,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from core.permissions import IsManagerOrReadOnly
+from core.permissions import IsManager
 
 from . import services
 from .infrastructure.musicbrainz_client import MusicBrainzClient
@@ -58,12 +58,14 @@ class ComposerViewSet(viewsets.ModelViewSet):
     """
     Endpoint for managing musical composers and arrangers.
 
-    Read access: any authenticated user. Write/merge/refresh actions:
-    managers only. The list endpoint annotates `pieces_count` so the
-    composers page can show "Bach: 12 utworów" without a separate query.
+    Manager-only (read + write): the raw repertoire archive is a back-office
+    resource. Choristers receive composer/biography data exclusively through the
+    project-scoped materials dashboard, never by browsing the whole library. The
+    list endpoint annotates `pieces_count` so the composers page can show
+    "Bach: 12 utworów" without a separate query.
     """
     serializer_class = ComposerSerializer
-    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManager]
 
     def get_queryset(self):
         return Composer.objects.annotate(
@@ -239,7 +241,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         .all()
     )
     serializer_class = PieceSerializer
-    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManager]
 
     def create(self, request, *args, **kwargs) -> Response:
         serializer = PieceSerializer(data=request.data, context=self.get_serializer_context())
@@ -269,7 +271,7 @@ class TrackViewSet(viewsets.ModelViewSet):
     serializer_class = TrackSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece', 'voice_part']
-    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManager]
 
     def create(self, request, *args, **kwargs) -> Response:
         """
@@ -301,7 +303,7 @@ class PieceVoiceRequirementViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = PieceVoiceRequirement.objects.all()
     serializer_class = PieceVoiceRequirementSerializer
-    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManager]
 
 
 # ===========================================================================
@@ -328,7 +330,7 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
     dispatch to `services.ingestion.start_ingestion` and never calls
     `tasks.s()` chains directly.
     """
-    permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsManager]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['ingestion_status', 'piece']
     parser_classes = [MultiPartParser, FormParser, JSONParser]

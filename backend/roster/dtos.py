@@ -11,13 +11,14 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-from .models import Attendance, Participation, Project, VoiceType
+from .models import Attendance, Participation, PieceReadiness, Project, VoiceType
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
 ATTENDANCE_STATUS_VALUES = frozenset(Attendance.Status.values)
 PROJECT_STATUS_VALUES = frozenset(Project.Status.values)
 PARTICIPATION_STATUS_VALUES = frozenset(Participation.Status.values)
 VOICE_TYPE_VALUES = frozenset(VoiceType.values)
+PIECE_READINESS_STATUS_VALUES = frozenset(PieceReadiness.Status.values)
 
 
 def _require_choice(value: str, allowed_values: frozenset[str], field_name: str) -> str:
@@ -137,9 +138,23 @@ class ParticipationStatusUpdateDTO(EnterpriseBaseDTO):
         return _require_choice(value, PARTICIPATION_STATUS_VALUES, "status")
 
 
+class PieceReadinessUpdateDTO(EnterpriseBaseDTO):
+    """Data contract for an artist's practice-readiness self report on one piece."""
+
+    piece: UUID
+    status: str = Field(..., max_length=12)
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str) -> str:
+        return _require_choice(value, PIECE_READINESS_STATUS_VALUES, "status")
+
+
 class ProjectBulkFeeDTO(EnterpriseBaseDTO):
     project_id: UUID
-    new_fee: Decimal = Field(..., ge=0, max_digits=8, decimal_places=2)
+    # The API/frontend speaks `fee`; `new_fee` stays the internal name. Without the
+    # alias the bulk endpoint 400'd on every call (extra="forbid" rejected `fee`).
+    new_fee: Decimal = Field(..., ge=0, max_digits=8, decimal_places=2, alias="fee")
 
 
 class ProjectCreateDTO(EnterpriseBaseDTO):

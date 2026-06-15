@@ -20,8 +20,10 @@ a Piece has no status of its own. See [_aggregate_ingestion_status].
 """
 
 import json
+from collections.abc import Mapping
 from typing import Any, cast
 
+from django.urls import reverse
 from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
 
@@ -39,6 +41,21 @@ from .models import (
     Track,
     Translation,
 )
+
+
+def score_download_url(obj: "ScoreEdition", context: Mapping[str, Any]) -> str | None:
+    """
+    Resolve a ScoreEdition PDF to its authenticated, project-scoped download
+    endpoint instead of a bare `/media/` link. Every consumer (manager Archive UI
+    and chorister Songbook alike) goes through the same gate, so the raw files can
+    be locked behind `internal` in nginx and access re-checked per request.
+    """
+    if not obj.pdf_file:
+        return None
+    url = reverse('score-edition-download', kwargs={'pk': obj.id})
+    request = context.get('request')
+    return request.build_absolute_uri(url) if request else url
+
 
 # Lowest-status-wins across all attached editions; mirrors what the conductor
 # would naturally describe ("we're still extracting" beats "one of three is done").
@@ -201,7 +218,7 @@ class PieceEditionSummarySerializer(serializers.ModelSerializer):
     Archive editor. The full review payload (with annotations + sha256) is
     only served from the ScoreEdition detail endpoint.
     """
-    pdf_file = serializers.FileField(read_only=True, use_url=True)
+    pdf_file = serializers.SerializerMethodField()
     ingestion_status_display = serializers.CharField(
         source='get_ingestion_status_display', read_only=True,
     )
@@ -215,7 +232,12 @@ class PieceEditionSummarySerializer(serializers.ModelSerializer):
             'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
         ]
-        read_only_fields = fields
+        # `pdf_file` is a declared method field (read-only by nature) and must not
+        # appear in read_only_fields, so list the model fields explicitly.
+        read_only_fields = [f for f in fields if f != 'pdf_file']
+
+    def get_pdf_file(self, obj: ScoreEdition) -> str | None:
+        return score_download_url(obj, self.context)
 
 
 class ScoreEditionListSerializer(serializers.ModelSerializer):
@@ -247,7 +269,7 @@ class ScoreEditionListSerializer(serializers.ModelSerializer):
 
 class ScoreEditionDetailSerializer(serializers.ModelSerializer):
     """Full ScoreEdition payload — includes annotations and SHA-256."""
-    pdf_file = serializers.FileField(read_only=True, use_url=True)
+    pdf_file = serializers.SerializerMethodField()
     annotations = AnnotationSerializer(many=True, read_only=True)
     ingestion_status_display = serializers.CharField(
         source='get_ingestion_status_display', read_only=True,
@@ -264,13 +286,18 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
             'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
         ]
+        # `pdf_file` (declared method field) is read-only by nature; never list it
+        # in read_only_fields or DRF raises an assertion error.
         read_only_fields = [
-            'id', 'pdf_file', 'page_count', 'sha256', 'uploaded_by',
+            'id', 'page_count', 'sha256', 'uploaded_by',
             'piece', 'annotations',
             'ingestion_status', 'ingestion_status_display',
             'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
         ]
+
+    def get_pdf_file(self, obj: ScoreEdition) -> str | None:
+        return score_download_url(obj, self.context)
 
 
 class ScoreEditionUploadSerializer(serializers.Serializer):

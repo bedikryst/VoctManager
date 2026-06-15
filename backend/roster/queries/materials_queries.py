@@ -12,7 +12,7 @@ from archive.models import (
     Track,
     Translation,
 )
-from roster.models import Participation, ProgramItem, ProjectPieceCasting
+from roster.models import Participation, PieceReadiness, ProgramItem, ProjectPieceCasting
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -28,6 +28,7 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
 
     Returned QuerySet attributes set by this function:
       participation.my_piece_castings   → list[ProjectPieceCasting] (this artist only)
+      participation.my_readiness_entries → list[PieceReadiness] (this artist only)
       participation.project.ordered_program → list[ProgramItem]
       program_item.piece.prefetched_tracks  → list[Track]
       program_item.piece.scope_castings     → list[ProjectPieceCasting] (all, across artist's projects)
@@ -115,5 +116,10 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
             'castings',
             queryset=my_castings_qs,
             to_attr='my_piece_castings',
+        ),
+        Prefetch(
+            'piece_readiness',
+            queryset=PieceReadiness.objects.all(),
+            to_attr='my_readiness_entries',
         ),
     )

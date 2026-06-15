@@ -111,6 +111,20 @@ class VocalLineEntryDTO(BaseModel):
         return _require_choice(value, VOICE_LINE_VALUES, "voice_line")
 
 
+class RepertoireEntryDTO(BaseModel):
+    """One distinct piece the artist has performed across completed projects."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    piece_id: UUID
+    title: str
+    composer_name: str
+    epoch: str
+    voice_lines: tuple[str, ...]
+    performances: int = Field(..., ge=1)
+    years: tuple[int, ...]
+
+
 class ArtistIdentityMetricsDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -119,3 +133,7 @@ class ArtistIdentityMetricsDTO(BaseModel):
     season_years: tuple[int, ...]
     vocal_line_distribution: tuple[VocalLineEntryDTO, ...]
     first_project_year: int | None
+    total_pieces: int = Field(default=0, ge=0)
+    total_composers: int = Field(default=0, ge=0)
+    attendance_rate: float | None = Field(default=None, ge=0, le=100)
+    repertoire: tuple[RepertoireEntryDTO, ...] = ()

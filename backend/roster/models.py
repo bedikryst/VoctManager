@@ -182,6 +182,16 @@ class Participation(EnterpriseBaseModel):
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='participations', verbose_name=_("Project"))
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name=_("Status"))
     fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
+    is_paid = models.BooleanField(
+        default=False,
+        verbose_name=_("Is Paid"),
+        help_text=_("Whether the agreed fee for this participation has been settled.")
+    )
+    paid_at = models.DateTimeField(
+        blank=True, null=True,
+        verbose_name=_("Paid At"),
+        help_text=_("Timestamp the fee was marked as settled. Cleared if the payment is reverted.")
+    )
 
     class Meta:
         verbose_name = _("Participation")
@@ -213,6 +223,44 @@ class ProjectPieceCasting(models.Model):
         indexes = [
             models.Index(fields=['participation', 'piece']),
         ]
+
+
+class PieceReadiness(models.Model):
+    """
+    Artist self-reported practice readiness for a single piece within a project.
+    Powers the chorister's Songbook checklist and the conductor's pre-rehearsal
+    readiness heatmap. One row per (participation, piece); upserted by the artist.
+    """
+
+    class Status(models.TextChoices):
+        NOT_STARTED = 'NOT_STARTED', _('Not started')
+        IN_PROGRESS = 'IN_PROGRESS', _('In progress')
+        READY = 'READY', _('Ready / Knows the part')
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    participation = models.ForeignKey(
+        Participation, on_delete=models.CASCADE, related_name='piece_readiness', verbose_name=_("Participant")
+    )
+    piece = models.ForeignKey(
+        'archive.Piece', on_delete=models.CASCADE, related_name='readiness_entries', verbose_name=_("Piece")
+    )
+    status = models.CharField(
+        max_length=12, choices=Status.choices, default=Status.NOT_STARTED, verbose_name=_("Readiness")
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Piece Readiness")
+        verbose_name_plural = _("Piece Readiness")
+        constraints = [
+            models.UniqueConstraint(fields=['participation', 'piece'], name='unique_participation_piece_readiness')
+        ]
+        indexes = [
+            models.Index(fields=['participation', 'piece']),
+        ]
+
+    def __str__(self):
+        return f"{self.participation} / {self.piece_id}: {self.status}"
 
 
 class Rehearsal(EnterpriseBaseModel):
@@ -316,6 +364,16 @@ class CrewAssignment(models.Model):
     role_description = models.CharField(max_length=150, blank=True, verbose_name=_("Role Description"))
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name=_("Status"))
     fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
+    is_paid = models.BooleanField(
+        default=False,
+        verbose_name=_("Is Paid"),
+        help_text=_("Whether the agreed fee for this assignment has been settled.")
+    )
+    paid_at = models.DateTimeField(
+        blank=True, null=True,
+        verbose_name=_("Paid At"),
+        help_text=_("Timestamp the fee was marked as settled. Cleared if the payment is reverted.")
+    )
 
     class Meta:
         verbose_name = _("Crew Assignment")

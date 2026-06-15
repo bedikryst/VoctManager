@@ -18,6 +18,7 @@ from .dtos import (
     DocumentCategoryCreateDTO,
     DocumentCategoryUpdateDTO,
     DocumentCreateDTO,
+    RepertoireEntryDTO,
     VocalLineEntryDTO,
 )
 from .models import Document, DocumentCategory
@@ -198,13 +199,91 @@ class ArtistMetricsService:
             for entry in casting_counts
         ]
 
+        repertoire = cls._build_repertoire(participation_ids)
+        composer_names = {entry.composer_name for entry in repertoire if entry.composer_name}
+
         return ArtistIdentityMetricsDTO(
             total_concerts=total_concerts,
             active_seasons=active_seasons,
             season_years=season_years,
             vocal_line_distribution=vocal_distribution,
             first_project_year=first_project_year,
+            total_pieces=len(repertoire),
+            total_composers=len(composer_names),
+            attendance_rate=cls._compute_attendance_rate(participation_ids),
+            repertoire=repertoire,
         )
+
+    @classmethod
+    def _build_repertoire(cls, participation_ids: list[UUID]) -> tuple[RepertoireEntryDTO, ...]:
+        """
+        Repertoire passport: every distinct piece the artist was cast on across
+        completed projects, with performance counts, voice lines sung and years.
+        """
+        from roster.models import ProjectPieceCasting
+
+        castings = (
+            ProjectPieceCasting.objects.filter(participation_id__in=participation_ids)
+            .select_related('piece__composer', 'participation__project')
+        )
+
+        grouped: dict[UUID, dict] = {}
+        for casting in castings:
+            piece = casting.piece
+            bucket = grouped.setdefault(piece.pk, {
+                'title': piece.title,
+                'composer_name': (
+                    f"{piece.composer.first_name} {piece.composer.last_name}".strip()
+                    if piece.composer else ''
+                ),
+                'epoch': piece.epoch or '',
+                'voice_lines': set(),
+                'projects': set(),
+                'years': set(),
+            })
+            bucket['voice_lines'].add(
+                str(cls._VOICE_LINE_LABELS.get(casting.voice_line, casting.voice_line))
+            )
+            project = casting.participation.project
+            bucket['projects'].add(project.pk)
+            bucket['years'].add(project.date_time.year)
+
+        entries = [
+            RepertoireEntryDTO(
+                piece_id=piece_id,
+                title=data['title'],
+                composer_name=data['composer_name'],
+                epoch=data['epoch'],
+                voice_lines=tuple(sorted(data['voice_lines'])),
+                performances=len(data['projects']),
+                years=tuple(sorted(data['years'])),
+            )
+            for piece_id, data in grouped.items()
+        ]
+        # Most recently performed first, then alphabetically for stable display.
+        entries.sort(key=lambda e: (-max(e.years), e.title.lower()))
+        return tuple(entries)
+
+    @staticmethod
+    def _compute_attendance_rate(participation_ids: list[UUID]) -> float | None:
+        """
+        Share of recorded rehearsal attendances marked PRESENT or LATE.
+        Private to the chorister — never exposed in rankings.
+        """
+        from roster.models import Attendance
+
+        rows = (
+            Attendance.objects.filter(participation_id__in=participation_ids)
+            .values('status')
+            .annotate(count=Count('id'))
+        )
+        total = sum(row['count'] for row in rows)
+        if total == 0:
+            return None
+        attended = sum(
+            row['count'] for row in rows if row['status'] in ('PRESENT', 'LATE')
+        )
+        return round(attended / total * 100, 1)
 
     @classmethod
     def get_empty_metrics(cls) -> ArtistIdentityMetricsDTO:
@@ -214,4 +293,8 @@ class ArtistMetricsService:
             season_years=[],
             vocal_line_distribution=[],
             first_project_year=None,
+            total_pieces=0,
+            total_composers=0,
+            attendance_rate=None,
+            repertoire=(),
         )

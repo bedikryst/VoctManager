@@ -9,14 +9,18 @@ Strictly handles HTTP protocol parsing, RBAC-based QuerySet routing, and Respons
 Delegates ALL state-mutating business logic to the Service Layer.
 """
 import io
+import os
+from decimal import Decimal, InvalidOperation
 
+from celery.result import AsyncResult
 from django.db.models import Count, Prefetch, Q
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from pydantic import ValidationError
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action, api_view
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
 from archive.models import PieceVoiceRequirement, Recording, ScoreEdition, Track
@@ -30,6 +34,7 @@ from .dtos import (
     ArtistCreateDTO,
     AttendanceRecordDTO,
     ParticipationStatusUpdateDTO,
+    PieceReadinessUpdateDTO,
     ProjectBulkFeeDTO,
     ProjectCreateDTO,
     ProjectUpdateDTO,
@@ -37,7 +42,7 @@ from .dtos import (
     RehearsalUpdateDTO,
 )
 from .exceptions import ArtistProvisioningException, AttendanceValidationException, CastingValidationException
-from .infrastructure.document_generator import DocumentGenerator
+from .infrastructure.document_generator import DocumentGenerator, DocumentRenderDependencyError
 
 # Models & Exceptions
 from .models import (
@@ -52,7 +57,7 @@ from .models import (
     Rehearsal,
     VoiceType,
 )
-from .queries import get_artist_materials_queryset
+from .queries import get_artist_dossier, get_artist_materials_queryset
 
 # Serializers
 from .serializers import (
@@ -60,7 +65,9 @@ from .serializers import (
     ArtistDetailedSerializer,
     ArtistMeSerializer,
     AttendanceSerializer,
+    CollaboratorBasicSerializer,
     CollaboratorSerializer,
+    CrewAssignmentBasicSerializer,
     CrewAssignmentSerializer,
     ParticipationBasicSerializer,
     ParticipationDetailedSerializer,
@@ -73,14 +80,117 @@ from .services import (
     ArtistHRService,
     CastingAndCrewService,
     ParticipationService,
+    PieceReadinessService,
     ProjectManagementService,
     RehearsalOperationsService,
 )
+from .tasks import generate_project_zip_task
 
 
 def _is_manager(user) -> bool:
     """Helper for evaluating manager privileges safely."""
     return hasattr(user, 'profile') and user.profile.is_manager
+
+
+# Project lifecycle states after which a chorister loses access to a project's
+# rehearsal materials (scores in particular — often the conductor's licensed or
+# personally-owned property, which must not stay readable once the concert is over).
+_CLOSED_PROJECT_STATUSES = (Project.Status.COMPLETED, Project.Status.CANCELLED)
+
+
+def _artist_has_live_access_to_piece(user, piece_id) -> bool:
+    """
+    True iff `user` is cast (active participation) in at least one project that
+    is still LIVE (not completed/cancelled) and programs `piece_id`.
+
+    This is the single rule behind chorister score access: it evaporates the
+    moment every project featuring the piece is closed, so a leaked or
+    bookmarked score URL stops resolving once the concert is done.
+    """
+    if piece_id is None:
+        return False
+    return (
+        Participation.objects.filter(
+            artist__user=user,
+            is_deleted=False,
+            project__program_items__piece_id=piece_id,
+        )
+        .exclude(project__status__in=_CLOSED_PROJECT_STATUSES)
+        .exists()
+    )
+
+
+class PdfRenderUnavailable(APIException):
+    """503 raised when WeasyPrint's native rendering libraries are missing on the host."""
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = "PDF rendering is temporarily unavailable on the server."
+    default_code = "pdf_render_unavailable"
+
+
+def _settlement_contract_response(record: Participation | CrewAssignment) -> FileResponse:
+    """Renders the legal contract PDF for one cast/crew record and wraps it for download."""
+    person: Artist | Collaborator
+    try:
+        if isinstance(record, Participation):
+            pdf_bytes = DocumentGenerator.generate_participation_contract_pdf(record)
+            person = record.artist
+        else:
+            pdf_bytes = DocumentGenerator.generate_crew_contract_pdf(record)
+            person = record.collaborator
+    except DocumentRenderDependencyError as exc:
+        raise PdfRenderUnavailable(str(exc)) from exc
+
+    filename = f"Umowa_{person.last_name}_{person.first_name}.pdf".replace(' ', '_')
+    buffer = io.BytesIO(pdf_bytes)
+    buffer.seek(0)
+    response = FileResponse(buffer, as_attachment=True, filename=filename, content_type='application/pdf')
+    response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    return response
+
+
+def _apply_payment(record: Participation | CrewAssignment, is_paid: bool) -> None:
+    """Toggles a record's settlement state, keeping `paid_at` consistent with `is_paid`."""
+    record.is_paid = is_paid
+    record.paid_at = timezone.now() if is_paid else None
+    record.save()
+
+
+_MAX_FEE = Decimal("999999.99")
+
+
+def _parse_fee(raw: object) -> Decimal | None:
+    """Coerces an incoming fee value to a bounded 2-dp Decimal (or None to clear it)."""
+    if raw is None or raw == '':
+        return None
+    try:
+        value = Decimal(str(raw)).quantize(Decimal("0.01"))
+    except (InvalidOperation, ValueError, TypeError) as exc:
+        raise ValueError("invalid_fee") from exc
+    if value < 0 or value > _MAX_FEE:
+        raise ValueError("fee_out_of_range")
+    return value
+
+
+def _fee_action(viewset, request) -> Response:
+    """
+    Shared fee-update handler. Writes the fee directly instead of routing through
+    the ModelSerializer: DRF mis-handles `Participation`'s conditional
+    UniqueConstraint on partial updates (it reads the condition field
+    `is_deleted` straight from the request payload and KeyErrors), which made the
+    generic `PATCH /participations/{id}/` fee edit 500. This bypass keeps fee
+    editing robust and symmetric across cast and crew.
+    """
+    record = viewset.get_object()
+    try:
+        fee_value = _parse_fee(request.data.get('fee'))
+    except ValueError:
+        return Response(
+            {"detail": "Enter a valid, non-negative fee (max 999999.99)."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    record.fee = fee_value
+    record.save()
+    return Response(viewset.get_serializer(record).data, status=status.HTTP_200_OK)
 
 
 class ArtistViewSet(viewsets.ModelViewSet):
@@ -94,7 +204,9 @@ class ArtistViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Data Partitioning: Managers see everyone, Artists see restricted subsets or everyone (depending on biz rules). 
         # Here we allow seeing all active artists, but serializers will strip sensitive data.
-        qs = Artist.objects.select_related('user').all()
+        # select_related user__profile so the avatar thumbnail does not trigger
+        # an extra query per artist card.
+        qs = Artist.objects.select_related('user', 'user__profile').all()
         return qs if _is_manager(self.request.user) else qs.filter(user=request_user(self.request))
     
     def get_serializer_class(self):
@@ -140,6 +252,17 @@ class ArtistViewSet(viewsets.ModelViewSet):
         if not artist:
             return Response(None, status=status.HTTP_204_NO_CONTENT)
         return Response(self.get_serializer(artist).data)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsManager])
+    def dossier(self, request, pk=None) -> Response:
+        """Read-only HR dossier: project track record, casting history and
+        attendance reliability, aggregated from relational state. Resolves
+        against all_objects so an archived artist's history stays reachable."""
+        try:
+            artist = Artist.all_objects.get(pk=pk)
+        except Artist.DoesNotExist:
+            return Response({"detail": "Artist not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(get_artist_dossier(artist))
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -238,6 +361,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
 
         if request.method == 'GET':
+            # Choristers lose access to the concert score once the project is
+            # completed or cancelled — the score is the conductor's property and
+            # is not retained on personal devices via the app after the event.
+            if not _is_manager(request.user) and project.status in _CLOSED_PROJECT_STATUSES:
+                return Response(
+                    {"detail": "Score access for this project has closed."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             if not project.score_pdf:
                 return Response(
                     {"detail": "This project has no score PDF."},
@@ -295,6 +426,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project.save(update_fields=['score_pdf', 'updated_at'])
 
         return Response(self.get_serializer(project).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='readiness-summary', permission_classes=[IsManager])
+    def readiness_summary(self, request, pk=None) -> Response:
+        """
+        Conductor pre-rehearsal heatmap: per program piece, counts of cast
+        singers who reported READY / IN_PROGRESS, with the remainder NOT_STARTED.
+        """
+        project = self.get_object()
+        return Response(PieceReadinessService.get_project_readiness_summary(project))
 
     @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def export_call_sheet(self, request, pk=None) -> FileResponse:
@@ -417,6 +557,31 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data)
 
+    @action(detail=True, methods=['put'], url_path='readiness', permission_classes=[permissions.IsAuthenticated])
+    def readiness(self, request, pk=None) -> Response:
+        """
+        Artist self-report: upserts practice readiness for one piece of this
+        participation. Managers may set readiness on any participation.
+        """
+        participation = self.get_object()
+
+        if not _is_manager(request.user) and participation.artist.user_id != request.user.id:
+            return Response(
+                {"detail": "You do not have permission to modify readiness for this participation."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            dto = PieceReadinessUpdateDTO(**request.data)
+        except ValidationError as e:
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        entry = PieceReadinessService.upsert_readiness(participation, dto)
+        return Response(
+            {"piece": str(entry.piece_id), "status": entry.status, "updated_at": entry.updated_at},
+            status=status.HTTP_200_OK,
+        )
+
     @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsManager])
     def bulk_fee(self, request) -> Response:
         try:
@@ -447,10 +612,64 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         updated_participation = ParticipationService.update_status_by_artist(participation, dto.status)
-        
+
         return Response(self.get_serializer(updated_participation).data, status=status.HTTP_200_OK)
-    
-    
+
+    @action(detail=True, methods=['get'], permission_classes=[IsManager])
+    def contract(self, request, pk=None) -> FileResponse:
+        """Renders and streams the individual legal contract PDF for one cast member."""
+        return _settlement_contract_response(self.get_object())
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsManager])
+    def payment(self, request, pk=None) -> Response:
+        """Marks this participation's fee as settled / unsettled (manager-only)."""
+        record = self.get_object()
+        is_paid = request.data.get('is_paid')
+        if not isinstance(is_paid, bool):
+            return Response({"detail": "Field 'is_paid' must be a boolean."}, status=status.HTTP_400_BAD_REQUEST)
+        _apply_payment(record, is_paid)
+        return Response(self.get_serializer(record).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsManager])
+    def fee(self, request, pk=None) -> Response:
+        """Sets (or clears) the remuneration on one participation (manager-only)."""
+        return _fee_action(self, request)
+
+    @action(detail=False, methods=['post'], url_path='request_project_zip', permission_classes=[IsManager])
+    def request_project_zip(self, request) -> Response:
+        """Kicks off the background ZIP export of all contract PDFs for a project."""
+        project_id = request.data.get('project_id')
+        if not project_id:
+            return Response({"detail": "Field 'project_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        task = generate_project_zip_task.delay(str(project_id))
+        return Response({"task_id": task.id}, status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=False, methods=['get'], url_path='check_zip_status', permission_classes=[IsManager])
+    def check_zip_status(self, request) -> Response:
+        """Polls the Celery task backing a project ZIP export and normalizes its state."""
+        task_id = request.query_params.get('task_id')
+        if not task_id:
+            return Response({"detail": "Query param 'task_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = AsyncResult(task_id)
+        state = result.state
+        payload: dict = {"state": state}
+
+        if state == 'SUCCESS':
+            data = result.result if isinstance(result.result, dict) else {}
+            if data.get('error'):
+                # The task completed but found nothing to package — surface as a failure
+                # so the frontend shows an actionable message instead of an empty download.
+                payload['state'] = 'FAILURE'
+                payload['error'] = 'Projekt nie ma przypisanej obsady ani ekipy do wygenerowania umów.'
+            else:
+                payload['file_url'] = data.get('download_url')
+        elif state in ('FAILURE', 'FAILED'):
+            payload['error'] = 'Generowanie paczki nie powiodło się. Spróbuj ponownie.'
+
+        return Response(payload, status=status.HTTP_200_OK)
+
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     serializer_class = AttendanceSerializer
@@ -584,15 +803,33 @@ class ProgramItemViewSet(viewsets.ModelViewSet):
     filterset_fields = ['project', 'piece']
 
     def get_queryset(self):
-        return ProgramItem.objects.select_related('piece').all().order_by('order')
+        # Data partitioning: a chorister may read the setlist only for projects
+        # they are cast in — never the whole organisation's programming.
+        qs = ProgramItem.objects.select_related('piece').order_by('order')
+        if _is_manager(self.request.user):
+            return qs
+        return qs.filter(
+            project__participations__artist__user=request_user(self.request),
+            project__participations__is_deleted=False,
+        ).distinct()
 
 
 class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
-    queryset = ProjectPieceCasting.objects.all()
     serializer_class = ProjectPieceCastingSerializer
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece', 'participation__project', 'participation']
+
+    def get_queryset(self):
+        # Data partitioning: a chorister sees the divisi (and casting notes) only
+        # for projects they are cast in, mirroring ProgramItem/Project scoping.
+        qs = ProjectPieceCasting.objects.all()
+        if _is_manager(self.request.user):
+            return qs
+        return qs.filter(
+            participation__project__participations__artist__user=request_user(self.request),
+            participation__project__participations__is_deleted=False,
+        ).distinct()
 
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
@@ -615,19 +852,111 @@ class CollaboratorViewSet(viewsets.ModelViewSet):
     serializer_class = CollaboratorSerializer
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
+    def get_serializer_class(self):
+        # Contact PII (email / phone) is manager-only, mirroring the crew and
+        # participation serializers. Non-managers get the PII-stripped payload.
+        return CollaboratorSerializer if _is_manager(self.request.user) else CollaboratorBasicSerializer
+
 
 class CrewAssignmentViewSet(viewsets.ModelViewSet):
     queryset = CrewAssignment.objects.all()
     serializer_class = CrewAssignmentSerializer
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['project', 'collaborator'] 
+    filterset_fields = ['project', 'collaborator']
+
+    def get_queryset(self):
+        # A chorister may see who the crew are on their own projects, but not the
+        # crew bookings of projects they have nothing to do with.
+        qs = CrewAssignment.objects.all()
+        if _is_manager(self.request.user):
+            return qs
+        return qs.filter(
+            project__participations__artist__user=request_user(self.request),
+            project__participations__is_deleted=False,
+        ).distinct()
+
+    def get_serializer_class(self):
+        # Financial fields (fee / is_paid / paid_at) are manager-only, mirroring
+        # the participation serializers. Non-managers get the basic payload.
+        return CrewAssignmentSerializer if _is_manager(self.request.user) else CrewAssignmentBasicSerializer
 
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         assignment = CastingAndCrewService.assign_crew(serializer.validated_data)
         return Response(self.get_serializer(assignment).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsManager])
+    def contract(self, request, pk=None) -> FileResponse:
+        """Renders and streams the individual legal contract PDF for one crew member."""
+        return _settlement_contract_response(self.get_object())
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsManager])
+    def payment(self, request, pk=None) -> Response:
+        """Marks this crew assignment's fee as settled / unsettled (manager-only)."""
+        record = self.get_object()
+        is_paid = request.data.get('is_paid')
+        if not isinstance(is_paid, bool):
+            return Response({"detail": "Field 'is_paid' must be a boolean."}, status=status.HTTP_400_BAD_REQUEST)
+        _apply_payment(record, is_paid)
+        return Response(self.get_serializer(record).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsManager])
+    def fee(self, request, pk=None) -> Response:
+        """Sets (or clears) the remuneration on one crew assignment (manager-only)."""
+        return _fee_action(self, request)
+
+    @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsManager])
+    def bulk_fee(self, request) -> Response:
+        """Applies one standard rate across a project's crew (skips settled rows)."""
+        try:
+            dto = ProjectBulkFeeDTO(**request.data)
+        except ValidationError as e:
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_count = ProjectManagementService.update_project_crew_bulk_fee(dto)
+        return Response({"detail": f"Successfully updated {updated_count} records.", "updated_count": updated_count}, status=status.HTTP_200_OK)
+
+
+class ScoreEditionDownloadView(views.APIView):
+    """
+    GET /api/materials/scores/<uuid:pk>/download/
+
+    Authenticated, project-scoped, status-aware delivery of a ScoreEdition PDF.
+    This is the ONLY chorister-facing path to a score: the raw archive endpoints
+    are manager-only and the materials dashboard hands out this URL (never a bare
+    /media/ link), so access is re-evaluated on every request. The moment a
+    chorister's projects featuring the piece are all closed, the PDF stops
+    resolving for them — managers retain access unconditionally.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk) -> Response | FileResponse:
+        try:
+            edition = ScoreEdition.objects.select_related('piece').get(id=pk, is_deleted=False)
+        except ScoreEdition.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not _is_manager(request.user) and not _artist_has_live_access_to_piece(
+            request.user, edition.piece_id
+        ):
+            # Deliberately 404 (not 403): a chorister who has lost access must not
+            # even be able to confirm the score still exists on the server.
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not edition.pdf_file:
+            return Response({"detail": "No file on this edition."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            file_handle = edition.pdf_file.open('rb')
+        except (FileNotFoundError, OSError):
+            return Response({"detail": "File not found on storage."}, status=status.HTTP_404_NOT_FOUND)
+
+        filename = os.path.basename(edition.pdf_file.name or '') or 'score.pdf'
+        response = FileResponse(file_handle, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+        return response
 
 
 @api_view(['GET'])

@@ -38,16 +38,26 @@ class ArtistBasicSerializer(serializers.ModelSerializer):
     is_manager = serializers.BooleanField(source='user.profile.is_manager', read_only=True)
     voice_type_display = serializers.CharField(source='get_voice_type_display', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
-    
+    avatar_thumb_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Artist
         exclude = (
-            'sight_reading_skill', 
-            'vocal_range_bottom', 
-            'vocal_range_top', 
-            'phone_number', 
+            'sight_reading_skill',
+            'vocal_range_bottom',
+            'vocal_range_top',
+            'phone_number',
             'email'
         )
+
+    def get_avatar_thumb_url(self, obj: Artist) -> str | None:
+        """Small avatar render for roster cards/rows; null when unset or no account."""
+        profile = getattr(getattr(obj, 'user', None), 'profile', None)
+        thumb = getattr(profile, 'avatar_thumb', None)
+        if not thumb:
+            return None
+        request = self.context.get('request')
+        return request.build_absolute_uri(thumb.url) if request else thumb.url
         
 class ArtistMeSerializer(serializers.ModelSerializer):
     """
@@ -95,10 +105,14 @@ class ParticipationBasicSerializer(serializers.ModelSerializer):
 class ParticipationDetailedSerializer(ParticipationBasicSerializer):
     """
     Privileged contract configuration including financial metrics for Management.
+    Settlement fields (`paid_at`, `is_paid`) are read-only here so the only path
+    that mutates them is the dedicated `payment` action, which keeps `paid_at`
+    consistent with `is_paid`.
     """
     class Meta:
         model = Participation
         fields = '__all__'
+        read_only_fields = ('is_paid', 'paid_at')
 
 # --- 3. PROJECT & REHEARSAL SERIALIZERS ---
 
@@ -119,7 +133,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     location = LocationSnippetSerializer(read_only=True)
     location_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     conductor_name = serializers.CharField(source='conductor.__str__', read_only=True)
-    score_pdf = serializers.FileField(use_url=True, required=False, allow_null=True, read_only=True)
+    score_pdf = serializers.SerializerMethodField()
     rehearsals_total = serializers.IntegerField(read_only=True, default=0)
     rehearsals_upcoming = serializers.IntegerField(read_only=True, default=0)
     cast_total = serializers.IntegerField(read_only=True, default=0)
@@ -132,6 +146,26 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = '__all__'
+
+    def get_score_pdf(self, obj) -> str | None:
+        """
+        The concert score is delivered through the authenticated, status-aware
+        `score_pdf` action — never a bare /media/ link. It is withheld from
+        choristers once the project is completed or cancelled (the score is the
+        conductor's property), while managers retain access unconditionally.
+        """
+        if not obj.score_pdf:
+            return None
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        is_manager = bool(
+            getattr(getattr(user, 'profile', None), 'is_manager', False)
+            or getattr(user, 'is_staff', False)
+        )
+        if not is_manager and obj.status in (Project.Status.COMPLETED, Project.Status.CANCELLED):
+            return None
+        url = f"/api/projects/{obj.pk}/score_pdf/"
+        return request.build_absolute_uri(url) if request else url
 
     def get_cast(self, obj) -> list[dict]:
         """Returns non-sensitive casting snapshot."""
@@ -277,12 +311,53 @@ class ProjectPieceCastingSerializer(serializers.ModelSerializer):
     def get_artist_id(self, obj) -> str:
         return str(obj.participation.artist_id)
 
-class CollaboratorSerializer(serializers.ModelSerializer):
+class CollaboratorBasicSerializer(serializers.ModelSerializer):
+    """
+    Collaborator without personal contact details. Surfaces the professional
+    identity (name, company, specialty) any authenticated user may legitimately
+    see, while `email` and `phone_number` stay manager-only PII — mirroring the
+    Artist/CrewAssignment basic-vs-detailed split. Without this, every singer
+    could enumerate the foundation's full external-crew address book.
+    """
+    specialty_display = serializers.CharField(source='get_specialty_display', read_only=True)
+
+    class Meta:
+        model = Collaborator
+        exclude = ('email', 'phone_number')
+
+
+class CollaboratorSerializer(CollaboratorBasicSerializer):
+    """Privileged collaborator record (full contact PII) for managers/HR."""
+
     class Meta:
         model = Collaborator
         fields = '__all__'
 
-class CrewAssignmentSerializer(serializers.ModelSerializer):
+class CrewAssignmentBasicSerializer(serializers.ModelSerializer):
+    """
+    Crew booking without the financial payload. Surfaces the collaborator's
+    display name and specialty (non-sensitive) so any authenticated user can see
+    who is on a project's team, while `fee` / `is_paid` / `paid_at` stay hidden.
+    """
+    collaborator_name = serializers.CharField(source='collaborator.__str__', read_only=True)
+    collaborator_specialty_display = serializers.CharField(
+        source='collaborator.get_specialty_display', read_only=True
+    )
+
+    class Meta:
+        model = CrewAssignment
+        exclude = ('fee', 'is_paid', 'paid_at')
+
+
+class CrewAssignmentSerializer(CrewAssignmentBasicSerializer):
+    """
+    Privileged crew booking for the settlement workspace, including financial
+    metrics. Settlement fields (`paid_at`, `is_paid`) are read-only — they are
+    mutated only by the dedicated `payment` action so `paid_at` stays consistent
+    with `is_paid`.
+    """
+
     class Meta:
         model = CrewAssignment
         fields = '__all__'
+        read_only_fields = ('is_paid', 'paid_at')

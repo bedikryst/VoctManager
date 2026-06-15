@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from django.urls import reverse
 from rest_framework import serializers
 
 from archive.models import (
@@ -14,7 +15,7 @@ from archive.models import (
     Track,
     Translation,
 )
-from roster.models import Participation, ProgramItem, Project, ProjectPieceCasting
+from roster.models import Participation, PieceReadiness, ProgramItem, Project, ProjectPieceCasting
 
 
 class ComposerSnippetSerializer(serializers.ModelSerializer):
@@ -63,7 +64,11 @@ class ProgramNoteSnippetSerializer(serializers.ModelSerializer):
 
 
 class EditionSnippetSerializer(serializers.ModelSerializer):
-    pdf_file = serializers.FileField(read_only=True, use_url=True)
+    # NOT a bare /media/ URL: scores are the conductor's licensed/owned property,
+    # so they are served only through the authenticated, status-aware download
+    # view (`score-edition-download`). That re-checks access on every request, so
+    # a bookmarked link dies the moment the chorister's projects close.
+    pdf_file = serializers.SerializerMethodField()
 
     class Meta:
         model = ScoreEdition
@@ -73,6 +78,13 @@ class EditionSnippetSerializer(serializers.ModelSerializer):
             'page_count', 'is_default',
             'ingestion_status', 'created_at',
         )
+
+    def get_pdf_file(self, obj: ScoreEdition) -> str | None:
+        if not obj.pdf_file:
+            return None
+        url = reverse('score-edition-download', kwargs={'pk': obj.id})
+        request = self.context.get('request')
+        return request.build_absolute_uri(url) if request else url
 
 
 class TrackSnippetSerializer(serializers.ModelSerializer):
@@ -126,6 +138,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
     Required context keys:
       project_id        uuid.UUID  — slices scope_castings to this project only
       my_piece_castings list       — this artist's own castings (from participation)
+      my_readiness_map  dict       — piece_id → readiness status (this artist)
       artist_id         uuid.UUID  — propagated to CastingSnippetSerializer for is_me
       request           Request    — propagated to TrackSnippetSerializer for media URLs
     """
@@ -133,6 +146,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
     def to_representation(self, piece: Piece) -> dict[str, Any]:
         project_id: uuid.UUID = self.context['project_id']
         my_piece_castings: list[ProjectPieceCasting] = self.context['my_piece_castings']
+        my_readiness_map: dict[uuid.UUID, str] = self.context.get('my_readiness_map', {})
         child_context: dict[str, Any] = {
             'artist_id': self.context.get('artist_id'),
             'request': self.context.get('request'),
@@ -143,6 +157,17 @@ class PieceMaterialsSerializer(serializers.Serializer):
         my_casting: ProjectPieceCasting | None = next(
             (c for c in my_piece_castings if c.piece_id == piece.pk), None
         )
+
+        # Once a project is completed/cancelled the chorister keeps the reference
+        # passport (lyrics, IPA, recordings) but loses the rehearsal materials —
+        # scores and practice tracks — so nothing licensed stays in the app.
+        materials_locked: bool = self.context.get('materials_locked', False)
+        editions = [] if materials_locked else EditionSnippetSerializer(
+            getattr(piece, 'prefetched_editions', []), many=True, context=child_context,
+        ).data
+        tracks = [] if materials_locked else TrackSnippetSerializer(
+            getattr(piece, 'prefetched_tracks', []), many=True, context=child_context,
+        ).data
 
         return {
             'id': str(piece.id),
@@ -170,16 +195,8 @@ class PieceMaterialsSerializer(serializers.Serializer):
                 getattr(piece, 'prefetched_program_notes', []),
                 many=True,
             ).data,
-            'editions': EditionSnippetSerializer(
-                getattr(piece, 'prefetched_editions', []),
-                many=True,
-                context=child_context,
-            ).data,
-            'tracks': TrackSnippetSerializer(
-                getattr(piece, 'prefetched_tracks', []),
-                many=True,
-                context=child_context,
-            ).data,
+            'editions': editions,
+            'tracks': tracks,
             'castings': CastingSnippetSerializer(
                 project_castings,
                 many=True,
@@ -189,6 +206,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
                 my_casting,
                 context=child_context,
             ).data if my_casting else None,
+            'my_readiness': my_readiness_map.get(piece.pk, PieceReadiness.Status.NOT_STARTED),
         }
 
 
@@ -223,13 +241,19 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
     def to_representation(self, participation: Participation) -> dict[str, Any]:
         project: Project = participation.project
         my_piece_castings: list[ProjectPieceCasting] = getattr(participation, 'my_piece_castings', [])
+        my_readiness_entries: list[PieceReadiness] = getattr(participation, 'my_readiness_entries', [])
         ordered_program: list[ProgramItem] = getattr(project, 'ordered_program', [])
 
         piece_context: dict[str, Any] = {
             'project_id': project.pk,
             'my_piece_castings': my_piece_castings,
+            'my_readiness_map': {entry.piece_id: entry.status for entry in my_readiness_entries},
             'artist_id': participation.artist_id,
             'request': self.context.get('request'),
+            # Scores + practice tracks are withheld once the concert is over.
+            'materials_locked': project.status in (
+                Project.Status.COMPLETED, Project.Status.CANCELLED,
+            ),
         }
 
         location = project.location
