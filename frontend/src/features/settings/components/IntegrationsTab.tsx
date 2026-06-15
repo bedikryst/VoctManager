@@ -1,11 +1,22 @@
+/**
+ * @file IntegrationsTab.tsx
+ * @description "Kalendarz" pane: live iCal feed with one-tap subscribe links
+ * (Google render intent + webcal:// for Apple/Outlook), the raw private URL
+ * with copy, and the token reset escape hatch. The quick-subscribe row spares
+ * choristers the "paste a URL into calendar settings" ritual entirely.
+ * @architecture Enterprise SaaS 2026
+ * @module features/settings/components/IntegrationsTab
+ */
+
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CalendarDays,
-  Copy,
-  RefreshCw,
+  CalendarPlus,
   CheckCircle2,
+  Copy,
   Info,
+  RefreshCw,
 } from "lucide-react";
 
 import { GlassCard } from "@ui/composites/GlassCard";
@@ -42,6 +53,8 @@ export const IntegrationsTab = () => {
   const calendarUrl = user?.profile?.calendar_token
     ? `${backendUrl}/api/calendar/${user.profile.calendar_token}/feed.ics`
     : "";
+  const webcalUrl = calendarUrl.replace(/^https?:\/\//, "webcal://");
+  const googleUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`;
 
   const handleCopy = async () => {
     try {
@@ -56,10 +69,10 @@ export const IntegrationsTab = () => {
   return (
     <GlassCard variant="light" isHoverable={false}>
       <SectionHeader
-        title={t("settings.integrations.title", "Integracje i kalendarze")}
-        icon={<CalendarDays className="w-5 h-5" />}
+        title={t("settings.integrations.title", "Kalendarz")}
+        icon={<CalendarDays className="h-5 w-5" />}
       />
-      <Text color="muted" className="mt-1 mb-8">
+      <Text color="muted" className="mb-8 mt-1">
         {t(
           "settings.integrations.subtitle",
           "Zsynchronizuj harmonogram prób ze swoim kalendarzem w telefonie.",
@@ -67,10 +80,10 @@ export const IntegrationsTab = () => {
       </Text>
 
       <div className="space-y-5">
-        {/* ── Live sync info + URL ──────────────────────── */}
+        {/* ── Live sync: one-tap subscribe + raw URL ────── */}
         <GlassCard variant="light" padding="md" isHoverable={false}>
-          <div className="flex items-start gap-3 mb-5">
-            <Info className="w-5 h-5 text-ethereal-amethyst shrink-0 mt-0.5" />
+          <div className="mb-5 flex items-start gap-3">
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-amethyst" />
             <div className="space-y-1">
               <Eyebrow color="amethyst">
                 {t(
@@ -81,11 +94,43 @@ export const IntegrationsTab = () => {
               <Text size="sm" color="muted" className="leading-relaxed">
                 {t(
                   "settings.integrations.live_sync_desc",
-                  'Użyj tego linku, aby zasubskrybować kalendarz chóru. Twoje próby i koncerty będą aktualizować się automatycznie. Dodaj go jako "Subskrypcję" (URL), a nie jednorazowy plik pobrany z dysku.',
+                  "Zasubskrybuj kalendarz chóru, a próby i koncerty będą aktualizować się automatycznie. To subskrypcja na żywo — nie jednorazowy plik z dysku.",
                 )}
               </Text>
             </div>
           </div>
+
+          {calendarUrl && (
+            <div className="mb-6 space-y-2">
+              <Eyebrow>
+                {t(
+                  "settings.integrations.quick_title",
+                  "Subskrybuj jednym dotknięciem",
+                )}
+              </Eyebrow>
+              <div className="flex flex-col gap-2.5 sm:flex-row">
+                <Button asChild variant="secondary" className="sm:shrink-0">
+                  <a
+                    href={googleUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+                    {t("settings.integrations.quick_google", "Google Kalendarz")}
+                  </a>
+                </Button>
+                <Button asChild variant="secondary" className="sm:shrink-0">
+                  <a href={webcalUrl}>
+                    <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+                    {t(
+                      "settings.integrations.quick_apple",
+                      "Apple / Outlook",
+                    )}
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Eyebrow>
@@ -109,9 +154,9 @@ export const IntegrationsTab = () => {
                 className="shrink-0"
                 leftIcon={
                   copied ? (
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="h-4 w-4" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <Copy className="h-4 w-4" />
                   )
                 }
               >
@@ -145,7 +190,7 @@ export const IntegrationsTab = () => {
               variant="outline"
               onClick={() => resetToken()}
               isLoading={isResetting}
-              leftIcon={<RefreshCw className="w-4 h-4" />}
+              leftIcon={<RefreshCw className="h-4 w-4" />}
               className="shrink-0"
             >
               {t("settings.integrations.reset_btn", "Wygeneruj nowy link")}

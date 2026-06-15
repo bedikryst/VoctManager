@@ -7,12 +7,15 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { settingsService } from "./settings.service";
 import {
   UpdatePreferencesPayload,
   ChangePasswordPayload,
   ChangeEmailPayload,
   DeleteAccountPayload,
+  UserMeDTO,
+  UserProfileDTO,
 } from "../types/settings.dto";
 
 export const settingsKeys = {
@@ -90,5 +93,40 @@ export const useResetCalendarToken = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.data });
     },
+  });
+};
+
+/**
+ * Propagates an avatar change everywhere it is shown: the settings cache, the
+ * roster (cards/rows derive from the artist list) and the global auth user that
+ * feeds the panel shell.
+ */
+const useAvatarPropagation = () => {
+  const queryClient = useQueryClient();
+  const { refreshUser } = useAuth();
+
+  return async (profile: UserProfileDTO) => {
+    queryClient.setQueryData<UserMeDTO>(settingsKeys.data, (prev) =>
+      prev ? { ...prev, profile } : prev,
+    );
+    queryClient.invalidateQueries({ queryKey: settingsKeys.data });
+    queryClient.invalidateQueries({ queryKey: ["artists"] });
+    await refreshUser();
+  };
+};
+
+export const useUploadAvatar = () => {
+  const propagate = useAvatarPropagation();
+  return useMutation({
+    mutationFn: (file: Blob) => settingsService.uploadAvatar(file),
+    onSuccess: propagate,
+  });
+};
+
+export const useDeleteAvatar = () => {
+  const propagate = useAvatarPropagation();
+  return useMutation({
+    mutationFn: () => settingsService.deleteAvatar(),
+    onSuccess: propagate,
   });
 };

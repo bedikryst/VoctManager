@@ -395,7 +395,7 @@ const PushHero: React.FC<PushHeroProps> = ({
   );
 };
 
-function describe(variant: HeroVariant, availability: ReturnType<typeof usePushNotifications>["availability"], t: any): { title: string; description: string } {
+function describe(variant: HeroVariant, availability: ReturnType<typeof usePushNotifications>["availability"], t: ReturnType<typeof useTranslation>["t"]): { title: string; description: string } {
   switch (variant) {
     case "subscribed":
       return {

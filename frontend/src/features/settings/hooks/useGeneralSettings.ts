@@ -8,12 +8,16 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { settingsKeys as settingsKeys } from "@/features/settings/api/settings.queries";
 import { useSettingsData, useUpdatePreferences } from "../api/settings.queries";
-import { UpdatePreferencesPayload } from "../types/settings.dto";
+import {
+  ApiErrorResponse,
+  UpdatePreferencesPayload,
+} from "../types/settings.dto";
 
 export function useGeneralSettings() {
   const queryClient = useQueryClient();
@@ -102,9 +106,10 @@ export function useGeneralSettings() {
       }
 
       setTimeout(() => setStatus({ type: null }), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMsg =
-        error.response?.data?.message ||
+        (axios.isAxiosError<ApiErrorResponse>(error) &&
+          error.response?.data?.message) ||
         t(
           "common.errors.save_problem",
           "Wystąpił problem podczas zapisywania danych.",

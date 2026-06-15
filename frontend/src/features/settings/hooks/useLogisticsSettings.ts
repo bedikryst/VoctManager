@@ -73,7 +73,7 @@ export function useLogisticsSettings() {
       await updatePreferences(payload);
       setStatus({ type: "success" });
       setTimeout(() => setStatus({ type: null }), 3000);
-    } catch (error: any) {
+    } catch {
       setStatus({
         type: "error",
         message: t(

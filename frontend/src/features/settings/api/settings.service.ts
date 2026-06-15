@@ -8,6 +8,7 @@
 import api from "@/shared/api/api";
 import {
   UserMeDTO,
+  UserProfileDTO,
   UpdatePreferencesPayload,
   ChangePasswordPayload,
   ChangeEmailPayload,
@@ -73,6 +74,27 @@ export const settingsService = {
   },
   resetCalendarToken: async (): Promise<{ calendar_token: string }> => {
     const response = await api.post(`${BASE_URL}reset-calendar-token/`);
+    return response.data;
+  },
+
+  /**
+   * Uploads a (client-cropped) avatar. The server re-encodes it and returns the
+   * refreshed profile with the new render URLs.
+   */
+  uploadAvatar: async (file: Blob): Promise<UserProfileDTO> => {
+    const formData = new FormData();
+    formData.append("avatar", file, "avatar.webp");
+    const response = await api.post<UserProfileDTO>(
+      `${BASE_URL}avatar/`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  },
+
+  /** Removes the current avatar; returns the refreshed profile. */
+  deleteAvatar: async (): Promise<UserProfileDTO> => {
+    const response = await api.delete<UserProfileDTO>(`${BASE_URL}avatar/`);
     return response.data;
   },
 };

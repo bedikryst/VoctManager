@@ -1,16 +1,25 @@
+/**
+ * @file LogisticsTab.tsx
+ * @description "Logistyka sceniczna" pane: wardrobe measurements used by the
+ * management when ordering concert attire. Catering preferences are parked
+ * (commented out) until the feature returns.
+ * @architecture Enterprise SaaS 2026
+ * @module features/settings/components/LogisticsTab
+ */
+
 import { useTranslation } from "react-i18next";
-import { Shirt, Ruler, CheckCircle2, Footprints } from "lucide-react";
+import { Shirt, Ruler, Footprints } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Input } from "@ui/primitives/Input";
 import { Select } from "@ui/primitives/Select";
-import { Button } from "@ui/primitives/Button";
-import { Text, Caption } from "@ui/primitives/typography";
+import { Text } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import { DURATION, EASE } from "@ui/kinematics/motion-presets";
 import { useLogisticsSettings } from "../hooks/useLogisticsSettings";
+import { SettingsSaveFooter } from "./SettingsSaveFooter";
 
 export const LogisticsTab = () => {
   const { t } = useTranslation();
@@ -39,13 +48,13 @@ export const LogisticsTab = () => {
   return (
     <GlassCard variant="light" isHoverable={false}>
       <SectionHeader
-        title={t("settings.logistics.title", "Logistyka")}
+        title={t("settings.logistics.title", "Logistyka sceniczna")}
         icon={<Shirt className="w-5 h-5" />}
       />
       <Text color="muted" className="mt-1 mb-6">
         {t(
           "settings.logistics.subtitle",
-          "Dane wykorzystywane przez management do zamawiania strojów.",
+          "Dane wykorzystywane przez management do zamawiania strojów koncertowych.",
         )}
       </Text>
 
@@ -164,33 +173,11 @@ export const LogisticsTab = () => {
           </div>
         </div>
 
-        <div className="pt-2 flex items-center justify-end gap-4">
-          <AnimatePresence>
-            {status.type === "success" && (
-              <motion.div
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 8 }}
-                transition={{ duration: DURATION.fast, ease: EASE.buttery }}
-                className="flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4 text-ethereal-sage shrink-0" />
-                <Caption color="sage">
-                  {t("common.state.saved", "Zapisano pomyślnie")}
-                </Caption>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <Button
-            type="submit"
-            isLoading={isPending}
-            disabled={!isDirty}
-            className={!isDirty ? "opacity-50 grayscale" : ""}
-          >
-            {t("common.actions.save", "Zapisz zmiany")}
-          </Button>
-        </div>
+        <SettingsSaveFooter
+          isDirty={isDirty}
+          isPending={isPending}
+          showSuccess={status.type === "success"}
+        />
       </form>
     </GlassCard>
   );

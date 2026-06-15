@@ -12,6 +12,8 @@ export interface UserProfileDTO {
   is_manager?: boolean;
   is_artist?: boolean;
   is_crew?: boolean;
+  avatar_url: string | null;
+  avatar_thumb_url: string | null;
   phone_number: string;
   language: string;
   timezone: string;

@@ -1,6 +1,14 @@
+/**
+ * @file PrivacyTab.tsx
+ * @description "Prywatność i dane" pane: GDPR data export plus the account
+ * deletion danger zone (re-auth with password, soft delete on the backend).
+ * @architecture Enterprise SaaS 2026
+ * @module features/settings/components/PrivacyTab
+ */
+
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ShieldAlert, Download, Trash2, FileJson } from "lucide-react";
+import { Fingerprint, Download, Trash2, FileJson } from "lucide-react";
 import axios from "axios";
 
 import { GlassCard } from "@ui/composites/GlassCard";
@@ -51,7 +59,7 @@ export const PrivacyTab = () => {
       <GlassCard variant="light" isHoverable={false}>
         <SectionHeader
           title={t("settings.privacy.title", "Prywatność i dane")}
-          icon={<ShieldAlert className="w-5 h-5" />}
+          icon={<Fingerprint className="w-5 h-5" />}
         />
         <Text color="muted" className="mt-1 mb-8">
           {t(
@@ -94,8 +102,13 @@ export const PrivacyTab = () => {
             </div>
           </GlassCard>
 
-          {/* Account Deletion */}
-          <GlassCard variant="outline" padding="md" isHoverable={false}>
+          {/* Account Deletion — the only true danger zone in settings */}
+          <GlassCard
+            variant="outline"
+            padding="md"
+            isHoverable={false}
+            className="border-ethereal-crimson/25 bg-ethereal-crimson/[0.03]"
+          >
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">

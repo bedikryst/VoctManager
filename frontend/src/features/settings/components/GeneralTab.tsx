@@ -1,28 +1,48 @@
+/**
+ * @file GeneralTab.tsx
+ * @description "Profil" pane: personal data + contact, the (read-only) login
+ * e-mail with a shortcut to the security pane where it can be changed, and
+ * interface preferences (language, timezone). Voice type now lives in the
+ * identity card at the layout level instead of an ad-hoc metric block here.
+ * @architecture Enterprise SaaS 2026
+ * @module features/settings/components/GeneralTab
+ */
+
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import {
-  User,
-  Phone,
-  Globe,
-  Clock,
-  CheckCircle2,
   AlertTriangle,
-  Mic2,
+  ArrowRight,
+  AtSign,
+  Clock,
+  Globe,
+  Phone,
+  User,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
-import { MetricBlock } from "@ui/composites/MetricBlock";
 import { Input } from "@ui/primitives/Input";
 import { Select } from "@ui/primitives/Select";
-import { Button } from "@ui/primitives/Button";
 import { Text, Caption } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import { DURATION, EASE } from "@ui/kinematics/motion-presets";
 import { useGeneralSettings } from "../hooks/useGeneralSettings";
+import { SettingsSaveFooter } from "./SettingsSaveFooter";
+
+const TIMEZONES = [
+  { value: "UTC", label: "UTC (Uniwersalna)" },
+  { value: "Europe/Warsaw", label: "Europe / Warsaw" },
+  { value: "Europe/Berlin", label: "Europe / Berlin" },
+  { value: "Europe/Paris", label: "Europe / Paris" },
+  { value: "Europe/London", label: "Europe / London" },
+  { value: "America/New_York", label: "America / New York" },
+];
 
 export const GeneralTab = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const {
     formData,
     user,
@@ -50,13 +70,13 @@ export const GeneralTab = () => {
   return (
     <GlassCard variant="light" isHoverable={false}>
       <SectionHeader
-        title={t("settings.general.title", "Ustawienia Ogólne")}
-        icon={<User className="w-5 h-5" />}
+        title={t("settings.general.title", "Profil")}
+        icon={<User className="h-5 w-5" />}
       />
-      <Text color="muted" className="mt-1 mb-6">
+      <Text color="muted" className="mb-6 mt-1">
         {t(
           "settings.general.subtitle",
-          "Zarządzaj swoimi danymi i preferencjami aplikacji.",
+          "Twoje dane osobowe i preferencje aplikacji.",
         )}
       </Text>
 
@@ -71,7 +91,7 @@ export const GeneralTab = () => {
           >
             <GlassCard variant="outline" padding="sm" isHoverable={false}>
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-ethereal-crimson shrink-0 mt-0.5" />
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ethereal-crimson" />
                 <Text size="sm" color="crimson">
                   {status.message}
                 </Text>
@@ -82,18 +102,18 @@ export const GeneralTab = () => {
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <Input
             label={t("settings.general.firstName", "Imię")}
             value={formData.first_name}
             onChange={(e) => handleChange("first_name", e.target.value)}
-            leftIcon={<User className="w-4 h-4" />}
+            leftIcon={<User className="h-4 w-4" />}
           />
           <Input
             label={t("settings.general.lastName", "Nazwisko")}
             value={formData.last_name}
             onChange={(e) => handleChange("last_name", e.target.value)}
-            leftIcon={<User className="w-4 h-4" />}
+            leftIcon={<User className="h-4 w-4" />}
           />
           <Input
             label={t("settings.general.phone", "Numer telefonu")}
@@ -101,32 +121,49 @@ export const GeneralTab = () => {
             onChange={(e) =>
               handleProfileChange("phone_number", e.target.value)
             }
-            leftIcon={<Phone className="w-4 h-4" />}
+            leftIcon={<Phone className="h-4 w-4" />}
           />
-          {user?.voice_type && (
-            <MetricBlock
-              label={t("settings.membership.voice", "Twój Głos w Chórze")}
-              value={
-                t(`dashboard.layout.roles.${user.voice_type}`) ||
-                user.voice_type_display
-              }
-              icon={<Mic2 className="w-5 h-5" />}
-              accentColor="gold"
-              className="scale-80 md:-left-3"
+          <div className="flex flex-col gap-1.5">
+            <Input
+              label={t("settings.general.email_label", "Adres e-mail (login)")}
+              value={user?.email ?? ""}
+              readOnly
+              leftIcon={<AtSign className="h-4 w-4" />}
+              className="text-ethereal-graphite/80"
             />
-          )}
+            <button
+              type="button"
+              onClick={() => navigate("/panel/settings/security")}
+              className="group ml-1 inline-flex items-center gap-1 self-start outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+            >
+              <Caption
+                color="muted"
+                className="transition-colors group-hover:text-ethereal-gold"
+              >
+                {t(
+                  "settings.general.email_cta",
+                  "Zmień adres w sekcji Bezpieczeństwo",
+                )}
+              </Caption>
+              <ArrowRight
+                size={11}
+                className="text-ethereal-graphite/50 transition-colors group-hover:text-ethereal-gold"
+                aria-hidden="true"
+              />
+            </button>
+          </div>
         </div>
 
         <div className="pt-2">
           <SectionHeader
             title={t("settings.general.preferencesTitle", "Preferencje")}
-            icon={<Globe className="w-4 h-4" />}
+            icon={<Globe className="h-4 w-4" />}
             withFluidDivider
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+          <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
             <Select
-              label={t("settings.general.language", "Język Interfejsu")}
-              leftIcon={<Globe className="w-4 h-4" />}
+              label={t("settings.general.language", "Język interfejsu")}
+              leftIcon={<Globe className="h-4 w-4" />}
               value={formData.profile.language}
               onChange={(e) => handleProfileChange("language", e.target.value)}
             >
@@ -136,46 +173,25 @@ export const GeneralTab = () => {
             </Select>
 
             <Select
-              label={t("settings.general.timezone", "Strefa Czasowa")}
-              leftIcon={<Clock className="w-4 h-4" />}
+              label={t("settings.general.timezone", "Strefa czasowa")}
+              leftIcon={<Clock className="h-4 w-4" />}
               value={formData.profile.timezone}
               onChange={(e) => handleProfileChange("timezone", e.target.value)}
             >
-              <option value="UTC">UTC (Uniwersalna)</option>
-              <option value="Europe/Warsaw">Europe / Warsaw</option>
-              <option value="Europe/London">Europe / London</option>
-              <option value="America/New_York">America / New York</option>
+              {TIMEZONES.map((zone) => (
+                <option key={zone.value} value={zone.value}>
+                  {zone.label}
+                </option>
+              ))}
             </Select>
           </div>
         </div>
 
-        <div className="pt-2 flex items-center justify-end gap-4">
-          <AnimatePresence>
-            {status.type === "success" && (
-              <motion.div
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 8 }}
-                transition={{ duration: DURATION.fast, ease: EASE.buttery }}
-                className="flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4 text-ethereal-sage shrink-0" />
-                <Caption color="sage">
-                  {t("common.state.saved", "Zapisano pomyślnie")}
-                </Caption>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <Button
-            type="submit"
-            isLoading={isPending}
-            disabled={!isDirty}
-            className={!isDirty ? "opacity-50 grayscale" : ""}
-          >
-            {t("common.actions.save", "Zapisz Zmiany")}
-          </Button>
-        </div>
+        <SettingsSaveFooter
+          isDirty={isDirty}
+          isPending={isPending}
+          showSuccess={status.type === "success"}
+        />
       </form>
     </GlassCard>
   );
