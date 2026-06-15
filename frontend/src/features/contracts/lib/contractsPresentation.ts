@@ -71,6 +71,49 @@ export const getCompletionRate = (completed: number, total: number): number => {
   return Math.round((completed / total) * 100);
 };
 
+export const isPaid = (record: ContractRecord): boolean =>
+  Boolean(record.is_paid);
+
+/**
+ * Whether a record represents money actually owed. Declined cast members are not
+ * billable (they withdrew), so they are excluded from budget / outstanding math
+ * even if a fee was entered before they declined. Crew has no decline state.
+ */
+export const isBillable = (
+  record: ContractRecord,
+  type: ContractRecordType,
+): boolean => (type === "CAST" ? record.status !== "DEC" : true);
+
+/**
+ * Settlement lifecycle of a single ledger record, used both for row styling and
+ * for ordering the ledger so action items float to the top.
+ *  - `unpriced`  billable but has no fee yet → blocks the contract PDF
+ *  - `unpaid`    billable, priced, money still owed
+ *  - `paid`      fully settled
+ *  - `inactive`  not billable (declined) → ignored by budget / outstanding
+ */
+export type SettlementState = "unpriced" | "unpaid" | "paid" | "inactive";
+
+export const getSettlementState = (
+  record: ContractRecord,
+  type: ContractRecordType,
+): SettlementState => {
+  if (!isBillable(record, type)) {
+    return "inactive";
+  }
+  if (isFeeMissing(record.fee)) {
+    return "unpriced";
+  }
+  return isPaid(record) ? "paid" : "unpaid";
+};
+
+const SETTLEMENT_RANK: Record<SettlementState, number> = {
+  unpriced: 0,
+  unpaid: 1,
+  paid: 2,
+  inactive: 3,
+};
+
 export const areFeesEqual = (
   left: string | number | null | undefined,
   right: string | number | null | undefined,
@@ -157,11 +200,11 @@ export const sortContractRecords = <T extends ContractRecord>(
   type: ContractRecordType,
 ): T[] =>
   [...records].sort((leftRecord, rightRecord) => {
-    const leftMissingFee = isFeeMissing(leftRecord.fee);
-    const rightMissingFee = isFeeMissing(rightRecord.fee);
+    const leftRank = SETTLEMENT_RANK[getSettlementState(leftRecord, type)];
+    const rightRank = SETTLEMENT_RANK[getSettlementState(rightRecord, type)];
 
-    if (leftMissingFee !== rightMissingFee) {
-      return leftMissingFee ? -1 : 1;
+    if (leftRank !== rightRank) {
+      return leftRank - rightRank;
     }
 
     return getContractPersonName(leftRecord, type).fallback.localeCompare(

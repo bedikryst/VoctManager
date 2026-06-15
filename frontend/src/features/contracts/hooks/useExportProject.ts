@@ -20,11 +20,17 @@ interface UseExportProjectReturn {
   reset: () => void;
 }
 
+// Cap the polling so a stalled/absent Celery worker can never leave the UI
+// spinning forever (~2 min at a 2s cadence) — it surfaces a timeout instead.
+const POLL_INTERVAL_MS = 2000;
+const MAX_POLL_ATTEMPTS = 60;
+
 export const useExportProject = (): UseExportProjectReturn => {
   const [status, setStatus] = useState<ExportStatus>("idle");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attemptsRef = useRef<number>(0);
 
   useEffect(() => {
     return () => {
@@ -59,10 +65,19 @@ export const useExportProject = (): UseExportProjectReturn => {
         setError(
           data.error || "Wystąpił błąd na serwerze podczas generowania paczki.",
         );
+      } else if (attemptsRef.current >= MAX_POLL_ATTEMPTS) {
+        setStatus("error");
+        setError(
+          "Przekroczono czas oczekiwania na paczkę. Spróbuj ponownie później.",
+        );
       } else {
-        timeoutRef.current = setTimeout(() => checkStatus(taskId), 2000);
+        attemptsRef.current += 1;
+        timeoutRef.current = setTimeout(
+          () => checkStatus(taskId),
+          POLL_INTERVAL_MS,
+        );
       }
-    } catch (err) {
+    } catch {
       setStatus("error");
       setError("Błąd podczas odpytywania serwera o status zadania.");
     }
@@ -72,6 +87,7 @@ export const useExportProject = (): UseExportProjectReturn => {
     setStatus("processing");
     setError(null);
     setDownloadUrl(null);
+    attemptsRef.current = 0;
 
     try {
       const response = await api.post(
@@ -90,10 +106,16 @@ export const useExportProject = (): UseExportProjectReturn => {
         setStatus("error");
         setError("Serwer nie przydzielił numeru zadania (Task ID).");
       }
-    } catch (err: any) {
+    } catch (err) {
+      const data = (
+        err as {
+          response?: { data?: { error?: string; detail?: string } };
+        }
+      )?.response?.data;
       setStatus("error");
       setError(
-        err.response?.data?.error ||
+        data?.error ||
+          data?.detail ||
           "Nie udało się rozpocząć zadania. Serwer nie odpowiada.",
       );
     }
@@ -103,6 +125,7 @@ export const useExportProject = (): UseExportProjectReturn => {
     setStatus("idle");
     setDownloadUrl(null);
     setError(null);
+    attemptsRef.current = 0;
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   };
 

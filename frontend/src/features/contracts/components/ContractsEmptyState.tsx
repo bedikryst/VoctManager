@@ -1,54 +1,38 @@
 /**
  * @file ContractsEmptyState.tsx
- * @description Empty-state surface for the contracts workflow.
- * Supports both idle portfolio mode and project-without-personnel scenarios.
+ * @description Empty state for a selected project that has no cast or crew yet —
+ * settlements only become possible once personnel are assigned in the project hub.
  * @architecture Enterprise SaaS 2026
+ * @module features/contracts/components/ContractsEmptyState
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Layers3, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 
 interface ContractsEmptyStateProps {
-  mode: "idle" | "no-personnel";
+  mode: "no-personnel";
 }
 
-export function ContractsEmptyState({
-  mode,
-}: ContractsEmptyStateProps): React.JSX.Element {
+export function ContractsEmptyState(
+  _props: ContractsEmptyStateProps,
+): React.JSX.Element {
   const { t } = useTranslation();
-
-  if (mode === "no-personnel") {
-    return (
-      <StatePanel
-        tone="warning"
-        icon={<Users size={28} strokeWidth={1.5} />}
-        eyebrow={t("contracts.empty.no_personnel_eyebrow", "No records yet")}
-        title={t(
-          "contracts.empty.no_personnel_title",
-          "This project has no assigned cast or crew.",
-        )}
-        description={t(
-          "contracts.empty.no_personnel_description",
-          "Assign personnel in the project workspace first. Once records exist here, you can define remunerations and generate PDF contracts.",
-        )}
-      />
-    );
-  }
 
   return (
     <StatePanel
-      icon={<Layers3 size={28} strokeWidth={1.5} />}
-      eyebrow={t("contracts.empty.idle_eyebrow", "Portfolio view")}
+      tone="warning"
+      icon={<Users size={28} strokeWidth={1.5} />}
+      eyebrow={t("contracts.empty.no_personnel_eyebrow", "Brak obsady")}
       title={t(
-        "contracts.empty.idle_title",
-        "Select a project to open the settlement ledger.",
+        "contracts.empty.no_personnel_title",
+        "Ten projekt nie ma przypisanej obsady ani ekipy.",
       )}
       description={t(
-        "contracts.empty.idle_description",
-        "The finance cockpit is ready. Pick an event above to inspect coverage, update remuneration values, and prepare exportable contract packages.",
+        "contracts.empty.no_personnel_description",
+        "Najpierw przypisz osoby w panelu projektu. Gdy pojawią się tutaj rekordy, ustalisz honoraria, oznaczysz płatności i wygenerujesz umowy PDF.",
       )}
     />
   );

@@ -1,8 +1,13 @@
 /**
  * @file contracts.service.ts
- * @description Pure HTTP service for the Contracts domain.
+ * @description Pure HTTP service for the Contracts / settlements domain.
  * @architecture Enterprise SaaS 2026
  * @module panel/contracts/api
+ *
+ * Fee and payment edits go through dedicated detail actions (`/fee/`, `/payment/`)
+ * rather than the generic record PATCH: the generic Participation update trips a
+ * DRF conditional-UniqueConstraint bug, and the payment action keeps `paid_at`
+ * server-managed and consistent with `is_paid`.
  */
 
 import api from "@/shared/api/api";
@@ -12,8 +17,14 @@ import type {
   EnrichedCrewAssignment,
 } from "../types/contracts.dto";
 
+export type ContractRecordType = "CAST" | "CREW";
+
+const detailBase = (type: ContractRecordType, id: string): string =>
+  type === "CAST"
+    ? `/api/participations/${id}`
+    : `/api/crew-assignments/${id}`;
+
 export const ContractsService = {
-  // Note: If you create a global projects.service.ts in shared/api later, you can remove this.
   getProjects: async (): Promise<Project[]> => {
     const response = await api.get<Project[]>("/api/projects/");
     return response.data;
@@ -33,39 +44,39 @@ export const ContractsService = {
     return response.data;
   },
 
-  updateParticipationFee: async (
+  updateFee: async (
+    type: ContractRecordType,
     id: string,
     fee: number | null,
-  ): Promise<EnrichedParticipation> => {
-    const response = await api.patch<EnrichedParticipation>(
-      `/api/participations/${id}/`,
-      { fee },
-    );
+  ): Promise<EnrichedParticipation | EnrichedCrewAssignment> => {
+    const response = await api.patch(`${detailBase(type, id)}/fee/`, { fee });
     return response.data;
   },
 
-  updateCrewFee: async (
+  setPaid: async (
+    type: ContractRecordType,
     id: string,
-    fee: number | null,
-  ): Promise<EnrichedCrewAssignment> => {
-    const response = await api.patch<EnrichedCrewAssignment>(
-      `/api/crew-assignments/${id}/`,
-      { fee },
-    );
+    isPaid: boolean,
+  ): Promise<EnrichedParticipation | EnrichedCrewAssignment> => {
+    const response = await api.patch(`${detailBase(type, id)}/payment/`, {
+      is_paid: isPaid,
+    });
     return response.data;
   },
 
-  bulkUpdateParticipationsFee: async (
+  bulkUpdateFee: async (
+    target: ContractRecordType,
     projectId: string,
     fee: number,
   ): Promise<{ updated_count: number }> => {
-    const response = await api.patch<{ updated_count: number }>(
-      "/api/participations/bulk-fee/",
-      {
-        project_id: projectId,
-        fee,
-      },
-    );
+    const url =
+      target === "CAST"
+        ? "/api/participations/bulk-fee/"
+        : "/api/crew-assignments/bulk-fee/";
+    const response = await api.patch<{ updated_count: number }>(url, {
+      project_id: projectId,
+      fee,
+    });
     return response.data;
   },
 };
