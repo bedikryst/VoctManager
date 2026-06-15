@@ -51,7 +51,7 @@
           font-size: 21px; font-style: italic; color: #374151;
           margin: 0 0 28px 0; text-align: center; line-height: 1.4;">
   {% if first_name %}
-    {% blocktranslate trimmed %}Hello {{ first_name_vocative|default:first_name }},{% endblocktranslate %}
+    {% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Hello {{ name }},{% endblocktranslate %}
   {% else %}
     {% translate "Hello," %}
   {% endif %}
@@ -228,7 +228,7 @@
         {% translate "Your workspace" %}
       </p>
 
-      <a href="{{ site_url }}/panel"
+      <a href="{{ site_url }}"
          style="display: inline-block; background-color: #111827; color: #c9a764;
                 text-decoration: none; padding: 20px 52px;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

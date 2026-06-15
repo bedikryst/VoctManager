@@ -5,7 +5,7 @@ VOCTMANAGER
 
 =========================================
 
-{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name_vocative|default:first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+{% if first_name %}{% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Hello {{ name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
 
 {% if metadata.message %}{{ metadata.message }}
 {% endif %}
@@ -35,7 +35,7 @@ VOCTMANAGER
 {% endif %}
 
 -----------------------------------------
-{% translate "Open VoctManager:" %} {{ site_url }}/panel
+{% translate "Open VoctManager:" %} {{ site_url }}
 
 {% translate "Musically yours," %}
 {% translate "The VoctEnsemble Team" %}

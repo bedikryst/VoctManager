@@ -3,7 +3,7 @@ VoctManager — {% blocktranslate trimmed with sender=metadata.sender_name %}Mes
 
 ---
 
-{% if first_name %}{% blocktranslate trimmed %}Hello {{ first_name_vocative|default:first_name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+{% if first_name %}{% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Hello {{ name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
 
 {{ metadata.title }}
 
@@ -13,7 +13,7 @@ VoctManager — {% blocktranslate trimmed with sender=metadata.sender_name %}Mes
 {% if metadata.cta_label %}{{ metadata.cta_label }}{% else %}{% translate "Open link" %}{% endif %}:
 {{ metadata.cta_url }}
 {% else %}
-{% translate "Open VoctManager" %}: {{ site_url }}/panel
+{% translate "Open VoctManager" %}: {{ site_url }}
 {% endif %}
 
 ---

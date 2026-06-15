@@ -60,7 +60,12 @@
     </style>
   </head>
   <body class="body" style="margin: 0; padding: 0 !important; mso-line-height-rule: exactly; background-color: #f8f6f2;">
-    
+
+    <!-- Inbox preview (preheader): hidden in the body, shown as the snippet next to the subject line -->
+    <div style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #f8f6f2; opacity: 0;">
+      {% block preheader %}{% endblock %}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+    </div>
+
     <table class="email-outer" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f8f6f2" style="background-color: #f8f6f2;">
       <tr>
         <td class="outer-cell" align="center" valign="top" bgcolor="#f8f6f2" style="padding: 60px 16px; background-color: #f8f6f2;">

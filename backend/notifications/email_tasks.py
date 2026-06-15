@@ -53,6 +53,7 @@ def send_notification_email_task(
     notification_type: str,
     template_name: str,
     metadata: dict[str, Any],
+    level: str = 'INFO',
     email_type: str = 'OPERATIONAL'
 ):
     """
@@ -66,5 +67,6 @@ def send_notification_email_task(
         notification_type=notification_type,
         template_name=template_name,
         metadata=metadata,
+        level=level,
         email_type=email_type
     )

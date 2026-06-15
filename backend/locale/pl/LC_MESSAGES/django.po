@@ -2,7 +2,7 @@
 # Copyright (C) 2026 VoctEnsemble
 # This file is distributed under the same license as the VoctManager package.
 # Krystian Bugalski <admin@voctensemble.com>, 2026.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: VoctManager 1.0\n"
@@ -15,8 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
-"|| n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: archive/models.py:35 roster/models.py:30
 #, python-format
@@ -356,7 +355,8 @@ msgstr "Polski"
 
 #: core/models.py:90
 msgid ""
-"The core authentication user linked to this profile. Cascades on hard delete."
+"The core authentication user linked to this profile. Cascades on hard "
+"delete."
 msgstr ""
 "Główne konto użytkownika powiązane z tym profilem. Kaskadowe usuwanie przy "
 "twardym skasowaniu."
@@ -630,7 +630,8 @@ msgid ""
 "Internal logistics instructions, e.g., 'Gate code: 1234', 'Backstage "
 "entrance'."
 msgstr ""
-"Wewnętrzne instrukcje logistyczne, np. 'Kod bramy: 1234', 'Wejście od kulis'."
+"Wewnętrzne instrukcje logistyczne, np. 'Kod bramy: 1234', 'Wejście od "
+"kulis'."
 
 #: logistics/models.py:79
 msgid ""
@@ -849,8 +850,8 @@ msgstr "Platforma sprzętowa/programowa zarejestrowanego urządzenia."
 
 #: notifications/models.py:159
 msgid ""
-"Indicates whether the token is currently valid. Invalidated automatically by "
-"delivery failures."
+"Indicates whether the token is currently valid. Invalidated automatically by"
+" delivery failures."
 msgstr ""
 "Określa, czy token jest obecnie ważny. Unieważniany automatycznie przy "
 "błędach dostarczenia."
@@ -894,100 +895,101 @@ msgstr "Preferencje powiadomień"
 
 #: notifications/push_payloads.py:76
 msgid "Open"
-msgstr "Otwarta księga"
+msgstr "Otwórz"
 
 #: notifications/push_payloads.py:80
 msgid "Dismiss"
-msgstr ""
+msgstr "Odrzuć"
 
 #: notifications/push_payloads.py:115
 msgid "a new project"
-msgstr "Projekt"
+msgstr "nowy projekt"
 
 #: notifications/push_payloads.py:116
 msgid "the management team"
-msgstr ""
+msgstr "zespół zarządzający"
 
 #: notifications/push_payloads.py:120
 #, python-format
 msgid "%(inviter)s has invited you to participate."
-msgstr ""
+msgstr "%(inviter)s zaprasza Cię do udziału."
 
 #: notifications/push_payloads.py:122
 #, python-format
 msgid "Dates: %(dates)s."
-msgstr ""
+msgstr "Terminy: %(dates)s."
 
 #: notifications/push_payloads.py:124
 #, python-format
 msgid "Venue: %(venue)s."
-msgstr ""
+msgstr "Miejsce: %(venue)s."
 
 #: notifications/push_payloads.py:127
-#, fuzzy, python-format
+#, python-format
 #| msgid "Project Invitation"
 msgid "Project invitation: %(project)s"
-msgstr "Zaproszenie do projektu"
+msgstr "Zaproszenie do projektu: %(project)s"
 
 #: notifications/push_payloads.py:139 notifications/push_payloads.py:166
 #: notifications/push_payloads.py:358 notifications/push_payloads.py:425
 #: notifications/push_payloads.py:442
 msgid "a project"
-msgstr "Projekt"
+msgstr "projekt"
 
 #: notifications/push_payloads.py:143
 #, python-format
 msgid "Updated: %(changes)s."
-msgstr ""
+msgstr "Zmieniono: %(changes)s."
 
 #: notifications/push_payloads.py:147 notifications/push_payloads.py:228
 #, python-format
 msgid "(+%(count)d more)"
-msgstr ""
+msgstr "(+%(count)d więcej)"
 
 #: notifications/push_payloads.py:150
 msgid "Project details have been revised. Tap to review the changes."
-msgstr ""
+msgstr "Szczegóły projektu zostały zmienione. Dotknij, aby zobaczyć zmiany."
 
 #: notifications/push_payloads.py:154
 #, python-format
 msgid "Project updated: %(project)s"
-msgstr ""
+msgstr "Zaktualizowano projekt: %(project)s"
 
 #: notifications/push_payloads.py:168
 msgid ""
 "The project has been cancelled. Please review your dashboard for details."
-msgstr ""
+msgstr "Projekt został odwołany. Szczegóły znajdziesz w panelu."
 
 #: notifications/push_payloads.py:171
-#, fuzzy, python-format
+#, python-format
 #| msgid "Project Cancelled"
 msgid "Project cancelled: %(project)s"
-msgstr "Projekt został odwołany"
+msgstr "Odwołano projekt: %(project)s"
 
 #: notifications/push_payloads.py:183
 msgid "an upcoming engagement"
-msgstr ""
+msgstr "nadchodzące wydarzenie"
 
 #: notifications/push_payloads.py:186
 #, python-format
 msgid "Your engagement begins on %(when)s. Tap to review the schedule."
 msgstr ""
+"Twoje wydarzenie zaczyna się %(when)s. Dotknij, aby zobaczyć harmonogram."
 
 #: notifications/push_payloads.py:189
 msgid "Your engagement is approaching. Tap to review the schedule."
-msgstr ""
+msgstr "Twoje wydarzenie się zbliża. Dotknij, aby zobaczyć harmonogram."
 
 #: notifications/push_payloads.py:192
 #, python-format
 msgid "Reminder: %(project)s"
-msgstr ""
+msgstr "Przypomnienie: %(project)s"
 
 #: notifications/push_payloads.py:204 notifications/push_payloads.py:220
 #: notifications/push_payloads.py:247 notifications/push_payloads.py:262
 #: notifications/push_payloads.py:380 notifications/push_payloads.py:401
 msgid "your project"
-msgstr "Projekt"
+msgstr "Twój projekt"
 
 #: notifications/push_payloads.py:206
 msgid "New rehearsal scheduled"
@@ -998,98 +1000,104 @@ msgstr "Zaplanowano nową próbę"
 msgid ""
 "A new rehearsal has been added to %(project)s. Tap to view the schedule."
 msgstr ""
+"Do projektu %(project)s dodano nową próbę. Dotknij, aby zobaczyć "
+"harmonogram."
 
 #: notifications/push_payloads.py:224
 #, python-format
 msgid "Changed: %(changes)s."
-msgstr ""
+msgstr "Zmieniono: %(changes)s."
 
 #: notifications/push_payloads.py:231
 msgid "Rehearsal time or location has changed. Please review the schedule."
-msgstr ""
+msgstr "Zmienił się czas lub miejsce próby. Sprawdź harmonogram."
 
 #: notifications/push_payloads.py:235
 #, python-format
 msgid "Rehearsal updated — %(project)s"
-msgstr ""
+msgstr "Zmiana próby — %(project)s"
 
 #: notifications/push_payloads.py:249
-#, fuzzy, python-format
+#, python-format
 #| msgid "Rehearsal Cancelled"
 msgid "Rehearsal cancelled — %(project)s"
-msgstr "Próba została odwołana"
+msgstr "Odwołana próba — %(project)s"
 
 #: notifications/push_payloads.py:251
 msgid "This rehearsal has been cancelled. Please review the updated schedule."
-msgstr ""
+msgstr "Ta próba została odwołana. Sprawdź zaktualizowany harmonogram."
 
 #: notifications/push_payloads.py:265
 #, python-format
 msgid "Your %(project)s rehearsal starts on %(when)s."
-msgstr ""
+msgstr "Twoja próba w projekcie %(project)s zaczyna się %(when)s."
 
 #: notifications/push_payloads.py:268
 #, python-format
 msgid "Your %(project)s rehearsal is approaching."
-msgstr ""
+msgstr "Twoja próba w projekcie %(project)s się zbliża."
 
 #: notifications/push_payloads.py:271
 msgid "Rehearsal reminder"
-msgstr "Miejsce próby"
+msgstr "Przypomnienie o próbie"
 
 #: notifications/push_payloads.py:283
 msgid "a new piece"
-msgstr ""
+msgstr "nowy utwór"
 
 #: notifications/push_payloads.py:286
 #, python-format
 msgid "You have been cast as %(voice)s. Tap to open the score and recordings."
-msgstr ""
+msgstr "Otrzymujesz partię %(voice)s. Dotknij, aby otworzyć nuty i nagrania."
 
 #: notifications/push_payloads.py:289
-msgid "You have been cast in this piece. Tap to open the score and recordings."
+msgid ""
+"You have been cast in this piece. Tap to open the score and recordings."
 msgstr ""
+"Otrzymujesz partię w tym utworze. Dotknij, aby otworzyć nuty i nagrania."
 
 #: notifications/push_payloads.py:292
 #, python-format
 msgid "New casting: %(piece)s"
-msgstr ""
+msgstr "Nowa obsada: %(piece)s"
 
 #: notifications/push_payloads.py:304
 msgid "a piece"
-msgstr "Utwór"
+msgstr "utwór"
 
 #: notifications/push_payloads.py:307
 #, python-format
 msgid "Changes: %(changes)s."
-msgstr ""
+msgstr "Zmiany: %(changes)s."
 
 #: notifications/push_payloads.py:312
 msgid "Your casting has been updated. Tap to review the new arrangement."
-msgstr ""
+msgstr "Twoja obsada została zmieniona. Dotknij, aby zobaczyć nowy układ."
 
 #: notifications/push_payloads.py:315
 #, python-format
 msgid "Casting changed: %(piece)s"
-msgstr ""
+msgstr "Zmiana obsady: %(piece)s"
 
 #: notifications/push_payloads.py:327
 msgid "your repertoire"
-msgstr "Projekty i repertuar"
+msgstr "Twój repertuar"
 
 #: notifications/push_payloads.py:329
 msgid "New material available"
-msgstr "Dostępne nowe nuty"
+msgstr "Nowe materiały"
 
 #: notifications/push_payloads.py:330
 #, python-format
 msgid ""
 "Sheet music or audio has been added to %(piece)s. Tap to open the library."
 msgstr ""
+"Do utworu %(piece)s dodano nuty lub nagrania. Dotknij, aby otworzyć "
+"bibliotekę."
 
 #: notifications/push_payloads.py:342
 msgid "your engagement"
-msgstr ""
+msgstr "Twoje wydarzenie"
 
 #: notifications/push_payloads.py:344
 msgid "Contract ready for review"
@@ -1099,6 +1107,8 @@ msgstr "Umowa gotowa do wglądu"
 #, python-format
 msgid "Your contract for %(project)s is ready. Tap to review and sign."
 msgstr ""
+"Twoja umowa do projektu %(project)s jest gotowa. Dotknij, aby ją przejrzeć i"
+" podpisać."
 
 #: notifications/push_payloads.py:357 notifications/push_payloads.py:423
 #: notifications/push_payloads.py:440
@@ -1109,124 +1119,135 @@ msgstr "Artysta"
 #, python-format
 msgid "%(artist)s requested an absence for %(project)s on %(when)s."
 msgstr ""
+"%(artist)s prosi o nieobecność w projekcie %(project)s w terminie %(when)s."
 
 #: notifications/push_payloads.py:364
 #, python-format
 msgid "%(artist)s requested an absence for %(project)s."
-msgstr ""
+msgstr "%(artist)s prosi o nieobecność w projekcie %(project)s."
 
 #: notifications/push_payloads.py:368
 msgid "Absence request"
-msgstr "Zatwierdzono prośbę o nieobecność"
+msgstr "Prośba o nieobecność"
 
 #: notifications/push_payloads.py:383
 #, python-format
 msgid "Your absence on %(when)s for %(project)s has been approved."
 msgstr ""
+"Twoja nieobecność %(when)s w projekcie %(project)s została zaakceptowana."
 
 #: notifications/push_payloads.py:386
-#, fuzzy, python-format
+#, python-format
 #| msgid "Your Absence Has Been Approved"
 msgid "Your absence for %(project)s has been approved."
-msgstr "Twoja nieobecność została zatwierdzona"
+msgstr "Twoja nieobecność w projekcie %(project)s została zaakceptowana."
 
 #: notifications/push_payloads.py:389
 msgid "Absence approved"
-msgstr "Zatwierdzono prośbę o nieobecność"
+msgstr "Nieobecność zaakceptowana"
 
 #: notifications/push_payloads.py:404
 #, python-format
 msgid ""
 "Your absence on %(when)s for %(project)s was not approved. Tap for details."
 msgstr ""
+"Twoja nieobecność %(when)s w projekcie %(project)s nie została "
+"zaakceptowana. Dotknij po szczegóły."
 
 #: notifications/push_payloads.py:407
 #, python-format
 msgid "Your absence for %(project)s was not approved. Tap for details."
 msgstr ""
+"Twoja nieobecność w projekcie %(project)s nie została zaakceptowana. Dotknij"
+" po szczegóły."
 
 #: notifications/push_payloads.py:411
 msgid "Absence not approved"
-msgstr "Zatwierdzono prośbę o nieobecność"
+msgstr "Nieobecność niezaakceptowana"
 
 #: notifications/push_payloads.py:424
 msgid "responded"
-msgstr ""
+msgstr "przesłał(a) odpowiedź"
 
 #: notifications/push_payloads.py:427
 #, python-format
 msgid "%(artist)s · %(action)s"
-msgstr ""
+msgstr "%(artist)s · %(action)s"
 
 #: notifications/push_payloads.py:428
 #, python-format
 msgid "Response to %(project)s. Tap to review the participation status."
 msgstr ""
+"Odpowiedź do projektu %(project)s. Dotknij, aby zobaczyć status udziału."
 
 #: notifications/push_payloads.py:441
 msgid "updated their attendance"
-msgstr ""
+msgstr "zaktualizował(a) swoją obecność"
 
 #: notifications/push_payloads.py:445
 #, python-format
 msgid " · %(when)s"
-msgstr ""
+msgstr " · %(when)s"
 
 #: notifications/push_payloads.py:448
 #, python-format
 msgid "Attendance update — %(project)s"
-msgstr ""
+msgstr "Aktualizacja obecności — %(project)s"
 
 #: notifications/push_payloads.py:449
 #, python-format
 msgid "%(artist)s %(detail)s%(suffix)s."
-msgstr ""
+msgstr "%(artist)s %(detail)s%(suffix)s."
 
 #: notifications/push_payloads.py:462
 msgid "Management"
-msgstr ""
+msgstr "Zarząd"
 
 #: notifications/push_payloads.py:463
 msgid "New message"
-msgstr ""
+msgstr "Nowa wiadomość"
 
 #: notifications/push_payloads.py:474
 #: templates/emails/custom_admin_message.html:26
 #: templates/emails/custom_admin_message.txt:2
 #, python-format
 msgid "Message from %(sender)s"
-msgstr "Wiadomość od %(sender)s"
+msgstr "Wiadomość od: %(sender)s"
 
 #: notifications/push_payloads.py:486
 msgid "System notice"
-msgstr ""
+msgstr "Komunikat systemowy"
 
 #: notifications/push_payloads.py:488
 msgid "A system update requires your attention. Tap to learn more."
 msgstr ""
+"Aktualizacja systemu wymaga Twojej uwagi. Dotknij, aby dowiedzieć się "
+"więcej."
 
 #: notifications/push_payloads.py:506
 #, python-format
 msgid "Update from %(project)s"
-msgstr ""
+msgstr "Aktualizacja: %(project)s"
 
 #: notifications/push_payloads.py:508
 msgid "New update"
-msgstr ""
+msgstr "Nowa aktualizacja"
 
 #: notifications/push_payloads.py:510
 msgid "You have a new update in VoctManager. Tap to view."
-msgstr ""
+msgstr "Masz nową aktualizację w VoctManager. Dotknij, aby zobaczyć."
 
 #: notifications/push_payloads.py:583
 msgid "Push notifications are active"
-msgstr "Preferencja powiadomień"
+msgstr "Powiadomienia push są aktywne"
 
 #: notifications/push_payloads.py:585
 msgid ""
 "VoctManager will notify you here about rehearsals, casting, and messages "
 "from your management team."
 msgstr ""
+"VoctManager będzie tu informować Cię o próbach, obsadzie i wiadomościach od "
+"zespołu zarządzającego."
 
 #: roster/models.py:38
 msgid "Soprano"
@@ -1312,8 +1333,8 @@ msgstr "Imię (Wołacz)"
 
 #: roster/models.py:77
 msgid ""
-"Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in personalized "
-"greetings and emails."
+"Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in personalized"
+" greetings and emails."
 msgstr ""
 "Polska forma wołacza, np. 'Krystianie' dla 'Krystian'. Używana w "
 "spersonalizowanych powitaniach i e-mailach."
@@ -1693,14 +1714,14 @@ msgstr "Zespół VoctEnsemble"
 
 #: templates/emails/account_activation.txt:8
 msgid ""
-"We are honored to invite you to our digital workspace. Your profile has been "
-"meticulously prepared. Please complete the final activation step to "
-"establish your secure credentials and step into the operational heart of our "
-"ensemble."
+"We are honored to invite you to our digital workspace. Your profile has been"
+" meticulously prepared. Please complete the final activation step to "
+"establish your secure credentials and step into the operational heart of our"
+" ensemble."
 msgstr ""
 "Mamy zaszczyt zaprosić Cię do naszej cyfrowej przestrzeni roboczej. Twój "
-"profil został skrupulatnie przygotowany. Dokończ ostatni krok aktywacji, aby "
-"ustanowić bezpieczne dane logowania i wejść do operacyjnego serca naszego "
+"profil został skrupulatnie przygotowany. Dokończ ostatni krok aktywacji, aby"
+" ustanowić bezpieczne dane logowania i wejść do operacyjnego serca naszego "
 "zespołu."
 
 #: templates/emails/account_activation.txt:16
@@ -1856,8 +1877,8 @@ msgid ""
 "If you did not make this change, please contact our administration team "
 "immediately to secure your account."
 msgstr ""
-"Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z naszym zespołem "
-"administracyjnym, aby zabezpieczyć konto."
+"Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z naszym zespołem"
+" administracyjnym, aby zabezpieczyć konto."
 
 #: templates/emails/password_changed.html:94
 msgid "Immediate action required"
@@ -1946,10 +1967,8 @@ msgstr "Zobacz pełne szczegóły w swojej przestrzeni roboczej"
 
 #: templates/emails/system_notification.txt:13
 #, python-format
-msgid ""
-"You have been invited to participate in the concert \"%(project_name)s\"."
-msgstr ""
-"Zostałeś zaproszony do wzięcia udziału w koncercie \"%(project_name)s\"."
+msgid "You have been invited to participate in the concert \"%(project_name)s\"."
+msgstr "Zostałeś zaproszony do wzięcia udziału w koncercie \"%(project_name)s\"."
 
 #: templates/emails/system_notification.txt:32
 msgid "Changes:"
@@ -2001,7 +2020,8 @@ msgstr "Pozostaje tylko zająć swoje miejsce."
 msgid "Projects &amp; Repertoire"
 msgstr "Projekty i repertuar"
 
-#: templates/emails/welcome_email.html:93 templates/emails/welcome_email.txt:20
+#: templates/emails/welcome_email.html:93
+#: templates/emails/welcome_email.txt:20
 msgid ""
 "View your upcoming projects, concert programmes, and casting assignments."
 msgstr ""
@@ -2015,8 +2035,8 @@ msgstr "Nuty"
 #: templates/emails/welcome_email.html:110
 #: templates/emails/welcome_email.txt:23
 msgid ""
-"Access your digital score library — scores and audio materials, organised by "
-"project."
+"Access your digital score library — scores and audio materials, organised by"
+" project."
 msgstr ""
 "Korzystaj z cyfrowej biblioteki nut — partytury i materiały audio, "
 "posegregowane według projektów."
@@ -2029,10 +2049,11 @@ msgstr "Harmonogram prób"
 #: templates/emails/welcome_email.html:127
 #: templates/emails/welcome_email.txt:26
 msgid ""
-"Stay up to date with rehearsal times, locations, and any last-minute changes."
+"Stay up to date with rehearsal times, locations, and any last-minute "
+"changes."
 msgstr ""
-"Bądź na bieżąco z godzinami prób, miejscami i wszelkimi zmianami w ostatniej "
-"chwili."
+"Bądź na bieżąco z godzinami prób, miejscami i wszelkimi zmianami w ostatniej"
+" chwili."
 
 #: templates/emails/welcome_email.html:146
 msgid "Your personal workspace"
@@ -2074,13 +2095,227 @@ msgstr ""
 "W razie problemów z logowaniem, prosimy o kontakt z zespołem "
 "administracyjnym."
 
-#, python-format
+msgid "%(artist)s %(detail)s."
+msgstr "%(artist)s %(detail)s."
 
+msgid "%(artist)s responded to %(project)s: %(action)s."
+msgstr "%(artist)s przesłał(a) odpowiedź do projektu %(project)s: %(action)s."
 
+msgid "%(artist)s responded — %(project)s"
+msgstr "Odpowiedź: %(artist)s — %(project)s"
 
+msgid "%(inviter)s has invited you to take part in %(project)s."
+msgstr "%(inviter)s zaprasza Cię do udziału w projekcie %(project)s."
 
+msgid "%(project)s has been cancelled."
+msgstr "Projekt %(project)s został odwołany."
 
+msgid "%(sender)s sent a message."
+msgstr "%(sender)s wysłał(a) wiadomość."
 
+msgid "%(sender)s: %(snippet)s"
+msgstr "%(sender)s: %(snippet)s"
 
+msgid "A new rehearsal has been added to %(project)s."
+msgstr "Do projektu %(project)s dodano nową próbę."
 
+msgid "A rehearsal for %(project)s has been cancelled."
+msgstr "Próba w projekcie %(project)s została odwołana."
 
+msgid "A rehearsal for %(project)s has changed."
+msgstr "Próba w projekcie %(project)s uległa zmianie."
+
+msgid "Absence approved — %(project)s"
+msgstr "Nieobecność zaakceptowana — %(project)s"
+
+msgid "Absence not approved — %(project)s"
+msgstr "Nieobecność niezaakceptowana — %(project)s"
+
+msgid "Absence request — %(artist)s"
+msgstr "Prośba o nieobecność — %(artist)s"
+
+msgid "Attendance — %(project)s"
+msgstr "Obecność — %(project)s"
+
+msgid "Cancelled: %(project)s"
+msgstr "Odwołano: %(project)s"
+
+msgid "Casting"
+msgstr "Obsada"
+
+msgid "Casting change"
+msgstr "Zmiana obsady"
+
+msgid "Casting updated — %(piece)s"
+msgstr "Zmiana obsady — %(piece)s"
+
+msgid "Change"
+msgstr "Zmiana"
+
+msgid "Channel"
+msgstr "Kanał"
+
+msgid "Contract"
+msgstr "Umowa"
+
+msgid "Contract ready to sign — %(project)s"
+msgstr "Umowa do podpisu — %(project)s"
+
+msgid "Date"
+msgstr "Data"
+
+msgid "Dates"
+msgstr "Terminy"
+
+msgid "Dear %(name)s,"
+msgstr "Drogi/a %(name)s,"
+
+msgid "Details of %(project)s have been revised."
+msgstr "Szczegóły projektu %(project)s zostały zmienione."
+
+msgid "Hello %(name)s,"
+msgstr "Witaj %(name)s,"
+
+msgid "Invitation"
+msgstr "Zaproszenie"
+
+msgid "Invitation to sing: %(project)s"
+msgstr "Zaproszenie do udziału: %(project)s"
+
+msgid "Invited by"
+msgstr "Zaproszenie od"
+
+msgid "Library"
+msgstr "Biblioteka"
+
+msgid "Message"
+msgstr "Wiadomość"
+
+msgid "New material — %(piece)s"
+msgstr "Nowe materiały — %(piece)s"
+
+msgid "New message in %(project)s"
+msgstr "Nowa wiadomość w projekcie %(project)s"
+
+msgid "New message: %(subject)s"
+msgstr "Nowa wiadomość: %(subject)s"
+
+msgid "New rehearsal — %(project)s"
+msgstr "Nowa próba — %(project)s"
+
+msgid "New sheet music or audio has been added to %(piece)s."
+msgstr "Do utworu %(piece)s dodano nowe nuty lub nagrania."
+
+msgid "Open channel"
+msgstr "Otwórz kanał"
+
+msgid "Open conversation"
+msgstr "Otwórz rozmowę"
+
+msgid "Open dashboard"
+msgstr "Otwórz panel"
+
+msgid "Open library"
+msgstr "Otwórz bibliotekę"
+
+msgid "Open rehearsals"
+msgstr "Otwórz próby"
+
+msgid "Open score"
+msgstr "Otwórz nuty"
+
+msgid "Project cancelled"
+msgstr "Projekt odwołany"
+
+msgid "Project update"
+msgstr "Aktualizacja projektu"
+
+msgid "Rehearsal change"
+msgstr "Zmiana próby"
+
+msgid "Rehearsal changed — %(project)s"
+msgstr "Zmiana próby — %(project)s"
+
+msgid "Rehearsal reminder — %(project)s"
+msgstr "Przypomnienie o próbie — %(project)s"
+
+msgid "Rehearsal reminder — %(project)s, %(when)s"
+msgstr "Przypomnienie o próbie — %(project)s, %(when)s"
+
+msgid "Reminder"
+msgstr "Przypomnienie"
+
+msgid "Reminder: %(project)s — %(when)s"
+msgstr "Przypomnienie: %(project)s — %(when)s"
+
+msgid "Response"
+msgstr "Odpowiedź"
+
+msgid "Review changes"
+msgstr "Zobacz zmiany"
+
+msgid "Review contract"
+msgstr "Przejrzyj umowę"
+
+msgid "Review participation"
+msgstr "Zobacz udział"
+
+msgid "Review request"
+msgstr "Zobacz prośbę"
+
+msgid "Starts"
+msgstr "Początek"
+
+msgid "System"
+msgstr "System"
+
+msgid "Updated: %(project)s"
+msgstr "Aktualizacja: %(project)s"
+
+msgid "Venue"
+msgstr "Miejsce"
+
+msgid "View invitation"
+msgstr "Zobacz zaproszenie"
+
+msgid "View schedule"
+msgstr "Zobacz harmonogram"
+
+msgid "Voice part"
+msgstr "Głos"
+
+msgid "When"
+msgstr "Kiedy"
+
+msgid "You are cast as %(voice)s — %(piece)s"
+msgstr "Twoja partia: %(voice)s — %(piece)s"
+
+msgid "You are cast — %(piece)s"
+msgstr "Twoja partia — %(piece)s"
+
+msgid "You have been cast as %(voice)s in %(piece)s."
+msgstr "W utworze %(piece)s otrzymujesz partię %(voice)s."
+
+msgid "You have been cast in %(piece)s."
+msgstr "Otrzymujesz partię w utworze %(piece)s."
+
+msgid "Your casting in %(piece)s has been updated."
+msgstr "Twoja obsada w utworze %(piece)s została zmieniona."
+
+msgid "Your contract for %(project)s is ready to review and sign."
+msgstr "Twoja umowa do projektu %(project)s jest gotowa do wglądu i podpisu."
+
+msgid "Your engagement %(project)s begins on %(when)s."
+msgstr "Twoje wydarzenie %(project)s zaczyna się %(when)s."
+
+msgid "Your engagement %(project)s is approaching."
+msgstr "Twoje wydarzenie %(project)s się zbliża."
+
+msgid "a participant"
+msgstr "uczestnik"
+
+msgid "your management team"
+msgstr "Twój zespół zarządzający"
+
+msgid "Rehearsal cancelled"
+msgstr "Próba odwołana"

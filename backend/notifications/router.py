@@ -12,7 +12,8 @@ from .email_tasks import send_notification_email_task
 from .models import NotificationLevel, NotificationPreference, NotificationType
 from .tasks import send_push_notification_task
 
-# Per-type override map. Falls back to system_notification for everything else.
+# Per-type override map. Falls back to the structured `transactional` template
+# (fed by the message_content layer) for everything else.
 _EMAIL_TEMPLATE_MAP: dict[str, str] = {
     NotificationType.CUSTOM_ADMIN_MESSAGE: "custom_admin_message",
     NotificationType.MESSAGE_RECEIVED: "message_received",
@@ -41,7 +42,7 @@ class NotificationRouter:
             notification_type=notification_type,
         )
 
-        template_name = _EMAIL_TEMPLATE_MAP.get(notification_type, "system_notification")
+        template_name = _EMAIL_TEMPLATE_MAP.get(notification_type, "transactional")
 
         if pref.email_enabled:
             send_notification_email_task.delay(
@@ -49,6 +50,7 @@ class NotificationRouter:
                 notification_type=notification_type,
                 template_name=template_name,
                 metadata=metadata,
+                level=level,
             )
 
         if pref.push_enabled:

@@ -1,0 +1,18 @@
+{% load i18n %}
+VOCTMANAGER — {{ eyebrow }}
+
+{{ headline }}
+
+=========================================
+
+{% if first_name %}{% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Hello {{ name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+
+{{ lead }}
+{% if details %}
+{% for row in details %}{{ row.label }}: {{ row.value }}
+{% endfor %}{% endif %}
+-----------------------------------------
+{{ cta_label }}: {{ cta_url }}
+
+{% translate "With warmest regards," %}
+{% translate "The VoctEnsemble Team" %}
