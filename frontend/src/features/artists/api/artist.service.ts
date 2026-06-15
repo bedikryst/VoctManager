@@ -8,6 +8,7 @@
 import api from "@/shared/api/api";
 import type { Artist } from "@/shared/types";
 import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
+import type { ArtistDossier } from "../types/artistDossier.dto";
 
 const BASE_URL = "/api/artists/";
 
@@ -42,5 +43,10 @@ export const ArtistService = {
     } else {
       await api.post(`${BASE_URL}${id}/archive/`);
     }
+  },
+
+  getDossier: async (id: string): Promise<ArtistDossier> => {
+    const response = await api.get<ArtistDossier>(`${BASE_URL}${id}/dossier/`);
+    return response.data;
   },
 };

@@ -1,21 +1,35 @@
-import React, { useEffect } from "react";
+/**
+ * @file ArtistManagement.tsx
+ * @description Roster command centre. Ensemble-balance strip (section read +
+ * filter) → search / sort / density toolbar → grid or list of singers. Editing
+ * happens in a slide-over; one-click messaging is wired at the page level so a
+ * single thread composer serves every card and row.
+ * @architecture Enterprise SaaS 2026
+ * @module features/artists/ArtistManagement
+ */
+
+import React, { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { UserPlus, Search, Filter, LayoutGrid } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
 
 import { useArtistData } from "./hooks/useArtistData";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Input } from "@/shared/ui/primitives/Input";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { VoiceFilterButton } from "./components/VoiceFilterButton";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import ArtistEditorPanel from "./components/ArtistEditorPanel";
 import { ArtistCard } from "./components/ArtistCard";
+import { ArtistRow } from "./components/ArtistRow";
+import { ArtistDossier } from "./components/ArtistDossier";
+import { BulkActionBar } from "./components/BulkActionBar";
+import { EnsembleBalance } from "./components/EnsembleBalance";
+import { RosterToolbar } from "./components/RosterToolbar";
+import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import {
   StaggeredBentoContainer,
   StaggeredBentoItem,
@@ -32,7 +46,12 @@ export default function ArtistManagement(): React.JSX.Element {
     setSearchTerm,
     voiceFilter,
     setVoiceFilter,
+    sortBy,
+    setSortBy,
+    viewMode,
+    setViewMode,
     ensembleBalance,
+    accountPendingCount,
     displayArtists,
     isPanelOpen,
     editingArtist,
@@ -40,6 +59,26 @@ export default function ArtistManagement(): React.JSX.Element {
     artistToToggle,
     setArtistToToggle,
     isTogglingStatus,
+    messageTarget,
+    isMessageOpen,
+    openMessage,
+    closeMessage,
+    dossierTarget,
+    isDossierOpen,
+    openDossier,
+    closeDossier,
+    selectionMode,
+    toggleSelectionMode,
+    selectedIds,
+    selectionStats,
+    toggleSelect,
+    clearSelection,
+    selectAllVisible,
+    pendingBulk,
+    setPendingBulk,
+    requestBulkToggle,
+    executeBulkToggle,
+    isBulkPending,
     openPanel,
     closePanel,
     handleToggleRequest,
@@ -57,178 +96,184 @@ export default function ArtistManagement(): React.JSX.Element {
     }
   }, [isError, t]);
 
-  useBodyScrollLock(isPanelOpen || artistToToggle !== null);
+  // Deep-links from the command palette: ?focus=<id> opens that singer's
+  // dossier, ?new=1 opens the create panel. Consumed once (a ref guard), then
+  // the param is stripped so refresh / back doesn't reopen the surface.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkConsumed = useRef(false);
+  useEffect(() => {
+    if (deepLinkConsumed.current) return;
+    const focusId = searchParams.get("focus");
+    const wantsNew = searchParams.get("new") === "1";
+    if (!focusId && !wantsNew) return;
+    if (isLoading) return;
+
+    deepLinkConsumed.current = true;
+    if (wantsNew) {
+      openPanel(null);
+    } else if (focusId) {
+      const target = displayArtists.find(
+        (artist) => String(artist.id) === focusId,
+      );
+      if (target) openDossier(target);
+    }
+
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    next.delete("new");
+    setSearchParams(next, { replace: true });
+  }, [
+    searchParams,
+    isLoading,
+    displayArtists,
+    openDossier,
+    openPanel,
+    setSearchParams,
+  ]);
+
+  useBodyScrollLock(
+    isPanelOpen ||
+      isDossierOpen ||
+      artistToToggle !== null ||
+      pendingBulk !== null,
+  );
 
   if (isLoading && displayArtists.length === 0) {
     return <EtherealLoader />;
   }
 
+  const isFiltering = Boolean(searchTerm.trim()) || voiceFilter !== "";
+
   return (
     <PageTransition>
-      <div className="relative cursor-default pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <StaggeredBentoContainer className="space-y-6">
+      <div className="relative mx-auto max-w-7xl cursor-default px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+        <StaggeredBentoContainer className="space-y-5">
           <StaggeredBentoItem>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 mb-2">
-              <PageHeader
-                roleText={t("artists.dashboard.subtitle", "Zasoby Ludzkie")}
-                title={t("artists.dashboard.title_prefix", "Zarządzanie")}
-                titleHighlight={t(
-                  "artists.dashboard.title_highlight",
-                  "Zespołem",
-                )}
-                size="standard"
-              />
-              <Button
-                variant="primary"
-                onClick={() => openPanel(null)}
-                leftIcon={<UserPlus size={16} aria-hidden="true" />}
-              >
-                {t("artists.dashboard.add_artist", "Dodaj Artystę")}
-              </Button>
-            </div>
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <div className="inline-flex flex-wrap items-center gap-2.5 p-2 bg-ethereal-alabaster/60 backdrop-blur-xl border border-ethereal-incense/15 shadow-glass-ethereal rounded-3xl w-full sm:w-auto mb-2">
-              <VoiceFilterButton
-                voiceType="S"
-                label={t("artists.filters.sopranos", "Soprany")}
-                count={ensembleBalance.S}
-                isActive={voiceFilter === "S"}
-                onClick={() => setVoiceFilter(voiceFilter === "S" ? "" : "S")}
-              />
-              <VoiceFilterButton
-                voiceType="A"
-                label={t("artists.filters.altos", "Alty")}
-                count={ensembleBalance.A}
-                isActive={voiceFilter === "A"}
-                onClick={() => setVoiceFilter(voiceFilter === "A" ? "" : "A")}
-              />
-              <VoiceFilterButton
-                voiceType="T"
-                label={t("artists.filters.tenors", "Tenory")}
-                count={ensembleBalance.T}
-                isActive={voiceFilter === "T"}
-                onClick={() => setVoiceFilter(voiceFilter === "T" ? "" : "T")}
-              />
-              <VoiceFilterButton
-                voiceType="B"
-                label={t("artists.filters.basses", "Basy")}
-                count={ensembleBalance.B}
-                isActive={voiceFilter === "B"}
-                onClick={() => setVoiceFilter(voiceFilter === "B" ? "" : "B")}
-              />
-              <VoiceFilterButton
-                voiceType="ALL"
-                label={t("artists.filters.all", "Tutti")}
-                count={ensembleBalance.Total}
-                isActive={voiceFilter === ""}
-                onClick={() => setVoiceFilter("")}
-              />
-            </div>
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <Input
-                  leftIcon={<Search size={16} />}
-                  type="search"
-                  placeholder={t(
-                    "artists.dashboard.search_placeholder",
-                    "Szukaj po nazwisku...",
-                  )}
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                />
-              </div>
-              <div className="relative w-full sm:w-72 flex-shrink-0">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Filter
-                    size={16}
-                    className="text-ethereal-graphite/50"
-                    aria-hidden="true"
-                  />
-                </div>
-                <select
-                  value={voiceFilter}
-                  onChange={(event) => setVoiceFilter(event.target.value)}
-                  className="w-full pl-11 pr-4 py-3 text-sm text-ethereal-ink bg-ethereal-alabaster/80 backdrop-blur-sm border border-ethereal-incense/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-ethereal-gold/20 focus:border-ethereal-gold/40 transition-all shadow-glass-ethereal font-bold appearance-none cursor-pointer"
+            <PageHeader
+              size="standard"
+              roleText={t("artists.dashboard.subtitle", "Zasoby Ludzkie")}
+              title={t("artists.dashboard.title_prefix", "Zarządzanie")}
+              titleHighlight={t("artists.dashboard.title_highlight", "Zespołem")}
+              rightContent={
+                <Button
+                  variant="primary"
+                  onClick={() => openPanel(null)}
+                  leftIcon={<UserPlus size={16} aria-hidden="true" />}
                 >
-                  <option value="">
-                    {t("artists.dashboard.all_voices", "Wszystkie głosy")}
-                  </option>
-                  {voiceTypes.map((voiceType) => (
-                    <option key={voiceType.value} value={voiceType.value}>
-                      {voiceType.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                  {t("artists.dashboard.add_artist", "Dodaj Artystę")}
+                </Button>
+              }
+            />
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {displayArtists.length > 0 ? (
-                <AnimatePresence>
-                  {displayArtists.map((artist: any) => (
-                    <ArtistCard
+            <EnsembleBalance
+              balance={ensembleBalance}
+              accountPending={accountPendingCount}
+              activeSection={voiceFilter}
+              onSelectSection={setVoiceFilter}
+            />
+          </StaggeredBentoItem>
+
+          <StaggeredBentoItem>
+            <RosterToolbar
+              searchTerm={searchTerm}
+              onSearch={setSearchTerm}
+              sortBy={sortBy}
+              onSort={setSortBy}
+              viewMode={viewMode}
+              onViewMode={setViewMode}
+              selectionMode={selectionMode}
+              onToggleSelectionMode={toggleSelectionMode}
+            />
+          </StaggeredBentoItem>
+
+          <StaggeredBentoItem>
+            {displayArtists.length > 0 ? (
+              viewMode === "grid" ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <AnimatePresence>
+                    {displayArtists.map((artist) => (
+                      <ArtistCard
+                        key={artist.id}
+                        artist={artist}
+                        onOpen={openDossier}
+                        onMessage={openMessage}
+                        onToggleStatus={handleToggleRequest}
+                        selectionMode={selectionMode}
+                        selected={selectedIds.has(artist.id)}
+                        onToggleSelect={toggleSelect}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {displayArtists.map((artist) => (
+                    <ArtistRow
                       key={artist.id}
                       artist={artist}
-                      onEdit={openPanel}
+                      onOpen={openDossier}
+                      onMessage={openMessage}
                       onToggleStatus={handleToggleRequest}
+                      selectionMode={selectionMode}
+                      selected={selectedIds.has(artist.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   ))}
-                </AnimatePresence>
-              ) : (
-                <div className="col-span-full">
-                  <GlassCard
-                    variant="ethereal"
-                    className="p-16 flex flex-col items-center justify-center text-center"
-                  >
-                    <LayoutGrid
-                      size={48}
-                      className="text-ethereal-graphite opacity-30 mb-4"
-                      aria-hidden="true"
-                    />
-                    <Eyebrow className="mb-2">
-                      {t("artists.dashboard.empty_title", "Brak wyników")}
-                    </Eyebrow>
-
-                    {searchTerm ? (
-                      <div className="flex flex-col items-center gap-3 mt-2">
-                        <Text size="sm" color="graphite" className="max-w-sm">
-                          {t("artists.dashboard.empty_desc_search", {
-                            defaultValue:
-                              'Nie znaleźliśmy chórzysty "{{term}}". Możesz dodać go teraz do bazy.',
-                            term: searchTerm,
-                          })}
-                        </Text>
-                        <Button
-                          variant="outline"
-                          onClick={() => openPanel(null, searchTerm)}
-                          leftIcon={<UserPlus size={14} aria-hidden="true" />}
-                          className="mt-2"
-                        >
-                          {t("artists.dashboard.add_search_term", {
-                            defaultValue: "Dodaj: {{term}}",
-                            term: searchTerm,
-                          })}
-                        </Button>
-                      </div>
-                    ) : (
-                      <Text size="sm" color="graphite" className="max-w-sm">
-                        {t(
-                          "artists.dashboard.empty_desc_default",
-                          "Zmień kryteria wyszukiwania lub dodaj nową osobę do bazy.",
-                        )}
-                      </Text>
-                    )}
-                  </GlassCard>
                 </div>
-              )}
-            </div>
+              )
+            ) : (
+              <StatePanel
+                icon={<Users size={32} aria-hidden="true" />}
+                eyebrow={t("artists.dashboard.empty_title", "Brak wyników")}
+                title={
+                  isFiltering
+                    ? t(
+                        "artists.dashboard.empty_filtered_title",
+                        "Nikt nie pasuje do filtrów",
+                      )
+                    : t(
+                        "artists.dashboard.empty_roster_title",
+                        "Twój zespół jest pusty",
+                      )
+                }
+                description={
+                  searchTerm.trim()
+                    ? t("artists.dashboard.empty_desc_search", {
+                        defaultValue:
+                          'Nie znaleźliśmy chórzysty "{{term}}". Możesz dodać go teraz do bazy.',
+                        term: searchTerm,
+                      })
+                    : t(
+                        "artists.dashboard.empty_desc_default",
+                        "Zmień kryteria wyszukiwania lub dodaj nową osobę do bazy.",
+                      )
+                }
+                actions={
+                  searchTerm.trim() ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => openPanel(null, searchTerm)}
+                      leftIcon={<UserPlus size={14} aria-hidden="true" />}
+                    >
+                      {t("artists.dashboard.add_search_term", {
+                        defaultValue: "Dodaj: {{term}}",
+                        term: searchTerm,
+                      })}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      onClick={() => openPanel(null)}
+                      leftIcon={<UserPlus size={14} aria-hidden="true" />}
+                    >
+                      {t("artists.dashboard.add_artist", "Dodaj Artystę")}
+                    </Button>
+                  )
+                }
+              />
+            )}
           </StaggeredBentoItem>
         </StaggeredBentoContainer>
 
@@ -262,6 +307,69 @@ export default function ArtistManagement(): React.JSX.Element {
           onCancel={() => setArtistToToggle(null)}
           isLoading={isTogglingStatus}
         />
+
+        {messageTarget && (
+          <NewThreadModal
+            isOpen={isMessageOpen}
+            onClose={closeMessage}
+            isManager
+            presetArtistId={messageTarget.id}
+            presetArtistName={`${messageTarget.first_name} ${messageTarget.last_name}`}
+          />
+        )}
+
+        <ArtistDossier
+          isOpen={isDossierOpen}
+          onClose={closeDossier}
+          artist={dossierTarget}
+          onEdit={(artist) => {
+            closeDossier();
+            openPanel(artist);
+          }}
+          onMessage={openMessage}
+        />
+
+        <ConfirmModal
+          isOpen={pendingBulk !== null}
+          title={
+            pendingBulk?.isActive
+              ? t("artists.bulk.restore_title", "Przywrócić zaznaczonych?")
+              : t("artists.bulk.archive_title", "Zarchiwizować zaznaczonych?")
+          }
+          description={
+            pendingBulk?.isActive
+              ? t("artists.bulk.restore_desc", {
+                  defaultValue:
+                    "Zaznaczeni artyści ({{n}}) odzyskają dostęp do platformy i widoczność w obsadzie.",
+                  n: pendingBulk?.ids.length ?? 0,
+                })
+              : t("artists.bulk.archive_desc", {
+                  defaultValue:
+                    "Zaznaczeni artyści ({{n}}) stracą dostęp do panelu. Dane historyczne zostaną zachowane.",
+                  n: pendingBulk?.ids.length ?? 0,
+                })
+          }
+          onConfirm={executeBulkToggle}
+          onCancel={() => setPendingBulk(null)}
+          isLoading={isBulkPending}
+        />
+
+        <AnimatePresence>
+          {selectionMode && (
+            <BulkActionBar
+              selectedTotal={selectionStats.total}
+              activeCount={selectionStats.active}
+              archivedCount={selectionStats.archived}
+              visibleCount={displayArtists.length}
+              onSelectAll={selectAllVisible}
+              onClear={clearSelection}
+              onArchive={() => requestBulkToggle(false)}
+              onRestore={() => requestBulkToggle(true)}
+              onExit={toggleSelectionMode}
+              isPending={isBulkPending}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </PageTransition>
   );

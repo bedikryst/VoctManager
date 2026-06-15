@@ -14,6 +14,8 @@ export const artistKeys = {
   artists: {
     all: ["artists"] as const,
     details: (id: string | number) => ["artists", String(id)] as const,
+    dossier: (id: string | number) =>
+      ["artists", String(id), "dossier"] as const,
   },
 };
 
@@ -22,6 +24,15 @@ export const useArtists = () => {
     queryKey: artistKeys.artists.all,
     queryFn: ArtistService.getAll,
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useArtistDossier = (id: string | null) => {
+  return useQuery({
+    queryKey: artistKeys.artists.dossier(id ?? "none"),
+    queryFn: () => ArtistService.getDossier(id as string),
+    enabled: Boolean(id),
+    staleTime: 1000 * 60,
   });
 };
 
@@ -51,6 +62,40 @@ export const useToggleArtistStatus = () => {
   return useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       ArtistService.toggleStatus(id, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
+    },
+  });
+};
+
+export interface BulkToggleResult {
+  total: number;
+  failed: number;
+}
+
+/**
+ * Archives or restores many artists in one gesture. Runs the per-artist calls in
+ * parallel, tolerates partial failure (allSettled), and invalidates the roster
+ * once at the end rather than per-item.
+ */
+export const useBulkToggleArtistStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      ids,
+      isActive,
+    }: {
+      ids: string[];
+      isActive: boolean;
+    }): Promise<BulkToggleResult> => {
+      const results = await Promise.allSettled(
+        ids.map((id) => ArtistService.toggleStatus(id, isActive)),
+      );
+      const failed = results.filter(
+        (result) => result.status === "rejected",
+      ).length;
+      return { total: ids.length, failed };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
     },

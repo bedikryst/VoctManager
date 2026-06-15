@@ -1,8 +1,10 @@
 /**
  * @file ArtistEditorPanel.tsx
  * @description Slide-over panel for creating or editing artist profiles.
- * Utilizes React Hook Form for zero-lag rendering and Zod for absolute validation.
- * @module panel/artists/ArtistEditorPanel
+ * Uses React Hook Form for zero-lag rendering and Zod for validation, and the
+ * shared Ethereal primitives (Input/Select with built-in label + error) so the
+ * editor matches the rest of the 2026 surface language.
+ * @module features/artists/components/ArtistEditorPanel
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -11,11 +13,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2, Send } from "lucide-react";
 import { useWatch } from "react-hook-form";
-import { cn } from "@/shared/lib/utils";
 
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
 import { Input } from "@ui/primitives/Input";
+import { Select } from "@ui/primitives/Select";
+import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useArtistForm } from "../hooks/useArtistForm";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
@@ -28,10 +31,15 @@ interface ArtistEditorPanelProps {
   initialSearchContext?: string;
 }
 
-const STYLE_LABEL =
-  "block text-[10px] font-bold antialiased uppercase tracking-widest text-stone-500 mb-2 ml-1";
-const STYLE_SELECT =
-  "w-full px-4 py-3 text-sm text-stone-800 bg-white/50 backdrop-blur-sm border border-stone-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]";
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <Eyebrow
+    as="h4"
+    color="gold"
+    className="block border-b border-ethereal-ink/8 pb-2.5"
+  >
+    {children}
+  </Eyebrow>
+);
 
 export default function ArtistEditorPanel({
   isOpen,
@@ -54,7 +62,11 @@ export default function ArtistEditorPanel({
     voiceTypes,
     initialSearchContext,
     onClose,
+    isOpen,
   );
+
+  const { errors } = form.formState;
+  const errorText = (key?: string) => (key ? t(key) : undefined);
 
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
   const languageValue = useWatch({ control: form.control, name: "language" });
@@ -97,7 +109,7 @@ export default function ArtistEditorPanel({
             exit={{ opacity: 0 }}
             onClick={handleCloseRequest}
             style={{ zIndex: 99 }}
-            className="fixed inset-0 bg-stone-900/30 backdrop-blur-sm"
+            className="fixed inset-0 bg-ethereal-ink/30 backdrop-blur-sm"
             aria-hidden="true"
           />
 
@@ -108,79 +120,59 @@ export default function ArtistEditorPanel({
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             style={{ zIndex: 100 }}
-            className="fixed inset-y-0 right-0 w-full max-w-xl bg-[#f4f2ee] shadow-2xl flex flex-col border-l border-white/60"
+            className="fixed inset-y-0 right-0 flex w-full max-w-xl flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-2xl"
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex justify-between items-center p-6 md:p-8 border-b border-stone-200/50 bg-white/80 backdrop-blur-xl flex-shrink-0 z-20">
-              <h3 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
+            <div className="z-20 flex flex-shrink-0 items-center justify-between border-b border-ethereal-ink/8 bg-ethereal-alabaster/80 p-6 backdrop-blur-xl md:p-8">
+              <Heading as="h3" size="2xl" weight="bold">
                 {artist?.id
                   ? t("artists.editor.title_edit", "Edycja Profilu")
                   : t("artists.editor.title_new", "Nowy Artysta")}
-              </h3>
+              </Heading>
               <div className="flex items-center gap-2">
                 {artist?.id && (
                   <button
                     type="button"
                     onClick={() => setShowNotifyModal(true)}
-                    title={t(
-                      "artists.editor.message_artist",
-                      "Napisz wiadomość",
-                    )}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-ethereal-amethyst bg-white hover:bg-ethereal-amethyst/10 border border-ethereal-amethyst/30 shadow-sm transition-all px-3 py-2 rounded-xl active:scale-95"
+                    title={t("artists.editor.message_artist", "Napisz wiadomość")}
+                    className="flex items-center gap-1.5 rounded-xl border border-ethereal-amethyst/30 bg-ethereal-alabaster px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-ethereal-amethyst shadow-sm transition-all hover:bg-ethereal-amethyst/10 active:scale-95"
                   >
-                    <Send size={14} />
-                    {t(
-                      "artists.editor.message_artist",
-                      "Napisz wiadomość",
-                    )}
+                    <Send size={14} aria-hidden="true" />
+                    {t("artists.editor.message_artist", "Napisz wiadomość")}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={handleCloseRequest}
-                  className="text-stone-400 hover:text-stone-900 bg-white hover:bg-stone-100 border border-stone-200/60 shadow-sm transition-all p-2.5 rounded-2xl active:scale-95"
+                  aria-label={t("common.actions.close", "Zamknij")}
+                  className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-marble hover:text-ethereal-ink active:scale-95"
                 >
                   <X size={20} aria-hidden="true" />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 relative">
+            <div className="relative flex-1 overflow-y-auto p-6 md:p-8">
               <form
                 onSubmit={onSubmit}
-                className="space-y-8 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-2xl border border-white/80 shadow-[0_4px_20px_rgb(0,0,0,0.03)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] relative flex flex-col min-h-full"
+                className="flex min-h-full flex-col space-y-8 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/60 p-6 shadow-glass-ethereal backdrop-blur-xl md:p-8"
               >
                 <div className="flex-1 space-y-8">
                   <div className="space-y-5">
-                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
+                    <SectionTitle>
                       {t("artists.editor.section_basic", "Dane Podstawowe")}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    </SectionTitle>
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                       <div className="space-y-3">
-                        <div>
-                          <label className={STYLE_LABEL}>
-                            {t("artists.editor.first_name", "Imię *")}
-                          </label>
-                          <Input
-                            type="text"
-                            {...form.register("first_name")}
-                            disabled={isSubmitting}
-                            className={cn(
-                              "font-bold",
-                              form.formState.errors.first_name &&
-                                "border-red-500",
-                            )}
-                          />
-                          {form.formState.errors.first_name && (
-                            <p className="text-red-500 text-xs mt-1.5 ml-1">
-                              {t(
-                                form.formState.errors.first_name
-                                  .message as string,
-                              )}
-                            </p>
-                          )}
-                        </div>
+                        <Input
+                          type="text"
+                          label={t("artists.editor.first_name", "Imię *")}
+                          {...form.register("first_name")}
+                          disabled={isSubmitting}
+                          error={errorText(errors.first_name?.message)}
+                          className="font-bold"
+                        />
                         <AnimatePresence>
                           {firstNameValue && languageValue === "pl" && (
                             <motion.div
@@ -190,271 +182,214 @@ export default function ArtistEditorPanel({
                               exit={{ opacity: 0, y: -6 }}
                               transition={{ duration: 0.18 }}
                             >
-                              <label className={cn(STYLE_LABEL, "text-ethereal-amethyst/80")}>
-                                {t("artists.editor.first_name_vocative", "Wołacz")}
-                              </label>
                               <Input
                                 type="text"
+                                label={t(
+                                  "artists.editor.first_name_vocative",
+                                  "Wołacz",
+                                )}
                                 {...form.register("first_name_vocative")}
                                 placeholder={t(
                                   "artists.editor.first_name_vocative_placeholder",
                                   "np. Krystianie",
                                 )}
                                 disabled={isSubmitting}
-                                className="text-sm text-ethereal-amethyst font-medium"
+                                className="font-medium text-ethereal-amethyst"
                               />
-                              <p className="text-stone-400 text-[10px] mt-1.5 ml-1">
+                              <Text
+                                as="p"
+                                size="xs"
+                                color="muted"
+                                className="ml-1 mt-1.5"
+                              >
                                 {t(
                                   "artists.editor.first_name_vocative_hint",
                                   "Forma używana w powitaniach, np. w mailach.",
                                 )}
-                              </p>
+                              </Text>
                             </motion.div>
                           )}
                         </AnimatePresence>
                       </div>
-                      <div>
-                        <label className={STYLE_LABEL}>
-                          {t("artists.editor.last_name", "Nazwisko *")}
-                        </label>
-                        <Input
-                          type="text"
-                          {...form.register("last_name")}
-                          disabled={isSubmitting}
-                          className={cn(
-                            "font-bold",
-                            form.formState.errors.last_name && "border-red-500",
-                          )}
-                        />
-                        {form.formState.errors.last_name && (
-                          <p className="text-red-500 text-xs mt-1.5 ml-1">
-                            {t(
-                              form.formState.errors.last_name.message as string,
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className={STYLE_LABEL}>
-                          {t("artists.editor.email", "E-mail *")}
-                        </label>
-                        <Input
-                          type="email"
-                          {...form.register("email")}
-                          disabled={isSubmitting}
-                          className={cn(
-                            form.formState.errors.email && "border-red-500",
-                          )}
-                        />
-                        {form.formState.errors.email && (
-                          <p className="text-red-500 text-xs mt-1.5 ml-1">
-                            {t(form.formState.errors.email.message as string)}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <label className={STYLE_LABEL}>
-                          {t("artists.editor.phone", "Telefon")}
-                        </label>
-                        <Input
-                          type="tel"
-                          {...form.register("phone_number")}
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t("artists.editor.language", "Język komunikacji *")}
-                      </label>
-                      <select
-                        {...form.register("language")}
-                        className={cn(
-                          STYLE_SELECT,
-                          "font-bold appearance-none",
-                          artist?.id &&
-                            "opacity-60 bg-stone-100 cursor-not-allowed",
-                        )}
-                        disabled={isSubmitting || !!artist?.id}
-                      >
-                        <option value="pl">Polski</option>
-                        <option value="en">English</option>
-                        <option value="fr">Français</option>
-                      </select>
-                      {artist?.id && (
-                        <p className="text-stone-500 text-[10px] font-medium mt-2 ml-1">
-                          {t(
-                            "artists.editor.language_edit_disabled",
-                            "Język jest zarządzany indywidualnie przez artystę w ustawieniach konta.",
-                          )}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-5 pt-4">
-                    <h4 className="text-[10px] font-bold antialiased uppercase tracking-[0.15em] text-brand border-b border-stone-200/60 pb-2">
-                      {t("artists.editor.section_voice", "Profil Wokalny")}
-                    </h4>
-
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t("artists.editor.voice_type", "Rodzaj Głosu *")}
-                      </label>
-                      <select
-                        {...form.register("voice_type")}
-                        className={cn(
-                          STYLE_SELECT,
-                          "font-bold appearance-none",
-                          form.formState.errors.voice_type && "border-red-500",
-                        )}
+                      <Input
+                        type="text"
+                        label={t("artists.editor.last_name", "Nazwisko *")}
+                        {...form.register("last_name")}
                         disabled={isSubmitting}
-                      >
-                        {voiceTypes.length > 0 ? (
-                          voiceTypes.map((voiceType) => (
-                            <option
-                              key={voiceType.value}
-                              value={voiceType.value}
-                            >
-                              {voiceType.label}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="SOP">
-                            {t("artists.editor.loading", "Ładowanie...")}
-                          </option>
-                        )}
-                      </select>
-                      {form.formState.errors.voice_type && (
-                        <p className="text-red-500 text-xs mt-1.5 ml-1">
-                          {t(
-                            form.formState.errors.voice_type.message as string,
-                          )}
-                        </p>
-                      )}
+                        error={errorText(errors.last_name?.message)}
+                        className="font-bold"
+                      />
                     </div>
+
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      <Input
+                        type="email"
+                        label={t("artists.editor.email", "E-mail *")}
+                        {...form.register("email")}
+                        disabled={isSubmitting}
+                        error={errorText(errors.email?.message)}
+                      />
+                      <Input
+                        type="tel"
+                        label={t("artists.editor.phone", "Telefon")}
+                        {...form.register("phone_number")}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      <div>
+                        <Select
+                          label={t(
+                            "artists.editor.language",
+                            "Język wiadomości *",
+                          )}
+                          {...form.register("language")}
+                          className="font-bold"
+                          disabled={isSubmitting || !!artist?.id}
+                        >
+                          <option value="pl">Polski</option>
+                          <option value="en">English</option>
+                          <option value="fr">Français</option>
+                        </Select>
+                        {artist?.id && (
+                          <Text
+                            as="p"
+                            size="xs"
+                            color="muted"
+                            className="ml-1 mt-2"
+                          >
+                            {t(
+                              "artists.editor.language_edit_disabled",
+                              "Język jest zarządzany indywidualnie przez artystę w ustawieniach konta.",
+                            )}
+                          </Text>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-5 pt-2">
+                    <SectionTitle>
+                      {t("artists.editor.section_voice", "Profil Wokalny")}
+                    </SectionTitle>
+
+                    <Select
+                      label={t("artists.editor.voice_type", "Rodzaj Głosu *")}
+                      {...form.register("voice_type")}
+                      className="font-bold"
+                      disabled={isSubmitting}
+                      error={errorText(errors.voice_type?.message)}
+                    >
+                      {voiceTypes.length > 0 ? (
+                        voiceTypes.map((voiceType) => (
+                          <option key={voiceType.value} value={voiceType.value}>
+                            {voiceType.label}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="SOP">
+                          {t("artists.editor.loading", "Ładowanie...")}
+                        </option>
+                      )}
+                    </Select>
 
                     <div className="grid grid-cols-2 gap-5">
-                      <div>
-                        <label
-                          className={STYLE_LABEL}
-                          title={t(
-                            "artists.editor.range_low_title",
-                            "Najniższy dźwięk",
-                          )}
-                        >
-                          {t("artists.editor.range_low", "Skala (Dół)")}
-                        </label>
-                        <Input
-                          type="text"
-                          {...form.register("vocal_range_bottom")}
-                          placeholder={t(
-                            "artists.editor.range_low_placeholder",
-                            "np. G2",
-                          )}
-                          disabled={isSubmitting}
-                          className="text-center font-bold text-brand"
-                        />
-                      </div>
-                      <div>
-                        <label
-                          className={STYLE_LABEL}
-                          title={t(
-                            "artists.editor.range_high_title",
-                            "Najwyższy dźwięk",
-                          )}
-                        >
-                          {t("artists.editor.range_high", "Skala (Góra)")}
-                        </label>
-                        <Input
-                          type="text"
-                          {...form.register("vocal_range_top")}
-                          placeholder={t(
-                            "artists.editor.range_high_placeholder",
-                            "np. C5",
-                          )}
-                          disabled={isSubmitting}
-                          className="text-center font-bold text-brand"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={STYLE_LABEL}>
-                        {t(
-                          "artists.editor.sight_reading",
-                          "Czytanie a vista (Ocena)",
+                      <Input
+                        type="text"
+                        label={t("artists.editor.range_low", "Skala (Dół)")}
+                        title={t(
+                          "artists.editor.range_low_title",
+                          "Najniższy dźwięk",
                         )}
-                      </label>
-                      <select
-                        {...form.register("sight_reading_skill")}
-                        className={cn(
-                          STYLE_SELECT,
-                          "font-bold appearance-none",
+                        {...form.register("vocal_range_bottom")}
+                        placeholder={t(
+                          "artists.editor.range_low_placeholder",
+                          "np. G2",
                         )}
                         disabled={isSubmitting}
-                      >
-                        <option value="">
-                          {t("artists.editor.no_rating", "— Brak oceny —")}
-                        </option>
-                        {[1, 2, 3, 4, 5].map((value) => (
-                          <option key={value} value={String(value)}>
-                            {t("artists.editor.stars_count", {
-                              defaultValue: "{{count}} Gwiazdki",
-                              count: value,
-                            })}
-                          </option>
-                        ))}
-                      </select>
+                        className="text-center font-bold text-ethereal-gold"
+                      />
+                      <Input
+                        type="text"
+                        label={t("artists.editor.range_high", "Skala (Góra)")}
+                        title={t(
+                          "artists.editor.range_high_title",
+                          "Najwyższy dźwięk",
+                        )}
+                        {...form.register("vocal_range_top")}
+                        placeholder={t(
+                          "artists.editor.range_high_placeholder",
+                          "np. C5",
+                        )}
+                        disabled={isSubmitting}
+                        className="text-center font-bold text-ethereal-gold"
+                      />
                     </div>
+
+                    <Select
+                      label={t(
+                        "artists.editor.sight_reading",
+                        "Czytanie a vista (Ocena)",
+                      )}
+                      {...form.register("sight_reading_skill")}
+                      className="font-bold"
+                      disabled={isSubmitting}
+                    >
+                      <option value="">
+                        {t("artists.editor.no_rating", "— Brak oceny —")}
+                      </option>
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <option key={value} value={String(value)}>
+                          {t("artists.editor.stars_count", {
+                            defaultValue: "{{count}} Gwiazdki",
+                            count: value,
+                          })}
+                        </option>
+                      ))}
+                    </Select>
                   </div>
 
                   {artist?.id && (
-                    <div className="pt-6 border-t border-stone-200/60">
-                      <label className="flex items-center gap-4 p-4 border border-stone-200/80 rounded-xl bg-white/50 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer hover:border-brand/40 transition-colors">
+                    <div className="border-t border-ethereal-ink/8 pt-6">
+                      <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-4 shadow-glass-ethereal transition-colors hover:border-ethereal-gold/40">
                         <input
                           type="checkbox"
                           {...form.register("is_active")}
-                          className="w-5 h-5 text-brand focus:ring-brand/20 border-stone-300 rounded-md cursor-pointer"
+                          className="h-5 w-5 cursor-pointer rounded-md accent-ethereal-gold"
                           disabled={isSubmitting}
                         />
                         <div>
-                          <span className="block text-sm font-bold text-stone-800">
+                          <Text size="sm" weight="bold">
                             {t(
                               "artists.editor.active_access_title",
                               "Aktywny dostęp do platformy",
                             )}
-                          </span>
-                          <span className="block text-[9px] font-bold antialiased uppercase tracking-widest text-stone-500 mt-1">
+                          </Text>
+                          <Eyebrow color="muted" className="mt-1 block">
                             {t(
                               "artists.editor.active_access_desc",
                               "Zablokuje logowanie w przypadku odznaczenia.",
                             )}
-                          </span>
+                          </Eyebrow>
                         </div>
                       </label>
                     </div>
                   )}
                 </div>
 
-                <div className="sticky bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-stone-200/60 p-4 md:p-6 -mx-6 md:-mx-8 -mb-8 mt-8 flex flex-col sm:flex-row gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-b-2xl">
+                <div className="sticky bottom-0 left-0 right-0 z-40 -mx-6 -mb-8 mt-8 rounded-b-2xl border-t border-ethereal-ink/8 bg-ethereal-alabaster/85 p-4 shadow-[0_-10px_30px_rgba(22,20,18,0.05)] backdrop-blur-xl md:-mx-8 md:p-6">
                   <Button
                     type="submit"
                     variant="primary"
                     disabled={isSubmitting}
                     isLoading={isSubmitting}
+                    fullWidth
                     leftIcon={
                       !isSubmitting ? (
                         <CheckCircle2 size={16} aria-hidden="true" />
                       ) : undefined
                     }
-                    className="w-full"
                   >
                     {artist?.id
                       ? t("artists.editor.save_profile", "Zapisz Profil")

@@ -23,6 +23,7 @@ export const useArtistForm = (
   voiceTypes: VoiceTypeOption[],
   initialSearchContext: string,
   onClose: () => void,
+  isOpen: boolean,
 ) => {
   const { t } = useTranslation();
   const createMutation = useCreateArtist();
@@ -60,7 +61,11 @@ export const useArtistForm = (
     },
   });
 
+  // Re-seed every time the panel opens so reopening always reflects the saved
+  // record — closing discards unsaved edits (and "New artist" never inherits a
+  // previously edited profile).
   useEffect(() => {
+    if (!isOpen) return;
     if (artist) {
       form.reset({
         first_name: artist.first_name,
@@ -92,7 +97,7 @@ export const useArtistForm = (
         language: "pl",
       });
     }
-  }, [artist, defaultNames, voiceTypes, form]);
+  }, [isOpen, artist, defaultNames, voiceTypes, form]);
 
   const onSubmit = async (data: ArtistFormValues) => {
     const toastId = toast.loading(
