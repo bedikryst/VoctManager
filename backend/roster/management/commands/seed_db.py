@@ -830,7 +830,7 @@ class Command(BaseCommand):
                 defaults={"order": order, "is_encore": order == len(programme)},
             )
             for idx, participation in enumerate(confirmed):
-                line = random.choice(VOICE_LINES_FOR[participation.artist.voice_type])
+                line = random.choice(VOICE_LINES_FOR[VoiceType(participation.artist.voice_type)])
                 ProjectPieceCasting.objects.get_or_create(
                     participation=participation, piece=piece,
                     defaults={
@@ -984,10 +984,10 @@ class Command(BaseCommand):
             ("Piotr", "Fundator", PatronLeadStatus.NEW, ""),
             ("Maria", "Wspierająca", PatronLeadStatus.ARCHIVED, "Zrezygnowała — zmiana sytuacji."),
         ]
-        for first, last, status, note in leads:
+        for first, last, lead_status, note in leads:
             PatronLead.objects.create(
                 first_name=first, last_name=last,
-                email=f"{_ascii(first)}.{_ascii(last)}@example.com", status=status, note=note,
+                email=f"{_ascii(first)}.{_ascii(last)}@example.com", status=lead_status, note=note,
             )
 
     # ----------------------------------------------------------------- #
