@@ -1,8 +1,13 @@
 /**
  * @file MobileNavigation.tsx
- * @description Root controller for the mobile navigation surface. Mounts a single
- * child at a time (collapsed dock or expanded sheet) and owns shell-level concerns:
- * scroll lock, close-watcher (Esc / Android back), haptics on state transitions.
+ * @description Root controller for the mobile navigation surface. The bottom tab
+ * bar is **always mounted**; the command sheet is an independent overlay that
+ * mounts instantly on open. (Previously the two were swapped through a single
+ * `AnimatePresence mode="wait"`, so the sheet could not appear until the bar
+ * finished its exit spring — a visible open delay. Decoupling them removes it:
+ * the sheet slides up immediately and simply covers the static bar.)
+ * Owns shell-level concerns: scroll lock, close-watcher (Esc / Android back),
+ * haptics on state transitions.
  * @architecture Enterprise SaaS 2026
  * @module widgets/panel-shell/mobile
  */
@@ -45,18 +50,20 @@ export const MobileNavigation = ({
   useCloseWatcher(isOpen, handleClose);
 
   return (
-    <AnimatePresence initial={false} mode="wait">
-      {isOpen ? (
-        <MobileNavSheet
-          key="sheet"
-          onClose={handleClose}
-          aura={aura}
-          logout={logout}
-        />
-      ) : (
-        <MobileNavTrigger key="trigger" onOpen={handleOpen} aura={aura} />
-      )}
-    </AnimatePresence>
+    <>
+      <MobileNavTrigger onOpen={handleOpen} isMenuOpen={isOpen} aura={aura} />
+      <AnimatePresence>
+        {isOpen && (
+          <MobileNavSheet
+            key="sheet"
+            user={user}
+            onClose={handleClose}
+            aura={aura}
+            logout={logout}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

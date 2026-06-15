@@ -17,6 +17,7 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { isArtist, isManager } from "@/shared/auth/rbac";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
+import { CommandPaletteProvider } from "./command/CommandPaletteProvider";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
@@ -65,12 +66,13 @@ export const DashboardLayout = ({
 
   const outlet = useOutlet();
 
-  // Collapse a project hub's sub-routes (its tabs) into a single transition key, so
-  // switching tabs keeps the hub mounted — header, tab bar and loaded data persist
-  // instead of the whole shell exiting + re-animating. Every other route keeps its
-  // full-path key and transitions normally.
-  const projectHubMatch = /^(\/panel\/projects\/[^/]+)/.exec(location.pathname);
-  const transitionKey = projectHubMatch ? projectHubMatch[1] : location.pathname;
+  // Collapse hubs whose sub-routes are in-page tabs (project hub, settings) into a
+  // single transition key, so switching tabs keeps the page mounted — header, nav
+  // and loaded data persist instead of the whole shell exiting + re-animating.
+  // Every other route keeps its full-path key and transitions normally.
+  const collapsedHubMatch =
+    /^(\/panel\/projects\/[^/]+|\/panel\/settings)/.exec(location.pathname);
+  const transitionKey = collapsedHubMatch ? collapsedHubMatch[1] : location.pathname;
 
   useEffect(() => {
     document.body.classList.add("admin-mode");
@@ -162,12 +164,13 @@ export const DashboardLayout = ({
   ]);
 
   return (
+    <CommandPaletteProvider user={user}>
     <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
       <EtherealBackground />
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-28 sm:px-6 fine-pointer:pb-6 fine-pointer:pl-[calc(var(--spacing-sidebar)+1.5rem)] fine-pointer:pr-6 fine-pointer:pt-6"
+        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-28 transition-[padding] duration-300 ease-out sm:px-6 fine-pointer:pb-6 fine-pointer:pl-[calc(var(--sidebar-pad,var(--spacing-sidebar))+1.5rem)] fine-pointer:pr-6 fine-pointer:pt-6"
         id="main-content"
       >
         <div className="relative mx-auto flex h-full w-full max-w-[1500px] flex-col">
@@ -190,6 +193,7 @@ export const DashboardLayout = ({
       <ProjectInvitationToasts />
       <CustomAdminMessageToast />
     </div>
+    </CommandPaletteProvider>
   );
 };
 

@@ -9,7 +9,9 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ADMIN_MOBILE_TABS,
   ADMIN_NAV_GROUPS,
+  ARTIST_MOBILE_TABS,
   ARTIST_NAV_GROUPS,
 } from "@/shared/config/navigation/dashboard.config";
 import { isCrew, isManager } from "@/shared/auth/rbac";
@@ -43,6 +45,19 @@ export const useNavigationAura = (user: AuthUser | null) => {
     [navGroups],
   );
 
+  // Mobile bottom-tab-bar primaries + the route set they occupy, so the
+  // "More" sheet can drop them from its idle list (no duplication) while still
+  // searching across everything.
+  const mobileTabs = useMemo(
+    () => (isManagerUser ? ADMIN_MOBILE_TABS : ARTIST_MOBILE_TABS),
+    [isManagerUser],
+  );
+
+  const primaryRoutes = useMemo(
+    () => new Set(mobileTabs.map((tab) => tab.to)),
+    [mobileTabs],
+  );
+
   // 4. Identity Metadata Projections
   const userFullName = useMemo(() => {
     if (!user) return t("dashboard.layout.roles.guest", "Guest");
@@ -73,13 +88,18 @@ export const useNavigationAura = (user: AuthUser | null) => {
     );
   }, [user]);
 
+  const avatarUrl = user?.profile?.avatar_thumb_url ?? null;
+
   return {
     navGroups,
     pinnedItems,
     allItems,
+    mobileTabs,
+    primaryRoutes,
     userFullName,
     roleLabel,
     initials,
+    avatarUrl,
     isManagerUser,
     t,
   };

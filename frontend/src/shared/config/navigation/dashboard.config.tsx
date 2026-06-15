@@ -208,6 +208,66 @@ export const ARTIST_NAV_GROUPS: readonly NavGroup[] = [
 ] as const;
 
 // ----------------------------------------------------------------------
+// 2b. MOBILE PRIMARY TABS (bottom tab bar)
+// A deliberately small, role-scoped set of the most-used destinations,
+// with SHORT labels purpose-built for a five-slot bar (the sidebar's
+// descriptive labels are far too long for a tab). The fifth slot ("Więcej")
+// opens the full sheet, so the long tail never needs to live in the bar.
+// ----------------------------------------------------------------------
+
+export interface MobilePrimaryTab {
+  readonly to: string;
+  readonly icon: LucideIcon;
+  readonly labelKey: string;
+}
+
+export const ADMIN_MOBILE_TABS: readonly MobilePrimaryTab[] = [
+  {
+    to: "/panel",
+    icon: LayoutDashboard,
+    labelKey: t("dashboard.layout.mobile_tabs.dashboard"),
+  },
+  {
+    to: "/panel/projects",
+    icon: Briefcase,
+    labelKey: t("dashboard.layout.mobile_tabs.projects"),
+  },
+  {
+    to: "/panel/rehearsals",
+    icon: CalendarCheck,
+    labelKey: t("dashboard.layout.mobile_tabs.attendance"),
+  },
+  {
+    to: "/panel/messages",
+    icon: MessageCircle,
+    labelKey: t("dashboard.layout.mobile_tabs.messages"),
+  },
+] as const;
+
+export const ARTIST_MOBILE_TABS: readonly MobilePrimaryTab[] = [
+  {
+    to: "/panel",
+    icon: LayoutDashboard,
+    labelKey: t("dashboard.layout.mobile_tabs.dashboard"),
+  },
+  {
+    to: "/panel/schedule",
+    icon: Calendar,
+    labelKey: t("dashboard.layout.mobile_tabs.schedule"),
+  },
+  {
+    to: "/panel/materials",
+    icon: Headphones,
+    labelKey: t("dashboard.layout.mobile_tabs.materials"),
+  },
+  {
+    to: "/panel/messages",
+    icon: MessageCircle,
+    labelKey: t("dashboard.layout.mobile_tabs.messages"),
+  },
+] as const;
+
+// ----------------------------------------------------------------------
 // 3. DASHBOARD BENTO DIRECTIVES (Admin Home Matrix)
 // ----------------------------------------------------------------------
 
