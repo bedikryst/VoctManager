@@ -20,7 +20,8 @@ import {
 } from "../constants/locationCategories";
 import type { LocationDto } from "../types/logistics.dto";
 
-export type LocationsViewMode = "grid" | "atlas";
+export type LocationsMobileView = "map" | "list";
+export type LocationsRailTab = "locations" | "upcoming";
 
 export interface LocationsActiveFilter {
   id: string;
@@ -141,7 +142,9 @@ export const useLocationsData = () => {
   const [categoryFilter, setCategoryFilter] = useState<LocationCategory | "">(
     "",
   );
-  const [viewMode, setViewMode] = useState<LocationsViewMode>("grid");
+  const [mobileView, setMobileView] = useState<LocationsMobileView>("map");
+  const [railTab, setRailTab] = useState<LocationsRailTab>("locations");
+  const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
 
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
   const [editingLocation, setEditingLocation] = useState<LocationDto | null>(
@@ -166,6 +169,14 @@ export const useLocationsData = () => {
 
   const metrics = useMemo(() => computeMetrics(locations), [locations]);
 
+  const activeLocation = useMemo(
+    () =>
+      activeLocationId
+        ? (locations.find((loc) => String(loc.id) === activeLocationId) ?? null)
+        : null,
+    [locations, activeLocationId],
+  );
+
   const categoryStats = useMemo(() => {
     const stats: Partial<Record<LocationCategory, number>> = {};
     locations.forEach((loc) => {
@@ -188,6 +199,10 @@ export const useLocationsData = () => {
   const resetFilters = useCallback(() => {
     setSearchTerm("");
     setCategoryFilter("");
+  }, []);
+
+  const selectLocation = useCallback((id: string | null) => {
+    setActiveLocationId(id);
   }, []);
 
   const openPanel = useCallback((location: LocationDto | null = null) => {
@@ -250,8 +265,13 @@ export const useLocationsData = () => {
     categoryFilter,
     setCategoryFilter,
     resetFilters,
-    viewMode,
-    setViewMode,
+    mobileView,
+    setMobileView,
+    railTab,
+    setRailTab,
+    activeLocationId,
+    activeLocation,
+    selectLocation,
     isPanelOpen,
     editingLocation,
     openPanel,

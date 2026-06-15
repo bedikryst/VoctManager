@@ -8,6 +8,9 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
+import type { Project, Rehearsal } from "@/shared/types";
+import { projectKeys } from "@/features/projects/api/project.queries";
+import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { logisticsService } from "./logistics.service";
 import type {
   LocationCreateDto,
@@ -27,6 +30,25 @@ export const useLocations = () => {
     staleTime: 1000 * 60 * 5,
   });
 };
+
+/**
+ * Concerts + rehearsals consumed by the logistics atlas. Both reuse the shared
+ * cache keys the projects/rehearsals features already populate, so the command
+ * centre rides the existing cache instead of issuing duplicate requests.
+ */
+export const useLogisticsProjects = () =>
+  useSuspenseQuery<Project[]>({
+    queryKey: projectKeys.projects.all,
+    queryFn: logisticsService.getProjects,
+    staleTime: 1000 * 60 * 5,
+  });
+
+export const useLogisticsRehearsals = () =>
+  useSuspenseQuery<Rehearsal[]>({
+    queryKey: rehearsalKeys.rehearsals.all,
+    queryFn: logisticsService.getRehearsals,
+    staleTime: 1000 * 60 * 5,
+  });
 
 export const useCreateLocation = () => {
   const queryClient = useQueryClient();

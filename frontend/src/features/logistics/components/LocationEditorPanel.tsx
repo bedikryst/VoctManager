@@ -12,10 +12,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Compass, Globe2, MapPin, StickyNote, X } from "lucide-react";
+import { CheckCircle2, Compass, Globe2, MapPin, StickyNote, X } from "lucide-react";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
-import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -54,7 +54,7 @@ export function LocationEditorPanel({
   const [mounted, setMounted] = useState<boolean>(false);
 
   const { form, handleGooglePlaceSelect, isDirty, isSubmitting, onSubmit } =
-    useLocationForm(location, onClose);
+    useLocationForm(location, isOpen, onClose);
 
   useEffect(() => {
     setMounted(true);
@@ -155,7 +155,7 @@ export function LocationEditorPanel({
               </button>
             </header>
 
-            <div className="relative flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
+            <div className="relative flex-1 overflow-y-auto overflow-x-hidden px-6 py-6 md:px-8 md:py-8">
               <form
                 id={FORM_ID}
                 onSubmit={onSubmit}
@@ -331,26 +331,28 @@ export function LocationEditorPanel({
                     </Text>
                   </div>
                 </section>
+
+                <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto rounded-b-3xl border-t border-ethereal-ink/8 bg-ethereal-alabaster/90 p-4 shadow-[0_-10px_30px_rgba(22,20,18,0.05)] backdrop-blur-xl md:-mx-8 md:-mb-8 md:p-6">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={isSubmitting}
+                    isLoading={isSubmitting}
+                    fullWidth
+                    leftIcon={
+                      !isSubmitting ? (
+                        <CheckCircle2 size={16} aria-hidden="true" />
+                      ) : undefined
+                    }
+                  >
+                    {isNewEntry
+                      ? t("logistics.editor.submit", "Dodaj do bazy")
+                      : t("common.save_changes", "Zapisz zmiany")}
+                  </Button>
+                </div>
               </form>
             </div>
           </motion.div>
-
-          <EditorActionBar
-            isOpen={isOpen && isDirty}
-            description={t(
-              "logistics.editor.action_bar.description",
-              "Zatwierdź, aby zapisać lokację w globalnej bazie.",
-            )}
-            cancelText={t("common.cancel", "Anuluj")}
-            confirmText={
-              isNewEntry
-                ? t("logistics.editor.submit", "Dodaj do bazy")
-                : t("common.save_changes", "Zapisz zmiany")
-            }
-            onCancel={handleCloseRequest}
-            formId={FORM_ID}
-            isLoading={isSubmitting}
-          />
 
           <ConfirmModal
             isOpen={showExitConfirm}

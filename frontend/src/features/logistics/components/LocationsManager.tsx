@@ -1,9 +1,10 @@
 /**
  * @file LocationsManager.tsx
- * @description Master controller for the Logistics atlas. Keeps the page shell
- * declarative — every domain decision (filtering, metrics, archive lifecycle,
- * view-mode persistence) is delegated to the `useLocationsData` hook and
- * presentation is fully composed from feature-scoped components.
+ * @description Master controller for the Logistics command centre. The map is
+ * the protagonist (venues + upcoming concerts/rehearsals, fly-to + 3D), paired
+ * with a dense command rail (venues / upcoming feed). All domain logic stays in
+ * `useLocationsData` (filters, archive, selection) and `useLogisticsEvents`
+ * (the client-side join of schedule → coordinates); this file only composes.
  * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationsManager
  */
@@ -12,15 +13,25 @@ import React, { useDeferredValue, useEffect, useMemo } from "react";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Compass, Plus } from "lucide-react";
+import {
+  CalendarClock,
+  List,
+  MapPin,
+  Map as MapIcon,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
 
+import { cn } from "@/shared/lib/utils";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
-import { Badge } from "@/shared/ui/primitives/Badge";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Heading, Text } from "@/shared/ui/primitives/typography";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import {
   StaggeredBentoContainer,
@@ -29,26 +40,21 @@ import {
 
 import { getLocationCategoryOptions } from "../constants/locationCategories";
 import { useLocationsData } from "../hooks/useLocationsData";
-import type { LocationCategory } from "@/shared/types";
+import { useLogisticsEvents } from "../hooks/useLogisticsEvents";
 
-import { LocationCard } from "./LocationCard";
-import { LocationCategoryBadge } from "./LocationCategoryBadge";
+import { LocationDossier } from "./LocationDossier";
 import { LocationEditorPanel } from "./LocationEditorPanel";
+import { LocationRow } from "./LocationRow";
 import { LocationsAtlas } from "./LocationsAtlas";
-import { LocationsEmptyState } from "./LocationsEmptyState";
-import { LocationsFiltersPanel } from "./LocationsFiltersPanel";
-import { LocationsHeroPanel } from "./LocationsHeroPanel";
-import { LocationsMetricsGrid } from "./LocationsMetricsGrid";
-
-const formatPercentage = (value: number, total: number): number => {
-  if (total === 0) return 0;
-  return Math.round((value / total) * 100);
-};
+import { LogisticsEventRow } from "./LogisticsEventRow";
+import { LogisticsOverviewBar } from "./LogisticsOverviewBar";
+import { LogisticsTimezoneBand } from "./LogisticsTimezoneBand";
 
 export const LocationsManager = (): React.JSX.Element => {
   const { t } = useTranslation();
   const {
     isError,
+    locations,
     displayLocations,
     metrics,
     categoryStats,
@@ -59,8 +65,13 @@ export const LocationsManager = (): React.JSX.Element => {
     categoryFilter,
     setCategoryFilter,
     resetFilters,
-    viewMode,
-    setViewMode,
+    mobileView,
+    setMobileView,
+    railTab,
+    setRailTab,
+    activeLocationId,
+    activeLocation,
+    selectLocation,
     isPanelOpen,
     editingLocation,
     openPanel,
@@ -72,20 +83,15 @@ export const LocationsManager = (): React.JSX.Element => {
     isArchiving,
   } = useLocationsData();
 
-  const deferredLocations = useDeferredValue(displayLocations);
-  const normalizedSearchTerm = searchTerm.trim();
-  const geoCoverage = formatPercentage(
-    metrics.geoTagged,
-    metrics.totalLocations,
-  );
-  const notesCoverage = formatPercentage(
-    metrics.withNotes,
-    metrics.totalLocations,
-  );
+  const { upcomingEvents, venueActivity, timezoneClocks, scheduleMetrics } =
+    useLogisticsEvents(locations);
 
+  const deferredLocations = useDeferredValue(displayLocations);
   const categoryOptions = useMemo(() => getLocationCategoryOptions(t), [t]);
 
-  useBodyScrollLock(isPanelOpen || locationToArchive !== null);
+  useBodyScrollLock(
+    isPanelOpen || locationToArchive !== null || activeLocation !== null,
+  );
 
   useEffect(() => {
     if (!isError) return;
@@ -100,38 +106,57 @@ export const LocationsManager = (): React.JSX.Element => {
     );
   }, [isError, t]);
 
-  const groupedLocations = useMemo(() => {
-    const groups = new Map<LocationCategory, typeof deferredLocations>();
-    categoryOptions.forEach((option) => {
-      groups.set(option.value, []);
+  const filteredUpcoming = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return upcomingEvents.filter((event) => {
+      const matchesCategory = categoryFilter
+        ? event.location?.category === categoryFilter
+        : true;
+      const matchesSearch =
+        term.length === 0 ||
+        event.title.toLowerCase().includes(term) ||
+        (event.location?.name ?? "").toLowerCase().includes(term);
+      return matchesCategory && matchesSearch;
     });
-    deferredLocations.forEach((loc) => {
-      const bucket = groups.get(loc.category);
-      if (bucket) {
-        bucket.push(loc);
-      } else {
-        groups.set(loc.category, [loc]);
-      }
-    });
-    return Array.from(groups.entries()).filter(
-      ([, items]) => items.length > 0,
-    );
-  }, [deferredLocations, categoryOptions]);
+  }, [upcomingEvents, searchTerm, categoryFilter]);
 
-  const showCollection = deferredLocations.length > 0;
+  const handleEditFromDossier = (location: typeof activeLocation): void => {
+    if (!location) return;
+    selectLocation(null);
+    openPanel(location);
+  };
+
+  const handleArchiveFromDossier = (location: typeof activeLocation): void => {
+    if (!location) return;
+    selectLocation(null);
+    requestArchive(location);
+  };
+
+  const RAIL_TABS = [
+    {
+      id: "locations" as const,
+      label: t("logistics.rail.tab_locations", "Lokacje"),
+      count: deferredLocations.length,
+    },
+    {
+      id: "upcoming" as const,
+      label: t("logistics.rail.tab_upcoming", "Nadchodzące"),
+      count: filteredUpcoming.length,
+    },
+  ];
 
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-24 pt-6 sm:px-0">
-        <StaggeredBentoContainer className="!flex flex-col gap-6">
+      <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 px-4 pb-24 pt-6 sm:px-6">
+        <StaggeredBentoContainer className="!flex flex-col gap-5">
           <StaggeredBentoItem>
             <PageHeader
               size="standard"
               roleText={t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
-              title={t("logistics.dashboard.title", "Atlas")}
+              title={t("logistics.dashboard.title", "Centrum")}
               titleHighlight={t(
                 "logistics.dashboard.title_highlight",
-                "Lokacji",
+                "Logistyki",
               )}
               rightContent={
                 <Button
@@ -157,126 +182,265 @@ export const LocationsManager = (): React.JSX.Element => {
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
-            <LocationsHeroPanel
-              metrics={metrics}
-              geoCoverage={geoCoverage}
-              notesCoverage={notesCoverage}
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <LocationsMetricsGrid
-              metrics={metrics}
-              geoCoverage={geoCoverage}
-              notesCoverage={notesCoverage}
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <LocationsFiltersPanel
-              searchTerm={searchTerm}
-              categoryFilter={categoryFilter}
+            <LogisticsOverviewBar
               categoryOptions={categoryOptions}
               categoryStats={categoryStats}
-              totalCount={metrics.totalLocations}
-              visibleCount={deferredLocations.length}
-              hasActiveFilters={hasActiveFilters}
-              activeFilters={activeFilters}
-              viewMode={viewMode}
-              onSearchTermChange={setSearchTerm}
-              onCategoryFilterChange={setCategoryFilter}
-              onResetFilters={resetFilters}
-              onViewModeChange={setViewMode}
+              metrics={metrics}
+              scheduleMetrics={scheduleMetrics}
+              activeCategory={categoryFilter}
+              onSelectCategory={setCategoryFilter}
             />
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <SectionHeader
-                  title={t(
-                    "logistics.dashboard.collection_title",
-                    "Globalna baza",
-                  )}
-                  icon={<Compass size={14} aria-hidden="true" />}
-                  withFluidDivider={false}
-                  className="mb-0 pb-0"
-                />
-                <Text color="graphite" className="mt-2 max-w-2xl">
-                  {t(
-                    "logistics.dashboard.collection_desc",
-                    "Każda lokacja zna swoją strefę czasową i przechowuje wewnętrzne instrukcje dla zespołu produkcyjnego.",
-                  )}
-                </Text>
-              </div>
+            <LogisticsTimezoneBand clocks={timezoneClocks} />
+          </StaggeredBentoItem>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="glass">
-                  {t("logistics.dashboard.in_view", "{{count}} w widoku", {
-                    count: deferredLocations.length,
-                  })}
-                </Badge>
-                {hasActiveFilters && (
-                  <Badge variant="outline">
-                    {t(
-                      "logistics.dashboard.filtered_view",
-                      "Widok filtrowany",
+          {/* Mobile-only map ↔ list switch (both panes show side-by-side on lg) */}
+          <StaggeredBentoItem className="lg:hidden">
+            <div
+              role="group"
+              aria-label={t("logistics.rail.view_label", "Widok")}
+              className="grid grid-cols-2 gap-1 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1"
+            >
+              {[
+                { id: "map" as const, label: t("logistics.rail.view_map", "Mapa"), Icon: MapIcon },
+                { id: "list" as const, label: t("logistics.rail.view_list", "Lista"), Icon: List },
+              ].map(({ id, label, Icon }) => {
+                const isActive = mobileView === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setMobileView(id)}
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-xl py-2 text-sm font-semibold transition-colors",
+                      isActive
+                        ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
+                        : "text-ethereal-graphite hover:text-ethereal-ink",
                     )}
-                  </Badge>
-                )}
-              </div>
+                  >
+                    <Icon size={15} aria-hidden="true" />
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
-            {viewMode === "atlas" ? (
-              <LocationsAtlas
-                locations={deferredLocations}
-                categoryStats={categoryStats}
-              />
-            ) : showCollection ? (
-              <div className="flex flex-col gap-10">
-                {groupedLocations.map(([category, items]) => (
-                  <section key={category} className="flex flex-col gap-5">
-                    <header className="flex flex-wrap items-center gap-3 border-b border-ethereal-incense/15 pb-3">
-                      <LocationCategoryBadge category={category} plural />
-                      <Heading
-                        as="h3"
-                        size="xl"
-                        weight="medium"
-                        className="text-ethereal-ink"
-                      >
-                        {t(`logistics.categories_plural.${category.toLowerCase()}`, category.replace(/_/g, " "))}
-                      </Heading>
-                      <Badge variant="neutral">{items.length}</Badge>
-                    </header>
+            <div className="grid gap-5 lg:grid-cols-12">
+              {/* Map — the protagonist */}
+              <div
+                className={cn(
+                  "lg:col-span-7 lg:sticky lg:top-6 lg:self-start xl:col-span-8",
+                  mobileView === "list" && "hidden lg:block",
+                )}
+              >
+                <LocationsAtlas
+                  locations={deferredLocations}
+                  venueActivity={venueActivity}
+                  categoryStats={categoryStats}
+                  activeLocationId={activeLocationId}
+                  onSelectLocation={selectLocation}
+                />
+              </div>
 
-                    <StaggeredBentoContainer className="!grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                      <AnimatePresence mode="popLayout">
-                        {items.map((loc) => (
-                          <StaggeredBentoItem key={loc.id} className="w-full">
-                            <LocationCard
-                              location={loc}
+              {/* Command rail */}
+              <div
+                className={cn(
+                  "lg:col-span-5 lg:sticky lg:top-6 lg:self-start xl:col-span-4",
+                  mobileView === "map" && "hidden lg:block",
+                )}
+              >
+                <GlassCard
+                  variant="solid"
+                  padding="none"
+                  isHoverable={false}
+                  className="flex flex-col lg:max-h-[calc(100dvh-11rem)]"
+                >
+                  <div className="shrink-0 space-y-3 border-b border-ethereal-ink/6 p-4">
+                    <Input
+                      leftIcon={<Search size={16} />}
+                      type="search"
+                      aria-label={t("logistics.filters.search_label", "Wyszukiwanie")}
+                      placeholder={t(
+                        "logistics.filters.search_placeholder",
+                        "Szukaj po nazwie lub adresie...",
+                      )}
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                    />
+
+                    <div
+                      role="tablist"
+                      aria-label={t("logistics.rail.tabs_label", "Zawartość szyny")}
+                      className="grid grid-cols-2 gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1"
+                    >
+                      {RAIL_TABS.map((tab) => {
+                        const isActive = railTab === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            onClick={() => setRailTab(tab.id)}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold transition-colors",
+                              isActive
+                                ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
+                                : "text-ethereal-graphite hover:text-ethereal-ink",
+                            )}
+                          >
+                            {tab.id === "locations" ? (
+                              <MapPin size={14} aria-hidden="true" />
+                            ) : (
+                              <CalendarClock size={14} aria-hidden="true" />
+                            )}
+                            {tab.label}
+                            <span className="tabular-nums opacity-60">
+                              {tab.count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {hasActiveFilters && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {activeFilters.map((filter) => (
+                          <button
+                            key={filter.id}
+                            type="button"
+                            onClick={filter.clear}
+                            className="inline-flex items-center gap-1 rounded-full border border-ethereal-ink/10 bg-ethereal-alabaster px-2.5 py-1 text-xs text-ethereal-graphite transition-colors hover:border-ethereal-crimson/30 hover:text-ethereal-crimson"
+                          >
+                            {filter.label}
+                            <X size={11} aria-hidden="true" />
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={resetFilters}
+                          className="text-xs font-semibold text-ethereal-graphite/60 underline-offset-2 hover:text-ethereal-gold hover:underline"
+                        >
+                          {t("logistics.filters.clear_filters", "Wyczyść filtry")}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+                    {railTab === "locations" ? (
+                      deferredLocations.length > 0 ? (
+                        <AnimatePresence mode="popLayout" initial={false}>
+                          {deferredLocations.map((location) => (
+                            <LocationRow
+                              key={location.id}
+                              location={location}
+                              isActive={String(location.id) === activeLocationId}
+                              nextEvent={
+                                venueActivity.get(String(location.id))?.nextEvent ??
+                                null
+                              }
+                              upcomingCount={
+                                venueActivity.get(String(location.id))?.upcoming
+                                  .length ?? 0
+                              }
+                              onSelect={selectLocation}
                               onEdit={openPanel}
-                              onArchive={requestArchive}
                             />
-                          </StaggeredBentoItem>
+                          ))}
+                        </AnimatePresence>
+                      ) : (
+                        <StatePanel
+                          icon={<MapPin size={22} aria-hidden="true" />}
+                          title={t(
+                            "logistics.empty_state.title",
+                            "Brak lokacji w bieżącym widoku",
+                          )}
+                          description={
+                            hasActiveFilters
+                              ? t(
+                                  "logistics.empty_state.filters_blocked",
+                                  "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego atlasu.",
+                                )
+                              : t(
+                                  "logistics.empty_state.start_building",
+                                  "Rozpocznij budowę globalnego atlasu, dodając pierwszą salę, kościół lub hotel zespołu.",
+                                )
+                          }
+                          actions={
+                            hasActiveFilters ? (
+                              <Button variant="outline" onClick={resetFilters}>
+                                {t("logistics.filters.clear_filters", "Wyczyść filtry")}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="primary"
+                                onClick={() => openPanel(null)}
+                                leftIcon={<Plus size={16} aria-hidden="true" />}
+                              >
+                                {t("logistics.dashboard.add_location", "Dodaj lokację")}
+                              </Button>
+                            )
+                          }
+                        />
+                      )
+                    ) : filteredUpcoming.length > 0 ? (
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        {filteredUpcoming.map((event) => (
+                          <LogisticsEventRow
+                            key={event.id}
+                            event={event}
+                            isActive={
+                              event.locationId !== null &&
+                              event.locationId === activeLocationId
+                            }
+                            onSelect={selectLocation}
+                          />
                         ))}
                       </AnimatePresence>
-                    </StaggeredBentoContainer>
-                  </section>
-                ))}
+                    ) : (
+                      <StatePanel
+                        icon={<CalendarClock size={22} aria-hidden="true" />}
+                        title={t(
+                          "logistics.rail.no_upcoming_title",
+                          "Brak nadchodzących wydarzeń",
+                        )}
+                        description={t(
+                          "logistics.rail.no_upcoming_desc",
+                          "Koncerty i próby z przypisaną lokacją pojawią się tutaj automatycznie.",
+                        )}
+                      />
+                    )}
+                  </div>
+                </GlassCard>
+
+                <Eyebrow color="muted" className="mt-3 block px-1 text-center lg:hidden">
+                  {t(
+                    "logistics.rail.hint",
+                    "Wybierz lokację, aby zobaczyć szczegóły i wydarzenia.",
+                  )}
+                </Eyebrow>
               </div>
-            ) : (
-              <LocationsEmptyState
-                searchTerm={normalizedSearchTerm}
-                hasActiveFilters={hasActiveFilters}
-                onCreateLocation={() => openPanel(null)}
-                onResetFilters={resetFilters}
-              />
-            )}
+            </div>
           </StaggeredBentoItem>
         </StaggeredBentoContainer>
+
+        <LocationDossier
+          location={activeLocation}
+          activity={
+            activeLocationId
+              ? venueActivity.get(activeLocationId)
+              : undefined
+          }
+          onClose={() => selectLocation(null)}
+          onEdit={handleEditFromDossier}
+          onArchive={handleArchiveFromDossier}
+        />
 
         <LocationEditorPanel
           isOpen={isPanelOpen}
@@ -286,10 +450,7 @@ export const LocationsManager = (): React.JSX.Element => {
 
         <ConfirmModal
           isOpen={!!locationToArchive}
-          title={t(
-            "logistics.dashboard.archive_title",
-            "Zarchiwizować lokację?",
-          )}
+          title={t("logistics.dashboard.archive_title", "Zarchiwizować lokację?")}
           description={t(
             "logistics.dashboard.archive_desc",
             "Lokacja zniknie z głównej bazy operacyjnej, ale zostanie zachowana dla projektów historycznych.",

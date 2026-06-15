@@ -26,6 +26,7 @@ const toLocationFormValues = (location: LocationDto | null): LocationFormValues 
 
 export const useLocationForm = (
   location: LocationDto | null,
+  isOpen: boolean,
   onClose: () => void,
 ) => {
   const { t } = useTranslation();
@@ -37,11 +38,14 @@ export const useLocationForm = (
     defaultValues: toLocationFormValues(location),
   });
 
+  // Re-seed every time the panel opens so reopening always starts from the
+  // entity's saved state — closing discards any unsaved edits (and "New
+  // location" never inherits a previously edited record).
   useEffect(() => {
-    if (location) {
+    if (isOpen) {
       form.reset(toLocationFormValues(location));
     }
-  }, [location, form]);
+  }, [isOpen, location, form]);
 
   const handleGooglePlaceSelect = (placeData: Partial<LocationFormValues>) => {
     if (placeData.name)
