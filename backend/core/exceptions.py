@@ -23,6 +23,10 @@ class InvalidCredentialsException(CoreDomainException):
 class EmailAlreadyInUseException(CoreDomainException):
     pass
 
+class InvalidImageException(CoreDomainException):
+    """Raised when an uploaded avatar is missing, corrupt, or not a real image."""
+    pass
+
 
 def format_pydantic_validation_errors(exc: ValidationError) -> list[dict[str, str]]:
     """Returns client-safe Pydantic errors without echoing submitted values."""

@@ -16,12 +16,16 @@ from rest_framework.routers import DefaultRouter
 from archive.views import ComposerViewSet, PieceViewSet, PieceVoiceRequirementViewSet, ScoreEditionViewSet, TrackViewSet
 from core.views import (
     ActivateAccountView,
+    ActivationPreviewView,
+    AvatarView,
     CalendarFeedView,
     ChangeEmailRequestView,
     ChangePasswordView,
     CSRFCookieView,
     CurrentUserRetrieveUpdateView,
     ExportUserDataView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
     RequestAccountDeletionView,
     ResetCalendarTokenView,
 )
@@ -38,6 +42,7 @@ from roster.views import (
     ProjectPieceCastingViewSet,
     ProjectViewSet,
     RehearsalViewSet,
+    ScoreEditionDownloadView,
     get_voice_lines,
     get_voice_types,
 )
@@ -120,12 +125,16 @@ urlpatterns = [
 
     # --- User Settings & Profile Endpoints ---
     path('api/users/activate/', ActivateAccountView.as_view(), name='user-activate-account'),
+    path('api/users/activate/preview/', ActivationPreviewView.as_view(), name='user-activate-preview'),
+    path('api/users/password-reset/', PasswordResetRequestView.as_view(), name='user-password-reset'),
+    path('api/users/password-reset/confirm/', PasswordResetConfirmView.as_view(), name='user-password-reset-confirm'),
     path('api/users/me/', CurrentUserRetrieveUpdateView.as_view(), name='user-me'),
     path('api/users/me/change-password/', ChangePasswordView.as_view(), name='user-change-password'),
     path('api/users/me/change-email/', ChangeEmailRequestView.as_view(), name='user-change-email'),
     path('api/users/me/export-data/', ExportUserDataView.as_view(), name='user-export-data'),
     path('api/users/me/delete-account/', RequestAccountDeletionView.as_view(), name='user-delete-account'),
     path('api/users/me/reset-calendar-token/', ResetCalendarTokenView.as_view(), name='user-reset-calendar-token'),
+    path('api/users/me/avatar/', AvatarView.as_view(), name='user-avatar'),
 
     path("api/logistics/", include("logistics.urls")),
 
@@ -137,6 +146,15 @@ urlpatterns = [
 
     # --- Chorister Hub: Authenticated, role-gated file download ---
     path('api/documents/<uuid:pk>/download/', DocumentDownloadView.as_view(), name='document-download'),
+
+    # --- Materials: authenticated, project-scoped, status-aware score delivery ---
+    # The only chorister-facing path to a ScoreEdition PDF; access is re-checked
+    # per request and revoked once their projects featuring the piece all close.
+    path(
+        'api/materials/scores/<uuid:pk>/download/',
+        ScoreEditionDownloadView.as_view(),
+        name='score-edition-download',
+    ),
 ]
 
 # Serve user-uploaded media files (PDFs, Audio) via Django ONLY during local development.

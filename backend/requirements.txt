@@ -52,6 +52,9 @@ requests==2.31.0
 # File type detection (reads magic bytes, not file extension)
 python-magic==0.4.27
 
+# Image processing (avatars: validate, re-encode/strip EXIF, square crop, resize)
+Pillow==12.2.0
+
 pywebpush>=2.0.0
 
 # AI / Score Package Compiler

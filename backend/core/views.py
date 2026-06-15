@@ -12,18 +12,27 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from pydantic import ValidationError
 from rest_framework import generics, status, views
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import ScopedRateThrottle, UserRateThrottle
 
+from .avatar_service import AvatarService
 from .dtos import (
     UserAccountActivationDTO,
     UserAccountDeletionDTO,
     UserEmailChangeDTO,
     UserPasswordChangeDTO,
+    UserPasswordResetConfirmDTO,
+    UserPasswordResetRequestDTO,
     UserPreferencesUpdateDTO,
 )
-from .exceptions import EmailAlreadyInUseException, InvalidCredentialsException, format_pydantic_validation_errors
+from .exceptions import (
+    EmailAlreadyInUseException,
+    InvalidCredentialsException,
+    InvalidImageException,
+    format_pydantic_validation_errors,
+)
 from .ical_service import ICalGeneratorService
 from .models import UserProfile
 from .serializers import UserMeSerializer, UserProfileSerializer
@@ -82,6 +91,103 @@ class ActivateAccountView(views.APIView):
         except InvalidCredentialsException as e:
             return Response(
                 {"error_code": str(e), "message": "Activation link is invalid or expired."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+
+class ActivationPreviewView(views.APIView):
+    """
+    GET /api/users/activate/preview/?uid=..&token=..
+    Read-only: returns the invited member's display name for a valid activation
+    link so the activation screen can greet them. The signed token is required,
+    so it never leaks names to anyone without the invitation, and it is never
+    consumed (activation still works afterwards).
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = ()
+
+    @extend_schema(responses={200: dict, 400: dict, 403: dict})
+    def get(self, request, *args, **kwargs):
+        uidb64 = request.query_params.get("uid") or request.query_params.get("uidb64") or ""
+        token = request.query_params.get("token") or ""
+        if not uidb64 or not token:
+            return Response(
+                {"error_code": "invalid_activation_link", "message": "Missing activation parameters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            data = UserIdentityService.get_activation_invitee(uidb64=uidb64, token=token)
+            return Response(data, status=status.HTTP_200_OK)
+        except InvalidCredentialsException as e:
+            return Response(
+                {"error_code": str(e), "message": "Activation link is invalid or expired."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+
+class PasswordResetRequestView(views.APIView):
+    """
+    POST /api/users/password-reset/
+    Public, enumeration-safe entry point: always answers 200 with an identical
+    message whether or not an account exists, so it never reveals membership.
+    Scoped throttle guards against using it to bomb a victim's inbox.
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = ()
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "password_reset"
+
+    @extend_schema(responses={200: dict, 400: dict})
+    def post(self, request, *args, **kwargs):
+        try:
+            dto = UserPasswordResetRequestDTO(**request.data)
+        except ValidationError as e:
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        UserIdentityService.request_password_reset(dto.email)
+
+        # Enumeration-safe: identical response regardless of account existence.
+        return Response(
+            {"detail": "If an account exists for this address, a reset link has been sent."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmView(views.APIView):
+    """
+    POST /api/users/password-reset/confirm/
+    Public endpoint that finalizes a password reset from a signed link.
+    """
+    permission_classes = (AllowAny,)
+    authentication_classes = ()
+
+    @extend_schema(responses={200: dict, 400: dict, 403: dict})
+    def post(self, request, *args, **kwargs):
+        try:
+            dto = UserPasswordResetConfirmDTO(**request.data)
+            validate_password(dto.new_password)
+        except ValidationError as e:
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except DjangoValidationError as e:
+            return Response(
+                {"validation_errors": {"new_password": list(e.messages)}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = UserIdentityService.reset_password(
+                uidb64=dto.uidb64,
+                token=dto.token,
+                new_password=dto.new_password,
+            )
+            return Response(
+                {"detail": "Password reset successfully.", "email": user.email},
+                status=status.HTTP_200_OK,
+            )
+        except InvalidCredentialsException as e:
+            return Response(
+                {"error_code": str(e), "message": "Reset link is invalid or expired."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -258,6 +364,51 @@ class ResetCalendarTokenView(views.APIView):
     def post(self, request, *args, **kwargs):
         profile = UserPreferencesService.reset_calendar_token(request.user)
         return Response(UserProfileSerializer(profile).data, status=status.HTTP_200_OK)
+
+
+class AvatarView(views.APIView):
+    """
+    POST   /api/v1/users/me/avatar/  — upload + process a new profile picture.
+    DELETE /api/v1/users/me/avatar/  — remove the current picture.
+
+    Accepts multipart form data under the field name `avatar`. The image is
+    re-encoded server-side (see AvatarService); the raw upload is never stored.
+    Returns the refreshed UserProfile so the client gets the new render URLs.
+    """
+    permission_classes = (IsAuthenticated,)
+    parser_classes = (MultiPartParser, FormParser)
+    throttle_classes = [UserRateThrottle]
+
+    def _profile_response(self, profile: UserProfile, request) -> Response:
+        return Response(
+            UserProfileSerializer(profile, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(request=None, responses={200: UserProfileSerializer, 400: dict})
+    def post(self, request, *args, **kwargs):
+        upload = request.FILES.get("avatar")
+        if upload is None:
+            return Response(
+                {"error_code": "avatar_missing", "message": "No image file provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile = get_object_or_404(UserProfile, user=request.user)
+        try:
+            profile = AvatarService.set_avatar(profile, upload)
+        except InvalidImageException as exc:
+            return Response(
+                {"error_code": str(exc), "message": "The uploaded file is not a valid image."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return self._profile_response(profile, request)
+
+    @extend_schema(responses={200: UserProfileSerializer})
+    def delete(self, request, *args, **kwargs):
+        profile = get_object_or_404(UserProfile, user=request.user)
+        profile = AvatarService.clear_avatar(profile)
+        return self._profile_response(profile, request)
 
 
 class CalendarFeedView(views.APIView):

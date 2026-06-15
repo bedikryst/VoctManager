@@ -25,22 +25,42 @@ class UserProfileSerializer(serializers.ModelSerializer):
     is_artist = serializers.BooleanField(read_only=True)
     is_crew = serializers.BooleanField(read_only=True)
 
+    # Profile picture renders (absolute URLs; null when no avatar is set)
+    avatar_url = serializers.SerializerMethodField()
+    avatar_thumb_url = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
         fields = (
             # RBAC Identity
             'role', 'is_manager', 'is_artist', 'is_crew',
-            
+
+            # Presence
+            'avatar_url', 'avatar_thumb_url',
+
             # Preferences
             'phone_number', 'language', 'timezone',
-            'dietary_preference', 'dietary_notes', 
-            'clothing_size', 'shoe_size', 'height_cm', 
-            
+            'dietary_preference', 'dietary_notes',
+            'clothing_size', 'shoe_size', 'height_cm',
+
             # Integrations
             'calendar_token'
         )
         # Critical Security: Users cannot escalate their own role or spoof tokens
         read_only_fields = ('role', 'calendar_token')
+
+    def _absolute_media_url(self, field) -> str | None:
+        if not field:
+            return None
+        url = field.url
+        request = self.context.get('request')
+        return request.build_absolute_uri(url) if request else url
+
+    def get_avatar_url(self, obj: UserProfile) -> str | None:
+        return self._absolute_media_url(obj.avatar)
+
+    def get_avatar_thumb_url(self, obj: UserProfile) -> str | None:
+        return self._absolute_media_url(obj.avatar_thumb)
 
     def validate_timezone(self, value: str) -> str:
         """

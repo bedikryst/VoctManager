@@ -13,6 +13,15 @@ from django.utils.translation import gettext_lazy as _
 from .constants import AppRole, ClothingSizeChoices, DietaryChoices
 
 
+def avatar_upload_path(instance: "UserProfile", filename: str) -> str:
+    """
+    Store avatars under an unguessable per-file UUID name (extension dropped —
+    the image is always re-encoded to WebP by the processing service), bucketed
+    by the profile id so a user's renders live together and are easy to purge.
+    """
+    return f"avatars/{instance.id}/{uuid.uuid4().hex}.webp"
+
+
 class SoftDeleteQuerySet(models.QuerySet):
     """
     Enterprise safeguard preventing accidental bulk hard-deletions.
@@ -93,10 +102,24 @@ class UserProfile(EnterpriseBaseModel):
         help_text=_("The core authentication user linked to this profile. Cascades on hard delete.")
     )
     
+    # Identity / Presence
+    avatar = models.ImageField(
+        upload_to=avatar_upload_path,
+        blank=True,
+        null=True,
+        help_text=_("Full-size (square, 512px) profile picture, re-encoded to WebP.")
+    )
+    avatar_thumb = models.ImageField(
+        upload_to=avatar_upload_path,
+        blank=True,
+        null=True,
+        help_text=_("Small (96px) thumbnail derived from the avatar for dense lists.")
+    )
+
     # Contact Info
     phone_number = models.CharField(
-        max_length=32, 
-        blank=True, 
+        max_length=32,
+        blank=True,
         help_text=_("International format phone number.")
     )
     

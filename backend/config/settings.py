@@ -188,6 +188,10 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/minute',
         'user': '300/minute',
+        # Public password-reset requests send one e-mail to an arbitrary inbox
+        # per hit, so the abuse surface is bombing a victim. Capped tight, but
+        # loose enough for a legitimate retry or shared NAT.
+        'password_reset': '5/hour',
         # Scoped limits for the public, unauthenticated payments endpoints.
         # 'donation_initiate' both writes a row and calls the gateway per hit;
         # kept generous enough for shared NAT (e.g. concert-venue Wi-Fi).
@@ -263,6 +267,13 @@ ANYMAIL = {
 }
 EMAIL_BACKEND = "anymail.backends.resend.EmailBackend" if env("RESEND_API_KEY", default="") else "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="VoctManager <noreply@voctensemble.com>")
+
+# Public frontend origin (no trailing slash, no /panel) — used to resolve the
+# SPA-relative deep-links produced by the message layer into absolute URLs for
+# email clients. SITE_URL is the panel base (origin + /panel) consumed by the
+# messaging service and the legacy email CTAs.
+FRONTEND_URL = env("FRONTEND_URL", default="https://voctensemble.com").rstrip("/")
+SITE_URL = env("SITE_URL", default=f"{FRONTEND_URL}/panel")
 
 # Inbox pinged when a visitor submits the public Mecenat (patronage) form. The
 # notification is deliberately content-free — no lead PII leaves the EU database —

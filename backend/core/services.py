@@ -109,6 +109,30 @@ class UserIdentityService:
             return user
 
     @staticmethod
+    def get_activation_invitee(uidb64: str, token: str) -> dict[str, str]:
+        """
+        Read-only lookup of the invited member's display name for a still-valid
+        activation link, so the activation screen can greet them by name before
+        they set a password. Requires the signed token (which the invitee
+        already holds), never consumes it, and mutates nothing.
+        """
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise InvalidCredentialsException("invalid_activation_link")
+
+        if not default_token_generator.check_token(user, token):
+            raise InvalidCredentialsException("expired_activation_link")
+
+        artist_profile = getattr(user, "artist_profile", None)
+        vocative = getattr(artist_profile, "first_name_vocative", "") if artist_profile else ""
+        return {
+            "first_name": getattr(user, "first_name", "") or "",
+            "first_name_vocative": vocative or "",
+        }
+
+    @staticmethod
     def activate_account_and_set_password(uidb64: str, token: str, new_password: str) -> User:
         """
         Activates the user account and explicitly dispatches a welcome email.
@@ -158,6 +182,101 @@ class UserIdentityService:
 
             logger.info(f"Account successfully activated and welcome email queued for user: {user.email}")
             return user
+
+    @staticmethod
+    def request_password_reset(email: str) -> None:
+        """
+        Enumeration-safe public reset request. If an ACTIVE account exists for
+        the e-mail, queue a signed reset link; otherwise do nothing. The caller
+        must respond identically regardless, so existence is never revealed.
+
+        Invited-but-not-yet-activated accounts (is_active=False) are skipped on
+        purpose — their path is activation, not reset.
+        """
+        user = (
+            User.objects.select_related("profile")
+            .filter(email__iexact=email, is_active=True)
+            .first()
+        )
+        if user is None:
+            logger.info("Password reset requested for an unknown/inactive e-mail (no-op).")
+            return
+
+        payload = UserIdentityService.generate_activation_token_payload(user)
+        reset_link = (
+            f"{settings.CORS_ALLOWED_ORIGINS[0]}/reset-password"
+            f"?uid={payload['uidb64']}&token={payload['token']}"
+        )
+
+        fallback_lang = user.profile.language if hasattr(user, "profile") else "en"
+        artist_profile = getattr(user, "artist_profile", None)
+        raw_vocative = getattr(artist_profile, "first_name_vocative", "") if artist_profile else ""
+        base_name = getattr(user, "first_name", "")
+        vocative = (raw_vocative or base_name) if fallback_lang == "pl" else base_name
+
+        with override(fallback_lang):
+            translated_subject = str(_("Reset your VoctManager password"))
+
+        # No DB write here, so dispatch directly (no transaction to commit).
+        send_transactional_email_task.delay(
+            recipient_email=user.email,
+            subject=translated_subject,
+            template_name="password_reset",
+            context={
+                "first_name": base_name,
+                "first_name_vocative": vocative,
+                "reset_link": reset_link,
+            },
+            fallback_language=fallback_lang,
+            email_type=EmailType.CRITICAL_SECURITY,
+        )
+        logger.info(f"Password reset link queued for user: {user.email}")
+
+    @staticmethod
+    def reset_password(uidb64: str, token: str, new_password: str) -> User:
+        """
+        Finalizes a password reset from a signed link. Mirrors account
+        activation, but the account is already active and the password is
+        merely rotated. The signed token (which hashes the current password)
+        is single-use: setting the new password invalidates it.
+        """
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.select_related("profile").get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            logger.warning(f"Failed password reset attempt with invalid UID: {uidb64}")
+            raise InvalidCredentialsException("invalid_reset_link")
+
+        if not user.is_active:
+            # An invited-but-not-activated account must activate, not reset.
+            logger.warning(f"Password reset attempted on an inactive account: {user.email}")
+            raise InvalidCredentialsException("invalid_reset_link")
+
+        if not default_token_generator.check_token(user, token):
+            logger.warning(f"Failed password reset attempt with expired/invalid token for user {user.email}")
+            raise InvalidCredentialsException("expired_reset_link")
+
+        with transaction.atomic():
+            user.set_password(new_password)
+            user.save(update_fields=["password"])
+
+            fallback_lang = user.profile.language if hasattr(user, "profile") else "en"
+            with override(fallback_lang):
+                translated_subject = str(_("Security Alert: Password Changed"))
+
+            transaction.on_commit(
+                lambda: send_transactional_email_task.delay(
+                    recipient_email=user.email,
+                    subject=translated_subject,
+                    template_name="password_changed",
+                    context={"user_email": user.email},
+                    fallback_language=fallback_lang,
+                    email_type=EmailType.CRITICAL_SECURITY,
+                )
+            )
+
+        logger.info(f"Password successfully reset and security alert queued for user: {user.email}")
+        return user
 
     @staticmethod
     def change_user_password(user: User, dto: UserPasswordChangeDTO) -> None:

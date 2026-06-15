@@ -126,6 +126,19 @@ class UserAccountActivationDTO(EnterpriseBaseDTO):
     new_password: str = Field(..., min_length=8)
 
 
+class UserPasswordResetRequestDTO(EnterpriseBaseDTO):
+    """Public, enumeration-safe reset request — only an e-mail is accepted."""
+    # EmailStr automatically validates regex and domain structures
+    email: EmailStr
+
+
+class UserPasswordResetConfirmDTO(EnterpriseBaseDTO):
+    """Finalizes a reset from a signed link. Mirrors activation's contract."""
+    uidb64: str = Field(..., min_length=1)
+    token: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8)
+
+
 class UserEmailChangeDTO(EnterpriseBaseDTO):
     # EmailStr automatically validates regex and domain structures
     new_email: EmailStr
