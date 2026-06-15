@@ -132,3 +132,14 @@ export const getCrewSpecialtyOption = (
     options[options.length - 1]
   );
 };
+
+/** Canonical specialty ordering (SOUND → … → OTHER), used by the balance bar and "by specialty" sort. */
+export const CREW_SPECIALTY_ORDER: readonly CollaboratorSpecialty[] =
+  CREW_SPECIALTY_DEFINITIONS.map((definition) => definition.value);
+
+export const getCrewSpecialtyOrder = (
+  value: CollaboratorSpecialty | string | null | undefined,
+): number => {
+  const index = CREW_SPECIALTY_ORDER.indexOf(value as CollaboratorSpecialty);
+  return index === -1 ? CREW_SPECIALTY_ORDER.length : index;
+};

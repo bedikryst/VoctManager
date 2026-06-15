@@ -55,7 +55,7 @@ export function CrewEditorPanel({
     isFormDirty,
     isSubmitting,
     handleSubmit,
-  } = useCrewForm(person, initialSearchContext, onClose);
+  } = useCrewForm(person, initialSearchContext, onClose, isOpen);
 
   useEffect(() => {
     setMounted(true);

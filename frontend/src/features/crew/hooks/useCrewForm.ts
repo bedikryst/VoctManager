@@ -4,7 +4,7 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { Collaborator } from "@/shared/types";
@@ -15,6 +15,7 @@ export const useCrewForm = (
   person: Collaborator | null,
   initialSearchContext: string,
   onClose: () => void,
+  isOpen: boolean,
 ) => {
   const { t } = useTranslation();
   const saveMutation = useSaveCrewMember();
@@ -42,6 +43,15 @@ export const useCrewForm = (
   }, [person, initialSearchContext]);
 
   const [formData, setFormData] = useState<CrewFormData>(initialFormData);
+
+  // Re-seed every time the panel opens so reopening always starts from the
+  // saved record — closing discards unsaved edits (and "New person" never
+  // inherits a previously edited collaborator).
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(initialFormData);
+    }
+  }, [isOpen, initialFormData]);
 
   const isFormDirty = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(initialFormData);

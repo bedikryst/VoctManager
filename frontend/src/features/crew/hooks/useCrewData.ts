@@ -18,8 +18,24 @@ import { useCrewMembers, useDeleteCrewMember } from "../api/crew.queries";
 import {
   getCrewSpecialtyOption,
   getCrewSpecialtyOptions,
+  getCrewSpecialtyOrder,
 } from "../constants/crewSpecialties";
 import type { CrewContactCompleteness } from "../types/crew.dto";
+
+export type CrewSort = "name" | "specialty" | "company";
+export type CrewView = "grid" | "list";
+
+const VIEW_STORAGE_KEY = "voct:crew:view";
+
+const readStoredView = (): CrewView => {
+  if (typeof window === "undefined") return "grid";
+  try {
+    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    return stored === "list" || stored === "grid" ? stored : "grid";
+  } catch {
+    return "grid";
+  }
+};
 
 export interface CrewActiveFilter {
   id: string;
@@ -97,6 +113,17 @@ export const useCrewData = () => {
   const [companyFilter, setCompanyFilter] = useState<string>("");
   const [contactFilter, setContactFilter] =
     useState<CrewContactCompleteness>("ALL");
+  const [sortBy, setSortBy] = useState<CrewSort>("name");
+  const [viewMode, setViewModeState] = useState<CrewView>(readStoredView);
+
+  const setViewMode = useCallback((next: CrewView) => {
+    setViewModeState(next);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      /* storage unavailable — keep in-memory value */
+    }
+  }, []);
 
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
   const [editingPerson, setEditingPerson] = useState<Collaborator | null>(null);
@@ -125,7 +152,10 @@ export const useCrewData = () => {
   );
 
   const displayCrew = useMemo(() => {
-    return crew.filter((person) => {
+    const sortName = (person: Collaborator) =>
+      `${person.last_name} ${person.first_name}`.trim().toLowerCase();
+
+    const filtered = crew.filter((person) => {
       const haystack =
         `${person.first_name} ${person.last_name} ${person.company_name ?? ""} ${person.email ?? ""}`.toLowerCase();
       const matchesSearch =
@@ -143,13 +173,47 @@ export const useCrewData = () => {
         matchesSearch && matchesSpecialty && matchesCompany && matchesContact
       );
     });
+
+    return filtered.sort((a, b) => {
+      if (sortBy === "specialty") {
+        const bySpecialty =
+          getCrewSpecialtyOrder(a.specialty) - getCrewSpecialtyOrder(b.specialty);
+        if (bySpecialty !== 0) return bySpecialty;
+      } else if (sortBy === "company") {
+        const byCompany = (a.company_name?.trim() || "￿").localeCompare(
+          b.company_name?.trim() || "￿",
+          undefined,
+          { sensitivity: "base" },
+        );
+        if (byCompany !== 0) return byCompany;
+      }
+      return sortName(a).localeCompare(sortName(b), undefined, {
+        sensitivity: "base",
+      });
+    });
   }, [
     crew,
     normalizedSearchTerm,
     specialtyFilter,
     companyFilter,
     contactFilter,
+    sortBy,
   ]);
+
+  const specialtyCounts = useMemo(() => {
+    const counts: Record<CollaboratorSpecialty, number> = {
+      SOUND: 0,
+      LIGHT: 0,
+      VISUALS: 0,
+      INSTRUMENT: 0,
+      LOGISTICS: 0,
+      OTHER: 0,
+    };
+    for (const person of crew) {
+      if (person.specialty in counts) counts[person.specialty] += 1;
+    }
+    return counts;
+  }, [crew]);
 
   const metrics: CrewMetrics = useMemo(() => {
     const specialtyCounts = new Map<CollaboratorSpecialty, number>();
@@ -351,6 +415,7 @@ export const useCrewData = () => {
     // Derived list & metadata
     displayCrew,
     metrics,
+    specialtyCounts,
     availableCompanies,
     specialtyOptions,
     activeFilters,
@@ -366,6 +431,10 @@ export const useCrewData = () => {
     setCompanyFilter,
     contactFilter,
     setContactFilter,
+    sortBy,
+    setSortBy,
+    viewMode,
+    setViewMode,
     resetFilters,
 
     // Editor lifecycle

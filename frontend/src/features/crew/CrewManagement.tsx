@@ -1,26 +1,24 @@
 /**
  * @file CrewManagement.tsx
- * @description Master controller for the External Collaborators dashboard.
- * Keeps the page shell declarative — every domain decision (filtering, metrics,
- * deletion lifecycle) is delegated to the `useCrewData` hook and presentation
- * is fully composed from feature-scoped components.
+ * @description External-collaborators roster. Specialty-balance strip (read +
+ * filter) → search / contact / sort / density toolbar → grid or list of
+ * click-to-open cards. Mirrors the artists roster; collaborators have no
+ * accounts, so there is no dossier or bulk lifecycle — editing is the primary
+ * open action.
  * @architecture Enterprise SaaS 2026
  * @module features/crew/CrewManagement
  */
 
 import React, { useDeferredValue, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Plus, Wrench } from "lucide-react";
+import { Plus, RotateCcw, X } from "lucide-react";
 
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
-import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Text } from "@/shared/ui/primitives/typography";
+import { Caption } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import {
@@ -29,17 +27,15 @@ import {
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
 import { CrewCard } from "./components/CrewCard";
+import { CrewRow } from "./components/CrewRow";
 import { CrewEditorPanel } from "./components/CrewEditorPanel";
 import { CrewEmptyState } from "./components/CrewEmptyState";
-import { CrewFiltersPanel } from "./components/CrewFiltersPanel";
-import { CrewHeroPanel } from "./components/CrewHeroPanel";
-import { CrewMetricsGrid } from "./components/CrewMetricsGrid";
+import { CrewSpecialtyBar } from "./components/CrewSpecialtyBar";
+import { CrewToolbar } from "./components/CrewToolbar";
 import { useCrewData } from "./hooks/useCrewData";
 
-const formatCoverage = (value: number, total: number): number => {
-  if (total === 0) return 0;
-  return Math.round((value / total) * 100);
-};
+const formatCoverage = (value: number, total: number): number =>
+  total === 0 ? 0 : Math.round((value / total) * 100);
 
 export default function CrewManagement(): React.JSX.Element {
   const { t } = useTranslation();
@@ -49,11 +45,11 @@ export default function CrewManagement(): React.JSX.Element {
     crew,
     displayCrew,
     metrics,
+    specialtyCounts,
     availableCompanies,
     specialtyOptions,
     activeFilters,
     hasActiveFilters,
-    activeFilterCount,
     searchTerm,
     setSearchTerm,
     specialtyFilter,
@@ -62,6 +58,10 @@ export default function CrewManagement(): React.JSX.Element {
     setCompanyFilter,
     contactFilter,
     setContactFilter,
+    sortBy,
+    setSortBy,
+    viewMode,
+    setViewMode,
     resetFilters,
     isPanelOpen,
     editingPerson,
@@ -98,17 +98,14 @@ export default function CrewManagement(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-24 pt-6 sm:px-0">
-        <StaggeredBentoContainer className="flex flex-col gap-6">
+      <div className="relative mx-auto flex max-w-6xl flex-col gap-5 px-4 pb-24 pt-6 sm:px-0">
+        <StaggeredBentoContainer className="flex flex-col gap-5">
           <StaggeredBentoItem>
             <PageHeader
               size="standard"
               roleText={t("crew.dashboard.subtitle", "Logistyka")}
               title={t("crew.dashboard.title", "Ekipa")}
-              titleHighlight={t(
-                "crew.dashboard.title_highlight",
-                "Techniczna",
-              )}
+              titleHighlight={t("crew.dashboard.title_highlight", "Techniczna")}
               rightContent={
                 <Button
                   variant="primary"
@@ -121,104 +118,96 @@ export default function CrewManagement(): React.JSX.Element {
             />
           </StaggeredBentoItem>
 
-          <StaggeredBentoItem className="md:hidden">
-            <Button
-              variant="primary"
-              fullWidth
-              onClick={() => openPanel(null)}
-              leftIcon={<Plus size={16} aria-hidden="true" />}
-            >
-              {t("crew.dashboard.add_btn", "Dodaj osobę")}
-            </Button>
-          </StaggeredBentoItem>
-
           <StaggeredBentoItem>
-            <CrewHeroPanel
-              metrics={metrics}
-              emailCoverage={emailCoverage}
-              phoneCoverage={phoneCoverage}
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <CrewMetricsGrid
-              metrics={metrics}
-              emailCoverage={emailCoverage}
-              phoneCoverage={phoneCoverage}
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <CrewFiltersPanel
-              searchTerm={searchTerm}
-              specialtyFilter={specialtyFilter}
-              companyFilter={companyFilter}
-              contactFilter={contactFilter}
+            <CrewSpecialtyBar
               specialtyOptions={specialtyOptions}
-              availableCompanies={availableCompanies}
-              hasActiveFilters={hasActiveFilters}
-              activeFilterCount={activeFilterCount}
-              activeFilters={activeFilters}
-              visibleCount={deferredCrew.length}
-              totalCount={metrics.totalPeople}
-              onSearchTermChange={setSearchTerm}
-              onSpecialtyFilterChange={setSpecialtyFilter}
-              onCompanyFilterChange={setCompanyFilter}
-              onContactFilterChange={setContactFilter}
-              onResetFilters={resetFilters}
+              counts={specialtyCounts}
+              totalPeople={metrics.totalPeople}
+              uniqueCompanies={metrics.uniqueCompanies}
+              emailCoverage={emailCoverage}
+              phoneCoverage={phoneCoverage}
+              activeSpecialty={specialtyFilter}
+              onSelectSpecialty={setSpecialtyFilter}
             />
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <SectionHeader
-                  title={t(
-                    "crew.dashboard.collection_title",
-                    "Zespół produkcyjny",
-                  )}
-                  icon={<Wrench size={14} aria-hidden="true" />}
-                  withFluidDivider={false}
-                  className="mb-0 pb-0"
-                />
-                <Text color="graphite" className="mt-2 max-w-2xl">
-                  {t(
-                    "crew.dashboard.collection_desc",
-                    "Każda karta otwiera szybką edycję profilu, dane firmy i kompletny kontakt operacyjny.",
-                  )}
-                </Text>
-              </div>
+            <CrewToolbar
+              searchTerm={searchTerm}
+              onSearch={setSearchTerm}
+              companyFilter={companyFilter}
+              onCompanyFilter={setCompanyFilter}
+              availableCompanies={availableCompanies}
+              contactFilter={contactFilter}
+              onContactFilter={setContactFilter}
+              sortBy={sortBy}
+              onSort={setSortBy}
+              viewMode={viewMode}
+              onViewMode={setViewMode}
+            />
+          </StaggeredBentoItem>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="glass">
-                  {t("crew.dashboard.in_view", "{{count}} w widoku", {
-                    count: deferredCrew.length,
-                  })}
-                </Badge>
-                {hasActiveFilters && (
-                  <Badge variant="outline">
-                    {t("crew.dashboard.filtered_view", "Widok filtrowany")}
-                  </Badge>
-                )}
-              </div>
+          <StaggeredBentoItem>
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              <Caption color="muted" className="tabular-nums">
+                {t("crew.filters.summary", {
+                  visible: deferredCrew.length,
+                  total: metrics.totalPeople,
+                  defaultValue: "{{visible}} z {{total}} osób w widoku.",
+                })}
+              </Caption>
+
+              {hasActiveFilters && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {activeFilters.map((token) => (
+                    <button
+                      key={token.id}
+                      type="button"
+                      onClick={token.clear}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-ethereal-ink/10 bg-ethereal-alabaster/70 px-3 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:border-ethereal-gold/35 hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/30"
+                    >
+                      <span>{token.label}</span>
+                      <X size={12} aria-hidden="true" />
+                    </button>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetFilters}
+                    leftIcon={<RotateCcw size={13} aria-hidden="true" />}
+                  >
+                    {t("crew.filters.clear_filters", "Wyczyść filtry")}
+                  </Button>
+                </div>
+              )}
             </div>
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
             {deferredCrew.length > 0 ? (
-              <StaggeredBentoContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                <AnimatePresence mode="popLayout">
+              viewMode === "grid" ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {deferredCrew.map((person) => (
-                    <StaggeredBentoItem key={person.id}>
-                      <CrewCard
-                        person={person}
-                        onEdit={openPanel}
-                        onDelete={requestDelete}
-                      />
-                    </StaggeredBentoItem>
+                    <CrewCard
+                      key={person.id}
+                      person={person}
+                      onOpen={openPanel}
+                      onDelete={requestDelete}
+                    />
                   ))}
-                </AnimatePresence>
-              </StaggeredBentoContainer>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {deferredCrew.map((person) => (
+                    <CrewRow
+                      key={person.id}
+                      person={person}
+                      onOpen={openPanel}
+                      onDelete={requestDelete}
+                    />
+                  ))}
+                </div>
+              )
             ) : (
               <CrewEmptyState
                 searchTerm={normalizedSearchTerm}
