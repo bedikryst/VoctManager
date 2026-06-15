@@ -7,9 +7,9 @@ import { cn } from '@/shared/lib/utils';
 import type { VocalLineEntry } from '../types/chorister-hub.dto';
 
 const VOICE_LINE_ACCENT: Record<string, string> = {
-  S1: 'bg-ethereal-amethyst/15 border-ethereal-amethyst/30 text-ethereal-amethyst',
-  S2: 'bg-ethereal-amethyst/10 border-ethereal-amethyst/20 text-ethereal-amethyst',
-  S3: 'bg-ethereal-amethyst/8 border-ethereal-amethyst/15 text-ethereal-amethyst',
+  S1: 'bg-ethereal-incense/15 border-ethereal-incense/30 text-ethereal-incense',
+  S2: 'bg-ethereal-incense/10 border-ethereal-incense/20 text-ethereal-incense',
+  S3: 'bg-ethereal-incense/8 border-ethereal-incense/15 text-ethereal-incense',
   A1: 'bg-ethereal-sage/15 border-ethereal-sage/30 text-ethereal-sage',
   A2: 'bg-ethereal-sage/10 border-ethereal-sage/20 text-ethereal-sage',
   A3: 'bg-ethereal-sage/8 border-ethereal-sage/15 text-ethereal-sage',

@@ -1,13 +1,16 @@
 // chorister-hub/ChoristerHubPage.tsx
+// "Moja Kartoteka" — the chorister's long-horizon surface: artist passport
+// (repertoire, seasons, voice lines) plus the institutional knowledge base.
 // Default export required for React.lazy route loading.
 import React, { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Library, UserRound } from 'lucide-react';
 
 import { useAuth } from '@/app/providers/AuthProvider';
 import { PageHeader } from '@/shared/ui/composites/PageHeader';
+import { SegmentedTabs } from '@/shared/ui/composites/SegmentedTabs';
 import { PageTransition } from '@/shared/ui/kinematics/PageTransition';
 import { EtherealLoader } from '@/shared/ui/kinematics/EtherealLoader';
-import { Button } from '@/shared/ui/primitives/Button';
 import {
   StaggeredBentoContainer,
   StaggeredBentoItem,
@@ -22,10 +25,25 @@ import { useChoristerHub } from './hooks/useChoristerHub';
 
 type Tab = 'identity' | 'knowledge';
 
+const TABS = [
+  {
+    id: 'identity' as const,
+    labelKey: 'chorister_hub.tabs.identity',
+    fallback: 'Kartoteka Artysty',
+    Icon: UserRound,
+  },
+  {
+    id: 'knowledge' as const,
+    labelKey: 'chorister_hub.tabs.knowledge',
+    fallback: 'Dokumenty',
+    Icon: Library,
+  },
+];
+
 export default function ChoristerHubPage(): React.JSX.Element {
   const { t } = useTranslation();
   const { user } = useAuth();
-  
+
   const [activeTab, setActiveTab] = useState<Tab>('identity');
 
   const {
@@ -53,30 +71,26 @@ export default function ChoristerHubPage(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="max-w-6xl mx-auto px-4 md:px-6 pb-24 cursor-default space-y-8">
+      <div className="mx-auto max-w-5xl cursor-default space-y-6 px-4 pb-24 md:px-6">
         <div className="pt-6">
           <PageHeader
             size="standard"
-            roleText={t('chorister_hub.page.badge', 'Knowledge & Identity')}
-            title={t('chorister_hub.page.title', 'Chorister')}
-            titleHighlight={t('chorister_hub.page.title_highlight', 'Hub.')}
+            roleText={t('chorister_hub.page.badge', 'Historia i Wiedza')}
+            title={t('chorister_hub.page.title', 'Moja')}
+            titleHighlight={t('chorister_hub.page.title_highlight', 'Kartoteka.')}
           />
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant={activeTab === 'identity' ? 'primary' : 'outline'}
-            onClick={() => setActiveTab('identity')}
-          >
-            {t('chorister_hub.tabs.identity', 'Artist Profile & History')}
-          </Button>
-          <Button
-            variant={activeTab === 'knowledge' ? 'primary' : 'outline'}
-            onClick={() => setActiveTab('knowledge')}
-          >
-            {t('chorister_hub.tabs.knowledge', 'Knowledge Base')}
-          </Button>
-        </div>
+        <SegmentedTabs
+          ariaLabel={t('chorister_hub.tabs.aria_label', 'Sekcje kartoteki')}
+          items={TABS.map(({ id, labelKey, fallback, Icon }) => ({
+            id,
+            label: t(labelKey, fallback),
+            Icon,
+          }))}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
 
         <StaggeredBentoContainer className="flex flex-col gap-10">
           {activeTab === 'identity' && (

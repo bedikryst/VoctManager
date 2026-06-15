@@ -75,10 +75,25 @@ export interface VocalLineEntry {
   count: number;
 }
 
+export interface RepertoireEntry {
+  piece_id: string;
+  title: string;
+  composer_name: string;
+  epoch: string;
+  voice_lines: string[];
+  performances: number;
+  years: number[];
+}
+
 export interface ArtistIdentityMetricsDTO {
   total_concerts: number;
   active_seasons: number;
   season_years: number[];
   vocal_line_distribution: VocalLineEntry[];
   first_project_year: number | null;
+  total_pieces: number;
+  total_composers: number;
+  /** % of recorded rehearsal attendances marked present/late; null = no data. */
+  attendance_rate: number | null;
+  repertoire: RepertoireEntry[];
 }

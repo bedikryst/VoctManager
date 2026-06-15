@@ -7,7 +7,6 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Send,
   UserMinus,
   ArrowRight,
   Check,
@@ -18,10 +17,9 @@ import {
 import type { AttendanceStatus } from "@/shared/types";
 import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
+import { AbsenceReportForm } from "./AbsenceReportForm";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
-import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Select } from "@/shared/ui/primitives/Select";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
@@ -44,7 +42,7 @@ interface TimelineRehearsalCardProps {
 const statusTopBorder = (s: string | null | undefined) => {
   if (s === "PRESENT") return "border-t-ethereal-sage";
   if (s === "LATE" || s === "ABSENT") return s === "LATE" ? "border-t-ethereal-incense" : "border-t-ethereal-crimson";
-  return "border-t-ethereal-amethyst/20";
+  return "border-t-ethereal-incense/25";
 };
 
 export const TimelineRehearsalCard = ({
@@ -88,7 +86,7 @@ export const TimelineRehearsalCard = ({
             ? "bg-ethereal-incense border-ethereal-incense"
             : maskedStatus === "PRESENT"
               ? "bg-ethereal-sage border-ethereal-sage"
-              : "bg-ethereal-marble border-ethereal-incense/40 group-hover:border-ethereal-amethyst",
+              : "bg-ethereal-marble border-ethereal-incense/40 group-hover:border-ethereal-gold",
         )}
       />
 
@@ -99,7 +97,7 @@ export const TimelineRehearsalCard = ({
         className={cn(
           "overflow-hidden transition-all duration-300 border-t-2",
           statusTopBorder(maskedStatus),
-          isExpanded ? "border-ethereal-amethyst/25" : "hover:border-ethereal-amethyst/15",
+          isExpanded ? "border-ethereal-gold/30" : "hover:border-ethereal-gold/20",
         )}
       >
         {/* ── main row ─────────────────────────────────────────────── */}
@@ -117,12 +115,12 @@ export const TimelineRehearsalCard = ({
                 ? "bg-ethereal-sage/8"
                 : isExcusedOrLate
                   ? "bg-ethereal-alabaster/60"
-                  : "bg-ethereal-amethyst/5 group-hover:bg-ethereal-amethyst/8",
+                  : "bg-ethereal-ink/[0.03] group-hover:bg-ethereal-gold/8",
             )}
           >
             <Eyebrow
               as="span"
-              color={maskedStatus === "PRESENT" ? "sage" : isExcusedOrLate ? "muted" : "amethyst"}
+              color={maskedStatus === "PRESENT" ? "sage" : isExcusedOrLate ? "muted" : "gold"}
             >
               {formatLocalizedDate(event.date_time, { month: "short" }, undefined, tz)}
             </Eyebrow>
@@ -130,7 +128,7 @@ export const TimelineRehearsalCard = ({
               as="span"
               size="3xl"
               weight="black"
-              color={maskedStatus === "PRESENT" ? "sage" : isExcusedOrLate ? "graphite" : "amethyst"}
+              color={maskedStatus === "PRESENT" ? "sage" : isExcusedOrLate ? "graphite" : "default"}
               className="leading-none my-0.5"
             >
               {formatLocalizedDate(event.date_time, { day: "numeric" }, undefined, tz)}
@@ -195,7 +193,7 @@ export const TimelineRehearsalCard = ({
               <DualTimeDisplay
                 value={event.date_time}
                 timeZone={tz}
-                icon={<Clock size={11} className="text-ethereal-amethyst/60" aria-hidden="true" />}
+                icon={<Clock size={11} className="text-ethereal-gold/70" aria-hidden="true" />}
                 containerClassName="flex items-center gap-1.5"
                 primaryTimeClassName="flex items-center gap-1.5"
                 localTimeClassName="text-[9px] text-ethereal-graphite/50 font-medium normal-case tracking-normal pl-1.5"
@@ -209,7 +207,7 @@ export const TimelineRehearsalCard = ({
           </div>
 
           {/* chevron */}
-          <div className="shrink-0 flex items-center pr-4 text-ethereal-incense/30 group-hover:text-ethereal-amethyst/60 transition-colors">
+          <div className="shrink-0 flex items-center pr-4 text-ethereal-incense/30 group-hover:text-ethereal-gold/70 transition-colors">
             <motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
               transition={{ duration: 0.25 }}
@@ -263,63 +261,13 @@ export const TimelineRehearsalCard = ({
               transition={{ duration: 0.25 }}
               className="overflow-hidden border-t border-ethereal-crimson/15 bg-ethereal-crimson/5"
             >
-              <form onSubmit={handleSubmitReport} className="p-4 sm:p-6">
-                <Eyebrow as="h4" color="crimson" className="mb-4 flex items-center gap-1.5">
-                  <AlertCircle size={13} aria-hidden="true" />
-                  {t("schedule.rehearsal.form.title", "Formularz nieobecności dla Inspektora")}
-                </Eyebrow>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                  <Select
-                    variant="glass"
-                    label={t("schedule.rehearsal.form.status_label", "Status *")}
-                    value={reportForm.status}
-                    onChange={(e) =>
-                      setReportForm({
-                        ...reportForm,
-                        status: e.target.value as Extract<AttendanceStatus, "ABSENT" | "LATE">,
-                      })
-                    }
-                    disabled={isSubmitting}
-                  >
-                    <option value="ABSENT">{t("schedule.rehearsal.form.option_absent", "Nie będę obecny")}</option>
-                    <option value="LATE">{t("schedule.rehearsal.form.option_late", "Spóźnię się")}</option>
-                  </Select>
-                  <div className="sm:col-span-2">
-                    <Eyebrow as="label" color="muted" className="mb-1.5 ml-1 block">
-                      {t("schedule.rehearsal.form.reason_label", "Powód / Uwagi *")}
-                    </Eyebrow>
-                    <Input
-                      required
-                      type="text"
-                      placeholder={t("schedule.rehearsal.form.reason_placeholder", "np. Korki, choroba...")}
-                      value={reportForm.notes}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setReportForm({ ...reportForm, notes: e.target.value })
-                      }
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => setReportingMode(false)}
-                    disabled={isSubmitting}
-                  >
-                    {t("schedule.rehearsal.form.cancel", "Anuluj")}
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={isSubmitting || !reportForm.notes.trim()}
-                    isLoading={isSubmitting}
-                    leftIcon={!isSubmitting ? <Send size={12} aria-hidden="true" /> : undefined}
-                  >
-                    {t("schedule.rehearsal.form.submit", "Wyślij")}
-                  </Button>
-                </div>
-              </form>
+              <AbsenceReportForm
+                reportForm={reportForm}
+                setReportForm={setReportForm}
+                isSubmitting={isSubmitting}
+                onSubmit={handleSubmitReport}
+                onCancel={() => setReportingMode(false)}
+              />
             </motion.div>
           )}
 
