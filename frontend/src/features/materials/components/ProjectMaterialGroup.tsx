@@ -4,7 +4,7 @@ import { Archive, Briefcase, CalendarDays } from "lucide-react";
 
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
-import { PieceMaterialCard } from "./PieceMaterialCard";
+import { PieceRow } from "./PieceRow";
 import type { MaterialsDashboardGroup } from "../types/materials.dto";
 
 interface ProjectMaterialGroupProps {
@@ -71,9 +71,10 @@ export const ProjectMaterialGroup = ({
 
       <div className="flex flex-col gap-3">
         {group.program.map((item) => (
-          <PieceMaterialCard
+          <PieceRow
             key={item.piece.id}
             piece={item.piece}
+            projectId={group.project.id}
             order={item.order}
             isEncored={item.is_encore}
             isArchived={isArchived}

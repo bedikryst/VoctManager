@@ -1,0 +1,343 @@
+/**
+ * @file practicePlayerEngine.ts
+ * @description Framework-agnostic multitrack practice engine for the Songbook.
+ *
+ * Plays every voice track of a piece simultaneously through a pool of
+ * HTMLAudioElements (NOT Web Audio buffers) so that:
+ *  - audio streams instead of waiting for full downloads (mobile data),
+ *  - playbackRate keeps pitch (preservesPitch) — slow practice stays in tune,
+ *  - per-voice volume/mute/solo is a simple element.volume write.
+ *
+ * The first track acts as the transport master clock; a 250 ms tick corrects
+ * drift on the remaining elements and enforces the A–B practice loop.
+ * Consumed by React via useSyncExternalStore (subscribe/getSnapshot).
+ */
+
+export interface PracticeTrackSource {
+  id: string;
+  /** Raw voice-line code (S1, A2, …) — matches casting.voice_line. */
+  voicePart: string;
+  /** Human label, e.g. "Sopran 1". */
+  label: string;
+  url: string;
+  isMine: boolean;
+}
+
+export interface PracticePieceSource {
+  pieceId: string;
+  projectId: string;
+  title: string;
+  composer: string;
+}
+
+export interface PracticeLoopRange {
+  a: number | null;
+  b: number | null;
+}
+
+export interface PracticePlayerSnapshot {
+  piece: PracticePieceSource | null;
+  tracks: PracticeTrackSource[];
+  isPlaying: boolean;
+  isBuffering: boolean;
+  position: number;
+  duration: number;
+  rate: number;
+  volumes: Readonly<Record<string, number>>;
+  muted: Readonly<Record<string, boolean>>;
+  soloTrackId: string | null;
+  loop: PracticeLoopRange;
+}
+
+const EMPTY_SNAPSHOT: PracticePlayerSnapshot = {
+  piece: null,
+  tracks: [],
+  isPlaying: false,
+  isBuffering: false,
+  position: 0,
+  duration: 0,
+  rate: 1,
+  volumes: {},
+  muted: {},
+  soloTrackId: null,
+  loop: { a: null, b: null },
+};
+
+const DRIFT_TOLERANCE_S = 0.08;
+const TICK_INTERVAL_MS = 250;
+
+type Listener = () => void;
+
+export class PracticePlayerEngine {
+  private elements = new Map<string, HTMLAudioElement>();
+  private masterId: string | null = null;
+  private tickHandle: number | null = null;
+  private listeners = new Set<Listener>();
+  private snapshot: PracticePlayerSnapshot = EMPTY_SNAPSHOT;
+
+  subscribe = (listener: Listener): (() => void) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+
+  getSnapshot = (): PracticePlayerSnapshot => this.snapshot;
+
+  /** Replaces the loaded piece. Keeps the global rate between pieces. */
+  load(
+    piece: PracticePieceSource,
+    tracks: PracticeTrackSource[],
+    options?: { soloTrackId?: string | null; autoplay?: boolean },
+  ): void {
+    const previousRate = this.snapshot.rate;
+    this.disposeElements();
+
+    const volumes: Record<string, number> = {};
+    const muted: Record<string, boolean> = {};
+
+    tracks.forEach((track) => {
+      const el = new Audio();
+      el.src = track.url;
+      el.preload = "auto";
+      // Pitch-preserving tempo change is the whole point of slow practice.
+      el.preservesPitch = true;
+      el.playbackRate = previousRate;
+      this.elements.set(track.id, el);
+      volumes[track.id] = 1;
+      muted[track.id] = false;
+    });
+
+    this.masterId = tracks[0]?.id ?? null;
+    const master = this.master();
+
+    if (master) {
+      master.addEventListener("loadedmetadata", this.handleMetadata);
+      master.addEventListener("ended", this.handleEnded);
+      master.addEventListener("waiting", this.handleWaiting);
+      master.addEventListener("playing", this.handlePlaying);
+    }
+
+    this.commit({
+      ...EMPTY_SNAPSHOT,
+      piece,
+      tracks,
+      rate: previousRate,
+      volumes,
+      muted,
+      soloTrackId: options?.soloTrackId ?? null,
+    });
+    this.applyMix();
+
+    if (options?.autoplay) {
+      void this.play();
+    }
+  }
+
+  async play(): Promise<void> {
+    const master = this.master();
+    if (!master || !this.snapshot.piece) return;
+
+    const startAt = master.currentTime;
+    const plays: Promise<void>[] = [];
+    this.elements.forEach((el) => {
+      el.currentTime = startAt;
+      plays.push(el.play().catch(() => undefined));
+    });
+    await Promise.all(plays);
+
+    this.startTick();
+    this.commit({ ...this.snapshot, isPlaying: true });
+  }
+
+  pause(): void {
+    this.elements.forEach((el) => el.pause());
+    this.stopTick();
+    this.commit({
+      ...this.snapshot,
+      isPlaying: false,
+      position: this.master()?.currentTime ?? this.snapshot.position,
+    });
+  }
+
+  toggle(): void {
+    if (this.snapshot.isPlaying) {
+      this.pause();
+    } else {
+      void this.play();
+    }
+  }
+
+  seek(seconds: number): void {
+    const clamped = Math.max(
+      0,
+      Math.min(seconds, this.snapshot.duration || seconds),
+    );
+    this.elements.forEach((el) => {
+      el.currentTime = clamped;
+    });
+    this.commit({ ...this.snapshot, position: clamped });
+  }
+
+  setRate(rate: number): void {
+    this.elements.forEach((el) => {
+      el.playbackRate = rate;
+    });
+    this.commit({ ...this.snapshot, rate });
+  }
+
+  setVolume(trackId: string, volume: number): void {
+    const volumes = { ...this.snapshot.volumes, [trackId]: volume };
+    this.commit({ ...this.snapshot, volumes });
+    this.applyMix();
+  }
+
+  toggleMute(trackId: string): void {
+    const muted = {
+      ...this.snapshot.muted,
+      [trackId]: !this.snapshot.muted[trackId],
+    };
+    this.commit({ ...this.snapshot, muted });
+    this.applyMix();
+  }
+
+  /** Solo is exclusive; passing the active solo id (or null) clears it. */
+  setSolo(trackId: string | null): void {
+    const soloTrackId =
+      trackId && this.snapshot.soloTrackId !== trackId ? trackId : null;
+    this.commit({ ...this.snapshot, soloTrackId });
+    this.applyMix();
+  }
+
+  setLoopPointA(): void {
+    const position = this.master()?.currentTime ?? this.snapshot.position;
+    const b = this.snapshot.loop.b;
+    this.commit({
+      ...this.snapshot,
+      loop: { a: position, b: b !== null && b <= position ? null : b },
+    });
+  }
+
+  setLoopPointB(): void {
+    const position = this.master()?.currentTime ?? this.snapshot.position;
+    const a = this.snapshot.loop.a;
+    if (a === null || position <= a) return;
+    this.commit({ ...this.snapshot, loop: { a, b: position } });
+  }
+
+  clearLoop(): void {
+    this.commit({ ...this.snapshot, loop: { a: null, b: null } });
+  }
+
+  /** Stops playback and unloads the piece entirely (mini-player close). */
+  close(): void {
+    this.disposeElements();
+    this.commit({ ...EMPTY_SNAPSHOT, rate: this.snapshot.rate });
+  }
+
+  destroy(): void {
+    this.disposeElements();
+    this.listeners.clear();
+    this.snapshot = EMPTY_SNAPSHOT;
+  }
+
+  // ── internals ────────────────────────────────────────────────────────────
+
+  private master(): HTMLAudioElement | null {
+    return this.masterId ? (this.elements.get(this.masterId) ?? null) : null;
+  }
+
+  private handleMetadata = (): void => {
+    this.commit({ ...this.snapshot, duration: this.master()?.duration ?? 0 });
+  };
+
+  private handleEnded = (): void => {
+    const { loop } = this.snapshot;
+    if (loop.a !== null && loop.b !== null) {
+      this.seek(loop.a);
+      void this.play();
+      return;
+    }
+    this.stopTick();
+    this.elements.forEach((el) => el.pause());
+    this.commit({ ...this.snapshot, isPlaying: false, position: 0 });
+    this.elements.forEach((el) => {
+      el.currentTime = 0;
+    });
+  };
+
+  private handleWaiting = (): void => {
+    this.commit({ ...this.snapshot, isBuffering: true });
+  };
+
+  private handlePlaying = (): void => {
+    if (this.snapshot.isBuffering) {
+      this.commit({ ...this.snapshot, isBuffering: false });
+    }
+  };
+
+  private startTick(): void {
+    this.stopTick();
+    this.tickHandle = window.setInterval(this.tick, TICK_INTERVAL_MS);
+  }
+
+  private stopTick(): void {
+    if (this.tickHandle !== null) {
+      window.clearInterval(this.tickHandle);
+      this.tickHandle = null;
+    }
+  }
+
+  private tick = (): void => {
+    const master = this.master();
+    if (!master) return;
+
+    const position = master.currentTime;
+    const { loop } = this.snapshot;
+
+    if (loop.a !== null && loop.b !== null && position >= loop.b) {
+      this.seek(loop.a);
+      this.commit({ ...this.snapshot, position: loop.a });
+      return;
+    }
+
+    // Re-align slaves that drifted away from the master clock.
+    this.elements.forEach((el, id) => {
+      if (id === this.masterId || el.paused) return;
+      if (Math.abs(el.currentTime - position) > DRIFT_TOLERANCE_S) {
+        el.currentTime = position;
+      }
+    });
+
+    this.commit({ ...this.snapshot, position });
+  };
+
+  private applyMix(): void {
+    const { volumes, muted, soloTrackId } = this.snapshot;
+    this.elements.forEach((el, id) => {
+      const soloSilenced = soloTrackId !== null && soloTrackId !== id;
+      el.volume = soloSilenced || muted[id] ? 0 : (volumes[id] ?? 1);
+    });
+  }
+
+  private disposeElements(): void {
+    this.stopTick();
+    const master = this.master();
+    if (master) {
+      master.removeEventListener("loadedmetadata", this.handleMetadata);
+      master.removeEventListener("ended", this.handleEnded);
+      master.removeEventListener("waiting", this.handleWaiting);
+      master.removeEventListener("playing", this.handlePlaying);
+    }
+    this.elements.forEach((el) => {
+      el.pause();
+      el.removeAttribute("src");
+      el.load();
+    });
+    this.elements.clear();
+    this.masterId = null;
+  }
+
+  private commit(next: PracticePlayerSnapshot): void {
+    this.snapshot = next;
+    this.listeners.forEach((listener) => listener());
+  }
+}

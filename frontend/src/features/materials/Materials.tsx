@@ -58,13 +58,13 @@ export const Materials = (): React.JSX.Element => {
         <div className="pt-6">
           <PageHeader
             roleText={t("materials.dashboard.subtitle", "Strefa Artysty")}
-            title={t("materials.dashboard.title", "Materiały do")}
-            titleHighlight={t("materials.dashboard.title_highlight", "ćwiczeń")}
+            title={t("materials.dashboard.title", "Mój")}
+            titleHighlight={t("materials.dashboard.title_highlight", "Śpiewnik.")}
           />
           <Text color="graphite" className="mt-3 max-w-lg">
             {t(
               "materials.dashboard.description",
-              "Pobieraj nuty, ćwicz z odtwarzaczem MIDI z kontrolą tempa i sprawdzaj swoją rolę w zespole.",
+              "Nuty, mikser głosów i Twoje partie — wszystko, czego potrzebujesz do przygotowań.",
             )}
           </Text>
         </div>

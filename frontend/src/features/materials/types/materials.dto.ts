@@ -98,6 +98,11 @@ export interface MaterialsCasting {
   is_me: boolean;
 }
 
+export type MaterialsReadinessStatus =
+  | "NOT_STARTED"
+  | "IN_PROGRESS"
+  | "READY";
+
 export interface MaterialsPiece {
   id: string;
   title: string;
@@ -120,6 +125,7 @@ export interface MaterialsPiece {
   tracks: MaterialsTrack[];
   castings: MaterialsCasting[];
   my_casting: MaterialsCasting | null;
+  my_readiness: MaterialsReadinessStatus;
 }
 
 export interface MaterialsProgramItem {
