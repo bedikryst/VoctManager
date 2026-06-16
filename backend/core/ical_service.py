@@ -1,5 +1,5 @@
 # core/ical_service.py
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -55,6 +55,48 @@ class ICalGeneratorService:
             ).distinct().select_related('project')
 
             return cls._build_ics(projects, rehearsals)
+
+    @classmethod
+    def build_single_event(
+        cls,
+        *,
+        uid: str,
+        summary: str,
+        start_iso: str,
+        end_iso: str,
+        location: str = "",
+        description: str = "",
+    ) -> str:
+        """
+        Builds a one-event RFC-5545 calendar for an email 'add to calendar'
+        attachment. start_iso/end_iso are ISO-8601 timestamps (aware preferred;
+        naive is treated as UTC). The caller localizes summary/description.
+        """
+        def _fmt(iso: str) -> str:
+            dt = datetime.fromisoformat(iso)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=UTC)
+            return dt.astimezone(UTC).strftime('%Y%m%dT%H%M%SZ')
+
+        now_utc = timezone.now().strftime('%Y%m%dT%H%M%SZ')
+        lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//VoctManager Enterprise//EN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{now_utc}",
+            f"DTSTART:{_fmt(start_iso)}",
+            f"DTEND:{_fmt(end_iso)}",
+            f"SUMMARY:{cls._escape_ics_text(summary)}",
+            f"LOCATION:{cls._escape_ics_text(location)}",
+            f"DESCRIPTION:{cls._escape_ics_text(description)}",
+            "END:VEVENT",
+            "END:VCALENDAR",
+        ]
+        return "\r\n".join(lines)
 
     @classmethod
     def _build_ics(cls, projects, rehearsals) -> str:

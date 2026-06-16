@@ -1,14 +1,21 @@
 import tempfile
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APITestCase
+
+from core.constants import AppRole
+from core.models import UserProfile
+from notifications.models import NotificationType
 
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectCreateDTO
 from .infrastructure.document_generator import DocumentRenderDependencyError
-from .services import ArtistHRService
+from .models import Artist, Participation, Project, Rehearsal, VoiceType
+from .services import ArtistHRService, RehearsalOperationsService
 
 # Provisioning delegates the email to core.services, so the task is patched there.
 EMAIL_TASK = "core.services.send_transactional_email_task.delay"
@@ -869,3 +876,136 @@ class MaterialsAccessControlTests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("/api/materials/scores/", resp.data["pdf_file"])
         self.assertNotIn("/media/", resp.data["pdf_file"])
+
+
+class ReminderDispatchTests(TestCase):
+    """Beat sweep: idempotent, windowed upcoming-event reminders."""
+
+    BULK = "roster.tasks.send_bulk_notifications_task.delay"
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="r1", email="r1@test.pl", password="pw123456", first_name="Ada"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.artist = Artist.objects.create(
+            user=self.user, first_name="Ada", last_name="L", email="r1@test.pl",
+            voice_type=VoiceType.SOPRANO,
+        )
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=10),
+            status=Project.Status.ACTIVE,
+        )
+        self.participation = Participation.objects.create(
+            artist=self.artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+
+    def _rehearsal(self, *, hours_ahead: float) -> Rehearsal:
+        return Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(hours=hours_ahead)
+        )
+
+    def test_rehearsal_in_window_is_reminded_once_with_ics(self) -> None:
+        from .tasks import dispatch_due_reminders
+        reh = self._rehearsal(hours_ahead=12)
+
+        with patch(self.BULK) as bulk:
+            result = dispatch_due_reminders()
+            self.assertEqual(result["rehearsals"], 1)
+            bulk.assert_called_once()
+            kwargs = bulk.call_args.kwargs
+            self.assertEqual(kwargs["notification_type"], NotificationType.REHEARSAL_REMINDER)
+            self.assertEqual(kwargs["metadata"]["ics"]["kind"], "rehearsal")
+            self.assertIn(str(reh.id), kwargs["metadata"]["ics"]["uid"])
+
+        reh.refresh_from_db()
+        self.assertIsNotNone(reh.reminder_sent_at)
+
+        # Idempotent: a second sweep does nothing.
+        with patch(self.BULK) as bulk2:
+            dispatch_due_reminders()
+            bulk2.assert_not_called()
+
+    def test_rehearsal_outside_window_is_not_reminded(self) -> None:
+        from .tasks import dispatch_due_reminders
+        self._rehearsal(hours_ahead=72)  # default lead is 24h
+        with patch(self.BULK) as bulk:
+            dispatch_due_reminders()
+            bulk.assert_not_called()
+
+    def test_cancelled_project_rehearsal_is_skipped(self) -> None:
+        from .tasks import dispatch_due_reminders
+        self.project.status = Project.Status.CANCELLED
+        self.project.save(update_fields=["status"])
+        self._rehearsal(hours_ahead=6)
+        with patch(self.BULK) as bulk:
+            dispatch_due_reminders()
+            bulk.assert_not_called()
+
+    def test_project_in_window_is_reminded(self) -> None:
+        from .tasks import dispatch_due_reminders
+        near = Project.objects.create(
+            title="Gala", date_time=timezone.now() + timedelta(hours=24),
+            status=Project.Status.ACTIVE,
+        )
+        Participation.objects.create(
+            artist=self.artist, project=near, status=Participation.Status.CONFIRMED
+        )
+        with patch(self.BULK) as bulk:
+            dispatch_due_reminders()
+            types = {c.kwargs["notification_type"] for c in bulk.call_args_list}
+            self.assertIn(NotificationType.PROJECT_REMINDER, types)
+        near.refresh_from_db()
+        self.assertIsNotNone(near.reminder_sent_at)
+
+
+class AbsenceRequestNotificationTests(TestCase):
+    """An artist self-marking EXCUSED/ABSENT pings managers as ABSENCE_REQUESTED."""
+
+    NOTIFY = "roster.services.ManagerNotificationHelper.notify_managers"
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="s1", email="s1@test.pl", password="pw123456", first_name="Bo"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.artist = Artist.objects.create(
+            user=self.user, first_name="Bo", last_name="M", email="s1@test.pl",
+            voice_type=VoiceType.BASS,
+        )
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=5),
+            status=Project.Status.ACTIVE,
+        )
+        self.participation = Participation.objects.create(
+            artist=self.artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        self.rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=2)
+        )
+
+    def _record(self, status: str):
+        dto = AttendanceRecordDTO(
+            requesting_user_id=self.user.id,
+            is_manager=False,
+            participation_id=self.participation.id,
+            rehearsal_id=self.rehearsal.id,
+            status=status,
+            excuse_note="Out of town",
+        )
+        with patch(self.NOTIFY) as notify, self.captureOnCommitCallbacks(execute=True):
+            RehearsalOperationsService.record_attendance(dto)
+        return notify
+
+    def test_self_excused_emits_absence_requested(self) -> None:
+        notify = self._record("EXCUSED")
+        notify.assert_called_once()
+        self.assertEqual(notify.call_args.kwargs["notification_type"], NotificationType.ABSENCE_REQUESTED)
+        meta = notify.call_args.kwargs["metadata"]
+        self.assertEqual(meta["artist_name"], "Bo M")
+        self.assertIn("rehearsal_id", meta)
+
+    def test_self_present_stays_attendance_submitted(self) -> None:
+        notify = self._record("PRESENT")
+        notify.assert_called_once()
+        self.assertEqual(notify.call_args.kwargs["notification_type"], NotificationType.ATTENDANCE_SUBMITTED)

@@ -9,7 +9,7 @@ Encapsulates all database transactions, state mutations, and side-effects.
 Views MUST delegate all business logic to these stateless classes.
 """
 import logging
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -415,6 +415,21 @@ class ManagerNotificationHelper:
                 metadata=metadata
             )
 
+def _rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
+    """Lightweight calendar payload carried in notification metadata so the email
+    layer can attach a localized 'add to calendar' .ics. Push ignores it."""
+    location_name = rehearsal.location.name if rehearsal.location else ""
+    return {
+        "kind": "rehearsal",
+        "uid": f"rehearsal_{rehearsal.id}@voctensemble.com",
+        "start": rehearsal.date_time.isoformat(),
+        "end": (rehearsal.date_time + timedelta(hours=3)).isoformat(),
+        "project_name": rehearsal.project.title,
+        "location": location_name,
+        "focus": rehearsal.focus or "",
+    }
+
+
 class RehearsalOperationsService:
     @staticmethod
     def schedule_rehearsal(dto: RehearsalCreateDTO, invited_participations: list[Participation] | None = None) -> Rehearsal:
@@ -441,7 +456,8 @@ class RehearsalOperationsService:
                     project_name=rehearsal.project.title,
                     message=f"A new rehearsal has been scheduled for the project '{rehearsal.project.title}'."
                 ).model_dump(mode="json")
-                
+                metadata["ics"] = _rehearsal_ics_payload(rehearsal)
+
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                     recipient_ids=recipient_ids,
                     notification_type=NotificationType.REHEARSAL_SCHEDULED,
@@ -500,7 +516,8 @@ class RehearsalOperationsService:
                     changes=changes,
                     message=f"Details for a rehearsal in the project '{rehearsal.project.title}' have been updated."
                 ).model_dump(mode="json")
-                
+                metadata["ics"] = _rehearsal_ics_payload(rehearsal)
+
                 level = NotificationLevel.URGENT if any("Date / Time" in change for change in changes) else NotificationLevel.WARNING
                 
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(
@@ -559,16 +576,35 @@ class RehearsalOperationsService:
             )
 
             if not dto.is_manager:
-                metadata = ManagerActionMetadata(
-                    project_name=attendance.rehearsal.project.title,
-                    artist_name=f"{attendance.participation.artist.first_name} {attendance.participation.artist.last_name}",
-                    action_details=f"Status: {dto.status}. Note: {dto.excuse_note or 'No note'}",
-                    rehearsal_date=attendance.rehearsal.date_time.strftime("%Y-%m-%d %H:%M"),
-                    message="An artist has submitted an attendance update."
-                ).model_dump(mode="json")
-                
+                artist_name = f"{attendance.participation.artist.first_name} {attendance.participation.artist.last_name}"
+                rehearsal_date = attendance.rehearsal.date_time.strftime("%Y-%m-%d %H:%M")
+
+                # An artist marking themselves EXCUSED/ABSENT IS an absence request —
+                # surface it to managers as the specific, actionable type rather than
+                # the generic attendance-submitted ping.
+                if dto.status in (Attendance.Status.EXCUSED, Attendance.Status.ABSENT):
+                    notif_type = NotificationType.ABSENCE_REQUESTED
+                    metadata = {
+                        "artist_name": artist_name,
+                        "artist_id": str(attendance.participation.artist_id),
+                        "project_name": attendance.rehearsal.project.title,
+                        "project_id": str(attendance.rehearsal.project_id),
+                        "rehearsal_id": str(rehearsal.id),
+                        "rehearsal_date": rehearsal_date,
+                        "action_details": dto.excuse_note or "",
+                    }
+                else:
+                    notif_type = NotificationType.ATTENDANCE_SUBMITTED
+                    metadata = ManagerActionMetadata(
+                        project_name=attendance.rehearsal.project.title,
+                        artist_name=artist_name,
+                        action_details=f"Status: {dto.status}. Note: {dto.excuse_note or 'No note'}",
+                        rehearsal_date=rehearsal_date,
+                        message="An artist has submitted an attendance update."
+                    ).model_dump(mode="json")
+
                 transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
-                    notification_type=NotificationType.ATTENDANCE_SUBMITTED,
+                    notification_type=notif_type,
                     metadata=metadata
                 ))
             

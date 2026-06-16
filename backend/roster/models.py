@@ -130,6 +130,10 @@ class Project(EnterpriseBaseModel):
     )
     description = models.TextField(blank=True, verbose_name=_("Description"))
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name=_("Status"))
+    reminder_sent_at = models.DateTimeField(
+        null=True, blank=True, db_index=True,
+        help_text=_("When the automated upcoming-event reminder was dispatched. Null = not yet sent.")
+    )
     run_sheet = models.JSONField(default=list, blank=True, verbose_name=_("Run-sheet"))
     spotify_playlist_url = models.URLField(blank=True, help_text=_("Spotify playlist URL"), verbose_name=_("Spotify Playlist"))
     score_pdf = models.FileField(
@@ -281,6 +285,10 @@ class Rehearsal(EnterpriseBaseModel):
     )
     focus = models.CharField(max_length=200, blank=True, verbose_name=_("Rehearsal Focus"))
     is_mandatory = models.BooleanField(default=True, verbose_name=_("Is Mandatory"))
+    reminder_sent_at = models.DateTimeField(
+        null=True, blank=True, db_index=True,
+        help_text=_("When the automated upcoming-rehearsal reminder was dispatched. Null = not yet sent.")
+    )
     invited_participations = models.ManyToManyField(
         Participation, blank=True, related_name='invited_rehearsals', verbose_name=_("Invited Singers")
     )
