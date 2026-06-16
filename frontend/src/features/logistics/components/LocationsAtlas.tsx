@@ -3,18 +3,21 @@
  * @description The protagonist surface of the logistics command centre. Every
  * venue is one marker; venues hosting upcoming events glow by imminence (gold =
  * today + pulse, amethyst = this week, sage = later) so the map reads as "where
- * is the ensemble headed", not a static address book. Selecting a venue (here
- * or from the rail) flies the camera in — optionally diving into a 3D tilt —
- * and the dossier opens. Auto-fits to the dataset when nothing is selected.
+ * is the ensemble headed", not a static address book. Selecting a venue (here or
+ * from the rail) performs one cinematic camera flight that automatically dives
+ * into a gentle 3D tilt — and because the detail now lives in the rail / a bottom
+ * sheet (never a full modal), that dive stays visible. Auto-fits to the dataset
+ * when nothing is selected. Camera choreography is the shared `cameraFlight`;
+ * pins and atmosphere are the shared `MapPinShell` / `MapAtmosphere`.
  * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationsAtlas
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { AdvancedMarker, Map, useMap } from "@vis.gl/react-google-maps";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Box, Globe2, Layers, MapPin, Radio } from "lucide-react";
+import { Globe2, Layers, MapPin, Minus, Plus, Radio } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -28,14 +31,15 @@ import {
   getLocationCategoryOption,
   getLocationCategoryOptions,
 } from "../constants/locationCategories";
+import { CINEMATIC, flyCameraTo } from "../lib/cameraFlight";
 import type { VenueActivity } from "../hooks/useLogisticsEvents";
 import type { LocationDto } from "../types/logistics.dto";
 
+import { MapAtmosphere } from "./MapAtmosphere";
+import { MapPinShell } from "./MapPinShell";
+
 const ATLAS_MAP_ID = "VOCTMANAGER_LOGISTICS_ATLAS";
 const DEFAULT_CENTER: google.maps.LatLngLiteral = { lat: 50.0, lng: 14.0 };
-const FOCUS_ZOOM = 16;
-const TILT_ANGLE = 47.5;
-const TILT_HEADING = 25;
 
 interface LocationsAtlasProps {
   locations: LocationDto[];
@@ -43,6 +47,8 @@ interface LocationsAtlasProps {
   categoryStats: Partial<Record<LocationCategory, number>>;
   activeLocationId: string | null;
   onSelectLocation: (id: string) => void;
+  /** When the map takes over the viewport (tablet/mobile focus mode). */
+  fullscreen?: boolean;
 }
 
 type GeoLocation = LocationDto & { latitude: number; longitude: number };
@@ -55,21 +61,72 @@ const toLatLng = (location: GeoLocation): google.maps.LatLngLiteral => ({
   lng: Number(location.longitude),
 });
 
+/** The zoom level fitBounds would settle on — needed to animate the exit. */
+const getBoundsZoomLevel = (
+  bounds: google.maps.LatLngBounds,
+  width: number,
+  height: number,
+  padding: number,
+): number => {
+  const WORLD_DIM = 256;
+  const ZOOM_MAX = 18;
+  const latRad = (lat: number): number => {
+    const sin = Math.sin((lat * Math.PI) / 180);
+    const radX2 = Math.log((1 + sin) / (1 - sin)) / 2;
+    return Math.max(Math.min(radX2, Math.PI), -Math.PI) / 2;
+  };
+  const zoomFor = (mapPx: number, fraction: number): number =>
+    Math.log2(mapPx / WORLD_DIM / fraction);
+
+  const ne = bounds.getNorthEast();
+  const sw = bounds.getSouthWest();
+  const latFraction = (latRad(ne.lat()) - latRad(sw.lat())) / Math.PI;
+  const lngDiff = ne.lng() - sw.lng();
+  const lngFraction = (lngDiff < 0 ? lngDiff + 360 : lngDiff) / 360;
+
+  const latZoom = zoomFor(height - padding * 2, Math.max(latFraction, 1e-9));
+  const lngZoom = zoomFor(width - padding * 2, Math.max(lngFraction, 1e-9));
+  return Math.min(latZoom, lngZoom, ZOOM_MAX);
+};
+
+/** The camera pose that frames the whole dataset (centre + zoom). */
+const getFitTarget = (
+  map: google.maps.Map,
+  locs: GeoLocation[],
+): { center: google.maps.LatLngLiteral; zoom: number } | null => {
+  if (locs.length === 0) return null;
+  if (locs.length === 1) return { center: toLatLng(locs[0]), zoom: 13 };
+  const bounds = new window.google.maps.LatLngBounds();
+  locs.forEach((loc) => bounds.extend(toLatLng(loc)));
+  const center = bounds.getCenter();
+  const div = map.getDiv();
+  const zoom = getBoundsZoomLevel(
+    bounds,
+    div.offsetWidth || 800,
+    div.offsetHeight || 600,
+    64,
+  );
+  return { center: { lat: center.lat(), lng: center.lng() }, zoom };
+};
+
 /**
- * Drives the camera: fly-to (+ optional 3D dive) on selection, auto-fit when
- * nothing is selected. Tilt/heading are best-effort — only vector map ids
- * honour them, so the calls are feature-detected and harmless otherwise.
+ * Drives the camera: a cinematic fly-to with an automatic 3D dive on selection,
+ * and a symmetric flight back out to the dataset view on deselect (instant only
+ * on first paint / data changes). Tilt is best-effort — only vector map ids
+ * honour it, so it is simply ignored on raster maps.
  */
 const AtlasCamera = ({
   locations,
   activeLocationId,
-  tilt3D,
 }: {
   locations: GeoLocation[];
   activeLocationId: string | null;
-  tilt3D: boolean;
 }): null => {
   const map = useMap(ATLAS_MAP_ID);
+  const prefersReduced = useReducedMotion();
+  const cancelFlightRef = useRef<(() => void) | null>(null);
+  // Distinguishes a real deselect (animate out) from first paint (snap into view).
+  const wasFocusedRef = useRef(false);
 
   const activeLocation = useMemo(
     () =>
@@ -79,18 +136,45 @@ const AtlasCamera = ({
     [locations, activeLocationId],
   );
 
-  // Fly to the selected venue (and dive into 3D when enabled).
+  useEffect(() => () => cancelFlightRef.current?.(), []);
+
+  // Fly to the selected venue and dive into a gentle 3D tilt.
   useEffect(() => {
     if (!map || !activeLocation) return;
-    map.panTo(toLatLng(activeLocation));
-    map.setZoom(FOCUS_ZOOM);
-    map.setTilt?.(tilt3D ? TILT_ANGLE : 0);
-    map.setHeading?.(tilt3D ? TILT_HEADING : 0);
-  }, [map, activeLocation, tilt3D]);
+    wasFocusedRef.current = true;
+    cancelFlightRef.current?.();
+    cancelFlightRef.current = flyCameraTo(
+      map,
+      {
+        center: toLatLng(activeLocation),
+        zoom: CINEMATIC.FOCUS_ZOOM,
+        tilt: CINEMATIC.TILT_ANGLE,
+        heading: 0,
+      },
+      { reducedMotion: prefersReduced ?? false },
+    );
+  }, [map, activeLocation, prefersReduced]);
 
-  // Auto-fit the whole dataset whenever the selection is cleared.
+  // Frame the whole dataset whenever the selection is cleared — animated when
+  // it is an actual deselect, instant on first paint / data changes.
   useEffect(() => {
     if (!map || activeLocation || !window.google) return;
+    cancelFlightRef.current?.();
+
+    if (wasFocusedRef.current && !(prefersReduced ?? false)) {
+      wasFocusedRef.current = false;
+      const target = getFitTarget(map, locations);
+      if (target) {
+        cancelFlightRef.current = flyCameraTo(
+          map,
+          { center: target.center, zoom: target.zoom, tilt: 0, heading: 0 },
+          { reducedMotion: false },
+        );
+        return;
+      }
+    }
+    wasFocusedRef.current = false;
+
     map.setTilt?.(0);
     map.setHeading?.(0);
     if (locations.length === 0) return;
@@ -102,7 +186,7 @@ const AtlasCamera = ({
     const bounds = new window.google.maps.LatLngBounds();
     locations.forEach((loc) => bounds.extend(toLatLng(loc)));
     map.fitBounds(bounds, { top: 64, bottom: 64, left: 64, right: 64 });
-  }, [map, activeLocation, locations]);
+  }, [map, activeLocation, locations, prefersReduced]);
 
   return null;
 };
@@ -135,38 +219,24 @@ const VenueMarker = ({
       title={location.name}
       zIndex={isActive ? 50 : imminence ? 20 : 10}
     >
-      <div className="group relative flex flex-col items-center">
-        <span
-          aria-hidden="true"
-          className={cn(
-            "absolute -top-2 h-8 w-8 rounded-full opacity-40 blur-md transition-opacity duration-500 group-hover:opacity-80",
-            isActive && "opacity-90",
-            imminence?.pulse && "animate-pulse opacity-70",
-          )}
-          style={{ backgroundColor: ringColor }}
-        />
-        <div
-          className={cn(
-            "relative flex h-9 w-9 items-center justify-center rounded-full border-2 bg-ethereal-marble shadow-[0_8px_18px_rgba(22,20,18,0.25)] transition-transform duration-500 group-hover:-translate-y-1",
-            isActive && "-translate-y-1 scale-110 ring-2 ring-ethereal-gold ring-offset-2 ring-offset-transparent",
-          )}
-          style={{ borderColor: ringColor, color: option.atlasMarker }}
-        >
-          <Icon size={16} strokeWidth={1.75} />
-          {upcomingCount > 1 && (
+      <MapPinShell
+        color={ringColor}
+        iconColor={option.atlasMarker}
+        active={isActive}
+        pulse={imminence?.pulse ?? false}
+        badge={
+          upcomingCount > 1 ? (
             <span
               className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ethereal-ink px-1 text-[9px] font-bold text-ethereal-marble"
               aria-hidden="true"
             >
               {upcomingCount}
             </span>
-          )}
-        </div>
-        <span
-          aria-hidden="true"
-          className="mt-0.5 h-1 w-1.5 rounded-full bg-ethereal-ink/40 blur-[2px]"
-        />
-      </div>
+          ) : undefined
+        }
+      >
+        <Icon size={16} strokeWidth={1.75} />
+      </MapPinShell>
     </AdvancedMarker>
   );
 };
@@ -228,9 +298,12 @@ export const LocationsAtlas = ({
   categoryStats,
   activeLocationId,
   onSelectLocation,
+  fullscreen = false,
 }: LocationsAtlasProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const [tilt3D, setTilt3D] = useState<boolean>(false);
+  const map = useMap(ATLAS_MAP_ID);
+  const prefersReduced = useReducedMotion();
+  const zoomFlightRef = useRef<(() => void) | null>(null);
 
   const categoryOptions = useMemo(() => getLocationCategoryOptions(t), [t]);
   const taggedLocations = useMemo(
@@ -247,19 +320,45 @@ export const LocationsAtlas = ({
     return count;
   }, [taggedLocations, venueActivity]);
 
+  const handleZoom = (delta: number): void => {
+    if (!map) return;
+    zoomFlightRef.current?.();
+    zoomFlightRef.current = flyCameraTo(
+      map,
+      { zoom: (map.getZoom() ?? 5) + delta },
+      { durationMs: 360, reducedMotion: prefersReduced ?? false },
+    );
+  };
+
+  useEffect(() => () => zoomFlightRef.current?.(), []);
+
+  const controlButtonClass =
+    "flex h-9 w-9 items-center justify-center rounded-xl border border-ethereal-incense/20 bg-ethereal-marble/90 text-ethereal-graphite shadow-glass-solid backdrop-blur-xl transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 26 }}
+      className={cn(fullscreen && "h-full")}
     >
       <GlassCard
         variant="solid"
         padding="none"
         isHoverable={false}
-        className="overflow-hidden"
+        className={cn(
+          "overflow-hidden",
+          fullscreen && "h-full max-lg:!rounded-none max-lg:!border-0",
+        )}
       >
-        <div className="relative h-[480px] w-full overflow-hidden bg-ethereal-alabaster/40 sm:h-[560px] lg:h-[calc(100dvh-11rem)]">
+        <div
+          className={cn(
+            "relative w-full overflow-hidden bg-ethereal-alabaster/40",
+            fullscreen
+              ? "h-[100dvh]"
+              : "h-[480px] sm:h-[560px] lg:h-[calc(100dvh-11rem)]",
+          )}
+        >
           <Map
             id={ATLAS_MAP_ID}
             mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
@@ -272,7 +371,6 @@ export const LocationsAtlas = ({
             <AtlasCamera
               locations={taggedLocations}
               activeLocationId={activeLocationId}
-              tilt3D={tilt3D}
             />
             {taggedLocations.map((loc) => (
               <VenueMarker
@@ -285,6 +383,8 @@ export const LocationsAtlas = ({
               />
             ))}
           </Map>
+
+          <MapAtmosphere />
 
           <AtlasLegend
             categoryOptions={categoryOptions}
@@ -306,20 +406,30 @@ export const LocationsAtlas = ({
             )}
           </div>
 
-          <button
-            type="button"
-            aria-pressed={tilt3D}
-            onClick={() => setTilt3D((prev) => !prev)}
+          {/* Zoom cluster — lifted above the peek sheet in fullscreen focus. */}
+          <div
             className={cn(
-              "absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold shadow-glass-solid backdrop-blur-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-              tilt3D
-                ? "border-ethereal-gold/50 bg-ethereal-gold text-ethereal-ink"
-                : "border-ethereal-incense/20 bg-ethereal-marble/90 text-ethereal-graphite hover:text-ethereal-ink",
+              "absolute right-4 z-10 flex flex-col gap-1.5",
+              fullscreen ? "bottom-[calc(42dvh+1rem)]" : "bottom-4",
             )}
           >
-            <Box size={14} aria-hidden="true" />
-            {t("logistics.atlas.tilt_3d", "Widok 3D")}
-          </button>
+            <button
+              type="button"
+              onClick={() => handleZoom(1)}
+              aria-label={t("logistics.map.zoom_in", "Przybliż")}
+              className={controlButtonClass}
+            >
+              <Plus size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleZoom(-1)}
+              aria-label={t("logistics.map.zoom_out", "Oddal")}
+              className={controlButtonClass}
+            >
+              <Minus size={15} aria-hidden="true" />
+            </button>
+          </div>
 
           {taggedLocations.length === 0 && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">

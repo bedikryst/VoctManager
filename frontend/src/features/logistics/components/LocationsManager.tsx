@@ -12,6 +12,7 @@
 import React, { useDeferredValue, useEffect, useMemo } from "react";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useMediaQuery } from "usehooks-ts";
 import { useTranslation } from "react-i18next";
 import {
   CalendarClock,
@@ -42,9 +43,10 @@ import { getLocationCategoryOptions } from "../constants/locationCategories";
 import { useLocationsData } from "../hooks/useLocationsData";
 import { useLogisticsEvents } from "../hooks/useLogisticsEvents";
 
-import { LocationDossier } from "./LocationDossier";
+import { LocationDetail } from "./LocationDetail";
 import { LocationEditorPanel } from "./LocationEditorPanel";
 import { LocationRow } from "./LocationRow";
+import { LocationSheet } from "./LocationSheet";
 import { LocationsAtlas } from "./LocationsAtlas";
 import { LogisticsEventRow } from "./LogisticsEventRow";
 import { LogisticsOverviewBar } from "./LogisticsOverviewBar";
@@ -89,6 +91,14 @@ export const LocationsManager = (): React.JSX.Element => {
   const deferredLocations = useDeferredValue(displayLocations);
   const categoryOptions = useMemo(() => getLocationCategoryOptions(t), [t]);
 
+  // Master-detail focus: on desktop the detail replaces the rail list; on
+  // tablet/mobile the map takes over the viewport and a bottom sheet carries
+  // the detail — the map is never hidden behind a modal in either case.
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const isVenueFocused = activeLocation !== null;
+  const mobileFocus = isVenueFocused && !isDesktop;
+  const showRailDetail = isVenueFocused && isDesktop;
+
   useBodyScrollLock(
     isPanelOpen || locationToArchive !== null || activeLocation !== null,
   );
@@ -105,6 +115,17 @@ export const LocationsManager = (): React.JSX.Element => {
       },
     );
   }, [isError, t]);
+
+  // Escape clears the venue focus (rail detail / bottom sheet), mirroring the
+  // old dossier's behaviour now that there is no modal to trap it.
+  useEffect(() => {
+    if (!isVenueFocused) return;
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") selectLocation(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isVenueFocused, selectLocation]);
 
   const filteredUpcoming = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -231,11 +252,14 @@ export const LocationsManager = (): React.JSX.Element => {
 
           <StaggeredBentoItem>
             <div className="grid gap-5 lg:grid-cols-12">
-              {/* Map — the protagonist */}
+              {/* Map — the protagonist. On tablet/mobile focus it takes over
+                  the viewport so the cinematic dive stays visible under the
+                  bottom sheet. */}
               <div
                 className={cn(
                   "lg:col-span-7 lg:sticky lg:top-6 lg:self-start xl:col-span-8",
-                  mobileView === "list" && "hidden lg:block",
+                  mobileView === "list" && !mobileFocus && "hidden lg:block",
+                  mobileFocus && "fixed inset-0 z-40",
                 )}
               >
                 <LocationsAtlas
@@ -244,6 +268,7 @@ export const LocationsManager = (): React.JSX.Element => {
                   categoryStats={categoryStats}
                   activeLocationId={activeLocationId}
                   onSelectLocation={selectLocation}
+                  fullscreen={mobileFocus}
                 />
               </div>
 
@@ -258,8 +283,31 @@ export const LocationsManager = (): React.JSX.Element => {
                   variant="solid"
                   padding="none"
                   isHoverable={false}
-                  className="flex flex-col lg:max-h-[calc(100dvh-11rem)]"
+                  className={cn(
+                    "flex flex-col",
+                    showRailDetail
+                      ? "lg:h-[calc(100dvh-11rem)]"
+                      : "lg:max-h-[calc(100dvh-11rem)]",
+                  )}
                 >
+                  {showRailDetail && activeLocation ? (
+                    <LocationDetail
+                      location={activeLocation}
+                      activity={
+                        activeLocationId
+                          ? venueActivity.get(activeLocationId)
+                          : undefined
+                      }
+                      onClose={() => selectLocation(null)}
+                      onEdit={handleEditFromDossier}
+                      onArchive={handleArchiveFromDossier}
+                      backLabel={t(
+                        "logistics.rail.back_to_list",
+                        "Wszystkie lokacje",
+                      )}
+                    />
+                  ) : (
+                    <>
                   <div className="shrink-0 space-y-3 border-b border-ethereal-ink/6 p-4">
                     <Input
                       leftIcon={<Search size={16} />}
@@ -417,6 +465,8 @@ export const LocationsManager = (): React.JSX.Element => {
                       />
                     )}
                   </div>
+                    </>
+                  )}
                 </GlassCard>
 
                 <Eyebrow color="muted" className="mt-3 block px-1 text-center lg:hidden">
@@ -430,17 +480,21 @@ export const LocationsManager = (): React.JSX.Element => {
           </StaggeredBentoItem>
         </StaggeredBentoContainer>
 
-        <LocationDossier
-          location={activeLocation}
-          activity={
-            activeLocationId
-              ? venueActivity.get(activeLocationId)
-              : undefined
-          }
-          onClose={() => selectLocation(null)}
-          onEdit={handleEditFromDossier}
-          onArchive={handleArchiveFromDossier}
-        />
+        <LocationSheet isOpen={mobileFocus} onClose={() => selectLocation(null)}>
+          {activeLocation && (
+            <LocationDetail
+              location={activeLocation}
+              activity={
+                activeLocationId
+                  ? venueActivity.get(activeLocationId)
+                  : undefined
+              }
+              onClose={() => selectLocation(null)}
+              onEdit={handleEditFromDossier}
+              onArchive={handleArchiveFromDossier}
+            />
+          )}
+        </LocationSheet>
 
         <LocationEditorPanel
           isOpen={isPanelOpen}

@@ -161,35 +161,45 @@ export function LocationEditorPanel({
                 onSubmit={onSubmit}
                 className="flex min-h-full flex-col gap-7 rounded-3xl border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl md:p-8"
               >
-                {isNewEntry && (
-                  <section className="space-y-5">
-                    <div className="flex items-center gap-3">
-                      <Eyebrow color="gold">
-                        {t(
-                          "logistics.editor.section_search",
-                          "Globalna baza Google",
-                        )}
-                      </Eyebrow>
-                      <Divider variant="gradient-right" />
-                    </div>
-
-                    <div className="rounded-2xl border border-ethereal-gold/20 bg-ethereal-gold/5 p-5">
-                      <div className="mb-4 flex items-center gap-2 text-ethereal-gold">
-                        <Globe2 size={14} strokeWidth={1.6} aria-hidden="true" />
-                        <Text size="xs" color="graphite" className="max-w-md">
-                          {t(
-                            "logistics.editor.search_hint",
-                            "Wyszukaj miejsce, aby automatycznie uzupełnić dane, koordynaty i strefę czasową — kluczowe dla inteligentnego planowania.",
+                <section className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <Eyebrow color="gold">
+                      {isNewEntry
+                        ? t(
+                            "logistics.editor.section_search",
+                            "Globalna baza Google",
+                          )
+                        : t(
+                            "logistics.editor.section_position",
+                            "Pozycja na mapie",
                           )}
-                        </Text>
-                      </div>
-                      <LocationMapPicker
-                        onLocationSelect={handleGooglePlaceSelect}
-                        initialPosition={initialPickerPosition}
-                      />
+                    </Eyebrow>
+                    <Divider variant="gradient-right" />
+                  </div>
+
+                  <div className="rounded-2xl border border-ethereal-gold/20 bg-ethereal-gold/5 p-5">
+                    <div className="mb-4 flex items-center gap-2 text-ethereal-gold">
+                      <Globe2 size={14} strokeWidth={1.6} aria-hidden="true" />
+                      <Text size="xs" color="graphite" className="max-w-md">
+                        {isNewEntry
+                          ? t(
+                              "logistics.editor.search_hint",
+                              "Wyszukaj miejsce, aby automatycznie uzupełnić dane, koordynaty i strefę czasową — kluczowe dla inteligentnego planowania.",
+                            )
+                          : t(
+                              "logistics.editor.position_hint",
+                              "Przeciągnij pinezkę lub kliknij na mapie, aby skorygować dokładną pozycję i adres tej lokacji.",
+                            )}
+                      </Text>
                     </div>
-                  </section>
-                )}
+                    <LocationMapPicker
+                      onLocationSelect={handleGooglePlaceSelect}
+                      initialPosition={initialPickerPosition}
+                      initialName={location?.name}
+                      initialAddress={location?.formatted_address}
+                    />
+                  </div>
+                </section>
 
                 <section className="space-y-5">
                   <div className="flex items-center gap-3">
