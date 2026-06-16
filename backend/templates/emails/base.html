@@ -10,8 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="x-apple-disable-message-reformatting" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <title></title>
+    <title>VoctEnsemble</title>
     <style>
       /* Reset & Base */
       body, p, h1, h2, h3 { margin: 0; padding: 0; }
@@ -19,7 +21,8 @@
       body {
         margin: 0; padding: 0; width: 100% !important;
         -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;
-        background-color: #f8f6f2; 
+        background-color: #f8f6f2;
+        color-scheme: light;
       }
 
       /* Container */
@@ -35,25 +38,20 @@
       /* Mobile Adjustments */
       @media only screen and (max-width: 600px) {
         .content-cell { padding: 44px 28px !important; }
-        .logo-cell { padding: 24px 0 !important; }
-        .logo-img { height: 120px !important; }
-        .outer-cell { padding: 32px 10px !important; }
+        .logo-cell { padding: 20px 0 !important; }
+        .logo-img { height: 44px !important; }
+        .outer-cell { padding: 28px 10px !important; }
       }
 
-      /* Dark Mode Strategy */
-      @media (prefers-color-scheme: dark) {
-        body, .email-outer { background-color: #0f172a !important; }
-        .email-container { background-color: #1e293b !important; border-color: #334155 !important; }
-        .content-cell { background-color: #1e293b !important; }
-        .logo-cell { background-color: #1e293b !important; border-bottom-color: #334155 !important; }
-        .email-footer { background-color: #0f172a !important; border-top-color: #334155 !important; }
-        h1, h2, h3, .info-label { color: #f1f5f9 !important; }
-        p, li, td, span { color: #94a3b8 !important; }
-        .divider { border-top-color: #334155 !important; }
-        .btn { background-color: #c9a764 !important; color: #0f172a !important; border-color: #c9a764 !important; }
-        .footer-text { color: #475569 !important; }
-        u + .body .email-outer { background-color: #0f172a !important; }
-      }
+      /*
+       * Color scheme — this email is a deliberately light, parchment-toned
+       * editorial artifact. We opt out of automatic client dark-mode inversion
+       * (see color-scheme / supported-color-schemes meta in <head>) rather than
+       * ship a half-inverted treatment. The previous dark block recoloured
+       * every <p>/<span> to slate, which silently flattened the gold accents
+       * (#c9a764) and brand styling; a controlled light render is the truer,
+       * more consistent result across Apple Mail, Gmail and Outlook.
+       */
 
       /* Fix dla Gmail Desktop */
       u + .body .email-outer { background-color: #f8f6f2 !important; }
@@ -68,7 +66,7 @@
 
     <table class="email-outer" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f8f6f2" style="background-color: #f8f6f2;">
       <tr>
-        <td class="outer-cell" align="center" valign="top" bgcolor="#f8f6f2" style="padding: 60px 16px; background-color: #f8f6f2;">
+        <td class="outer-cell" align="center" valign="top" bgcolor="#f8f6f2" style="padding: 40px 16px; background-color: #f8f6f2;">
           
           <table
             role="presentation" border="0" cellpadding="0" cellspacing="0"
@@ -85,15 +83,15 @@
               <td
                 class="logo-cell"
                 align="center"
-                style="background-color: #ffffff; padding: 40px 0; border-bottom: 1px solid #f0ede7;"
+                style="background-color: #ffffff; padding: 28px 0; border-bottom: 1px solid #f0ede7;"
               >
                 {% if logo_url %}
                   <img
                     src="{{ logo_url }}"
                     alt="VoctEnsemble"
-                    height="160"
+                    height="56"
                     class="logo-img"
-                    style="height: 160px; width: auto; max-width: 100%; display: block; margin: 0 auto;"
+                    style="height: 56px; width: auto; max-width: 100%; display: block; margin: 0 auto;"
                   />
                 {% else %}
                   <div style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
@@ -111,7 +109,7 @@
             </tr>
 
             <tr>
-              <td class="content-cell" style="background-color: #ffffff; padding: 60px 64px;">
+              <td class="content-cell" style="background-color: #ffffff; padding: 48px 64px;">
                 {% block content %}{% endblock %}
               </td>
             </tr>
@@ -129,6 +127,12 @@
                            font-size: 10px; color: #ddd8d1; margin: 0; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.1em;">
                   {% translate "Automatically generated. Please do not reply." %}
                 </p>
+                {% if manage_prefs_url %}
+                <p class="footer-text sans" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                           font-size: 10px; margin: 14px 0 0 0; line-height: 1.6; letter-spacing: 0.06em;">
+                  <a href="{{ manage_prefs_url }}" style="color: #c9a764; text-decoration: underline;">{% translate "Manage your notification preferences" %}</a>
+                </p>
+                {% endif %}
               </td>
             </tr>
 

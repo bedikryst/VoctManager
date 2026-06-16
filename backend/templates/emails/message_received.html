@@ -1,6 +1,8 @@
 {% extends "emails/base.html" %}
 {% load i18n %}
 
+{% block preheader %}{% blocktranslate trimmed with sender=metadata.sender_name %}New message from {{ sender }}{% endblocktranslate %}{% if metadata.message %} — {{ metadata.message|truncatechars:90 }}{% endif %}{% endblock %}
+
 {% block content %}
 
 

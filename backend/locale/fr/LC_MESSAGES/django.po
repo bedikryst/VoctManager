@@ -2347,3 +2347,70 @@ msgstr "votre équipe de direction"
 
 msgid "Rehearsal cancelled"
 msgstr "Répétition annulée"
+
+msgid "Manage your notification preferences"
+msgstr "Gérer vos préférences de notification"
+
+msgid "Your daily VoctManager briefing"
+msgstr "Votre récapitulatif quotidien VoctManager"
+
+msgid "Your daily briefing"
+msgstr "Votre récapitulatif quotidien"
+
+msgid "Updates from the last 24 hours"
+msgstr "Mises à jour des dernières 24 heures"
+
+msgid "Absence requests"
+msgstr "Demandes d'absence"
+
+msgid "Participation responses"
+msgstr "Réponses de participation"
+
+msgid "Attendance updates"
+msgstr "Mises à jour de présence"
+
+msgid "Updates"
+msgstr "Mises à jour"
+
+msgid "Your daily briefing — %(count)d update(s)"
+msgstr "Votre récapitulatif quotidien — %(count)d mise(s) à jour"
+
+#. email preheader
+msgid ""
+"Activate your VoctEnsemble profile — your scores, schedule and casting are "
+"ready."
+msgstr ""
+"Activez votre profil VoctEnsemble — partitions, calendrier et distribution "
+"vous attendent."
+
+#. email preheader
+msgid ""
+"Your VoctEnsemble workspace is ready — projects, scores and rehearsals in "
+"one place."
+msgstr ""
+"Votre espace VoctEnsemble est prêt — projets, partitions et répétitions "
+"réunis."
+
+#. email preheader
+msgid ""
+"Reset your VoctManager password with the secure link inside — it expires "
+"soon."
+msgstr ""
+"Réinitialisez votre mot de passe VoctManager avec le lien sécurisé ci-joint "
+"— il expire bientôt."
+
+#. email preheader
+msgid "Confirmation that your VoctManager password was just changed."
+msgstr "Confirmation : votre mot de passe VoctManager vient d'être modifié."
+
+#. email preheader
+msgid ""
+"Your VoctManager account and personal data have been permanently removed."
+msgstr ""
+"Votre compte VoctManager et vos données personnelles ont été définitivement "
+"supprimés."
+
+#. message subtitle/preheader
+#, python-format
+msgid "New message from %(sender)s"
+msgstr "Nouveau message de %(sender)s"

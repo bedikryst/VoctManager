@@ -8,13 +8,17 @@
              are deterministic regardless of compiled .mo catalogs.
 @module notifications/tests
 """
+from types import SimpleNamespace
 from typing import cast
+from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
 from django.test import SimpleTestCase, TestCase, override_settings
-from django.utils import translation
+from django.utils import timezone, translation
+from pydantic import ValidationError
 
 from core.constants import AppRole
 from core.models import UserProfile
@@ -26,7 +30,7 @@ from .message_content import (
     MessageContentBuilder,
     PushPayload,
 )
-from .models import NotificationLevel, NotificationType
+from .models import Notification, NotificationLevel, NotificationType
 
 User = get_user_model()
 
@@ -147,6 +151,45 @@ class TransactionalEmailTests(TestCase):
         self._dispatch(NotificationType.REHEARSAL_SCHEDULED, metadata={"project_name": "Requiem"})
         self.assertEqual(len(mail.outbox), 0)
 
+    def test_undeliverable_address_is_suppressed(self) -> None:
+        self.user.profile.email_undeliverable = True
+        self.user.profile.save(update_fields=["email_undeliverable"])
+        self._dispatch(NotificationType.REHEARSAL_SCHEDULED, metadata={"project_name": "Requiem"})
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_rehearsal_reminder_attaches_ics_and_footer_prefs_link(self) -> None:
+        self._dispatch(
+            NotificationType.REHEARSAL_REMINDER,
+            metadata={
+                "project_name": "Requiem",
+                "starts_at": "19.06.2026, 19:00",
+                "location": "St Anne's",
+                "ics": {
+                    "kind": "rehearsal", "uid": "rehearsal_x@voctensemble.com",
+                    "start": "2026-06-19T17:00:00+00:00", "end": "2026-06-19T20:00:00+00:00",
+                    "project_name": "Requiem", "location": "St Anne's", "focus": "Lacrimosa",
+                },
+            },
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        msg = cast(EmailMultiAlternatives, mail.outbox[0])
+
+        self.assertEqual(len(msg.attachments), 1)
+        filename, content, mimetype = msg.attachments[0]
+        self.assertEqual(filename, "invite.ics")
+        self.assertIn("text/calendar", mimetype)
+        self.assertIn("BEGIN:VCALENDAR", str(content))
+        self.assertIn("DTSTART:20260619T170000Z", str(content))
+
+        html = str(msg.alternatives[0][0])
+        self.assertIn("settings?tab=notifications", html)
+
+    def test_non_calendar_email_has_no_attachment(self) -> None:
+        self._dispatch(NotificationType.PIECE_CASTING_ASSIGNED,
+                       metadata={"piece_title": "Lacrimosa", "voice_line": "Soprano I"})
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(cast(EmailMultiAlternatives, mail.outbox[0]).attachments), 0)
+
     def test_bespoke_message_template_uses_layer_subject(self) -> None:
         self._dispatch(
             NotificationType.MESSAGE_RECEIVED,
@@ -156,3 +199,179 @@ class TransactionalEmailTests(TestCase):
         )
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Rehearsal note", mail.outbox[0].subject)
+
+
+class RouterDigestGatingTests(TestCase):
+    """Routine INFO manager alerts are held back; urgent/non-digestible break through."""
+
+    EMAIL = "notifications.router.send_notification_email_task.delay"
+    PUSH = "notifications.router.send_push_notification_task.delay"
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="m1", email="m1@test.pl", password="pw123456"
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user, role=AppRole.MANAGER, digest_enabled=True
+        )
+
+    def _route(self, ntype: str, level: str):
+        from notifications.router import NotificationRouter
+        with patch(self.EMAIL) as email, patch(self.PUSH) as push:
+            NotificationRouter.route(
+                recipient_id=str(self.user.id), notification_type=ntype,
+                metadata={}, level=level,
+            )
+        return email, push
+
+    def test_digestible_info_is_held_back(self) -> None:
+        email, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, NotificationLevel.INFO)
+        email.assert_not_called()
+        push.assert_not_called()
+
+    def test_digestible_warning_breaks_through(self) -> None:
+        email, push = self._route(NotificationType.PARTICIPATION_RESPONSE, NotificationLevel.WARNING)
+        email.assert_called_once()
+        push.assert_called_once()
+
+    def test_non_digestible_is_delivered_immediately(self) -> None:
+        email, push = self._route(NotificationType.REHEARSAL_REMINDER, NotificationLevel.INFO)
+        email.assert_called_once()
+        push.assert_called_once()
+
+    def test_digest_disabled_restores_immediate_delivery(self) -> None:
+        self.profile.digest_enabled = False
+        self.profile.save(update_fields=["digest_enabled"])
+        email, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, NotificationLevel.INFO)
+        email.assert_called_once()
+        push.assert_called_once()
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://voctensemble.com",
+    SITE_URL="https://voctensemble.com/panel",
+)
+class DigestSweepTests(TestCase):
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="maestro", email="maestro@test.pl", password="pw123456", first_name="Maestro"
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user, role=AppRole.MANAGER, digest_enabled=True,
+            language="en", timezone="Europe/Warsaw",
+        )
+        # Pin digest_hour to "now" so the sweep fires this run.
+        self._tz = ZoneInfo("Europe/Warsaw")
+        self.profile.digest_hour = timezone.now().astimezone(self._tz).hour
+        self.profile.save(update_fields=["digest_hour"])
+
+    def _notif(self, ntype: str, meta: dict, level: str = NotificationLevel.INFO) -> Notification:
+        return Notification.objects.create(
+            recipient=self.user, notification_type=ntype, level=level, metadata=meta
+        )
+
+    def _sweep(self):
+        from notifications.tasks import send_notification_digests
+        return send_notification_digests()
+
+    def test_digest_groups_items_and_sends_once(self) -> None:
+        self._notif(NotificationType.ATTENDANCE_SUBMITTED,
+                    {"artist_name": "Ada", "project_name": "Requiem", "action_details": "Present"})
+        self._notif(NotificationType.ABSENCE_REQUESTED,
+                    {"artist_name": "Bo", "project_name": "Requiem", "rehearsal_date": "19.06"})
+
+        result = self._sweep()
+        self.assertEqual(result["sent"], 1)
+        self.assertEqual(len(mail.outbox), 1)
+        msg = cast(EmailMultiAlternatives, mail.outbox[0])
+        self.assertIn("2", msg.subject)
+        html = str(msg.alternatives[0][0])
+        self.assertIn("Ada", html)
+        self.assertIn("Bo", html)
+        self.assertIn("settings?tab=notifications", html)  # footer prefs link
+
+        self.profile.refresh_from_db()
+        self.assertIsNotNone(self.profile.last_digest_sent_at)
+
+    def test_no_items_sends_nothing(self) -> None:
+        self.assertEqual(self._sweep()["sent"], 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_idempotent_within_the_day(self) -> None:
+        self._notif(NotificationType.ATTENDANCE_SUBMITTED,
+                    {"artist_name": "Ada", "project_name": "Requiem"})
+        self._sweep()
+        self._sweep()
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_warning_items_are_not_in_digest(self) -> None:
+        # A WARNING participation decline is delivered in real time, not digested.
+        self._notif(NotificationType.PARTICIPATION_RESPONSE,
+                    {"artist_name": "Cy", "project_name": "Requiem"}, level=NotificationLevel.WARNING)
+        self.assertEqual(self._sweep()["sent"], 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_hour_mismatch_skips(self) -> None:
+        self.profile.digest_hour = (timezone.now().astimezone(self._tz).hour + 1) % 24
+        self.profile.save(update_fields=["digest_hour"])
+        self._notif(NotificationType.ATTENDANCE_SUBMITTED, {"artist_name": "Ada"})
+        self.assertEqual(self._sweep()["sent"], 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+
+class PreferenceDtoTests(SimpleTestCase):
+    """SMS channel is fully removed from the preference contract."""
+
+    def test_sms_field_is_rejected(self) -> None:
+        from notifications.dtos import NotificationPreferenceUpdateDTO
+        with self.assertRaises(ValidationError):
+            NotificationPreferenceUpdateDTO(  # type: ignore[call-arg]
+                user_id=1, notification_type="MESSAGE_RECEIVED", sms_enabled=True,
+            )
+
+    def test_email_only_toggle_is_valid(self) -> None:
+        from notifications.dtos import NotificationPreferenceUpdateDTO
+        dto = NotificationPreferenceUpdateDTO(
+            user_id=1, notification_type="MESSAGE_RECEIVED", email_enabled=False,
+        )
+        self.assertFalse(dto.email_enabled)
+
+    def test_requires_at_least_one_channel(self) -> None:
+        from notifications.dtos import NotificationPreferenceUpdateDTO
+        with self.assertRaises(ValidationError):
+            NotificationPreferenceUpdateDTO(user_id=1, notification_type="MESSAGE_RECEIVED")
+
+
+class ESPTrackingTests(TestCase):
+    """Anymail bounce/complaint webhook → address suppression."""
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="b1", email="bounce@test.pl", password="pw123456"
+        )
+        self.profile = UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+
+    def _fire(self, **kw) -> None:
+        from notifications.signals import handle_esp_tracking
+        base = {"recipient": self.user.email, "event_type": "", "reject_reason": None}
+        base.update(kw)
+        handle_esp_tracking(sender=None, event=SimpleNamespace(**base), esp_name="resend")
+        self.profile.refresh_from_db()
+
+    def test_hard_bounce_marks_undeliverable(self) -> None:
+        self._fire(event_type="bounced", reject_reason="invalid")
+        self.assertTrue(self.profile.email_undeliverable)
+
+    def test_spam_complaint_marks_undeliverable(self) -> None:
+        self._fire(event_type="complained")
+        self.assertTrue(self.profile.email_undeliverable)
+
+    def test_soft_bounce_does_not_suppress(self) -> None:
+        self._fire(event_type="bounced", reject_reason="timed_out")
+        self.assertFalse(self.profile.email_undeliverable)
+
+    def test_unsubscribe_opts_out_of_operational(self) -> None:
+        self._fire(event_type="unsubscribed")
+        self.assertFalse(self.profile.email_notifications_enabled)
+        self.assertFalse(self.profile.email_undeliverable)
