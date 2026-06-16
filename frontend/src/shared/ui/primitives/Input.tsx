@@ -72,7 +72,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               className={cn(
                 // Hidden on phones — the icon ate ~24px of an already narrow
                 // field and the value clipped; the padding is reclaimed below.
-                "absolute left-3 hidden items-center justify-center sm:flex",
+                // z-10: the field's backdrop-blur makes it a stacking context, and
+                // since the icon precedes it in the DOM the field's (near-opaque)
+                // background paints OVER the icon and hides it — z-10 lifts the
+                // icon back on top. pointer-events-none keeps click-to-focus.
+                "pointer-events-none absolute left-3 z-10 hidden items-center justify-center sm:flex",
                 // Incense reads on the dark variant but is too faint on the light
                 // fills; graphite gives the icon real contrast on desktop.
                 variant === "dark"

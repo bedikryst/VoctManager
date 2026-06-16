@@ -69,7 +69,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <div className="relative flex items-center">
           {leftIcon && (
             <div
-              className="pointer-events-none absolute left-4 hidden items-center justify-center text-ethereal-graphite/60 sm:flex"
+              className="pointer-events-none absolute left-4 z-10 hidden items-center justify-center text-ethereal-graphite/60 sm:flex"
               aria-hidden="true"
             >
               {React.isValidElement(leftIcon)
