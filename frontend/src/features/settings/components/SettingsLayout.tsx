@@ -83,15 +83,19 @@ export default function SettingsLayout(): React.JSX.Element {
           size="standard"
         />
 
-        <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-8">
+        {/* Split to sidebar + content only at lg. At md (iPad-mini portrait,
+            768px) the sidebar+gap would crush the content column to ~400px and
+            the two-column forms / notifications table overflowed — so below lg
+            we stack (horizontal rail nav + full-width content). */}
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
           {/* ── NAVIGATION + IDENTITY ───────────────────── */}
-          <aside className="shrink-0 space-y-4 md:sticky md:top-6 md:w-64">
+          <aside className="shrink-0 space-y-4 lg:sticky lg:top-6 lg:w-64">
             <SettingsIdentityCard user={user} />
 
-            {/* Mobile: horizontal scrollable rail */}
+            {/* Below lg: horizontal scrollable rail */}
             <nav
               aria-label={t("settings.nav.aria", "Menu ustawień")}
-              className="md:hidden"
+              className="lg:hidden"
             >
               <GlassCard variant="light" padding="sm" isHoverable={false}>
                 <div className="no-scrollbar flex gap-0.5 overflow-x-auto pb-px">
@@ -145,10 +149,10 @@ export default function SettingsLayout(): React.JSX.Element {
               </GlassCard>
             </nav>
 
-            {/* Desktop: grouped vertical nav */}
+            {/* lg+: grouped vertical nav */}
             <nav
               aria-label={t("settings.nav.aria", "Menu ustawień")}
-              className="hidden md:block"
+              className="hidden lg:block"
             >
               <GlassCard variant="light" padding="sm" isHoverable={false}>
                 <div className="flex flex-col gap-1">

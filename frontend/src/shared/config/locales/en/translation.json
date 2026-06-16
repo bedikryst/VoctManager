@@ -1442,7 +1442,7 @@
     "changed": "Changed:",
     "crew_role": "Assigned Role: {{role}}",
     "custom_message": {
-      "from": "From",
+      "from": "From: {{name}}",
       "mark_read": "Mark as read",
       "open_link": "Open link"
     },
@@ -1712,7 +1712,7 @@
         "notes": "Production Notes",
         "references": "Musical References",
         "run_sheet": "Concert Day Run Sheet",
-        "score_pdf": "Partytura Koncertu (PDF)",
+        "score_pdf": "Concert Score (PDF)",
         "title_desc": "Title and Description"
       }
     },

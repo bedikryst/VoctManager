@@ -308,7 +308,10 @@ export const RehearsalInspector = ({
       </AnimatePresence>
 
       {/* ── Roster ────────────────────────────────────────────────────── */}
-      <div className="max-h-[64vh] overflow-y-auto overflow-x-hidden">
+      {/* On phones/tablets the roster flows with the page (natural scroll);
+          only once the rail + inspector sit side by side (lg) does it become a
+          height-capped panel so the two columns stay aligned. */}
+      <div className="overflow-x-hidden lg:max-h-[64vh] lg:overflow-y-auto">
         {invitedCount === 0 ? (
           <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
             <Users size={26} className="text-ethereal-incense/30" aria-hidden="true" />

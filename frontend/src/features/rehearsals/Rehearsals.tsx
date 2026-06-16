@@ -138,7 +138,7 @@ export default function Rehearsals(): React.JSX.Element {
   return (
     <PageTransition>
       <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 px-4 pb-24 pt-6 sm:px-6">
-        <StaggeredBentoContainer className="!flex flex-col gap-5">
+        <StaggeredBentoContainer className="!flex min-w-0 flex-col gap-5">
           <StaggeredBentoItem>
             <PageHeader
               size="standard"
@@ -159,9 +159,12 @@ export default function Rehearsals(): React.JSX.Element {
             />
           </StaggeredBentoItem>
 
-          <StaggeredBentoItem>
-            <div className="grid gap-5 lg:grid-cols-12">
-              <div className="lg:col-span-4 lg:sticky lg:top-6 lg:self-start">
+          <StaggeredBentoItem className="min-w-0">
+            {/* min-w-0 on the grid + its items lets an over-wide child (e.g. the
+                dense roster) be clipped by the cards' own overflow-hidden instead
+                of forcing the whole single-column grid past the viewport. */}
+            <div className="grid min-w-0 gap-5 lg:grid-cols-12">
+              <div className="min-w-0 lg:col-span-4 lg:sticky lg:top-6 lg:self-start">
                 <RehearsalRail
                   projectTab={projectTab}
                   onProjectTab={setProjectTab}
@@ -176,7 +179,7 @@ export default function Rehearsals(): React.JSX.Element {
                 />
               </div>
 
-              <div className="lg:col-span-8">
+              <div className="min-w-0 lg:col-span-8">
                 {view === "RELIABILITY" ? (
                   <ReliabilityBoard
                     analytics={analytics}

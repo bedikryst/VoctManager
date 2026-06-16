@@ -148,8 +148,15 @@ export const ArtistRow = React.memo(
     const statusToggle = (
       <div
         className={cn(
-          "grid rounded-xl border border-ethereal-incense/15 bg-ethereal-alabaster",
-          isRollCall ? "grid-cols-2 gap-1.5 p-1.5 sm:grid-cols-4" : "flex p-1",
+          "rounded-xl border border-ethereal-incense/15 bg-ethereal-alabaster",
+          isRollCall
+            ? "grid grid-cols-2 gap-1.5 p-1.5 sm:grid-cols-4"
+            : // Compact: the four long PL status words ("USPRAWIEDLIWIONY"…) can't
+              // fit one row on phones/tablets, so the toggle wraps (each keeps its
+              // full label) rather than forcing the card — and the page — past the
+              // viewport. Only at xl, beside the note fields, does it collapse back
+              // to a single content-width row.
+              "flex w-full flex-wrap gap-1 p-1 xl:w-auto",
         )}
       >
         {SELECTABLE_STATUSES.map((key) => {
@@ -224,7 +231,12 @@ export const ArtistRow = React.memo(
         </AnimatePresence>
 
         {showNote && (
-          <div className={cn("relative", isRollCall ? "flex-1" : "w-full sm:w-56 shrink-0")}>
+          <div
+            className={cn(
+              "relative",
+              isRollCall ? "flex-1" : "min-w-0 flex-1 sm:w-56 sm:flex-none",
+            )}
+          >
             <Input
               type="text"
               variant="ghost"

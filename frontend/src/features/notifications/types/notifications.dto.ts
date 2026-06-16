@@ -196,7 +196,6 @@ export interface NotificationPreferenceDTO {
   notification_type: NotificationType;
   email_enabled: boolean;
   push_enabled: boolean;
-  sms_enabled: boolean;
   label?: string;
 }
 
@@ -204,7 +203,7 @@ export type NotificationPreferenceUpdateDTO =
   Partial<
     Pick<
       NotificationPreferenceDTO,
-      "email_enabled" | "push_enabled" | "sms_enabled"
+      "email_enabled" | "push_enabled"
     >
   > & {
     notification_type: NotificationType;

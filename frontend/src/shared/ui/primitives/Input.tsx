@@ -69,7 +69,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative flex items-center">
           {leftIcon && (
             <div
-              className="absolute left-3 flex items-center justify-center text-ethereal-incense"
+              className={cn(
+                // Hidden on phones — the icon ate ~24px of an already narrow
+                // field and the value clipped; the padding is reclaimed below.
+                "absolute left-3 hidden items-center justify-center sm:flex",
+                // Incense reads on the dark variant but is too faint on the light
+                // fills; graphite gives the icon real contrast on desktop.
+                variant === "dark"
+                  ? "text-ethereal-incense"
+                  : "text-ethereal-graphite/55",
+              )}
               aria-hidden="true"
             >
               {React.isValidElement(leftIcon)
@@ -91,7 +100,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={hasError ? errorId : undefined}
             className={cn(
               inputVariants({ variant, hasError, className }),
-              leftIcon ? "pl-10" : "pl-4",
+              // Icon padding only from sm+, since the icon itself is hidden on phones.
+              leftIcon ? "pl-4 sm:pl-10" : "pl-4",
               rightElement ? "pr-12" : "pr-4",
               "py-3",
             )}

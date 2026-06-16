@@ -69,7 +69,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <div className="relative flex items-center">
           {leftIcon && (
             <div
-              className="pointer-events-none absolute left-4 flex items-center justify-center text-ethereal-graphite/60"
+              className="pointer-events-none absolute left-4 hidden items-center justify-center text-ethereal-graphite/60 sm:flex"
               aria-hidden="true"
             >
               {React.isValidElement(leftIcon)
@@ -91,7 +91,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             aria-describedby={hasError ? errorId : undefined}
             className={cn(
               selectVariants({ variant, hasError, className }),
-              leftIcon ? "pl-11" : "px-4",
+              // Icon padding only from sm+, since the icon is hidden on phones.
+              leftIcon ? "pl-4 sm:pl-11" : "px-4",
               "pr-10 py-3",
             )}
             {...props}

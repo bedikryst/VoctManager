@@ -383,7 +383,7 @@ export const ReliabilityBoard = ({
           </div>
         </header>
 
-        <div className="max-h-[60vh] overflow-y-auto">
+        <div className="lg:max-h-[60vh] lg:overflow-y-auto">
           {analytics.singers.length === 0 ? (
             <div className="px-5 py-12 text-center">
               <Heading as="p" size="lg" weight="medium" color="muted">
