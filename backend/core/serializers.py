@@ -43,6 +43,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'dietary_preference', 'dietary_notes',
             'clothing_size', 'shoe_size', 'height_cm',
 
+            # Notification delivery
+            'digest_enabled', 'digest_hour',
+
             # Integrations
             'calendar_token'
         )

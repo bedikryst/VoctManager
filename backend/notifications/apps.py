@@ -11,6 +11,9 @@ class NotificationsConfig(AppConfig):
     name = 'notifications'
 
     def ready(self) -> None:
+        # Register ESP delivery-event handlers (bounce/complaint suppression).
+        from . import signals  # noqa: F401
+
         if settings.FIREBASE_CREDENTIALS_PATH and os.path.exists(settings.FIREBASE_CREDENTIALS_PATH):
             cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
             firebase_admin.initialize_app(cred)

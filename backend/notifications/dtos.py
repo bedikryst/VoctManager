@@ -232,7 +232,6 @@ class NotificationPreferenceUpdateDTO(BaseModel):
     notification_type: str = Field(..., description="Target business event category.")
     email_enabled: bool | None = Field(None, description="Toggle Email delivery.")
     push_enabled: bool | None = Field(None, description="Toggle Push delivery.")
-    sms_enabled: bool | None = Field(None, description="Toggle SMS delivery.")
 
     @field_validator("notification_type")
     @classmethod
@@ -241,7 +240,7 @@ class NotificationPreferenceUpdateDTO(BaseModel):
 
     @model_validator(mode="after")
     def require_at_least_one_channel(self):
-        if self.email_enabled is None and self.push_enabled is None and self.sms_enabled is None:
+        if self.email_enabled is None and self.push_enabled is None:
             raise ValueError("At least one notification channel toggle must be provided.")
         return self
 

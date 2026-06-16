@@ -39,7 +39,6 @@ class NotificationPreferenceUpdateSerializer(serializers.Serializer):
     notification_type = serializers.ChoiceField(choices=NotificationType.choices)
     email_enabled = serializers.BooleanField(required=False, allow_null=True)
     push_enabled = serializers.BooleanField(required=False, allow_null=True)
-    sms_enabled = serializers.BooleanField(required=False, allow_null=True)
 
 
 class SendToArtistSerializer(serializers.Serializer):

@@ -6,6 +6,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -174,6 +175,32 @@ class UserProfile(EnterpriseBaseModel):
     email_notifications_enabled = models.BooleanField(
         default=True,
         help_text=_("Determines if the user receives non-critical operational emails.")
+    )
+
+    # System-controlled (set by ESP bounce/complaint webhooks, not the user). When
+    # set, all notification email to this address is suppressed until it is cleared
+    # (manually, or automatically when the user changes their email).
+    email_undeliverable = models.BooleanField(
+        default=False,
+        help_text=_("Set automatically on a hard bounce or spam complaint. Suppresses notification email.")
+    )
+
+    # Routine, high-volume manager alerts (attendance, RSVPs, absence requests) are
+    # batched into a once-daily digest instead of a flood of individual emails/pushes.
+    # Urgent alerts (declines, cancellations) and personal notifications always break
+    # through in real time regardless of this setting.
+    digest_enabled = models.BooleanField(
+        default=True,
+        help_text=_("Batch routine informational manager alerts into a single daily digest email.")
+    )
+    digest_hour = models.PositiveSmallIntegerField(
+        default=8,
+        validators=[MinValueValidator(0), MaxValueValidator(23)],
+        help_text=_("Local hour (0-23, in the user's timezone) the daily digest is delivered.")
+    )
+    last_digest_sent_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("Timestamp of the most recent digest dispatch. Guards against duplicates.")
     )
 
     # === ENTERPRISE RBAC ===

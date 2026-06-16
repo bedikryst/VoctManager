@@ -252,11 +252,26 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
+# How far ahead of an event the automated reminder fires. The hourly beat sweep
+# reminds each rehearsal/concert once, the first hour it enters this window.
+REHEARSAL_REMINDER_LEAD_HOURS = env.int('REHEARSAL_REMINDER_LEAD_HOURS', default=24)
+PROJECT_REMINDER_LEAD_HOURS = env.int('PROJECT_REMINDER_LEAD_HOURS', default=48)
+
 # Scheduled tasks — requires the `celery beat` process to be running alongside
-# the worker. Hourly sweep that fails out abandoned PENDING donations.
+# the worker. Hourly sweeps: fail out abandoned PENDING donations; remind
+# participants of upcoming rehearsals/concerts.
 CELERY_BEAT_SCHEDULE = {
     'payments-expire-stale-pending-donations': {
         'task': 'payments.expire_stale_pending_donations',
+        'schedule': timedelta(hours=1),
+    },
+    'roster-dispatch-due-reminders': {
+        'task': 'roster.dispatch_due_reminders',
+        'schedule': timedelta(hours=1),
+    },
+    # Hourly; each recipient's digest_hour gates the actual send to once a day.
+    'notifications-send-digests': {
+        'task': 'notifications.send_notification_digests',
         'schedule': timedelta(hours=1),
     },
 }
@@ -264,6 +279,9 @@ CELERY_BEAT_SCHEDULE = {
 # --- EMAIL (ANYMAIL) ---
 ANYMAIL = {
     "RESEND_API_KEY": env("RESEND_API_KEY", default=""),
+    # Svix signing secret (Resend dashboard → Webhooks) used by Anymail to verify
+    # inbound tracking events before the bounce/complaint suppression runs.
+    "RESEND_SIGNING_SECRET": env("RESEND_SIGNING_SECRET", default=""),
 }
 EMAIL_BACKEND = "anymail.backends.resend.EmailBackend" if env("RESEND_API_KEY", default="") else "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="VoctManager <noreply@voctensemble.com>")

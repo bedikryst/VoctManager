@@ -104,7 +104,10 @@ class EmailDispatcherService:
             # 1. JIT State Resolution (Avoid N+1 with select_related)
             user = User.objects.select_related('profile').get(id=recipient_id)
 
-            # 2. Enforce Business Rules (Strict Opt-outs)
+            # 2. Enforce Business Rules (Strict Opt-outs + ESP suppression)
+            if getattr(user.profile, 'email_undeliverable', False):
+                logger.info(f"[EmailService] Suppressed email for UID:{recipient_id}. Address marked undeliverable.")
+                return
             if email_type == EmailType.OPERATIONAL and not getattr(user.profile, 'email_notifications_enabled', True):
                 logger.info(f"[EmailService] Suppressed operational email for UID:{recipient_id}. User opted out.")
                 return
@@ -131,6 +134,7 @@ class EmailDispatcherService:
                     (raw_vocative or user.first_name) if resolved_language == 'pl' else user.first_name
                 )
 
+                frontend_url = getattr(settings, 'FRONTEND_URL', 'https://voctensemble.com')
                 context: dict[str, Any] = {
                     "first_name": user.first_name,
                     "first_name_vocative": first_name_vocative,
@@ -138,14 +142,20 @@ class EmailDispatcherService:
                     "metadata": metadata,
                     "lang": resolved_language,
                     "site_url": getattr(settings, 'SITE_URL', 'https://voctensemble.com/panel'),
+                    # Operational emails expose a one-click route to channel preferences.
+                    "manage_prefs_url": f"{frontend_url}/panel/settings?tab=notifications",
                 }
 
                 # Structured transactional layout gets the projected email content;
                 # bespoke templates read metadata directly and only borrow the subject.
                 if template_name not in _BESPOKE_TEMPLATES:
                     context.update(
-                        content.to_email_context(base_url=getattr(settings, 'FRONTEND_URL', 'https://voctensemble.com'))
+                        content.to_email_context(base_url=frontend_url)
                     )
+
+                # Calendar attachment is built inside the language override so the
+                # event title/description land in the recipient's language.
+                attachments = cls._build_ics_attachment(metadata)
 
                 # 5. Delegate execution to core transport layer
                 cls._dispatch_core(
@@ -153,7 +163,8 @@ class EmailDispatcherService:
                     subject=subject,
                     template_name=template_name,
                     context=context,
-                    email_type=email_type
+                    email_type=email_type,
+                    attachments=attachments,
                 )
 
         except User.DoesNotExist:
@@ -162,6 +173,47 @@ class EmailDispatcherService:
             logger.error(f"[EmailService] Unexpected failure during dispatch prep for UID:{recipient_id}: {e}", exc_info=True)
             raise
 
+    @staticmethod
+    def _build_ics_attachment(metadata: dict[str, Any]) -> list[tuple[str, str, str]] | None:
+        """
+        Builds a localized 'add to calendar' .ics attachment from an `ics` payload
+        in the notification metadata (rehearsal/concert events). Must run inside the
+        recipient's translation.override so the event title/description are localized.
+        """
+        ics = (metadata or {}).get("ics")
+        if not isinstance(ics, dict) or not ics.get("start") or not ics.get("end"):
+            return None
+
+        from django.utils.translation import gettext as _gettext
+
+        from core.ical_service import ICalGeneratorService
+
+        project_name = ics.get("project_name") or ""
+        kind = ics.get("kind")
+        label = _gettext("Concert") if kind == "project" else _gettext("Rehearsal")
+        summary = f"[{label}] {project_name}".strip()
+
+        description_parts = []
+        if ics.get("focus"):
+            description_parts.append(f"{_gettext('Focus')}: {ics['focus']}")
+        if project_name:
+            description_parts.append(f"{_gettext('Project')}: {project_name}")
+
+        try:
+            content = ICalGeneratorService.build_single_event(
+                uid=ics.get("uid") or "voct-event@voctensemble.com",
+                summary=summary,
+                start_iso=str(ics["start"]),
+                end_iso=str(ics["end"]),
+                location=ics.get("location") or "",
+                description="\n".join(description_parts),
+            )
+        except Exception:
+            logger.warning("[EmailService] Failed to build .ics attachment.", exc_info=True)
+            return None
+
+        return [("invite.ics", content, "text/calendar; charset=utf-8; method=PUBLISH")]
+
     @classmethod
     def _dispatch_core(
         cls,
@@ -169,7 +221,8 @@ class EmailDispatcherService:
         subject: str,
         template_name: str,
         context: dict[str, Any],
-        email_type: str
+        email_type: str,
+        attachments: list[tuple[str, str, str]] | None = None,
     ) -> None:
         """
         Low-level transport orchestrator.
@@ -190,6 +243,9 @@ class EmailDispatcherService:
                 to=[recipient_email],
             )
             msg.attach_alternative(html_content, "text/html")
+
+            for filename, payload, mimetype in (attachments or []):
+                msg.attach(filename, payload, mimetype)
 
             # Metadata attachments for downstream ESP analytics (e.g., Resend, Postmark)
             if hasattr(msg, 'tags'):

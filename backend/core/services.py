@@ -322,6 +322,10 @@ class UserIdentityService:
         user.email = dto.new_email
         user.save(update_fields=['email'])
 
+        # A fresh address is deliverable until proven otherwise — clear any prior
+        # bounce/complaint suppression so the new mailbox starts receiving again.
+        UserProfile.objects.filter(user=user, email_undeliverable=True).update(email_undeliverable=False)
+
         user_email_changed.send(sender=UserIdentityService, user=user, old_email=old_email, new_email=dto.new_email)
         logger.info(f"Email changed successfully from {old_email} to {dto.new_email}")
         return user

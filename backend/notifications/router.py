@@ -8,6 +8,7 @@
 """
 from typing import Any
 
+from .delivery import is_digestible
 from .email_tasks import send_notification_email_task
 from .models import NotificationLevel, NotificationPreference, NotificationType
 from .tasks import send_push_notification_task
@@ -33,8 +34,15 @@ class NotificationRouter:
     ) -> None:
         """
         NOTIFICATION_READ_RECEIPT is in-app only — no email or push by design.
+        Routine INFO manager alerts are held back from real-time channels when the
+        recipient has the daily digest enabled; the in-app row is already persisted
+        and the digest sweep collects it. Disabling the digest restores immediate
+        email + push for these events.
         """
         if notification_type == NotificationType.NOTIFICATION_READ_RECEIPT:
+            return
+
+        if is_digestible(notification_type, level) and cls._digest_enabled(recipient_id):
             return
 
         pref, _ = NotificationPreference.objects.get_or_create(
@@ -60,3 +68,11 @@ class NotificationRouter:
                 metadata=metadata,
                 level=level,
             )
+
+    @staticmethod
+    def _digest_enabled(recipient_id: str) -> bool:
+        """Whether the recipient batches routine alerts into the daily digest."""
+        from core.models import UserProfile
+        return UserProfile.objects.filter(
+            user_id=recipient_id, digest_enabled=True
+        ).exists()

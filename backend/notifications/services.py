@@ -105,7 +105,6 @@ class NotificationPreferenceService:
                 k: v for k, v in [
                     ('email_enabled', dto.email_enabled),
                     ('push_enabled', dto.push_enabled),
-                    ('sms_enabled', dto.sms_enabled)
                 ] if v is not None
             }
         )

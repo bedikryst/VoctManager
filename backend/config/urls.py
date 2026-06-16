@@ -141,6 +141,10 @@ urlpatterns = [
     # --- Payments & Donations (Axepta BNP Paribas) ---
     path("api/payments/", include("payments.urls")),
 
+    # --- ESP delivery webhooks (Anymail/Resend tracking → bounce/complaint suppression) ---
+    # Resend posts Svix-signed events to .../resend/tracking/; Anymail verifies them.
+    path("api/webhooks/email/", include("anymail.urls")),
+
     # --- Chorister Hub: Artist Identity Metrics ---
     path('api/documents/artist-metrics/', ArtistMetricsAPIView.as_view(), name='artist-metrics'),
 

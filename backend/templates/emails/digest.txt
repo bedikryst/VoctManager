@@ -1,0 +1,19 @@
+{% load i18n %}
+VOCTMANAGER
+
+{% translate "Your daily briefing" %}
+{% translate "Updates from the last 24 hours" %}: {{ total }}
+
+=========================================
+
+{% if first_name %}{% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Hello {{ name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+{% for group in groups %}
+--- {{ group.title }} ({{ group.count }}) ---
+{% for item in group.items %}- {{ item.primary }}{% if item.secondary %} · {{ item.secondary }}{% endif %}{% if item.detail %}
+  {{ item.detail }}{% endif %}
+{% endfor %}{% endfor %}
+-----------------------------------------
+{% translate "Open VoctManager" %}: {{ site_url }}
+
+{% translate "With warmest regards," %}
+{% translate "The VoctEnsemble Team" %}

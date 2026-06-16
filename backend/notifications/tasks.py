@@ -13,15 +13,21 @@ Standards: SaaS 2026, Scalable Fan-Out, Strict Payload Rehydration.
 """
 
 import logging
+from datetime import timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from celery import group, shared_task
+from django.conf import settings
+from django.utils import timezone
 
 from .dtos import NotificationCreateDTO
-from .models import NotificationLevel
+from .models import NotificationLevel, NotificationType
 from .services import NotificationService
 
 logger = logging.getLogger(__name__)
+
+_DEFAULT_DIGEST_TZ = "Europe/Warsaw"
 
 
 # --- 1. CORE NOTIFICATION PROVISIONING ---
@@ -144,3 +150,156 @@ def send_bulk_notifications_task(
     
     job = group(signatures)
     job.apply_async()
+
+
+# --- 5. DAILY DIGEST -------------------------------------------------------- #
+# Routine INFO manager alerts are held back from real-time channels by the router
+# and collected here into one human, scannable email per recipient per day — sent
+# at the recipient's chosen local hour, and only when there is something to say.
+
+# Digest sections, in descending order of how much they demand the conductor's
+# attention. Titles are resolved lazily inside the language override.
+_DIGEST_SECTIONS: tuple[str, ...] = (
+    NotificationType.ABSENCE_REQUESTED,
+    NotificationType.PARTICIPATION_RESPONSE,
+    NotificationType.ATTENDANCE_SUBMITTED,
+)
+
+
+def _digest_section_title(notification_type: str) -> str:
+    from django.utils.translation import gettext as _
+    titles: dict[str, str] = {
+        NotificationType.ABSENCE_REQUESTED: _("Absence requests"),
+        NotificationType.PARTICIPATION_RESPONSE: _("Participation responses"),
+        NotificationType.ATTENDANCE_SUBMITTED: _("Attendance updates"),
+    }
+    return titles.get(notification_type, _("Updates"))
+
+
+def _dispatch_digest(profile, notifications: list) -> None:
+    """Renders and sends one grouped digest email in the recipient's language."""
+    from django.utils import translation
+
+    from .email_service import EmailDispatcherService, EmailType
+
+    user = profile.user
+    lang = getattr(profile, "language", "en") or "en"
+
+    with translation.override(lang):
+        groups: list[dict[str, Any]] = []
+        for ntype in _DIGEST_SECTIONS:
+            items = [
+                {
+                    "primary": (n.metadata or {}).get("artist_name") or "",
+                    "secondary": (n.metadata or {}).get("project_name") or "",
+                    "detail": (n.metadata or {}).get("rehearsal_date")
+                    or (n.metadata or {}).get("action_details")
+                    or "",
+                }
+                for n in notifications
+                if n.notification_type == ntype
+            ]
+            if items:
+                groups.append({"title": _digest_section_title(ntype), "count": len(items), "items": items})
+
+        total = sum(g["count"] for g in groups)
+        frontend_url = getattr(settings, "FRONTEND_URL", "https://voctensemble.com")
+
+        artist_profile = getattr(user, "artist_profile", None)
+        raw_vocative = getattr(artist_profile, "first_name_vocative", "") if artist_profile else ""
+        first_name_vocative = (raw_vocative or user.first_name) if lang == "pl" else user.first_name
+
+        from django.utils.translation import gettext as _
+        subject = _("Your daily briefing — %(count)d update(s)") % {"count": total}
+
+        context = {
+            "first_name": user.first_name,
+            "first_name_vocative": first_name_vocative,
+            "groups": groups,
+            "total": total,
+            "lang": lang,
+            "site_url": getattr(settings, "SITE_URL", f"{frontend_url}/panel"),
+            "manage_prefs_url": f"{frontend_url}/panel/settings?tab=notifications",
+        }
+        EmailDispatcherService.dispatch(
+            recipient_email=user.email,
+            subject=subject,
+            template_name="digest",
+            context=context,
+            fallback_language=lang,
+            email_type=EmailType.OPERATIONAL,
+        )
+
+
+@shared_task(name="notifications.send_notification_digests")
+def send_notification_digests() -> dict:
+    """
+    Hourly beat. For each recipient whose local hour matches their digest_hour and
+    who hasn't been digested in the last ~23h, collect the routine INFO manager
+    alerts from the trailing window and send one grouped email. Silent when empty.
+    """
+    from core.models import UserProfile
+
+    from .delivery import DIGESTIBLE_TYPES
+    from .models import Notification, NotificationPreference
+
+    now = timezone.now()
+    sent = 0
+
+    profiles = (
+        UserProfile.objects.filter(
+            digest_enabled=True, email_notifications_enabled=True, email_undeliverable=False
+        )
+        .select_related("user")
+    )
+    for profile in profiles:
+        try:
+            tz = ZoneInfo(profile.timezone or _DEFAULT_DIGEST_TZ)
+        except Exception:
+            tz = ZoneInfo(_DEFAULT_DIGEST_TZ)
+
+        if now.astimezone(tz).hour != profile.digest_hour:
+            continue
+        if profile.last_digest_sent_at and profile.last_digest_sent_at > now - timedelta(hours=23):
+            continue
+        if not getattr(profile.user, "email", None):
+            continue
+
+        floor = now - timedelta(hours=26)
+        since = (
+            profile.last_digest_sent_at
+            if profile.last_digest_sent_at and profile.last_digest_sent_at > floor
+            else floor
+        )
+
+        notifications = list(
+            Notification.objects.filter(
+                recipient_id=profile.user_id,
+                notification_type__in=DIGESTIBLE_TYPES,
+                level=NotificationLevel.INFO,
+                created_at__gt=since,
+                created_at__lte=now,
+            ).order_by("created_at")
+        )
+        if not notifications:
+            continue
+
+        disabled = set(
+            NotificationPreference.objects.filter(
+                user_id=profile.user_id, email_enabled=False
+            ).values_list("notification_type", flat=True)
+        )
+        notifications = [n for n in notifications if n.notification_type not in disabled]
+        if not notifications:
+            continue
+
+        try:
+            _dispatch_digest(profile, notifications)
+            UserProfile.objects.filter(pk=profile.pk).update(last_digest_sent_at=now)
+            sent += 1
+        except Exception:
+            logger.error("[Digest] Failed for UID:%s", profile.user_id, exc_info=True)
+
+    if sent:
+        logger.info("[Digest] Dispatched %d digest email(s).", sent)
+    return {"sent": sent}

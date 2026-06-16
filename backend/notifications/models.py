@@ -199,10 +199,6 @@ class NotificationPreference(EnterpriseBaseModel):
         default=True,
         help_text=_("Delivery authorization for Push channel.")
     )
-    sms_enabled = models.BooleanField(
-        default=False,
-        help_text=_("Delivery authorization for SMS channel.")
-    )
 
     class Meta:
         db_table = 'notifications_preference'

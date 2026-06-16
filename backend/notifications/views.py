@@ -266,7 +266,6 @@ class NotificationPreferenceAPIView(views.APIView):
                 "label": str(choice.label),
                 "email_enabled": pref.email_enabled if pref else default_email,
                 "push_enabled": pref.push_enabled if pref else default_push,
-                "sms_enabled": pref.sms_enabled if pref else False,
             })
         return Response(data)
     
