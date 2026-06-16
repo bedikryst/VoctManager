@@ -12,10 +12,14 @@ services:
       - ./backend:/app  
 
   celery:
-    command: celery -A config worker -l INFO
+    # -B runs the beat scheduler embedded in the worker so CELERY_BEAT_SCHEDULE
+    # (reminders, daily digest, stale-donation sweep) actually fires. Safe while
+    # there is a SINGLE celery container — beat must be a singleton. If you ever
+    # scale to multiple workers, drop -B here and add a dedicated `beat` service.
+    command: celery -A config worker -B -l INFO
     volumes:
       # Ensure Celery workers reflect local code changes
-      - ./backend:/app  
+      - ./backend:/app
 
   frontend:
     ports:

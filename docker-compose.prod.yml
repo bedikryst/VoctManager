@@ -7,7 +7,11 @@ services:
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
 
   celery:
-    command: celery -A config worker -l INFO
+    # -B embeds the beat scheduler so CELERY_BEAT_SCHEDULE (reminders, daily
+    # digest, stale-donation sweep) fires. Valid while this is the ONLY celery
+    # container (beat must run as a single instance). To scale workers, remove
+    # -B and add a separate one-replica `beat` service: `celery -A config beat`.
+    command: celery -A config worker -B -l INFO
 
   frontend:
     ports:
