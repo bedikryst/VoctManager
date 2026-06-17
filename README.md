@@ -12,17 +12,17 @@
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude_4.7-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
 
-**VoctManager** is a high-performance, dual-architecture enterprise resource planning (ERP) and digital operations platform. Engineered specifically as the official digital infrastructure for the professional vocal ensemble **VoctEnsemble**, it seamlessly bridges the gap between complex production logistics, secure asset management, and an immersive, cinematic digital experience.
+**VoctManager** is a dual-architecture ERP and digital operations platform — the official digital infrastructure for the professional vocal ensemble **VoctEnsemble**. It connects production logistics, secure asset management, and a cinematic public-facing experience under one backend.
 
-The platform strictly adheres to **Feature-Sliced Design (FSD)** architecture, ensuring massive scalability, domain separation, and robust long-term maintainability.
+The frontend follows **Feature-Sliced Design (FSD)** and the Django backend is layered into services + selectors, keeping domains isolated and the codebase maintainable as it grows.
 
-🌐 **Live Public Experience:** [test.voctensemble.com](https://voctensemble.com)
+🌐 **Live Public Experience:** [voctensemble.com](https://voctensemble.com)
 
 ---
 
 ## 🏛️ System Architecture & Engineering Standards
 
-The platform is built on a highly decoupled architecture designed for high availability, offline-resilient caching, and asynchronous background processing. 
+The platform is built on a decoupled architecture: asynchronous background processing, client-side cache resilience (query persistence), and a clean split between the public site and the authenticated panel. 
 
 ```mermaid
 graph TD
@@ -87,7 +87,7 @@ The platform ships **two independent frontends** that share a single Django back
 
 Frontend engineering pillars:
 
-- **Zero-Layout-Shift Architecture:** Suspense boundaries + `<EtherealLoader>` + strict skeleton states keep CLS at 0 during async fetches — no jank, ever.
+- **Zero-Layout-Shift Architecture:** Suspense boundaries + `<EtherealLoader>` + strict skeleton states keep CLS at 0 during async fetches.
 - **60FPS Kinematics:** Animations driven exclusively by `transform` / `opacity` via **Framer Motion v12** (panel) and hand-authored CSS choreography + JS rAF loops (public site). The public site runs **Lenis v1.3+** window-level smooth-scroll synced to View Transitions; the panel uses native platform scrolling.
 - **Cinematic Page Transitions:** The Astro public site composes native `::view-transition-old/new(root)` keyframes (sacred fade + Y-drift + blur, 320ms / 540ms) with a shared `view-transition-name: voct-brand` so the candle mark morphs across navigations instead of cross-fading.
 - **Staggered Bento Dashboards:** All panel views composed with `<StaggeredBentoContainer>` / `<StaggeredBentoItem>` over a shared glassmorphism token set (`shadow-glass-ethereal`) — spatial, predictable, and theme-driven.
@@ -104,7 +104,7 @@ Frontend engineering pillars:
 ### 3. Enterprise OS & Logistics (Backend)
 - **Granular RBAC:** Deep, Role-Based Access Control matrix (Admin, Manager, Artist, Crew) securing endpoints, data payloads, and UI visibility.
 - **Web Push & Real-Time Alerts:** Native-like, real-time push notifications built on the W3C VAPID standard. Handled asynchronously via Celery alongside a robust transactional email engine, keeping artists instantly updated on casting and schedule changes.
-- **Internal Messaging:** Async two-way conversation threads between choristers and the conducting/management pool, delivered in-app + email + push with unread badges and a unified inbox. Deliberately **not** a real-time chat (no presence/typing) — the store (`messaging` app) is decoupled from delivery (`notifications`), so each message reuses the existing notification pipeline.
+- **Internal Messaging:** Async two-way threads between choristers and the conducting/management pool, plus per-project broadcast channels — delivered in-app + email + push with unread badges and a unified inbox. Managers get a triage workflow (assign / resolve), a searchable inbox with status filters, an idle-pane **conductor briefing deck** that surfaces what needs attention (derived client-side, zero extra fetch), and pinned channel announcements. Day-grouped streams carry sender avatars and optimistic-send cues; deliberately **not** a real-time chat (no presence/typing) — the store (`messaging` app) is decoupled from delivery (`notifications`), so each message reuses the existing notification pipeline.
 - **Calendar Synchronization (iCal):** Seamless external calendar integration, providing auto-generated iCal feeds for Google Calendar and Apple Calendar synchronization.
 - **Optimistic UI:** Aggressive server-state caching using **@tanstack/react-query v5.91+**, delivering a zero-latency feel for critical mutations (e.g., attendance confirmation, casting updates).
 - **Asynchronous Document Engine:** Production workflows, such as dynamic Contract generation and Run Sheet compilation, are offloaded to **Celery workers** and **WeasyPrint**, guaranteeing the main thread remains unblocked.
@@ -149,21 +149,20 @@ Frontend engineering pillars:
 
 ## 🔒 Security & Data Compliance
 
-Processing artist contracts, rehearsal schedules, and copyrighted musical material requires uncompromising security:
+Processing artist contracts, rehearsal schedules, and copyrighted musical material is treated as a first-class security concern:
 
 ### Authentication & Access Control
-* **Stateless Authentication:** Secure, `httpOnly` cookie strategies with JWT rotation to mitigate XSS and CSRF vectors.
+* **Cookie-Based JWT:** Access + refresh tokens delivered exclusively in `httpOnly`, `Secure`, `SameSite=Lax` cookies (`CookieJWTAuthentication`) — the SPA never reads the token, closing the XSS exfiltration vector, with CSRF double-submit on top.
 * **Granular RBAC:** Role-based access matrices (Admin, Manager, Artist, Crew) with fine-grained endpoint and payload restrictions.
 * **Token-Gated Asset Distribution:** Sensitive repertoire (Sheet Music PDFs, Reference Audio) secured with time-limited, signed tokens tied exclusively to active project participation.
 
 ### Data Protection & Privacy
-* **GDPR Compliance:** Built-in data minimization workflows and soft-deletion mechanisms to preserve production history while meeting strict privacy regulations.
-* **Field-Level Encryption:** Sensitive fields (contracts, payroll data) encrypted at rest using FERNET cipher.
-* **Audit Logging:** Immutable transaction logs for all mutations on HR and financial records, enabling forensic analysis and compliance reporting.
+* **GDPR-Minded by Default:** Data-minimization workflows and a `SoftDeleteModel` (`is_deleted` + filtered default manager) that preserves production history without leaking removed records into active queries.
+* **No Third-Party Font CDN:** The public site self-hosts every variable font (woff2) — zero user-IP leakage to Google Fonts / Bunny — matching the stated privacy policy.
 
 ### Domain Integrity
-* **Relational Constraints:** Strict foreign key and check constraints at the database layer prevent data corruption during complex multi-entity operations (e.g., casting rollbacks, contract terminations).
-* **Pydantic Validation:** Service-layer DTOs enforce type safety and business rule validation before persistence, eliminating silent data degradation.
+* **Relational Constraints:** Foreign-key and `CheckConstraint`s at the database layer guard against corruption during multi-entity operations (e.g. casting rollbacks, contract terminations).
+* **Pydantic Validation:** Service-layer DTOs enforce type safety and business-rule validation before persistence, preventing silent data degradation.
 
 ---
 
@@ -172,19 +171,23 @@ Processing artist contracts, rehearsal schedules, and copyrighted musical materi
 VoctManager is architected for continuous evolution toward production-grade observability and resilience:
 
 - [x] **Core ERP & Logistics:** Complete domain models for projects, rosters, contracts, and scheduling.
-- [x] **Event-Driven Notifications:** Async notification routing with Resend (email) and Firebase (push) providers.
+- [x] **Event-Driven Notifications:** Async notification routing with Resend (email) and Firebase (push) — plus daily digests, rehearsal reminders, and ESP bounce/complaint suppression.
+- [x] **Asynchronous Processing:** Celery + Redis for background tasks (document generation, batch notifications, reminder/digest beats).
 - [x] **Containerization & Orchestration:** Docker & Docker Compose with zero-parity between Dev and Prod environments.
-- [x] **Asynchronous Processing:** Celery + Redis for background tasks (document generation, batch notifications, data export).
 - [x] **Error Tracking:** Sentry SDK wired into Django for production error capture and release-health monitoring.
+- [x] **Automated Testing:** Django/PyTest suite (~160 tests) across the critical paths — roster, payments, messaging, notifications, documents, archive, logistics, core — including contract generation and the AI provenance pipeline.
+- [x] **CI (Backend):** GitHub Actions runs Ruff, mypy (strict), and the full test suite on PostgreSQL for every push and PR.
 - [x] **AI Score Compiler — Schema & Ingestion Pipeline:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus the live Celery ingestion chain — a tiered Claude wrapper (adaptive thinking, cost tracking, prompt caching) that extracts PDF metadata, resolves composers/works against MusicBrainz & Wikidata, generates program notes + IPA + singing translations, and surfaces a conductor review screen. External clients (MusicBrainz, Wikidata, Spotify, YouTube) are Redis-cached.
 - [ ] **AI Score Compiler — Concert Assembly & Annotation:** WeasyPrint + pypdf concert-binder generation (cover, TOC, per-piece front matter, original scores) plus a PDF.js + Konva in-browser annotation overlay (highlight, comment, freehand, page reorder) with versioned, layer-aware persistence and export-time flattening.
+- [ ] **Field-Level Encryption & Audit Trail:** Fernet at-rest encryption for contract/financial fields and an immutable mutation log over HR/financial records for forensic review.
+- [ ] **Frontend CI & End-to-End Tests:** Lint / typecheck / build pipelines for both frontends, plus Playwright E2E coverage building on the existing screenshot harness.
 - [ ] **Metrics & Distributed Tracing:** Prometheus + Grafana dashboards and OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
-- [ ] **Automated Testing:** PyTest coverage for critical business paths (contract generation, payroll calculations, casting algorithms).
-- [ ] **CI/CD Pipelines:** GitHub Actions for automated lint, build, test, and zero-downtime deploys.
+- [ ] **Automated Backups & Disaster Recovery:** Scheduled PostgreSQL + media backups with rotation (`infra/backup.sh`; on-droplet today, off-site copy still TODO for true DR). Media persistence + nginx delivery already ship via host bind-mounts.
 - [ ] **Advanced Caching:** Redis cluster for session management and distributed cache invalidation.
-- [ ] **Rate Limiting & DDoS Protection:** CloudFlare + WAF rules for API abuse prevention.
+- [ ] **Rate Limiting & DDoS Protection:** CloudFlare + WAF rules and DRF throttling for API abuse prevention.
 - [ ] **Database Replication:** PostgreSQL streaming replication for high availability and disaster recovery.
-- [ ] **SMS & Voice:** Twilio integration for rehearsal reminders and critical schedule alerts.
+- [ ] **EAA Accessibility Conformance:** Automated accessibility testing (axe / Playwright) to certify the European Accessibility Act baseline the UI is built against.
+- [ ] **Zero-Downtime Deploys:** Blue-green / rolling release automation on top of the current single-command prod build.
 
 ---
 
@@ -196,7 +199,7 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 
 ### ▶ [voctensemble.com](https://voctensemble.com) — open in a desktop browser with sound on
 
-> **Why a separate Astro app?** The panel CSR shell was a SEO/perf regression for a charity site chasing Google Ad Grants. Astro emits crawlable static HTML, ships React only where needed (donation Vault, audio gate, sticky chrome), and uses the platform's native View Transitions API for Awwwards-grade cross-page animation without a CSR runtime tax. Source-of-truth docs: [`web/README.md`](web/README.md).
+> **Why a separate Astro app?** The panel CSR shell was a SEO/perf regression for a charity site chasing Google Ad Grants. Astro emits crawlable static HTML, ships React only where needed (donation Vault, audio gate, sticky chrome), and uses the native View Transitions API for polished cross-page animation without a CSR runtime tax. Source-of-truth docs: [`web/README.md`](web/README.md).
 
 | Section | What to watch for |
 |---|---|
@@ -237,7 +240,7 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 
 ## 📊 Performance Budget & AI Cost Telemetry
 
-The platform enforces explicit budgets at both the frontend (perceived performance) and backend (AI spend) layers. Numbers below are target ceilings measured in production.
+The platform enforces explicit budgets at both the frontend (perceived performance) and backend (AI spend) layers. Numbers below are the target ceilings the project holds itself to.
 
 ### Frontend Lighthouse
 
@@ -262,15 +265,15 @@ The cinematic entry gate is bypassed with `?nogate` so the auditor measures the 
 
 ### AI Score Compiler (Per-Piece Ingestion)
 
-| Stage | Model | Avg. cost | Cache-read share |
-|---|---|---|---|
-| PDF metadata classification | Haiku 4.5 | ~$0.01 | _placeholder_ |
-| Composer + work resolution (MusicBrainz / Wikidata) | Sonnet 4.6 | ~$0.04 | _placeholder_ |
-| Program note + IPA + singing translation | Opus 4.7 | ~$0.13 | _placeholder_ |
-| Provenance stamping + persistence | — (no LLM) | ~$0.02 (DB/API) | n/a |
-| **End-to-end average per PDF** | mixed | **~$0.20** | ≥80% on repeat runs |
+| Stage | Model | Avg. cost |
+|---|---|---|
+| PDF metadata classification | Haiku 4.5 | ~$0.01 |
+| Composer + work resolution (MusicBrainz / Wikidata) | Sonnet 4.6 | ~$0.04 |
+| Program note + IPA + singing translation | Opus 4.7 | ~$0.13 |
+| Provenance stamping + persistence | — (no LLM) | ~$0.02 (DB/API) |
+| **End-to-end average per PDF** | mixed | **~$0.20** |
 
-> Anthropic prompt caching (`cache_control: ephemeral`) is enabled on every tiered call, so cache-read tokens dominate after the first ingestion of a given piece — slashing marginal cost on re-runs and review iterations.
+> Anthropic prompt caching (`cache_control: ephemeral`) is enabled on every tiered call, so cache-read tokens dominate (≥80% on repeat runs) after the first ingestion of a given piece — slashing marginal cost on re-runs and review iterations.
 
 ---
 

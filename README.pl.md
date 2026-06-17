@@ -12,17 +12,17 @@
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude_4.7-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
 
-**VoctManager** to wysokowydajna platforma o podwójnej architekturze, łącząca planowanie zasobów przedsiębiorstwa (ERP) z operacjami cyfrowymi. Zaprojektowana jako oficjalna cyfrowa infrastruktura dla profesjonalnego zespołu wokalnego **VoctEnsemble**, płynnie łączy złożoną logistykę produkcji, bezpieczne zarządzanie zasobami oraz immersyjne, kinowe doświadczenie cyfrowe.
+**VoctManager** to platforma o podwójnej architekturze, łącząca ERP z operacjami cyfrowymi — oficjalna cyfrowa infrastruktura profesjonalnego zespołu wokalnego **VoctEnsemble**. Łączy logistykę produkcji, bezpieczne zarządzanie zasobami i kinowe doświadczenie publiczne pod jednym backendem.
 
-Platforma ściśle przestrzega architektury **Feature-Sliced Design (FSD)**, co zapewnia ogromną skalowalność, separację domeny i solidną długoterminową utrzymywalność.
+Frontend stosuje **Feature-Sliced Design (FSD)**, a backend Django jest podzielony na warstwy usług i selektorów — domeny pozostają odizolowane, a baza kodu utrzymywalna w miarę wzrostu.
 
-🌐 **Wersja Publiczna Live:** [test.voctensemble.com](https://voctensemble.com)
+🌐 **Wersja Publiczna Live:** [voctensemble.com](https://voctensemble.com)
 
 ---
 
 ## 🏛️ Architektura Systemu i Standardy Inżynieryjne
 
-Platforma jest zbudowana na wysoko zdekomponowanej architekturze zaprojektowanej z myślą o wysokiej dostępności, odpornym na offline buforowaniu oraz asynchronicznym przetwarzaniu w tle.
+Platforma jest zbudowana na zdekomponowanej architekturze: asynchroniczne przetwarzanie w tle, odporność cache po stronie klienta (persystencja zapytań) oraz czysty rozdział strony publicznej od uwierzytelnionego panelu.
 
 ```mermaid
 graph TD
@@ -87,7 +87,7 @@ Platforma dostarcza **dwa niezależne frontendy** współdzielące jeden backend
 
 Filary inżynieryjne frontendu:
 
-- **Architektura Zero-Layout-Shift:** Boundary suspense + `<EtherealLoader>` + rygorystyczne stany skeleton utrzymują CLS na poziomie 0 podczas asynchronicznego pobierania danych — zero przeskoków, zawsze.
+- **Architektura Zero-Layout-Shift:** Boundary suspense + `<EtherealLoader>` + rygorystyczne stany skeleton utrzymują CLS na poziomie 0 podczas asynchronicznego pobierania danych.
 - **Kinematyka 60FPS:** Animacje napędzane wyłącznie przez `transform` / `opacity` za pomocą **Framer Motion v12** (panel) i ręcznie pisanej choreografii CSS + pętli rAF w JS (strona publiczna). Strona publiczna używa **Lenis v1.3+** smooth-scrolla na poziomie okna zsynchronizowanego z View Transitions; panel korzysta z natywnego scrolla platformy.
 - **Kinowe przejścia między stronami:** Strona publiczna Astro komponuje natywne keyframes `::view-transition-old/new(root)` (sakralny fade + Y-drift + blur, 320ms / 540ms) z shared `view-transition-name: voct-brand`, więc znak świecy morphuje płynnie między nawigacjami zamiast cross-fadeu.
 - **Stopniowane panele Bento:** Wszystkie widoki panelu komponowane przez `<StaggeredBentoContainer>` / `<StaggeredBentoItem>` na wspólnym zestawie tokenów glassmorphism (`shadow-glass-ethereal`) — przestrzenne, przewidywalne, sterowane motywem.
@@ -104,7 +104,7 @@ Filary inżynieryjne frontendu:
 ### 3. System Enterprise i Logistyka (Backend)
 - **Granularny RBAC:** Głęboka macierz kontroli dostępu opartej na rolach (Admin, Manager, Artysta, Crew), zabezpieczająca endpointy, payloady danych i widoczność interfejsu.
 - **Web Push i alerty w czasie rzeczywistym:** Natywno-podobne powiadomienia push w czasie rzeczywistym oparte na standardzie W3C VAPID. Obsługiwane asynchronicznie przez Celery wraz z solidnym transakcyjnym silnikiem email, utrzymujące artystów na bieżąco ze zmianami castingu i harmonogramu.
-- **Komunikacja wewnętrzna:** Asynchroniczne, dwukierunkowe wątki rozmów między chórzystami a pulą dyrygentów/zarządu, dostarczane in-app + e-mail + push, z licznikiem nieprzeczytanych i wspólną skrzynką. Świadomie **nie** czat w czasie rzeczywistym (bez presence/„pisze…") — magazyn (`messaging`) jest oddzielony od dostarczania (`notifications`), więc każda wiadomość korzysta z istniejącego pipeline'u powiadomień.
+- **Komunikacja wewnętrzna:** Asynchroniczne, dwukierunkowe wątki między chórzystami a pulą dyrygentów/zarządu oraz kanały rozgłoszeniowe per projekt — dostarczane in-app + e-mail + push, z licznikiem nieprzeczytanych i wspólną skrzynką. Menedżerowie dostają workflow triage (przydziel / zamknij), przeszukiwalną skrzynkę z filtrami statusu, **skrzynkę dyrygenta** w bezczynnym panelu, która wydobywa to, co wymaga uwagi (wyliczane po stronie klienta, bez dodatkowych zapytań), oraz przypięte ogłoszenia kanałowe. Strumienie pogrupowane dniami niosą awatary nadawców i sygnały optymistycznego wysyłania; świadomie **nie** czat w czasie rzeczywistym (bez presence/„pisze…") — magazyn (`messaging`) jest oddzielony od dostarczania (`notifications`), więc każda wiadomość korzysta z istniejącego pipeline'u powiadomień.
 - **Synchronizacja kalendarzy (iCal):** Bezproblemowa integracja z zewnętrznymi kalendarzami, automatycznie generująca feedy iCal do synchronizacji z Google i Apple Calendar.
 - **Optimistic UI:** Agresywne buforowanie stanu serwera przy użyciu **@tanstack/react-query v5.91+**, zapewniające odczucie zerowego opóźnienia dla krytycznych mutacji (potwierdzenie obecności, zmiany castingu).
 - **Asynchroniczny silnik dokumentów:** Produkcyjne przepływy pracy, takie jak dynamiczne generowanie umów i kompilacja arkuszy produkcyjnych, są przekazywane do **Celery workers** i **WeasyPrint**, gwarantując, że główny wątek pozostaje nieblokowany.
@@ -149,22 +149,20 @@ Filary inżynieryjne frontendu:
 
 ## 🔒 Bezpieczeństwo, prywatność i zgodność danych
 
-Przetwarzanie umów artystycznych, harmonogramów prób i chronionych materiałów muzycznych wymaga najwyższej klasy zabezpieczeń:
+Przetwarzanie umów artystycznych, harmonogramów prób i chronionych materiałów muzycznych traktujemy jako priorytetową kwestię bezpieczeństwa:
 
 ### Uwierzytelnianie i kontrola dostępu
-* **Uwierzytelnianie bezstanowe:** Bezpieczna strategia oparta na ciasteczkach `httpOnly` i rotacji tokenów JWT, ograniczająca wektory ataku XSS i CSRF.
+* **JWT w ciasteczkach:** Tokeny access + refresh dostarczane wyłącznie w ciasteczkach `httpOnly`, `Secure`, `SameSite=Lax` (`CookieJWTAuthentication`) — SPA nigdy nie odczytuje tokenu, co zamyka wektor wykradzenia przez XSS; do tego CSRF double-submit.
 * **Granularny RBAC:** Macierze kontroli dostępu oparte na rolach (Admin, Manager, Artysta, Crew) z drobnoziarnistymi restrykcjami na poziomie endpointu i payloadu.
 * **Dystrybucja zasobów z zabezpieczeniem tokenem:** Wrażliwe zasoby repertuarowe (PDF-y nut, audio referencyjne) zabezpieczone czasowo ograniczonymi, podpisanymi tokenami powiązanymi wyłącznie z aktywnym uczestnictwem w projekcie.
 
 ### Ochrona danych i prywatność
-* **Zgodność z RODO:** Wbudowane przepływy minimalizacji danych i mechanizmy miękkiego usuwania, aby zachować historię produkcji, spełniając ścisłe przepisy o prywatności.
-* **Szyfrowanie na poziomie pola:** Wrażliwe pola (umowy, dane wynagrodzeń) szyfrowane w spoczynku przy użyciu szyfru FERNET.
-* **Dziennik audytu:** Niezmienne logi transakcji dla wszystkich mutacji danych HR i finansowych, umożliwiające analizę kryminalistyczną i raportowanie zgodności.
-* **Brak zewnętrznych CDN-ów dla fontów:** Strona publiczna używa wyłącznie samodzielnie hostowanych, zmiennych fontów woff2 (zero transferu IP użytkownika do Google Fonts / Bunny) — zgodnie z deklarowaną polityką prywatności.
+* **Zgodność z RODO u podstaw:** Przepływy minimalizacji danych i `SoftDeleteModel` (`is_deleted` + filtrujący menedżer domyślny), który zachowuje historię produkcji bez przeciekania usuniętych rekordów do aktywnych zapytań.
+* **Brak zewnętrznych CDN-ów dla fontów:** Strona publiczna hostuje samodzielnie wszystkie zmienne fonty woff2 (zero transferu IP użytkownika do Google Fonts / Bunny) — zgodnie z deklarowaną polityką prywatności.
 
 ### Integralność domeny
-* **Ograniczenia relacyjne:** Ścisłe ograniczenia klucza obcego i sprawdzenia na poziomie bazy danych zapobiegają uszkodzeniu danych podczas złożonych operacji wieloentityowych (np. wycofywanie castingu, rozwiązywanie umów).
-* **Walidacja Pydantic:** Usługowe DTO wymuszają bezpieczeństwo typów i walidację reguł biznesowych przed utrwaleniem, eliminując cichą degradację danych.
+* **Ograniczenia relacyjne:** Klucze obce i `CheckConstraint`y na poziomie bazy danych chronią przed uszkodzeniem podczas operacji wieloentityowych (np. wycofywanie castingu, rozwiązywanie umów).
+* **Walidacja Pydantic:** Usługowe DTO wymuszają bezpieczeństwo typów i walidację reguł biznesowych przed utrwaleniem, zapobiegając cichej degradacji danych.
 
 ---
 
@@ -173,19 +171,23 @@ Przetwarzanie umów artystycznych, harmonogramów prób i chronionych materiał�
 VoctManager jest zaprojektowany do ciągłej ewolucji w kierunku obserwowalności i odporności klasy produkcyjnej:
 
 - [x] **Podstawowe ERP i logistyka:** Kompletne modele domeny dla projektów, zespołów, umów i planowania.
-- [x] **Powiadomienia oparte na zdarzeniach:** Asynchroniczne trasowanie powiadomień z dostawcami Resend (email) i Firebase (push).
+- [x] **Powiadomienia oparte na zdarzeniach:** Asynchroniczne trasowanie powiadomień z dostawcami Resend (email) i Firebase (push) — plus dzienne digesty, przypomnienia o próbach i wygaszanie po bounce/skardze ESP.
+- [x] **Przetwarzanie asynchroniczne:** Celery + Redis dla zadań w tle (generowanie dokumentów, powiadomienia grupowe, beaty przypomnień/digestów).
 - [x] **Konteneryzacja i orkiestracja:** Docker i Docker Compose z zerowym parytetem między środowiskami Dev i Prod.
-- [x] **Przetwarzanie asynchroniczne:** Celery + Redis dla zadań w tle (generowanie dokumentów, powiadomienia grupowe, eksport danych).
 - [x] **Śledzenie błędów:** Sentry SDK wpięty w Django do przechwytywania błędów produkcyjnych i monitorowania kondycji wydań.
+- [x] **Automatyczne testowanie:** Zestaw testów Django/PyTest (~160) pokrywający krytyczne ścieżki — roster, payments, messaging, notifications, documents, archive, logistics, core — w tym generowanie umów i pipeline proweniencji AI.
+- [x] **CI (backend):** GitHub Actions odpala Ruff, mypy (strict) i pełny zestaw testów na PostgreSQL przy każdym pushu i PR.
 - [x] **Kompilator Partytur AI — Schemat i pipeline przetwarzania:** Kanoniczny schemat domeny (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus działający łańcuch Celery — wielopoziomowy wrapper Claude (adaptacyjne myślenie, śledzenie kosztów, buforowanie promptów) ekstrahujący metadane PDF, rozwiązujący kompozytorów/utwory względem MusicBrainz i Wikidata, generujący noty programowe + IPA + przekłady śpiewalne i prezentujący ekran przeglądu dla dyrygenta. Klienty zewnętrzne (MusicBrainz, Wikidata, Spotify, YouTube) buforowane w Redis.
 - [ ] **Kompilator Partytur AI — Montaż koncertu i adnotacje:** Generowanie skoroszytu koncertowego WeasyPrint + pypdf (okładka, spis treści, materiały wstępne per utwór, oryginalne partytury) oraz nakładka adnotacji w przeglądarce PDF.js + Konva (podświetlenie, komentarz, odręczne rysowanie, zmiana kolejności stron) z wersjonowaną, warstwową persystencją i spłaszczaniem przy eksporcie.
+- [ ] **Szyfrowanie pól i dziennik audytu:** Szyfrowanie w spoczynku (Fernet) pól umów/finansowych oraz niezmienny log mutacji rekordów HR/finansowych do przeglądu kryminalistycznego.
+- [ ] **CI frontendu i testy E2E:** Pipeline'y lint / typecheck / build dla obu frontendów oraz pokrycie E2E Playwright w oparciu o istniejący harness zrzutów ekranu.
 - [ ] **Metryki i rozproszone śledzenie:** Dashboardy Prometheus + Grafana oraz instrumentacja OpenTelemetry do śledzenia żądań end-to-end między usługami i zewnętrznymi API.
-- [ ] **Automatyczne testowanie:** Pokrycie PyTest dla krytycznych ścieżek biznesowych (generowanie umów, kalkulacje wynagrodzeń, algorytmy castingu).
-- [ ] **Pipelines CI/CD:** GitHub Actions do zautomatyzowanego lint, build, test i wdrożeń bez przestojów.
+- [ ] **Automatyczne backupy i odzyskiwanie po awarii:** Zaplanowane kopie PostgreSQL + mediów z rotacją (`infra/backup.sh`; na razie na droplecie, kopia poza serwerem wciąż do zrobienia dla pełnego DR). Trwałość mediów + serwowanie przez nginx już działa dzięki bind-mountom hosta.
 - [ ] **Zaawansowane buforowanie:** Klaster Redis do zarządzania sesją i unieważniania rozproszonej pamięci podręcznej.
-- [ ] **Limitowanie szybkości i ochrona DDoS:** Reguły CloudFlare + WAF do zapobiegania nadużywaniu API.
+- [ ] **Limitowanie szybkości i ochrona DDoS:** Reguły CloudFlare + WAF oraz throttling DRF do zapobiegania nadużywaniu API.
 - [ ] **Replikacja bazy danych:** Strumieniowa replikacja PostgreSQL w celu zapewnienia wysokiej dostępności i odzyskiwania po awarii.
-- [ ] **SMS i połączenia głosowe:** Integracja Twilio dla przypomnień o próbach i krytycznych alertów harmonogramu.
+- [ ] **Zgodność z EAA (dostępność):** Automatyczne testy dostępności (axe / Playwright) certyfikujące bazowy poziom Europejskiego Aktu o Dostępności, pod który budowany jest UI.
+- [ ] **Wdrożenia bez przestojów:** Automatyzacja release'ów blue-green / rolling na bazie obecnego jednokomendowego buildu produkcyjnego.
 
 ---
 
@@ -197,7 +199,7 @@ Pełne doświadczenie opiera się na kinematyce powiązanej ze scrollem, sygnał
 
 ### ▶ [voctensemble.com](https://voctensemble.com) — otwórz w przeglądarce desktopowej z włączonym dźwiękiem
 
-> **Dlaczego osobna aplikacja Astro?** Powłoka CSR panelu była regresją SEO/perf dla strony fundacji starającej się o Google Ad Grants. Astro emituje crawlable statyczny HTML, wysyła React tylko tam, gdzie potrzebny (lejek datków Vault, brama audio, sticky chrome), i używa natywnego API View Transitions dla przejść na poziomie Awwwards bez narzutu CSR runtime. Źródło prawdy: [`web/README.pl.md`](web/README.pl.md).
+> **Dlaczego osobna aplikacja Astro?** Powłoka CSR panelu była regresją SEO/perf dla strony fundacji starającej się o Google Ad Grants. Astro emituje crawlable statyczny HTML, wysyła React tylko tam, gdzie potrzebny (lejek datków Vault, brama audio, sticky chrome), i używa natywnego API View Transitions dla dopracowanych przejść między stronami bez narzutu CSR runtime. Źródło prawdy: [`web/README.pl.md`](web/README.pl.md).
 
 | Sekcja | Na co zwrócić uwagę |
 |---|---|
@@ -238,7 +240,7 @@ Pełne doświadczenie opiera się na kinematyce powiązanej ze scrollem, sygnał
 
 ## 📊 Budżet wydajności i telemetria kosztów AI
 
-Platforma wymusza jawne budżety zarówno na warstwie frontendu (postrzegana wydajność), jak i backendu (wydatki AI). Poniższe liczby to docelowe pułapy mierzone na produkcji.
+Platforma wymusza jawne budżety zarówno na warstwie frontendu (postrzegana wydajność), jak i backendu (wydatki AI). Poniższe liczby to docelowe pułapy, do których projekt się stosuje.
 
 ### Frontend Lighthouse
 
@@ -263,15 +265,15 @@ Kinowa brama wejściowa jest pomijana parametrem `?nogate`, aby audytor mierzył
 
 ### Kompilator Partytur AI (przetwarzanie per utwór)
 
-| Etap | Model | Średni koszt | Udział odczytu z cache |
-|---|---|---|---|
-| Klasyfikacja metadanych PDF | Haiku 4.5 | ~0,01 USD | _placeholder_ |
-| Rozwiązanie kompozytora + utworu (MusicBrainz / Wikidata) | Sonnet 4.6 | ~0,04 USD | _placeholder_ |
-| Nota programowa + IPA + przekład śpiewalny | Opus 4.7 | ~0,13 USD | _placeholder_ |
-| Stemplowanie proweniencji + persystencja | — (bez LLM) | ~0,02 USD (DB/API) | nd. |
-| **Średnia end-to-end na PDF** | mieszane | **~0,20 USD** | ≥80% przy powtórnych uruchomieniach |
+| Etap | Model | Średni koszt |
+|---|---|---|
+| Klasyfikacja metadanych PDF | Haiku 4.5 | ~0,01 USD |
+| Rozwiązanie kompozytora + utworu (MusicBrainz / Wikidata) | Sonnet 4.6 | ~0,04 USD |
+| Nota programowa + IPA + przekład śpiewalny | Opus 4.7 | ~0,13 USD |
+| Stemplowanie proweniencji + persystencja | — (bez LLM) | ~0,02 USD (DB/API) |
+| **Średnia end-to-end na PDF** | mieszane | **~0,20 USD** |
 
-> Buforowanie promptów Anthropic (`cache_control: ephemeral`) jest włączone na każdym wywołaniu wielopoziomowym, więc tokeny odczytu z cache dominują po pierwszym przetworzeniu danego utworu — drastycznie obniżając koszt krańcowy przy powtórnych uruchomieniach i iteracjach przeglądu.
+> Buforowanie promptów Anthropic (`cache_control: ephemeral`) jest włączone na każdym wywołaniu wielopoziomowym, więc tokeny odczytu z cache dominują (≥80% przy powtórnych uruchomieniach) po pierwszym przetworzeniu danego utworu — drastycznie obniżając koszt krańcowy przy powtórnych uruchomieniach i iteracjach przeglądu.
 
 ---
 
