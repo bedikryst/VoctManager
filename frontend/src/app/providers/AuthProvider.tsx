@@ -18,6 +18,7 @@ import { isAxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import api, { type AuthRequestConfig } from "@/shared/api/api";
 import { clearPersistedQueryCache } from "@/shared/api/queryPersistence";
+import { clearAllOffline } from "@/shared/offline/offlineClient";
 import i18n from "@/shared/config/i18n";
 import type { AuthProfile, AuthUser } from "@/shared/auth/auth.types";
 import { settingsKeys } from "@/features/settings/api/settings.queries";
@@ -234,8 +235,11 @@ export const AuthProvider = ({
     } finally {
       setUser(null);
       queryClient.clear();
-      // Drop the offline snapshot too — no cached data may survive logout.
+      // Drop every offline trace too — query snapshot, downloaded scores/audio
+      // and any queued writes — so nothing leaks to the next user on a shared
+      // device.
       clearPersistedQueryCache();
+      void clearAllOffline();
       window.location.href = "/login";
     }
   };

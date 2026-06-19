@@ -8,7 +8,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
-import { QueryClient } from "@tanstack/react-query";
+import {
+  QueryClient,
+  defaultShouldDehydrateQuery,
+} from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 
 import { CursorProvider } from "./app/providers/CursorProvider";
@@ -18,6 +21,7 @@ import {
   QUERY_CACHE_BUSTER,
   QUERY_CACHE_MAX_AGE_MS,
 } from "./shared/api/queryPersistence";
+import { registerOfflineServiceWorker } from "./shared/offline/offlineClient";
 import "./shared/config/i18n";
 import { router } from "./app/App";
 import "./app/styles/index.css";
@@ -47,6 +51,20 @@ ReactDOM.createRoot(rootElement).render(
         persister,
         maxAge: QUERY_CACHE_MAX_AGE_MS,
         buster: QUERY_CACHE_BUSTER,
+        dehydrateOptions: {
+          // Binary payloads (PDF/score blobs from the in-app viewer) do NOT
+          // survive JSON serialization — they rehydrate from localStorage as
+          // `{}` and detonate consumers like URL.createObjectURL ("Overload
+          // resolution failed"). Never persist them; the viewer refetches the
+          // blob on demand anyway (and they'd blow the localStorage quota).
+          shouldDehydrateQuery: (query) => {
+            const data = query.state.data;
+            if (data instanceof Blob || data instanceof ArrayBuffer) {
+              return false;
+            }
+            return defaultShouldDehydrateQuery(query);
+          },
+        },
       }}
     >
       <CursorProvider>
@@ -57,3 +75,7 @@ ReactDOM.createRoot(rootElement).render(
     </PersistQueryClientProvider>
   </React.StrictMode>,
 );
+
+// Register the offline service worker for everyone after first paint, so the
+// PWA can boot and practice offline regardless of push-notification consent.
+void registerOfflineServiceWorker();

@@ -3,9 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo_biale.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>VoctManager | Panel</title>
     <meta name="robots" content="noindex,nofollow" />
+
+    <!--
+      Installable PWA. Static manifest in /public (no plugin HTML injection, so
+      the install criteria are auditable here). theme-color tracks the light
+      panel chrome; the dark variant matches the splash/icon backdrop (#060607).
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#060607" media="(prefers-color-scheme: dark)" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="VoctManager" />
 
     <!--
       Self-hosted variable fonts: GDPR-compliant, zero data transfer to third-party

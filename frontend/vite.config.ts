@@ -33,7 +33,15 @@ export default defineConfig(({ mode }) => {
       injectRegister: null,
       manifest: false,
       injectManifest: {
-        globPatterns: [],
+        // Precache the full app shell so the PWA boots with zero network — the
+        // foundation real offline stands on. The pdf.worker chunk is large but
+        // essential (offline score viewer), so lift the per-file cap to 5 MB.
+        globPatterns: [
+          "**/*.{js,css,html,wasm}",
+          "**/*.{woff,woff2}",
+          "**/*.{svg,png,webp,ico}",
+        ],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       devOptions: {
         enabled: true,

@@ -32,6 +32,7 @@ import {
 } from "@/features/projects/api/project.query-utils";
 import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { RehearsalsService } from "@/features/rehearsals/api/rehearsals.service";
+import { scheduleKeys } from "@/features/schedule/api/schedule.queries";
 import { ScheduleService } from "@/features/schedule/api/schedule.service";
 
 interface DashboardDataPreloadContext {
@@ -247,30 +248,16 @@ const preloadArtistWorkspace = ({
     return Promise.resolve();
   }
 
+  // The artist home + calendar both read the server-joined schedule dashboard
+  // (and the materials dashboard for readiness). The former per-collection
+  // `*ByArtist` prefetches fed the retired client-side join and are no longer
+  // read by any surface — warming them would be three wasted round-trips.
   return Promise.allSettled([
     prefetchQuery(
       queryClient,
       projectKeys.projects.all,
       ProjectService.getAll,
       WORKSPACE_STALE_TIME,
-    ),
-    prefetchQuery(
-      queryClient,
-      projectKeys.participations.byArtist(artistId),
-      () => ScheduleService.getParticipationsByArtist(artistId),
-      WORKSPACE_STALE_TIME,
-    ),
-    prefetchQuery(
-      queryClient,
-      rehearsalKeys.rehearsals.byArtist(artistId),
-      () => ScheduleService.getRehearsalsByArtist(artistId),
-      WORKSPACE_STALE_TIME,
-    ),
-    prefetchQuery(
-      queryClient,
-      rehearsalKeys.attendances.byArtist(artistId),
-      () => ScheduleService.getAttendancesByArtist(artistId),
-      FAST_CHANGING_STALE_TIME,
     ),
     prefetchQuery(
       queryClient,
@@ -282,6 +269,12 @@ const preloadArtistWorkspace = ({
       queryClient,
       materialsKeys.dashboard,
       MaterialsService.getArtistMaterialsDashboard,
+      WORKSPACE_STALE_TIME,
+    ),
+    prefetchQuery(
+      queryClient,
+      scheduleKeys.dashboard.byArtist(artistId),
+      ScheduleService.getScheduleDashboard,
       WORKSPACE_STALE_TIME,
     ),
   ]);
