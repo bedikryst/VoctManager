@@ -9,14 +9,14 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
-import { Preloader } from "@/shared/ui/kinematics/Preloader";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
 export default function ManagerRoute(): React.JSX.Element {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
-    return <Preloader />;
+    return <EtherealLoader />;
   }
 
   if (!isManager(user)) {

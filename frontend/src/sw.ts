@@ -72,7 +72,14 @@ const BADGE = "/logo.png";
 
 // Shell (JS/CSS/HTML/fonts/icons) injected by vite-plugin-pwa from the build.
 // With this populated, the PWA boots offline instead of hitting the dino page.
-precacheAndRoute(self.__WB_MANIFEST);
+//
+// directoryIndex:"" — DON'T auto-map a bare "/" navigation to the precached
+// app index. "/" is the Astro MARKETING homepage on this origin; letting the
+// precache answer it would make the app shell hijack the public landing page.
+// Workbox guards with `if (directoryIndex && pathname.endsWith('/'))`, so an
+// empty string disables the mapping (and is type-valid, unlike null). App
+// navigations are handled explicitly by the allowlisted NavigationRoute below.
+precacheAndRoute(self.__WB_MANIFEST, { directoryIndex: "" });
 cleanupOutdatedCaches();
 
 const isSameOrigin = (url: URL): boolean => url.origin === self.location.origin;

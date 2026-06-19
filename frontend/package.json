@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:analyze": "vite build --mode analyze",
+    "typecheck": "tsc -b --noEmit",
+    "build": "tsc -b --noEmit && vite build",
+    "build:analyze": "tsc -b --noEmit && vite build --mode analyze",
     "lint": "eslint .",
     "preview": "vite preview",
     "extract-i18n": "i18next-cli extract"

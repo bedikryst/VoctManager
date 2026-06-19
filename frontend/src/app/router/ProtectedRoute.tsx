@@ -10,7 +10,7 @@
 import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { Preloader } from "@/shared/ui/kinematics/Preloader";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
 export default function ProtectedRoute(): React.JSX.Element {
   const { isAuthenticated, isLoading } = useAuth();
@@ -18,7 +18,7 @@ export default function ProtectedRoute(): React.JSX.Element {
 
   // Intercept render tree while authenticating session token via backend
   if (isLoading) {
-    return <Preloader />;
+    return <EtherealLoader />;
   }
 
   // Redirect unauthorized traffic to login, persisting target path for post-login redirection
