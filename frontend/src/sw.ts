@@ -143,14 +143,17 @@ registerRoute(
   }),
 );
 
-// Boot offline: serve the precached shell for any navigation the browser can't
-// fulfil from the network. Production-only — in dev the shell isn't precached
-// and this would shadow Vite's index. API/media/admin are denied so they 404
-// honestly instead of returning the SPA document.
+// Boot offline: serve the precached APP shell for navigations to the panel SPA.
+// ALLOWLIST (not denylist) is critical — this SW is registered at scope "/", but
+// the marketing site (Astro) lives at "/", "/o-nas", "/koncerty"… on the SAME
+// origin. A denylist would make the app shell hijack those public pages. We
+// match exactly the routes nginx serves from the app build (`^~ /panel|/login|
+// /documents`), so the SW mirrors the server and also makes those routes immune
+// to any stale CDN/browser cache. Production-only (dev shell isn't precached).
 if (import.meta.env.PROD) {
   registerRoute(
     new NavigationRoute(createHandlerBoundToURL("index.html"), {
-      denylist: [/^\/api\//, /^\/media\//, /^\/admin\//, /^\/django-static\//],
+      allowlist: [/^\/panel/, /^\/login/, /^\/documents\//],
     }),
   );
 }
