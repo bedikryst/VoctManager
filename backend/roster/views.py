@@ -57,7 +57,13 @@ from .models import (
     Rehearsal,
     VoiceType,
 )
-from .queries import get_artist_dossier, get_artist_materials_queryset
+from .queries import (
+    artist_has_live_access_to_piece,
+    get_artist_dossier,
+    get_artist_materials_queryset,
+    get_artist_schedule,
+)
+from .queries.materials_queries import CLOSED_PROJECT_STATUSES
 
 # Serializers
 from .serializers import (
@@ -92,32 +98,12 @@ def _is_manager(user) -> bool:
     return hasattr(user, 'profile') and user.profile.is_manager
 
 
-# Project lifecycle states after which a chorister loses access to a project's
-# rehearsal materials (scores in particular — often the conductor's licensed or
-# personally-owned property, which must not stay readable once the concert is over).
-_CLOSED_PROJECT_STATUSES = (Project.Status.COMPLETED, Project.Status.CANCELLED)
-
-
-def _artist_has_live_access_to_piece(user, piece_id) -> bool:
-    """
-    True iff `user` is cast (active participation) in at least one project that
-    is still LIVE (not completed/cancelled) and programs `piece_id`.
-
-    This is the single rule behind chorister score access: it evaporates the
-    moment every project featuring the piece is closed, so a leaked or
-    bookmarked score URL stops resolving once the concert is done.
-    """
-    if piece_id is None:
-        return False
-    return (
-        Participation.objects.filter(
-            artist__user=user,
-            is_deleted=False,
-            project__program_items__piece_id=piece_id,
-        )
-        .exclude(project__status__in=_CLOSED_PROJECT_STATUSES)
-        .exists()
-    )
+# Chorister material-access rule now lives in roster.queries.materials_queries so
+# the archive AnnotationViewSet can share the exact same gate (scores + their
+# shared markings expire together when every project featuring the piece closes).
+# Thin module-local aliases preserve the existing private call sites below.
+_CLOSED_PROJECT_STATUSES = CLOSED_PROJECT_STATUSES
+_artist_has_live_access_to_piece = artist_has_live_access_to_piece
 
 
 class PdfRenderUnavailable(APIException):
@@ -556,6 +542,52 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             context={'request': request},
         )
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='schedule-dashboard')
+    def schedule_dashboard(self, request) -> Response:
+        """
+        Pre-joined personal schedule for the authenticated artist: the projects
+        they are cast in and the rehearsals they are invited to, each carrying
+        their own participation id and (for rehearsals) their attendance. The
+        server owns the join so the client never re-joins four collections.
+        Returns a flat, discriminated list of {type: PROJECT|REHEARSAL, ...}.
+        """
+        projects_qs, rehearsals_qs, participation_by_project = get_artist_schedule(
+            request_user(request)
+        )
+        ctx = {'request': request}
+
+        items: list[dict] = [
+            {
+                'type': 'PROJECT',
+                'participation_id': participation_by_project.get(str(project['id'])),
+                'project': project,
+            }
+            for project in ProjectSerializer(projects_qs, many=True, context=ctx).data
+        ]
+
+        rehearsal_objs = list(rehearsals_qs)
+        rehearsal_data = RehearsalSerializer(rehearsal_objs, many=True, context=ctx).data
+        for reh_obj, rehearsal in zip(rehearsal_objs, rehearsal_data, strict=True):
+            my_attendances = getattr(reh_obj, 'my_attendances', None) or []
+            mine = my_attendances[0] if my_attendances else None
+            items.append({
+                'type': 'REHEARSAL',
+                'participation_id': participation_by_project.get(str(reh_obj.project_id)),
+                'project_title': reh_obj.project.title,
+                'my_attendance': (
+                    {
+                        'id': str(mine.id),
+                        'status': mine.status,
+                        'excuse_note': mine.excuse_note,
+                    }
+                    if mine
+                    else None
+                ),
+                'rehearsal': rehearsal,
+            })
+
+        return Response(items)
 
     @action(detail=True, methods=['put'], url_path='readiness', permission_classes=[permissions.IsAuthenticated])
     def readiness(self, request, pk=None) -> Response:

@@ -24,11 +24,14 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from core.permissions import IsManager
+from core.request_utils import request_user
+from roster.queries import artist_live_piece_ids
 
 from . import services
 from .infrastructure.musicbrainz_client import MusicBrainzClient
 from .infrastructure.wikidata_client import WikidataClient
 from .models import (
+    Annotation,
     Composer,
     IngestionStatus,
     Piece,
@@ -37,6 +40,7 @@ from .models import (
     Track,
 )
 from .serializers import (
+    AnnotationSerializer,
     ComposerSerializer,
     PieceSerializer,
     PieceVoiceRequirementSerializer,
@@ -471,3 +475,88 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         body = ScoreEditionDetailSerializer(edition, context={'request': request}).data
         body['celery_task_id'] = ticket.celery_task_id
         return Response(body, status=status.HTTP_202_ACCEPTED)
+
+
+# ===========================================================================
+# Score annotations — conductor markup overlay
+# ===========================================================================
+# The conductor draws breath marks, cuts, dynamics and pins rehearsal comments
+# onto a ScoreEdition PDF. Markings are stored as data (never mutating the source
+# PDF) on a named layer:
+#
+#   layer_name = 'shared'    → pushed to every chorister cast in a LIVE project
+#                              featuring the piece (the headline feature).
+#   layer_name = 'conductor' → the maestro's private cues, never sent to singers.
+#
+# Access deliberately mirrors ScoreEditionDownloadView so a score and its shared
+# markings appear and expire together:
+#   * managers          → full CRUD, every layer, any edition.
+#   * choristers/crew   → READ-ONLY, 'shared' layer only, and only on editions
+#                         whose piece they still have live access to.
+# ===========================================================================
+
+SHARED_ANNOTATION_LAYER = 'shared'
+
+
+class AnnotationViewSet(viewsets.ModelViewSet):
+    """
+    CRUD for score annotations. Thin controller: read scope is decided in
+    `get_queryset` (role-aware), write access in `get_permissions` (managers
+    only), and `created_by` is stamped from the request — never trusted from
+    the payload.
+    """
+    serializer_class = AnnotationSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['edition', 'page_number', 'layer_name']
+
+    def get_permissions(self):
+        # Anyone authenticated may read (scope is narrowed in get_queryset);
+        # only managers may create / update / delete markings.
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), IsManager()]
+
+    def get_queryset(self):
+        user = request_user(self.request)
+        base = (
+            Annotation.objects
+            .select_related('edition')
+            .filter(is_deleted=False)
+            .order_by('created_at')
+        )
+        profile = getattr(user, 'profile', None)
+        if user.is_staff or (profile is not None and profile.is_manager):
+            return base
+        # Chorister / crew: only the shared layer, only on still-accessible pieces.
+        return base.filter(
+            layer_name=SHARED_ANNOTATION_LAYER,
+            edition__piece_id__in=artist_live_piece_ids(user),
+        )
+
+    def perform_create(self, serializer) -> None:
+        serializer.save(created_by=request_user(self.request))
+
+    def perform_destroy(self, instance: Annotation) -> None:
+        # Inherit EnterpriseBaseModel soft-delete (sets is_deleted=True).
+        instance.delete()
+
+    @action(detail=False, methods=['post'], url_path='clear')
+    def clear(self, request):
+        """
+        Manager-only bulk soft-delete of every annotation on an edition (all
+        layers by default; pass `layer_name` to scope). POST so it's gated by the
+        manager check in get_permissions. Body: {edition, layer_name?}.
+        """
+        edition_id = request.data.get('edition')
+        if not edition_id:
+            return Response(
+                {'detail': 'edition is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        qs = Annotation.objects.filter(edition_id=edition_id, is_deleted=False)
+        layer = request.data.get('layer_name')
+        if layer:
+            qs = qs.filter(layer_name=layer)
+        deleted = qs.count()
+        qs.delete()  # SoftDeleteQuerySet → bulk is_deleted=True
+        return Response({'deleted': deleted}, status=status.HTTP_200_OK)

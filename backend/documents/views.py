@@ -33,6 +33,7 @@ from .services import (
     DocumentCategoryNotFoundError,
     DocumentNotFoundError,
     DocumentService,
+    EnsembleDirectoryService,
 )
 
 logger = logging.getLogger(__name__)
@@ -206,3 +207,16 @@ class ArtistMetricsAPIView(views.APIView):
         metrics = ArtistMetricsService.get_metrics_for_artist(artist_profile.id)
 
         return Response(metrics.model_dump(mode="json"))
+
+
+class MyEnsembleAPIView(views.APIView):
+    """
+    Ensemble directory for the authenticated chorister: active singers grouped by
+    stable voice type, plus the caller's own standing. Whitelisted output — never
+    exposes the conductor's private capability data (sight-reading, vocal range).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        ensemble = EnsembleDirectoryService.get_ensemble(request.user, request=request)
+        return Response(ensemble.model_dump(mode="json"))

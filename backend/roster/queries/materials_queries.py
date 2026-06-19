@@ -12,10 +12,64 @@ from archive.models import (
     Track,
     Translation,
 )
-from roster.models import Participation, PieceReadiness, ProgramItem, ProjectPieceCasting
+from roster.models import (
+    Participation,
+    PieceReadiness,
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+)
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
+
+# Project lifecycle states after which a chorister loses access to a project's
+# rehearsal materials — scores in particular, often the conductor's licensed or
+# personally-owned property, which must not stay readable once the concert is over.
+# Score annotations follow the exact same rule: a shared marking evaporates for a
+# singer the moment every project featuring the piece is closed.
+CLOSED_PROJECT_STATUSES = (Project.Status.COMPLETED, Project.Status.CANCELLED)
+
+
+def artist_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None) -> bool:
+    """
+    True iff `user` is cast (active participation) in at least one project that
+    is still LIVE (not completed/cancelled) and programs `piece_id`.
+
+    This is the single rule behind chorister score AND annotation access: it
+    evaporates the moment every project featuring the piece is closed, so a
+    leaked or bookmarked score URL — or a shared conductor marking — stops
+    resolving once the concert is done.
+    """
+    if piece_id is None:
+        return False
+    return (
+        Participation.objects.filter(
+            artist__user=user,
+            is_deleted=False,
+            project__program_items__piece_id=piece_id,
+        )
+        .exclude(project__status__in=CLOSED_PROJECT_STATUSES)
+        .exists()
+    )
+
+
+def artist_live_piece_ids(user: User) -> QuerySet[ProgramItem, uuid.UUID]:
+    """
+    Distinct ids of every Piece the artist still has live access to (cast in at
+    least one non-closed project programming it). Set-form companion to
+    `artist_has_live_access_to_piece`, for IN-clause filtering of bulk reads
+    (e.g. all shared annotations the singer is allowed to see).
+    """
+    return (
+        ProgramItem.objects.filter(
+            project__participations__artist__user=user,
+            project__participations__is_deleted=False,
+        )
+        .exclude(project__status__in=CLOSED_PROJECT_STATUSES)
+        .values_list('piece_id', flat=True)
+        .distinct()
+    )
 
 
 def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:

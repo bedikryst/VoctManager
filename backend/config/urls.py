@@ -13,7 +13,14 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
-from archive.views import ComposerViewSet, PieceViewSet, PieceVoiceRequirementViewSet, ScoreEditionViewSet, TrackViewSet
+from archive.views import (
+    AnnotationViewSet,
+    ComposerViewSet,
+    PieceViewSet,
+    PieceVoiceRequirementViewSet,
+    ScoreEditionViewSet,
+    TrackViewSet,
+)
 from core.views import (
     ActivateAccountView,
     ActivationPreviewView,
@@ -29,7 +36,12 @@ from core.views import (
     RequestAccountDeletionView,
     ResetCalendarTokenView,
 )
-from documents.views import ArtistMetricsAPIView, DocumentCategoryViewSet, DocumentDownloadView
+from documents.views import (
+    ArtistMetricsAPIView,
+    DocumentCategoryViewSet,
+    DocumentDownloadView,
+    MyEnsembleAPIView,
+)
 from messaging.views import ProjectChannelViewSet, ThreadViewSet
 from notifications.views import NotificationPreferenceAPIView, NotificationViewSet, PushDeviceViewSet
 from roster.views import (
@@ -73,6 +85,7 @@ router.register(r'piece-voice-requirements', PieceVoiceRequirementViewSet, basen
 
 # --- Score Package Compiler Endpoints ---
 router.register(r'archive/editions', ScoreEditionViewSet, basename='score-edition')
+router.register(r'archive/annotations', AnnotationViewSet, basename='annotation')
 
 # --- System & Notifications ---
 router.register(r'notifications', NotificationViewSet, basename='notification')
@@ -147,6 +160,9 @@ urlpatterns = [
 
     # --- Chorister Hub: Artist Identity Metrics ---
     path('api/documents/artist-metrics/', ArtistMetricsAPIView.as_view(), name='artist-metrics'),
+
+    # --- Chorister Hub: Ensemble / section directory ("My Section") ---
+    path('api/documents/my-ensemble/', MyEnsembleAPIView.as_view(), name='my-ensemble'),
 
     # --- Chorister Hub: Authenticated, role-gated file download ---
     path('api/documents/<uuid:pk>/download/', DocumentDownloadView.as_view(), name='document-download'),

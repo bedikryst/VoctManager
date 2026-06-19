@@ -199,12 +199,18 @@ class ProgramNoteSerializer(serializers.ModelSerializer):
 
 
 class AnnotationSerializer(serializers.ModelSerializer):
-    """PDF markup overlay (Phase 4 — annotation editor)."""
+    """
+    PDF markup overlay — conductor score annotations (freehand cues, breath
+    marks, cuts, pinned rehearsal comments). Used both nested-read inside
+    ScoreEditionDetailSerializer and as the write payload for AnnotationViewSet,
+    hence `edition` is writable here. `created_by` is stamped server-side from
+    the request user and never trusted from the client.
+    """
     class Meta:
         model = Annotation
-        fields = ['id', 'page_number', 'annotation_type', 'payload',
-                  'color', 'layer_name', 'created_by']
-        read_only_fields = ['id', 'created_by']
+        fields = ['id', 'edition', 'page_number', 'annotation_type', 'payload',
+                  'color', 'layer_name', 'created_by', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
 
 
 # ===========================================================================

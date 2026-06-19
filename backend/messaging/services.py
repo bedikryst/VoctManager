@@ -32,6 +32,7 @@ from .models import (
     ProjectChannel,
     Thread,
     ThreadReadState,
+    ThreadStatus,
 )
 from .selectors import user_display_name
 
@@ -71,11 +72,19 @@ class MessagingService:
 
     @classmethod
     def post_message(cls, *, thread: Thread, sender_id: int, body: str) -> Message:
-        """Appends a reply, bumps the inbox sort key, and pings the other party."""
+        """Appends a reply, bumps the inbox sort key, and pings the other party.
+
+        A reply to a RESOLVED thread reopens it: "resolved" is a triage state ("handled"),
+        not a lock — a fresh message means the conversation is live again.
+        """
         with transaction.atomic():
             message = Message.objects.create(thread=thread, sender_id=sender_id, body=body)
             thread.last_message_at = message.created_at
-            thread.save(update_fields=['last_message_at', 'updated_at'])
+            update_fields = ['last_message_at', 'updated_at']
+            if thread.status == ThreadStatus.RESOLVED:
+                thread.status = ThreadStatus.OPEN
+                update_fields.append('status')
+            thread.save(update_fields=update_fields)
             cls._touch_read_state(thread.id, sender_id, when=message.created_at)
             transaction.on_commit(
                 lambda: cls._emit_for_message(message.id, sender_id)

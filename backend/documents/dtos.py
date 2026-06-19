@@ -137,3 +137,66 @@ class ArtistIdentityMetricsDTO(BaseModel):
     total_composers: int = Field(default=0, ge=0)
     attendance_rate: float | None = Field(default=None, ge=0, le=100)
     repertoire: tuple[RepertoireEntryDTO, ...] = ()
+
+
+# --- Concert roster ("Z kim śpiewam") ---
+# Strictly concert-and-piece-scoped: for each of the caller's OWN confirmed, upcoming
+# concerts, and within it only the pieces the caller is cast on, the co-singers grouped
+# by the voice line they sing IN THAT PIECE (it may differ piece to piece). It never
+# exposes the full ensemble, nor anyone's default/assigned voice type, nor the
+# conductor's private capability data (sight-reading, vocal range). It exists only to
+# serve the concert. `extra="forbid"` makes any accidental leak fail loudly.
+
+
+class SectionMemberDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    artist_id: UUID
+    first_name: str
+    last_name: str
+    avatar_thumb_url: str | None = None
+    is_me: bool = False
+
+
+class PieceVoiceSectionDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    voice_line: str
+    voice_line_display: str
+    # True when the caller themselves sings this voice line in this piece.
+    is_mine: bool = False
+    members: tuple[SectionMemberDTO, ...] = ()
+
+
+class ConcertPieceDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    piece_id: UUID
+    title: str
+    sections: tuple[PieceVoiceSectionDTO, ...] = ()
+
+
+class ConcertRosterDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    project_id: UUID
+    title: str
+    date: str | None = None
+    pieces: tuple[ConcertPieceDTO, ...] = ()
+
+
+class EnsembleMeDTO(BaseModel):
+    """The caller's own standing — self-knowledge only (shown only to themselves)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    voice_type_display: str | None
+    is_active: bool = False
+    is_linked: bool = False
+
+
+class MyEnsembleDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    me: EnsembleMeDTO
+    concerts: tuple[ConcertRosterDTO, ...] = ()

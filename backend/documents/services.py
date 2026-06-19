@@ -4,21 +4,30 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID
 
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models import Count, Prefetch, Q
 from django.utils.functional import Promise
 
+if TYPE_CHECKING:
+    from rest_framework.request import Request
+
 from core.constants import AppRole, VoiceLine
 
 from .dtos import (
     ArtistIdentityMetricsDTO,
+    ConcertPieceDTO,
+    ConcertRosterDTO,
     DocumentCategoryCreateDTO,
     DocumentCategoryUpdateDTO,
     DocumentCreateDTO,
+    EnsembleMeDTO,
+    MyEnsembleDTO,
+    PieceVoiceSectionDTO,
     RepertoireEntryDTO,
+    SectionMemberDTO,
     VocalLineEntryDTO,
 )
 from .models import Document, DocumentCategory
@@ -298,3 +307,176 @@ class ArtistMetricsService:
             attendance_rate=None,
             repertoire=(),
         )
+
+
+class EnsembleDirectoryService:
+    """
+    Concert roster for the authenticated chorister ("Z kim śpiewam").
+
+    For each of the caller's OWN confirmed, upcoming concerts, and only for the
+    pieces they are cast on, it returns the co-singers grouped by the voice line
+    each sings IN THAT PIECE (which may differ piece to piece). It is strictly
+    scoped to the caller's concerts — it never reveals the full ensemble, anyone's
+    default/assigned voice type, nor the conductor's private capability data
+    (sight-reading skill, vocal range). It exists only to serve the concert.
+
+    The data it surfaces is the same already shown on the materials "Obsada" tab
+    (roster.dashboard_serializers.CastingSnippetSerializer).
+    """
+
+    # Upcoming / in-prep concerts only — closed and cancelled projects drop off.
+    _OPEN_PROJECT_STATUSES: ClassVar[tuple[str, ...]] = ('DRAFT', 'ACTIVE')
+
+    @classmethod
+    def get_ensemble(cls, user: object, request: "Request | None" = None) -> MyEnsembleDTO:
+        from core.constants import VoiceLine
+        from roster.models import ProjectPieceCasting
+
+        me_artist = getattr(user, 'artist_profile', None)
+        me = EnsembleMeDTO(
+            voice_type_display=(
+                me_artist.get_voice_type_display() if me_artist is not None else None
+            ),
+            is_active=bool(me_artist.is_active) if me_artist is not None else False,
+            is_linked=me_artist is not None,
+        )
+        if me_artist is None:
+            return MyEnsembleDTO(me=me, concerts=())
+
+        # The pieces the caller themselves sings, across their open concerts, with
+        # their own voice line per piece. This bounds the whole roster to "my pieces".
+        my_castings = list(
+            ProjectPieceCasting.objects.filter(
+                participation__artist_id=me_artist.id,
+                participation__status='CON',
+                participation__is_deleted=False,
+                participation__project__status__in=cls._OPEN_PROJECT_STATUSES,
+                participation__project__is_deleted=False,
+            ).select_related('participation__project')
+        )
+        if not my_castings:
+            return MyEnsembleDTO(me=me, concerts=())
+
+        my_pairs = {(c.participation.project_id, c.piece_id) for c in my_castings}
+        my_voice_lines: dict[tuple, set[str]] = {}
+        for c in my_castings:
+            my_voice_lines.setdefault((c.participation.project_id, c.piece_id), set()).add(c.voice_line)
+
+        project_ids = {pid for pid, _ in my_pairs}
+        piece_ids = {pid for _, pid in my_pairs}
+
+        # Every confirmed singer cast on one of my pieces within one of my concerts.
+        all_castings = (
+            ProjectPieceCasting.objects.filter(
+                participation__project_id__in=project_ids,
+                piece_id__in=piece_ids,
+                participation__status='CON',
+                participation__is_deleted=False,
+            )
+            .select_related(
+                'participation__artist__user__profile',
+                'participation__project',
+                'piece',
+            )
+        )
+
+        vl_order = {value: idx for idx, (value, _) in enumerate(VoiceLine.choices)}
+        vl_label = {value: str(label) for value, label in VoiceLine.choices}
+
+        # project_id → {title, date} and (project_id, piece_id) → {piece_title, voice_line → {artist_id → artist}}
+        projects: dict = {}
+        pieces: dict = {}
+        for casting in all_castings:
+            key = (casting.participation.project_id, casting.piece_id)
+            if key not in my_pairs:
+                continue
+            project = casting.participation.project
+            projects.setdefault(
+                project.id,
+                {'title': project.title, 'date': project.date_time},
+            )
+            bucket = pieces.setdefault(key, {'title': casting.piece.title, 'voices': {}})
+            members = bucket['voices'].setdefault(casting.voice_line, {})
+            members.setdefault(casting.participation.artist_id, casting.participation.artist)
+
+        concerts = cls._build_concerts(
+            user_artist_id=me_artist.id,
+            my_pairs=my_pairs,
+            my_voice_lines=my_voice_lines,
+            projects=projects,
+            pieces=pieces,
+            vl_order=vl_order,
+            vl_label=vl_label,
+            request=request,
+        )
+        return MyEnsembleDTO(me=me, concerts=concerts)
+
+    @classmethod
+    def _build_concerts(
+        cls,
+        *,
+        user_artist_id: object,
+        my_pairs: set,
+        my_voice_lines: dict,
+        projects: dict,
+        pieces: dict,
+        vl_order: dict,
+        vl_label: dict,
+        request: "Request | None",
+    ) -> tuple[ConcertRosterDTO, ...]:
+        by_project: dict = {}
+        for (project_id, piece_id), data in pieces.items():
+            mine_lines = my_voice_lines.get((project_id, piece_id), set())
+            sections = tuple(
+                PieceVoiceSectionDTO(
+                    voice_line=voice_line,
+                    voice_line_display=vl_label.get(voice_line, voice_line),
+                    is_mine=voice_line in mine_lines,
+                    members=tuple(
+                        SectionMemberDTO(
+                            artist_id=artist.id,
+                            first_name=artist.first_name,
+                            last_name=artist.last_name,
+                            avatar_thumb_url=cls._avatar_thumb_url(artist, request),
+                            is_me=(artist.id == user_artist_id),
+                        )
+                        for artist in sorted(
+                            members.values(), key=lambda a: (a.last_name.lower(), a.first_name.lower())
+                        )
+                    ),
+                )
+                for voice_line, members in sorted(
+                    data['voices'].items(), key=lambda kv: vl_order.get(kv[0], 99)
+                )
+            )
+            by_project.setdefault(project_id, []).append(
+                ConcertPieceDTO(piece_id=piece_id, title=data['title'], sections=sections)
+            )
+
+        concerts = [
+            ConcertRosterDTO(
+                project_id=project_id,
+                title=projects[project_id]['title'],
+                date=(
+                    projects[project_id]['date'].isoformat()
+                    if projects[project_id]['date'] is not None
+                    else None
+                ),
+                pieces=tuple(sorted(piece_list, key=lambda p: p.title.lower())),
+            )
+            for project_id, piece_list in by_project.items()
+        ]
+        # Soonest concert first; undated last.
+        concerts.sort(key=lambda c: (c.date is None, c.date or ''))
+        return tuple(concerts)
+
+    @staticmethod
+    def _avatar_thumb_url(artist: object, request: "Request | None") -> str | None:
+        """Mirror of ArtistBasicSerializer.get_avatar_thumb_url — small roster avatar."""
+        profile = getattr(getattr(artist, 'user', None), 'profile', None)
+        thumb = getattr(profile, 'avatar_thumb', None)
+        if not thumb:
+            return None
+        if request is not None:
+            return request.build_absolute_uri(thumb.url)
+        return str(thumb.url)

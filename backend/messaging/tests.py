@@ -175,6 +175,57 @@ class MessagingFlowTests(APITestCase):
         self.assertEqual(directed.status_code, 201)
         self.assertEqual(Thread.objects.filter(artist=self.artist).count(), 2)
 
+    def test_manager_project_threads_are_deduped_per_project(self) -> None:
+        project = Project.objects.create(title="Lux Aeterna")
+        self.client.force_authenticate(user=self.manager)
+        first = self.client.post(
+            THREADS,
+            {"subject": "Solo", "body": "a", "artist_id": str(self.artist.id),
+             "context_type": "PROJECT", "context_id": str(project.id)},
+            format="json",
+        )
+        self.assertEqual(first.status_code, 201)
+        second = self.client.post(
+            THREADS,
+            {"subject": "Strój", "body": "b", "artist_id": str(self.artist.id),
+             "context_type": "PROJECT", "context_id": str(project.id)},
+            format="json",
+        )
+        self.assertEqual(second.status_code, 200)  # reused, not duplicated
+        self.assertEqual(first.json()["id"], second.json()["id"])
+        self.assertEqual(
+            Thread.objects.filter(artist=self.artist, context_type="PROJECT").count(), 1
+        )
+
+        other = Project.objects.create(title="Miserere")
+        third = self.client.post(
+            THREADS,
+            {"subject": "Inny", "body": "c", "artist_id": str(self.artist.id),
+             "context_type": "PROJECT", "context_id": str(other.id)},
+            format="json",
+        )
+        self.assertEqual(third.status_code, 201)  # different project → fresh thread
+        self.assertEqual(
+            Thread.objects.filter(artist=self.artist, context_type="PROJECT").count(), 2
+        )
+
+    def test_reply_reopens_resolved_thread(self) -> None:
+        self.client.force_authenticate(user=self.artist_user)
+        opened = self.client.post(
+            THREADS, {"subject": "Q", "body": "a", "assignee_id": self.manager.id}, format="json"
+        )
+        thread_id = opened.json()["id"]
+
+        self.client.force_authenticate(user=self.manager)
+        self.client.patch(f"{THREADS}{thread_id}/", {"status": ThreadStatus.RESOLVED}, format="json")
+        self.assertEqual(Thread.objects.get(id=thread_id).status, ThreadStatus.RESOLVED)
+
+        self.client.force_authenticate(user=self.artist_user)
+        with patch(EMIT), self.captureOnCommitCallbacks(execute=True):
+            reply = self.client.post(f"{THREADS}{thread_id}/messages/", {"body": "jeszcze coś"}, format="json")
+        self.assertEqual(reply.status_code, 201)
+        self.assertEqual(Thread.objects.get(id=thread_id).status, ThreadStatus.OPEN)
+
     def test_gdpr_erasure_blanks_messages_and_soft_deletes_threads(self) -> None:
         self.client.force_authenticate(user=self.artist_user)
         self.client.post(

@@ -19,7 +19,7 @@ from .models import (
     ThreadContextType,
     ThreadStatus,
 )
-from .selectors import user_brief, viewer_last_read
+from .selectors import avatar_thumb_url, user_brief, viewer_last_read
 
 _SNIPPET_LEN = 140
 
@@ -35,7 +35,7 @@ class MessageSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_sender(self, obj: Message) -> dict[str, Any] | None:
-        return user_brief(obj.sender)
+        return user_brief(obj.sender, self.context.get('request'))
 
     def get_is_mine(self, obj: Message) -> bool:
         request = self.context.get('request')
@@ -62,10 +62,13 @@ class _ThreadBaseSerializer(serializers.ModelSerializer):
             'id': str(artist.id),
             'name': f"{artist.first_name} {artist.last_name}".strip(),
             'voice_type': artist.voice_type,
+            'avatar_url': avatar_thumb_url(
+                getattr(artist, 'user', None), self.context.get('request')
+            ),
         }
 
     def get_assignee(self, obj: Thread) -> dict[str, Any] | None:
-        return user_brief(obj.assignee)
+        return user_brief(obj.assignee, self.context.get('request'))
 
     def get_unread(self, obj: Thread) -> bool:
         last_read = viewer_last_read(self.context, obj.id)
@@ -140,7 +143,7 @@ class ChannelMessageSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_sender(self, obj: ChannelMessage) -> dict[str, Any] | None:
-        return user_brief(obj.sender)
+        return user_brief(obj.sender, self.context.get('request'))
 
     def get_is_mine(self, obj: ChannelMessage) -> bool:
         request = self.context.get('request')

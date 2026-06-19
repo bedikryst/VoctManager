@@ -9,6 +9,7 @@
 @module messaging/views
 """
 import logging
+from uuid import UUID
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, F, OuterRef, Prefetch, Q, QuerySet, Subquery
@@ -134,6 +135,40 @@ class ThreadViewSet(viewsets.GenericViewSet):
         serializer = ThreadDetailSerializer(thread, context={'request': request, 'read_map': read_map})
         return Response(serializer.data)
 
+    @staticmethod
+    def _find_reusable_thread(
+        *, artist: Artist, context_type: str, context_id: UUID | None, assignee_id: int | None
+    ) -> Thread | None:
+        """An OPEN conversation to continue instead of spawning a duplicate.
+
+        - PROJECT-scoped: one thread per (artist, project) while open — keeps a person's
+          private project matters in a single, resolvable place (and tagged to the project).
+        - GENERAL + undirected: the artist's standing general thread.
+        Directed general threads (an explicit assignee) always open fresh.
+        """
+        if context_type == ThreadContextType.PROJECT and context_id:
+            return (
+                Thread.objects.filter(
+                    artist=artist,
+                    context_type=ThreadContextType.PROJECT,
+                    context_id=context_id,
+                    status=ThreadStatus.OPEN,
+                )
+                .order_by('-last_message_at')
+                .first()
+            )
+        if context_type == ThreadContextType.GENERAL and not context_id and not assignee_id:
+            return (
+                Thread.objects.filter(
+                    artist=artist,
+                    context_type=ThreadContextType.GENERAL,
+                    status=ThreadStatus.OPEN,
+                )
+                .order_by('-last_message_at')
+                .first()
+            )
+        return None
+
     def create(self, request: Request) -> Response:
         user = request_user(request)
         serializer = ThreadCreateSerializer(data=request.data)
@@ -158,43 +193,33 @@ class ThreadViewSet(viewsets.GenericViewSet):
             if assignee_id is not None and not self._is_manager_user_id(assignee_id):
                 return Response({"detail": "Chosen recipient is not a manager."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Dedup: an artist's undirected general questions reuse their existing OPEN
-            # general thread instead of spawning duplicates. A directed (assignee) or
-            # project-scoped thread always opens a fresh conversation.
-            context_type = data.get('context_type', ThreadContextType.GENERAL)
-            if (
-                context_type == ThreadContextType.GENERAL
-                and not data.get('context_id')
-                and not assignee_id
-            ):
-                existing = (
-                    Thread.objects.filter(
-                        artist=artist,
-                        context_type=ThreadContextType.GENERAL,
-                        status=ThreadStatus.OPEN,
-                    )
-                    .order_by('-last_message_at')
-                    .first()
-                )
-                if existing is not None:
-                    MessagingService.post_message(
-                        thread=existing, sender_id=user.id, body=data['body']
-                    )
-                    read_map = {existing.id: existing.last_message_at}
-                    return Response(
-                        ThreadDetailSerializer(
-                            existing, context={'request': request, 'read_map': read_map}
-                        ).data,
-                        status=status.HTTP_200_OK,
-                    )
+        context_type = data.get('context_type', ThreadContextType.GENERAL)
+        context_id = data.get('context_id')
+
+        # Continue an existing OPEN conversation instead of duplicating it: one thread
+        # per (artist, project) for project matters, and the artist's standing general
+        # thread for undirected questions (see _find_reusable_thread).
+        existing = self._find_reusable_thread(
+            artist=artist,
+            context_type=context_type,
+            context_id=context_id,
+            assignee_id=assignee_id,
+        )
+        if existing is not None:
+            MessagingService.post_message(thread=existing, sender_id=user.id, body=data['body'])
+            read_map = {existing.id: existing.last_message_at}
+            return Response(
+                ThreadDetailSerializer(existing, context={'request': request, 'read_map': read_map}).data,
+                status=status.HTTP_200_OK,
+            )
 
         dto = ThreadCreateDTO(
             artist_id=artist.id,
             sender_id=user.id,
             subject=data['subject'],
             body=data['body'],
-            context_type=data.get('context_type', ThreadContextType.GENERAL),
-            context_id=data.get('context_id'),
+            context_type=context_type,
+            context_id=context_id,
             assignee_id=assignee_id,
         )
         thread = MessagingService.create_thread(dto)

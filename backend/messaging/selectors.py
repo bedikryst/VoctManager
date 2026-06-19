@@ -28,11 +28,24 @@ def user_display_name(user: Any | None) -> str:
     return user.get_full_name() or user.email
 
 
-def user_brief(user: Any | None) -> dict[str, Any] | None:
+def avatar_thumb_url(user: Any | None, request: Any | None = None) -> str | None:
+    """Absolute (when a request is present) URL of a user's small avatar render, or None."""
+    profile = getattr(user, 'profile', None)
+    thumb = getattr(profile, 'avatar_thumb', None)
+    if not thumb:
+        return None
+    return request.build_absolute_uri(thumb.url) if request else thumb.url
+
+
+def user_brief(user: Any | None, request: Any | None = None) -> dict[str, Any] | None:
     """Compact identity payload for embedding in thread/message representations."""
     if user is None:
         return None
-    return {'id': user.id, 'name': user_display_name(user)}
+    return {
+        'id': user.id,
+        'name': user_display_name(user),
+        'avatar_url': avatar_thumb_url(user, request),
+    }
 
 
 def viewer_last_read(context: Mapping[str, Any], thread_id: UUID) -> datetime | None:

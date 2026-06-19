@@ -877,6 +877,96 @@ class MaterialsAccessControlTests(APITestCase):
         self.assertIn("/api/materials/scores/", resp.data["pdf_file"])
         self.assertNotIn("/media/", resp.data["pdf_file"])
 
+    # --- score annotations: same gate as the score itself --------------- #
+
+    def _make_annotation(self, edition, layer="shared"):
+        from archive.models import Annotation
+        return Annotation.objects.create(
+            edition=edition, page_number=1, annotation_type="FH",
+            payload={"paths": [[[0.1, 0.1], [0.2, 0.2]]], "width": 0.004},
+            layer_name=layer, created_by=self.manager,
+        )
+
+    def test_manager_can_create_annotation_and_created_by_is_stamped(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post("/api/archive/annotations/", {
+            "edition": str(self.edition_live.id), "page_number": 1,
+            "annotation_type": "CM", "payload": {"x": 0.5, "y": 0.5, "text": "Watch me here"},
+            "layer_name": "shared",
+        }, format="json")
+        self.assertEqual(resp.status_code, 201, msg=resp.data)
+        self.assertEqual(str(resp.data["created_by"]), str(self.manager.id))
+
+    def test_singer_cannot_create_annotation(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.post("/api/archive/annotations/", {
+            "edition": str(self.edition_live.id), "page_number": 1,
+            "annotation_type": "CM", "payload": {"x": 0.5, "y": 0.5, "text": "no"},
+            "layer_name": "shared",
+        }, format="json")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_singer_sees_only_shared_layer_on_live_edition(self) -> None:
+        shared = self._make_annotation(self.edition_live, layer="shared")
+        self._make_annotation(self.edition_live, layer="conductor")  # private
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(f"/api/archive/annotations/?edition={self.edition_live.id}")
+        self.assertEqual(resp.status_code, 200)
+        ids = {row["id"] for row in resp.data}
+        self.assertEqual(ids, {str(shared.id)})
+
+    def test_manager_sees_all_layers_on_live_edition(self) -> None:
+        self._make_annotation(self.edition_live, layer="shared")
+        self._make_annotation(self.edition_live, layer="conductor")
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.get(f"/api/archive/annotations/?edition={self.edition_live.id}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 2)
+
+    def test_singer_cannot_see_annotations_on_closed_edition(self) -> None:
+        self._make_annotation(self.edition_closed, layer="shared")
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(f"/api/archive/annotations/?edition={self.edition_closed.id}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data, [])
+
+    def test_singer_cannot_see_annotations_on_foreign_edition(self) -> None:
+        self._make_annotation(self.edition_foreign, layer="shared")
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(f"/api/archive/annotations/?edition={self.edition_foreign.id}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data, [])
+
+    def test_singer_cannot_delete_annotation(self) -> None:
+        ann = self._make_annotation(self.edition_live, layer="shared")
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.delete(f"/api/archive/annotations/{ann.id}/")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_manager_can_clear_all_annotations_on_edition(self) -> None:
+        from archive.models import Annotation
+        self._make_annotation(self.edition_live, layer="shared")
+        self._make_annotation(self.edition_live, layer="conductor")
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(
+            "/api/archive/annotations/clear/",
+            {"edition": str(self.edition_live.id)}, format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["deleted"], 2)
+        self.assertEqual(
+            Annotation.objects.filter(edition=self.edition_live, is_deleted=False).count(), 0,
+        )
+
+    def test_singer_cannot_clear_annotations(self) -> None:
+        self._make_annotation(self.edition_live, layer="shared")
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.post(
+            "/api/archive/annotations/clear/",
+            {"edition": str(self.edition_live.id)}, format="json",
+        )
+        self.assertEqual(resp.status_code, 403)
+
 
 class ReminderDispatchTests(TestCase):
     """Beat sweep: idempotent, windowed upcoming-event reminders."""
@@ -1009,3 +1099,155 @@ class AbsenceRequestNotificationTests(TestCase):
         notify = self._record("PRESENT")
         notify.assert_called_once()
         self.assertEqual(notify.call_args.kwargs["notification_type"], NotificationType.ATTENDANCE_SUBMITTED)
+
+
+class ScheduleDashboardTests(APITestCase):
+    """
+    The artist schedule read-model (`/api/participations/schedule-dashboard/`):
+    only the singer's own active projects and invited rehearsals, each pre-joined
+    with their participation and attendance, with no cross-artist leakage.
+    """
+
+    URL = "/api/participations/schedule-dashboard/"
+
+    def setUp(self) -> None:
+        from .models import Attendance
+
+        User = get_user_model()
+        now = timezone.now()
+
+        self.singer_user = User.objects.create_user(
+            username="sch-singer", email="sch-singer@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        self.singer = Artist.objects.create(
+            user=self.singer_user, first_name="Sara", last_name="Schedule",
+            email="sch-singer@test.pl", voice_type=VoiceType.ALTO,
+        )
+
+        self.outsider_user = User.objects.create_user(
+            username="sch-out", email="sch-out@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.outsider_user, role=AppRole.ARTIST)
+        self.outsider = Artist.objects.create(
+            user=self.outsider_user, first_name="Otto", last_name="Outsider",
+            email="sch-out@test.pl", voice_type=VoiceType.BASS,
+        )
+
+        # Active project the singer is cast in.
+        self.project_live = Project.objects.create(
+            title="Spring Concert", date_time=now, status=Project.Status.ACTIVE
+        )
+        self.part_live = Participation.objects.create(
+            artist=self.singer, project=self.project_live,
+            status=Participation.Status.CONFIRMED,
+        )
+        # A second confirmed singer, so we can target a rehearsal at them only.
+        self.part_other = Participation.objects.create(
+            artist=self.outsider, project=self.project_live,
+            status=Participation.Status.CONFIRMED,
+        )
+
+        # Cancelled project — cast but must drop off the schedule.
+        self.project_cancelled = Project.objects.create(
+            title="Scrapped Gala", date_time=now, status=Project.Status.CANCELLED
+        )
+        Participation.objects.create(
+            artist=self.singer, project=self.project_cancelled,
+            status=Participation.Status.CONFIRMED,
+        )
+
+        # Declined project — must drop off the schedule.
+        self.project_declined = Project.objects.create(
+            title="Passed Up", date_time=now, status=Project.Status.ACTIVE
+        )
+        Participation.objects.create(
+            artist=self.singer, project=self.project_declined,
+            status=Participation.Status.DECLINED,
+        )
+
+        # Foreign project — the singer has nothing to do with it.
+        self.project_foreign = Project.objects.create(
+            title="Other Choir Night", date_time=now, status=Project.Status.ACTIVE
+        )
+        Participation.objects.create(
+            artist=self.outsider, project=self.project_foreign,
+            status=Participation.Status.CONFIRMED,
+        )
+
+        # Rehearsals on the live project.
+        self.reh_all = Rehearsal.objects.create(
+            project=self.project_live, date_time=now + timedelta(days=1),
+        )  # no invite list → everyone in the project
+        self.reh_invited = Rehearsal.objects.create(
+            project=self.project_live, date_time=now + timedelta(days=2),
+        )
+        self.reh_invited.invited_participations.add(self.part_live)
+        self.reh_other = Rehearsal.objects.create(
+            project=self.project_live, date_time=now + timedelta(days=3),
+        )
+        self.reh_other.invited_participations.add(self.part_other)  # not the singer
+        self.reh_foreign = Rehearsal.objects.create(
+            project=self.project_foreign, date_time=now + timedelta(days=1),
+        )
+
+        # The singer's own attendance on the all-invited rehearsal.
+        Attendance.objects.create(
+            rehearsal=self.reh_all, participation=self.part_live,
+            status=Attendance.Status.PRESENT,
+        )
+
+    def _fetch(self):
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(self.URL)
+        self.assertEqual(resp.status_code, 200)
+        return resp.data
+
+    def test_projects_scoped_excluding_cancelled_declined_foreign(self) -> None:
+        data = self._fetch()
+        project_ids = {
+            item["project"]["id"] for item in data if item["type"] == "PROJECT"
+        }
+        self.assertIn(str(self.project_live.id), project_ids)
+        self.assertNotIn(str(self.project_cancelled.id), project_ids)
+        self.assertNotIn(str(self.project_declined.id), project_ids)
+        self.assertNotIn(str(self.project_foreign.id), project_ids)
+
+    def test_rehearsal_invitation_scope(self) -> None:
+        data = self._fetch()
+        rehearsal_ids = {
+            item["rehearsal"]["id"] for item in data if item["type"] == "REHEARSAL"
+        }
+        self.assertIn(str(self.reh_all.id), rehearsal_ids)  # all-invited
+        self.assertIn(str(self.reh_invited.id), rehearsal_ids)  # explicitly invited
+        self.assertNotIn(str(self.reh_other.id), rehearsal_ids)  # invites someone else
+        self.assertNotIn(str(self.reh_foreign.id), rehearsal_ids)  # foreign project
+
+    def test_rehearsal_carries_attendance_and_participation(self) -> None:
+        data = self._fetch()
+        by_id = {
+            item["rehearsal"]["id"]: item
+            for item in data
+            if item["type"] == "REHEARSAL"
+        }
+        attended = by_id[str(self.reh_all.id)]
+        self.assertEqual(attended["participation_id"], str(self.part_live.id))
+        self.assertEqual(attended["project_title"], self.project_live.title)
+        self.assertIsNotNone(attended["my_attendance"])
+        self.assertEqual(attended["my_attendance"]["status"], "PRESENT")
+
+        # A rehearsal the singer hasn't marked carries a null attendance.
+        unmarked = by_id[str(self.reh_invited.id)]
+        self.assertIsNone(unmarked["my_attendance"])
+
+    def test_outsider_does_not_see_singers_schedule(self) -> None:
+        self.client.force_authenticate(user=self.outsider_user)
+        resp = self.client.get(self.URL)
+        self.assertEqual(resp.status_code, 200)
+        project_ids = {
+            item["project"]["id"] for item in resp.data if item["type"] == "PROJECT"
+        }
+        # The outsider is cast in the live + foreign projects, never in the
+        # cancelled/declined ones, and never inherits the singer's attendance.
+        self.assertIn(str(self.project_foreign.id), project_ids)
+        self.assertNotIn(str(self.project_cancelled.id), project_ids)
