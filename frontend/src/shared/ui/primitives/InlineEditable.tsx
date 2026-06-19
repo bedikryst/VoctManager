@@ -19,6 +19,7 @@ import React, {
   useState,
 } from "react";
 import { Check, Loader2, Pencil, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 
@@ -57,6 +58,7 @@ export const InlineEditable = ({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!isEditing) {
@@ -186,7 +188,7 @@ export const InlineEditable = ({
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => void commit(draft)}
         disabled={isSaving}
-        aria-label="Zapisz"
+        aria-label={t("common.actions.save")}
         className="flex h-6 w-6 items-center justify-center rounded-md text-ethereal-sage hover:bg-ethereal-sage/10"
       >
         {isSaving ? (
@@ -201,7 +203,7 @@ export const InlineEditable = ({
         onMouseDown={(event) => event.preventDefault()}
         onClick={cancel}
         disabled={isSaving}
-        aria-label="Anuluj"
+        aria-label={t("common.actions.cancel")}
         className="flex h-6 w-6 items-center justify-center rounded-md text-ethereal-graphite hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
       >
         <X size={12} />

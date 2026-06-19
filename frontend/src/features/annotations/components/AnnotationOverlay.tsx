@@ -272,7 +272,7 @@ export const AnnotationOverlay = ({
               type="button"
               onClick={() => setPendingComment(null)}
               className="rounded-md p-1 text-ethereal-ink/50 hover:text-ethereal-ink"
-              aria-label="cancel"
+              aria-label={t("common.actions.cancel")}
             >
               <X size={15} aria-hidden="true" />
             </button>
@@ -282,7 +282,7 @@ export const AnnotationOverlay = ({
               disabled={!commentDraft.trim()}
               className="rounded-md bg-ethereal-ink px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
             >
-              OK
+              {t("common.ok", "OK")}
             </button>
           </div>
         </div>

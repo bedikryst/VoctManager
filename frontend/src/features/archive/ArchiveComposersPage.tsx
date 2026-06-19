@@ -513,7 +513,8 @@ export default function ArchiveComposersPage(): React.JSX.Element {
                             <span className="truncate">
                               {c.last_name}
                               {c.first_name ? `, ${c.first_name}` : ""} (
-                              {c.pieces_count ?? 0} utw.) →{" "}
+                              {c.pieces_count ?? 0}{" "}
+                              {t("archive.composers.merge_card_pieces")}) →{" "}
                               {t(
                                 "archive.composers.merge_preview_delete",
                                 "usunięty",

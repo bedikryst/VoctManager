@@ -272,7 +272,10 @@ export const DocumentUploadModal = ({
                       "Override visible roles",
                     )}
                     <Caption color="muted" className="ml-1">
-                      (empty = inherit from category)
+                      {t(
+                        "chorister_hub.modal.document.roles_hint",
+                        "(puste = dziedzicz z kategorii)",
+                      )}
                     </Caption>
                   </Label>
                   <Controller

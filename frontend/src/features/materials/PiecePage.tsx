@@ -116,7 +116,7 @@ export default function PiecePage(): React.JSX.Element {
   if (!group || !programItem) {
     return (
       <PageTransition>
-        <div className="mx-auto max-w-3xl px-4 pt-10 md:px-6">
+        <div className="mx-auto max-w-3xl pt-10">
           <StatePanel
             icon={<Music2 size={26} aria-hidden="true" />}
             title={t("materials.piece_page.not_found_title", "Nie znaleziono utworu")}
@@ -180,7 +180,7 @@ export default function PiecePage(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-5xl cursor-default space-y-5 px-4 pb-28 md:px-6">
+      <div className="mx-auto max-w-5xl cursor-default space-y-5 pb-28">
         {/* ── breadcrumb / context ─────────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-5">
           <Link
