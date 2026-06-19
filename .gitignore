@@ -59,7 +59,14 @@ frontend/public/**/*.mov
 frontend/public/**/*.webm
 frontend/public/**/*.mp3
 frontend/public/samples/
+
+# PWA app icons are essential, lightweight build assets (referenced by
+# manifest.webmanifest + index.html) — they MUST ship in git, so re-include
+# them despite the broad public/*.png media ignore above.
+!frontend/public/icons/
+!frontend/public/icons/*.png
 voct_data/
+backend/celerybeat-schedule
 
 # --- Other ---
 gemini/

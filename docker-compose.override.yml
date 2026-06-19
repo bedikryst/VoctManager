@@ -5,13 +5,20 @@ services:
   web:
     # Use standard Django dev server for automatic code reloading
     command: python manage.py runserver 0.0.0.0:8000
+    # Run as root in dev so uploads can be written to the host-bind-mounted
+    # media dir (Docker Desktop's file-sharing layer won't honour chown to
+    # voctuser → EACCES). Prod keeps the unprivileged default. See entrypoint.sh.
+    environment:
+      APP_RUN_USER: root
     ports:
-      - "8000:8000"  
+      - "8000:8000"
     volumes:
       # CRITICAL: Mount local codebase only in development
-      - ./backend:/app  
+      - ./backend:/app
 
   celery:
+    environment:
+      APP_RUN_USER: root
     # -B runs the beat scheduler embedded in the worker so CELERY_BEAT_SCHEDULE
     # (reminders, daily digest, stale-donation sweep) actually fires. Safe while
     # there is a SINGLE celery container — beat must be a singleton. If you ever
