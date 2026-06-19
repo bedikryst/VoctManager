@@ -62,7 +62,9 @@ export const useTimelineRehearsalCard = (
       String(event.rawObj.id),
       event.project_id,
       "PRESENT",
-      "Obecność potwierdzona",
+      // Confirming presence carries no excuse note — keep it out of the DB
+      // rather than writing a hardcoded, non-localized sentence.
+      "",
     );
     setIsSubmitting(false);
     setReportingMode(false);

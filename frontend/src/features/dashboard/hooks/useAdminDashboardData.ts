@@ -29,8 +29,15 @@ import type {
 // UI DTOs imports
 import type { AdminTelemetryStatsDto } from "../components/TelemetryWidget";
 import type { ProjectStatsDto } from "../components/SpotlightProjectCard";
-import type { InvitationStatsDto } from "../components/InvitationStatusWidget";
+import type {
+  InvitationStatsDto,
+  PipelineProjectDto,
+} from "../components/ProductionPipeline";
 import { parseConductorName } from "../utils/conductorParser";
+
+// The pipeline is a focused triage list, not the full project archive — cap it
+// and defer the long tail to the "Wszystkie projekty" link.
+const PIPELINE_LIMIT = 6;
 
 const EMPTY_PROJECTS: Project[] = [];
 const EMPTY_REHEARSALS: EnrichedRehearsal[] = [];
@@ -163,6 +170,37 @@ export const useAdminDashboardData = () => {
     };
   }, [projects]);
 
+  // 2b. PRODUCTION PIPELINE — every live/upcoming production with its readiness,
+  // sorted by date. Powers the per-project triage that replaced the aggregate
+  // invitations tile. Uses the same non-archived set the totals are summed over.
+  const pipelineProjects: PipelineProjectDto[] = useMemo(() => {
+    return projects
+      .filter(
+        (p) =>
+          p.status !== PROJECT_STATUS.DONE &&
+          p.status !== PROJECT_STATUS.CANCELLED,
+      )
+      .sort((a, b) => {
+        const ta = a.date_time ? new Date(a.date_time).getTime() : Infinity;
+        const tb = b.date_time ? new Date(b.date_time).getTime() : Infinity;
+        return ta - tb;
+      })
+      .slice(0, PIPELINE_LIMIT)
+      .map((p) => ({
+        id: String(p.id),
+        title: p.title,
+        dateTime: p.date_time,
+        timezone: p.timezone,
+        status: p.status,
+        castConfirmed: p.cast_confirmed ?? 0,
+        castPending: p.cast_pending ?? 0,
+        castDeclined: p.cast_declined ?? 0,
+        castTotal: p.cast_total ?? 0,
+        rehearsalsUpcoming: p.rehearsals_upcoming ?? 0,
+        piecesTotal: p.pieces_total ?? 0,
+      }));
+  }, [projects]);
+
   // 3. SPOTLIGHT NEXT PROJECT
   const rawNextProject = useMemo(() => {
     const todayStart = new Date();
@@ -270,6 +308,7 @@ export const useAdminDashboardData = () => {
     refetch,
     adminStats,
     invitationStats,
+    pipelineProjects,
     nextProject,
     nextProjectStats,
     nextRehearsal,

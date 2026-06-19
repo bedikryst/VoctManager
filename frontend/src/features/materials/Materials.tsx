@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Music, Search } from "lucide-react";
+import { Archive, CalendarClock, ListChecks, Music, Search } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useMaterialsData } from "./hooks/useMaterialsData";
@@ -10,20 +10,48 @@ import { ProjectMaterialGroup } from "./components/ProjectMaterialGroup";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { Input } from "@/shared/ui/primitives/Input";
+import { cn } from "@/shared/lib/utils";
+import type { MaterialsDashboardGroup } from "./types/materials.dto";
+
+type MaterialsView = "upcoming" | "archive";
 
 export const Materials = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [view, setView] = useState<MaterialsView>("upcoming");
+  const [onlyUnpracticed, setOnlyUnpracticed] = useState<boolean>(false);
 
   const { isLoading, isError, filteredGroups } = useMaterialsData(
     searchQuery,
     !!user,
   );
+
+  const { upcoming, archived } = useMemo(
+    () => ({
+      upcoming: filteredGroups.filter((g) => g.project.status !== "DONE"),
+      archived: filteredGroups.filter((g) => g.project.status === "DONE"),
+    }),
+    [filteredGroups],
+  );
+
+  const displayedGroups = useMemo<MaterialsDashboardGroup[]>(() => {
+    const base = view === "upcoming" ? upcoming : archived;
+    if (!onlyUnpracticed || view !== "upcoming") return base;
+    return base
+      .map((group) => ({
+        ...group,
+        program: group.program.filter(
+          (item) => item.piece.my_readiness !== "READY",
+        ),
+      }))
+      .filter((group) => group.program.length > 0);
+  }, [view, upcoming, archived, onlyUnpracticed]);
 
   useEffect(() => {
     if (isError) {
@@ -52,6 +80,23 @@ export const Materials = (): React.JSX.Element => {
     );
   }
 
+  const tabs = [
+    {
+      id: "upcoming" as const,
+      label: t("materials.dashboard.tab_upcoming", "Nadchodzące ({{count}})", {
+        count: upcoming.length,
+      }),
+      Icon: CalendarClock,
+    },
+    {
+      id: "archive" as const,
+      label: t("materials.dashboard.tab_archive", "Archiwum ({{count}})", {
+        count: archived.length,
+      }),
+      Icon: Archive,
+    },
+  ];
+
   return (
     <PageTransition>
       <div className="max-w-5xl mx-auto px-4 md:px-6 pb-24 cursor-default space-y-6">
@@ -69,21 +114,51 @@ export const Materials = (): React.JSX.Element => {
           </Text>
         </div>
 
-        <Input
-          leftIcon={<Search size={16} />}
-          type="search"
-          placeholder={t(
-            "materials.dashboard.search_placeholder",
-            "Szukaj utworu lub kompozytora...",
-          )}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+        <div className="space-y-3">
+          <Input
+            leftIcon={<Search size={16} />}
+            type="search"
+            placeholder={t(
+              "materials.dashboard.search_placeholder",
+              "Szukaj utworu lub kompozytora...",
+            )}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <SegmentedTabs
+              items={tabs}
+              value={view}
+              onChange={setView}
+              ariaLabel={t("materials.dashboard.view_aria", "Widok materiałów")}
+            />
+
+            {view === "upcoming" && (
+              <button
+                type="button"
+                onClick={() => setOnlyUnpracticed((prev) => !prev)}
+                aria-pressed={onlyUnpracticed}
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 transition-all active:scale-95",
+                  onlyUnpracticed
+                    ? "border-ethereal-gold/40 bg-ethereal-gold/12 text-ethereal-gold"
+                    : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink",
+                )}
+              >
+                <ListChecks size={14} aria-hidden="true" />
+                <Eyebrow color="inherit">
+                  {t("materials.dashboard.filter_unpracticed", "Do przećwiczenia")}
+                </Eyebrow>
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="flex flex-col gap-8">
           <AnimatePresence mode="popLayout">
-            {filteredGroups.length > 0 ? (
-              filteredGroups.map((group, i) => (
+            {displayedGroups.length > 0 ? (
+              displayedGroups.map((group, i) => (
                 <motion.div
                   key={group.project.id}
                   layout
@@ -119,16 +194,36 @@ export const Materials = (): React.JSX.Element => {
                     />
                   </div>
                   <Eyebrow color="default" className="mb-3">
-                    {t(
-                      "materials.dashboard.empty_title",
-                      "Brak przypisanych materiałów",
-                    )}
+                    {view === "archive"
+                      ? t(
+                          "materials.dashboard.empty_archive_title",
+                          "Archiwum jest puste",
+                        )
+                      : onlyUnpracticed
+                        ? t(
+                            "materials.dashboard.empty_unpracticed_title",
+                            "Wszystko przećwiczone",
+                          )
+                        : t(
+                            "materials.dashboard.empty_title",
+                            "Brak przypisanych materiałów",
+                          )}
                   </Eyebrow>
                   <Text color="graphite" className="max-w-sm">
-                    {t(
-                      "materials.dashboard.empty_desc",
-                      "W tej chwili nie masz nadchodzących projektów lub dyrygent nie zatwierdził jeszcze żadnego programu koncertu.",
-                    )}
+                    {view === "archive"
+                      ? t(
+                          "materials.dashboard.empty_archive_desc",
+                          "Tu trafią materiały z zakończonych już koncertów.",
+                        )
+                      : onlyUnpracticed
+                        ? t(
+                            "materials.dashboard.empty_unpracticed_desc",
+                            "Świetna robota — oznaczyłeś każdą partię jako gotową.",
+                          )
+                        : t(
+                            "materials.dashboard.empty_desc",
+                            "W tej chwili nie masz nadchodzących projektów lub dyrygent nie zatwierdził jeszcze żadnego programu koncertu.",
+                          )}
                   </Text>
                 </GlassCard>
               </motion.div>

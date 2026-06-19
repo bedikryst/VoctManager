@@ -22,6 +22,9 @@ import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
+import { useOfflineSync } from "@/shared/offline/useOfflineSync";
+import { OfflineStatusBadge } from "@/shared/offline/OfflineStatusBadge";
+import { InstallAppPrompt } from "@/shared/pwa/InstallAppPrompt";
 
 export interface DashboardRoutePreloader {
   readonly preload: () => Promise<unknown>;
@@ -61,6 +64,7 @@ export const DashboardLayout = ({
   const { user, logout } = useAuth();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const offlineSync = useOfflineSync();
   const canPreloadArtistRoutes = isArtist(user);
   const canPreloadManagerRoutes = isManager(user);
 
@@ -192,6 +196,12 @@ export const DashboardLayout = ({
       </main>
       <ProjectInvitationToasts />
       <CustomAdminMessageToast />
+      {/* Bottom dock — stacks the transient offline + install affordances so they
+          never overlap, clear of the mobile nav (safe-area aware). */}
+      <div className="fixed inset-x-0 bottom-24 z-40 flex flex-col items-center gap-2 fine-pointer:bottom-6">
+        <OfflineStatusBadge {...offlineSync} />
+        <InstallAppPrompt />
+      </div>
     </div>
     </CommandPaletteProvider>
   );

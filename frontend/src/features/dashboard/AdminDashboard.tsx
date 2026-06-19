@@ -1,32 +1,34 @@
 /**
  * @file AdminDashboard.tsx
- * @description Refined Mission Control.
- * Fully migrated to Ethereal UI Primitives & Composites (Zero Tech Debt).
+ * @description The conductor's command console — a tablet- and desktop-polished
+ * operations cockpit (not a mobile-scaled grid). A commanding header, the most
+ * time-sensitive alerts up top, then a focus row (next concert + ensemble
+ * balance), an actionable production pipeline, and a dense module strip.
  * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { CalendarPlus } from "lucide-react";
+
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useAdminDashboardData } from "./hooks/useAdminDashboardData";
 import { artistKeys } from "@/features/artists/api/artist.queries";
 import { ArtistService } from "@/features/artists/api/artist.service";
 
-import { UserLocalClock } from "@/widgets/utility/UserLocalClock";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { Button } from "@/shared/ui/primitives/Button";
 
 import { NextRehearsalAlert } from "./components/NextRehearsalAlert";
 import { TelemetryWidget } from "./components/TelemetryWidget";
 import { SpotlightProjectCard } from "./components/SpotlightProjectCard";
-import { InvitationStatusWidget } from "./components/InvitationStatusWidget";
-import { AdminModulesDirectory } from "./components/AdminModulesDirectory";
+import { ProductionPipeline } from "./components/ProductionPipeline";
+import { AdminQuickModules } from "./components/AdminQuickModules";
 import { DashboardErrorState } from "./components/DashboardErrorState";
 import { UnreadMessagesAlert } from "./components/UnreadMessagesAlert";
 
@@ -42,6 +44,7 @@ export default function AdminDashboard(): React.JSX.Element {
     refetch,
     adminStats,
     invitationStats,
+    pipelineProjects,
     nextProject,
     nextProjectStats,
     nextRehearsal,
@@ -73,57 +76,67 @@ export default function AdminDashboard(): React.JSX.Element {
     return <DashboardErrorState onRetry={refetch} />;
   }
 
+  const highlight =
+    user?.profile?.language === "pl" && adminFirstNameVocative
+      ? adminFirstNameVocative
+      : user?.first_name || "Maestro";
+
   return (
-    <StaggeredBentoContainer className="mx-auto w-full max-w-400 px-0 pb-24 md:px-6 lg:px-10">
-      {/* HEADER STRATUM */}
-      <StaggeredBentoItem>
+    <PageTransition>
+      {/* Full-bleed to the shell's 1500px cap — this is a wide console, not a
+          single-column feed. Polished from tablet (lg split) through desktop. */}
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 pb-6 pt-4 sm:gap-6 sm:pt-6">
         <PageHeader
           size="dashboard"
+          className="!mb-0"
           roleText={t("dashboard.admin.role", "Główny Pulpit Dyrygenta")}
           title={greeting}
-          titleHighlight={
-            (user?.profile?.language === "pl" && adminFirstNameVocative)
-              ? adminFirstNameVocative
-              : (user?.first_name || "Maestro")
-          }
-          rightContent={<UserLocalClock />}
+          titleHighlight={highlight}
         />
-      </StaggeredBentoItem>
 
-      {/* CORE BENTO GRID */}
-      <div className="grid grid-cols-1 gap-4 xl:gap-8 lg:grid-cols-12 xl:grid-cols-13">
-        <UnreadMessagesAlert className="col-span-1 lg:col-span-12 xl:col-span-13" />
+        <UnreadMessagesAlert />
 
-        {nextRehearsal && (
-          <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
-            <NextRehearsalAlert rehearsal={nextRehearsal} />
-          </StaggeredBentoItem>
-        )}
+        {nextRehearsal && <NextRehearsalAlert rehearsal={nextRehearsal} />}
 
-        <StaggeredBentoItem className="col-span-1 lg:col-span-5 lg:min-h-100">
-          <TelemetryWidget adminStats={adminStats} />
-        </StaggeredBentoItem>
+        {/* ── focus row: next concert + ensemble balance ─────────────────── */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            {nextProject ? (
+              <SpotlightProjectCard
+                project={nextProject}
+                stats={nextProjectStats}
+              />
+            ) : (
+              <StatePanel
+                className="h-full"
+                icon={<CalendarPlus size={22} aria-hidden="true" />}
+                eyebrow={t("dashboard.admin.spotlight.empty_eyebrow", "Brak nadchodzących koncertów")}
+                title={t("dashboard.admin.spotlight.empty_title", "Czysty horyzont")}
+                description={t(
+                  "dashboard.admin.spotlight.empty_desc",
+                  "Nie masz zaplanowanego żadnego nadchodzącego koncertu. To dobry moment, by przygotować kolejny występ.",
+                )}
+                actions={
+                  <Button variant="primary" asChild>
+                    <Link to="/panel/projects">
+                      {t("dashboard.admin.spotlight.empty_cta", "Zaplanuj koncert")}
+                    </Link>
+                  </Button>
+                }
+              />
+            )}
+          </div>
+          <div className="lg:col-span-5">
+            <TelemetryWidget adminStats={adminStats} />
+          </div>
+        </div>
 
-        <StaggeredBentoItem className="col-span-1 lg:col-span-7 xl:col-span-8 lg:min-h-100">
-          <SpotlightProjectCard
-            project={nextProject}
-            stats={nextProjectStats}
-          />
-        </StaggeredBentoItem>
+        {/* ── actionable production pipeline ─────────────────────────────── */}
+        <ProductionPipeline stats={invitationStats} projects={pipelineProjects} />
 
-        <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
-          <InvitationStatusWidget stats={invitationStats} />
-        </StaggeredBentoItem>
-
-        <StaggeredBentoItem className="mt-4 col-span-1 lg:col-span-12 xl:col-span-13">
-          <SectionHeader
-            title={t("dashboard.admin.directory_sub", "06 Modułów")}
-            withFluidDivider={false}
-            className="px-5 md:px-0"
-          />
-          <AdminModulesDirectory />
-        </StaggeredBentoItem>
+        {/* ── dense operational module strip ─────────────────────────────── */}
+        <AdminQuickModules />
       </div>
-    </StaggeredBentoContainer>
+    </PageTransition>
   );
 }

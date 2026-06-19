@@ -1,8 +1,10 @@
 /**
  * @file ArtistDashboard.tsx
- * @description The Artist's Sanctuary.
- * Synchronized with the Ethereal UI 2026 Admin standards. Zero Lucide vectors.
- * Kinetic typography, fluid masking, and Roman numeral directives.
+ * @description The chorister's home — a mobile-first "what now" cockpit, not a
+ * navigation directory. A single focused column: today's greeting, the next
+ * event spotlight (RSVP + concert prep, reused from the calendar so the two can
+ * never disagree), the concert you're working toward with your part-readiness,
+ * your attendance mirror, and a one-tap toolkit led by an instant Kamerton.
  * @module panel/dashboard/ArtistDashboard
  */
 
@@ -11,20 +13,17 @@ import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
-import { ARTIST_BENTO_DIRECTIVES } from "@/shared/config/navigation/dashboard.config";
 
-import { SystemModuleCard } from "@/widgets/domain/SystemModuleCard";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
-import { UserLocalClock } from "@/widgets/utility/UserLocalClock";
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 
-import { ArtistNextRehearsalWidget } from "./components/ArtistNextRehearsalWidget";
-import { ArtistNextProjectWidget } from "./components/ArtistNextProjectWidget";
+import { NextEventHero } from "@/features/schedule/components/NextEventHero";
+import { MyAttendancePanel } from "@/features/schedule/components/MyAttendancePanel";
+
+import { GoalConcertCard } from "./components/GoalConcertCard";
+import { ArtistQuickTools } from "./components/ArtistQuickTools";
 import { ArtistEmptyState } from "./components/ArtistEmptyState";
 import { DashboardErrorState } from "./components/DashboardErrorState";
 import { UnreadMessagesAlert } from "./components/UnreadMessagesAlert";
@@ -37,8 +36,10 @@ export default function ArtistDashboard(): React.JSX.Element {
     isLoading,
     isError,
     refetch,
-    upNextRehearsal,
-    upNextProject,
+    nextEvent,
+    goalConcert,
+    attendanceStats,
+    handleAbsenceSubmit,
     greeting,
     firstNameVocative,
   } = useArtistDashboardData(user?.artist_profile_id ?? undefined);
@@ -57,100 +58,53 @@ export default function ArtistDashboard(): React.JSX.Element {
     return <DashboardErrorState onRetry={refetch} />;
   }
 
+  const highlight =
+    user?.profile?.language === "pl" && firstNameVocative
+      ? firstNameVocative
+      : user?.first_name || t("common.artist_generic", "Artysty");
+
+  const todayLabel = formatLocalizedDate(
+    new Date(),
+    { weekday: "long", day: "numeric", month: "long" },
+    undefined,
+    user?.profile?.timezone,
+  );
+
+  // The concert you're rehearsing toward only earns its own strip when the next
+  // event isn't already that concert (the hero would otherwise say it twice).
+  const showGoalStrip = Boolean(
+    goalConcert && (!nextEvent || nextEvent.id !== goalConcert.id),
+  );
+
   return (
-    <StaggeredBentoContainer className="mx-auto w-full max-w-400 px-0 pb-24 md:px-6 lg:px-10">
-      {/* HEADER STRATUM */}
-      <StaggeredBentoItem>
+    <PageTransition>
+      {/* No own horizontal padding — the app shell provides the gutter. A single
+          centred column, mobile-first; the calendar and "Moja Karta" share it. */}
+      <div className="mx-auto flex max-w-3xl flex-col gap-5 pb-6 pt-4 sm:pt-6">
         <PageHeader
-          size="dashboard"
-          roleText={t("dashboard.artist.title_main", "Przestrzeń chórzysty")}
+          size="standard"
+          className="!mb-0"
+          roleText={todayLabel}
           title={greeting}
-          titleHighlight={
-            (user?.profile?.language === "pl" && firstNameVocative)
-              ? firstNameVocative
-              : (user?.first_name || t("common.artist_generic", "Artysty"))
-          }
-          rightContent={<UserLocalClock />}
+          titleHighlight={highlight}
         />
-      </StaggeredBentoItem>
 
-      {/* CORE BENTO GRID */}
-      <div className="grid grid-cols-1 gap-4 xl:gap-8 lg:grid-cols-12 xl:grid-cols-13">
-        <UnreadMessagesAlert className="col-span-1 lg:col-span-12 xl:col-span-13" />
+        <UnreadMessagesAlert />
 
-        {!upNextRehearsal && !upNextProject && (
-          <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
-            <SectionHeader
-              title={t("dashboard.artist.next_challenges", "Na horyzoncie")}
-              className="px-5 md:px-0"
-            />
-            <ArtistEmptyState />
-          </StaggeredBentoItem>
+        {nextEvent ? (
+          <NextEventHero event={nextEvent} onSubmitReport={handleAbsenceSubmit} />
+        ) : (
+          <ArtistEmptyState />
         )}
 
-        {(upNextRehearsal || upNextProject) && (
-          <StaggeredBentoItem className="col-span-1 lg:col-span-12 xl:col-span-13">
-            <SectionHeader
-              title={t(
-                "dashboard.artist.next_challenges",
-                "Bezpośrednie Wytyczne",
-              )}
-              className="px-5 md:px-0"
-            />
-          </StaggeredBentoItem>
+        {showGoalStrip && goalConcert && <GoalConcertCard event={goalConcert} />}
+
+        {attendanceStats.rate !== null && (
+          <MyAttendancePanel stats={attendanceStats} />
         )}
 
-        {upNextProject && (
-          <StaggeredBentoItem
-            className={
-              upNextRehearsal
-                ? "col-span-1 md:col-span-7 xl:col-span-8"
-                : "col-span-1 md:col-span-12 xl:col-span-13"
-            }
-          >
-            <ArtistNextProjectWidget project={upNextProject} />
-          </StaggeredBentoItem>
-        )}
-
-        {upNextRehearsal && (
-          <StaggeredBentoItem
-            className={
-              upNextProject
-                ? "col-span-1 md:col-span-5 xl:col-span-5"
-                : "col-span-1 md:col-span-12 xl:col-span-13"
-            }
-          >
-            <ArtistNextRehearsalWidget rehearsal={upNextRehearsal} />
-          </StaggeredBentoItem>
-        )}
-
-        {/* DIRECTIVES DIRECTORY */}
-        <StaggeredBentoItem className="mt-4 col-span-1 lg:col-span-12 xl:col-span-13">
-          <SectionHeader
-            title={t("dashboard.artist.personal_modules", "Katalog Modułów")}
-            withFluidDivider={false}
-            className="px-5 md:px-0"
-          />
-          <nav aria-label={t("dashboard.artist.nav_aria", "Nawigacja artysty")}>
-            <ul className="grid grid-cols-1 gap-4 md:grid-cols-3 md:auto-rows-[180px]">
-              {ARTIST_BENTO_DIRECTIVES.map((directive) => (
-                <li key={directive.id} className={directive.gridClass}>
-                  <SystemModuleCard
-                    id={directive.id}
-                    path={directive.path}
-                    romanNumeral={directive.romanNumeral}
-                    accentClass={directive.accentClass}
-                    title={t(directive.titleKey, directive.defaultTitle)}
-                    features={directive.features.map((feat) =>
-                      t(feat.labelKey, feat.defaultLabel)
-                    )}
-                  />
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </StaggeredBentoItem>
+        <ArtistQuickTools />
       </div>
-    </StaggeredBentoContainer>
+    </PageTransition>
   );
 }

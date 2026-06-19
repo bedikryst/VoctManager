@@ -137,7 +137,7 @@ export const ArtistCard = React.memo(
           </div>
 
           <div className="min-w-0 flex-1">
-            <Heading as="h3" size="sm" weight="bold" truncate>
+            <Heading as="h3" size="md" weight="bold" truncate>
               {fullName}
             </Heading>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">

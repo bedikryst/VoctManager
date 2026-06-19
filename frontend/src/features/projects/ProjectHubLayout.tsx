@@ -240,7 +240,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-7xl flex-col gap-5 px-4 pb-24 pt-6 sm:px-0">
+      <div className="relative mx-auto flex max-w-7xl flex-col gap-5 pb-24 pt-6">
         <header className="flex flex-col gap-5">
           {/* Utility row — navigation + project-level actions. Labels collapse to
               icons as the viewport narrows so the cluster never overflows. */}

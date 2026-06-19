@@ -31,6 +31,9 @@ export const buttonVariants = cva(
       size: {
         default: "px-5 py-2.5",
         sm: "px-4 py-2 !text-[10px]",
+        // `touch` guarantees a >=44px hit area for thumb-driven primary actions
+        // (schedule RSVP, sheet footers) without shrinking the type like `sm`.
+        touch: "min-h-11 px-5 py-3",
         lg: "px-8 py-3.5 !text-[12px]",
         icon: "h-10 w-10 flex items-center justify-center p-0",
       },

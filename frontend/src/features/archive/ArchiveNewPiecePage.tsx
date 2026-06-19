@@ -110,7 +110,7 @@ export default function ArchiveNewPiecePage(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-3xl px-4 pb-24 pt-6 sm:px-6">
+      <div className="mx-auto max-w-3xl pb-24 pt-6">
         <header className="mb-5 flex items-center gap-3">
           <Button
             asChild

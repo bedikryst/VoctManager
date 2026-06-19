@@ -73,11 +73,11 @@ export const VocalDistributionGrid = ({
               />
             </div>
 
-            <div className="flex-shrink-0 flex items-center gap-2 min-w-[120px]">
+            <div className="flex shrink-0 items-center gap-2 w-16 sm:w-32">
               <Text size="xs" weight="semibold" className="text-ethereal-ink tabular-nums">
                 {entry.count}×
               </Text>
-              <Text size="xs" color="muted" className="truncate">
+              <Text size="xs" color="muted" className="hidden truncate sm:block">
                 {entry.voice_line_display}
               </Text>
             </div>

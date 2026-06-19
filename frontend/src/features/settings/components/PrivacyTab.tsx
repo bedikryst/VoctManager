@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Fingerprint, Download, Trash2, FileJson } from "lucide-react";
+import { Fingerprint, Download, Trash2, FileJson, Music } from "lucide-react";
 import axios from "axios";
 
 import { GlassCard } from "@ui/composites/GlassCard";
@@ -17,6 +17,10 @@ import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
 import { Input } from "@ui/primitives/Input";
 import { Text, Eyebrow, Caption } from "@ui/primitives/typography";
+import {
+  setSpotifyConsent,
+  useSpotifyConsent,
+} from "@/shared/lib/consent/spotifyConsent";
 import { useExportData, useDeleteAccount } from "../api/settings.queries";
 import type { ApiErrorResponse } from "../types/settings.dto";
 
@@ -25,6 +29,8 @@ export const PrivacyTab = () => {
 
   const { mutate: exportData, isPending: isExporting } = useExportData();
   const { mutate: deleteAccount, isPending: isDeleting } = useDeleteAccount();
+
+  const spotifyConsent = useSpotifyConsent();
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -98,6 +104,48 @@ export const PrivacyTab = () => {
                 className="shrink-0"
               >
                 {t("common.actions.download", "Pobierz")}
+              </Button>
+            </div>
+          </GlassCard>
+
+          {/* Spotify embed consent — revocable as easily as granted (RODO art. 7 ust. 3) */}
+          <GlassCard variant="outline" padding="md" isHoverable={false}>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Music className="w-4 h-4 text-ethereal-graphite" />
+                  <Eyebrow>
+                    {t(
+                      "settings.privacy.spotifyTitle",
+                      "Wbudowane odtwarzacze (Spotify)",
+                    )}
+                  </Eyebrow>
+                </div>
+                <Text
+                  size="sm"
+                  color="muted"
+                  className="max-w-md leading-relaxed"
+                >
+                  {spotifyConsent
+                    ? t(
+                        "settings.privacy.spotifyDescOn",
+                        "Odtwarzacze Spotify ładują się automatycznie dzięki Twojej zgodzie (łączą się z serwerami Spotify, pliki cookie i dane). Możesz cofnąć zgodę w każdej chwili.",
+                      )
+                    : t(
+                        "settings.privacy.spotifyDescOff",
+                        "Wbudowane odtwarzacze Spotify są wyłączone. Zapytamy o zgodę dopiero, gdy otworzysz odtwarzacz przy projekcie.",
+                      )}
+                </Text>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setSpotifyConsent(!spotifyConsent)}
+                leftIcon={<Music className="w-4 h-4" />}
+                className="shrink-0"
+              >
+                {spotifyConsent
+                  ? t("settings.privacy.spotifyRevoke", "Cofnij zgodę")
+                  : t("settings.privacy.spotifyGrant", "Zezwól")}
               </Button>
             </div>
           </GlassCard>

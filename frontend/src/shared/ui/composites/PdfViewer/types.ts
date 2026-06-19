@@ -20,6 +20,19 @@ export type PdfViewerEvent =
   | { type: "open_in_browser" }
   | { type: "retry" };
 
+/**
+ * Geometry of the currently-rendered page, in CSS pixels, handed to
+ * `renderPageOverlay` so a caller can position an absolutely-stacked layer
+ * (annotations, highlights) over the page and map normalized 0..1 coordinates
+ * to pixels. Re-emitted on page change and zoom.
+ */
+export interface PdfPageGeometry {
+  pageNumber: number;
+  width: number;
+  height: number;
+  scale: number;
+}
+
 export interface PdfViewerProps {
   fetchBlob: (() => Promise<Blob>) | null;
   docKey?: string | number;
@@ -28,5 +41,12 @@ export interface PdfViewerProps {
   fileName?: string;
   onEvent?: (event: PdfViewerEvent) => void;
   toolbarSlot?: ReactNode;
+  /**
+   * Optional layer rendered absolutely over the rendered page (e.g. a score
+   * annotation canvas). Receives live page geometry; the returned node fills
+   * the page box. The container is `pointer-events-none` — interactive overlay
+   * content must opt back in on its own surface.
+   */
+  renderPageOverlay?: (geometry: PdfPageGeometry) => ReactNode;
   className?: string;
 }

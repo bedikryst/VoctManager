@@ -9,7 +9,7 @@
 ![Framer Motion v12](https://img.shields.io/badge/Framer_Motion_v12-black?style=for-the-badge&logo=framer&logoColor=blue)
 ![TanStack Query v5](https://img.shields.io/badge/TanStack_Query_v5-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
 
-Ten katalog zawiera kod źródłowy **uwierzytelnionej aplikacji jednostronicowej (SPA)** platformy **VoctManager** — operacyjnego panelu ERP (`/panel/*`) oraz publicznych ścieżek autoryzacji (`/login`, `/activate`, `/documents/*`). Baza kodu jest zbudowana wokół trzech bezkompromisowych celów: **ścisłego Feature-Sliced Design**, **UX bez przesunięć układu (zero-layout-shift) przy 60 FPS** oraz **agresywnego buforowania stanu serwera** przez TanStack Query.
+Ten katalog zawiera kod źródłowy **uwierzytelnionej aplikacji jednostronicowej (SPA)** platformy **VoctManager** — operacyjnego panelu ERP (`/panel/*`) oraz publicznych ścieżek autoryzacji (`/login`, `/activate`, `/documents/*`). Baza kodu jest zbudowana wokół trzech celów: **ścisłego Feature-Sliced Design**, **UX bez przesunięć układu (zero-layout-shift) przy 60 FPS** oraz **buforowania stanu serwera** przez TanStack Query.
 
 > **Publiczna strona marketingowa została przeniesiona.** Landing voctensemble.com + podstrony (`/`, `/koncerty`, `/o-nas`, `/kontakt`, `/polityka-prywatnosci`) są teraz osobną aplikacją Astro w [`../web/`](../web/) — patrz [web/README.md](../web/README.md). SPA nie zawiera już powierzchni marketingowej, bramy progowej (Threshold), lejka datków (Vault) ani silnika audio; te żyją obecnie jako wyspy Astro. Oba buildy współdzielą backend Django pod `/api/*`.
 
@@ -37,7 +37,7 @@ src/
 │   └── utility/      # Widgety generyczne (error boundaries, stany puste)
 │
 ├── features/         ← Samodzielne wycinki domeny
-│   ├── archive/      # Archiwum repertuaru (utwory, edycje, nagrania)
+│   ├── archive/      # Archiwum repertuaru + przegląd kompilatora partytur AI (utwory, edycje)
 │   ├── artists/      # Zespół, profile, głosy
 │   ├── auth/         # Przepływy uwierzytelniania + cykl życia JWT
 │   ├── chorister-hub/# Baza wiedzy + metryki tożsamości artysty
@@ -46,12 +46,11 @@ src/
 │   ├── dashboard/    # Hooki danych dashboardu Bento
 │   ├── logistics/    # Lokalizacje, podróże, zarządzanie miejscami
 │   ├── materials/    # Dystrybucja nut + audio referencyjnego
-│   ├── messages/     # Asynchroniczne wątki rozmów dyrygent/chórzysta
+│   ├── messages/     # Wątki 1:1 + kanały projektów, triage i skrzynka dyrygenta
 │   ├── notifications/# Web push (VAPID) + log emaili transakcyjnych
 │   ├── projects/     # Projekty koncertowe, casting, arkusze produkcyjne
 │   ├── rehearsals/   # Planowanie prób + obecność
 │   ├── schedule/     # Synchronizacja iCal, feed kalendarza
-│   ├── score-compiler/# UI Kompilatora Pakietów Partytur AI
 │   └── settings/     # Ustawienia użytkownika i systemu
 │
 └── shared/           ← Reużywalne bloki budulcowe (najniższa warstwa)
@@ -64,8 +63,9 @@ src/
     ├── types/        # Globalne typy TypeScript
     └── ui/
         ├── primitives/    # Atomowe prymitywy (Button, Input, Heading, Text…)
-        ├── composites/    # Złożone UI (GlassCard, PageHeader, MetricBlock…)
-        └── kinematics/    # Prymitywy ruchu (PageTransition, EtherealLoader…)
+        ├── composites/    # Złożone UI (GlassCard, PageHeader, MetricBlock, Avatar…)
+        ├── kinematics/    # Prymitywy ruchu (PageTransition, EtherealLoader…)
+        └── instruments/   # Prymitywy muzyczne (PitchPipe / kamerton)
 ```
 
 > **Uwaga:** warstwa `entities/` jest celowo pominięta. Encje domenowe żyją obok swojej macierzystej funkcji (`features/<domena>/types/`), utrzymując graf zależności płaskim bez utraty dyscypliny FSD.

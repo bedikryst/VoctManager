@@ -39,7 +39,7 @@ export default function ProjectNewPage(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto max-w-4xl px-4 pb-24 pt-6 sm:px-0">
+      <div className="relative mx-auto max-w-4xl pb-24 pt-6">
         <header className="mb-5 flex items-center gap-3">
           <Button
             asChild

@@ -1,4 +1,3 @@
-import React from "react";
 import { Download, Globe, Share2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -12,7 +11,6 @@ interface PdfToolbarProps {
   onOpenInBrowser: () => void;
   onShare: () => void;
   onDownload: () => void;
-  toolbarSlot?: React.ReactNode;
 }
 
 export const PdfToolbar = ({
@@ -23,7 +21,6 @@ export const PdfToolbar = ({
   onOpenInBrowser,
   onShare,
   onDownload,
-  toolbarSlot,
 }: PdfToolbarProps) => {
   const { t } = useTranslation();
 
@@ -32,51 +29,48 @@ export const PdfToolbar = ({
       <GlassCard
         variant="surface"
         padding="sm"
-        className="flex items-center gap-1 rounded-full p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+        className="rounded-full p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
         isHoverable={false}
       >
-        {blobUrl && (
+        {/* Single flex-row child: GlassCard's inner wrapper is flex-col, so the
+            buttons must share one row container or they stack vertically. */}
+        <div className="flex items-center gap-1">
+          {blobUrl && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onOpenInBrowser}
+              aria-label={t("pdf_viewer.open_browser", "Open in browser")}
+              className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
+            >
+              <Globe size={16} aria-hidden="true" />
+            </Button>
+          )}
+
+          {supportsNativeShare && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onShare}
+              isLoading={isSharing}
+              aria-label={t("pdf_viewer.share", "Share")}
+              className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
+            >
+              {!isSharing && <Share2 size={16} aria-hidden="true" />}
+            </Button>
+          )}
+
           <Button
             variant="ghost"
             size="icon"
-            onClick={onOpenInBrowser}
-            aria-label={t("pdf_viewer.open_browser", "Open in browser")}
+            onClick={onDownload}
+            isLoading={isDownloading}
+            aria-label={t("pdf_viewer.download", "Download")}
             className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
           >
-            <Globe size={16} aria-hidden="true" />
+            {!isDownloading && <Download size={16} aria-hidden="true" />}
           </Button>
-        )}
-
-        {supportsNativeShare && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onShare}
-            isLoading={isSharing}
-            aria-label={t("pdf_viewer.share", "Share")}
-            className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
-          >
-            {!isSharing && <Share2 size={16} aria-hidden="true" />}
-          </Button>
-        )}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onDownload}
-          isLoading={isDownloading}
-          aria-label={t("pdf_viewer.download", "Download")}
-          className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
-        >
-          {!isDownloading && <Download size={16} aria-hidden="true" />}
-        </Button>
-
-        {toolbarSlot && (
-          <>
-            <div className="mx-1 h-4 w-px bg-white/15" />
-            {toolbarSlot}
-          </>
-        )}
+        </div>
       </GlassCard>
     </div>
   );

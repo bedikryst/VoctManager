@@ -29,6 +29,13 @@ export const useArtistMetrics = () =>
     staleTime: METRICS_STALE,
   });
 
+export const useMyEnsemble = () =>
+  useSuspenseQuery({
+    queryKey: choristerHubKeys.myEnsemble.mine(),
+    queryFn: ChoristerHubService.getMyEnsemble,
+    staleTime: METRICS_STALE,
+  });
+
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();

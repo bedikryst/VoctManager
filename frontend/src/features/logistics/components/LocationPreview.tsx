@@ -224,7 +224,9 @@ export const LocationPreview = ({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "group flex items-center gap-1.5 transition-all duration-500",
+          // min-w-0 + max-w-full let the inner label actually truncate instead
+          // of forcing the badge wider than its container (mobile overflow fix).
+          "group flex min-w-0 max-w-full items-center gap-1.5 transition-all duration-500",
           anchorStyles,
           className,
         )}

@@ -222,7 +222,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-5xl flex-col gap-5 px-4 pb-24 pt-6 sm:px-0">
+      <div className="relative mx-auto flex max-w-5xl flex-col gap-5 pb-24 pt-6">
         <PageHeader
           size="standard"
           roleText={t("archive.composers.subtitle", "Biblioteka nut")}

@@ -5,6 +5,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialsService } from "./materials.service";
+import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
 import type {
   MaterialsDashboardItem,
   MaterialsReadinessStatus,
@@ -66,13 +68,29 @@ export const useSetPieceReadiness = () => {
       return { snapshot };
     },
 
-    onError: (_error, _variables, context) => {
+    onError: (error, variables, context) => {
+      // Offline tap: keep the optimistic patch and queue the write for replay —
+      // rolling back would punish the chorister for having no signal.
+      if (isLikelyOfflineError(error)) {
+        useOfflineStore.getState().enqueueWrite({
+          kind: "readiness",
+          method: "PUT",
+          url: `/api/participations/${variables.participationId}/readiness/`,
+          body: { piece: variables.pieceId, status: variables.status },
+          dedupeKey: `readiness:${variables.participationId}:${variables.pieceId}`,
+          label: "Gotowość utworu",
+        });
+        return;
+      }
       if (context?.snapshot) {
         queryClient.setQueryData(materialsKeys.dashboard, context.snapshot);
       }
     },
 
     onSettled: () => {
+      // Skip the refetch while offline — it would only fail and churn the cache;
+      // the queued replay invalidates on reconnect.
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
       void queryClient.invalidateQueries({ queryKey: materialsKeys.dashboard });
     },
   });

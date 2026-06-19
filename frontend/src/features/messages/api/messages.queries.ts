@@ -8,6 +8,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import i18n from "@/shared/config/i18n";
 
 import { ChannelService, MessagingService } from "./messages.service";
 import type {
@@ -118,6 +120,7 @@ export const usePostMessage = (threadId: string, me: UserBrief) => {
           context.previous,
         );
       }
+      toast.error(i18n.t("messages.send_failed", "Nie udało się wysłać wiadomości."));
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -212,8 +215,38 @@ export const usePostChannelMessage = (channelId: string, me: UserBrief) => {
       if (context?.previous) {
         queryClient.setQueryData(channelKeys.detail(channelId), context.previous);
       }
+      toast.error(i18n.t("messages.send_failed", "Nie udało się wysłać wiadomości."));
     },
     onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
+      queryClient.invalidateQueries({ queryKey: messagingKeys.all });
+    },
+  });
+};
+
+/**
+ * Manager broadcast: post a message to a project channel and (optionally) pin it as
+ * an announcement. Two sequential calls — post returns the new message id, then pin.
+ */
+export const usePostChannelAnnouncement = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      channelId,
+      body,
+      pin,
+    }: {
+      channelId: string;
+      body: string;
+      pin: boolean;
+    }) => {
+      const message = await ChannelService.postMessage(channelId, body);
+      if (pin) {
+        await ChannelService.pin(channelId, message.id, true);
+      }
+      return message;
+    },
+    onSuccess: (_message, { channelId }) => {
       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });
       queryClient.invalidateQueries({ queryKey: messagingKeys.all });
     },

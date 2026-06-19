@@ -221,7 +221,7 @@ export default function ArchiveEditPiecePage(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-3xl px-4 pb-24 pt-6 sm:px-6">
+      <div className="mx-auto max-w-3xl pb-24 pt-6">
         <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <Button

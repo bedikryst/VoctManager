@@ -155,6 +155,5 @@ export interface MaterialsDashboardGroup {
   project: MaterialsProject;
   participationId: string;
   participationStatus: string;
-  fee: string | null;
   program: MaterialsProgramItem[];
 }

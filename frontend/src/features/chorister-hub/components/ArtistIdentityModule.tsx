@@ -142,7 +142,7 @@ export const ArtistIdentityModule = (): React.JSX.Element => {
         </div>
         <div>
           <Heading size="xl" className="tracking-tight">
-            {t("chorister_hub.identity.title", "Kartoteka Artysty")}
+            {t("chorister_hub.identity.title", "Moja droga")}
           </Heading>
           <Text size="xs" color="muted">
             {t(

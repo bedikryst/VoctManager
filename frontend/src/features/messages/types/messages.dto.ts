@@ -12,12 +12,16 @@ export type ThreadStatus = "OPEN" | "RESOLVED" | "ARCHIVED";
 export interface UserBrief {
   id: number;
   name: string;
+  /** Small avatar render; null/undefined → initials fallback. */
+  avatar_url?: string | null;
 }
 
 export interface ThreadArtistBrief {
   id: string;
   name: string;
   voice_type: string;
+  /** Small avatar render; null/undefined → initials fallback. */
+  avatar_url?: string | null;
 }
 
 export interface MessageDTO {

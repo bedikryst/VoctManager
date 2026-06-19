@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   Clock,
   ChevronDown,
+  ChevronRight,
   Shirt,
   Eye,
   Download,
@@ -13,6 +14,7 @@ import {
   FileText,
 } from "lucide-react";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
+import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -23,8 +25,12 @@ import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { useTimelineProjectCard } from "../hooks/useTimelineProjectCard";
+import { useProjectReadiness } from "../hooks/useProjectReadiness";
+import { ReadinessRing } from "./ReadinessRing";
+import { AddToCalendar } from "./AddToCalendar";
 import type { TimelineEvent } from "../types/schedule.dto";
 import { cn } from "@/shared/lib/utils";
+import { onActivate } from "@/shared/lib/dom/a11y";
 
 interface TimelineProjectCardProps {
   event: TimelineEvent;
@@ -56,9 +62,6 @@ export const TimelineProjectCard = ({
 }: TimelineProjectCardProps): React.JSX.Element => {
   const { t } = useTranslation();
   const proj = event.rawObj as Project;
-  const combinedDressCode = [proj.dress_code_female, proj.dress_code_male]
-    .filter(Boolean)
-    .join(" / ");
 
   const {
     activeSubTab,
@@ -82,6 +85,11 @@ export const TimelineProjectCard = ({
   } = useTimelineProjectCard(proj.id, proj.title, isExpanded);
 
   const populatedCastings = castings as PopulatedPieceCasting[];
+  const readiness = useProjectReadiness(
+    proj.id,
+    isExpanded && activeSubTab === "SETLIST",
+  );
+  const isUpcoming = event.date_time.getTime() > Date.now();
 
   return (
     <motion.div
@@ -90,11 +98,8 @@ export const TimelineProjectCard = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="relative sm:pl-14 md:pl-16 group"
+      className="group relative"
     >
-      {/* timeline dot — desktop */}
-      <div className="hidden sm:block absolute left-3.5 md:left-6 top-5 w-3 h-3 rounded-full border-2 ring-4 ring-ethereal-parchment z-10 bg-ethereal-gold border-ethereal-gold shadow-glass-solid" />
-
       <GlassCard
         variant="dark"
         glow={true}
@@ -109,12 +114,20 @@ export const TimelineProjectCard = ({
         )}
       >
         {/* ── hero header ──────────────────────────────────────────── */}
-        <div
-          className="relative flex items-start gap-4 p-4 sm:p-6 cursor-pointer hover:bg-ethereal-marble/5 transition-colors"
-          onClick={onToggle}
-          role="button"
-          aria-expanded={isExpanded}
-        >
+        <div className="relative flex items-start gap-4 p-4 sm:p-6">
+          {/* stretched click-layer: the whole header opens the detail sheet.
+              A real <button> (not a div[role=button]) sitting *under* the
+              location badge — no nested interactive controls, no tap clash. */}
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-haspopup="dialog"
+            aria-expanded={isExpanded}
+            aria-label={t("schedule.card.open_detail", "Otwórz szczegóły: {{title}}", {
+              title: event.title,
+            })}
+            className="absolute inset-0 z-[1] cursor-pointer rounded-2xl transition-colors hover:bg-ethereal-marble/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+          />
           {/* date box */}
           <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border flex flex-col items-center justify-center shadow-glass-ethereal bg-ethereal-incense/20 border-ethereal-incense/40 backdrop-blur-md">
             <Eyebrow as="span" color="parchment">
@@ -147,7 +160,7 @@ export const TimelineProjectCard = ({
               <Eyebrow
                 as="span"
                 color="gold"
-                className="px-2.5 py-1 bg-ethereal-gold/15 border border-ethereal-gold/40 rounded-md shadow-glass-ethereal"
+                className="whitespace-nowrap px-2.5 py-1 bg-ethereal-gold/15 border border-ethereal-gold/40 rounded-md shadow-glass-ethereal"
               >
                 {t("schedule.card.project_badge", "Koncert / Wydarzenie")}
               </Eyebrow>
@@ -155,7 +168,7 @@ export const TimelineProjectCard = ({
 
             <Heading
               as="h3"
-              size="3xl"
+              size="2xl"
               weight="bold"
               color="white"
               className="mb-2.5 leading-tight"
@@ -163,7 +176,7 @@ export const TimelineProjectCard = ({
               {event.title}
             </Heading>
 
-            {/* badges row */}
+            {/* badges row — dress code lives in the expanded Logistics tab */}
             <div className="flex flex-wrap items-center gap-2">
               {proj.call_time && (
                 <DualTimeDisplay
@@ -174,66 +187,56 @@ export const TimelineProjectCard = ({
                   variant="dark"
                   containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-incense/30 text-ethereal-parchment border border-ethereal-incense/50"
                   primaryTimeClassName="flex items-center gap-1.5 font-medium"
-                  localTimeClassName="text-[9px] text-ethereal-parchment/70 border-l border-ethereal-incense/50 pl-1.5"
+                  localTimeClassName="text-[10px] text-ethereal-parchment/70 border-l border-ethereal-incense/50 pl-1.5"
                 />
               )}
-              {combinedDressCode && (
-                <Eyebrow
-                  as="span"
-                  color="parchment"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-incense/15 border border-ethereal-incense/40 max-w-48 truncate"
-                  title={combinedDressCode}
-                >
-                  <Shirt size={11} aria-hidden="true" />
-                  {combinedDressCode}
-                </Eyebrow>
-              )}
-              <LocationPreview
-                locationRef={event.location}
-                fallback={t("schedule.card.no_location", "Brak lok.")}
-                variant="badge"
-                className="text-ethereal-parchment/80 border-ethereal-incense/30 bg-ethereal-incense/10"
-              />
+              {/* lifted above the stretched click-layer (z-[2]) so the map
+                  popover opens on its own tap; flex+min-w-0 keeps the badge
+                  shrinkable so a long venue name truncates instead of bleeding
+                  past the card edge */}
+              <span className="relative z-[2] flex min-w-0 max-w-full">
+                <LocationPreview
+                  locationRef={event.location}
+                  fallback={t("schedule.card.no_location", "Brak lok.")}
+                  variant="badge"
+                  className="max-w-full text-ethereal-parchment/80 border-ethereal-incense/30 bg-ethereal-incense/10"
+                />
+              </span>
             </div>
           </div>
 
-          {/* chevron */}
-          <div className="shrink-0 self-start mt-1 p-1.5 bg-ethereal-incense/20 border border-ethereal-incense/30 rounded-full text-ethereal-parchment/80 hover:bg-ethereal-incense/30 transition-colors">
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <ChevronDown size={18} aria-hidden="true" />
-            </motion.div>
+          {/* open-detail affordance (decorative — the stretched button owns
+              the interaction); top-anchored beside the date box */}
+          <div className="shrink-0 self-start mt-1 p-1.5 bg-ethereal-incense/20 border border-ethereal-incense/30 rounded-full text-ethereal-parchment/80 transition-colors">
+            <ChevronRight size={18} aria-hidden="true" />
           </div>
         </div>
 
-        {/* ── expanded panel ───────────────────────────────────────── */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              key="expanded"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.28 }}
-              className="overflow-hidden border-t border-ethereal-incense/10 bg-ethereal-ink/20"
-            >
+        {/* ── detail surface — bottom-sheet on touch, centred modal on
+             desktop; replaces the former four-level inline accordion ─── */}
+        <BottomSheet
+          isOpen={isExpanded}
+          onClose={onToggle}
+          tone="dark"
+          title={event.title}
+          subtitle={t("schedule.card.project_badge", "Koncert / Wydarzenie")}
+        >
+          <div className="flex flex-col gap-4">
               {/* sub-tab bar — full-width on mobile */}
-              <div className="flex p-3 sm:p-5 pb-0 gap-2">
+              <div className="flex gap-2">
                 {(
                   [
                     {
                       id: "LOGISTICS",
                       Icon: Wrench,
                       labelKey: "schedule.card.tab.logistics",
-                      fallback: "Logistyka & Plan",
+                      fallback: "Logistyka",
                     },
                     {
                       id: "SETLIST",
                       Icon: Music,
                       labelKey: "schedule.card.tab.setlist",
-                      fallback: "Repertuar & Divisi",
+                      fallback: "Repertuar",
                     },
                   ] as const
                 ).map(({ id, Icon, labelKey, fallback }) => (
@@ -256,7 +259,12 @@ export const TimelineProjectCard = ({
                 ))}
               </div>
 
-              <div className="p-4 sm:p-6 pt-4">
+              <div className="min-w-0">
+                {isUpcoming && (
+                  <div className="mb-4">
+                    <AddToCalendar event={event} tone="dark" layout="inline" />
+                  </div>
+                )}
                 {/* ── LOGISTICS tab ─────────────────────────────── */}
                 {activeSubTab === "LOGISTICS" && (
                   <div className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
@@ -308,7 +316,7 @@ export const TimelineProjectCard = ({
                       {proj.description ? (
                         <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4">
                           <Text
-                            size="sm"
+                            size="base"
                             color="white"
                             className="leading-relaxed whitespace-pre-wrap font-serif"
                           >
@@ -331,7 +339,7 @@ export const TimelineProjectCard = ({
 
                     {/* run sheet */}
                     <div>
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <Eyebrow color="parchment">
                           {t(
                             "schedule.card.run_sheet_title",
@@ -372,7 +380,7 @@ export const TimelineProjectCard = ({
 
                       {/* Score PDF — only shown when the manager has uploaded one */}
                       {proj.score_pdf && (
-                        <div className="flex items-center justify-between mb-4 rounded-xl border border-ethereal-sage/30 bg-ethereal-sage/10 px-3 py-2">
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ethereal-sage/30 bg-ethereal-sage/10 px-3 py-2">
                           <div className="flex items-center gap-1.5">
                             <FileText
                               size={12}
@@ -423,9 +431,22 @@ export const TimelineProjectCard = ({
                                   {item.time}
                                 </Eyebrow>
                                 <div className="bg-ethereal-incense/10 p-3.5 rounded-xl border border-ethereal-incense/20 hover:bg-ethereal-incense/20 transition-colors">
-                                  <Text weight="bold" color="white">
-                                    {item.title}
-                                  </Text>
+                                  {item.title ? (
+                                    <Text weight="bold" color="white">
+                                      {item.title}
+                                    </Text>
+                                  ) : (
+                                    <Text
+                                      weight="medium"
+                                      color="parchment-muted"
+                                      className="italic text-ethereal-parchment/50"
+                                    >
+                                      {t(
+                                        "schedule.card.run_sheet_untitled",
+                                        "Punkt harmonogramu",
+                                      )}
+                                    </Text>
+                                  )}
                                   {item.description && (
                                     <Text
                                       size="sm"
@@ -457,18 +478,23 @@ export const TimelineProjectCard = ({
 
                 {/* ── SETLIST tab ───────────────────────────────── */}
                 {activeSubTab === "SETLIST" && (
-                  <div className="space-y-6 xl:grid xl:grid-cols-5 xl:gap-8 xl:space-y-0">
-                    {/* spotify — on mobile appears below the list */}
-                    <div className="xl:col-span-2 xl:order-last">
+                  // Single column on every breakpoint: the programme is the
+                  // primary content and keeps the full sheet width, while the
+                  // secondary Spotify reference drops full-width *below* it
+                  // (`order-last`) instead of being crammed into a viewport-`xl`
+                  // side column that the fixed-width modal never has room for.
+                  <div className="flex flex-col gap-6">
+                    {/* spotify reference — full-width strip below the programme */}
+                    <div className="order-last">
                       {proj.spotify_playlist_url ? (
                         <SpotifyWidget
                           playlistUrl={proj.spotify_playlist_url}
                         />
                       ) : (
-                        <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-5 text-center flex flex-col items-center justify-center min-h-36">
+                        <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4 flex items-center justify-center gap-2 text-center">
                           <Music
-                            size={22}
-                            className="text-ethereal-parchment/40 mb-2"
+                            size={16}
+                            className="text-ethereal-parchment/40 shrink-0"
                             aria-hidden="true"
                           />
                           <Text
@@ -486,7 +512,14 @@ export const TimelineProjectCard = ({
                     </div>
 
                     {/* program items */}
-                    <div className="xl:col-span-3 space-y-3">
+                    <div className="space-y-3">
+                      {readiness.hasData && (
+                        <ReadinessRing
+                          readiness={readiness}
+                          to="/panel/materials"
+                          surface="dark"
+                        />
+                      )}
                       {isProgramLoading ? (
                         <EtherealLoader fullHeight={false} />
                       ) : programItems.length > 0 ? (
@@ -514,7 +547,15 @@ export const TimelineProjectCard = ({
                                       isPieceExpanded ? null : String(pi.piece),
                                     )
                                   }
-                                  className="p-4 flex items-center justify-between cursor-pointer transition-colors"
+                                  onKeyDown={onActivate(() =>
+                                    setExpandedPieceId(
+                                      isPieceExpanded ? null : String(pi.piece),
+                                    )
+                                  )}
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-expanded={isPieceExpanded}
+                                  className="p-4 flex items-center justify-between cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-sage/40"
                                 >
                                   <div className="flex items-center gap-3 min-w-0">
                                     <Eyebrow
@@ -724,9 +765,8 @@ export const TimelineProjectCard = ({
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
+        </BottomSheet>
       </GlassCard>
 
       <PdfViewerModal

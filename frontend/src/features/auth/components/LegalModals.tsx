@@ -230,6 +230,15 @@ const PrivacyContent: React.FC = () => {
 
     <div>
       <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.privacy.embeds_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.privacy.embeds_desc")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
         {t("auth.legal.privacy.your_rights_title")}
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
@@ -280,6 +289,15 @@ const TermsContent: React.FC = () => {
       </Eyebrow>
       <Text size="md" color="graphite" className="mt-2">
         {t("auth.legal.terms.data_desc")}
+      </Text>
+    </div>
+
+    <div>
+      <Eyebrow color="muted" size={"md"} className="mb-4">
+        {t("auth.legal.terms.embeds_title")}
+      </Eyebrow>
+      <Text size="md" color="graphite" className="mt-2">
+        {t("auth.legal.terms.embeds_desc")}
       </Text>
     </div>
 

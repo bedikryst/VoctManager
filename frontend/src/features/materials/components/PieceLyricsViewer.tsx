@@ -26,6 +26,8 @@ interface PieceLyricsViewerProps {
   translations?: MaterialsTranslation[];
   /** Audience-facing program notes. */
   programNotes?: MaterialsProgramNote[];
+  /** Open on mount — used when text is a tab of its own, not a buried add-on. */
+  defaultExpanded?: boolean;
 }
 
 export const PieceLyricsViewer = ({
@@ -33,9 +35,10 @@ export const PieceLyricsViewer = ({
   lyricsIpa,
   translations,
   programNotes,
+  defaultExpanded = false,
 }: PieceLyricsViewerProps): React.JSX.Element | null => {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
 
   const cleanedTranslations = (translations ?? []).filter((tr) =>
     Boolean(tr.text?.trim()),

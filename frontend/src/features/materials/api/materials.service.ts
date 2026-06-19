@@ -18,6 +18,21 @@ export const MaterialsService = {
     return response.data;
   },
 
+  /**
+   * Fetches a score-edition PDF through the authenticated, status-aware gate
+   * (`/api/materials/scores/<id>/download/`). Going through the axios instance
+   * gives us cookie auth + silent token refresh — unlike a bare <a> navigation,
+   * which dies on the new tab the moment the access cookie expires. Feeds the
+   * in-app PdfViewer so the chorister follows the score without leaving practice.
+   */
+  fetchScoreEditionBlob: async (editionId: string): Promise<Blob> => {
+    const response = await api.get(
+      `/api/materials/scores/${editionId}/download/`,
+      { responseType: "blob" },
+    );
+    return response.data as Blob;
+  },
+
   setPieceReadiness: async (
     participationId: string,
     pieceId: string,

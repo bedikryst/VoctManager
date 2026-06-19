@@ -9,4 +9,10 @@ export const choristerHubKeys = {
     all: ['chorister-hub', 'artist-metrics'] as const,
     mine: () => [...choristerHubKeys.artistMetrics.all, 'mine'] as const,
   },
+  myEnsemble: {
+    all: ['chorister-hub', 'my-ensemble'] as const,
+    // 'v2' tags the concert-scoped response schema; it orphans any persisted
+    // cache from the earlier section-directory shape so it can't rehydrate stale.
+    mine: () => [...choristerHubKeys.myEnsemble.all, 'mine', 'v2'] as const,
+  },
 } as const;

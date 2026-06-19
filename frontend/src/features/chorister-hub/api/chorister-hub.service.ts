@@ -6,6 +6,7 @@ import type {
   DocumentCategoryUpdateDTO,
   DocumentFileDTO,
   ArtistIdentityMetricsDTO,
+  MyEnsembleDTO,
 } from '../types/chorister-hub.dto';
 
 const API_BASE = '/api/documents';
@@ -37,6 +38,9 @@ export const ChoristerHubService = {
 
   getArtistMetrics: (): Promise<ArtistIdentityMetricsDTO> =>
     api.get<ArtistIdentityMetricsDTO>(`${API_BASE}/artist-metrics/`).then((r) => r.data),
+
+  getMyEnsemble: (): Promise<MyEnsembleDTO> =>
+    api.get<MyEnsembleDTO>(`${API_BASE}/my-ensemble/`).then((r) => r.data),
 
   fetchDocumentBlob: (documentId: string): Promise<Blob> =>
     api

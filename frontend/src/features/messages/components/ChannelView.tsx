@@ -1,8 +1,8 @@
 /**
  * @file ChannelView.tsx
  * @description Active project-channel pane: header (project, member count, per-user push
- * toggle), pinned-announcements banner, group message stream (sender shown per row,
- * manager pin/unpin), and a composer everyone can post to. Marks read on open.
+ * toggle), pinned-announcements banner, day-grouped group message stream (sender avatar
+ * per row, manager pin/unpin), and a composer everyone can post to. Marks read on open.
  * Async by design — no presence/typing.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/components
@@ -12,6 +12,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Bell, BellOff, Pin, PinOff, Send } from "lucide-react";
 
+import { Avatar } from "@/shared/ui/composites/Avatar";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Heading, Text, Label } from "@/shared/ui/primitives/typography";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -23,15 +25,9 @@ import {
   usePostChannelMessage,
   useSetChannelPush,
 } from "../api/messages.queries";
+import { clockStamp, dayLabel, groupMessagesByDay, isOptimisticId } from "../lib/time";
 import type { ChannelMessageDTO, UserBrief } from "../types/messages.dto";
-
-const formatTime = (iso: string): string =>
-  new Date(iso).toLocaleString(undefined, {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+import { DayDivider } from "@/shared/ui/composites/DayDivider";
 
 interface ChannelViewProps {
   channelId: string;
@@ -47,40 +43,58 @@ interface ChannelRowProps {
   pinPending: boolean;
 }
 
-const ChannelRow: React.FC<ChannelRowProps> = ({ message, isManager, onTogglePin, pinPending }) => (
-  <div
-    className={cn(
-      "group/row flex flex-col rounded-xl border px-4 py-2.5",
-      message.is_mine
-        ? "bg-ethereal-gold/10 border-ethereal-gold/20"
-        : "bg-ethereal-alabaster/60 border-ethereal-ink/8",
-    )}
-  >
-    <div className="flex items-center gap-2">
-      <Label size="xs" color="muted" weight="semibold" className="flex-1 truncate">
-        {message.sender?.name ?? "—"}
-      </Label>
-      {message.is_pinned && <Pin size={12} className="text-ethereal-gold" />}
-      <Label size="xs" color="muted" className="shrink-0 opacity-60">
-        {formatTime(message.created_at)}
-      </Label>
-      {isManager && (
-        <button
-          type="button"
-          onClick={() => onTogglePin(message)}
-          disabled={pinPending}
-          className="shrink-0 text-ethereal-graphite/40 opacity-0 transition-opacity hover:text-ethereal-gold group-hover/row:opacity-100"
-          title={message.is_pinned ? "Odepnij" : "Przypnij"}
-        >
-          {message.is_pinned ? <PinOff size={13} /> : <Pin size={13} />}
-        </button>
-      )}
+const ChannelRow: React.FC<ChannelRowProps> = ({ message, isManager, onTogglePin, pinPending }) => {
+  const { t } = useTranslation();
+  const pending = message.is_mine && isOptimisticId(message.id);
+
+  return (
+    <div className="flex items-start gap-2">
+      <Avatar
+        size="xs"
+        src={message.sender?.avatar_url}
+        name={message.sender?.name}
+        className="mt-0.5"
+      />
+      <div
+        className={cn(
+          "group/row flex min-w-0 flex-1 flex-col rounded-xl border px-4 py-2.5",
+          message.is_mine
+            ? "bg-ethereal-gold/10 border-ethereal-gold/20"
+            : "bg-ethereal-alabaster/60 border-ethereal-ink/8",
+          pending && "opacity-70",
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <Label size="xs" color="muted" weight="semibold" className="flex-1 truncate">
+            {message.sender?.name ?? t("messages.channel.unknown_sender", "—")}
+          </Label>
+          {message.is_pinned && <Pin size={12} className="text-ethereal-gold" aria-hidden="true" />}
+          <Label size="xs" color="muted" className="shrink-0 tabular-nums opacity-60">
+            {pending ? t("messages.bubble.sending", "wysyłanie…") : clockStamp(message.created_at)}
+          </Label>
+          {isManager && !pending && (
+            <button
+              type="button"
+              onClick={() => onTogglePin(message)}
+              disabled={pinPending}
+              className="shrink-0 text-ethereal-graphite/40 opacity-60 transition-opacity hover:text-ethereal-gold group-hover/row:opacity-100 sm:opacity-0"
+              title={
+                message.is_pinned
+                  ? t("messages.channel.unpin", "Odepnij")
+                  : t("messages.channel.pin", "Przypnij")
+              }
+            >
+              {message.is_pinned ? <PinOff size={13} /> : <Pin size={13} />}
+            </button>
+          )}
+        </div>
+        <Text size="sm" color="graphite" className="whitespace-pre-line leading-relaxed">
+          {message.body}
+        </Text>
+      </div>
     </div>
-    <Text size="sm" color="graphite" className="whitespace-pre-line leading-relaxed">
-      {message.body}
-    </Text>
-  </div>
-);
+  );
+};
 
 export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, me, onBack }) => {
   const { t } = useTranslation();
@@ -119,21 +133,16 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
   };
 
   if (isLoading || !channel) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <Text size="sm" color="muted">
-          {t("messages.channel.loading", "Ładowanie kanału…")}
-        </Text>
-      </div>
-    );
+    return <EtherealLoader fullHeight={false} message={t("messages.channel.loading", "Ładowanie kanału…")} />;
   }
 
   const pinned = channel.messages.filter((m) => m.is_pinned);
+  const groups = groupMessagesByDay(channel.messages);
 
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-start gap-3 border-b border-ethereal-ink/8 px-5 py-4">
+      <div className="flex items-center gap-3 border-b border-ethereal-ink/8 px-5 py-4">
         {onBack && (
           <button
             type="button"
@@ -144,6 +153,7 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
             <ArrowLeft size={18} />
           </button>
         )}
+        <Avatar size="md" shape="rounded" tone="neutral" name={channel.project_name} />
         <div className="min-w-0 flex-1">
           <Heading as="h3" size="lg" color="graphite" className="truncate">
             {channel.project_name}
@@ -179,7 +189,7 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
       {pinned.length > 0 && (
         <div className="border-b border-ethereal-gold/20 bg-ethereal-gold/[0.06] px-5 py-3">
           <div className="mb-1 flex items-center gap-1.5">
-            <Pin size={12} className="text-ethereal-gold" />
+            <Pin size={12} className="text-ethereal-gold" aria-hidden="true" />
             <Label size="xs" color="muted" weight="semibold">
               {t("messages.channel.pinned", "Przypięte")}
             </Label>
@@ -196,14 +206,19 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
 
       {/* Stream */}
       <div ref={scrollRef} className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4 no-scrollbar">
-        {channel.messages.map((message) => (
-          <ChannelRow
-            key={message.id}
-            message={message}
-            isManager={isManager}
-            onTogglePin={(m) => pinMessage.mutate({ messageId: m.id, pinned: !m.is_pinned })}
-            pinPending={pinMessage.isPending}
-          />
+        {groups.map((group) => (
+          <React.Fragment key={group.key}>
+            <DayDivider label={dayLabel(group.iso, t)} />
+            {group.items.map((message) => (
+              <ChannelRow
+                key={message.id}
+                message={message}
+                isManager={isManager}
+                onTogglePin={(m) => pinMessage.mutate({ messageId: m.id, pinned: !m.is_pinned })}
+                pinPending={pinMessage.isPending}
+              />
+            ))}
+          </React.Fragment>
         ))}
       </div>
 
@@ -224,9 +239,9 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
             type="button"
             onClick={handleSend}
             disabled={!body.trim()}
-            className="mb-1 flex items-center gap-2"
+            leftIcon={<Send size={14} />}
+            className="mb-1"
           >
-            <Send size={14} />
             {t("messages.channel.send", "Wyślij")}
           </Button>
         </div>

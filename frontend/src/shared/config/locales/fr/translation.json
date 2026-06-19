@@ -1,4 +1,21 @@
 {
+  "annotations": {
+    "tools": {
+      "pointer": "Parcourir",
+      "pen": "Stylo",
+      "comment": "Commentaire",
+      "eraser": "Gomme"
+    },
+    "layer": {
+      "shared": "Visible par le chœur",
+      "private": "Privé (vous seul)",
+      "shared_short": "Chœur",
+      "private_short": "Privé"
+    },
+    "comment_placeholder": "Note pour cet endroit…",
+    "clear_all": "Effacer toutes les annotations",
+    "clear_confirm": "Sûr ?"
+  },
   "archive": {
     "card": {
       "actions": {
@@ -463,6 +480,8 @@
         "transfers_desc": "Nous maintenons notre infrastructure principale dans l'Union européenne et limitons au strict nécessaire les transferts hors de l'Espace économique européen. Certains services de notification et de contenu intégré peuvent néanmoins traiter des données hors EEE : les notifications push mobiles (Google Firebase Cloud Messaging), l'envoi d'e-mails (Resend) et le lecteur Spotify intégré. Ces transferts reposent sur une décision d'adéquation, le Data Privacy Framework UE–États-Unis ou des clauses contractuelles types (CCT).",
         "retention_title": "Durée de conservation",
         "retention_desc": "Nous conservons les données de votre compte et de votre profil (nom, e-mail, téléphone, photo de profil, données logistiques, jeton de calendrier, etc.) tant que votre compte existe. Lors de sa suppression (droit à l'effacement), nous anonymisons votre identité, supprimons votre profil et votre photo, effaçons définitivement le contenu de vos messages et supprimons vos fils de discussion et adhésions aux canaux. Les données opérationnelles liées au travail de l'ensemble (par ex. participation aux projets et présence) sont anonymisées ou supprimées en conséquence. Font exception les données que nous devons conserver pour respecter des obligations légales — en particulier les documents de règlement, soumis aux durées de conservation légales en matière comptable et fiscale. Les jetons d'authentification sont de courte durée et les journaux techniques du serveur ne sont conservés que le temps nécessaire à la sécurité.",
+        "embeds_title": "Contenus intégrés (Spotify)",
+        "embeds_desc": "Les pages de concert peuvent proposer un lecteur de référence Spotify intégré, optionnel. Il n'est jamais chargé automatiquement : il se connecte à Spotify Inc. (cookies, votre adresse IP et données d'usage) uniquement après votre consentement actif (« cliquer pour charger »). Votre consentement est mémorisé sur votre appareil et peut être retiré à tout moment dans Paramètres → Confidentialité, aussi facilement qu'il a été donné. Un lien ouvrant la playlist directement dans Spotify est toujours disponible sans charger le contenu intégré. Le traitement par Spotify est régi par sa propre politique de confidentialité.",
         "analytics_title": "Analyses internes et décisions automatisées",
         "analytics_desc": "Pour faciliter l'organisation de l'ensemble, nous présentons au bureau des indicateurs agrégés issus de votre activité (par ex. statistiques de présence ou historique des distributions). Ils servent uniquement à des fins organisationnelles et artistiques. Nous ne prenons à votre égard aucune décision automatisée produisant des effets juridiques ou vous affectant de manière significative (art. 22 RGPD) — les décisions de distribution et de participation sont prises par des personnes."
       },
@@ -482,6 +501,8 @@
         "title": "Conditions d'utilisation",
         "data_title": "Données personnelles",
         "data_desc": "Le traitement de vos données personnelles dans le panneau est décrit dans la Politique de confidentialité. En utilisant VoctManager, vous confirmez en avoir pris connaissance. Pour les questions de protection des données, écrivez à rodo@voctensemble.com.",
+        "embeds_title": "Contenus externes",
+        "embeds_desc": "Le panneau peut renvoyer vers ou intégrer en option des contenus de référence de tiers (par ex. playlists Spotify). Ces contenus sont optionnels, désactivés par défaut et régis par les conditions et politiques du fournisseur concerné ; la Fondation n'est pas responsable des services tiers.",
         "changes_title": "Modifications du Règlement",
         "changes_desc": "Le présent Règlement peut être mis à jour lorsque la portée ou le fonctionnement du panneau évolue. Nous annoncerons les changements importants dans l'application ou par e-mail. La poursuite de l'utilisation du panneau après l'entrée en vigueur des changements vaut acceptation.",
         "governing_law_title": "Droit applicable",
@@ -510,14 +531,14 @@
       "season_timeline": "Chronologie de la saison",
       "since": "depuis {{year}}",
       "subtitle": "Agrégé à partir des projets terminés",
-      "title": "Profil et historique de l'artiste",
+      "title": "Mon parcours",
       "vocal_distribution": "Distribution des lignes vocales"
     },
     "knowledge_base": {
       "add_category": "Nouvelle catégorie",
       "empty": "Aucune catégorie de documents n'a été configurée.",
-      "subtitle": "Règlements, politiques et documents institutionnels",
-      "title": "Base de connaissances"
+      "subtitle": "Règlements, politiques et documents de l’ensemble",
+      "title": "L’essentiel"
     },
     "modal": {
       "category": {
@@ -553,7 +574,10 @@
     },
     "tabs": {
       "identity": "Profil et historique de l'artiste",
-      "knowledge": "Base de connaissances"
+      "knowledge": "L’essentiel",
+      "team": "Avec qui je chante",
+      "journey": "Mon parcours",
+      "aria_label": "Sections de la carte"
     },
     "toast": {
       "category_create_error": "Échec de la création de la catégorie.",
@@ -566,6 +590,46 @@
       "document_deleted": "Document supprimé.",
       "document_upload_error": "Échec du téléchargement du document.",
       "document_uploaded": "Document téléchargé."
+    },
+    "card": {
+      "curator_role": "Curateur de l’ensemble",
+      "curator_hint": "Vous gérez la base de connaissances et voyez tout l’ensemble.",
+      "member_active": "Membre actif",
+      "member_inactive": "Membre (inactif)",
+      "since": "Chante depuis",
+      "concerts": "Concerts",
+      "seasons": "Saisons",
+      "new_member": "Votre histoire avec l’ensemble ne fait que commencer."
+    },
+    "section": {
+      "you": "Vous",
+      "member_count": "{{count}} pers.",
+      "title": "Avec qui je chante",
+      "title_curator": "Effectif de l’ensemble",
+      "subtitle": "L’effectif de vos concerts à venir, œuvre par œuvre",
+      "mine": "Votre voix",
+      "others": "Autres voix",
+      "all_voices": "Toutes les voix",
+      "empty": "Vous n’avez pas de concerts à venir. L’effectif apparaîtra une fois distribué.",
+      "upcoming": "Concerts à venir"
+    },
+    "confirm": {
+      "category_title": "Supprimer la catégorie ?",
+      "category_body": "La catégorie « {{name}} » et tous ses documents seront supprimés. Action irréversible.",
+      "document_title": "Supprimer le document ?",
+      "document_body": "Le document « {{name}} » sera supprimé pour tous. Action irréversible."
+    },
+    "roles": {
+      "artist_all": "Partager avec tous les artistes (tous connectés)"
+    },
+    "passport": {
+      "traditional": "Traditionnel / Inconnu",
+      "metric_pieces": "Œuvres au répertoire",
+      "metric_composers": "Compositeurs",
+      "attendance": "Votre présence aux répétitions : {{rate}} %",
+      "attendance_private": "Visible uniquement par vous",
+      "repertoire_title": "Passeport du répertoire",
+      "repertoire_empty": "Aucune donnée de distribution pour les projets terminés."
     }
   },
   "common": {
@@ -1000,7 +1064,48 @@
         "program": "Répertoire",
         "remaining": "Avant la première",
         "status_active": "En production",
-        "status_prep": "En préparation"
+        "status_prep": "En préparation",
+        "empty_eyebrow": "Aucun concert à venir",
+        "empty_title": "Horizon dégagé",
+        "empty_desc": "Vous n'avez aucun concert programmé. C'est le bon moment pour préparer la prochaine représentation.",
+        "empty_cta": "Planifier un concert"
+      },
+      "pipeline": {
+        "title": "Ligne de production",
+        "status_active": "En production",
+        "status_prep": "En préparation",
+        "rehearsals_left": "{{count}} rép.",
+        "pieces": "{{count}} œuv.",
+        "pending_short": "en attente",
+        "complete": "complet",
+        "see_all": "Tous les projets",
+        "empty": "Aucune production active. Il est temps de planifier le prochain concert."
+      },
+      "quick": {
+        "aria": "Modules du système",
+        "title": "Centre de commande",
+        "projects": "Projets",
+        "projects_hint": "Productions et distribution",
+        "rehearsals": "Répétitions",
+        "rehearsals_hint": "Présences et assiduité",
+        "artists": "Artistes",
+        "artists_hint": "Effectif et voix",
+        "archive": "Archives",
+        "archive_hint": "Partitions et œuvres",
+        "contracts": "Finances",
+        "contracts_hint": "Contrats et règlements",
+        "locations": "Lieux",
+        "locations_hint": "Salles et lieux"
+      },
+      "roster": {
+        "subtitle": "Statut des invitations",
+        "open_project": "Ouvrir le projet",
+        "no_contact": "Aucune coordonnée",
+        "loading": "Chargement de la distribution...",
+        "empty": "Personne n'a encore été invité à ce projet.",
+        "pending": "En attente de réponse",
+        "confirmed": "Confirmés",
+        "declined": "Ont décliné"
       },
       "unknown_project": "Projet inconnu"
     },
@@ -1034,7 +1139,7 @@
       "label_call_time": "Convocation : ",
       "modules": {
         "materials_title": "Répertoire",
-        "resources_title": "Connaissances",
+        "resources_title": "Ma carte",
         "schedule_title": "Planning"
       },
       "nav_aria": "Navigation de l'artiste",
@@ -1045,6 +1150,26 @@
       "status_absent": "Je serai absent",
       "status_late": "Je serai en retard",
       "title_main": "Espace de l'artiste",
+      "goal": {
+        "days_away": "Dans {{count}} jours",
+        "eyebrow": "Vous vous préparez pour",
+        "open_songbook": "Ouvrir le Recueil",
+        "today": "Aujourd'hui",
+        "tomorrow": "Demain"
+      },
+      "tools": {
+        "aria": "Outils du choriste",
+        "my_card": "Ma Carte",
+        "my_card_hint": "Ensemble et essentiels",
+        "schedule": "Calendrier",
+        "schedule_hint": "Répétitions et concerts",
+        "songbook": "Recueil",
+        "songbook_hint": "Partitions et audio",
+        "title": "À portée",
+        "tuning_fork": "Diapason",
+        "tuning_fork_hint": "Donnez le ton",
+        "tuning_fork_sheet_subtitle": "Accordez votre voix à tout moment"
+      },
       "toast_confirm_success": "Présence confirmée !",
       "toast_confirming": "Confirmation de la présence...",
       "toast_download_error": "Erreur de téléchargement du planning",
@@ -1109,7 +1234,7 @@
         "materials": "Matériel d'étude",
         "messages": "Messages",
         "projects": "Gestion des Projets",
-        "resources": "Base de Connaissances",
+        "resources": "Ma carte",
         "schedule": "Mon Calendrier"
       },
       "mobile_tabs": {
@@ -1371,50 +1496,255 @@
       "updating": "Mise à jour..."
     }
   },
+  "pwa": {
+    "install": {
+      "title": "Installer VoctManager",
+      "subtitle": "Plein écran et répétition hors ligne.",
+      "action": "Installer",
+      "dismiss": "Fermer",
+      "ios_step_1": "Appuyez sur",
+      "ios_step_2": "puis « Sur l’écran d’accueil »"
+    }
+  },
+  "offline": {
+    "download": {
+      "action": "Enregistrer hors ligne",
+      "starting": "Téléchargement…",
+      "progress": "Téléchargement {{done}}/{{total}}",
+      "ready": "Partitions disponibles hors ligne.",
+      "ready_badge": "Disponible hors ligne",
+      "partial": "Une partie des fichiers a été téléchargée — vérifiez la connexion.",
+      "partial_badge": "Partiellement hors ligne",
+      "empty": "Aucun fichier à enregistrer hors ligne.",
+      "unavailable": "Le mode hors ligne n'est pas disponible sur cet appareil.",
+      "removed": "Fichiers hors ligne supprimés.",
+      "remove": "Supprimer les fichiers hors ligne",
+      "retry": "Télécharger à nouveau"
+    },
+    "badge": {
+      "offline": "Mode hors ligne",
+      "offline_pending": "Hors ligne · {{count}} à synchroniser",
+      "pending": "{{count}} modification(s) en attente de synchronisation",
+      "syncing": "Synchronisation…",
+      "sync_now": "Synchroniser maintenant"
+    },
+    "sync": {
+      "flushed": "Modifications hors ligne synchronisées.",
+      "rejected": "Certaines modifications hors ligne ont été rejetées par le serveur."
+    }
+  },
   "materials": {
     "dashboard": {
-      "description": "Téléchargez les partitions, travaillez avec le lecteur MIDI à vitesse réglable et consultez votre rôle dans l'ensemble.",
+      "description": "Les partitions, le mixeur de voix et vos parties — tout ce qu'il faut pour vous préparer.",
+      "empty_archive_desc": "Les supports des concerts déjà terminés apparaîtront ici.",
+      "empty_archive_title": "Les archives sont vides",
       "empty_desc": "Vous n'avez actuellement aucun projet à venir ou le chef n'a pas encore validé le programme du concert.",
       "empty_title": "Aucun support attribué",
+      "empty_unpracticed_desc": "Beau travail — vous avez marqué chaque partie comme prête.",
+      "empty_unpracticed_title": "Tout est travaillé",
+      "filter_unpracticed": "À travailler",
       "search_placeholder": "Rechercher une pièce ou un compositeur...",
       "subtitle": "Espace artiste",
       "sync_error_desc": "Impossible de charger les supports. Actualisez la page.",
       "sync_error_title": "Erreur de synchronisation",
       "syncing": "Synchronisation de la bibliothèque...",
-      "title": "Supports de",
-      "title_highlight": "travail"
+      "tab_archive": "Archives ({{count}})",
+      "tab_upcoming": "À venir ({{count}})",
+      "title": "Mon",
+      "title_highlight": "Carnet.",
+      "view_aria": "Vue des supports"
     },
     "piece": {
-      "access_locked_desc": "Le projet est terminé. Les supports de travail et les partitions ne sont plus disponibles en raison de la protection de la propriété intellectuelle et des arrangements du chef.",
+      "access_locked_desc": "Le projet est terminé. Les supports de travail ne sont plus disponibles en raison de la protection de la propriété intellectuelle.",
       "access_locked_title": "Accès verrouillé",
-      "audio_badge": "Audio",
-      "cast_divisi": "Distribution de la pièce (Divisi)",
-      "download_pdf": "Télécharger la partition (PDF)",
-      "encore_badge": "BIS",
-      "listen_reference": "Écouter la référence",
-      "locked_badge": "Protégé",
+      "cast_divisi": "Distribution (Divisi)",
+      "encore_badge": "Bis",
+      "listen_reference_featured": "Meilleure · {{label}}",
+      "lyrics_ipa": "Prononciation (API)",
       "lyrics_translation": "Paroles et traduction",
       "no_divisi": "Aucune division vocale définie.",
       "no_notes": "Le chef n'a ajouté aucune note particulière.",
       "no_pdf": "Partition indisponible",
+      "open_score": "Ouvrir la partition",
       "original_lyrics": "Original",
       "other_voice": "Autre",
       "part": "Partie :",
-      "pdf_badge": "PDF",
-      "practice_tracks": "Pistes de travail (MIDI / MP3)",
+      "program_note_section": "Note de programme",
       "traditional": "Traditionnel / Inconnu",
-      "translation_notes": "Traduction (notes)",
+      "translation_label": "{{lang}}",
+      "translation_singable": "chantable",
+      "translations_section": "Traductions",
       "unknown_artist": "Artiste",
-      "your_guidelines": "Vos consignes pour la pièce"
+      "your_guidelines": "Vos consignes"
+    },
+    "piece_page": {
+      "back_short": "Carnet",
+      "back_to_songbook": "Retour au carnet",
+      "duration_min": "{{count}} min",
+      "gives_pitch": "C'est vous qui donnez le ton",
+      "mixer_hint": "Choisissez un mode d'un toucher ou réglez chaque voix — travaillez votre partie avec tout le chœur.",
+      "mixer_section": "Console de travail",
+      "my_part_chip": "Votre partie : {{part}}",
+      "not_found_desc": "Cette pièce n'est plus dans votre carnet, ou le lien n'est plus à jour.",
+      "not_found_title": "Pièce introuvable",
+      "pitch_section": "Diapason",
+      "readiness_hint": "Le chef voit la préparation globale de l'ensemble et organise les répétitions en conséquence.",
+      "readiness_section": "Votre préparation",
+      "reference_section": "Enregistrements de référence",
+      "score_section": "Partition",
+      "tab_cast": "Distribution",
+      "tab_practice": "Travailler",
+      "tab_text": "Texte",
+      "tabs_aria": "Sections de la pièce"
     },
     "player": {
-      "speed_title": "Régler le tempo à {{rate}}x",
-      "your_voice": "(Votre voix)"
+      "clear_loop": "Désactiver la boucle",
+      "close": "Fermer le lecteur",
+      "mute_for": "Couper : {{voice}}",
+      "pause": "Pause",
+      "play": "Lecture",
+      "preset_blend": "Tout le chœur",
+      "preset_minus_mine": "Sans ma voix",
+      "preset_needs_my_voice": "Votre partie n'est pas dans les enregistrements de cette pièce.",
+      "preset_solo_mine": "Seulement ma voix",
+      "presets_label": "Mode de travail",
+      "seek": "Avancer",
+      "solo_for": "Solo : {{voice}}",
+      "volume_for": "Volume : {{voice}}",
+      "your_voice_short": "Votre voix"
     },
     "project": {
-      "archived_badge": "Projet archivé",
-      "event": "Événement :"
+      "archived_badge": "Archives",
+      "event": "Événement :",
+      "readiness_caption": "{{ready}} parties prêtes sur {{total}}"
+    },
+    "readiness": {
+      "group_label": "Votre préparation",
+      "in_progress": "Je travaille",
+      "not_started": "Pas commencé",
+      "ready": "Je connais ma partie",
+      "save_error": "Échec de l'enregistrement de la préparation."
+    },
+    "row": {
+      "listen": "Lecture",
+      "open_details": "Ouvrir les détails de la pièce",
+      "pause": "Pause",
+      "score": "Partition"
     }
+  },
+  "messages": {
+    "bubble": {
+      "sending": "envoi…"
+    },
+    "channel": {
+      "composer": "Écrire au canal…",
+      "loading": "Chargement du canal…",
+      "members_one": "{{count}} participant",
+      "members_other": "{{count}} participants",
+      "pin": "Épingler",
+      "pinned": "Épinglé",
+      "push_off": "Push désactivé",
+      "push_on": "Push activé",
+      "send": "Envoyer",
+      "toggle_push": "Notifications push",
+      "unknown_sender": "—",
+      "unpin": "Désépingler"
+    },
+    "compose": {
+      "announce_body_placeholder": "Texte de l'annonce…",
+      "announce_success": "Annonce publiée.",
+      "artist": "Destinataire (artiste)",
+      "artist_placeholder": "— choisir un artiste —",
+      "channel": "Canal de projet",
+      "channel_placeholder": "— choisir un projet —",
+      "error": "Échec de l'envoi.",
+      "heading": "Nouveau message",
+      "heading_announce": "Nouvelle annonce",
+      "message": "Message",
+      "message_placeholder": "Rédigez votre message…",
+      "mode_announce": "Annonce",
+      "mode_message": "Message",
+      "no_channels": "Vous n'avez pas encore de canaux de projet.",
+      "pin": "Épingler comme annonce",
+      "pin_hint": "Les annonces épinglées restent en haut du canal.",
+      "project_context": "À propos d'un projet (facultatif)",
+      "project_none": "Aucun lien",
+      "recipient": "À (facultatif)",
+      "recipient_any": "N'importe quel chef de chœur",
+      "recipient_to": "À",
+      "send": "Envoyer",
+      "sending": "Envoi…",
+      "subject": "Sujet",
+      "subject_placeholder": "De quoi parle la conversation ?",
+      "success": "Message envoyé."
+    },
+    "context": {
+      "project": "Projet",
+      "view_project": "Ouvrir le projet"
+    },
+    "deck": {
+      "all_clear": "Boîte vide — toutes les conversations traitées.",
+      "channels": "Canaux de projet",
+      "empty": "Aucune conversation. Commencez un nouveau message.",
+      "eyebrow": "Boîte du chef de chœur",
+      "eyebrow_artist": "Votre boîte",
+      "needs_assignment": "À attribuer",
+      "needs_attention": "À traiter",
+      "stat_open": "ouvertes",
+      "stat_unassigned": "sans suivi",
+      "stat_unread": "non lus",
+      "summary_assign_one": "{{count}} en attente d'attribution",
+      "summary_assign_other": "{{count}} en attente d'attribution",
+      "summary_clear": "Tout est à jour.",
+      "summary_clear_artist": "Aucun nouveau message.",
+      "summary_unread_one": "{{count}} non lu",
+      "summary_unread_other": "{{count}} non lus"
+    },
+    "eyebrow": "Communication",
+    "filter": {
+      "all": "Toutes",
+      "aria": "Filtrer les conversations",
+      "mine": "Les miennes",
+      "resolved": "Fermées",
+      "unassigned": "Sans suivi",
+      "unread": "Nouvelles"
+    },
+    "list": {
+      "empty": "Aucune conversation. Commencez un nouveau message.",
+      "loading": "Chargement…",
+      "management": "Direction",
+      "no_match": "Aucune conversation pour ce filtre.",
+      "unread": "Non lus"
+    },
+    "new": "Nouveau",
+    "search": "Rechercher une conversation…",
+    "section": {
+      "channels": "Canaux de projet",
+      "threads": "Fils"
+    },
+    "send_failed": "Échec de l'envoi du message.",
+    "status": {
+      "archived": "Archivé",
+      "resolved": "Fermé"
+    },
+    "thread": {
+      "claim": "Prendre en charge",
+      "composer": "Écrire un message…",
+      "loading": "Chargement de la conversation…",
+      "reopen": "Rouvrir",
+      "resolve": "Fermer",
+      "resolved_hint": "Fil fermé — envoyer une réponse le rouvrira.",
+      "send": "Envoyer"
+    },
+    "time": {
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "now": "à l'instant",
+      "today": "Aujourd'hui",
+      "yesterday": "hier",
+      "yesterday_full": "Hier"
+    },
+    "title": "Messages"
   },
   "nav": {
     "actions": {
@@ -2079,6 +2409,21 @@
     }
   },
   "schedule": {
+    "attendance": {
+      "absent": "Absences",
+      "based_on": "Sur la base de {{count}} répétitions",
+      "late": "Retards",
+      "present": "Présences",
+      "streak": "Série",
+      "subtitle": "Présence aux répétitions",
+      "title": "Votre assiduité"
+    },
+    "calendar": {
+      "add": "Ajouter au calendrier",
+      "google": "Google Calendar",
+      "ics": "Apple / Outlook (.ics)",
+      "menu_label": "Enregistrer l'événement"
+    },
     "card": {
       "call_sheet_preview_title": "Aperçu Call-Sheet",
       "call_time": "Convocation :",
@@ -2098,9 +2443,15 @@
       "no_run_sheet": "La feuille de route n'a pas encore été publiée par le manager.",
       "no_spotify": "Aucune playlist de référence.",
       "note_label": "Note :",
+      "open_detail": "Ouvrir les détails : {{title}}",
       "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Concert / Événement",
       "run_sheet_title": "Feuille de route",
+      "run_sheet_untitled": "Élément du programme",
+      "tab": {
+        "logistics": "Logistique",
+        "setlist": "Répertoire"
+      },
       "score_pdf_label": "Partition / Programme",
       "score_pdf_modal_title": "Partition du concert",
       "unknown_artist": "Artiste",
@@ -2108,19 +2459,61 @@
     },
     "dashboard": {
       "description": "Consultez les répétitions, signalez vos absences et suivez les plans de concert.",
+      "subscribe_ics": "S'abonner au calendrier",
       "subtitle": "Calendrier personnel",
       "title": "Mon",
       "title_highlight": "Planning"
     },
+    "day": {
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "yesterday": "Hier"
+    },
     "empty": {
       "description": "Vous n'avez aucun rendez-vous ou concert assigné dans cette vue.",
+      "heading_past": "Historique vide",
+      "heading_upcoming": "Horizon dégagé",
       "title": "Aucune entrée dans le calendrier"
     },
     "event": {
       "generic_event": "Événement",
       "rehearsal_prefix": "Répétition :"
     },
+    "hero": {
+      "concert_hint": "Vous trouverez les détails du jour du concert sur la carte de l'événement ci-dessous.",
+      "countdown": {
+        "days": "Dans {{count}} jours",
+        "hours": "Dans {{count}} h",
+        "minutes": "Dans {{count}} min",
+        "now": "En cours",
+        "tomorrow": "Demain"
+      },
+      "next_concert": "Prochain concert",
+      "next_rehearsal": "Prochaine répétition",
+      "prepare_cta": "Recueil",
+      "program_loading": "Chargement du répertoire...",
+      "rehearsal_mode": "Mode répétition",
+      "tonight_program": "Répertoire du projet",
+      "untitled_piece": "Pièce"
+    },
     "loading": "Chargement du planning...",
+    "past": {
+      "load_more": "Afficher les plus anciens"
+    },
+    "pitch_pipe": {
+      "hint": "Touchez une note pour entendre le ton. Touchez à nouveau pour couper.",
+      "title": "Diapason"
+    },
+    "readiness": {
+      "cta": "Travailler dans le Recueil",
+      "ready_cta": "Réviser dans le Recueil",
+      "ready_title": "Parties prêtes",
+      "title": "Préparation des parties"
+    },
+    "ribbon": {
+      "aria": "Pouls de la saison",
+      "title": "Votre saison"
+    },
     "rehearsal": {
       "action": {
         "confirm_long": "Confirmer la présence",
@@ -2152,7 +2545,13 @@
       "optional": "Optionnel",
       "status_absent": "Absent",
       "status_late": "Retard",
-      "status_present": "Confirmé"
+      "status_present": "Confirmé",
+      "toggle_detail": "Afficher les détails de la répétition : {{title}}"
+    },
+    "tabs": {
+      "aria_label": "Vue calendrier",
+      "past": "Historique",
+      "upcoming": "À venir"
     },
     "toast": {
       "submit_error_desc": "Impossible d'enregistrer le signalement.",
@@ -2234,6 +2633,11 @@
       "modalDescLine2": "L'historique des présences sera conservé à titre informatif, mais le compte sera définitivement désactivé.",
       "modalTitle": "Êtes-vous sûr de vouloir supprimer le compte ?",
       "passwordPlaceholder": "Mot de passe actuel",
+      "spotifyDescOff": "Les lecteurs Spotify intégrés sont désactivés. Nous demanderons votre consentement uniquement lorsque vous ouvrirez un lecteur sur un projet.",
+      "spotifyDescOn": "Les lecteurs Spotify se chargent automatiquement grâce à votre consentement (ils se connectent aux serveurs de Spotify, avec cookies et données). Vous pouvez retirer votre consentement à tout moment.",
+      "spotifyGrant": "Autoriser",
+      "spotifyRevoke": "Retirer le consentement",
+      "spotifyTitle": "Lecteurs intégrés (Spotify)",
       "subtitle": "Gérez vos données personnelles et les permissions du compte.",
       "title": "Confidentialité et données (RGPD)"
     },

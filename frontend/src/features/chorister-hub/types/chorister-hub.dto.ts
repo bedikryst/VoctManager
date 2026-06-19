@@ -97,3 +97,51 @@ export interface ArtistIdentityMetricsDTO {
   attendance_rate: number | null;
   repertoire: RepertoireEntry[];
 }
+
+// ── Concert roster ("Z kim śpiewam") ──────────────────────────────────────────
+// Strictly scoped to the caller's own upcoming concerts and the pieces they sing;
+// grouped by the voice line each co-singer sings IN THAT PIECE. The backend never
+// sends the full ensemble, anyone's default voice type, nor sight-reading / vocal
+// range (the conductor's private data).
+
+export interface SectionMemberDTO {
+  artist_id: string;
+  first_name: string;
+  last_name: string;
+  avatar_thumb_url: string | null;
+  is_me: boolean;
+}
+
+export interface PieceVoiceSectionDTO {
+  voice_line: string;
+  voice_line_display: string;
+  /** True when the caller themselves sings this voice line in this piece. */
+  is_mine: boolean;
+  members: SectionMemberDTO[];
+}
+
+export interface ConcertPieceDTO {
+  piece_id: string;
+  title: string;
+  sections: PieceVoiceSectionDTO[];
+}
+
+export interface ConcertRosterDTO {
+  project_id: string;
+  title: string;
+  date: string | null;
+  pieces: ConcertPieceDTO[];
+}
+
+export interface EnsembleMeDTO {
+  /** The caller's own voice type label — self-knowledge only. */
+  voice_type_display: string | null;
+  is_active: boolean;
+  /** False for users with no artist record (pure managers / conductors). */
+  is_linked: boolean;
+}
+
+export interface MyEnsembleDTO {
+  me: EnsembleMeDTO;
+  concerts: ConcertRosterDTO[];
+}

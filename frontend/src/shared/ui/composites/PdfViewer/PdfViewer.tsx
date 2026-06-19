@@ -1,4 +1,4 @@
-import React, { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,6 +32,7 @@ export const PdfViewer = ({
   fileName,
   onEvent,
   toolbarSlot,
+  renderPageOverlay,
   className,
 }: PdfViewerProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -52,6 +53,11 @@ export const PdfViewer = ({
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+
+  // Live rendered-page box (CSS px), measured for the overlay seam. Observed via
+  // ResizeObserver so it stays correct across zoom, page change and reflow.
+  const pageBoxRef = useRef<HTMLDivElement | null>(null);
+  const [pageBox, setPageBox] = useState<{ width: number; height: number } | null>(null);
 
   const {
     data: documentBlob,
@@ -199,7 +205,10 @@ export const PdfViewer = ({
   }, [docKey, emitEvent]);
 
   useEffect(() => {
-    if (!documentBlob) { setBlobUrl(null); return; }
+    // Guard against a non-Blob slipping through (e.g. a persisted cache entry
+    // rehydrated as `{}`): createObjectURL throws "Overload resolution failed"
+    // on anything that isn't a Blob/MediaSource. Treat it as "no document".
+    if (!(documentBlob instanceof Blob)) { setBlobUrl(null); return; }
     const url = URL.createObjectURL(documentBlob);
     setBlobUrl(url);
     return () => URL.revokeObjectURL(url);
@@ -209,6 +218,22 @@ export const PdfViewer = ({
     window.addEventListener("keydown", handleKeyboardShortcuts);
     return () => window.removeEventListener("keydown", handleKeyboardShortcuts);
   }, [handleKeyboardShortcuts]);
+
+  // Measure the rendered page box for the overlay seam. Only wired when a
+  // caller actually needs the overlay, so the common viewer pays nothing.
+  useEffect(() => {
+    if (!renderPageOverlay) return;
+    const el = pageBoxRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (rect && rect.width > 0 && rect.height > 0) {
+        setPageBox({ width: rect.width, height: rect.height });
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [renderPageOverlay, blobUrl, currentPage, renderedPageWidth, zoom]);
 
   const isIdle = !fetchBlob;
   const showLoadingState = (isIdle && !blobUrl) || (!isIdle && isFetchingBlob && !blobUrl);
@@ -229,8 +254,18 @@ export const PdfViewer = ({
           onOpenInBrowser={handleOpenInBrowser}
           onShare={handleShare}
           onDownload={handleDownload}
-          toolbarSlot={toolbarSlot}
         />
+      )}
+
+      {/* Annotation tools get their OWN horizontal bar, top-center — kept out of
+          the top-right utility pill (a GlassCard whose inner wrapper is flex-col,
+          which would stack and overflow this wider toolset into a blob). */}
+      {showPdfChrome && toolbarSlot && (
+        <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2 sm:top-6">
+          <div className="flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-ethereal-ink/70 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+            {toolbarSlot}
+          </div>
+        </div>
       )}
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -270,19 +305,37 @@ export const PdfViewer = ({
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <Page
-                      pageNumber={currentPage}
-                      width={renderedPageWidth}
-                      scale={zoom}
-                      devicePixelRatio={devicePixelRatio}
-                      canvasBackground="#ffffff"
-                      renderAnnotationLayer
-                      renderTextLayer
-                      onLoadError={flagViewerError}
-                      onRenderError={flagViewerError}
-                      loading={<div className="flex min-h-[12rem] items-center justify-center py-8"><EtherealLoader /></div>}
-                      className={cn("overflow-hidden rounded-[1.5rem] bg-white shadow-glass-ethereal", isCompactViewport && "rounded-[1.125rem]")}
-                    />
+                    <div ref={pageBoxRef} className="relative w-fit">
+                      <Page
+                        pageNumber={currentPage}
+                        width={renderedPageWidth}
+                        scale={zoom}
+                        devicePixelRatio={devicePixelRatio}
+                        canvasBackground="#ffffff"
+                        renderAnnotationLayer
+                        renderTextLayer
+                        onLoadError={flagViewerError}
+                        onRenderError={flagViewerError}
+                        loading={<div className="flex min-h-[12rem] items-center justify-center py-8"><EtherealLoader /></div>}
+                        className={cn("overflow-hidden rounded-[1.5rem] bg-white shadow-glass-ethereal", isCompactViewport && "rounded-[1.125rem]")}
+                      />
+                      {renderPageOverlay && pageBox && (
+                        // z-10 lifts the annotation surface ABOVE react-pdf's
+                        // text layer (z-index 2) and annotation layer (z-index 3)
+                        // so pen/comment input is captured instead of being
+                        // swallowed by native text selection. In browse mode the
+                        // surface is pointer-events:none, so text selection still
+                        // passes through to the layer below.
+                        <div className="pointer-events-none absolute inset-0 z-10">
+                          {renderPageOverlay({
+                            pageNumber: currentPage,
+                            width: pageBox.width,
+                            height: pageBox.height,
+                            scale: zoom,
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
                 </AnimatePresence>
               </Document>

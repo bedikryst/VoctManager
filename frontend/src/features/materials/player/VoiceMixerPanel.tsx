@@ -9,21 +9,61 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   Headphones,
+  Mic,
   Pause,
   Play,
   Repeat,
+  User,
+  Users,
   Volume2,
   VolumeX,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { usePracticePlayer, buildPracticeSources } from "./PracticePlayerProvider";
+import type { PracticePreset } from "./practicePlayerEngine";
 import type { MaterialsPiece } from "../types/materials.dto";
 
 const PLAYBACK_RATES = [0.5, 0.75, 1] as const;
+
+const PRESETS: readonly {
+  id: PracticePreset;
+  labelKey: string;
+  fallback: string;
+  Icon: LucideIcon;
+  /** solo-mine / minus-mine are meaningless without the chorister's own track. */
+  requiresMine: boolean;
+  activeClass: string;
+}[] = [
+  {
+    id: "blend",
+    labelKey: "materials.player.preset_blend",
+    fallback: "Cały chór",
+    Icon: Users,
+    requiresMine: false,
+    activeClass: "border-ethereal-sage/40 bg-ethereal-sage/12 text-ethereal-sage",
+  },
+  {
+    id: "solo-mine",
+    labelKey: "materials.player.preset_solo_mine",
+    fallback: "Tylko mój głos",
+    Icon: User,
+    requiresMine: true,
+    activeClass: "border-ethereal-gold/40 bg-ethereal-gold/12 text-ethereal-gold",
+  },
+  {
+    id: "minus-mine",
+    labelKey: "materials.player.preset_minus_mine",
+    fallback: "Bez mojego głosu",
+    Icon: Mic,
+    requiresMine: true,
+    activeClass: "border-ethereal-incense/40 bg-ethereal-incense/12 text-ethereal-incense",
+  },
+];
 
 export const formatPlayerTime = (seconds: number): string => {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -60,10 +100,63 @@ export const VoiceMixerPanel = ({
     action?.();
   };
 
+  // Presets must load the piece first, then apply — load() commits tracks
+  // synchronously, so applyPreset right after sees the populated mix.
+  const handlePreset = (preset: PracticePreset) => {
+    if (!isLoaded) {
+      const { source, tracks: sources } = buildPracticeSources(piece, projectId);
+      engine.load(source, sources, { autoplay: true });
+    }
+    engine.applyPreset(preset);
+  };
+
+  const hasMine = tracks.some((track) => track.isMine);
+  const activePreset = isLoaded ? snapshot.activePreset : null;
   const loopActive = snapshot.loop.a !== null && snapshot.loop.b !== null;
 
   return (
     <GlassCard variant="ethereal" padding="none" isHoverable={false}>
+      {/* ── practice presets — the one-tap mixes choristers actually reach for ── */}
+      <div className="border-b border-ethereal-marble/60 p-3 sm:p-4">
+        <Eyebrow color="muted" className="mb-2 block px-0.5">
+          {t("materials.player.presets_label", "Tryb ćwiczeń")}
+        </Eyebrow>
+        <div role="group" className="grid grid-cols-3 gap-1.5">
+          {PRESETS.map(({ id, labelKey, fallback, Icon, requiresMine, activeClass }) => {
+            const disabled = requiresMine && !hasMine;
+            const isActive = activePreset === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handlePreset(id)}
+                disabled={disabled}
+                aria-pressed={isActive}
+                title={
+                  disabled
+                    ? t(
+                        "materials.player.preset_needs_my_voice",
+                        "Brak Twojej partii w nagraniach tego utworu.",
+                      )
+                    : undefined
+                }
+                className={cn(
+                  "flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-xl border px-1.5 py-2 text-center transition-all active:scale-[0.97] disabled:opacity-40",
+                  isActive
+                    ? cn(activeClass, "shadow-glass-ethereal")
+                    : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-graphite shadow-glass-solid hover:border-ethereal-gold/30 hover:text-ethereal-ink",
+                )}
+              >
+                <Icon size={17} aria-hidden="true" className="shrink-0" />
+                <span className="text-[10.5px] font-bold uppercase leading-tight tracking-[0.06em]">
+                  {t(labelKey, fallback)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* ── transport ─────────────────────────────────────────────── */}
       <div className="border-b border-ethereal-marble/60 p-4">
         <div className="flex items-center gap-3">

@@ -1,4 +1,21 @@
 {
+  "annotations": {
+    "tools": {
+      "pointer": "Browse",
+      "pen": "Pen",
+      "comment": "Comment",
+      "eraser": "Erase"
+    },
+    "layer": {
+      "shared": "Visible to the choir",
+      "private": "Private (only you)",
+      "shared_short": "Choir",
+      "private_short": "Private"
+    },
+    "comment_placeholder": "Note for this spot…",
+    "clear_all": "Clear all annotations",
+    "clear_confirm": "Sure?"
+  },
   "archive": {
     "card": {
       "actions": {
@@ -457,6 +474,8 @@
         "transfers_desc": "We keep our core infrastructure in the European Union and limit transfers outside the European Economic Area to what is necessary. Some notification and embedded-content services may nonetheless process data outside the EEA: mobile push notifications (Google Firebase Cloud Messaging), email delivery (Resend) and the embedded Spotify player. Such transfers rely on an adequacy decision, the EU–US Data Privacy Framework, or standard contractual clauses (SCC).",
         "retention_title": "Data Retention",
         "retention_desc": "We keep your account and profile data (e.g. name, email, phone, profile photo, logistics details, calendar token) for as long as your account exists. When you delete it (right to erasure), we anonymise your identity, delete your profile and photo, permanently erase the content of your messages, and remove your threads and channel memberships. Operational records tied to the ensemble's work (e.g. project participation and attendance) are anonymised or removed accordingly. The exception is data we must keep to meet legal obligations — in particular settlement records, which are subject to the statutory retention periods under accounting and tax law. Authentication tokens are short-lived, and technical server logs are kept only for as long as security requires.",
+        "embeds_title": "Embedded Content (Spotify)",
+        "embeds_desc": "Concert pages may offer an optional embedded Spotify reference player. It is never loaded automatically: it connects to Spotify Inc. (cookies, your IP address and usage data) only after you actively consent (\"click to load\"). Your consent is remembered on your device and can be withdrawn at any time in Settings → Privacy, just as easily as it was given. A link that opens the playlist directly in Spotify is always available without loading the embed. Spotify's own processing is governed by its privacy policy.",
         "analytics_title": "Internal Analytics and Automated Decisions",
         "analytics_desc": "To support the ensemble's organisation, we present aggregated indicators derived from your activity to the board (e.g. attendance statistics or casting history). These serve organisational and artistic purposes only. We do not make automated decisions about you that produce legal effects or similarly significantly affect you (Art. 22 GDPR) — casting and participation decisions are made by people."
       },
@@ -476,6 +495,8 @@
         "title": "Terms of Service",
         "data_title": "Personal Data",
         "data_desc": "How your personal data is processed in the panel is described in the Privacy Policy. By using VoctManager you confirm that you have read it. For data-protection matters, write to rodo@voctensemble.com.",
+        "embeds_title": "External Content",
+        "embeds_desc": "The panel may link to or optionally embed third-party reference content (e.g. Spotify playlists). Such content is optional, off by default, and governed by the terms and policies of the respective provider; the Foundation is not responsible for third-party services.",
         "changes_title": "Changes to the Terms",
         "changes_desc": "These Terms may be updated when the scope or operation of the panel changes. We will announce significant changes in the application or by email. Continued use of the panel after changes take effect constitutes acceptance.",
         "governing_law_title": "Governing Law",
@@ -504,14 +525,14 @@
       "season_timeline": "Season timeline",
       "since": "since {{year}}",
       "subtitle": "Aggregated from completed projects",
-      "title": "Artist Profile & History",
+      "title": "My Journey",
       "vocal_distribution": "Voice Line Distribution"
     },
     "knowledge_base": {
       "add_category": "New category",
       "empty": "No document categories have been configured.",
-      "subtitle": "Regulations, policies and institutional documents",
-      "title": "Knowledge Base"
+      "subtitle": "Regulations, policies and team documents",
+      "title": "Essentials"
     },
     "modal": {
       "category": {
@@ -547,7 +568,10 @@
     },
     "tabs": {
       "identity": "Artist Profile & History",
-      "knowledge": "Knowledge Base"
+      "knowledge": "Essentials",
+      "team": "Co-singers",
+      "journey": "My Journey",
+      "aria_label": "Card sections"
     },
     "toast": {
       "category_create_error": "Category creation failed.",
@@ -560,6 +584,46 @@
       "document_deleted": "Document removed.",
       "document_upload_error": "Document upload failed.",
       "document_uploaded": "Document uploaded."
+    },
+    "card": {
+      "curator_role": "Ensemble curator",
+      "curator_hint": "You manage the knowledge base and can see the full ensemble.",
+      "member_active": "Active member",
+      "member_inactive": "Member (inactive)",
+      "since": "Singing since",
+      "concerts": "Concerts",
+      "seasons": "Seasons",
+      "new_member": "Your story with the ensemble is just beginning."
+    },
+    "section": {
+      "you": "You",
+      "member_count": "{{count}} ppl",
+      "title": "Singing with",
+      "title_curator": "Ensemble roster",
+      "subtitle": "Your upcoming concerts’ line-up, piece by piece",
+      "mine": "Your voice",
+      "others": "Other voices",
+      "all_voices": "All voices",
+      "empty": "You have no upcoming concerts. The line-up appears once you are cast.",
+      "upcoming": "Upcoming concerts"
+    },
+    "confirm": {
+      "category_title": "Delete category?",
+      "category_body": "The category “{{name}}” and all its documents will be deleted. This cannot be undone.",
+      "document_title": "Delete document?",
+      "document_body": "The document “{{name}}” will be deleted for everyone. This cannot be undone."
+    },
+    "roles": {
+      "artist_all": "Share with all artists (all logged in)"
+    },
+    "passport": {
+      "traditional": "Traditional / Unknown",
+      "metric_pieces": "Pieces in repertoire",
+      "metric_composers": "Composers",
+      "attendance": "Your rehearsal attendance: {{rate}}%",
+      "attendance_private": "Visible only to you",
+      "repertoire_title": "Repertoire passport",
+      "repertoire_empty": "No casting data for completed projects."
     }
   },
   "common": {
@@ -985,7 +1049,48 @@
         "program": "Repertoire",
         "remaining": "Until Premiere",
         "status_active": "In Production",
-        "status_prep": "In Preparation"
+        "status_prep": "In Preparation",
+        "empty_eyebrow": "No upcoming concerts",
+        "empty_title": "Clear horizon",
+        "empty_desc": "You have no upcoming concert scheduled. A good moment to start preparing the next performance.",
+        "empty_cta": "Plan a concert"
+      },
+      "pipeline": {
+        "title": "Production line",
+        "status_active": "In production",
+        "status_prep": "In preparation",
+        "rehearsals_left": "{{count}} reh.",
+        "pieces": "{{count}} pcs",
+        "pending_short": "waiting",
+        "complete": "complete",
+        "see_all": "All projects",
+        "empty": "No active productions. Time to plan the next concert."
+      },
+      "quick": {
+        "aria": "System modules",
+        "title": "Command center",
+        "projects": "Projects",
+        "projects_hint": "Productions & cast",
+        "rehearsals": "Rehearsals",
+        "rehearsals_hint": "Attendance & reliability",
+        "artists": "Artists",
+        "artists_hint": "Roster & voices",
+        "archive": "Archive",
+        "archive_hint": "Scores & pieces",
+        "contracts": "Finance",
+        "contracts_hint": "Contracts & settlements",
+        "locations": "Locations",
+        "locations_hint": "Halls & venues"
+      },
+      "roster": {
+        "subtitle": "Invitation status",
+        "open_project": "Open project",
+        "no_contact": "No contact details",
+        "loading": "Loading roster...",
+        "empty": "No one has been invited to this project yet.",
+        "pending": "Awaiting response",
+        "confirmed": "Confirmed",
+        "declined": "Declined"
       },
       "unknown_project": "Unknown project"
     },
@@ -1019,7 +1124,7 @@
       "label_call_time": "Call time: ",
       "modules": {
         "materials_title": "Repertoire",
-        "resources_title": "Knowledge",
+        "resources_title": "My Card",
         "schedule_title": "Schedule"
       },
       "nav_aria": "Artist navigation",
@@ -1030,6 +1135,26 @@
       "status_absent": "I will be absent",
       "status_late": "I will be late",
       "title_main": "Artist navigation",
+      "goal": {
+        "days_away": "In {{count}} days",
+        "eyebrow": "You're preparing for",
+        "open_songbook": "Open Songbook",
+        "today": "Today",
+        "tomorrow": "Tomorrow"
+      },
+      "tools": {
+        "aria": "Chorister tools",
+        "my_card": "My Card",
+        "my_card_hint": "Ensemble & essentials",
+        "schedule": "Schedule",
+        "schedule_hint": "Rehearsals & concerts",
+        "songbook": "Songbook",
+        "songbook_hint": "Scores & audio",
+        "title": "At hand",
+        "tuning_fork": "Pitch pipe",
+        "tuning_fork_hint": "Take a pitch",
+        "tuning_fork_sheet_subtitle": "Tune your voice anytime"
+      },
       "toast_confirm_success": "Presence confirmed!",
       "toast_confirming": "Confirming presence...",
       "toast_download_error": "Error downloading schedule",
@@ -1094,7 +1219,7 @@
         "materials": "Practice Materials",
         "messages": "Messages",
         "projects": "Project Management",
-        "resources": "Resources & Knowledge",
+        "resources": "My Card",
         "schedule": "My Schedule"
       },
       "mobile_tabs": {
@@ -1356,50 +1481,255 @@
       "updating": "Updating..."
     }
   },
+  "pwa": {
+    "install": {
+      "title": "Install VoctManager",
+      "subtitle": "Full screen and offline practice.",
+      "action": "Install",
+      "dismiss": "Dismiss",
+      "ios_step_1": "Tap",
+      "ios_step_2": "then “Add to Home Screen”"
+    }
+  },
+  "offline": {
+    "download": {
+      "action": "Save offline",
+      "starting": "Downloading…",
+      "progress": "Downloading {{done}}/{{total}}",
+      "ready": "Materials available offline.",
+      "ready_badge": "Available offline",
+      "partial": "Some materials downloaded — check your connection.",
+      "partial_badge": "Partially offline",
+      "empty": "No materials to save offline.",
+      "unavailable": "Offline mode isn't available on this device.",
+      "removed": "Offline materials removed.",
+      "remove": "Remove offline materials",
+      "retry": "Download again"
+    },
+    "badge": {
+      "offline": "Offline mode",
+      "offline_pending": "Offline · {{count}} to sync",
+      "pending": "{{count}} change(s) waiting to sync",
+      "syncing": "Syncing…",
+      "sync_now": "Sync now"
+    },
+    "sync": {
+      "flushed": "Offline changes synced.",
+      "rejected": "Some offline changes were rejected by the server."
+    }
+  },
   "materials": {
     "dashboard": {
-      "description": "Download sheet music, practice using the MIDI player with tempo control, and check your role in the ensemble.",
+      "description": "Scores, the voice mixer and your parts — everything you need to prepare.",
+      "empty_archive_desc": "Materials from concerts that have already finished will appear here.",
+      "empty_archive_title": "The archive is empty",
       "empty_desc": "You currently have no upcoming projects or the conductor hasn't approved any concert program yet.",
       "empty_title": "No assigned materials",
+      "empty_unpracticed_desc": "Great work — you've marked every part as ready.",
+      "empty_unpracticed_title": "Everything practised",
+      "filter_unpracticed": "To practise",
       "search_placeholder": "Search piece or composer...",
       "subtitle": "Artist Zone",
       "sync_error_desc": "Failed to load materials. Refresh the page.",
       "sync_error_title": "Sync error",
       "syncing": "Syncing library...",
-      "title": "Practice",
-      "title_highlight": "Materials"
+      "tab_archive": "Archive ({{count}})",
+      "tab_upcoming": "Upcoming ({{count}})",
+      "title": "My",
+      "title_highlight": "Songbook.",
+      "view_aria": "Materials view"
     },
     "piece": {
-      "access_locked_desc": "The project has concluded. Practice materials and scores are no longer available due to intellectual property and conductor arrangement protection.",
+      "access_locked_desc": "The project has concluded. Practice materials are no longer available due to intellectual property protection.",
       "access_locked_title": "Access Locked",
-      "audio_badge": "Audio",
-      "cast_divisi": "Piece Cast (Divisi)",
-      "download_pdf": "Download Score (PDF)",
-      "encore_badge": "Bis",
-      "listen_reference": "Listen to Reference",
-      "locked_badge": "Protected",
+      "cast_divisi": "Cast (Divisi)",
+      "encore_badge": "Encore",
+      "listen_reference_featured": "Best · {{label}}",
+      "lyrics_ipa": "Pronunciation (IPA)",
       "lyrics_translation": "Lyrics and Translation",
       "no_divisi": "No voice division defined.",
       "no_notes": "The conductor has not added any special notes.",
       "no_pdf": "Sheet music unavailable",
+      "open_score": "Open score",
       "original_lyrics": "Original",
       "other_voice": "Other",
       "part": "Part:",
-      "pdf_badge": "PDF",
-      "practice_tracks": "Practice Tracks (MIDI / MP3)",
+      "program_note_section": "Programme note",
       "traditional": "Traditional / Unknown",
-      "translation_notes": "Translation (Notes)",
+      "translation_label": "{{lang}}",
+      "translation_singable": "singable",
+      "translations_section": "Translations",
       "unknown_artist": "Artist",
-      "your_guidelines": "Your guidelines for the piece"
+      "your_guidelines": "Your guidelines"
+    },
+    "piece_page": {
+      "back_short": "Songbook",
+      "back_to_songbook": "Back to songbook",
+      "duration_min": "{{count}} min",
+      "gives_pitch": "You give the pitch",
+      "mixer_hint": "Pick a mode with one tap or fine-tune each voice — practise your part against the whole choir.",
+      "mixer_section": "Practice console",
+      "my_part_chip": "Your part: {{part}}",
+      "not_found_desc": "This piece is no longer in your songbook, or the link is out of date.",
+      "not_found_title": "Piece not found",
+      "pitch_section": "Pitch pipe",
+      "readiness_hint": "The conductor sees the ensemble's combined readiness and plans rehearsals around it.",
+      "readiness_section": "Your readiness",
+      "reference_section": "Reference recordings",
+      "score_section": "Score",
+      "tab_cast": "Cast",
+      "tab_practice": "Practice",
+      "tab_text": "Text",
+      "tabs_aria": "Piece sections"
     },
     "player": {
-      "speed_title": "Set tempo to {{rate}}x",
-      "your_voice": "(Your voice)"
+      "clear_loop": "Turn off loop",
+      "close": "Close player",
+      "mute_for": "Mute: {{voice}}",
+      "pause": "Pause",
+      "play": "Play",
+      "preset_blend": "Whole choir",
+      "preset_minus_mine": "Without my voice",
+      "preset_needs_my_voice": "Your part isn't in this piece's recordings.",
+      "preset_solo_mine": "Only my voice",
+      "presets_label": "Practice mode",
+      "seek": "Seek",
+      "solo_for": "Solo: {{voice}}",
+      "volume_for": "Volume: {{voice}}",
+      "your_voice_short": "Your voice"
     },
     "project": {
-      "archived_badge": "Archived Project",
-      "event": "Event:"
+      "archived_badge": "Archive",
+      "event": "Event:",
+      "readiness_caption": "{{ready}} of {{total}} parts ready"
+    },
+    "readiness": {
+      "group_label": "Your readiness",
+      "in_progress": "Practising",
+      "not_started": "Not started",
+      "ready": "I know my part",
+      "save_error": "Couldn't save readiness."
+    },
+    "row": {
+      "listen": "Play",
+      "open_details": "Open piece details",
+      "pause": "Pause",
+      "score": "Score"
     }
+  },
+  "messages": {
+    "bubble": {
+      "sending": "sending…"
+    },
+    "channel": {
+      "composer": "Write to the channel…",
+      "loading": "Loading channel…",
+      "members_one": "{{count}} member",
+      "members_other": "{{count}} members",
+      "pin": "Pin",
+      "pinned": "Pinned",
+      "push_off": "Push off",
+      "push_on": "Push on",
+      "send": "Send",
+      "toggle_push": "Push notifications",
+      "unknown_sender": "—",
+      "unpin": "Unpin"
+    },
+    "compose": {
+      "announce_body_placeholder": "Announcement text…",
+      "announce_success": "Announcement published.",
+      "artist": "Recipient (artist)",
+      "artist_placeholder": "— choose an artist —",
+      "channel": "Project channel",
+      "channel_placeholder": "— choose a project —",
+      "error": "Could not send.",
+      "heading": "New message",
+      "heading_announce": "New announcement",
+      "message": "Message",
+      "message_placeholder": "Write your message…",
+      "mode_announce": "Announcement",
+      "mode_message": "Message",
+      "no_channels": "You don't have any project channels yet.",
+      "pin": "Pin as announcement",
+      "pin_hint": "Pinned announcements stay at the top of the channel.",
+      "project_context": "About a project (optional)",
+      "project_none": "No link",
+      "recipient": "To (optional)",
+      "recipient_any": "Any conductor",
+      "recipient_to": "To",
+      "send": "Send",
+      "sending": "Sending…",
+      "subject": "Subject",
+      "subject_placeholder": "What is the conversation about?",
+      "success": "Message sent."
+    },
+    "context": {
+      "project": "Project",
+      "view_project": "Open project"
+    },
+    "deck": {
+      "all_clear": "Inbox clear — every conversation handled.",
+      "channels": "Project channels",
+      "empty": "No conversations yet. Start a new message.",
+      "eyebrow": "Conductor's inbox",
+      "eyebrow_artist": "Your inbox",
+      "needs_assignment": "Needs assignment",
+      "needs_attention": "Needs attention",
+      "stat_open": "open",
+      "stat_unassigned": "unattended",
+      "stat_unread": "unread",
+      "summary_assign_one": "{{count}} awaiting assignment",
+      "summary_assign_other": "{{count}} awaiting assignment",
+      "summary_clear": "All caught up.",
+      "summary_clear_artist": "No new messages.",
+      "summary_unread_one": "{{count}} unread",
+      "summary_unread_other": "{{count}} unread"
+    },
+    "eyebrow": "Communication",
+    "filter": {
+      "all": "All",
+      "aria": "Filter conversations",
+      "mine": "Mine",
+      "resolved": "Closed",
+      "unassigned": "Unattended",
+      "unread": "New"
+    },
+    "list": {
+      "empty": "No conversations yet. Start a new message.",
+      "loading": "Loading…",
+      "management": "Management",
+      "no_match": "No conversations for this filter.",
+      "unread": "Unread"
+    },
+    "new": "New",
+    "search": "Search conversations…",
+    "section": {
+      "channels": "Project channels",
+      "threads": "Threads"
+    },
+    "send_failed": "Could not send the message.",
+    "status": {
+      "archived": "Archived",
+      "resolved": "Closed"
+    },
+    "thread": {
+      "claim": "Claim",
+      "composer": "Write a message…",
+      "loading": "Loading conversation…",
+      "reopen": "Reopen",
+      "resolve": "Close",
+      "resolved_hint": "Thread closed — sending a reply will reopen it.",
+      "send": "Send"
+    },
+    "time": {
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "now": "now",
+      "today": "Today",
+      "yesterday": "yesterday",
+      "yesterday_full": "Yesterday"
+    },
+    "title": "Messages"
   },
   "nav": {
     "actions": {
@@ -2052,6 +2382,21 @@
     }
   },
   "schedule": {
+    "attendance": {
+      "absent": "Absences",
+      "based_on": "Based on {{count}} rehearsals",
+      "late": "Late arrivals",
+      "present": "Attended",
+      "streak": "Streak",
+      "subtitle": "Rehearsal attendance",
+      "title": "Your attendance"
+    },
+    "calendar": {
+      "add": "Add to calendar",
+      "google": "Google Calendar",
+      "ics": "Apple / Outlook (.ics)",
+      "menu_label": "Save event"
+    },
     "card": {
       "call_sheet_preview_title": "Call-Sheet",
       "call_time": "Call Time:",
@@ -2071,9 +2416,15 @@
       "no_run_sheet": "The run sheet has not been published by the manager yet.",
       "no_spotify": "No reference playlist.",
       "note_label": "Note:",
+      "open_detail": "Open details: {{title}}",
       "preview_call_sheet": "Call-Sheet PDF",
       "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
+      "run_sheet_untitled": "Schedule item",
+      "tab": {
+        "logistics": "Logistics",
+        "setlist": "Repertoire"
+      },
       "score_pdf_label": "Score / Program",
       "score_pdf_modal_title": "Concert Score",
       "unknown_artist": "Artist",
@@ -2081,19 +2432,61 @@
     },
     "dashboard": {
       "description": "Check rehearsals, report absences, and track concert plans.",
+      "subscribe_ics": "Subscribe to calendar",
       "subtitle": "Personal Calendar",
       "title": "My",
       "title_highlight": "Schedule"
     },
+    "day": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "yesterday": "Yesterday"
+    },
     "empty": {
       "description": "You don't have any assigned meetings or concerts in this view.",
+      "heading_past": "Empty history",
+      "heading_upcoming": "Clear horizon",
       "title": "No calendar entries"
     },
     "event": {
       "generic_event": "Event",
       "rehearsal_prefix": "Rehearsal:"
     },
+    "hero": {
+      "concert_hint": "You'll find the concert-day details on the event card below.",
+      "countdown": {
+        "days": "In {{count}} days",
+        "hours": "In {{count}} h",
+        "minutes": "In {{count}} min",
+        "now": "Happening now",
+        "tomorrow": "Tomorrow"
+      },
+      "next_concert": "Next concert",
+      "next_rehearsal": "Next rehearsal",
+      "prepare_cta": "Songbook",
+      "program_loading": "Loading repertoire...",
+      "rehearsal_mode": "Rehearsal mode",
+      "tonight_program": "Project repertoire",
+      "untitled_piece": "Piece"
+    },
     "loading": "Loading schedule...",
+    "past": {
+      "load_more": "Show older"
+    },
+    "pitch_pipe": {
+      "hint": "Tap a note to hear the pitch. Tap again to mute.",
+      "title": "Pitch pipe"
+    },
+    "readiness": {
+      "cta": "Practice in the Songbook",
+      "ready_cta": "Review in the Songbook",
+      "ready_title": "Parts ready",
+      "title": "Part readiness"
+    },
+    "ribbon": {
+      "aria": "Season pulse",
+      "title": "Your season"
+    },
     "rehearsal": {
       "action": {
         "confirm_long": "Confirm Attendance",
@@ -2125,7 +2518,13 @@
       "optional": "Optional",
       "status_absent": "Absent",
       "status_late": "Running Late",
-      "status_present": "Confirmed"
+      "status_present": "Confirmed",
+      "toggle_detail": "Show rehearsal details: {{title}}"
+    },
+    "tabs": {
+      "aria_label": "Calendar view",
+      "past": "History",
+      "upcoming": "Upcoming"
     },
     "toast": {
       "submit_error_desc": "Failed to save the report.",
@@ -2207,6 +2606,11 @@
       "modalDescLine2": "Attendance history will be preserved for audit purposes, but the account will be permanently deactivated.",
       "modalTitle": "Are you sure you want to delete the account?",
       "passwordPlaceholder": "Current password",
+      "spotifyDescOff": "Embedded Spotify players are off. We'll ask for your consent only when you open a player on a project.",
+      "spotifyDescOn": "Spotify players load automatically thanks to your consent (they connect to Spotify's servers, with cookies and data). You can withdraw consent at any time.",
+      "spotifyGrant": "Allow",
+      "spotifyRevoke": "Withdraw consent",
+      "spotifyTitle": "Embedded players (Spotify)",
       "subtitle": "Manage your personal data and account permissions.",
       "title": "Privacy and Data (GDPR)"
     },

@@ -10,7 +10,17 @@ import {
   useUploadDocument,
   useDeleteDocument,
 } from '../api/chorister-hub.queries';
-import type { DocumentCategoryDTO, DocumentCategoryCreateDTO, DocumentCategoryUpdateDTO, DocumentFileDTO } from '../types/chorister-hub.dto';
+import type {
+  DocumentCategoryDTO,
+  DocumentCategoryCreateDTO,
+  DocumentCategoryUpdateDTO,
+  DocumentFileDTO,
+} from '../types/chorister-hub.dto';
+
+/** A pending destructive action awaiting confirmation. */
+export type PendingDeletion =
+  | { kind: 'category'; category: DocumentCategoryDTO }
+  | { kind: 'document'; categoryId: string; document: DocumentFileDTO };
 
 export const useChoristerHub = (user: AuthUser | null) => {
   const isManagerUser = isManager(user);
@@ -21,12 +31,13 @@ export const useChoristerHub = (user: AuthUser | null) => {
   const [editingCategory, setEditingCategory] = useState<DocumentCategoryDTO | null>(null);
   const [targetCategory, setTargetCategory] = useState<DocumentCategoryDTO | null>(null);
   const [previewDocument, setPreviewDocument] = useState<DocumentFileDTO | null>(null);
+  const [pendingDeletion, setPendingDeletion] = useState<PendingDeletion | null>(null);
 
   const { mutate: createCategory, isPending: isCreatingCategory } = useCreateCategory();
   const { mutate: updateCategory, isPending: isUpdatingCategory } = useUpdateCategory();
-  const { mutate: deleteCategory } = useDeleteCategory();
+  const { mutate: deleteCategory, isPending: isDeletingCategory } = useDeleteCategory();
   const { mutate: uploadDocument, isPending: isUploadingDocument } = useUploadDocument();
-  const { mutate: deleteDocument } = useDeleteDocument();
+  const { mutate: deleteDocument, isPending: isDeletingDocument } = useDeleteDocument();
 
   const handleAddCategory = useCallback(() => {
     setEditingCategory(null);
@@ -38,26 +49,15 @@ export const useChoristerHub = (user: AuthUser | null) => {
     setCategoryModalOpen(true);
   }, []);
 
-  const handleDeleteCategory = useCallback(
-    (categoryId: string) => {
-      deleteCategory(categoryId);
-    },
-    [deleteCategory],
-  );
-
   const handleCategoryModalSubmit = useCallback(
     (values: DocumentCategoryCreateDTO, editId?: string) => {
       if (editId) {
         updateCategory(
           { id: editId, dto: values as DocumentCategoryUpdateDTO },
-          {
-            onSuccess: () => setCategoryModalOpen(false),
-          },
+          { onSuccess: () => setCategoryModalOpen(false) },
         );
       } else {
-        createCategory(values, {
-          onSuccess: () => setCategoryModalOpen(false),
-        });
+        createCategory(values, { onSuccess: () => setCategoryModalOpen(false) });
       }
     },
     [createCategory, updateCategory],
@@ -78,12 +78,33 @@ export const useChoristerHub = (user: AuthUser | null) => {
     [uploadDocument],
   );
 
-  const handleDeleteDocument = useCallback(
-    (categoryId: string, documentId: string) => {
-      deleteDocument({ categoryId, documentId });
+  // ── Confirmed destructive actions ───────────────────────────────────────────
+  const requestDeleteCategory = useCallback((category: DocumentCategoryDTO) => {
+    setPendingDeletion({ kind: 'category', category });
+  }, []);
+
+  const requestDeleteDocument = useCallback(
+    (categoryId: string, document: DocumentFileDTO) => {
+      setPendingDeletion({ kind: 'document', categoryId, document });
     },
-    [deleteDocument],
+    [],
   );
+
+  const handleCancelDelete = useCallback(() => setPendingDeletion(null), []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!pendingDeletion) return;
+    if (pendingDeletion.kind === 'category') {
+      deleteCategory(pendingDeletion.category.id, {
+        onSettled: () => setPendingDeletion(null),
+      });
+    } else {
+      deleteDocument(
+        { categoryId: pendingDeletion.categoryId, documentId: pendingDeletion.document.id },
+        { onSettled: () => setPendingDeletion(null) },
+      );
+    }
+  }, [pendingDeletion, deleteCategory, deleteDocument]);
 
   const handleCategoryModalClose = useCallback(() => {
     setCategoryModalOpen(false);
@@ -115,13 +136,19 @@ export const useChoristerHub = (user: AuthUser | null) => {
     isDocumentPending: isUploadingDocument,
     handleAddCategory,
     handleEditCategory,
-    handleDeleteCategory,
     handleCategoryModalSubmit,
     handleCategoryModalClose,
     handleUploadDocument,
     handleDocumentUploadSubmit,
-    handleDeleteDocument,
     handleDocumentModalClose,
+    // confirmed deletions
+    pendingDeletion,
+    isDeletionPending: isDeletingCategory || isDeletingDocument,
+    requestDeleteCategory,
+    requestDeleteDocument,
+    handleConfirmDelete,
+    handleCancelDelete,
+    // preview
     isPreviewModalOpen,
     previewDocument,
     handlePreviewDocument,

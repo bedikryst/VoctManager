@@ -35,6 +35,15 @@ export interface PracticeLoopRange {
   b: number | null;
 }
 
+/**
+ * One-tap mixing intents the chorister actually reaches for:
+ *  - blend       → hear the whole choir balanced (every voice unmuted),
+ *  - solo-mine   → only my voice, to learn the notes,
+ *  - minus-mine  → everyone but me, to sing my line against the choir.
+ * `null` means the mix was hand-tuned and no preset is active.
+ */
+export type PracticePreset = "blend" | "solo-mine" | "minus-mine";
+
 export interface PracticePlayerSnapshot {
   piece: PracticePieceSource | null;
   tracks: PracticeTrackSource[];
@@ -47,6 +56,7 @@ export interface PracticePlayerSnapshot {
   muted: Readonly<Record<string, boolean>>;
   soloTrackId: string | null;
   loop: PracticeLoopRange;
+  activePreset: PracticePreset | null;
 }
 
 const EMPTY_SNAPSHOT: PracticePlayerSnapshot = {
@@ -61,10 +71,34 @@ const EMPTY_SNAPSHOT: PracticePlayerSnapshot = {
   muted: {},
   soloTrackId: null,
   loop: { a: null, b: null },
+  activePreset: null,
 };
 
 const DRIFT_TOLERANCE_S = 0.08;
 const TICK_INTERVAL_MS = 250;
+const PREF_KEY_PREFIX = "voct.practice.pref.";
+
+interface PersistedPref {
+  rate?: number;
+  preset?: PracticePreset | null;
+}
+
+/** Mute map for a preset given the piece's tracks (used on load + on tap). */
+const mutedForPreset = (
+  tracks: PracticeTrackSource[],
+  preset: PracticePreset,
+): Record<string, boolean> => {
+  const muted: Record<string, boolean> = {};
+  tracks.forEach((track) => {
+    muted[track.id] =
+      preset === "blend"
+        ? false
+        : preset === "solo-mine"
+          ? !track.isMine
+          : track.isMine; // minus-mine
+  });
+  return muted;
+};
 
 type Listener = () => void;
 
@@ -82,17 +116,30 @@ export class PracticePlayerEngine {
 
   getSnapshot = (): PracticePlayerSnapshot => this.snapshot;
 
-  /** Replaces the loaded piece. Keeps the global rate between pieces. */
+  /**
+   * Replaces the loaded piece. Restores the chorister's remembered tempo and
+   * preset for this piece (falling back to the global rate between pieces), so
+   * reopening a piece drops them straight back into how they last practised it.
+   */
   load(
     piece: PracticePieceSource,
     tracks: PracticeTrackSource[],
     options?: { soloTrackId?: string | null; autoplay?: boolean },
   ): void {
-    const previousRate = this.snapshot.rate;
     this.disposeElements();
 
+    const pref = this.readPref(piece.pieceId);
+    const rate = pref?.rate ?? this.snapshot.rate;
+
+    const hasMine = tracks.some((track) => track.isMine);
+    // A solo/minus preset is meaningless without the chorister's own track.
+    const activePreset: PracticePreset | null =
+      pref?.preset && (pref.preset === "blend" || hasMine) ? pref.preset : null;
+
     const volumes: Record<string, number> = {};
-    const muted: Record<string, boolean> = {};
+    const muted: Record<string, boolean> = activePreset
+      ? mutedForPreset(tracks, activePreset)
+      : {};
 
     tracks.forEach((track) => {
       const el = new Audio();
@@ -100,10 +147,10 @@ export class PracticePlayerEngine {
       el.preload = "auto";
       // Pitch-preserving tempo change is the whole point of slow practice.
       el.preservesPitch = true;
-      el.playbackRate = previousRate;
+      el.playbackRate = rate;
       this.elements.set(track.id, el);
       volumes[track.id] = 1;
-      muted[track.id] = false;
+      muted[track.id] ??= false;
     });
 
     this.masterId = tracks[0]?.id ?? null;
@@ -120,10 +167,11 @@ export class PracticePlayerEngine {
       ...EMPTY_SNAPSHOT,
       piece,
       tracks,
-      rate: previousRate,
+      rate,
       volumes,
       muted,
       soloTrackId: options?.soloTrackId ?? null,
+      activePreset,
     });
     this.applyMix();
 
@@ -182,6 +230,27 @@ export class PracticePlayerEngine {
       el.playbackRate = rate;
     });
     this.commit({ ...this.snapshot, rate });
+    this.persistPref();
+  }
+
+  /**
+   * Applies a one-tap mix intent across every voice (blend / solo-mine /
+   * minus-mine). No-op for a solo/minus preset when the chorister has no own
+   * track, so the UI can never tap the choir into silence.
+   */
+  applyPreset(preset: PracticePreset): void {
+    const { tracks } = this.snapshot;
+    if (tracks.length === 0) return;
+    if (preset !== "blend" && !tracks.some((track) => track.isMine)) return;
+
+    this.commit({
+      ...this.snapshot,
+      muted: mutedForPreset(tracks, preset),
+      soloTrackId: null,
+      activePreset: preset,
+    });
+    this.applyMix();
+    this.persistPref();
   }
 
   setVolume(trackId: string, volume: number): void {
@@ -195,15 +264,17 @@ export class PracticePlayerEngine {
       ...this.snapshot.muted,
       [trackId]: !this.snapshot.muted[trackId],
     };
-    this.commit({ ...this.snapshot, muted });
+    // A hand-tuned mute breaks the preset abstraction — drop the badge.
+    this.commit({ ...this.snapshot, muted, activePreset: null });
     this.applyMix();
+    this.persistPref();
   }
 
   /** Solo is exclusive; passing the active solo id (or null) clears it. */
   setSolo(trackId: string | null): void {
     const soloTrackId =
       trackId && this.snapshot.soloTrackId !== trackId ? trackId : null;
-    this.commit({ ...this.snapshot, soloTrackId });
+    this.commit({ ...this.snapshot, soloTrackId, activePreset: null });
     this.applyMix();
   }
 
@@ -243,6 +314,31 @@ export class PracticePlayerEngine {
 
   private master(): HTMLAudioElement | null {
     return this.masterId ? (this.elements.get(this.masterId) ?? null) : null;
+  }
+
+  /** Remembers tempo + preset per piece so practice picks up where it left off. */
+  private persistPref(): void {
+    const pieceId = this.snapshot.piece?.pieceId;
+    if (!pieceId || typeof localStorage === "undefined") return;
+    try {
+      const pref: PersistedPref = {
+        rate: this.snapshot.rate,
+        preset: this.snapshot.activePreset,
+      };
+      localStorage.setItem(PREF_KEY_PREFIX + pieceId, JSON.stringify(pref));
+    } catch {
+      // Private mode / quota — practice prefs are best-effort, never fatal.
+    }
+  }
+
+  private readPref(pieceId: string): PersistedPref | null {
+    if (typeof localStorage === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(PREF_KEY_PREFIX + pieceId);
+      return raw ? (JSON.parse(raw) as PersistedPref) : null;
+    } catch {
+      return null;
+    }
   }
 
   private handleMetadata = (): void => {

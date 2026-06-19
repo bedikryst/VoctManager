@@ -234,7 +234,7 @@ export default function Contracts(): React.JSX.Element {
   if (isLoading && !hasAnyLedgerData) {
     return (
       <PageTransition>
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 pb-24 sm:px-0">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-6 pb-24">
           {pageHeader}
           <EtherealLoader
             message={t("contracts.loader.message", "Wczytuję rejestry rozliczeń…")}
@@ -247,7 +247,7 @@ export default function Contracts(): React.JSX.Element {
   if (isError && !hasAnyLedgerData) {
     return (
       <PageTransition>
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 pb-24 sm:px-0">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-6 pb-24">
           {pageHeader}
           <StatePanel
             tone="danger"
@@ -282,7 +282,7 @@ export default function Contracts(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 pb-24 sm:px-0">
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-6 pb-24">
         {pageHeader}
 
         {isError && hasAnyLedgerData && (

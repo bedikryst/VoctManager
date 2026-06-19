@@ -67,7 +67,7 @@ interface DocumentRowProps {
   doc: DocumentFileDTO;
   isManager: boolean;
   categoryId: string;
-  onDelete: (categoryId: string, documentId: string) => void;
+  onDelete: (categoryId: string, doc: DocumentFileDTO) => void;
   onPreview: (doc: DocumentFileDTO) => void;
 }
 
@@ -129,7 +129,6 @@ const DocumentRow = ({
               e.stopPropagation();
               onPreview(doc);
             }}
-            className="opacity-0 group-hover/file:opacity-100"
             aria-label={t(
               "chorister_hub.category.preview_aria",
               "Preview {{title}}",
@@ -145,9 +144,9 @@ const DocumentRow = ({
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(categoryId, doc.id);
+              onDelete(categoryId, doc);
             }}
-            className="opacity-0 group-hover/file:opacity-100 hover:text-ethereal-crimson"
+            className="hover:text-ethereal-crimson"
             aria-label={t(
               "chorister_hub.category.remove_aria",
               "Remove {{title}}",
@@ -181,9 +180,9 @@ interface DocumentCategoryCardProps {
   category: DocumentCategoryDTO;
   isManager: boolean;
   onEdit: (category: DocumentCategoryDTO) => void;
-  onDelete: (categoryId: string) => void;
+  onDelete: (category: DocumentCategoryDTO) => void;
   onUploadDocument: (category: DocumentCategoryDTO) => void;
-  onDeleteDocument: (categoryId: string, documentId: string) => void;
+  onDeleteDocument: (categoryId: string, doc: DocumentFileDTO) => void;
   onPreviewDocument: (doc: DocumentFileDTO) => void;
 }
 
@@ -242,7 +241,7 @@ export const DocumentCategoryCard = ({
           </div>
 
           {isManager && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
+            <div className="flex items-center gap-1 shrink-0 ml-2">
               <Button
                 variant="ghost"
                 size="icon"
@@ -258,7 +257,7 @@ export const DocumentCategoryCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onDelete(category.id)}
+                onClick={() => onDelete(category)}
                 className="hover:text-ethereal-crimson hover:bg-ethereal-crimson/10"
                 aria-label={t(
                   "chorister_hub.category.delete_aria",

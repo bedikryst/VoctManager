@@ -50,6 +50,9 @@ import {
   WorkIdentifiersGrid,
 } from "@/shared/ui/composites/repertoire";
 import { cn } from "@/shared/lib/utils";
+import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
+import { MaterialsService } from "@/features/materials/api/materials.service";
+import { useScoreAnnotator } from "@/features/annotations";
 
 import { usePiece, usePieces, useUpdatePiece } from "./api/archive.queries";
 import type { PiecePatchDTO } from "./types/archive.dto";
@@ -119,6 +122,13 @@ export default function ArchiveReviewPage(): React.JSX.Element {
   const { data: piece, isLoading, isError, error } = usePiece(id);
   const { data: allPieces = [] } = usePieces();
   const updatePiece = useUpdatePiece();
+
+  // Conductor markup, right in the main score preview (not buried in the
+  // editions list below). Archive is manager-only, so editing is always on.
+  const annotator = useScoreAnnotator({
+    editionId: piece ? getPrimaryPdf(piece)?.id ?? null : null,
+    canEdit: true,
+  });
 
   // ---- Form wiring -------------------------------------------------------
   const initial = useMemo<ReviewFormValues>(
@@ -310,15 +320,23 @@ export default function ArchiveReviewPage(): React.JSX.Element {
                     </a>
                   </Button>
                 </div>
-                <iframe
-                  src={primaryPdf.url}
-                  title={t(
-                    "archive.review.pdf_iframe_title",
-                    "PDF — {{title}}",
-                    { title: piece.title },
-                  )}
-                  className="flex-1 bg-ethereal-marble/40"
-                />
+                {/* In-app render (react-pdf) instead of an <iframe>: the gated
+                    score URL sets X-Frame-Options: DENY, so framing it is
+                    refused by the browser. fetchScoreEditionBlob streams the
+                    PDF through the authenticated axios instance. */}
+                <div className="min-h-0 flex-1">
+                  <PdfViewer
+                    fetchBlob={() =>
+                      MaterialsService.fetchScoreEditionBlob(primaryPdf.id)
+                    }
+                    docKey={primaryPdf.id}
+                    title={piece.title}
+                    subtitle={primaryPdf.label}
+                    fileName={primaryPdf.label}
+                    toolbarSlot={annotator.toolbarSlot}
+                    renderPageOverlay={annotator.renderPageOverlay}
+                  />
+                </div>
               </div>
             ) : (
               <div className="flex h-[40vh] flex-col items-center justify-center gap-4 p-6 text-center lg:h-full">

@@ -1,62 +1,39 @@
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { Attendance } from "@/shared/types";
 import { projectKeys } from "@/features/projects/api/project.queries";
-import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
+import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
 import { ScheduleService } from "./schedule.service";
-import type { ScheduleAttendanceReportDTO } from "../types/schedule.dto";
+import type {
+  ScheduleAttendanceReportDTO,
+  ScheduleDashboardItem,
+} from "../types/schedule.dto";
 
 const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
 
-export const useScheduleContextData = (artistId?: string | number) => {
-  const results = useQueries({
-    queries: [
-      {
-        queryKey: rehearsalKeys.rehearsals.byArtist(
-          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
-        ),
-        queryFn: () => ScheduleService.getRehearsalsByArtist(artistId!),
-        enabled: !!artistId,
-        staleTime: 1000 * 60 * 5,
-      },
-      {
-        queryKey: projectKeys.projects.all,
-        queryFn: ScheduleService.getProjects,
-        enabled: !!artistId,
-        staleTime: 1000 * 60 * 5,
-      },
-      {
-        queryKey: projectKeys.participations.byArtist(
-          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
-        ),
-        queryFn: () => ScheduleService.getParticipationsByArtist(artistId!),
-        enabled: !!artistId,
-        staleTime: 1000 * 60 * 5,
-      },
-      {
-        queryKey: rehearsalKeys.attendances.byArtist(
-          artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
-        ),
-        queryFn: () => ScheduleService.getAttendancesByArtist(artistId!),
-        enabled: !!artistId,
-        staleTime: 1000 * 60,
-      },
-    ],
-  });
-
-  return {
-    rehearsals: results[0].data || [],
-    projects: results[1].data || [],
-    participations: results[2].data || [],
-    attendances: results[3].data || [],
-    isLoading: results.some((query) => query.isLoading),
-  };
+export const scheduleKeys = {
+  dashboard: {
+    byArtist: (artistId: string | number) =>
+      ["schedule", "dashboard", String(artistId)] as const,
+  },
 };
+
+/** Partial key matching every artist's dashboard cache (for optimistic patches). */
+const SCHEDULE_DASHBOARD_PREFIX = ["schedule", "dashboard"] as const;
+
+/**
+ * The artist's personal schedule in one server-joined call — replaces the
+ * former four-query `useScheduleContextData` + client-side O(n·m) join.
+ */
+export const useScheduleDashboard = (artistId?: string | number) =>
+  useQuery({
+    queryKey: scheduleKeys.dashboard.byArtist(
+      artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
+    ),
+    queryFn: ScheduleService.getScheduleDashboard,
+    enabled: !!artistId,
+    staleTime: 1000 * 60 * 5,
+  });
 
 export const useScheduleProgramItems = (
   projectId: string | number,
@@ -85,6 +62,11 @@ export const useSchedulePieceCastings = (
   });
 };
 
+/**
+ * Optimistic RSVP: patches the artist's attendance straight onto the matching
+ * rehearsal in every schedule-dashboard cache, so the card answers the tap with
+ * zero latency, and rolls back if the server rejects the write.
+ */
 export const useUpsertScheduleAttendance = () => {
   const queryClient = useQueryClient();
 
@@ -98,43 +80,53 @@ export const useUpsertScheduleAttendance = () => {
     }) => ScheduleService.saveAttendanceReport(existingAttendanceId, payload),
 
     onMutate: async ({ existingAttendanceId, payload }) => {
-      await queryClient.cancelQueries({
-        queryKey: rehearsalKeys.attendances.all,
+      await queryClient.cancelQueries({ queryKey: SCHEDULE_DASHBOARD_PREFIX });
+
+      const snapshot = queryClient.getQueriesData<ScheduleDashboardItem[]>({
+        queryKey: SCHEDULE_DASHBOARD_PREFIX,
       });
 
-      const snapshot = queryClient.getQueriesData<Attendance[]>({
-        queryKey: rehearsalKeys.attendances.all,
-      });
-
-      queryClient.setQueriesData<Attendance[]>(
-        { queryKey: rehearsalKeys.attendances.all },
-        (old = []) => {
-          if (existingAttendanceId) {
-            return old.map((record) =>
-              record.id === existingAttendanceId
-                ? {
-                    ...record,
+      queryClient.setQueriesData<ScheduleDashboardItem[]>(
+        { queryKey: SCHEDULE_DASHBOARD_PREFIX },
+        (old) =>
+          old?.map((item) =>
+            item.type === "REHEARSAL" &&
+            String(item.rehearsal.id) === String(payload.rehearsal)
+              ? {
+                  ...item,
+                  my_attendance: {
+                    id:
+                      existingAttendanceId ??
+                      item.my_attendance?.id ??
+                      `optimistic-${Date.now()}`,
                     status: payload.status,
                     excuse_note: payload.excuse_note,
-                  }
-                : record,
-            );
-          }
-          const optimisticRecord: Attendance = {
-            id: `optimistic-${Date.now()}`,
-            rehearsal: String(payload.rehearsal),
-            participation: String(payload.participation),
-            status: payload.status,
-            excuse_note: payload.excuse_note,
-          };
-          return [...old, optimisticRecord];
-        },
+                  },
+                }
+              : item,
+          ),
       );
 
       return { snapshot };
     },
 
-    onError: (_error, _variables, context) => {
+    onError: (error, { existingAttendanceId, payload }, context) => {
+      // Offline RSVP: keep the optimistic patch and queue the write. The replay
+      // re-uses the same method/URL, so an offline "create" stays a POST and an
+      // edit of a synced record stays a PATCH.
+      if (isLikelyOfflineError(error)) {
+        useOfflineStore.getState().enqueueWrite({
+          kind: "attendance",
+          method: existingAttendanceId ? "PATCH" : "POST",
+          url: existingAttendanceId
+            ? `/api/attendances/${existingAttendanceId}/`
+            : "/api/attendances/",
+          body: payload,
+          dedupeKey: `attendance:${payload.rehearsal}`,
+          label: "Obecność na próbie",
+        });
+        return;
+      }
       if (!context?.snapshot) return;
       for (const [queryKey, data] of context.snapshot) {
         queryClient.setQueryData(queryKey, data);
@@ -142,9 +134,8 @@ export const useUpsertScheduleAttendance = () => {
     },
 
     onSettled: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: rehearsalKeys.attendances.all,
-      });
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
+      await queryClient.invalidateQueries({ queryKey: SCHEDULE_DASHBOARD_PREFIX });
     },
   });
 };

@@ -19,6 +19,7 @@ import { Heading, Text } from "@/shared/ui/primitives/typography";
 import {
   PdfViewer,
   type PdfViewerEvent,
+  type PdfPageGeometry,
 } from "@/shared/ui/composites/PdfViewer";
 import {
   buildDocumentViewerPath,
@@ -53,6 +54,10 @@ export interface PdfViewerModalProps {
   fullView?: DocumentDescriptor;
   /** Telemetry seam forwarded to the underlying PdfViewer. No transport bundled. */
   onEvent?: (event: PdfViewerEvent) => void;
+  /** Compact controls injected into the floating viewer toolbar (e.g. annotation tools). */
+  toolbarSlot?: React.ReactNode;
+  /** Layer stacked over each rendered page — see PdfViewer.renderPageOverlay. */
+  renderPageOverlay?: (geometry: PdfPageGeometry) => React.ReactNode;
   onClose: () => void;
 }
 
@@ -67,6 +72,8 @@ export const PdfViewerModal = ({
   fullViewHint,
   fullView,
   onEvent,
+  toolbarSlot,
+  renderPageOverlay,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -193,6 +200,8 @@ export const PdfViewerModal = ({
                     subtitle={subtitle}
                     fileName={fileName}
                     onEvent={onEvent}
+                    toolbarSlot={toolbarSlot}
+                    renderPageOverlay={renderPageOverlay}
                     className="flex-1"
                   />
                 </motion.div>

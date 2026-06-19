@@ -9,7 +9,7 @@
 ![Framer Motion v12](https://img.shields.io/badge/Framer_Motion_v12-black?style=for-the-badge&logo=framer&logoColor=blue)
 ![TanStack Query v5](https://img.shields.io/badge/TanStack_Query_v5-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
 
-This directory contains the source code for the **authenticated Single Page Application** of the **VoctManager** platform — the operational ERP panel (`/panel/*`) plus the public auth flows (`/login`, `/activate`, `/documents/*`). The codebase is engineered around three non-negotiable goals: **strict Feature-Sliced Design**, **zero-layout-shift UX at 60 FPS**, and **aggressive server-state caching** via TanStack Query.
+This directory contains the source code for the **authenticated Single Page Application** of the **VoctManager** platform — the operational ERP panel (`/panel/*`) plus the public auth flows (`/login`, `/activate`, `/documents/*`). The codebase is built around three goals: **strict Feature-Sliced Design**, **zero-layout-shift UX at 60 FPS**, and **server-state caching** via TanStack Query.
 
 > **Public marketing site has moved.** The voctensemble.com landing + subpages (`/`, `/koncerty`, `/o-nas`, `/kontakt`, `/polityka-prywatnosci`) are now a separate Astro app under [`../web/`](../web/) — see [web/README.md](../web/README.md). The SPA no longer ships the marketing surface, the Threshold gate, the donation Vault, or the audio engine; those live in Astro islands now. The two builds share the Django backend at `/api/*`.
 
@@ -37,7 +37,7 @@ src/
 │   └── utility/      # Generic widgets (error boundaries, empty states)
 │
 ├── features/         ← Self-contained domain slices
-│   ├── archive/      # Repertoire archive (pieces, editions, recordings)
+│   ├── archive/      # Repertoire archive + AI score-compiler review (pieces, editions)
 │   ├── artists/      # Roster, profiles, voice parts
 │   ├── auth/         # Authentication flows + JWT lifecycle
 │   ├── chorister-hub/# Knowledge base + artist identity metrics
@@ -46,12 +46,11 @@ src/
 │   ├── dashboard/    # Bento dashboard data hooks
 │   ├── logistics/    # Locations, travel, venue management
 │   ├── materials/    # Sheet music + reference audio distribution
-│   ├── messages/     # Async conductor/chorister conversation threads
+│   ├── messages/     # 1:1 threads + project channels, triage & conductor briefing deck
 │   ├── notifications/# Web push (VAPID) + transactional email log
 │   ├── projects/     # Concert projects, casting, run sheets
 │   ├── rehearsals/   # Rehearsal scheduling + attendance
 │   ├── schedule/     # iCal sync, calendar feed
-│   ├── score-compiler/# AI Score Package Compiler UI
 │   └── settings/     # User & system settings
 │
 └── shared/           ← Reusable building blocks (lowest layer)
@@ -64,8 +63,9 @@ src/
     ├── types/        # Global TypeScript types
     └── ui/
         ├── primitives/    # Atomic primitives (Button, Input, Heading, Text…)
-        ├── composites/    # Composed UI (GlassCard, PageHeader, MetricBlock…)
-        └── kinematics/    # Motion primitives (PageTransition, EtherealLoader…)
+        ├── composites/    # Composed UI (GlassCard, PageHeader, MetricBlock, Avatar…)
+        ├── kinematics/    # Motion primitives (PageTransition, EtherealLoader…)
+        └── instruments/   # Musical primitives (PitchPipe / tuning fork)
 ```
 
 > **Note:** the `entities/` layer is intentionally omitted. Domain entities live alongside their owning feature (`features/<domain>/types/`), keeping the dependency graph flatter without sacrificing FSD discipline.

@@ -18,7 +18,7 @@ import type { AttendanceStatus } from "@/shared/types";
 import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { AbsenceReportForm } from "./AbsenceReportForm";
-import { formatLocalizedDate } from "@/shared/lib/time/intl";
+import { AddToCalendar } from "./AddToCalendar";
 import { Button } from "@/shared/ui/primitives/Button";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
@@ -39,10 +39,77 @@ interface TimelineRehearsalCardProps {
   viewMode: ScheduleViewMode;
 }
 
-const statusTopBorder = (s: string | null | undefined) => {
-  if (s === "PRESENT") return "border-t-ethereal-sage";
-  if (s === "LATE" || s === "ABSENT") return s === "LATE" ? "border-t-ethereal-incense" : "border-t-ethereal-crimson";
-  return "border-t-ethereal-incense/25";
+// A left accent strip in the status colour gives the (deliberately plainer)
+// rehearsal card a clear identity and at-a-glance state, alongside the textual
+// status badge (colour is never the only signal).
+const statusAccent = (s: string | null | undefined) => {
+  if (s === "PRESENT") return "border-l-ethereal-sage";
+  if (s === "LATE") return "border-l-ethereal-incense";
+  if (s === "ABSENT") return "border-l-ethereal-crimson";
+  return "border-l-ethereal-gold/40";
+};
+
+interface RehearsalActionsProps {
+  maskedStatus: string | null | undefined;
+  currentMaskedStatus: string | null | undefined;
+  isSubmitting: boolean;
+  // The handlers need the click event (they stopPropagation under the card's
+  // stretched toggle), so they take a MouseEvent — not a bare `() => void`.
+  onConfirm: (event: React.MouseEvent) => void;
+  onReport: (event: React.MouseEvent) => void;
+  /** Mobile: full-width stacked, long label. Desktop: hug, short label. */
+  fullWidth?: boolean;
+}
+
+// Single source of truth for the RSVP pair — placed full-width at the foot of
+// the collapsed card on touch, and hugging-right inside the expanded panel on
+// desktop. One definition, so the two placements can never drift apart.
+const RehearsalActions = ({
+  maskedStatus,
+  currentMaskedStatus,
+  isSubmitting,
+  onConfirm,
+  onReport,
+  fullWidth = false,
+}: RehearsalActionsProps): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {maskedStatus !== "PRESENT" && (
+        <Button
+          variant="primary"
+          size="touch"
+          onClick={onConfirm}
+          disabled={isSubmitting}
+          isLoading={isSubmitting}
+          leftIcon={!isSubmitting ? <Check size={13} aria-hidden="true" /> : undefined}
+          className={cn(
+            "bg-ethereal-sage border-ethereal-sage hover:bg-ethereal-sage/80",
+            fullWidth && "w-full",
+          )}
+        >
+          {fullWidth
+            ? t("schedule.rehearsal.action.confirm_long", "Potwierdź Obecność")
+            : t("schedule.rehearsal.action.confirm_short", "Potwierdź")}
+        </Button>
+      )}
+      <Button
+        variant="outline"
+        size="touch"
+        onClick={onReport}
+        leftIcon={<AlertCircle size={13} aria-hidden="true" />}
+        className={cn(
+          fullWidth && "w-full",
+          maskedStatus === "ABSENT" &&
+            "text-ethereal-crimson hover:border-ethereal-crimson/30",
+        )}
+      >
+        {currentMaskedStatus
+          ? t("schedule.rehearsal.action.edit", "Edytuj")
+          : t("schedule.rehearsal.action.report_issue", "Zgłoś problem")}
+      </Button>
+    </>
+  );
 };
 
 export const TimelineRehearsalCard = ({
@@ -76,68 +143,33 @@ export const TimelineRehearsalCard = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="relative sm:pl-14 md:pl-16 group"
+      className="group relative"
     >
-      {/* timeline dot — desktop sidebar */}
-      <div
-        className={cn(
-          "hidden sm:block absolute left-3.5 md:left-6 top-5 w-3 h-3 rounded-full border-2 ring-4 ring-ethereal-parchment z-10 transition-all duration-500",
-          isExcusedOrLate
-            ? "bg-ethereal-incense border-ethereal-incense"
-            : maskedStatus === "PRESENT"
-              ? "bg-ethereal-sage border-ethereal-sage"
-              : "bg-ethereal-marble border-ethereal-incense/40 group-hover:border-ethereal-gold",
-        )}
-      />
-
       <GlassCard
         variant="ethereal"
         padding="none"
         isHoverable={false}
         className={cn(
-          "overflow-hidden transition-all duration-300 border-t-2",
-          statusTopBorder(maskedStatus),
-          isExpanded ? "border-ethereal-gold/30" : "hover:border-ethereal-gold/20",
+          "overflow-hidden border-l-[3px] transition-all duration-300",
+          statusAccent(maskedStatus),
+          isExpanded
+            ? "ring-1 ring-ethereal-gold/25"
+            : "hover:ring-1 hover:ring-ethereal-gold/15",
         )}
       >
         {/* ── main row ─────────────────────────────────────────────── */}
-        <div
-          className="flex items-stretch cursor-pointer"
-          onClick={() => { if (!reportingMode) onToggle(); }}
-          role="button"
-          aria-expanded={isExpanded}
-        >
-          {/* date column */}
-          <div
-            className={cn(
-              "w-18 sm:w-20 shrink-0 flex flex-col items-center justify-center py-4 border-r border-dashed border-ethereal-incense/15 transition-colors",
-              maskedStatus === "PRESENT"
-                ? "bg-ethereal-sage/8"
-                : isExcusedOrLate
-                  ? "bg-ethereal-alabaster/60"
-                  : "bg-ethereal-ink/[0.03] group-hover:bg-ethereal-gold/8",
-            )}
-          >
-            <Eyebrow
-              as="span"
-              color={maskedStatus === "PRESENT" ? "sage" : isExcusedOrLate ? "muted" : "gold"}
-            >
-              {formatLocalizedDate(event.date_time, { month: "short" }, undefined, tz)}
-            </Eyebrow>
-            <Heading
-              as="span"
-              size="3xl"
-              weight="black"
-              color={maskedStatus === "PRESENT" ? "sage" : isExcusedOrLate ? "graphite" : "default"}
-              className="leading-none my-0.5"
-            >
-              {formatLocalizedDate(event.date_time, { day: "numeric" }, undefined, tz)}
-            </Heading>
-            <Eyebrow as="span" color="muted">
-              {formatLocalizedDate(event.date_time, { weekday: "short" }, undefined, tz)}
-            </Eyebrow>
-          </div>
-
+        <div className="relative flex items-stretch rounded-xl">
+          {/* stretched click-layer (real <button>, sits under the location
+              badge) — toggles the inline detail without nesting controls */}
+          <button
+            type="button"
+            onClick={() => { if (!reportingMode) onToggle(); }}
+            aria-expanded={isExpanded}
+            aria-label={t("schedule.rehearsal.toggle_detail", "Pokaż szczegóły próby: {{title}}", {
+              title: event.title,
+            })}
+            className="absolute inset-0 z-[1] cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+          />
           {/* content column */}
           <div className="flex-1 min-w-0 px-4 py-3.5 flex flex-col justify-center gap-1.5">
             {/* badges row */}
@@ -183,7 +215,7 @@ export const TimelineRehearsalCard = ({
               size="xl"
               weight="bold"
               color={isExcusedOrLate ? "graphite" : "default"}
-              truncate
+              className="line-clamp-2"
             >
               {event.title}
             </Heading>
@@ -193,60 +225,45 @@ export const TimelineRehearsalCard = ({
               <DualTimeDisplay
                 value={event.date_time}
                 timeZone={tz}
-                icon={<Clock size={11} className="text-ethereal-gold/70" aria-hidden="true" />}
+                icon={<Clock size={13} className="text-ethereal-gold" aria-hidden="true" />}
                 containerClassName="flex items-center gap-1.5"
-                primaryTimeClassName="flex items-center gap-1.5"
-                localTimeClassName="text-[9px] text-ethereal-graphite/50 font-medium normal-case tracking-normal pl-1.5"
+                primaryTimeClassName="flex items-center gap-1.5 font-semibold text-ethereal-ink"
+                localTimeClassName="text-[10px] text-ethereal-graphite/50 font-medium normal-case tracking-normal pl-1.5"
               />
-              <LocationPreview
-                locationRef={event.location}
-                fallback={t("schedule.rehearsal.no_location", "Brak")}
-                variant="minimal"
-              />
+              <span className="relative z-[2] flex min-w-0 max-w-full">
+                <LocationPreview
+                  locationRef={event.location}
+                  fallback={t("schedule.rehearsal.no_location", "Brak")}
+                  variant="minimal"
+                />
+              </span>
             </div>
           </div>
 
-          {/* chevron */}
-          <div className="shrink-0 flex items-center pr-4 text-ethereal-incense/30 group-hover:text-ethereal-gold/70 transition-colors">
+          {/* chevron (decorative — stretched button owns the toggle) */}
+          <div className="shrink-0 flex items-center pr-4">
             <motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
               transition={{ duration: 0.25 }}
+              className="rounded-full bg-ethereal-ink/[0.04] p-1.5 text-ethereal-incense/40 transition-colors group-hover:bg-ethereal-gold/10 group-hover:text-ethereal-gold"
             >
-              <ChevronDown size={18} aria-hidden="true" />
+              <ChevronDown size={16} aria-hidden="true" />
             </motion.div>
           </div>
         </div>
 
-        {/* ── action buttons — mobile full-width, desktop sidebar ────── */}
+        {/* ── action buttons — mobile: stacked full-width (no clipping),
+             desktop: sidebar inside the expanded panel ─────────────────── */}
         {viewMode === "UPCOMING" && !reportingMode && (
-          <div className="flex gap-2 px-4 pb-4 pt-0 sm:hidden">
-            {maskedStatus !== "PRESENT" && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleConfirmPresence}
-                disabled={isSubmitting}
-                isLoading={isSubmitting}
-                leftIcon={!isSubmitting ? <Check size={13} aria-hidden="true" /> : undefined}
-                className="flex-1 bg-ethereal-sage border-ethereal-sage hover:bg-ethereal-sage/80"
-              >
-                {t("schedule.rehearsal.action.confirm_long", "Potwierdź Obecność")}
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={enableReportingMode}
-              className={cn(
-                "flex-1",
-                isExcusedOrLate ? "" : "text-ethereal-crimson hover:border-ethereal-crimson/30",
-              )}
-              leftIcon={<AlertCircle size={13} aria-hidden="true" />}
-            >
-              {currentMaskedStatus
-                ? t("schedule.rehearsal.action.edit", "Edytuj")
-                : t("schedule.rehearsal.action.report_issue", "Zgłoś")}
-            </Button>
+          <div className="flex flex-col gap-2 px-4 pb-4 pt-0 sm:hidden">
+            <RehearsalActions
+              fullWidth
+              maskedStatus={maskedStatus}
+              currentMaskedStatus={currentMaskedStatus}
+              isSubmitting={isSubmitting}
+              onConfirm={handleConfirmPresence}
+              onReport={enableReportingMode}
+            />
           </div>
         )}
 
@@ -290,7 +307,7 @@ export const TimelineRehearsalCard = ({
                   </Eyebrow>
                   <GlassCard variant="light" padding="sm" isHoverable={false} className="flex-1 rounded-2xl">
                     {event.focus ? (
-                      <Text size="sm" color="default" className="italic font-serif whitespace-pre-wrap leading-relaxed">
+                      <Text size="base" color="default" className="italic font-serif whitespace-pre-wrap leading-relaxed">
                         {event.focus}
                       </Text>
                     ) : (
@@ -338,35 +355,22 @@ export const TimelineRehearsalCard = ({
                 </div>
               </div>
 
+              {viewMode === "UPCOMING" && (
+                <div className="px-4 sm:px-6 pb-4">
+                  <AddToCalendar event={event} tone="light" />
+                </div>
+              )}
+
               {/* desktop action buttons inside expanded — hidden on mobile (bottom row handles it) */}
               {viewMode === "UPCOMING" && (
                 <div className="hidden sm:flex gap-2 px-6 pb-5 pt-0 justify-end border-t border-ethereal-incense/10">
-                  {maskedStatus !== "PRESENT" && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleConfirmPresence}
-                      disabled={isSubmitting}
-                      isLoading={isSubmitting}
-                      leftIcon={!isSubmitting ? <Check size={13} aria-hidden="true" /> : undefined}
-                      className="bg-ethereal-sage border-ethereal-sage hover:bg-ethereal-sage/80"
-                    >
-                      {t("schedule.rehearsal.action.confirm_short", "Potwierdź")}
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={enableReportingMode}
-                    className={cn(
-                      isExcusedOrLate ? "" : "text-ethereal-crimson hover:border-ethereal-crimson/30",
-                    )}
-                    leftIcon={<AlertCircle size={13} aria-hidden="true" />}
-                  >
-                    {currentMaskedStatus
-                      ? t("schedule.rehearsal.action.edit", "Edytuj")
-                      : t("schedule.rehearsal.action.report_issue", "Zgłoś problem")}
-                  </Button>
+                  <RehearsalActions
+                    maskedStatus={maskedStatus}
+                    currentMaskedStatus={currentMaskedStatus}
+                    isSubmitting={isSubmitting}
+                    onConfirm={handleConfirmPresence}
+                    onReport={enableReportingMode}
+                  />
                 </div>
               )}
             </motion.div>

@@ -43,7 +43,6 @@ export const useMaterialsData = (searchQuery = "", enabled = true) => {
         project: item.project,
         participationId: item.participation_id,
         participationStatus: item.participation_status,
-        fee: item.fee,
         program: item.program.map(prioritiseMyTrack),
       }))
       .sort((a, b) => {

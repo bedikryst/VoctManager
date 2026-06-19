@@ -14,10 +14,24 @@ import type {
 } from "@/shared/types";
 import type {
   ScheduleAttendanceReportDTO,
+  ScheduleDashboardItem,
   EnrichedRehearsal,
 } from "../types/schedule.dto";
 
 export const ScheduleService = {
+  /**
+   * The artist's personal schedule, pre-joined server-side: projects they are
+   * cast in + rehearsals they are invited to, each carrying their participation
+   * and attendance. Replaces the four separate list calls the timeline used to
+   * fetch and re-join on the client.
+   */
+  getScheduleDashboard: async (): Promise<ScheduleDashboardItem[]> => {
+    const response = await api.get<ScheduleDashboardItem[]>(
+      "/api/participations/schedule-dashboard/",
+    );
+    return response.data;
+  },
+
   getRehearsals: async (): Promise<EnrichedRehearsal[]> => {
     const response = await api.get<EnrichedRehearsal[]>("/api/rehearsals/");
     return response.data;

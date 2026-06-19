@@ -16,13 +16,16 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { CheckCircle2, ExternalLink, FileDown, RefreshCcw, Trash2 } from "lucide-react";
+import { CheckCircle2, FileDown, RefreshCcw, SquarePen, Trash2 } from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { EditionStatusBadge } from "@/shared/ui/composites/repertoire";
 import { INGESTION_STATUS, type ScoreEditionSummary } from "@/shared/types";
+import { useScoreAnnotator } from "@/features/annotations";
+import { MaterialsService } from "@/features/materials/api/materials.service";
 
 import {
   useApproveEdition,
@@ -57,10 +60,17 @@ export const EditionsList = ({
   const [pendingApproveId, setPendingApproveId] = useState<string | null>(null);
   const [pendingReingestId, setPendingReingestId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [openEditionId, setOpenEditionId] = useState<string | null>(null);
 
   const approve = useApproveEdition();
   const reingest = useReingestEdition();
   const remove = useDeleteEdition();
+
+  // In-app score viewer + conductor markup editor. This is the manager-native
+  // authoring surface: managers may always draw (archive is manager-only), and
+  // the `shared` layer they leave here is what reaches the choir's songbook.
+  const annotator = useScoreAnnotator({ editionId: openEditionId, canEdit: true });
+  const openEdition = editions.find((e) => e.id === openEditionId) ?? null;
 
   if (editions.length === 0) return null;
 
@@ -204,18 +214,12 @@ export const EditionsList = ({
                   <div className="flex flex-wrap items-center gap-2">
                     {edition.pdf_file && (
                       <Button
-                        asChild
                         variant="outline"
                         size="sm"
-                        leftIcon={<ExternalLink size={13} aria-hidden="true" />}
+                        leftIcon={<SquarePen size={13} aria-hidden="true" />}
+                        onClick={() => setOpenEditionId(edition.id)}
                       >
-                        <a
-                          href={edition.pdf_file}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {t("archive.editions.open_pdf", "Otwórz PDF")}
-                        </a>
+                        {t("archive.editions.open_annotate", "Otwórz i adnotuj")}
                       </Button>
                     )}
                     {canApprove && (
@@ -312,6 +316,32 @@ export const EditionsList = ({
         isLoading={remove.isPending}
         onCancel={() => setPendingDeleteId(null)}
         onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+      />
+
+      <PdfViewerModal
+        isOpen={openEditionId !== null}
+        title={
+          openEdition?.original_filename ||
+          t("archive.editions.untitled", "Bez nazwy")
+        }
+        subtitle={
+          [
+            openEdition?.publisher,
+            openEdition?.edition_year ? String(openEdition.edition_year) : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        }
+        fileName={openEdition?.original_filename}
+        fetchBlob={
+          openEditionId
+            ? () => MaterialsService.fetchScoreEditionBlob(openEditionId)
+            : null
+        }
+        docKey={openEditionId ?? undefined}
+        toolbarSlot={annotator.toolbarSlot}
+        renderPageOverlay={annotator.renderPageOverlay}
+        onClose={() => setOpenEditionId(null)}
       />
     </>
   );

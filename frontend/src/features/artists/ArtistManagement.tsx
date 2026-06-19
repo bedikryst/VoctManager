@@ -146,7 +146,7 @@ export default function ArtistManagement(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto max-w-7xl cursor-default px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+      <div className="relative mx-auto max-w-7xl cursor-default pb-24 pt-6">
         <StaggeredBentoContainer className="space-y-5">
           <StaggeredBentoItem>
             <PageHeader

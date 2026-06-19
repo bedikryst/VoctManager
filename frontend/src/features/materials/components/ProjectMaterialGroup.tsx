@@ -2,9 +2,11 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Archive, Briefcase, CalendarDays } from "lucide-react";
 
-import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { PieceRow } from "./PieceRow";
+import { OfflineDownloadControl } from "./OfflineDownloadControl";
 import type { MaterialsDashboardGroup } from "../types/materials.dto";
 
 interface ProjectMaterialGroupProps {
@@ -16,6 +18,14 @@ export const ProjectMaterialGroup = ({
 }: ProjectMaterialGroupProps): React.JSX.Element => {
   const { t } = useTranslation();
   const isArchived = group.project.status === "DONE";
+
+  const total = group.program.length;
+  const ready = group.program.filter(
+    (item) => item.piece.my_readiness === "READY",
+  ).length;
+  const readyPct = total > 0 ? Math.round((ready / total) * 100) : 0;
+  const ringTone =
+    readyPct === 100 ? "sage" : readyPct > 0 ? "gold" : "graphite";
 
   return (
     <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
@@ -55,7 +65,7 @@ export const ProjectMaterialGroup = ({
           </div>
         </div>
 
-        {isArchived && (
+        {isArchived ? (
           <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-ethereal-marble/60 border border-ethereal-marble rounded-lg shadow-glass-solid">
             <Archive
               size={11}
@@ -66,6 +76,27 @@ export const ProjectMaterialGroup = ({
               {t("materials.project.archived_badge", "Archiwum")}
             </Eyebrow>
           </div>
+        ) : (
+          total > 0 && (
+            <div className="shrink-0 flex items-center gap-2.5">
+              <OfflineDownloadControl group={group} />
+              <Text
+                size="xs"
+                color="muted"
+                className="hidden text-right leading-tight sm:block"
+              >
+                {t("materials.project.readiness_caption", "{{ready}} z {{total}} partii gotowych", {
+                  ready,
+                  total,
+                })}
+              </Text>
+              <CompletionRing value={readyPct} tone={ringTone} size={44}>
+                <span className="text-[11px] font-bold tabular-nums text-ethereal-ink">
+                  {ready}/{total}
+                </span>
+              </CompletionRing>
+            </div>
+          )
         )}
       </div>
 

@@ -98,7 +98,7 @@ export default function CrewManagement(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-5 px-4 pb-24 pt-6 sm:px-0">
+      <div className="relative mx-auto flex max-w-6xl flex-col gap-5 pb-24 pt-6">
         <StaggeredBentoContainer className="flex flex-col gap-5">
           <StaggeredBentoItem>
             <PageHeader

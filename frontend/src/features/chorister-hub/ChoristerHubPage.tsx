@@ -1,21 +1,20 @@
 // chorister-hub/ChoristerHubPage.tsx
-// "Moja Kartoteka" — the chorister's long-horizon surface: artist passport
-// (repertoire, seasons, voice lines) plus the institutional knowledge base.
+// "Moja Karta" — the chorister's membership identity surface. A persistent
+// membership hero anchors three intent-scoped views: my ensemble (people),
+// the knowledge base ("Niezbędnik"), and my long-horizon journey. Mobile-first.
 // Default export required for React.lazy route loading.
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Library, UserRound } from 'lucide-react';
+import { History, Library, Users } from 'lucide-react';
 
 import { useAuth } from '@/app/providers/AuthProvider';
-import { PageHeader } from '@/shared/ui/composites/PageHeader';
 import { SegmentedTabs } from '@/shared/ui/composites/SegmentedTabs';
+import { ConfirmModal } from '@/shared/ui/composites/ConfirmModal';
 import { PageTransition } from '@/shared/ui/kinematics/PageTransition';
 import { EtherealLoader } from '@/shared/ui/kinematics/EtherealLoader';
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from '@/shared/ui/kinematics/StaggeredBentoGrid';
 
+import { MembershipCard } from './components/MembershipCard';
+import { MySectionModule } from './components/MySectionModule';
 import { KnowledgeBaseModule } from './components/KnowledgeBaseModule';
 import { ArtistIdentityModule } from './components/ArtistIdentityModule';
 import { CategoryFormModal } from './components/modals/CategoryFormModal';
@@ -23,28 +22,11 @@ import { DocumentUploadModal } from './components/modals/DocumentUploadModal';
 import { DocumentPreviewModal } from './components/modals/DocumentPreviewModal';
 import { useChoristerHub } from './hooks/useChoristerHub';
 
-type Tab = 'identity' | 'knowledge';
-
-const TABS = [
-  {
-    id: 'identity' as const,
-    labelKey: 'chorister_hub.tabs.identity',
-    fallback: 'Kartoteka Artysty',
-    Icon: UserRound,
-  },
-  {
-    id: 'knowledge' as const,
-    labelKey: 'chorister_hub.tabs.knowledge',
-    fallback: 'Dokumenty',
-    Icon: Library,
-  },
-];
+type Tab = 'team' | 'knowledge' | 'journey';
 
 export default function ChoristerHubPage(): React.JSX.Element {
   const { t } = useTranslation();
   const { user } = useAuth();
-
-  const [activeTab, setActiveTab] = useState<Tab>('identity');
 
   const {
     isManagerUser,
@@ -56,67 +38,103 @@ export default function ChoristerHubPage(): React.JSX.Element {
     previewDocument,
     isCategoryPending,
     isDocumentPending,
+    pendingDeletion,
+    isDeletionPending,
     handleAddCategory,
     handleEditCategory,
-    handleDeleteCategory,
     handleCategoryModalSubmit,
     handleCategoryModalClose,
     handleUploadDocument,
     handleDocumentUploadSubmit,
-    handleDeleteDocument,
     handleDocumentModalClose,
+    requestDeleteCategory,
+    requestDeleteDocument,
+    handleConfirmDelete,
+    handleCancelDelete,
     handlePreviewDocument,
     handlePreviewModalClose,
   } = useChoristerHub(user);
 
+  // A manager has no concerts and no personal passport, so they get the curator
+  // surface only: knowledge-base curation, no tabs. Choristers get the full set.
+  const tabs = useMemo(
+    () => [
+      { id: 'team' as const, label: t('chorister_hub.tabs.team', 'Z kim śpiewam'), Icon: Users },
+      { id: 'knowledge' as const, label: t('chorister_hub.tabs.knowledge', 'Niezbędnik'), Icon: Library },
+      { id: 'journey' as const, label: t('chorister_hub.tabs.journey', 'Moja droga'), Icon: History },
+    ],
+    [t],
+  );
+
+  const [activeTab, setActiveTab] = useState<Tab>('team');
+
+  const deletionCopy = pendingDeletion
+    ? pendingDeletion.kind === 'category'
+      ? {
+          title: t('chorister_hub.confirm.category_title', 'Usunąć kategorię?'),
+          description: t(
+            'chorister_hub.confirm.category_body',
+            'Kategoria „{{name}}" i wszystkie jej dokumenty zostaną usunięte. Tej operacji nie można cofnąć.',
+            { name: pendingDeletion.category.name },
+          ),
+        }
+      : {
+          title: t('chorister_hub.confirm.document_title', 'Usunąć dokument?'),
+          description: t(
+            'chorister_hub.confirm.document_body',
+            'Dokument „{{name}}" zostanie usunięty dla wszystkich. Tej operacji nie można cofnąć.',
+            { name: pendingDeletion.document.title },
+          ),
+        }
+    : { title: '', description: '' };
+
   return (
     <PageTransition>
-      <div className="mx-auto max-w-5xl cursor-default space-y-6 px-4 pb-24 md:px-6">
-        <div className="pt-6">
-          <PageHeader
-            size="standard"
-            roleText={t('chorister_hub.page.badge', 'Historia i Wiedza')}
-            title={t('chorister_hub.page.title', 'Moja')}
-            titleHighlight={t('chorister_hub.page.title_highlight', 'Kartoteka.')}
-          />
-        </div>
+      <div className="mx-auto max-w-3xl cursor-default space-y-6 px-1 pb-28 pt-6 sm:px-0">
+        <Suspense fallback={<EtherealLoader />}>
+          <MembershipCard />
+        </Suspense>
 
-        <SegmentedTabs
-          ariaLabel={t('chorister_hub.tabs.aria_label', 'Sekcje kartoteki')}
-          items={TABS.map(({ id, labelKey, fallback, Icon }) => ({
-            id,
-            label: t(labelKey, fallback),
-            Icon,
-          }))}
-          value={activeTab}
-          onChange={setActiveTab}
-        />
+        {isManagerUser ? (
+          <Suspense fallback={<EtherealLoader />}>
+            <KnowledgeBaseModule
+              isManager
+              onAddCategory={handleAddCategory}
+              onEditCategory={handleEditCategory}
+              onDeleteCategory={requestDeleteCategory}
+              onUploadDocument={handleUploadDocument}
+              onDeleteDocument={requestDeleteDocument}
+              onPreviewDocument={handlePreviewDocument}
+            />
+          </Suspense>
+        ) : (
+          <>
+            <SegmentedTabs
+              ariaLabel={t('chorister_hub.tabs.aria_label', 'Sekcje karty')}
+              items={tabs}
+              value={activeTab}
+              onChange={setActiveTab}
+            />
 
-        <StaggeredBentoContainer className="flex flex-col gap-10">
-          {activeTab === 'identity' && (
-            <StaggeredBentoItem key="identity">
-              <Suspense fallback={<EtherealLoader />}>
-                <ArtistIdentityModule />
-              </Suspense>
-            </StaggeredBentoItem>
-          )}
+            <Suspense fallback={<EtherealLoader />}>
+              {activeTab === 'team' && <MySectionModule />}
 
-          {activeTab === 'knowledge' && (
-            <StaggeredBentoItem key="knowledge">
-              <Suspense fallback={<EtherealLoader />}>
+              {activeTab === 'knowledge' && (
                 <KnowledgeBaseModule
-                  isManager={isManagerUser}
+                  isManager={false}
                   onAddCategory={handleAddCategory}
                   onEditCategory={handleEditCategory}
-                  onDeleteCategory={handleDeleteCategory}
+                  onDeleteCategory={requestDeleteCategory}
                   onUploadDocument={handleUploadDocument}
-                  onDeleteDocument={handleDeleteDocument}
+                  onDeleteDocument={requestDeleteDocument}
                   onPreviewDocument={handlePreviewDocument}
                 />
-              </Suspense>
-            </StaggeredBentoItem>
-          )}
-        </StaggeredBentoContainer>
+              )}
+
+              {activeTab === 'journey' && <ArtistIdentityModule />}
+            </Suspense>
+          </>
+        )}
       </div>
 
       {isManagerUser && (
@@ -134,6 +152,16 @@ export default function ChoristerHubPage(): React.JSX.Element {
             onClose={handleDocumentModalClose}
             onSubmit={handleDocumentUploadSubmit}
             isPending={isDocumentPending}
+          />
+          <ConfirmModal
+            isOpen={pendingDeletion != null}
+            title={deletionCopy.title}
+            description={deletionCopy.description}
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+            isLoading={isDeletionPending}
+            confirmText={t('common.actions.delete', 'Usuń')}
+            cancelText={t('common.cancel', 'Anuluj')}
           />
         </>
       )}

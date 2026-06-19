@@ -137,7 +137,7 @@ export default function Rehearsals(): React.JSX.Element {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 px-4 pb-24 pt-6 sm:px-6">
+      <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 pb-24 pt-6">
         <StaggeredBentoContainer className="!flex min-w-0 flex-col gap-5">
           <StaggeredBentoItem>
             <PageHeader

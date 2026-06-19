@@ -14,9 +14,9 @@ interface KnowledgeBaseModuleProps {
   isManager: boolean;
   onAddCategory: () => void;
   onEditCategory: (category: DocumentCategoryDTO) => void;
-  onDeleteCategory: (categoryId: string) => void;
+  onDeleteCategory: (category: DocumentCategoryDTO) => void;
   onUploadDocument: (category: DocumentCategoryDTO) => void;
-  onDeleteDocument: (categoryId: string, documentId: string) => void;
+  onDeleteDocument: (categoryId: string, doc: DocumentFileDTO) => void;
   onPreviewDocument: (doc: DocumentFileDTO) => void;
 }
 
@@ -41,12 +41,12 @@ export const KnowledgeBaseModule = ({
           </div>
           <div>
             <Heading size="xl" className="tracking-tight">
-              {t("chorister_hub.knowledge_base.title", "Knowledge Base")}
+              {t("chorister_hub.knowledge_base.title", "Niezbędnik")}
             </Heading>
             <Text size="xs" color="muted">
               {t(
                 "chorister_hub.knowledge_base.subtitle",
-                "Regulations, policies and institutional documents",
+                "Regulaminy, zasady i dokumenty zespołu",
               )}
             </Text>
           </div>
@@ -59,7 +59,7 @@ export const KnowledgeBaseModule = ({
             leftIcon={<Plus size={14} aria-hidden="true" />}
             onClick={onAddCategory}
           >
-            {t("chorister_hub.knowledge_base.add_category", "New category")}
+            {t("chorister_hub.knowledge_base.add_category", "Nowa kategoria")}
           </Button>
         )}
       </div>

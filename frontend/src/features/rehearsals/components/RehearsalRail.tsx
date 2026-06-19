@@ -28,7 +28,7 @@ import type { Project, Rehearsal } from "@/shared/types";
 import type { ProjectTabType } from "../types/rehearsals.dto";
 import type { AttendanceTally } from "../lib/attendanceStats";
 import { EMPTY_TALLY, isPast, isRehearsalLive } from "../lib/attendanceStats";
-import { CompletionRing } from "./CompletionRing";
+import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
 
 interface RehearsalRailProps {
   projectTab: ProjectTabType;

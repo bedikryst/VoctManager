@@ -1,108 +1,94 @@
 /**
  * @file useScheduleData.ts
- * @description Encapsulates timeline aggregation and attendance reporting for the artist schedule.
+ * @description Builds the artist timeline from the server-joined schedule
+ * dashboard (projects + invited rehearsals, each pre-joined with the artist's
+ * participation and attendance). The former four-collection client-side join is
+ * gone — this is now a thin map into view-ready `TimelineEvent`s plus paging,
+ * attendance stats and the RSVP submit.
  * @architecture Enterprise SaaS 2026
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { AttendanceStatus } from "@/shared/types";
+import type { AttendanceStatus, Project } from "@/shared/types";
 import {
-  useScheduleContextData,
+  useScheduleDashboard,
   useUpsertScheduleAttendance,
 } from "../api/schedule.queries";
-import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
+import type {
+  ScheduleAttendanceStats,
+  ScheduleViewMode,
+  TimelineEvent,
+} from "../types/schedule.dto";
+
+// History can span years; render it in pages so a long-serving chorister never
+// pays for hundreds of animated cards on a single scroll.
+const PAST_PAGE_SIZE = 30;
 
 export const useScheduleData = (artistId?: string | number) => {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ScheduleViewMode>("UPCOMING");
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [pastLimit, setPastLimit] = useState(PAST_PAGE_SIZE);
 
-  const { rehearsals, projects, participations, attendances, isLoading } =
-    useScheduleContextData(artistId);
+  // A fresh dive into history always starts from the most recent page.
+  useEffect(() => {
+    if (viewMode === "PAST") setPastLimit(PAST_PAGE_SIZE);
+  }, [viewMode]);
+
+  const { data = [], isLoading } = useScheduleDashboard(artistId);
   const attendanceMutation = useUpsertScheduleAttendance();
 
   const timelineEvents = useMemo<TimelineEvent[]>(() => {
     if (!artistId || isLoading) return [];
 
     const events: TimelineEvent[] = [];
-    const activeParticipations = participations.filter(
-      (participation) => participation.status !== "DEC",
-    );
 
-    rehearsals.forEach((rehearsal) => {
-      const myParticipation = activeParticipations.find(
-        (participation) =>
-          String(participation.project) === String(rehearsal.project),
-      );
-
-      if (!myParticipation) return;
-
-      const isInvited =
-        !rehearsal.invited_participations ||
-        rehearsal.invited_participations.length === 0 ||
-        rehearsal.invited_participations.includes(String(myParticipation.id));
-
-      if (isInvited) {
-        const project = projects.find(
-          (candidate) => String(candidate.id) === String(rehearsal.project),
-        );
-        const myAttendance = attendances.find(
-          (attendance) =>
-            String(attendance.rehearsal) === String(rehearsal.id) &&
-            String(attendance.participation) === String(myParticipation.id),
-        );
-
+    for (const item of data) {
+      if (item.type === "PROJECT") {
+        const proj: Project = item.project;
+        // The server already drops cancelled projects; guard anyway.
+        if (proj.status === "CANC") continue;
         events.push({
-          id: `REH-${rehearsal.id}`,
-          type: "REHEARSAL",
-          rawObj: rehearsal,
-          date_time: new Date(rehearsal.date_time),
-          title: `${t("schedule.event.rehearsal_prefix", "Próba:")} ${project?.title || t("schedule.event.generic_event", "Wydarzenie")}`,
-          location: rehearsal.location,
-          focus: rehearsal.focus,
-          is_mandatory: rehearsal.is_mandatory,
-          status: myAttendance?.status || null,
-          excuse_note: myAttendance?.excuse_note || null,
-          absences: rehearsal.absent_count || 0,
-          project_id: rehearsal.project,
-        });
-      }
-    });
-
-    projects.forEach((project) => {
-      const isParticipating = activeParticipations.some(
-        (participation) => String(participation.project) === String(project.id),
-      );
-
-      if (isParticipating && project.status !== "CANC") {
-        events.push({
-          id: `PROJ-${project.id}`,
+          id: `PROJ-${proj.id}`,
           type: "PROJECT",
-          rawObj: project,
-          date_time: new Date(project.date_time),
-          title: project.title,
-          location: project.location,
-          call_time: project.call_time,
-          run_sheet: project.run_sheet,
-          description: project.description,
+          rawObj: proj,
+          date_time: new Date(proj.date_time),
+          title: proj.title,
+          location: proj.location,
+          call_time: proj.call_time,
+          run_sheet: proj.run_sheet,
+          description: proj.description,
           status: null,
-          project_id: project.id,
+          project_id: proj.id,
+          participationId: item.participation_id ?? undefined,
+        });
+      } else {
+        const reh = item.rehearsal;
+        events.push({
+          id: `REH-${reh.id}`,
+          type: "REHEARSAL",
+          rawObj: reh,
+          date_time: new Date(reh.date_time),
+          // No "Próba:" prefix here — the PRÓBA badge already says it. The
+          // rehearsal label is re-added only for the calendar export.
+          title: item.project_title || t("schedule.event.generic_event", "Wydarzenie"),
+          location: reh.location,
+          focus: reh.focus,
+          is_mandatory: reh.is_mandatory,
+          status: item.my_attendance?.status ?? null,
+          excuse_note: item.my_attendance?.excuse_note ?? null,
+          absences: reh.absent_count || 0,
+          project_id: reh.project,
+          participationId: item.participation_id ?? undefined,
+          attendanceId: item.my_attendance?.id,
         });
       }
-    });
+    }
 
     return events;
-  }, [
-    artistId,
-    isLoading,
-    rehearsals,
-    projects,
-    participations,
-    attendances,
-    t,
-  ]);
+  }, [artistId, isLoading, data, t]);
 
   const filteredEvents = useMemo(() => {
     const threshold = new Date(Date.now() - 4 * 60 * 60 * 1000);
@@ -121,9 +107,68 @@ export const useScheduleData = (artistId?: string | number) => {
       );
   }, [timelineEvents, viewMode]);
 
+  // The chorister's own attendance mirror — computed over every past rehearsal
+  // they were invited to (not just the windowed/visible page).
+  const attendanceStats = useMemo<ScheduleAttendanceStats>(() => {
+    const nowMs = Date.now();
+    const pastRehearsals = timelineEvents
+      .filter(
+        (event) =>
+          event.type === "REHEARSAL" && event.date_time.getTime() < nowMs,
+      )
+      .sort((left, right) => right.date_time.getTime() - left.date_time.getTime());
+
+    let present = 0;
+    let late = 0;
+    let absent = 0;
+    let excused = 0;
+    for (const event of pastRehearsals) {
+      if (event.status === "PRESENT") present += 1;
+      else if (event.status === "LATE") late += 1;
+      else if (event.status === "ABSENT") absent += 1;
+      else if (event.status === "EXCUSED") excused += 1;
+    }
+
+    const accountable = present + late + absent;
+    const rate =
+      accountable > 0
+        ? Math.round(((present + late) / accountable) * 100)
+        : null;
+
+    // Streak walks from the most recent rehearsal; an absence breaks it, while
+    // an excused or not-yet-marked rehearsal is treated as neutral (skipped).
+    let streak = 0;
+    for (const event of pastRehearsals) {
+      if (event.status === "PRESENT" || event.status === "LATE") streak += 1;
+      else if (event.status === "EXCUSED" || event.status == null) continue;
+      else break;
+    }
+
+    return {
+      present,
+      late,
+      absent,
+      excused,
+      total: pastRehearsals.length,
+      accountable,
+      rate,
+      streak,
+    };
+  }, [timelineEvents]);
+
+  // PAST is windowed; UPCOMING shows everything (the season ahead is finite).
+  const visibleEvents = useMemo(
+    () =>
+      viewMode === "PAST" ? filteredEvents.slice(0, pastLimit) : filteredEvents,
+    [filteredEvents, viewMode, pastLimit],
+  );
+  const hasMorePast =
+    viewMode === "PAST" && filteredEvents.length > visibleEvents.length;
+  const loadMorePast = () => setPastLimit((prev) => prev + PAST_PAGE_SIZE);
+
   const handleAbsenceSubmit = async (
     eventId: string,
-    projectId: string | number,
+    _projectId: string | number,
     status: AttendanceStatus,
     notes: string,
   ) => {
@@ -132,25 +177,27 @@ export const useScheduleData = (artistId?: string | number) => {
     );
 
     try {
-      const myParticipation = participations.find(
-        (participation) => String(participation.project) === String(projectId),
+      // The dashboard already carries this artist's participation + existing
+      // attendance for the rehearsal — no client-side join needed.
+      const item = data.find(
+        (entry) =>
+          entry.type === "REHEARSAL" &&
+          String(entry.rehearsal.id) === String(eventId),
       );
+      const participationId =
+        item?.type === "REHEARSAL" ? item.participation_id : null;
+      const existingAttendanceId =
+        item?.type === "REHEARSAL" ? item.my_attendance?.id : undefined;
 
-      if (!myParticipation) {
+      if (!participationId) {
         throw new Error("Artist participation is missing.");
       }
 
-      const existingAttendance = attendances.find(
-        (attendance) =>
-          String(attendance.rehearsal) === String(eventId) &&
-          String(attendance.participation) === String(myParticipation.id),
-      );
-
       await attendanceMutation.mutateAsync({
-        existingAttendanceId: existingAttendance?.id,
+        existingAttendanceId,
         payload: {
           rehearsal: eventId,
-          participation: myParticipation.id,
+          participation: participationId,
           status,
           excuse_note: notes,
         },
@@ -161,7 +208,7 @@ export const useScheduleData = (artistId?: string | number) => {
         { id: toastId },
       );
       return true;
-    } catch (error) {
+    } catch {
       toast.error(t("schedule.toast.submit_error_title", "Błąd zapisu"), {
         id: toastId,
         description: t(
@@ -180,6 +227,10 @@ export const useScheduleData = (artistId?: string | number) => {
     expandedEventId,
     setExpandedEventId,
     filteredEvents,
+    visibleEvents,
+    hasMorePast,
+    loadMorePast,
+    attendanceStats,
     handleAbsenceSubmit,
     artistId,
   };

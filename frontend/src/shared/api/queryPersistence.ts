@@ -10,7 +10,7 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 export const QUERY_CACHE_STORAGE_KEY = "voctmanager-query-cache";
 
 /** Bump to invalidate persisted snapshots after breaking cache-shape changes. */
-export const QUERY_CACHE_BUSTER = "2026-06-chorister-zone";
+export const QUERY_CACHE_BUSTER = "2026-06-no-blob-persist";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

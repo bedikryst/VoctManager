@@ -5,12 +5,13 @@
  * visible — never hidden behind an accordion. The whole row navigates to the
  * piece page for everything else.
  */
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, FileText, Lock, Play, Square } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
 import { cn } from "@/shared/lib/utils";
@@ -18,6 +19,7 @@ import {
   buildPracticeSources,
   usePracticePlayer,
 } from "../player/PracticePlayerProvider";
+import { MaterialsService } from "../api/materials.service";
 import { ReadinessDot } from "./ReadinessControl";
 import type { MaterialsPiece } from "../types/materials.dto";
 
@@ -39,6 +41,7 @@ export const PieceRow = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { engine, snapshot } = usePracticePlayer();
+  const [isScoreOpen, setIsScoreOpen] = useState<boolean>(false);
 
   const pdfLinks = getPiecePdfLinks({ editions: piece.editions });
   const primaryPdf = pdfLinks[0] ?? null;
@@ -64,6 +67,7 @@ export const PieceRow = ({
   };
 
   return (
+    <>
     <GlassCard
       variant={isArchived ? "dark" : "ethereal"}
       padding="none"
@@ -157,18 +161,19 @@ export const PieceRow = ({
       {!isArchived && (primaryPdf || hasTracks) && (
         <div className="flex gap-2 border-t border-ethereal-marble/60 bg-ethereal-parchment/25 px-3.5 py-2.5 sm:px-4">
           {primaryPdf && (
-            <a
-              href={primaryPdf.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(event) => event.stopPropagation()}
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsScoreOpen(true);
+              }}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-3 py-2 shadow-glass-solid transition-all hover:bg-ethereal-marble/50 active:scale-95"
             >
               <FileText size={13} className="text-ethereal-sage" aria-hidden="true" />
               <Eyebrow color="default">
                 {t("materials.row.score", "Nuty")}
               </Eyebrow>
-            </a>
+            </button>
           )}
           {hasTracks && (
             <button
@@ -199,5 +204,18 @@ export const PieceRow = ({
         </div>
       )}
     </GlassCard>
+
+      {primaryPdf && (
+        <PdfViewerModal
+          isOpen={isScoreOpen}
+          title={piece.title}
+          subtitle={primaryPdf.label}
+          fileName={primaryPdf.label.endsWith(".pdf") ? primaryPdf.label : `${primaryPdf.label}.pdf`}
+          fetchBlob={() => MaterialsService.fetchScoreEditionBlob(primaryPdf.id)}
+          docKey={primaryPdf.id}
+          onClose={() => setIsScoreOpen(false)}
+        />
+      )}
+    </>
   );
 };
