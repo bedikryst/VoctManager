@@ -160,7 +160,13 @@ registerRoute(
 if (import.meta.env.PROD) {
   registerRoute(
     new NavigationRoute(createHandlerBoundToURL("index.html"), {
-      allowlist: [/^\/panel/, /^\/login/, /^\/documents\//],
+      allowlist: [
+        /^\/panel/,
+        /^\/login/,
+        /^\/activate/,
+        /^\/reset-password/,
+        /^\/documents\//,
+      ],
     }),
   );
 }
