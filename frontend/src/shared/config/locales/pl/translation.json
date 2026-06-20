@@ -425,6 +425,9 @@
       "audio_count_tooltip_few": "{{count}} ścieżek audio",
       "audio_count_tooltip_many": "{{count}} ścieżek audio",
       "audio_count_tooltip_other": "{{count}} ścieżek audio",
+      "badge_awaiting": "AI · do przeglądu",
+      "badge_failed": "AI · błąd",
+      "badge_progress": "AI · w toku",
       "delete_aria": "Usuń utwór {{title}}",
       "edit_title": "Tytuł",
       "edit_voicing": "Obsada",
@@ -2334,6 +2337,18 @@
       "title": "Nowe zaproszenie do projektu"
     },
     "mark_all_read": "Oznacz wszystkie jako przeczytane",
+    "primer": {
+      "description": "Zaraz pojawi się okienko przeglądarki z prośbą o zgodę. Po jej udzieleniu będziesz otrzymywać powiadomienia bezpośrednio na tym urządzeniu — nawet gdy aplikacja jest zamknięta.",
+      "enable": "Włącz powiadomienia",
+      "highlight_control_desc": "Każdy typ zdarzenia możesz włączyć lub wyłączyć osobno.",
+      "highlight_control_label": "Pełna kontrola",
+      "highlight_essential_desc": "Zmiany w próbach, zaproszenia do projektów, pilne wiadomości od managera.",
+      "highlight_essential_label": "Tylko to, co istotne",
+      "highlight_security_desc": "Powiadomienia szyfrowane VAPID. Nie udostępniamy ich nikomu.",
+      "highlight_security_label": "Bezpieczeństwo",
+      "not_now": "Nie teraz",
+      "title": "Włącz powiadomienia push"
+    },
     "section_earlier": "Wcześniejsze",
     "section_new": "Nowe",
     "send_modal": {

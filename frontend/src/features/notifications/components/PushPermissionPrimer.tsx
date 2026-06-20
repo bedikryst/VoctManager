@@ -10,6 +10,7 @@ import React, { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { BellRing, ShieldCheck, Sparkles, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
@@ -22,24 +23,6 @@ export interface PushPermissionPrimerProps {
   onDismiss: () => void;
 }
 
-const HIGHLIGHTS: { icon: React.ReactNode; label: string; description: string }[] = [
-  {
-    icon: <BellRing className="w-4 h-4" />,
-    label: "Tylko to, co istotne",
-    description: "Zmiany w próbach, zaproszenia do projektów, pilne wiadomości od managera.",
-  },
-  {
-    icon: <Sparkles className="w-4 h-4" />,
-    label: "Pełna kontrola",
-    description: "Każdy typ zdarzenia możesz włączyć lub wyłączyć osobno.",
-  },
-  {
-    icon: <ShieldCheck className="w-4 h-4" />,
-    label: "Bezpieczeństwo",
-    description: "Powiadomienia szyfrowane VAPID. Nie udostępniamy ich nikomu.",
-  },
-];
-
 export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
   isOpen,
   isLoading,
@@ -49,6 +32,34 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
   const descriptionId = useId();
+  const { t } = useTranslation();
+
+  const HIGHLIGHTS = [
+    {
+      icon: <BellRing className="w-4 h-4" />,
+      label: t("notifications.primer.highlight_essential_label", "Tylko to, co istotne"),
+      description: t(
+        "notifications.primer.highlight_essential_desc",
+        "Zmiany w próbach, zaproszenia do projektów, pilne wiadomości od managera.",
+      ),
+    },
+    {
+      icon: <Sparkles className="w-4 h-4" />,
+      label: t("notifications.primer.highlight_control_label", "Pełna kontrola"),
+      description: t(
+        "notifications.primer.highlight_control_desc",
+        "Każdy typ zdarzenia możesz włączyć lub wyłączyć osobno.",
+      ),
+    },
+    {
+      icon: <ShieldCheck className="w-4 h-4" />,
+      label: t("notifications.primer.highlight_security_label", "Bezpieczeństwo"),
+      description: t(
+        "notifications.primer.highlight_security_desc",
+        "Powiadomienia szyfrowane VAPID. Nie udostępniamy ich nikomu.",
+      ),
+    },
+  ];
 
   useBodyScrollLock(isOpen);
 
@@ -95,7 +106,7 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
               type="button"
               onClick={onDismiss}
               disabled={isLoading}
-              aria-label="Zamknij"
+              aria-label={t("common.actions.close")}
               className="absolute top-4 right-4 p-2 rounded-lg text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-ethereal-parchment/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <X className="w-4 h-4" />
@@ -107,12 +118,13 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
               </div>
 
               <Heading as="h3" id={titleId} size="lg" weight="bold">
-                Włącz powiadomienia push
+                {t("notifications.primer.title", "Włącz powiadomienia push")}
               </Heading>
               <Text id={descriptionId} color="muted" className="mt-2 leading-relaxed">
-                Zaraz pojawi się okienko przeglądarki z prośbą o zgodę. Po jej udzieleniu
-                będziesz otrzymywać powiadomienia bezpośrednio na tym urządzeniu — nawet
-                gdy aplikacja jest zamknięta.
+                {t(
+                  "notifications.primer.description",
+                  "Zaraz pojawi się okienko przeglądarki z prośbą o zgodę. Po jej udzieleniu będziesz otrzymywać powiadomienia bezpośrednio na tym urządzeniu — nawet gdy aplikacja jest zamknięta.",
+                )}
               </Text>
             </div>
 
@@ -136,10 +148,10 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
 
             <div className="bg-ethereal-alabaster px-7 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t border-ethereal-incense/10">
               <Button variant="ghost" onClick={onDismiss} disabled={isLoading}>
-                Nie teraz
+                {t("notifications.primer.not_now", "Nie teraz")}
               </Button>
               <Button variant="primary" onClick={onAccept} isLoading={isLoading}>
-                Włącz powiadomienia
+                {t("notifications.primer.enable", "Włącz powiadomienia")}
               </Button>
             </div>
           </motion.div>

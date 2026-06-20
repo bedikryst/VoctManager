@@ -9,6 +9,7 @@
     "build": "tsc -b --noEmit && vite build",
     "build:analyze": "tsc -b --noEmit && vite build --mode analyze",
     "lint": "eslint .",
+    "lint:i18n": "eslint --config eslint.i18n-audit.config.js \"src/**/*.tsx\"",
     "preview": "vite preview",
     "extract-i18n": "i18next-cli extract"
   },
@@ -59,6 +60,7 @@
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.1",
+    "eslint-plugin-i18next": "^6.1.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",

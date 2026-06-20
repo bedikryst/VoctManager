@@ -425,6 +425,9 @@
       "audio_count_tooltip_few": "{{count}} audio tracks",
       "audio_count_tooltip_many": "{{count}} audio tracks",
       "audio_count_tooltip_other": "{{count}} audio tracks",
+      "badge_awaiting": "AI · to review",
+      "badge_failed": "AI · error",
+      "badge_progress": "AI · in progress",
       "delete_aria": "Delete piece {{title}}",
       "edit_title": "Title",
       "edit_voicing": "Voicing",
@@ -2334,6 +2337,18 @@
       "title": "New project invitation"
     },
     "mark_all_read": "Mark all as read",
+    "primer": {
+      "description": "A browser dialog will appear asking for your consent. Once granted, you'll receive notifications directly on this device — even when the app is closed.",
+      "enable": "Enable notifications",
+      "highlight_control_desc": "You can enable or disable each event type separately.",
+      "highlight_control_label": "Full control",
+      "highlight_essential_desc": "Rehearsal changes, project invitations, urgent messages from the manager.",
+      "highlight_essential_label": "Only what matters",
+      "highlight_security_desc": "VAPID-encrypted notifications. We don't share them with anyone.",
+      "highlight_security_label": "Security",
+      "not_now": "Not now",
+      "title": "Enable push notifications"
+    },
     "section_earlier": "Earlier",
     "section_new": "New",
     "send_modal": {

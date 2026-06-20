@@ -126,7 +126,7 @@ const StatusChip = ({
           title={t("archive.row.status_awaiting", "AI zakończyło — czeka na weryfikację")}
         >
           <Sparkles size={10} aria-hidden="true" />
-          AI · do przeglądu
+          {t("archive.row.badge_awaiting", "AI · do przeglądu")}
         </span>
       );
     case INGESTION_STATUS.FAILED:
@@ -136,7 +136,7 @@ const StatusChip = ({
           title={t("archive.row.status_failed", "Pipeline AI się nie powiódł")}
         >
           <AlertTriangle size={10} aria-hidden="true" />
-          AI · błąd
+          {t("archive.row.badge_failed", "AI · błąd")}
         </span>
       );
     case INGESTION_STATUS.EXTRACTING:
@@ -149,7 +149,7 @@ const StatusChip = ({
           title={t("archive.row.status_progress", "AI pracuje…")}
         >
           <Loader2 size={10} aria-hidden="true" className="animate-spin" />
-          AI · w toku
+          {t("archive.row.badge_progress", "AI · w toku")}
         </span>
       );
     default:

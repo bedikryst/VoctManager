@@ -425,6 +425,9 @@
       "audio_count_tooltip_few": "{{count}} pistes audio",
       "audio_count_tooltip_many": "{{count}} pistes audio",
       "audio_count_tooltip_other": "{{count}} pistes audio",
+      "badge_awaiting": "IA · à vérifier",
+      "badge_failed": "IA · erreur",
+      "badge_progress": "IA · en cours",
       "delete_aria": "Supprimer la pièce {{title}}",
       "edit_title": "Titre",
       "edit_voicing": "Distribution",
@@ -2334,6 +2337,18 @@
       "title": "Nouvelle invitation au projet"
     },
     "mark_all_read": "Marquer tout comme lu",
+    "primer": {
+      "description": "Une fenêtre du navigateur va s'ouvrir pour demander votre consentement. Une fois accordé, vous recevrez les notifications directement sur cet appareil — même lorsque l'application est fermée.",
+      "enable": "Activer les notifications",
+      "highlight_control_desc": "Vous pouvez activer ou désactiver chaque type d'événement séparément.",
+      "highlight_control_label": "Contrôle total",
+      "highlight_essential_desc": "Changements de répétitions, invitations à des projets, messages urgents du manager.",
+      "highlight_essential_label": "Seulement l'essentiel",
+      "highlight_security_desc": "Notifications chiffrées VAPID. Nous ne les partageons avec personne.",
+      "highlight_security_label": "Sécurité",
+      "not_now": "Pas maintenant",
+      "title": "Activer les notifications push"
+    },
     "section_earlier": "Plus anciennes",
     "section_new": "Nouvelles",
     "send_modal": {
