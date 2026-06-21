@@ -14,6 +14,7 @@ import { Archive, CheckCheck, RotateCcw, X } from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
+import { Portal } from "@/shared/lib/dom/Portal";
 
 interface BulkActionBarProps {
   selectedTotal: number;
@@ -44,13 +45,13 @@ export const BulkActionBar = ({
   const allSelected = selectedTotal >= visibleCount && visibleCount > 0;
 
   return (
+    <Portal>
     <motion.div
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 80, opacity: 0 }}
       transition={{ type: "spring", damping: 26, stiffness: 260 }}
-      style={{ zIndex: 60 }}
-      className="fixed inset-x-0 bottom-5 mx-auto flex w-[min(100%-2rem,44rem)] flex-wrap items-center justify-between gap-3 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-dock z-toast mx-auto flex w-[min(100%-2rem,44rem)] flex-wrap items-center justify-between gap-3 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal backdrop-blur-xl"
       role="region"
       aria-label={t("artists.bulk.bar_aria", "Akcje zbiorcze")}
     >
@@ -114,5 +115,6 @@ export const BulkActionBar = ({
         </Button>
       </div>
     </motion.div>
+    </Portal>
   );
 };

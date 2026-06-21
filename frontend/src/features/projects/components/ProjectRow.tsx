@@ -151,7 +151,7 @@ export const ProjectRow = ({
         title: project.title,
       })}
       className={cn(
-        "group flex w-full cursor-pointer items-center gap-3 rounded-2xl border bg-ethereal-alabaster px-4 py-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
+        "group flex w-full cursor-pointer items-center gap-3 rounded-2xl border bg-ethereal-alabaster px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
         "border-ethereal-ink/8 hover:border-ethereal-gold/30 hover:bg-ethereal-parchment/40",
         isDone && "opacity-65 saturate-[0.85]",
       )}

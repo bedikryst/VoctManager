@@ -167,7 +167,7 @@ export const PieceRow = ({
                 event.stopPropagation();
                 setIsScoreOpen(true);
               }}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-3 py-2 shadow-glass-solid transition-all hover:bg-ethereal-marble/50 active:scale-95"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-3 py-2 shadow-glass-solid transition-[transform,background-color] hover:bg-ethereal-marble/50 active:scale-95"
             >
               <FileText size={13} className="text-ethereal-sage" aria-hidden="true" />
               <Eyebrow color="default">
@@ -180,7 +180,7 @@ export const PieceRow = ({
               type="button"
               onClick={handlePlayToggle}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 shadow-glass-solid transition-all active:scale-95",
+                "flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 shadow-glass-solid transition-[transform,background-color] active:scale-95",
                 isThisPiecePlaying
                   ? "border-ethereal-sage/80 bg-ethereal-sage text-white"
                   : "border-ethereal-marble bg-ethereal-alabaster hover:bg-ethereal-marble/50",

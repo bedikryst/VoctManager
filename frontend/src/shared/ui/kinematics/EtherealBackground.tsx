@@ -6,8 +6,9 @@
  * a faint historical C-clef signature and a chiaroscuro vignette. The stave and
  * clef play a single, slow draw-in on first entry, gated by `isAuraStabilized`
  * so every later navigation (and the login → panel hand-off) skips straight to
- * the settled state until a full reload. The glows breathe via a GPU-only CSS
- * keyframe. A quiet stage for the content, never a competitor for it.
+ * the settled state until a full reload. The glows are held static (the old
+ * infinite "breath" was an imperceptible animation that kept the compositor
+ * re-blending huge layers every frame). A quiet stage for the content.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/kinematics/EtherealBackground
  */
@@ -31,10 +32,14 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(253,253,250,0.55)_0%,rgba(253,253,250,0)_44%)]" />
 
       {/* LAYER 2 — Warm chiaroscuro glows. Multiply over the deeper canvas reads
-          as soft incense-light pooling; `ethereal-breath` gives slow GPU-only
-          life. Positioned to warm the top-left and the otherwise-empty lower-right. */}
-      <div className="ethereal-breath absolute -left-[6%] -top-[8%] h-[42vw] w-[42vw] rounded-full bg-ethereal-gold/20 mix-blend-multiply blur-[110px] [--breath-delay:0s] [--breath-duration:11s] [--breath-max:0.26] [--breath-min:0.14] [--breath-scale:1.15]" />
-      <div className="ethereal-breath absolute -bottom-[20%] -right-[6%] h-[48vw] w-[48vw] rounded-full bg-ethereal-amethyst/15 mix-blend-multiply blur-[120px] [--breath-delay:1.5s] [--breath-duration:13s] [--breath-max:0.2] [--breath-min:0.1] [--breath-scale:1.2]" />
+          as soft incense-light pooling, warming the top-left and the otherwise-
+          empty lower-right. Held STATIC at the mid-breath opacity: the old slow
+          "breathing" pulse was imperceptible (Δopacity on a 110px-blurred,
+          mix-blended blob) yet forced the compositor to re-blend two huge layers
+          against the backdrop every frame, forever — pure invisible cost. As a
+          fixed background it now composites once. */}
+      <div className="absolute -left-[6%] -top-[8%] h-[42vw] w-[42vw] rounded-full bg-ethereal-gold/20 opacity-20 mix-blend-multiply blur-[110px]" />
+      <div className="absolute -bottom-[20%] -right-[6%] h-[48vw] w-[48vw] rounded-full bg-ethereal-amethyst/15 opacity-[0.15] mix-blend-multiply blur-[120px]" />
 
       {/* LAYER 3 — The kinematic stave: a diagonal musical staff laid across the
           field, oversized so it spans the whole viewport. Plays a slow,

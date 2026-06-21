@@ -16,6 +16,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { Portal } from "@/shared/lib/dom/Portal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Text } from "@/shared/ui/primitives/typography";
 
@@ -62,6 +63,7 @@ export const AutosaveStatus = ({
   const isSavingPhase = phase === "saving";
 
   return (
+    <Portal>
     <AnimatePresence>
       {phase !== "idle" && (
         <motion.div
@@ -73,7 +75,7 @@ export const AutosaveStatus = ({
           exit={{ y: 60, opacity: 0, x: "-50%" }}
           transition={SPRING}
           className={cn(
-            "pointer-events-none fixed bottom-6 left-1/2 z-(--z-toast) md:bottom-10",
+            "pointer-events-none fixed bottom-dock left-1/2 z-(--z-toast)",
             className,
           )}
         >
@@ -118,5 +120,6 @@ export const AutosaveStatus = ({
         </motion.div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

@@ -23,24 +23,40 @@ import { motion, useMotionValue, useMotionTemplate } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
 
 const glassCardVariants = cva(
-  "group relative isolate overflow-hidden rounded-3xl transform-gpu contain-paint",
+  // `contain-paint` confines repaints to the card's own box (cheap, keeps it).
+  // We deliberately do NOT force `transform-gpu` here: promoting all ~130 cards
+  // to their own compositor layer up-front is a net loss (GPU memory + compositing
+  // overhead, worse scrolling). The browser promotes a card only when it actually
+  // animates (hover lift), which is exactly when promotion pays off.
+  "group relative isolate overflow-hidden rounded-3xl contain-paint",
   {
     variants: {
+      // backdrop-filter is kept ONLY where a card floats over real CONTENT
+      // (`surface` — e.g. the PDF toolbar over a document). The in-flow tiles
+      // (`ethereal`, `dark`) sit over the near-empty ambient background, so a
+      // live blur re-samples ~nothing every frame while you scroll — pure cost,
+      // no visible effect — and is dropped. `dark` is 90% opaque anyway, so its
+      // blur was invisible. Floating overlays that genuinely need frosting
+      // (command palette, bottom sheet, dropdown) carry their own backdrop-blur
+      // at their own call sites, where it is transient rather than scrolled-over.
       variant: {
         ethereal:
-          "bg-glass-surface backdrop-blur-ethereal border border-glass-border shadow-glass-ethereal",
+          "bg-glass-surface border border-glass-border shadow-glass-ethereal",
         surface:
           "bg-ethereal-ink/40 backdrop-blur-xl border border-white/5 shadow-glass-ethereal",
         solid:
           "bg-ethereal-alabaster border border-ethereal-ink/6 shadow-glass-solid",
-        dark: "bg-ethereal-ink/90 backdrop-blur-ethereal border border-ethereal-incense/20 text-ethereal-marble shadow-glass-solid",
+        dark: "bg-ethereal-ink/90 border border-ethereal-incense/20 text-ethereal-marble shadow-glass-solid",
         outline:
           "bg-transparent border border-ethereal-incense/30 hover:border-ethereal-gold hover:shadow-glass-outline-hover",
         light:
           "bg-glass-surface/50 backdrop-blur-[4px] border border-glass-border shadow-glass-ethereal",
       },
       isHoverable: {
-        true: "hover:-translate-y-1 cursor-pointer hover:shadow-glass-ethereal-hover will-change-transform",
+        // No static `will-change-transform`: it permanently reserves a compositor
+        // layer on every hoverable card even at rest. The lift is a simple
+        // transform the browser composites fine on hover-intent without it.
+        true: "hover:-translate-y-1 cursor-pointer hover:shadow-glass-ethereal-hover",
         false: "",
       },
       padding: {
@@ -50,7 +66,13 @@ const glassCardVariants = cva(
         lg: "p-7 md:p-10",
       },
       animationEngine: {
-        css: "transition-[transform,box-shadow,border-color,background-color] duration-700 ease-out",
+        // Transition only compositor-cheap / small-paint properties. box-shadow
+        // and background-color are deliberately excluded: animating a large
+        // blurry shadow repaints every frame for the whole 700ms, and sweeping
+        // the pointer across a list of cards stacks those repaints — the dominant
+        // cause of hover-induced frame drops across the ~130 cards. The hover
+        // shadow still applies; it just snaps (one repaint) under the smooth lift.
+        css: "transition-[transform,border-color] duration-700 ease-out",
         framer: "transition-none",
       },
     },

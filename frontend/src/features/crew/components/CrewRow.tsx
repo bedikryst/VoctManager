@@ -56,7 +56,7 @@ const CrewRowComponent = ({
         name: fullName,
       })}
       className={cn(
-        "group flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster px-4 py-3 transition-all hover:border-ethereal-gold/30 hover:bg-ethereal-parchment/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
+        "group flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster px-4 py-3 transition-colors hover:border-ethereal-gold/30 hover:bg-ethereal-parchment/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
       )}
     >
       <div

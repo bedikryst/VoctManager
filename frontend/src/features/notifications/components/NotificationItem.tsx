@@ -403,7 +403,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         size={16}
         strokeWidth={2}
         aria-hidden="true"
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ethereal-graphite/25 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ethereal-graphite/25 opacity-0 transition-[transform,opacity] duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
       />
     </div>
   );

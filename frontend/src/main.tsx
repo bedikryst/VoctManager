@@ -14,7 +14,6 @@ import {
 } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 
-import { CursorProvider } from "./app/providers/CursorProvider";
 import { AuthProvider } from "./app/providers/AuthProvider";
 import {
   createQueryPersister,
@@ -22,7 +21,7 @@ import {
   QUERY_CACHE_MAX_AGE_MS,
 } from "./shared/api/queryPersistence";
 import { registerOfflineServiceWorker } from "./shared/offline/offlineClient";
-import "./shared/config/i18n";
+import { i18nReady } from "./shared/config/i18n";
 import { router } from "./app/App";
 import "./app/styles/index.css";
 
@@ -43,8 +42,9 @@ const persister = createQueryPersister();
 
 const rootElement = document.getElementById("root")!;
 
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
+const renderApp = (): void => {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{
@@ -67,14 +67,18 @@ ReactDOM.createRoot(rootElement).render(
         },
       }}
     >
-      <CursorProvider>
-        <AuthProvider>
-          <RouterProvider router={router} />
-        </AuthProvider>
-      </CursorProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </PersistQueryClientProvider>
   </React.StrictMode>,
-);
+  );
+};
+
+// Hold first paint until the active locale bundle is registered, so the opening
+// render already has its translations (no missing-key flash). A locale load
+// failure must never block boot — render regardless.
+void i18nReady.then(renderApp, renderApp);
 
 // Register the offline service worker for everyone after first paint, so the
 // PWA can boot and practice offline regardless of push-notification consent.

@@ -88,7 +88,7 @@ export function ArtifactCard({
       <header className="relative z-10 flex items-center justify-between px-10 pt-10 pointer-events-none">
         <div className="pointer-events-auto">{statusBadgeSlot}</div>
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-ethereal-incense/10 bg-glass-surface/20 backdrop-blur-md transition-all duration-700 group-hover:scale-110 group-hover:border-ethereal-gold/40 group-hover:bg-glass-surface group-hover:shadow-glass-outline-hover"
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-ethereal-incense/10 bg-glass-surface/20 backdrop-blur-md transition-[transform,border-color,background-color] duration-700 group-hover:scale-110 group-hover:border-ethereal-gold/40 group-hover:bg-glass-surface group-hover:shadow-glass-outline-hover"
           aria-hidden="true"
         >
           <ArrowUpRight

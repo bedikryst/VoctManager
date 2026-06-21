@@ -217,7 +217,7 @@ export function ContractRow({
           }
           aria-pressed={paid}
           className={cn(
-            "inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 disabled:cursor-not-allowed disabled:opacity-40",
+            "inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 disabled:cursor-not-allowed disabled:opacity-40",
             paid
               ? "border-ethereal-sage/40 bg-ethereal-sage/10 text-ethereal-sage hover:bg-ethereal-sage/15"
               : "border-ethereal-ink/12 bg-ethereal-alabaster text-ethereal-graphite hover:border-ethereal-sage/40 hover:text-ethereal-sage",

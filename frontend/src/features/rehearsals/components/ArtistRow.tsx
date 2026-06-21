@@ -174,7 +174,7 @@ export const ArtistRow = React.memo(
               disabled={isSyncing}
               aria-pressed={active}
               className={cn(
-                "flex items-center justify-center gap-1.5 font-bold uppercase tracking-widest transition-all duration-200 disabled:opacity-50",
+                "flex items-center justify-center gap-1.5 font-bold uppercase tracking-widest transition-colors duration-200 disabled:opacity-50",
                 isRollCall
                   ? "min-h-12 rounded-lg px-2 py-2 text-[11px]"
                   : "flex-1 rounded-lg px-3 py-1.5 text-[9px] sm:flex-none",

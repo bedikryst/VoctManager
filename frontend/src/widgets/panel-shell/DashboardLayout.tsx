@@ -174,7 +174,7 @@ export const DashboardLayout = ({
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-28 transition-[padding] duration-300 ease-out sm:px-6 fine-pointer:pb-6 fine-pointer:pl-[calc(var(--sidebar-pad,var(--spacing-sidebar))+1.5rem)] fine-pointer:pr-6 fine-pointer:pt-6"
+        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-nav-dock transition-[padding] duration-300 ease-out sm:px-6 fine-pointer:pl-[calc(var(--sidebar-pad,var(--spacing-sidebar))+1.5rem)] fine-pointer:pr-6 fine-pointer:pt-6"
         id="main-content"
       >
         <div className="relative mx-auto flex h-full w-full max-w-[1500px] flex-col">
@@ -197,8 +197,10 @@ export const DashboardLayout = ({
       <ProjectInvitationToasts />
       <CustomAdminMessageToast />
       {/* Bottom dock — stacks the transient offline + install affordances so they
-          never overlap, clear of the mobile nav (safe-area aware). */}
-      <div className="fixed inset-x-0 bottom-24 z-40 flex flex-col items-center gap-2 fine-pointer:bottom-6">
+          never overlap, clear of the mobile nav (safe-area aware). Sits a notch
+          higher than the editor save bars so an offline badge is never hidden by
+          one. Lives at body level already, so no Portal is needed here. */}
+      <div className="fixed inset-x-0 bottom-[calc(var(--nav-dock-h)+2.25rem)] z-40 flex flex-col items-center gap-2">
         <OfflineStatusBadge {...offlineSync} />
         <InstallAppPrompt />
       </div>

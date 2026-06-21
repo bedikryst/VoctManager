@@ -40,7 +40,7 @@ export function EventCard({
       padding="none"
       glow={true}
       isHoverable={false}
-      className="flex flex-col h-full relative z-10 !overflow-visible transition-all duration-300"
+      className="flex flex-col h-full relative z-10 !overflow-visible transition-transform duration-300"
     >
       {backgroundElement}
 

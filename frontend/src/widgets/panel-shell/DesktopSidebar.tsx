@@ -118,6 +118,12 @@ export const DesktopSidebar = ({
         )}
       </AnimatePresence>
 
+      {/* Opaque surface (bg-ethereal-marble) overrides the glass variant's
+          translucent default: the sidebar is fixed chrome floating directly over
+          scrolling content with no scrim, so it must stay solid. It used to lean
+          on backdrop-blur for that; with the blur removed (pointless over the
+          ambient bg, costly to re-sample on a tall element each scroll frame) it
+          is opaque instead — same #fdfdfd hue, full coverage, zero scroll cost. */}
       <GlassCard
         as={motion.aside}
         variant="ethereal"
@@ -138,7 +144,7 @@ export const DesktopSidebar = ({
         padding="none"
         aria-expanded={isExpanded}
         isHoverable={false}
-        className="fixed bottom-4 left-4 top-4 z-60 hidden w-70 flex-col border-none will-change-[clip-path,box-shadow] fine-pointer:flex"
+        className="fixed bottom-4 left-4 top-4 z-60 hidden w-70 flex-col border-none bg-ethereal-marble will-change-[clip-path,box-shadow] fine-pointer:flex"
       >
         <div className="relative flex h-full w-70 flex-col p-4">
           {/* ---- Brand + pin ---- */}

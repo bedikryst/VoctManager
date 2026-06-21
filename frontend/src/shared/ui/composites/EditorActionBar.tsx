@@ -15,6 +15,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Save } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { Portal } from "@/shared/lib/dom/Portal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -70,6 +71,7 @@ export const EditorActionBar = ({
   const resolvedCancel = cancelText ?? t("common.actions.cancel", "Anuluj");
 
   return (
+    <Portal>
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -81,7 +83,7 @@ export const EditorActionBar = ({
           exit={{ y: 100, opacity: 0, x: "-50%" }}
           transition={SPRING}
           className={cn(
-            "fixed bottom-6 left-1/2 z-(--z-toast) w-[min(92vw,32rem)] md:bottom-10",
+            "fixed bottom-dock left-1/2 z-(--z-toast) w-[min(92vw,32rem)]",
             className,
           )}
         >
@@ -142,5 +144,6 @@ export const EditorActionBar = ({
         </motion.div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

@@ -32,21 +32,26 @@
   /* =========================================
      GLASSMORPHISM & KINEMATICS TOKENS
      ========================================= */
-  --blur-ethereal: 24px;
+  /* backdrop-filter blur radius for the workhorse glass surfaces. Kept modest:
+     this filter is re-sampled every frame while scrolling over the fixed
+     background, on ~130 surfaces, so cost scales with radius. 14px reads
+     near-identically over the already-soft ethereal canvas at a fraction of
+     the paint cost of the former 24px. */
+  --blur-ethereal: 14px;
   --color-glass-surface: rgba(253, 253, 253, 0.62);
   --color-glass-border: rgba(194, 168, 120, 0.28);
 
   --shadow-glass-ethereal:
     inset 0 1px 1px rgba(255, 255, 255, 0.9),
     0 1px 2px rgba(22, 20, 18, 0.04),
-    0 12px 32px -10px rgba(120, 104, 82, 0.18);
+    0 12px 26px -10px rgba(120, 104, 82, 0.18);
   --shadow-glass-ethereal-hover:
     inset 0 1px 1px rgba(255, 255, 255, 1),
     0 2px 4px rgba(22, 20, 18, 0.05),
-    0 22px 48px -14px rgba(120, 104, 82, 0.28);
+    0 22px 38px -14px rgba(120, 104, 82, 0.28);
   --shadow-glass-solid:
     0 1px 2px rgba(22, 20, 18, 0.05),
-    0 10px 30px -12px rgba(120, 104, 82, 0.16);
+    0 10px 24px -12px rgba(120, 104, 82, 0.16);
   --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
 
   --shadow-button-primary:
@@ -59,9 +64,11 @@
     0 12px 28px -6px rgba(194, 168, 120, 0.5);
 
   /* =========================================
-     SPATIAL, LAYOUT & Z-INDEX TOKENS 
+     SPATIAL, LAYOUT & Z-INDEX TOKENS
+     The mobile nav-dock clearance lives in :root (base layer) as --nav-dock-h,
+     not here: it depends on env(safe-area-inset-bottom) and is overridden per
+     pointer modality, neither of which belongs in a static @theme token.
      ========================================= */
-  --spacing-nav-dock: 3rem;
   --spacing-sheet-expanded: 85dvh;
   --spacing-sidebar: 104px;
 
@@ -91,6 +98,24 @@
 @layer base {
   :root {
     color-scheme: light;
+
+    /* Real height of the fixed mobile nav dock (icon + label rows + its own
+       safe-area pad). The single source of truth for "how much space the dock
+       eats at the bottom edge", consumed by content padding (pb-nav-dock) and
+       by every bottom-anchored floating surface (bottom-dock) so nothing hides
+       behind the dock. The old --spacing-nav-dock (3rem) was both dead and far
+       too short — the rendered dock is ~4.25rem before any safe-area inset. */
+    --nav-dock-h: calc(4.25rem + max(env(safe-area-inset-bottom), 0.5rem));
+    --bottom-dock-gap: calc(var(--nav-dock-h) + 0.875rem);
+  }
+
+  /* A fine pointer gets the hover sidebar, not the bottom dock — so there is no
+     dock to clear. Zero the token (floating bars fall back to a plain inset). */
+  @media (hover: hover) and (pointer: fine) {
+    :root {
+      --nav-dock-h: 0px;
+      --bottom-dock-gap: 2.5rem;
+    }
   }
 
   body.theme-panel {
@@ -175,6 +200,20 @@
 
 @utility z-toast {
   z-index: var(--z-toast);
+}
+
+/* Bottom clearance for the mobile nav dock. `pb-nav-dock` keeps scrollable page
+   content from ending underneath the dock; `bottom-dock` anchors fixed floating
+   bars just above it. Both collapse to a plain inset on fine-pointer (no dock).
+   NOTE: a `position: fixed` bar only escapes the page's stacking context — and
+   thus only paints above the dock — when portalled to <body>. Offset alone is
+   not enough; pair `bottom-dock` with the shared <Portal>. */
+@utility pb-nav-dock {
+  padding-bottom: calc(var(--nav-dock-h) + 1.5rem);
+}
+
+@utility bottom-dock {
+  bottom: var(--bottom-dock-gap);
 }
 
 @utility no-scrollbar {

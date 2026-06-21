@@ -12,6 +12,7 @@ import { Loader2, Music2, Pause, Play, X } from "lucide-react";
 
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
+import { Portal } from "@/shared/lib/dom/Portal";
 import { usePracticePlayer } from "./PracticePlayerProvider";
 import { formatPlayerTime } from "./VoiceMixerPanel";
 
@@ -31,6 +32,7 @@ export const MiniPlayerBar = (): React.JSX.Element => {
     snapshot.duration > 0 ? (snapshot.position / snapshot.duration) * 100 : 0;
 
   return (
+    <Portal>
     <AnimatePresence>
       {isVisible && piece && piecePath && (
         <motion.div
@@ -38,7 +40,7 @@ export const MiniPlayerBar = (): React.JSX.Element => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="pointer-events-none fixed inset-x-0 bottom-21 z-40 flex justify-center px-4 fine-pointer:bottom-5"
+          className="pointer-events-none fixed inset-x-0 bottom-dock z-toast flex justify-center px-4"
         >
           <div className="pointer-events-auto flex w-full max-w-xl items-center gap-3 overflow-hidden rounded-2xl border border-glass-border bg-ethereal-alabaster/95 py-2.5 pl-3 pr-2 shadow-[0_10px_32px_-12px_rgba(22,20,18,0.25),0_2px_6px_rgba(22,20,18,0.08)] backdrop-blur-md">
             <button
@@ -100,5 +102,6 @@ export const MiniPlayerBar = (): React.JSX.Element => {
         </motion.div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

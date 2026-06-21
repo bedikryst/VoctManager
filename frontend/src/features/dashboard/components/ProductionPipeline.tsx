@@ -114,7 +114,7 @@ const PipelineRow = ({
       type="button"
       onClick={() => onOpen(project)}
       aria-haspopup="dialog"
-      className="group flex w-full items-center gap-3 rounded-2xl border border-ethereal-incense/12 bg-ethereal-alabaster/50 p-3 text-left transition-all hover:border-ethereal-gold/30 hover:bg-ethereal-alabaster hover:shadow-glass-ethereal-hover active:scale-[0.99] sm:gap-4 sm:p-3.5"
+      className="group flex w-full items-center gap-3 rounded-2xl border border-ethereal-incense/12 bg-ethereal-alabaster/50 p-3 text-left transition-[transform,border-color,background-color] hover:border-ethereal-gold/30 hover:bg-ethereal-alabaster hover:shadow-glass-ethereal-hover active:scale-[0.99] sm:gap-4 sm:p-3.5"
     >
       <CompletionRing
         value={pct}
