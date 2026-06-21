@@ -690,7 +690,9 @@
       "title_new": "Nowy Artysta",
       "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
       "unsaved_title": "Masz niezapisane zmiany!",
-      "voice_type": "Rodzaj Głosu *"
+      "voice_type": "Rodzaj Głosu *",
+      "salutation_edit_disabled": "Forma zwrotu jest zarządzana przez członka w ustawieniach konta.",
+      "salutation_hint": "Tylko dla powitań (np. „Droga”/„Drogi”). Podpowiadane na podstawie głosu."
     },
     "filters": {
       "all": "Tutti",
@@ -1114,7 +1116,14 @@
       "defaultFallback": "UTC"
     },
     "unsaved_desc": "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie edytora spowoduje ich utratę.",
-    "unsaved_title": "Masz niezapisane zmiany!"
+    "unsaved_title": "Masz niezapisane zmiany!",
+    "salutation": {
+      "label": "Forma zwrotu",
+      "feminine": "Kobieca (Droga…)",
+      "masculine": "Męska (Drogi…)",
+      "neutral": "Neutralna",
+      "settings_hint": "Używana tylko w powitaniach w e-mailach i powiadomieniach."
+    }
   },
   "contact_filters": {
     "no_phone": "Brak telefonu",
@@ -3625,7 +3634,9 @@
       "spotifyRevoke": "Cofnij zgodę",
       "spotifyTitle": "Wbudowane odtwarzacze (Spotify)",
       "subtitle": "Zarządzaj swoimi danymi osobowymi oraz uprawnieniami do konta.",
-      "title": "Prywatność i dane (RODO)"
+      "title": "Prywatność i dane (RODO)",
+      "salutationTitle": "Forma zwrotu",
+      "salutationDesc": "Przechowujemy opcjonalną formę zwrotu (kobieca / męska / neutralna) wyłącznie po to, by poprawnie zwracać się do Ciebie w powitaniach w e-mailach i powiadomieniach. Jest opcjonalna, nie udostępniamy jej nikomu, a Ty możesz ją w każdej chwili zmienić lub ustawić jako neutralną w zakładce „Ogólne”."
     },
     "security": {
       "confirmPassword": "Powtórz nowe hasło",

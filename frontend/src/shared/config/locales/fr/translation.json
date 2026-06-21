@@ -690,7 +690,9 @@
       "title_new": "Nouvel artiste",
       "unsaved_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera.",
       "unsaved_title": "Vous avez des modifications non enregistrées !",
-      "voice_type": "Type de voix *"
+      "voice_type": "Type de voix *",
+      "salutation_edit_disabled": "La forme d’adresse est gérée par le membre dans les réglages de son compte.",
+      "salutation_hint": "Pour les salutations uniquement (Chère/Cher…). Suggérée d’après le pupitre."
     },
     "filters": {
       "all": "Tous",
@@ -1114,7 +1116,14 @@
       "defaultFallback": "UTC"
     },
     "unsaved_desc": "Vous avez des modifications non enregistrées. Fermer l'éditeur entraînera leur perte.",
-    "unsaved_title": "Modifications non enregistrées !"
+    "unsaved_title": "Modifications non enregistrées !",
+    "salutation": {
+      "label": "Forme d’adresse",
+      "feminine": "Féminine (Chère…)",
+      "masculine": "Masculine (Cher…)",
+      "neutral": "Neutre",
+      "settings_hint": "Utilisée uniquement dans les salutations des e-mails et notifications."
+    }
   },
   "contact_filters": {
     "no_phone": "Pas de téléphone",
@@ -3625,7 +3634,9 @@
       "spotifyRevoke": "Retirer le consentement",
       "spotifyTitle": "Lecteurs intégrés (Spotify)",
       "subtitle": "Gérez vos données personnelles et les permissions du compte.",
-      "title": "Confidentialité et données (RGPD)"
+      "title": "Confidentialité et données (RGPD)",
+      "salutationTitle": "Forme d’adresse",
+      "salutationDesc": "Nous conservons une forme d’adresse optionnelle (féminine / masculine / neutre) uniquement afin de nous adresser correctement à vous dans les salutations des e-mails et notifications. Elle est facultative, jamais partagée, et vous pouvez la modifier à tout moment ou la définir sur neutre dans l’onglet « Général »."
     },
     "security": {
       "confirmPassword": "Répétez le nouveau mot de passe",

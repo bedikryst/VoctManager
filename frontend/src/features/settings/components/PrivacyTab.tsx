@@ -8,7 +8,14 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Fingerprint, Download, Trash2, FileJson, Music } from "lucide-react";
+import {
+  Fingerprint,
+  Download,
+  Trash2,
+  FileJson,
+  Music,
+  MessageSquareQuote,
+} from "lucide-react";
 import axios from "axios";
 
 import { GlassCard } from "@ui/composites/GlassCard";
@@ -75,6 +82,25 @@ export const PrivacyTab = () => {
         </Text>
 
         <div className="space-y-4">
+          {/* What we process — transparency note for the optional form-of-address
+              data (GDPR art. 13). Ordinary data, never special-category. */}
+          <GlassCard variant="outline" padding="md" isHoverable={false}>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <MessageSquareQuote className="w-4 h-4 text-ethereal-graphite" />
+                <Eyebrow>
+                  {t("settings.privacy.salutationTitle", "Forma zwrotu")}
+                </Eyebrow>
+              </div>
+              <Text size="sm" color="muted" className="max-w-xl leading-relaxed">
+                {t(
+                  "settings.privacy.salutationDesc",
+                  "Przechowujemy opcjonalną formę zwrotu (kobieca / męska / neutralna) wyłącznie po to, by poprawnie zwracać się do Ciebie w powitaniach w e-mailach i powiadomieniach. Jest opcjonalna, nie udostępniamy jej nikomu, a Ty możesz ją w każdej chwili zmienić lub ustawić jako neutralną w zakładce „Ogólne”.",
+                )}
+              </Text>
+            </div>
+          </GlassCard>
+
           {/* Data Export */}
           <GlassCard variant="outline" padding="md" isHoverable={false}>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

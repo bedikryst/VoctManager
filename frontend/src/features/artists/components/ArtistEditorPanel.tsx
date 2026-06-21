@@ -21,6 +21,7 @@ import { Select } from "@ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useArtistForm } from "../hooks/useArtistForm";
+import { voiceToSalutation } from "../types/artist.dto";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
 
 interface ArtistEditorPanelProps {
@@ -70,6 +71,16 @@ export default function ArtistEditorPanel({
 
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
   const languageValue = useWatch({ control: form.control, name: "language" });
+  const voiceValue = useWatch({ control: form.control, name: "voice_type" });
+
+  // Suggest the form of address from the voice part when creating (manager can
+  // still override). Never runs on edit — that field is disabled there.
+  const { setValue } = form;
+  useEffect(() => {
+    if (!artist && voiceValue) {
+      setValue("salutation", voiceToSalutation(voiceValue));
+    }
+  }, [artist, voiceValue, setValue]);
 
   const handleCloseRequest = useCallback(() => {
     if (isDirty) {
@@ -265,6 +276,29 @@ export default function ArtistEditorPanel({
                             )}
                           </Text>
                         )}
+                      </div>
+                      <div>
+                        <Select
+                          label={t("common.salutation.label", "Forma zwrotu")}
+                          {...form.register("salutation")}
+                          className="font-bold"
+                          disabled={isSubmitting || !!artist?.id}
+                        >
+                          <option value="N">{t("common.salutation.neutral", "Neutralna")}</option>
+                          <option value="F">{t("common.salutation.feminine", "Kobieca")}</option>
+                          <option value="M">{t("common.salutation.masculine", "Męska")}</option>
+                        </Select>
+                        <Text as="p" size="xs" color="muted" className="ml-1 mt-2">
+                          {artist?.id
+                            ? t(
+                                "artists.editor.salutation_edit_disabled",
+                                "Forma zwrotu jest zarządzana przez członka w ustawieniach konta.",
+                              )
+                            : t(
+                                "artists.editor.salutation_hint",
+                                "Tylko dla powitań. Podpowiadane na podstawie głosu.",
+                              )}
+                        </Text>
                       </div>
                     </div>
                   </div>

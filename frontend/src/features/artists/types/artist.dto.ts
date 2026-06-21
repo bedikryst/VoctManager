@@ -18,10 +18,22 @@ export const artistFormSchema = z.object({
   vocal_range_bottom: z.string().optional(),
   vocal_range_top: z.string().optional(),
   language: z.enum(["pl", "en", "fr"]),
+  salutation: z.enum(["F", "M", "N"]),
   is_active: z.boolean(),
 });
 
 export type ArtistFormValues = z.infer<typeof artistFormSchema>;
+
+/**
+ * Smart default for the grammatical form of address, suggested from the voice
+ * part (women's voices → feminine, men's → masculine, conductor → neutral).
+ * Only a PREFILL — the manager confirms/corrects it; it is never inferred silently.
+ */
+export const voiceToSalutation = (voice: string): "F" | "M" | "N" => {
+  if (["SOP", "MEZ", "ALT"].includes(voice)) return "F";
+  if (["TEN", "BAR", "BAS", "CT"].includes(voice)) return "M";
+  return "N"; // DIR / conductor / unknown
+};
 
 export interface ArtistCreateDTO {
   first_name: string;
@@ -34,6 +46,7 @@ export interface ArtistCreateDTO {
   vocal_range_bottom?: string;
   vocal_range_top?: string;
   language?: string;
+  salutation?: string;
 }
 
 export type ArtistUpdateDTO = Partial<ArtistCreateDTO> & {

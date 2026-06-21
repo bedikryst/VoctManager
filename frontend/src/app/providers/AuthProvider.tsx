@@ -129,6 +129,7 @@ const toUserMeDTO = (user: AuthUser): UserMeDTO => ({
         phone_number: user.profile.phone_number ?? "",
         language: user.profile.language ?? "pl",
         timezone: user.profile.timezone ?? "UTC",
+        salutation: user.profile.salutation ?? "N",
         dietary_preference: user.profile.dietary_preference ?? "none",
         dietary_notes: user.profile.dietary_notes ?? "",
         clothing_size: user.profile.clothing_size ?? "",

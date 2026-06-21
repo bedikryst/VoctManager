@@ -690,7 +690,9 @@
       "title_new": "New Artist",
       "unsaved_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
       "unsaved_title": "You have unsaved changes!",
-      "voice_type": "Voice Type *"
+      "voice_type": "Voice Type *",
+      "salutation_edit_disabled": "The form of address is managed by the member in their account settings.",
+      "salutation_hint": "For greetings only (e.g. Dear…). Suggested from the voice part."
     },
     "filters": {
       "all": "All",
@@ -1114,7 +1116,14 @@
       "defaultFallback": "UTC"
     },
     "unsaved_desc": "You have unsaved changes in the form. Closing the editor will result in their loss.",
-    "unsaved_title": "You have unsaved changes!"
+    "unsaved_title": "You have unsaved changes!",
+    "salutation": {
+      "label": "Form of address",
+      "feminine": "Feminine",
+      "masculine": "Masculine",
+      "neutral": "Neutral",
+      "settings_hint": "Used only in greetings in emails and notifications."
+    }
   },
   "contact_filters": {
     "no_phone": "No phone",
@@ -3625,7 +3634,9 @@
       "spotifyRevoke": "Withdraw consent",
       "spotifyTitle": "Embedded players (Spotify)",
       "subtitle": "Manage your personal data and account permissions.",
-      "title": "Privacy and Data (GDPR)"
+      "title": "Privacy and Data (GDPR)",
+      "salutationTitle": "Form of address",
+      "salutationDesc": "We store an optional form of address (feminine / masculine / neutral) solely so we can greet you correctly in email and notification salutations. It is optional, never shared, and you can change it or set it to neutral at any time in the General tab."
     },
     "security": {
       "confirmPassword": "Repeat new password",

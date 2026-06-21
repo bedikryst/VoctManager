@@ -22,6 +22,7 @@ export interface AuthProfile {
   avatar_thumb_url?: string | null;
   language?: string;
   timezone?: string;
+  salutation?: string;
   phone_number?: string;
   dietary_preference?: string;
   dietary_notes?: string;

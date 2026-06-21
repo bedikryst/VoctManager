@@ -59,6 +59,7 @@ export function useLogisticsSettings() {
         phone_number: user.profile?.phone_number || "",
         language: user.profile?.language || "pl",
         timezone: user.profile?.timezone || "UTC",
+        salutation: user.profile?.salutation || "N",
         dietary_preference: formData.dietary_preference,
         dietary_notes: formData.dietary_notes,
         clothing_size: formData.clothing_size,

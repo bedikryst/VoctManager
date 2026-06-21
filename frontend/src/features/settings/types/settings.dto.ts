@@ -17,6 +17,7 @@ export interface UserProfileDTO {
   phone_number: string;
   language: string;
   timezone: string;
+  salutation: string;
   dietary_preference: string;
   dietary_notes: string;
   clothing_size: string;
@@ -50,6 +51,7 @@ export interface UpdatePreferencesPayload {
     phone_number: string;
     language: string;
     timezone: string;
+    salutation: string;
     dietary_preference: string;
     dietary_notes: string;
     clothing_size: string;

@@ -13,6 +13,7 @@ import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useCreateArtist, useUpdateArtist } from "../api/artist.queries";
 import {
   artistFormSchema,
+  voiceToSalutation,
   type ArtistFormValues,
   type ArtistCreateDTO,
   type ArtistUpdateDTO,
@@ -58,6 +59,9 @@ export const useArtistForm = (
       vocal_range_bottom: artist?.vocal_range_bottom || "",
       vocal_range_top: artist?.vocal_range_top || "",
       language: "pl",
+      salutation: artist
+        ? "N"
+        : voiceToSalutation(voiceTypes.length > 0 ? voiceTypes[0].value : "SOP"),
     },
   });
 
@@ -81,6 +85,7 @@ export const useArtistForm = (
         vocal_range_bottom: artist.vocal_range_bottom || "",
         vocal_range_top: artist.vocal_range_top || "",
         language: "pl",
+        salutation: "N",
       });
     } else {
       form.reset({
@@ -95,6 +100,9 @@ export const useArtistForm = (
         vocal_range_bottom: "",
         vocal_range_top: "",
         language: "pl",
+        salutation: voiceToSalutation(
+          voiceTypes.length > 0 ? voiceTypes[0].value : "SOP",
+        ),
       });
     }
   }, [isOpen, artist, defaultNames, voiceTypes, form]);
@@ -119,11 +127,14 @@ export const useArtistForm = (
         ? parseInt(data.sight_reading_skill, 10)
         : null,
       language: data.language,
+      salutation: data.salutation,
     };
 
     try {
       if (artist?.id) {
-        const { language, ...safeBasePayload } = basePayload;
+        // language + salutation are profile-level prefs, set at creation and then
+        // owned by the member in their own settings — not editable per-artist here.
+        const { language, salutation, ...safeBasePayload } = basePayload;
         const updatePayload: ArtistUpdateDTO = {
           ...safeBasePayload,
           is_active: data.is_active,

@@ -184,6 +184,24 @@ export const GeneralTab = () => {
                 </option>
               ))}
             </Select>
+
+            <div>
+              <Select
+                label={t("common.salutation.label", "Forma zwrotu")}
+                value={formData.profile.salutation}
+                onChange={(e) => handleProfileChange("salutation", e.target.value)}
+              >
+                <option value="N">{t("common.salutation.neutral", "Neutralna")}</option>
+                <option value="F">{t("common.salutation.feminine", "Kobieca")}</option>
+                <option value="M">{t("common.salutation.masculine", "Męska")}</option>
+              </Select>
+              <Text as="p" size="xs" color="muted" className="ml-1 mt-1.5">
+                {t(
+                  "common.salutation.settings_hint",
+                  "Używana tylko w powitaniach w e-mailach i powiadomieniach.",
+                )}
+              </Text>
+            </div>
           </div>
         </div>
 
