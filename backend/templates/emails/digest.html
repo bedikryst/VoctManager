@@ -11,19 +11,10 @@
 
 {% block content %}
 
-
-<!-- HEADLINE -->
-<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          font-size: 9px; font-weight: 700; letter-spacing: 0.5em; text-transform: uppercase;
-          color: #c9a764; margin: 0 0 18px 0; text-align: center;">
-  VoctManager
-</p>
-
-<h1 style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-           font-size: 34px; font-weight: 400; line-height: 1.18; letter-spacing: 0.01em;
-           color: #111827; margin: 0 0 10px 0; text-align: center;">
-  {% translate "Your daily briefing" %}
-</h1>
+{# HEADLINE #}
+{% include "emails/partials/_eyebrow.html" with text="VoctManager" %}
+{% translate "Your daily briefing" as headline_text %}
+{% include "emails/partials/_headline.html" with text=headline_text size=34 mb=10 %}
 
 <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
           font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
@@ -31,20 +22,10 @@
   {% translate "Updates from the last 24 hours" %} &middot; {{ total }}
 </p>
 
+{# GREETING #}
+{% include "emails/partials/_greeting.html" with style="hello" mb=32 %}
 
-<!-- GREETING -->
-<p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-          font-size: 21px; font-style: italic; color: #374151;
-          margin: 0 0 32px 0; text-align: center; line-height: 1.4;">
-  {% if first_name %}
-    {% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Hello {{ name }},{% endblocktranslate %}
-  {% else %}
-    {% translate "Hello," %}
-  {% endif %}
-</p>
-
-
-<!-- GROUPS -->
+{# GROUPS #}
 {% for group in groups %}
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 28px 0;">
   <tr>
@@ -79,36 +60,18 @@
 </table>
 {% endfor %}
 
-
-<!-- CTA -->
+{# CTA #}
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 12px 0 44px 0;">
   <tr>
     <td bgcolor="#faf8f4" style="background-color: #faf8f4; border: 1px solid #e8e3d8;
                                  padding: 36px 32px; text-align: center;">
-      <a href="{{ site_url }}"
-         style="display: inline-block; background-color: #111827; color: #c9a764;
-                text-decoration: none; padding: 18px 48px;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                font-size: 11px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;">
-        {% translate "Open VoctManager" %} &rarr;
-      </a>
+      {% translate "Open VoctManager" as cta_label %}
+      {% include "emails/partials/_button.html" with url=site_url label=cta_label %}
     </td>
   </tr>
 </table>
 
-
-<!-- CLOSING -->
-<p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-          font-size: 18px; font-style: italic; color: #4b5563;
-          margin: 0 0 12px 0; text-align: center; line-height: 1.5;">
-  {% translate "With warmest regards," %}
-</p>
-
-<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          font-size: 9px; font-weight: 700; letter-spacing: 0.48em; text-transform: uppercase;
-          color: #111827; margin: 0; text-align: center;">
-  {% translate "The VoctEnsemble Team" %}
-</p>
-
+{# CLOSING #}
+{% include "emails/partials/_signoff.html" %}
 
 {% endblock %}

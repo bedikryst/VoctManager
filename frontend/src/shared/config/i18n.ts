@@ -36,4 +36,22 @@ i18n
     },
   });
 
+/**
+ * Canonical "switch the app language" primitive. Changes the active i18next
+ * language (also persisted to localStorage by the detector) and reflects it on
+ * the document for accessibility/SEO. This is the ONLY place the two should be
+ * changed together — callers (login adoption, settings save, auth switcher)
+ * route through here so they never drift. Backend persistence of the
+ * authenticated user's preference is handled separately by the settings
+ * mutation (profile.language is the server-side source of truth for comms).
+ */
+export const changeAppLanguage = (lang: string): void => {
+  if (i18n.language !== lang) {
+    void i18n.changeLanguage(lang);
+  }
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = lang;
+  }
+};
+
 export default i18n;

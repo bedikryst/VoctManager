@@ -411,8 +411,10 @@ export default function ActivatePage(): React.JSX.Element {
                 </>
               ) : (
                 <div className="flex h-full flex-col justify-center">
-                  <div className="rounded-3xl border border-ethereal-sage/30 bg-ethereal-sage/5 p-6">
-                    <div className="flex items-start gap-4">
+                  <div className="rounded-3xl border border-ethereal-sage/30 bg-ethereal-sage/5 p-5 sm:p-6">
+                    {/* Header — the seal of success crowns the message: stacked
+                        and centred on mobile, inline on larger screens. */}
+                    <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
                       <motion.div
                         initial={{ scale: 0.6, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -428,66 +430,66 @@ export default function ActivatePage(): React.JSX.Element {
                           aria-hidden="true"
                         />
                       </motion.div>
-                      <div>
-                        <Eyebrow color="sage" as="p" className="mb-3">
+                      <div className="min-w-0">
+                        <Eyebrow color="sage" as="p" className="mb-2">
                           {t("auth.activate.success.subtitle")}
                         </Eyebrow>
-                        <Heading as="h2" size="4xl" color="default">
+                        <Heading as="h2" size="3xl" color="default">
                           {t("auth.activate.success.title")}
                         </Heading>
                         <Text size="sm" color="graphite" className="mt-3 leading-7">
-                          {t("auth.activate.success.desc_1")}
-                          <span className="font-semibold text-ethereal-ink">
-                            {activatedData.email}
-                          </span>
-                          {t("auth.activate.success.desc_2")}
-                        </Text>
-
-                        <div className="mt-5 mb-4 rounded-xl border border-ethereal-incense/20 bg-white/70 p-4 shadow-glass-solid">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <Text
-                                size="xs"
-                                weight="bold"
-                                color="graphite"
-                                className="mb-1 uppercase tracking-[0.2em]"
-                              >
-                                {t("auth.activate.success.your_username")}
-                              </Text>
-                              <Text
-                                size="md"
-                                weight="bold"
-                                color="gold"
-                                className="truncate font-mono tracking-tight"
-                              >
-                                {activatedData.email}
-                              </Text>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={handleCopyLogin}
-                              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-white/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-ethereal-graphite transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
-                            >
-                              {copied ? (
-                                <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                              ) : (
-                                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                              )}
-                              {copied
-                                ? t("auth.activate.success.copied", "Skopiowano")
-                                : t(
-                                    "auth.activate.success.copy_login",
-                                    "Skopiuj login",
-                                  )}
-                            </button>
-                          </div>
-                        </div>
-
-                        <Text size="xs" color="graphite" className="leading-relaxed">
-                          {t("auth.activate.success.instruction")}
+                          {t("auth.activate.success.desc")}
                         </Text>
                       </div>
                     </div>
+
+                    {/* The credential — given the full width of the card so the
+                        login and its copy action never crush on a narrow screen. */}
+                    <div className="mt-6 rounded-2xl border border-ethereal-incense/20 bg-white/70 p-4 shadow-glass-solid">
+                      <Text
+                        size="xs"
+                        weight="bold"
+                        color="graphite"
+                        className="mb-2.5 uppercase tracking-[0.2em]"
+                      >
+                        {t("auth.activate.success.your_username")}
+                      </Text>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <Text
+                          size="md"
+                          weight="bold"
+                          color="gold"
+                          className="min-w-0 truncate font-mono tracking-tight"
+                        >
+                          {activatedData.email}
+                        </Text>
+                        <button
+                          type="button"
+                          onClick={handleCopyLogin}
+                          className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-white/60 px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-ethereal-graphite transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 sm:w-auto sm:py-2"
+                        >
+                          {copied ? (
+                            <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                          )}
+                          {copied
+                            ? t("auth.activate.success.copied", "Skopiowano")
+                            : t(
+                                "auth.activate.success.copy_login",
+                                "Skopiuj login",
+                              )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Text
+                      size="xs"
+                      color="graphite"
+                      className="mt-4 leading-relaxed"
+                    >
+                      {t("auth.activate.success.instruction")}
+                    </Text>
                   </div>
 
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">

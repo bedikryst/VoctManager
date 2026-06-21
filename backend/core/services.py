@@ -22,7 +22,13 @@ from notifications.email_service import EmailType
 # Enterprise Imports for Notifications
 from notifications.email_tasks import send_transactional_email_task
 
-from .dtos import UserAccountDeletionDTO, UserEmailChangeDTO, UserPasswordChangeDTO, UserPreferencesUpdateDTO
+from .dtos import (
+    SUPPORTED_LANGUAGE_CODES,
+    UserAccountDeletionDTO,
+    UserEmailChangeDTO,
+    UserPasswordChangeDTO,
+    UserPreferencesUpdateDTO,
+)
 from .exceptions import EmailAlreadyInUseException, InvalidCredentialsException
 from .models import UserProfile
 from .signals import account_soft_deleted, user_email_changed, user_pii_updated
@@ -48,7 +54,7 @@ class UserIdentityService:
         return {"uidb64": uidb64, "token": token}
 
     @staticmethod
-    def provision_user_account(email: str, first_name: str, last_name: str, language: str = 'en', first_name_vocative: str = '') -> User:
+    def provision_user_account(email: str, first_name: str, last_name: str, language: str = 'pl', first_name_vocative: str = '') -> User:
         """
         Enterprise IAM: Provisions a new core identity and profile.
         Generates a collision-free UUID username, handles activation tokens,
@@ -56,6 +62,11 @@ class UserIdentityService:
         """
         if User.objects.filter(email__iexact=email).exists():
             raise EmailAlreadyInUseException("email_in_use")
+
+        # The invited member's chosen language drives their activation email, the
+        # activation screen itself and — until they change it — the whole app, so
+        # guard that only a supported code is ever persisted or put on the link.
+        language = language if language in SUPPORTED_LANGUAGE_CODES else 'pl'
 
         with transaction.atomic():
             # SaaS 2026 Standard: Abstract usernames prevent enumeration and PII leaks
@@ -81,7 +92,7 @@ class UserIdentityService:
             payload = UserIdentityService.generate_activation_token_payload(user)
             activation_link = (
                 f"{settings.CORS_ALLOWED_ORIGINS[0]}/activate"
-                f"?uid={payload['uidb64']}&token={payload['token']}"
+                f"?uid={payload['uidb64']}&token={payload['token']}&lang={language}"
             )
 
             vocative = (first_name_vocative or first_name) if language == 'pl' else first_name
@@ -111,14 +122,15 @@ class UserIdentityService:
     @staticmethod
     def get_activation_invitee(uidb64: str, token: str) -> dict[str, str]:
         """
-        Read-only lookup of the invited member's display name for a still-valid
-        activation link, so the activation screen can greet them by name before
-        they set a password. Requires the signed token (which the invitee
-        already holds), never consumes it, and mutates nothing.
+        Read-only lookup of the invited member's display name (and chosen language)
+        for a still-valid activation link, so the activation screen can greet them
+        by name and render in their language before they set a password. Requires
+        the signed token (which the invitee already holds), never consumes it, and
+        mutates nothing.
         """
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
+            user = User.objects.select_related("profile").get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             raise InvalidCredentialsException("invalid_activation_link")
 
@@ -127,9 +139,13 @@ class UserIdentityService:
 
         artist_profile = getattr(user, "artist_profile", None)
         vocative = getattr(artist_profile, "first_name_vocative", "") if artist_profile else ""
+        profile = getattr(user, "profile", None)
+        language = getattr(profile, "language", "") or "pl"
         return {
             "first_name": getattr(user, "first_name", "") or "",
             "first_name_vocative": vocative or "",
+            # Authoritative confirmation of the link's ?lang= (server-side source).
+            "language": language,
         }
 
     @staticmethod

@@ -205,9 +205,9 @@ class PushDispatcherService:
         mobile_devices = [d for d in target.devices if d.device_type != DeviceType.WEB]
 
         if web_devices:
-            cls._send_vapid_batch(web_devices, payload)
+            cls._send_vapid_batch(web_devices, payload, target.language)
         if mobile_devices:
-            cls._send_fcm_batch(mobile_devices, payload)
+            cls._send_fcm_batch(mobile_devices, payload, target.language)
 
     # ------------------------------------------------------------------ #
     # VAPID (Web Push)                                                   #
@@ -218,8 +218,11 @@ class PushDispatcherService:
         cls,
         devices: list[PushDevice],
         payload: PushPayload,
+        language: str,
     ) -> None:
-        body = json.dumps(payload.to_dict(), ensure_ascii=False)
+        data = payload.to_dict()
+        data["lang"] = language  # lets the SW set <notification lang> for a11y
+        body = json.dumps(data, ensure_ascii=False)
         urgency = _VAPID_URGENCY.get(payload.level, "normal")
         ttl = _URGENT_TTL if payload.level == NotificationLevel.URGENT else _DEFAULT_TTL
 
@@ -270,6 +273,7 @@ class PushDispatcherService:
         cls,
         devices: list[PushDevice],
         payload: PushPayload,
+        language: str,
     ) -> None:
         tokens = [d.registration_token for d in devices]
 
@@ -280,10 +284,14 @@ class PushDispatcherService:
             "level": payload.level,
             "url": payload.url,
             "tag": payload.tag,
+            "lang": language,
         }
         if payload.actions:
             data["actions"] = json.dumps(
-                [{"action": a.action, "title": a.title} for a in payload.actions],
+                [
+                    {"action": a.action, "title": a.title, **({"url": a.url} if a.url else {})}
+                    for a in payload.actions
+                ],
                 ensure_ascii=False,
             )
 

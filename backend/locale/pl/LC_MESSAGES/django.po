@@ -326,7 +326,7 @@ msgstr "Brak"
 
 #: core/ical_service.py:77
 msgid "Focus"
-msgstr "Temat próby"
+msgstr "Plan próby"
 
 #: core/ical_service.py:77 roster/models.py:145 roster/models.py:182
 #: roster/models.py:219 roster/models.py:315
@@ -899,7 +899,7 @@ msgstr "Otwórz"
 
 #: notifications/push_payloads.py:80
 msgid "Dismiss"
-msgstr "Odrzuć"
+msgstr "Pomiń"
 
 #: notifications/push_payloads.py:115
 msgid "a new project"
@@ -907,7 +907,7 @@ msgstr "nowy projekt"
 
 #: notifications/push_payloads.py:116
 msgid "the management team"
-msgstr "zespół zarządzający"
+msgstr "zespół prowadzący"
 
 #: notifications/push_payloads.py:120
 #, python-format
@@ -1021,7 +1021,7 @@ msgstr "Zmiana próby — %(project)s"
 #, python-format
 #| msgid "Rehearsal Cancelled"
 msgid "Rehearsal cancelled — %(project)s"
-msgstr "Odwołana próba — %(project)s"
+msgstr "Próba odwołana — %(project)s"
 
 #: notifications/push_payloads.py:251
 msgid "This rehearsal has been cancelled. Please review the updated schedule."
@@ -1097,7 +1097,7 @@ msgstr ""
 
 #: notifications/push_payloads.py:342
 msgid "your engagement"
-msgstr "Twoje wydarzenie"
+msgstr "Twój występ"
 
 #: notifications/push_payloads.py:344
 msgid "Contract ready for review"
@@ -1182,7 +1182,7 @@ msgstr ""
 
 #: notifications/push_payloads.py:441
 msgid "updated their attendance"
-msgstr "zaktualizował(a) swoją obecność"
+msgstr "aktualizuje obecność"
 
 #: notifications/push_payloads.py:445
 #, python-format
@@ -1212,7 +1212,7 @@ msgstr "Nowa wiadomość"
 #: templates/emails/custom_admin_message.txt:2
 #, python-format
 msgid "Message from %(sender)s"
-msgstr "Wiadomość od: %(sender)s"
+msgstr "Wiadomość od %(sender)s"
 
 #: notifications/push_payloads.py:486
 msgid "System notice"
@@ -1246,8 +1246,8 @@ msgid ""
 "VoctManager will notify you here about rehearsals, casting, and messages "
 "from your management team."
 msgstr ""
-"VoctManager będzie tu informować Cię o próbach, obsadzie i wiadomościach od "
-"zespołu zarządzającego."
+"VoctManager powiadomi Cię tutaj o próbach, obsadzie i wiadomościach od "
+"zespołu prowadzącego."
 
 #: roster/models.py:38
 msgid "Soprano"
@@ -2108,7 +2108,7 @@ msgid "%(inviter)s has invited you to take part in %(project)s."
 msgstr "%(inviter)s zaprasza Cię do udziału w projekcie %(project)s."
 
 msgid "%(project)s has been cancelled."
-msgstr "Projekt %(project)s został odwołany."
+msgstr "%(project)s zostaje odwołany."
 
 msgid "%(sender)s sent a message."
 msgstr "%(sender)s wysłał(a) wiadomość."
@@ -2117,19 +2117,19 @@ msgid "%(sender)s: %(snippet)s"
 msgstr "%(sender)s: %(snippet)s"
 
 msgid "A new rehearsal has been added to %(project)s."
-msgstr "Do projektu %(project)s dodano nową próbę."
+msgstr "Do %(project)s dodano nową próbę."
 
 msgid "A rehearsal for %(project)s has been cancelled."
 msgstr "Próba w projekcie %(project)s została odwołana."
 
 msgid "A rehearsal for %(project)s has changed."
-msgstr "Próba w projekcie %(project)s uległa zmianie."
+msgstr "Zmieniły się szczegóły próby w %(project)s."
 
 msgid "Absence approved — %(project)s"
-msgstr "Nieobecność zaakceptowana — %(project)s"
+msgstr "Nieobecność zatwierdzona — %(project)s"
 
 msgid "Absence not approved — %(project)s"
-msgstr "Nieobecność niezaakceptowana — %(project)s"
+msgstr "Nieobecność niezatwierdzona — %(project)s"
 
 msgid "Absence request — %(artist)s"
 msgstr "Prośba o nieobecność — %(artist)s"
@@ -2159,7 +2159,7 @@ msgid "Contract"
 msgstr "Umowa"
 
 msgid "Contract ready to sign — %(project)s"
-msgstr "Umowa do podpisu — %(project)s"
+msgstr "Umowa gotowa do podpisu — %(project)s"
 
 msgid "Date"
 msgstr "Data"
@@ -2183,7 +2183,7 @@ msgid "Invitation to sing: %(project)s"
 msgstr "Zaproszenie do udziału: %(project)s"
 
 msgid "Invited by"
-msgstr "Zaproszenie od"
+msgstr "Zaprasza"
 
 msgid "Library"
 msgstr "Biblioteka"
@@ -2195,7 +2195,7 @@ msgid "New material — %(piece)s"
 msgstr "Nowe materiały — %(piece)s"
 
 msgid "New message in %(project)s"
-msgstr "Nowa wiadomość w projekcie %(project)s"
+msgstr "Nowa wiadomość w %(project)s"
 
 msgid "New message: %(subject)s"
 msgstr "Nowa wiadomość: %(subject)s"
@@ -2270,7 +2270,7 @@ msgid "System"
 msgstr "System"
 
 msgid "Updated: %(project)s"
-msgstr "Aktualizacja: %(project)s"
+msgstr "Zmiany: %(project)s"
 
 msgid "Venue"
 msgstr "Miejsce"
@@ -2282,7 +2282,7 @@ msgid "View schedule"
 msgstr "Zobacz harmonogram"
 
 msgid "Voice part"
-msgstr "Głos"
+msgstr "Partia"
 
 msgid "When"
 msgstr "Kiedy"
@@ -2300,10 +2300,10 @@ msgid "You have been cast in %(piece)s."
 msgstr "Otrzymujesz partię w utworze %(piece)s."
 
 msgid "Your casting in %(piece)s has been updated."
-msgstr "Twoja obsada w utworze %(piece)s została zmieniona."
+msgstr "Twoja obsada w %(piece)s została zmieniona."
 
 msgid "Your contract for %(project)s is ready to review and sign."
-msgstr "Twoja umowa do projektu %(project)s jest gotowa do wglądu i podpisu."
+msgstr "Twoja umowa do %(project)s czeka na sprawdzenie i podpis."
 
 msgid "Your engagement %(project)s begins on %(when)s."
 msgstr "Twoje wydarzenie %(project)s zaczyna się %(when)s."
@@ -2384,3 +2384,361 @@ msgstr "Twoje konto VoctManager i dane osobowe zostały trwale usunięte."
 #, python-format
 msgid "New message from %(sender)s"
 msgstr "Nowa wiadomość od: %(sender)s"
+
+msgid "Reply"
+msgstr "Odpowiedz"
+
+msgid "Schedule"
+msgstr "Harmonogram"
+
+msgid "Open the channel"
+msgstr "Otwórz kanał"
+
+msgid "Open the conversation"
+msgstr "Otwórz rozmowę"
+
+msgid "Open the library"
+msgstr "Otwórz bibliotekę"
+
+msgid "Open the score"
+msgstr "Otwórz nuty"
+
+msgid "See the changes"
+msgstr "Zobacz zmiany"
+
+msgid "See the invitation"
+msgstr "Zobacz zaproszenie"
+
+msgid "Review the contract"
+msgstr "Sprawdź umowę"
+
+msgid "Review the request"
+msgstr "Rozpatrz prośbę"
+
+msgid "Review the roster"
+msgstr "Zobacz skład"
+
+msgid "RSVP"
+msgstr "Odpowiedź"
+
+msgid "Notice"
+msgstr "Komunikat"
+
+msgid "Singer"
+msgstr "Chórzysta"
+
+msgid "Where"
+msgstr "Gdzie"
+
+msgid "Note"
+msgstr "Notatka"
+
+msgid "Date & time"
+msgstr "Data i godzina"
+
+msgid "Call time"
+msgstr "Zbiórka"
+
+msgid "Dress code"
+msgstr "Strój"
+
+msgid "someone"
+msgstr "ktoś"
+
+msgid "A singer"
+msgstr "Ktoś z chóru"
+
+msgid "your next concert"
+msgstr "Twój najbliższy koncert"
+
+msgid "%(label)s: %(new)s"
+msgstr "%(label)s: %(new)s"
+
+msgid "%(label)s: %(old)s → %(new)s"
+msgstr "%(label)s: %(old)s → %(new)s"
+
+msgid "You're invited: %(project)s"
+msgstr "Zaproszenie: %(project)s"
+
+msgid "An invitation to sing — %(project)s"
+msgstr "Zaproszenie do śpiewania — %(project)s"
+
+msgid "%(inviter)s would love to have you on this one."
+msgstr "%(inviter)s chętnie zobaczy Cię w tym składzie."
+
+msgid ""
+"%(inviter)s has invited you to join %(project)s. We hope you can be part of "
+"it."
+msgstr ""
+"%(inviter)s zaprasza Cię do udziału w %(project)s. Mamy nadzieję, że "
+"będziesz z nami."
+
+msgid "When: %(dates)s."
+msgstr "Kiedy: %(dates)s."
+
+msgid "Where: %(venue)s."
+msgstr "Gdzie: %(venue)s."
+
+msgid "What changed in %(project)s"
+msgstr "Co się zmieniło w %(project)s"
+
+msgid "Here's what changed in %(project)s."
+msgstr "Oto co się zmieniło w %(project)s."
+
+msgid "A few things changed — %(summary)s."
+msgstr "Kilka zmian — %(summary)s."
+
+msgid "Some details have changed. Tap to see what's new."
+msgstr "Zmieniło się kilka szczegółów. Dotknij, aby zobaczyć."
+
+msgid "Change of plans: %(project)s"
+msgstr "Zmiana planów: %(project)s"
+
+msgid "You've been removed from %(project)s"
+msgstr "Usunięto Cię z %(project)s"
+
+msgid ""
+"You're no longer on the roster for %(project)s. Reach out if this is "
+"unexpected."
+msgstr ""
+"Nie ma Cię już w składzie %(project)s. Odezwij się, jeśli to niespodzianka."
+
+msgid ""
+"You're no longer part of %(project)s. If that seems wrong, please get in "
+"touch with the office."
+msgstr ""
+"Nie bierzesz już udziału w %(project)s. Jeśli to pomyłka, skontaktuj się z "
+"biurem."
+
+msgid "%(project)s has been cancelled"
+msgstr "%(project)s zostaje odwołany"
+
+msgid "%(project)s won't be going ahead. Check your schedule for the details."
+msgstr ""
+"%(project)s niestety się nie odbędzie. Szczegóły znajdziesz w harmonogramie."
+
+msgid "Coming up: %(project)s"
+msgstr "Już wkrótce: %(project)s"
+
+msgid "Coming up: %(project)s — %(when)s"
+msgstr "Już wkrótce: %(project)s — %(when)s"
+
+msgid "%(project)s is coming up on %(when)s. Almost showtime."
+msgstr "%(project)s już %(when)s. Zbliża się wielki dzień."
+
+msgid "%(project)s is coming up soon. Almost showtime."
+msgstr "%(project)s już niedługo. Zbliża się wielki dzień."
+
+msgid "A new rehearsal for %(project)s — %(when)s. See you at the stands."
+msgstr "Nowa próba %(project)s — %(when)s. Do zobaczenia na pulpitach."
+
+msgid "A new rehearsal has been added to %(project)s. See you at the stands."
+msgstr "Do %(project)s dodano nową próbę. Do zobaczenia na pulpitach."
+
+msgid "Rehearsal details changed — %(summary)s."
+msgstr "Zmiany w próbie — %(summary)s."
+
+msgid "A rehearsal time or place has changed. Tap to check the schedule."
+msgstr "Zmienił się termin lub miejsce próby. Sprawdź harmonogram."
+
+msgid "A %(project)s rehearsal is off. Check the schedule for what's next."
+msgstr "Próba %(project)s odwołana. Sprawdź harmonogram, co dalej."
+
+msgid "%(project)s rehearsal %(when)s. See you at the stands."
+msgstr "Próba %(project)s — %(when)s. Do zobaczenia na pulpitach."
+
+msgid "Your %(project)s rehearsal is coming up. See you at the stands."
+msgstr "Twoja próba %(project)s już niedługo. Do zobaczenia na pulpitach."
+
+msgid "You're singing %(voice)s — %(piece)s"
+msgstr "Śpiewasz partię %(voice)s — %(piece)s"
+
+msgid "A new part for you — %(piece)s"
+msgstr "Nowa partia dla Ciebie — %(piece)s"
+
+msgid "New part for you — %(piece)s"
+msgstr "Nowa partia dla Ciebie — %(piece)s"
+
+msgid ""
+"Your part in %(piece)s is %(voice)s. Open the score and recordings to start "
+"learning it."
+msgstr ""
+"Twoja partia w %(piece)s to %(voice)s. Otwórz nuty i nagrania, aby zacząć "
+"ćwiczyć."
+
+msgid ""
+"You've been cast in %(piece)s. Open the score and recordings to start "
+"learning it."
+msgstr "Masz partię w %(piece)s. Otwórz nuty i nagrania, aby zacząć ćwiczyć."
+
+msgid "Casting update — %(piece)s"
+msgstr "Aktualizacja obsady — %(piece)s"
+
+msgid "Casting change — %(piece)s"
+msgstr "Zmiana w obsadzie — %(piece)s"
+
+msgid "Your part changed — %(summary)s. Tap to review the score."
+msgstr "Zmiana w Twojej partii — %(summary)s. Dotknij, aby sprawdzić nuty."
+
+msgid "Your casting in %(piece)s has changed. Tap to review the score."
+msgstr "Twoja obsada w %(piece)s się zmieniła. Dotknij, aby sprawdzić nuty."
+
+msgid "You're no longer cast in %(piece)s."
+msgstr "Nie śpiewasz już w %(piece)s."
+
+msgid "Fresh material — %(piece)s"
+msgstr "Nowe materiały — %(piece)s"
+
+msgid ""
+"New sheet music or a recording has landed for %(piece)s. Tap to open it."
+msgstr "Są nowe nuty lub nagranie do %(piece)s. Dotknij, aby otworzyć."
+
+msgid "New sheet music or a recording has been added to %(piece)s."
+msgstr "Do %(piece)s dodano nowe nuty lub nagranie."
+
+msgid "Your contract is ready — %(project)s"
+msgstr "Twoja umowa jest gotowa — %(project)s"
+
+msgid "The contract for %(project)s is ready to review and sign."
+msgstr "Umowa do %(project)s czeka na sprawdzenie i podpis."
+
+msgid ""
+"%(artist)s asked to be excused from the %(project)s rehearsal on %(when)s."
+msgstr "%(artist)s prosi o nieobecność na próbie %(project)s dnia %(when)s."
+
+msgid "%(artist)s asked to be excused from %(project)s."
+msgstr "%(artist)s prosi o nieobecność — %(project)s."
+
+msgid "“%(note)s”"
+msgstr "„%(note)s”"
+
+msgid "You're excused — %(project)s"
+msgstr "Nieobecność usprawiedliwiona — %(project)s"
+
+msgid ""
+"You're excused from the %(project)s rehearsal on %(when)s. Thanks for "
+"letting us know."
+msgstr ""
+"Masz usprawiedliwioną nieobecność na próbie %(project)s dnia %(when)s. "
+"Dziękujemy za informację."
+
+msgid "You're excused from %(project)s. Thanks for letting us know."
+msgstr ""
+"Masz usprawiedliwioną nieobecność — %(project)s. Dziękujemy za informację."
+
+msgid ""
+"Your absence for the %(project)s rehearsal on %(when)s wasn't approved. Tap "
+"for details."
+msgstr ""
+"Twoja nieobecność na próbie %(project)s dnia %(when)s nie została "
+"zatwierdzona. Dotknij po szczegóły."
+
+msgid "Your absence for %(project)s wasn't approved. Tap for details."
+msgstr ""
+"Twoja nieobecność w %(project)s nie została zatwierdzona. Dotknij po "
+"szczegóły."
+
+msgid "%(artist)s — %(project)s"
+msgstr "%(artist)s — %(project)s"
+
+msgid "%(artist)s %(phrase)s for %(project)s."
+msgstr "%(artist)s %(phrase)s — %(project)s."
+
+msgid "%(artist)s %(phrase)s — %(project)s."
+msgstr "%(artist)s %(phrase)s — %(project)s."
+
+msgid "confirmed their place"
+msgstr "potwierdza udział"
+
+msgid "declined the invitation"
+msgstr "rezygnuje z udziału"
+
+msgid "was invited"
+msgstr "został(a) zaproszony(a)"
+
+msgid "responded to the invitation"
+msgstr "odpowiada na zaproszenie"
+
+msgid "will be there"
+msgstr "będzie obecny(a)"
+
+msgid "will be a little late"
+msgstr "się trochę spóźni"
+
+msgid "will be about %(minutes)d min late"
+msgstr "spóźni się ok. %(minutes)d min"
+
+msgid "can't make it"
+msgstr "nie może dotrzeć"
+
+msgid "asked to be excused"
+msgstr "prosi o nieobecność"
+
+msgid "A message for you"
+msgstr "Wiadomość dla Ciebie"
+
+msgid "%(sender)s posted in the channel."
+msgstr "%(sender)s napisał(a) na kanale."
+
+msgid "A quick note"
+msgstr "Krótka informacja"
+
+msgid "There's something that needs your attention. Tap to learn more."
+msgstr "Jest coś, co wymaga Twojej uwagi. Dotknij, aby zobaczyć."
+
+msgid "Update — %(project)s"
+msgstr "Aktualizacja — %(project)s"
+
+msgid "Something new for you"
+msgstr "Coś nowego dla Ciebie"
+
+msgid "You have a new update in VoctManager. Tap to take a look."
+msgstr "Masz nowość w VoctManager. Dotknij, aby zobaczyć."
+
+msgid "Security"
+msgstr "Bezpieczeństwo"
+
+msgid "Reset your password"
+msgstr "Zresetuj hasło"
+
+msgid "Regain access to your panel"
+msgstr "Odzyskaj dostęp do panelu"
+
+msgid "Set a new password"
+msgstr "Ustaw nowe hasło"
+
+msgid "Reset Password"
+msgstr "Zresetuj hasło"
+
+msgid "This link expires automatically"
+msgstr "Ten link wygasa automatycznie"
+
+msgid "If you did not request this, you can safely ignore this message."
+msgstr ""
+"Jeśli to nie Ty wysłałeś tę prośbę, możesz spokojnie zignorować tę "
+"wiadomość."
+
+msgid ""
+"This link can be used only once and will expire automatically. Please ensure"
+" it remains confidential and do not share it."
+msgstr ""
+"Tego linku można użyć tylko raz i wygasa on automatycznie. Upewnij się, że "
+"pozostanie poufny, i nie udostępniaj go nikomu."
+
+msgid ""
+"We received a request to reset the password for your VoctManager account. "
+"Choose a new password using the secure link below and you will be back in "
+"the panel in a moment."
+msgstr ""
+"Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta VoctManager. "
+"Wybierz nowe hasło za pomocą bezpiecznego linku poniżej, a za chwilę wrócisz"
+" do panelu."
+
+msgid "Reply in your workspace"
+msgstr "Odpowiedz w panelu"
+
+msgid "Now mandatory"
+msgstr "Teraz obowiązkowa"
+
+msgid "Now optional"
+msgstr "Teraz nieobowiązkowa"

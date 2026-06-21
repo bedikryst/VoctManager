@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { Globe } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
+import { changeAppLanguage } from "@/shared/config/i18n";
 
 const SUPPORTED_LANGUAGES = ["pl", "en", "fr"] as const;
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -60,10 +61,10 @@ export const AuthLanguageSwitcher: React.FC<AuthLanguageSwitcherProps> = ({
   const handleChange = useCallback(
     (lang: SupportedLanguage) => {
       if (lang === currentLang) return;
-      void i18n.changeLanguage(lang);
-      document.documentElement.lang = lang;
+      // Pre-login: localStorage only (no authenticated profile to persist to yet).
+      changeAppLanguage(lang);
     },
-    [i18n, currentLang],
+    [currentLang],
   );
 
   return (

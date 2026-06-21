@@ -84,7 +84,7 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     sight_reading_skill: int | None = Field(None, ge=1, le=5)
     vocal_range_bottom: str | None = Field(None, max_length=5)
     vocal_range_top: str | None = Field(None, max_length=5)
-    language: str = Field(default='en', max_length=10)
+    language: str = Field(default='pl', max_length=10)
 
     @field_validator("first_name", "last_name", mode="before")
     @classmethod

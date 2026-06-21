@@ -9,12 +9,17 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import i18n from "@/shared/config/i18n";
 import {
   useRegisterPushDevice,
   useUnregisterPushDevice,
   useSendTestPush,
 } from "@/features/notifications/api/devices";
 import type { WebPushSubscribeDTO } from "../types/notifications.dto";
+
+/** Localized toast text. The hook isn't a component, so it reads the shared
+ * i18n instance directly (resources are loaded at app init). */
+const tt = (key: string): string => i18n.t(`notifications.push.toasts.${key}`);
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
@@ -131,12 +136,12 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (availability.kind !== "ready") {
       if (availability.kind === "misconfigured") {
-        toast.error("Powiadomienia są tymczasowo niedostępne. Skontaktuj się z administratorem.");
+        toast.error(tt("unavailable"));
       }
       return false;
     }
     if (Notification.permission === "denied") {
-      toast.error("Powiadomienia są zablokowane w ustawieniach przeglądarki.");
+      toast.error(tt("denied_blocked"));
       return false;
     }
 
@@ -145,7 +150,7 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       setPermission(result);
       if (result !== "granted") {
         if (result === "denied") {
-          toast.error("Odmówiłeś dostępu. Możesz to zmienić w ustawieniach przeglądarki.");
+          toast.error(tt("denied_now"));
         }
         return false;
       }
@@ -173,11 +178,11 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       });
 
       setIsSubscribed(true);
-      toast.success("Powiadomienia push aktywne na tym urządzeniu.");
+      toast.success(tt("enabled"));
       return true;
     } catch (error) {
       console.error("[PushNotifications] Subscription failed:", error);
-      toast.error("Nie udało się aktywować powiadomień. Spróbuj ponownie za chwilę.");
+      toast.error(tt("subscribe_failed"));
       return false;
     }
   }, [availability, registerMutation]);
@@ -198,10 +203,10 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       await subscription.unsubscribe();
       await unregisterMutation.mutateAsync(endpoint);
       setIsSubscribed(false);
-      toast.success("Powiadomienia push wyłączone.");
+      toast.success(tt("disabled"));
     } catch (error) {
       console.error("[PushNotifications] Unsubscribe failed:", error);
-      toast.error("Nie udało się wyłączyć powiadomień push.");
+      toast.error(tt("unsubscribe_failed"));
     }
   }, [isReady, unregisterMutation]);
 
@@ -209,9 +214,9 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     if (!isReady || !isSubscribed) return;
     try {
       await testMutation.mutateAsync();
-      toast.success("Test powiadomienia wysłany — sprawdź pasek powiadomień.");
+      toast.success(tt("test_sent"));
     } catch {
-      toast.error("Nie udało się wysłać testu. Spróbuj ponownie.");
+      toast.error(tt("test_failed"));
     }
   }, [isReady, isSubscribed, testMutation]);
 

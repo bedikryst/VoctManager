@@ -5,51 +5,17 @@
 
 {% block content %}
 
+{# I. HEADLINE #}
+{% translate "Overture" as eyebrow_text %}
+{% include "emails/partials/_eyebrow.html" with text=eyebrow_text %}
+{% translate "Welcome to VoctManager" as headline_text %}
+{% include "emails/partials/_headline.html" with text=headline_text size=38 mb=12 %}
+{% translate "Your profile awaits" as subtitle_text %}
+{% include "emails/partials/_subtitle.html" with text=subtitle_text %}
+{% include "emails/partials/_rule.html" with mb=44 %}
 
-<!-- ════════════════════════════════════════
-     I. HEADLINE
-     ════════════════════════════════════════ -->
-
-<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          font-size: 9px; font-weight: 700; letter-spacing: 0.5em; text-transform: uppercase;
-          color: #c9a764; margin: 0 0 18px 0; text-align: center;">
-  {% translate "Overture" %}
-</p>
-
-<h1 style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-           font-size: 38px; font-weight: 400; line-height: 1.15; letter-spacing: 0.01em;
-           color: #111827; margin: 0 0 12px 0; text-align: center;">
-  {% translate "Welcome to VoctManager" %}
-</h1>
-
-<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
-          color: #c9bfb4; margin: 0 0 44px 0; text-align: center;">
-  {% translate "Your profile awaits" %}
-</p>
-
-
-<!-- Thin rule -->
-<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 44px 0;">
-  <tr>
-    <td style="border-top: 1px solid #ede8df; font-size: 0; line-height: 0;">&nbsp;</td>
-  </tr>
-</table>
-
-
-<!-- ════════════════════════════════════════
-     II. BODY
-     ════════════════════════════════════════ -->
-
-<p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-          font-size: 21px; font-style: italic; color: #374151;
-          margin: 0 0 28px 0; text-align: center; line-height: 1.4;">
-  {% if first_name %}
-    {% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Dear {{ name }},{% endblocktranslate %}
-  {% else %}
-    {% translate "Dear Artist," %}
-  {% endif %}
-</p>
+{# II. BODY #}
+{% include "emails/partials/_greeting.html" with style="dear" mb=28 %}
 
 <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
           font-size: 15px; color: #4b5563; margin: 0 0 20px 0; line-height: 1.9; text-align: center;">
@@ -66,11 +32,7 @@
   {% translate "One final step remains before the music begins." %}
 </p>
 
-
-<!-- ════════════════════════════════════════
-     III. CTA
-     ════════════════════════════════════════ -->
-
+{# III. CTA #}
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 44px 0;">
   <tr>
     <td bgcolor="#faf8f4" style="background-color: #faf8f4; border: 1px solid #e8e3d8;
@@ -82,13 +44,8 @@
         {% translate "Complete your activation" %}
       </p>
 
-      <a href="{{ activation_link }}"
-         style="display: inline-block; background-color: #111827; color: #c9a764;
-                text-decoration: none; padding: 20px 52px;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                font-size: 11px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;">
-        {% translate "Activate Profile" %} &rarr;
-      </a>
+      {% translate "Activate Profile" as cta_label %}
+      {% include "emails/partials/_button.html" with url=activation_link label=cta_label %}
 
       <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                 font-size: 11px; color: #c9bfb4; margin: 20px 0 0 0; letter-spacing: 0.04em;">
@@ -99,11 +56,7 @@
   </tr>
 </table>
 
-
-<!-- ════════════════════════════════════════
-     IV. SECURITY
-     ════════════════════════════════════════ -->
-
+{# IV. SECURITY #}
 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 14px 0;">
   <tr>
     <td bgcolor="#faf9f7" style="background-color: #faf9f7; border-left: 2px solid #c9a764;
@@ -128,28 +81,8 @@
   </a>
 </p>
 
-
-<!-- ════════════════════════════════════════
-     V. CLOSING
-     ════════════════════════════════════════ -->
-
-<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 44px 0;">
-  <tr>
-    <td style="border-top: 1px solid #ede8df; font-size: 0; line-height: 0;">&nbsp;</td>
-  </tr>
-</table>
-
-<p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-          font-size: 18px; font-style: italic; color: #4b5563;
-          margin: 0 0 12px 0; text-align: center; line-height: 1.5;">
-  {% translate "With warmest regards," %}
-</p>
-
-<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          font-size: 9px; font-weight: 700; letter-spacing: 0.48em; text-transform: uppercase;
-          color: #111827; margin: 0; text-align: center;">
-  {% translate "The VoctEnsemble Team" %}
-</p>
-
+{# V. CLOSING #}
+{% include "emails/partials/_rule.html" with mb=44 %}
+{% include "emails/partials/_signoff.html" %}
 
 {% endblock %}

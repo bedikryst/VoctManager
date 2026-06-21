@@ -108,6 +108,87 @@ class MessageContentCompositionTests(SimpleTestCase):
             self.assertEqual(c.url_path, "/panel")
 
 
+class StructuredMetadataTests(SimpleTestCase):
+    """Composers render structured codes (status / field changes) — never prose."""
+
+    def test_attendance_status_and_minutes_render(self) -> None:
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.ATTENDANCE_SUBMITTED, "INFO",
+                {"artist_name": "Ada", "project_name": "Requiem", "status": "LATE", "minutes_late": 15},
+                is_manager=True,
+            )
+            self.assertIn("Ada", c.body)
+            self.assertIn("15", c.body)
+            # The old half-English "Status: LATE. Note:" prose must be gone.
+            self.assertNotIn("Status:", c.body)
+
+    def test_participation_status_renders_phrase(self) -> None:
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.PARTICIPATION_RESPONSE, "INFO",
+                {"artist_name": "Bo", "project_name": "Requiem", "status": "DEC"},
+                is_manager=True,
+            )
+            self.assertIn("declined", c.body.lower())
+            self.assertNotIn("Changed status", c.body)
+
+    def test_structured_changes_render_localized_labels(self) -> None:
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.PROJECT_UPDATED, "WARNING",
+                {"project_name": "Requiem",
+                 "changes": [{"field": "location", "old": "A", "new": "B"},
+                             {"field": "date_time", "old": "x", "new": "y"}]},
+                is_manager=False,
+            )
+            self.assertIn("Venue", c.body)
+            self.assertIn("A → B", c.body)
+            # Detail rows mirror the structured changes.
+            self.assertTrue(any(r.label == "Date & time" for r in c.details))
+
+    def test_project_removed_event_distinct_from_update(self) -> None:
+        with translation.override("en"):
+            removed = MessageContentBuilder.build(
+                NotificationType.PROJECT_UPDATED, "WARNING",
+                {"project_name": "Requiem", "event": "removed"}, is_manager=False,
+            )
+            self.assertIn("no longer", removed.body.lower())
+
+    def test_casting_carries_contextual_action_urls(self) -> None:
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.PIECE_CASTING_ASSIGNED, "INFO",
+                {"piece_title": "Lacrimosa", "voice_line": "Alt"}, is_manager=False,
+            )
+            urls = {a.action: a.url for a in c.actions}
+            self.assertEqual(urls.get("view"), "/panel/materials")
+            self.assertEqual(urls.get("schedule"), "/panel/schedule")
+
+
+class LocalizedRenderTests(SimpleTestCase):
+    """The compiled .mo catalogs render the warm copy in PL/FR (no English leak)."""
+
+    def test_polish_casting_uses_native_copy(self) -> None:
+        with translation.override("pl"):
+            c = MessageContentBuilder.build(
+                NotificationType.PIECE_CASTING_ASSIGNED, "INFO",
+                {"piece_title": "Lacrimosa", "voice_line": "Alt"}, is_manager=False,
+            )
+            self.assertIn("Śpiewasz", c.title)
+            self.assertIn("nuty", c.body)
+
+    def test_polish_participation_has_no_english_leak(self) -> None:
+        with translation.override("pl"):
+            c = MessageContentBuilder.build(
+                NotificationType.PARTICIPATION_RESPONSE, "INFO",
+                {"artist_name": "Ada", "project_name": "Requiem", "status": "DEC"},
+                is_manager=True,
+            )
+            self.assertIn("rezygnuje", c.body)
+            self.assertNotIn("declined", c.body.lower())
+
+
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     FRONTEND_URL="https://voctensemble.com",
@@ -144,6 +225,26 @@ class TransactionalEmailTests(TestCase):
         self.assertIn("https://voctensemble.com/panel/schedule", html)
         # Plain-text alternative carries the same absolute link
         self.assertIn("https://voctensemble.com/panel/schedule", msg.body)
+
+    def test_email_language_follows_profile_and_updates_after_change(self) -> None:
+        """Notification emails resolve profile.language JIT at send time — so a
+        language change is honoured by the very next email, with no re-subscribe."""
+        # Profile starts as 'en' (see setUp): an INFO email keeps the warm sign-off.
+        self._dispatch(NotificationType.REHEARSAL_SCHEDULED, metadata={"project_name": "Requiem"})
+        self.assertEqual(len(mail.outbox), 1)
+        html_en = str(cast(EmailMultiAlternatives, mail.outbox[0]).alternatives[0][0])
+        self.assertIn("With warmest regards,", html_en)
+
+        # Artist switches language → the next email follows immediately.
+        mail.outbox.clear()
+        self.user.profile.language = "fr"
+        self.user.profile.save(update_fields=["language"])
+
+        self._dispatch(NotificationType.REHEARSAL_SCHEDULED, metadata={"project_name": "Requiem"})
+        self.assertEqual(len(mail.outbox), 1)
+        html_fr = str(cast(EmailMultiAlternatives, mail.outbox[0]).alternatives[0][0])
+        self.assertIn("Avec nos plus cordiales salutations,", html_fr)
+        self.assertNotIn("With warmest regards,", html_fr)
 
     def test_operational_email_respects_opt_out(self) -> None:
         self.user.profile.email_notifications_enabled = False

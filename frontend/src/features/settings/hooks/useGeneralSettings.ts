@@ -24,7 +24,7 @@ export function useGeneralSettings() {
   const { refreshUser } = useAuth();
   const { data: user, isLoading: isFetching } = useSettingsData();
   const { mutateAsync: updatePreferences, isPending } = useUpdatePreferences();
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<UpdatePreferencesPayload>({
     first_name: "",
     last_name: "",
@@ -99,11 +99,8 @@ export function useGeneralSettings() {
 
       setStatus({ type: "success" });
 
-      const newLang = formData.profile.language;
-      if (newLang && i18n.language !== newLang) {
-        i18n.changeLanguage(newLang);
-        document.documentElement.lang = newLang;
-      }
+      // Language adoption (UI + <html lang>) is handled centrally by the
+      // useUpdatePreferences mutation's onSuccess from the persisted response.
 
       setTimeout(() => setStatus({ type: null }), 3000);
     } catch (error: unknown) {

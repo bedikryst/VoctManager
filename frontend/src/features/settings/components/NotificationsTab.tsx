@@ -26,6 +26,10 @@ import {
   useNotificationPreferences,
   useUpdatePreference,
 } from "@/features/notifications/api/preferences";
+import {
+  useSettingsData,
+  useUpdateDigestSettings,
+} from "@/features/settings/api/settings.queries";
 import { usePushNotifications } from "@/features/notifications/hooks/usePushNotifications";
 import { PushPermissionPrimer } from "@/features/notifications/components/PushPermissionPrimer";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -48,12 +52,6 @@ const NotificationSwitch = ({ checked, onCheckedChange }: NotificationSwitchProp
   >
     <Switch.Thumb className="block w-5 h-5 bg-ethereal-marble rounded-full transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-5.5" />
   </Switch.Root>
-);
-
-const LockedOnSwitch = () => (
-  <div className="w-11 h-6 bg-ethereal-sage/30 rounded-full flex items-center px-0.5 opacity-50 cursor-not-allowed shrink-0">
-    <div className="w-5 h-5 bg-ethereal-sage/70 rounded-full translate-x-5" />
-  </div>
 );
 
 const LockedOffSwitch = () => (
@@ -189,13 +187,14 @@ export const NotificationsTab: React.FC = () => {
           onSendTest={sendTest}
         />
 
+        <Text size="xs" color="muted" className="mb-2 leading-relaxed">
+          {t("settings.notifications.in_app_note")}
+        </Text>
+
         <div className="flex flex-col divide-y divide-ethereal-parchment/40 sm:border-t sm:border-ethereal-parchment/40">
-          <div className="hidden sm:grid grid-cols-[1fr_100px_100px_100px] gap-4 py-4 px-2">
+          <div className="hidden sm:grid grid-cols-[1fr_100px_100px] gap-4 py-4 px-2">
             <div>
               <Eyebrow>{t("settings.notifications.table.event_type")}</Eyebrow>
-            </div>
-            <div className="text-center">
-              <Eyebrow>{t("settings.notifications.table.in_app")}</Eyebrow>
             </div>
             <div className="text-center">
               <Eyebrow>{t("settings.notifications.table.email")}</Eyebrow>
@@ -208,7 +207,7 @@ export const NotificationsTab: React.FC = () => {
           {preferences?.map((pref) => (
             <div
               key={pref.notification_type}
-              className="flex flex-col sm:grid sm:grid-cols-[1fr_100px_100px_100px] sm:items-center gap-y-4 sm:gap-4 py-5 sm:py-4 hover:bg-ethereal-parchment/10 transition-colors sm:px-2 rounded-xl sm:rounded-none"
+              className="flex flex-col sm:grid sm:grid-cols-[1fr_100px_100px] sm:items-center gap-y-4 sm:gap-4 py-5 sm:py-4 hover:bg-ethereal-parchment/10 transition-colors sm:px-2 rounded-xl sm:rounded-none"
             >
               <div className="flex items-center px-1 sm:px-0">
                 <Text size="sm" weight="medium">
@@ -217,11 +216,6 @@ export const NotificationsTab: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-lg p-4 sm:p-0">
-                <div className="flex items-center justify-between sm:justify-center w-full">
-                  <Eyebrow className="sm:hidden">{t("settings.notifications.table.in_app")}</Eyebrow>
-                  <LockedOnSwitch />
-                </div>
-
                 <div className="flex items-center justify-between sm:justify-center w-full">
                   <Eyebrow className="sm:hidden">{t("settings.notifications.table.email")}</Eyebrow>
                   <NotificationSwitch
@@ -275,6 +269,8 @@ export const NotificationsTab: React.FC = () => {
             </div>
           ))}
         </div>
+
+        <DigestSection />
       </GlassCard>
 
       <PushPermissionPrimer
@@ -392,6 +388,58 @@ const PushHero: React.FC<PushHeroProps> = ({
         )}
       </div>
     </motion.div>
+  );
+};
+
+/**
+ * Daily-digest control. Routine INFO manager alerts (attendance, RSVPs, absence
+ * requests) are batched into one email a day instead of a real-time flood. Only
+ * shown to managers — they're the recipients of digestible events.
+ */
+const DigestSection: React.FC = () => {
+  const { t } = useTranslation();
+  const { data: user } = useSettingsData();
+  const updateDigest = useUpdateDigestSettings();
+
+  if (!user?.profile?.is_manager) return null;
+
+  const enabled = user.profile.digest_enabled ?? true;
+  const hour = user.profile.digest_hour ?? 8;
+
+  return (
+    <div className="mt-6 pt-6 border-t border-ethereal-parchment/40">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <Text size="sm" weight="medium">
+            {t("settings.notifications.digest.title")}
+          </Text>
+          <Text size="xs" color="muted" className="mt-1 leading-relaxed">
+            {t("settings.notifications.digest.description")}
+          </Text>
+        </div>
+        <NotificationSwitch
+          checked={enabled}
+          onCheckedChange={(val) => updateDigest.mutate({ digest_enabled: val })}
+        />
+      </div>
+
+      {enabled && (
+        <div className="mt-4 flex items-center justify-between gap-4">
+          <Eyebrow>{t("settings.notifications.digest.hour_label")}</Eyebrow>
+          <select
+            value={hour}
+            onChange={(e) => updateDigest.mutate({ digest_hour: Number(e.target.value) })}
+            className="rounded-lg border border-ethereal-parchment/60 bg-ethereal-marble px-3 py-1.5 text-sm text-ethereal-ink outline-none focus:ring-2 ring-ethereal-gold/50 cursor-pointer"
+          >
+            {Array.from({ length: 24 }, (_, h) => (
+              <option key={h} value={h}>
+                {String(h).padStart(2, "0")}:00
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -4,17 +4,8 @@
 
 {% block content %}
 
-<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          font-size: 9px; font-weight: 700; letter-spacing: 0.5em; text-transform: uppercase;
-          color: #c9a764; margin: 0 0 18px 0; text-align: center;">
-  VoctFoundation · Mecenat
-</p>
-
-<h1 style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-           font-size: 34px; font-weight: 400; line-height: 1.15; letter-spacing: 0.01em;
-           color: #111827; margin: 0 0 12px 0; text-align: center;">
-  Nowe zgłoszenie mecenasa
-</h1>
+{% include "emails/partials/_eyebrow.html" with text="VoctFoundation · Mecenat" %}
+{% include "emails/partials/_headline.html" with text="Nowe zgłoszenie mecenasa" size=34 mb=12 %}
 
 <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
           font-size: 15px; color: #4b5563; margin: 28px 0; line-height: 1.9; text-align: center;">

@@ -33,14 +33,37 @@
       .sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; }
 
       /* Buttons & Interaction */
-      .btn:hover { background-color: #1f2937 !important; border-color: #1f2937 !important; }
+      .cta { transition: background-color 0.2s ease, border-color 0.2s ease; }
+      .cta:hover { background-color: #1f2937 !important; border-color: #1f2937 !important; }
 
-      /* Mobile Adjustments */
+      /*
+       * Mobile Adjustments
+       * A phone renders this fixed 600px artifact at its own device width. The
+       * single worst failure mode was a fixed-width CTA (wide padding + wide
+       * letter-spacing) overflowing a ~360px screen: to fit it, mail clients
+       * (iOS Mail especially) scale the WHOLE message down — which is exactly
+       * why headlines and some copy read "too small". We therefore make the CTA
+       * full-bleed and size the headline to the device, so the message renders
+       * at true 1:1 scale instead of being shrunk to fit a runaway button.
+       */
       @media only screen and (max-width: 600px) {
-        .content-cell { padding: 44px 28px !important; }
-        .logo-cell { padding: 20px 0 !important; }
-        .logo-img { height: 44px !important; }
-        .outer-cell { padding: 28px 10px !important; }
+        .outer-cell   { padding: 24px 12px !important; }
+        .content-cell { padding: 40px 26px !important; }
+        .logo-cell    { padding: 24px 0 !important; }
+        .logo-img     { height: 46px !important; }
+        .email-footer { padding: 30px 26px !important; }
+
+        /* Headline stays editorial, sized to land in one or two lines. */
+        .email-h1 { font-size: 27px !important; line-height: 1.24 !important; }
+
+        /* Full-bleed, finger-friendly primary action — never overflows. */
+        .cta {
+          display: block !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          padding: 18px 20px !important;
+          letter-spacing: 0.16em !important;
+        }
       }
 
       /*

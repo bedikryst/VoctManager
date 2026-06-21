@@ -28,23 +28,39 @@ export type NotificationType =
 // ==========================================
 // STRICT METADATA PAYLOADS
 // ==========================================
+//
+// Metadata carries STRUCTURED, language-neutral data only (stable status/field
+// codes, names, formatted dates). The in-app row composes its own copy from
+// these codes in the viewer's current UI language — see NotificationItem.tsx.
+
+/** One audited field change; `field` is a stable key localized at render time. */
+export interface FieldChange {
+  field: string;
+  old?: string | null;
+  new?: string | null;
+}
+
+export type ProjectChangeEvent = "updated" | "removed";
+export type CastingChangeEvent = "updated" | "removed";
+
+/** Attendance status (PRESENT/LATE/EXCUSED/ABSENT) or participation RSVP (INV/CON/DEC). */
+export type RosterStatusCode = string;
 
 export interface ProjectInvitationMetadata {
   project_id: string;
   project_name: string;
   participation_id: string;
-  inviter_name: string;
-  date_range: string;
-  location: string;
-  description: string;
-  message?: string;
+  inviter_name?: string;
+  date_range?: string;
+  location?: string;
+  description?: string;
 }
 
 export interface ProjectUpdatedMetadata {
   project_id?: string;
   project_name: string;
-  message?: string;
-  changes?: string[];
+  event?: ProjectChangeEvent;
+  changes?: FieldChange[];
 }
 
 export interface RehearsalScheduledMetadata {
@@ -56,25 +72,24 @@ export interface RehearsalScheduledMetadata {
 export interface RehearsalUpdatedMetadata {
   rehearsal_id: string;
   project_name: string;
-  changes: string[];
+  changes: FieldChange[];
 }
 
 export interface RehearsalCancelledMetadata {
   project_name: string;
-  message: string;
 }
 
 export interface PieceCastingMetadata {
   piece_id?: string;
   piece_title: string;
   voice_line?: string;
-  message?: string;
+  event?: CastingChangeEvent;
+  changes?: FieldChange[];
 }
 
 export interface MaterialUploadedMetadata {
-  piece_id: string;
-  piece_title: string;
-  message?: string;
+  piece_id?: string;
+  piece_title?: string;
 }
 
 export interface AbsenceStatusMetadata {
@@ -86,8 +101,14 @@ export interface AbsenceStatusMetadata {
 export interface ManagerActionMetadata {
   project_name: string;
   artist_name: string;
-  action_details: string;
+  artist_id?: string;
+  project_id?: string;
+  rehearsal_id?: string;
   rehearsal_date?: string;
+  status?: RosterStatusCode;
+  previous_status?: RosterStatusCode;
+  minutes_late?: number | null;
+  excuse_note?: string | null;
 }
 
 export interface CustomAdminMessageMetadata {
@@ -155,14 +176,14 @@ export type NotificationDTO = BaseNotification &
       }
     | { notification_type: "MATERIAL_UPLOADED"; metadata: MaterialUploadedMetadata }
     | {
-        notification_type:
-          | "ABSENCE_APPROVED"
-          | "ABSENCE_REJECTED"
-          | "ABSENCE_REQUESTED";
+        notification_type: "ABSENCE_APPROVED" | "ABSENCE_REJECTED";
         metadata: AbsenceStatusMetadata;
       }
     | {
-        notification_type: "PARTICIPATION_RESPONSE" | "ATTENDANCE_SUBMITTED";
+        notification_type:
+          | "PARTICIPATION_RESPONSE"
+          | "ATTENDANCE_SUBMITTED"
+          | "ABSENCE_REQUESTED";
         metadata: ManagerActionMetadata;
       }
     | {

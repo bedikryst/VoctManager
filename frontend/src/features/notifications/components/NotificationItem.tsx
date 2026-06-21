@@ -26,16 +26,163 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { NotificationDTO } from "../types/notifications.dto";
+import type { FieldChange, NotificationDTO } from "../types/notifications.dto";
 import { useMarkNotificationRead } from "../api/notifications.queries";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
 
+type TFunc = ReturnType<typeof useTranslation>["t"];
+
 interface NotificationItemProps {
   notification: NotificationDTO;
   onClosePanel: () => void;
 }
+
+/** Localized human label for a structured change field key. */
+const changeLabel = (t: TFunc, fieldKey: string): string =>
+  t(`notifications.changes.${fieldKey}`, fieldKey.replace(/_/g, " "));
+
+/** A structured change rendered as a compact localized chip label. */
+const renderChange = (t: TFunc, change: FieldChange): string => {
+  const label = changeLabel(t, change.field);
+  if (change.old && change.new) return `${label}: ${change.old} → ${change.new}`;
+  if (change.new) return `${label}: ${change.new}`;
+  return label;
+};
+
+/** Verb phrase for a roster status code (attendance or RSVP). */
+const statusPhrase = (
+  t: TFunc,
+  kind: "attendance" | "participation",
+  code?: string,
+): string => (code ? t(`notifications.status.${kind}.${code}`, code) : "");
+
+/**
+ * Composes the in-app row's display parts from STRUCTURED metadata, localized to
+ * the viewer's current UI language. Mirrors the backend message_content composer
+ * so the bell, push and email all read consistently — without ever surfacing the
+ * language-neutral codes stored on the row.
+ */
+const describe = (
+  notification: NotificationDTO,
+  t: TFunc,
+): {
+  headline?: string;
+  subLabel?: string;
+  detail?: string;
+  changeChips?: string[];
+} => {
+  switch (notification.notification_type) {
+    case "PROJECT_INVITATION":
+      return { headline: notification.metadata.project_name };
+    case "PROJECT_UPDATED":
+      if (notification.metadata.event === "removed") {
+        return {
+          headline: notification.metadata.project_name,
+          detail: t("notifications.inapp.project_removed"),
+        };
+      }
+      return {
+        headline: notification.metadata.project_name,
+        changeChips: (notification.metadata.changes ?? []).map((c) => renderChange(t, c)),
+      };
+    case "PROJECT_CANCELLED":
+      return {
+        headline: notification.metadata.project_name as string | undefined,
+        detail: t("notifications.inapp.project_cancelled"),
+      };
+    case "REHEARSAL_SCHEDULED":
+      return { headline: notification.metadata.project_name };
+    case "REHEARSAL_UPDATED":
+      return {
+        headline: notification.metadata.project_name,
+        changeChips: (notification.metadata.changes ?? []).map((c) => renderChange(t, c)),
+      };
+    case "REHEARSAL_CANCELLED":
+      return {
+        headline: notification.metadata.project_name,
+        detail: t("notifications.inapp.rehearsal_cancelled"),
+      };
+    case "REHEARSAL_REMINDER":
+      return { headline: notification.metadata.project_name as string | undefined };
+    case "PIECE_CASTING_ASSIGNED":
+      return {
+        headline: notification.metadata.piece_title,
+        subLabel: notification.metadata.voice_line,
+      };
+    case "PIECE_CASTING_UPDATED":
+      if (notification.metadata.event === "removed") {
+        return {
+          headline: notification.metadata.piece_title,
+          detail: t("notifications.inapp.casting_removed"),
+        };
+      }
+      return {
+        headline: notification.metadata.piece_title,
+        changeChips: (notification.metadata.changes ?? []).map((c) => renderChange(t, c)),
+      };
+    case "MATERIAL_UPLOADED":
+      return { headline: notification.metadata.piece_title };
+    case "ABSENCE_APPROVED":
+      return {
+        headline: notification.metadata.project_name,
+        subLabel: notification.metadata.rehearsal_date,
+        detail: t("notifications.inapp.absence_approved"),
+      };
+    case "ABSENCE_REJECTED":
+      return {
+        headline: notification.metadata.project_name,
+        subLabel: notification.metadata.rehearsal_date,
+        detail: t("notifications.inapp.absence_rejected"),
+      };
+    case "ABSENCE_REQUESTED":
+      return {
+        headline: notification.metadata.artist_name,
+        subLabel: notification.metadata.project_name,
+        detail: t("notifications.inapp.absence_requested"),
+      };
+    case "PARTICIPATION_RESPONSE":
+      return {
+        headline: notification.metadata.artist_name,
+        subLabel: notification.metadata.project_name,
+        detail: statusPhrase(t, "participation", notification.metadata.status),
+      };
+    case "ATTENDANCE_SUBMITTED":
+      return {
+        headline: notification.metadata.artist_name,
+        subLabel: notification.metadata.project_name,
+        detail: statusPhrase(t, "attendance", notification.metadata.status),
+      };
+    case "MESSAGE_RECEIVED":
+      // Subject + snippet are user-authored content — passed through verbatim.
+      return {
+        headline: notification.metadata.title,
+        subLabel: notification.metadata.sender_name,
+        detail: notification.metadata.snippet,
+      };
+    case "CUSTOM_ADMIN_MESSAGE":
+      return {
+        headline: notification.metadata.title,
+        detail: notification.metadata.message,
+      };
+    case "NOTIFICATION_READ_RECEIPT":
+      return {
+        headline: notification.metadata.artist_name,
+        subLabel: notification.metadata.original_title,
+        detail: t("notifications.inapp.read_receipt"),
+      };
+    case "CONTRACT_ISSUED":
+      return { headline: notification.metadata.project_name as string | undefined };
+    case "SYSTEM_ALERT":
+      return {
+        headline: notification.metadata.title as string | undefined,
+        detail: notification.metadata.message as string | undefined,
+      };
+    default:
+      return {};
+  }
+};
 
 type Accent = "gold" | "sage" | "amethyst" | "incense" | "crimson" | "neutral";
 
@@ -115,6 +262,8 @@ const resolveVisual = (
       return { icon: ClipboardCheck, accent: "sage" };
     case "MESSAGE_RECEIVED":
       return { icon: MessageCircle, accent: "incense" };
+    case "NOTIFICATION_READ_RECEIPT":
+      return { icon: CheckCircle, accent: "sage" };
     case "CONTRACT_ISSUED":
       return { icon: Briefcase, accent: "gold" };
     case "SYSTEM_ALERT":
@@ -172,58 +321,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     onClosePanel();
   };
 
-  let projectName: string | undefined;
-  let pieceTitle: string | undefined;
-  let message: string | undefined;
-  let changes: string[] | undefined;
-  let subLabel: string | undefined;
-
-  switch (notification.notification_type) {
-    case "PROJECT_INVITATION":
-      projectName = notification.metadata.project_name;
-      message = notification.metadata.message;
-      break;
-    case "PROJECT_UPDATED":
-      projectName = notification.metadata.project_name;
-      message = notification.metadata.message;
-      changes = notification.metadata.changes;
-      break;
-    case "REHEARSAL_SCHEDULED":
-      projectName = notification.metadata.project_name;
-      break;
-    case "REHEARSAL_UPDATED":
-      projectName = notification.metadata.project_name;
-      changes = notification.metadata.changes;
-      break;
-    case "REHEARSAL_CANCELLED":
-      projectName = notification.metadata.project_name;
-      message = notification.metadata.message;
-      break;
-    case "PIECE_CASTING_ASSIGNED":
-    case "PIECE_CASTING_UPDATED":
-      pieceTitle = notification.metadata.piece_title;
-      message = notification.metadata.message;
-      break;
-    case "MATERIAL_UPLOADED":
-      pieceTitle = notification.metadata.piece_title;
-      break;
-    case "ABSENCE_APPROVED":
-    case "ABSENCE_REJECTED":
-      projectName = notification.metadata.project_name;
-      subLabel = notification.metadata.rehearsal_date;
-      break;
-    case "PARTICIPATION_RESPONSE":
-    case "ATTENDANCE_SUBMITTED":
-      projectName = notification.metadata.project_name;
-      subLabel = notification.metadata.artist_name;
-      message = notification.metadata.action_details;
-      break;
-    case "MESSAGE_RECEIVED":
-      projectName = notification.metadata.title;
-      subLabel = notification.metadata.sender_name;
-      message = notification.metadata.snippet;
-      break;
-  }
+  const { headline, subLabel, detail, changeChips } = describe(notification, t);
 
   return (
     <div
@@ -266,19 +364,16 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         </p>
 
         <div className="mt-1 text-sm leading-snug text-ethereal-graphite/80">
-          {projectName && (
-            <span className="font-semibold text-ethereal-ink">{projectName}</span>
-          )}
-          {pieceTitle && (
-            <span className="font-semibold text-ethereal-ink">{pieceTitle}</span>
+          {headline && (
+            <span className="font-semibold text-ethereal-ink">{headline}</span>
           )}
           {subLabel && <span className="text-ethereal-graphite/55"> · {subLabel}</span>}
-          {message && (projectName || pieceTitle ? ` — ${message}` : message)}
+          {detail && (headline ? ` — ${detail}` : detail)}
         </div>
 
-        {changes && changes.length > 0 && (
+        {changeChips && changeChips.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {changes.map((change, index) => (
+            {changeChips.map((change, index) => (
               <span
                 key={index}
                 className="rounded-md border border-ethereal-graphite/15 bg-ethereal-graphite/[0.05] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-ethereal-graphite/65"

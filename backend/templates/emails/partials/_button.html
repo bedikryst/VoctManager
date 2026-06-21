@@ -1,0 +1,9 @@
+{% comment %}Primary call to action. Params: url, label (pre-translated, no arrow).
+class="cta" makes it full-bleed & finger-friendly on mobile (see base.html @media).{% endcomment %}
+<a href="{{ url }}" class="cta"
+   style="display: inline-block; background-color: #111827; color: #c9a764;
+          text-decoration: none; padding: 20px 52px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          font-size: 11px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;">
+  {{ label }} &rarr;
+</a>

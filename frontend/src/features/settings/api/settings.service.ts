@@ -10,6 +10,7 @@ import {
   UserMeDTO,
   UserProfileDTO,
   UpdatePreferencesPayload,
+  DigestSettingsPayload,
   ChangePasswordPayload,
   ChangeEmailPayload,
   DeleteAccountPayload,
@@ -33,6 +34,16 @@ export const settingsService = {
     payload: UpdatePreferencesPayload,
   ): Promise<UserMeDTO> => {
     const response = await api.patch<UserMeDTO>(BASE_URL, payload);
+    return response.data;
+  },
+
+  /**
+   * Updates the daily-digest delivery preferences (partial nested profile PATCH).
+   */
+  updateDigestSettings: async (
+    payload: DigestSettingsPayload,
+  ): Promise<UserMeDTO> => {
+    const response = await api.patch<UserMeDTO>(BASE_URL, { profile: payload });
     return response.data;
   },
 

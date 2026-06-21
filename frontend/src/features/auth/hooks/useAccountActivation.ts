@@ -4,12 +4,16 @@
  * @module features/auth/hooks
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { isAxiosError } from "axios";
 import { authService } from "../api/auth.service";
+import { changeAppLanguage } from "@/shared/config/i18n";
+
+/** Mirrors i18n `supportedLngs` — guards what we'll adopt from an untrusted link. */
+const SUPPORTED_LANGS = new Set(["pl", "en", "fr"]);
 
 const getActivationErrorMessage = (error: unknown): string => {
   if (isAxiosError(error) && error.response?.data) {
@@ -57,6 +61,18 @@ export const useAccountActivation = () => {
   const hasActivationParams =
     activationContext.uidb64.length > 0 && activationContext.token.length > 0;
 
+  // The invited member's chosen language drives this whole pre-login threshold.
+  // Adopt it instantly from the link (no English flash before any request),
+  // persisting it to localStorage — so the post-activation screen and the login
+  // page that follow stay in it. After sign-in, AuthProvider re-adopts the
+  // server's profile.language as the lasting source of truth.
+  const urlLang = searchParams.get("lang");
+  useEffect(() => {
+    if (urlLang && SUPPORTED_LANGS.has(urlLang)) {
+      changeAppLanguage(urlLang);
+    }
+  }, [urlLang]);
+
   // Resolve the invitee's name from the signed link so the screen can greet
   // them before they set a password. Read-only; failure falls back to generic.
   const previewQuery = useQuery({
@@ -68,6 +84,16 @@ export const useAccountActivation = () => {
   });
 
   const invitee = previewQuery.data;
+
+  // Reaffirm from the server's authoritative value once the preview resolves —
+  // covers a missing/tampered ?lang= on the link.
+  const inviteeLang = invitee?.language;
+  useEffect(() => {
+    if (inviteeLang && SUPPORTED_LANGS.has(inviteeLang)) {
+      changeAppLanguage(inviteeLang);
+    }
+  }, [inviteeLang]);
+
   const resolvedName = invitee
     ? i18n.language?.startsWith("pl")
       ? invitee.first_name_vocative || invitee.first_name

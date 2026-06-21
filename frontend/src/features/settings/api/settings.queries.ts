@@ -6,11 +6,12 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { changeAppLanguage } from "@/shared/config/i18n";
 import { settingsService } from "./settings.service";
 import {
   UpdatePreferencesPayload,
+  DigestSettingsPayload,
   ChangePasswordPayload,
   ChangeEmailPayload,
   DeleteAccountPayload,
@@ -33,7 +34,6 @@ export const useSettingsData = () => {
 
 export const useUpdatePreferences = () => {
   const queryClient = useQueryClient();
-  const { i18n } = useTranslation();
 
   return useMutation({
     mutationFn: (payload: UpdatePreferencesPayload) =>
@@ -42,10 +42,39 @@ export const useUpdatePreferences = () => {
       // 1. Update the local React Query cache optimistically
       queryClient.setQueryData(settingsKeys.data, data);
 
-      // 2. Synchronize the application UI language immediately
-      if (data.profile?.language && i18n.language !== data.profile.language) {
-        i18n.changeLanguage(data.profile.language);
+      // 2. Adopt the saved language across the UI (and <html lang>). The backend
+      //    now holds this preference, so notifications follow automatically.
+      if (data.profile?.language) {
+        changeAppLanguage(data.profile.language);
       }
+    },
+  });
+};
+
+export const useUpdateDigestSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: DigestSettingsPayload) =>
+      settingsService.updateDigestSettings(payload),
+    onMutate: async (payload) => {
+      // Optimistic: the switch/select should feel instant.
+      await queryClient.cancelQueries({ queryKey: settingsKeys.data });
+      const previous = queryClient.getQueryData<UserMeDTO>(settingsKeys.data);
+      if (previous?.profile) {
+        queryClient.setQueryData<UserMeDTO>(settingsKeys.data, {
+          ...previous,
+          profile: { ...previous.profile, ...payload },
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _payload, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(settingsKeys.data, context.previous);
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(settingsKeys.data, data);
     },
   });
 };

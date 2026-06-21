@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase, override_settings
-from django.utils import timezone
+from django.utils import timezone, translation
 from rest_framework.test import APITestCase
 
 from core.constants import AppRole
@@ -480,7 +480,10 @@ class ContractsSettlementTests(APITestCase):
 
     def test_crew_serializer_exposes_name_and_specialty(self) -> None:
         self.client.force_authenticate(user=self.manager)
-        resp = self.client.get(f"/api/crew-assignments/{self.crew.id}/")
+        # Pin the language so the translated choice display is deterministic
+        # (no LocaleMiddleware → the response renders under the active language).
+        with translation.override("en"):
+            resp = self.client.get(f"/api/crew-assignments/{self.crew.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["collaborator_name"], "Sound Engineer")
         self.assertEqual(resp.data["collaborator_specialty_display"], "Sound Engineering")
@@ -593,7 +596,9 @@ class CollaboratorPiiExposureTests(APITestCase):
 
     def test_non_manager_list_hides_contact_pii(self) -> None:
         self.client.force_authenticate(user=self.artist_user)
-        resp = self.client.get("/api/collaborators/")
+        # Pin language so the translated specialty display is deterministic.
+        with translation.override("en"):
+            resp = self.client.get("/api/collaborators/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data), 1)
         row = resp.data[0]

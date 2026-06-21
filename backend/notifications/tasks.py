@@ -176,6 +176,25 @@ def _digest_section_title(notification_type: str) -> str:
     return titles.get(notification_type, _("Updates"))
 
 
+def _digest_detail(notification) -> str:
+    """A localized one-line detail for a digest row, rendered from structured
+    metadata (status codes) — never from stored prose."""
+    from .message_content import (
+        _attendance_status_phrase,
+        _participation_status_phrase,
+    )
+
+    m = notification.metadata or {}
+    ntype = notification.notification_type
+    if ntype == NotificationType.PARTICIPATION_RESPONSE:
+        return _participation_status_phrase(m.get("status"))
+    if ntype == NotificationType.ATTENDANCE_SUBMITTED:
+        return _attendance_status_phrase(m.get("status"))
+    if ntype == NotificationType.ABSENCE_REQUESTED:
+        return m.get("rehearsal_date") or m.get("excuse_note") or ""
+    return m.get("rehearsal_date") or ""
+
+
 def _dispatch_digest(profile, notifications: list) -> None:
     """Renders and sends one grouped digest email in the recipient's language."""
     from django.utils import translation
@@ -192,9 +211,7 @@ def _dispatch_digest(profile, notifications: list) -> None:
                 {
                     "primary": (n.metadata or {}).get("artist_name") or "",
                     "secondary": (n.metadata or {}).get("project_name") or "",
-                    "detail": (n.metadata or {}).get("rehearsal_date")
-                    or (n.metadata or {}).get("action_details")
-                    or "",
+                    "detail": _digest_detail(n),
                 }
                 for n in notifications
                 if n.notification_type == ntype

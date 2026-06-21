@@ -92,6 +92,28 @@ class UserProvisioningServiceTests(TestCase):
         self.assertEqual(enqueue_mock.call_args.kwargs["template_name"], "account_activation")
 
     @patch(EMAIL_TASK)
+    def test_provision_passes_chosen_language_to_email_and_activation_link(self, enqueue_mock):
+        with self.captureOnCommitCallbacks(execute=True):
+            UserIdentityService.provision_user_account(
+                email="amelie@example.com", first_name="Amelie", last_name="Poulain",
+                language="fr",
+            )
+        kwargs = enqueue_mock.call_args.kwargs
+        # The onboarding email renders in the invitee's chosen language…
+        self.assertEqual(kwargs["fallback_language"], "fr")
+        # …and the link carries it so the activation SCREEN matches (no English flash).
+        self.assertIn("&lang=fr", kwargs["context"]["activation_link"])
+
+    @patch(EMAIL_TASK)
+    def test_provision_clamps_unsupported_language_to_pl(self, enqueue_mock):
+        with self.captureOnCommitCallbacks(execute=True):
+            user = UserIdentityService.provision_user_account(
+                email="weird@example.com", first_name="X", last_name="Y", language="zz",
+            )
+        self.assertEqual(user.profile.language, "pl")
+        self.assertIn("&lang=pl", enqueue_mock.call_args.kwargs["context"]["activation_link"])
+
+    @patch(EMAIL_TASK)
     def test_provision_rejects_duplicate_email_case_insensitively(self, enqueue_mock):
         UserIdentityService.provision_user_account(
             email="dupe@example.com", first_name="Ada", last_name="Lovelace",
@@ -175,6 +197,24 @@ class ActivationPreviewViewTests(APITestCase):
         self.assertIn("first_name_vocative", response.data)
 
     @patch(EMAIL_TASK)
+    def test_preview_returns_invitee_language(self, _enqueue):
+        """Authoritative confirmation of the link's ?lang= so the activation
+        screen can adopt the invitee's language even if the link is tampered."""
+        with self.captureOnCommitCallbacks(execute=True):
+            user = UserIdentityService.provision_user_account(
+                email="lang@example.com", first_name="Ada", last_name="Lovelace",
+                language="fr",
+            )
+        payload = UserIdentityService.generate_activation_token_payload(user)
+
+        response = self.client.get(
+            self.PREVIEW_URL, {"uid": payload["uidb64"], "token": payload["token"]}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["language"], "fr")
+
+    @patch(EMAIL_TASK)
     def test_preview_rejects_invalid_token(self, _enqueue):
         with self.captureOnCommitCallbacks(execute=True):
             user = UserIdentityService.provision_user_account(
@@ -191,6 +231,33 @@ class ActivationPreviewViewTests(APITestCase):
     def test_preview_requires_parameters(self):
         response = self.client.get(self.PREVIEW_URL)
         self.assertEqual(response.status_code, 400)
+
+
+class ActivationEmailLanguageTests(TestCase):
+    """The onboarding email BODY itself must render in the invitee's language,
+    not just be flagged with it — proven end-to-end through the dispatcher."""
+
+    def test_activation_email_renders_in_chosen_language(self):
+        from django.core import mail
+
+        from notifications.email_service import EmailDispatcherService, EmailType
+
+        EmailDispatcherService.dispatch(
+            recipient_email="fr@example.com",
+            subject="s",
+            template_name="account_activation",
+            context={
+                "first_name": "Amelie",
+                "first_name_vocative": "Amelie",
+                "activation_link": "https://example.test/activate?lang=fr",
+            },
+            fallback_language="fr",
+            email_type=EmailType.OPERATIONAL,
+        )
+
+        self.assertEqual(len(mail.outbox), 1)
+        html = str(mail.outbox[0].alternatives[0][0])
+        self.assertIn("Bienvenue dans VoctManager", html)  # FR headline, not the EN msgid
 
 
 class PasswordResetRequestViewTests(APITestCase):

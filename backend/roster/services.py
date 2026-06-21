@@ -10,7 +10,7 @@ Views MUST delegate all business logic to these stateless classes.
 """
 import logging
 from datetime import date, datetime, time, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
@@ -86,17 +86,25 @@ def resolve_location_and_timezone(location_id: UUID | None, fallback_timezone: s
         return None, fallback_timezone
 
 
-def _format_change_value(value: object) -> str:
-    """Renders an audit-trail value for human-readable change logs (single source of truth)."""
+def _format_change_value(value: object) -> str | None:
+    """Renders an audit-trail value for change logs (single source of truth).
+    Returns None for empty values so the renderer can show a localized dash."""
     if isinstance(value, datetime):
         return value.strftime('%d.%m.%Y %H:%M')
     if isinstance(value, date):
         return value.strftime('%d.%m.%Y')
     if isinstance(value, time):
         return value.strftime('%H:%M')
-    if value is None:
-        return "None"
+    if value is None or value == "":
+        return None
     return str(value)
+
+
+def _change(field: str, old: object, new: object) -> dict[str, str | None]:
+    """Builds one structured field change. `field` is a stable, localizable key;
+    `old`/`new` are language-neutral display values. The human label is resolved
+    per language at render time (push/email composer + in-app NotificationItem)."""
+    return {"field": field, "old": _format_change_value(old), "new": _format_change_value(new)}
 
 
 class ArtistHRService:
@@ -205,14 +213,19 @@ class ProjectManagementService:
             logger.info(f"Project '{project.title}' created by {user.email} with timezone {resolved_timezone}")
             return project
             
+    # Maps a model attribute to a stable, localizable change key. Keys (not English
+    # labels) drive both rendering and the urgency escalation below.
+    _PROJECT_CHANGE_KEYS: ClassVar[dict[str, str]] = {
+        "title": "title", "date_time": "date_time", "location_id": "location",
+        "call_time": "call_time", "status": "status", "conductor": "conductor",
+        "dress_code_male": "dress_code", "dress_code_female": "dress_code",
+    }
+    # A change to any of these fields is time-critical → escalate to URGENT.
+    _PROJECT_URGENT_FIELDS: ClassVar[frozenset[str]] = frozenset({"date_time", "call_time"})
+
     @staticmethod
     def update_project(project: Project, dto: ProjectUpdateDTO) -> Project:
-        FIELD_NAMES = {
-            "title": "Title", "date_time": "Date", "location_id": "Location",
-            "call_time": "Call-time", "status": "Status", "conductor": "Conductor",
-            "dress_code_male": "Dress Code", "dress_code_female": "Dress Code"
-        }
-        changes = []
+        changes: list[dict[str, str | None]] = []
 
         # Exclude location_id to handle it manually via the helper
         update_data = dto.model_dump(
@@ -231,9 +244,9 @@ class ProjectManagementService:
                 )
 
                 if project.location_id != (location.id if location else None):
-                    old_loc = project.location.name if project.location else "None"
-                    new_loc = location.name if location else "None"
-                    changes.append(f"Location: {old_loc} ➔ {new_loc}")
+                    old_loc = project.location.name if project.location else None
+                    new_loc = location.name if location else None
+                    changes.append(_change("location", old_loc, new_loc))
 
                 # The apply loop below deliberately skips 'location'/'timezone',
                 # so the resolved FK + timezone must be persisted on the instance
@@ -248,7 +261,7 @@ class ProjectManagementService:
 
             if 'conductor' in dto.model_fields_set:
                 if project.conductor_id != dto.conductor:
-                    changes.append("Conductor updated")
+                    changes.append(_change("conductor", None, None))
                 update_data['conductor_id'] = dto.conductor
 
             for attr, value in update_data.items():
@@ -256,30 +269,31 @@ class ProjectManagementService:
                     continue
                 old_value = getattr(project, attr)
                 if old_value != value:
-                    field_name = FIELD_NAMES.get(attr, attr.title())
-                    changes.append(f"{field_name}: {_format_change_value(old_value)} ➔ {_format_change_value(value)}")
+                    key = ProjectManagementService._PROJECT_CHANGE_KEYS.get(attr, attr)
+                    changes.append(_change(key, old_value, value))
                 setattr(project, attr, value)
-                
+
             project.save()
 
             qs = Participation.objects.filter(project=project, is_deleted=False)
             recipient_ids = NotificationRecipientPolicy.from_participations(qs)
 
             if recipient_ids and changes:
-                unique_changes = list(set(changes))
+                # De-duplicate on the structured key (dress_code_male/female both map
+                # to one "dress_code" change; conductor may repeat).
+                unique_changes = list({c["field"]: c for c in changes}.values())
                 metadata = ProjectUpdatedMetadata(
                     project_id=project.id,
                     project_name=project.title,
-                    message="Project details have been updated.",
-                    changes=unique_changes
+                    changes=unique_changes,
                 ).model_dump(mode="json")
-                
+
                 level = (
                     NotificationLevel.URGENT
-                    if any(any(label in change for label in ("Date", "Call-time")) for change in changes)
+                    if any(c["field"] in ProjectManagementService._PROJECT_URGENT_FIELDS for c in unique_changes)
                     else NotificationLevel.WARNING
                 )
-                
+
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                     recipient_ids=recipient_ids,
                     notification_type=NotificationType.PROJECT_UPDATED,
@@ -301,9 +315,9 @@ class ProjectManagementService:
             if user_id:
                 metadata = ProjectUpdatedMetadata(
                     project_name=project_name,
-                    message="You have been removed from this project."
+                    event="removed",
                 ).model_dump(mode="json")
-                
+
                 transaction.on_commit(lambda: send_notification_task.delay(
                     recipient_id=str(user_id),
                     notification_type=NotificationType.PROJECT_UPDATED,
@@ -334,17 +348,20 @@ class ProjectManagementService:
                 
                 archived_participation.restore() # Saves and sets is_deleted=False
                 participation = archived_participation
-                message = "You have been re-added to the project."
             else:
                 # 2B. CREATE PATH
                 participation = Participation.objects.create(**validated_data)
-                message = None # Default invitation message
 
-            # 3. Dispatch Notification
+            # 3. Dispatch Notification (an invitation, whether fresh or restored)
             if participation.artist.user_id:
-                location_name = participation.project.location.name if participation.project.location else "TBD"
-                inviter_name = f"{participation.project.conductor.first_name} {participation.project.conductor.last_name}" if participation.project.conductor else "Zarząd VoctManager"
-                
+                # Blank when unset → the composer falls back to localized neutral copy
+                # (e.g. "the management team", and it simply omits a missing venue).
+                location_name = participation.project.location.name if participation.project.location else ""
+                inviter_name = (
+                    f"{participation.project.conductor.first_name} {participation.project.conductor.last_name}"
+                    if participation.project.conductor else ""
+                )
+
                 metadata = ProjectInvitationMetadata(
                     project_id=participation.project_id,
                     project_name=participation.project.title,
@@ -352,8 +369,7 @@ class ProjectManagementService:
                     inviter_name=inviter_name,
                     date_range=participation.project.date_time.strftime("%Y-%m-%d %H:%M"),
                     location=location_name,
-                    description=participation.project.description or "Brak opisu",
-                    message=message
+                    description=participation.project.description or "",
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_notification_task.delay(
@@ -454,7 +470,6 @@ class RehearsalOperationsService:
                     rehearsal_id=rehearsal.id,
                     project_id=rehearsal.project_id,
                     project_name=rehearsal.project.title,
-                    message=f"A new rehearsal has been scheduled for the project '{rehearsal.project.title}'."
                 ).model_dump(mode="json")
                 metadata["ics"] = _rehearsal_ics_payload(rehearsal)
 
@@ -466,38 +481,45 @@ class RehearsalOperationsService:
                 ))
         return rehearsal
 
+    # Stable, localizable change keys (not English labels). `is_mandatory` is
+    # handled separately below — a raw boolean diff ("True → False") reads badly,
+    # so it becomes a self-describing state change instead.
+    _REHEARSAL_CHANGE_KEYS: ClassVar[dict[str, str]] = {
+        "date_time": "date_time", "location_id": "location", "focus": "focus",
+    }
+
     @staticmethod
     def update_rehearsal(rehearsal: Rehearsal, dto: RehearsalUpdateDTO, invited_participations: list[Participation] | None = None) -> Rehearsal:
-        FIELD_NAMES = {
-            "date_time": "Date / Time", "location_id": "Location",
-            "focus": "Focus / Plan", "is_mandatory": "Mandatory Status"
-        }
-        changes = []
+        changes: list[dict[str, str | None]] = []
         update_data = dto.model_dump(exclude={'location_id'}, exclude_unset=True)
-        
+
         with transaction.atomic():
             if 'location_id' in dto.model_fields_set:
                 location, resolved_timezone = resolve_location_and_timezone(
-                    dto.location_id, 
+                    dto.location_id,
                     dto.timezone or rehearsal.timezone
                 )
                 update_data['location'] = location
                 update_data['timezone'] = resolved_timezone
-                
+
                 if rehearsal.location_id != (location.id if location else None):
-                    old_loc = rehearsal.location.name if rehearsal.location else "None"
-                    new_loc = location.name if location else "None"
-                    changes.append(f"Location: {old_loc} ➔ {new_loc}")
+                    old_loc = rehearsal.location.name if rehearsal.location else None
+                    new_loc = location.name if location else None
+                    changes.append(_change("location", old_loc, new_loc))
 
             for attr, value in update_data.items():
                 if attr in ('location', 'timezone'):
                     continue
                 old_value = getattr(rehearsal, attr)
                 if old_value != value:
-                    field_name = FIELD_NAMES.get(attr, attr.title())
-                    changes.append(f"{field_name}: {_format_change_value(old_value)} ➔ {_format_change_value(value)}")
+                    if attr == "is_mandatory":
+                        # Self-describing state change — never a raw "True → False".
+                        changes.append(_change("now_mandatory" if value else "now_optional", None, None))
+                    else:
+                        key = RehearsalOperationsService._REHEARSAL_CHANGE_KEYS.get(attr, attr)
+                        changes.append(_change(key, old_value, value))
                 setattr(rehearsal, attr, value)
-                
+
             rehearsal.save()
 
             if invited_participations is not None:
@@ -514,11 +536,10 @@ class RehearsalOperationsService:
                     rehearsal_id=rehearsal.id,
                     project_name=rehearsal.project.title,
                     changes=changes,
-                    message=f"Details for a rehearsal in the project '{rehearsal.project.title}' have been updated."
                 ).model_dump(mode="json")
                 metadata["ics"] = _rehearsal_ics_payload(rehearsal)
 
-                level = NotificationLevel.URGENT if any("Date / Time" in change for change in changes) else NotificationLevel.WARNING
+                level = NotificationLevel.URGENT if any(c["field"] == "date_time" for c in changes) else NotificationLevel.WARNING
                 
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(
                     recipient_ids=recipient_ids,
@@ -543,7 +564,6 @@ class RehearsalOperationsService:
             if recipient_ids:
                 metadata = RehearsalCancelledMetadata(
                     project_name=project_name,
-                    message="A scheduled rehearsal has been cancelled."
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(
@@ -584,23 +604,26 @@ class RehearsalOperationsService:
                 # the generic attendance-submitted ping.
                 if dto.status in (Attendance.Status.EXCUSED, Attendance.Status.ABSENT):
                     notif_type = NotificationType.ABSENCE_REQUESTED
-                    metadata = {
-                        "artist_name": artist_name,
-                        "artist_id": str(attendance.participation.artist_id),
-                        "project_name": attendance.rehearsal.project.title,
-                        "project_id": str(attendance.rehearsal.project_id),
-                        "rehearsal_id": str(rehearsal.id),
-                        "rehearsal_date": rehearsal_date,
-                        "action_details": dto.excuse_note or "",
-                    }
+                    metadata = ManagerActionMetadata(
+                        project_name=attendance.rehearsal.project.title,
+                        artist_name=artist_name,
+                        artist_id=str(attendance.participation.artist_id),
+                        project_id=str(attendance.rehearsal.project_id),
+                        rehearsal_id=str(rehearsal.id),
+                        rehearsal_date=rehearsal_date,
+                        status=dto.status,
+                        excuse_note=dto.excuse_note or None,
+                    ).model_dump(mode="json")
                 else:
                     notif_type = NotificationType.ATTENDANCE_SUBMITTED
                     metadata = ManagerActionMetadata(
                         project_name=attendance.rehearsal.project.title,
                         artist_name=artist_name,
-                        action_details=f"Status: {dto.status}. Note: {dto.excuse_note or 'No note'}",
+                        artist_id=str(attendance.participation.artist_id),
+                        rehearsal_id=str(rehearsal.id),
                         rehearsal_date=rehearsal_date,
-                        message="An artist has submitted an attendance update."
+                        status=dto.status,
+                        minutes_late=dto.minutes_late or None,
                     ).model_dump(mode="json")
 
                 transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
@@ -610,12 +633,10 @@ class RehearsalOperationsService:
             
             if dto.is_manager and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
                 notif_type = NotificationType.ABSENCE_APPROVED if dto.status == 'EXCUSED' else NotificationType.ABSENCE_REJECTED
-                status_text = "approved" if dto.status == 'EXCUSED' else "rejected"
                 metadata = AbsenceStatusMetadata(
                     rehearsal_id=rehearsal.id,
                     project_name=rehearsal.project.title,
                     rehearsal_date=rehearsal.date_time.strftime("%Y-%m-%d %H:%M"),
-                    message=f"Your absence request for the rehearsal on {rehearsal.date_time.strftime('%Y-%m-%d')} has been {status_text}."
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_notification_task.delay(
@@ -638,8 +659,10 @@ class ParticipationService:
             metadata = ManagerActionMetadata(
                 project_name=participation.project.title,
                 artist_name=f"{participation.artist.first_name} {participation.artist.last_name}",
-                action_details=f"Changed status from {old_status} to {new_status}",
-                message="An artist has updated their participation status."
+                artist_id=str(participation.artist_id),
+                project_id=str(participation.project_id),
+                status=new_status,
+                previous_status=old_status,
             ).model_dump(mode="json")
             
             transaction.on_commit(lambda: ManagerNotificationHelper.notify_managers(
@@ -736,9 +759,8 @@ class CastingAndCrewService:
                     piece_id=casting.piece_id,
                     piece_title=casting.piece.title,
                     voice_line=casting.get_voice_line_display() or casting.voice_line,
-                    message=f"You have been cast in the piece '{casting.piece.title}'."
                 ).model_dump(mode="json")
-                
+
                 transaction.on_commit(lambda: send_notification_task.delay(
                     recipient_id=str(user_id),
                     notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
@@ -749,23 +771,22 @@ class CastingAndCrewService:
 
     @staticmethod
     def update_piece_casting(casting: ProjectPieceCasting, validated_data: dict[str, Any]) -> ProjectPieceCasting:
-        changes = []
+        changes: list[dict[str, str | None]] = []
         with transaction.atomic():
             for attr, value in validated_data.items():
                 old_value = getattr(casting, attr)
                 if old_value != value:
-                    field_name = attr.replace('_', ' ').title()
                     if attr == 'voice_line':
                         from roster.models import VoiceLine
                         voice_map = dict(VoiceLine.choices)
-                        old_display = voice_map.get(old_value, old_value) if old_value else 'None'
-                        new_display = voice_map.get(value, value) if value else 'None'
-                        changes.append(f"{field_name}: {old_display} ➔ {new_display}")
+                        old_display = voice_map.get(old_value, old_value) if old_value else None
+                        new_display = voice_map.get(value, value) if value else None
+                        changes.append(_change("voice_line", old_display, new_display))
                     else:
-                        changes.append(f"{field_name}: {old_value or 'None'} ➔ {value or 'None'}")
+                        changes.append(_change(attr, old_value, value))
                 setattr(casting, attr, value)
             casting.save()
-            
+
             user_id = casting.participation.artist.user_id
             if user_id and changes:
                 metadata = PieceCastingMetadata(
@@ -773,7 +794,6 @@ class CastingAndCrewService:
                     piece_title=casting.piece.title,
                     voice_line=casting.get_voice_line_display() or casting.voice_line,
                     changes=changes,
-                    message=f"Your casting in the piece '{casting.piece.title}' has been updated."
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_notification_task.delay(
@@ -795,7 +815,7 @@ class CastingAndCrewService:
             if user_id:
                 metadata = PieceCastingMetadata(
                     piece_title=piece_title,
-                    message=f"Your casting for '{piece_title}' has been removed."
+                    event="removed",
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_notification_task.delay(

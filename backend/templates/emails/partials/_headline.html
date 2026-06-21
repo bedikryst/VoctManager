@@ -1,0 +1,7 @@
+{% comment %}Editorial serif headline. Params: text, size (px, default 34),
+mb (margin-bottom px, default 12). Carries class="email-h1" for the mobile fix.{% endcomment %}
+<h1 class="email-h1" style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+           font-size: {{ size|default:34 }}px; font-weight: 400; line-height: 1.18; letter-spacing: 0.01em;
+           color: #111827; margin: 0 0 {{ mb|default:12 }}px 0; text-align: center;">
+  {{ text }}
+</h1>

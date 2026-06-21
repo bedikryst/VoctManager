@@ -65,6 +65,41 @@ async function render({ size, fill, file }) {
   console.log(`  ✓ ${file} (${size}×${size}, mark ${Math.round(fill * 100)}%)`);
 }
 
+/**
+ * Status-bar badge: a flat WHITE silhouette of the mark on transparency. Android
+ * tints the badge to a solid colour and shows it as a small monochrome glyph, so
+ * the colour logo would render as a white square — this paints white only where
+ * the mark is opaque (using its alpha as a mask via `dest-in`).
+ */
+async function renderBadge({ size = 72, fill = 0.78, file = "badge.png" } = {}) {
+  const inner = Math.round(size * fill);
+  const mark = await sharp(SOURCE)
+    .trim()
+    .resize(inner, inner, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .toBuffer();
+
+  const whiteField = await sharp({
+    create: { width: inner, height: inner, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+  })
+    .png()
+    .toBuffer();
+
+  // Keep white only where the mark is opaque → a clean monochrome silhouette.
+  const silhouette = await sharp(whiteField)
+    .composite([{ input: mark, blend: "dest-in" }])
+    .png()
+    .toBuffer();
+
+  const canvas = sharp({
+    create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  });
+  await canvas
+    .composite([{ input: silhouette, gravity: "centre" }])
+    .png()
+    .toFile(resolve(OUT_DIR, file));
+  console.log(`  ✓ ${file} (${size}×${size}, white silhouette)`);
+}
+
 await mkdir(OUT_DIR, { recursive: true });
 console.log("Source", SOURCE);
 
@@ -75,5 +110,9 @@ await render({ size: 512, fill: 0.74, file: "icon-512.png" });
 await render({ size: 512, fill: 0.6, file: "icon-maskable-512.png" });
 // Apple touch icon: the backdrop is already opaque, so no flatten needed.
 await render({ size: 180, fill: 0.72, file: "apple-touch-icon.png" });
+
+// Monochrome status-bar badge (transparent → public/icons/badge.png, referenced
+// by sw.ts). Lives under icons/ so the .gitignore negation tracks & ships it.
+await renderBadge();
 
 console.log("Done → public/icons/");

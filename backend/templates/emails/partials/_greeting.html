@@ -1,0 +1,14 @@
+{% load i18n %}
+{% comment %}Personalised salutation. Params: style ("dear"|"hello", default hello),
+mb (margin-bottom px, default 28). Reads first_name / first_name_vocative from context.
+Centralising this keeps the vocative idiom in ONE place (the old per-template copies
+once all rendered "Hello ," because of a filter-in-blocktranslate bug).{% endcomment %}
+<p style="font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+          font-size: 21px; font-style: italic; color: #374151;
+          margin: 0 0 {{ mb|default:28 }}px 0; text-align: center; line-height: 1.4;">
+  {% if style == 'dear' %}
+    {% if first_name %}{% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Dear {{ name }},{% endblocktranslate %}{% else %}{% translate "Dear Artist," %}{% endif %}
+  {% else %}
+    {% if first_name %}{% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Hello {{ name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
+  {% endif %}
+</p>

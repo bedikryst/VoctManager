@@ -23,6 +23,14 @@ export interface UserProfileDTO {
   shoe_size: string;
   height_cm: number | null;
   calendar_token: string;
+  // Notification delivery (daily digest of routine manager alerts).
+  digest_enabled?: boolean;
+  digest_hour?: number;
+}
+
+export interface DigestSettingsPayload {
+  digest_enabled?: boolean;
+  digest_hour?: number;
 }
 
 export interface UserMeDTO {

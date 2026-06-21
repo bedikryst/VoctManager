@@ -19,7 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import api, { type AuthRequestConfig } from "@/shared/api/api";
 import { clearPersistedQueryCache } from "@/shared/api/queryPersistence";
 import { clearAllOffline } from "@/shared/offline/offlineClient";
-import i18n from "@/shared/config/i18n";
+import { changeAppLanguage } from "@/shared/config/i18n";
 import type { AuthProfile, AuthUser } from "@/shared/auth/auth.types";
 import { settingsKeys } from "@/features/settings/api/settings.queries";
 import type { UserMeDTO } from "@/features/settings/types/settings.dto";
@@ -157,9 +157,11 @@ export const AuthProvider = ({
 
   useEffect(() => {
     const userLang = user?.profile?.language;
-    if (userLang && i18n.language !== userLang) {
-      i18n.changeLanguage(userLang);
-      document.documentElement.lang = userLang;
+    if (userLang) {
+      // The authenticated user's stored preference is the source of truth for the
+      // language they read the app in AND the language their notifications arrive
+      // in — adopt it on login/refresh so the two never diverge.
+      changeAppLanguage(userLang);
     }
   }, [user?.profile?.language]);
 

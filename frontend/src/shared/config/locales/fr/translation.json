@@ -767,8 +767,7 @@
       "success": {
         "copied": "Copié",
         "copy_login": "Copier l'identifiant",
-        "desc_1": "Le compte assigné à ",
-        "desc_2": " a été sécurisé et activé.",
+        "desc": "Votre compte a été sécurisé et activé.",
         "go_to_login": "Aller à la connexion",
         "instruction": "Allez à la page de connexion et utilisez votre adresse e-mail avec votre nouveau mot de passe pour accéder au panneau.",
         "return_home": "Retour à l'accueil",
@@ -2371,7 +2370,80 @@
       "title_placeholder": "ex. Changement d'heure de répétition"
     },
     "title": "Notifications",
-    "unread": "Non lues"
+    "unread": "Non lues",
+    "types": {
+      "PROJECT_INVITATION": "Invitation",
+      "PROJECT_UPDATED": "Mise à jour du projet",
+      "PROJECT_CANCELLED": "Projet annulé",
+      "PROJECT_REMINDER": "Rappel",
+      "REHEARSAL_SCHEDULED": "Nouvelle répétition",
+      "REHEARSAL_UPDATED": "Répétition modifiée",
+      "REHEARSAL_CANCELLED": "Répétition annulée",
+      "REHEARSAL_REMINDER": "Rappel de répétition",
+      "PIECE_CASTING_ASSIGNED": "Distribution",
+      "PIECE_CASTING_UPDATED": "Changement de distribution",
+      "MATERIAL_UPLOADED": "Nouveau matériel",
+      "CONTRACT_ISSUED": "Contrat",
+      "ABSENCE_REQUESTED": "Demande d’absence",
+      "ABSENCE_APPROVED": "Absence approuvée",
+      "ABSENCE_REJECTED": "Absence non approuvée",
+      "SYSTEM_ALERT": "Avis",
+      "PARTICIPATION_RESPONSE": "Réponse",
+      "ATTENDANCE_SUBMITTED": "Présence",
+      "CUSTOM_ADMIN_MESSAGE": "Message",
+      "MESSAGE_RECEIVED": "Message",
+      "NOTIFICATION_READ_RECEIPT": "Accusé de lecture"
+    },
+    "status": {
+      "attendance": {
+        "PRESENT": "sera là",
+        "LATE": "sera en retard",
+        "ABSENT": "ne pourra pas venir",
+        "EXCUSED": "demande à s’absenter"
+      },
+      "participation": {
+        "INV": "a reçu une invitation",
+        "CON": "a confirmé",
+        "DEC": "a décliné"
+      }
+    },
+    "changes": {
+      "title": "Titre",
+      "date_time": "Date et heure",
+      "location": "Lieu",
+      "call_time": "Heure de convocation",
+      "status": "Statut",
+      "conductor": "Chef de chœur",
+      "dress_code": "Tenue",
+      "focus": "Objectif",
+      "is_mandatory": "Présence",
+      "voice_line": "Pupitre",
+      "now_mandatory": "Désormais obligatoire",
+      "now_optional": "Désormais facultative"
+    },
+    "inapp": {
+      "project_removed": "retrait de l’effectif",
+      "project_cancelled": "projet annulé",
+      "rehearsal_cancelled": "répétition annulée",
+      "casting_removed": "rôle retiré",
+      "absence_approved": "absence acceptée",
+      "absence_rejected": "non approuvée",
+      "absence_requested": "demande une absence",
+      "read_receipt": "a lu votre message"
+    },
+    "push": {
+      "toasts": {
+        "enabled": "Notifications push activées sur cet appareil.",
+        "disabled": "Notifications push désactivées.",
+        "test_sent": "Notification de test envoyée — vérifiez votre barre de notifications.",
+        "denied_blocked": "Les notifications sont bloquées dans les réglages du navigateur.",
+        "denied_now": "Autorisation refusée. Vous pouvez la modifier dans les réglages du navigateur.",
+        "unavailable": "Notifications momentanément indisponibles. Contactez l’administrateur.",
+        "subscribe_failed": "Impossible d’activer les notifications. Réessayez bientôt.",
+        "unsubscribe_failed": "Impossible de désactiver les notifications push.",
+        "test_failed": "Impossible d’envoyer le test. Réessayez."
+      }
+    }
   },
   "offline": {
     "badge": {
@@ -3521,7 +3593,14 @@
       "unsubscribe_modal": {
         "description": "Vous ne recevrez plus de notifications push sur cet appareil. Vous pourrez les réactiver à tout moment.",
         "title": "Désactiver les notifications push ?"
-      }
+      },
+      "digest": {
+        "title": "Récapitulatif quotidien",
+        "description": "Les mises à jour de routine (présences, réponses, demandes d’absence) sont regroupées en un e-mail par jour. Les éléments urgents arrivent toujours immédiatement.",
+        "toggle_label": "Récapitulatif quotidien par e-mail",
+        "hour_label": "Heure d’envoi"
+      },
+      "in_app_note": "Chaque événement apparaît toujours dans la cloche de l’application. Ci-dessous, choisissez ce que vous souhaitez aussi recevoir par e-mail et en notification push."
     },
     "page": {
       "highlight": "du compte",

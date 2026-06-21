@@ -767,8 +767,7 @@
       "success": {
         "copied": "Copied",
         "copy_login": "Copy login",
-        "desc_1": "The account assigned to ",
-        "desc_2": " has been secured and activated.",
+        "desc": "Your account has been secured and activated.",
         "go_to_login": "Go to login",
         "instruction": "Proceed to the login page and use your email along with your newly created password to access the panel.",
         "return_home": "Return home",
@@ -2371,7 +2370,80 @@
       "title_placeholder": "e.g. Rehearsal Update"
     },
     "title": "Notifications",
-    "unread": "Unread"
+    "unread": "Unread",
+    "types": {
+      "PROJECT_INVITATION": "Invitation",
+      "PROJECT_UPDATED": "Project update",
+      "PROJECT_CANCELLED": "Project cancelled",
+      "PROJECT_REMINDER": "Reminder",
+      "REHEARSAL_SCHEDULED": "New rehearsal",
+      "REHEARSAL_UPDATED": "Rehearsal change",
+      "REHEARSAL_CANCELLED": "Rehearsal cancelled",
+      "REHEARSAL_REMINDER": "Rehearsal reminder",
+      "PIECE_CASTING_ASSIGNED": "Casting",
+      "PIECE_CASTING_UPDATED": "Casting change",
+      "MATERIAL_UPLOADED": "New material",
+      "CONTRACT_ISSUED": "Contract",
+      "ABSENCE_REQUESTED": "Absence request",
+      "ABSENCE_APPROVED": "Absence approved",
+      "ABSENCE_REJECTED": "Absence not approved",
+      "SYSTEM_ALERT": "Notice",
+      "PARTICIPATION_RESPONSE": "RSVP",
+      "ATTENDANCE_SUBMITTED": "Attendance",
+      "CUSTOM_ADMIN_MESSAGE": "Message",
+      "MESSAGE_RECEIVED": "Message",
+      "NOTIFICATION_READ_RECEIPT": "Read receipt"
+    },
+    "status": {
+      "attendance": {
+        "PRESENT": "will be there",
+        "LATE": "will be late",
+        "ABSENT": "can’t make it",
+        "EXCUSED": "asked to be excused"
+      },
+      "participation": {
+        "INV": "invited",
+        "CON": "confirmed",
+        "DEC": "declined"
+      }
+    },
+    "changes": {
+      "title": "Title",
+      "date_time": "Date & time",
+      "location": "Venue",
+      "call_time": "Call time",
+      "status": "Status",
+      "conductor": "Conductor",
+      "dress_code": "Dress code",
+      "focus": "Focus",
+      "is_mandatory": "Attendance",
+      "voice_line": "Voice part",
+      "now_mandatory": "Now mandatory",
+      "now_optional": "Now optional"
+    },
+    "inapp": {
+      "project_removed": "you’ve been removed",
+      "project_cancelled": "project cancelled",
+      "rehearsal_cancelled": "rehearsal cancelled",
+      "casting_removed": "no longer cast",
+      "absence_approved": "excused",
+      "absence_rejected": "not approved",
+      "absence_requested": "asked to be excused",
+      "read_receipt": "read your message"
+    },
+    "push": {
+      "toasts": {
+        "enabled": "Push notifications enabled on this device.",
+        "disabled": "Push notifications turned off.",
+        "test_sent": "Test notification sent — check your notification tray.",
+        "denied_blocked": "Notifications are blocked in your browser settings.",
+        "denied_now": "Permission denied. You can change this in your browser settings.",
+        "unavailable": "Notifications are temporarily unavailable. Contact your administrator.",
+        "subscribe_failed": "Couldn’t enable notifications. Please try again shortly.",
+        "unsubscribe_failed": "Couldn’t turn off push notifications.",
+        "test_failed": "Couldn’t send the test. Please try again."
+      }
+    }
   },
   "offline": {
     "badge": {
@@ -3521,7 +3593,14 @@
       "unsubscribe_modal": {
         "description": "You will no longer receive push notifications on this device. You can turn them back on at any time.",
         "title": "Disable push notifications?"
-      }
+      },
+      "digest": {
+        "title": "Daily digest",
+        "description": "Routine updates (attendance, RSVPs, absence requests) are gathered into one email a day. Urgent items always arrive immediately.",
+        "toggle_label": "Daily email digest",
+        "hour_label": "Delivery time"
+      },
+      "in_app_note": "Every event always appears in your in-app bell. Below, choose what you also want by email and as a push notification."
     },
     "page": {
       "highlight": "account",

@@ -151,7 +151,7 @@ DATABASES = {
 }
 
 # --- INTERNATIONALIZATION ---
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pl'
 LANGUAGES = [
     ('en', 'English'),
     ('pl', 'Polish'),

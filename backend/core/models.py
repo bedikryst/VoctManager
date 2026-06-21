@@ -128,8 +128,10 @@ class UserProfile(EnterpriseBaseModel):
     language = models.CharField(
         max_length=10,
         choices=LanguageChoices.choices,
-        default=LanguageChoices.ENGLISH,
-        help_text=_("User preferred UI language.")
+        default=LanguageChoices.POLISH,
+        help_text=_("Preferred language for the UI and for all outgoing notifications "
+                    "(push, email, digest). Single source of truth — kept in sync with "
+                    "the client UI language for authenticated users.")
     )
     timezone = models.CharField(
         max_length=63,

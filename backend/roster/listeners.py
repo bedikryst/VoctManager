@@ -53,7 +53,6 @@ def handle_piece_material_updated(sender, piece, **kwargs):
                 metadata={
                     "piece_id": str(piece.id),
                     "piece_title": piece.title,
-                    "message": "Sheet music or resources have been updated."
                 }
             )
             logger.info(

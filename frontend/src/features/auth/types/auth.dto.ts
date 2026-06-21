@@ -13,6 +13,8 @@ export interface ActivateAccountResponse {
 export interface ActivationPreviewResponse {
   first_name: string;
   first_name_vocative: string;
+  /** The invitee's chosen language (pl|en|fr) — drives the activation screen. */
+  language?: string;
 }
 
 export interface PasswordResetRequestPayload {

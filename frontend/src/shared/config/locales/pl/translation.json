@@ -767,8 +767,7 @@
       "success": {
         "copied": "Skopiowano",
         "copy_login": "Skopiuj login",
-        "desc_1": "Konto przypisane do ",
-        "desc_2": " zostało zabezpieczone i aktywowane.",
+        "desc": "Twoje konto zostało zabezpieczone i aktywowane.",
         "go_to_login": "Przejdź do logowania",
         "instruction": "Przejdź do strony logowania i użyj swojego adresu e-mail oraz nowo utworzonego hasła, aby wejść do panelu.",
         "return_home": "Wróć na stronę główną",
@@ -2371,7 +2370,80 @@
       "title_placeholder": "np. Zmiana godziny próby"
     },
     "title": "Powiadomienia",
-    "unread": "nieprzeczytane"
+    "unread": "nieprzeczytane",
+    "types": {
+      "PROJECT_INVITATION": "Zaproszenie",
+      "PROJECT_UPDATED": "Aktualizacja projektu",
+      "PROJECT_CANCELLED": "Projekt odwołany",
+      "PROJECT_REMINDER": "Przypomnienie",
+      "REHEARSAL_SCHEDULED": "Nowa próba",
+      "REHEARSAL_UPDATED": "Zmiana próby",
+      "REHEARSAL_CANCELLED": "Próba odwołana",
+      "REHEARSAL_REMINDER": "Przypomnienie o próbie",
+      "PIECE_CASTING_ASSIGNED": "Obsada",
+      "PIECE_CASTING_UPDATED": "Zmiana w obsadzie",
+      "MATERIAL_UPLOADED": "Nowe materiały",
+      "CONTRACT_ISSUED": "Umowa",
+      "ABSENCE_REQUESTED": "Prośba o nieobecność",
+      "ABSENCE_APPROVED": "Nieobecność zatwierdzona",
+      "ABSENCE_REJECTED": "Nieobecność niezatwierdzona",
+      "SYSTEM_ALERT": "Komunikat",
+      "PARTICIPATION_RESPONSE": "Odpowiedź",
+      "ATTENDANCE_SUBMITTED": "Obecność",
+      "CUSTOM_ADMIN_MESSAGE": "Wiadomość",
+      "MESSAGE_RECEIVED": "Wiadomość",
+      "NOTIFICATION_READ_RECEIPT": "Potwierdzenie odczytu"
+    },
+    "status": {
+      "attendance": {
+        "PRESENT": "będzie obecny(a)",
+        "LATE": "się spóźni",
+        "ABSENT": "nie dotrze",
+        "EXCUSED": "prosi o zwolnienie"
+      },
+      "participation": {
+        "INV": "zaproszony(a)",
+        "CON": "potwierdza udział",
+        "DEC": "rezygnuje z udziału"
+      }
+    },
+    "changes": {
+      "title": "Tytuł",
+      "date_time": "Data i godzina",
+      "location": "Miejsce",
+      "call_time": "Zbiórka",
+      "status": "Status",
+      "conductor": "Dyrygent",
+      "dress_code": "Strój",
+      "focus": "Plan próby",
+      "is_mandatory": "Obecność",
+      "voice_line": "Partia",
+      "now_mandatory": "Teraz obowiązkowa",
+      "now_optional": "Teraz nieobowiązkowa"
+    },
+    "inapp": {
+      "project_removed": "usunięto Cię ze składu",
+      "project_cancelled": "projekt odwołany",
+      "rehearsal_cancelled": "próba odwołana",
+      "casting_removed": "nie śpiewasz już w tym utworze",
+      "absence_approved": "nieobecność usprawiedliwiona",
+      "absence_rejected": "nie zatwierdzono",
+      "absence_requested": "prosi o nieobecność",
+      "read_receipt": "przeczytał(a) Twoją wiadomość"
+    },
+    "push": {
+      "toasts": {
+        "enabled": "Powiadomienia push włączone na tym urządzeniu.",
+        "disabled": "Powiadomienia push wyłączone.",
+        "test_sent": "Wysłaliśmy testowe powiadomienie — sprawdź pasek powiadomień.",
+        "denied_blocked": "Powiadomienia są zablokowane w ustawieniach przeglądarki.",
+        "denied_now": "Odmówiono dostępu. Możesz to zmienić w ustawieniach przeglądarki.",
+        "unavailable": "Powiadomienia są chwilowo niedostępne. Skontaktuj się z administratorem.",
+        "subscribe_failed": "Nie udało się włączyć powiadomień. Spróbuj ponownie za chwilę.",
+        "unsubscribe_failed": "Nie udało się wyłączyć powiadomień push.",
+        "test_failed": "Nie udało się wysłać testu. Spróbuj ponownie."
+      }
+    }
   },
   "offline": {
     "badge": {
@@ -3521,7 +3593,14 @@
       "unsubscribe_modal": {
         "description": "Nie będziesz już otrzymywać powiadomień push na tym urządzeniu. W każdej chwili możesz je włączyć ponownie.",
         "title": "Wyłączyć powiadomienia push?"
-      }
+      },
+      "digest": {
+        "title": "Dzienne podsumowanie",
+        "description": "Rutynowe aktualizacje (obecności, odpowiedzi na zaproszenia, prośby o nieobecność) zbieramy w jedną wiadomość dziennie. Pilne sprawy zawsze docierają od razu.",
+        "toggle_label": "Codzienne podsumowanie e-mail",
+        "hour_label": "Godzina wysyłki"
+      },
+      "in_app_note": "Każde zdarzenie zawsze pojawia się w dzwonku w aplikacji. Poniżej wybierz, co dodatkowo chcesz dostawać e-mailem i jako powiadomienie push."
     },
     "page": {
       "highlight": "konta",

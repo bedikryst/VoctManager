@@ -9,10 +9,12 @@
                • .to_email_context() → long-form transactional email context
                • .subject            → metadata-bearing inbox subject line
 
-             This is the single source of truth for notification copy. The push
-             projection is byte-for-byte identical to the legacy push_payloads
-             output, so the (already excellent) push UX is unchanged; the email
-             projection is what closes the gap with the rest of the product.
+             This is the single source of truth for notification copy. Composers
+             consume STRUCTURED, language-neutral metadata (status/field codes,
+             names, formatted dates) — never pre-rendered prose — and render it in
+             the recipient's language. Voice: warm and ensemble-native, addressing
+             the singer directly; alarms (cancellations, declines, URGENT) stay
+             sober and direct.
 
              Pure functions, no I/O. Composers call gettext() at build time, so
              the builder must run inside a translation.override() context.
@@ -45,9 +47,12 @@ _ELLIPSIS = "…"
 
 @dataclass(frozen=True)
 class PushAction:
-    """Quick-action button rendered alongside the system notification."""
+    """Quick-action button rendered alongside the system notification. An optional
+    per-action deep-link lets a button route somewhere other than the body click
+    (e.g. a casting push offering both 'Open score' and 'Schedule')."""
     action: str
     title: str
+    url: str = ""
 
 
 @dataclass(frozen=True)
@@ -70,7 +75,10 @@ class PushPayload:
             "type": self.notification_type,
             "level": self.level,
             "renotify": True,
-            "actions": [{"action": a.action, "title": a.title} for a in self.actions],
+            "actions": [
+                {"action": a.action, "title": a.title, **({"url": a.url} if a.url else {})}
+                for a in self.actions
+            ],
         }
 
 
@@ -165,8 +173,8 @@ def _row(label: str, value: Any) -> DetailRow:
     return DetailRow(label=label, value=str(value))
 
 
-def _open_action() -> PushAction:
-    return PushAction(action="view", title=_("Open"))
+def _open_action(url: str = "") -> PushAction:
+    return PushAction(action="view", title=_("Open"), url=url)
 
 
 def _dismiss_action() -> PushAction:
@@ -197,6 +205,82 @@ def _settings_notifications_url() -> str:
     return "/panel/settings?tab=notifications"
 
 
+# -- structured-code → localized label maps --------------------------------- #
+
+def _attendance_status_phrase(status: str | None) -> str:
+    """Verb phrase for an attendance status, e.g. 'is present'."""
+    return {
+        "PRESENT": _("will be there"),
+        "LATE": _("will be a little late"),
+        "ABSENT": _("can't make it"),
+        "EXCUSED": _("asked to be excused"),
+    }.get(status or "", _("updated their attendance"))
+
+
+def _participation_status_phrase(status: str | None) -> str:
+    """Verb phrase for a participation RSVP, e.g. 'confirmed their place'."""
+    return {
+        "CON": _("confirmed their place"),
+        "DEC": _("declined the invitation"),
+        "INV": _("was invited"),
+    }.get(status or "", _("responded to the invitation"))
+
+
+def _change_field_label(field_key: str) -> str:
+    """Localized human label for a structured change key."""
+    return {
+        "title": _("Title"),
+        "date_time": _("Date & time"),
+        "location": _("Venue"),
+        "call_time": _("Call time"),
+        "status": _("Status"),
+        "conductor": _("Conductor"),
+        "dress_code": _("Dress code"),
+        "focus": _("Focus"),
+        "is_mandatory": _("Attendance"),  # legacy rows; new rows use now_mandatory/now_optional
+        "now_mandatory": _("Now mandatory"),
+        "now_optional": _("Now optional"),
+        "voice_line": _("Voice part"),
+    }.get(field_key, field_key.replace("_", " ").capitalize())
+
+
+def _render_change(change: dict[str, Any]) -> str:
+    """One change as a compact localized phrase: 'Venue: A → B' / 'Conductor'."""
+    label = _change_field_label(str(change.get("field", "")))
+    old, new = change.get("old"), change.get("new")
+    if old and new:
+        return _("%(label)s: %(old)s → %(new)s") % {"label": label, "old": old, "new": new}
+    if new:
+        return _("%(label)s: %(new)s") % {"label": label, "new": new}
+    return label
+
+
+def _summarize_changes(changes: Any, limit: int = 3) -> str:
+    """A scannable, localized one-liner summarizing structured field changes."""
+    if not isinstance(changes, (list, tuple)) or not changes:
+        return ""
+    rendered = [_render_change(c) for c in changes if isinstance(c, dict)]
+    head = "; ".join(rendered[:limit])
+    if len(rendered) > limit:
+        head += " " + _("(+%(count)d more)") % {"count": len(rendered) - limit}
+    return head
+
+
+def _change_rows(changes: Any) -> tuple[DetailRow, ...]:
+    """Structured changes as labelled email detail rows."""
+    if not isinstance(changes, (list, tuple)):
+        return ()
+    rows: list[DetailRow] = []
+    for c in changes:
+        if not isinstance(c, dict):
+            continue
+        label = _change_field_label(str(c.get("field", "")))
+        old, new = c.get("old"), c.get("new")
+        value = f"{old} → {new}" if old and new else (new or old or "—")
+        rows.append(DetailRow(label=label, value=str(value)))
+    return tuple(rows)
+
+
 # --------------------------------------------------------------------------- #
 # Per-type composers                                                          #
 # --------------------------------------------------------------------------- #
@@ -208,86 +292,94 @@ def _compose_project_invitation(ctx: MessageContext) -> MessageContent:
     dates = m.get("date_range")
     venue = m.get("location")
 
-    parts = [_("%(inviter)s has invited you to participate.") % {"inviter": inviter}]
+    parts = [_("%(inviter)s would love to have you on this one.") % {"inviter": inviter}]
     if dates:
-        parts.append(_("Dates: %(dates)s.") % {"dates": dates})
+        parts.append(_("When: %(dates)s.") % {"dates": dates})
     if venue:
-        parts.append(_("Venue: %(venue)s.") % {"venue": venue})
+        parts.append(_("Where: %(venue)s.") % {"venue": venue})
 
     details: list[DetailRow] = []
-    if inviter:
+    if m.get("inviter_name"):
         details.append(_row(_("Invited by"), inviter))
     if dates:
-        details.append(_row(_("Dates"), dates))
+        details.append(_row(_("When"), dates))
     if venue:
-        details.append(_row(_("Venue"), venue))
+        details.append(_row(_("Where"), venue))
 
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Project invitation: %(project)s") % {"project": project},
+        title=_("You're invited: %(project)s") % {"project": project},
         body=" ".join(parts),
         url_path=_projects_url(ctx),
         tag=f"project-invitation:{m.get('participation_id') or m.get('project_id') or ''}",
         actions=(_open_action(),),
-        subject=_("Invitation to sing: %(project)s") % {"project": project},
+        subject=_("An invitation to sing — %(project)s") % {"project": project},
         eyebrow=_("Invitation"),
-        email_lead=_("%(inviter)s has invited you to take part in %(project)s.")
+        email_lead=_("%(inviter)s has invited you to join %(project)s. We hope you can be part of it.")
         % {"inviter": inviter, "project": project},
         details=tuple(details),
-        cta_label=_("View invitation"),
+        cta_label=_("See the invitation"),
     )
 
 
 def _compose_project_updated(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
-    project = m.get("project_name") or _("a project")
-    changes = m.get("changes") or []
+    project = m.get("project_name") or _("your project")
 
-    if isinstance(changes, list) and changes:
-        body = _("Updated: %(changes)s.") % {
-            "changes": ", ".join(str(c) for c in changes[:3])
-        }
-        if len(changes) > 3:
-            body += " " + _("(+%(count)d more)") % {"count": len(changes) - 3}
-    else:
-        body = m.get("message") or _(
-            "Project details have been revised. Tap to review the changes."
+    if m.get("event") == "removed":
+        return MessageContent(
+            notification_type=ctx.notification_type,
+            level=ctx.level or NotificationLevel.WARNING,
+            title=_("Change of plans: %(project)s") % {"project": project},
+            body=_("You're no longer on the roster for %(project)s. Reach out if this is unexpected.")
+            % {"project": project},
+            url_path=_projects_url(ctx),
+            tag=f"project-removed:{m.get('project_id') or project}",
+            actions=(_open_action(),),
+            subject=_("You've been removed from %(project)s") % {"project": project},
+            eyebrow=_("Project"),
+            email_lead=_("You're no longer part of %(project)s. If that seems wrong, please get in touch with the office.")
+            % {"project": project},
+            cta_label=_("Open dashboard"),
         )
 
-    details = tuple(_row(_("Change"), c) for c in changes) if isinstance(changes, list) else ()
+    summary = _summarize_changes(m.get("changes"))
+    body = (
+        _("A few things changed — %(summary)s.") % {"summary": summary}
+        if summary
+        else _("Some details have changed. Tap to see what's new.")
+    )
 
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Project updated: %(project)s") % {"project": project},
+        title=_("Updated: %(project)s") % {"project": project},
         body=body,
         url_path=_projects_url(ctx),
         tag=f"project-updated:{m.get('project_id') or project}",
         actions=(_open_action(),),
-        subject=_("Updated: %(project)s") % {"project": project},
+        subject=_("What changed in %(project)s") % {"project": project},
         eyebrow=_("Project update"),
-        email_lead=_("Details of %(project)s have been revised.") % {"project": project},
-        details=details,
-        cta_label=_("Review changes"),
+        email_lead=_("Here's what changed in %(project)s.") % {"project": project},
+        details=_change_rows(m.get("changes")),
+        cta_label=_("See the changes"),
     )
 
 
 def _compose_project_cancelled(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     project = m.get("project_name") or _("a project")
-    body = m.get("message") or _(
-        "The project has been cancelled. Please review your dashboard for details."
-    )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
-        title=_("Project cancelled: %(project)s") % {"project": project},
-        body=body,
+        title=_("Cancelled: %(project)s") % {"project": project},
+        body=_("%(project)s won't be going ahead. Check your schedule for the details.")
+        % {"project": project},
         url_path=_projects_url(ctx),
         tag=f"project-cancelled:{m.get('project_id') or project}",
         actions=(_open_action(),),
-        subject=_("Cancelled: %(project)s") % {"project": project},
+        subject=_("%(project)s has been cancelled") % {"project": project},
         eyebrow=_("Project cancelled"),
         email_lead=_("%(project)s has been cancelled.") % {"project": project},
         cta_label=_("Open dashboard"),
@@ -296,36 +388,36 @@ def _compose_project_cancelled(ctx: MessageContext) -> MessageContent:
 
 def _compose_project_reminder(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
-    project = m.get("project_name") or _("an upcoming engagement")
+    project = m.get("project_name") or _("your next concert")
     when = m.get("date_range") or m.get("starts_at")
+    venue = m.get("location")
     body = (
-        _("Your engagement begins on %(when)s. Tap to review the schedule.")
-        % {"when": when}
+        _("%(project)s is coming up on %(when)s. Almost showtime.")
+        % {"project": project, "when": when}
         if when
-        else _("Your engagement is approaching. Tap to review the schedule.")
+        else _("%(project)s is coming up soon. Almost showtime.") % {"project": project}
     )
-    details = (_row(_("When"), when),) if when else ()
+    details: list[DetailRow] = []
+    if when:
+        details.append(_row(_("When"), when))
+    if venue:
+        details.append(_row(_("Where"), venue))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Reminder: %(project)s") % {"project": project},
+        title=_("Coming up: %(project)s") % {"project": project},
         body=body,
         url_path=_projects_url(ctx),
         tag=f"project-reminder:{m.get('project_id') or project}",
         actions=(_open_action(),),
         subject=(
-            _("Reminder: %(project)s — %(when)s") % {"project": project, "when": when}
+            _("Coming up: %(project)s — %(when)s") % {"project": project, "when": when}
             if when
-            else _("Reminder: %(project)s") % {"project": project}
+            else _("Coming up: %(project)s") % {"project": project}
         ),
         eyebrow=_("Reminder"),
-        email_lead=(
-            _("Your engagement %(project)s begins on %(when)s.")
-            % {"project": project, "when": when}
-            if when
-            else _("Your engagement %(project)s is approaching.") % {"project": project}
-        ),
-        details=details,
+        email_lead=body,
+        details=tuple(details),
         cta_label=_("View schedule"),
     )
 
@@ -335,18 +427,23 @@ def _compose_rehearsal_scheduled(ctx: MessageContext) -> MessageContent:
     project = m.get("project_name") or _("your project")
     when = m.get("starts_at") or m.get("rehearsal_date")
     venue = m.get("location")
+    body = (
+        _("A new rehearsal for %(project)s — %(when)s. See you at the stands.")
+        % {"project": project, "when": when}
+        if when
+        else _("A new rehearsal has been added to %(project)s. See you at the stands.")
+        % {"project": project}
+    )
     details: list[DetailRow] = [_row(_("Project"), project)]
     if when:
-        details.append(_row(_("Date"), when))
+        details.append(_row(_("When"), when))
     if venue:
-        details.append(_row(_("Venue"), venue))
+        details.append(_row(_("Where"), venue))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("New rehearsal scheduled"),
-        body=m.get("message")
-        or _("A new rehearsal has been added to %(project)s. Tap to view the schedule.")
-        % {"project": project},
+        title=_("New rehearsal — %(project)s") % {"project": project},
+        body=body,
         url_path=_rehearsals_url(ctx),
         tag=f"rehearsal-scheduled:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
@@ -361,25 +458,16 @@ def _compose_rehearsal_scheduled(ctx: MessageContext) -> MessageContent:
 def _compose_rehearsal_updated(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     project = m.get("project_name") or _("your project")
-    changes = m.get("changes") or []
-
-    if isinstance(changes, list) and changes:
-        body = _("Changed: %(changes)s.") % {
-            "changes": ", ".join(str(c) for c in changes[:3])
-        }
-        if len(changes) > 3:
-            body += " " + _("(+%(count)d more)") % {"count": len(changes) - 3}
-    else:
-        body = m.get("message") or _(
-            "Rehearsal time or location has changed. Please review the schedule."
-        )
-
-    details = tuple(_row(_("Change"), c) for c in changes) if isinstance(changes, list) else ()
-
+    summary = _summarize_changes(m.get("changes"))
+    body = (
+        _("Rehearsal details changed — %(summary)s.") % {"summary": summary}
+        if summary
+        else _("A rehearsal time or place has changed. Tap to check the schedule.")
+    )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
-        title=_("Rehearsal updated — %(project)s") % {"project": project},
+        title=_("Rehearsal changed — %(project)s") % {"project": project},
         body=body,
         url_path=_rehearsals_url(ctx),
         tag=f"rehearsal-updated:{m.get('rehearsal_id') or ''}",
@@ -387,7 +475,7 @@ def _compose_rehearsal_updated(ctx: MessageContext) -> MessageContent:
         subject=_("Rehearsal changed — %(project)s") % {"project": project},
         eyebrow=_("Rehearsal change"),
         email_lead=_("A rehearsal for %(project)s has changed.") % {"project": project},
-        details=details,
+        details=_change_rows(m.get("changes")),
         cta_label=_("View schedule"),
     )
 
@@ -399,8 +487,8 @@ def _compose_rehearsal_cancelled(ctx: MessageContext) -> MessageContent:
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
         title=_("Rehearsal cancelled — %(project)s") % {"project": project},
-        body=m.get("message")
-        or _("This rehearsal has been cancelled. Please review the updated schedule."),
+        body=_("A %(project)s rehearsal is off. Check the schedule for what's next.")
+        % {"project": project},
         url_path=_rehearsals_url(ctx),
         tag=f"rehearsal-cancelled:{m.get('rehearsal_id') or ''}",
         actions=(_open_action(),),
@@ -417,20 +505,21 @@ def _compose_rehearsal_reminder(ctx: MessageContext) -> MessageContent:
     when = m.get("starts_at") or m.get("rehearsal_date")
     venue = m.get("location")
     body = (
-        _("Your %(project)s rehearsal starts on %(when)s.")
+        _("%(project)s rehearsal %(when)s. See you at the stands.")
         % {"project": project, "when": when}
         if when
-        else _("Your %(project)s rehearsal is approaching.") % {"project": project}
+        else _("Your %(project)s rehearsal is coming up. See you at the stands.")
+        % {"project": project}
     )
     details: list[DetailRow] = [_row(_("Project"), project)]
     if when:
-        details.append(_row(_("Starts"), when))
+        details.append(_row(_("When"), when))
     if venue:
-        details.append(_row(_("Venue"), venue))
+        details.append(_row(_("Where"), venue))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Rehearsal reminder"),
+        title=_("Rehearsal reminder — %(project)s") % {"project": project},
         body=body,
         url_path=_rehearsals_url(ctx),
         tag=f"rehearsal-reminder:{m.get('rehearsal_id') or ''}",
@@ -452,138 +541,159 @@ def _compose_piece_casting_assigned(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     piece = m.get("piece_title") or _("a new piece")
     voice = m.get("voice_line")
-    body = (
-        _("You have been cast as %(voice)s. Tap to open the score and recordings.")
-        % {"voice": voice}
-        if voice
-        else _("You have been cast in this piece. Tap to open the score and recordings.")
+    score_url = _materials_url(ctx)
+    actions = (
+        _open_action(score_url),
+        PushAction(action="schedule", title=_("Schedule"), url=_rehearsals_url(ctx)),
     )
+    if voice:
+        title = _("You're singing %(voice)s — %(piece)s") % {"voice": voice, "piece": piece}
+        body = _("Your part in %(piece)s is %(voice)s. Open the score and recordings to start learning it.") % {
+            "piece": piece, "voice": voice,
+        }
+    else:
+        title = _("New part for you — %(piece)s") % {"piece": piece}
+        body = _("You've been cast in %(piece)s. Open the score and recordings to start learning it.") % {
+            "piece": piece,
+        }
     details: list[DetailRow] = [_row(_("Piece"), piece)]
     if voice:
         details.append(_row(_("Voice part"), voice))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("New casting: %(piece)s") % {"piece": piece},
+        title=title,
         body=body,
-        url_path=_projects_url(ctx),
+        url_path=score_url,
         tag=f"casting-assigned:{m.get('piece_id') or piece}",
-        actions=(_open_action(),),
+        actions=actions,
         subject=(
-            _("You are cast as %(voice)s — %(piece)s") % {"voice": voice, "piece": piece}
+            _("You're singing %(voice)s — %(piece)s") % {"voice": voice, "piece": piece}
             if voice
-            else _("You are cast — %(piece)s") % {"piece": piece}
+            else _("A new part for you — %(piece)s") % {"piece": piece}
         ),
         eyebrow=_("Casting"),
-        email_lead=(
-            _("You have been cast as %(voice)s in %(piece)s.")
-            % {"voice": voice, "piece": piece}
-            if voice
-            else _("You have been cast in %(piece)s.") % {"piece": piece}
-        ),
+        email_lead=body,
         details=tuple(details),
-        cta_label=_("Open score"),
+        cta_label=_("Open the score"),
     )
 
 
 def _compose_piece_casting_updated(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     piece = m.get("piece_title") or _("a piece")
-    changes = m.get("changes") or []
-    if isinstance(changes, list) and changes:
-        body = _("Changes: %(changes)s.") % {
-            "changes": ", ".join(str(c) for c in changes[:3])
-        }
-    else:
-        body = m.get("message") or _(
-            "Your casting has been updated. Tap to review the new arrangement."
+    score_url = _materials_url(ctx)
+
+    if m.get("event") == "removed":
+        return MessageContent(
+            notification_type=ctx.notification_type,
+            level=ctx.level or NotificationLevel.WARNING,
+            title=_("Casting change — %(piece)s") % {"piece": piece},
+            body=_("You're no longer cast in %(piece)s.") % {"piece": piece},
+            url_path=_projects_url(ctx),
+            tag=f"casting-removed:{m.get('piece_id') or piece}",
+            actions=(_open_action(),),
+            subject=_("Casting change — %(piece)s") % {"piece": piece},
+            eyebrow=_("Casting"),
+            email_lead=_("You're no longer cast in %(piece)s.") % {"piece": piece},
+            cta_label=_("Open dashboard"),
         )
-    details = tuple(_row(_("Change"), c) for c in changes) if isinstance(changes, list) else ()
+
+    summary = _summarize_changes(m.get("changes"))
+    body = (
+        _("Your part changed — %(summary)s. Tap to review the score.") % {"summary": summary}
+        if summary
+        else _("Your casting in %(piece)s has changed. Tap to review the score.") % {"piece": piece}
+    )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Casting changed: %(piece)s") % {"piece": piece},
+        title=_("Casting update — %(piece)s") % {"piece": piece},
         body=body,
-        url_path=_projects_url(ctx),
+        url_path=score_url,
         tag=f"casting-updated:{m.get('piece_id') or piece}",
-        actions=(_open_action(),),
-        subject=_("Casting updated — %(piece)s") % {"piece": piece},
-        eyebrow=_("Casting change"),
+        actions=(_open_action(score_url),),
+        subject=_("Casting update — %(piece)s") % {"piece": piece},
+        eyebrow=_("Casting"),
         email_lead=_("Your casting in %(piece)s has been updated.") % {"piece": piece},
-        details=details,
-        cta_label=_("Open score"),
+        details=_change_rows(m.get("changes")),
+        cta_label=_("Open the score"),
     )
 
 
 def _compose_material_uploaded(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     piece = m.get("piece_title") or m.get("project_name") or _("your repertoire")
+    score_url = _materials_url(ctx)
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("New material available"),
-        body=_("Sheet music or audio has been added to %(piece)s. Tap to open the library.")
+        title=_("Fresh material — %(piece)s") % {"piece": piece},
+        body=_("New sheet music or a recording has landed for %(piece)s. Tap to open it.")
         % {"piece": piece},
-        url_path=_materials_url(ctx),
+        url_path=score_url,
         tag=f"material-uploaded:{m.get('piece_id') or m.get('material_id') or piece}",
-        actions=(_open_action(),),
+        actions=(_open_action(score_url),),
         subject=_("New material — %(piece)s") % {"piece": piece},
         eyebrow=_("Library"),
-        email_lead=_("New sheet music or audio has been added to %(piece)s.") % {"piece": piece},
+        email_lead=_("New sheet music or a recording has been added to %(piece)s.") % {"piece": piece},
         details=(_row(_("Piece"), piece),),
-        cta_label=_("Open library"),
+        cta_label=_("Open the library"),
     )
 
 
 def _compose_contract_issued(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     project = m.get("project_name") or _("your engagement")
+    contracts_url = _contracts_url(ctx)
     return MessageContent(
         notification_type=ctx.notification_type,
         level=NotificationLevel.WARNING,
-        title=_("Contract ready for review"),
-        body=_("Your contract for %(project)s is ready. Tap to review and sign.")
-        % {"project": project},
-        url_path=_contracts_url(ctx),
+        title=_("Your contract is ready — %(project)s") % {"project": project},
+        body=_("The contract for %(project)s is ready to review and sign.") % {"project": project},
+        url_path=contracts_url,
         tag=f"contract-issued:{m.get('contract_id') or m.get('project_id') or ''}",
-        actions=(_open_action(),),
+        actions=(_open_action(contracts_url),),
         subject=_("Contract ready to sign — %(project)s") % {"project": project},
         eyebrow=_("Contract"),
-        email_lead=_("Your contract for %(project)s is ready to review and sign.")
-        % {"project": project},
+        email_lead=_("Your contract for %(project)s is ready to review and sign.") % {"project": project},
         details=(_row(_("Project"), project),),
-        cta_label=_("Review contract"),
+        cta_label=_("Review the contract"),
     )
 
 
 def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
-    artist = m.get("artist_name") or _("An artist")
+    artist = m.get("artist_name") or _("A singer")
     project = m.get("project_name") or _("a project")
     when = m.get("rehearsal_date")
+    note = m.get("excuse_note")
     body = (
-        _("%(artist)s requested an absence for %(project)s on %(when)s.")
+        _("%(artist)s asked to be excused from the %(project)s rehearsal on %(when)s.")
         % {"artist": artist, "project": project, "when": when}
         if when
-        else _("%(artist)s requested an absence for %(project)s.")
+        else _("%(artist)s asked to be excused from %(project)s.")
         % {"artist": artist, "project": project}
     )
-    details: list[DetailRow] = [_row(_("Artist"), artist), _row(_("Project"), project)]
+    rehearsals_url = _rehearsals_url(ctx)
+    details: list[DetailRow] = [_row(_("Singer"), artist), _row(_("Project"), project)]
     if when:
         details.append(_row(_("Rehearsal"), when))
+    if note:
+        details.append(_row(_("Note"), note))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Absence request"),
-        body=body,
-        url_path=_rehearsals_url(ctx),
+        title=_("Absence request — %(artist)s") % {"artist": artist},
+        body=body if not note else f"{body} {_('“%(note)s”') % {'note': note}}",
+        url_path=rehearsals_url,
         tag=f"absence-requested:{m.get('rehearsal_id') or ''}",
-        actions=(_open_action(),),
+        actions=(_open_action(rehearsals_url),),
         subject=_("Absence request — %(artist)s") % {"artist": artist},
         eyebrow=_("Attendance"),
         email_lead=body,
         details=tuple(details),
-        cta_label=_("Review request"),
+        cta_label=_("Review the request"),
     )
 
 
@@ -592,10 +702,10 @@ def _compose_absence_approved(ctx: MessageContext) -> MessageContent:
     project = m.get("project_name") or _("your project")
     when = m.get("rehearsal_date")
     body = (
-        _("Your absence on %(when)s for %(project)s has been approved.")
-        % {"when": when, "project": project}
+        _("You're excused from the %(project)s rehearsal on %(when)s. Thanks for letting us know.")
+        % {"project": project, "when": when}
         if when
-        else _("Your absence for %(project)s has been approved.") % {"project": project}
+        else _("You're excused from %(project)s. Thanks for letting us know.") % {"project": project}
     )
     details: list[DetailRow] = [_row(_("Project"), project)]
     if when:
@@ -603,7 +713,7 @@ def _compose_absence_approved(ctx: MessageContext) -> MessageContent:
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Absence approved"),
+        title=_("You're excused — %(project)s") % {"project": project},
         body=body,
         url_path=_rehearsals_url(ctx),
         tag=f"absence-approved:{m.get('rehearsal_id') or ''}",
@@ -621,10 +731,10 @@ def _compose_absence_rejected(ctx: MessageContext) -> MessageContent:
     project = m.get("project_name") or _("your project")
     when = m.get("rehearsal_date")
     body = (
-        _("Your absence on %(when)s for %(project)s was not approved. Tap for details.")
-        % {"when": when, "project": project}
+        _("Your absence for the %(project)s rehearsal on %(when)s wasn't approved. Tap for details.")
+        % {"project": project, "when": when}
         if when
-        else _("Your absence for %(project)s was not approved. Tap for details.")
+        else _("Your absence for %(project)s wasn't approved. Tap for details.")
         % {"project": project}
     )
     details: list[DetailRow] = [_row(_("Project"), project)]
@@ -633,7 +743,7 @@ def _compose_absence_rejected(ctx: MessageContext) -> MessageContent:
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
-        title=_("Absence not approved"),
+        title=_("Absence not approved — %(project)s") % {"project": project},
         body=body,
         url_path=_rehearsals_url(ctx),
         tag=f"absence-rejected:{m.get('rehearsal_id') or ''}",
@@ -648,68 +758,73 @@ def _compose_absence_rejected(ctx: MessageContext) -> MessageContent:
 
 def _compose_participation_response(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
-    artist = m.get("artist_name") or _("An artist")
-    action = m.get("action_details") or _("responded")
+    artist = m.get("artist_name") or _("A singer")
     project = m.get("project_name") or _("a project")
+    phrase = _participation_status_phrase(m.get("status"))
+    body = _("%(artist)s %(phrase)s for %(project)s.") % {
+        "artist": artist, "phrase": phrase, "project": project,
+    }
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("%(artist)s · %(action)s") % {"artist": artist, "action": action},
-        body=_("Response to %(project)s. Tap to review the participation status.")
-        % {"project": project},
+        title=_("%(artist)s — %(project)s") % {"artist": artist, "project": project},
+        body=body,
         url_path=_projects_url(ctx),
         tag=f"participation:{m.get('project_id') or ''}:{m.get('artist_id') or artist}",
         actions=(_open_action(),),
-        subject=_("%(artist)s responded — %(project)s") % {"artist": artist, "project": project},
-        eyebrow=_("Participation"),
-        email_lead=_("%(artist)s responded to %(project)s: %(action)s.")
-        % {"artist": artist, "project": project, "action": action},
-        details=(_row(_("Artist"), artist), _row(_("Project"), project),
-                 _row(_("Response"), action)),
-        cta_label=_("Review participation"),
+        subject=body,
+        eyebrow=_("RSVP"),
+        email_lead=body,
+        details=(_row(_("Singer"), artist), _row(_("Project"), project)),
+        cta_label=_("Review the roster"),
     )
 
 
 def _compose_attendance_submitted(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
-    artist = m.get("artist_name") or _("An artist")
-    detail = m.get("action_details") or _("updated their attendance")
+    artist = m.get("artist_name") or _("A singer")
     project = m.get("project_name") or _("a project")
     when = m.get("rehearsal_date")
-    suffix = _(" · %(when)s") % {"when": when} if when else ""
-    details: list[DetailRow] = [_row(_("Artist"), artist), _row(_("Project"), project)]
+    phrase = _attendance_status_phrase(m.get("status"))
+    minutes = m.get("minutes_late")
+    if m.get("status") == "LATE" and minutes:
+        phrase = _("will be about %(minutes)d min late") % {"minutes": int(minutes)}
+    body = _("%(artist)s %(phrase)s — %(project)s.") % {
+        "artist": artist, "phrase": phrase, "project": project,
+    }
+    rehearsals_url = _rehearsals_url(ctx)
+    details: list[DetailRow] = [_row(_("Singer"), artist), _row(_("Project"), project)]
     if when:
         details.append(_row(_("Rehearsal"), when))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Attendance update — %(project)s") % {"project": project},
-        body=_("%(artist)s %(detail)s%(suffix)s.")
-        % {"artist": artist, "detail": detail, "suffix": suffix},
-        url_path=_rehearsals_url(ctx),
+        title=_("Attendance — %(project)s") % {"project": project},
+        body=body,
+        url_path=rehearsals_url,
         tag=f"attendance:{m.get('rehearsal_id') or ''}:{m.get('artist_id') or artist}",
-        actions=(_open_action(),),
-        subject=_("Attendance — %(project)s") % {"project": project},
+        actions=(_open_action(rehearsals_url),),
+        subject=body,
         eyebrow=_("Attendance"),
-        email_lead=_("%(artist)s %(detail)s.") % {"artist": artist, "detail": detail},
+        email_lead=body,
         details=tuple(details),
         cta_label=_("Open rehearsals"),
     )
 
 
 def _compose_custom_admin_message(ctx: MessageContext) -> MessageContent:
-    """Direct manager → artist message. Sender is the title; the message is the body."""
+    """Direct manager → singer message. Sender is the title; the message is the body."""
     m = ctx.metadata
-    sender = m.get("sender_name") or _("Management")
-    subject = m.get("title") or _("New message")
+    sender = m.get("sender_name") or _("the management team")
+    subject = m.get("title") or _("A message for you")
     message = m.get("message") or ""
 
     body = f"{subject} — {message}" if message else subject
     cta_url = m.get("cta_url") or _settings_notifications_url()
 
-    actions: tuple[PushAction, ...] = (_open_action(),)
+    actions: tuple[PushAction, ...] = (_open_action(cta_url),)
     if m.get("cta_label"):
-        actions = (PushAction(action="cta", title=str(m["cta_label"])), _dismiss_action())
+        actions = (PushAction(action="cta", title=str(m["cta_label"]), url=cta_url), _dismiss_action())
 
     return MessageContent(
         notification_type=ctx.notification_type,
@@ -729,10 +844,11 @@ def _compose_custom_admin_message(ctx: MessageContext) -> MessageContent:
 def _compose_message_received(ctx: MessageContext) -> MessageContent:
     """New message in a conversation thread. Sender → title; subject + snippet → body."""
     m = ctx.metadata
-    sender = m.get("sender_name") or _("your management team")
+    sender = m.get("sender_name") or _("the management team")
     subject = m.get("title") or _("New message")
     snippet = m.get("snippet") or m.get("message") or ""
     thread_id = m.get("thread_id") or ""
+    thread_url = f"/panel/messages/{thread_id}" if thread_id else "/panel/messages"
 
     body = f"{subject} — {snippet}" if snippet else subject
 
@@ -741,13 +857,13 @@ def _compose_message_received(ctx: MessageContext) -> MessageContent:
         level=ctx.level,
         title=_("Message from %(sender)s") % {"sender": sender},
         body=body,
-        url_path=f"/panel/messages/{thread_id}" if thread_id else "/panel/messages",
+        url_path=thread_url,
         tag=f"message:{thread_id}",
-        actions=(_open_action(),),
+        actions=(PushAction(action="reply", title=_("Reply"), url=thread_url),),
         subject=_("New message: %(subject)s") % {"subject": subject},
         eyebrow=_("Message"),
         email_lead=str(snippet) or str(subject),
-        cta_label=_("Open conversation"),
+        cta_label=_("Open the conversation"),
     )
 
 
@@ -755,46 +871,46 @@ def _compose_channel_message(ctx: MessageContext) -> MessageContent:
     """New message in a project group channel. Project = title; sender + snippet = body."""
     m = ctx.metadata
     project = m.get("project_name") or _("your project")
-    sender = m.get("sender_name") or _("a participant")
+    sender = m.get("sender_name") or _("someone")
     snippet = m.get("snippet") or ""
     channel_id = m.get("channel_id") or ""
+    channel_url = f"/panel/messages/channel/{channel_id}" if channel_id else "/panel/messages"
 
     body = (
         _("%(sender)s: %(snippet)s") % {"sender": sender, "snippet": snippet}
         if snippet
-        else _("%(sender)s sent a message.") % {"sender": sender}
+        else _("%(sender)s posted in the channel.") % {"sender": sender}
     )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=str(project),
         body=body,
-        url_path=f"/panel/messages/channel/{channel_id}" if channel_id else "/panel/messages",
+        url_path=channel_url,
         tag=f"channel:{channel_id}",
-        actions=(_open_action(),),
+        actions=(PushAction(action="reply", title=_("Reply"), url=channel_url),),
         subject=_("New message in %(project)s") % {"project": project},
         eyebrow=_("Channel"),
         email_lead=body,
-        cta_label=_("Open channel"),
+        cta_label=_("Open the channel"),
     )
 
 
 def _compose_system_alert(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
-    title = m.get("title") or _("System notice")
-    body = m.get("message") or _(
-        "A system update requires your attention. Tap to learn more."
-    )
+    title = m.get("title") or _("A quick note")
+    body = m.get("message") or _("There's something that needs your attention. Tap to learn more.")
+    cta_url = m.get("cta_url") or "/panel"
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
         title=str(title),
         body=str(body),
-        url_path=m.get("cta_url") or "/panel",
+        url_path=cta_url,
         tag="system-alert",
-        actions=(_open_action(),),
+        actions=(_open_action(cta_url),),
         subject=str(title),
-        eyebrow=_("System"),
+        eyebrow=_("Notice"),
         email_lead=str(body),
         cta_label=str(m.get("cta_label") or _("Open VoctManager")),
     )
@@ -805,11 +921,11 @@ def _compose_default(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     project = m.get("project_name")
     title = (
-        _("Update from %(project)s") % {"project": project}
+        _("Update — %(project)s") % {"project": project}
         if project
-        else _("New update")
+        else _("Something new for you")
     )
-    body = m.get("message") or _("You have a new update in VoctManager. Tap to view.")
+    body = m.get("message") or _("You have a new update in VoctManager. Tap to take a look.")
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
