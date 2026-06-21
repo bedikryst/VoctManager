@@ -61,7 +61,12 @@ export const InstallAppPrompt = (): React.JSX.Element => {
                 variant="primary"
                 size="touch"
                 leftIcon={<Download size={15} aria-hidden="true" />}
-                onClick={() => void promptInstall()}
+                onClick={() => {
+                  // Declining the OS dialog → snooze the nudge for the cooldown.
+                  void promptInstall().then((outcome) => {
+                    if (outcome === "dismissed") dismiss();
+                  });
+                }}
                 className="shrink-0"
               >
                 {t("pwa.install.action", "Zainstaluj")}

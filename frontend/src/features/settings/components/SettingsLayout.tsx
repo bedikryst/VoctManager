@@ -31,6 +31,7 @@ import { SettingsIdentityCard } from "./SettingsIdentityCard";
 import { GeneralTab } from "./GeneralTab";
 import { SecurityTab } from "./SecurityTab";
 import { LogisticsTab } from "./LogisticsTab";
+import { AppTab } from "./AppTab";
 import { PrivacyTab } from "./PrivacyTab";
 import { IntegrationsTab } from "./IntegrationsTab";
 
@@ -44,6 +45,8 @@ const renderSection = (section: SettingsSectionId): React.ReactNode => {
       return <NotificationsTab />;
     case "logistics":
       return <LogisticsTab />;
+    case "app":
+      return <AppTab />;
     case "calendar":
       return <IntegrationsTab />;
     case "privacy":

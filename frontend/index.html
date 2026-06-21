@@ -11,6 +11,24 @@
     <meta name="robots" content="noindex,nofollow" />
 
     <!--
+      Earliest-possible capture of the install prompt. Chromium fires
+      `beforeinstallprompt` once, often before the app bundle evaluates; buffering
+      it here (synchronously, during parse) guarantees the in-app install button
+      never misses it. Drained on boot by shared/pwa/installController.ts.
+    -->
+    <script>
+      window.__voctInstall = { event: null, installed: false };
+      window.addEventListener("beforeinstallprompt", function (e) {
+        e.preventDefault();
+        window.__voctInstall.event = e;
+      });
+      window.addEventListener("appinstalled", function () {
+        window.__voctInstall.event = null;
+        window.__voctInstall.installed = true;
+      });
+    </script>
+
+    <!--
       Installable PWA. Static manifest in /public (no plugin HTML injection, so
       the install criteria are auditable here). theme-color tracks the light
       panel chrome; the dark variant matches the splash/icon backdrop (#060607).

@@ -3453,6 +3453,44 @@
     }
   },
   "settings": {
+    "app": {
+      "benefits": {
+        "fast": "An icon on your screen — like a native app",
+        "fullscreen": "Full screen, no browser bar",
+        "offline": "Scores and attendance, even offline"
+      },
+      "install_action": "Install app",
+      "install_ready": "Ready to install",
+      "install_ready_desc": "One tap adds VoctManager to this device.",
+      "installed": {
+        "desc": "You're running VoctManager as an app on this device.",
+        "title": "The app is installed"
+      },
+      "ios": {
+        "step_1": "Tap the Share icon in Safari's bottom bar",
+        "step_2": "Choose “Add to Home Screen”",
+        "step_3": "Confirm — the icon appears on your home screen",
+        "title": "Add to Home Screen"
+      },
+      "other": {
+        "desc": "To install the app, open this address in Chrome or Edge — or on your phone. You'll find a link to share below.",
+        "title": "Installing in this browser"
+      },
+      "share": {
+        "copied": "Link copied",
+        "copied_short": "Copied",
+        "copy": "Copy link",
+        "copy_failed": "Couldn't copy the link",
+        "qr_hint": "Scan with a phone",
+        "share": "Share",
+        "share_text": "VoctEnsemble choir panel — schedule, scores and attendance.",
+        "share_title": "VoctManager",
+        "subtitle": "Send the link to choristers or show the QR code at rehearsal — just scan it with a phone.",
+        "title": "Share the app"
+      },
+      "subtitle": "Install VoctManager on your device — full screen, instant access and offline practice. Works on phone, tablet and desktop.",
+      "title": "App"
+    },
     "avatar": {
       "change_photo": "Change photo",
       "crop_aria": "Photo crop area",
@@ -3637,6 +3675,12 @@
       "title": "Privacy and Data (GDPR)",
       "salutationTitle": "Form of address",
       "salutationDesc": "We store an optional form of address (feminine / masculine / neutral) solely so we can greet you correctly in email and notification salutations. It is optional, never shared, and you can change it or set it to neutral at any time in the General tab."
+    },
+    "sections": {
+      "app": {
+        "label": "App",
+        "short": "App"
+      }
     },
     "security": {
       "confirmPassword": "Repeat new password",

@@ -1,24 +1,25 @@
 /**
  * @file useInstallPrompt.ts
- * @description Drives the "install this app" affordance. Captures Chromium's
- * `beforeinstallprompt` so we can offer a first-party install button, detects
- * the iOS case (no such event — manual Add to Home Screen), and stays quiet
- * once installed or recently dismissed.
+ * @description React binding over the app-boot install controller. The
+ * controller — not this hook — captures `beforeinstallprompt`, so the prompt is
+ * never lost to the mount race ({@link module:shared/pwa/installController}).
+ * This hook just projects the live snapshot and layers the UI concerns: iOS
+ * Add-to-Home-Screen detection (no event exists there) and the dismissible
+ * 14-day cooldown that gates the *ambient nudge* card. The deliberate Settings
+ * entry point ignores the cooldown and reads the capabilities directly.
  * @module shared/pwa/useInstallPrompt
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  prompt: () => Promise<void>;
-  readonly userChoice: Promise<{
-    outcome: "accepted" | "dismissed";
-    platform: string;
-  }>;
-}
+import {
+  getInstallSnapshot,
+  subscribeInstall,
+  triggerInstallPrompt,
+  type InstallOutcome,
+} from "./installController";
 
 const DISMISS_KEY = "voct.pwa.install.dismissed-at";
-const DISMISS_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000; // re-offer after two weeks
+const DISMISS_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000; // re-offer the nudge after two weeks
 
 export type InstallPlatform = "chromium" | "ios" | "none";
 
@@ -27,19 +28,16 @@ export interface InstallPromptState {
   canPrompt: boolean;
   /** iOS Safari — show manual Add-to-Home-Screen instructions instead. */
   isIOS: boolean;
-  /** Already running as an installed app — never offer install. */
-  isStandalone: boolean;
-  /** The prompt should currently be surfaced (not standalone, not dismissed). */
+  /** Already running as an installed app. */
+  isInstalled: boolean;
+  /** The ambient nudge should be surfaced (not installed, not dismissed). */
   shouldOffer: boolean;
   platform: InstallPlatform;
-  promptInstall: () => Promise<void>;
+  /** Trigger the native prompt; resolves with the user's choice. */
+  promptInstall: () => Promise<InstallOutcome>;
+  /** Snooze the ambient nudge for the cooldown window. */
   dismiss: () => void;
 }
-
-const detectStandalone = (): boolean =>
-  typeof window !== "undefined" &&
-  (window.matchMedia?.("(display-mode: standalone)").matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true);
 
 const detectIOS = (): boolean =>
   typeof navigator !== "undefined" &&
@@ -49,36 +47,20 @@ const detectIOS = (): boolean =>
 const recentlyDismissed = (): boolean => {
   try {
     const raw = localStorage.getItem(DISMISS_KEY);
-    if (!raw) return false;
-    return Date.now() - Number(raw) < DISMISS_COOLDOWN_MS;
+    return raw ? Date.now() - Number(raw) < DISMISS_COOLDOWN_MS : false;
   } catch {
     return false;
   }
 };
 
 export const useInstallPrompt = (): InstallPromptState => {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isStandalone, setIsStandalone] = useState<boolean>(detectStandalone);
+  const { canPrompt, isInstalled } = useSyncExternalStore(
+    subscribeInstall,
+    getInstallSnapshot,
+    getInstallSnapshot, // server snapshot — identical, this is a CSR-only app
+  );
   const [dismissed, setDismissed] = useState<boolean>(recentlyDismissed);
   const isIOS = detectIOS();
-
-  useEffect(() => {
-    const onBeforeInstall = (event: Event) => {
-      event.preventDefault(); // suppress the mini-infobar; we drive our own UI
-      setDeferred(event as BeforeInstallPromptEvent);
-    };
-    const onInstalled = () => {
-      setDeferred(null);
-      setIsStandalone(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
-  }, []);
 
   const dismiss = useCallback(() => {
     try {
@@ -89,23 +71,19 @@ export const useInstallPrompt = (): InstallPromptState => {
     setDismissed(true);
   }, []);
 
-  const promptInstall = useCallback(async () => {
-    if (!deferred) return;
-    await deferred.prompt();
-    const choice = await deferred.userChoice;
-    setDeferred(null);
-    if (choice.outcome === "dismissed") dismiss();
-  }, [deferred, dismiss]);
+  const promptInstall = useCallback(() => triggerInstallPrompt(), []);
 
-  const canPrompt = !!deferred;
-  const platform: InstallPlatform = canPrompt ? "chromium" : isIOS ? "ios" : "none";
-  const shouldOffer =
-    !isStandalone && !dismissed && (canPrompt || isIOS);
+  const platform: InstallPlatform = canPrompt
+    ? "chromium"
+    : isIOS
+      ? "ios"
+      : "none";
+  const shouldOffer = !isInstalled && !dismissed && (canPrompt || isIOS);
 
   return {
     canPrompt,
     isIOS,
-    isStandalone,
+    isInstalled,
     shouldOffer,
     platform,
     promptInstall,

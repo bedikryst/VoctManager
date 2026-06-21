@@ -3453,6 +3453,44 @@
     }
   },
   "settings": {
+    "app": {
+      "benefits": {
+        "fast": "Ikona na ekranie — jak zwykła aplikacja",
+        "fullscreen": "Pełny ekran, bez paska przeglądarki",
+        "offline": "Nuty i obecności także offline"
+      },
+      "install_action": "Zainstaluj aplikację",
+      "install_ready": "Gotowe do instalacji",
+      "install_ready_desc": "Jedno dotknięcie dodaje VoctManager do tego urządzenia.",
+      "installed": {
+        "desc": "Uruchamiasz VoctManager jako aplikację na tym urządzeniu.",
+        "title": "Aplikacja jest zainstalowana"
+      },
+      "ios": {
+        "step_1": "Dotknij ikony Udostępnij na dolnym pasku Safari",
+        "step_2": "Wybierz „Do ekranu początkowego”",
+        "step_3": "Potwierdź — ikona pojawi się na ekranie telefonu",
+        "title": "Dodaj do ekranu początkowego"
+      },
+      "other": {
+        "desc": "Aby zainstalować aplikację, otwórz ten adres w Chrome lub Edge — albo na telefonie. Link do wysłania znajdziesz poniżej.",
+        "title": "Instalacja w tej przeglądarce"
+      },
+      "share": {
+        "copied": "Skopiowano link",
+        "copied_short": "Skopiowano",
+        "copy": "Kopiuj link",
+        "copy_failed": "Nie udało się skopiować linku",
+        "qr_hint": "Zeskanuj telefonem",
+        "share": "Udostępnij",
+        "share_text": "Panel chóru VoctEnsemble — harmonogram, nuty i obecności.",
+        "share_title": "VoctManager",
+        "subtitle": "Wyślij link chórzystom albo pokaż kod QR na próbie — wystarczy zeskanować telefonem.",
+        "title": "Udostępnij aplikację"
+      },
+      "subtitle": "Zainstaluj VoctManager na urządzeniu — pełny ekran, błyskawiczny dostęp i ćwiczenia offline. Działa na telefonie, tablecie i komputerze.",
+      "title": "Aplikacja"
+    },
     "avatar": {
       "change_photo": "Zmień zdjęcie",
       "crop_aria": "Obszar kadrowania zdjęcia",
@@ -3637,6 +3675,12 @@
       "title": "Prywatność i dane (RODO)",
       "salutationTitle": "Forma zwrotu",
       "salutationDesc": "Przechowujemy opcjonalną formę zwrotu (kobieca / męska / neutralna) wyłącznie po to, by poprawnie zwracać się do Ciebie w powitaniach w e-mailach i powiadomieniach. Jest opcjonalna, nie udostępniamy jej nikomu, a Ty możesz ją w każdej chwili zmienić lub ustawić jako neutralną w zakładce „Ogólne”."
+    },
+    "sections": {
+      "app": {
+        "label": "Aplikacja",
+        "short": "Aplikacja"
+      }
     },
     "security": {
       "confirmPassword": "Powtórz nowe hasło",

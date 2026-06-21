@@ -3453,6 +3453,44 @@
     }
   },
   "settings": {
+    "app": {
+      "benefits": {
+        "fast": "Une icône sur l'écran — comme une vraie application",
+        "fullscreen": "Plein écran, sans barre du navigateur",
+        "offline": "Partitions et présences, même hors ligne"
+      },
+      "install_action": "Installer l'application",
+      "install_ready": "Prêt à installer",
+      "install_ready_desc": "Une seule touche ajoute VoctManager à cet appareil.",
+      "installed": {
+        "desc": "Vous utilisez VoctManager en tant qu'application sur cet appareil.",
+        "title": "L'application est installée"
+      },
+      "ios": {
+        "step_1": "Touchez l'icône Partager dans la barre inférieure de Safari",
+        "step_2": "Choisissez « Sur l'écran d'accueil »",
+        "step_3": "Confirmez — l'icône apparaît sur votre écran d'accueil",
+        "title": "Ajouter à l'écran d'accueil"
+      },
+      "other": {
+        "desc": "Pour installer l'application, ouvrez cette adresse dans Chrome ou Edge — ou sur votre téléphone. Vous trouverez ci-dessous un lien à partager.",
+        "title": "Installation dans ce navigateur"
+      },
+      "share": {
+        "copied": "Lien copié",
+        "copied_short": "Copié",
+        "copy": "Copier le lien",
+        "copy_failed": "Impossible de copier le lien",
+        "qr_hint": "Scannez avec un téléphone",
+        "share": "Partager",
+        "share_text": "Panneau du chœur VoctEnsemble — calendrier, partitions et présences.",
+        "share_title": "VoctManager",
+        "subtitle": "Envoyez le lien aux choristes ou montrez le QR code en répétition — il suffit de le scanner avec un téléphone.",
+        "title": "Partager l'application"
+      },
+      "subtitle": "Installez VoctManager sur votre appareil — plein écran, accès instantané et répétition hors ligne. Sur téléphone, tablette et ordinateur.",
+      "title": "Application"
+    },
     "avatar": {
       "change_photo": "Changer la photo",
       "crop_aria": "Zone de recadrage de la photo",
@@ -3637,6 +3675,12 @@
       "title": "Confidentialité et données (RGPD)",
       "salutationTitle": "Forme d’adresse",
       "salutationDesc": "Nous conservons une forme d’adresse optionnelle (féminine / masculine / neutre) uniquement afin de nous adresser correctement à vous dans les salutations des e-mails et notifications. Elle est facultative, jamais partagée, et vous pouvez la modifier à tout moment ou la définir sur neutre dans l’onglet « Général »."
+    },
+    "sections": {
+      "app": {
+        "label": "Application",
+        "short": "Appli"
+      }
     },
     "security": {
       "confirmPassword": "Répétez le nouveau mot de passe",

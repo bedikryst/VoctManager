@@ -14,6 +14,7 @@ import {
   Fingerprint,
   ShieldCheck,
   Shirt,
+  Smartphone,
   User,
 } from "lucide-react";
 
@@ -22,6 +23,7 @@ export type SettingsSectionId =
   | "security"
   | "notifications"
   | "logistics"
+  | "app"
   | "calendar"
   | "privacy";
 
@@ -85,6 +87,14 @@ export const SETTINGS_GROUPS: readonly SettingsGroupDef[] = [
         labelFallback: "Logistyka sceniczna",
         shortKey: "settings.sections.logistics.short",
         shortFallback: "Stroje",
+      },
+      {
+        id: "app",
+        icon: Smartphone,
+        labelKey: "settings.sections.app.label",
+        labelFallback: "Aplikacja",
+        shortKey: "settings.sections.app.short",
+        shortFallback: "Aplikacja",
       },
     ],
   },
