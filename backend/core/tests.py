@@ -1,6 +1,6 @@
 import io
 import tempfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.mail import EmailMultiAlternatives
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from PIL import Image
 from pydantic import ValidationError
@@ -256,8 +257,39 @@ class ActivationEmailLanguageTests(TestCase):
         )
 
         self.assertEqual(len(mail.outbox), 1)
-        html = str(mail.outbox[0].alternatives[0][0])
+        html = str(cast(EmailMultiAlternatives, mail.outbox[0]).alternatives[0][0])
         self.assertIn("Bienvenue dans VoctManager", html)  # FR headline, not the EN msgid
+
+    def test_greeting_is_gendered_by_salutation(self):
+        """Optional `salutation` genders only the greeting; NEUTRAL stays genderless."""
+        from django.core import mail
+
+        from notifications.email_service import EmailDispatcherService, EmailType
+
+        cases = {
+            "F": ("pl", "Droga Maria,"),
+            "M": ("pl", "Drogi Maria,"),
+            "N": ("pl", "Witaj Maria,"),
+        }
+        for salutation, (lang, expected) in cases.items():
+            mail.outbox.clear()
+            EmailDispatcherService.dispatch(
+                recipient_email="g@example.com",
+                subject="s",
+                template_name="account_activation",
+                context={
+                    "first_name": "Maria",
+                    "first_name_vocative": "Maria",
+                    "salutation": salutation,
+                    "activation_link": "https://example.test/activate",
+                },
+                fallback_language=lang,
+                email_type=EmailType.OPERATIONAL,
+            )
+            html = str(cast(EmailMultiAlternatives, mail.outbox[0]).alternatives[0][0])
+            self.assertIn(expected, html, f"salutation={salutation}")
+            # The inelegant "Drogi/a" slash must never appear.
+            self.assertNotIn("Drogi/a", html)
 
 
 class PasswordResetRequestViewTests(APITestCase):

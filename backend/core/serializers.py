@@ -39,7 +39,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'avatar_url', 'avatar_thumb_url',
 
             # Preferences
-            'phone_number', 'language', 'timezone',
+            'phone_number', 'language', 'timezone', 'salutation',
             'dietary_preference', 'dietary_notes',
             'clothing_size', 'shoe_size', 'height_cm',
 

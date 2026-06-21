@@ -227,6 +227,7 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
                 "phone_number": getattr(profile, 'phone_number', ''),
                 "language": getattr(profile, 'language', 'en'),
                 "timezone": getattr(profile, 'timezone', 'Europe/Warsaw'),
+                "salutation": getattr(profile, 'salutation', 'N'),
                 "dietary_preference": getattr(profile, 'dietary_preference', 'none'),
                 "dietary_notes": getattr(profile, 'dietary_notes', ''),
                 "clothing_size": getattr(profile, 'clothing_size', ''),

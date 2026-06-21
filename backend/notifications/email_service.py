@@ -69,6 +69,9 @@ class EmailDispatcherService:
         Synchronous dispatch interface for direct email operations.
         Enforces contextual internationalization.
         """
+        # Ensure the template's <html lang> matches the render language even for
+        # account emails (notification emails already inject `lang`).
+        context = {"lang": fallback_language, **context}
         with translation.override(fallback_language):
             cls._dispatch_core(
                 recipient_email=recipient_email,
@@ -138,6 +141,7 @@ class EmailDispatcherService:
                 context: dict[str, Any] = {
                     "first_name": user.first_name,
                     "first_name_vocative": first_name_vocative,
+                    "salutation": getattr(profile, "salutation", "N"),
                     "notification_type": notification_type,
                     "metadata": metadata,
                     "lang": resolved_language,

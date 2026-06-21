@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, mo
 from .models import Attendance, Participation, PieceReadiness, Project, VoiceType
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
+SALUTATION_VALUES = frozenset({"F", "M", "N"})
 ATTENDANCE_STATUS_VALUES = frozenset(Attendance.Status.values)
 PROJECT_STATUS_VALUES = frozenset(Project.Status.values)
 PARTICIPATION_STATUS_VALUES = frozenset(Participation.Status.values)
@@ -85,6 +86,7 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     vocal_range_bottom: str | None = Field(None, max_length=5)
     vocal_range_top: str | None = Field(None, max_length=5)
     language: str = Field(default='pl', max_length=10)
+    salutation: str = Field(default='N', max_length=1)
 
     @field_validator("first_name", "last_name", mode="before")
     @classmethod
@@ -105,6 +107,11 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
     @classmethod
     def validate_language(cls, value: str) -> str:
         return _require_choice(value, SUPPORTED_LANGUAGE_CODES, "language")
+
+    @field_validator("salutation")
+    @classmethod
+    def validate_salutation(cls, value: str) -> str:
+        return _require_choice((value or "N").upper(), SALUTATION_VALUES, "salutation")
 
 
 class AttendanceRecordDTO(EnterpriseBaseDTO):

@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from .constants import ClothingSizeChoices, DietaryChoices
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
+SALUTATION_VALUES = frozenset({"F", "M", "N"})
 DIETARY_CHOICE_VALUES = frozenset(DietaryChoices.values)
 CLOTHING_SIZE_VALUES = frozenset(ClothingSizeChoices.values)
 
@@ -61,7 +62,8 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     phone_number: str | None = Field(None, max_length=32)
     language: str = Field(default='en', max_length=10)
     timezone: str = Field(default='Europe/Warsaw', max_length=63)
-    
+    salutation: str = Field(default='N', max_length=1)
+
     dietary_preference: str = Field(default='none', max_length=15)
     dietary_notes: str = Field(default='')
     clothing_size: str = Field(default='', max_length=5)
@@ -89,6 +91,12 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     def validate_language(cls, value: str) -> str:
         value = value.lower()
         return _require_choice(value, SUPPORTED_LANGUAGE_CODES, "language")
+
+    @field_validator("salutation")
+    @classmethod
+    def validate_salutation(cls, value: str) -> str:
+        value = (value or "N").upper()
+        return _require_choice(value, SALUTATION_VALUES, "salutation")
 
     @field_validator("timezone")
     @classmethod

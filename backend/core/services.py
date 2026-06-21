@@ -54,7 +54,7 @@ class UserIdentityService:
         return {"uidb64": uidb64, "token": token}
 
     @staticmethod
-    def provision_user_account(email: str, first_name: str, last_name: str, language: str = 'pl', first_name_vocative: str = '') -> User:
+    def provision_user_account(email: str, first_name: str, last_name: str, language: str = 'pl', first_name_vocative: str = '', salutation: str = 'N') -> User:
         """
         Enterprise IAM: Provisions a new core identity and profile.
         Generates a collision-free UUID username, handles activation tokens,
@@ -85,7 +85,8 @@ class UserIdentityService:
             # Explicit Profile Creation (side-effecting; the instance is not needed here)
             UserProfile.objects.create(
                 user=user,
-                language=language
+                language=language,
+                salutation=salutation if salutation in {'F', 'M', 'N'} else 'N',
             )
 
             # Generate Activation Tokens
@@ -109,6 +110,7 @@ class UserIdentityService:
                     context={
                         "first_name": user.first_name,
                         "first_name_vocative": vocative,
+                        "salutation": salutation if salutation in {'F', 'M', 'N'} else 'N',
                         "activation_link": activation_link,
                     },
                     fallback_language=language,
@@ -189,6 +191,7 @@ class UserIdentityService:
                     context={
                         "first_name": getattr(user, "first_name", ""),
                         "first_name_vocative": vocative,
+                        "salutation": getattr(getattr(user, "profile", None), "salutation", "N"),
                         "frontend_url": f"{settings.CORS_ALLOWED_ORIGINS[0]}/login",
                     },
                     fallback_language=fallback_lang,
@@ -241,6 +244,7 @@ class UserIdentityService:
             context={
                 "first_name": base_name,
                 "first_name_vocative": vocative,
+                "salutation": getattr(getattr(user, "profile", None), "salutation", "N"),
                 "reset_link": reset_link,
             },
             fallback_language=fallback_lang,
@@ -410,6 +414,7 @@ class UserPreferencesService:
                     'phone_number': dto.phone_number or '',
                     'language': dto.language,
                     'timezone': dto.timezone,
+                    'salutation': dto.salutation,
                     'dietary_preference': dto.dietary_preference,
                     'dietary_notes': dto.dietary_notes,
                     'clothing_size': dto.clothing_size,

@@ -128,7 +128,8 @@ class ArtistHRService:
                     first_name=dto.first_name,
                     last_name=dto.last_name,
                     language=getattr(dto, 'language', 'en'),
-                    first_name_vocative=dto.first_name_vocative or ""
+                    first_name_vocative=dto.first_name_vocative or "",
+                    salutation=getattr(dto, 'salutation', 'N'),
                 )
 
                 # 2. Create Roster-specific entity

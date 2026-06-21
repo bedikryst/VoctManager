@@ -96,6 +96,14 @@ class UserProfile(EnterpriseBaseModel):
         POLISH = 'pl', _('Polish')
         FRENCH = 'fr', _('French')
 
+    class Salutation(models.TextChoices):
+        """Grammatical form of address for personalised greetings (PL/FR have
+        gendered salutations). Deliberately a communication preference, not an
+        identity attribute — default NEUTRAL never assumes anything."""
+        FEMININE = 'F', _('Feminine')
+        MASCULINE = 'M', _('Masculine')
+        NEUTRAL = 'N', _('Neutral / unspecified')
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -137,6 +145,13 @@ class UserProfile(EnterpriseBaseModel):
         max_length=63,
         default='Europe/Warsaw',
         help_text=_("Local timezone for this entity. Critical for UI rendering and iCal feeds.")
+    )
+    salutation = models.CharField(
+        max_length=1,
+        choices=Salutation.choices,
+        default=Salutation.NEUTRAL,
+        help_text=_("Grammatical form of address for greetings only (e.g. PL Drogi/Droga, "
+                    "FR Cher/Chère). Optional; NEUTRAL makes no assumption.")
     )
 
     dietary_preference = models.CharField(
