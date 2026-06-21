@@ -1637,7 +1637,7 @@ msgstr "Drogi/a %(first_name_vocative|default:first_name)s,"
 #: templates/emails/password_changed.html:48
 #: templates/emails/welcome_email.html:48
 msgid "Dear Artist,"
-msgstr "Drogi Artysto,"
+msgstr "Witaj,"
 
 #: templates/emails/account_activation.html:54
 msgid ""
@@ -1886,7 +1886,7 @@ msgstr "Wymagane natychmiastowe działanie"
 
 #: templates/emails/password_changed.html:102
 msgid "Secure My Account"
-msgstr "Aktywuj Konto"
+msgstr "Zabezpiecz konto"
 
 #: templates/emails/password_changed.html:107
 msgid "Take control of your account security"
@@ -2168,7 +2168,7 @@ msgid "Dates"
 msgstr "Terminy"
 
 msgid "Dear %(name)s,"
-msgstr "Drogi/a %(name)s,"
+msgstr "Witaj %(name)s,"
 
 msgid "Details of %(project)s have been revised."
 msgstr "Szczegóły projektu %(project)s zostały zmienione."
@@ -2742,3 +2742,17 @@ msgstr "Teraz obowiązkowa"
 
 msgid "Now optional"
 msgstr "Teraz nieobowiązkowa"
+
+msgid "SET A NEW PASSWORD"
+msgstr "USTAW NOWE HASŁO"
+
+msgid "Reset your VoctManager password"
+msgstr "Zresetuj hasło do VoctManager"
+
+msgctxt "feminine"
+msgid "Dear %(name)s,"
+msgstr "Droga %(name)s,"
+
+msgctxt "masculine"
+msgid "Dear %(name)s,"
+msgstr "Drogi %(name)s,"
