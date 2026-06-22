@@ -26,7 +26,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { FieldChange, NotificationDTO } from "../types/notifications.dto";
+import type { NotificationDTO } from "../types/notifications.dto";
 import { useMarkNotificationRead } from "../api/notifications.queries";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
@@ -43,13 +43,37 @@ interface NotificationItemProps {
 const changeLabel = (t: TFunc, fieldKey: string): string =>
   t(`notifications.changes.${fieldKey}`, fieldKey.replace(/_/g, " "));
 
-/** A structured change rendered as a compact localized chip label. */
-const renderChange = (t: TFunc, change: FieldChange): string => {
-  const label = changeLabel(t, change.field);
-  if (change.old && change.new) return `${label}: ${change.old} → ${change.new}`;
-  if (change.new) return `${label}: ${change.new}`;
+/**
+ * Renders one change entry as a compact localized chip label. Tolerant of loose
+ * or legacy metadata shapes — a change persisted before the structured-codes
+ * refactor may arrive as a plain string, or as an object without a stable
+ * `field` key. We never assume the shape, so a single stale row can't blank the
+ * whole panel (the `field.replace` it used to crash on is now guarded).
+ */
+const renderChange = (t: TFunc, change: unknown): string => {
+  if (typeof change === "string") return change;
+  if (!change || typeof change !== "object") return "";
+
+  const { field, old, new: next } = change as {
+    field?: unknown;
+    old?: unknown;
+    new?: unknown;
+  };
+  const label = typeof field === "string" && field ? changeLabel(t, field) : "";
+  const from = old == null ? "" : String(old);
+  const to = next == null ? "" : String(next);
+
+  if (from && to) return label ? `${label}: ${from} → ${to}` : `${from} → ${to}`;
+  if (to) return label ? `${label}: ${to}` : to;
   return label;
 };
+
+/** Maps a (possibly legacy/loose) `changes` payload to chip labels, dropping
+ *  any entry that can't be rendered. Never assumes an array of structured objects. */
+const renderChanges = (t: TFunc, changes: unknown): string[] =>
+  Array.isArray(changes)
+    ? changes.map((change) => renderChange(t, change)).filter(Boolean)
+    : [];
 
 /** Verb phrase for a roster status code (attendance or RSVP). */
 const statusPhrase = (
@@ -85,7 +109,7 @@ const describe = (
       }
       return {
         headline: notification.metadata.project_name,
-        changeChips: (notification.metadata.changes ?? []).map((c) => renderChange(t, c)),
+        changeChips: renderChanges(t, notification.metadata.changes),
       };
     case "PROJECT_CANCELLED":
       return {
@@ -97,7 +121,7 @@ const describe = (
     case "REHEARSAL_UPDATED":
       return {
         headline: notification.metadata.project_name,
-        changeChips: (notification.metadata.changes ?? []).map((c) => renderChange(t, c)),
+        changeChips: renderChanges(t, notification.metadata.changes),
       };
     case "REHEARSAL_CANCELLED":
       return {
@@ -120,7 +144,7 @@ const describe = (
       }
       return {
         headline: notification.metadata.piece_title,
-        changeChips: (notification.metadata.changes ?? []).map((c) => renderChange(t, c)),
+        changeChips: renderChanges(t, notification.metadata.changes),
       };
     case "MATERIAL_UPLOADED":
       return { headline: notification.metadata.piece_title };
