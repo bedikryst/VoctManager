@@ -21,9 +21,11 @@ import {
   KeyRound,
   ShieldCheck,
   Sparkles,
+  Volume2,
 } from "lucide-react";
 
 import { useAccountActivation } from "@features/auth/hooks/useAccountActivation";
+import { useWelcomeChord } from "@/shared/ui/instruments/useWelcomeChord";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { PasswordInput } from "@/shared/ui/primitives/PasswordInput";
@@ -60,6 +62,8 @@ export default function ActivatePage(): React.JSX.Element {
     inviteeName,
     handleSubmit,
   } = useAccountActivation();
+
+  const { play: playWelcomeChord, isPlaying: chordPlaying } = useWelcomeChord();
 
   const meetsLength = password.length >= 8;
   const meetsMatch = confirmPassword.length > 0 && password === confirmPassword;
@@ -440,6 +444,47 @@ export default function ActivatePage(): React.JSX.Element {
                         <Text size="sm" color="graphite" className="mt-3 leading-7">
                           {t("auth.activate.success.desc")}
                         </Text>
+
+                        {/* A chord of welcome — the ensemble finds its pitch the
+                            moment the new member crosses in. */}
+                        <button
+                          type="button"
+                          onClick={playWelcomeChord}
+                          aria-label={t(
+                            "auth.activate.success.chord_cta",
+                            "Posłuchaj tonu zespołu",
+                          )}
+                          className={cn(
+                            "group mt-4 inline-flex items-center gap-2.5 rounded-full border px-4 py-2 transition-colors",
+                            chordPlaying
+                              ? "border-ethereal-gold/60 bg-ethereal-gold/10"
+                              : "border-ethereal-sage/30 bg-white/50 hover:border-ethereal-gold/45 hover:bg-ethereal-gold/[0.06]",
+                          )}
+                        >
+                          <Volume2
+                            size={16}
+                            strokeWidth={2}
+                            className={cn(
+                              "shrink-0 transition-transform",
+                              chordPlaying
+                                ? "animate-pulse text-ethereal-gold"
+                                : "text-ethereal-gold/80 group-hover:scale-110",
+                            )}
+                            aria-hidden="true"
+                          />
+                          <Eyebrow
+                            color={chordPlaying ? "gold" : "incense-muted"}
+                            as="span"
+                            className="tracking-[0.16em]"
+                          >
+                            {chordPlaying
+                              ? t("auth.activate.success.chord_playing", "Brzmi…")
+                              : t(
+                                  "auth.activate.success.chord_cta",
+                                  "Posłuchaj tonu zespołu",
+                                )}
+                          </Eyebrow>
+                        </button>
                       </div>
                     </div>
 

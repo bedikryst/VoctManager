@@ -97,7 +97,10 @@ export const CustomAdminMessageToast: React.FC = () => {
           </GlassCard>
         ),
         {
-          duration: Infinity,
+          // URGENT must be acknowledged — keep it on screen until the user acts.
+          // Lower levels also persist in the notification centre, so let the toast
+          // auto-dismiss instead of stacking into a permanent pile on every load.
+          duration: level === "URGENT" ? Infinity : 14000,
           id: notification.id,
           position: "top-center",
           icon: <MessageSquare size={16} />,

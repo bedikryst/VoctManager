@@ -89,6 +89,14 @@ export const settingsService = {
   },
 
   /**
+   * Stamps the one-time home-screen welcome as completed (server-side, set once),
+   * so it greets the member exactly once per account — across every device.
+   */
+  markWelcomeSeen: async (): Promise<void> => {
+    await api.post(`${BASE_URL}seen-welcome/`);
+  },
+
+  /**
    * Uploads a (client-cropped) avatar. The server re-encodes it and returns the
    * refreshed profile with the new render URLs.
    */

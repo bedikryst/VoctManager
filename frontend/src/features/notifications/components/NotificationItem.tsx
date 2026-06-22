@@ -112,10 +112,9 @@ const describe = (
         changeChips: renderChanges(t, notification.metadata.changes),
       };
     case "PROJECT_CANCELLED":
-      return {
-        headline: notification.metadata.project_name as string | undefined,
-        detail: t("notifications.inapp.project_cancelled"),
-      };
+      // The type eyebrow already reads "Project cancelled" — don't echo it in the
+      // body. The project name under that eyebrow is unambiguous on its own.
+      return { headline: notification.metadata.project_name as string | undefined };
     case "REHEARSAL_SCHEDULED":
       return { headline: notification.metadata.project_name };
     case "REHEARSAL_UPDATED":
@@ -124,10 +123,8 @@ const describe = (
         changeChips: renderChanges(t, notification.metadata.changes),
       };
     case "REHEARSAL_CANCELLED":
-      return {
-        headline: notification.metadata.project_name,
-        detail: t("notifications.inapp.rehearsal_cancelled"),
-      };
+      // "Rehearsal cancelled" is already the eyebrow — show only the project.
+      return { headline: notification.metadata.project_name };
     case "REHEARSAL_REMINDER":
       return { headline: notification.metadata.project_name as string | undefined };
     case "PIECE_CASTING_ASSIGNED":
@@ -155,10 +152,11 @@ const describe = (
         detail: t("notifications.inapp.absence_approved"),
       };
     case "ABSENCE_REJECTED":
+      // Eyebrow carries "Absence not approved"; the project + rehearsal date say
+      // which one. Echoing "not approved" in the body added nothing.
       return {
         headline: notification.metadata.project_name,
         subLabel: notification.metadata.rehearsal_date,
-        detail: t("notifications.inapp.absence_rejected"),
       };
     case "ABSENCE_REQUESTED":
       return {
@@ -252,6 +250,19 @@ const getRelativeTime = (dateString: string, lang: string): string => {
   return rtf.format(Math.round(diffInSeconds / 31536000), "year");
 };
 
+/** Full, localized date+time — surfaced on hover/long-press so the relative
+ *  label ("2 days ago") never costs the reader the actual moment. */
+const getAbsoluteTime = (dateString: string, lang: string): string => {
+  try {
+    return new Intl.DateTimeFormat(lang || "pl", {
+      dateStyle: "full",
+      timeStyle: "short",
+    }).format(new Date(dateString));
+  } catch {
+    return "";
+  }
+};
+
 const resolveVisual = (
   notification: NotificationDTO,
 ): { icon: LucideIcon; accent: Accent } => {
@@ -312,6 +323,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   const { icon: Icon, accent } = resolveVisual(notification);
   const accentStyle = ACCENT[accent];
   const timeAgo = getRelativeTime(notification.created_at, i18n.language);
+  const absoluteTime = getAbsoluteTime(notification.created_at, i18n.language);
+  // Genuine alarms (cancellations, rejections, URGENT) resolve to crimson — give
+  // those rows a left accent so they're triaged at a glance, not just by icon hue.
+  const isAlarm = accent === "crimson";
 
   const navigateToContext = () => {
     const type = notification.notification_type;
@@ -365,6 +380,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           : "bg-ethereal-ink/[0.03] hover:bg-ethereal-ink/[0.055]",
       )}
     >
+      {isAlarm && (
+        <span
+          className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-ethereal-crimson/70"
+          aria-hidden="true"
+        />
+      )}
+
       <div
         className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.03]",
@@ -408,9 +430,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           </div>
         )}
 
-        <p className="mt-2 text-[11px] font-medium text-ethereal-graphite/45">
+        <time
+          dateTime={notification.created_at}
+          title={absoluteTime}
+          className="mt-2 block text-[11px] font-medium text-ethereal-graphite/45"
+        >
           {timeAgo}
-        </p>
+        </time>
       </div>
 
       {!isRead && (

@@ -4,6 +4,7 @@ import logging
 from django.utils import timezone
 from rest_framework import status, views, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -32,6 +33,16 @@ from .services import NotificationPreferenceService
 
 logger = logging.getLogger(__name__)
 
+class NotificationCursorPagination(CursorPagination):
+    """Cursor pagination for the bell feed. Keyed on ``-created_at`` so newly
+    arriving notifications (the list is polled) never shift offsets and cause a
+    skip/duplicate at a page boundary — the failure mode of page-number
+    pagination over a live, prepend-heavy feed. The unread badge is served by a
+    separate count endpoint, so omitting ``count`` here is intentional."""
+    page_size = 20
+    ordering = '-created_at'
+
+
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows notifications to be viewed and managed by the current user.
@@ -39,6 +50,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     """
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = NotificationCursorPagination
 
     def get_queryset(self):
         """Ensure users can only access their own notifications."""
@@ -47,11 +59,32 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'], url_path='unread-count')
     def unread_count(self, request: Request) -> Response:
         """
-        Highly optimized endpoint for the top-bar bell icon.
-        Returns just the integer count to minimize payload size.
+        Counts for the top-bar bell. `unread_count` is the true per-item unread
+        total (drives the in-panel header + "mark all read"). `new_count` is the
+        "new since last seen" subset that drives the badge — it clears when the
+        user opens the centre (see `mark-seen`) without touching read state.
         """
-        count = self.get_queryset().filter(is_read=False).count()
-        return Response({"unread_count": count}, status=status.HTTP_200_OK)
+        unread_qs = self.get_queryset().filter(is_read=False)
+        profile = getattr(request.user, 'profile', None)
+        seen_at = getattr(profile, 'notifications_seen_at', None)
+        new_qs = unread_qs.filter(created_at__gt=seen_at) if seen_at else unread_qs
+        return Response(
+            {"unread_count": unread_qs.count(), "new_count": new_qs.count()},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=['post'], url_path='mark-seen')
+    def mark_seen(self, request: Request) -> Response:
+        """
+        Clears the "new since seen" bell badge by stamping the user's last-seen
+        time. Deliberately does NOT mark notifications read — per-item read state
+        is untouched, so the act-now signal and invitation resurfacing survive.
+        """
+        profile = getattr(request.user, 'profile', None)
+        if profile is not None:
+            profile.notifications_seen_at = timezone.now()
+            profile.save(update_fields=['notifications_seen_at', 'updated_at'])
+        return Response({"status": "seen"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['patch'], url_path='mark-read')
     def mark_read(self, request: Request, pk: str) -> Response:

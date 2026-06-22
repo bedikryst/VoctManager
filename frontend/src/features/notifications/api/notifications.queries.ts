@@ -1,7 +1,13 @@
 // frontend/src/features/notifications/api/notifications.queries.ts
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { NotificationService, type SendToArtistPayload } from "./notifications.service";
+import type { UnreadCountResponse } from "../types/notifications.dto";
 
 export const notificationKeys = {
   all: ["notifications"] as const,
@@ -11,11 +17,17 @@ export const notificationKeys = {
 
 const POLLING_INTERVAL = 1000 * 30;
 
-// 1. Fetch entire inbox
+// 1. Cursor-paginated inbox. `select` flattens pages into a single newest-first
+//    array, so list consumers keep a plain `NotificationDTO[]`; the panel uses
+//    `fetchNextPage`/`hasNextPage` to reveal older history on demand.
 export const useNotifications = (enabled: boolean = true) =>
-  useQuery({
+  useInfiniteQuery({
     queryKey: notificationKeys.lists(),
-    queryFn: NotificationService.getAll,
+    queryFn: ({ pageParam }: { pageParam: string | null }) =>
+      NotificationService.getPage(pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+    select: (data) => data.pages.flatMap((page) => page.results),
     staleTime: POLLING_INTERVAL,
     refetchInterval: POLLING_INTERVAL,
     refetchOnWindowFocus: true,
@@ -42,6 +54,38 @@ export const useMarkNotificationRead = () => {
     onSuccess: () => {
       // Invalidate both lists and unread count to force immediate UI updates
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    },
+  });
+};
+
+// 3b. Mutation: stamp the centre as "seen" — clears the bell badge on open
+//     without marking any notification read. Optimistic so the badge clears
+//     instantly, then reconciled against the server.
+export const useMarkNotificationsSeen = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => NotificationService.markSeen(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.unreadCount() });
+      const previous = queryClient.getQueryData<UnreadCountResponse>(
+        notificationKeys.unreadCount(),
+      );
+      if (previous) {
+        queryClient.setQueryData<UnreadCountResponse>(notificationKeys.unreadCount(), {
+          ...previous,
+          new_count: 0,
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(notificationKeys.unreadCount(), context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
     },
   });
 };

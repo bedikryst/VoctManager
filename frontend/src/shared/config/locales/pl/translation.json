@@ -767,6 +767,8 @@
       "greeting_word": "Witaj",
       "subtitle": "Dostęp do VoctManagera",
       "success": {
+        "chord_cta": "Posłuchaj tonu zespołu",
+        "chord_playing": "Brzmi…",
         "copied": "Skopiowano",
         "copy_login": "Skopiuj login",
         "desc": "Twoje konto zostało zabezpieczone i aktywowane.",
@@ -1648,7 +1650,18 @@
         "tuning_fork_hint": "Daj sobie ton",
         "tuning_fork_sheet_subtitle": "Nastrój głos w każdej chwili"
       },
-      "validation_notes_min": "Proszę podać powód/uwagi (min. 3 znaki)."
+      "validation_notes_min": "Proszę podać powód/uwagi (min. 3 znaki).",
+      "welcome": {
+        "chord_cta": "Usłysz swój zespół",
+        "chord_playing": "Brzmi…",
+        "dismiss": "Zaczynam",
+        "eyebrow": "Witamy w zespole",
+        "intro": "To Twoja przestrzeń: zobaczysz tu najbliższą próbę, przećwiczysz swoją partię i potwierdzisz obecność. Zacznij od jednego z trzech miejsc poniżej.",
+        "settings_cta": "Dokończ konfigurację",
+        "settings_desc": "Powiadomienia o próbach · synchronizacja kalendarza · zdjęcie profilowe",
+        "title": "Dobrze, że jesteś",
+        "voice_label": "Twój głos"
+      }
     },
     "layout": {
       "actions": {
@@ -2345,6 +2358,7 @@
       "title": "Nowe zaproszenie do projektu"
     },
     "mark_all_read": "Oznacz wszystkie jako przeczytane",
+    "render_error": "Nie udało się wyświetlić tego powiadomienia.",
     "primer": {
       "description": "Zaraz pojawi się okienko przeglądarki z prośbą o zgodę. Po jej udzieleniu będziesz otrzymywać powiadomienia bezpośrednio na tym urządzeniu — nawet gdy aplikacja jest zamknięta.",
       "enable": "Włącz powiadomienia",
@@ -2352,13 +2366,21 @@
       "highlight_control_label": "Pełna kontrola",
       "highlight_essential_desc": "Zmiany w próbach, zaproszenia do projektów, pilne wiadomości od managera.",
       "highlight_essential_label": "Tylko to, co istotne",
-      "highlight_security_desc": "Powiadomienia szyfrowane VAPID. Nie udostępniamy ich nikomu.",
+      "highlight_security_desc": "Bezpieczne, szyfrowane połączenie. Nie udostępniamy Twoich danych nikomu.",
       "highlight_security_label": "Bezpieczeństwo",
       "not_now": "Nie teraz",
       "title": "Włącz powiadomienia push"
     },
     "section_earlier": "Wcześniejsze",
     "section_new": "Nowe",
+    "groups": {
+      "today": "Dziś",
+      "yesterday": "Wczoraj",
+      "this_week": "W tym tygodniu",
+      "this_month": "W tym miesiącu",
+      "older": "Starsze"
+    },
+    "show_older": "Pokaż starsze",
     "send_modal": {
       "cta_label": "Etykieta przycisku (CTA)",
       "cta_label_placeholder": "np. Zobacz szczegóły",
@@ -2405,13 +2427,13 @@
     },
     "status": {
       "attendance": {
-        "PRESENT": "będzie obecny(a)",
+        "PRESENT": "potwierdza obecność",
         "LATE": "się spóźni",
         "ABSENT": "nie dotrze",
         "EXCUSED": "prosi o zwolnienie"
       },
       "participation": {
-        "INV": "zaproszony(a)",
+        "INV": "ma zaproszenie",
         "CON": "potwierdza udział",
         "DEC": "rezygnuje z udziału"
       }
@@ -2438,7 +2460,7 @@
       "absence_approved": "nieobecność usprawiedliwiona",
       "absence_rejected": "nie zatwierdzono",
       "absence_requested": "prosi o nieobecność",
-      "read_receipt": "przeczytał(a) Twoją wiadomość"
+      "read_receipt": "przeczytano Twoją wiadomość"
     },
     "push": {
       "toasts": {

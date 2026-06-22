@@ -46,11 +46,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
             # Notification delivery
             'digest_enabled', 'digest_hour',
 
+            # Onboarding (read-only; stamped server-side via the seen-welcome action)
+            'welcome_seen_at',
+
             # Integrations
             'calendar_token'
         )
-        # Critical Security: Users cannot escalate their own role or spoof tokens
-        read_only_fields = ('role', 'calendar_token')
+        # Critical Security: Users cannot escalate their own role or spoof tokens.
+        # welcome_seen_at is server-authoritative — clients read it but cannot set it.
+        read_only_fields = ('role', 'calendar_token', 'welcome_seen_at')
 
     def _absolute_media_url(self, field) -> str | None:
         if not field:

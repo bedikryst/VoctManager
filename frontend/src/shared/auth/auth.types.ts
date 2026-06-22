@@ -30,6 +30,8 @@ export interface AuthProfile {
   shoe_size?: string;
   height_cm?: number | null;
   calendar_token?: string;
+  /** Set once, server-side, when the member completes the one-time home welcome. */
+  welcome_seen_at?: string | null;
 }
 
 export interface AuthUser {

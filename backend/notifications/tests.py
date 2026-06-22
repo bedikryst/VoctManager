@@ -19,6 +19,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone, translation
 from pydantic import ValidationError
+from rest_framework.test import APITestCase
 
 from core.constants import AppRole
 from core.models import UserProfile
@@ -476,3 +477,49 @@ class ESPTrackingTests(TestCase):
         self._fire(event_type="unsubscribed")
         self.assertFalse(self.profile.email_notifications_enabled)
         self.assertFalse(self.profile.email_undeliverable)
+
+
+class NotificationBadgeSeenTests(APITestCase):
+    """The bell badge tracks 'new since seen': opening the centre (mark-seen)
+    clears `new_count` without touching per-item read state (`unread_count`)."""
+
+    UNREAD_COUNT_URL = "/api/notifications/unread-count/"
+    MARK_SEEN_URL = "/api/notifications/mark-seen/"
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="seer", email="seer@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.client.force_authenticate(self.user)
+
+    def _notify(self) -> Notification:
+        return Notification.objects.create(
+            recipient=self.user,
+            notification_type=NotificationType.REHEARSAL_REMINDER,
+            level=NotificationLevel.INFO,
+            metadata={},
+        )
+
+    def test_unread_count_reports_unread_and_new(self) -> None:
+        self._notify()
+        self._notify()
+        resp = self.client.get(self.UNREAD_COUNT_URL)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["unread_count"], 2)
+        self.assertEqual(resp.data["new_count"], 2)
+
+    def test_mark_seen_clears_new_but_keeps_unread(self) -> None:
+        self._notify()
+        self.client.post(self.MARK_SEEN_URL)
+        self.user.profile.refresh_from_db()
+        self.assertIsNotNone(self.user.profile.notifications_seen_at)
+        resp = self.client.get(self.UNREAD_COUNT_URL)
+        self.assertEqual(resp.data["unread_count"], 1)  # still unread per-item
+        self.assertEqual(resp.data["new_count"], 0)  # but seen → badge cleared
+
+    def test_notification_after_seen_counts_as_new_again(self) -> None:
+        self.client.post(self.MARK_SEEN_URL)
+        self._notify()
+        resp = self.client.get(self.UNREAD_COUNT_URL)
+        self.assertEqual(resp.data["new_count"], 1)

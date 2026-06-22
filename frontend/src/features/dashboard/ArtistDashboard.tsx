@@ -27,6 +27,7 @@ import { ArtistQuickTools } from "./components/ArtistQuickTools";
 import { ArtistEmptyState } from "./components/ArtistEmptyState";
 import { DashboardErrorState } from "./components/DashboardErrorState";
 import { UnreadMessagesAlert } from "./components/UnreadMessagesAlert";
+import { WelcomeMoment } from "./components/WelcomeMoment";
 
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
@@ -88,6 +89,8 @@ export default function ArtistDashboard(): React.JSX.Element {
           title={greeting}
           titleHighlight={highlight}
         />
+
+        <WelcomeMoment name={highlight} />
 
         <UnreadMessagesAlert />
 

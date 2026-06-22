@@ -767,6 +767,8 @@
       "greeting_word": "Bienvenue",
       "subtitle": "Accès VoctManager",
       "success": {
+        "chord_cta": "Écoutez l'accord de votre ensemble",
+        "chord_playing": "Ça résonne…",
         "copied": "Copié",
         "copy_login": "Copier l'identifiant",
         "desc": "Votre compte a été sécurisé et activé.",
@@ -1648,7 +1650,18 @@
         "tuning_fork_hint": "Donnez le ton",
         "tuning_fork_sheet_subtitle": "Accordez votre voix à tout moment"
       },
-      "validation_notes_min": "Veuillez fournir une raison/notes (min. 3 caractères)."
+      "validation_notes_min": "Veuillez fournir une raison/notes (min. 3 caractères).",
+      "welcome": {
+        "chord_cta": "Écoutez votre ensemble",
+        "chord_playing": "Ça résonne…",
+        "dismiss": "Je commence",
+        "eyebrow": "Bienvenue dans l'ensemble",
+        "intro": "C'est votre espace : vous y verrez votre prochaine répétition, vous travaillerez votre partie et confirmerez votre présence. Commencez par l'un des trois endroits ci-dessous.",
+        "settings_cta": "Terminez la configuration",
+        "settings_desc": "Rappels de répétition · synchronisation de l'agenda · photo de profil",
+        "title": "Heureux de vous accueillir",
+        "voice_label": "Votre voix"
+      }
     },
     "layout": {
       "actions": {
@@ -2345,6 +2358,7 @@
       "title": "Nouvelle invitation au projet"
     },
     "mark_all_read": "Marquer tout comme lu",
+    "render_error": "Cette notification n'a pas pu s'afficher.",
     "primer": {
       "description": "Une fenêtre du navigateur va s'ouvrir pour demander votre consentement. Une fois accordé, vous recevrez les notifications directement sur cet appareil — même lorsque l'application est fermée.",
       "enable": "Activer les notifications",
@@ -2352,13 +2366,21 @@
       "highlight_control_label": "Contrôle total",
       "highlight_essential_desc": "Changements de répétitions, invitations à des projets, messages urgents du manager.",
       "highlight_essential_label": "Seulement l'essentiel",
-      "highlight_security_desc": "Notifications chiffrées VAPID. Nous ne les partageons avec personne.",
+      "highlight_security_desc": "Une connexion sécurisée et chiffrée. Nous ne partageons jamais vos données.",
       "highlight_security_label": "Sécurité",
       "not_now": "Pas maintenant",
       "title": "Activer les notifications push"
     },
     "section_earlier": "Plus anciennes",
     "section_new": "Nouvelles",
+    "groups": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "this_week": "Cette semaine",
+      "this_month": "Ce mois-ci",
+      "older": "Plus anciennes"
+    },
+    "show_older": "Afficher plus anciennes",
     "send_modal": {
       "cta_label": "Libellé du bouton (CTA)",
       "cta_label_placeholder": "ex. Voir les détails",

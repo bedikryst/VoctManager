@@ -84,20 +84,15 @@ const selectNearestOperationalProject = (
 const preloadSessionNotifications = ({
   queryClient,
 }: DashboardDataPreloadContext): Promise<unknown> =>
-  Promise.allSettled([
-    prefetchQuery(
-      queryClient,
-      notificationKeys.unreadCount(),
-      NotificationService.getUnreadCount,
-      NOTIFICATION_STALE_TIME,
-    ),
-    prefetchQuery(
-      queryClient,
-      notificationKeys.lists(),
-      NotificationService.getAll,
-      NOTIFICATION_STALE_TIME,
-    ),
-  ]);
+  // Only the unread badge is warmed eagerly. The cursor-paginated list is loaded
+  // by the bell's own hook (and the invitation/admin toasts) on mount, so there's
+  // no need to pre-fetch a full first page on every panel entry.
+  prefetchQuery(
+    queryClient,
+    notificationKeys.unreadCount(),
+    NotificationService.getUnreadCount,
+    NOTIFICATION_STALE_TIME,
+  );
 
 const preloadNearestProjectGraph = async (
   queryClient: QueryClient,

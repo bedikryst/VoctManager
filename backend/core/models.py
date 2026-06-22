@@ -219,6 +219,19 @@ class UserProfile(EnterpriseBaseModel):
         null=True, blank=True,
         help_text=_("Timestamp of the most recent digest dispatch. Guards against duplicates.")
     )
+    notifications_seen_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("When the user last opened the notification centre. Drives the "
+                    "'new since seen' bell badge: opening clears the count without "
+                    "marking individual notifications as read.")
+    )
+    welcome_seen_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("When the member first completed the one-time home-screen "
+                    "welcome. Stamped once, server-side, so the WelcomeMoment card "
+                    "greets a new member exactly once per account — on every device "
+                    "they sign in from, not once per browser.")
+    )
 
     # === ENTERPRISE RBAC ===
     role = models.CharField(

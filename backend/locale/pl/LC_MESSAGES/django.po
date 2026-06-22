@@ -1167,7 +1167,7 @@ msgstr "Nieobecność niezaakceptowana"
 
 #: notifications/push_payloads.py:424
 msgid "responded"
-msgstr "przesłał(a) odpowiedź"
+msgstr "odpowiada"
 
 #: notifications/push_payloads.py:427
 #, python-format
@@ -2099,7 +2099,7 @@ msgid "%(artist)s %(detail)s."
 msgstr "%(artist)s %(detail)s."
 
 msgid "%(artist)s responded to %(project)s: %(action)s."
-msgstr "%(artist)s przesłał(a) odpowiedź do projektu %(project)s: %(action)s."
+msgstr "%(artist)s — odpowiedź w projekcie %(project)s: %(action)s."
 
 msgid "%(artist)s responded — %(project)s"
 msgstr "Odpowiedź: %(artist)s — %(project)s"
@@ -2111,7 +2111,7 @@ msgid "%(project)s has been cancelled."
 msgstr "%(project)s zostaje odwołany."
 
 msgid "%(sender)s sent a message."
-msgstr "%(sender)s wysłał(a) wiadomość."
+msgstr "Nowa wiadomość od %(sender)s."
 
 msgid "%(sender)s: %(snippet)s"
 msgstr "%(sender)s: %(snippet)s"
@@ -2654,13 +2654,13 @@ msgid "declined the invitation"
 msgstr "rezygnuje z udziału"
 
 msgid "was invited"
-msgstr "został(a) zaproszony(a)"
+msgstr "ma zaproszenie"
 
 msgid "responded to the invitation"
 msgstr "odpowiada na zaproszenie"
 
 msgid "will be there"
-msgstr "będzie obecny(a)"
+msgstr "potwierdza obecność"
 
 msgid "will be a little late"
 msgstr "się trochę spóźni"
@@ -2678,7 +2678,7 @@ msgid "A message for you"
 msgstr "Wiadomość dla Ciebie"
 
 msgid "%(sender)s posted in the channel."
-msgstr "%(sender)s napisał(a) na kanale."
+msgstr "Nowy wpis na kanale od %(sender)s."
 
 msgid "A quick note"
 msgstr "Krótka informacja"

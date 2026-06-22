@@ -31,6 +31,7 @@ from core.views import (
     CSRFCookieView,
     CurrentUserRetrieveUpdateView,
     ExportUserDataView,
+    MarkWelcomeSeenView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RequestAccountDeletionView,
@@ -147,6 +148,7 @@ urlpatterns = [
     path('api/users/me/export-data/', ExportUserDataView.as_view(), name='user-export-data'),
     path('api/users/me/delete-account/', RequestAccountDeletionView.as_view(), name='user-delete-account'),
     path('api/users/me/reset-calendar-token/', ResetCalendarTokenView.as_view(), name='user-reset-calendar-token'),
+    path('api/users/me/seen-welcome/', MarkWelcomeSeenView.as_view(), name='user-seen-welcome'),
     path('api/users/me/avatar/', AvatarView.as_view(), name='user-avatar'),
 
     path("api/logistics/", include("logistics.urls")),

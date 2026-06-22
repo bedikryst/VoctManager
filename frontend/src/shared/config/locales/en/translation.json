@@ -767,6 +767,8 @@
       "greeting_word": "Welcome",
       "subtitle": "VoctManager Access",
       "success": {
+        "chord_cta": "Hear your ensemble's chord",
+        "chord_playing": "Sounding…",
         "copied": "Copied",
         "copy_login": "Copy login",
         "desc": "Your account has been secured and activated.",
@@ -1648,7 +1650,18 @@
         "tuning_fork_hint": "Take a pitch",
         "tuning_fork_sheet_subtitle": "Tune your voice anytime"
       },
-      "validation_notes_min": "Please provide a reason/notes (min. 3 characters)."
+      "validation_notes_min": "Please provide a reason/notes (min. 3 characters).",
+      "welcome": {
+        "chord_cta": "Hear your ensemble",
+        "chord_playing": "Sounding…",
+        "dismiss": "Let's begin",
+        "eyebrow": "Welcome to the ensemble",
+        "intro": "This is your space: you'll find your next rehearsal here, practise your part, and confirm your attendance. Start from one of the three places below.",
+        "settings_cta": "Finish setting up",
+        "settings_desc": "Rehearsal reminders · calendar sync · profile photo",
+        "title": "Good to have you",
+        "voice_label": "Your voice"
+      }
     },
     "layout": {
       "actions": {
@@ -2345,6 +2358,7 @@
       "title": "New project invitation"
     },
     "mark_all_read": "Mark all as read",
+    "render_error": "This notification couldn't be displayed.",
     "primer": {
       "description": "A browser dialog will appear asking for your consent. Once granted, you'll receive notifications directly on this device — even when the app is closed.",
       "enable": "Enable notifications",
@@ -2352,13 +2366,21 @@
       "highlight_control_label": "Full control",
       "highlight_essential_desc": "Rehearsal changes, project invitations, urgent messages from the manager.",
       "highlight_essential_label": "Only what matters",
-      "highlight_security_desc": "VAPID-encrypted notifications. We don't share them with anyone.",
+      "highlight_security_desc": "A secure, encrypted connection. We never share your data.",
       "highlight_security_label": "Security",
       "not_now": "Not now",
       "title": "Enable push notifications"
     },
     "section_earlier": "Earlier",
     "section_new": "New",
+    "groups": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "this_week": "This week",
+      "this_month": "This month",
+      "older": "Older"
+    },
+    "show_older": "Show older",
     "send_modal": {
       "cta_label": "Button Label",
       "cta_label_placeholder": "e.g. View Details",

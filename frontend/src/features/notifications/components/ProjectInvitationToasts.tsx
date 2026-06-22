@@ -1,17 +1,34 @@
-import React, { useEffect, useRef } from "react";
+/**
+ * @file ProjectInvitationToasts.tsx
+ * @description Centre-stage invitation prompt. A project invitation needs a
+ * DECISION (accept/decline), so it is presented as a scrimmed, centred modal —
+ * not a corner toast that is easy to miss. Dismissible (X / click-scrim / Esc):
+ * dismissing only defers the decision for this session; the invitation is still
+ * unread, so it resurfaces on the next load (and stays reachable from the
+ * notification centre / schedule). Multiple pending invitations are shown one at
+ * a time as a queue. The export name is kept (`ProjectInvitationToasts`) so the
+ * DashboardLayout mount point is untouched.
+ * @module features/notifications/components/ProjectInvitationToasts
+ */
+
+import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Calendar, MapPin, User as UserIcon } from "lucide-react";
+import { Calendar, MapPin, User as UserIcon, X } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import {
   useNotifications,
   useMarkNotificationRead,
 } from "../api/notifications.queries";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ProjectService } from "@/features/projects/api/project.service";
 import type { ProjectInvitationMetadata } from "../types/notifications.dto";
-import { Text, Heading } from "@/shared/ui/primitives/typography";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Text, Heading, Eyebrow } from "@/shared/ui/primitives/typography";
+import { Button } from "@/shared/ui/primitives/Button";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 
 export const ProjectInvitationToasts: React.FC = () => {
   const { user } = useAuth();
@@ -19,7 +36,13 @@ export const ProjectInvitationToasts: React.FC = () => {
   const { data: notifications = [] } = useNotifications(!!user);
   const { mutate: markAsRead } = useMarkNotificationRead();
   const queryClient = useQueryClient();
-  const shownToastsRef = useRef<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
+  // Session-local: invitations the user closed without deciding. Kept out of the
+  // queue this session; they remain unread server-side so they return next load.
+  const [deferredIds, setDeferredIds] = useState<Set<string>>(new Set());
+  const titleId = useId();
+
+  useEffect(() => setMounted(true), []);
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: "CON" | "DEC" }) =>
@@ -34,99 +57,170 @@ export const ProjectInvitationToasts: React.FC = () => {
     },
   });
 
+  const pending = useMemo(
+    () =>
+      notifications.filter(
+        (n) =>
+          n.notification_type === "PROJECT_INVITATION" &&
+          !n.is_read &&
+          !deferredIds.has(n.id),
+      ),
+    [notifications, deferredIds],
+  );
+
+  const current = pending[0];
+
+  const defer = useCallback((id: string) => {
+    setDeferredIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const respond = useCallback(
+    (notificationId: string, participationId: string, status: "CON" | "DEC") => {
+      updateStatusMutation.mutate({ id: participationId, status });
+      markAsRead(notificationId);
+      // Advance the queue immediately; the mutation/refetch settle in the background.
+      defer(notificationId);
+    },
+    [updateStatusMutation, markAsRead, defer],
+  );
+
+  useBodyScrollLock(!!current);
+
   useEffect(() => {
-    const pendingInvitations = notifications.filter(
-      (n) => n.notification_type === "PROJECT_INVITATION" && !n.is_read,
-    );
+    if (!current) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") defer(current.id);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [current, defer]);
 
-    pendingInvitations.forEach((notification) => {
-      if (shownToastsRef.current.has(notification.id)) {
-        return;
-      }
-      shownToastsRef.current.add(notification.id);
+  if (!mounted) return null;
 
-      const metadata = notification.metadata as ProjectInvitationMetadata;
+  const metadata = current?.metadata as ProjectInvitationMetadata | undefined;
 
-      toast.custom(
-        (toastId) => (
-          <GlassCard className="p-4 flex flex-col gap-3 w-full min-w-[320px] max-w-[400px]">
-            <div>
-              <Heading as="h5" size="lg" color="graphite">
-                {metadata.project_name}
-              </Heading>
-              <Text size="sm" color="graphite" className="mb-2">
-                {t("notifications.invitation_toast.title")}
-              </Text>
+  return createPortal(
+    <AnimatePresence>
+      {current && metadata && (
+        <div className="fixed inset-0 z-(--z-toast) flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-ethereal-ink/55 backdrop-blur-md"
+            onClick={() => defer(current.id)}
+            aria-hidden="true"
+          />
+
+          <motion.div
+            key={current.id}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ type: "spring", stiffness: 380, damping: 32 }}
+            className="relative flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-ethereal-gold/30 bg-ethereal-marble shadow-glass-solid"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+          >
+            {/* Gold accent rail — reads as "important / a decision is waiting". */}
+            <div className="h-1 w-full bg-linear-to-r from-ethereal-gold/70 via-ethereal-gold to-ethereal-gold/70" />
+
+            <button
+              type="button"
+              onClick={() => defer(current.id)}
+              aria-label={t("common.actions.close", "Zamknij")}
+              className="absolute right-3 top-4 grid h-8 w-8 place-items-center rounded-full text-ethereal-graphite/50 outline-none transition-colors hover:bg-ethereal-ink/[0.05] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+            >
+              <X size={16} strokeWidth={2} aria-hidden="true" />
+            </button>
+
+            <div className="flex flex-col gap-4 p-6">
+              <div className="flex items-start gap-4 pr-8">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ethereal-gold/12 text-ethereal-gold">
+                  <Calendar size={22} strokeWidth={1.75} aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Eyebrow color="gold" size="caption">
+                      {t("notifications.invitation_toast.title")}
+                    </Eyebrow>
+                    {pending.length > 1 && (
+                      <span className="rounded-full bg-ethereal-ink/[0.06] px-2 py-0.5 text-[11px] font-semibold leading-none text-ethereal-graphite/70">
+                        1 / {pending.length}
+                      </span>
+                    )}
+                  </div>
+                  <Heading
+                    as="h3"
+                    id={titleId}
+                    size="xl"
+                    weight="bold"
+                    className="mt-1 leading-tight break-words"
+                  >
+                    {metadata.project_name}
+                  </Heading>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-4">
+                <div className="flex items-center gap-2.5 text-ethereal-graphite">
+                  <UserIcon size={15} className="shrink-0 text-ethereal-amethyst" aria-hidden="true" />
+                  <Text size="sm">
+                    {t("notifications.invitation_toast.invites", {
+                      name: metadata.inviter_name || t("common.management", "Zarząd"),
+                    })}
+                  </Text>
+                </div>
+                <div className="flex items-center gap-2.5 text-ethereal-graphite">
+                  <Calendar size={15} className="shrink-0 text-ethereal-sage" aria-hidden="true" />
+                  <Text size="sm">{metadata.date_range}</Text>
+                </div>
+                <div className="flex items-center gap-2.5 text-ethereal-graphite">
+                  <MapPin size={15} className="shrink-0 text-ethereal-gold" aria-hidden="true" />
+                  <Text size="sm" className="truncate">
+                    {metadata.location}
+                  </Text>
+                </div>
+                {metadata.description && (
+                  <Text
+                    size="xs"
+                    className="mt-1 italic text-ethereal-graphite/60 line-clamp-3"
+                  >
+                    {metadata.description}
+                  </Text>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 text-ethereal-graphite/80 dark:text-white/80">
-                <UserIcon size={14} className="text-ethereal-amethyst" />
-                <Text size="sm">
-                  {t("notifications.invitation_toast.invites", {
-                    name:
-                      metadata.inviter_name || t("common.management", "Zarząd"),
-                  })}
-                </Text>
-              </div>
-              <div className="flex items-center gap-2 text-ethereal-graphite/80 dark:text-white/80">
-                <Calendar size={14} className="text-ethereal-sage" />
-                <Text size="sm">{metadata.date_range}</Text>
-              </div>
-              <div className="flex items-center gap-2 text-ethereal-graphite/80 dark:text-white/80">
-                <MapPin size={14} className="text-ethereal-gold" />
-                <Text size="sm" className="truncate">
-                  {metadata.location}
-                </Text>
-              </div>
-              {metadata.description && (
-                <Text
-                  size="xs"
-                  className="mt-1 text-ethereal-graphite/60 dark:text-white/60 italic line-clamp-2"
-                >
-                  {metadata.description}
-                </Text>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-2 mt-2">
-              <button
-                onClick={() => {
-                  toast.dismiss(toastId);
-                  updateStatusMutation.mutate({
-                    id: metadata.participation_id,
-                    status: "DEC",
-                  });
-                  markAsRead(notification.id);
-                }}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg text-ethereal-crimson hover:bg-red-500/10 transition-colors"
+            <div className="flex items-center gap-3 border-t border-ethereal-incense/15 bg-ethereal-alabaster px-6 py-4">
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  respond(current.id, metadata.participation_id, "DEC")
+                }
+                className="flex-1 text-ethereal-crimson hover:bg-ethereal-crimson/10"
               >
                 {t("notifications.invitation_toast.decline")}
-              </button>
-              <button
-                onClick={() => {
-                  toast.dismiss(toastId);
-                  updateStatusMutation.mutate({
-                    id: metadata.participation_id,
-                    status: "CON",
-                  });
-                  markAsRead(notification.id);
-                }}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-ethereal-sage text-white hover:bg-emerald-600 transition-colors shadow-sm"
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() =>
+                  respond(current.id, metadata.participation_id, "CON")
+                }
+                className="flex-1"
               >
                 {t("notifications.invitation_toast.accept")}
-              </button>
+              </Button>
             </div>
-          </GlassCard>
-        ),
-        {
-          duration: Infinity,
-          id: notification.id,
-          position: "top-center",
-        },
-      );
-    });
-  }, [notifications, markAsRead, updateStatusMutation, t]);
-
-  return null;
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
 };

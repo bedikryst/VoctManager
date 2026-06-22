@@ -576,3 +576,46 @@ class AvatarViewTests(APITestCase):
         response = self.client.delete(self.AVATAR_URL)
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.data["avatar_url"])
+
+
+class MarkWelcomeSeenViewTests(APITestCase):
+    SEEN_URL = "/api/users/me/seen-welcome/"
+    ME_URL = "/api/users/me/"
+
+    def setUp(self):
+        self.user = User.objects.create(username=str(uuid4()), email=f"{uuid4()}@example.com")
+        self.profile = UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.client.force_authenticate(self.user)
+
+    def test_first_call_stamps_welcome_seen(self):
+        self.assertIsNone(self.profile.welcome_seen_at)
+        response = self.client.post(self.SEEN_URL)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.data["welcome_seen_at"])
+        self.profile.refresh_from_db()
+        self.assertIsNotNone(self.profile.welcome_seen_at)
+
+    def test_idempotent_keeps_original_timestamp(self):
+        first = self.client.post(self.SEEN_URL).data["welcome_seen_at"]
+        second = self.client.post(self.SEEN_URL).data["welcome_seen_at"]
+        # Set once: a repeat call must not overwrite the original moment.
+        self.assertEqual(first, second)
+
+    def test_welcome_seen_at_is_read_only_via_profile_patch(self):
+        # The flag is server-authoritative; a client cannot back-date or clear it
+        # through the ordinary profile PATCH. It is read-only in the serializer AND
+        # the preferences DTO rejects the unknown field outright (400) — either way
+        # the value never takes effect.
+        response = self.client.patch(
+            self.ME_URL,
+            {"profile": {"welcome_seen_at": "2000-01-01T00:00:00Z"}},
+            format="json",
+        )
+        self.assertIn(response.status_code, (200, 400))
+        self.profile.refresh_from_db()
+        self.assertIsNone(self.profile.welcome_seen_at)
+
+    def test_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.post(self.SEEN_URL)
+        self.assertIn(response.status_code, (401, 403))

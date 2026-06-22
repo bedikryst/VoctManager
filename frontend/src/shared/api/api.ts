@@ -20,12 +20,16 @@ import axios, {
 export interface AuthRequestConfig extends AxiosRequestConfig {
   skipAuthRefresh?: boolean;
   skipAuthRedirect?: boolean;
+  /** Opt out of the automatic DRF `.results` unwrap to keep pagination metadata
+   *  (`next`/`previous`/`count`) — needed by paginated/infinite consumers. */
+  skipUnwrap?: boolean;
 }
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
   skipAuthRefresh?: boolean;
   skipAuthRedirect?: boolean;
+  skipUnwrap?: boolean;
 }
 
 /**
@@ -76,8 +80,11 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Automatically unwrap Django REST Framework paginated responses
+    // Automatically unwrap Django REST Framework paginated responses, unless the
+    // caller opted out to read pagination metadata (next/previous/count).
+    const config = response.config as CustomAxiosRequestConfig;
     if (
+      !config?.skipUnwrap &&
       response.data &&
       typeof response.data === "object" &&
       "results" in response.data &&

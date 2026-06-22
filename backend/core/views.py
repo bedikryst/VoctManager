@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from pydantic import ValidationError
 from rest_framework import generics, status, views
@@ -365,6 +366,29 @@ class ResetCalendarTokenView(views.APIView):
     def post(self, request, *args, **kwargs):
         profile = UserPreferencesService.reset_calendar_token(request.user)
         return Response(UserProfileSerializer(profile).data, status=status.HTTP_200_OK)
+
+
+class MarkWelcomeSeenView(views.APIView):
+    """
+    POST /api/users/me/seen-welcome/
+    Stamps the one-time home-screen welcome as completed — server-side and set
+    once, so the WelcomeMoment greets a new member exactly once per account
+    across every device they sign in from. Idempotent: a repeat call keeps the
+    original timestamp. Returns the refreshed profile so the client can settle
+    its cached `welcome_seen_at`.
+    """
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(responses={200: UserProfileSerializer})
+    def post(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        if profile is not None and profile.welcome_seen_at is None:
+            profile.welcome_seen_at = timezone.now()
+            profile.save(update_fields=['welcome_seen_at', 'updated_at'])
+        return Response(
+            UserProfileSerializer(profile, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
 
 class AvatarView(views.APIView):

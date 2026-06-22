@@ -22,8 +22,8 @@ export type NotificationType =
   | "PARTICIPATION_RESPONSE"
   | "ATTENDANCE_SUBMITTED"
   | "CUSTOM_ADMIN_MESSAGE"
-  | "NOTIFICATION_READ_RECEIPT"
-  | "MESSAGE_RECEIVED";
+  | "MESSAGE_RECEIVED"
+  | "NOTIFICATION_READ_RECEIPT";
 
 // ==========================================
 // STRICT METADATA PAYLOADS
@@ -207,10 +207,18 @@ export type NotificationDTO = BaseNotification &
         notification_type: "MESSAGE_RECEIVED";
         metadata: MessageReceivedMetadata;
       }
+    | {
+        notification_type: "NOTIFICATION_READ_RECEIPT";
+        metadata: NotificationReadReceiptMetadata;
+      }
   );
 
 export interface UnreadCountResponse {
+  /** True per-item unread total — drives the panel header + "mark all read". */
   unread_count: number;
+  /** Unread items that arrived since the user last opened the centre — drives
+   *  the bell badge, and clears on open without changing read state. */
+  new_count: number;
 }
 
 export interface NotificationPreferenceDTO {

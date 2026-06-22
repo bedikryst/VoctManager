@@ -10,7 +10,7 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   AnimatePresence,
@@ -21,15 +21,17 @@ import {
   type Transition,
 } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Bell, BellOff, BellRing, Check, X } from "lucide-react";
+import { Bell, BellOff, BellRing, Check, ChevronDown, Info, X } from "lucide-react";
 
 import {
   useNotifications,
   useUnreadNotificationCount,
   useMarkAllNotificationsRead,
+  useMarkNotificationsSeen,
 } from "../api/notifications.queries";
 import type { NotificationDTO } from "../types/notifications.dto";
 import { NotificationItem } from "./NotificationItem";
+import { NotificationItemBoundary } from "./NotificationItemBoundary";
 
 import { Heading, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
@@ -73,6 +75,65 @@ const SCRIM_TRANSITION: Transition = {
 const SWIPE_OFFSET_THRESHOLD = 90;
 const SWIPE_VELOCITY_THRESHOLD = 420;
 
+type DayBucketKey = "today" | "yesterday" | "this_week" | "this_month" | "older";
+const BUCKET_ORDER: readonly DayBucketKey[] = [
+  "today",
+  "yesterday",
+  "this_week",
+  "this_month",
+  "older",
+];
+
+const startOfDayMs = (date: Date): number => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
+
+const bucketFor = (iso: string, todayStart: number): DayBucketKey => {
+  const DAY = 86_400_000;
+  const created = startOfDayMs(new Date(iso));
+  if (created >= todayStart) return "today";
+  if (created >= todayStart - DAY) return "yesterday";
+  if (created >= todayStart - 7 * DAY) return "this_week";
+  if (created >= todayStart - 30 * DAY) return "this_month";
+  return "older";
+};
+
+/** Buckets read notifications into ordered day groups, preserving newest-first
+ *  order within each group and dropping any empty bucket. */
+const groupByDay = (
+  items: readonly NotificationDTO[],
+): { key: DayBucketKey; items: NotificationDTO[] }[] => {
+  const todayStart = startOfDayMs(new Date());
+  const map = new Map<DayBucketKey, NotificationDTO[]>();
+  for (const item of items) {
+    const key = bucketFor(item.created_at, todayStart);
+    const bucket = map.get(key);
+    if (bucket) bucket.push(item);
+    else map.set(key, [item]);
+  }
+  return BUCKET_ORDER.filter((key) => map.has(key)).map((key) => ({
+    key,
+    items: map.get(key)!,
+  }));
+};
+
+/** Quiet placeholder shown when a single row fails to render (see boundary). */
+const FallbackRow: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-3 rounded-2xl p-3">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ethereal-graphite/10 text-ethereal-graphite/45">
+        <Info size={16} strokeWidth={2} aria-hidden="true" />
+      </div>
+      <Text size="sm" color="muted">
+        {t("notifications.render_error", "Nie udało się wyświetlić tego powiadomienia.")}
+      </Text>
+    </div>
+  );
+};
+
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   className,
   variant = "icon",
@@ -87,9 +148,20 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const dragControls = useDragControls();
   const y = useMotionValue(0);
 
-  const { data: unreadCount = 0 } = useUnreadNotificationCount(!!user);
-  const { data: notifications = [], isLoading } = useNotifications(!!user);
+  const { data: counts } = useUnreadNotificationCount(!!user);
+  // `unreadCount` = true per-item unread (header + "mark all read"); `newCount` =
+  // new-since-seen (the bell badge, cleared on open).
+  const unreadCount = counts?.unread_count ?? 0;
+  const newCount = counts?.new_count ?? 0;
+  const {
+    data: notifications = [],
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useNotifications(!!user);
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
+  const { mutate: markSeen } = useMarkNotificationsSeen();
 
   const close = useCallback(() => setIsOpen(false), []);
 
@@ -97,14 +169,22 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   useCloseWatcher(isOpen, close);
   useFocusTrap(panelRef, isOpen);
 
-  const { unread, earlier } = useMemo(() => {
+  // Opening the centre "sees" everything currently new — clears the bell badge
+  // without marking anything read (per-item unread state is untouched).
+  useEffect(() => {
+    if (isOpen && newCount > 0) markSeen();
+  }, [isOpen, newCount, markSeen]);
+
+  const { unread, read } = useMemo(() => {
     const unreadList: NotificationDTO[] = [];
-    const earlierList: NotificationDTO[] = [];
+    const readList: NotificationDTO[] = [];
     for (const item of notifications) {
-      (item.is_read ? earlierList : unreadList).push(item);
+      (item.is_read ? readList : unreadList).push(item);
     }
-    return { unread: unreadList, earlier: earlierList };
+    return { unread: unreadList, read: readList };
   }, [notifications]);
+
+  const readGroups = useMemo(() => groupByDay(read), [read]);
 
   const handleDragEnd = (
     _: PointerEvent | MouseEvent | TouchEvent,
@@ -141,11 +221,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       </div>
       <div className="flex flex-col gap-0.5">
         {items.map((item) => (
-          <NotificationItem
-            key={item.id}
-            notification={item}
-            onClosePanel={close}
-          />
+          <NotificationItemBoundary key={item.id} fallback={<FallbackRow />}>
+            <NotificationItem notification={item} onClosePanel={close} />
+          </NotificationItemBoundary>
         ))}
       </div>
     </div>
@@ -226,23 +304,42 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       ) : (
         <>
           {unread.length > 0 &&
-            renderSection(
-              t("notifications.section_new", "Nowe"),
-              unread,
-              true,
-            )}
-          {earlier.length > 0 &&
-            renderSection(
-              t("notifications.section_earlier", "Wcześniejsze"),
-              earlier,
-              false,
-            )}
+            renderSection(t("notifications.section_new", "Nowe"), unread, true)}
+
+          {readGroups.map((group) => (
+            <React.Fragment key={group.key}>
+              {renderSection(
+                t(`notifications.groups.${group.key}`),
+                group.items,
+                false,
+              )}
+            </React.Fragment>
+          ))}
+
+          {hasNextPage && (
+            <div className="flex justify-center pb-2 pt-1">
+              <button
+                type="button"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+                className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ethereal-graphite/55 outline-none transition-colors hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronDown
+                  size={14}
+                  strokeWidth={2.5}
+                  aria-hidden="true"
+                  className={isFetchingNextPage ? "animate-bounce" : undefined}
+                />
+                {t("notifications.show_older", "Pokaż starsze")}
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
   );
 
-  const countBadge = unreadCount > 0 && (
+  const countBadge = newCount > 0 && (
     <motion.span
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
@@ -252,7 +349,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
         variant === "tab" ? "-right-2 -top-1" : "right-1.5 top-1",
       )}
     >
-      {unreadCount > 99 ? "99+" : unreadCount}
+      {newCount > 99 ? "99+" : newCount}
     </motion.span>
   );
 
@@ -266,7 +363,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           aria-haspopup="dialog"
           className={cn(
             "relative flex flex-1 select-none flex-col items-center justify-center gap-1.5 rounded-xl pt-2 pb-1 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.95]",
-            unreadCount > 0
+            newCount > 0
               ? "text-ethereal-gold"
               : "text-ethereal-graphite/55 hover:text-ethereal-ink",
             className,
@@ -275,7 +372,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           <span className="relative flex h-8 items-center justify-center">
             <Bell
               size={21}
-              strokeWidth={unreadCount > 0 ? 2.25 : 1.75}
+              strokeWidth={newCount > 0 ? 2.25 : 1.75}
               aria-hidden="true"
             />
             <AnimatePresence>{countBadge}</AnimatePresence>

@@ -56,7 +56,7 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
       label: t("notifications.primer.highlight_security_label", "Bezpieczeństwo"),
       description: t(
         "notifications.primer.highlight_security_desc",
-        "Powiadomienia szyfrowane VAPID. Nie udostępniamy ich nikomu.",
+        "Bezpieczne, szyfrowane połączenie. Nie udostępniamy Twoich danych nikomu.",
       ),
     },
   ];
