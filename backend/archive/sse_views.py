@@ -34,10 +34,19 @@ import asyncio
 import json
 import logging
 import time
+from collections.abc import AsyncIterator
+from typing import cast
 
 from asgiref.sync import sync_to_async
-from django.http import Http404, HttpRequest, JsonResponse, StreamingHttpResponse
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponseBase,
+    JsonResponse,
+    StreamingHttpResponse,
+)
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.request import Request
 from rest_framework_simplejwt.exceptions import TokenError
 
 from archive.models import IngestionStatus, ScoreEdition
@@ -72,7 +81,9 @@ _SNAPSHOT_FIELDS = (
 def _authenticate(request: HttpRequest):
     """Run the cookie/JWT auth (DB + CSRF) off the event loop. Returns the user
     or None; raises on an invalid token / CSRF failure."""
-    result = CookieJWTAuthentication().authenticate(request)
+    # DRF's auth class is typed for a DRF Request but only touches .COOKIES /
+    # .META / CSRF, all present on the ASGI HttpRequest.
+    result = CookieJWTAuthentication().authenticate(cast("Request", request))
     return result[0] if result else None
 
 
@@ -107,7 +118,7 @@ def _format(event: str, snap: dict | None) -> str:
     return f"event: {event}\ndata: {json.dumps(payload)}\n\n"
 
 
-async def _event_stream(pk):
+async def _event_stream(pk) -> AsyncIterator[str]:
     """Async generator: emit a `progress` event on every change, a comment
     heartbeat otherwise, and a terminal `done`/`gone`/`timeout` then stop."""
     started = time.monotonic()
@@ -144,7 +155,7 @@ async def _event_stream(pk):
         await asyncio.sleep(_POLL_INTERVAL_SECONDS)
 
 
-async def score_edition_events(request: HttpRequest, pk):
+async def score_edition_events(request: HttpRequest, pk) -> HttpResponseBase:
     """SSE endpoint for one edition's live ingestion progress (manager-only)."""
     if request.method != 'GET':
         return JsonResponse({'detail': 'Method not allowed.'}, status=405)

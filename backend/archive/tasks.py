@@ -264,7 +264,7 @@ def _guarded(func: Callable) -> Callable:
                 base_delay=TRANSIENT_BASE_DELAY,
                 max_delay=TRANSIENT_MAX_DELAY,
             )
-        except Exception as exc:  # noqa: BLE001 — last-resort infra resilience
+        except Exception as exc:  # last-resort infra resilience → terminal state
             return _retry_or_fail(
                 self, payload, exc,
                 reason=f'unexpected_error: {exc.__class__.__name__}: {exc}',
@@ -443,7 +443,6 @@ def resolve_composer_and_piece(self, payload: dict) -> dict:
 def persist_analysis(self, payload: dict) -> dict:
     """Phase 4 — persist the movements, sung text, IPA and translations that the
     single analysis call produced. No AI here; idempotent."""
-    edition = _load_edition(payload['edition_id'])
     _set_progress(payload['edition_id'], IngestionProgress.PERSISTING)
     piece = Piece.objects.get(id=payload['piece_id'])
     analysis = ScoreAnalysisResult.model_validate(payload['analysis'])
