@@ -30,7 +30,7 @@ import {
   X,
 } from "lucide-react";
 
-import { parseApiError } from "@/shared/api/errors";
+import { parseApiError, resolveErrorCopy } from "@/shared/api/errors";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -110,25 +110,14 @@ export const EditionUploadZone = ({
           ),
         );
       } catch (err) {
-        // Surface the server's *actual* reason (field errors, domain detail,
-        // stable code) instead of axios's opaque "Request failed with status
-        // code 400". Persisted on the row + toast so a failed ingest is
-        // diagnosable at a glance.
+        // Translate the server's real reason into the UI language (stable code →
+        // curated copy, single rejected field → its message) instead of axios's
+        // opaque "Request failed with status code 400". Persisted on the row +
+        // toast so a failed ingest reads clearly at a glance.
         const normalized = parseApiError(err);
-        const fieldNotes = Object.entries(normalized.fieldErrors).map(
-          ([field, msg]) => `${field}: ${msg}`,
-        );
-        const reason =
-          normalized.serverMessage ??
-          fieldNotes[0] ??
-          (err instanceof Error ? err.message : null) ??
-          t("archive.upload.toast_failed", "Upload nieudany");
-        const tag =
-          normalized.code ??
-          (normalized.status ? `HTTP ${normalized.status}` : null);
-        const message = tag ? `${reason} (${tag})` : reason;
-        updateUpload(entry.localId, { phase: "failed", errorMessage: message });
-        toast.error(`${entry.file.name} — ${message}`);
+        const { detail } = resolveErrorCopy(normalized, t);
+        updateUpload(entry.localId, { phase: "failed", errorMessage: detail });
+        toast.error(`${entry.file.name} — ${detail}`);
       }
     },
     [pieceId, uploadEdition, updateUpload, t],

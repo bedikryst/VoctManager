@@ -9,6 +9,7 @@ Strictly handles HTTP protocol parsing, RBAC-based QuerySet routing, and Respons
 Delegates ALL state-mutating business logic to the Service Layer.
 """
 import io
+import logging
 import os
 from decimal import Decimal, InvalidOperation
 
@@ -25,7 +26,7 @@ from rest_framework.response import Response
 
 from archive.models import PieceVoiceRequirement, Recording, ScoreEdition, Track
 from core.constants import VoiceLine
-from core.exceptions import format_pydantic_validation_errors
+from core.exceptions import format_pydantic_validation_errors, make_error_response
 from core.permissions import IsManager, IsManagerOrReadOnly
 from core.request_utils import request_user
 
@@ -101,6 +102,8 @@ def _is_manager(user) -> bool:
 # Chorister material-access rule now lives in roster.queries.materials_queries so
 # the archive AnnotationViewSet can share the exact same gate (scores + their
 # shared markings expire together when every project featuring the piece closes).
+logger = logging.getLogger(__name__)
+
 # Thin module-local aliases preserve the existing private call sites below.
 _CLOSED_PROJECT_STATUSES = CLOSED_PROJECT_STATUSES
 _artist_has_live_access_to_piece = artist_has_live_access_to_piece
@@ -206,13 +209,30 @@ class ArtistViewSet(viewsets.ModelViewSet):
         try:
             dto = ArtistCreateDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
+
         try:
             artist = ArtistHRService.provision_artist(dto)
             return Response(self.get_serializer(artist).data, status=status.HTTP_201_CREATED)
         except ArtistProvisioningException as e:
-            return Response({"error": str(e)}, status=status.HTTP_409_CONFLICT)
+            # The only thing provisioning rejects is a duplicate email, so say
+            # exactly that — a stable `email_taken` code the client maps to clear
+            # copy, plus a field error so the email input lights up inline,
+            # instead of the old opaque 409 that read as a generic "conflict".
+            logger.info("artist_provision_rejected email_in_use: %s", e)
+            return make_error_response(
+                request,
+                status_code=status.HTTP_409_CONFLICT,
+                error_code="email_taken",
+                detail=str(e),
+                validation_errors={"email": [str(e)]},
+            )
     
     @action(detail=True, methods=['post'], permission_classes=[IsManager])
     def archive(self, request, pk=None) -> Response:

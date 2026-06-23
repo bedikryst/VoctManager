@@ -1859,6 +1859,18 @@
       "expired_activation_link": {
         "title": "Link expired",
         "detail": "This activation link is no longer valid. Request a new one."
+      },
+      "ingestion_unavailable": {
+        "title": "Processing unavailable",
+        "detail": "Automatic PDF processing is temporarily unavailable. Please try again later."
+      },
+      "ingestion_precondition": {
+        "title": "Can’t start processing",
+        "detail": "This file couldn’t be sent for processing."
+      },
+      "piece_not_found": {
+        "title": "Piece not found",
+        "detail": "The referenced piece doesn’t exist or was removed."
       }
     },
     "form": {

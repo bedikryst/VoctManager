@@ -1859,6 +1859,18 @@
       "expired_activation_link": {
         "title": "Link wygasł",
         "detail": "Ten link aktywacyjny stracił ważność. Poproś o nowy."
+      },
+      "ingestion_unavailable": {
+        "title": "Przetwarzanie niedostępne",
+        "detail": "Automatyczne przetwarzanie PDF jest chwilowo niedostępne. Spróbuj ponownie później."
+      },
+      "ingestion_precondition": {
+        "title": "Nie można rozpocząć",
+        "detail": "Nie udało się rozpocząć przetwarzania tego pliku."
+      },
+      "piece_not_found": {
+        "title": "Nie znaleziono utworu",
+        "detail": "Wskazany utwór nie istnieje lub został usunięty."
       }
     },
     "form": {

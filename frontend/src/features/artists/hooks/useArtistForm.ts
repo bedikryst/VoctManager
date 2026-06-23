@@ -163,10 +163,27 @@ export const useArtistForm = (
       }
       onClose();
     } catch (err: unknown) {
-      // Light up rejected fields inline (e.g. a taken email lands on the email
-      // input), and transition the loading toast into a precise summary.
+      // Transition the loading toast into a precise summary, and light up the
+      // rejected field inline.
       const normalized = toastApiError(err, t, { id: toastId });
-      applyFieldErrors(form.setError, normalized);
+      if (normalized.code === "email_taken") {
+        // The one provisioning conflict is a duplicate email — pin it to the
+        // email input in the UI language, not the server's English sentence,
+        // and never as a vague "someone changed this" conflict toast.
+        form.setError(
+          "email",
+          {
+            type: "server",
+            message: t(
+              "errors.codes.email_taken.detail",
+              "Ten adres e-mail jest już przypisany do innego konta.",
+            ),
+          },
+          { shouldFocus: true },
+        );
+      } else {
+        applyFieldErrors(form.setError, normalized);
+      }
     }
   };
 

@@ -1859,6 +1859,18 @@
       "expired_activation_link": {
         "title": "Lien expiré",
         "detail": "Ce lien d’activation n’est plus valide. Demandez-en un nouveau."
+      },
+      "ingestion_unavailable": {
+        "title": "Traitement indisponible",
+        "detail": "Le traitement automatique des PDF est temporairement indisponible. Réessayez plus tard."
+      },
+      "ingestion_precondition": {
+        "title": "Démarrage impossible",
+        "detail": "Ce fichier n’a pas pu être envoyé au traitement."
+      },
+      "piece_not_found": {
+        "title": "Œuvre introuvable",
+        "detail": "L’œuvre référencée n’existe pas ou a été supprimée."
       }
     },
     "form": {

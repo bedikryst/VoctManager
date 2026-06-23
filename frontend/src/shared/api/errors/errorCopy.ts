@@ -70,6 +70,19 @@ const KNOWN_CODES: Record<string, { title: string; detail: string }> = {
     title: "errors.codes.invalid_image.title",
     detail: "errors.codes.invalid_image.detail",
   },
+  // Score-compiler PDF ingest.
+  ingestion_unavailable: {
+    title: "errors.codes.ingestion_unavailable.title",
+    detail: "errors.codes.ingestion_unavailable.detail",
+  },
+  ingestion_precondition: {
+    title: "errors.codes.ingestion_precondition.title",
+    detail: "errors.codes.ingestion_precondition.detail",
+  },
+  piece_not_found: {
+    title: "errors.codes.piece_not_found.title",
+    detail: "errors.codes.piece_not_found.detail",
+  },
 };
 
 /** Localized title + detail fallback for each coarse kind. */
