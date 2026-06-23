@@ -25,6 +25,7 @@ import type {
   Rehearsal,
   Project,
 } from "@/shared/types";
+import { toastApiError } from "@/shared/api/errors";
 import { useLocations } from "@/features/logistics/api/logistics.queries";
 import {
   useCreateRehearsal,
@@ -307,9 +308,9 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       }
 
       resetForm();
-    } catch {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
-        description: t(
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
           "projects.rehearsals.toast.save_error_desc",
           "Wystąpił problem z zapisem do bazy. Sprawdź formularz i połączenie.",
         ),
@@ -332,9 +333,9 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       if (editingRehearsalId === rehearsalToDelete) {
         resetForm();
       }
-    } catch {
-      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
-        description: t(
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
           "projects.rehearsals.toast.remove_error_desc",
           "Nie udało się usunąć próby. Serwer odrzucił żądanie.",
         ),

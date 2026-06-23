@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { toastApiError } from "@/shared/api/errors";
 import type { Artist, Attendance, Participation, Rehearsal } from "@/shared/types";
 import { compareProjectDateAsc } from "../../lib/projectPresentation";
 import {
@@ -299,10 +300,10 @@ export const useAttendanceMatrix = (
         t("projects.matrix.toast.save_success", "Zapisano frekwencję"),
         { id: toastId },
       );
-    } catch {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "projects.matrix.toast.save_error_desc",
           "Sprawdź połączenie i spróbuj ponownie.",
         ),

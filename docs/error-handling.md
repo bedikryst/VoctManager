@@ -95,11 +95,14 @@ fallback for the kind. Localized strings live under `errors.toast.*`,
   (raw `" | "` dump removed), participation/crew/piece-casting mutations
   (9 hard-coded English toasts → localized, precise).
 
-**Phase 2 — editor hooks.** Convert the `} catch {` blocks in
-`useBudgetTab`, `useProgramTab`, `useRehearsalsTab`, `useAttendanceMatrix`,
-`useCastTab`, `useCrewAssignments` to capture the error and call
-`toastApiError(error, t, { id: toastId, description })`, keeping each feature's
-tailored description as the override where it reads better than the server's.
+**Phase 2 — editor hooks.** ✅ Shipped. The `} catch {` blocks in
+`useBudgetTab`, `useProgramTab` (×5), `useRehearsalsTab` (×2),
+`useAttendanceMatrix`, `useCastTab`, `useCrewAssignments` (×2) no longer swallow
+the error — they capture it and call `toastApiError(error, t, { id?, fallbackDescription })`.
+A 403, a 409 and a dropped connection now read differently instead of all
+saying "Błąd zapisu". `fallbackDescription` keeps each feature's tailored copy,
+but only surfaces it for a truly opaque `unknown` error — every named cause
+(offline, forbidden, server, conflict, …) leads with its own precise detail.
 
 **Phase 3 — remaining `toast.error` sites + zod forms.** Sweep the rest of the
 58 sites; wire `applyFieldErrors` into every `zodResolver` form

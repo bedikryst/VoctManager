@@ -3098,7 +3098,7 @@
         "add_error": "Failed to add piece.",
         "add_success": "Added to setlist",
         "adding": "Adding piece...",
-        "encore_error": "Connection error. Failed to change encore status.",
+        "encore_error": "Couldn’t change the encore status.",
         "encore_toggled": "Encore status changed",
         "remove_success": "Removed from program",
         "removing": "Removing piece...",

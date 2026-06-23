@@ -12,7 +12,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 
 import type { Artist, Participation } from "@/shared/types";
@@ -122,9 +122,9 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
           });
         }
       }
-    } catch {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
-        description: t(
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
           "common.errors.database_error",
           "Wystąpił problem z połączeniem z bazą danych.",
         ),

@@ -19,6 +19,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { toastApiError } from "@/shared/api/errors";
 import type { Piece, ProgramItem } from "@/shared/types";
 import {
   projectKeys,
@@ -165,10 +166,10 @@ export const useProgramTab = (
         t("projects.program.toast.add_success", "Dodano do setlisty"),
         { id: toastId },
       );
-    } catch {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "projects.program.toast.add_error",
           "Nie powiodło się dodanie utworu.",
         ),
@@ -189,13 +190,13 @@ export const useProgramTab = (
           "Status BIS został zaktualizowany",
         ),
       );
-    } catch {
-      toast.error(
-        t(
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
           "projects.program.toast.encore_error",
-          "Błąd połączenia. Nie udało się zmienić statusu BIS.",
+          "Nie udało się zmienić statusu BIS.",
         ),
-      );
+      });
     }
   };
 
@@ -211,10 +212,10 @@ export const useProgramTab = (
         t("projects.program.toast.remove_success", "Usunięto z programu"),
         { id: toastId },
       );
-    } catch {
-      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "common.errors.server_problem",
           "Wystąpił problem z serwerem.",
         ),
@@ -345,7 +346,7 @@ export const useProgramTab = (
         ),
         { id: toastId },
       );
-    } catch {
+    } catch (error) {
       const reorderedItems = programItems.map((item, index) => ({
         ...item,
         order: index + 1,
@@ -386,9 +387,9 @@ export const useProgramTab = (
         queryKey: projectKeys.program.all,
       });
 
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "projects.program.toast.save_order_error",
           "Serwer odrzucił część zmian.",
         ),

@@ -3098,7 +3098,7 @@
         "add_error": "Impossible d'ajouter la pièce.",
         "add_success": "Ajouté à la setlist",
         "adding": "Ajout de la pièce...",
-        "encore_error": "Erreur de connexion. Impossible de modifier le statut bis.",
+        "encore_error": "Impossible de modifier le statut bis.",
         "encore_toggled": "Statut bis modifié",
         "remove_success": "Retiré du programme",
         "removing": "Suppression de la pièce...",

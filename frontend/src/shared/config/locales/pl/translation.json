@@ -3098,7 +3098,7 @@
         "add_error": "Nie powiodło się dodanie utworu.",
         "add_success": "Dodano do setlisty",
         "adding": "Dodawanie utworu...",
-        "encore_error": "Błąd połączenia. Nie udało się zmienić statusu BIS.",
+        "encore_error": "Nie udało się zmienić statusu BIS.",
         "encore_toggled": "Status BIS zmieniony",
         "remove_success": "Usunięto z programu",
         "removing": "Usuwanie utworu...",

@@ -20,6 +20,14 @@ import type { NormalizedApiError } from "./types";
 export interface ToastApiErrorOptions extends ExternalToast {
   /** Override the resolved headline (detail still comes from the server). */
   title?: string;
+  /**
+   * Caller-supplied description used *only* when the error carries no specific
+   * detail of its own (a generic kind fallback). Lets a feature keep its
+   * tailored copy — "Nie udało się zapisać wszystkich stawek." — while still
+   * deferring to a precise server reason (a rejected field, a domain rule)
+   * whenever one exists. Ignored if `description` is set.
+   */
+  fallbackDescription?: string;
 }
 
 /**
@@ -37,11 +45,19 @@ export const toastApiError = (
 ): NormalizedApiError => {
   const translate = (t ?? i18n.t.bind(i18n)) as TFunction;
   const normalized = parseApiError(error);
-  const { title, detail } = resolveErrorCopy(normalized, translate);
-  const { title: titleOverride, description, ...rest } = options;
+  const { title, detail, specific } = resolveErrorCopy(normalized, translate);
+  const {
+    title: titleOverride,
+    description,
+    fallbackDescription,
+    ...rest
+  } = options;
+
+  const resolvedDescription =
+    description ?? (specific ? detail : (fallbackDescription ?? detail));
 
   toast.error(titleOverride ?? title, {
-    description: description ?? detail,
+    description: resolvedDescription,
     ...rest,
   });
 

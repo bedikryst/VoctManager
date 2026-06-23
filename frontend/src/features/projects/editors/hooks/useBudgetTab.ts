@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
+import { toastApiError } from "@/shared/api/errors";
 import type {
   Artist,
   Collaborator,
@@ -235,10 +236,10 @@ export const useBudgetTab = (
         ),
         { id: toastId },
       );
-    } catch {
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "projects.budget.toast.save_error_desc",
           "Nie udało się zapisać wszystkich stawek.",
         ),

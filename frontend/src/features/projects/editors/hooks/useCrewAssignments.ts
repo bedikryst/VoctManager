@@ -12,7 +12,7 @@ import {
   type FormEvent,
   type SetStateAction,
 } from "react";
-import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 
 import type { Collaborator, CrewAssignment } from "@/shared/types";
@@ -109,9 +109,9 @@ export const useCrewAssignments = (
 
       setSelectedCrewId("");
       setRoleDesc("");
-    } catch {
-      toast.error(t("projects.crew.toast.assign_error", "Błąd przypisania"), {
-        description: t(
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
           "projects.crew.toast.assign_error_desc",
           "Nie udało się przypisać członka ekipy do projektu.",
         ),
@@ -122,9 +122,9 @@ export const useCrewAssignments = (
   const handleRemove = async (id: string): Promise<void> => {
     try {
       await deleteCrewAssignmentMutation.mutateAsync(id);
-    } catch {
-      toast.error(t("common.actions.delete_error", "Błąd usuwania"), {
-        description: t(
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
           "projects.crew.toast.remove_error_desc",
           "Nie udało się odpiąć członka ekipy z projektu.",
         ),

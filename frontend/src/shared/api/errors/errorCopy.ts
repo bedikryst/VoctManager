@@ -18,6 +18,13 @@ import type { NormalizedApiError, ApiErrorKind } from "./types";
 export interface ErrorCopy {
   title: string;
   detail: string;
+  /**
+   * `true` when `detail` carries real, error-specific information (a known
+   * code, a rejected field's message, or a domain rule). `false` when it is
+   * only the generic fallback for the kind — the signal a caller uses to decide
+   * whether its own tailored copy reads better.
+   */
+  specific: boolean;
 }
 
 /** Stable server `error_code`s we have written first-class, localized copy for. */
@@ -137,7 +144,11 @@ export const resolveErrorCopy = (
   // 1. A stable, known code wins — fully curated, localized copy.
   if (error.code && KNOWN_CODES[error.code]) {
     const keys = KNOWN_CODES[error.code];
-    return { title: translate(t, keys.title), detail: translate(t, keys.detail) };
+    return {
+      title: translate(t, keys.title),
+      detail: translate(t, keys.detail),
+      specific: true,
+    };
   }
 
   const fallback = KIND_FALLBACK[error.kind];
@@ -146,7 +157,7 @@ export const resolveErrorCopy = (
   // 2. Exactly one rejected field → lead with its own specific message.
   const fieldMessages = Object.values(error.fieldErrors);
   if (error.kind === "validation" && fieldMessages.length === 1) {
-    return { title, detail: fieldMessages[0] };
+    return { title, detail: fieldMessages[0], specific: true };
   }
 
   // 3. A meaningful server sentence (typically a domain rule) → trust it.
@@ -154,9 +165,16 @@ export const resolveErrorCopy = (
     (error.kind === "domain" || error.kind === "conflict") &&
     error.serverMessage
   ) {
-    return { title, detail: error.serverMessage };
+    return { title, detail: error.serverMessage, specific: true };
   }
 
-  // 4. Localized fallback for the kind.
-  return { title, detail: translate(t, fallback.detail) };
+  // 4. Localized fallback for the kind. Every kind except a truly opaque
+  //    "unknown" still names a real cause (offline, forbidden, server, …) that
+  //    beats a caller's generic "couldn't save" line — so only "unknown" yields
+  //    to a fallbackDescription.
+  return {
+    title,
+    detail: translate(t, fallback.detail),
+    specific: error.kind !== "unknown",
+  };
 };
