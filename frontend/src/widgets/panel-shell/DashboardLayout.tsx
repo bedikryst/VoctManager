@@ -17,6 +17,7 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { isArtist, isManager } from "@/shared/auth/rbac";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
+import { PanelErrorBoundary } from "@/app/router/PanelErrorBoundary";
 import { CommandPaletteProvider } from "./command/CommandPaletteProvider";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -178,20 +179,22 @@ export const DashboardLayout = ({
         id="main-content"
       >
         <div className="relative mx-auto flex h-full w-full max-w-[1500px] flex-col">
-          <Suspense fallback={<DashboardRouteFallback />}>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={transitionKey}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 flex flex-col w-full h-full"
-              >
-                {outlet}
-              </motion.div>
-            </AnimatePresence>
-          </Suspense>
+          <PanelErrorBoundary resetKey={location.pathname}>
+            <Suspense fallback={<DashboardRouteFallback />}>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={transitionKey}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex-1 flex flex-col w-full h-full"
+                >
+                  {outlet}
+                </motion.div>
+              </AnimatePresence>
+            </Suspense>
+          </PanelErrorBoundary>
         </div>
       </main>
       <ProjectInvitationToasts />
