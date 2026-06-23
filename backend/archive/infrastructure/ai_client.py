@@ -104,6 +104,31 @@ _PRICING: Final[dict[str, _ModelPricing]] = {
 _MODELS_WITHOUT_EFFORT: Final[frozenset[str]] = frozenset({AIModel.HAIKU})
 
 
+# Hard upper bound on `max_tokens` per model when we auto-escalate after a
+# `stop_reason='max_tokens'` truncation. `max_tokens` is shared by thinking AND
+# output tokens, so a big translation with adaptive thinking can overshoot a
+# modest budget; we double and retry up to this ceiling before giving up.
+# Values track each model's documented max output cap (Sonnet/Haiku 64K).
+# Haiku tasks are pure extraction — a truncation there means something is odd,
+# so its ceiling stays low to avoid runaway spend.
+_MODEL_OUTPUT_CEILING: Final[dict[str, int]] = {
+    AIModel.HAIKU: 16384,
+    AIModel.SONNET: 65536,
+    AIModel.OPUS: 65536,
+}
+
+# How many times we double `max_tokens` after a truncation before declaring the
+# call terminally truncated (each attempt is billed by Anthropic).
+MAX_TOKEN_ESCALATIONS: Final[int] = 2
+
+# Default per-request timeout (seconds). Generous because ingestion runs in a
+# Celery worker, not a web request — a multi-minute structured-output call is
+# fine. Setting it explicitly also suppresses the SDK's non-streaming guard,
+# which otherwise refuses large-`max_tokens` requests it estimates may exceed
+# ~10 minutes (relevant once we escalate the lyrics budget toward 64K).
+DEFAULT_REQUEST_TIMEOUT_SECONDS: Final[float] = 600.0
+
+
 # ---------------------------------------------------------------------------
 # Exceptions
 # ---------------------------------------------------------------------------
@@ -150,6 +175,21 @@ class AIClientPermanentError(AIClientError):
     """
 
 
+class AIClientTruncatedError(AIClientError):
+    """
+    Raised when Claude could not return parseable output *even after escalating
+    `max_tokens`* — almost always `stop_reason='max_tokens'`: the combined
+    thinking + structured output exceeded the largest budget we will spend on
+    one call.
+
+    This is **terminal, not retryable**: a fixed budget truncates
+    deterministically, so re-issuing the identical call (Celery autoretry) just
+    burns the same money for the same failure. The guard bills the accumulated
+    cost of every attempt and marks the entity FAILED with a clear reason.
+    `cost` carries the *sum* across all escalation attempts.
+    """
+
+
 # ---------------------------------------------------------------------------
 # Cost arithmetic helpers
 # ---------------------------------------------------------------------------
@@ -187,6 +227,26 @@ def _compute_cost(
     )
 
 
+def _sum_costs(costs: list[CallCost]) -> CallCost:
+    """Combine the per-attempt costs of an escalating call into one `CallCost`.
+
+    Anthropic bills every attempt (input + truncated output), so the entity must
+    be charged for the sum, not just the final try. `CallCost` is frozen, so we
+    build a fresh aggregate rather than mutate.
+    """
+    if len(costs) == 1:
+        return costs[0]
+    return CallCost(
+        model=costs[-1].model,
+        input_tokens=sum(c.input_tokens for c in costs),
+        output_tokens=sum(c.output_tokens for c in costs),
+        cache_creation_input_tokens=sum(c.cache_creation_input_tokens for c in costs),
+        cache_read_input_tokens=sum(c.cache_read_input_tokens for c in costs),
+        total_usd=sum((c.total_usd for c in costs), Decimal("0")),
+        total_cents=sum(c.total_cents for c in costs),
+    )
+
+
 # ---------------------------------------------------------------------------
 # The client
 # ---------------------------------------------------------------------------
@@ -216,7 +276,11 @@ class AIClient:
                 "ANTHROPIC_API_KEY is not configured. "
                 "Set it in the environment or in Django settings."
             )
-        self._client = anthropic.Anthropic(api_key=key)
+        timeout = getattr(
+            settings, 'ANTHROPIC_REQUEST_TIMEOUT_SECONDS',
+            DEFAULT_REQUEST_TIMEOUT_SECONDS,
+        )
+        self._client = anthropic.Anthropic(api_key=key, timeout=timeout)
 
     # -- public --------------------------------------------------------------
 
@@ -261,9 +325,8 @@ class AIClient:
 
         Raises `AIClientError` on any unrecoverable SDK error.
         """
-        params: dict = {
+        base_params: dict = {
             "model": model,
-            "max_tokens": max_tokens,
             "system": [
                 {
                     "type": "text",
@@ -280,71 +343,93 @@ class AIClient:
         # not support the effort parameter"); only set the dial on models
         # that honour it.
         if model not in _MODELS_WITHOUT_EFFORT:
-            params["output_config"] = {"effort": effort}
+            base_params["output_config"] = {"effort": effort}
         if enable_thinking:
-            params["thinking"] = {"type": "adaptive"}
+            base_params["thinking"] = {"type": "adaptive"}
 
-        t0 = time.monotonic()
-        try:
-            response = self._client.messages.parse(**params)
-        except anthropic.BadRequestError as exc:
-            # 400 is a code bug (bad params, malformed schema, model mismatch).
-            # Surface as AIClientPermanentError so the Celery guard short-
-            # circuits the chain instead of autoretrying the same broken call.
-            raise AIClientPermanentError(
-                f"Claude rejected request: {exc.message}"
-            ) from exc
-        except anthropic.AuthenticationError as exc:
-            raise AIClientPermanentError(
-                "Claude API key is invalid."
-            ) from exc
-        except anthropic.PermissionDeniedError as exc:
-            raise AIClientPermanentError(
-                f"Claude denied access: {exc.message}"
-            ) from exc
-        except anthropic.APIStatusError:
-            # Rate limit / overloaded / 5xx — transient, Celery autoretry
-            # is correct here.
-            raise
+        # `max_tokens` is shared between thinking and output. If a generous
+        # initial budget still truncates (stop_reason='max_tokens'), doubling
+        # and retrying is the *correct* response — blindly re-issuing the same
+        # call (which is what Celery autoretry would do) truncates identically
+        # and re-bills. We escalate here, bill the sum of every attempt, and
+        # only give up at the per-model ceiling.
+        ceiling = max(_MODEL_OUTPUT_CEILING.get(model, max_tokens), max_tokens)
+        budget = max_tokens
+        costs: list[CallCost] = []
+        last_stop_reason: str | None = None
 
-        elapsed = time.monotonic() - t0
+        for attempt in range(MAX_TOKEN_ESCALATIONS + 1):
+            params = {**base_params, "max_tokens": budget}
 
-        # Compute cost BEFORE checking parsed_output — Anthropic bills for the
-        # call whether or not it produced parseable output. We must bill the
-        # entity either way, otherwise the hard cap silently leaks.
-        usage = response.usage
-        cost = _compute_cost(
-            model=model,
-            input_tokens=usage.input_tokens or 0,
-            output_tokens=usage.output_tokens or 0,
-            cache_creation_input_tokens=getattr(usage, 'cache_creation_input_tokens', 0) or 0,
-            cache_read_input_tokens=getattr(usage, 'cache_read_input_tokens', 0) or 0,
-        )
+            t0 = time.monotonic()
+            try:
+                response = self._client.messages.parse(**params)
+            except anthropic.BadRequestError as exc:
+                # 400 is a code bug (bad params, malformed schema, model
+                # mismatch). Surface as AIClientPermanentError so the Celery
+                # guard short-circuits instead of autoretrying a broken call.
+                raise AIClientPermanentError(
+                    f"Claude rejected request: {exc.message}"
+                ) from exc
+            except anthropic.AuthenticationError as exc:
+                raise AIClientPermanentError("Claude API key is invalid.") from exc
+            except anthropic.PermissionDeniedError as exc:
+                raise AIClientPermanentError(
+                    f"Claude denied access: {exc.message}"
+                ) from exc
+            except anthropic.APIStatusError:
+                # Rate limit / overloaded / 5xx — transient, Celery autoretry
+                # is correct here.
+                raise
 
-        logger.info(
-            "ai.parse model=%s prompt=%s elapsed=%.2fs "
-            "in=%d out=%d cache_w=%d cache_r=%d cost=%d¢ stop=%s",
-            model,
-            prompt.version,
-            elapsed,
-            cost.input_tokens,
-            cost.output_tokens,
-            cost.cache_creation_input_tokens,
-            cost.cache_read_input_tokens,
-            cost.total_cents,
-            response.stop_reason,
-        )
+            elapsed = time.monotonic() - t0
 
-        parsed: T | None = response.parsed_output
-        if parsed is None:
-            # Most commonly: stop_reason='max_tokens' — Claude ran out of budget
-            # mid-output, often because adaptive thinking consumed it. Caller
-            # should bump max_tokens on the prompt rather than blindly retrying.
-            raise AIClientError(
-                f"Claude returned no parseable output "
-                f"(stop_reason={response.stop_reason!r}). "
-                f"If stop_reason is 'max_tokens', increase max_tokens.",
-                cost=cost,
+            # Compute cost BEFORE checking parsed_output — Anthropic bills for
+            # the call whether or not it produced parseable output. We must bill
+            # the entity either way, otherwise the hard cap silently leaks.
+            usage = response.usage
+            cost = _compute_cost(
+                model=model,
+                input_tokens=usage.input_tokens or 0,
+                output_tokens=usage.output_tokens or 0,
+                cache_creation_input_tokens=getattr(usage, 'cache_creation_input_tokens', 0) or 0,
+                cache_read_input_tokens=getattr(usage, 'cache_read_input_tokens', 0) or 0,
+            )
+            costs.append(cost)
+            last_stop_reason = response.stop_reason
+
+            logger.info(
+                "ai.parse model=%s prompt=%s attempt=%d max_tokens=%d elapsed=%.2fs "
+                "in=%d out=%d cache_w=%d cache_r=%d cost=%d¢ stop=%s",
+                model, prompt.version, attempt + 1, budget, elapsed,
+                cost.input_tokens, cost.output_tokens,
+                cost.cache_creation_input_tokens, cost.cache_read_input_tokens,
+                cost.total_cents, response.stop_reason,
             )
 
-        return parsed, cost
+            parsed: T | None = response.parsed_output
+            if parsed is not None:
+                return parsed, _sum_costs(costs)
+
+            # No parseable output. Only a `max_tokens` truncation is worth
+            # retrying — and only with a *bigger* budget. Any other reason
+            # (e.g. a refusal) won't improve on retry, so stop now.
+            if response.stop_reason != 'max_tokens' or budget >= ceiling:
+                break
+
+            new_budget = min(budget * 2, ceiling)
+            logger.warning(
+                "ai.parse truncated model=%s prompt=%s — escalating max_tokens %d→%d",
+                model, prompt.version, budget, new_budget,
+            )
+            budget = new_budget
+
+        # Exhausted escalations (or a non-truncation no-parse). Terminal: bill
+        # every attempt and let the guard mark the entity FAILED — do NOT let
+        # Celery autoretry re-burn the budget on an identical doomed call.
+        raise AIClientTruncatedError(
+            f"Claude returned no parseable output after {len(costs)} attempt(s) "
+            f"(stop_reason={last_stop_reason!r}, max_tokens up to {budget}). "
+            f"The score's sung text may be longer than a single call can handle.",
+            cost=_sum_costs(costs),
+        )
