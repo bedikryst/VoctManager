@@ -58,7 +58,7 @@ graph TD
     end
 
     subgraph AIScoreCompiler[Kompilator Pakietów Partytur AI]
-        Celery -->|Przetwarzanie PDF| Claude["Wielopoziomowy pipeline Claude<br/>Haiku 4.5 · Sonnet 4.6 · Opus 4.7"]
+        Celery -->|Natywny PDF (wizja)| Claude["Sonnet 4.6 — jedno skonsolidowane wywołanie<br/>tożsamość · części · tekst · IPA · tłumaczenia"]
         Claude -->|Zapytania orkiestrowane narzędziami| ExtMeta["MusicBrainz · Wikidata<br/>Spotify · YouTube"]
         ExtMeta -.->|buforowane odpowiedzi| Redis
         Claude -->|Pola stemplowane proweniencją| DB
@@ -94,11 +94,13 @@ Filary inżynieryjne frontendu:
 - **Dostępność EAA:** Primitywy Radix UI + semantyczny HTML spełniające bazowe wymogi Europejskiego Aktu o Dostępności; strona publiczna dodaje opt-outy `prefers-reduced-motion` na każdej animowanej powierzchni.
 
 ### 2. Kompilator Pakietów Partytur napędzany AI
-- **Wielopoziomowy pipeline Claude:** Wieloetapowe przetwarzanie skalujące model do zadania — Haiku 4.5 do szybkiej klasyfikacji, Sonnet 4.6 do wzbogacania, Opus 4.7 do najtrudniejszego rozumowania. Adaptacyjne myślenie + parametr `effort` pozwalają Claude dynamicznie alokować moc obliczeniową.
+- **Analiza natywnego PDF (wizja):** Jedno skonsolidowane wywołanie Sonnet 4.6 czyta **cały** wgrany PDF wzrokowo (warstwa tekstowa *oraz* skany) i zwraca naraz tożsamość utworu, części, tekst śpiewany, IPA linia-w-linię i tłumaczenia prozą — radząc sobie ze skanami i realnym układem strony zamiast kruchego zgrywania tekstu. PDF jest buforowany (`cache_control: ephemeral`), więc ponowienia z eskalacją czytają go taniej.
+- **Odporność na przeciążenie:** Chwilowe przeciążenia Anthropica (HTTP 529 / 5xx / 429 / timeout) są klasyfikowane jako przejściowe i ponawiane **cierpliwie** (dziesiątki sekund → minuty), ze stanem „usługa zajęta, ponawiam" na żywo — koniec z burzą „ponów-i-padnij". Truncation i błędy 4xx zostają terminalne i nie palą budżetu na skazane ponowienie.
 - **Rozwiązywanie tożsamości kanonicznej:** Deduplikacja kompozytorów i utworów przez krzyżowe odniesienia **MusicBrainz MBID** i **Wikidata QID** — AI ekstrahuje, ale nigdy nie halucynuje faktów biograficznych ani identyfikatorów kanonicznych.
 - **Wzbogacanie metadanych zewnętrznych:** Orkiestrowane narzędziami zapytania do MusicBrainz, Wikidata, Spotify Web API i YouTube Data API v3, z odpowiedziami buforowanymi w Redis, ponowieniami z wykładniczym backoffem i łagodną degradacją, gdy któreś źródło jest niedostępne.
 - **Proweniencja klasy audytowej:** Każde pole pochodzące z AI lub API jest stemplowane `(model, prompt_version, source_reference, confidence, retrieved_at)` w tabeli `ProvenanceRecord` z generycznym kluczem obcym — umożliwiając regenerację jednym kliknięciem i kryminalistyczny przegląd zgodności.
-- **Świadomość kosztów w architekturze:** Pełne przetworzenie pojedynczej partytury PDF kosztuje średnio **~0,20 USD** (kompozytor + utwór + nota programowa + IPA + przekład śpiewalny). Twarde limity na encję wymuszane na granicy zadania Celery zapobiegają niekontrolowanym wydatkom; buforowanie promptów Anthropic (`cache_control: ephemeral`) sprawia, że tokeny odczytu z pamięci podręcznej dominują przy powtórnych uruchomieniach, obniżając koszt o ≥80%.
+- **Kontrola kosztów w architekturze:** Natywne przetworzenie PDF kosztuje średnio **~0,10–0,30 USD**. Trzy niezależne limity wymuszane na granicy zadania Celery: **per-przebieg**, **dożywotni** per wydanie (nigdy nie zerowany — re-przetwarzany PDF nie wydrenuje konta) oraz **dzienny budżet org** jako bezpiecznik — każde obciążenie Claude nalicza licznik przebiegu i dożywotni.
+- **Postęp na żywo (SSE):** Asynchroniczny (ASGI) endpoint Server-Sent-Events strumieniuje krok, koszt i status każdego przetwarzania w chwili zapisu przez workera; przeglądarka subskrybuje przez `EventSource` (cookie JWT) z fallbackiem na polling. Dyrygent widzi pracę AI krok po kroku od momentu uploadu — na desktopie i telefonie.
 - **Dyrygent w pętli decyzyjnej:** AI sugeruje, dyrygent decyduje. Każda ekstrakcja prezentuje wskaźnik pewności i ekran przeglądu — platforma nigdy po cichu nie modyfikuje kanonicznego repertuaru.
 
 ### 3. System Enterprise i Logistyka (Backend)
@@ -177,7 +179,7 @@ VoctManager jest zaprojektowany do ciągłej ewolucji w kierunku obserwowalnośc
 - [x] **Śledzenie błędów:** Sentry SDK wpięty w Django do przechwytywania błędów produkcyjnych i monitorowania kondycji wydań.
 - [x] **Automatyczne testowanie:** Zestaw testów Django/PyTest (~160) pokrywający krytyczne ścieżki — roster, payments, messaging, notifications, documents, archive, logistics, core — w tym generowanie umów i pipeline proweniencji AI.
 - [x] **CI (backend):** GitHub Actions odpala Ruff, mypy (strict) i pełny zestaw testów na PostgreSQL przy każdym pushu i PR.
-- [x] **Kompilator Partytur AI — Schemat i pipeline przetwarzania:** Kanoniczny schemat domeny (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus działający łańcuch Celery — wielopoziomowy wrapper Claude (adaptacyjne myślenie, śledzenie kosztów, buforowanie promptów) ekstrahujący metadane PDF, rozwiązujący kompozytorów/utwory względem MusicBrainz i Wikidata, generujący noty programowe + IPA + przekłady śpiewalne i prezentujący ekran przeglądu dla dyrygenta. Klienty zewnętrzne (MusicBrainz, Wikidata, Spotify, YouTube) buforowane w Redis.
+- [x] **Kompilator Partytur AI — Schemat i pipeline przetwarzania:** Kanoniczny schemat domeny (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus działający łańcuch Celery — natywno-PDF wrapper Claude (wizja, adaptacyjne myślenie, podwójne śledzenie kosztów per-przebieg/dożywotnio, buforowanie promptów, cierpliwe ponawianie przy przeciążeniu 529) czytający całą partyturę w jednym skonsolidowanym wywołaniu, rozwiązujący kompozytorów/utwory względem MusicBrainz i Wikidata, generujący noty programowe + IPA + przekłady śpiewalne, strumieniujący postęp na żywo przez SSE i prezentujący ekran przeglądu dla dyrygenta. Klienty zewnętrzne (MusicBrainz, Wikidata, Spotify, YouTube) buforowane w Redis.
 - [ ] **Kompilator Partytur AI — Montaż koncertu i adnotacje:** Generowanie skoroszytu koncertowego WeasyPrint + pypdf (okładka, spis treści, materiały wstępne per utwór, oryginalne partytury) oraz nakładka adnotacji w przeglądarce PDF.js + Konva (podświetlenie, komentarz, odręczne rysowanie, zmiana kolejności stron) z wersjonowaną, warstwową persystencją i spłaszczaniem przy eksporcie.
 - [ ] **Szyfrowanie pól i dziennik audytu:** Szyfrowanie w spoczynku (Fernet) pól umów/finansowych oraz niezmienny log mutacji rekordów HR/finansowych do przeglądu kryminalistycznego.
 - [ ] **CI frontendu i testy E2E:** Pipeline'y lint / typecheck / build dla obu frontendów oraz pokrycie E2E Playwright w oparciu o istniejący harness zrzutów ekranu.
@@ -265,15 +267,19 @@ Kinowa brama wejściowa jest pomijana parametrem `?nogate`, aby audytor mierzył
 
 ### Kompilator Partytur AI (przetwarzanie per utwór)
 
+Łańcuch Celery (v2, natywny PDF): `prepare_document → analyze_score → resolve_composer_and_piece → persist_analysis → generate_program_note → lookup_spotify → lookup_youtube → finalize_edition`.
+
 | Etap | Model | Średni koszt |
 |---|---|---|
-| Klasyfikacja metadanych PDF | Haiku 4.5 | ~0,01 USD |
-| Rozwiązanie kompozytora + utworu (MusicBrainz / Wikidata) | Sonnet 4.6 | ~0,04 USD |
-| Nota programowa + IPA + przekład śpiewalny | Opus 4.7 | ~0,13 USD |
-| Stemplowanie proweniencji + persystencja | — (bez LLM) | ~0,02 USD (DB/API) |
-| **Średnia end-to-end na PDF** | mieszane | **~0,20 USD** |
+| Analiza partytury — cały PDF wzrokowo (tożsamość + części + tekst + IPA + tłumaczenia) | Sonnet 4.6 | ~0,10–0,20 USD |
+| Rozwiązanie kompozytora + utworu (MusicBrainz / Wikidata) | — (bez LLM) | ~0,00 USD |
+| Nota programowa | Sonnet 4.6 | ~0,03 USD |
+| Stemplowanie proweniencji + persystencja + nagrania | — (bez LLM) | ~0,02 USD (DB/API) |
+| **Średnia end-to-end na PDF** | mieszane | **~0,15–0,30 USD** |
 
-> Buforowanie promptów Anthropic (`cache_control: ephemeral`) jest włączone na każdym wywołaniu wielopoziomowym, więc tokeny odczytu z cache dominują (≥80% przy powtórnych uruchomieniach) po pierwszym przetworzeniu danego utworu — drastycznie obniżając koszt krańcowy przy powtórnych uruchomieniach i iteracjach przeglądu.
+> PDF jest wysyłany jako natywny blok `document` z `cache_control: ephemeral`, więc eskalacja `max_tokens` lub szybki re-import czytają go po stawkach cache-read. Wydatki ograniczają trzy limity — per-przebieg, dożywotni per wydanie (nigdy nie zerowany) i dzienny budżet org (`INGESTION_COST_CEILING_CENTS`, `INGESTION_LIFETIME_CEILING_CENTS`, `INGESTION_DAILY_BUDGET_CENTS`).
+
+> **Postęp na żywo** strumieniuje przez Server-Sent Events z asynchronicznego (ASGI) endpointu — `GET /api/archive/editions/<id>/events/` — więc produkcja uruchamia backend pod `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
 
 ---
 
