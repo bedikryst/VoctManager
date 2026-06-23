@@ -90,6 +90,48 @@ def _http_error_code(status_code: int) -> str:
     return _HTTP_CODE_MAP.get(status_code, f"http_{status_code}")
 
 
+_ERROR_TITLES = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    409: "Conflict",
+    422: "Validation Error",
+    429: "Too Many Requests",
+}
+
+
+def make_error_response(
+    request,
+    *,
+    status_code: int,
+    error_code: str,
+    detail: str,
+    validation_errors=None,
+) -> Response:
+    """Build the canonical error envelope for hand-written view responses, so an
+    endpoint that catches its own exception speaks the exact same shape as
+    `enterprise_exception_handler`. Centralizing it here is what lets the auth
+    views stop hand-rolling ad-hoc `{error_code, message}` payloads.
+
+    `message` is kept as a transitional alias of `detail` so older clients that
+    still read `message` keep working across the deploy; remove once every
+    consumer reads `detail`.
+    """
+    payload = {
+        "type": f"/errors/{error_code.replace('_', '-')}",
+        "title": _ERROR_TITLES.get(status_code, "API Error"),
+        "status": status_code,
+        "error_code": error_code,
+        "detail": detail,
+        "message": detail,
+        "instance": getattr(request, "path", ""),
+    }
+    if validation_errors is not None:
+        payload["validation_errors"] = validation_errors
+    return Response(payload, status=status_code)
+
+
 def format_pydantic_validation_errors(exc: ValidationError) -> list[dict[str, str]]:
     """Returns client-safe Pydantic errors without echoing submitted values."""
     errors: list[dict[str, str]] = []

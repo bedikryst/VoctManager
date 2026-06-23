@@ -37,6 +37,19 @@ const KNOWN_CODES: Record<string, { title: string; detail: string }> = {
     title: "errors.codes.email_taken.title",
     detail: "errors.codes.email_taken.detail",
   },
+  // The email-change flow raises this per-raise code; same meaning as email_taken.
+  email_in_use: {
+    title: "errors.codes.email_taken.title",
+    detail: "errors.codes.email_taken.detail",
+  },
+  invalid_current_password: {
+    title: "errors.codes.invalid_current_password.title",
+    detail: "errors.codes.invalid_current_password.detail",
+  },
+  expired_activation_link: {
+    title: "errors.codes.expired_activation_link.title",
+    detail: "errors.codes.expired_activation_link.detail",
+  },
   expired_reset_link: {
     title: "errors.codes.expired_reset_link.title",
     detail: "errors.codes.expired_reset_link.detail",

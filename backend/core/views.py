@@ -33,6 +33,7 @@ from .exceptions import (
     InvalidCredentialsException,
     InvalidImageException,
     format_pydantic_validation_errors,
+    make_error_response,
 )
 from .ical_service import ICalGeneratorService
 from .models import UserProfile
@@ -69,11 +70,20 @@ class ActivateAccountView(views.APIView):
             dto = UserAccountActivationDTO(**request.data)
             validate_password(dto.new_password)
         except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
         except DjangoValidationError as e:
-            return Response(
-                {"validation_errors": {"new_password": list(e.messages)}},
-                status=status.HTTP_400_BAD_REQUEST,
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="password_invalid",
+                detail="The password does not meet the security requirements.",
+                validation_errors={"new_password": list(e.messages)},
             )
 
         try:
@@ -90,9 +100,11 @@ class ActivateAccountView(views.APIView):
                 status=status.HTTP_200_OK,
             )
         except InvalidCredentialsException as e:
-            return Response(
-                {"error_code": str(e), "message": "Activation link is invalid or expired."},
-                status=status.HTTP_403_FORBIDDEN,
+            return make_error_response(
+                request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code=str(e) or e.code,
+                detail="Activation link is invalid or expired.",
             )
 
 
@@ -112,18 +124,22 @@ class ActivationPreviewView(views.APIView):
         uidb64 = request.query_params.get("uid") or request.query_params.get("uidb64") or ""
         token = request.query_params.get("token") or ""
         if not uidb64 or not token:
-            return Response(
-                {"error_code": "invalid_activation_link", "message": "Missing activation parameters."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="invalid_activation_link",
+                detail="Missing activation parameters.",
             )
 
         try:
             data = UserIdentityService.get_activation_invitee(uidb64=uidb64, token=token)
             return Response(data, status=status.HTTP_200_OK)
         except InvalidCredentialsException as e:
-            return Response(
-                {"error_code": str(e), "message": "Activation link is invalid or expired."},
-                status=status.HTTP_403_FORBIDDEN,
+            return make_error_response(
+                request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code=str(e) or e.code,
+                detail="Activation link is invalid or expired.",
             )
 
 
@@ -144,7 +160,13 @@ class PasswordResetRequestView(views.APIView):
         try:
             dto = UserPasswordResetRequestDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
 
         UserIdentityService.request_password_reset(dto.email)
 
@@ -169,11 +191,20 @@ class PasswordResetConfirmView(views.APIView):
             dto = UserPasswordResetConfirmDTO(**request.data)
             validate_password(dto.new_password)
         except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
         except DjangoValidationError as e:
-            return Response(
-                {"validation_errors": {"new_password": list(e.messages)}},
-                status=status.HTTP_400_BAD_REQUEST,
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="password_invalid",
+                detail="The password does not meet the security requirements.",
+                validation_errors={"new_password": list(e.messages)},
             )
 
         try:
@@ -187,9 +218,11 @@ class PasswordResetConfirmView(views.APIView):
                 status=status.HTTP_200_OK,
             )
         except InvalidCredentialsException as e:
-            return Response(
-                {"error_code": str(e), "message": "Reset link is invalid or expired."},
-                status=status.HTTP_403_FORBIDDEN,
+            return make_error_response(
+                request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code=str(e) or e.code,
+                detail="Reset link is invalid or expired.",
             )
 
 
@@ -218,9 +251,12 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
             profile = getattr(request.user, 'profile', None)
             profile_data = request.data.get('profile') or {}
             if not isinstance(profile_data, dict):
-                return Response(
-                    {"validation_errors": {"profile": ["Expected an object."]}},
-                    status=status.HTTP_400_BAD_REQUEST,
+                return make_error_response(
+                    request,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error_code="validation_error",
+                    detail="The submitted data is invalid.",
+                    validation_errors={"profile": ["Expected an object."]},
                 )
             payload = {
                 "first_name": request.data.get('first_name', request.user.first_name),
@@ -239,7 +275,13 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
             # The DTO will automatically fail-fast if data is malformed
             dto = UserPreferencesUpdateDTO(**payload)
         except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
 
         # Delegate persistence to the Service Layer
         UserPreferencesService.update_user_preferences(request.user, dto)
@@ -260,7 +302,13 @@ class ChangePasswordView(views.APIView):
         try:
             dto = UserPasswordChangeDTO(**request.data)
         except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
 
         try:
             UserIdentityService.change_user_password(request.user, dto)
@@ -268,9 +316,11 @@ class ChangePasswordView(views.APIView):
             update_session_auth_hash(request, request.user) 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except InvalidCredentialsException as e:
-            return Response(
-                {"error_code": str(e), "message": "Invalid current password."}, 
-                status=status.HTTP_403_FORBIDDEN
+            return make_error_response(
+                request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code=str(e) or e.code,
+                detail="Invalid current password.",
             )
 
 
@@ -290,20 +340,30 @@ class ChangeEmailRequestView(views.APIView):
             }
             dto = UserEmailChangeDTO(**payload)
         except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
 
         try:
             updated_user = UserIdentityService.process_email_change(request.user, dto)
             return Response(UserMeSerializer(updated_user).data, status=status.HTTP_200_OK)
         except InvalidCredentialsException as e:
-            return Response(
-                {"error_code": str(e), "message": "Authentication failed."}, 
-                status=status.HTTP_403_FORBIDDEN
+            return make_error_response(
+                request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code=str(e) or e.code,
+                detail="Authentication failed.",
             )
         except EmailAlreadyInUseException as e:
-            return Response(
-                {"error_code": str(e), "message": "This email is already in use."}, 
-                status=status.HTTP_409_CONFLICT
+            return make_error_response(
+                request,
+                status_code=status.HTTP_409_CONFLICT,
+                error_code=str(e) or e.code,
+                detail="This email is already in use.",
             )
 
 
@@ -342,16 +402,24 @@ class RequestAccountDeletionView(views.APIView):
         try:
             dto = UserAccountDeletionDTO(current_password=request.data.get('password'))
         except ValidationError as e:
-            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
 
         try:
             UserIdentityService.process_account_soft_deletion(request.user, dto)
             logout(request)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except InvalidCredentialsException as e:
-            return Response(
-                {"error_code": str(e), "message": "Authentication failed."}, 
-                status=status.HTTP_403_FORBIDDEN
+            return make_error_response(
+                request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code=str(e) or e.code,
+                detail="Authentication failed.",
             )
 
 
@@ -414,18 +482,22 @@ class AvatarView(views.APIView):
     def post(self, request, *args, **kwargs):
         upload = request.FILES.get("avatar")
         if upload is None:
-            return Response(
-                {"error_code": "avatar_missing", "message": "No image file provided."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="avatar_missing",
+                detail="No image file provided.",
             )
 
         profile = get_object_or_404(UserProfile, user=request.user)
         try:
             profile = AvatarService.set_avatar(profile, upload)
         except InvalidImageException as exc:
-            return Response(
-                {"error_code": str(exc), "message": "The uploaded file is not a valid image."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code=str(exc) or exc.code,
+                detail="The uploaded file is not a valid image.",
             )
         return self._profile_response(profile, request)
 

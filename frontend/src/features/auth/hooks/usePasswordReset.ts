@@ -10,30 +10,20 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
+import { parseApiError } from "@/shared/api/errors";
 import { authService } from "../api/auth.service";
 
+// Returns either an i18n key (translated by the page) or, for a server-provided
+// password rule, the message verbatim. Reads the canonical error envelope via
+// `parseApiError`, so it survives the `message` → `detail` field transition.
 const getResetErrorMessage = (error: unknown): string => {
-  if (isAxiosError(error) && error.response?.data) {
-    const { error_code, validation_errors, message } = error.response.data;
-    const passwordErrors = validation_errors?.new_password;
+  const { code, fieldErrors, serverMessage } = parseApiError(error);
 
-    if (Array.isArray(passwordErrors) && passwordErrors.length > 0) {
-      return passwordErrors[0];
-    }
+  if (fieldErrors.new_password) return fieldErrors.new_password;
+  if (code === "expired_reset_link") return "auth.reset.errors.expired_link";
+  if (code === "invalid_reset_link") return "auth.reset.errors.invalid_link";
 
-    if (error_code === "expired_reset_link") {
-      return "auth.reset.errors.expired_link";
-    }
-
-    if (error_code === "invalid_reset_link") {
-      return "auth.reset.errors.invalid_link";
-    }
-
-    return message || "auth.reset.errors.reset_failed";
-  }
-
-  return "auth.reset.errors.reset_failed";
+  return serverMessage ?? "auth.reset.errors.reset_failed";
 };
 
 export const usePasswordReset = () => {

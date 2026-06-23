@@ -152,11 +152,27 @@ Intentionally **left bespoke** (not API errors, or special):
 - **Tests**: `EnterpriseExceptionHandlerTests` covers every envelope branch
   (verified in isolation here; runs in CI with the project's Python/DB).
 
-Deferred (needs coordinated FE + staging verification):
-- Retiring the hand-rolled auth payloads in `core/views.py` so the login /
-  activation / reset endpoints emit the same envelope + stable codes. The
-  client tolerates the current auth shapes today (`parseApiError` +
-  `usePasswordReset`), so this is a cleanup, not a blocker.
+**Auth views unified.** ✅ The hand-rolled `{error_code, message}` payloads in
+`core/views.py` (activate, activation preview, password reset request/confirm,
+profile update, change password, change email, delete account, avatar) now go
+through one `make_error_response(...)` helper that emits the same envelope as
+the global handler — `{type, title, status, error_code, detail, instance,
+validation_errors?}`. Key decisions:
+- The **per-raise code is preserved** (`InvalidCredentialsException(
+  "expired_reset_link")` → `error_code: "expired_reset_link"`), because that is
+  exactly what the client branches on; the class-level `code` is only a
+  fallback for a message-less raise.
+- `message` is kept as a **transitional alias** of `detail` so the swap is
+  safe in either deploy order; remove once nothing reads `message`.
+- Frontend `usePasswordReset` / `useAccountActivation` now read the envelope
+  via `parseApiError` (code + `fieldErrors.new_password` + `serverMessage`),
+  surviving the `message` → `detail` move. New `error_code`s
+  (`email_in_use`, `invalid_current_password`, `expired_activation_link`) have
+  curated copy in `errors.codes.*` (pl/en/fr).
+- Covered by `MakeErrorResponseEnvelopeTests`; verified in isolation here.
+
+Remaining cleanup (non-blocking): once a release has shipped, drop the
+`message` alias from `make_error_response`.
 
 ---
 

@@ -1851,6 +1851,14 @@
       "invalid_image": {
         "title": "Nieprawidłowy obraz",
         "detail": "Przesłany plik nie jest prawidłowym obrazem."
+      },
+      "invalid_current_password": {
+        "title": "Nieprawidłowe hasło",
+        "detail": "Podane obecne hasło jest nieprawidłowe."
+      },
+      "expired_activation_link": {
+        "title": "Link wygasł",
+        "detail": "Ten link aktywacyjny stracił ważność. Poproś o nowy."
       }
     },
     "form": {

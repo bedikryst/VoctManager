@@ -1851,6 +1851,14 @@
       "invalid_image": {
         "title": "Invalid image",
         "detail": "The uploaded file is not a valid image."
+      },
+      "invalid_current_password": {
+        "title": "Wrong password",
+        "detail": "The current password you entered is incorrect."
+      },
+      "expired_activation_link": {
+        "title": "Link expired",
+        "detail": "This activation link is no longer valid. Request a new one."
       }
     },
     "form": {

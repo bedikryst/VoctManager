@@ -704,3 +704,54 @@ class EnterpriseExceptionHandlerTests(SimpleTestCase):
         # A non-API exception yields None so Django renders its own 500 — the
         # handler must never mask a real server fault as a tidy 400.
         self.assertIsNone(self.handle(Exception("boom"), self.context))
+
+
+class MakeErrorResponseEnvelopeTests(SimpleTestCase):
+    """Hand-written view error responses (auth flows) must speak the same
+    envelope as the global handler, and preserve the per-raise stable code the
+    client branches on (e.g. `expired_reset_link`)."""
+
+    def setUp(self):
+        from .exceptions import make_error_response
+
+        self.make = make_error_response
+        self.request = RequestFactory().post("/api/users/password-reset/confirm/")
+
+    def test_envelope_shape_and_message_alias(self):
+        from .exceptions import InvalidCredentialsException
+
+        exc = InvalidCredentialsException("expired_reset_link")
+        response = self.make(
+            self.request,
+            status_code=403,
+            error_code=str(exc) or exc.code,
+            detail="Reset link is invalid or expired.",
+        )
+        self.assertEqual(response.status_code, 403)
+        data = response.data
+        self.assertEqual(data["error_code"], "expired_reset_link")
+        self.assertEqual(data["detail"], "Reset link is invalid or expired.")
+        self.assertEqual(data["message"], data["detail"])  # transitional alias
+        self.assertEqual(data["status"], 403)
+        self.assertEqual(data["title"], "Forbidden")
+        self.assertEqual(data["instance"], "/api/users/password-reset/confirm/")
+        self.assertEqual(data["type"], "/errors/expired-reset-link")
+
+    def test_class_code_fallback_when_raised_without_message(self):
+        from .exceptions import InvalidCredentialsException
+
+        exc = InvalidCredentialsException()
+        self.assertEqual(str(exc) or exc.code, "invalid_credentials")
+
+    def test_validation_errors_passthrough(self):
+        response = self.make(
+            self.request,
+            status_code=400,
+            error_code="password_invalid",
+            detail="The password does not meet the security requirements.",
+            validation_errors={"new_password": ["Too short."]},
+        )
+        self.assertEqual(response.data["error_code"], "password_invalid")
+        self.assertEqual(
+            response.data["validation_errors"]["new_password"], ["Too short."]
+        )

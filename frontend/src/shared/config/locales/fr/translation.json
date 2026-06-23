@@ -1851,6 +1851,14 @@
       "invalid_image": {
         "title": "Image invalide",
         "detail": "Le fichier téléversé n’est pas une image valide."
+      },
+      "invalid_current_password": {
+        "title": "Mot de passe incorrect",
+        "detail": "Le mot de passe actuel saisi est incorrect."
+      },
+      "expired_activation_link": {
+        "title": "Lien expiré",
+        "detail": "Ce lien d’activation n’est plus valide. Demandez-en un nouveau."
       }
     },
     "form": {

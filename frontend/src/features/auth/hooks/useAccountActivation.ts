@@ -8,34 +8,24 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { isAxiosError } from "axios";
+import { parseApiError } from "@/shared/api/errors";
 import { authService } from "../api/auth.service";
 import { changeAppLanguage } from "@/shared/config/i18n";
 
 /** Mirrors i18n `supportedLngs` — guards what we'll adopt from an untrusted link. */
 const SUPPORTED_LANGS = new Set(["pl", "en", "fr"]);
 
+// Returns either an i18n key (translated by the page) or, for a server-provided
+// password rule, the message verbatim. Reads the canonical error envelope via
+// `parseApiError`, so it survives the `message` → `detail` field transition.
 const getActivationErrorMessage = (error: unknown): string => {
-  if (isAxiosError(error) && error.response?.data) {
-    const { error_code, validation_errors, message } = error.response.data;
-    const passwordErrors = validation_errors?.new_password;
+  const { code, fieldErrors, serverMessage } = parseApiError(error);
 
-    if (Array.isArray(passwordErrors) && passwordErrors.length > 0) {
-      return passwordErrors[0];
-    }
+  if (fieldErrors.new_password) return fieldErrors.new_password;
+  if (code === "expired_activation_link") return "auth.activate.errors.expired_link";
+  if (code === "invalid_activation_link") return "auth.activate.errors.invalid_link";
 
-    if (error_code === "expired_activation_link") {
-      return "auth.activate.errors.expired_link";
-    }
-
-    if (error_code === "invalid_activation_link") {
-      return "auth.activate.errors.invalid_link";
-    }
-
-    return message || "auth.activate.errors.activation_failed";
-  }
-
-  return "auth.activate.errors.activation_failed";
+  return serverMessage ?? "auth.activate.errors.activation_failed";
 };
 
 export const useAccountActivation = () => {
