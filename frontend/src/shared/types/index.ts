@@ -368,13 +368,13 @@ export type IngestionStatusCode =
  */
 export type IngestionProgressCode =
   | ""
-  | "extracting"
-  | "identifying"
+  | "preparing"
+  | "analyzing"
   | "resolving"
-  | "movements"
-  | "lyrics"
+  | "persisting"
   | "program_note"
-  | "recordings";
+  | "recordings"
+  | "waiting_overload";
 
 /**
  * Status codes as named constants. Always prefer these over string literals —
@@ -419,6 +419,7 @@ export interface ScoreEditionSummary extends BaseModel {
   ingestion_status_display?: string;
   ingestion_progress?: IngestionProgressCode;
   ingestion_cost_cents?: number;
+  ingestion_cost_cents_lifetime?: number;
   ingestion_error?: string;
 }
 

@@ -29,6 +29,7 @@ Standards: SaaS 2026, Anthropic SDK best practices, provenance-aware.
 """
 from __future__ import annotations
 
+import base64
 import logging
 import time
 from dataclasses import dataclass
@@ -128,6 +129,11 @@ MAX_TOKEN_ESCALATIONS: Final[int] = 2
 # ~10 minutes (relevant once we escalate the lyrics budget toward 64K).
 DEFAULT_REQUEST_TIMEOUT_SECONDS: Final[float] = 600.0
 
+# SDK-level retry budget for transient errors (429/5xx/overloaded/connection).
+# The SDK backs off exponentially and honours `retry-after`. This is the first
+# tier; archive.tasks adds a much more patient Celery-level tier on exhaustion.
+DEFAULT_MAX_RETRIES: Final[int] = 4
+
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -187,6 +193,20 @@ class AIClientTruncatedError(AIClientError):
     burns the same money for the same failure. The guard bills the accumulated
     cost of every attempt and marks the entity FAILED with a clear reason.
     `cost` carries the *sum* across all escalation attempts.
+    """
+
+
+class AIClientOverloadedError(AIClientError):
+    """
+    Transient capacity failure: Anthropic returned 529 `overloaded_error`, a
+    5xx, a rate limit (429), or the connection timed out — *after* the SDK
+    exhausted its own internal retries. These are NOT billed (the request never
+    produced output), so `cost` is always None.
+
+    Unlike every other `AIClientError`, this one is **retryable** — the caller
+    should wait patiently (tens of seconds to minutes) and try again rather than
+    failing the edition. The pipeline surfaces a "service overloaded, retrying"
+    state to the conductor while it waits.
     """
 
 
@@ -255,14 +275,15 @@ class AIClient:
     """
     Opinionated Claude wrapper for the Score Package Compiler.
 
-    Caller pattern:
+    Caller pattern (native-PDF vision):
         client = AIClient()
         result, cost = client.parse(
             model=AIModel.SONNET,
-            prompt=EXTRACT_WORK_IDENTITY,
-            user_content="...first 2 pages of the PDF as text...",
-            output_schema=ExtractedWorkIdentity,
-            max_tokens=2048,
+            prompt=ANALYZE_SCORE,
+            user_content="Translate the sung text into: en, pl.",
+            output_schema=ScoreAnalysisResult,
+            max_tokens=32768,
+            pdf_bytes=raw_pdf_bytes,   # Claude reads the whole document by vision
         )
     """
 
@@ -280,7 +301,14 @@ class AIClient:
             settings, 'ANTHROPIC_REQUEST_TIMEOUT_SECONDS',
             DEFAULT_REQUEST_TIMEOUT_SECONDS,
         )
-        self._client = anthropic.Anthropic(api_key=key, timeout=timeout)
+        # The SDK does the *first* line of overload/5xx/429 defence itself, with
+        # exponential backoff that honours `retry-after`. We give it a healthy
+        # budget; the Celery layer adds a second, far more patient tier on top
+        # (minutes) for sustained outages — see archive.tasks `_guarded`.
+        max_retries = getattr(settings, 'ANTHROPIC_MAX_RETRIES', DEFAULT_MAX_RETRIES)
+        self._client = anthropic.Anthropic(
+            api_key=key, timeout=timeout, max_retries=max_retries,
+        )
 
     # -- public --------------------------------------------------------------
 
@@ -313,6 +341,7 @@ class AIClient:
         max_tokens: int = DEFAULT_MAX_TOKENS,
         effort: str = DEFAULT_EFFORT,
         enable_thinking: bool = True,
+        pdf_bytes: bytes | None = None,
     ) -> tuple[T, CallCost]:
         """
         Run one structured-output call. Returns the parsed Pydantic instance
@@ -323,8 +352,32 @@ class AIClient:
           - `output_config.effort` controls overall reasoning depth
           - System prompt is cached for the run
 
-        Raises `AIClientError` on any unrecoverable SDK error.
+        When `pdf_bytes` is given, the raw PDF is sent as a native `document`
+        block (Claude reads every page visually — text layer AND scanned
+        images), cached so escalation retries read it back cheaply. This is how
+        the v2 pipeline analyses a score: the real document, not pypdf text.
+
+        Raises `AIClientError` on any unrecoverable SDK error, or
+        `AIClientOverloadedError` (retryable) on a transient capacity failure.
         """
+        if pdf_bytes is not None:
+            content_blocks: list[dict] = [{
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "media_type": "application/pdf",
+                    "data": base64.standard_b64encode(pdf_bytes).decode("ascii"),
+                },
+                "cache_control": {"type": "ephemeral"},
+            }]
+            if isinstance(user_content, str):
+                content_blocks.append({"type": "text", "text": user_content})
+            else:
+                content_blocks.extend(user_content)
+            message_content: str | list[dict] = content_blocks
+        else:
+            message_content = user_content
+
         base_params: dict = {
             "model": model,
             "system": [
@@ -335,7 +388,7 @@ class AIClient:
                 }
             ],
             "messages": [
-                {"role": "user", "content": user_content},
+                {"role": "user", "content": message_content},
             ],
             "output_format": output_schema,
         }
@@ -377,10 +430,30 @@ class AIClient:
                 raise AIClientPermanentError(
                     f"Claude denied access: {exc.message}"
                 ) from exc
-            except anthropic.APIStatusError:
-                # Rate limit / overloaded / 5xx — transient, Celery autoretry
-                # is correct here.
-                raise
+            except (
+                anthropic.RateLimitError,
+                anthropic.InternalServerError,
+                anthropic.APITimeoutError,
+                anthropic.APIConnectionError,
+            ) as exc:
+                # 429 / 5xx / 529 overloaded / connection-timeout, AFTER the SDK
+                # exhausted its own retries. Not billed. Surface as overloaded so
+                # the task waits patiently (minutes) instead of failing the
+                # edition — the cause of the 529 retry-storm in production.
+                raise AIClientOverloadedError(
+                    f"Claude temporarily unavailable: {exc.__class__.__name__}"
+                ) from exc
+            except anthropic.APIStatusError as exc:
+                # Any other non-2xx: >=500 is transient overload, <500 is a
+                # permanent client error.
+                if exc.status_code >= 500:
+                    raise AIClientOverloadedError(
+                        f"Claude server error {exc.status_code}."
+                    ) from exc
+                raise AIClientPermanentError(
+                    f"Claude rejected request ({exc.status_code}): "
+                    f"{getattr(exc, 'message', exc)}"
+                ) from exc
 
             elapsed = time.monotonic() - t0
 

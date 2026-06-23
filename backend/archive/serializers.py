@@ -261,7 +261,7 @@ class ScoreEditionListSerializer(serializers.ModelSerializer):
             'page_count', 'is_default',
             'piece', 'piece_title', 'composer_name',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
-            'ingestion_cost_cents', 'ingestion_error',
+            'ingestion_cost_cents', 'ingestion_cost_cents_lifetime', 'ingestion_error',
             'created_at', 'updated_at',
         ]
         read_only_fields = fields
@@ -289,7 +289,7 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
             'sha256', 'uploaded_by',
             'piece', 'annotations',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
-            'ingestion_cost_cents', 'ingestion_error',
+            'ingestion_cost_cents', 'ingestion_cost_cents_lifetime', 'ingestion_error',
             'created_at', 'updated_at',
         ]
         # `pdf_file` (declared method field) is read-only by nature; never list it
@@ -298,7 +298,7 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
             'id', 'page_count', 'sha256', 'uploaded_by',
             'piece', 'annotations',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
-            'ingestion_cost_cents', 'ingestion_error',
+            'ingestion_cost_cents', 'ingestion_cost_cents_lifetime', 'ingestion_error',
             'created_at', 'updated_at',
         ]
 

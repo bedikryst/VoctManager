@@ -58,7 +58,7 @@ graph TD
     end
 
     subgraph AIScoreCompiler[AI Score Package Compiler]
-        Celery -->|PDF ingestion| Claude["Tiered Claude Pipeline<br/>Haiku 4.5 · Sonnet 4.6 · Opus 4.7"]
+        Celery -->|Native-PDF vision| Claude["Sonnet 4.6 — single consolidated call<br/>identity · movements · text · IPA · translations"]
         Claude -->|Tool-orchestrated lookups| ExtMeta["MusicBrainz · Wikidata<br/>Spotify · YouTube"]
         ExtMeta -.->|cached responses| Redis
         Claude -->|Provenance-stamped fields| DB
@@ -94,11 +94,13 @@ Frontend engineering pillars:
 - **EAA Accessibility:** Radix UI Primitives + semantic HTML to meet the European Accessibility Act baseline; the public site adds `prefers-reduced-motion` opt-outs on every animated surface.
 
 ### 2. AI-Powered Score Package Compiler
-- **Tiered Claude Pipeline:** Multi-stage ingestion that scales the model to the task — Haiku 4.5 for fast classification, Sonnet 4.6 for enrichment, Opus 4.7 for the hardest reasoning. Adaptive thinking + `effort` parameter let Claude allocate compute dynamically.
+- **Native-PDF Vision Analysis:** One consolidated Sonnet 4.6 call reads the **whole** uploaded PDF visually (text layer *and* scanned pages) and returns work identity, movements, sung text, line-aligned IPA, and prose translations together — handling scans and real page layout instead of brittle text scraping. The PDF is cached (`cache_control: ephemeral`) so escalation retries read it back cheaply.
+- **Overload-Resilient:** Anthropic capacity blips (HTTP 529 / 5xx / 429 / timeout) are classified as transient and retried **patiently** (tens of seconds → minutes), with a live "service busy, retrying" state — never a hammer-then-fail retry storm. Truncations and 4xx stay terminal and never burn budget on a doomed retry.
 - **Canonical Identity Resolution:** Composer and work deduplication via **MusicBrainz MBID** and **Wikidata QID** cross-referencing — the AI extracts, but never hallucinates, biographical facts or canonical IDs.
 - **External Metadata Enrichment:** Tool-orchestrated lookups across MusicBrainz, Wikidata, Spotify Web API, and YouTube Data API v3, with Redis-cached responses, exponential-backoff retries, and graceful degradation when any source is unavailable.
 - **Audit-Grade Provenance:** Every AI- or API-sourced field is stamped with `(model, prompt_version, source_reference, confidence, retrieved_at)` in a generic-FK `ProvenanceRecord` table — enabling one-click regeneration and forensic compliance review.
-- **Cost-Aware by Construction:** End-to-end ingestion of a single PDF score averages **~$0.20** (composer + work + program note + IPA + singing translation). Per-entity hard ceilings enforced at the Celery task boundary prevent runaway spend; Anthropic prompt caching (`cache_control: ephemeral`) drives cache-read tokens to dominate on repeat runs, slashing cost ≥80%.
+- **Cost-Governed by Construction:** A native-PDF run averages **~$0.10–0.30**. Three independent ceilings are enforced at the Celery task boundary: a **per-run** cap, a **never-reset lifetime** cap per edition (so a re-processed PDF can't silently drain the account), and an **org-wide daily budget** circuit breaker — every Claude charge bills both the run and lifetime counters.
+- **Real-Time Progress (SSE):** An async (ASGI) Server-Sent-Events endpoint streams the live step, cost, and status of each ingestion the instant the worker writes it; the browser subscribes via `EventSource` (cookie JWT) with a polling fallback. The conductor sees the AI working step-by-step from the moment of upload, on desktop and mobile.
 - **Conductor-in-the-Loop:** AI suggests, conductor decides. Every extraction surfaces a confidence score and a review screen — the platform never silently mutates canonical repertoire.
 
 ### 3. Enterprise OS & Logistics (Backend)
@@ -177,7 +179,7 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [x] **Error Tracking:** Sentry SDK wired into Django for production error capture and release-health monitoring.
 - [x] **Automated Testing:** Django/PyTest suite (~160 tests) across the critical paths — roster, payments, messaging, notifications, documents, archive, logistics, core — including contract generation and the AI provenance pipeline.
 - [x] **CI (Backend):** GitHub Actions runs Ruff, mypy (strict), and the full test suite on PostgreSQL for every push and PR.
-- [x] **AI Score Compiler — Schema & Ingestion Pipeline:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus the live Celery ingestion chain — a tiered Claude wrapper (adaptive thinking, cost tracking, prompt caching) that extracts PDF metadata, resolves composers/works against MusicBrainz & Wikidata, generates program notes + IPA + singing translations, and surfaces a conductor review screen. External clients (MusicBrainz, Wikidata, Spotify, YouTube) are Redis-cached.
+- [x] **AI Score Compiler — Schema & Ingestion Pipeline:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus the live Celery ingestion chain — a native-PDF Claude wrapper (vision, adaptive thinking, dual per-run/lifetime cost tracking, prompt caching, patient 529-overload retries) that reads the whole score in one consolidated call, resolves composers/works against MusicBrainz & Wikidata, generates program notes + IPA + singing translations, streams live progress over SSE, and surfaces a conductor review screen. External clients (MusicBrainz, Wikidata, Spotify, YouTube) are Redis-cached.
 - [ ] **AI Score Compiler — Concert Assembly & Annotation:** WeasyPrint + pypdf concert-binder generation (cover, TOC, per-piece front matter, original scores) plus a PDF.js + Konva in-browser annotation overlay (highlight, comment, freehand, page reorder) with versioned, layer-aware persistence and export-time flattening.
 - [ ] **Field-Level Encryption & Audit Trail:** Fernet at-rest encryption for contract/financial fields and an immutable mutation log over HR/financial records for forensic review.
 - [ ] **Frontend CI & End-to-End Tests:** Lint / typecheck / build pipelines for both frontends, plus Playwright E2E coverage building on the existing screenshot harness.
@@ -265,15 +267,19 @@ The cinematic entry gate is bypassed with `?nogate` so the auditor measures the 
 
 ### AI Score Compiler (Per-Piece Ingestion)
 
+Celery chain (v2, native-PDF): `prepare_document → analyze_score → resolve_composer_and_piece → persist_analysis → generate_program_note → lookup_spotify → lookup_youtube → finalize_edition`.
+
 | Stage | Model | Avg. cost |
 |---|---|---|
-| PDF metadata classification | Haiku 4.5 | ~$0.01 |
-| Composer + work resolution (MusicBrainz / Wikidata) | Sonnet 4.6 | ~$0.04 |
-| Program note + IPA + singing translation | Opus 4.7 | ~$0.13 |
-| Provenance stamping + persistence | — (no LLM) | ~$0.02 (DB/API) |
-| **End-to-end average per PDF** | mixed | **~$0.20** |
+| Score analysis — whole PDF by vision (identity + movements + text + IPA + translations) | Sonnet 4.6 | ~$0.10–0.20 |
+| Composer + work resolution (MusicBrainz / Wikidata) | — (no LLM) | ~$0.00 |
+| Program note | Sonnet 4.6 | ~$0.03 |
+| Provenance stamping + persistence + recordings | — (no LLM) | ~$0.02 (DB/API) |
+| **End-to-end average per PDF** | mixed | **~$0.15–0.30** |
 
-> Anthropic prompt caching (`cache_control: ephemeral`) is enabled on every tiered call, so cache-read tokens dominate (≥80% on repeat runs) after the first ingestion of a given piece — slashing marginal cost on re-runs and review iterations.
+> The PDF is sent as a native `document` block with `cache_control: ephemeral`, so a `max_tokens` escalation or a quick re-ingest reads it back at cache-read rates. Spend is bounded by three ceilings — per-run, never-reset lifetime per edition, and an org-wide daily budget (`INGESTION_COST_CEILING_CENTS`, `INGESTION_LIFETIME_CEILING_CENTS`, `INGESTION_DAILY_BUDGET_CENTS`).
+
+> **Real-time progress** streams over Server-Sent Events from an async (ASGI) endpoint — `GET /api/archive/editions/<id>/events/` — so production runs the backend under `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
 
 ---
 

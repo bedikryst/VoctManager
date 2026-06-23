@@ -9,6 +9,7 @@
  * shows AI extraction phases ticking through (EXTR → ENRI → GENR → AWAI).
  */
 
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -378,6 +379,100 @@ export const useEditionIngestion = (id: string | null) =>
         : false;
     },
   });
+
+/** Unified live ingestion snapshot, sourced from SSE (or the poll fallback). */
+export interface LiveIngestion {
+  ingestion_status: import("@/shared/types").IngestionStatusCode;
+  ingestion_progress: import("@/shared/types").IngestionProgressCode;
+  ingestion_error: string;
+  ingestion_cost_cents: number;
+  ingestion_cost_cents_lifetime: number;
+  page_count: number | null;
+  piece_id: string | null;
+}
+
+const SSE_BASE = import.meta.env.VITE_API_URL || "";
+
+/**
+ * Real-time ingestion progress for one edition, over Server-Sent Events.
+ *
+ * The browser holds a single open connection to the async Django endpoint and
+ * receives a push the instant the worker writes a new step / cost / status —
+ * including the "AI service busy, retrying" state during a 529 overload, so a
+ * long-but-legitimate pause never looks like a freeze. The cookie JWT rides
+ * along automatically (`withCredentials`). If SSE is unavailable (old browser,
+ * proxy strips it), it transparently falls back to the 3s poll.
+ *
+ * Returns the latest snapshot, or null until the first event arrives.
+ */
+export const useLiveIngestion = (id: string | null): LiveIngestion | null => {
+  const qc = useQueryClient();
+  const [snapshot, setSnapshot] = useState<LiveIngestion | null>(null);
+  const [streamFailed, setStreamFailed] = useState(false);
+
+  useEffect(() => {
+    setSnapshot(null);
+    setStreamFailed(false);
+    if (!id || typeof EventSource === "undefined") {
+      if (id) setStreamFailed(true);
+      return;
+    }
+
+    const es = new EventSource(
+      `${SSE_BASE}/api/archive/editions/${id}/events/`,
+      { withCredentials: true },
+    );
+    let gotData = false;
+
+    const apply = (event: MessageEvent): void => {
+      try {
+        setSnapshot(JSON.parse(event.data) as LiveIngestion);
+        gotData = true;
+      } catch {
+        /* ignore malformed frame */
+      }
+    };
+    const finish = (): void => {
+      es.close();
+      // The resolved piece (and its new edition) now appears in the list.
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    };
+
+    es.addEventListener("progress", apply as EventListener);
+    es.addEventListener("done", ((e: MessageEvent) => {
+      apply(e);
+      finish();
+    }) as EventListener);
+    es.addEventListener("gone", finish);
+    es.addEventListener("timeout", finish);
+    es.onerror = (): void => {
+      // Native EventSource auto-reconnects (the server re-primes current state
+      // on reconnect). Only fall back to polling if we never received anything
+      // — i.e. the endpoint is unreachable or auth was rejected.
+      if (!gotData) setStreamFailed(true);
+    };
+
+    return () => es.close();
+  }, [id, qc]);
+
+  // Poll fallback — enabled only when SSE could not deliver.
+  const poll = useEditionIngestion(streamFailed && id ? id : null);
+
+  if (snapshot) return snapshot;
+  if (streamFailed && poll.data) {
+    const d = poll.data;
+    return {
+      ingestion_status: d.ingestion_status,
+      ingestion_progress: d.ingestion_progress ?? "",
+      ingestion_error: d.ingestion_error ?? "",
+      ingestion_cost_cents: d.ingestion_cost_cents ?? 0,
+      ingestion_cost_cents_lifetime: d.ingestion_cost_cents_lifetime ?? 0,
+      page_count: d.page_count ?? null,
+      piece_id: null,
+    };
+  }
+  return null;
+};
 
 export const useReingestEdition = () => {
   const qc = useQueryClient();

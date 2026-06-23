@@ -65,20 +65,19 @@ class IngestionStatus(models.TextChoices):
 
 class IngestionProgress(models.TextChoices):
     """Fine-grained, human-facing label for the step the pipeline is on *right
-    now* — the live "what is the AI doing?" signal.
+    now* — the live "what is the AI doing?" signal, streamed to the UI over SSE.
 
-    Distinct from `IngestionStatus` (the coarse, persisted phase): a single
-    status like GENERATING spans lyric extraction *and* the programme note, and
-    a single ENRICHING spans several seconds of sequential MusicBrainz/Wikidata
-    lookups. The conductor wants to see which sub-step is running rather than a
-    static "in progress". Empty string = no step active (queued, or terminal)."""
-    EXTRACTING   = 'extracting',   _('Reading the PDF')
-    IDENTIFYING  = 'identifying',  _('Identifying title & composer')
-    RESOLVING    = 'resolving',    _('Matching against MusicBrainz & Wikidata')
-    MOVEMENTS    = 'movements',    _('Detecting movements')
-    LYRICS       = 'lyrics',       _('Extracting lyrics, IPA & translations')
-    PROGRAM_NOTE = 'program_note', _('Writing the programme note')
-    RECORDINGS   = 'recordings',   _('Finding reference recordings')
+    Distinct from `IngestionStatus` (the coarse, persisted phase). Empty string
+    = no step active (queued, or terminal). `WAITING_OVERLOAD` is special: the
+    step did not change, but Claude is temporarily overloaded and we are waiting
+    to retry — the UI shows this so a long pause never looks like a freeze."""
+    PREPARING        = 'preparing',        _('Preparing the document')
+    ANALYZING        = 'analyzing',        _('Reading the score (AI)')
+    RESOLVING        = 'resolving',        _('Matching against MusicBrainz & Wikidata')
+    PERSISTING       = 'persisting',       _('Saving the results')
+    PROGRAM_NOTE     = 'program_note',     _('Writing the programme note')
+    RECORDINGS       = 'recordings',       _('Finding reference recordings')
+    WAITING_OVERLOAD = 'waiting_overload', _('AI service is busy — retrying shortly')
 
 
 class ProvenanceSource(models.TextChoices):
@@ -336,8 +335,15 @@ class ScoreEdition(EnterpriseBaseModel):
     )
     ingestion_cost_cents = models.PositiveIntegerField(
         default=0,
-        help_text=_("Cumulative AI cost spent ingesting this edition, in USD cents."),
-        verbose_name=_("Ingestion Cost (¢)"),
+        help_text=_("AI cost of the CURRENT ingestion run, in USD cents. "
+                    "Reset to 0 on every (re)ingest — enforces the per-run ceiling."),
+        verbose_name=_("Ingestion Cost — this run (¢)"),
+    )
+    ingestion_cost_cents_lifetime = models.PositiveIntegerField(
+        default=0,
+        help_text=_("Cumulative AI cost across ALL ingestion runs of this edition, "
+                    "in USD cents. Never reset — the true money spent on this PDF."),
+        verbose_name=_("Ingestion Cost — lifetime (¢)"),
     )
     ingestion_progress = models.CharField(
         max_length=20, blank=True, choices=IngestionProgress.choices,
