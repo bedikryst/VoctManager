@@ -40,6 +40,9 @@ export const archiveKeys = {
     byPiece: (pieceId: string | number) =>
       ["tracks", { piece: String(pieceId) }] as const,
   },
+  editions: {
+    detail: (id: string) => ["editions", id] as const,
+  },
 };
 
 const POLL_IN_PROGRESS_MS = 3_000;
@@ -354,6 +357,27 @@ export const useApproveEdition = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: archiveKeys.pieces.all }),
   });
 };
+
+/**
+ * Poll a single edition's ingestion state. Drives the live "what is the AI
+ * doing?" line in the upload zone the moment a PDF is sent — without waiting for
+ * the edition to be resolved onto a Piece and surface in the pieces list (which,
+ * for a brand-new upload, only happens several seconds in, after the
+ * MusicBrainz/Wikidata step). Stops polling once terminal (AWAI / RDY / FAIL).
+ */
+export const useEditionIngestion = (id: string | null) =>
+  useQuery({
+    queryKey: id ? archiveKeys.editions.detail(id) : ["editions", "none"],
+    queryFn: () => ArchiveService.getEdition(id!),
+    enabled: Boolean(id),
+    refetchInterval: (query) => {
+      const data = query.state.data as ScoreEditionDetail | undefined;
+      if (!data) return POLL_IN_PROGRESS_MS;
+      return isIngestionInProgress(data.ingestion_status)
+        ? POLL_IN_PROGRESS_MS
+        : false;
+    },
+  });
 
 export const useReingestEdition = () => {
   const qc = useQueryClient();

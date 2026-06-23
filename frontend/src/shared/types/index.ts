@@ -361,6 +361,22 @@ export type IngestionStatusCode =
   | "FAIL";
 
 /**
+ * Fine-grained "what is the AI doing right now" step, set by the backend at the
+ * start of each pipeline task. Empty string = no step active (queued or done).
+ * Distinct from {@link IngestionStatusCode}: one coarse status (e.g. GENR) spans
+ * several of these steps. Backend source of truth: `archive.models.IngestionProgress`.
+ */
+export type IngestionProgressCode =
+  | ""
+  | "extracting"
+  | "identifying"
+  | "resolving"
+  | "movements"
+  | "lyrics"
+  | "program_note"
+  | "recordings";
+
+/**
  * Status codes as named constants. Always prefer these over string literals —
  * the backend stores 'RDY ' (with trailing space, max_length=4) and getting
  * the spacing wrong silently breaks comparisons.
@@ -401,6 +417,7 @@ export interface ScoreEditionSummary extends BaseModel {
   is_default: boolean;
   ingestion_status: IngestionStatusCode;
   ingestion_status_display?: string;
+  ingestion_progress?: IngestionProgressCode;
   ingestion_cost_cents?: number;
   ingestion_error?: string;
 }

@@ -163,6 +163,12 @@ export const ArchiveService = {
     return response.data;
   },
 
+  /** Single-edition fetch — drives the live ingestion-progress poll after upload. */
+  getEdition: async (id: string): Promise<ScoreEditionDetail> => {
+    const response = await api.get<ScoreEditionDetail>(`${EDITIONS_URL}${id}/`);
+    return response.data;
+  },
+
   patchEdition: async (
     id: string,
     dto: ScoreEditionPatchDTO,

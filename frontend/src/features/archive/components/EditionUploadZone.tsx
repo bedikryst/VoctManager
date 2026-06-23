@@ -26,6 +26,7 @@ import {
   CircleAlert,
   FileText,
   Loader2,
+  Sparkles,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -37,7 +38,8 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
-import { useUploadEdition } from "../api/archive.queries";
+import { useEditionIngestion, useUploadEdition } from "../api/archive.queries";
+import { liveIngestionLabel } from "../constants/ingestionProgress";
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -49,6 +51,8 @@ interface PendingUpload {
   phase: UploadPhase;
   progress: number;
   errorMessage?: string;
+  /** Set once the PDF is accepted — keys the live ingestion-progress poll. */
+  editionId?: string;
 }
 
 interface EditionUploadZoneProps {
@@ -89,7 +93,7 @@ export const EditionUploadZone = ({
     async (entry: PendingUpload): Promise<void> => {
       updateUpload(entry.localId, { phase: "uploading", progress: 0 });
       try {
-        await uploadEdition({
+        const created = await uploadEdition({
           dto: {
             pdf_file: entry.file,
             original_filename: entry.file.name,
@@ -101,7 +105,14 @@ export const EditionUploadZone = ({
             });
           },
         });
-        updateUpload(entry.localId, { phase: "succeeded", progress: 100 });
+        // `succeeded` here means the PDF reached the server and the AI pipeline
+        // was dispatched — not that ingestion finished. Stash the edition id so
+        // the row can poll and surface the live AI step.
+        updateUpload(entry.localId, {
+          phase: "succeeded",
+          progress: 100,
+          editionId: created.id,
+        });
         toast.success(
           t(
             "archive.upload.toast_success",
@@ -292,9 +303,52 @@ interface UploadRowProps {
   readonly onRemove: (localId: string) => void;
 }
 
+type RowView =
+  | "queued"
+  | "uploading"
+  | "upload_failed"
+  | "ingesting"
+  | "awaiting"
+  | "ready"
+  | "ingest_failed";
+
 const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const { file, phase, progress, errorMessage } = entry;
+  const { file, phase, progress, errorMessage, editionId } = entry;
+
+  // Poll the edition once the PDF is accepted, so the row shows the live AI step
+  // (read PDF → identify → resolve → translate → …) immediately. The pieces list
+  // won't surface this edition until it's resolved onto a Piece several seconds
+  // in (after the MusicBrainz/Wikidata step), so this is the only early signal.
+  const { data: edition } = useEditionIngestion(editionId ?? null);
+  const ingStatus = edition?.ingestion_status;
+
+  const view: RowView =
+    phase === "queued"
+      ? "queued"
+      : phase === "uploading"
+        ? "uploading"
+        : phase === "failed"
+          ? "upload_failed"
+          : ingStatus === "FAIL"
+            ? "ingest_failed"
+            : ingStatus === "RDY "
+              ? "ready"
+              : ingStatus === "AWAI"
+                ? "awaiting"
+                : "ingesting"; // HTTP upload done, pipeline still running
+
+  const isErr = view === "upload_failed" || view === "ingest_failed";
+
+  const avatarTone = isErr
+    ? "border-ethereal-crimson/50 bg-ethereal-crimson/10 text-ethereal-crimson"
+    : view === "ready"
+      ? "border-ethereal-sage/50 bg-ethereal-sage/15 text-ethereal-sage"
+      : view === "awaiting"
+        ? "border-ethereal-gold/50 bg-ethereal-gold/15 text-ethereal-gold"
+        : view === "ingesting"
+          ? "border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
+          : "border-ethereal-incense/30 bg-ethereal-marble/80 text-ethereal-graphite";
 
   return (
     <motion.li
@@ -308,19 +362,17 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
       <span
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
-          phase === "succeeded"
-            ? "border-ethereal-sage/50 bg-ethereal-sage/15 text-ethereal-sage"
-            : phase === "failed"
-              ? "border-ethereal-crimson/50 bg-ethereal-crimson/10 text-ethereal-crimson"
-              : "border-ethereal-incense/30 bg-ethereal-marble/80 text-ethereal-graphite",
+          avatarTone,
         )}
         aria-hidden="true"
       >
-        {phase === "succeeded" ? (
-          <CheckCircle2 size={16} strokeWidth={2} />
-        ) : phase === "failed" ? (
+        {isErr ? (
           <CircleAlert size={16} strokeWidth={2} />
-        ) : phase === "uploading" ? (
+        ) : view === "ready" ? (
+          <CheckCircle2 size={16} strokeWidth={2} />
+        ) : view === "awaiting" ? (
+          <Sparkles size={16} strokeWidth={2} />
+        ) : view === "ingesting" || view === "uploading" ? (
           <Loader2 size={16} strokeWidth={2} className="animate-spin" />
         ) : (
           <FileText size={16} strokeWidth={1.8} />
@@ -332,22 +384,38 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
         </Text>
         <div className="mt-1 flex items-center gap-3">
           <Caption color="muted">{fmtSizeMB(file.size)}</Caption>
-          {phase === "uploading" && <Caption color="muted">{progress}%</Caption>}
-          {phase === "succeeded" && (
+          {view === "uploading" && <Caption color="muted">{progress}%</Caption>}
+          {view === "ingesting" && (
             <Caption color="muted">
-              {t(
-                "archive.upload.row_succeeded",
-                "Wysłano · pipeline uruchomiony",
-              )}
+              {liveIngestionLabel(t, ingStatus ?? "PEND", edition?.ingestion_progress)}
             </Caption>
           )}
-          {phase === "failed" && (
+          {view === "awaiting" && (
+            <Caption color="muted">
+              {t("archive.upload.row_awaiting", "Gotowe — sprawdź i zatwierdź")}
+            </Caption>
+          )}
+          {view === "ready" && (
+            <Caption color="muted">
+              {t("archive.upload.row_ready", "Zatwierdzone")}
+            </Caption>
+          )}
+          {view === "upload_failed" && (
             <Caption color="crimson">
               {errorMessage ?? t("archive.upload.row_failed", "Błąd wysyłki")}
             </Caption>
           )}
+          {view === "ingest_failed" && (
+            <Caption color="crimson">
+              {edition?.ingestion_error ||
+                t(
+                  "archive.upload.row_ingest_failed",
+                  "Przetwarzanie nie powiodło się",
+                )}
+            </Caption>
+          )}
         </div>
-        {(phase === "uploading" || phase === "queued") && (
+        {(view === "uploading" || view === "queued") && (
           <div
             role="progressbar"
             aria-valuemin={0}

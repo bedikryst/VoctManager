@@ -235,7 +235,7 @@ class PieceEditionSummarySerializer(serializers.ModelSerializer):
             'id', 'pdf_file', 'original_filename', 'publisher',
             'edition_year', 'editor_name', 'page_count',
             'is_default', 'ingestion_status', 'ingestion_status_display',
-            'ingestion_cost_cents', 'ingestion_error',
+            'ingestion_progress', 'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
         ]
         # `pdf_file` is a declared method field (read-only by nature) and must not
@@ -260,7 +260,7 @@ class ScoreEditionListSerializer(serializers.ModelSerializer):
             'id', 'original_filename', 'publisher', 'edition_year',
             'page_count', 'is_default',
             'piece', 'piece_title', 'composer_name',
-            'ingestion_status', 'ingestion_status_display',
+            'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
             'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
         ]
@@ -288,7 +288,7 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
             'publisher', 'edition_year', 'editor_name', 'is_default',
             'sha256', 'uploaded_by',
             'piece', 'annotations',
-            'ingestion_status', 'ingestion_status_display',
+            'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
             'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
         ]
@@ -297,7 +297,7 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'page_count', 'sha256', 'uploaded_by',
             'piece', 'annotations',
-            'ingestion_status', 'ingestion_status_display',
+            'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
             'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
         ]

@@ -63,6 +63,24 @@ class IngestionStatus(models.TextChoices):
     FAILED     = 'FAIL', _('Failed')
 
 
+class IngestionProgress(models.TextChoices):
+    """Fine-grained, human-facing label for the step the pipeline is on *right
+    now* — the live "what is the AI doing?" signal.
+
+    Distinct from `IngestionStatus` (the coarse, persisted phase): a single
+    status like GENERATING spans lyric extraction *and* the programme note, and
+    a single ENRICHING spans several seconds of sequential MusicBrainz/Wikidata
+    lookups. The conductor wants to see which sub-step is running rather than a
+    static "in progress". Empty string = no step active (queued, or terminal)."""
+    EXTRACTING   = 'extracting',   _('Reading the PDF')
+    IDENTIFYING  = 'identifying',  _('Identifying title & composer')
+    RESOLVING    = 'resolving',    _('Matching against MusicBrainz & Wikidata')
+    MOVEMENTS    = 'movements',    _('Detecting movements')
+    LYRICS       = 'lyrics',       _('Extracting lyrics, IPA & translations')
+    PROGRAM_NOTE = 'program_note', _('Writing the programme note')
+    RECORDINGS   = 'recordings',   _('Finding reference recordings')
+
+
 class ProvenanceSource(models.TextChoices):
     MANUAL      = 'MAN', _('Manual entry')
     AI_HAIKU    = 'AIH', _('AI — Haiku 4.5')
@@ -320,6 +338,12 @@ class ScoreEdition(EnterpriseBaseModel):
         default=0,
         help_text=_("Cumulative AI cost spent ingesting this edition, in USD cents."),
         verbose_name=_("Ingestion Cost (¢)"),
+    )
+    ingestion_progress = models.CharField(
+        max_length=20, blank=True, choices=IngestionProgress.choices,
+        help_text=_("Fine-grained current pipeline step, for the live ingestion UI. "
+                    "Blank when queued or finished."),
+        verbose_name=_("Ingestion Progress Step"),
     )
     ingestion_error = models.TextField(blank=True, verbose_name=_("Ingestion Error"))
 

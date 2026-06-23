@@ -48,6 +48,7 @@ from celery import chain, shared_task
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 
 from archive.dtos import (
     ExtractedMovementList,
@@ -59,6 +60,7 @@ from archive.infrastructure.ai_client import (
     AIClient,
     AIClientError,
     AIClientPermanentError,
+    AIClientTruncatedError,
     AIModel,
     CostCeilingExceeded,
 )
@@ -80,6 +82,7 @@ from archive.infrastructure.spotify_client import SpotifyClient
 from archive.infrastructure.wikidata_client import WikidataClient
 from archive.infrastructure.youtube_client import YouTubeClient
 from archive.models import (
+    IngestionProgress,
     IngestionStatus,
     Movement,
     Piece,
@@ -164,6 +167,20 @@ def _guarded(func: Callable) -> Callable:
                 func.__name__, payload['edition_id'], exc,
             )
             return _fail(edition, f'ai_request_rejected: {exc}', payload)
+        except AIClientTruncatedError as exc:
+            # Output truncated even after the client escalated max_tokens. A
+            # fixed budget truncates deterministically, so Celery autoretry would
+            # re-burn the same money for the same failure. Bill the attempts,
+            # mark FAILED with a clear reason, and stop the chain — no retry.
+            edition = _load_edition(payload['edition_id'])
+            if exc.cost is not None:
+                _bill_edition(edition, exc.cost.total_cents)
+            logger.error(
+                "ingest.ai_truncated task=%s edition=%s cost_cents=%s err=%s",
+                func.__name__, payload['edition_id'],
+                exc.cost.total_cents if exc.cost else 0, exc,
+            )
+            return _fail(edition, f'ai_output_truncated: {exc}', payload)
         except AIClientError as exc:
             # Anthropic billed us; the entity must too. Re-raise so Celery
             # autoretries the task body (with the updated cost ceiling check).
@@ -198,7 +215,8 @@ def extract_pdf_text(self, payload: dict) -> dict:
     """Phase 1 — parse the uploaded PDF, capture sha256 + page count + front-matter text."""
     edition = _load_edition(payload['edition_id'])
     edition.ingestion_status = IngestionStatus.EXTRACTING
-    edition.save(update_fields=['ingestion_status', 'updated_at'])
+    edition.ingestion_progress = IngestionProgress.EXTRACTING
+    edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
 
     try:
         with edition.pdf_file.open('rb') as fh:
@@ -239,6 +257,7 @@ def identify_work(self, payload: dict) -> dict:
     """
     edition = _load_edition(payload['edition_id'])
     _ensure_budget(edition)
+    _set_progress(payload['edition_id'], IngestionProgress.IDENTIFYING)
 
     client = AIClient()
     # Without thinking, 4K is ample for structured extraction of ~10 fields.
@@ -277,7 +296,8 @@ def resolve_composer_and_piece(self, payload: dict) -> dict:
     """
     edition = _load_edition(payload['edition_id'])
     edition.ingestion_status = IngestionStatus.ENRICHING
-    edition.save(update_fields=['ingestion_status', 'updated_at'])
+    edition.ingestion_progress = IngestionProgress.RESOLVING
+    edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
 
     if edition.piece is not None:
         payload['piece_id'] = str(edition.piece.id)
@@ -345,6 +365,7 @@ def detect_movements(self, payload: dict) -> dict:
     """Phase 4 — Claude lists movements in performance order; we persist them."""
     edition = _load_edition(payload['edition_id'])
     _ensure_budget(edition)
+    _set_progress(payload['edition_id'], IngestionProgress.MOVEMENTS)
     piece = Piece.objects.get(id=payload['piece_id'])
 
     # Idempotency: skip if movements already populated.
@@ -394,7 +415,8 @@ def extract_lyrics(self, payload: dict) -> dict:
     edition = _load_edition(payload['edition_id'])
     _ensure_budget(edition)
     edition.ingestion_status = IngestionStatus.GENERATING
-    edition.save(update_fields=['ingestion_status', 'updated_at'])
+    edition.ingestion_progress = IngestionProgress.LYRICS
+    edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
 
     piece = Piece.objects.get(id=payload['piece_id'])
 
@@ -412,17 +434,20 @@ def extract_lyrics(self, payload: dict) -> dict:
     )
 
     client = AIClient()
-    # Lyrics + IPA + 2-3 translations + thinking can easily exceed 8K output
-    # tokens — give the largest cap of any task in the chain. Effort drops to
-    # 'medium' (from default 'high'): Sonnet's translation quality at medium is
-    # excellent for liturgical Latin/Polish/English, and we save ~30% on
-    # output tokens.
+    # The single largest output in the chain: cleaned sung text + line-aligned
+    # IPA + 2-3 translations. Crucially, `max_tokens` is shared with adaptive
+    # thinking, so the budget must cover *both* — 16K was too tight and tripped
+    # stop_reason='max_tokens' on longer motets. Start at 32K; if even that
+    # truncates, AIClient escalates toward Sonnet's 64K cap rather than failing
+    # (and never blindly re-runs the same doomed call). Effort stays 'medium':
+    # Sonnet's translation quality there is excellent for liturgical
+    # Latin/Polish/English at meaningfully lower output cost.
     result, cost = client.parse(
         model=AIModel.SONNET,
         prompt=EXTRACT_AND_TRANSLATE_LYRICS,
         user_content=user_content,
         output_schema=LyricsExtractionResult,
-        max_tokens=16384,
+        max_tokens=32768,
         effort="medium",
     )
     _bill_edition(edition, cost.total_cents)
@@ -477,6 +502,7 @@ def generate_program_note(self, payload: dict) -> dict:
     """Phase 6 — Claude writes a ~250-word audience program note."""
     edition = _load_edition(payload['edition_id'])
     _ensure_budget(edition)
+    _set_progress(payload['edition_id'], IngestionProgress.PROGRAM_NOTE)
     piece = Piece.objects.get(id=payload['piece_id'])
 
     # Idempotency: skip if a canonical (non-project) program note exists.
@@ -528,6 +554,7 @@ def generate_program_note(self, payload: dict) -> dict:
 @_guarded
 def lookup_spotify(self, payload: dict) -> dict:
     """Phase 7 — Spotify recording search; up to 5 candidates persisted."""
+    _set_progress(payload['edition_id'], IngestionProgress.RECORDINGS)
     piece = Piece.objects.get(id=payload['piece_id'])
     composer_name = _composer_name(piece)
     search = SpotifyClient.search_recordings(
@@ -565,7 +592,8 @@ def finalize_edition(self, payload: dict) -> dict:
     if edition.ingestion_status == IngestionStatus.FAILED:
         return payload  # already terminal, nothing to do
     edition.ingestion_status = IngestionStatus.AWAITING
-    edition.save(update_fields=['ingestion_status', 'updated_at'])
+    edition.ingestion_progress = ''  # no step active once review-ready
+    edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
     logger.info(
         "ingest.complete edition=%s piece=%s cost_cents=%d",
         edition.id, edition.piece_id, edition.ingestion_cost_cents,
@@ -602,6 +630,21 @@ def _bill_edition(edition: ScoreEdition, cents: int) -> None:
     )
 
 
+def _set_progress(edition_id: str, step: str) -> None:
+    """Stamp the fine-grained 'what is the AI doing right now' step on the
+    edition so the live UI can show it immediately — a single status like
+    GENERATING spans both lyric translation and the programme note, and the
+    conductor wants to know which is running.
+
+    A cheap filtered UPDATE (no full load), safe to call at the top of any task.
+    `updated_at` is bumped so the polling client sees the change as fresh.
+    """
+    ScoreEdition.objects.filter(pk=edition_id).update(
+        ingestion_progress=step,
+        updated_at=timezone.now(),
+    )
+
+
 def _composer_name(piece: Piece) -> str:
     if not piece.composer:
         return ''
@@ -633,7 +676,10 @@ def _fail(edition: ScoreEdition, reason: str, payload: dict) -> dict:
     """
     edition.ingestion_status = IngestionStatus.FAILED
     edition.ingestion_error = reason
-    edition.save(update_fields=['ingestion_status', 'ingestion_error', 'updated_at'])
+    edition.ingestion_progress = ''  # no step active once failed
+    edition.save(update_fields=[
+        'ingestion_status', 'ingestion_error', 'ingestion_progress', 'updated_at',
+    ])
     logger.error("ingest.failed edition=%s reason=%s", edition.id, reason)
     payload['_aborted'] = True
     return payload
