@@ -1798,6 +1798,20 @@
       "ready": "Package ready"
     }
   },
+  "errors": {
+    "eyebrow": "An unexpected rest",
+    "eyebrow_stale": "A new release",
+    "title": "Something interrupted the score",
+    "title_stale": "A fresh version is ready",
+    "panel_title": "This view stumbled",
+    "body": "We hit an unexpected error and paused so nothing breaks. Your data is safe — refresh the view to pick up where you left off.",
+    "body_stale": "We're loading the latest version of the app. Refresh to continue with the current score.",
+    "panel_body": "The rest of the panel is working normally. Try loading this view again, or head back to the main panel.",
+    "action_reload": "Refresh",
+    "action_retry": "Try again",
+    "action_home": "Back to panel",
+    "detail_label": "Technical details"
+  },
   "footer": {
     "actions": {
       "scrollToTop": "Scroll to top",

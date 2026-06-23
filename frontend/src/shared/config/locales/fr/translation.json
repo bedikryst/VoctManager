@@ -1798,6 +1798,20 @@
       "ready": "Package prêt"
     }
   },
+  "errors": {
+    "eyebrow": "Un silence inattendu",
+    "eyebrow_stale": "Une nouvelle version",
+    "title": "Quelque chose a interrompu la partition",
+    "title_stale": "Une nouvelle version est prête",
+    "panel_title": "Cette vue a trébuché",
+    "body": "Une erreur inattendue est survenue et nous nous sommes arrêtés pour ne rien casser. Vos données sont en sécurité — actualisez la vue pour reprendre où vous en étiez.",
+    "body_stale": "Nous chargeons la dernière version de l’application. Actualisez pour continuer avec la partition à jour.",
+    "panel_body": "Le reste du panneau fonctionne normalement. Essayez de recharger cette vue ou revenez au panneau principal.",
+    "action_reload": "Actualiser",
+    "action_retry": "Réessayer",
+    "action_home": "Retour au panneau",
+    "detail_label": "Détails techniques"
+  },
   "footer": {
     "actions": {
       "scrollToTop": "Faire défiler vers le haut",

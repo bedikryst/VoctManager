@@ -1798,6 +1798,20 @@
       "ready": "Pakiet gotowy"
     }
   },
+  "errors": {
+    "eyebrow": "Nieoczekiwana pauza",
+    "eyebrow_stale": "Nowa odsłona",
+    "title": "Coś przerwało partyturę",
+    "title_stale": "Dostępna jest świeża wersja",
+    "panel_title": "Ten widok się potknął",
+    "body": "Napotkaliśmy nieoczekiwany błąd i zatrzymaliśmy się, by niczego nie zepsuć. Twoje dane są bezpieczne — odśwież widok, aby wrócić do pracy.",
+    "body_stale": "Wczytujemy najnowszą wersję aplikacji. Odśwież, aby kontynuować z aktualnymi nutami.",
+    "panel_body": "Reszta panelu działa bez zmian. Spróbuj wczytać ten widok ponownie lub wróć do panelu głównego.",
+    "action_reload": "Odśwież",
+    "action_retry": "Spróbuj ponownie",
+    "action_home": "Wróć do panelu",
+    "detail_label": "Szczegóły techniczne"
+  },
   "footer": {
     "actions": {
       "scrollToTop": "Przewiń do góry",

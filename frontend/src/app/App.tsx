@@ -22,6 +22,7 @@ import { APIProvider } from "@vis.gl/react-google-maps";
 
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import RouteErrorBoundary from "./router/RouteErrorBoundary";
 import ProtectedRoute from "./router/ProtectedRoute";
 import ManagerRoute from "./router/ManagerRoute";
 import { PANEL_DATA_PRELOADERS } from "./router/panelDataPreloaders";
@@ -245,7 +246,7 @@ function RootLayout(): React.JSX.Element {
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route element={<RootLayout />}>
+    <Route element={<RootLayout />} errorElement={<RouteErrorBoundary />}>
       <Route path="/" element={<Navigate to="/panel" replace />} />
       <Route
         path="/login"
