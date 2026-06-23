@@ -619,3 +619,88 @@ class MarkWelcomeSeenViewTests(APITestCase):
         self.client.force_authenticate(user=None)
         response = self.client.post(self.SEEN_URL)
         self.assertIn(response.status_code, (401, 403))
+
+
+class EnterpriseExceptionHandlerTests(SimpleTestCase):
+    """The API error envelope is the contract the frontend parses. Every branch
+    must carry a stable, machine-readable `error_code` (so the client maps it to
+    curated, localized copy) and a non-empty `detail`."""
+
+    def setUp(self):
+        from .exceptions import enterprise_exception_handler
+
+        self.handle = enterprise_exception_handler
+        self.context = {"request": RequestFactory().get("/api/test/")}
+
+    def _envelope(self, exc):
+        response = self.handle(exc, self.context)
+        self.assertIsNotNone(response)
+        return response
+
+    def test_domain_exception_uses_explicit_code_and_default_message(self):
+        from .exceptions import EmailAlreadyInUseException
+
+        response = self._envelope(EmailAlreadyInUseException())
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "email_taken")
+        # Raised without a message → the class default backs `detail`.
+        self.assertEqual(response.data["detail"], "This email is already in use.")
+
+    def test_domain_exception_preserves_caller_message_and_derives_code(self):
+        from roster.exceptions import ParticipationException
+
+        response = self._envelope(
+            ParticipationException("Cannot assign an unconfirmed participation.")
+        )
+        self.assertEqual(response.data["error_code"], "participation")
+        self.assertEqual(
+            response.data["detail"], "Cannot assign an unconfirmed participation."
+        )
+
+    def test_archive_domain_exception_derives_code_from_class_name(self):
+        from archive.exceptions import PieceValidationException
+
+        response = self._envelope(PieceValidationException())
+        self.assertEqual(response.data["error_code"], "piece_validation")
+        self.assertEqual(
+            response.data["detail"], "This archive operation is not allowed."
+        )
+
+    def test_pydantic_validation_envelope(self):
+        from pydantic import BaseModel, ValidationError
+
+        class _Model(BaseModel):
+            age: int
+
+        try:
+            _Model(age="not-a-number")
+        except ValidationError as exc:
+            response = self._envelope(exc)
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.data["error_code"], "validation_error")
+        self.assertEqual(response.data["validation_errors"][0]["field"], "age")
+
+    def test_http_errors_map_to_stable_codes(self):
+        from rest_framework.exceptions import (
+            NotAuthenticated,
+            NotFound,
+            PermissionDenied,
+            Throttled,
+        )
+
+        self.assertEqual(self._envelope(NotFound()).data["error_code"], "not_found")
+        self.assertEqual(
+            self._envelope(PermissionDenied()).data["error_code"], "forbidden"
+        )
+        self.assertEqual(
+            self._envelope(NotAuthenticated()).data["error_code"], "unauthorized"
+        )
+        self.assertEqual(self._envelope(Throttled()).data["error_code"], "rate_limited")
+        # The original DRF payload is preserved under `errors` for field detail.
+        self.assertIn("errors", self._envelope(NotFound()).data)
+
+    def test_unhandled_exception_is_not_swallowed(self):
+        # A non-API exception yields None so Django renders its own 500 — the
+        # handler must never mask a real server fault as a tidy 400.
+        self.assertIsNone(self.handle(Exception("boom"), self.context))

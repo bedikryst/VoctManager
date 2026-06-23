@@ -13,6 +13,7 @@ import axios, {
   InternalAxiosRequestConfig,
   AxiosResponse,
 } from "axios";
+import i18n from "@/shared/config/i18n";
 
 /**
  * Extended Axios request configuration to support retry logic during token rotation.
@@ -74,7 +75,16 @@ const processQueue = (
 };
 
 api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => config,
+  (config: InternalAxiosRequestConfig) => {
+    // Tell the API which language to answer in, so server-localized strings
+    // (DRF validation messages, domain errors) come back in the UI's language
+    // — matching the user's chosen locale, not just the browser's. The backend
+    // resolves this via LocaleMiddleware against its supported LANGUAGES.
+    if (i18n.language) {
+      config.headers.set("Accept-Language", i18n.language);
+    }
+    return config;
+  },
   (error: AxiosError) => Promise.reject(error),
 );
 

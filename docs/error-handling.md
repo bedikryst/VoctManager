@@ -135,14 +135,28 @@ Intentionally **left bespoke** (not API errors, or special):
 - `ArtistRow` autosave + `NewThreadModal` — row/compose-scoped copy; revisit
   if they start needing cause-precise messages.
 
-**Phase 4 — backend contract hardening (recommended).** Make the client able to
-_fully_ trust the server:
-- One error envelope for every endpoint (retire the hand-rolled auth payloads).
-- `error_code` always a stable kebab string (`invalid-credentials`,
-  `email-taken`, …), never empty — the client maps these to curated copy.
-- Localize messages by `Accept-Language` (the `backend/locale/` machinery is
-  already present) so `serverMessage` is safe to show verbatim.
-- Always key field errors by field name so `applyFieldErrors` is exhaustive.
+**Phase 4 — backend contract hardening.** ◑ Largely shipped.
+- **Stable `error_code` on every envelope branch** (`core/exceptions.py`):
+  pydantic 422 → `validation_error`; domain → the exception's explicit `code`
+  (e.g. `email_taken`, `invalid_credentials`) or a snake_case of its class name
+  (`ParticipationException` → `participation`); HTTP errors → a mapped code
+  (`not_found`, `forbidden`, `rate_limited`, …). The client's
+  `resolveErrorCopy` maps these straight to curated copy.
+- **Domain exceptions carry `code` + `default_message`** (core / archive /
+  roster), so `detail` is never empty even for a message-less raise.
+  `__init__`/`__str__` are untouched, so existing call sites are unaffected.
+- **`Accept-Language` localization**: `LocaleMiddleware` enabled
+  (`USE_I18N`, `LANGUAGES`, `LOCALE_PATHS` were already set), and the axios
+  client now sends the active UI language — so DRF/domain messages come back in
+  the user's locale, matching the UI rather than the browser default.
+- **Tests**: `EnterpriseExceptionHandlerTests` covers every envelope branch
+  (verified in isolation here; runs in CI with the project's Python/DB).
+
+Deferred (needs coordinated FE + staging verification):
+- Retiring the hand-rolled auth payloads in `core/views.py` so the login /
+  activation / reset endpoints emit the same envelope + stable codes. The
+  client tolerates the current auth shapes today (`parseApiError` +
+  `usePasswordReset`), so this is a cleanup, not a blocker.
 
 ---
 

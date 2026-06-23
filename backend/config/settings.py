@@ -110,6 +110,11 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # Resolves the active language from the `Accept-Language` header (within the
+    # supported LANGUAGES) so DRF's built-in error messages — and any gettext'd
+    # domain copy — come back in the caller's language. Must sit after Session
+    # and before Common (Django's required ordering).
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
