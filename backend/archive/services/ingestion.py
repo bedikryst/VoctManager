@@ -25,8 +25,9 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.db import transaction
 
+from archive.infrastructure.ai_client import CostCeilingExceeded
 from archive.models import IngestionStatus, ScoreEdition
-from archive.tasks import build_ingestion_chain
+from archive.tasks import build_ingestion_chain, ensure_daily_budget
 
 logger = logging.getLogger(__name__)
 
@@ -67,17 +68,21 @@ def start_ingestion(edition: ScoreEdition, *, force: bool = False) -> IngestionT
     """
     _check_api_key()
     _check_file(edition)
+    _check_daily_budget()
     if not force:
         _check_status(edition)
 
     with transaction.atomic():
-        # Reset state for re-ingestion paths. Cost ceiling applies per *run*,
-        # so we clear the counter; provenance rows from prior runs stay.
+        # Reset state for re-ingestion paths. The per-RUN cost ceiling applies
+        # per run, so we clear that counter — but NOT the lifetime counter,
+        # which records every dollar this PDF has ever cost. Provenance rows
+        # from prior runs stay.
         edition.ingestion_status = IngestionStatus.PENDING
         edition.ingestion_error = ''
+        edition.ingestion_progress = ''
         edition.ingestion_cost_cents = 0
         edition.save(update_fields=[
-            'ingestion_status', 'ingestion_error',
+            'ingestion_status', 'ingestion_error', 'ingestion_progress',
             'ingestion_cost_cents', 'updated_at',
         ])
 
@@ -111,6 +116,19 @@ def _check_file(edition: ScoreEdition) -> None:
         raise IngestionPreconditionError(
             f"ScoreEdition {edition.id} has no attached PDF — upload before dispatching."
         )
+
+
+def _check_daily_budget() -> None:
+    """Fail fast (before persisting/queueing) if the org-wide daily AI budget is
+    already spent — a circuit breaker against a runaway loop draining the account."""
+    try:
+        ensure_daily_budget()
+    except CostCeilingExceeded as exc:
+        raise IngestionPreconditionError(
+            "Dzienny budżet AI został wyczerpany — przetwarzanie partytur jest "
+            "wstrzymane do jutra (lub podnieś INGESTION_DAILY_BUDGET_CENTS). "
+            f"({exc})"
+        ) from exc
 
 
 def _check_status(edition: ScoreEdition) -> None:

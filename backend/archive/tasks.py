@@ -1,64 +1,71 @@
 """
 ===============================================================================
-Score Package Compiler — Celery Ingestion Tasks
+Score Package Compiler — Celery Ingestion Tasks (Workflow A, v2)
 ===============================================================================
 Domain: Archive / Ingestion
 Description:
-    The full Workflow A (single-edition ingestion) Celery chain. Public
-    entrypoint: `archive.services.ingestion.start_ingestion(edition)` — do
-    NOT call these tasks directly from views; use the service façade.
+    The single-edition ingestion chain. Public entrypoint:
+    `archive.services.ingestion.start_ingestion(edition)` — do NOT call these
+    tasks directly from views; use the service façade.
 
-    Chain shape:
-        extract_pdf_text
-          → identify_work          (Claude — Sonnet)
-          → resolve_composer_and_piece  (MB + Wikidata + DB dedup)
-          → detect_movements       (Claude — Sonnet)
-          → extract_lyrics         (Claude — Sonnet)
-          → generate_program_note  (Claude — Sonnet)
+    v2 chain (native-PDF, consolidated):
+        prepare_document            (sha256 + page count; NO text-layer gate)
+          → analyze_score           (Claude — Sonnet, reads the WHOLE PDF by
+                                      vision: identity + movements + sung text
+                                      + IPA + translations in ONE call)
+          → resolve_composer_and_piece  (MusicBrainz + Wikidata + DB dedup)
+          → persist_analysis        (write movements / lyrics / translations)
+          → generate_program_note   (Claude — Sonnet, text-only)
           → lookup_spotify
           → lookup_youtube
           → finalize_edition
 
-    Design rules:
-      * Each task is **idempotent** — it fetches edition state, decides
-        whether its phase is already done, and skips if so. Safe to retry
-        from any step.
-      * Each task that calls Claude checks the per-entity cost ceiling
-        BEFORE issuing the call; the `_guarded` decorator catches
-        CostCeilingExceeded and converts it to a graceful chain abort.
-      * State flows via a small dict (`payload`) carrying `edition_id` plus
-        any scratch values not yet persisted. PDF text + AI outputs round
-        trip through Celery JSON serialization (≤ 50KB per task — fine).
-      * Setting `payload['_aborted'] = True` short-circuits every downstream
-        task except `finalize_edition`, which always runs to set a terminal
-        status.
+    Why the rewrite (vs the old 4-call text-only chain):
+      * One vision call over the real document — handles scans, full pages,
+        and true layout — instead of three calls fed garbled pypdf text from
+        only the first three pages. Fewer calls = fewer points to overload.
+      * Resilience: a transient `overloaded_error` (HTTP 529) is retried
+        *patiently* (tens of seconds → minutes) and surfaced as a
+        WAITING_OVERLOAD step, NEVER hammered then failed. 529s are unbilled.
+      * Cost governance: every Claude charge is billed to BOTH the per-run
+        counter (enforces the run ceiling) AND a never-reset lifetime counter,
+        plus an org-wide daily budget — so a PDF can't silently drain the
+        account by being re-processed.
 
-Standards: SaaS 2026, Celery 5.3 patterns (autoretry, backoff, jitter).
+    Design rules (unchanged):
+      * Each task is idempotent and safe to retry from any step.
+      * `payload['_aborted'] = True` short-circuits downstream tasks; only
+        `finalize_edition` always runs, to guarantee a terminal status.
+
+Standards: SaaS 2026, Celery 5.3, native-PDF vision, overload-aware.
 ===============================================================================
 """
 from __future__ import annotations
 
 import functools
 import logging
+import random
 from collections.abc import Callable
 from typing import Any, BinaryIO, cast
 from uuid import UUID
 
 from celery import chain, shared_task
+from celery.exceptions import MaxRetriesExceededError
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
 from archive.dtos import (
-    ExtractedMovementList,
     ExtractedWorkIdentity,
     GeneratedProgramNote,
-    LyricsExtractionResult,
+    ScoreAnalysisResult,
 )
 from archive.infrastructure.ai_client import (
     AIClient,
     AIClientError,
+    AIClientOverloadedError,
     AIClientPermanentError,
     AIClientTruncatedError,
     AIModel,
@@ -73,9 +80,7 @@ from archive.infrastructure.pdf_extractor import (
     extract as extract_pdf,
 )
 from archive.infrastructure.prompts import (
-    DETECT_MOVEMENTS,
-    EXTRACT_AND_TRANSLATE_LYRICS,
-    EXTRACT_WORK_IDENTITY,
+    ANALYZE_SCORE,
     GENERATE_PROGRAM_NOTE,
 )
 from archive.infrastructure.spotify_client import SpotifyClient
@@ -100,9 +105,29 @@ from archive.services.resolvers import (
 
 logger = logging.getLogger(__name__)
 
-# Confidence below this aborts the chain with FAILED status — the PDF is
-# probably not a score, or it's illegible and not worth burning more tokens.
+# Confidence below this aborts with FAILED — the PDF is probably not a score.
 MIN_IDENTITY_CONFIDENCE: float = 0.5
+
+# Hard page cap. Anthropic's native-PDF support tops out around 100 pages; a
+# score longer than this should be split, not silently truncated.
+MAX_PDF_PAGES: int = 100
+
+# Output budget for the consolidated analysis (sung text + line-aligned IPA +
+# 2 translations + adaptive thinking, all sharing `max_tokens`). The client
+# escalates toward the model's 64K cap on truncation rather than failing.
+ANALYZE_MAX_TOKENS: int = 32768
+PROGRAM_NOTE_MAX_TOKENS: int = 8192
+
+# Two-tier retry policy. Overload (529) is patient — Anthropic-wide capacity
+# blips clear in seconds to minutes, and failing the edition just makes the
+# conductor re-upload. Other transient blips (DB, external HTTP) get a shorter,
+# smaller budget before we give up and mark FAILED.
+OVERLOAD_MAX_RETRIES: int = 6      # 30,60,120,240,480,600s ≈ up to ~25 min
+OVERLOAD_BASE_DELAY: float = 30.0
+OVERLOAD_MAX_DELAY: float = 600.0
+TRANSIENT_MAX_RETRIES: int = 3     # 5,10,20s
+TRANSIENT_BASE_DELAY: float = 5.0
+TRANSIENT_MAX_DELAY: float = 120.0
 
 
 # ===========================================================================
@@ -116,11 +141,10 @@ def build_ingestion_chain(edition_id: UUID) -> Any:
     """
     eid = str(edition_id)
     return chain(
-        extract_pdf_text.s({'edition_id': eid}),
-        identify_work.s(),
+        prepare_document.s({'edition_id': eid}),
+        analyze_score.s(),
         resolve_composer_and_piece.s(),
-        detect_movements.s(),
-        extract_lyrics.s(),
+        persist_analysis.s(),
         generate_program_note.s(),
         lookup_spotify.s(),
         lookup_youtube.s(),
@@ -129,21 +153,60 @@ def build_ingestion_chain(edition_id: UUID) -> Any:
 
 
 # ===========================================================================
-# Guard decorator — short-circuits aborted chains, catches budget overflows.
-# Applied INSIDE @shared_task so the wrapper runs whenever Celery dispatches.
+# Retry / failure plumbing
 # ===========================================================================
+
+def _backoff(retries: int, base: float, cap: float) -> float:
+    """Exponential backoff with full jitter."""
+    return min(cap, base * (2 ** retries)) * (0.5 + random.random() / 2)
+
+
+def _retry_or_fail(
+    self,
+    payload: dict,
+    exc: Exception,
+    *,
+    reason: str,
+    max_retries: int,
+    base_delay: float,
+    max_delay: float,
+    progress: str = '',
+) -> dict:
+    """
+    Schedule a patient retry of the current task, or — once the budget is
+    exhausted — mark the edition FAILED with `reason` and abort the chain.
+
+    Raising `self.retry(...)` either reschedules (propagates `Retry`) or raises
+    `MaxRetriesExceededError`, which we convert into a graceful terminal state.
+    """
+    edition_id = payload['edition_id']
+    if progress:
+        _set_progress(edition_id, progress)
+    countdown = _backoff(self.request.retries, base_delay, max_delay)
+    logger.warning(
+        "ingest.retry task=%s edition=%s attempt=%d countdown=%.0fs reason=%s",
+        self.name, edition_id, self.request.retries + 1, countdown, exc,
+    )
+    try:
+        raise self.retry(exc=exc, countdown=countdown, max_retries=max_retries)
+    except MaxRetriesExceededError:
+        edition = _load_edition(edition_id)
+        return _fail(edition, reason, payload)
+
 
 def _guarded(func: Callable) -> Callable:
     """
-    Wrap a chain task body with:
-      * upstream-abort short-circuit (payload['_aborted'] is True)
-      * CostCeilingExceeded → graceful FAILED transition
-      * AIClientPermanentError → graceful FAILED transition (no autoretry —
-        4xx means the request is malformed and repeating it just wastes
-        worker cycles, e.g. autoretrying a 400 'unsupported parameter' 3x).
-      * AIClientError with .cost attached → bill the failed attempt to the
-        entity before re-raising, so Celery autoretry sees the updated
-        ingestion_cost_cents and our hard cap stays honest.
+    Wrap a chain task body with the full error contract:
+
+      * upstream-abort short-circuit (`payload['_aborted']`)
+      * CostCeilingExceeded / AIClientPermanentError / AIClientTruncatedError
+        → terminal FAILED (truncation bills the attempts first)
+      * AIClientOverloadedError → PATIENT retry (529/5xx/429/timeout), surfaced
+        as a WAITING_OVERLOAD step; FAILED only after the patient budget runs
+        out. Never billed.
+      * any other AIClientError / unexpected Exception → short retry, then FAILED
+        — guaranteeing every guarded task reaches a terminal state rather than
+        leaving the edition stuck mid-pipeline.
     """
     @functools.wraps(func)
     def wrapper(self, payload: dict) -> dict:
@@ -159,8 +222,6 @@ def _guarded(func: Callable) -> Callable:
             edition = _load_edition(payload['edition_id'])
             return _fail(edition, f'cost_ceiling_exceeded: {exc}', payload)
         except AIClientPermanentError as exc:
-            # 4xx from Anthropic — code/config bug. Don't retry; mark FAILED
-            # so the conductor sees the actual error in the review modal.
             edition = _load_edition(payload['edition_id'])
             logger.error(
                 "ingest.ai_permanent task=%s edition=%s err=%s",
@@ -168,10 +229,6 @@ def _guarded(func: Callable) -> Callable:
             )
             return _fail(edition, f'ai_request_rejected: {exc}', payload)
         except AIClientTruncatedError as exc:
-            # Output truncated even after the client escalated max_tokens. A
-            # fixed budget truncates deterministically, so Celery autoretry would
-            # re-burn the same money for the same failure. Bill the attempts,
-            # mark FAILED with a clear reason, and stop the chain — no retry.
             edition = _load_edition(payload['edition_id'])
             if exc.cost is not None:
                 _bill_edition(edition, exc.cost.total_cents)
@@ -181,55 +238,74 @@ def _guarded(func: Callable) -> Callable:
                 exc.cost.total_cents if exc.cost else 0, exc,
             )
             return _fail(edition, f'ai_output_truncated: {exc}', payload)
+        except AIClientOverloadedError as exc:
+            # 529 / transient capacity. Unbilled. Wait patiently — this is the
+            # fix for the production retry-storm that hammered then died.
+            return _retry_or_fail(
+                self, payload, exc,
+                reason=(
+                    'api_overloaded — usługa AI była przeciążona przez dłuższą '
+                    'chwilę. Spróbuj ponowić przetwarzanie później.'
+                ),
+                max_retries=OVERLOAD_MAX_RETRIES,
+                base_delay=OVERLOAD_BASE_DELAY,
+                max_delay=OVERLOAD_MAX_DELAY,
+                progress=IngestionProgress.WAITING_OVERLOAD,
+            )
         except AIClientError as exc:
-            # Anthropic billed us; the entity must too. Re-raise so Celery
-            # autoretries the task body (with the updated cost ceiling check).
+            # Reached Anthropic and billed, but not a known-terminal class.
             if exc.cost is not None:
                 edition = _load_edition(payload['edition_id'])
                 _bill_edition(edition, exc.cost.total_cents)
-                logger.warning(
-                    "ingest.ai_failed_billed task=%s edition=%s cost_cents=%d err=%s",
-                    func.__name__, payload['edition_id'],
-                    exc.cost.total_cents, exc,
-                )
-            raise
+            return _retry_or_fail(
+                self, payload, exc,
+                reason=f'ai_error: {exc}',
+                max_retries=TRANSIENT_MAX_RETRIES,
+                base_delay=TRANSIENT_BASE_DELAY,
+                max_delay=TRANSIENT_MAX_DELAY,
+            )
+        except Exception as exc:  # noqa: BLE001 — last-resort infra resilience
+            return _retry_or_fail(
+                self, payload, exc,
+                reason=f'unexpected_error: {exc.__class__.__name__}: {exc}',
+                max_retries=TRANSIENT_MAX_RETRIES,
+                base_delay=TRANSIENT_BASE_DELAY,
+                max_delay=TRANSIENT_MAX_DELAY,
+            )
 
     return wrapper
 
 
-_TASK_KW = dict(
-    bind=True,
-    autoretry_for=(Exception,),
-    max_retries=3,
-    retry_backoff=True,
-    retry_jitter=True,
-)
+# `bind=True` only — all retry/abort logic lives in `_guarded` / `_retry_or_fail`
+# so overload (patient) and infra (short) blips get different backoff policies.
+_TASK_KW = dict(bind=True, max_retries=OVERLOAD_MAX_RETRIES)
 
 
 # ===========================================================================
 # Tasks
 # ===========================================================================
 
-@shared_task(name='archive.extract_pdf_text', **_TASK_KW)
-def extract_pdf_text(self, payload: dict) -> dict:
-    """Phase 1 — parse the uploaded PDF, capture sha256 + page count + front-matter text."""
+@shared_task(name='archive.prepare_document', **_TASK_KW)
+@_guarded
+def prepare_document(self, payload: dict) -> dict:
+    """Phase 1 — hash + page-count the PDF. No text-layer gate: scans are valid
+    input now that the model reads the document by vision."""
     edition = _load_edition(payload['edition_id'])
     edition.ingestion_status = IngestionStatus.EXTRACTING
-    edition.ingestion_progress = IngestionProgress.EXTRACTING
+    edition.ingestion_progress = IngestionProgress.PREPARING
     edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
 
     try:
         with edition.pdf_file.open('rb') as fh:
-            # An opened Django FieldFile is a binary stream; bridge it to the
-            # storage-agnostic extractor that works in terms of BinaryIO.
             result: ExtractedPdf = extract_pdf(cast("BinaryIO", fh))
     except PdfExtractionError as exc:
         return _fail(edition, f'pdf_extraction_failed: {exc}', payload)
 
-    if not result.front_matter_text:
+    if result.page_count > MAX_PDF_PAGES:
         return _fail(
             edition,
-            'no_text_layer — PDF appears to be a scan. Re-upload with OCR or a digital edition.',
+            f'pdf_too_large: {result.page_count} stron (limit {MAX_PDF_PAGES}). '
+            f'Podziel partyturę na mniejsze pliki.',
             payload,
         )
 
@@ -242,46 +318,53 @@ def extract_pdf_text(self, payload: dict) -> dict:
         update_fields.append('page_count')
     edition.save(update_fields=update_fields)
 
-    payload['pdf_text'] = result.front_matter_text
     payload['page_count'] = result.page_count
     return payload
 
 
-@shared_task(name='archive.identify_work', **_TASK_KW)
+@shared_task(name='archive.analyze_score', **_TASK_KW)
 @_guarded
-def identify_work(self, payload: dict) -> dict:
-    """Phase 2 — Claude extracts work identity (title, composer, opus, voicing) from front-matter.
-
-    Uses Haiku 4.5 with thinking disabled: this is "read the page, list what's
-    printed" — no reasoning required, and Haiku is ~1/3 the cost of Sonnet.
-    """
+def analyze_score(self, payload: dict) -> dict:
+    """Phase 2 — ONE Sonnet vision call reads the whole PDF and returns the full
+    record: identity + movements + sung text + IPA + translations."""
     edition = _load_edition(payload['edition_id'])
     _ensure_budget(edition)
-    _set_progress(payload['edition_id'], IngestionProgress.IDENTIFYING)
+    edition.ingestion_status = IngestionStatus.GENERATING
+    edition.ingestion_progress = IngestionProgress.ANALYZING
+    edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
+
+    # Default audience languages; configurable per ensemble in a later phase.
+    target_languages = ['en', 'pl']
+    instructions = (
+        "Analyse the attached score PDF. Provide prose translations of the sung "
+        f"text into these target languages: {', '.join(target_languages)}."
+    )
+
+    with edition.pdf_file.open('rb') as fh:
+        pdf_bytes = fh.read()
 
     client = AIClient()
-    # Without thinking, 4K is ample for structured extraction of ~10 fields.
-    extracted, cost = client.parse(
-        model=AIModel.HAIKU,
-        prompt=EXTRACT_WORK_IDENTITY,
-        user_content=payload['pdf_text'],
-        output_schema=ExtractedWorkIdentity,
-        max_tokens=4096,
-        enable_thinking=False,
+    analysis, cost = client.parse(
+        model=AIModel.SONNET,
+        prompt=ANALYZE_SCORE,
+        user_content=instructions,
+        output_schema=ScoreAnalysisResult,
+        max_tokens=ANALYZE_MAX_TOKENS,
+        effort="medium",
+        pdf_bytes=pdf_bytes,
     )
     _bill_edition(edition, cost.total_cents)
 
-    if extracted.confidence < MIN_IDENTITY_CONFIDENCE:
+    if analysis.confidence < MIN_IDENTITY_CONFIDENCE:
         return _fail(
             edition,
-            f'low_confidence: {extracted.confidence:.2f} — PDF may not be a score, '
-            f'or front matter is missing. Conductor should re-upload.',
+            f'low_confidence: {analysis.confidence:.2f} — to może nie być '
+            f'partytura albo skan jest nieczytelny. Sprawdź plik i wgraj ponownie.',
             payload,
         )
 
-    payload['identity'] = extracted.model_dump(mode='json')
-    payload['identity_prompt_version'] = EXTRACT_WORK_IDENTITY.version
-    payload['identity_model'] = AIModel.HAIKU
+    payload['analysis'] = analysis.model_dump(mode='json')
+    payload['analysis_prompt_version'] = ANALYZE_SCORE.version
     return payload
 
 
@@ -290,9 +373,8 @@ def identify_work(self, payload: dict) -> dict:
 def resolve_composer_and_piece(self, payload: dict) -> dict:
     """Phase 3 — canonicalize via MusicBrainz + Wikidata, then dedup against DB.
 
-    Fast path: if the edition was uploaded with `piece_id` pre-attached (e.g.
-    "add another edition to this existing Bach Magnificat"), trust the FK and
-    skip the resolver — the conductor already disambiguated.
+    Fast path: a pre-attached `piece_id` (uploading another edition of a known
+    work) trusts the FK and skips the resolver.
     """
     edition = _load_edition(payload['edition_id'])
     edition.ingestion_status = IngestionStatus.ENRICHING
@@ -310,9 +392,8 @@ def resolve_composer_and_piece(self, payload: dict) -> dict:
         )
         return payload
 
-    extracted = ExtractedWorkIdentity.model_validate(payload['identity'])
+    extracted = _identity_from_analysis(payload['analysis'])
 
-    # MusicBrainz lookups — canonical, free, polite.
     mbz_work = MusicBrainzClient.search_work(
         title=extracted.title,
         composer_name=extracted.composer_full_name or None,
@@ -325,7 +406,6 @@ def resolve_composer_and_piece(self, payload: dict) -> dict:
     elif extracted.composer_full_name:
         mbz_composer = MusicBrainzClient.search_composer(name=extracted.composer_full_name)
 
-    # Wikidata enrichment — prefer mbid-based lookup, fall back to name search.
     wiki_composer = None
     if mbz_composer and mbz_composer.mbid:
         wiki_composer = WikidataClient.enrich_composer_by_mbid(mbz_composer.mbid)
@@ -343,7 +423,6 @@ def resolve_composer_and_piece(self, payload: dict) -> dict:
         mbz_work=mbz_work,
     )
 
-    # Wire the edition to the resolved piece (might be created or merged).
     if edition.piece_id != piece_outcome.entity_id:
         edition.piece_id = piece_outcome.entity_id
         edition.save(update_fields=['piece_id', 'updated_at'])
@@ -359,126 +438,59 @@ def resolve_composer_and_piece(self, payload: dict) -> dict:
     return payload
 
 
-@shared_task(name='archive.detect_movements', **_TASK_KW)
+@shared_task(name='archive.persist_analysis', **_TASK_KW)
 @_guarded
-def detect_movements(self, payload: dict) -> dict:
-    """Phase 4 — Claude lists movements in performance order; we persist them."""
+def persist_analysis(self, payload: dict) -> dict:
+    """Phase 4 — persist the movements, sung text, IPA and translations that the
+    single analysis call produced. No AI here; idempotent."""
     edition = _load_edition(payload['edition_id'])
-    _ensure_budget(edition)
-    _set_progress(payload['edition_id'], IngestionProgress.MOVEMENTS)
+    _set_progress(payload['edition_id'], IngestionProgress.PERSISTING)
     piece = Piece.objects.get(id=payload['piece_id'])
-
-    # Idempotency: skip if movements already populated.
-    if piece.movements.exists():
-        logger.info("ingest.movements_skipped piece=%s — already populated", piece.id)
-        return payload
-
-    client = AIClient()
-    # Haiku 4.5 + no thinking: listing printed movement headings is pure
-    # extraction, not reasoning. Saves ~6¢ per ingest vs. Sonnet+thinking.
-    result, cost = client.parse(
-        model=AIModel.HAIKU,
-        prompt=DETECT_MOVEMENTS,
-        user_content=payload['pdf_text'],
-        output_schema=ExtractedMovementList,
-        max_tokens=4096,
-        enable_thinking=False,
-    )
-    _bill_edition(edition, cost.total_cents)
-
-    if not result.movements:
-        logger.warning("ingest.no_movements piece=%s", piece.id)
-        return payload
+    analysis = ScoreAnalysisResult.model_validate(payload['analysis'])
+    version = payload.get('analysis_prompt_version', ANALYZE_SCORE.version)
 
     with transaction.atomic():
-        for mv in result.movements:
-            movement = Movement.objects.create(
-                piece=piece,
-                order_index=mv.order_index,
-                title=mv.title,
-                tempo_marking=mv.tempo_marking or '',
-                starts_on_page=mv.starts_on_page,
-            )
-            provenance.record_ai(
-                target=movement, field_name='title',
-                model_id=AIModel.HAIKU,
-                prompt_version=DETECT_MOVEMENTS.version,
-            )
+        # Movements (skip if already populated).
+        if not piece.movements.exists() and analysis.movements:
+            for mv in analysis.movements:
+                movement = Movement.objects.create(
+                    piece=piece,
+                    order_index=mv.order_index,
+                    title=mv.title,
+                    tempo_marking=mv.tempo_marking or '',
+                    starts_on_page=mv.starts_on_page,
+                )
+                provenance.record_ai(
+                    target=movement, field_name='title',
+                    model_id=AIModel.SONNET, prompt_version=version,
+                )
 
-    return payload
-
-
-@shared_task(name='archive.extract_lyrics', **_TASK_KW)
-@_guarded
-def extract_lyrics(self, payload: dict) -> dict:
-    """Phase 5 — Claude extracts sung text, IPA, and translations into target languages."""
-    edition = _load_edition(payload['edition_id'])
-    _ensure_budget(edition)
-    edition.ingestion_status = IngestionStatus.GENERATING
-    edition.ingestion_progress = IngestionProgress.LYRICS
-    edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
-
-    piece = Piece.objects.get(id=payload['piece_id'])
-
-    # Idempotency: skip if lyrics + translations already populated.
-    if piece.lyrics_ipa and piece.translations.exists():
-        return payload
-
-    # Configurable per ensemble in a later phase; default = English + Polish
-    # to match the ensemble's two-language audience.
-    target_languages = ['en', 'pl']
-    user_content = (
-        f"Sung text language: {piece.language or 'unknown'}\n"
-        f"Target translation languages: {', '.join(target_languages)}\n\n"
-        f"--- Score front matter ---\n{payload['pdf_text']}"
-    )
-
-    client = AIClient()
-    # The single largest output in the chain: cleaned sung text + line-aligned
-    # IPA + 2-3 translations. Crucially, `max_tokens` is shared with adaptive
-    # thinking, so the budget must cover *both* — 16K was too tight and tripped
-    # stop_reason='max_tokens' on longer motets. Start at 32K; if even that
-    # truncates, AIClient escalates toward Sonnet's 64K cap rather than failing
-    # (and never blindly re-runs the same doomed call). Effort stays 'medium':
-    # Sonnet's translation quality there is excellent for liturgical
-    # Latin/Polish/English at meaningfully lower output cost.
-    result, cost = client.parse(
-        model=AIModel.SONNET,
-        prompt=EXTRACT_AND_TRANSLATE_LYRICS,
-        user_content=user_content,
-        output_schema=LyricsExtractionResult,
-        max_tokens=32768,
-        effort="medium",
-    )
-    _bill_edition(edition, cost.total_cents)
-
-    with transaction.atomic():
+        # Sung text / IPA / language (fill only blanks).
         update_fields: list[str] = ['updated_at']
-        if not piece.lyrics_original and result.sung_text:
-            piece.lyrics_original = result.sung_text
+        if not piece.lyrics_original and analysis.sung_text:
+            piece.lyrics_original = analysis.sung_text
             update_fields.append('lyrics_original')
             provenance.record_ai(
                 target=piece, field_name='lyrics_original',
-                model_id=AIModel.SONNET,
-                prompt_version=EXTRACT_AND_TRANSLATE_LYRICS.version,
+                model_id=AIModel.SONNET, prompt_version=version,
             )
-        if not piece.lyrics_ipa and result.ipa_transcription:
-            piece.lyrics_ipa = result.ipa_transcription
+        if not piece.lyrics_ipa and analysis.ipa_transcription:
+            piece.lyrics_ipa = analysis.ipa_transcription
             update_fields.append('lyrics_ipa')
             provenance.record_ai(
                 target=piece, field_name='lyrics_ipa',
-                model_id=AIModel.SONNET,
-                prompt_version=EXTRACT_AND_TRANSLATE_LYRICS.version,
+                model_id=AIModel.SONNET, prompt_version=version,
             )
-        if not piece.language and result.sung_text_language:
-            piece.language = result.sung_text_language
+        if not piece.language and analysis.sung_text_language:
+            piece.language = analysis.sung_text_language
             update_fields.append('language')
         piece.save(update_fields=update_fields)
 
+        # Translations (skip languages already present).
         existing_langs = set(
             piece.translations.values_list('target_language', flat=True)
         )
-        for tr in result.translations:
+        for tr in analysis.translations:
             if tr.target_language in existing_langs:
                 continue
             translation = Translation.objects.create(
@@ -489,8 +501,7 @@ def extract_lyrics(self, payload: dict) -> dict:
             )
             provenance.record_ai(
                 target=translation, field_name='text',
-                model_id=AIModel.SONNET,
-                prompt_version=EXTRACT_AND_TRANSLATE_LYRICS.version,
+                model_id=AIModel.SONNET, prompt_version=version,
             )
 
     return payload
@@ -499,13 +510,12 @@ def extract_lyrics(self, payload: dict) -> dict:
 @shared_task(name='archive.generate_program_note', **_TASK_KW)
 @_guarded
 def generate_program_note(self, payload: dict) -> dict:
-    """Phase 6 — Claude writes a ~250-word audience program note."""
+    """Phase 5 — Claude writes a ~250-word audience programme note (text-only)."""
     edition = _load_edition(payload['edition_id'])
     _ensure_budget(edition)
     _set_progress(payload['edition_id'], IngestionProgress.PROGRAM_NOTE)
     piece = Piece.objects.get(id=payload['piece_id'])
 
-    # Idempotency: skip if a canonical (non-project) program note exists.
     if ProgramNote.objects.filter(piece=piece, project__isnull=True, language='en').exists():
         return payload
 
@@ -530,7 +540,7 @@ def generate_program_note(self, payload: dict) -> dict:
         prompt=GENERATE_PROGRAM_NOTE,
         user_content=user_content,
         output_schema=GeneratedProgramNote,
-        max_tokens=8192,
+        max_tokens=PROGRAM_NOTE_MAX_TOKENS,
     )
     _bill_edition(edition, cost.total_cents)
 
@@ -553,7 +563,7 @@ def generate_program_note(self, payload: dict) -> dict:
 @shared_task(name='archive.lookup_spotify', **_TASK_KW)
 @_guarded
 def lookup_spotify(self, payload: dict) -> dict:
-    """Phase 7 — Spotify recording search; up to 5 candidates persisted."""
+    """Phase 6 — Spotify recording search; up to 5 candidates persisted."""
     _set_progress(payload['edition_id'], IngestionProgress.RECORDINGS)
     piece = Piece.objects.get(id=payload['piece_id'])
     composer_name = _composer_name(piece)
@@ -569,7 +579,7 @@ def lookup_spotify(self, payload: dict) -> dict:
 @shared_task(name='archive.lookup_youtube', **_TASK_KW)
 @_guarded
 def lookup_youtube(self, payload: dict) -> dict:
-    """Phase 8 — YouTube video search; up to 5 candidates persisted."""
+    """Phase 7 — YouTube video search; up to 5 candidates persisted."""
     piece = Piece.objects.get(id=payload['piece_id'])
     composer_name = _composer_name(piece)
     search = YouTubeClient.search_videos(
@@ -584,19 +594,20 @@ def lookup_youtube(self, payload: dict) -> dict:
 @shared_task(name='archive.finalize_edition', **_TASK_KW)
 def finalize_edition(self, payload: dict) -> dict:
     """
-    Phase 9 — flip the edition to AWAITING conductor review.
-    NOT guarded: this task always runs, even after an upstream abort, so
-    every chain produces a terminal status (FAILED was already set by `_fail`).
+    Phase 8 — flip the edition to AWAITING conductor review.
+    NOT guarded: always runs, even after an upstream abort, so every chain
+    produces a terminal status (FAILED was already set by `_fail`).
     """
     edition = _load_edition(payload['edition_id'])
     if edition.ingestion_status == IngestionStatus.FAILED:
-        return payload  # already terminal, nothing to do
+        return payload
     edition.ingestion_status = IngestionStatus.AWAITING
-    edition.ingestion_progress = ''  # no step active once review-ready
+    edition.ingestion_progress = ''
     edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
     logger.info(
-        "ingest.complete edition=%s piece=%s cost_cents=%d",
-        edition.id, edition.piece_id, edition.ingestion_cost_cents,
+        "ingest.complete edition=%s piece=%s cost_cents=%d lifetime_cents=%d",
+        edition.id, edition.piece_id,
+        edition.ingestion_cost_cents, edition.ingestion_cost_cents_lifetime,
     )
     return payload
 
@@ -609,36 +620,94 @@ def _load_edition(edition_id: str) -> ScoreEdition:
     return ScoreEdition.objects.select_related('piece', 'piece__composer').get(id=edition_id)
 
 
+def _identity_from_analysis(analysis: dict) -> ExtractedWorkIdentity:
+    """Project the identity subset of a `ScoreAnalysisResult` dict onto the
+    `ExtractedWorkIdentity` the resolvers expect — keeps the resolver layer
+    untouched by the consolidation."""
+    return ExtractedWorkIdentity.model_validate({
+        'title': analysis['title'],
+        'composer_full_name': analysis['composer_full_name'],
+        'composer_birth_year': analysis.get('composer_birth_year'),
+        'opus_catalog': analysis.get('opus_catalog'),
+        'musical_key': analysis.get('musical_key'),
+        'voicing': analysis.get('voicing'),
+        'language': analysis.get('language'),
+        'text_source': analysis.get('text_source'),
+        'confidence': analysis.get('confidence', 0.0),
+    })
+
+
 def _ensure_budget(edition: ScoreEdition) -> None:
     """
-    Raise CostCeilingExceeded if the edition has hit the per-entity hard cap.
-    Re-fetch the row first so we see costs from sibling tasks that completed
-    while this one was queued.
+    Enforce all three spend guards BEFORE issuing a Claude call:
+      * per-run ceiling (resets each (re)ingest)
+      * lifetime ceiling (never resets — the true money on this PDF)
+      * org-wide daily budget (circuit breaker)
+    Re-fetch first so we see costs billed by sibling tasks.
     """
-    edition.refresh_from_db(fields=['ingestion_cost_cents'])
+    edition.refresh_from_db(
+        fields=['ingestion_cost_cents', 'ingestion_cost_cents_lifetime'],
+    )
     AIClient.enforce_ceiling(
         entity_id=str(edition.id),
         spent_cents=edition.ingestion_cost_cents,
         ceiling_cents=settings.INGESTION_COST_CEILING_CENTS,
     )
+    AIClient.enforce_ceiling(
+        entity_id=f'{edition.id}:lifetime',
+        spent_cents=edition.ingestion_cost_cents_lifetime,
+        ceiling_cents=settings.INGESTION_LIFETIME_CEILING_CENTS,
+    )
+    ensure_daily_budget()
+
+
+def ensure_daily_budget() -> None:
+    """Raise `CostCeilingExceeded` if today's org-wide spend hit the budget.
+    Exposed so the dispatch façade can fail fast before queueing a run."""
+    spent = _daily_spend()
+    if spent >= settings.INGESTION_DAILY_BUDGET_CENTS:
+        raise CostCeilingExceeded(
+            entity_id=f'daily:{_daily_key()}',
+            spent_cents=spent,
+            ceiling_cents=settings.INGESTION_DAILY_BUDGET_CENTS,
+        )
+
+
+def _daily_key() -> str:
+    return f"ingest:daily_spend:{timezone.now():%Y%m%d}"
+
+
+def _daily_spend() -> int:
+    return cache.get(_daily_key(), 0) or 0
+
+
+def _record_daily_spend(cents: int) -> None:
+    """Increment the org-wide daily spend counter (Redis cache, 48h TTL)."""
+    if cents <= 0:
+        return
+    key = _daily_key()
+    try:
+        cache.incr(key, cents)
+    except ValueError:
+        # Key absent/expired — seed it. 48h TTL covers the UTC-day rollover.
+        cache.set(key, cents, timeout=60 * 60 * 48)
 
 
 def _bill_edition(edition: ScoreEdition, cents: int) -> None:
-    """Atomic cost increment — safe under concurrent task execution."""
+    """Atomic cost increment — bills BOTH the per-run and the lifetime counters,
+    and the org-wide daily total. Safe under concurrent task execution."""
+    if cents <= 0:
+        return
     ScoreEdition.objects.filter(pk=edition.pk).update(
         ingestion_cost_cents=F('ingestion_cost_cents') + cents,
+        ingestion_cost_cents_lifetime=F('ingestion_cost_cents_lifetime') + cents,
     )
+    _record_daily_spend(cents)
 
 
 def _set_progress(edition_id: str, step: str) -> None:
-    """Stamp the fine-grained 'what is the AI doing right now' step on the
-    edition so the live UI can show it immediately — a single status like
-    GENERATING spans both lyric translation and the programme note, and the
-    conductor wants to know which is running.
-
-    A cheap filtered UPDATE (no full load), safe to call at the top of any task.
-    `updated_at` is bumped so the polling client sees the change as fresh.
-    """
+    """Stamp the fine-grained 'what is the AI doing right now' step. A cheap
+    filtered UPDATE; `updated_at` is bumped so the SSE/polling layer sees it."""
     ScoreEdition.objects.filter(pk=edition_id).update(
         ingestion_progress=step,
         updated_at=timezone.now(),
@@ -669,14 +738,11 @@ def _persist_recordings(*, piece: Piece, source_enum: str, search: Any) -> None:
 
 
 def _fail(edition: ScoreEdition, reason: str, payload: dict) -> dict:
-    """
-    Mark the edition FAILED with a human-readable reason and abort the chain.
-    Downstream tasks short-circuit via the `_guarded` decorator; the final
-    `finalize_edition` task respects the FAILED status and doesn't overwrite it.
-    """
+    """Mark the edition FAILED with a human-readable reason and abort the chain.
+    Lifetime cost is preserved; only the live step is cleared."""
     edition.ingestion_status = IngestionStatus.FAILED
     edition.ingestion_error = reason
-    edition.ingestion_progress = ''  # no step active once failed
+    edition.ingestion_progress = ''
     edition.save(update_fields=[
         'ingestion_status', 'ingestion_error', 'ingestion_progress', 'updated_at',
     ])
@@ -686,14 +752,14 @@ def _fail(edition: ScoreEdition, reason: str, payload: dict) -> dict:
 
 
 __all__ = [
+    'analyze_score',
     'build_ingestion_chain',
-    'detect_movements',
-    'extract_lyrics',
-    'extract_pdf_text',
+    'ensure_daily_budget',
     'finalize_edition',
     'generate_program_note',
-    'identify_work',
     'lookup_spotify',
     'lookup_youtube',
+    'persist_analysis',
+    'prepare_document',
     'resolve_composer_and_piece',
 ]

@@ -38,8 +38,11 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
-import { useEditionIngestion, useUploadEdition } from "../api/archive.queries";
-import { liveIngestionLabel } from "../constants/ingestionProgress";
+import { useLiveIngestion, useUploadEdition } from "../api/archive.queries";
+import { isOverloadWait, liveIngestionLabel } from "../constants/ingestionProgress";
+
+const fmtCents = (cents?: number): string =>
+  cents && cents > 0 ? `$${(cents / 100).toFixed(2)}` : "$0.00";
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -316,12 +319,14 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { file, phase, progress, errorMessage, editionId } = entry;
 
-  // Poll the edition once the PDF is accepted, so the row shows the live AI step
-  // (read PDF → identify → resolve → translate → …) immediately. The pieces list
-  // won't surface this edition until it's resolved onto a Piece several seconds
-  // in (after the MusicBrainz/Wikidata step), so this is the only early signal.
-  const { data: edition } = useEditionIngestion(editionId ?? null);
-  const ingStatus = edition?.ingestion_status;
+  // Live ingestion over SSE the instant the PDF is accepted — the row shows the
+  // real AI step (preparing → analyzing → resolving → … ), the running cost, and
+  // the "service busy, retrying" state, all pushed from the server. The pieces
+  // list won't surface this edition until it's resolved onto a Piece several
+  // seconds in, so this is the only early signal.
+  const live = useLiveIngestion(editionId ?? null);
+  const ingStatus = live?.ingestion_status;
+  const overloaded = isOverloadWait(live?.ingestion_progress);
 
   const view: RowView =
     phase === "queued"
@@ -346,9 +351,11 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
       ? "border-ethereal-sage/50 bg-ethereal-sage/15 text-ethereal-sage"
       : view === "awaiting"
         ? "border-ethereal-gold/50 bg-ethereal-gold/15 text-ethereal-gold"
-        : view === "ingesting"
-          ? "border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
-          : "border-ethereal-incense/30 bg-ethereal-marble/80 text-ethereal-graphite";
+        : overloaded
+          ? "border-ethereal-gold/50 bg-ethereal-gold/10 text-ethereal-gold"
+          : view === "ingesting"
+            ? "border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
+            : "border-ethereal-incense/30 bg-ethereal-marble/80 text-ethereal-graphite";
 
   return (
     <motion.li
@@ -386,8 +393,13 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
           <Caption color="muted">{fmtSizeMB(file.size)}</Caption>
           {view === "uploading" && <Caption color="muted">{progress}%</Caption>}
           {view === "ingesting" && (
+            <Caption color={overloaded ? "gold" : "muted"}>
+              {liveIngestionLabel(t, ingStatus ?? "PEND", live?.ingestion_progress)}
+            </Caption>
+          )}
+          {view === "ingesting" && (live?.ingestion_cost_cents_lifetime ?? 0) > 0 && (
             <Caption color="muted">
-              {liveIngestionLabel(t, ingStatus ?? "PEND", edition?.ingestion_progress)}
+              {fmtCents(live?.ingestion_cost_cents_lifetime)}
             </Caption>
           )}
           {view === "awaiting" && (

@@ -17,22 +17,18 @@ const PROGRESS_LABEL: Record<
   Exclude<IngestionProgressCode, "">,
   { readonly key: string; readonly pl: string }
 > = {
-  extracting: { key: "archive.progress.extracting", pl: "Czytam PDF…" },
-  identifying: {
-    key: "archive.progress.identifying",
-    pl: "Rozpoznaję tytuł i kompozytora…",
+  preparing: { key: "archive.progress.preparing", pl: "Przygotowuję dokument…" },
+  analyzing: {
+    key: "archive.progress.analyzing",
+    pl: "Czytam partyturę (AI) — tytuł, części, tekst, IPA, tłumaczenia…",
   },
   resolving: {
     key: "archive.progress.resolving",
     pl: "Szukam w MusicBrainz i Wikidata…",
   },
-  movements: {
-    key: "archive.progress.movements",
-    pl: "Wykrywam części utworu…",
-  },
-  lyrics: {
-    key: "archive.progress.lyrics",
-    pl: "Wyciągam tekst, IPA i tłumaczenia…",
+  persisting: {
+    key: "archive.progress.persisting",
+    pl: "Zapisuję wyniki…",
   },
   program_note: {
     key: "archive.progress.program_note",
@@ -42,7 +38,16 @@ const PROGRESS_LABEL: Record<
     key: "archive.progress.recordings",
     pl: "Szukam nagrań (Spotify, YouTube)…",
   },
+  waiting_overload: {
+    key: "archive.progress.waiting_overload",
+    pl: "Usługa AI jest przeciążona — ponawiam za chwilę…",
+  },
 };
+
+/** True while the pipeline is waiting out an AI-service overload (529). The UI
+ *  shows this distinctly so a long, legitimate pause never looks like a freeze. */
+export const isOverloadWait = (progress?: IngestionProgressCode): boolean =>
+  progress === "waiting_overload";
 
 /**
  * Best live label for an in-progress edition. Prefers the fine-grained step;
@@ -62,11 +67,11 @@ export const liveIngestionLabel = (
     case "PEND":
       return t("archive.progress.queued", "W kolejce…");
     case "EXTR":
-      return t("archive.progress.extracting", "Czytam PDF…");
+      return t("archive.progress.preparing", "Przygotowuję dokument…");
     case "ENRI":
       return t("archive.progress.resolving", "Szukam w MusicBrainz i Wikidata…");
     case "GENR":
-      return t("archive.progress.generating", "Generuję materiały…");
+      return t("archive.progress.analyzing", "Czytam partyturę (AI)…");
     default:
       return t("archive.progress.working", "Pracuję…");
   }

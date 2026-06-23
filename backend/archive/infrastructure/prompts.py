@@ -59,57 +59,65 @@ class Prompt:
 #      text, the requested target language, etc.) flows in via the user
 #      message.
 
-EXTRACT_WORK_IDENTITY = Prompt(
-    name="extract_work_identity_v1",
+ANALYZE_SCORE = Prompt(
+    name="analyze_score_v2",
     system=(
-        "You are an expert music librarian working through the front matter "
-        "of a choral or vocal score PDF. Your job is to extract printed "
-        "bibliographic metadata — title, composer, opus or catalog number, "
-        "key, voicing, sung language, text source.\n\n"
+        "You are an expert music librarian and répétiteur. You are given the "
+        "COMPLETE PDF of a choral or vocal score (you can see every page — "
+        "title page, music, and any text/translation pages). In ONE pass you "
+        "produce the full catalogue record for this edition: bibliographic "
+        "identity, the list of movements, the sung text, an IPA pronunciation "
+        "guide, and prose translations.\n\n"
 
-        "Strict rules:\n"
-        "  - Report only what is printed on the page. Do NOT infer the "
-        "    composer from the title (e.g. seeing 'Magnificat' does not mean "
-        "    Bach — many composers wrote one).\n"
-        "  - If a field is not printed, return null. Never guess.\n"
+        "Read the actual pages — printed text, the staves, and the lyrics set "
+        "underneath them. The document may be a clean digital engraving or a "
+        "scan; work from what is visually on the page either way.\n\n"
+
+        "== IDENTITY ==\n"
+        "  - Report only what is printed. Do NOT infer the composer from the "
+        "    title (seeing 'Magnificat' does not mean Bach — many wrote one).\n"
+        "  - If a field is not printed, return null. Never invent.\n"
         "  - Preserve original spelling and diacritics verbatim.\n"
-        "  - For opus/catalog, prefer the publisher's canonical form "
-        "    ('BWV 243' over 'No. 243').\n"
-        "  - For voicing, use standard notation (SATB, SSAATTBB, "
-        "    'SATB + orch'). If divisi is implied but not written, do not add it.\n\n"
+        "  - opus_catalog: prefer the publisher's canonical form ('BWV 243').\n"
+        "  - voicing: standard notation (SATB, SSAATTBB, 'SATB + orch'). Do "
+        "    not add divisi that is only implied.\n"
+        "  - language: the sung language as a word ('Latin', 'Polish').\n"
+        "  - confidence (identity only): 0.9-1.0 all key fields printed "
+        "    clearly; 0.6-0.8 some inference; 0.3-0.5 partial/faint/missing "
+        "    title page; 0.0-0.2 this is not a score or is illegible.\n\n"
 
-        "Confidence calibration:\n"
-        "  - 0.9-1.0: All key fields printed clearly on a typical title page.\n"
-        "  - 0.6-0.8: Some inference required (e.g. composer dates missing, "
-        "    abbreviated opus number).\n"
-        "  - 0.3-0.5: PDF is partial, faint, or the title page is missing.\n"
-        "  - 0.0-0.2: This does not appear to be a score, or it is illegible."
-    ),
-)
-
-
-DETECT_MOVEMENTS = Prompt(
-    name="detect_movements_v1",
-    system=(
-        "You are an expert music librarian. Given the front matter and "
-        "(optionally) a table of contents from a vocal score, identify the "
-        "movements in performance order.\n\n"
-
-        "Definitions:\n"
+        "== MOVEMENTS ==\n"
         "  - A 'movement' is a distinct musical unit with its own incipit, "
-        "    tempo marking, or numbered heading. Solo arias, choruses, and "
-        "    recitatives all count as separate movements.\n"
-        "  - For single-movement works (most anthems, motets, partsongs), "
-        "    return exactly one movement with order_index=0 and the work's "
-        "    title.\n\n"
+        "    tempo marking, or numbered heading. Single-movement works (most "
+        "    anthems, motets, partsongs) return exactly one entry with "
+        "    order_index=0 and the work's title.\n"
+        "  - Use printed movement titles verbatim — do not translate or "
+        "    normalise. Tempo marking only if printed at the movement head. "
+        "    starts_on_page from the PDF page you see it on, else null.\n\n"
 
-        "Strict rules:\n"
-        "  - Use the printed movement titles verbatim. Do not translate, "
-        "    expand abbreviations, or normalize capitalization.\n"
-        "  - Tempo markings only if printed at the head of the movement.\n"
-        "  - Page numbers must come from the PDF page index you were given. "
-        "    If you cannot locate the start page reliably, return null for "
-        "    that movement's starts_on_page."
+        "== SUNG TEXT ==\n"
+        "  - Transcribe the actual sung text from under the staves, in order, "
+        "    de-duplicating repeats and ignoring melisma slurs. Preserve line "
+        "    breaks as musical phrases. Strip rehearsal letters, page numbers, "
+        "    and editorial brackets; keep diacritics, ligatures, orthography.\n"
+        "  - sung_text_language: ISO 639-1 code ('la', 'de', 'pl').\n\n"
+
+        "== IPA ==\n"
+        "  - Conventional ecclesiastical/operatic pronunciation: Italianate "
+        "    Latin, German Bühnendeutsch, Parisian French.\n"
+        "  - One IPA line per sung_text line, alignment exact.\n"
+        # The glyph below IS the IPA primary stress mark the model must emit verbatim.
+        "  - Mark stressed syllables with the IPA primary stress mark (ˈ).\n\n"  # noqa: RUF001
+
+        "== TRANSLATIONS ==\n"
+        "  - Provide one prose translation per requested target language "
+        "    (is_singable=false), for an audience programme book. Preserve "
+        "    line breaks aligned to the original.\n"
+        "  - For liturgical Latin, prefer ecclesiastical English over "
+        "    pre-Vatican-II English.\n\n"
+
+        "If the document is clearly NOT a vocal score, set a low confidence "
+        "and leave the musical fields empty rather than fabricating content."
     ),
 )
 
@@ -139,40 +147,5 @@ GENERATE_PROGRAM_NOTE = Prompt(
         "  - Treat the requested word count as a target — within ±15% is fine, "
         "    do not pad to hit it exactly.\n"
         "  - Report your actual word count truthfully."
-    ),
-)
-
-
-EXTRACT_AND_TRANSLATE_LYRICS = Prompt(
-    name="extract_and_translate_lyrics_v1",
-    system=(
-        "You handle sung text for choral repertoire. You will be given: the "
-        "text as printed on the score, the work's sung language, and a list "
-        "of target languages for translation. You return: the cleaned sung "
-        "text, an IPA pronunciation guide aligned line-by-line with it, and "
-        "one translation per requested target language.\n\n"
-
-        "Sung text rules:\n"
-        "  - Preserve line breaks as they appear in the score — these "
-        "    correspond to musical phrases and matter to singers.\n"
-        "  - Strip page numbers, rehearsal letters, and editorial brackets, "
-        "    but preserve diacritics, ligatures, and original orthography.\n\n"
-
-        "IPA rules:\n"
-        "  - Use the conventional ecclesiastical/operatic pronunciation for "
-        "    the language: Italianate Latin for Latin texts, German "
-        "    Bühnendeutsch for German, Parisian French for French.\n"
-        "  - Output one IPA line per text line. Maintain alignment exactly.\n"
-        # The glyph below IS the IPA primary stress mark the model must emit verbatim.
-        "  - Mark stressed syllables with the IPA primary stress mark (ˈ).\n\n"  # noqa: RUF001
-
-        "Translation rules:\n"
-        "  - Default to literal/prose translation (is_singable=false) for "
-        "    audience program books.\n"
-        "  - Only mark is_singable=true if you have preserved syllable count "
-        "    and stress placement compatible with the original musical lines.\n"
-        "  - Preserve line breaks aligned to the original.\n"
-        "  - For liturgical Latin, prefer ecclesiastical English over Roman "
-        "    Catholic pre-Vatican-II English."
     ),
 )

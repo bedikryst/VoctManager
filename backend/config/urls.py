@@ -13,6 +13,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
+from archive.sse_views import score_edition_events
 from archive.views import (
     AnnotationViewSet,
     ComposerViewSet,
@@ -115,6 +116,15 @@ urlpatterns = [
     path('api/notifications/devices/test/', PushDeviceViewSet.as_view({'post': 'test_push'}), name='push-device-test'),
     path('api/notifications/devices/', PushDeviceViewSet.as_view({'post': 'create'}), name='push-device-register'),
     path('api/notifications/devices/<path:pk>/', PushDeviceViewSet.as_view({'delete': 'destroy'}), name='push-device-unregister'),
+
+    # --- Score Package Compiler: live ingestion progress (SSE) ---
+    # Registered BEFORE the router so the streaming endpoint is not shadowed by
+    # the ScoreEdition viewset's detail routes. Async view (ASGI), manager-only.
+    path(
+        'api/archive/editions/<uuid:pk>/events/',
+        score_edition_events,
+        name='score-edition-events',
+    ),
 
     # Auto-generated REST API routes
     path('api/', include(router.urls)),

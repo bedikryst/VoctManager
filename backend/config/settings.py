@@ -311,11 +311,29 @@ DEFAULT_ARTIST_PASSWORD = env('DEFAULT_ARTIST_PASSWORD', default='secure_passwor
 # when first instantiated. Leave blank to disable ingestion features in dev.
 ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 
-# Hard ceiling, in USD cents, the ingestion pipeline may spend per ScoreEdition.
-# Tasks check this BEFORE issuing each Claude call and refuse to proceed if
-# the entity's `ingestion_cost_cents` has hit it. 50¢ ~= one full pipeline run
-# on a 4-page Magnificat movement with cache hits on the system prompt.
-INGESTION_COST_CEILING_CENTS = env.int('INGESTION_COST_CEILING_CENTS', default=200)
+# Hard ceiling, in USD cents, the ingestion pipeline may spend per ScoreEdition
+# PER RUN. Tasks check this BEFORE each Claude call and refuse to proceed once
+# `ingestion_cost_cents` (this run) hits it. ~$0.30 covers a full v2 native-PDF
+# run on a typical motet; the headroom absorbs a max_tokens escalation.
+INGESTION_COST_CEILING_CENTS = env.int('INGESTION_COST_CEILING_CENTS', default=100)
+
+# LIFETIME ceiling per ScoreEdition, in USD cents — across every (re)ingest.
+# The per-run counter resets on reingest; this one never does. Stops a PDF that
+# keeps getting re-processed from silently draining the account (the "it took
+# $5 doing the same thing" failure mode).
+INGESTION_LIFETIME_CEILING_CENTS = env.int('INGESTION_LIFETIME_CEILING_CENTS', default=500)
+
+# Org-wide DAILY spend guard, in USD cents. Summed across all editions ingested
+# in the current UTC day; new runs are refused once exceeded. A circuit breaker
+# against a runaway loop or a bulk re-upload draining the API budget.
+INGESTION_DAILY_BUDGET_CENTS = env.int('INGESTION_DAILY_BUDGET_CENTS', default=2000)
+
+# Anthropic SDK transient-retry budget (429/5xx/overloaded/connection). The SDK
+# backs off exponentially and honours `retry-after`; the Celery layer adds a far
+# more patient tier on top. The generous request timeout suits a worker and also
+# suppresses the SDK's large-max_tokens non-streaming guard.
+ANTHROPIC_MAX_RETRIES = env.int('ANTHROPIC_MAX_RETRIES', default=4)
+ANTHROPIC_REQUEST_TIMEOUT_SECONDS = env.float('ANTHROPIC_REQUEST_TIMEOUT_SECONDS', default=600.0)
 
 # --- EXTERNAL DATA SOURCES (Score Package Compiler enrichment) ---
 # MusicBrainz and Wikidata require no auth — only a polite User-Agent.

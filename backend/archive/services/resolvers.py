@@ -351,15 +351,16 @@ def _merge_piece(
             ('language',     mbz_work.language,     ProvenanceSource.MUSICBRAINZ, str(mbz_work.mbid)),
         ]
     # AI-extracted values fall back when no canonical source exists.
-    # `identify_work` runs on Haiku 4.5 — keep the provenance source aligned.
+    # Identity now comes from the consolidated `analyze_score` call on Sonnet —
+    # keep the provenance source/reference aligned.
     if extracted.musical_key:
-        fill_pairs.append(('musical_key', extracted.musical_key, ProvenanceSource.AI_HAIKU, 'extract_work_identity'))
+        fill_pairs.append(('musical_key', extracted.musical_key, ProvenanceSource.AI_SONNET, 'analyze_score'))
     if extracted.opus_catalog:
-        fill_pairs.append(('opus_catalog', extracted.opus_catalog, ProvenanceSource.AI_HAIKU, 'extract_work_identity'))
+        fill_pairs.append(('opus_catalog', extracted.opus_catalog, ProvenanceSource.AI_SONNET, 'analyze_score'))
     if extracted.voicing:
-        fill_pairs.append(('voicing', extracted.voicing, ProvenanceSource.AI_HAIKU, 'extract_work_identity'))
+        fill_pairs.append(('voicing', extracted.voicing, ProvenanceSource.AI_SONNET, 'analyze_score'))
     if extracted.text_source:
-        fill_pairs.append(('text_source', extracted.text_source, ProvenanceSource.AI_HAIKU, 'extract_work_identity'))
+        fill_pairs.append(('text_source', extracted.text_source, ProvenanceSource.AI_SONNET, 'analyze_score'))
 
     for field, value, src, ref in fill_pairs:
         if not value:
