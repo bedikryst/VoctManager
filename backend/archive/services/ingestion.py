@@ -35,6 +35,14 @@ class IngestionPreconditionError(Exception):
     """Caller asked to ingest an edition that isn't in an ingestible state."""
 
 
+def ingestion_is_available() -> bool:
+    """True when the pipeline's hard configuration prerequisite — the Claude API
+    key — is present. Callers use this to fail fast with a clear, non-leaky
+    message *before* persisting an edition row that could never be processed
+    (otherwise every upload against an unconfigured deploy leaves an orphan)."""
+    return bool(getattr(settings, 'ANTHROPIC_API_KEY', ''))
+
+
 @dataclass(frozen=True)
 class IngestionTicket:
     """Returned from `start_ingestion` — opaque handle the caller can log / surface."""

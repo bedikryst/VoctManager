@@ -23,6 +23,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
+from core.exceptions import make_error_response
 from core.permissions import IsManager
 from core.request_utils import request_user
 from roster.queries import artist_live_piece_ids
@@ -51,6 +52,7 @@ from .serializers import (
 )
 from .services.ingestion import (
     IngestionPreconditionError,
+    ingestion_is_available,
     start_ingestion,
 )
 from .signals import piece_material_updated_event
@@ -375,6 +377,18 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         vd = serializer.validated_data
 
+        # Fail fast on a missing pipeline prerequisite BEFORE persisting a row,
+        # so an unconfigured deploy returns a clear, stable error instead of a
+        # bare 400 and a trail of orphaned, un-processable editions.
+        if not ingestion_is_available():
+            logger.error("ingestion_unavailable: ANTHROPIC_API_KEY is not configured")
+            return make_error_response(
+                request,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                error_code="ingestion_unavailable",
+                detail="Automatic score processing is temporarily unavailable.",
+            )
+
         uploaded_file = vd['pdf_file']
         # Optional: pre-attached piece when uploading from inside an
         # existing-piece editor. The pipeline's resolver step then skips
@@ -384,9 +398,11 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
             try:
                 target_piece = Piece.objects.get(id=vd['piece_id'])
             except Piece.DoesNotExist:
-                return Response(
-                    {'detail': f"Piece {vd['piece_id']} not found."},
-                    status=status.HTTP_400_BAD_REQUEST,
+                return make_error_response(
+                    request,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error_code="piece_not_found",
+                    detail=f"Piece {vd['piece_id']} not found.",
                 )
         edition = ScoreEdition.objects.create(
             piece=target_piece,
@@ -405,9 +421,13 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
             ticket = start_ingestion(edition)
         except IngestionPreconditionError as exc:
             logger.warning("ingestion_dispatch_failed edition=%s err=%s", edition.id, exc)
-            return Response(
-                {'detail': str(exc)},
-                status=status.HTTP_400_BAD_REQUEST,
+            # Never leave an un-processable orphan behind.
+            edition.delete()
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="ingestion_precondition",
+                detail=str(exc),
             )
 
         edition.refresh_from_db()
