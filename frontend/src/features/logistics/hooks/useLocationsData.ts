@@ -10,6 +10,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
@@ -239,10 +240,9 @@ export const useLocationsData = () => {
         { id: toastId },
       );
     } catch (error) {
-      console.error("[VoctManager Logistics]", error);
-      toast.error(t("common.errors.server_error", "Błąd serwera"), {
+        toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "logistics.toast.archive_error",
           "Nie udało się zarchiwizować lokacji.",
         ),

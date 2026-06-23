@@ -14,6 +14,7 @@
 
 import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
@@ -139,11 +140,12 @@ export default function ArchiveComposersPage(): React.JSX.Element {
       setDraft(EMPTY_DRAFT);
       setIsAdding(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t("archive.composers.add_error", "Nie udało się dodać."),
-      );
+      toastApiError(err, t, {
+        fallbackDescription: t(
+          "archive.composers.add_error",
+          "Nie udało się dodać.",
+        ),
+      });
     }
   };
 
@@ -157,19 +159,13 @@ export default function ArchiveComposersPage(): React.JSX.Element {
           "Kompozytor usunięty.",
         ),
       );
-    } catch (err: unknown) {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? null;
-      toast.error(
-        detail ??
-          (err instanceof Error
-            ? err.message
-            : t(
-                "archive.composers.delete_error",
-                "Nie udało się usunąć kompozytora.",
-              )),
-      );
+    } catch (err) {
+      toastApiError(err, t, {
+        fallbackDescription: t(
+          "archive.composers.delete_error",
+          "Nie udało się usunąć kompozytora.",
+        ),
+      });
     } finally {
       setPendingDelete(null);
     }

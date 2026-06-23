@@ -29,6 +29,7 @@ import {
   Wrench,
 } from "lucide-react";
 
+import { toastApiError } from "@/shared/api/errors";
 import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -123,10 +124,10 @@ export const ProjectRow = ({
               ),
           { id: toastId },
         );
-      } catch {
-        toast.error(t("common.errors.server_error", "Błąd serwera"), {
+      } catch (error) {
+        toastApiError(error, t, {
           id: toastId,
-          description: t(
+          fallbackDescription: t(
             "projects.card.status_update_failed",
             "Nie udało się zmienić statusu.",
           ),

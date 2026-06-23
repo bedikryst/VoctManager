@@ -9,6 +9,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import {
   useArtists,
@@ -261,10 +262,8 @@ export const useArtistData = () => {
           { id: toastId },
         );
       }
-    } catch {
-      toast.error(t("common.errors.server_error", "Błąd serwera"), {
-        id: toastId,
-      });
+    } catch (error) {
+      toastApiError(error, t, { id: toastId });
     } finally {
       setPendingBulk(null);
       setSelectedIds(new Set());
@@ -298,9 +297,9 @@ export const useArtistData = () => {
         { id: toastId },
       );
     } catch (err) {
-      toast.error(t("common.errors.server_error", "Błąd serwera"), {
+      toastApiError(err, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "artists.toast.toggle_error_desc",
           "Nie udało się zmienić statusu artysty.",
         ),

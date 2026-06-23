@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
@@ -390,17 +391,14 @@ export const useCrewData = () => {
         t("crew.toast.delete_success", "Osoba została usunięta z bazy."),
         { id: toastId },
       );
-    } catch {
-      toast.error(
-        t("crew.toast.delete_error_title", "Nie można usunąć tej osoby"),
-        {
-          id: toastId,
-          description: t(
-            "crew.toast.delete_error_desc",
-            "Prawdopodobnie jest ona powiązana z istniejącymi projektami. Spróbuj edytować jej dane.",
-          ),
-        },
-      );
+    } catch (error) {
+      toastApiError(error, t, {
+        id: toastId,
+        fallbackDescription: t(
+          "crew.toast.delete_error_desc",
+          "Prawdopodobnie jest ona powiązana z istniejącymi projektami. Spróbuj edytować jej dane.",
+        ),
+      });
     } finally {
       setPersonToDelete(null);
     }

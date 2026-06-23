@@ -7,6 +7,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import {
   usePieces,
@@ -160,16 +161,13 @@ export const useArchiveData = () => {
         },
       );
     } catch (err) {
-      toast.error(
-        t("archive.toast.delete_error_title", "Nie udało się usunąć utworu."),
-        {
-          id: toastId,
-          description: t(
-            "archive.toast.delete_error_desc",
-            "Upewnij się, że utwór nie jest powiązany z aktywnymi projektami.",
-          ),
-        },
-      );
+      toastApiError(err, t, {
+        id: toastId,
+        fallbackDescription: t(
+          "archive.toast.delete_error_desc",
+          "Upewnij się, że utwór nie jest powiązany z aktywnymi projektami.",
+        ),
+      });
     } finally {
       setPieceToDelete(null);
     }

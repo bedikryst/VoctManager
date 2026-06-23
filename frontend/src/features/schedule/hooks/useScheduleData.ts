@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { AttendanceStatus, Project } from "@/shared/types";
 import {
@@ -208,10 +209,10 @@ export const useScheduleData = (artistId?: string | number) => {
         { id: toastId },
       );
       return true;
-    } catch {
-      toast.error(t("schedule.toast.submit_error_title", "Błąd zapisu"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "schedule.toast.submit_error_desc",
           "Nie udało się zapisać zgłoszenia.",
         ),

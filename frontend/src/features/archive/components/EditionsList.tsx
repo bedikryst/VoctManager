@@ -16,6 +16,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { CheckCircle2, FileDown, RefreshCcw, SquarePen, Trash2 } from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
@@ -91,14 +92,10 @@ export const EditionsList = ({
         setPendingApproveId(null);
       },
       onError: (err) =>
-        toast.error(
-          err instanceof Error
-            ? err.message
-            : t(
+        toastApiError(err, t, { fallbackDescription: t(
                 "archive.editions.approve_error",
                 "Nie udało się zatwierdzić wydania.",
-              ),
-        ),
+              ) }),
     });
   };
 
@@ -116,14 +113,10 @@ export const EditionsList = ({
           setPendingReingestId(null);
         },
         onError: (err) =>
-          toast.error(
-            err instanceof Error
-              ? err.message
-              : t(
+        toastApiError(err, t, { fallbackDescription: t(
                   "archive.editions.reingest_error",
                   "Nie udało się uruchomić pipeline ponownie.",
-                ),
-          ),
+                ) }),
       },
     );
   };
@@ -137,11 +130,7 @@ export const EditionsList = ({
         setPendingDeleteId(null);
       },
       onError: (err) =>
-        toast.error(
-          err instanceof Error
-            ? err.message
-            : t("archive.editions.delete_error", "Nie udało się usunąć wydania."),
-        ),
+        toastApiError(err, t, { fallbackDescription: t("archive.editions.delete_error", "Nie udało się usunąć wydania.") }),
     });
   };
 

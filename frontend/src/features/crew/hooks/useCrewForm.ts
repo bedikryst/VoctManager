@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { Collaborator } from "@/shared/types";
 import { useSaveCrewMember } from "../api/crew.queries";
@@ -80,19 +81,13 @@ export const useCrewForm = (
       setFormData(formData);
       onClose();
     } catch (error) {
-      toast.error(
-        t(
-          "crew.toast.save_error_title",
-          "Wystąpił błąd podczas zapisywania danych.",
+      toastApiError(error, t, {
+        id: toastId,
+        fallbackDescription: t(
+          "crew.toast.save_error_desc",
+          "Sprawdź poprawność danych i spróbuj ponownie.",
         ),
-        {
-          id: toastId,
-          description: t(
-            "crew.toast.save_error_desc",
-            "Sprawdź poprawność danych i spróbuj ponownie.",
-          ),
-        },
-      );
+      });
     }
   };
 

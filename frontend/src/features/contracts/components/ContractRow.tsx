@@ -10,7 +10,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import {
   AlertTriangle,
   BadgeCheck,
@@ -99,22 +99,18 @@ export function ContractRow({
       if (flashRef.current) clearTimeout(flashRef.current);
       setSavedFlash(true);
       flashRef.current = setTimeout(() => setSavedFlash(false), 1600);
-    } catch {
-      toast.error(
-        t("contracts.toast.save_error", "Nie udało się zapisać honorarium dla {{name}}.", {
+    } catch (error) {
+      toastApiError(error, t, { fallbackDescription: t("contracts.toast.save_error", "Nie udało się zapisać honorarium dla {{name}}.", {
           name: personName,
-        }),
-      );
+        }) });
     }
   };
 
   const handleTogglePaid = async (): Promise<void> => {
     try {
       await setPaid.mutateAsync({ id: String(record.id), isPaid: !paid });
-    } catch {
-      toast.error(
-        t("contracts.toast.payment_error", "Nie udało się zmienić statusu płatności."),
-      );
+    } catch (error) {
+      toastApiError(error, t, { fallbackDescription: t("contracts.toast.payment_error", "Nie udało się zmienić statusu płatności.") });
     }
   };
 

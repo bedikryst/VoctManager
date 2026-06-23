@@ -117,12 +117,23 @@ but only surfaces it for a truly opaque `unknown` error — every named cause
   to the caller's `fallbackDescription` (e.g. "project still has contracts"),
   not a generic kind line.
 
-**Remaining mop-up (phase 3 tail).** A scattered set of component-level
-`toast.error` handlers (rehearsals/schedule/contracts/archive list components,
-`NewThreadModal`, a few data hooks). Convert opportunistically with the same
-pattern. Intentionally **left bespoke** (not API errors): push-notification
-permission states (`usePushNotifications`) and client-side file-upload
-validation (`EditionUploadZone`, …).
+**Phase 3 tail — component handlers.** ✅ Swept. Converted the scattered
+component/data-hook `toast.error` API handlers: schedule, rehearsals, artists,
+logistics, contracts (Contracts / ContractRow / PayablesBoard), archive
+(composers, pieces data, editions, row-tracks), crew (form + data), project
+row / card / dashboard / hub. Every server CRUD failure in these surfaces now
+states a precise, localized cause.
+
+Intentionally **left bespoke** (not API errors, or special):
+- `usePushNotifications` — browser Notification-permission states.
+- `EditionUploadZone` — client-side file-type/size validation.
+- `AppTab` share — `navigator.clipboard` failure.
+- `LocationsManager` — only a React Query `isError` flag is in scope (no error
+  object to classify); shows a sync warning.
+- `ComposerRowExpanded` — the message is also rendered inline in component
+  state, not just toasted.
+- `ArtistRow` autosave + `NewThreadModal` — row/compose-scoped copy; revisit
+  if they start needing cause-precise messages.
 
 **Phase 4 — backend contract hardening (recommended).** Make the client able to
 _fully_ trust the server:

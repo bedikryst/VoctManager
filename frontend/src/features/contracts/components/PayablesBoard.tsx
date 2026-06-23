@@ -11,6 +11,7 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import {
   ArrowUpRight,
   BadgeCheck,
@@ -74,10 +75,8 @@ const PayableRow = ({
           name: personName,
         }),
       );
-    } catch {
-      toast.error(
-        t("contracts.toast.payment_error", "Nie udało się zmienić statusu płatności."),
-      );
+    } catch (error) {
+      toastApiError(error, t, { fallbackDescription: t("contracts.toast.payment_error", "Nie udało się zmienić statusu płatności.") });
     }
   };
 

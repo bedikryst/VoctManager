@@ -5,6 +5,7 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 
 import { ScheduleService } from "../api/schedule.service";
@@ -94,10 +95,10 @@ export const useTimelineProjectCard = (
       toast.success(t("schedule.card.download_success", "Plik został pobrany"), {
         id: toastId,
       });
-    } catch {
-      toast.error(t("common.errors.generation_error", "Błąd generowania"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "schedule.card.download_error_desc",
           "Nie udało się pobrać pliku.",
         ),

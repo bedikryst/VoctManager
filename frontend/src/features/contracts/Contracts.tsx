@@ -12,6 +12,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { AlertTriangle, RefreshCw, Users, Wrench } from "lucide-react";
 
 import { downloadFile } from "@/shared/lib/io/downloadFile";
@@ -102,11 +103,8 @@ export default function Contracts(): React.JSX.Element {
         { id: toastId },
       );
       setGlobalFee("");
-    } catch {
-      toast.error(
-        t("contracts.toast.bulk_error", "Nie udało się ustawić zbiorczej stawki."),
-        { id: toastId },
-      );
+    } catch (error) {
+      toastApiError(error, t, { id: toastId, fallbackDescription: t("contracts.toast.bulk_error", "Nie udało się ustawić zbiorczej stawki.") });
     }
   };
 
@@ -161,11 +159,8 @@ export default function Contracts(): React.JSX.Element {
           { id: toastId },
         );
       }
-    } catch {
-      toast.error(
-        t("contracts.toast.payment_error", "Nie udało się zmienić statusu płatności."),
-        { id: toastId },
-      );
+    } catch (error) {
+      toastApiError(error, t, { id: toastId, fallbackDescription: t("contracts.toast.payment_error", "Nie udało się zmienić statusu płatności.") });
     } finally {
       setConfirmPaidOpen(false);
     }

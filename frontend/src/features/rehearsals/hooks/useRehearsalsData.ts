@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type {
   Artist,
@@ -398,10 +399,10 @@ export const useRehearsalsData = () => {
         t("rehearsals.toast.bulk_success", "Uzupełniono luki jako 'Obecny'."),
         { id: toastId },
       );
-    } catch {
-      toast.error(t("rehearsals.toast.bulk_error_title", "Błąd systemu"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "rehearsals.toast.bulk_error_desc",
           "Nie udało się zapisać masowej obecności.",
         ),

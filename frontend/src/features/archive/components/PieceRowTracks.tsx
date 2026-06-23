@@ -12,6 +12,7 @@
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 import { Loader2, Plus, Trash2, UploadCloud, X } from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
@@ -72,14 +73,11 @@ export const PieceRowTracks = ({
         { id: toastId },
       );
       resetAddForm();
-    } catch {
-      toast.error(
-        t(
+    } catch (error) {
+      toastApiError(error, t, { id: toastId, fallbackDescription: t(
           "archive.row_tracks.upload_error",
           "Błąd wgrywania. Sprawdź format pliku (MP3/WAV/MIDI).",
-        ),
-        { id: toastId },
-      );
+        ) });
     }
   };
 
@@ -93,11 +91,8 @@ export const PieceRowTracks = ({
       toast.success(t("archive.row_tracks.delete_success", "Ścieżka usunięta."), {
         id: toastId,
       });
-    } catch {
-      toast.error(
-        t("archive.row_tracks.delete_error", "Nie udało się usunąć."),
-        { id: toastId },
-      );
+    } catch (error) {
+      toastApiError(error, t, { id: toastId, fallbackDescription: t("archive.row_tracks.delete_error", "Nie udało się usunąć.") });
     } finally {
       setPendingDeleteId(null);
     }

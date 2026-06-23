@@ -8,6 +8,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 
 import {
   ProjectService,
@@ -62,15 +63,11 @@ export function useProjectCard(projectId: string) {
       );
     },
     onError: (error) => {
-      const message =
-        error instanceof Error
-          ? error.message
-          : t(
-              "projects.card.download_unknown_error",
-              "Nie udało się wygenerować dokumentu.",
-            );
-      toast.error(t("common.errors.generation_error", "Błąd generowania"), {
-        description: message,
+      toastApiError(error, t, {
+        fallbackDescription: t(
+          "projects.card.download_unknown_error",
+          "Nie udało się wygenerować dokumentu.",
+        ),
       });
     },
   });
