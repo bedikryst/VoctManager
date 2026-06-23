@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
 import { useCreateLocation, useUpdateLocation } from "../api/logistics.queries";
 import {
   locationFormSchema,
@@ -96,10 +97,8 @@ export const useLocationForm = (
       }
       onClose();
     } catch (error) {
-      console.error("[VoctManager API Error]:", error);
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
-        id: toastId,
-      });
+      const normalized = toastApiError(error, t, { id: toastId });
+      applyFieldErrors(form.setError, normalized);
     }
   };
 

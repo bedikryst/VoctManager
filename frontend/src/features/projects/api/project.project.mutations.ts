@@ -6,7 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 
 import type { Project } from "@/shared/types";
 
@@ -48,8 +48,8 @@ export const useCreateProject = () => {
 
       return { optimisticId, previousProjects };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousProjects) {
         queryClient.setQueryData(
           projectKeys.projects.all,
@@ -114,8 +114,8 @@ export const useUpdateProject = () => {
 
       return { previousProjects, previousProjectDetails };
     },
-    onError: (_error, variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, variables, context) => {
+      toastApiError(error);
       if (context?.previousProjects) {
         queryClient.setQueryData(
           projectKeys.projects.all,
@@ -174,8 +174,8 @@ export const useDeleteProject = () => {
 
       return { previousProjects, previousProjectDetails };
     },
-    onError: (_error, id, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, id, context) => {
+      toastApiError(error);
       if (context?.previousProjects) {
         queryClient.setQueryData(
           projectKeys.projects.all,
@@ -239,8 +239,8 @@ export const useUpdateProjectStatus = () => {
 
       return { previousProjects, previousProjectDetails };
     },
-    onError: (_error, variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, variables, context) => {
+      toastApiError(error);
       if (context?.previousProjects) {
         queryClient.setQueryData(
           projectKeys.projects.all,

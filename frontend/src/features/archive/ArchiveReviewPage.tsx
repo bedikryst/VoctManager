@@ -34,6 +34,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -191,14 +192,13 @@ export default function ArchiveReviewPage(): React.JSX.Element {
       reset(values, { keepValues: true });
       toast.success(t("archive.review.toast_save_success", "Zapisano zmiany."));
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t(
-              "archive.review.toast_save_error",
-              "Nie udało się zapisać zmian.",
-            ),
-      );
+      const normalized = toastApiError(err, t, {
+        fallbackDescription: t(
+          "archive.review.toast_save_error",
+          "Nie udało się zapisać zmian.",
+        ),
+      });
+      applyFieldErrors(form.setError, normalized);
     }
   });
 

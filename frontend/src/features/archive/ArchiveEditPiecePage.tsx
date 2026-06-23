@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ChevronRight, Sparkles } from "lucide-react";
 
+import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -179,15 +180,14 @@ export default function ArchiveEditPiecePage(): React.JSX.Element {
       form.reset(values, { keepValues: true });
       navigate("/panel/archive-management");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t(
-              "archive.edit_piece.toast_error",
-              "Nie udało się zapisać zmian.",
-            ),
-        { id: toastId },
-      );
+      const normalized = toastApiError(err, t, {
+        id: toastId,
+        fallbackDescription: t(
+          "archive.edit_piece.toast_error",
+          "Nie udało się zapisać zmian.",
+        ),
+      });
+      applyFieldErrors(form.setError, normalized);
     }
   });
 

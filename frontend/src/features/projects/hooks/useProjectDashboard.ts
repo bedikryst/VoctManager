@@ -12,6 +12,7 @@ import { startTransition, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
+import { toastApiError } from "@/shared/api/errors";
 import type { Project } from "@/shared/types";
 import { useDeleteProject } from "../api/project.queries";
 import { useEnrichedProjects } from "./useEnrichedProjects";
@@ -112,10 +113,10 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
         t("projects.toast.delete_success", "Projekt usunięty pomyślnie"),
         { id: toastId },
       );
-    } catch {
-      toast.error(t("projects.toast.delete_error_title", "Błąd usuwania"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "projects.toast.delete_error_desc",
           "Sprawdź powiązania projektu w bazie. Projekt może mieć przypisane umowy lub obecności.",
         ),

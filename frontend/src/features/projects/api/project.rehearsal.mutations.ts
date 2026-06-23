@@ -6,7 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 
 import type { Rehearsal } from "@/shared/types";
 
@@ -52,8 +52,8 @@ export const useCreateRehearsal = (projectId: string) => {
 
       return { optimisticId, previousRehearsals };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousRehearsals) {
         queryClient.setQueryData(
           projectKeys.rehearsals.byProject(projectId),
@@ -109,8 +109,8 @@ export const useUpdateRehearsal = (projectId: string) => {
 
       return { previousRehearsals };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousRehearsals) {
         queryClient.setQueryData(
           projectKeys.rehearsals.byProject(projectId),
@@ -155,8 +155,8 @@ export const useDeleteRehearsal = (projectId: string) => {
 
       return { previousRehearsals };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousRehearsals) {
         queryClient.setQueryData(
           projectKeys.rehearsals.byProject(projectId),

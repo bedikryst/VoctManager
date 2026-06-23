@@ -35,6 +35,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { toastApiError } from "@/shared/api/errors";
 import type { Project } from "@/shared/types";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -193,10 +194,10 @@ export default function ProjectHubLayout(): React.JSX.Element {
             ),
         { id: toastId },
       );
-    } catch {
-      toast.error(t("common.errors.server_error", "Błąd serwera"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "projects.card.status_update_failed",
           "Nie udało się zmienić statusu.",
         ),
@@ -215,10 +216,10 @@ export default function ProjectHubLayout(): React.JSX.Element {
         { id: toastId },
       );
       navigate("/panel/projects");
-    } catch {
-      toast.error(t("projects.toast.delete_error_title", "Błąd usuwania"), {
+    } catch (error) {
+      toastApiError(error, t, {
         id: toastId,
-        description: t(
+        fallbackDescription: t(
           "projects.toast.delete_error_desc",
           "Sprawdź powiązania projektu w bazie. Projekt może mieć przypisane umowy lub obecności.",
         ),

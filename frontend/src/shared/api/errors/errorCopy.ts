@@ -168,13 +168,14 @@ export const resolveErrorCopy = (
     return { title, detail: error.serverMessage, specific: true };
   }
 
-  // 4. Localized fallback for the kind. Every kind except a truly opaque
-  //    "unknown" still names a real cause (offline, forbidden, server, …) that
-  //    beats a caller's generic "couldn't save" line — so only "unknown" yields
-  //    to a fallbackDescription.
+  // 4. Localized fallback for the kind. Most kinds still name a real cause
+  //    (offline, forbidden, server, …) that beats a caller's generic line. The
+  //    exceptions are "unknown" and a message-less "domain" rule: there the
+  //    feature's own hint ("project still has contracts") is the best copy, so
+  //    yield to a fallbackDescription.
   return {
     title,
     detail: translate(t, fallback.detail),
-    specific: error.kind !== "unknown",
+    specific: error.kind !== "unknown" && error.kind !== "domain",
   };
 };

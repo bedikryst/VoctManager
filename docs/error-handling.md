@@ -104,9 +104,25 @@ saying "Błąd zapisu". `fallbackDescription` keeps each feature's tailored copy
 but only surfaces it for a truly opaque `unknown` error — every named cause
 (offline, forbidden, server, conflict, …) leads with its own precise detail.
 
-**Phase 3 — remaining `toast.error` sites + zod forms.** Sweep the rest of the
-58 sites; wire `applyFieldErrors` into every `zodResolver` form
-(`useLocationForm`, `usePieceFormState`, modals, …).
+**Phase 3 — zod forms + API call sites.** ✅ Largely shipped.
+- Forms that own their submission now light up rejected fields inline via
+  `applyFieldErrors`: artist, location, archive piece (new + edit), archive
+  review. (The chorister-hub category/document modals delegate submission to a
+  parent mutation, so their toasts were made precise at the query layer; inline
+  field wiring there is a small follow-up once submission moves into the modal.)
+- API layers swept: `chorister-hub.queries` (×5), `project.project /
+  rehearsal / program / attendance.mutations` (13 more hard-coded English
+  toasts), `messages.queries` (×2), project-hub + dashboard delete/status.
+- `resolveErrorCopy` learned that a message-less **domain** rule should defer
+  to the caller's `fallbackDescription` (e.g. "project still has contracts"),
+  not a generic kind line.
+
+**Remaining mop-up (phase 3 tail).** A scattered set of component-level
+`toast.error` handlers (rehearsals/schedule/contracts/archive list components,
+`NewThreadModal`, a few data hooks). Convert opportunistically with the same
+pattern. Intentionally **left bespoke** (not API errors): push-notification
+permission states (`usePushNotifications`) and client-side file-upload
+validation (`EditionUploadZone`, …).
 
 **Phase 4 — backend contract hardening (recommended).** Make the client able to
 _fully_ trust the server:

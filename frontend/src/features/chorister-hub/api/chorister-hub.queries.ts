@@ -3,6 +3,7 @@ import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
+import { toastApiError } from '@/shared/api/errors';
 import { choristerHubKeys } from './chorister-hub.query-keys';
 import { ChoristerHubService } from './chorister-hub.service';
 import type {
@@ -61,11 +62,11 @@ export const useCreateCategory = () => {
       ]);
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (err, _vars, ctx) => {
       if (ctx?.previous) {
         queryClient.setQueryData(choristerHubKeys.categories.list(), ctx.previous);
       }
-      toast.error(t('chorister_hub.toast.category_create_error', 'Category creation failed.'));
+      toastApiError(err, t, { fallbackDescription: t('chorister_hub.toast.category_create_error', 'Category creation failed.') });
     },
     onSuccess: () => {
       toast.success(t('chorister_hub.toast.category_created', 'Category created.'));
@@ -94,11 +95,11 @@ export const useUpdateCategory = () => {
       );
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (err, _vars, ctx) => {
       if (ctx?.previous) {
         queryClient.setQueryData(choristerHubKeys.categories.list(), ctx.previous);
       }
-      toast.error(t('chorister_hub.toast.category_update_error', 'Category update failed.'));
+      toastApiError(err, t, { fallbackDescription: t('chorister_hub.toast.category_update_error', 'Category update failed.') });
     },
     onSuccess: () => {
       toast.success(t('chorister_hub.toast.category_updated', 'Category updated.'));
@@ -126,11 +127,11 @@ export const useDeleteCategory = () => {
       );
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (err, _vars, ctx) => {
       if (ctx?.previous) {
         queryClient.setQueryData(choristerHubKeys.categories.list(), ctx.previous);
       }
-      toast.error(t('chorister_hub.toast.category_delete_error', 'Category deletion failed.'));
+      toastApiError(err, t, { fallbackDescription: t('chorister_hub.toast.category_delete_error', 'Category deletion failed.') });
     },
     onSuccess: () => {
       toast.success(t('chorister_hub.toast.category_deleted', 'Category removed.'));
@@ -177,11 +178,11 @@ export const useUploadDocument = () => {
       );
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (err, _vars, ctx) => {
       if (ctx?.previous) {
         queryClient.setQueryData(choristerHubKeys.categories.list(), ctx.previous);
       }
-      toast.error(t('chorister_hub.toast.document_upload_error', 'Document upload failed.'));
+      toastApiError(err, t, { fallbackDescription: t('chorister_hub.toast.document_upload_error', 'Document upload failed.') });
     },
     onSuccess: () => {
       toast.success(t('chorister_hub.toast.document_uploaded', 'Document uploaded.'));
@@ -215,11 +216,11 @@ export const useDeleteDocument = () => {
       );
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (err, _vars, ctx) => {
       if (ctx?.previous) {
         queryClient.setQueryData(choristerHubKeys.categories.list(), ctx.previous);
       }
-      toast.error(t('chorister_hub.toast.document_delete_error', 'Document deletion failed.'));
+      toastApiError(err, t, { fallbackDescription: t('chorister_hub.toast.document_delete_error', 'Document deletion failed.') });
     },
     onSuccess: () => {
       toast.success(t('chorister_hub.toast.document_deleted', 'Document removed.'));

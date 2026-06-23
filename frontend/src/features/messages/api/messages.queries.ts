@@ -8,8 +8,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import i18n from "@/shared/config/i18n";
+import { toastApiError } from "@/shared/api/errors";
 
 import { ChannelService, MessagingService } from "./messages.service";
 import type {
@@ -113,14 +113,19 @@ export const usePostMessage = (threadId: string, me: UserBrief) => {
       }
       return { previous };
     },
-    onError: (_error, _body, context) => {
+    onError: (error, _body, context) => {
       if (context?.previous) {
         queryClient.setQueryData(
           messagingKeys.thread(threadId),
           context.previous,
         );
       }
-      toast.error(i18n.t("messages.send_failed", "Nie udało się wysłać wiadomości."));
+      toastApiError(error, undefined, {
+        fallbackDescription: i18n.t(
+          "messages.send_failed",
+          "Nie udało się wysłać wiadomości.",
+        ),
+      });
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -211,11 +216,16 @@ export const usePostChannelMessage = (channelId: string, me: UserBrief) => {
       }
       return { previous };
     },
-    onError: (_error, _body, context) => {
+    onError: (error, _body, context) => {
       if (context?.previous) {
         queryClient.setQueryData(channelKeys.detail(channelId), context.previous);
       }
-      toast.error(i18n.t("messages.send_failed", "Nie udało się wysłać wiadomości."));
+      toastApiError(error, undefined, {
+        fallbackDescription: i18n.t(
+          "messages.send_failed",
+          "Nie udało się wysłać wiadomości.",
+        ),
+      });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: channelKeys.detail(channelId) });

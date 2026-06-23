@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 
+import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading } from "@/shared/ui/primitives/typography";
@@ -96,15 +97,14 @@ export default function ArchiveNewPiecePage(): React.JSX.Element {
       );
       navigate(`/panel/archive-management?highlight=${created.id}`);
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t(
-              "archive.new_piece.toast_error",
-              "Nie udało się dodać utworu.",
-            ),
-        { id: toastId },
-      );
+      const normalized = toastApiError(err, t, {
+        id: toastId,
+        fallbackDescription: t(
+          "archive.new_piece.toast_error",
+          "Nie udało się dodać utworu.",
+        ),
+      });
+      applyFieldErrors(form.setError, normalized);
     }
   });
 
