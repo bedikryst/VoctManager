@@ -48,11 +48,11 @@ class ICalGeneratorService:
             projects = Project.objects.filter(
                 participations__artist=artist,
                 participations__status__in=active_statuses
-            ).exclude(status=Project.Status.CANCELLED)
+            ).exclude(status=Project.Status.CANCELLED).select_related('location')
 
             rehearsals = Rehearsal.objects.filter(
                 project__in=projects
-            ).distinct().select_related('project')
+            ).distinct().select_related('project', 'location')
 
             return cls._build_ics(projects, rehearsals)
 
@@ -117,7 +117,7 @@ class ICalGeneratorService:
             end_time = start_time + timedelta(hours=3)
             
             title = cls._escape_ics_text(f"[{_('Rehearsal')}] {reh.project.title}")
-            location = cls._escape_ics_text(reh.location)
+            location = cls._escape_ics_text(reh.location.name if reh.location else "")
             focus_text = cls._escape_ics_text(reh.focus) if reh.focus else _('None')
             description = cls._escape_ics_text(f"{_('Focus')}: {focus_text}\n{_('Project')}: {reh.project.title}")
 
@@ -138,7 +138,7 @@ class ICalGeneratorService:
             end_time = proj.date_time + timedelta(hours=4)
             
             title = cls._escape_ics_text(f"[{_('Concert')}] {proj.title}")
-            location = cls._escape_ics_text(proj.location)
+            location = cls._escape_ics_text(proj.location.name if proj.location else "")
             desc_text = cls._escape_ics_text(proj.description)
             
             # Using gettext for labels
