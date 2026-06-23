@@ -1799,6 +1799,64 @@
     }
   },
   "errors": {
+    "toast": {
+      "validation_title": "Vérifiez le formulaire",
+      "validation_detail": "Certains champs nécessitent votre attention.",
+      "domain_title": "Action impossible",
+      "domain_detail": "Cette action n’est pas autorisée pour le moment.",
+      "auth_title": "Session expirée",
+      "auth_detail": "Veuillez vous reconnecter pour continuer.",
+      "permission_title": "Accès refusé",
+      "permission_detail": "Vous n’avez pas l’autorisation pour cette action.",
+      "notfound_title": "Introuvable",
+      "notfound_detail": "Cette ressource n’existe plus ou a été déplacée.",
+      "conflict_title": "Conflit de modifications",
+      "conflict_detail": "Quelqu’un a modifié ces données entre-temps. Actualisez et réessayez.",
+      "rate_limit_title": "Trop de tentatives",
+      "rate_limit_detail": "Patientez un instant avant de réessayer.",
+      "network_title": "Pas de connexion",
+      "network_detail": "Impossible de joindre le serveur. Vérifiez votre réseau et réessayez.",
+      "offline_title": "Vous êtes hors ligne",
+      "offline_detail": "Vos modifications seront envoyées au retour de la connexion.",
+      "server_title": "Erreur serveur",
+      "server_detail": "Une erreur est survenue de notre côté. Nous y travaillons — réessayez bientôt.",
+      "unknown_title": "Une erreur est survenue",
+      "unknown_detail": "Veuillez réessayer dans un instant."
+    },
+    "codes": {
+      "invalid_credentials": {
+        "title": "Identifiants invalides",
+        "detail": "Vérifiez votre e-mail et votre mot de passe, puis réessayez."
+      },
+      "email_taken": {
+        "title": "E-mail déjà utilisé",
+        "detail": "Cet e-mail est déjà associé à un autre compte."
+      },
+      "expired_reset_link": {
+        "title": "Lien expiré",
+        "detail": "Ce lien de réinitialisation n’est plus valide. Demandez-en un nouveau."
+      },
+      "invalid_reset_link": {
+        "title": "Lien invalide",
+        "detail": "Ce lien de réinitialisation est invalide ou déjà utilisé."
+      },
+      "invalid_activation_link": {
+        "title": "Lien d’activation invalide",
+        "detail": "Le lien d’activation est invalide ou expiré. Demandez-en un nouveau."
+      },
+      "avatar_missing": {
+        "title": "Aucun fichier",
+        "detail": "Aucune image sélectionnée à téléverser."
+      },
+      "invalid_image": {
+        "title": "Image invalide",
+        "detail": "Le fichier téléversé n’est pas une image valide."
+      }
+    },
+    "form": {
+      "has_errors": "Corrigez les champs en surbrillance.",
+      "unknown_field": "Le serveur a rejeté des données absentes de ce formulaire."
+    },
     "eyebrow": "Un silence inattendu",
     "eyebrow_stale": "Une nouvelle version",
     "title": "Quelque chose a interrompu la partition",

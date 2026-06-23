@@ -6,7 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 
 import type { Participation } from "@/shared/types";
 
@@ -49,8 +49,8 @@ export const useCreateParticipation = (projectId: string) => {
 
       return { optimisticId, previousParticipations };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousParticipations) {
         queryClient.setQueryData(
           projectKeys.participations.byProject(projectId),
@@ -104,8 +104,8 @@ export const useUpdateParticipation = (projectId: string) => {
 
       return { previousParticipations };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousParticipations) {
         queryClient.setQueryData(
           projectKeys.participations.byProject(projectId),
@@ -151,8 +151,8 @@ export const useDeleteParticipation = (projectId: string) => {
 
       return { previousParticipations };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousParticipations) {
         queryClient.setQueryData(
           projectKeys.participations.byProject(projectId),

@@ -1799,6 +1799,64 @@
     }
   },
   "errors": {
+    "toast": {
+      "validation_title": "Sprawdź formularz",
+      "validation_detail": "Niektóre pola wymagają poprawy.",
+      "domain_title": "Nie można wykonać tej operacji",
+      "domain_detail": "Ta czynność jest teraz niedozwolona.",
+      "auth_title": "Sesja wygasła",
+      "auth_detail": "Zaloguj się ponownie, aby kontynuować.",
+      "permission_title": "Brak uprawnień",
+      "permission_detail": "Nie masz dostępu do tej operacji.",
+      "notfound_title": "Nie znaleziono",
+      "notfound_detail": "Tego zasobu już nie ma lub został przeniesiony.",
+      "conflict_title": "Konflikt zmian",
+      "conflict_detail": "Ktoś zmienił te dane w międzyczasie. Odśwież i spróbuj ponownie.",
+      "rate_limit_title": "Zbyt wiele prób",
+      "rate_limit_detail": "Odczekaj chwilę i spróbuj ponownie.",
+      "network_title": "Brak połączenia",
+      "network_detail": "Nie udało się połączyć z serwerem. Sprawdź sieć i spróbuj ponownie.",
+      "offline_title": "Jesteś offline",
+      "offline_detail": "Zmiany zostaną wysłane, gdy wróci połączenie.",
+      "server_title": "Błąd serwera",
+      "server_detail": "Coś po naszej stronie zawiodło. Pracujemy nad tym — spróbuj za chwilę.",
+      "unknown_title": "Wystąpił błąd",
+      "unknown_detail": "Spróbuj ponownie za chwilę."
+    },
+    "codes": {
+      "invalid_credentials": {
+        "title": "Nieprawidłowe dane logowania",
+        "detail": "Sprawdź e-mail i hasło, a następnie spróbuj ponownie."
+      },
+      "email_taken": {
+        "title": "Adres e-mail zajęty",
+        "detail": "Ten adres e-mail jest już przypisany do innego konta."
+      },
+      "expired_reset_link": {
+        "title": "Link wygasł",
+        "detail": "Ten link do resetu hasła stracił ważność. Poproś o nowy."
+      },
+      "invalid_reset_link": {
+        "title": "Nieprawidłowy link",
+        "detail": "Ten link do resetu hasła jest nieprawidłowy lub został już użyty."
+      },
+      "invalid_activation_link": {
+        "title": "Nieprawidłowy link aktywacyjny",
+        "detail": "Link aktywacyjny jest nieprawidłowy lub wygasł. Poproś o nowy."
+      },
+      "avatar_missing": {
+        "title": "Brak pliku",
+        "detail": "Nie wybrano żadnego zdjęcia do przesłania."
+      },
+      "invalid_image": {
+        "title": "Nieprawidłowy obraz",
+        "detail": "Przesłany plik nie jest prawidłowym obrazem."
+      }
+    },
+    "form": {
+      "has_errors": "Popraw zaznaczone pola.",
+      "unknown_field": "Serwer odrzucił dane, których nie ma w formularzu."
+    },
     "eyebrow": "Nieoczekiwana pauza",
     "eyebrow_stale": "Nowa odsłona",
     "title": "Coś przerwało partyturę",

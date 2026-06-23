@@ -6,7 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 
 import type { CrewAssignment } from "@/shared/types";
 
@@ -49,8 +49,8 @@ export const useCreateCrewAssignment = (projectId: string) => {
 
       return { optimisticId, previousCrewAssignments };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousCrewAssignments) {
         queryClient.setQueryData(
           projectKeys.crewAssignments.byProject(projectId),
@@ -104,8 +104,8 @@ export const useUpdateCrewAssignment = (projectId: string) => {
 
       return { previousCrewAssignments };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousCrewAssignments) {
         queryClient.setQueryData(
           projectKeys.crewAssignments.byProject(projectId),
@@ -151,8 +151,8 @@ export const useDeleteCrewAssignment = (projectId: string) => {
 
       return { previousCrewAssignments };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousCrewAssignments) {
         queryClient.setQueryData(
           projectKeys.crewAssignments.byProject(projectId),

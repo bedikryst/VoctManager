@@ -1799,6 +1799,64 @@
     }
   },
   "errors": {
+    "toast": {
+      "validation_title": "Check the form",
+      "validation_detail": "Some fields need attention.",
+      "domain_title": "Can’t do that",
+      "domain_detail": "This action isn’t allowed right now.",
+      "auth_title": "Session expired",
+      "auth_detail": "Please sign in again to continue.",
+      "permission_title": "No access",
+      "permission_detail": "You don’t have permission for this action.",
+      "notfound_title": "Not found",
+      "notfound_detail": "This resource is gone or has moved.",
+      "conflict_title": "Edit conflict",
+      "conflict_detail": "Someone changed this in the meantime. Refresh and try again.",
+      "rate_limit_title": "Too many attempts",
+      "rate_limit_detail": "Wait a moment and try again.",
+      "network_title": "No connection",
+      "network_detail": "Couldn’t reach the server. Check your network and try again.",
+      "offline_title": "You’re offline",
+      "offline_detail": "Your changes will be sent once the connection returns.",
+      "server_title": "Server error",
+      "server_detail": "Something failed on our side. We’re on it — try again shortly.",
+      "unknown_title": "Something went wrong",
+      "unknown_detail": "Please try again in a moment."
+    },
+    "codes": {
+      "invalid_credentials": {
+        "title": "Invalid login",
+        "detail": "Check your email and password, then try again."
+      },
+      "email_taken": {
+        "title": "Email taken",
+        "detail": "This email is already linked to another account."
+      },
+      "expired_reset_link": {
+        "title": "Link expired",
+        "detail": "This password-reset link is no longer valid. Request a new one."
+      },
+      "invalid_reset_link": {
+        "title": "Invalid link",
+        "detail": "This password-reset link is invalid or already used."
+      },
+      "invalid_activation_link": {
+        "title": "Invalid activation link",
+        "detail": "The activation link is invalid or expired. Request a new one."
+      },
+      "avatar_missing": {
+        "title": "No file",
+        "detail": "No image was selected to upload."
+      },
+      "invalid_image": {
+        "title": "Invalid image",
+        "detail": "The uploaded file is not a valid image."
+      }
+    },
+    "form": {
+      "has_errors": "Fix the highlighted fields.",
+      "unknown_field": "The server rejected data that isn’t in this form."
+    },
     "eyebrow": "An unexpected rest",
     "eyebrow_stale": "A new release",
     "title": "Something interrupted the score",

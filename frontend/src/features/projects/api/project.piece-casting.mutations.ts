@@ -6,7 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toastApiError } from "@/shared/api/errors";
 
 import type { PieceCasting } from "@/shared/types";
 
@@ -55,8 +55,8 @@ export const useCreatePieceCasting = (projectId: string) => {
 
       return { optimisticId, previousPieceCastings };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousPieceCastings) {
         queryClient.setQueryData(
           projectKeys.pieceCastings.byProject(projectId),
@@ -116,8 +116,8 @@ export const useUpdatePieceCasting = (projectId: string) => {
 
       return { previousPieceCastings };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousPieceCastings) {
         queryClient.setQueryData(
           projectKeys.pieceCastings.byProject(projectId),
@@ -169,8 +169,8 @@ export const useDeletePieceCasting = (projectId: string) => {
 
       return { previousPieceCastings };
     },
-    onError: (_error, _variables, context) => {
-      toast.error("Operation unsuccessful. Please verify your connection and try again.");
+    onError: (error, _variables, context) => {
+      toastApiError(error);
       if (context?.previousPieceCastings) {
         queryClient.setQueryData(
           projectKeys.pieceCastings.byProject(projectId),

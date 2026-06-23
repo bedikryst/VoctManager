@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
+import { toastApiError } from "@/shared/api/errors";
 import type { Project, RunSheetItem } from "@/shared/types";
 import {
   useCreateProject,
@@ -396,23 +397,7 @@ export const useDetailsForm = (
       resetFormToProject(savedProject);
       onSuccess(savedProject);
     } catch (error: unknown) {
-      const isAxiosError = (
-        value: unknown,
-      ): value is { response?: { data?: Record<string, string[]> } } =>
-        typeof value === "object" && value !== null && "response" in value;
-
-      const errorMessage =
-        isAxiosError(error) && error.response?.data
-          ? Object.values(error.response.data).flat().join(" | ")
-          : t(
-              "common.errors.save_problem",
-              "Wystąpił problem podczas zapisywania danych.",
-            );
-
-      toast.error(t("common.errors.save_error", "Błąd zapisu"), {
-        id: toastId,
-        description: errorMessage,
-      });
+      toastApiError(error, t, { id: toastId });
     }
   };
 

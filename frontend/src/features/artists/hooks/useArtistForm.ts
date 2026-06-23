@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
+import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
 import { useCreateArtist, useUpdateArtist } from "../api/artist.queries";
 import {
   artistFormSchema,
@@ -161,25 +162,11 @@ export const useArtistForm = (
         );
       }
       onClose();
-    } catch (err: any) {
-      console.error("[ArtistEditor] Form submission failed:", err);
-      const isEmailTaken = err?.response?.data?.email;
-
-      toast.error(
-        isEmailTaken
-          ? t(
-              "artists.form.toast.email_taken",
-              "Ten adres e-mail jest już zajęty.",
-            )
-          : t("common.errors.save_error", "Błąd zapisu"),
-        {
-          id: toastId,
-          description: t(
-            "artists.form.toast.save_error_desc",
-            "Sprawdź poprawność danych i spróbuj ponownie.",
-          ),
-        },
-      );
+    } catch (err: unknown) {
+      // Light up rejected fields inline (e.g. a taken email lands on the email
+      // input), and transition the loading toast into a precise summary.
+      const normalized = toastApiError(err, t, { id: toastId });
+      applyFieldErrors(form.setError, normalized);
     }
   };
 
