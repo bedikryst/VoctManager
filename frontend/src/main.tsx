@@ -62,6 +62,21 @@ const renderApp = (): void => {
             if (data instanceof Blob || data instanceof ArrayBuffer) {
               return false;
             }
+            // Never persist infinite-query caches. Their `{ pages, pageParams }`
+            // shape is read by TanStack internals (`getNextPageParam` does
+            // `data.pages.length`) the moment the observer mounts — before any
+            // `select` guard runs — so restoring a snapshot whose shape no
+            // longer matches the current query detonates the whole app. The
+            // only infinite query here is the polled notifications inbox, which
+            // has negligible offline value; let it refetch fresh instead.
+            if (
+              data !== null &&
+              typeof data === "object" &&
+              Array.isArray((data as { pages?: unknown }).pages) &&
+              Array.isArray((data as { pageParams?: unknown }).pageParams)
+            ) {
+              return false;
+            }
             return defaultShouldDehydrateQuery(query);
           },
         },

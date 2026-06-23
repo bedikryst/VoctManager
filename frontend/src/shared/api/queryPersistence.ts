@@ -9,8 +9,17 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 
 export const QUERY_CACHE_STORAGE_KEY = "voctmanager-query-cache";
 
-/** Bump to invalidate persisted snapshots after breaking cache-shape changes. */
-export const QUERY_CACHE_BUSTER = "2026-06-no-blob-persist";
+/**
+ * Bump to invalidate persisted snapshots after breaking cache-shape changes.
+ *
+ * 2026-06-infinite-notifications: the notifications inbox (`["notifications",
+ * "list"]`) changed from a plain `useQuery` array to a `useInfiniteQuery`
+ * (`{ pages, pageParams }`). Returning users had the old array persisted under
+ * the same key; restoring it into the new InfiniteQueryObserver crashed the
+ * whole app inside TanStack's `getNextPageParam` (`data.pages.length` on an
+ * array with no `.pages`). Bumping the buster evicts those stale snapshots.
+ */
+export const QUERY_CACHE_BUSTER = "2026-06-infinite-notifications";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
