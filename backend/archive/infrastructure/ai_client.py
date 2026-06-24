@@ -30,11 +30,12 @@ Standards: SaaS 2026, Anthropic SDK best practices, provenance-aware.
 from __future__ import annotations
 
 import base64
+import json
 import logging
 import time
 from dataclasses import dataclass
 from decimal import ROUND_UP, Decimal
-from typing import Final, TypeVar
+from typing import Any, Final, TypeVar
 
 import anthropic
 from django.conf import settings
@@ -342,6 +343,7 @@ class AIClient:
         effort: str = DEFAULT_EFFORT,
         enable_thinking: bool = True,
         pdf_bytes: bytes | None = None,
+        structured: bool = True,
     ) -> tuple[T, CallCost]:
         """
         Run one structured-output call. Returns the parsed Pydantic instance
@@ -357,9 +359,27 @@ class AIClient:
         images), cached so escalation retries read it back cheaply. This is how
         the v2 pipeline analyses a score: the real document, not pypdf text.
 
+        `structured=True` (default) uses the SDK's strict structured outputs
+        (`output_format`). Set `structured=False` when the schema is too large
+        for that validator (Anthropic returns 400 "Schema is too complex" — the
+        consolidated score analysis hits this): we then steer the shape via the
+        prompt and parse the JSON ourselves. Claude 4.x follows an explicit
+        schema-in-prompt reliably, and there is no complexity limit.
+
         Raises `AIClientError` on any unrecoverable SDK error, or
         `AIClientOverloadedError` (retryable) on a transient capacity failure.
         """
+        # Without `output_format`, append the JSON Schema to the prompt so the
+        # model knows the exact shape to emit.
+        json_directive = ""
+        if not structured:
+            json_directive = (
+                "\n\nRespond with ONLY a single JSON object — no prose, no "
+                "explanation, no markdown code fences — conforming exactly to "
+                "this JSON Schema:\n"
+                + json.dumps(output_schema.model_json_schema())
+            )
+
         if pdf_bytes is not None:
             content_blocks: list[dict] = [{
                 "type": "document",
@@ -371,10 +391,14 @@ class AIClient:
                 "cache_control": {"type": "ephemeral"},
             }]
             if isinstance(user_content, str):
-                content_blocks.append({"type": "text", "text": user_content})
+                content_blocks.append({"type": "text", "text": user_content + json_directive})
             else:
                 content_blocks.extend(user_content)
+                if json_directive:
+                    content_blocks.append({"type": "text", "text": json_directive})
             message_content: str | list[dict] = content_blocks
+        elif isinstance(user_content, str):
+            message_content = user_content + json_directive
         else:
             message_content = user_content
 
@@ -390,8 +414,9 @@ class AIClient:
             "messages": [
                 {"role": "user", "content": message_content},
             ],
-            "output_format": output_schema,
         }
+        if structured:
+            base_params["output_format"] = output_schema
         # Haiku 4.5 returns 400 for `output_config.effort` ("This model does
         # not support the effort parameter"); only set the dial on models
         # that honour it.
@@ -410,13 +435,20 @@ class AIClient:
         budget = max_tokens
         costs: list[CallCost] = []
         last_stop_reason: str | None = None
+        # `.parse()` and `.create()` return different SDK types; `parsed_output`
+        # only exists on the former. Keep the handler dynamic so reading it in
+        # the structured branch doesn't trip the union.
+        response: Any = None
 
         for attempt in range(MAX_TOKEN_ESCALATIONS + 1):
             params = {**base_params, "max_tokens": budget}
 
             t0 = time.monotonic()
             try:
-                response = self._client.messages.parse(**params)
+                if structured:
+                    response = self._client.messages.parse(**params)
+                else:
+                    response = self._client.messages.create(**params)
             except anthropic.BadRequestError as exc:
                 # 400 is a code bug (bad params, malformed schema, model
                 # mismatch). Surface as AIClientPermanentError so the Celery
@@ -480,13 +512,16 @@ class AIClient:
                 cost.total_cents, response.stop_reason,
             )
 
-            parsed: T | None = response.parsed_output
+            parsed: T | None = (
+                response.parsed_output if structured
+                else self._coerce_json(response, output_schema)
+            )
             if parsed is not None:
                 return parsed, _sum_costs(costs)
 
             # No parseable output. Only a `max_tokens` truncation is worth
-            # retrying — and only with a *bigger* budget. Any other reason
-            # (e.g. a refusal) won't improve on retry, so stop now.
+            # retrying with a *bigger* budget; anything else won't improve by
+            # re-issuing an identical call, so stop the escalation here.
             if response.stop_reason != 'max_tokens' or budget >= ceiling:
                 break
 
@@ -497,12 +532,45 @@ class AIClient:
             )
             budget = new_budget
 
-        # Exhausted escalations (or a non-truncation no-parse). Terminal: bill
-        # every attempt and let the guard mark the entity FAILED — do NOT let
-        # Celery autoretry re-burn the budget on an identical doomed call.
-        raise AIClientTruncatedError(
+        total = _sum_costs(costs)
+        if last_stop_reason == 'max_tokens':
+            # Genuinely too long for the budget. Terminal (a bigger budget was
+            # already tried) — bill the attempts and let the guard mark FAILED.
+            raise AIClientTruncatedError(
+                f"Claude returned no parseable output after {len(costs)} attempt(s) "
+                f"(stop_reason='max_tokens', max_tokens up to {budget}). "
+                f"The score may be longer than a single call can handle.",
+                cost=total,
+            )
+        # Any other no-parse (e.g. malformed JSON in the unstructured path) is
+        # worth a fresh attempt — surface a retryable error, not a terminal one.
+        raise AIClientError(
             f"Claude returned no parseable output after {len(costs)} attempt(s) "
-            f"(stop_reason={last_stop_reason!r}, max_tokens up to {budget}). "
-            f"The score's sung text may be longer than a single call can handle.",
-            cost=_sum_costs(costs),
+            f"(stop_reason={last_stop_reason!r}).",
+            cost=total,
         )
+
+    @staticmethod
+    def _coerce_json(response: Any, output_schema: type[T]) -> T | None:
+        """Extract and validate a JSON object from an unstructured response.
+        Tolerates markdown fences / surrounding prose. Returns None if nothing
+        parses, so the caller retries."""
+        text = "".join(
+            getattr(block, "text", "") for block in response.content
+            if getattr(block, "type", None) == "text"
+        ).strip()
+        if not text:
+            return None
+        if text.startswith("```"):
+            newline = text.find("\n")
+            text = text[newline + 1:] if newline != -1 else text[3:]
+            if text.rstrip().endswith("```"):
+                text = text.rstrip()[:-3]
+            text = text.strip()
+        start, end = text.find("{"), text.rfind("}")
+        if start != -1 and end > start:
+            text = text[start:end + 1]
+        try:
+            return output_schema.model_validate_json(text)
+        except Exception:
+            return None

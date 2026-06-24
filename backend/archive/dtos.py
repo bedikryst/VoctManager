@@ -173,7 +173,9 @@ class ExtractedWorkIdentity(BaseModel):
 
 class ExtractedMovement(BaseModel):
     """One movement detected inside a multi-movement work."""
-    model_config = ConfigDict(extra='forbid')
+    # `ignore` (not `forbid`): parsed from model-authored JSON; a stray extra
+    # field should be dropped, not fail the whole analysis.
+    model_config = ConfigDict(extra='ignore')
 
     order_index: int = Field(ge=0, description="Zero-based index of this movement.")
     title: str = Field(description="Movement title, including any incipit (e.g. 'Et exsultavit spiritus meus').")
@@ -200,7 +202,7 @@ class GeneratedProgramNote(BaseModel):
 
 class TranslationPayload(BaseModel):
     """A single language's translation of the sung text."""
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra='ignore')
 
     target_language: str = Field(
         description="ISO 639-1 code of the translation language (e.g. 'en', 'pl', 'fr')."
@@ -220,8 +222,12 @@ class ScoreAnalysisResult(BaseModel):
     vision call over the *whole* document returns identity + movements + sung
     text + IPA + translations together. Sub-models (`ExtractedMovement`,
     `TranslationPayload`) are reused so persistence code is unchanged.
+
+    Parsed from model-authored JSON (the schema is too complex for the SDK's
+    strict `output_format` validator), so `extra='ignore'` keeps a stray field
+    from failing the whole parse.
     """
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra='ignore')
 
     # --- Identity (from the title page / front matter) ---
     title: str = Field(description="Title of the work as printed on the score.")

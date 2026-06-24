@@ -37,6 +37,7 @@ import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { INGESTION_STATUS } from "@/shared/types";
 
+import { ActiveIngestionsPanel } from "./components/ActiveIngestionsPanel";
 import { ArchiveAwaitingBanner } from "./components/ArchiveAwaitingBanner";
 import { ArchiveEmptyState } from "./components/ArchiveEmptyState";
 import { ArchiveTabs } from "./components/ArchiveTabs";
@@ -249,6 +250,10 @@ export default function ArchiveManagement(): React.JSX.Element {
             }
           />
         )}
+
+        {/* Persistent, refresh-proof live view of every ingestion in flight —
+            rendered in both the fresh and populated archive states. */}
+        <ActiveIngestionsPanel />
 
         {isFreshArchive ? (
           <ArchiveWelcomeState onAddManually={navigateToNew} />

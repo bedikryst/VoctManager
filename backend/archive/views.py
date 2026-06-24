@@ -496,6 +496,30 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         body['celery_task_id'] = ticket.celery_task_id
         return Response(body, status=status.HTTP_202_ACCEPTED)
 
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Every in-flight (non-terminal) ingestion across the archive.
+
+        Powers the persistent "AI w toku" panel: a freshly uploaded edition is
+        not attached to a Piece until the resolver step, so it never shows in
+        the pieces list while it processes — and a page refresh wipes the
+        client-side upload row. This endpoint is the durable source of truth, so
+        the panel can repopulate after a reload and show exactly what the AI is
+        doing right now.
+        """
+        qs = self.get_queryset().filter(
+            ingestion_status__in=[
+                IngestionStatus.PENDING,
+                IngestionStatus.EXTRACTING,
+                IngestionStatus.ENRICHING,
+                IngestionStatus.GENERATING,
+            ],
+        )
+        serializer = ScoreEditionListSerializer(
+            qs, many=True, context={'request': request},
+        )
+        return Response(serializer.data)
+
 
 # ===========================================================================
 # Score annotations — conductor markup overlay
