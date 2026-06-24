@@ -25,6 +25,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import type { Composer, Piece } from "@/shared/types";
 
+import type { ComposerRefreshResult } from "../api/archive.service";
 import { usePieces, useRefreshComposerFromMb } from "../api/archive.queries";
 
 interface ComposerRowExpandedProps {
@@ -37,49 +38,62 @@ export const ComposerRowExpanded = ({
   const { t } = useTranslation();
   const refresh = useRefreshComposerFromMb();
   const { data: allPieces = [] } = usePieces();
-  const [refreshResult, setRefreshResult] = useState<{
-    filled: string[];
-    error?: string;
-  } | null>(null);
+  const [refreshOutcome, setRefreshOutcome] =
+    useState<ComposerRefreshResult | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [pendingMode, setPendingMode] = useState<"fill" | "force" | null>(null);
 
   const piecesByThis = allPieces.filter(
     (p: Piece) => p.composer?.id === composer.id,
   );
 
-  const handleRefresh = () => {
-    setRefreshResult(null);
-    refresh.mutate(String(composer.id), {
-      onSuccess: (data) => {
-        setRefreshResult({ filled: data.fields_filled });
-        if (data.fields_filled.length === 0) {
-          toast.info(
-            t(
-              "archive.composer_expanded.refresh_no_changes",
-              "MusicBrainz nie miał nowych danych do uzupełnienia.",
-            ),
-          );
-        } else {
-          toast.success(
-            t(
-              "archive.composer_expanded.refresh_success",
-              "Uzupełniono {{count}} pól z MusicBrainz / Wikidata.",
-              { count: data.fields_filled.length },
-            ),
-          );
-        }
+  const handleRefresh = (force: boolean) => {
+    setRefreshOutcome(null);
+    setRefreshError(null);
+    setPendingMode(force ? "force" : "fill");
+    refresh.mutate(
+      { id: String(composer.id), force },
+      {
+        onSuccess: (data) => {
+          setRefreshOutcome(data);
+          if (data.status === "updated") {
+            toast.success(
+              t(
+                "archive.composer_expanded.refresh_success",
+                "Uzupełniono {{count}} pól z MusicBrainz / Wikidata.",
+                { count: data.fields_filled.length },
+              ),
+            );
+          } else if (data.status === "matched_no_changes") {
+            toast.info(
+              t(
+                "archive.composer_expanded.refresh_no_changes",
+                "MusicBrainz nie miał nowych danych do uzupełnienia.",
+              ),
+            );
+          } else {
+            toast.warning(
+              t(
+                "archive.composer_expanded.refresh_no_match",
+                "Nie znaleziono tego kompozytora w MusicBrainz ani Wikidata. Sprawdź pisownię imienia i nazwiska.",
+              ),
+            );
+          }
+        },
+        onError: (err) => {
+          const message =
+            err instanceof Error
+              ? err.message
+              : t(
+                  "archive.composer_expanded.refresh_error",
+                  "Nie udało się pobrać danych.",
+                );
+          setRefreshError(message);
+          toast.error(message);
+        },
+        onSettled: () => setPendingMode(null),
       },
-      onError: (err) => {
-        const message =
-          err instanceof Error
-            ? err.message
-            : t(
-                "archive.composer_expanded.refresh_error",
-                "Nie udało się pobrać danych.",
-              );
-        setRefreshResult({ filled: [], error: message });
-        toast.error(message);
-      },
-    });
+    );
   };
 
   return (
@@ -161,37 +175,73 @@ export const ComposerRowExpanded = ({
               </Caption>
             )}
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refresh.isPending}
-            isLoading={refresh.isPending}
-            leftIcon={
-              !refresh.isPending ? (
-                <RefreshCcw size={13} aria-hidden="true" />
-              ) : undefined
-            }
-          >
-            {t(
-              "archive.composer_expanded.refresh_btn",
-              "Odśwież z MusicBrainz",
-            )}
-          </Button>
-          {refreshResult && refreshResult.filled.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleRefresh(false)}
+              disabled={refresh.isPending}
+              isLoading={pendingMode === "fill"}
+              leftIcon={
+                pendingMode === "fill" ? undefined : (
+                  <RefreshCcw size={13} aria-hidden="true" />
+                )
+              }
+            >
+              {t(
+                "archive.composer_expanded.refresh_btn",
+                "Odśwież z MusicBrainz",
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleRefresh(true)}
+              disabled={refresh.isPending}
+              isLoading={pendingMode === "force"}
+              title={t(
+                "archive.composer_expanded.refresh_force_hint",
+                "Pobiera ponownie i nadpisuje dane z MusicBrainz / Wikidata. Ręczne zmiany pozostają nietknięte.",
+              )}
+            >
+              {t(
+                "archive.composer_expanded.refresh_force_btn",
+                "Pobierz ponownie (nadpisz)",
+              )}
+            </Button>
+          </div>
+          {refreshOutcome?.status === "updated" && (
             <Caption color="muted">
               {t(
                 "archive.composer_expanded.refresh_filled",
                 "Uzupełniono: {{fields}}",
-                { fields: refreshResult.filled.join(", ") },
+                { fields: refreshOutcome.fields_filled.join(", ") },
               )}
             </Caption>
           )}
-          {refreshResult?.error && (
+          {refreshOutcome?.status === "matched_no_changes" && (
+            <Caption color="muted">
+              {t(
+                "archive.composer_expanded.refresh_matched",
+                "Dopasowano kompozytora — wszystkie pola są już uzupełnione.",
+              )}
+            </Caption>
+          )}
+          {refreshOutcome?.status === "no_match" && (
+            <Caption color="muted" className="flex items-center gap-1">
+              <AlertCircle size={11} aria-hidden="true" />
+              {t(
+                "archive.composer_expanded.refresh_no_match",
+                "Nie znaleziono tego kompozytora w MusicBrainz ani Wikidata. Sprawdź pisownię imienia i nazwiska.",
+              )}
+            </Caption>
+          )}
+          {refreshError && (
             <Caption color="crimson" className="flex items-center gap-1">
               <AlertCircle size={11} aria-hidden="true" />
-              {refreshResult.error}
+              {refreshError}
             </Caption>
           )}
         </div>

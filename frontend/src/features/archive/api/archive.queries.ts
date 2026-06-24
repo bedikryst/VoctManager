@@ -188,7 +188,8 @@ export const useMergeComposers = () => {
 export const useRefreshComposerFromMb = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ArchiveService.refreshComposerFromMb(id),
+    mutationFn: ({ id, force = false }: { id: string; force?: boolean }) =>
+      ArchiveService.refreshComposerFromMb(id, force),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });

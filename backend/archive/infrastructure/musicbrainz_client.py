@@ -25,12 +25,14 @@ from __future__ import annotations
 import contextlib
 import logging
 import time
+from collections.abc import Callable
 from uuid import UUID
 
 from archive.dtos import ComposerLookupResult, WorkLookupResult
 from archive.infrastructure._http import (
     ExternalAPIError,
     ExternalAPIUnavailable,
+    bust_cache,
     cached_get_json,
 )
 
@@ -80,7 +82,10 @@ class MusicBrainzClient:
             'fmt': 'json',
             'limit': limit,
         }
-        data = cls._get('/work', params)
+        data = cls._get(
+            '/work', params,
+            is_empty=lambda d: not (isinstance(d, dict) and d.get('works')),
+        )
         if data is None:
             return None
 
@@ -103,7 +108,10 @@ class MusicBrainzClient:
     def get_work(cls, mbid: UUID) -> WorkLookupResult | None:
         """Direct lookup by canonical mbid (cheapest path when we already have it)."""
         params = {'fmt': 'json', 'inc': 'artist-rels'}
-        data = cls._get(f'/work/{mbid}', params)
+        data = cls._get(
+            f'/work/{mbid}', params,
+            is_empty=lambda d: not (isinstance(d, dict) and d.get('id')),
+        )
         if data is None:
             return None
         return cls._parse_work(data, score=100)
@@ -111,11 +119,32 @@ class MusicBrainzClient:
     # -- composers / artists ------------------------------------------------
 
     @classmethod
+    def get_artist(cls, mbid: UUID, *, force: bool = False) -> ComposerLookupResult | None:
+        """
+        Direct artist lookup by canonical mbid, including aliases.
+
+        This is the path 'refresh from MusicBrainz' takes when the composer
+        already has an mbid: a name search would be wasteful and could drift to
+        the wrong person, whereas the mbid is exact. `inc=aliases` pulls the
+        alternate spellings the resolver uses for fuzzy AI-extraction matches.
+        """
+        params = {'fmt': 'json', 'inc': 'aliases'}
+        data = cls._get(
+            f'/artist/{mbid}', params,
+            is_empty=lambda d: not (isinstance(d, dict) and d.get('id')),
+            force=force,
+        )
+        if data is None:
+            return None
+        return cls._parse_composer(data)
+
+    @classmethod
     def search_composer(
         cls,
         *,
         name: str,
         limit: int = 8,
+        force: bool = False,
     ) -> ComposerLookupResult | None:
         """
         Search MusicBrainz artists by name. Returns the highest-scoring
@@ -136,7 +165,11 @@ class MusicBrainzClient:
             'fmt': 'json',
             'limit': limit,
         }
-        data = cls._get('/artist', params)
+        data = cls._get(
+            '/artist', params,
+            is_empty=lambda d: not (isinstance(d, dict) and d.get('artists')),
+            force=force,
+        )
         if data is None:
             return None
 
@@ -169,16 +202,29 @@ class MusicBrainzClient:
     # -- internals ----------------------------------------------------------
 
     @classmethod
-    def _get(cls, path: str, params: dict) -> dict | None:
+    def _get(
+        cls,
+        path: str,
+        params: dict,
+        *,
+        is_empty: Callable[[object], bool] | None = None,
+        force: bool = False,
+    ) -> dict | None:
+        url = f'{cls.BASE_URL}{path}'
+        if force:
+            # Evict any cached (incl. previously-cached empty) result first so a
+            # deliberate re-pull actually hits MusicBrainz.
+            bust_cache(cls.SOURCE, url, params)
         cls._respect_rate_limit()
         try:
             result = cached_get_json(
                 source=cls.SOURCE,
-                url=f'{cls.BASE_URL}{path}',
+                url=url,
                 params=params,
                 # MusicBrainz refuses requests with the default 'application/json'
                 # Accept — it returns XML by default and switches on fmt=json.
                 headers={'Accept': 'application/json'},
+                is_empty=is_empty,
             )
             return result.data
         except ExternalAPIError as exc:

@@ -29,8 +29,6 @@ from core.request_utils import request_user
 from roster.queries import artist_live_piece_ids
 
 from . import services
-from .infrastructure.musicbrainz_client import MusicBrainzClient
-from .infrastructure.wikidata_client import WikidataClient
 from .models import (
     Annotation,
     Composer,
@@ -50,6 +48,7 @@ from .serializers import (
     ScoreEditionUploadSerializer,
     TrackSerializer,
 )
+from .services import enrichment
 from .services.ingestion import (
     IngestionPreconditionError,
     ingestion_is_available,
@@ -58,6 +57,11 @@ from .services.ingestion import (
 from .signals import piece_material_updated_event
 
 logger = logging.getLogger(__name__)
+
+
+def _truthy(value: object) -> bool:
+    """Parse a query-param / body flag ('1', 'true', 'yes') into a bool."""
+    return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
 
 
 class ComposerViewSet(viewsets.ModelViewSet):
@@ -138,72 +142,46 @@ class ComposerViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='refresh_mb')
     def refresh_mb(self, request, pk=None):
         """
-        Re-run MusicBrainz + Wikidata enrichment for this composer. Populates
-        ONLY blank fields — never overwrites a conductor's manual edit.
+        Re-pull MusicBrainz + Wikidata data for this composer.
 
-        Useful when the AI pipeline ran before Wikidata coverage caught up,
-        or when a composer was added manually and you want to attach the
-        canonical biographical data.
+        Modes (pass `?force=true` or body `{"force": true}`):
+          * default — fill ONLY blank fields; existing data is untouched.
+          * force   — also overwrite canonical fields with fresh external
+                      values, EXCEPT any field a conductor edited by hand.
+
+        Returns a diagnostic payload so a no-op is explained rather than
+        looking like a silent failure: which fields were filled / overwritten /
+        skipped, the resolved mbid + Wikidata QID, and which sources responded.
         """
         composer = self.get_object()
-        full_name = f"{composer.first_name} {composer.last_name}".strip()
-        if not full_name:
+        force = _truthy(request.query_params.get('force')) or _truthy(
+            request.data.get('force') if hasattr(request.data, 'get') else None
+        )
+
+        report = enrichment.refresh_composer(composer, force=force)
+        if report.status == enrichment.STATUS_NO_NAME:
             return Response(
                 {'detail': 'Composer has no name — cannot resolve.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        mbz = (
-            MusicBrainzClient.search_composer(name=full_name)
-            if not composer.mbid
-            else None
-        )
-        wiki = None
-        if composer.mbid:
-            wiki = WikidataClient.enrich_composer_by_mbid(composer.mbid)
-        elif mbz and mbz.mbid:
-            wiki = WikidataClient.enrich_composer_by_mbid(mbz.mbid)
-        else:
-            wiki = WikidataClient.enrich_composer_by_name(full_name)
-
-        update_fields: list[str] = []
-
-        if not composer.mbid and mbz and mbz.mbid:
-            composer.mbid = mbz.mbid
-            update_fields.append('mbid')
-
-        if wiki:
-            if not composer.wikidata_qid and wiki.wikidata_qid:
-                composer.wikidata_qid = wiki.wikidata_qid
-                update_fields.append('wikidata_qid')
-            for attr in ('bio', 'portrait_url', 'portrait_license', 'nationality', 'period'):
-                value = getattr(wiki, attr, '')
-                if value and not getattr(composer, attr):
-                    setattr(composer, attr, value)
-                    update_fields.append(attr)
-            if wiki.birth_year and not composer.birth_year:
-                composer.birth_year = str(wiki.birth_year)
-                update_fields.append('birth_year')
-            if wiki.death_year and not composer.death_year:
-                composer.death_year = str(wiki.death_year)
-                update_fields.append('death_year')
-
-        if update_fields:
-            composer.save(update_fields=[*update_fields, 'updated_at'])
-
-        logger.info(
-            "composer.refreshed id=%s fields_filled=%s",
-            composer.id, update_fields,
-        )
-
         # Re-annotate so pieces_count is included in the response.
-        annotated = (
-            self.get_queryset().filter(id=composer.id).first()
-        )
+        annotated = self.get_queryset().filter(id=composer.id).first()
         return Response(
             {
                 'composer': ComposerSerializer(annotated or composer).data,
-                'fields_filled': update_fields,
+                # `fields_filled` keeps its original meaning (every field that
+                # changed) for backward compatibility with existing clients.
+                'fields_filled': report.changed,
+                'fields_overwritten': report.fields_overwritten,
+                'fields_skipped_existing': report.fields_skipped_existing,
+                'status': report.status,
+                'mbid': report.mbid,
+                'wikidata_qid': report.wikidata_qid,
+                'sources': {
+                    'musicbrainz': report.mbz_responded,
+                    'wikidata': report.wiki_responded,
+                },
             },
             status=status.HTTP_200_OK,
         )
