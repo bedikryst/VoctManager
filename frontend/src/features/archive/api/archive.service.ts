@@ -29,6 +29,32 @@ const COMPOSERS_URL = "/api/composers/";
 const TRACKS_URL = "/api/tracks/";
 const EDITIONS_URL = "/api/archive/editions/";
 
+/**
+ * Diagnostic result of a MusicBrainz/Wikidata refresh. `status` explains a
+ * no-op so the UI never shows a silent "nothing happened":
+ *   - "updated"             — at least one field changed
+ *   - "matched_no_changes"  — a source matched, but everything was already set
+ *   - "no_match"            — neither source returned a usable entry
+ *   - "no_name"             — composer has no name to resolve
+ */
+export type ComposerRefreshStatus =
+  | "updated"
+  | "matched_no_changes"
+  | "no_match"
+  | "no_name";
+
+export interface ComposerRefreshResult {
+  composer: Composer;
+  /** Every field that changed (filled + overwritten) — back-compat name. */
+  fields_filled: string[];
+  fields_overwritten: string[];
+  fields_skipped_existing: string[];
+  status: ComposerRefreshStatus;
+  mbid: string;
+  wikidata_qid: string;
+  sources: { musicbrainz: boolean; wikidata: boolean };
+}
+
 /** Full edition detail returned by upload/retrieve/approve/reingest. */
 export interface ScoreEditionDetail extends ScoreEditionSummary {
   sha256: string;
@@ -124,14 +150,18 @@ export const ArchiveService = {
     return response.data;
   },
 
-  /** Re-runs MB + Wikidata enrichment, filling only blank fields. */
+  /**
+   * Re-pull MusicBrainz + Wikidata data for a composer.
+   * @param force when true, also overwrite existing canonical fields with fresh
+   *   values (conductor's manual edits stay protected); otherwise fill blanks only.
+   */
   refreshComposerFromMb: async (
     id: string,
-  ): Promise<{ composer: Composer; fields_filled: string[] }> => {
-    const response = await api.post<{
-      composer: Composer;
-      fields_filled: string[];
-    }>(`${COMPOSERS_URL}${id}/refresh_mb/`);
+    force = false,
+  ): Promise<ComposerRefreshResult> => {
+    const response = await api.post<ComposerRefreshResult>(
+      `${COMPOSERS_URL}${id}/refresh_mb/${force ? "?force=true" : ""}`,
+    );
     return response.data;
   },
 

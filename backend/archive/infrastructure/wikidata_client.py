@@ -25,16 +25,25 @@ Standards: SaaS 2026, attribution-aware, gracefully degraded on missing data.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
+from typing import Any
+from urllib.parse import quote
 from uuid import UUID
 
 from archive.dtos import ComposerLookupResult
 from archive.infrastructure._http import (
     ExternalAPIError,
     ExternalAPIUnavailable,
+    bust_cache,
     cached_get_json,
 )
 
 logger = logging.getLogger(__name__)
+
+# Width (px) requested from Wikimedia Commons for composer portraits. The raw
+# P18 original is frequently a multi-megabyte TIFF/JPEG; a 480px thumbnail is
+# plenty for a card and loads an order of magnitude faster.
+PORTRAIT_THUMB_WIDTH: int = 480
 
 
 class WikidataClient:
@@ -46,35 +55,40 @@ class WikidataClient:
     SOURCE = "wiki"
 
     @classmethod
-    def enrich_composer_by_mbid(cls, mbid: UUID) -> ComposerLookupResult | None:
+    def enrich_composer_by_mbid(
+        cls, mbid: UUID, *, force: bool = False,
+    ) -> ComposerLookupResult | None:
         """
         Look up a composer's Wikidata entity via their MusicBrainz mbid
         (Wikidata property P434), then return bio + portrait + dates.
-        Returns None if no Wikidata entry exists for this mbid.
+        Returns None if no Wikidata entry is linked to this mbid — callers
+        should then fall back to `enrich_composer_by_name`, since a large share
+        of valid Wikidata composer entities simply lack the P434 backlink.
         """
-        qid = cls._find_qid_by_mbid(mbid)
+        qid = cls._find_qid_by_mbid(mbid, force=force)
         if not qid:
             return None
-        return cls._entity_to_composer(qid)
+        return cls._entity_to_composer(qid, force=force)
 
     @classmethod
-    def enrich_composer_by_name(cls, name: str) -> ComposerLookupResult | None:
+    def enrich_composer_by_name(
+        cls, name: str, *, force: bool = False,
+    ) -> ComposerLookupResult | None:
         """
-        Fallback: search Wikidata by name when we don't have a mbid yet.
-        Less reliable than the mbid path — only use when MusicBrainz has
-        no match (e.g., contemporary composers).
+        Search Wikidata by name. Used when we have no mbid, or when the mbid
+        path found no P434-linked entity (the common case for many composers).
         """
         if not name.strip():
             return None
-        qid = cls._search_qid_by_name(name)
+        qid = cls._search_qid_by_name(name, force=force)
         if not qid:
             return None
-        return cls._entity_to_composer(qid)
+        return cls._entity_to_composer(qid, force=force)
 
     # -- internals ----------------------------------------------------------
 
     @classmethod
-    def _find_qid_by_mbid(cls, mbid: UUID) -> str | None:
+    def _find_qid_by_mbid(cls, mbid: UUID, *, force: bool = False) -> str | None:
         # Wikidata Query Service (SPARQL) is canonical but heavy.
         # The Action API search via haswbstatement is lighter for this lookup.
         params = {
@@ -84,11 +98,13 @@ class WikidataClient:
             'srnamespace': 0,
             'srlimit': 1,
             'format': 'json',
-            'origin': '*',
         }
-        # haswbstatement search is served via the main wikipedia endpoint, not w.api.
         url = "https://www.wikidata.org/w/api.php"
-        data = cls._get(url, params)
+        data = cls._get(
+            url, params,
+            is_empty=lambda d: not ((d.get('query') or {}).get('search')),
+            force=force,
+        )
         if data is None:
             return None
         hits = (data.get('query') or {}).get('search') or []
@@ -101,7 +117,7 @@ class WikidataClient:
         return None
 
     @classmethod
-    def _search_qid_by_name(cls, name: str) -> str | None:
+    def _search_qid_by_name(cls, name: str, *, force: bool = False) -> str | None:
         params = {
             'action': 'wbsearchentities',
             'search': name,
@@ -109,9 +125,12 @@ class WikidataClient:
             'limit': 5,
             'type': 'item',
             'format': 'json',
-            'origin': '*',
         }
-        data = cls._get(cls.WIKIDATA_API, params)
+        data = cls._get(
+            cls.WIKIDATA_API, params,
+            is_empty=lambda d: not d.get('search'),
+            force=force,
+        )
         if data is None:
             return None
         hits = data.get('search') or []
@@ -123,7 +142,7 @@ class WikidataClient:
         return hits[0].get('id') if hits else None
 
     @classmethod
-    def _entity_to_composer(cls, qid: str) -> ComposerLookupResult | None:
+    def _entity_to_composer(cls, qid: str, *, force: bool = False) -> ComposerLookupResult | None:
         params = {
             'action': 'wbgetentities',
             'ids': qid,
@@ -131,9 +150,12 @@ class WikidataClient:
             'languages': 'en',
             'sitefilter': 'enwiki',
             'format': 'json',
-            'origin': '*',
         }
-        data = cls._get(cls.WIKIDATA_API, params)
+        data = cls._get(
+            cls.WIKIDATA_API, params,
+            is_empty=lambda d: not ((d.get('entities') or {}).get(qid)),
+            force=force,
+        )
         if data is None:
             return None
 
@@ -159,7 +181,7 @@ class WikidataClient:
         enwiki = sitelinks.get('enwiki') or {}
         wiki_title = enwiki.get('title')
         if wiki_title:
-            bio = cls._fetch_wikipedia_summary(wiki_title) or ""
+            bio = cls._fetch_wikipedia_summary(wiki_title, force=force) or ""
 
         period = _period_from_birth_year(birth_year)
 
@@ -179,10 +201,14 @@ class WikidataClient:
         )
 
     @classmethod
-    def _fetch_wikipedia_summary(cls, title: str) -> str | None:
+    def _fetch_wikipedia_summary(cls, title: str, *, force: bool = False) -> str | None:
         # The REST summary endpoint URL-encodes the title via path segment.
-        url = f"{cls.WIKIPEDIA_SUMMARY}/{title.replace(' ', '_')}"
-        data = cls._get(url, params=None)
+        url = f"{cls.WIKIPEDIA_SUMMARY}/{quote(title.replace(' ', '_'))}"
+        data = cls._get(
+            url, params=None,
+            is_empty=lambda d: not (d.get('extract') or '').strip(),
+            force=force,
+        )
         if data is None:
             return None
         return (data.get('extract') or '').strip() or None
@@ -202,9 +228,11 @@ class WikidataClient:
             'props': 'labels',
             'languages': 'en',
             'format': 'json',
-            'origin': '*',
         }
-        data = cls._get(cls.WIKIDATA_API, params)
+        data = cls._get(
+            cls.WIKIDATA_API, params,
+            is_empty=lambda d: not ((d.get('entities') or {}).get(qid)),
+        )
         if data is None:
             return qid
         try:
@@ -214,9 +242,20 @@ class WikidataClient:
         return label.strip() or qid
 
     @classmethod
-    def _get(cls, url: str, params: dict | None) -> dict | None:
+    def _get(
+        cls,
+        url: str,
+        params: dict | None,
+        *,
+        is_empty: Callable[[Any], bool] | None = None,
+        force: bool = False,
+    ) -> dict | None:
+        if force:
+            bust_cache(cls.SOURCE, url, params)
         try:
-            result = cached_get_json(source=cls.SOURCE, url=url, params=params)
+            result = cached_get_json(
+                source=cls.SOURCE, url=url, params=params, is_empty=is_empty,
+            )
             return result.data
         except ExternalAPIError as exc:
             logger.error("wiki.error url=%s err=%s", url, exc)
@@ -261,9 +300,15 @@ def _claim_image(claim_list: list | None) -> str:
         filename = claim_list[0]['mainsnak']['datavalue']['value']
     except (KeyError, IndexError, TypeError):
         return ""
-    # Commons Special:FilePath resolves a filename to a stable image URL.
-    # Hash-bucketing is handled server-side; we just URL-encode spaces.
-    return f"https://commons.wikimedia.org/wiki/Special:FilePath/{filename.replace(' ', '_')}"
+    # Commons Special:FilePath resolves a filename to a stable image URL and,
+    # with ?width=, redirects to a scaled thumbnail instead of the (often
+    # multi-megabyte) original. URL-encode the filename — Commons titles carry
+    # commas, parentheses and apostrophes that would otherwise break the URL.
+    encoded = quote(filename.replace(' ', '_'))
+    return (
+        f"https://commons.wikimedia.org/wiki/Special:FilePath/{encoded}"
+        f"?width={PORTRAIT_THUMB_WIDTH}"
+    )
 
 
 def _period_from_birth_year(year: int | None) -> str:

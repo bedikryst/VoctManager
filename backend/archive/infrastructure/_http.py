@@ -45,6 +45,13 @@ DEFAULT_MAX_RETRIES: int = 3
 DEFAULT_BACKOFF_BASE: float = 0.5  # seconds — 0.5, 1.0, 2.0
 DEFAULT_CACHE_TTL_SECONDS: int = 60 * 60 * 24 * 30  # 30 days
 
+# Empty / "no match" results must NOT inherit the 30-day TTL. A transient blip
+# (upstream returns 200 with an empty body, a brief block, a query that found
+# nothing) would otherwise be served from cache for a month — the classic
+# "enrichment silently stopped working and re-trying doesn't help" failure.
+# A short TTL lets a real result heal itself within hours.
+DEFAULT_NEGATIVE_CACHE_TTL_SECONDS: int = 60 * 60 * 6  # 6 hours
+
 
 # ---------------------------------------------------------------------------
 # Errors
@@ -73,6 +80,16 @@ def make_cache_key(source: str, payload: Mapping[str, Any]) -> str:
     return f"ext:{source}:{digest}"
 
 
+def bust_cache(source: str, url: str, params: Mapping[str, Any] | None = None) -> None:
+    """
+    Drop a single cached (source, url, params) entry.
+
+    Used by force-refresh: a previously-cached empty/poisoned result must not
+    defeat a deliberate manual re-pull, so we evict the key before re-fetching.
+    """
+    cache.delete(make_cache_key(source, {'url': url, 'params': dict(params or {})}))
+
+
 # ---------------------------------------------------------------------------
 # Core HTTP call with retry + cache
 # ---------------------------------------------------------------------------
@@ -93,11 +110,20 @@ def cached_get_json(
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     max_retries: int = DEFAULT_MAX_RETRIES,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+    negative_cache_ttl: int = DEFAULT_NEGATIVE_CACHE_TTL_SECONDS,
+    is_empty: Callable[[Any], bool] | None = None,
     parse: Callable[[requests.Response], Any] = lambda r: r.json(),
 ) -> GetResult:
     """
     GET `url` with `params`, returning JSON-decoded body. Caches the *decoded*
-    payload by (source, url, params) for `cache_ttl` seconds.
+    payload by (source, url, params).
+
+    Caching is split by usefulness so a transient empty/blocked response cannot
+    poison the long cache:
+      * a "real" payload is cached for `cache_ttl` (default 30 days);
+      * a payload the caller flags as empty via `is_empty(data) -> True` is
+        cached for the short `negative_cache_ttl` (default 6 hours) so it heals
+        itself quickly once the upstream recovers.
 
     Retries on 429 / 5xx with exponential backoff, honouring `Retry-After`
     on 429 if present. Raises:
@@ -143,11 +169,13 @@ def cached_get_json(
                 raise ExternalAPIError(
                     f"{source}: failed to decode response from {url}: {exc}"
                 ) from exc
+            empty = bool(is_empty(data)) if is_empty is not None else False
+            ttl = negative_cache_ttl if empty else cache_ttl
             logger.info(
-                "ext.ok source=%s url=%s status=%d ms=%d cached=False",
-                source, url, status, elapsed_ms,
+                "ext.ok source=%s url=%s status=%d ms=%d cached=False empty=%s ttl=%ds",
+                source, url, status, elapsed_ms, empty, ttl,
             )
-            cache.set(cache_key, data, timeout=cache_ttl)
+            cache.set(cache_key, data, timeout=ttl)
             return GetResult(data=data, from_cache=False)
 
         if status == 429:
