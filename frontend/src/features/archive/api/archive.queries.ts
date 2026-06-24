@@ -14,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   ArchiveService,
+  type ActiveIngestion,
   type ScoreEditionDetail,
 } from "./archive.service";
 import {
@@ -307,9 +308,28 @@ export const useUploadEdition = () => {
     }) => ArchiveService.uploadEdition(dto, onProgress),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      // Surface the new ingestion in the persistent "AI w toku" panel at once.
+      qc.invalidateQueries({ queryKey: ["editions", "active"] });
     },
   });
 };
+
+/**
+ * Every in-flight ingestion across the archive, polled. This is the durable,
+ * refresh-proof source for the "AI w toku" panel: a freshly uploaded edition
+ * isn't attached to a Piece until the resolver step, so it never appears in the
+ * pieces list while processing, and a reload wipes the client-side upload row.
+ * Polls faster while something is active, slower when idle.
+ */
+export const useActiveIngestions = () =>
+  useQuery({
+    queryKey: ["editions", "active"],
+    queryFn: ArchiveService.getActiveEditions,
+    refetchInterval: (query) => {
+      const data = query.state.data as ActiveIngestion[] | undefined;
+      return data && data.length > 0 ? 2000 : 5000;
+    },
+  });
 
 export const usePatchEdition = () => {
   const qc = useQueryClient();

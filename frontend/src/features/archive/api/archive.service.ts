@@ -10,6 +10,8 @@
 import api from "@/shared/api/api";
 import type {
   Composer,
+  IngestionProgressCode,
+  IngestionStatusCode,
   Piece,
   ScoreEditionSummary,
   Track,
@@ -33,6 +35,25 @@ export interface ScoreEditionDetail extends ScoreEditionSummary {
   uploaded_by: number | null;
   /** Present on POST responses (upload, reingest) only. */
   celery_task_id?: string;
+}
+
+/** One in-flight ingestion, from `GET /api/archive/editions/active/` — the
+ *  durable source for the persistent "AI w toku" panel (survives refresh). */
+export interface ActiveIngestion {
+  id: string;
+  original_filename: string;
+  page_count?: number | null;
+  piece?: string | null;
+  piece_title?: string;
+  composer_name?: string;
+  ingestion_status: IngestionStatusCode;
+  ingestion_status_display?: string;
+  ingestion_progress?: IngestionProgressCode;
+  ingestion_cost_cents?: number;
+  ingestion_cost_cents_lifetime?: number;
+  ingestion_error?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const ArchiveService = {
@@ -166,6 +187,13 @@ export const ArchiveService = {
   /** Single-edition fetch — drives the live ingestion-progress poll after upload. */
   getEdition: async (id: string): Promise<ScoreEditionDetail> => {
     const response = await api.get<ScoreEditionDetail>(`${EDITIONS_URL}${id}/`);
+    return response.data;
+  },
+
+  /** Every in-flight ingestion across the archive — powers the persistent
+   *  "AI w toku" panel that survives a page refresh. */
+  getActiveEditions: async (): Promise<ActiveIngestion[]> => {
+    const response = await api.get<ActiveIngestion[]>(`${EDITIONS_URL}active/`);
     return response.data;
   },
 

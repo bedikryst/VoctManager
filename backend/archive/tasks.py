@@ -344,6 +344,10 @@ def analyze_score(self, payload: dict) -> dict:
         pdf_bytes = fh.read()
 
     client = AIClient()
+    # `structured=False`: the consolidated schema (identity + movements + text +
+    # IPA + translations) is too large for the SDK's strict `output_format`
+    # validator — Anthropic rejects it with 400 "Schema is too complex". We send
+    # the JSON Schema in the prompt and parse the model's JSON ourselves instead.
     analysis, cost = client.parse(
         model=AIModel.SONNET,
         prompt=ANALYZE_SCORE,
@@ -352,6 +356,7 @@ def analyze_score(self, payload: dict) -> dict:
         max_tokens=ANALYZE_MAX_TOKENS,
         effort="medium",
         pdf_bytes=pdf_bytes,
+        structured=False,
     )
     _bill_edition(edition, cost.total_cents)
 

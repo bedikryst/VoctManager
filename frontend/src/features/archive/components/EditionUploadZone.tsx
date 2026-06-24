@@ -419,7 +419,8 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
           )}
           {view === "ingest_failed" && (
             <Caption color="crimson">
-                {t(
+              {live?.ingestion_error ||
+                t(
                   "archive.upload.row_ingest_failed",
                   "Przetwarzanie nie powiodło się",
                 )}
