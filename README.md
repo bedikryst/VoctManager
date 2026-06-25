@@ -10,7 +10,7 @@
 ![Redis 5](https://img.shields.io/badge/Redis_5-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 ![Celery 5](https://img.shields.io/badge/Celery_5-37814A?style=for-the-badge&logo=celery&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
-![Claude](https://img.shields.io/badge/Claude_4.7-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude_Sonnet_4.6-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
 
 **VoctManager** is a dual-architecture ERP and digital operations platform — the official digital infrastructure for the professional vocal ensemble **VoctEnsemble**. It connects production logistics, secure asset management, and a cinematic public-facing experience under one backend.
 
@@ -94,14 +94,14 @@ Frontend engineering pillars:
 - **EAA Accessibility:** Radix UI Primitives + semantic HTML to meet the European Accessibility Act baseline; the public site adds `prefers-reduced-motion` opt-outs on every animated surface.
 
 ### 2. AI-Powered Score Package Compiler
-- **Native-PDF Vision Analysis:** One consolidated Sonnet 4.6 call reads the **whole** uploaded PDF visually (text layer *and* scanned pages) and returns work identity, movements, sung text, line-aligned IPA, and prose translations together — handling scans and real page layout instead of brittle text scraping. The PDF is cached (`cache_control: ephemeral`) so escalation retries read it back cheaply.
+- **Native-PDF Vision Analysis:** One consolidated Sonnet 4.6 call reads the **whole** uploaded PDF visually (text layer *and* scanned pages) and returns work identity — including the key inferred from the key signature, a composer-vs-arranger split, and the stylistic period — plus movements, the printed sung text transcribed **faithfully** (no canonical-text substitution for famous hymns), line-aligned IPA, and prose translations, all together. Handles scans and real page layout instead of brittle text scraping; the PDF is cached (`cache_control: ephemeral`) so escalation retries read it back cheaply.
 - **Overload-Resilient:** Anthropic capacity blips (HTTP 529 / 5xx / 429 / timeout) are classified as transient and retried **patiently** (tens of seconds → minutes), with a live "service busy, retrying" state — never a hammer-then-fail retry storm. Truncations and 4xx stay terminal and never burn budget on a doomed retry.
 - **Canonical Identity Resolution:** Composer and work deduplication via **MusicBrainz MBID** and **Wikidata QID** cross-referencing — the AI extracts, but never hallucinates, biographical facts or canonical IDs.
 - **External Metadata Enrichment:** Tool-orchestrated lookups across MusicBrainz, Wikidata, Spotify Web API, and YouTube Data API v3, with Redis-cached responses, exponential-backoff retries, and graceful degradation when any source is unavailable.
-- **Audit-Grade Provenance:** Every AI- or API-sourced field is stamped with `(model, prompt_version, source_reference, confidence, retrieved_at)` in a generic-FK `ProvenanceRecord` table — enabling one-click regeneration and forensic compliance review.
-- **Cost-Governed by Construction:** A native-PDF run averages **~$0.10–0.30**. Three independent ceilings are enforced at the Celery task boundary: a **per-run** cap, a **never-reset lifetime** cap per edition (so a re-processed PDF can't silently drain the account), and an **org-wide daily budget** circuit breaker — every Claude charge bills both the run and lifetime counters.
+- **Audit-Grade Provenance — surfaced, not just stored:** Every AI- or API-sourced field is stamped with `(model, prompt_version, source_reference, confidence, retrieved_at)` in a generic-FK `ProvenanceRecord` table — and the review cockpit renders it **per field**: an *AI · 95%* chip, a *MusicBrainz* canonical chip, or a *Verified* chip once a human edits the value, so the conductor knows exactly what to trust.
+- **Cost-Governed by Construction:** A native-PDF ingest averages **~$0.10–0.22**. Three independent ceilings are enforced at the Celery task boundary — a **per-run** cap, a **never-reset lifetime** cap per edition, and an **org-wide daily budget** circuit breaker (every Claude charge bills both the run and lifetime counters). Re-uploading an identical PDF (same SHA-256) is **deduplicated** — it attaches to the already-resolved work and skips the AI entirely. The audience **programme note is generated eagerly in the ensemble's language** at `effort: low` (~1¢); the cockpit regenerates it or adds another language on demand.
 - **Real-Time Progress (SSE):** An async (ASGI) Server-Sent-Events endpoint streams the live step, cost, and status of each ingestion the instant the worker writes it; the browser subscribes via `EventSource` (cookie JWT) with a polling fallback. The conductor sees the AI working step-by-step from the moment of upload, on desktop and mobile.
-- **Conductor-in-the-Loop:** AI suggests, conductor decides. Every extraction surfaces a confidence score and a review screen — the platform never silently mutates canonical repertoire.
+- **Conductor Review Cockpit:** AI suggests, conductor decides. A split PDF-and-fields surface shows per-field provenance + confidence, lets the conductor **correct or delete** the AI's most error-prone outputs inline (movements, translations, reference recordings), regenerate the programme note, **cancel an in-flight run** when the wrong PDF went up, and **approve-to-publish** in one action (AWAITING → READY). Cheap hallucination guards flag impossible composition years, IPA-vs-lyrics line-count drift, and low-confidence fields — the platform never silently mutates canonical repertoire.
 
 ### 3. Enterprise OS & Logistics (Backend)
 - **Granular RBAC:** Deep, Role-Based Access Control matrix (Admin, Manager, Artist, Crew) securing endpoints, data payloads, and UI visibility.
@@ -140,7 +140,7 @@ Frontend engineering pillars:
 * **Authentication:** JWT via `djangorestframework-simplejwt`
 * **Message Broker & Workers:** Redis 5+, Celery 5.3+
 * **Document Generation:** WeasyPrint v68+, pypdf v5+
-* **AI / Repertoire Intelligence:** Anthropic Python SDK (Claude Opus 4.7 / Sonnet 4.6 / Haiku 4.5), adaptive thinking, prompt caching, structured output via Pydantic schemas
+* **AI / Repertoire Intelligence:** Anthropic Python SDK — ingestion runs on **Claude Sonnet 4.6** (Opus 4.8 / Haiku 4.5 wired as higher/cheaper tiers), adaptive thinking, prompt caching, Pydantic-validated structured/JSON output
 
 ### Infrastructure & DevOps
 * **Containerization:** Docker & Docker Compose (Zero-parity between Dev and Prod)
@@ -179,7 +179,7 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [x] **Error Tracking:** Sentry SDK wired into Django for production error capture and release-health monitoring.
 - [x] **Automated Testing:** Django/PyTest suite (~160 tests) across the critical paths — roster, payments, messaging, notifications, documents, archive, logistics, core — including contract generation and the AI provenance pipeline.
 - [x] **CI (Backend):** GitHub Actions runs Ruff, mypy (strict), and the full test suite on PostgreSQL for every push and PR.
-- [x] **AI Score Compiler — Schema & Ingestion Pipeline:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus the live Celery ingestion chain — a native-PDF Claude wrapper (vision, adaptive thinking, dual per-run/lifetime cost tracking, prompt caching, patient 529-overload retries) that reads the whole score in one consolidated call, resolves composers/works against MusicBrainz & Wikidata, generates program notes + IPA + singing translations, streams live progress over SSE, and surfaces a conductor review screen. External clients (MusicBrainz, Wikidata, Spotify, YouTube) are Redis-cached.
+- [x] **AI Score Compiler — Schema, Ingestion Pipeline & Review Cockpit:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus the live Celery ingestion chain — a native-PDF Claude wrapper (vision, adaptive thinking, dual per-run/lifetime cost tracking, prompt caching, patient 529-overload retries, lenient JSON parsing, SHA-256 re-upload dedup) that reads the whole score in one consolidated call, resolves composers/works against MusicBrainz & Wikidata, extracts IPA + singing translations plus a programme note in the ensemble language, and streams live progress over SSE. A conductor **review cockpit** surfaces per-field provenance + confidence, inline correction/deletion of the AI's movements/translations/recordings, a cancel-in-flight control, and a single approve-to-publish. External clients (MusicBrainz, Wikidata, Spotify, YouTube) are Redis-cached.
 - [ ] **AI Score Compiler — Concert Assembly & Annotation:** WeasyPrint + pypdf concert-binder generation (cover, TOC, per-piece front matter, original scores) plus a PDF.js + Konva in-browser annotation overlay (highlight, comment, freehand, page reorder) with versioned, layer-aware persistence and export-time flattening.
 - [ ] **Field-Level Encryption & Audit Trail:** Fernet at-rest encryption for contract/financial fields and an immutable mutation log over HR/financial records for forensic review.
 - [ ] **Frontend CI & End-to-End Tests:** Lint / typecheck / build pipelines for both frontends, plus Playwright E2E coverage building on the existing screenshot harness.
@@ -281,11 +281,12 @@ Celery chain (v2, native-PDF): `prepare_document → analyze_score → resolve_c
 
 | Stage | Model | Avg. cost |
 |---|---|---|
-| Score analysis — whole PDF by vision (identity + movements + text + IPA + translations) | Sonnet 4.6 | ~$0.10–0.20 |
+| Score analysis — whole PDF by vision (identity + movements + text + IPA + translations) | Sonnet 4.6 | ~$0.08–0.18 |
 | Composer + work resolution (MusicBrainz / Wikidata) | — (no LLM) | ~$0.00 |
-| Program note | Sonnet 4.6 | ~$0.03 |
+| Programme note — eager, in the ensemble language | Sonnet 4.6 (`effort: low`) | ~$0.01 |
 | Provenance stamping + persistence + recordings | — (no LLM) | ~$0.02 (DB/API) |
-| **End-to-end average per PDF** | mixed | **~$0.15–0.30** |
+| **End-to-end average per ingest** | mixed | **~$0.11–0.22** |
+| Re-upload of an identical PDF (SHA-256 dedup) | — (skips AI) | **~$0.00** |
 
 > The PDF is sent as a native `document` block with `cache_control: ephemeral`, so a `max_tokens` escalation or a quick re-ingest reads it back at cache-read rates. Spend is bounded by three ceilings — per-run, never-reset lifetime per edition, and an org-wide daily budget (`INGESTION_COST_CEILING_CENTS`, `INGESTION_LIFETIME_CEILING_CENTS`, `INGESTION_DAILY_BUDGET_CENTS`).
 
