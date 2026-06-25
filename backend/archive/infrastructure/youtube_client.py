@@ -165,7 +165,24 @@ class YouTubeClient:
             )
             return result.data
         except ExternalAPIError as exc:
-            logger.error("yt.error url=%s err=%s", url, exc)
+            message = str(exc)
+            lowered = message.lower()
+            if 'referer' in lowered or 'permission_denied' in lowered or 'http 403' in lowered:
+                # The API key has an HTTP-referrer (or other application)
+                # restriction in Google Cloud Console. A backend worker sends no
+                # Referer, so Google rejects every call ("Requests from referer
+                # <empty> are blocked"). This is a deployment config issue, not a
+                # transient error — log it once, clearly, instead of dumping the
+                # full 403 body at ERROR on every single ingestion.
+                logger.warning(
+                    "yt.key_restricted — YouTube Data API key is rejecting "
+                    "server-side requests. In Google Cloud Console set the "
+                    "key's Application restriction to 'None' or 'IP addresses' "
+                    "(an HTTP-referrer restriction cannot work from a backend). "
+                    "Reference recordings from YouTube are skipped until fixed."
+                )
+            else:
+                logger.error("yt.error url=%s err=%s", url, exc)
             return None
         except ExternalAPIUnavailable as exc:
             logger.warning("yt.unavailable url=%s err=%s", url, exc)

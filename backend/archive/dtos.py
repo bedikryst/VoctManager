@@ -137,8 +137,16 @@ class ExtractedWorkIdentity(BaseModel):
 
     title: str = Field(description="Title of the work as printed on the score.")
     composer_full_name: str = Field(
-        description="Composer's full name as printed (e.g. 'Johann Sebastian Bach'). "
+        description="Composer of the ORIGINAL music as printed (e.g. 'Johann Sebastian Bach'). "
+                    "For a hymn/chant whose text & melody ('t. i mel.', 'sł. i muz.') are "
+                    "credited to one person, that person is the composer — NOT the arranger. "
                     "If only initials are printed, return them verbatim."
+    )
+    arranger: str | None = Field(
+        default=None,
+        description="Whoever is credited with the arrangement / setting, distinct from "
+                    "the original composer: 'arr.', 'opr.', 'opracowanie', 'harm.', 'ed.'. "
+                    "Null if the score is not an arrangement."
     )
     composer_birth_year: int | None = Field(
         default=None,
@@ -150,7 +158,9 @@ class ExtractedWorkIdentity(BaseModel):
     )
     musical_key: str | None = Field(
         default=None,
-        description="Musical key (e.g. 'D major', 'F# minor'). Null if not stated."
+        description="Musical key, derived from the key signature and tonal centre "
+                    "(e.g. two sharps cadencing on D = 'D major'). Report it even when not "
+                    "printed as words. Null only if genuinely indeterminate (atonal/modal)."
     )
     voicing: str | None = Field(
         default=None,
@@ -158,11 +168,20 @@ class ExtractedWorkIdentity(BaseModel):
     )
     language: str | None = Field(
         default=None,
-        description="Primary sung language of the text (e.g. 'Latin', 'German', 'English')."
+        description="Primary sung language of the text (e.g. 'Latin', 'German', 'English'). "
+                    "If the text alternates languages (e.g. Polish and Latin verses), the predominant one."
     )
     text_source: str | None = Field(
         default=None,
-        description="Source of the text being set (e.g. 'Luke 1:46-55', 'Psalm 23', 'liturgical Latin')."
+        description="Literary / liturgical source of the TEXT being set (e.g. 'Luke 1:46-55', "
+                    "'Psalm 23', 'Adoro te devote — Eucharistic hymn'). This is the text's origin, "
+                    "NOT a person's name — the author goes in composer/arranger."
+    )
+    epoch: str | None = Field(
+        default=None,
+        description="Stylistic period as one code: MED, REN, BAR, CLA, ROM, M20, CON, POP, "
+                    "FOLK, OTH. For an arrangement use the arrangement's period (a 2020 setting "
+                    "of a medieval hymn is CON). Null if unsure."
     )
     confidence: float = Field(
         ge=0.0, le=1.0,
@@ -232,7 +251,14 @@ class ScoreAnalysisResult(BaseModel):
     # --- Identity (from the title page / front matter) ---
     title: str = Field(description="Title of the work as printed on the score.")
     composer_full_name: str = Field(
-        description="Composer's full name as printed. If only initials are printed, return them verbatim."
+        description="Composer of the ORIGINAL music. For a hymn/chant whose text & melody "
+                    "('t. i mel.', 'sł. i muz.') are credited to one person, that person — NOT "
+                    "the arranger. If only initials are printed, return them verbatim."
+    )
+    arranger: str | None = Field(
+        default=None,
+        description="Arrangement / setting credit ('arr.', 'opr.', 'opracowanie', 'harm.', "
+                    "'ed.'), distinct from the original composer. Null if not an arrangement."
     )
     composer_birth_year: int | None = Field(
         default=None, description="Composer's birth year if printed, else null."
@@ -241,16 +267,27 @@ class ScoreAnalysisResult(BaseModel):
         default=None, description="Opus or catalog identifier (e.g. 'BWV 243', 'K. 626')."
     )
     musical_key: str | None = Field(
-        default=None, description="Musical key (e.g. 'D major'). Null if not stated."
+        default=None,
+        description="Musical key from the key signature + tonal centre (e.g. two sharps "
+                    "cadencing on D = 'D major'). Report it even when not printed as words."
     )
     voicing: str | None = Field(
         default=None, description="Voicing notation (e.g. 'SATB', 'SSAATTBB'). Null if not stated."
     )
     language: str | None = Field(
-        default=None, description="Primary sung language as a word (e.g. 'Latin', 'Polish')."
+        default=None,
+        description="Predominant sung language as a word (e.g. 'Latin', 'Polish'). "
+                    "If verses alternate languages, the predominant one."
     )
     text_source: str | None = Field(
-        default=None, description="Source of the text (e.g. 'Luke 1:46-55', 'liturgical Latin')."
+        default=None,
+        description="Literary / liturgical source of the TEXT (e.g. 'Luke 1:46-55', "
+                    "'Adoro te devote — Eucharistic hymn') — the text's origin, not a person's name."
+    )
+    epoch: str | None = Field(
+        default=None,
+        description="Stylistic period as one code: MED, REN, BAR, CLA, ROM, M20, CON, POP, "
+                    "FOLK, OTH. For an arrangement, the arrangement's period. Null if unsure."
     )
     confidence: float = Field(
         ge=0.0, le=1.0,

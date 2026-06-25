@@ -39,10 +39,21 @@ from archive.dtos import (
     ExtractedWorkIdentity,
     WorkLookupResult,
 )
-from archive.models import Composer, Piece, ProvenanceSource
+from archive.models import Composer, EpochChoices, Piece, ProvenanceSource
 from archive.services import provenance
 
 logger = logging.getLogger(__name__)
+
+_EPOCH_VALUES = frozenset(EpochChoices.values)
+
+
+def _safe_epoch(value: str | None) -> str:
+    """Return `value` only if it is a valid `EpochChoices` code, else ''.
+    The AI returns a free string; we never write a junk epoch to the DB."""
+    if not value:
+        return ''
+    candidate = value.strip().upper()
+    return candidate if candidate in _EPOCH_VALUES else ''
 
 
 @dataclass(frozen=True)
@@ -361,6 +372,11 @@ def _merge_piece(
         fill_pairs.append(('voicing', extracted.voicing, ProvenanceSource.AI_SONNET, 'analyze_score'))
     if extracted.text_source:
         fill_pairs.append(('text_source', extracted.text_source, ProvenanceSource.AI_SONNET, 'analyze_score'))
+    if extracted.arranger:
+        fill_pairs.append(('arranger', extracted.arranger.strip(), ProvenanceSource.AI_SONNET, 'analyze_score'))
+    safe_epoch = _safe_epoch(extracted.epoch)
+    if safe_epoch:
+        fill_pairs.append(('epoch', safe_epoch, ProvenanceSource.AI_SONNET, 'analyze_score'))
 
     for field, value, src, ref in fill_pairs:
         if not value:
@@ -386,23 +402,62 @@ def _create_piece(
     extracted: ExtractedWorkIdentity,
 ) -> Piece:
     title = (mbz_work.canonical_title if mbz_work else extracted.title).strip()
+    opus = (mbz_work.opus_catalog if mbz_work else extracted.opus_catalog) or ''
+    key = (mbz_work.musical_key if mbz_work else extracted.musical_key) or ''
+    language = (mbz_work.language if mbz_work else (extracted.language or ''))
+    voicing = extracted.voicing or ''
+    text_source = extracted.text_source or ''
+    arranger = (extracted.arranger or '').strip()
+    epoch = _safe_epoch(extracted.epoch)
 
     piece = Piece.objects.create(
         composer_id=composer_id,
         title=title or 'Untitled Work',
-        opus_catalog=(mbz_work.opus_catalog if mbz_work else extracted.opus_catalog) or '',
-        musical_key=(mbz_work.musical_key if mbz_work else extracted.musical_key) or '',
-        language=(mbz_work.language if mbz_work else (extracted.language or '')),
-        voicing=extracted.voicing or '',
-        text_source=extracted.text_source or '',
+        opus_catalog=opus,
+        musical_key=key,
+        language=language,
+        voicing=voicing,
+        text_source=text_source,
+        arranger=arranger,
+        epoch=epoch,
         mbid_work=(mbz_work.mbid if mbz_work else None),
     )
 
+    # Stamp per-field provenance on the freshly-created piece so the review
+    # cockpit can show, for each identity field, whether it is MusicBrainz-
+    # canonical or an AI guess (carrying the run's self-rated confidence).
+    # Without this a first upload — by far the common case — had chips on lyrics
+    # but none on title/opus/key/voicing/text_source. Source priority mirrors
+    # `_merge_piece`: canonical when MusicBrainz supplied the value, else AI.
+    mbid_ref = str(mbz_work.mbid) if (mbz_work and mbz_work.mbid) else ''
+
+    def _stamp(field: str, value: str, from_mbz: bool) -> None:
+        if not value:
+            return
+        if from_mbz:
+            provenance.record_external(
+                target=piece, field_name=field,
+                source=ProvenanceSource.MUSICBRAINZ, source_reference=mbid_ref,
+            )
+        else:
+            provenance.record_external(
+                target=piece, field_name=field,
+                source=ProvenanceSource.AI_SONNET, source_reference='analyze_score',
+                confidence=extracted.confidence,
+            )
+
+    _stamp('title', piece.title, bool(mbz_work and mbz_work.canonical_title))
+    _stamp('opus_catalog', opus, bool(mbz_work and mbz_work.opus_catalog))
+    _stamp('musical_key', key, bool(mbz_work and mbz_work.musical_key))
+    _stamp('language', language, bool(mbz_work and mbz_work.language))
+    _stamp('voicing', voicing, from_mbz=False)
+    _stamp('text_source', text_source, from_mbz=False)
+    _stamp('arranger', arranger, from_mbz=False)
+    _stamp('epoch', epoch, from_mbz=False)
     if mbz_work and mbz_work.mbid:
         provenance.record_external(
             target=piece, field_name='mbid_work',
-            source=ProvenanceSource.MUSICBRAINZ,
-            source_reference=str(mbz_work.mbid),
+            source=ProvenanceSource.MUSICBRAINZ, source_reference=mbid_ref,
         )
     return piece
 

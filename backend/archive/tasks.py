@@ -118,6 +118,11 @@ MAX_PDF_PAGES: int = 100
 ANALYZE_MAX_TOKENS: int = 32768
 PROGRAM_NOTE_MAX_TOKENS: int = 8192
 
+# The canonical programme note is generated eagerly in the ensemble's language.
+# Polish is the platform's primary language; the cockpit can request others.
+DEFAULT_PROGRAM_NOTE_LANGUAGE: str = 'pl'
+DEFAULT_PROGRAM_NOTE_TONE: str = 'accessible'
+
 # Two-tier retry policy. Overload (529) is patient — Anthropic-wide capacity
 # blips clear in seconds to minutes, and failing the edition just makes the
 # conductor re-upload. Other transient blips (DB, external HTTP) get a shorter,
@@ -140,6 +145,11 @@ def build_ingestion_chain(edition_id: UUID) -> Any:
     Caller (`services.ingestion.start_ingestion`) applies it.
     """
     eid = str(edition_id)
+    # The programme note runs at `effort="low"` (~1¢ per note), so it is cheap
+    # enough to generate eagerly in the ensemble's language (`DEFAULT_PROGRAM_NOTE_LANGUAGE`)
+    # — far more useful than an empty section the conductor must remember to fill.
+    # The review cockpit can still regenerate it or produce another language on
+    # demand via `services.ingestion.dispatch_program_note`.
     return chain(
         prepare_document.s({'edition_id': eid}),
         analyze_score.s(),
@@ -159,6 +169,12 @@ def build_ingestion_chain(edition_id: UUID) -> Any:
 def _backoff(retries: int, base: float, cap: float) -> float:
     """Exponential backoff with full jitter."""
     return min(cap, base * (2 ** retries)) * (0.5 + random.random() / 2)
+
+
+def cancel_cache_key(edition_id: str) -> str:
+    """Redis key the guard polls to cooperatively stop an in-flight chain.
+    Set by `services.ingestion.cancel_ingestion`, cleared on (re)dispatch."""
+    return f"ingest:cancel:{edition_id}"
 
 
 def _retry_or_fail(
@@ -210,10 +226,22 @@ def _guarded(func: Callable) -> Callable:
     """
     @functools.wraps(func)
     def wrapper(self, payload: dict) -> dict:
+        edition_id = payload.get('edition_id')
+        # Cooperative cancellation: the conductor hit "cancel" (wrong PDF, etc.).
+        # The edition was already marked FAILED by the service; we just stop the
+        # chain here so no further AI money is spent. A call already in flight
+        # finishes and bills, but nothing downstream of this boundary runs.
+        if edition_id and cache.get(cancel_cache_key(str(edition_id))):
+            logger.info(
+                "ingest.cancelled task=%s edition=%s — short-circuit",
+                func.__name__, edition_id,
+            )
+            payload['_aborted'] = True
+            return payload
         if payload.get('_aborted'):
             logger.info(
                 "ingest.skip task=%s edition=%s reason=upstream_aborted",
-                func.__name__, payload.get('edition_id'),
+                func.__name__, edition_id,
             )
             return payload
         try:
@@ -317,6 +345,42 @@ def prepare_document(self, payload: dict) -> dict:
         edition.page_count = result.page_count
         update_fields.append('page_count')
     edition.save(update_fields=update_fields)
+
+    # Re-upload dedup: an identical PDF (same SHA-256) that already resolved to a
+    # piece needs no second AI run — attach this edition to that piece and skip
+    # straight to conductor review. `_aborted` short-circuits the guarded AI
+    # tasks; because we set AWAITING (not FAILED), `finalize_edition` still
+    # confirms the terminal state. Only for fresh uploads (no pre-attached
+    # piece), and only against a twin that already reached AWAITING / READY.
+    if edition.piece_id is None and result.sha256:
+        twin = (
+            ScoreEdition.objects
+            .filter(
+                sha256=result.sha256,
+                piece__isnull=False,
+                ingestion_status__in=[
+                    IngestionStatus.AWAITING, IngestionStatus.READY,
+                ],
+            )
+            .exclude(pk=edition.pk)
+            .order_by('-created_at')
+            .first()
+        )
+        if twin is not None:
+            edition.piece_id = twin.piece_id
+            edition.ingestion_status = IngestionStatus.AWAITING
+            edition.ingestion_progress = ''
+            edition.save(update_fields=[
+                'piece_id', 'ingestion_status', 'ingestion_progress', 'updated_at',
+            ])
+            logger.info(
+                "ingest.dedup edition=%s sha256=%s matched piece=%s — skipping AI",
+                edition.id, result.sha256[:12], twin.piece_id,
+            )
+            payload['page_count'] = result.page_count
+            payload['piece_id'] = str(twin.piece_id)
+            payload['_aborted'] = True
+            return payload
 
     payload['page_count'] = result.page_count
     return payload
@@ -467,6 +531,7 @@ def persist_analysis(self, payload: dict) -> dict:
                 provenance.record_ai(
                     target=movement, field_name='title',
                     model_id=AIModel.SONNET, prompt_version=version,
+                    confidence=analysis.confidence,
                 )
 
         # Sung text / IPA / language (fill only blanks).
@@ -477,6 +542,7 @@ def persist_analysis(self, payload: dict) -> dict:
             provenance.record_ai(
                 target=piece, field_name='lyrics_original',
                 model_id=AIModel.SONNET, prompt_version=version,
+                confidence=analysis.confidence,
             )
         if not piece.lyrics_ipa and analysis.ipa_transcription:
             piece.lyrics_ipa = analysis.ipa_transcription
@@ -484,6 +550,7 @@ def persist_analysis(self, payload: dict) -> dict:
             provenance.record_ai(
                 target=piece, field_name='lyrics_ipa',
                 model_id=AIModel.SONNET, prompt_version=version,
+                confidence=analysis.confidence,
             )
         if not piece.language and analysis.sung_text_language:
             piece.language = analysis.sung_text_language
@@ -506,22 +573,44 @@ def persist_analysis(self, payload: dict) -> dict:
             provenance.record_ai(
                 target=translation, field_name='text',
                 model_id=AIModel.SONNET, prompt_version=version,
+                confidence=analysis.confidence,
             )
 
+    # The full analysis (sung text + line-aligned IPA + translations) is now
+    # persisted. Drop it from the Celery payload so the four remaining tasks
+    # don't drag a multi-KB blob through the result backend on every hop — and
+    # don't dump it into the worker log on every `task succeeded` line.
+    payload.pop('analysis', None)
+    payload.pop('analysis_prompt_version', None)
     return payload
 
 
 @shared_task(name='archive.generate_program_note', **_TASK_KW)
 @_guarded
 def generate_program_note(self, payload: dict) -> dict:
-    """Phase 5 — Claude writes a ~250-word audience programme note (text-only)."""
+    """Claude writes a ~250-word audience programme note (text-only).
+
+    Runs eagerly in the ingestion chain in the ensemble's language
+    (`DEFAULT_PROGRAM_NOTE_LANGUAGE`) — at `effort="low"` it's ~1¢. The review
+    cockpit re-dispatches it via `services.ingestion.dispatch_program_note` to
+    regenerate or produce another language; pass `program_note_language` and
+    `force_program_note=True` in the payload for that.
+    """
     edition = _load_edition(payload['edition_id'])
     _ensure_budget(edition)
-    _set_progress(payload['edition_id'], IngestionProgress.PROGRAM_NOTE)
     piece = Piece.objects.get(id=payload['piece_id'])
 
-    if ProgramNote.objects.filter(piece=piece, project__isnull=True, language='en').exists():
-        return payload
+    language = payload.get('program_note_language') or DEFAULT_PROGRAM_NOTE_LANGUAGE
+    tone = payload.get('program_note_tone') or DEFAULT_PROGRAM_NOTE_TONE
+
+    existing = ProgramNote.objects.filter(
+        piece=piece, project__isnull=True, language=language,
+    )
+    if existing.exists():
+        if not payload.get('force_program_note'):
+            return payload
+        # Regenerate: soft-delete the stale note so they don't accumulate.
+        existing.delete()
 
     composer = piece.composer
     composer_name = ''
@@ -530,29 +619,35 @@ def generate_program_note(self, payload: dict) -> dict:
 
     user_content = (
         f"Composer: {composer_name or 'Unknown'}\n"
+        f"Arranger: {piece.arranger or '—'}\n"
         f"Work title: {piece.title}\n"
         f"Year of composition: {piece.composition_year or 'unknown'}\n"
         f"Text source: {piece.text_source or 'unknown'}\n"
-        f"Target tone: accessible\n"
+        f"Target tone: {tone}\n"
         f"Target word count: 250\n"
-        f"Target language: en"
+        f"Target language: {language}"
     )
 
     client = AIClient()
+    # `effort="high"` (the original setting) is what produced the long, detailed,
+    # complete notes the conductor liked. `effort="low"` made the model under-
+    # deliver — short notes that stopped mid-sentence — so for a prose artifact
+    # that's read by the audience, quality wins over the few cents saved.
     result, cost = client.parse(
         model=AIModel.SONNET,
         prompt=GENERATE_PROGRAM_NOTE,
         user_content=user_content,
         output_schema=GeneratedProgramNote,
         max_tokens=PROGRAM_NOTE_MAX_TOKENS,
+        effort="high",
     )
     _bill_edition(edition, cost.total_cents)
 
     note = ProgramNote.objects.create(
         piece=piece,
         project=None,
-        language='en',
-        target_tone='accessible',
+        language=language,
+        target_tone=tone,
         word_count_target=250,
         content=result.content,
     )
@@ -631,12 +726,14 @@ def _identity_from_analysis(analysis: dict) -> ExtractedWorkIdentity:
     return ExtractedWorkIdentity.model_validate({
         'title': analysis['title'],
         'composer_full_name': analysis['composer_full_name'],
+        'arranger': analysis.get('arranger'),
         'composer_birth_year': analysis.get('composer_birth_year'),
         'opus_catalog': analysis.get('opus_catalog'),
         'musical_key': analysis.get('musical_key'),
         'voicing': analysis.get('voicing'),
         'language': analysis.get('language'),
         'text_source': analysis.get('text_source'),
+        'epoch': analysis.get('epoch'),
         'confidence': analysis.get('confidence', 0.0),
     })
 

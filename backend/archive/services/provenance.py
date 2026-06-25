@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 _AI_MODEL_TO_SOURCE: Final[dict[str, str]] = {
     'claude-haiku-4-5':  ProvenanceSource.AI_HAIKU,
     'claude-sonnet-4-6': ProvenanceSource.AI_SONNET,
-    'claude-opus-4-7':   ProvenanceSource.AI_OPUS,
+    'claude-opus-4-8':   ProvenanceSource.AI_OPUS,
 }
 
 

@@ -14,6 +14,7 @@ Standards: SaaS 2026, RFC 7807 (Global Exception Handling), Aggregate Roots.
 """
 
 import logging
+import uuid
 
 from django.db import transaction
 from django.db.models import Count, Q
@@ -33,24 +34,32 @@ from .models import (
     Annotation,
     Composer,
     IngestionStatus,
+    Movement,
     Piece,
     PieceVoiceRequirement,
+    Recording,
     ScoreEdition,
     Track,
+    Translation,
 )
 from .serializers import (
     AnnotationSerializer,
     ComposerSerializer,
+    MovementWriteSerializer,
     PieceSerializer,
     PieceVoiceRequirementSerializer,
+    RecordingWriteSerializer,
     ScoreEditionDetailSerializer,
     ScoreEditionListSerializer,
     ScoreEditionUploadSerializer,
     TrackSerializer,
+    TranslationWriteSerializer,
 )
-from .services import enrichment
+from .services import enrichment, provenance
 from .services.ingestion import (
     IngestionPreconditionError,
+    cancel_ingestion,
+    dispatch_program_note,
     ingestion_is_available,
     start_ingestion,
 )
@@ -227,6 +236,17 @@ class PieceViewSet(viewsets.ModelViewSet):
     serializer_class = PieceSerializer
     permission_classes = [permissions.IsAuthenticated, IsManager]
 
+    def get_serializer_context(self) -> dict:
+        # Concrete dict: DRF stubs surface the base context as a read-only
+        # Mapping, which blocks the keyed assignment + dict return below.
+        ctx = dict(super().get_serializer_context())
+        # Per-field provenance is one extra query; only the single-piece review
+        # surfaces (detail / write responses) need it, never the list.
+        ctx['include_provenance'] = self.action in (
+            'retrieve', 'create', 'update', 'partial_update',
+        )
+        return ctx
+
     def create(self, request, *args, **kwargs) -> Response:
         serializer = PieceSerializer(data=request.data, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
@@ -245,6 +265,30 @@ class PieceViewSet(viewsets.ModelViewSet):
         dto = serializer.to_dto(instance=instance)
         piece = services.ArchiveManagementService.update_piece(piece=instance, dto=dto)
         return Response(self.get_serializer(piece).data)
+
+    @action(detail=True, methods=['post'], url_path='generate_program_note')
+    def generate_program_note(self, request, pk=None):
+        """
+        Generate (or, with `?force=true`, regenerate) the AI programme note for
+        this piece on demand. Program notes are no longer produced eagerly at
+        ingest — the conductor asks for one from the review cockpit when wanted.
+        Returns 202 with the Celery task id; the note appears on a later refetch.
+        """
+        piece = self.get_object()
+        force = _truthy(request.query_params.get('force')) or _truthy(
+            request.data.get('force') if hasattr(request.data, 'get') else None
+        )
+        language = request.query_params.get('language') or (
+            request.data.get('language') if hasattr(request.data, 'get') else None
+        )
+        try:
+            task_id = dispatch_program_note(piece, force=force, language=language or None)
+        except IngestionPreconditionError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'celery_task_id': task_id, 'status': 'dispatched'},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 class TrackViewSet(viewsets.ModelViewSet):
@@ -288,6 +332,77 @@ class PieceVoiceRequirementViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PieceVoiceRequirement.objects.all()
     serializer_class = PieceVoiceRequirementSerializer
     permission_classes = [permissions.IsAuthenticated, IsManager]
+
+
+# ===========================================================================
+# AI artifacts — inline correction endpoints for the Review cockpit
+# ===========================================================================
+# Movements, translations and recordings are the AI's most error-prone outputs
+# (a hallucinated movement, a wrong translation line, an irrelevant recording).
+# They used to be read-only inside the Piece payload with nowhere to fix them.
+# These manager-only endpoints let the conductor correct or delete them during
+# review; editing a movement/translation by hand stamps MANUAL provenance so the
+# field's chip flips from "AI-suggested" to "verified".
+#
+#   GET/POST           /api/archive/movements/        (?piece=<uuid>)
+#   PATCH/DELETE       /api/archive/movements/{id}/
+#   …likewise translations, recordings.
+# ===========================================================================
+
+def _actor_email(request) -> str:
+    user = request_user(request)
+    return getattr(user, 'email', '') or ''
+
+
+class MovementViewSet(viewsets.ModelViewSet):
+    """Inline CRUD for movements (manager-only). Editing stamps MANUAL provenance."""
+    queryset = Movement.objects.select_related('piece').order_by('piece', 'order_index')
+    serializer_class = MovementWriteSerializer
+    permission_classes = [permissions.IsAuthenticated, IsManager]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['piece']
+
+    def perform_update(self, serializer) -> None:
+        movement = serializer.save()
+        provenance.record_manual(
+            target=movement, field_name='title',
+            actor_email=_actor_email(self.request),
+        )
+
+    def perform_destroy(self, instance) -> None:
+        instance.delete()  # EnterpriseBaseModel soft-delete
+
+
+class TranslationViewSet(viewsets.ModelViewSet):
+    """Inline CRUD for translations (manager-only). Editing stamps MANUAL provenance."""
+    queryset = Translation.objects.select_related('piece').order_by('target_language')
+    serializer_class = TranslationWriteSerializer
+    permission_classes = [permissions.IsAuthenticated, IsManager]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['piece', 'target_language']
+
+    def perform_update(self, serializer) -> None:
+        translation = serializer.save()
+        provenance.record_manual(
+            target=translation, field_name='text',
+            actor_email=_actor_email(self.request),
+        )
+
+    def perform_destroy(self, instance) -> None:
+        instance.delete()  # EnterpriseBaseModel soft-delete
+
+
+class RecordingViewSet(viewsets.ModelViewSet):
+    """Inline CRUD for reference recordings (manager-only): toggle the featured
+    pick, drop an irrelevant hit, or add a hand-picked one."""
+    queryset = Recording.objects.select_related('piece').order_by('-is_featured')
+    serializer_class = RecordingWriteSerializer
+    permission_classes = [permissions.IsAuthenticated, IsManager]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['piece', 'source']
+
+    def perform_destroy(self, instance) -> None:
+        instance.delete()  # EnterpriseBaseModel soft-delete
 
 
 # ===========================================================================
@@ -474,6 +589,24 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         body['celery_task_id'] = ticket.celery_task_id
         return Response(body, status=status.HTTP_202_ACCEPTED)
 
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """
+        Cooperatively cancel an in-flight ingestion (wrong PDF, changed mind).
+        Marks the edition FAILED immediately and stops the chain at its next
+        task boundary so no further AI spend is incurred. 409 if already
+        terminal (nothing to cancel).
+        """
+        edition = self.get_object()
+        try:
+            cancel_ingestion(edition)
+        except IngestionPreconditionError as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_409_CONFLICT)
+        return Response(
+            ScoreEditionDetailSerializer(edition, context={'request': request}).data,
+            status=status.HTTP_200_OK,
+        )
+
     @action(detail=False, methods=['get'])
     def active(self, request):
         """Every in-flight (non-terminal) ingestion across the archive.
@@ -574,6 +707,20 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             return Response(
                 {'detail': 'edition is required.'},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            uuid.UUID(str(edition_id))
+        except (ValueError, TypeError):
+            return Response(
+                {'detail': 'edition must be a valid id.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Never blind-delete by raw id: confirm the edition exists so a stray or
+        # forged id can't silently no-op (and so the response is an honest 404).
+        if not ScoreEdition.objects.filter(pk=edition_id).exists():
+            return Response(
+                {'detail': 'edition not found.'},
+                status=status.HTTP_404_NOT_FOUND,
             )
         qs = Annotation.objects.filter(edition_id=edition_id, is_deleted=False)
         layer = request.data.get('layer_name')

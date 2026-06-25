@@ -23,11 +23,17 @@ import logging
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 
 from archive.infrastructure.ai_client import CostCeilingExceeded
-from archive.models import IngestionStatus, ScoreEdition
-from archive.tasks import build_ingestion_chain, ensure_daily_budget
+from archive.models import IngestionStatus, Piece, ScoreEdition
+from archive.tasks import (
+    build_ingestion_chain,
+    cancel_cache_key,
+    ensure_daily_budget,
+    generate_program_note,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +92,10 @@ def start_ingestion(edition: ScoreEdition, *, force: bool = False) -> IngestionT
             'ingestion_cost_cents', 'updated_at',
         ])
 
+    # Clear any stale cancellation flag so a deliberate re-ingest of a
+    # previously-cancelled edition is not immediately short-circuited.
+    cache.delete(cancel_cache_key(str(edition.id)))
+
     chain_signature = build_ingestion_chain(edition.id)
     async_result = chain_signature.apply_async()
 
@@ -97,6 +107,75 @@ def start_ingestion(edition: ScoreEdition, *, force: bool = False) -> IngestionT
         edition_id=str(edition.id),
         celery_task_id=async_result.id,
     )
+
+
+def dispatch_program_note(
+    piece: Piece, *, force: bool = False, language: str | None = None,
+) -> str:
+    """
+    Dispatch programme-note generation for a piece on demand — to regenerate the
+    canonical note or produce one in another language (the ingestion chain
+    already generates the default-language note eagerly). The AI cost is billed
+    against the piece's default / most-recent score edition. `force=True`
+    regenerates over an existing note in that language.
+
+    Raises `IngestionPreconditionError` for caller-fixable issues (missing API
+    key, no edition to bill against, daily budget exhausted). Returns the Celery
+    task id.
+    """
+    _check_api_key()
+    _check_daily_budget()
+    edition = (
+        piece.editions.filter(is_deleted=False)
+        .order_by('-is_default', '-created_at')
+        .first()
+    )
+    if edition is None:
+        raise IngestionPreconditionError(
+            "Ten utwór nie ma wgranej partytury, do której można przypisać "
+            "koszt AI — najpierw wgraj PDF."
+        )
+
+    payload: dict = {'edition_id': str(edition.id), 'piece_id': str(piece.id)}
+    if force:
+        payload['force_program_note'] = True
+    if language:
+        payload['program_note_language'] = language
+    async_result = generate_program_note.delay(payload)
+    logger.info(
+        "ingest.program_note_dispatched piece=%s edition=%s task=%s force=%s lang=%s",
+        piece.id, edition.id, async_result.id, force, language or 'default',
+    )
+    return async_result.id
+
+
+def cancel_ingestion(edition: ScoreEdition) -> None:
+    """
+    Cooperatively cancel an in-flight ingestion (wrong PDF, changed mind, …).
+
+    Sets a short-lived cache flag each guarded task checks at its boundary — the
+    call already in flight finishes and bills, but the chain stops there — and
+    marks the edition FAILED immediately so the UI reflects the cancel at once.
+
+    Raises `IngestionPreconditionError` if the edition is already terminal
+    (nothing to cancel).
+    """
+    terminal = {
+        IngestionStatus.AWAITING, IngestionStatus.READY, IngestionStatus.FAILED,
+    }
+    if edition.ingestion_status in terminal:
+        raise IngestionPreconditionError(
+            "To przetwarzanie już się zakończyło — nie ma czego anulować."
+        )
+
+    cache.set(cancel_cache_key(str(edition.id)), True, timeout=60 * 60)
+    edition.ingestion_status = IngestionStatus.FAILED
+    edition.ingestion_error = 'Przetwarzanie anulowane przez użytkownika.'
+    edition.ingestion_progress = ''
+    edition.save(update_fields=[
+        'ingestion_status', 'ingestion_error', 'ingestion_progress', 'updated_at',
+    ])
+    logger.info("ingest.cancel_requested edition=%s", edition.id)
 
 
 # ---------------------------------------------------------------------------

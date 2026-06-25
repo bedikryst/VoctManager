@@ -24,23 +24,63 @@ from collections.abc import Mapping
 from typing import Any, cast
 
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
 
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .models import (
     Annotation,
+    AnnotationType,
     Composer,
     IngestionStatus,
     Movement,
     Piece,
     PieceVoiceRequirement,
     ProgramNote,
+    ProvenanceRecord,
+    ProvenanceSource,
     Recording,
     ScoreEdition,
     Track,
     Translation,
 )
+
+
+def build_piece_provenance_index(piece: "Piece") -> dict[str, dict[str, Any]]:
+    """Latest `ProvenanceRecord` per (object, field) for a piece and its
+    AI-enriched children (movements / translations / recordings), in ONE query.
+
+    Keyed `"<object_id>:<field_name>"`, so the AI Review cockpit can show, per
+    field, whether the value came from the AI (and at what self-rated
+    confidence), from MusicBrainz / Wikidata, or from a human edit — i.e. the
+    "AI-suggested vs verified" signal that the provenance log was built for but
+    nothing surfaced. Children are read from the prefetch cache (`.all()`), so
+    this stays a single extra query on the piece-detail endpoint.
+    """
+    target_ids: list[Any] = [piece.pk]
+    for relation in ('movements', 'translations', 'recordings'):
+        target_ids.extend(obj.pk for obj in getattr(piece, relation).all())
+
+    source_labels = dict(ProvenanceSource.choices)
+    index: dict[str, dict[str, Any]] = {}
+    records = (
+        ProvenanceRecord.objects
+        .filter(object_id__in=target_ids)
+        .order_by('object_id', 'field_name', '-retrieved_at')
+    )
+    for rec in records:
+        key = f"{rec.object_id}:{rec.field_name}"
+        if key in index:
+            continue  # ordered newest-first; first row per key wins
+        index[key] = {
+            'source': rec.source,
+            'source_display': str(source_labels.get(rec.source, rec.source)),
+            'confidence': rec.confidence,
+            'model_version': rec.model_version,
+            'retrieved_at': rec.retrieved_at.isoformat() if rec.retrieved_at else None,
+        }
+    return index
 
 
 def score_download_url(obj: "ScoreEdition", context: Mapping[str, Any]) -> str | None:
@@ -198,19 +238,173 @@ class ProgramNoteSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'project', 'word_count_target']
 
 
+# ---------------------------------------------------------------------------
+# Write serializers for the three AI artifacts the conductor corrects inline.
+# The read-only variants above stay embedded in PieceSerializer; these power the
+# standalone Movement/Translation/Recording endpoints so a hallucinated movement,
+# a wrong translation line, or an irrelevant recording can actually be fixed or
+# deleted from the review cockpit.
+# ---------------------------------------------------------------------------
+
+class MovementWriteSerializer(serializers.ModelSerializer):
+    """Read+write Movement payload for `MovementViewSet`."""
+    class Meta:
+        model = Movement
+        fields = ['id', 'piece', 'order_index', 'title', 'tempo_marking',
+                  'duration_seconds', 'voicing_override', 'starts_on_page']
+        read_only_fields = ['id']
+
+
+class TranslationWriteSerializer(serializers.ModelSerializer):
+    """Read+write Translation payload for `TranslationViewSet`."""
+    class Meta:
+        model = Translation
+        fields = ['id', 'piece', 'movement', 'target_language', 'text', 'is_singable']
+        read_only_fields = ['id']
+
+
+class RecordingWriteSerializer(serializers.ModelSerializer):
+    """Read+write Recording payload for `RecordingViewSet` — toggle the featured
+    pick, drop an irrelevant hit, or paste a hand-picked URL."""
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
+
+    class Meta:
+        model = Recording
+        fields = ['id', 'piece', 'source', 'source_display', 'external_id', 'url',
+                  'performer', 'year', 'duration_seconds', 'is_featured']
+        read_only_fields = ['id', 'source_display']
+
+
+# Hard limits on stored markup — defensive bounds so a malformed or hostile
+# payload can never bloat the row or persist a shape the renderer drops silently.
+_MAX_PATHS = 256
+_MAX_POINTS_PER_PATH = 8000
+_MAX_TEXT_LEN = 2000
+_MAX_STROKE_WIDTH = 0.2  # fraction of page width
+_NOTE_DISPLAY_MODES = ('pin', 'inline')
+
+
+def _clamp01(value: Any) -> float:
+    """Coerce to float and clamp into the normalized page box [0, 1]."""
+    try:
+        return min(1.0, max(0.0, float(value)))
+    except (TypeError, ValueError) as exc:
+        raise serializers.ValidationError(
+            {'payload': _('Coordinates must be numbers.')}
+        ) from exc
+
+
 class AnnotationSerializer(serializers.ModelSerializer):
     """
-    PDF markup overlay — conductor score annotations (freehand cues, breath
-    marks, cuts, pinned rehearsal comments). Used both nested-read inside
+    PDF markup overlay — conductor score annotations (freehand ink, highlighter
+    strokes, pinned/inline rehearsal comments). Used both nested-read inside
     ScoreEditionDetailSerializer and as the write payload for AnnotationViewSet,
     hence `edition` is writable here. `created_by` is stamped server-side from
     the request user and never trusted from the client.
+
+    The `payload` shape is validated AND sanitized per `annotation_type` on
+    write: coordinates are clamped to the normalized page box, sizes are bounded,
+    and the cleaned object is what gets persisted — the DB never holds a shape
+    the frontend type-guards would silently discard.
     """
     class Meta:
         model = Annotation
         fields = ['id', 'edition', 'page_number', 'annotation_type', 'payload',
                   'color', 'layer_name', 'created_by', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        # On PATCH either field may be absent; resolve the effective pair so the
+        # payload is always validated against the type it will be stored under.
+        touches_shape = 'payload' in attrs or 'annotation_type' in attrs
+        if not touches_shape:
+            return attrs
+        atype = attrs.get(
+            'annotation_type', getattr(self.instance, 'annotation_type', None)
+        )
+        payload = attrs.get('payload', getattr(self.instance, 'payload', None))
+        attrs['payload'] = self._clean_payload(atype, payload)
+        return attrs
+
+    def _clean_payload(self, atype: str | None, payload: Any) -> dict[str, Any]:
+        if not isinstance(payload, Mapping):
+            raise serializers.ValidationError(
+                {'payload': _('Payload must be an object.')}
+            )
+        if atype in (AnnotationType.FREEHAND, AnnotationType.HIGHLIGHT):
+            return self._clean_strokes(payload)
+        if atype == AnnotationType.COMMENT:
+            return self._clean_comment(payload)
+        if atype == AnnotationType.STAMP:
+            return self._clean_stamp(payload)
+        raise serializers.ValidationError(
+            {'annotation_type': _('Unsupported annotation type.')}
+        )
+
+    def _clean_strokes(self, payload: Mapping[str, Any]) -> dict[str, Any]:
+        raw_paths = payload.get('paths')
+        if not isinstance(raw_paths, (list, tuple)) or not raw_paths:
+            raise serializers.ValidationError(
+                {'payload': _('Freehand payload requires a non-empty "paths" list.')}
+            )
+        if len(raw_paths) > _MAX_PATHS:
+            raise serializers.ValidationError(
+                {'payload': _('Too many strokes in one marking.')}
+            )
+        cleaned_paths: list[list[list[float]]] = []
+        for path in raw_paths:
+            if not isinstance(path, (list, tuple)) or not path:
+                raise serializers.ValidationError(
+                    {'payload': _('Each stroke must be a non-empty list of points.')}
+                )
+            if len(path) > _MAX_POINTS_PER_PATH:
+                raise serializers.ValidationError(
+                    {'payload': _('A stroke has too many points.')}
+                )
+            cleaned_points: list[list[float]] = []
+            for point in path:
+                if not isinstance(point, (list, tuple)) or len(point) != 2:
+                    raise serializers.ValidationError(
+                        {'payload': _('Each point must be an [x, y] pair.')}
+                    )
+                cleaned_points.append([_clamp01(point[0]), _clamp01(point[1])])
+            cleaned_paths.append(cleaned_points)
+        try:
+            width = float(payload.get('width', 0.004))
+        except (TypeError, ValueError) as exc:
+            raise serializers.ValidationError(
+                {'payload': _('Stroke width must be a number.')}
+            ) from exc
+        width = min(_MAX_STROKE_WIDTH, max(0.0005, width))
+        return {'paths': cleaned_paths, 'width': width}
+
+    def _clean_comment(self, payload: Mapping[str, Any]) -> dict[str, Any]:
+        text = payload.get('text')
+        if not isinstance(text, str) or not text.strip():
+            raise serializers.ValidationError(
+                {'payload': _('A comment requires non-empty text.')}
+            )
+        display = payload.get('display', 'pin')
+        if display not in _NOTE_DISPLAY_MODES:
+            display = 'pin'
+        return {
+            'x': _clamp01(payload.get('x')),
+            'y': _clamp01(payload.get('y')),
+            'text': text.strip()[:_MAX_TEXT_LEN],
+            'display': display,
+        }
+
+    def _clean_stamp(self, payload: Mapping[str, Any]) -> dict[str, Any]:
+        symbol = payload.get('symbol')
+        if not isinstance(symbol, str) or not symbol.strip():
+            raise serializers.ValidationError(
+                {'payload': _('A stamp requires a "symbol" code.')}
+            )
+        return {
+            'x': _clamp01(payload.get('x')),
+            'y': _clamp01(payload.get('y')),
+            'symbol': symbol.strip()[:40],
+        }
 
 
 # ===========================================================================
@@ -384,6 +578,10 @@ class PieceSerializer(serializers.ModelSerializer):
     epoch_display = serializers.CharField(source='get_epoch_display', read_only=True)
     ingestion_status = serializers.SerializerMethodField()
     ingestion_status_display = serializers.SerializerMethodField()
+    # Per-field source attribution (AI / MusicBrainz / verified) + confidence.
+    # Only populated on the piece-detail endpoint (review cockpit) — see
+    # `PieceViewSet.get_serializer_context` — so the list stays a single query.
+    provenance = serializers.SerializerMethodField()
 
     class Meta:
         model = Piece
@@ -406,6 +604,7 @@ class PieceSerializer(serializers.ModelSerializer):
             'mbid_work',
             # Derived
             'ingestion_status', 'ingestion_status_display',
+            'provenance',
             # Read-only nested relations
             'tracks',
             'voice_requirements',          # write-only
@@ -430,6 +629,12 @@ class PieceSerializer(serializers.ModelSerializer):
     def get_ingestion_status_display(self, obj: Piece) -> str:
         code = _aggregate_ingestion_status(obj)
         return str(dict(IngestionStatus.choices).get(code, code))
+
+    def get_provenance(self, obj: Piece) -> dict[str, Any]:
+        # Gated: skip the extra query on list responses (many pieces, no review).
+        if not self.context.get('include_provenance'):
+            return {}
+        return build_piece_provenance_index(obj)
 
     # ---- Write validation --------------------------------------------------
 

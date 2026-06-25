@@ -22,7 +22,7 @@ Description:
          the caller can stamp `ProvenanceRecord` rows with full attribution.
 
     Adheres to the Anthropic 2026 defaults: adaptive thinking, no sampling
-    parameters, Claude 4.7 / 4.6 / 4.5-haiku as the supported model tier.
+    parameters, Opus 4.8 / Sonnet 4.6 / Haiku 4.5 as the supported model tier.
 
 Standards: SaaS 2026, Anthropic SDK best practices, provenance-aware.
 ===============================================================================
@@ -59,7 +59,7 @@ class AIModel:
     """Canonical model IDs (Claude API, May 2026). Never construct your own."""
     HAIKU: Final[str] = "claude-haiku-4-5"      # cheap classification, dedup, simple extraction
     SONNET: Final[str] = "claude-sonnet-4-6"    # enrichment, translations, program notes
-    OPUS: Final[str] = "claude-opus-4-7"        # hardest reasoning / multi-step decisions
+    OPUS: Final[str] = "claude-opus-4-8"        # hardest reasoning / multi-step decisions
 
 
 # ---------------------------------------------------------------------------
@@ -553,13 +553,28 @@ class AIClient:
     @staticmethod
     def _coerce_json(response: Any, output_schema: type[T]) -> T | None:
         """Extract and validate a JSON object from an unstructured response.
-        Tolerates markdown fences / surrounding prose. Returns None if nothing
-        parses, so the caller retries."""
+
+        Tolerates markdown fences, surrounding prose, AND raw control characters
+        (literal newlines / tabs) inside string values. The last point is the
+        important one: told to "preserve line breaks", Claude routinely emits
+        actual newlines inside the `sung_text` / `ipa_transcription` /
+        translation fields, which are illegal in strict JSON. `model_validate_json`
+        rejects them, so a complete, already-billed analysis was being thrown
+        away and re-run as a fresh Celery task — three full ~60s Sonnet vision
+        calls to land one parse (see the analyze_score retry storm). Parsing the
+        bytes with `json.loads(strict=False)` accepts those control characters,
+        so the first response is kept.
+
+        Returns None only when nothing usable can be recovered, and logs *why*
+        (empty / non-JSON / decode error / schema drift) so a genuine failure is
+        diagnosable instead of an opaque "no parseable output".
+        """
         text = "".join(
             getattr(block, "text", "") for block in response.content
             if getattr(block, "type", None) == "text"
         ).strip()
         if not text:
+            logger.warning("ai.parse.coerce reason=empty_text_response")
             return None
         if text.startswith("```"):
             newline = text.find("\n")
@@ -568,9 +583,25 @@ class AIClient:
                 text = text.rstrip()[:-3]
             text = text.strip()
         start, end = text.find("{"), text.rfind("}")
-        if start != -1 and end > start:
-            text = text[start:end + 1]
+        if start == -1 or end <= start:
+            logger.warning("ai.parse.coerce reason=no_json_object chars=%d", len(text))
+            return None
+        candidate = text[start:end + 1]
         try:
-            return output_schema.model_validate_json(text)
-        except Exception:
+            # strict=False permits the raw newlines/tabs Claude emits inside
+            # multi-line string values; strict JSON would reject them.
+            obj = json.loads(candidate, strict=False)
+        except json.JSONDecodeError as exc:
+            logger.warning(
+                "ai.parse.coerce reason=json_decode_error pos=%s msg=%s",
+                exc.pos, exc.msg,
+            )
+            return None
+        try:
+            return output_schema.model_validate(obj)
+        except Exception as exc:
+            logger.warning(
+                "ai.parse.coerce reason=schema_validation_failed schema=%s err=%s",
+                output_schema.__name__, str(exc)[:300],
+            )
             return None

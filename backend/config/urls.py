@@ -17,10 +17,13 @@ from archive.sse_views import score_edition_events
 from archive.views import (
     AnnotationViewSet,
     ComposerViewSet,
+    MovementViewSet,
     PieceViewSet,
     PieceVoiceRequirementViewSet,
+    RecordingViewSet,
     ScoreEditionViewSet,
     TrackViewSet,
+    TranslationViewSet,
 )
 from core.views import (
     ActivateAccountView,
@@ -88,6 +91,9 @@ router.register(r'piece-voice-requirements', PieceVoiceRequirementViewSet, basen
 # --- Score Package Compiler Endpoints ---
 router.register(r'archive/editions', ScoreEditionViewSet, basename='score-edition')
 router.register(r'archive/annotations', AnnotationViewSet, basename='annotation')
+router.register(r'archive/movements', MovementViewSet, basename='movement')
+router.register(r'archive/translations', TranslationViewSet, basename='translation')
+router.register(r'archive/recordings', RecordingViewSet, basename='recording')
 
 # --- System & Notifications ---
 router.register(r'notifications', NotificationViewSet, basename='notification')

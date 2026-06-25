@@ -470,7 +470,12 @@ class Annotation(EnterpriseBaseModel):
     page_number = models.PositiveIntegerField(verbose_name=_("Page Number"))
     annotation_type = models.CharField(max_length=2, choices=AnnotationType.choices, verbose_name=_("Type"))
     payload = models.JSONField(
-        help_text=_("Shape varies by annotation_type: highlights store rect arrays, freehand stores SVG path data, comments store text + anchor coordinates."),
+        help_text=_(
+            "Shape varies by annotation_type, validated + sanitized server-side: "
+            "FH/HL store {paths:[[[x,y],...]], width} (normalized 0..1, width as a "
+            "fraction of page width); CM stores {x, y, text, display:'pin'|'inline'}; "
+            "ST stores {x, y, symbol}."
+        ),
         verbose_name=_("Payload"),
     )
     color = models.CharField(max_length=9, default='#FFD700FF', verbose_name=_("Color (RGBA Hex)"))
