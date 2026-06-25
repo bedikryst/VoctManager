@@ -7,7 +7,11 @@
  */
 
 import api from "@/shared/api/api";
-import type { NewAnnotation, ScoreAnnotation } from "../types/annotations.dto";
+import type {
+  AnnotationPatch,
+  NewAnnotation,
+  ScoreAnnotation,
+} from "../types/annotations.dto";
 
 export const AnnotationsService = {
   list: async (editionId: string): Promise<ScoreAnnotation[]> => {
@@ -22,6 +26,17 @@ export const AnnotationsService = {
     const response = await api.post<ScoreAnnotation>(
       "/api/archive/annotations/",
       payload,
+    );
+    return response.data;
+  },
+
+  update: async (
+    id: string,
+    patch: AnnotationPatch,
+  ): Promise<ScoreAnnotation> => {
+    const response = await api.patch<ScoreAnnotation>(
+      `/api/archive/annotations/${id}/`,
+      patch,
     );
     return response.data;
   },

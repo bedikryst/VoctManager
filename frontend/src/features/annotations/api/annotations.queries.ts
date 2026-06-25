@@ -1,15 +1,20 @@
 /**
  * @file annotations.queries.ts
- * @description React Query hooks for score annotations. Create/delete patch the
- * per-edition cache optimistically so a pen stroke or erased mark answers the
- * conductor's hand with zero latency, rolling back on server rejection.
+ * @description React Query hooks for score annotations. Create / update / delete
+ * patch the per-edition cache optimistically so a pen stroke, edited note or
+ * erased mark answers the conductor's hand with zero latency, rolling back on
+ * server rejection.
  * @module features/annotations/api
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { AnnotationsService } from "./annotations.service";
-import type { NewAnnotation, ScoreAnnotation } from "../types/annotations.dto";
+import type {
+  AnnotationPatch,
+  NewAnnotation,
+  ScoreAnnotation,
+} from "../types/annotations.dto";
 
 export const annotationKeys = {
   all: ["annotations"] as const,
@@ -29,9 +34,9 @@ let tempCounter = 0;
 const nextTempId = (): string => `temp-${Date.now()}-${tempCounter++}`;
 
 /**
- * Create + delete mutations scoped to one edition's cache. Returned handlers are
- * stable enough for the overlay's pointer flow; both reconcile against the
- * server response (create swaps the temp row, delete is idempotent).
+ * Create / update / delete mutations scoped to one edition's cache. Returned
+ * handlers reconcile against the server response (create swaps the temp row,
+ * update merges fields, delete is idempotent).
  */
 export const useAnnotationMutations = (editionId: string | null) => {
   const queryClient = useQueryClient();
@@ -68,6 +73,32 @@ export const useAnnotationMutations = (editionId: string | null) => {
     },
   });
 
+  const update = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: AnnotationPatch }) =>
+      AnnotationsService.update(id, patch),
+    onMutate: async ({ id, patch }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const snapshot =
+        queryClient.getQueryData<ScoreAnnotation[]>(key) ?? [];
+      queryClient.setQueryData<ScoreAnnotation[]>(key, (current) =>
+        (current ?? []).map((a) =>
+          a.id === id
+            ? { ...a, ...patch, updated_at: new Date().toISOString() }
+            : a,
+        ),
+      );
+      return { snapshot };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.snapshot) queryClient.setQueryData(key, context.snapshot);
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ScoreAnnotation[]>(key, (current) =>
+        (current ?? []).map((a) => (a.id === updated.id ? updated : a)),
+      );
+    },
+  });
+
   const remove = useMutation({
     mutationFn: (id: string) => AnnotationsService.remove(id),
     onMutate: async (id) => {
@@ -99,5 +130,5 @@ export const useAnnotationMutations = (editionId: string | null) => {
     },
   });
 
-  return { create, remove, clear };
+  return { create, update, remove, clear };
 };
