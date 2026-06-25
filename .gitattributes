@@ -2,6 +2,12 @@
 # This silences the "LF will be replaced by CRLF" warnings on Windows.
 * text=auto
 
+# Shell scripts MUST stay LF even on Windows checkouts. They run inside the
+# Linux containers and in dev are bind-mounted from the host (see
+# docker-compose.override.yml). CRLF mangles the shebang and the container dies
+# with "exec /app/entrypoint.sh: no such file or directory".
+*.sh text eol=lf
+
 # Explicit binaries (never normalize).
 *.png   binary
 *.jpg   binary
