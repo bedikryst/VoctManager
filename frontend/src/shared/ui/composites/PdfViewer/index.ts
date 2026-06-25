@@ -3,4 +3,5 @@ export type {
   PdfViewerProps,
   PdfViewerEvent,
   PdfPageGeometry,
+  PdfPageApi,
 } from "./types";

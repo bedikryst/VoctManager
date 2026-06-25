@@ -33,6 +33,8 @@ export const PdfViewer = ({
   onEvent,
   toolbarSlot,
   renderPageOverlay,
+  overlaySlot,
+  onPageApiChange,
   className,
 }: PdfViewerProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -204,6 +206,11 @@ export const PdfViewer = ({
     if (docKey) emitEvent({ type: "open", docKey });
   }, [docKey, emitEvent]);
 
+  // Surface the live page handle so an overlaySlot can drive navigation.
+  useEffect(() => {
+    onPageApiChange?.({ currentPage, numPages, goToPage: changePage });
+  }, [onPageApiChange, currentPage, numPages, changePage]);
+
   useEffect(() => {
     // Guard against a non-Blob slipping through (e.g. a persisted cache entry
     // rehydrated as `{}`): createObjectURL throws "Overload resolution failed"
@@ -344,6 +351,14 @@ export const PdfViewer = ({
             )}
           </div>
         </div>
+
+        {/* Whole-viewer overlay (annotation index / page rail). Spans the page
+            area only; content opts back into pointer events on its own surface. */}
+        {showPdfChrome && overlaySlot && (
+          <div className="pointer-events-none absolute inset-0 z-20">
+            {overlaySlot}
+          </div>
+        )}
       </div>
 
       {showPdfChrome && (

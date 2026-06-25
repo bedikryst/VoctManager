@@ -31,6 +31,7 @@ import {
   Library,
   Music2,
   ScrollText,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
@@ -40,14 +41,11 @@ import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import {
   ComposerCard,
-  LyricsBlock,
-  MovementsList,
-  ProgramNotesList,
-  RecordingsList,
   WorkIdentifiersGrid,
 } from "@/shared/ui/composites/repertoire";
 import { cn } from "@/shared/lib/utils";
@@ -55,16 +53,59 @@ import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
 import { MaterialsService } from "@/features/materials/api/materials.service";
 import { useScoreAnnotator } from "@/features/annotations";
 
-import { usePiece, usePieces, useUpdatePiece } from "./api/archive.queries";
+import {
+  useApproveEdition,
+  usePiece,
+  usePieces,
+  useUpdatePiece,
+} from "./api/archive.queries";
 import type { PiecePatchDTO } from "./types/archive.dto";
 import { AIHallucinationWarning } from "./components/AIHallucinationWarning";
 import { EditionsList } from "./components/EditionsList";
 import { EditionUploadZone } from "./components/EditionUploadZone";
+import {
+  ProvenanceChip,
+  pieceFieldProvenance,
+} from "./components/ProvenanceChip";
+import {
+  MovementsEditor,
+  ProgramNoteSection,
+  RecordingsEditor,
+  TranslationsEditor,
+} from "./components/ReviewArtifactsEditors";
+import { getArchiveEpochOptions } from "./constants/archiveEpochs";
 import { getPrimaryPdf } from "./constants/piecePdfs";
 import { INGESTION_STATUS, type Piece } from "@/shared/types";
 
+/**
+ * Label + provenance chip header over a control. Mirrors the Input primitive's
+ * own label styling so the chip can sit beside the label (the Input API has no
+ * label-adornment slot). The wrapped control uses `aria-label`, not a second
+ * visible label.
+ */
+const LabeledField = ({
+  label,
+  chip,
+  children,
+}: {
+  label: string;
+  chip?: React.ReactNode;
+  children: React.ReactNode;
+}): React.JSX.Element => (
+  <div className="flex w-full flex-col gap-1.5">
+    <div className="flex items-center gap-2">
+      <span className="ml-1 text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite antialiased">
+        {label}
+      </span>
+      {chip}
+    </div>
+    {children}
+  </div>
+);
+
 const reviewSchema = z.object({
   title: z.string().min(1, "Tytuł jest wymagany").max(200),
+  arranger: z.string().max(150).default(""),
   opus_catalog: z.string().max(40).default(""),
   musical_key: z.string().max(20).default(""),
   language: z.string().max(50).default(""),
@@ -74,6 +115,7 @@ const reviewSchema = z.object({
     .union([z.coerce.number().int().min(500).max(2100), z.literal("")])
     .optional()
     .transform((v) => (v === "" || v === undefined ? null : v)),
+  epoch: z.string().max(4).default(""),
   lyrics_original: z.string().default(""),
   lyrics_ipa: z.string().default(""),
 });
@@ -123,6 +165,7 @@ export default function ArchiveReviewPage(): React.JSX.Element {
   const { data: piece, isLoading, isError, error } = usePiece(id);
   const { data: allPieces = [] } = usePieces();
   const updatePiece = useUpdatePiece();
+  const approveEdition = useApproveEdition();
 
   // Conductor markup, right in the main score preview (not buried in the
   // editions list below). Archive is manager-only, so editing is always on.
@@ -135,12 +178,14 @@ export default function ArchiveReviewPage(): React.JSX.Element {
   const initial = useMemo<ReviewFormValues>(
     () => ({
       title: piece?.title ?? "",
+      arranger: piece?.arranger ?? "",
       opus_catalog: piece?.opus_catalog ?? "",
       musical_key: piece?.musical_key ?? "",
       language: piece?.language ?? "",
       voicing: piece?.voicing ?? "",
       text_source: piece?.text_source ?? "",
       composition_year: piece?.composition_year ?? null,
+      epoch: piece?.epoch ?? "",
       lyrics_original: piece?.lyrics_original ?? "",
       lyrics_ipa: piece?.lyrics_ipa ?? "",
     }),
@@ -231,7 +276,6 @@ export default function ArchiveReviewPage(): React.JSX.Element {
   const editions = piece.editions ?? [];
   const movements = piece.movements ?? [];
   const translations = piece.translations ?? [];
-  const programNotes = piece.program_notes ?? [];
   const recordings = piece.recordings ?? [];
   const primaryPdf = getPrimaryPdf(piece);
   const composerName = composer
@@ -239,6 +283,40 @@ export default function ArchiveReviewPage(): React.JSX.Element {
     : t("archive.review.no_composer", "Brak kompozytora");
 
   const nextAwaiting = findNextAwaiting(allPieces, String(piece.id));
+
+  // The edition this review is verifying. Approve (AWAITING → READY) is the
+  // terminal action of the page — promoted out of the buried editions sub-list.
+  const awaitingEdition = editions.find(
+    (e) => e.ingestion_status === INGESTION_STATUS.AWAITING,
+  );
+
+  const handleApprove = (): void => {
+    if (!awaitingEdition) return;
+    approveEdition.mutate(String(awaitingEdition.id), {
+      onSuccess: () => {
+        toast.success(
+          t(
+            "archive.review.approved",
+            "Zatwierdzono — materiały są gotowe do udostępnienia.",
+          ),
+        );
+        if (nextAwaiting && String(nextAwaiting.id) !== String(piece.id)) {
+          navigate(`/panel/archive-management/${nextAwaiting.id}/review`);
+        } else {
+          navigate("/panel/archive-management");
+        }
+      },
+      onError: () =>
+        toast.error(
+          t("archive.review.approve_failed", "Nie udało się zatwierdzić."),
+        ),
+    });
+  };
+
+  const fieldChip = (field: string): React.ReactNode => (
+    <ProvenanceChip entry={pieceFieldProvenance(piece, field)} />
+  );
+  const epochOptions = getArchiveEpochOptions(t);
 
   return (
     <PageTransition>
@@ -335,6 +413,8 @@ export default function ArchiveReviewPage(): React.JSX.Element {
                     fileName={primaryPdf.label}
                     toolbarSlot={annotator.toolbarSlot}
                     renderPageOverlay={annotator.renderPageOverlay}
+                    overlaySlot={annotator.overlaySlot}
+                    onPageApiChange={annotator.onPageApiChange}
                   />
                 </div>
               </div>
@@ -388,75 +468,154 @@ export default function ArchiveReviewPage(): React.JSX.Element {
                     className="space-y-4"
                   >
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      <Input
+                      <LabeledField
                         label={t("archive.review.fields.title", "Tytuł")}
-                        error={errors.title?.message}
-                        {...register("title")}
-                      />
-                      <Input
-                        label={t("archive.review.fields.opus", "Opus / Katalog")}
-                        placeholder="np. BWV 243"
-                        error={errors.opus_catalog?.message}
-                        {...register("opus_catalog")}
-                      />
-                      <Input
-                        label={t("archive.review.fields.key", "Tonacja")}
-                        placeholder="np. D-dur"
-                        error={errors.musical_key?.message}
-                        {...register("musical_key")}
-                      />
-                      <Input
+                        chip={fieldChip("title")}
+                      >
+                        <Input
+                          aria-label={t("archive.review.fields.title", "Tytuł")}
+                          error={errors.title?.message}
+                          {...register("title")}
+                        />
+                      </LabeledField>
+                      <LabeledField
                         label={t(
-                          "archive.review.fields.language",
-                          "Język śpiewu",
+                          "archive.review.fields.arranger",
+                          "Opracowanie / aranżacja",
                         )}
-                        placeholder="np. la, en, pl"
-                        error={errors.language?.message}
-                        {...register("language")}
-                      />
-                      <Input
+                        chip={fieldChip("arranger")}
+                      >
+                        <Input
+                          aria-label={t(
+                            "archive.review.fields.arranger",
+                            "Opracowanie / aranżacja",
+                          )}
+                          placeholder="np. opr. T. Kuras"
+                          error={errors.arranger?.message}
+                          {...register("arranger")}
+                        />
+                      </LabeledField>
+                      <LabeledField
+                        label={t("archive.review.fields.opus", "Opus / Katalog")}
+                        chip={fieldChip("opus_catalog")}
+                      >
+                        <Input
+                          aria-label={t("archive.review.fields.opus", "Opus / Katalog")}
+                          placeholder="np. BWV 243"
+                          error={errors.opus_catalog?.message}
+                          {...register("opus_catalog")}
+                        />
+                      </LabeledField>
+                      <LabeledField
+                        label={t("archive.review.fields.key", "Tonacja")}
+                        chip={fieldChip("musical_key")}
+                      >
+                        <Input
+                          aria-label={t("archive.review.fields.key", "Tonacja")}
+                          placeholder="np. D-dur"
+                          error={errors.musical_key?.message}
+                          {...register("musical_key")}
+                        />
+                      </LabeledField>
+                      <LabeledField
+                        label={t("archive.review.fields.language", "Język śpiewu")}
+                        chip={fieldChip("language")}
+                      >
+                        <Input
+                          aria-label={t("archive.review.fields.language", "Język śpiewu")}
+                          placeholder="np. la, en, pl"
+                          error={errors.language?.message}
+                          {...register("language")}
+                        />
+                      </LabeledField>
+                      <LabeledField
                         label={t("archive.review.fields.voicing", "Obsada")}
-                        placeholder="np. SATB"
-                        error={errors.voicing?.message}
-                        {...register("voicing")}
-                      />
-                      <Input
+                        chip={fieldChip("voicing")}
+                      >
+                        <Input
+                          aria-label={t("archive.review.fields.voicing", "Obsada")}
+                          placeholder="np. SATB"
+                          error={errors.voicing?.message}
+                          {...register("voicing")}
+                        />
+                      </LabeledField>
+                      <LabeledField
                         label={t(
                           "archive.review.fields.composition_year",
                           "Rok kompozycji",
                         )}
-                        type="number"
-                        error={errors.composition_year?.message}
-                        {...register("composition_year")}
-                      />
+                      >
+                        <Input
+                          aria-label={t(
+                            "archive.review.fields.composition_year",
+                            "Rok kompozycji",
+                          )}
+                          type="number"
+                          error={errors.composition_year?.message}
+                          {...register("composition_year")}
+                        />
+                      </LabeledField>
+                      <LabeledField
+                        label={t("archive.review.fields.epoch", "Epoka")}
+                        chip={fieldChip("epoch")}
+                      >
+                        <Select
+                          aria-label={t("archive.review.fields.epoch", "Epoka")}
+                          {...register("epoch")}
+                        >
+                          <option value="">
+                            {t("archive.review.epoch_pick", "— wybierz —")}
+                          </option>
+                          {epochOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </Select>
+                      </LabeledField>
                     </div>
-                    <Input
-                      label={t(
-                        "archive.review.fields.text_source",
-                        "Źródło tekstu",
-                      )}
-                      placeholder="np. Magnificat (Łk 1,46-55)"
-                      error={errors.text_source?.message}
-                      {...register("text_source")}
-                    />
-                    <Textarea
+                    <LabeledField
+                      label={t("archive.review.fields.text_source", "Źródło tekstu")}
+                      chip={fieldChip("text_source")}
+                    >
+                      <Input
+                        aria-label={t("archive.review.fields.text_source", "Źródło tekstu")}
+                        placeholder="np. Magnificat (Łk 1,46-55)"
+                        error={errors.text_source?.message}
+                        {...register("text_source")}
+                      />
+                    </LabeledField>
+                    <LabeledField
                       label={t(
                         "archive.review.fields.lyrics_original",
                         "Tekst oryginalny",
                       )}
-                      rows={4}
-                      error={errors.lyrics_original?.message}
-                      {...register("lyrics_original")}
-                    />
-                    <Textarea
-                      label={t(
-                        "archive.review.fields.lyrics_ipa",
-                        "Transkrypcja IPA",
-                      )}
-                      rows={3}
-                      error={errors.lyrics_ipa?.message}
-                      {...register("lyrics_ipa")}
-                    />
+                      chip={fieldChip("lyrics_original")}
+                    >
+                      <Textarea
+                        aria-label={t(
+                          "archive.review.fields.lyrics_original",
+                          "Tekst oryginalny",
+                        )}
+                        rows={4}
+                        error={errors.lyrics_original?.message}
+                        {...register("lyrics_original")}
+                      />
+                    </LabeledField>
+                    <LabeledField
+                      label={t("archive.review.fields.lyrics_ipa", "Transkrypcja IPA")}
+                      chip={fieldChip("lyrics_ipa")}
+                    >
+                      <Textarea
+                        aria-label={t(
+                          "archive.review.fields.lyrics_ipa",
+                          "Transkrypcja IPA",
+                        )}
+                        rows={3}
+                        error={errors.lyrics_ipa?.message}
+                        {...register("lyrics_ipa")}
+                      />
+                    </LabeledField>
                   </form>
                 </GlassCard>
 
@@ -513,38 +672,34 @@ export default function ArchiveReviewPage(): React.JSX.Element {
                       )}
                       icon={<Music2 size={14} aria-hidden="true" />}
                     />
-                    <MovementsList movements={movements} showPage />
+                    <MovementsEditor piece={piece} />
                   </GlassCard>
                 )}
 
-                {(piece.lyrics_ipa || translations.length > 0) && (
+                {translations.length > 0 && (
                   <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
                     <SectionDivider
                       label={t(
-                        "archive.review.lyrics_section",
-                        "Wymowa i tłumaczenia",
+                        "archive.review.translations_section",
+                        "Tłumaczenia ({{count}})",
+                        { count: translations.length },
                       )}
                       icon={<Languages size={14} aria-hidden="true" />}
                     />
-                    <LyricsBlock
-                      ipa={piece.lyrics_ipa}
-                      translations={translations}
-                    />
+                    <TranslationsEditor piece={piece} />
                   </GlassCard>
                 )}
 
-                {programNotes.length > 0 && (
-                  <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
-                    <SectionDivider
-                      label={t(
-                        "archive.review.program_note_section",
-                        "Notka programowa",
-                      )}
-                      icon={<ScrollText size={14} aria-hidden="true" />}
-                    />
-                    <ProgramNotesList notes={programNotes} />
-                  </GlassCard>
-                )}
+                <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
+                  <SectionDivider
+                    label={t(
+                      "archive.review.program_note_section",
+                      "Notka programowa",
+                    )}
+                    icon={<ScrollText size={14} aria-hidden="true" />}
+                  />
+                  <ProgramNoteSection piece={piece} />
+                </GlassCard>
 
                 {recordings.length > 0 && (
                   <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
@@ -556,7 +711,7 @@ export default function ArchiveReviewPage(): React.JSX.Element {
                       )}
                       icon={<Sparkles size={14} aria-hidden="true" />}
                     />
-                    <RecordingsList recordings={recordings} columns={1} />
+                    <RecordingsEditor piece={piece} />
                   </GlassCard>
                 )}
               </div>
@@ -569,23 +724,44 @@ export default function ArchiveReviewPage(): React.JSX.Element {
                 isDirty && "border-t-ethereal-gold/40 bg-ethereal-gold/5",
               )}
             >
-              {isDirty && (
+              {isDirty ? (
                 <Caption color="gold" className="mr-auto">
+                  {t("archive.review.dirty_hint", "Masz niezapisane zmiany")}
+                </Caption>
+              ) : awaitingEdition ? (
+                <Caption color="muted" className="mr-auto">
                   {t(
-                    "archive.review.dirty_hint",
-                    "Masz niezapisane zmiany",
+                    "archive.review.approve_hint",
+                    "Sprawdź pola powyżej, a następnie zatwierdź.",
                   )}
                 </Caption>
-              )}
+              ) : null}
               <Button
                 type="submit"
                 form="review-form"
-                variant="primary"
+                variant={awaitingEdition ? "outline" : "primary"}
                 disabled={!isDirty || updatePiece.isPending}
                 isLoading={updatePiece.isPending}
               >
-                {t("archive.review.save_btn", "Zapisz zmiany AI")}
+                {t("archive.review.save_btn", "Zapisz zmiany")}
               </Button>
+              {awaitingEdition && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  leftIcon={<ShieldCheck size={15} aria-hidden="true" />}
+                  disabled={isDirty || approveEdition.isPending}
+                  isLoading={approveEdition.isPending}
+                  onClick={handleApprove}
+                  title={
+                    isDirty
+                      ? t("archive.review.save_first", "Najpierw zapisz zmiany.")
+                      : undefined
+                  }
+                >
+                  {t("archive.review.approve_btn", "Zatwierdź i opublikuj")}
+                </Button>
+              )}
             </footer>
           </section>
         </div>

@@ -7,13 +7,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialsService } from "./materials.service";
 import { useOfflineStore } from "@/app/store/useOfflineStore";
 import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
+import {
+  PERSONAL_READMODEL_KEYS,
+  RECONCILING_REFETCH,
+} from "@/shared/api/queryPolicy";
 import type {
   MaterialsDashboardItem,
   MaterialsReadinessStatus,
 } from "../types/materials.dto";
 
 export const materialsKeys = {
-  dashboard: ["materials", "dashboard"] as const,
+  dashboard: PERSONAL_READMODEL_KEYS.materialsDashboard,
 };
 
 export const useArtistMaterialsDashboard = (enabled = true) =>
@@ -21,6 +25,11 @@ export const useArtistMaterialsDashboard = (enabled = true) =>
     queryKey: materialsKeys.dashboard,
     queryFn: MaterialsService.getArtistMaterialsDashboard,
     enabled,
+    // Personal read-model joined server-side from the chorister's participations
+    // and castings — both of which a manager changes from another session. Must
+    // reconcile on the chorister's next mount/focus, not after the 24h cache
+    // ages out, or a newly-assigned divisi piece stays hidden.
+    ...RECONCILING_REFETCH,
     staleTime: 1000 * 60 * 5,
   });
 

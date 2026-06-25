@@ -518,6 +518,8 @@ export default function PiecePage(): React.JSX.Element {
         docKey={openEdition?.id}
         toolbarSlot={annotator.toolbarSlot}
         renderPageOverlay={annotator.renderPageOverlay}
+        overlaySlot={annotator.overlaySlot}
+        onPageApiChange={annotator.onPageApiChange}
         onClose={() => setOpenEdition(null)}
       />
     </PageTransition>

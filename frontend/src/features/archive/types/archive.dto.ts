@@ -48,12 +48,14 @@ export interface PieceWriteDTO {
  */
 export interface PiecePatchDTO {
   title?: string;
+  arranger?: string;
   opus_catalog?: string;
   musical_key?: string;
   language?: string;
   voicing?: string;
   text_source?: string;
   composition_year?: number | null;
+  epoch?: Epoch | "";
   estimated_duration?: number | null;
   lyrics_original?: string;
   lyrics_ipa?: string;

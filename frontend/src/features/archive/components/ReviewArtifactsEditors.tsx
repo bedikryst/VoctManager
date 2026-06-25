@@ -1,0 +1,545 @@
+/**
+ * @file ReviewArtifactsEditors.tsx
+ * @description Inline editors for the AI's three most error-prone outputs —
+ * movements, translations and reference recordings — used in the AI Review
+ * cockpit. Previously these were read-only with nowhere to fix a hallucinated
+ * movement, a wrong translation line, or an irrelevant Spotify hit; now the
+ * conductor can correct or delete each in place. Editing a movement/translation
+ * stamps MANUAL provenance server-side, so its chip flips from "AI" to
+ * "Zweryfikowane".
+ * @architecture Enterprise SaaS 2026
+ * @module features/archive/components/ReviewArtifactsEditors
+ */
+
+import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  Check,
+  ExternalLink,
+  Loader2,
+  Sparkles,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
+
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Textarea } from "@/shared/ui/primitives/Textarea";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { ProgramNotesList } from "@/shared/ui/composites/repertoire";
+import { cn } from "@/shared/lib/utils";
+import type { Movement, Piece, Recording, Translation } from "@/shared/types";
+
+import {
+  archiveKeys,
+  useDeleteMovement,
+  useDeleteRecording,
+  useDeleteTranslation,
+  useGenerateProgramNote,
+  useUpdateMovement,
+  useUpdateRecording,
+  useUpdateTranslation,
+} from "../api/archive.queries";
+import { ProvenanceChip, childFieldProvenance } from "./ProvenanceChip";
+
+/** The canonical (project-less) AI program note, if generated. Language-agnostic:
+ *  the eager note is generated in the ensemble's language (Polish), and the
+ *  conductor can regenerate it or add another language on demand. */
+const canonicalNote = (piece: Piece) =>
+  (piece.program_notes ?? []).find((n) => !n.project);
+
+// ---------------------------------------------------------------------------
+// A two-click delete affordance — no separate modal, no accidental wipes.
+// ---------------------------------------------------------------------------
+
+interface DeleteButtonProps {
+  readonly onConfirm: () => void;
+  readonly isPending: boolean;
+  readonly label: string;
+}
+
+const DeleteButton = ({
+  onConfirm,
+  isPending,
+  label,
+}: DeleteButtonProps): React.JSX.Element => {
+  const { t } = useTranslation();
+  const [armed, setArmed] = useState(false);
+
+  if (!armed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setArmed(true)}
+        aria-label={label}
+        title={label}
+        className="flex h-7 w-7 items-center justify-center rounded-lg border border-ethereal-incense/25 text-ethereal-graphite/60 transition-colors hover:border-ethereal-crimson/40 hover:text-ethereal-crimson"
+      >
+        <Trash2 size={13} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={isPending}
+        aria-label={t("archive.review.confirm_delete", "Potwierdź usunięcie")}
+        className="flex h-7 items-center gap-1 rounded-lg border border-ethereal-crimson/40 bg-ethereal-crimson/10 px-2 text-[11px] font-semibold text-ethereal-crimson"
+      >
+        {isPending ? (
+          <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+        ) : (
+          <Check size={12} strokeWidth={2.2} aria-hidden="true" />
+        )}
+        {t("archive.review.delete", "Usuń")}
+      </button>
+      <button
+        type="button"
+        onClick={() => setArmed(false)}
+        aria-label={t("archive.review.cancel", "Anuluj")}
+        className="flex h-7 w-7 items-center justify-center rounded-lg border border-ethereal-incense/25 text-ethereal-graphite/60"
+      >
+        <X size={13} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+    </div>
+  );
+};
+
+// ===========================================================================
+// Movements
+// ===========================================================================
+
+export const MovementsEditor = ({
+  piece,
+}: {
+  readonly piece: Piece;
+}): React.JSX.Element | null => {
+  const movements = piece.movements ?? [];
+  if (movements.length === 0) return null;
+  return (
+    <ul role="list" className="space-y-2">
+      {movements.map((movement) => (
+        <MovementRow key={movement.id} piece={piece} movement={movement} />
+      ))}
+    </ul>
+  );
+};
+
+const MovementRow = ({
+  piece,
+  movement,
+}: {
+  readonly piece: Piece;
+  readonly movement: Movement;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const update = useUpdateMovement();
+  const remove = useDeleteMovement();
+  const pieceId = String(piece.id);
+
+  const [title, setTitle] = useState(movement.title);
+  const [tempo, setTempo] = useState(movement.tempo_marking ?? "");
+  const dirty =
+    title.trim() !== movement.title ||
+    tempo.trim() !== (movement.tempo_marking ?? "");
+
+  const save = (): void => {
+    update.mutate(
+      {
+        id: movement.id,
+        pieceId,
+        data: { title: title.trim(), tempo_marking: tempo.trim() },
+      },
+      {
+        onSuccess: () =>
+          toast.success(t("archive.review.movement_saved", "Zapisano część.")),
+        onError: () =>
+          toast.error(t("archive.review.save_failed", "Nie udało się zapisać.")),
+      },
+    );
+  };
+
+  return (
+    <li className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <Caption color="muted" className="font-mono">
+          {movement.order_index + 1}.
+        </Caption>
+        <ProvenanceChip entry={childFieldProvenance(piece, movement.id, "title")} />
+        {movement.starts_on_page ? (
+          <Caption color="muted">
+            {t("archive.review.page_short", "str.")} {movement.starts_on_page}
+          </Caption>
+        ) : null}
+        <div className="ml-auto">
+          <DeleteButton
+            onConfirm={() =>
+              remove.mutate(
+                { id: movement.id, pieceId },
+                {
+                  onSuccess: () =>
+                    toast.success(
+                      t("archive.review.movement_deleted", "Usunięto część."),
+                    ),
+                  onError: () =>
+                    toast.error(
+                      t("archive.review.delete_failed", "Nie udało się usunąć."),
+                    ),
+                },
+              )
+            }
+            isPending={remove.isPending}
+            label={t("archive.review.delete_movement", "Usuń część")}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          aria-label={t("archive.review.movement_title", "Tytuł części")}
+        />
+        <Input
+          value={tempo}
+          onChange={(e) => setTempo(e.target.value)}
+          placeholder={t("archive.review.tempo", "Tempo")}
+          aria-label={t("archive.review.tempo", "Tempo")}
+          className="sm:w-32"
+        />
+      </div>
+      {dirty && (
+        <div className="mt-2 flex justify-end">
+          <Button size="sm" variant="primary" onClick={save} isLoading={update.isPending}>
+            {t("archive.review.save_row", "Zapisz")}
+          </Button>
+        </div>
+      )}
+    </li>
+  );
+};
+
+// ===========================================================================
+// Translations
+// ===========================================================================
+
+export const TranslationsEditor = ({
+  piece,
+}: {
+  readonly piece: Piece;
+}): React.JSX.Element | null => {
+  const translations = piece.translations ?? [];
+  if (translations.length === 0) return null;
+  return (
+    <ul role="list" className="space-y-3">
+      {translations.map((tr) => (
+        <TranslationRow key={tr.id} piece={piece} translation={tr} />
+      ))}
+    </ul>
+  );
+};
+
+const TranslationRow = ({
+  piece,
+  translation,
+}: {
+  readonly piece: Piece;
+  readonly translation: Translation;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const update = useUpdateTranslation();
+  const remove = useDeleteTranslation();
+  const pieceId = String(piece.id);
+
+  const [text, setText] = useState(translation.text);
+  const dirty = text !== translation.text;
+
+  return (
+    <li className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="rounded-md border border-ethereal-incense/30 bg-ethereal-parchment px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ethereal-graphite">
+          {translation.target_language}
+        </span>
+        <ProvenanceChip entry={childFieldProvenance(piece, translation.id, "text")} />
+        {translation.is_singable ? (
+          <Caption color="muted">{t("archive.review.singable", "śpiewne")}</Caption>
+        ) : null}
+        <div className="ml-auto">
+          <DeleteButton
+            onConfirm={() =>
+              remove.mutate(
+                { id: translation.id, pieceId },
+                {
+                  onSuccess: () =>
+                    toast.success(
+                      t("archive.review.translation_deleted", "Usunięto tłumaczenie."),
+                    ),
+                  onError: () =>
+                    toast.error(
+                      t("archive.review.delete_failed", "Nie udało się usunąć."),
+                    ),
+                },
+              )
+            }
+            isPending={remove.isPending}
+            label={t("archive.review.delete_translation", "Usuń tłumaczenie")}
+          />
+        </div>
+      </div>
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={4}
+        aria-label={t("archive.review.translation_text", "Treść tłumaczenia")}
+      />
+      {dirty && (
+        <div className="mt-2 flex justify-end">
+          <Button
+            size="sm"
+            variant="primary"
+            isLoading={update.isPending}
+            onClick={() =>
+              update.mutate(
+                { id: translation.id, pieceId, data: { text } },
+                {
+                  onSuccess: () =>
+                    toast.success(
+                      t("archive.review.translation_saved", "Zapisano tłumaczenie."),
+                    ),
+                  onError: () =>
+                    toast.error(
+                      t("archive.review.save_failed", "Nie udało się zapisać."),
+                    ),
+                },
+              )
+            }
+          >
+            {t("archive.review.save_row", "Zapisz")}
+          </Button>
+        </div>
+      )}
+    </li>
+  );
+};
+
+// ===========================================================================
+// Recordings
+// ===========================================================================
+
+export const RecordingsEditor = ({
+  piece,
+}: {
+  readonly piece: Piece;
+}): React.JSX.Element | null => {
+  const recordings = piece.recordings ?? [];
+  if (recordings.length === 0) return null;
+  return (
+    <ul role="list" className="space-y-2">
+      {recordings.map((rec) => (
+        <RecordingRow key={rec.id} piece={piece} recording={rec} />
+      ))}
+    </ul>
+  );
+};
+
+const RecordingRow = ({
+  piece,
+  recording,
+}: {
+  readonly piece: Piece;
+  readonly recording: Recording;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const update = useUpdateRecording();
+  const remove = useDeleteRecording();
+  const pieceId = String(piece.id);
+
+  const toggleFeatured = (): void => {
+    update.mutate(
+      { id: recording.id, pieceId, data: { is_featured: !recording.is_featured } },
+      {
+        onError: () =>
+          toast.error(t("archive.review.save_failed", "Nie udało się zapisać.")),
+      },
+    );
+  };
+
+  return (
+    <li className="flex items-center gap-2 rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
+      <button
+        type="button"
+        onClick={toggleFeatured}
+        disabled={update.isPending}
+        aria-label={
+          recording.is_featured
+            ? t("archive.review.unfeature", "Odepnij polecane")
+            : t("archive.review.feature", "Ustaw jako polecane")
+        }
+        title={
+          recording.is_featured
+            ? t("archive.review.unfeature", "Odepnij polecane")
+            : t("archive.review.feature", "Ustaw jako polecane")
+        }
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors",
+          recording.is_featured
+            ? "border-ethereal-gold/50 bg-ethereal-gold/10 text-ethereal-gold"
+            : "border-ethereal-incense/25 text-ethereal-graphite/50 hover:text-ethereal-gold",
+        )}
+      >
+        <Star
+          size={14}
+          strokeWidth={1.8}
+          fill={recording.is_featured ? "currentColor" : "none"}
+          aria-hidden="true"
+        />
+      </button>
+      <div className="min-w-0 flex-1">
+        <Text size="sm" weight="medium" truncate className="block">
+          {recording.performer ||
+            t("archive.review.unknown_performer", "Nieznany wykonawca")}
+        </Text>
+        <Caption color="muted" className="block">
+          {recording.source_display || recording.source}
+          {recording.year ? ` · ${recording.year}` : ""}
+        </Caption>
+      </div>
+      <a
+        href={recording.url}
+        target="_blank"
+        rel="noreferrer"
+        aria-label={t("archive.review.open_recording", "Otwórz nagranie")}
+        title={t("archive.review.open_recording", "Otwórz nagranie")}
+        className="flex h-7 w-7 items-center justify-center rounded-lg border border-ethereal-incense/25 text-ethereal-graphite/60 transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
+      >
+        <ExternalLink size={13} strokeWidth={1.8} aria-hidden="true" />
+      </a>
+      <DeleteButton
+        onConfirm={() =>
+          remove.mutate(
+            { id: recording.id, pieceId },
+            {
+              onSuccess: () =>
+                toast.success(
+                  t("archive.review.recording_deleted", "Usunięto nagranie."),
+                ),
+              onError: () =>
+                toast.error(
+                  t("archive.review.delete_failed", "Nie udało się usunąć."),
+                ),
+            },
+          )
+        }
+        isPending={remove.isPending}
+        label={t("archive.review.delete_recording", "Usuń nagranie")}
+      />
+    </li>
+  );
+};
+
+// ===========================================================================
+// Program note (on-demand)
+// ===========================================================================
+// The note is no longer produced eagerly at ingest — the conductor generates it
+// here when wanted. Generation is async (~30s), so after dispatch we poll the
+// piece until the canonical note appears (or its id changes, on a regenerate).
+
+const POLL_MS = 4000;
+const MAX_POLLS = 20; // ~80s ceiling
+
+export const ProgramNoteSection = ({
+  piece,
+}: {
+  readonly piece: Piece;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const generate = useGenerateProgramNote();
+  const pieceId = String(piece.id);
+
+  const note = canonicalNote(piece);
+  const noteId = note?.id ?? null;
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const startedFromId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isGenerating) return;
+    // Done when a canonical note exists and is a different row than we started
+    // from (covers both first-generation and regenerate). The brief delete→create
+    // window inside a regenerate leaves noteId null, which this guard ignores.
+    if (noteId && noteId !== startedFromId.current) {
+      setIsGenerating(false);
+      toast.success(t("archive.review.note_ready", "Notka programowa gotowa."));
+      return;
+    }
+    let ticks = 0;
+    const handle = window.setInterval(() => {
+      ticks += 1;
+      if (ticks > MAX_POLLS) {
+        window.clearInterval(handle);
+        setIsGenerating(false);
+        toast.message(
+          t(
+            "archive.review.note_slow",
+            "Generowanie trwa dłużej niż zwykle — odśwież stronę za chwilę.",
+          ),
+        );
+        return;
+      }
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.details(pieceId) });
+    }, POLL_MS);
+    return () => window.clearInterval(handle);
+  }, [isGenerating, noteId, pieceId, qc, t]);
+
+  const run = (force: boolean): void => {
+    startedFromId.current = noteId;
+    generate.mutate(
+      // Regenerate the existing note in its own language; otherwise let the
+      // backend default to the ensemble language.
+      { pieceId, force, language: force ? note?.language : undefined },
+      {
+        onSuccess: () => setIsGenerating(true),
+        onError: () =>
+          toast.error(
+            t("archive.review.note_failed", "Nie udało się uruchomić generowania."),
+          ),
+      },
+    );
+  };
+
+  const busy = generate.isPending || isGenerating;
+
+  return (
+    <div className="space-y-3">
+      {note ? (
+        <ProgramNotesList notes={piece.program_notes ?? []} />
+      ) : (
+        <Text size="sm" color="muted">
+          {t(
+            "archive.review.no_note_hint",
+            "Brak notki programowej. Wygeneruj ją na żądanie (AI, ~30 s) — nie powstaje już automatycznie przy imporcie.",
+          )}
+        </Text>
+      )}
+      <Button
+        variant={note ? "outline" : "primary"}
+        size="sm"
+        leftIcon={<Sparkles size={14} aria-hidden="true" />}
+        isLoading={busy}
+        disabled={busy}
+        onClick={() => run(Boolean(note))}
+      >
+        {busy
+          ? t("archive.review.note_generating", "Generuję…")
+          : note
+            ? t("archive.review.regenerate_note", "Regeneruj notkę")
+            : t("archive.review.generate_note", "Generuj notkę programową")}
+      </Button>
+    </div>
+  );
+};

@@ -20,6 +20,7 @@ import {
   PdfViewer,
   type PdfViewerEvent,
   type PdfPageGeometry,
+  type PdfPageApi,
 } from "@/shared/ui/composites/PdfViewer";
 import {
   buildDocumentViewerPath,
@@ -58,6 +59,10 @@ export interface PdfViewerModalProps {
   toolbarSlot?: React.ReactNode;
   /** Layer stacked over each rendered page — see PdfViewer.renderPageOverlay. */
   renderPageOverlay?: (geometry: PdfPageGeometry) => React.ReactNode;
+  /** Whole-viewer overlay (annotation index / page rail) — see PdfViewer.overlaySlot. */
+  overlaySlot?: React.ReactNode;
+  /** Receives the live page handle (current/total + goToPage) on every change. */
+  onPageApiChange?: (api: PdfPageApi) => void;
   onClose: () => void;
 }
 
@@ -74,6 +79,8 @@ export const PdfViewerModal = ({
   onEvent,
   toolbarSlot,
   renderPageOverlay,
+  overlaySlot,
+  onPageApiChange,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -202,6 +209,8 @@ export const PdfViewerModal = ({
                     onEvent={onEvent}
                     toolbarSlot={toolbarSlot}
                     renderPageOverlay={renderPageOverlay}
+                    overlaySlot={overlaySlot}
+                    onPageApiChange={onPageApiChange}
                     className="flex-1"
                   />
                 </motion.div>

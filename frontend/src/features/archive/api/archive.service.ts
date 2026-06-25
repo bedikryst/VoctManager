@@ -12,9 +12,12 @@ import type {
   Composer,
   IngestionProgressCode,
   IngestionStatusCode,
+  Movement,
   Piece,
+  Recording,
   ScoreEditionSummary,
   Track,
+  Translation,
 } from "@/shared/types";
 import type {
   ComposerWriteDTO,
@@ -28,6 +31,9 @@ const PIECES_URL = "/api/pieces/";
 const COMPOSERS_URL = "/api/composers/";
 const TRACKS_URL = "/api/tracks/";
 const EDITIONS_URL = "/api/archive/editions/";
+const MOVEMENTS_URL = "/api/archive/movements/";
+const TRANSLATIONS_URL = "/api/archive/translations/";
+const RECORDINGS_URL = "/api/archive/recordings/";
 
 /**
  * Diagnostic result of a MusicBrainz/Wikidata refresh. `status` explains a
@@ -109,6 +115,25 @@ export const ArchiveService = {
 
   deletePiece: async (id: string): Promise<void> => {
     await api.delete(`${PIECES_URL}${id}/`);
+  },
+
+  /**
+   * Dispatch on-demand AI program-note generation for a piece (no longer eager
+   * at ingest). Returns immediately with a task id; the note appears on a later
+   * refetch. `force` regenerates over an existing note.
+   */
+  generateProgramNote: async (
+    pieceId: string,
+    force = false,
+    language?: string,
+  ): Promise<{ celery_task_id: string; status: string }> => {
+    const params = new URLSearchParams();
+    if (force) params.set("force", "true");
+    if (language) params.set("language", language);
+    const qs = params.toString();
+    const url = `${PIECES_URL}${pieceId}/generate_program_note/${qs ? `?${qs}` : ""}`;
+    const response = await api.post<{ celery_task_id: string; status: string }>(url);
+    return response.data;
   },
 
   // ---- Composers --------------------------------------------------------
@@ -244,6 +269,12 @@ export const ArchiveService = {
     return response.data;
   },
 
+  /** Cooperatively cancel an in-flight ingestion (wrong PDF, changed mind). */
+  cancelEdition: async (id: string): Promise<ScoreEditionDetail> => {
+    const response = await api.post<ScoreEditionDetail>(`${EDITIONS_URL}${id}/cancel/`);
+    return response.data;
+  },
+
   reingestEdition: async (
     id: string,
     force = false,
@@ -253,5 +284,41 @@ export const ArchiveService = {
       : `${EDITIONS_URL}${id}/reingest/`;
     const response = await api.post<ScoreEditionDetail>(url);
     return response.data;
+  },
+
+  // ---- AI artifacts (inline correction in the Review cockpit) -----------
+  // Movements / translations / recordings are the AI's most error-prone
+  // outputs; these let the conductor fix or drop a bad one during review.
+  updateMovement: async (id: string, data: Partial<Movement>): Promise<Movement> => {
+    const response = await api.patch<Movement>(`${MOVEMENTS_URL}${id}/`, data);
+    return response.data;
+  },
+
+  deleteMovement: async (id: string): Promise<void> => {
+    await api.delete(`${MOVEMENTS_URL}${id}/`);
+  },
+
+  updateTranslation: async (
+    id: string,
+    data: Partial<Translation>,
+  ): Promise<Translation> => {
+    const response = await api.patch<Translation>(`${TRANSLATIONS_URL}${id}/`, data);
+    return response.data;
+  },
+
+  deleteTranslation: async (id: string): Promise<void> => {
+    await api.delete(`${TRANSLATIONS_URL}${id}/`);
+  },
+
+  updateRecording: async (
+    id: string,
+    data: Partial<Recording>,
+  ): Promise<Recording> => {
+    const response = await api.patch<Recording>(`${RECORDINGS_URL}${id}/`, data);
+    return response.data;
+  },
+
+  deleteRecording: async (id: string): Promise<void> => {
+    await api.delete(`${RECORDINGS_URL}${id}/`);
   },
 };

@@ -158,6 +158,50 @@ const StatusChip = ({
 };
 
 // ---------------------------------------------------------------------------
+// State badges — PDF / audio-count / AI status. Shared between the desktop
+// right rail and the mobile meta line so the markup lives in one place.
+// ---------------------------------------------------------------------------
+
+interface StateBadgesProps {
+  readonly hasPdfAttached: boolean;
+  readonly audioCount: number;
+  readonly aiStatus: IngestionStatusCode | null;
+}
+
+const StateBadges = ({
+  hasPdfAttached,
+  audioCount,
+  aiStatus,
+}: StateBadgesProps): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {hasPdfAttached && (
+        <span
+          className="inline-flex items-center gap-1 rounded-md border border-ethereal-amethyst/30 bg-ethereal-amethyst/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-amethyst"
+          title={t("archive.row.pdf_attached", "PDF dostępne")}
+        >
+          <FileText size={10} aria-hidden="true" />
+          PDF
+        </span>
+      )}
+      {audioCount > 0 && (
+        <span
+          className="inline-flex items-center gap-1 rounded-md border border-ethereal-sage/35 bg-ethereal-sage/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-sage"
+          title={t("archive.row.audio_count_tooltip", "{{count}} ścieżek audio", {
+            count: audioCount,
+          })}
+        >
+          <Headphones size={10} aria-hidden="true" />
+          {audioCount}
+        </span>
+      )}
+      {aiStatus && <StatusChip status={aiStatus} />}
+    </>
+  );
+};
+
+// ---------------------------------------------------------------------------
 
 export const PieceRow = ({
   piece,
@@ -215,7 +259,7 @@ export const PieceRow = ({
           }
         }}
         className={cn(
-          "group flex w-full cursor-pointer items-center gap-3 px-4 py-3",
+          "group flex w-full cursor-pointer items-start gap-3 px-4 py-3 md:items-center",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
         )}
         aria-expanded={isExpanded}
@@ -279,6 +323,34 @@ export const PieceRow = ({
               </>
             )}
           </div>
+
+          {/* Mobile meta — voicing / duration / badges live on their own line
+              below the title so nothing crowds it. Desktop shows these on the
+              right rail instead (the two clusters below, md:flex). */}
+          {(piece.voicing ||
+            duration ||
+            hasPdfAttached ||
+            audioCount > 0 ||
+            aiStatus) && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 md:hidden">
+              {piece.voicing && (
+                <Caption color="muted" className="font-semibold uppercase tracking-wide">
+                  {piece.voicing}
+                </Caption>
+              )}
+              {duration && (
+                <Caption color="muted" className="inline-flex items-center gap-1 tabular-nums">
+                  <Clock size={10} aria-hidden="true" />
+                  {duration}
+                </Caption>
+              )}
+              <StateBadges
+                hasPdfAttached={hasPdfAttached}
+                audioCount={audioCount}
+                aiStatus={aiStatus}
+              />
+            </div>
+          )}
         </div>
 
         {/* Intrinsic facts — voicing + duration, plain typography no chip chrome */}
@@ -302,29 +374,14 @@ export const PieceRow = ({
           )}
         </div>
 
-        {/* State badges — different visual register from intrinsic facts */}
-        <div className="flex shrink-0 items-center gap-1.5">
-          {hasPdfAttached && (
-            <span
-              className="inline-flex items-center gap-1 rounded-md border border-ethereal-amethyst/30 bg-ethereal-amethyst/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-amethyst"
-              title={t("archive.row.pdf_attached", "PDF dostępne")}
-            >
-              <FileText size={10} aria-hidden="true" />
-              PDF
-            </span>
-          )}
-          {audioCount > 0 && (
-            <span
-              className="inline-flex items-center gap-1 rounded-md border border-ethereal-sage/35 bg-ethereal-sage/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-sage"
-              title={t("archive.row.audio_count_tooltip", "{{count}} ścieżek audio", {
-                count: audioCount,
-              })}
-            >
-              <Headphones size={10} aria-hidden="true" />
-              {audioCount}
-            </span>
-          )}
-          {aiStatus && <StatusChip status={aiStatus} />}
+        {/* State badges — desktop right rail; on mobile these render in the
+            meta line under the title instead (see above). */}
+        <div className="hidden shrink-0 items-center gap-1.5 md:flex">
+          <StateBadges
+            hasPdfAttached={hasPdfAttached}
+            audioCount={audioCount}
+            aiStatus={aiStatus}
+          />
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
@@ -338,7 +395,7 @@ export const PieceRow = ({
               event.stopPropagation();
               onDelete(piece);
             }}
-            className="h-8 w-8 text-ethereal-graphite opacity-0 transition-opacity hover:text-ethereal-crimson group-hover:opacity-100 focus-visible:opacity-100"
+            className="h-8 w-8 text-ethereal-graphite transition-opacity hover:text-ethereal-crimson focus-visible:opacity-100 fine-pointer:opacity-0 fine-pointer:group-hover:opacity-100"
           >
             <Trash2 size={13} aria-hidden="true" />
           </Button>

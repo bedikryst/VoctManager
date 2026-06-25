@@ -9,9 +9,10 @@
  * shows AI extraction phases ticking through (EXTR → ENRI → GENR → AWAI).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import {
   ArchiveService,
   type ActiveIngestion,
@@ -19,7 +20,10 @@ import {
 } from "./archive.service";
 import {
   isIngestionInProgress,
+  type Movement,
   type Piece,
+  type Recording,
+  type Translation,
 } from "@/shared/types";
 import type {
   ComposerWriteDTO,
@@ -62,6 +66,7 @@ export const usePieces = () =>
   useQuery({
     queryKey: archiveKeys.pieces.all,
     queryFn: ArchiveService.getPieces,
+    ...RECONCILING_REFETCH,
     staleTime: 1000 * 60 * 5,
     refetchInterval: (query) =>
       anyPieceIngesting(query.state.data as Piece[] | undefined)
@@ -79,6 +84,7 @@ export const usePiece = (id: string | null) =>
     queryKey: id ? archiveKeys.pieces.details(id) : ["pieces", "none"],
     queryFn: () => ArchiveService.getPiece(id!),
     enabled: Boolean(id),
+    ...RECONCILING_REFETCH,
     refetchInterval: (query) => {
       const data = query.state.data as Piece | undefined;
       const anyInProgress = data?.editions?.some(
@@ -96,7 +102,12 @@ export const useComposers = () =>
   useQuery({
     queryKey: archiveKeys.composers.all,
     queryFn: ArchiveService.getComposers,
-    staleTime: 1000 * 60 * 60,
+    // Was staleTime 1h — which, with the persisted cache, hid AI-created
+    // composers for up to an hour (and the SSE `done` handler never invalidated
+    // this key). Now reconciles on mount/focus, plus the ingestion-completion
+    // signals below invalidate it explicitly.
+    ...RECONCILING_REFETCH,
+    staleTime: 1000 * 60 * 5,
   });
 
 export const useCreatePiece = () => {
@@ -322,15 +333,41 @@ export const useUploadEdition = () => {
  * pieces list while processing, and a reload wipes the client-side upload row.
  * Polls faster while something is active, slower when idle.
  */
-export const useActiveIngestions = () =>
-  useQuery({
+export const useActiveIngestions = () => {
+  const qc = useQueryClient();
+  const previousActiveIds = useRef<Set<string> | null>(null);
+
+  const query = useQuery({
     queryKey: ["editions", "active"],
     queryFn: ArchiveService.getActiveEditions,
-    refetchInterval: (query) => {
-      const data = query.state.data as ActiveIngestion[] | undefined;
+    ...RECONCILING_REFETCH,
+    refetchInterval: (q) => {
+      const data = q.state.data as ActiveIngestion[] | undefined;
       return data && data.length > 0 ? 2000 : 5000;
     },
   });
+
+  // Durable, refresh-proof completion signal. The `active/` endpoint returns
+  // only non-terminal ingestions (PEND/EXTR/ENRI/GENR) — an edition leaves this
+  // set exactly when it reaches AWAITING, i.e. once the resolver has persisted
+  // its Piece and created/linked its Composer. Reconcile both lists here so the
+  // new piece and composer appear even when the user navigated away from the
+  // SSE-connected upload row (whose `done` handler is the only other trigger).
+  useEffect(() => {
+    const current = new Set((query.data ?? []).map((item) => item.id));
+    const previous = previousActiveIds.current;
+    previousActiveIds.current = current;
+    if (!previous) return; // first snapshot — nothing has completed yet
+
+    const completed = [...previous].some((id) => !current.has(id));
+    if (completed) {
+      void qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      void qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
+    }
+  }, [query.data, qc]);
+
+  return query;
+};
 
 export const usePatchEdition = () => {
   const qc = useQueryClient();
@@ -377,6 +414,17 @@ export const useApproveEdition = () => {
   return useMutation<ScoreEditionDetail, Error, string>({
     mutationFn: (id) => ArchiveService.approveEdition(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: archiveKeys.pieces.all }),
+  });
+};
+
+export const useCancelEdition = () => {
+  const qc = useQueryClient();
+  return useMutation<ScoreEditionDetail, Error, string>({
+    mutationFn: (id) => ArchiveService.cancelEdition(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      qc.invalidateQueries({ queryKey: ["editions", "active"] });
+    },
   });
 };
 
@@ -455,8 +503,12 @@ export const useLiveIngestion = (id: string | null): LiveIngestion | null => {
     };
     const finish = (): void => {
       es.close();
-      // The resolved piece (and its new edition) now appears in the list.
+      // The resolved piece (and its new edition) now appears in the list — and
+      // the resolver may have just created/linked a brand-new Composer, so
+      // reconcile that list too (otherwise an AI-entered composer stays
+      // invisible until the cache ages out / a logout wipes it).
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
     };
 
     es.addEventListener("progress", apply as EventListener);
@@ -505,5 +557,94 @@ export const useReingestEdition = () => {
     mutationFn: ({ id, force = false }) =>
       ArchiveService.reingestEdition(id, force),
     onSuccess: () => qc.invalidateQueries({ queryKey: archiveKeys.pieces.all }),
+  });
+};
+
+// ===========================================================================
+// AI artifacts — inline correction from the Review cockpit
+// ===========================================================================
+// Each mutation refetches the parent piece (so the chip flips AI → verified and
+// the edited value re-renders) plus the pieces list (status badges).
+
+const invalidatePiece = (qc: ReturnType<typeof useQueryClient>, pieceId: string) => {
+  qc.invalidateQueries({ queryKey: archiveKeys.pieces.details(pieceId) });
+  qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+};
+
+export const useUpdateMovement = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    Movement,
+    Error,
+    { id: string; pieceId: string; data: Partial<Movement> }
+  >({
+    mutationFn: ({ id, data }) => ArchiveService.updateMovement(id, data),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+export const useDeleteMovement = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, { id: string; pieceId: string }>({
+    mutationFn: ({ id }) => ArchiveService.deleteMovement(id),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+export const useUpdateTranslation = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    Translation,
+    Error,
+    { id: string; pieceId: string; data: Partial<Translation> }
+  >({
+    mutationFn: ({ id, data }) => ArchiveService.updateTranslation(id, data),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+export const useDeleteTranslation = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, { id: string; pieceId: string }>({
+    mutationFn: ({ id }) => ArchiveService.deleteTranslation(id),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+export const useUpdateRecording = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    Recording,
+    Error,
+    { id: string; pieceId: string; data: Partial<Recording> }
+  >({
+    mutationFn: ({ id, data }) => ArchiveService.updateRecording(id, data),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+export const useDeleteRecording = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, { id: string; pieceId: string }>({
+    mutationFn: ({ id }) => ArchiveService.deleteRecording(id),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+/**
+ * Dispatch on-demand program-note generation. The note is async (~30s), so the
+ * caller polls the piece detail itself (see ProgramNoteSection) — this just
+ * kicks off the task.
+ */
+export const useGenerateProgramNote = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    { celery_task_id: string; status: string },
+    Error,
+    { pieceId: string; force?: boolean; language?: string }
+  >({
+    mutationFn: ({ pieceId, force = false, language }) =>
+      ArchiveService.generateProgramNote(pieceId, force, language),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
   });
 };

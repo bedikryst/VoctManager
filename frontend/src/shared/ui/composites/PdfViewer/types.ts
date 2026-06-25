@@ -33,6 +33,17 @@ export interface PdfPageGeometry {
   scale: number;
 }
 
+/**
+ * Imperative page handle surfaced to callers that render an `overlaySlot`
+ * needing to drive navigation (e.g. an annotation index that jumps to the page
+ * a comment lives on). Re-emitted whenever the page or page-count changes.
+ */
+export interface PdfPageApi {
+  currentPage: number;
+  numPages: number | null;
+  goToPage: (page: number) => void;
+}
+
 export interface PdfViewerProps {
   fetchBlob: (() => Promise<Blob>) | null;
   docKey?: string | number;
@@ -48,5 +59,13 @@ export interface PdfViewerProps {
    * content must opt back in on its own surface.
    */
   renderPageOverlay?: (geometry: PdfPageGeometry) => ReactNode;
+  /**
+   * Layer stacked over the WHOLE viewer (not a single page) — a collapsible
+   * annotation index / page rail. The container is `pointer-events-none`;
+   * interactive content opts back in on its own surface.
+   */
+  overlaySlot?: ReactNode;
+  /** Receives the live page handle (current/total + goToPage) on every change. */
+  onPageApiChange?: (api: PdfPageApi) => void;
   className?: string;
 }

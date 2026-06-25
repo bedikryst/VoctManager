@@ -12,12 +12,13 @@
 
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { Ban, Check, Loader2, Sparkles, X } from "lucide-react";
 
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
-import { useActiveIngestions } from "../api/archive.queries";
+import { useActiveIngestions, useCancelEdition } from "../api/archive.queries";
 import type { ActiveIngestion } from "../api/archive.service";
 import { isOverloadWait, liveIngestionLabel } from "../constants/ingestionProgress";
 
@@ -60,11 +61,9 @@ export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
           <Sparkles size={18} strokeWidth={1.6} />
         </span>
         <Heading as="h2" size="lg" weight="medium">
-          {active.length === 1
-            ? t("archive.active.title_one", "AI pracuje nad 1 partyturą")
-            : t("archive.active.title_many", "AI pracuje nad {{count}} partyturami", {
-                count: active.length,
-              })}
+          {t("archive.active.title", "AI pracuje nad {{count}} partyturą", {
+            count: active.length,
+          })}
         </Heading>
       </div>
 
@@ -120,6 +119,70 @@ const ActiveRow = ({ item, now }: ActiveRowProps): React.JSX.Element => {
             : ""}
         </Caption>
       </div>
+      <CancelControl editionId={item.id} />
     </li>
+  );
+};
+
+/** Two-click "przerwij" — cancelling an ingestion mid-flight is deliberate
+ *  (wrong PDF), so guard it against an accidental single tap. */
+const CancelControl = ({
+  editionId,
+}: {
+  readonly editionId: string;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const cancel = useCancelEdition();
+  const [armed, setArmed] = useState(false);
+
+  if (!armed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setArmed(true)}
+        aria-label={t("archive.active.cancel", "Przerwij przetwarzanie")}
+        title={t("archive.active.cancel", "Przerwij przetwarzanie")}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-ethereal-incense/25 text-ethereal-graphite/55 transition-colors hover:border-ethereal-crimson/40 hover:text-ethereal-crimson"
+      >
+        <Ban size={15} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+    );
+  }
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        disabled={cancel.isPending}
+        onClick={() =>
+          cancel.mutate(editionId, {
+            onSuccess: () =>
+              toast.success(
+                t("archive.active.cancelled", "Przerwano przetwarzanie."),
+              ),
+            onError: () =>
+              toast.error(
+                t("archive.active.cancel_failed", "Nie udało się przerwać."),
+              ),
+          })
+        }
+        aria-label={t("archive.active.cancel_confirm", "Potwierdź przerwanie")}
+        className="flex h-8 items-center gap-1 rounded-xl border border-ethereal-crimson/40 bg-ethereal-crimson/10 px-2 text-[11px] font-semibold text-ethereal-crimson"
+      >
+        {cancel.isPending ? (
+          <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+        ) : (
+          <Check size={12} strokeWidth={2.2} aria-hidden="true" />
+        )}
+        {t("archive.active.cancel_short", "Przerwij")}
+      </button>
+      <button
+        type="button"
+        onClick={() => setArmed(false)}
+        aria-label={t("archive.review.cancel", "Anuluj")}
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-ethereal-incense/25 text-ethereal-graphite/55"
+      >
+        <X size={14} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+    </div>
   );
 };

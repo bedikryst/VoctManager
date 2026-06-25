@@ -47,6 +47,63 @@ const lifespanString = (composer: Composer): string | null => {
   return `${composer.birth_year ?? "?"}–${composer.death_year ?? ""}`.trim();
 };
 
+// ---------------------------------------------------------------------------
+// Stat chips — pieces-count + MusicBrainz link state. Shared between the
+// desktop right rail and the mobile meta line so the markup lives in one place.
+// ---------------------------------------------------------------------------
+
+interface ComposerStatsProps {
+  readonly piecesCount: number;
+  readonly hasMB: boolean;
+}
+
+const ComposerStats = ({
+  piecesCount,
+  hasMB,
+}: ComposerStatsProps): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest",
+          piecesCount > 0
+            ? "border-ethereal-amethyst/30 bg-ethereal-amethyst/10 text-ethereal-amethyst"
+            : "border-ethereal-incense/25 bg-ethereal-marble/40 text-ethereal-graphite/70",
+        )}
+        title={t(
+          "archive.composer_row.pieces_tooltip",
+          "{{count}} utworów w bibliotece",
+          { count: piecesCount },
+        )}
+      >
+        <Library size={10} aria-hidden="true" />
+        {piecesCount}
+      </span>
+      {hasMB ? (
+        <span
+          className="inline-flex items-center gap-1 rounded-md border border-ethereal-sage/35 bg-ethereal-sage/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-sage"
+          title={t("archive.composer_row.mb_tooltip", "Powiązany z MusicBrainz")}
+        >
+          <CheckCircle2 size={10} aria-hidden="true" />
+          MB
+        </span>
+      ) : (
+        <span
+          className="inline-flex items-center gap-1 rounded-md border border-ethereal-gold/40 bg-ethereal-gold/5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-gold"
+          title={t(
+            "archive.composer_row.no_mb_tooltip",
+            "Brak MBID — rozważ 'Odśwież z MusicBrainz'",
+          )}
+        >
+          <AlertTriangle size={10} aria-hidden="true" />
+          MB?
+        </span>
+      )}
+    </>
+  );
+};
+
 export const ComposerRow = ({
   composer,
   isSelected,
@@ -93,7 +150,7 @@ export const ComposerRow = ({
             setIsExpanded((v) => !v);
           }
         }}
-        className="group flex w-full cursor-pointer items-center gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset"
+        className="group flex w-full cursor-pointer items-start gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset md:items-center"
         aria-expanded={isExpanded}
       >
         {/* Bulk-select checkbox */}
@@ -138,18 +195,21 @@ export const ComposerRow = ({
 
         {/* Name + lifespan + nationality */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <div onClick={(event) => event.stopPropagation()}>
+          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+            <span
+              className="inline-flex items-baseline"
+              onClick={(event) => event.stopPropagation()}
+            >
               <InlineEditable
                 value={composer.last_name}
                 onSave={(next) => patch("last_name", next)}
                 ariaLabel={t("archive.composer_row.edit_last", "Nazwisko")}
                 variant="title"
               />
-            </div>
-            <Text size="sm" color="graphite" aria-hidden="true">
-              ,
-            </Text>
+              <Text size="sm" color="graphite" aria-hidden="true">
+                ,
+              </Text>
+            </span>
             <div onClick={(event) => event.stopPropagation()}>
               <InlineEditable
                 value={composer.first_name ?? ""}
@@ -160,7 +220,7 @@ export const ComposerRow = ({
             </div>
           </div>
           <div
-            className="mt-0.5 flex items-baseline gap-2"
+            className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
             onClick={(event) => event.stopPropagation()}
           >
             <InlineEditable
@@ -193,49 +253,17 @@ export const ComposerRow = ({
               emptyDisplay={t("archive.composer_row.nationality_empty", "kraj?")}
             />
           </div>
+
+          {/* Mobile meta — stat chips on their own line below the name so they
+              never crowd or overlap it. Desktop shows them on the right rail. */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 md:hidden">
+            <ComposerStats piecesCount={piecesCount} hasMB={hasMB} />
+          </div>
         </div>
 
-        {/* Stats chips */}
-        <div className="flex shrink-0 items-center gap-1.5">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest",
-              piecesCount > 0
-                ? "border-ethereal-amethyst/30 bg-ethereal-amethyst/10 text-ethereal-amethyst"
-                : "border-ethereal-incense/25 bg-ethereal-marble/40 text-ethereal-graphite/70",
-            )}
-            title={t(
-              "archive.composer_row.pieces_tooltip",
-              "{{count}} utworów w bibliotece",
-              { count: piecesCount },
-            )}
-          >
-            <Library size={10} aria-hidden="true" />
-            {piecesCount}
-          </span>
-          {hasMB ? (
-            <span
-              className="inline-flex items-center gap-1 rounded-md border border-ethereal-sage/35 bg-ethereal-sage/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-sage"
-              title={t(
-                "archive.composer_row.mb_tooltip",
-                "Powiązany z MusicBrainz",
-              )}
-            >
-              <CheckCircle2 size={10} aria-hidden="true" />
-              MB
-            </span>
-          ) : (
-            <span
-              className="inline-flex items-center gap-1 rounded-md border border-ethereal-gold/40 bg-ethereal-gold/5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-gold"
-              title={t(
-                "archive.composer_row.no_mb_tooltip",
-                "Brak MBID — rozważ 'Odśwież z MusicBrainz'",
-              )}
-            >
-              <AlertTriangle size={10} aria-hidden="true" />
-              MB?
-            </span>
-          )}
+        {/* Stats chips — desktop right rail (mobile renders them above). */}
+        <div className="hidden shrink-0 items-center gap-1.5 md:flex">
+          <ComposerStats piecesCount={piecesCount} hasMB={hasMB} />
         </div>
 
         {/* Actions */}
@@ -253,7 +281,7 @@ export const ComposerRow = ({
                 event.stopPropagation();
                 onDelete(composer);
               }}
-              className="h-8 w-8 text-ethereal-graphite opacity-0 transition-opacity hover:text-ethereal-crimson group-hover:opacity-100 focus-visible:opacity-100"
+              className="h-8 w-8 text-ethereal-graphite transition-opacity hover:text-ethereal-crimson focus-visible:opacity-100 fine-pointer:opacity-0 fine-pointer:group-hover:opacity-100"
             >
               <Trash2 size={13} aria-hidden="true" />
             </Button>

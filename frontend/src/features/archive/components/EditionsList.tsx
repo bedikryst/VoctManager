@@ -330,6 +330,8 @@ export const EditionsList = ({
         docKey={openEditionId ?? undefined}
         toolbarSlot={annotator.toolbarSlot}
         renderPageOverlay={annotator.renderPageOverlay}
+        overlaySlot={annotator.overlaySlot}
+        onPageApiChange={annotator.onPageApiChange}
         onClose={() => setOpenEditionId(null)}
       />
     </>

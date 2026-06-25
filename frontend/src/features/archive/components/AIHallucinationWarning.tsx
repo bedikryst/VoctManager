@@ -61,6 +61,45 @@ export const AIHallucinationWarning = ({
     }
   }
 
+  // IPA is supposed to be line-aligned with the sung text; a line-count mismatch
+  // is a cheap, high-signal sign the alignment drifted (a near-certain bug to fix).
+  const countLines = (value: string | null | undefined): number =>
+    (value ?? "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean).length;
+  const lyricLines = countLines(piece.lyrics_original);
+  const ipaLines = countLines(piece.lyrics_ipa);
+  if (lyricLines > 0 && ipaLines > 0 && lyricLines !== ipaLines) {
+    reasons.push(
+      t(
+        "archive.ai_warning.ipa_misaligned",
+        "Transkrypcja IPA ma {{ipa}} linii, a tekst {{lyrics}} — wyrównanie wers-do-wersu może być błędne.",
+        { ipa: ipaLines, lyrics: lyricLines },
+      ),
+    );
+  }
+
+  // The AI self-rated one or more of this piece's own fields below 60% — a hint
+  // to scrutinise the highlighted (crimson) chips rather than trust them.
+  const provenance = piece.provenance ?? {};
+  const pieceHasLowConfidence = Object.entries(provenance).some(
+    ([key, entry]) =>
+      key.startsWith(`${piece.id}:`) &&
+      (entry.source === "AIS" ||
+        entry.source === "AIH" ||
+        entry.source === "AIO") &&
+      (entry.confidence ?? 1) < 0.6,
+  );
+  if (pieceHasLowConfidence) {
+    reasons.push(
+      t(
+        "archive.ai_warning.low_confidence",
+        "AI oznaczył część pól niską pewnością — zweryfikuj je szczególnie uważnie.",
+      ),
+    );
+  }
+
   if (reasons.length === 0) return null;
 
   return (
