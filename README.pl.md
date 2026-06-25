@@ -238,7 +238,7 @@ Pełne doświadczenie opiera się na kinematyce powiązanej ze scrollem, sygnał
 | **Zarządzanie Lokacjami** | **Widok Wiadomości** |
 | <img src="docs/assets/locations.png" width="400" alt="Locations Management view"/> | <img src="docs/assets/messages.png" width="400" alt="Messages view"/> |
 | **Zakładka prywatności** | **Widok zarządzania powiadomieniami** |
-| <img src="docs/assets/privacy-tab.png" width="400" alt="Privacy Tab"/> | <img src="docs/assets/notifications-tab.png" width="400" alt="Notifications Center"/> |
+| <img src="docs/assets/privacy-tab.png" width="400" alt="Privacy Tab"/> | <img src="docs/assets/notification-tab.png" width="400" alt="Notifications Center"/> |
 | **Widok Materiałów Artysty** | **Centrum Chórzysty** |
 | <img src="docs/assets/materials.png" width="400" alt="Materials view"/> | <img src="docs/assets/chorister.png" width="400" alt="Chorister hub view"/> |
 | **Dossier Chórzysty** | **Widok zarządzania chórzystami** |

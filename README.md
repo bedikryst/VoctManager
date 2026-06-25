@@ -238,7 +238,7 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 | **Locations Management** | **Messages View** |
 | <img src="docs/assets/locations.png" width="400" alt="Locations Management view"/> | <img src="docs/assets/messages.png" width="400" alt="Messages view"/> |
 | **Privacy Tab** | **Notifications Center** |
-| <img src="docs/assets/privacy-tab.png" width="400" alt="Privacy Tab"/> | <img src="docs/assets/notifications-tab.png" width="400" alt="Notifications Center"/> |
+| <img src="docs/assets/privacy-tab.png" width="400" alt="Privacy Tab"/> | <img src="docs/assets/notification-tab.png" width="400" alt="Notifications Center"/> |
 | **Materials View** | **Chorister Hub** |
 | <img src="docs/assets/materials.png" width="400" alt="Materials view"/> | <img src="docs/assets/chorister.png" width="400" alt="Chorister hub view"/> |
 | **Artist's Dossier** | **Artists Management View** |
