@@ -228,15 +228,25 @@ Pełne doświadczenie opiera się na kinematyce powiązanej ze scrollem, sygnał
 
 ## 📸 Interfejs systemu (Ethereal Design System)
 
-| Główny Dashboard (Staggered Bento OS) | Projekt i edytor logistyki |
+| Główny Panel Dyrygenta | Główny Panel Artysty |
 |:---:|:---:|
-| <img src="docs/assets/dashboard.png" width="400" alt="Główny Dashboard prezentujący siatkę Bento"/> | <img src="docs/assets/editor.png" width="400" alt="Edytor projektu"/> |
-| **Zarządzanie lokalizacjami** | **Centrum powiadomień** |
-| <img src="docs/assets/locations.png" width="400" alt="Widok zarządzania lokalizacjami"/> | <img src="docs/assets/notifications.png" width="400" alt="Centrum powiadomień"/> |
-| **Ustawienia systemu** | **Baza wiedzy** |
-| <img src="docs/assets/settings.png" width="400" alt="Widok ustawień systemu"/> | <img src="docs/assets/chorister.png" width="400" alt="Baza wiedzy"/> |
-| **Atlas Lokalizacji (widok mapy)** | **Archiwum Nut** |
-| <img src="docs/assets/locations-atlas.png" width="400" alt="Widok mapy Atlasu Lokalizacji — placeholder: podmień na zrzut atlasu miejsc opartego na Google Maps"/> | <img src="docs/assets/archive-pieces.png" width="400" alt="Archiwum nut — placeholder: podmień na zrzut archiwum repertuaru (utwory, edycje, nagrania)"/> |
+| <img src="docs/assets/admin-dashboard.png" width="400" alt="Main Admin Dashboard"/> | <img src="docs/assets/artist-dashboard.png" width="400" alt="Main Artist Dashboard"/> |
+| **Edytor Koncertu** | **Edytor Programu** |
+| <img src="docs/assets/concert.png" width="400" alt="Project view"/> | <img src="docs/assets/program.png" width="400" alt="Program Tab"/> |
+| **Zakładka Divisi** | **Zakładka Budżetu** |
+| <img src="docs/assets/divisi.png" width="400" alt="Project view"/> | <img src="docs/assets/settlements.png" width="400" alt="Settlements"/> |
+| **Zarządzanie Lokacjami** | **Widok Wiadomości** |
+| <img src="docs/assets/locations.png" width="400" alt="Locations Management view"/> | <img src="docs/assets/messages.png" width="400" alt="Messages view"/> |
+| **Zakładka prywatności** | **Widok zarządzania powiadomieniami** |
+| <img src="docs/assets/privacy-tab.png" width="400" alt="Privacy Tab"/> | <img src="docs/assets/notifications-tab.png" width="400" alt="Notifications Center"/> |
+| **Widok Materiałów Artysty** | **Centrum Chórzysty** |
+| <img src="docs/assets/materials.png" width="400" alt="Materials view"/> | <img src="docs/assets/chorister.png" width="400" alt="Chorister hub view"/> |
+| **Dossier Chórzysty** | **Widok zarządzania chórzystami** |
+| <img src="docs/assets/dossier.png" width="400" alt="Artist's Dossier"/> | <img src="docs/assets/artists.png" width="400" alt="Artists Management View"/> |
+| **Widok Zakładki Kompozytorów** | **Harmonogram Chórzysty** |
+| <img src="docs/assets/composers.png" width="400" alt="Composers Management View"/> | <img src="docs/assets/schedule.png" width="400" alt="Artist's Schedule View"/> |
+| **Widok zarządzania próbami** | **Statystyki Prób** |
+| <img src="docs/assets/rehearsals.png" width="400" alt="Rehearsals View"/> | <img src="docs/assets/attendence.png" width="400" alt="Attendance Logs"/> |
 
 ---
 

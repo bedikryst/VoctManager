@@ -222,21 +222,31 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 
 | Score Ingestion (Upload & Tiered Analysis) | Conductor Review (AI-Extracted Repertoire) |
 |:---:|:---:|
-| <img src="docs/assets/score-compiler-upload.png" width="400" alt="Score Compiler upload zone — placeholder: replace with screenshot of the PDF drag-and-drop ingestion screen showing live tiered-Claude status"/> | <img src="docs/assets/score-compiler-review.png" width="400" alt="Conductor review modal — placeholder: replace with screenshot of AI-extracted composer/work/program-note fields with confidence scores"/> |
+| <img src="docs/assets/.old/score-compiler-upload.png" width="400" alt="Score Compiler upload zone — placeholder: replace with screenshot of the PDF drag-and-drop ingestion screen showing live tiered-Claude status"/> | <img src="docs/assets/.old/score-compiler-review.png" width="400" alt="Conductor review modal — placeholder: replace with screenshot of AI-extracted composer/work/program-note fields with confidence scores"/> |
 
 ---
 
 ## 📸 System Interface (Ethereal Design System)
 
-| Main Dashboard (Staggered Bento OS) | Project & Logistics Editor |
+| Admin Main Dashboard | Artist Main Dashboard |
 |:---:|:---:|
-| <img src="docs/assets/dashboard.png" width="400" alt="Main Dashboard showcasing Bento Grid"/> | <img src="docs/assets/editor.png" width="400" alt="Project Editor"/> |
-| **Locations Management** | **Notifications Center** |
-| <img src="docs/assets/locations.png" width="400" alt="Locations Management view"/> | <img src="docs/assets/notifications.png" width="400" alt="Notifications Center"/> |
-| **System Settings** | **Knowledge Base** |
-| <img src="docs/assets/settings.png" width="400" alt="System Settings view"/> | <img src="docs/assets/chorister.png" width="400" alt="Knowledge base"/> |
-| **Locations Atlas (Map View)** | **Sheet Music Archive** |
-| <img src="docs/assets/locations-atlas.png" width="400" alt="Locations Atlas map view — placeholder: replace with screenshot of the Google Maps-backed venue atlas"/> | <img src="docs/assets/archive-pieces.png" width="400" alt="Sheet music archive — placeholder: replace with screenshot of the repertoire archive (pieces, editions, recordings)"/> |
+| <img src="docs/assets/admin-dashboard.png" width="400" alt="Main Admin Dashboard"/> | <img src="docs/assets/artist-dashboard.png" width="400" alt="Main Artist Dashboard"/> |
+| **Project Editor** | **Program Tab** |
+| <img src="docs/assets/concert.png" width="400" alt="Project view"/> | <img src="docs/assets/program.png" width="400" alt="Program Tab"/> |
+| **Divisi Tab** | **Settlements** |
+| <img src="docs/assets/divisi.png" width="400" alt="Project view"/> | <img src="docs/assets/settlements.png" width="400" alt="Settlements"/> |
+| **Locations Management** | **Messages View** |
+| <img src="docs/assets/locations.png" width="400" alt="Locations Management view"/> | <img src="docs/assets/messages.png" width="400" alt="Messages view"/> |
+| **Privacy Tab** | **Notifications Center** |
+| <img src="docs/assets/privacy-tab.png" width="400" alt="Privacy Tab"/> | <img src="docs/assets/notifications-tab.png" width="400" alt="Notifications Center"/> |
+| **Materials View** | **Chorister Hub** |
+| <img src="docs/assets/materials.png" width="400" alt="Materials view"/> | <img src="docs/assets/chorister.png" width="400" alt="Chorister hub view"/> |
+| **Artist's Dossier** | **Artists Management View** |
+| <img src="docs/assets/dossier.png" width="400" alt="Artist's Dossier"/> | <img src="docs/assets/artists.png" width="400" alt="Artists Management View"/> |
+| **Composers Management View** | **Artist's Schedule View** |
+| <img src="docs/assets/composers.png" width="400" alt="Composers Management View"/> | <img src="docs/assets/schedule.png" width="400" alt="Artist's Schedule View"/> |
+| **Rehearsals View** | **Attendance Logs** |
+| <img src="docs/assets/rehearsals.png" width="400" alt="Rehearsals View"/> | <img src="docs/assets/attendence.png" width="400" alt="Attendance Logs"/> |
 
 ---
 
