@@ -14,7 +14,8 @@ import { useTranslation } from "react-i18next";
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -107,8 +108,19 @@ export const MicroCastingTab = ({
     onDirtyStateChange?.(isDirty);
   }, [isDirty, onDirtyStateChange]);
 
+  // Split mouse and touch into separate sensors so each gets the activation
+  // constraint its input model needs. A single PointerSensor cannot both let a
+  // finger scroll the list AND pick up a card — on touch the browser claims the
+  // gesture as a scroll before dnd-kit ever activates.
+  // - Mouse: drag after an 8px move (small enough that note-button clicks still register).
+  // - Touch: press-and-hold ~180ms to lift; a quick swipe (>8px before the delay)
+  //   stays a scroll. Once the drag is live, dnd-kit preventDefaults touchmove,
+  //   so the page no longer scrolls underneath the card being dragged.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),

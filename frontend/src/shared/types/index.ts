@@ -351,6 +351,35 @@ export interface ProgramNote {
   is_approved: boolean;
 }
 
+/** Where a single field's value came from — mirrors backend ProvenanceSource. */
+export type ProvenanceSourceCode =
+  | "MAN" // manual / human-verified
+  | "AIH" // AI — Haiku
+  | "AIS" // AI — Sonnet
+  | "AIO" // AI — Opus
+  | "MBZ" // MusicBrainz
+  | "WKD" // Wikidata
+  | "SPF" // Spotify
+  | "YTB" // YouTube
+  | "IMS"; // IMSLP
+
+export interface ProvenanceEntry {
+  source: ProvenanceSourceCode;
+  source_display: string;
+  /** AI self-rated confidence 0..1 (1 for canonical/manual sources). */
+  confidence: number;
+  model_version: string;
+  retrieved_at: string | null;
+}
+
+/**
+ * Per-field provenance for a piece + its children, keyed `"<objectId>:<field>"`.
+ * Only populated on the piece-detail endpoint (the AI Review cockpit). Lets the
+ * UI show, per field, whether a value is AI-suggested (and how confident),
+ * canonical (MusicBrainz/Wikidata), or human-verified.
+ */
+export type ProvenanceMap = Record<string, ProvenanceEntry>;
+
 export type IngestionStatusCode =
   | "PEND"
   | "EXTR"
@@ -450,6 +479,10 @@ export interface Piece extends BaseModel {
   // Derived from editions[] by the backend serializer — never stored on Piece.
   ingestion_status?: IngestionStatusCode;
   ingestion_status_display?: string;
+
+  // Per-field source attribution + confidence. Only present on the piece-detail
+  // (review) endpoint; empty/undefined on the list. See {@link ProvenanceMap}.
+  provenance?: ProvenanceMap;
 
   // Nested relations — read-only on this serializer; each has its own write endpoint.
   tracks: Track[];

@@ -28,7 +28,16 @@ import "./app/styles/index.css";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      // Reconcile after the user comes back to the tab or regains signal. This
+      // is how a server-side change made in another session (an AI-created
+      // composer, a new divisi assignment) propagates without a logout — the
+      // persisted snapshot still paints instantly; the refetch happens in the
+      // background. Static dictionaries opt out via their 24h staleTime (a
+      // non-stale query is not refetched on focus). Volatile read-models add
+      // `refetchOnMount: "always"` (see shared/api/queryPolicy) so a reload —
+      // which restores the snapshot's original `dataUpdatedAt` — reconciles too.
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
       // Must be >= the persister's maxAge so restored snapshots aren't
       // immediately garbage-collected (offline-first requirement).
       gcTime: QUERY_CACHE_MAX_AGE_MS,

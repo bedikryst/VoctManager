@@ -21,6 +21,8 @@ import type {
   VoiceLineOption,
 } from "@/shared/types";
 
+import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
+
 import {
   ProjectService,
   type ProjectReadinessSummaryEntry,
@@ -125,6 +127,7 @@ export const useProjects = (enabled = true) =>
     ...(enabled
       ? {
           queryFn: ProjectService.getAll,
+          ...RECONCILING_REFETCH,
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<Project>()),
@@ -149,6 +152,7 @@ export const useProject = (projectId: string | undefined) => {
       ? {
           queryFn: (): Promise<Project | null> =>
             ProjectService.getById(projectId),
+          ...RECONCILING_REFETCH,
           staleTime: PROJECT_RELATION_STALE_TIME,
           initialData: (): Project | undefined =>
             queryClient
@@ -229,6 +233,7 @@ export const useProjectParticipations = (projectId: string | undefined) =>
     ...(projectId
       ? {
           queryFn: () => ProjectService.getParticipationsByProject(projectId),
+          ...RECONCILING_REFETCH,
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<Participation>()),
@@ -243,6 +248,7 @@ export const useProjectRehearsals = (projectId: string | undefined) =>
     ...(projectId
       ? {
           queryFn: () => ProjectService.getRehearsalsByProject(projectId),
+          ...RECONCILING_REFETCH,
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<Rehearsal>()),
@@ -257,6 +263,7 @@ export const useProjectCrewAssignments = (projectId: string | undefined) =>
     ...(projectId
       ? {
           queryFn: () => ProjectService.getCrewAssignmentsByProject(projectId),
+          ...RECONCILING_REFETCH,
           staleTime: PROJECT_RELATION_STALE_TIME,
         }
       : getDisabledListQueryConfig<CrewAssignment>()),
@@ -271,6 +278,7 @@ export const useProjectProgram = (projectId: string | undefined) =>
     ...(projectId
       ? {
           queryFn: () => ProjectService.getProgramByProject(projectId),
+          ...RECONCILING_REFETCH,
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<ProgramItem>()),
@@ -285,6 +293,7 @@ export const useProjectPieceCastings = (projectId: string | undefined) =>
     ...(projectId
       ? {
           queryFn: () => ProjectService.getPieceCastingsByProject(projectId),
+          ...RECONCILING_REFETCH,
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<PieceCasting>()),
@@ -299,6 +308,7 @@ export const useProjectAttendances = (projectId: string | undefined) =>
     ...(projectId
       ? {
           queryFn: () => ProjectService.getAttendancesByProject(projectId),
+          ...RECONCILING_REFETCH,
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<Attendance>()),
@@ -313,6 +323,7 @@ export const useProjectReadinessSummary = (projectId: string | undefined) =>
     ...(projectId
       ? {
           queryFn: () => ProjectService.getReadinessSummary(projectId),
+          ...RECONCILING_REFETCH,
           staleTime: FAST_CHANGING_STALE_TIME,
         }
       : getDisabledListQueryConfig<ProjectReadinessSummaryEntry>()),

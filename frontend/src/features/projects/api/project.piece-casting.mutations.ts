@@ -7,6 +7,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toastApiError } from "@/shared/api/errors";
+import { invalidatePersonalReadModels } from "@/shared/api/queryPolicy";
 
 import type { PieceCasting } from "@/shared/types";
 
@@ -86,6 +87,10 @@ export const useCreatePieceCasting = (projectId: string) => {
         queryKey: projectKeys.program.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      // Casting decides which pieces a chorister sees in their Materials
+      // program — reconcile their personal read-models (no-op across sessions,
+      // where the dashboards' own focus-refetch carries the change).
+      invalidatePersonalReadModels(queryClient);
     },
   });
 };
@@ -144,6 +149,10 @@ export const useUpdatePieceCasting = (projectId: string) => {
         queryKey: projectKeys.program.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      // Casting decides which pieces a chorister sees in their Materials
+      // program — reconcile their personal read-models (no-op across sessions,
+      // where the dashboards' own focus-refetch carries the change).
+      invalidatePersonalReadModels(queryClient);
     },
   });
 };
@@ -189,6 +198,10 @@ export const useDeletePieceCasting = (projectId: string) => {
         queryKey: projectKeys.program.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      // Casting decides which pieces a chorister sees in their Materials
+      // program — reconcile their personal read-models (no-op across sessions,
+      // where the dashboards' own focus-refetch carries the change).
+      invalidatePersonalReadModels(queryClient);
     },
   });
 };

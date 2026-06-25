@@ -976,6 +976,101 @@ class MaterialsAccessControlTests(APITestCase):
         )
         self.assertEqual(resp.status_code, 403)
 
+    # --- payload validation + sanitization ------------------------------- #
+
+    def test_freehand_without_paths_is_rejected(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post("/api/archive/annotations/", {
+            "edition": str(self.edition_live.id), "page_number": 1,
+            "annotation_type": "FH", "payload": {"width": 0.004},
+            "layer_name": "shared",
+        }, format="json")
+        self.assertEqual(resp.status_code, 400)
+        # Validation errors are nested under `errors` by the RFC 7807 handler.
+        self.assertIn("payload", resp.data.get("errors", resp.data))
+
+    def test_comment_without_text_is_rejected(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post("/api/archive/annotations/", {
+            "edition": str(self.edition_live.id), "page_number": 1,
+            "annotation_type": "CM", "payload": {"x": 0.5, "y": 0.5, "text": "   "},
+            "layer_name": "shared",
+        }, format="json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_out_of_range_coordinates_are_clamped_on_write(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post("/api/archive/annotations/", {
+            "edition": str(self.edition_live.id), "page_number": 1,
+            "annotation_type": "FH",
+            "payload": {"paths": [[[1.8, -0.4], [0.5, 0.5]]], "width": 99},
+            "layer_name": "shared",
+        }, format="json")
+        self.assertEqual(resp.status_code, 201, msg=resp.data)
+        self.assertEqual(resp.data["payload"]["paths"][0][0], [1.0, 0.0])
+        self.assertLessEqual(resp.data["payload"]["width"], 0.2)
+
+    def test_manager_can_create_highlighter_marking(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post("/api/archive/annotations/", {
+            "edition": str(self.edition_live.id), "page_number": 2,
+            "annotation_type": "HL",
+            "payload": {"paths": [[[0.1, 0.1], [0.4, 0.1]]], "width": 0.02},
+            "layer_name": "shared",
+        }, format="json")
+        self.assertEqual(resp.status_code, 201, msg=resp.data)
+        self.assertEqual(resp.data["annotation_type"], "HL")
+
+    def test_inline_comment_display_persists(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post("/api/archive/annotations/", {
+            "edition": str(self.edition_live.id), "page_number": 1,
+            "annotation_type": "CM",
+            "payload": {"x": 0.5, "y": 0.5, "text": "Oddech", "display": "inline"},
+            "layer_name": "shared",
+        }, format="json")
+        self.assertEqual(resp.status_code, 201, msg=resp.data)
+        self.assertEqual(resp.data["payload"]["display"], "inline")
+
+    def test_manager_can_patch_comment_text(self) -> None:
+        ann = self._make_annotation(self.edition_live, layer="shared")
+        ann.annotation_type = "CM"
+        ann.payload = {"x": 0.5, "y": 0.5, "text": "old", "display": "pin"}
+        ann.save(update_fields=["annotation_type", "payload"])
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.patch(
+            f"/api/archive/annotations/{ann.id}/",
+            {"payload": {"x": 0.5, "y": 0.5, "text": "new", "display": "pin"}},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200, msg=resp.data)
+        self.assertEqual(resp.data["payload"]["text"], "new")
+
+    def test_singer_cannot_patch_annotation(self) -> None:
+        ann = self._make_annotation(self.edition_live, layer="shared")
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.patch(
+            f"/api/archive/annotations/{ann.id}/",
+            {"layer_name": "conductor"}, format="json",
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_clear_on_missing_edition_returns_404(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(
+            "/api/archive/annotations/clear/",
+            {"edition": "00000000-0000-0000-0000-000000000000"}, format="json",
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_clear_with_malformed_edition_id_returns_400(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(
+            "/api/archive/annotations/clear/",
+            {"edition": "not-a-uuid"}, format="json",
+        )
+        self.assertEqual(resp.status_code, 400)
+
 
 class ReminderDispatchTests(TestCase):
     """Beat sweep: idempotent, windowed upcoming-event reminders."""

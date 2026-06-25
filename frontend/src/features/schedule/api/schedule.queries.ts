@@ -3,6 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { useOfflineStore } from "@/app/store/useOfflineStore";
 import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
+import {
+  PERSONAL_READMODEL_KEYS,
+  RECONCILING_REFETCH,
+} from "@/shared/api/queryPolicy";
 import { ScheduleService } from "./schedule.service";
 import type {
   ScheduleAttendanceReportDTO,
@@ -14,12 +18,12 @@ const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
 export const scheduleKeys = {
   dashboard: {
     byArtist: (artistId: string | number) =>
-      ["schedule", "dashboard", String(artistId)] as const,
+      [...PERSONAL_READMODEL_KEYS.scheduleDashboard, String(artistId)] as const,
   },
 };
 
 /** Partial key matching every artist's dashboard cache (for optimistic patches). */
-const SCHEDULE_DASHBOARD_PREFIX = ["schedule", "dashboard"] as const;
+const SCHEDULE_DASHBOARD_PREFIX = PERSONAL_READMODEL_KEYS.scheduleDashboard;
 
 /**
  * The artist's personal schedule in one server-joined call — replaces the
@@ -32,6 +36,10 @@ export const useScheduleDashboard = (artistId?: string | number) =>
     ),
     queryFn: ScheduleService.getScheduleDashboard,
     enabled: !!artistId,
+    // Personal read-model driven by the artist's participations and the
+    // project's rehearsals — both changed from the manager's session. Reconcile
+    // on the artist's next mount/focus so a new rehearsal or assignment lands.
+    ...RECONCILING_REFETCH,
     staleTime: 1000 * 60 * 5,
   });
 

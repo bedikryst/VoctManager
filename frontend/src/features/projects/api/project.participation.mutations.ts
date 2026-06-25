@@ -7,6 +7,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toastApiError } from "@/shared/api/errors";
+import { invalidatePersonalReadModels } from "@/shared/api/queryPolicy";
 
 import type { Participation } from "@/shared/types";
 
@@ -74,6 +75,10 @@ export const useCreateParticipation = (projectId: string) => {
         queryKey: projectKeys.participations.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      // Participation = ensemble membership, which drives both the chorister's
+      // Materials program and their personal Schedule. Reconcile those personal
+      // read-models (cross-session propagation rides their focus-refetch).
+      invalidatePersonalReadModels(queryClient);
     },
   });
 };
@@ -126,6 +131,10 @@ export const useUpdateParticipation = (projectId: string) => {
         queryKey: projectKeys.participations.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      // Participation = ensemble membership, which drives both the chorister's
+      // Materials program and their personal Schedule. Reconcile those personal
+      // read-models (cross-session propagation rides their focus-refetch).
+      invalidatePersonalReadModels(queryClient);
     },
   });
 };
@@ -165,6 +174,10 @@ export const useDeleteParticipation = (projectId: string) => {
         queryKey: projectKeys.participations.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+      // Participation = ensemble membership, which drives both the chorister's
+      // Materials program and their personal Schedule. Reconcile those personal
+      // read-models (cross-session propagation rides their focus-refetch).
+      invalidatePersonalReadModels(queryClient);
     },
   });
 };

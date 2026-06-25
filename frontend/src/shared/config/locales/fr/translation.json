@@ -3,20 +3,53 @@
     "clear_all": "Effacer toutes les annotations",
     "clear_confirm": "Sûr ?",
     "comment_placeholder": "Note pour cet endroit…",
+    "draw_on_tablet": "Le dessin est disponible sur tablette",
+    "ink_color": "Couleur",
+    "redo": "Rétablir",
+    "undo": "Annuler",
     "layer": {
       "private": "Privé (vous seul)",
       "private_short": "Privé",
       "shared": "Visible par le chœur",
       "shared_short": "Chœur"
     },
+    "note": {
+      "delete": "Supprimer la note",
+      "inline": "Sur la partition",
+      "pin": "Épingle"
+    },
+    "panel": {
+      "layers": "Visibilité des calques",
+      "no_notes": "Aucune note de texte.",
+      "notes": "Notes",
+      "open": "Afficher les annotations",
+      "page": "p. {{page}}",
+      "page_marks": "{{count}} marques",
+      "pages": "Pages annotées",
+      "title": "Annotations"
+    },
+    "size": {
+      "bold": "Épais",
+      "fine": "Fin",
+      "medium": "Moyen"
+    },
     "tools": {
-      "comment": "Commentaire",
       "eraser": "Gomme",
+      "highlighter": "Surligneur",
+      "note": "Note",
       "pen": "Stylo",
       "pointer": "Parcourir"
     }
   },
   "archive": {
+    "active": {
+      "aria": "Traitement IA en cours",
+      "pages": "p.",
+      "title_one": "L’IA traite {{count}} partition",
+      "title_few": "L’IA traite {{count}} partitions",
+      "title_many": "L’IA traite {{count}} partitions",
+      "title_other": "L’IA traite {{count}} partitions"
+    },
     "ai_warning": {
       "before_birth": "L'année de composition ({{year}}) précède la naissance du compositeur ({{birth}}).",
       "long_after_death": "L'année de composition ({{year}}) est bien postérieure à la mort du compositeur ({{death}}).",
@@ -377,6 +410,17 @@
       "toast_creating": "Ajout de la pièce…",
       "toast_error": "Impossible d'ajouter la pièce.",
       "toast_success": "Pièce ajoutée."
+    },
+    "progress": {
+      "preparing": "Préparation du document…",
+      "analyzing": "Lecture de la partition (IA) — titre, mouvements, paroles, API, traductions…",
+      "resolving": "Recherche dans MusicBrainz et Wikidata…",
+      "persisting": "Enregistrement des résultats…",
+      "program_note": "Rédaction de la note de programme…",
+      "recordings": "Recherche d’enregistrements (Spotify, YouTube)…",
+      "waiting_overload": "Le service d’IA est surchargé — nouvelle tentative sous peu…",
+      "queued": "En file d’attente…",
+      "working": "Traitement en cours…"
     },
     "review": {
       "add_edition_hint": "Ajouter une autre édition (Bärenreiter, IMSLP, votre propre arrangement)",

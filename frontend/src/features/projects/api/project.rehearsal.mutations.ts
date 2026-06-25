@@ -7,6 +7,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toastApiError } from "@/shared/api/errors";
+import { PERSONAL_READMODEL_KEYS } from "@/shared/api/queryPolicy";
 
 import type { Rehearsal } from "@/shared/types";
 
@@ -75,8 +76,14 @@ export const useCreateRehearsal = (projectId: string) => {
       );
     },
     onSettled: () => {
+      // `rehearsals.all` (not just the project-scoped key) so the cross-project
+      // Rehearsals workspace, which reads `["rehearsals"]`, reconciles too.
+      queryClient.invalidateQueries({ queryKey: projectKeys.rehearsals.all });
+      // A scheduling change shows up in every cast chorister's personal
+      // Schedule read-model — mark it stale (their dashboard focus-refetch
+      // carries it across sessions).
       queryClient.invalidateQueries({
-        queryKey: projectKeys.rehearsals.byProject(projectId),
+        queryKey: PERSONAL_READMODEL_KEYS.scheduleDashboard,
       });
     },
   });
@@ -129,8 +136,14 @@ export const useUpdateRehearsal = (projectId: string) => {
       );
     },
     onSettled: () => {
+      // `rehearsals.all` (not just the project-scoped key) so the cross-project
+      // Rehearsals workspace, which reads `["rehearsals"]`, reconciles too.
+      queryClient.invalidateQueries({ queryKey: projectKeys.rehearsals.all });
+      // A scheduling change shows up in every cast chorister's personal
+      // Schedule read-model — mark it stale (their dashboard focus-refetch
+      // carries it across sessions).
       queryClient.invalidateQueries({
-        queryKey: projectKeys.rehearsals.byProject(projectId),
+        queryKey: PERSONAL_READMODEL_KEYS.scheduleDashboard,
       });
     },
   });
@@ -165,8 +178,14 @@ export const useDeleteRehearsal = (projectId: string) => {
       }
     },
     onSettled: () => {
+      // `rehearsals.all` (not just the project-scoped key) so the cross-project
+      // Rehearsals workspace, which reads `["rehearsals"]`, reconciles too.
+      queryClient.invalidateQueries({ queryKey: projectKeys.rehearsals.all });
+      // A scheduling change shows up in every cast chorister's personal
+      // Schedule read-model — mark it stale (their dashboard focus-refetch
+      // carries it across sessions).
       queryClient.invalidateQueries({
-        queryKey: projectKeys.rehearsals.byProject(projectId),
+        queryKey: PERSONAL_READMODEL_KEYS.scheduleDashboard,
       });
     },
   });

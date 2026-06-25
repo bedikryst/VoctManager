@@ -3,20 +3,53 @@
     "clear_all": "Clear all annotations",
     "clear_confirm": "Sure?",
     "comment_placeholder": "Note for this spot…",
+    "draw_on_tablet": "Drawing is available on a tablet",
+    "ink_color": "Ink colour",
+    "redo": "Redo",
+    "undo": "Undo",
     "layer": {
       "private": "Private (only you)",
       "private_short": "Private",
       "shared": "Visible to the choir",
       "shared_short": "Choir"
     },
+    "note": {
+      "delete": "Delete note",
+      "inline": "On score",
+      "pin": "Pin"
+    },
+    "panel": {
+      "layers": "Layer visibility",
+      "no_notes": "No text notes.",
+      "notes": "Notes",
+      "open": "Show annotations",
+      "page": "p. {{page}}",
+      "page_marks": "{{count}} marks",
+      "pages": "Marked pages",
+      "title": "Annotations"
+    },
+    "size": {
+      "bold": "Bold",
+      "fine": "Fine",
+      "medium": "Medium"
+    },
     "tools": {
-      "comment": "Comment",
       "eraser": "Erase",
+      "highlighter": "Highlighter",
+      "note": "Note",
       "pen": "Pen",
       "pointer": "Browse"
     }
   },
   "archive": {
+    "active": {
+      "aria": "AI processing in progress",
+      "pages": "pp.",
+      "title_one": "AI is working on {{count}} score",
+      "title_few": "AI is working on {{count}} scores",
+      "title_many": "AI is working on {{count}} scores",
+      "title_other": "AI is working on {{count}} scores"
+    },
     "ai_warning": {
       "before_birth": "Composition year ({{year}}) predates the composer's birth ({{birth}}).",
       "long_after_death": "Composition year ({{year}}) is long after the composer's death ({{death}}).",
@@ -377,6 +410,17 @@
       "toast_creating": "Adding piece…",
       "toast_error": "Couldn't add the piece.",
       "toast_success": "Piece added."
+    },
+    "progress": {
+      "preparing": "Preparing the document…",
+      "analyzing": "Reading the score (AI) — title, movements, lyrics, IPA, translations…",
+      "resolving": "Searching MusicBrainz and Wikidata…",
+      "persisting": "Saving the results…",
+      "program_note": "Writing the programme note…",
+      "recordings": "Looking for recordings (Spotify, YouTube)…",
+      "waiting_overload": "The AI service is overloaded — retrying shortly…",
+      "queued": "Queued…",
+      "working": "Working…"
     },
     "review": {
       "add_edition_hint": "Add another edition (Bärenreiter, IMSLP, your own arrangement)",

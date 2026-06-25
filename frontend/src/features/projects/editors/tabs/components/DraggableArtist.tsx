@@ -111,7 +111,14 @@ export const DraggableArtist = React.memo(function DraggableArtist({
             {...(isBlocked ? {} : listeners)}
             {...attributes}
             className={cn(
-              "p-1 -ml-1 rounded transition-colors",
+              // Comfortable grab target. Compact on a fine pointer (mouse): the
+              // -my-1 bleeds the hit area into the card's own py-1 padding so the
+              // row height is unchanged. On a coarse pointer (touch) it grows to
+              // a ~44px WCAG-grade target — we deliberately let the card grow to
+              // ~44px tall rather than over-pull with negatives, which GlassCard's
+              // overflow-hidden would clip straight back to the old size.
+              "flex min-h-8 min-w-7 -my-1 -ml-1.5 shrink-0 items-center justify-center rounded-lg transition-colors select-none",
+              "pointer-coarse:min-h-11 pointer-coarse:min-w-9",
               isBlocked
                 ? "cursor-not-allowed text-ethereal-graphite/25"
                 : isOverlay

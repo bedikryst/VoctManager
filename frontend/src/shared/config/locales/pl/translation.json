@@ -3,20 +3,53 @@
     "clear_all": "Usuń wszystkie adnotacje",
     "clear_confirm": "Na pewno?",
     "comment_placeholder": "Notatka do tego miejsca…",
+    "draw_on_tablet": "Rysowanie dostępne na tablecie",
+    "ink_color": "Kolor",
+    "redo": "Ponów",
+    "undo": "Cofnij",
     "layer": {
       "private": "Prywatne (tylko Ty)",
       "private_short": "Prywatne",
       "shared": "Widoczne dla chóru",
       "shared_short": "Chór"
     },
+    "note": {
+      "delete": "Usuń notatkę",
+      "inline": "Na nucie",
+      "pin": "Pinezka"
+    },
+    "panel": {
+      "layers": "Widoczność warstw",
+      "no_notes": "Brak notatek tekstowych.",
+      "notes": "Notatki",
+      "open": "Pokaż adnotacje",
+      "page": "s. {{page}}",
+      "page_marks": "{{count}} oznaczeń",
+      "pages": "Oznaczone strony",
+      "title": "Adnotacje"
+    },
+    "size": {
+      "bold": "Gruba",
+      "fine": "Cienka",
+      "medium": "Średnia"
+    },
     "tools": {
-      "comment": "Komentarz",
       "eraser": "Gumka",
+      "highlighter": "Zakreślacz",
+      "note": "Notatka",
       "pen": "Pióro",
       "pointer": "Przeglądaj"
     }
   },
   "archive": {
+    "active": {
+      "aria": "Przetwarzanie AI w toku",
+      "pages": "str.",
+      "title_one": "AI pracuje nad {{count}} partyturą",
+      "title_few": "AI pracuje nad {{count}} partyturami",
+      "title_many": "AI pracuje nad {{count}} partyturami",
+      "title_other": "AI pracuje nad {{count}} partyturami"
+    },
     "ai_warning": {
       "before_birth": "Rok kompozycji ({{year}}) jest przed urodzeniem kompozytora ({{birth}}).",
       "long_after_death": "Rok kompozycji ({{year}}) jest dużo po śmierci kompozytora ({{death}}).",
@@ -377,6 +410,17 @@
       "toast_creating": "Dodawanie utworu…",
       "toast_error": "Nie udało się dodać utworu.",
       "toast_success": "Utwór dodany."
+    },
+    "progress": {
+      "preparing": "Przygotowuję dokument…",
+      "analyzing": "Czytam partyturę (AI) — tytuł, części, tekst, IPA, tłumaczenia…",
+      "resolving": "Szukam w MusicBrainz i Wikidata…",
+      "persisting": "Zapisuję wyniki…",
+      "program_note": "Piszę notkę programową…",
+      "recordings": "Szukam nagrań (Spotify, YouTube)…",
+      "waiting_overload": "Usługa AI jest przeciążona — ponawiam za chwilę…",
+      "queued": "W kolejce…",
+      "working": "Pracuję…"
     },
     "review": {
       "add_edition_hint": "Dodaj kolejne wydanie (Bärenreiter, IMSLP, własna aranżacja)",
