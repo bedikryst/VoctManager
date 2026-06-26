@@ -3,8 +3,11 @@
     "clear_all": "Usuń wszystkie adnotacje",
     "clear_confirm": "Na pewno?",
     "comment_placeholder": "Notatka do tego miejsca…",
+    "collapse_tools": "Zwiń narzędzia",
     "draw_on_tablet": "Rysowanie dostępne na tablecie",
     "ink_color": "Kolor",
+    "markup": "Adnotacje",
+    "open_tools": "Narzędzia adnotacji",
     "redo": "Ponów",
     "undo": "Cofnij",
     "layer": {
@@ -1613,6 +1616,36 @@
       },
       "satb_distribution": "Dystrybucja Głosów SATB",
       "satb_total_aria": "Łączna liczba głosów w zespole",
+      "setup": {
+        "chord_cta": "Posłuchaj tonu zespołu",
+        "chord_playing": "Brzmi…",
+        "eyebrow": "Pierwszy sezon",
+        "finish": "Zakończ konfigurację",
+        "intro": "Trzy kroki dzielą Cię od żywego pulpitu: zaplanuj pierwszy koncert, zaproś śpiewaków i zbuduj repertuar. Każdy krok prowadzi prosto do właściwego narzędzia.",
+        "intro_done": "Masz koncert w kalendarzu, śpiewaków w składzie i repertuar w archiwum. Twój pulpit jest gotowy do pracy.",
+        "progress": "Krok {{done}} z {{total}}",
+        "snooze": "Zrobię to później",
+        "step_done": "Gotowe",
+        "steps": {
+          "concert": {
+            "cta": "Zaplanuj koncert",
+            "desc": "Stwórz produkcję — wokół niej zbudujesz datę, miejsce i obsadę całego sezonu.",
+            "label": "Zaplanuj pierwszy koncert"
+          },
+          "repertoire": {
+            "cta": "Otwórz archiwum",
+            "desc": "Wgraj nuty i nagrania do archiwum, by przypisać je do koncertów i prób.",
+            "label": "Zbuduj repertuar"
+          },
+          "singers": {
+            "cta": "Zbuduj skład",
+            "desc": "Dodaj chórzystów do bazy i wyślij zaproszenia — sami aktywują swoje konta.",
+            "label": "Zaproś śpiewaków"
+          }
+        },
+        "title": "Załóżmy fundamenty",
+        "title_done": "Sezon założony"
+      },
       "spotlight": {
         "cast": "Obsada",
         "empty_cta": "Zaplanuj koncert",
@@ -1704,10 +1737,15 @@
       "validation_notes_min": "Proszę podać powód/uwagi (min. 3 znaki).",
       "welcome": {
         "chord_cta": "Usłysz swój zespół",
+        "chord_hint": "Dotknij, by usłyszeć, jak zespół stroi",
         "chord_playing": "Brzmi…",
         "dismiss": "Zaczynam",
+        "enter": "Wejdź do swojej przestrzeni",
         "eyebrow": "Witamy w zespole",
+        "install_cta": "Zainstaluj aplikację",
         "intro": "To Twoja przestrzeń: zobaczysz tu najbliższą próbę, przećwiczysz swoją partię i potwierdzisz obecność. Zacznij od jednego z trzech miejsc poniżej.",
+        "overlay_intro": "To Twoja przestrzeń — najbliższa próba, Twoja partia i obecność w jednym miejscu. Ale najpierw posłuchaj, jak brzmi zespół, do którego dołączasz.",
+        "overlay_skip": "Pomiń",
         "settings_cta": "Dokończ konfigurację",
         "settings_desc": "Powiadomienia o próbach · synchronizacja kalendarza · zdjęcie profilowe",
         "title": "Dobrze, że jesteś",
@@ -3733,6 +3771,12 @@
     },
     "nav": {
       "aria": "Menu ustawień",
+      "groups": {
+        "account": "Konto",
+        "connections": "Połączenia",
+        "data": "Dane i prywatność",
+        "preferences": "Preferencje"
+      },
       "logistics_pending": "Uzupełnij wymiary strojów"
     },
     "notifications": {
@@ -3845,6 +3889,30 @@
       "app": {
         "label": "Aplikacja",
         "short": "Aplikacja"
+      },
+      "calendar": {
+        "label": "Kalendarz",
+        "short": "Kalendarz"
+      },
+      "logistics": {
+        "label": "Logistyka sceniczna",
+        "short": "Stroje"
+      },
+      "notifications": {
+        "label": "Powiadomienia",
+        "short": "Alerty"
+      },
+      "privacy": {
+        "label": "Prywatność (RODO)",
+        "short": "RODO"
+      },
+      "profile": {
+        "label": "Profil",
+        "short": "Profil"
+      },
+      "security": {
+        "label": "Bezpieczeństwo i logowanie",
+        "short": "Logowanie"
       }
     },
     "security": {

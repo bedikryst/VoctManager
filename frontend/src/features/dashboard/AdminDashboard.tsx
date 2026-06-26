@@ -31,6 +31,7 @@ import { ProductionPipeline } from "./components/ProductionPipeline";
 import { AdminQuickModules } from "./components/AdminQuickModules";
 import { DashboardErrorState } from "./components/DashboardErrorState";
 import { UnreadMessagesAlert } from "./components/UnreadMessagesAlert";
+import { SeasonSetupConcierge } from "./components/SeasonSetupConcierge";
 
 const ANONYMOUS_ARTIST_QUERY_ID = "anonymous";
 
@@ -93,6 +94,8 @@ export default function AdminDashboard(): React.JSX.Element {
           title={greeting}
           titleHighlight={highlight}
         />
+
+        <SeasonSetupConcierge name={highlight} />
 
         <UnreadMessagesAlert />
 

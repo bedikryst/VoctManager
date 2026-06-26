@@ -68,6 +68,11 @@ export const DashboardLayout = ({
   const offlineSync = useOfflineSync();
   const canPreloadArtistRoutes = isArtist(user);
   const canPreloadManagerRoutes = isManager(user);
+  // The chorister's first-run welcome is a full-screen moment that owns the
+  // install ask while it's up, so the ambient pill stays quiet behind it. The
+  // conductor's concierge is an inline panel — the pill can sit alongside it.
+  const isFirstRun = !!user && (user.profile?.welcome_seen_at ?? null) === null;
+  const welcomeOverlayActive = isFirstRun && !canPreloadManagerRoutes;
 
   const outlet = useOutlet();
 
@@ -205,7 +210,10 @@ export const DashboardLayout = ({
           one. Lives at body level already, so no Portal is needed here. */}
       <div className="fixed inset-x-0 bottom-[calc(var(--nav-dock-h)+2.25rem)] z-40 flex flex-col items-center gap-2">
         <OfflineStatusBadge {...offlineSync} />
-        <InstallAppPrompt />
+        {/* The chorister's full-screen welcome owns the install ask while it's on
+            screen — the ambient pill stays quiet until the member has crossed the
+            threshold, then resumes its own cadence. One install nudge at a time. */}
+        {!welcomeOverlayActive && <InstallAppPrompt />}
       </div>
     </div>
     </CommandPaletteProvider>

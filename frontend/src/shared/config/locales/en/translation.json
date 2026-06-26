@@ -3,8 +3,11 @@
     "clear_all": "Clear all annotations",
     "clear_confirm": "Sure?",
     "comment_placeholder": "Note for this spot…",
+    "collapse_tools": "Collapse tools",
     "draw_on_tablet": "Drawing is available on a tablet",
     "ink_color": "Ink colour",
+    "markup": "Markup",
+    "open_tools": "Annotation tools",
     "redo": "Redo",
     "undo": "Undo",
     "layer": {
@@ -1610,6 +1613,36 @@
       },
       "satb_distribution": "SATB Voice Distribution",
       "satb_total_aria": "Total number of voices in the ensemble",
+      "setup": {
+        "chord_cta": "Hear the ensemble's chord",
+        "chord_playing": "Sounding…",
+        "eyebrow": "First season",
+        "finish": "Finish setup",
+        "intro": "Three steps stand between you and a living console: schedule your first concert, invite your singers, and build the repertoire. Each step leads straight to the right tool.",
+        "intro_done": "You've a concert on the calendar, singers in the roster, and repertoire in the archive. Your console is ready to work.",
+        "progress": "Step {{done}} of {{total}}",
+        "snooze": "I'll do this later",
+        "step_done": "Done",
+        "steps": {
+          "concert": {
+            "cta": "Schedule a concert",
+            "desc": "Create a production — you'll build the date, venue, and casting of the whole season around it.",
+            "label": "Schedule your first concert"
+          },
+          "repertoire": {
+            "cta": "Open the archive",
+            "desc": "Upload scores and recordings to the archive so you can assign them to concerts and rehearsals.",
+            "label": "Build the repertoire"
+          },
+          "singers": {
+            "cta": "Build the roster",
+            "desc": "Add choristers to the directory and send invitations — they activate their own accounts.",
+            "label": "Invite your singers"
+          }
+        },
+        "title": "Let's lay the foundations",
+        "title_done": "Season founded"
+      },
       "spotlight": {
         "cast": "Cast",
         "empty_cta": "Plan a concert",
@@ -1701,10 +1734,15 @@
       "validation_notes_min": "Please provide a reason/notes (min. 3 characters).",
       "welcome": {
         "chord_cta": "Hear your ensemble",
+        "chord_hint": "Tap to hear the ensemble find its pitch",
         "chord_playing": "Sounding…",
         "dismiss": "Let's begin",
+        "enter": "Step into your space",
         "eyebrow": "Welcome to the ensemble",
+        "install_cta": "Install the app",
         "intro": "This is your space: you'll find your next rehearsal here, practise your part, and confirm your attendance. Start from one of the three places below.",
+        "overlay_intro": "This is your space — your next rehearsal, your part, and your attendance in one place. But first, hear how the ensemble you're joining sounds.",
+        "overlay_skip": "Skip",
         "settings_cta": "Finish setting up",
         "settings_desc": "Rehearsal reminders · calendar sync · profile photo",
         "title": "Good to have you",
@@ -3730,6 +3768,12 @@
     },
     "nav": {
       "aria": "Settings menu",
+      "groups": {
+        "account": "Account",
+        "connections": "Connections",
+        "data": "Data & privacy",
+        "preferences": "Preferences"
+      },
       "logistics_pending": "Add your outfit measurements"
     },
     "notifications": {
@@ -3842,6 +3886,30 @@
       "app": {
         "label": "App",
         "short": "App"
+      },
+      "calendar": {
+        "label": "Calendar",
+        "short": "Calendar"
+      },
+      "logistics": {
+        "label": "Stage logistics",
+        "short": "Outfits"
+      },
+      "notifications": {
+        "label": "Notifications",
+        "short": "Alerts"
+      },
+      "privacy": {
+        "label": "Privacy (GDPR)",
+        "short": "GDPR"
+      },
+      "profile": {
+        "label": "Profile",
+        "short": "Profile"
+      },
+      "security": {
+        "label": "Security & sign-in",
+        "short": "Sign-in"
       }
     },
     "security": {

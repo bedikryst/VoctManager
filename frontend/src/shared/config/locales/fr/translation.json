@@ -3,8 +3,11 @@
     "clear_all": "Effacer toutes les annotations",
     "clear_confirm": "Sûr ?",
     "comment_placeholder": "Note pour cet endroit…",
+    "collapse_tools": "Réduire les outils",
     "draw_on_tablet": "Le dessin est disponible sur tablette",
     "ink_color": "Couleur",
+    "markup": "Annotation",
+    "open_tools": "Outils d'annotation",
     "redo": "Rétablir",
     "undo": "Annuler",
     "layer": {
@@ -1610,6 +1613,36 @@
       },
       "satb_distribution": "Distribution vocale SATB",
       "satb_total_aria": "Nombre total de voix dans l'ensemble",
+      "setup": {
+        "chord_cta": "Écoutez l'accord de l'ensemble",
+        "chord_playing": "Ça résonne…",
+        "eyebrow": "Première saison",
+        "finish": "Terminer la configuration",
+        "intro": "Trois étapes vous séparent d'une console vivante : programmez votre premier concert, invitez vos chanteurs et constituez le répertoire. Chaque étape mène directement au bon outil.",
+        "intro_done": "Vous avez un concert au calendrier, des chanteurs dans l'effectif et du répertoire aux archives. Votre console est prête à travailler.",
+        "progress": "Étape {{done}} sur {{total}}",
+        "snooze": "Je le ferai plus tard",
+        "step_done": "Terminé",
+        "steps": {
+          "concert": {
+            "cta": "Programmer un concert",
+            "desc": "Créez une production — vous y bâtirez la date, le lieu et la distribution de toute la saison.",
+            "label": "Programmez votre premier concert"
+          },
+          "repertoire": {
+            "cta": "Ouvrir les archives",
+            "desc": "Téléversez partitions et enregistrements aux archives pour les associer aux concerts et répétitions.",
+            "label": "Constituez le répertoire"
+          },
+          "singers": {
+            "cta": "Constituer l'effectif",
+            "desc": "Ajoutez des choristes à l'annuaire et envoyez les invitations — ils activent eux-mêmes leur compte.",
+            "label": "Invitez vos chanteurs"
+          }
+        },
+        "title": "Posons les fondations",
+        "title_done": "Saison fondée"
+      },
       "spotlight": {
         "cast": "Distribution",
         "empty_cta": "Planifier un concert",
@@ -1701,10 +1734,15 @@
       "validation_notes_min": "Veuillez fournir une raison/notes (min. 3 caractères).",
       "welcome": {
         "chord_cta": "Écoutez votre ensemble",
+        "chord_hint": "Touchez pour entendre l'ensemble s'accorder",
         "chord_playing": "Ça résonne…",
         "dismiss": "Je commence",
+        "enter": "Entrez dans votre espace",
         "eyebrow": "Bienvenue dans l'ensemble",
+        "install_cta": "Installer l'application",
         "intro": "C'est votre espace : vous y verrez votre prochaine répétition, vous travaillerez votre partie et confirmerez votre présence. Commencez par l'un des trois endroits ci-dessous.",
+        "overlay_intro": "C'est votre espace — votre prochaine répétition, votre partie et votre présence au même endroit. Mais d'abord, écoutez comment sonne l'ensemble que vous rejoignez.",
+        "overlay_skip": "Passer",
         "settings_cta": "Terminez la configuration",
         "settings_desc": "Rappels de répétition · synchronisation de l'agenda · photo de profil",
         "title": "Heureux de vous accueillir",
@@ -3730,6 +3768,12 @@
     },
     "nav": {
       "aria": "Menu des paramètres",
+      "groups": {
+        "account": "Compte",
+        "connections": "Connexions",
+        "data": "Données et confidentialité",
+        "preferences": "Préférences"
+      },
       "logistics_pending": "Complétez vos mensurations de costume"
     },
     "notifications": {
@@ -3842,6 +3886,30 @@
       "app": {
         "label": "Application",
         "short": "Appli"
+      },
+      "calendar": {
+        "label": "Calendrier",
+        "short": "Calendrier"
+      },
+      "logistics": {
+        "label": "Logistique scénique",
+        "short": "Tenues"
+      },
+      "notifications": {
+        "label": "Notifications",
+        "short": "Alertes"
+      },
+      "privacy": {
+        "label": "Confidentialité (RGPD)",
+        "short": "RGPD"
+      },
+      "profile": {
+        "label": "Profil",
+        "short": "Profil"
+      },
+      "security": {
+        "label": "Sécurité et connexion",
+        "short": "Connexion"
       }
     },
     "security": {
