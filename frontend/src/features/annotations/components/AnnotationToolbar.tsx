@@ -11,12 +11,14 @@
 import React, { useEffect, useState } from "react";
 import {
   Check,
+  ChevronLeft,
   Eraser,
   Highlighter,
   MessageSquarePlus,
   MousePointer2,
   PenLine,
   Redo2,
+  SquarePen,
   TabletSmartphone,
   Trash2,
   Undo2,
@@ -70,6 +72,12 @@ const pillButton =
   "flex h-9 w-9 items-center justify-center rounded-full text-ethereal-marble transition-colors";
 const Divider = () => <div className="mx-1 h-4 w-px bg-white/15" aria-hidden="true" />;
 
+// Self-contained chrome: the toolbar owns its glass pill (PdfViewer just gives
+// it a top-left slot with a capped width), so collapsed = a clean trigger and
+// expanded = a scrollable bar, without a double-pill.
+const barChrome =
+  "pointer-events-auto flex items-center rounded-full border border-white/10 bg-ethereal-ink/70 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
+
 export const AnnotationToolbar = ({
   tool,
   setTool,
@@ -94,6 +102,10 @@ export const AnnotationToolbar = ({
   const showSize = tool === "pen" || tool === "highlighter";
   const showNoteMode = tool === "note";
 
+  // Collapsed to a single trigger by default on phones (where it would crowd
+  // the utility pill), open by default where there's room (tablet+ / canDraw).
+  const [expanded, setExpanded] = useState(canDraw);
+
   // Two-tap confirm (avoids a modal-inside-the-PDF-modal); auto-resets so a
   // stray first tap never leaves the toolbar armed.
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -105,8 +117,42 @@ export const AnnotationToolbar = ({
 
   const visibleTools = TOOLS.filter((toolDef) => canDraw || !toolDef.drawOnly);
 
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        aria-label={t("annotations.open_tools", "Narzędzia adnotacji")}
+        className={cn(
+          barChrome,
+          "h-11 gap-1.5 px-3.5 text-ethereal-marble transition-colors hover:bg-ethereal-ink/85",
+        )}
+      >
+        <SquarePen size={17} aria-hidden="true" />
+        <span className="text-sm font-medium">
+          {t("annotations.markup", "Adnotacje")}
+        </span>
+        {annotationCount > 0 && (
+          <span className="ml-0.5 rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-ethereal-ink">
+            {annotationCount}
+          </span>
+        )}
+      </button>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-0.5">
+    <div className={cn(barChrome, "no-scrollbar max-w-full gap-0.5 overflow-x-auto p-1.5")}>
+      <button
+        type="button"
+        onClick={() => setExpanded(false)}
+        aria-label={t("annotations.collapse_tools", "Zwiń narzędzia")}
+        title={t("annotations.collapse_tools", "Zwiń narzędzia")}
+        className={cn(pillButton, "hover:bg-white/10")}
+      >
+        <ChevronLeft size={16} aria-hidden="true" />
+      </button>
+      <Divider />
       <button
         type="button"
         onClick={onUndo}

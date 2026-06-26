@@ -264,14 +264,13 @@ export const PdfViewer = ({
         />
       )}
 
-      {/* Annotation tools get their OWN horizontal bar, top-center — kept out of
-          the top-right utility pill (a GlassCard whose inner wrapper is flex-col,
-          which would stack and overflow this wider toolset into a blob). */}
+      {/* Annotation tools live top-LEFT; the top-right corner is the utility
+          pill (open / share / download). The width is capped so the two can
+          never overlap on a phone, and the toolbar owns its own chrome +
+          collapse-to-trigger so it isn't always occupying the top. */}
       {showPdfChrome && toolbarSlot && (
-        <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2 sm:top-6">
-          <div className="flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-ethereal-ink/70 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
-            {toolbarSlot}
-          </div>
+        <div className="pointer-events-none absolute left-3 top-4 z-20 max-w-[calc(100vw-9rem)] sm:left-6 sm:top-6 sm:max-w-[calc(100vw-13rem)]">
+          {toolbarSlot}
         </div>
       )}
 
