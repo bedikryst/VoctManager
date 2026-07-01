@@ -1,0 +1,76 @@
+{% comment %}
+@file score_package_front_matter.html
+@description Front matter for the auto-assembled concert score book: a quiet,
+    classic title page and a dotted-leader table of contents. Print-editorial
+    typography on A4 — deliberately NOT the web Ethereal/glass language.
+@architecture Enterprise SaaS 2026
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="{{ doc_lang|default:'pl' }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        @page { size: A4; margin: 25mm 24mm; }
+        * { box-sizing: border-box; }
+        body { margin: 0; color: #1d1b16; font: 11pt/1.6 Georgia, "Times New Roman", serif; }
+        h1, h2, p { margin: 0; }
+
+        /* --- Title page --- */
+        .title-page { display: flex; flex-direction: column; min-height: 240mm; text-align: center; }
+        .title-top { letter-spacing: 0; }
+        .wordmark { font-size: 13pt; letter-spacing: 6px; text-transform: uppercase; color: #8a6d3b; }
+        .rule { width: 42px; height: 1px; margin: 14px auto 0; background: #c9b48a; }
+        .title-mid { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .ensemble { font-size: 22pt; letter-spacing: 1px; color: #1d1b16; }
+        .title-bottom { color: #45413a; font-size: 11pt; }
+        .title-bottom .sup { vertical-align: super; font-size: 7pt; }
+        .title-bottom .venue { margin-top: 4px; }
+
+        /* --- Table of contents --- */
+        .toc { break-before: page; }
+        .toc.first { break-before: auto; }
+        .toc-head { font-size: 15pt; letter-spacing: 1px; text-align: center; margin-bottom: 12mm; }
+        .toc-head::after { content: ""; display: block; width: 42px; height: 1px; margin: 8px auto 0; background: #c9b48a; }
+        .toc-row { display: flex; align-items: baseline; margin: 0 0 9pt; }
+        .toc-num { width: 22px; color: #8a6d3b; flex: none; }
+        .toc-title { font-weight: bold; }
+        .toc-composer { font-weight: normal; color: #6b655a; }
+        .toc-leader { flex: 1; margin: 0 6px; border-bottom: 1px dotted #b8b0a0; transform: translateY(-3px); }
+        .toc-page { flex: none; color: #45413a; white-space: nowrap; }
+        .toc-foot { margin-top: 16mm; text-align: center; color: #8a8377; font-size: 9pt; letter-spacing: .5px; }
+    </style>
+</head>
+<body>
+    {% if show_title_page %}
+    <section class="title-page">
+        <div class="title-top">
+            <div class="wordmark">{{ ensemble_name }}</div>
+            <div class="rule"></div>
+        </div>
+        <div class="title-mid">
+            <h1 class="ensemble">{{ title }}</h1>
+        </div>
+        <div class="title-bottom">
+            {% if date_label %}<p>{{ date_label }}{% if time_label %} — godz. {{ time_label }}{% endif %}</p>{% endif %}
+            {% if venue %}<p class="venue">{{ venue }}</p>{% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if show_toc %}
+    <section class="toc{% if not show_title_page %} first{% endif %}">
+        <h2 class="toc-head">Repertuar</h2>
+        {% for entry in toc_entries %}
+        <div class="toc-row">
+            <span class="toc-num">{{ entry.order }}.</span>
+            <span class="toc-title">{{ entry.title }}{% if entry.composer %} <span class="toc-composer">| {{ entry.composer }}</span>{% endif %}</span>
+            <span class="toc-leader"></span>
+            <span class="toc-page">s. {{ entry.page }}</span>
+        </div>
+        {% endfor %}
+        <p class="toc-foot">{{ title }} · {{ ensemble_name }}</p>
+    </section>
+    {% endif %}
+</body>
+</html>

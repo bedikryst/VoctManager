@@ -1,0 +1,115 @@
+{% comment %}
+@file score_package_cards.html
+@description Per-piece text content for the score book. Two modes from one template:
+    section_header unset → a single airy frontispiece (or a placeholder divider when
+    no music is attached) — CONCERT density; section_header set → a consolidated,
+    flowing "Teksty i tłumaczenia" section (MASS density). Print-editorial typography
+    on A4 — never the web glass language.
+@architecture Enterprise SaaS 2026
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="{{ doc_lang|default:'pl' }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if section_header %}{{ section_header }}{% else %}{{ cards.0.title }}{% endif %}</title>
+    <style>
+        @page { size: A4; margin: 22mm 22mm 18mm; }
+        * { box-sizing: border-box; }
+        body { margin: 0; color: #1d1b16; font: 11pt/1.6 Georgia, "Times New Roman", serif; }
+        h1, h2, p { margin: 0; }
+        .eyebrow { font-size: 9pt; letter-spacing: 2.5px; text-transform: uppercase; color: #8a6d3b; }
+        .meta { margin-top: 6px; font-size: 8.5pt; letter-spacing: 1.5px; text-transform: uppercase; color: #6b655a; }
+        .lyrics { white-space: pre-line; }
+        .tr { white-space: pre-line; color: #4a463d; }
+
+        /* --- Frontispiece (CONCERT) --- */
+        .frontispiece { display: flex; flex-direction: column; min-height: 245mm; }
+        .frontispiece:not(:first-child) { break-before: page; }
+        .fp-rule { width: 42px; height: 1px; margin-top: 12px; background: #c9b48a; }
+        .fp-id { margin-top: 16mm; }
+        .fp-role { font-size: 11pt; letter-spacing: .5px; color: #8a6d3b; margin-bottom: 2px; }
+        .fp-title { font-size: 21pt; letter-spacing: .3px; }
+        .fp-composer { margin-top: 6px; font-size: 12pt; color: #45413a; }
+        .fp-body { flex: 1; display: flex; gap: 14mm; margin-top: 14mm; }
+        .fp-body .col { flex: 1; }
+        .fp-body .lyrics, .fp-body .tr { font-size: 11pt; line-height: 1.7; }
+        .fp-ipa { margin-top: 8mm; padding-top: 5mm; border-top: 1px dotted #ddd4c2;
+                  font-size: 9.5pt; line-height: 1.6; color: #6b655a; white-space: pre-line; }
+        .fp-ipa-label { font-size: 8pt; letter-spacing: 2px; text-transform: uppercase; color: #a08a5e; margin-bottom: 3px; }
+        .fp-note { margin-top: 10mm; padding-top: 6mm; border-top: 1px solid #e7e0d2;
+                   font-size: 10pt; font-style: italic; color: #5a554b; }
+
+        /* --- Placeholder (music not yet attached) --- */
+        .placeholder { justify-content: center; text-align: center; }
+        .ph-mark { font-size: 9pt; letter-spacing: 3px; text-transform: uppercase; color: #b0a892; }
+        .ph-note { margin-top: 10mm; font-size: 10.5pt; font-style: italic; color: #8a8377; }
+
+        /* --- Consolidated texts (MASS) --- */
+        .texts-head { font-size: 15pt; letter-spacing: 1px; text-align: center; margin-bottom: 10mm; }
+        .texts-head::after { content: ""; display: block; width: 42px; height: 1px;
+                             margin: 8px auto 0; background: #c9b48a; }
+        .entry { margin-bottom: 9mm; break-inside: avoid; }
+        .entry-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3mm;
+                      padding-bottom: 2mm; border-bottom: 1px solid #ece5d7; }
+        .entry-title { font-weight: bold; }
+        .entry-composer { color: #6b655a; flex: 1; }
+        .entry-page { color: #8a6d3b; white-space: nowrap; font-size: 9.5pt; }
+        .entry-cols { display: flex; gap: 12mm; }
+        .entry-cols .col { flex: 1; font-size: 10pt; line-height: 1.6; }
+    </style>
+</head>
+<body>
+{% if section_header %}
+    <section class="texts">
+        <h1 class="texts-head">{{ section_header }}</h1>
+        {% for c in cards %}
+        <div class="entry">
+            <div class="entry-head">
+                <span class="entry-title">{% if c.role %}{{ c.role }} {% endif %}{{ c.title }}</span>
+                {% if c.composer %}<span class="entry-composer">{{ c.composer }}{% if c.years %} ({{ c.years }}){% endif %}</span>{% else %}<span class="entry-composer"></span>{% endif %}
+                {% if c.page_label %}<span class="entry-page">{{ c.page_label }}</span>{% endif %}
+            </div>
+            <div class="entry-cols">
+                {% if c.text %}<div class="col"><div class="lyrics">{{ c.text }}</div></div>{% endif %}
+                {% if c.translation %}<div class="col"><div class="tr">{{ c.translation }}</div></div>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+{% else %}
+    {% for c in cards %}
+    <section class="frontispiece{% if c.placeholder %} placeholder{% endif %}">
+        <div class="fp-top">
+            {% if c.eyebrow %}<div class="eyebrow">{{ c.eyebrow }}</div>{% endif %}
+            <div class="fp-rule"{% if c.placeholder %} style="margin-left:auto;margin-right:auto;"{% endif %}></div>
+        </div>
+        <div class="fp-id">
+            {% if c.role %}<p class="fp-role">{{ c.role }}</p>{% endif %}
+            <h1 class="fp-title">{{ c.title }}</h1>
+            {% if c.composer %}
+            <p class="fp-composer">{{ c.composer }}{% if c.years %} ({{ c.years }}){% endif %}{% if c.arranger %} · oprac. {{ c.arranger }}{% endif %}</p>
+            {% elif c.arranger %}
+            <p class="fp-composer">oprac. {{ c.arranger }}</p>
+            {% endif %}
+            {% if c.meta or c.page_label %}
+            <p class="meta">{% for m in c.meta %}{{ m }}{% if not forloop.last %} · {% endif %}{% endfor %}{% if c.page_label %}{% if c.meta %} · {% endif %}{{ c.page_label }}{% endif %}</p>
+            {% endif %}
+        </div>
+        {% if c.placeholder %}
+        <div class="ph-block">
+            <p class="ph-mark">Nuty w przygotowaniu</p>
+            <p class="ph-note">Partytura tego utworu zostanie dołączona po przesłaniu wydania.</p>
+        </div>
+        {% else %}
+        <div class="fp-body">
+            {% if c.text %}<div class="col"><div class="lyrics">{{ c.text }}</div></div>{% endif %}
+            {% if c.translation %}<div class="col"><div class="tr">{{ c.translation }}</div></div>{% endif %}
+        </div>
+        {% if c.ipa %}<div class="fp-ipa"><div class="fp-ipa-label">Wymowa (IPA)</div>{{ c.ipa }}</div>{% endif %}
+        {% if c.note %}<div class="fp-note">{{ c.note }}</div>{% endif %}
+        {% endif %}
+    </section>
+    {% endfor %}
+{% endif %}
+</body>
+</html>

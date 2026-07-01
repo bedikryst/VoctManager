@@ -164,6 +164,56 @@ class ProgramItem(models.Model):
     order = models.PositiveIntegerField(verbose_name=_("Order (1, 2, 3...)"))
     is_encore = models.BooleanField(default=False, verbose_name=_("Is Encore?"))
 
+    # --- Score-package build cockpit (Phase 3). Per-item overrides of the
+    #     package defaults; all nullable/blank so an untouched item simply
+    #     inherits the package's settings and the auto-selected edition. ---
+    score_edition = models.ForeignKey(
+        'archive.ScoreEdition', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+        help_text=_("Explicit edition to bind for this piece. Blank = auto-select the default edition."),
+        verbose_name=_("Score Edition"),
+    )
+    pdf_page_start = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text=_("1-based first source page to bind (trims publisher front matter). Blank = page 1."),
+        verbose_name=_("PDF Page Start"),
+    )
+    pdf_page_end = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text=_("1-based last source page to bind (inclusive). Blank = last page."),
+        verbose_name=_("PDF Page End"),
+    )
+    section_label = models.CharField(
+        max_length=80, blank=True,
+        help_text=_("Section heading shown as the card eyebrow, e.g. 'LITURGIA EUCHARYSTYCZNA'. Blank = the piece's text source."),
+        verbose_name=_("Section Label"),
+    )
+    role_prefix = models.CharField(
+        max_length=60, blank=True,
+        help_text=_("Liturgical/role prefix shown before the title, e.g. 'Ofiarowanie:'."),
+        verbose_name=_("Role Prefix"),
+    )
+    card_enabled = models.BooleanField(
+        null=True, blank=True,
+        help_text=_("Per-item override of the package's card master switch. Null = inherit."),
+        verbose_name=_("Card Enabled"),
+    )
+    card_elements = models.JSONField(
+        null=True, blank=True,
+        help_text=_("Explicit list of card element keys to render for this item. Null = derive from the package's card toggles."),
+        verbose_name=_("Card Elements"),
+    )
+    text_override = models.TextField(
+        blank=True,
+        help_text=_("Replaces the original text on this item's card for this concert."),
+        verbose_name=_("Text Override"),
+    )
+    note_override = models.TextField(
+        blank=True,
+        help_text=_("Replaces the programme note on this item's card for this concert."),
+        verbose_name=_("Note Override"),
+    )
+
     class Meta:
         ordering = ['order']
         verbose_name = _("Program Item")
@@ -174,6 +224,122 @@ class ProgramItem(models.Model):
 
     def __str__(self):
         return f"{self.order}. {self.piece.title}"
+
+
+class ScorePackage(EnterpriseBaseModel):
+    """
+    Configuration + build state for a Project's auto-assembled concert score book.
+
+    One package per Project. The generated PDF itself is stored on
+    ``Project.score_pdf`` (served, gated, through the existing ``score_pdf``
+    action) — this row only holds the conductor's chosen settings, the async
+    build status, and a content hash of the inputs, so the output can be flagged
+    stale when the repertoire or settings change.
+
+    @architecture Enterprise SaaS 2026
+    @module roster/ScorePackage
+    """
+
+    class Status(models.TextChoices):
+        IDLE     = 'IDLE', _('Not generated')
+        QUEUED   = 'QUED', _('Queued')
+        BUILDING = 'BLDG', _('Building')
+        READY    = 'RDY', _('Ready')
+        FAILED   = 'FAIL', _('Failed')
+
+    class Density(models.TextChoices):
+        CONCERT = 'CONCERT', _('Concert — frontispiece per piece')
+        MASS    = 'MASS',    _('Mass — light dividers, consolidated texts')
+
+    project = models.OneToOneField(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='score_package',
+        verbose_name=_("Project"),
+    )
+
+    # --- Layout configuration. Phase 1 honours the booleans below; `density_mode`
+    #     is persisted now but only drives the per-piece frontispiece work in Phase 2. ---
+    density_mode = models.CharField(
+        max_length=8, choices=Density.choices, default=Density.CONCERT,
+        verbose_name=_("Density Mode"),
+    )
+    include_title_page = models.BooleanField(default=True, verbose_name=_("Title Page"))
+    include_toc = models.BooleanField(default=True, verbose_name=_("Table of Contents"))
+    include_page_numbers = models.BooleanField(default=True, verbose_name=_("Page Numbers"))
+    include_bookmarks = models.BooleanField(default=True, verbose_name=_("PDF Bookmarks"))
+    normalize_to_a4 = models.BooleanField(
+        default=True,
+        help_text=_("Scale and centre every source page onto a uniform A4 sheet so the "
+                    "assembled book does not 'wobble' between differently-sized editions."),
+        verbose_name=_("Normalize to A4"),
+    )
+
+    # --- Per-piece text content (Phase 2). `include_cards` is the master switch;
+    #     `density_mode` then decides CONCERT (a frontispiece before each piece) vs
+    #     MASS (one consolidated "Teksty i tłumaczenia" section in the front matter). ---
+    include_cards = models.BooleanField(
+        default=True,
+        help_text=_("Render per-piece text content (frontispiece in CONCERT mode, "
+                    "consolidated texts section in MASS mode)."),
+        verbose_name=_("Include Text Content"),
+    )
+    card_include_text = models.BooleanField(default=True, verbose_name=_("Card: Original Text"))
+    card_include_translation = models.BooleanField(default=True, verbose_name=_("Card: Translation"))
+    card_include_program_note = models.BooleanField(default=True, verbose_name=_("Card: Programme Note"))
+    translation_language = models.CharField(
+        max_length=8, default='pl',
+        help_text=_("ISO 639-1 code of the translation/programme-note language shown on the cards."),
+        verbose_name=_("Card Language"),
+    )
+
+    # --- Async build state ---
+    status = models.CharField(
+        max_length=4, choices=Status.choices, default=Status.IDLE,
+        db_index=True, verbose_name=_("Build Status"),
+    )
+    error = models.TextField(blank=True, verbose_name=_("Build Error"))
+    source_hash = models.CharField(
+        max_length=64, blank=True,
+        help_text=_("SHA-256 of the inputs (ordered repertoire, chosen editions, settings) "
+                    "that produced the current score_pdf. The output is stale when the live "
+                    "hash differs from this value."),
+        verbose_name=_("Source Hash"),
+    )
+    page_count = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Page Count"))
+    generated_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Generated At"))
+
+    # --- Distribution trail. Singers download the finished book through the gated
+    #     `score_pdf` action; once they have it, a rebuild silently replaces what is
+    #     already in their folders (and may shift page numbers). These let the
+    #     cockpit stamp a version and warn — but only when the book is actually out. ---
+    build_version = models.PositiveIntegerField(
+        default=0,
+        help_text=_("Increments on every successful build, so a printed/distributed copy "
+                    "can be reconciled against the live book."),
+        verbose_name=_("Build Version"),
+    )
+    distributed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("When a non-manager (singer) first downloaded the current build. "
+                    "Null until the book leaves the building; reset on every rebuild."),
+        verbose_name=_("First Distributed At"),
+    )
+    is_manual_upload = models.BooleanField(
+        default=False,
+        help_text=_("True when the current score_pdf was hand-uploaded by the conductor "
+                    "rather than assembled by the generator. The cockpit then shows "
+                    "'manually uploaded' instead of a (meaningless) build version / "
+                    "staleness, and the two paths stop fighting over project.score_pdf."),
+        verbose_name=_("Manually Uploaded"),
+    )
+
+    class Meta:
+        verbose_name = _("Score Package")
+        verbose_name_plural = _("Score Packages")
+
+    def __str__(self) -> str:
+        return f"Score package · {self.project.title} [{self.get_status_display()}]"
 
 
 class Participation(EnterpriseBaseModel):

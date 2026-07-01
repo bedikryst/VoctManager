@@ -65,6 +65,7 @@ from .queries import (
     get_artist_schedule,
 )
 from .queries.materials_queries import CLOSED_PROJECT_STATUSES
+from .score_package_service import ScorePackageItemError, ScorePackageService
 
 # Serializers
 from .serializers import (
@@ -387,6 +388,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     {"detail": "Score PDF file not found on the server."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
+            # A singer downloading the book is the moment it "leaves the building";
+            # flag it so the conductor's cockpit warns before a rebuild silently
+            # replaces what is already in their folders. Managers previewing it do
+            # not count as distribution.
+            if not _is_manager(request.user):
+                ScorePackageService.mark_distributed(project)
             response = FileResponse(
                 file_handle,
                 content_type='application/pdf',
@@ -406,6 +413,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 project.score_pdf.delete(save=False)
                 project.score_pdf = None
                 project.save(update_fields=['score_pdf', 'updated_at'])
+                # Keep the score-package read model in step with the cleared file.
+                ScorePackageService.mark_score_cleared(project)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         # POST — upload a new PDF
@@ -430,8 +439,113 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         project.score_pdf = uploaded_file
         project.save(update_fields=['score_pdf', 'updated_at'])
+        # Reconcile the cockpit: this hand-uploaded file is the current book, so the
+        # generator's version/staleness must not be shown over it.
+        ScorePackageService.mark_manual_upload(project)
 
         return Response(self.get_serializer(project).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get', 'post'], url_path='score_package', permission_classes=[IsManager])
+    def score_package(self, request, pk=None) -> Response:
+        """
+        Concert score-book generator (conductor cockpit). Manager-only.
+
+        GET  — build state: status, staleness, page count, and per-piece readiness
+               (which program pieces still lack a bindable PDF).
+        POST — queue an (re)assembly. Optional layout settings in the JSON body
+               (`density_mode`, `include_title_page`, `include_toc`,
+               `include_page_numbers`, `include_bookmarks`, `normalize_to_a4`).
+               The finished PDF is served through the existing `score_pdf` action.
+        """
+        project = self.get_object()
+
+        if request.method == 'POST':
+            config_patch = request.data if isinstance(request.data, dict) else {}
+            ScorePackageService.request_generation(project, config_patch)
+            return Response(
+                ScorePackageService.compute_state(project),
+                status=status.HTTP_202_ACCEPTED,
+            )
+
+        return Response(ScorePackageService.compute_state(project))
+
+    @action(detail=True, methods=['patch'], url_path='score_package/config', permission_classes=[IsManager])
+    def score_package_config(self, request, pk=None) -> Response:
+        """
+        Persist the global layout settings (density, card content, structure, A4,
+        translation language) without queuing a build, and return the recomputed
+        cockpit state. Manager-only.
+        """
+        project = self.get_object()
+        patch = request.data if isinstance(request.data, dict) else {}
+        return Response(ScorePackageService.update_config(project, patch))
+
+    @action(detail=True, methods=['patch'], url_path='score_package/item', permission_classes=[IsManager])
+    def score_package_item(self, request, pk=None) -> Response:
+        """
+        Persist one program item's build-cockpit overrides (edition, page-range
+        trim, card elements + per-item text/note overrides) and return the
+        recomputed cockpit state. Manager-only.
+
+        Body: ``{"item_id": "<uuid>", ...overrides}``.
+        """
+        project = self.get_object()
+        body = request.data if isinstance(request.data, dict) else {}
+        item_id = body.get('item_id')
+        if not item_id:
+            return Response({"detail": "item_id jest wymagane."}, status=status.HTTP_400_BAD_REQUEST)
+        patch = {k: v for k, v in body.items() if k != 'item_id'}
+        try:
+            state = ScorePackageService.update_item(project, str(item_id), patch)
+        except ScorePackageItemError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(state)
+
+    @action(detail=True, methods=['get'], url_path='score_package/preview', permission_classes=[IsManager])
+    def score_package_preview(self, request, pk=None) -> Response | FileResponse:
+        """
+        Live card preview for the build cockpit: render one program item's
+        frontispiece/placeholder card to a PDF and stream it inline. Manager-only.
+
+        Query: ``?item=<uuid>``.
+        """
+        project = self.get_object()
+        item_id = request.query_params.get('item')
+        if not item_id:
+            return Response({"detail": "item jest wymagane."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            pdf_bytes = ScorePackageService.render_item_preview(project, str(item_id))
+        except ScorePackageItemError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+        except DocumentRenderDependencyError as exc:
+            raise PdfRenderUnavailable() from exc
+        buffer = io.BytesIO(pdf_bytes)
+        buffer.seek(0)
+        response = FileResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="card_preview.pdf"'
+        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+        return response
+
+    @action(detail=True, methods=['get'], url_path='score_package/thumbnails', permission_classes=[IsManager])
+    def score_package_thumbnails(self, request, pk=None) -> Response:
+        """
+        Page thumbnails for a program item's resolved edition, powering the build
+        cockpit's visual page-range trimming. Manager-only; the edition is resolved
+        server-side from the item, so a client cannot request a foreign score's
+        pages. Always 200: an empty strip means no readable edition, ``available``
+        ``False`` means the host has no rasteriser (the cockpit keeps manual entry).
+
+        Query: ``?item=<uuid>``.
+        """
+        project = self.get_object()
+        item_id = request.query_params.get('item')
+        if not item_id:
+            return Response({"detail": "item jest wymagane."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            manifest = ScorePackageService.thumbnails_for_item(project, str(item_id))
+        except ScorePackageItemError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(manifest)
 
     @action(detail=True, methods=['get'], url_path='readiness-summary', permission_classes=[IsManager])
     def readiness_summary(self, request, pk=None) -> Response:

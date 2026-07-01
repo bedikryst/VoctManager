@@ -33,6 +33,7 @@ from notifications.dtos import (
 from notifications.models import NotificationLevel, NotificationType
 from notifications.services import NotificationRecipientPolicy
 from notifications.tasks import send_bulk_notifications_task, send_notification_task
+from notifications.time_metadata import build_event_time_metadata
 
 from .dtos import (
     ArtistCreateDTO,
@@ -51,6 +52,7 @@ from .exceptions import (
     ParticipationException,
 )
 from .models import (
+    DEFAULT_EVENT_TIMEZONE,
     Artist,
     Attendance,
     CrewAssignment,
@@ -447,6 +449,19 @@ def _rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
     }
 
 
+def _rehearsal_notification_context(rehearsal: Rehearsal) -> dict[str, str]:
+    """Compact rehearsal facts reused by push, email, and in-app surfaces."""
+    return {
+        **build_event_time_metadata(
+            rehearsal.date_time,
+            rehearsal.timezone,
+            fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+        ),
+        "location": rehearsal.location.name if rehearsal.location else "",
+        "focus": rehearsal.focus or "",
+    }
+
+
 class RehearsalOperationsService:
     @staticmethod
     def schedule_rehearsal(dto: RehearsalCreateDTO, invited_participations: list[Participation] | None = None) -> Rehearsal:
@@ -471,6 +486,7 @@ class RehearsalOperationsService:
                     rehearsal_id=rehearsal.id,
                     project_id=rehearsal.project_id,
                     project_name=rehearsal.project.title,
+                    **_rehearsal_notification_context(rehearsal),
                 ).model_dump(mode="json")
                 metadata["ics"] = _rehearsal_ics_payload(rehearsal)
 
@@ -535,7 +551,9 @@ class RehearsalOperationsService:
             if recipient_ids and changes:
                 metadata = RehearsalUpdatedMetadata(
                     rehearsal_id=rehearsal.id,
+                    project_id=rehearsal.project_id,
                     project_name=rehearsal.project.title,
+                    **_rehearsal_notification_context(rehearsal),
                     changes=changes,
                 ).model_dump(mode="json")
                 metadata["ics"] = _rehearsal_ics_payload(rehearsal)
@@ -558,13 +576,17 @@ class RehearsalOperationsService:
 
         recipient_ids = NotificationRecipientPolicy.from_participations(qs)
         project_name = rehearsal.project.title
+        metadata_context = _rehearsal_notification_context(rehearsal)
         
         with transaction.atomic():
             rehearsal.delete()
             
             if recipient_ids:
                 metadata = RehearsalCancelledMetadata(
+                    rehearsal_id=rehearsal.id,
+                    project_id=rehearsal.project_id,
                     project_name=project_name,
+                    **metadata_context,
                 ).model_dump(mode="json")
                 
                 transaction.on_commit(lambda: send_bulk_notifications_task.delay(

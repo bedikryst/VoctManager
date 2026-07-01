@@ -8,7 +8,6 @@ import io
 import logging
 import zipfile
 from datetime import timedelta
-from zoneinfo import ZoneInfo
 
 from celery import shared_task
 from django.conf import settings
@@ -19,6 +18,7 @@ from django.utils import timezone
 from notifications.models import NotificationLevel, NotificationType
 from notifications.services import NotificationRecipientPolicy
 from notifications.tasks import send_bulk_notifications_task
+from notifications.time_metadata import build_event_time_metadata
 
 from .infrastructure.document_generator import DocumentGenerator
 from .models import (
@@ -110,21 +110,26 @@ def generate_project_zip_task(self, project_id):
     }
 
 
+@shared_task(bind=True)
+def generate_score_package_task(self, package_id: str):
+    """
+    Assemble a Project's concert score book (title + TOC + bound editions +
+    numbering + bookmarks) and store it on ``Project.score_pdf``. The service
+    owns all status transitions and always leaves the package in a terminal
+    state, so this task is a thin, idempotent dispatcher.
+    """
+    from .score_package_service import ScorePackageService
+
+    ScorePackageService.run_build(package_id)
+    return {"package_id": package_id, "message": "done"}
+
+
 # ──────────────────────────────────────────────────────────────────────────── #
 # Upcoming-event reminders                                                      #
 # Hourly beat sweep. Each rehearsal/project is reminded once, when it first      #
 # enters its lead window; `reminder_sent_at` is claimed atomically so a second   #
 # beat (or worker) cannot double-send.                                           #
 # ──────────────────────────────────────────────────────────────────────────── #
-
-def _fmt_local(dt, tz_name: str) -> str:
-    """Human, language-neutral local time for the reminder body (DD.MM.YYYY, HH:MM)."""
-    try:
-        local = dt.astimezone(ZoneInfo(tz_name or DEFAULT_EVENT_TIMEZONE))
-    except Exception:
-        local = dt
-    return local.strftime("%d.%m.%Y, %H:%M")
-
 
 def _dispatch_rehearsal_reminders(now) -> int:
     lead = timedelta(hours=getattr(settings, "REHEARSAL_REMINDER_LEAD_HOURS", 24))
@@ -160,12 +165,18 @@ def _dispatch_rehearsal_reminders(now) -> int:
             continue
 
         location_name = reh.location.name if reh.location else ""
+        event_time_metadata = build_event_time_metadata(
+            reh.date_time,
+            reh.timezone,
+            fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+        )
         metadata = {
             "project_name": reh.project.title,
             "project_id": str(reh.project_id),
             "rehearsal_id": str(reh.id),
-            "starts_at": _fmt_local(reh.date_time, reh.timezone),
+            **event_time_metadata,
             "location": location_name,
+            "focus": reh.focus or "",
             "ics": {
                 "kind": "rehearsal",
                 "uid": f"rehearsal_{reh.id}@voctensemble.com",
@@ -210,10 +221,16 @@ def _dispatch_project_reminders(now) -> int:
 
         location_name = proj.location.name if proj.location else ""
         start = proj.call_time or proj.date_time
+        event_time_metadata = build_event_time_metadata(
+            proj.date_time,
+            proj.timezone,
+            fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+        )
         metadata = {
             "project_name": proj.title,
             "project_id": str(proj.id),
-            "date_range": _fmt_local(proj.date_time, proj.timezone),
+            "date_range": event_time_metadata["starts_at_display"],
+            **event_time_metadata,
             "location": location_name,
             "ics": {
                 "kind": "project",

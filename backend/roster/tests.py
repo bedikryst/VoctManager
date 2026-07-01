@@ -1,5 +1,5 @@
 import tempfile
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
@@ -1109,6 +1109,9 @@ class ReminderDispatchTests(TestCase):
             bulk.assert_called_once()
             kwargs = bulk.call_args.kwargs
             self.assertEqual(kwargs["notification_type"], NotificationType.REHEARSAL_REMINDER)
+            self.assertIn("T", kwargs["metadata"]["starts_at"])
+            self.assertIn("starts_at_display", kwargs["metadata"])
+            self.assertEqual(kwargs["metadata"]["timezone"], "Europe/Warsaw")
             self.assertEqual(kwargs["metadata"]["ics"]["kind"], "rehearsal")
             self.assertIn(str(reh.id), kwargs["metadata"]["ics"]["uid"])
 
@@ -1355,3 +1358,103 @@ class ScheduleDashboardTests(APITestCase):
         # cancelled/declined ones, and never inherits the singer's attendance.
         self.assertIn(str(self.project_foreign.id), project_ids)
         self.assertNotIn(str(self.project_cancelled.id), project_ids)
+
+
+class RehearsalNotificationEmitterTests(TestCase):
+    """Schedule / update / cancel emit the canonical event-moment metadata
+    (structured ISO `starts_at`, localized display fallback, IANA timezone) plus the
+    rehearsal identity, so every downstream surface renders timezone-correct copy."""
+
+    BULK = "roster.services.send_bulk_notifications_task.delay"
+    # 17:00 UTC == 19:00 in Warsaw — a fixed instant keeps display assertions stable.
+    WHEN = datetime(2026, 6, 19, 17, 0, tzinfo=UTC)
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="emit1", email="emit1@test.pl", password="pw123456", first_name="Ada"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.artist = Artist.objects.create(
+            user=self.user, first_name="Ada", last_name="L", email="emit1@test.pl",
+            voice_type=VoiceType.SOPRANO,
+        )
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=10),
+            status=Project.Status.ACTIVE,
+        )
+        self.participation = Participation.objects.create(
+            artist=self.artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+
+    def _location(self, tz: str = "Europe/Warsaw"):
+        from logistics.models import Location
+
+        return Location.objects.create(
+            name="St Anne's", category="CHURCH",
+            formatted_address="Grodzka 1, Kraków", timezone=tz,
+        )
+
+    def _emit(self, fn) -> dict:
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            fn()
+        bulk.assert_called_once()
+        return dict(bulk.call_args.kwargs)
+
+    def test_schedule_emits_canonical_event_time_and_identity(self) -> None:
+        from .dtos import RehearsalCreateDTO
+
+        location = self._location()
+        # Deliberately pass a different DTO timezone to prove the location's IANA
+        # zone is the single source of truth that lands in the metadata.
+        rehearsal = self._emit(lambda: RehearsalOperationsService.schedule_rehearsal(
+            RehearsalCreateDTO(
+                project_id=self.project.id, date_time=self.WHEN, timezone="UTC",
+                location_id=location.id, focus="Lacrimosa",
+            )
+        ))
+        kwargs = rehearsal
+        self.assertEqual(kwargs["notification_type"], NotificationType.REHEARSAL_SCHEDULED)
+        meta = kwargs["metadata"]
+        self.assertEqual(meta["starts_at"], "2026-06-19T17:00:00+00:00")
+        self.assertEqual(meta["starts_at_display"], "19.06.2026, 19:00")
+        self.assertEqual(meta["timezone"], "Europe/Warsaw")
+        self.assertEqual(meta["location"], "St Anne's")
+        self.assertEqual(meta["focus"], "Lacrimosa")
+        self.assertTrue(meta["rehearsal_id"])
+        self.assertEqual(meta["project_id"], str(self.project.id))
+
+    def test_update_emits_changes_with_current_event_facts(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=self.WHEN, timezone="Europe/Warsaw",
+            focus="Intro",
+        )
+        kwargs = self._emit(lambda: RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(focus="Lacrimosa")
+        ))
+        self.assertEqual(kwargs["notification_type"], NotificationType.REHEARSAL_UPDATED)
+        meta = kwargs["metadata"]
+        # Structured change is carried…
+        focus_changes = [c for c in meta["changes"] if c["field"] == "focus"]
+        self.assertEqual(len(focus_changes), 1)
+        self.assertEqual(focus_changes[0]["new"], "Lacrimosa")
+        # …alongside the current event facts for an at-a-glance read.
+        self.assertEqual(meta["starts_at_display"], "19.06.2026, 19:00")
+        self.assertEqual(meta["focus"], "Lacrimosa")
+
+    def test_cancel_emits_identity_and_event_facts_after_soft_delete(self) -> None:
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=self.WHEN, timezone="Europe/Warsaw",
+            focus="Lacrimosa",
+        )
+        rehearsal_id = str(rehearsal.id)
+        kwargs = self._emit(lambda: RehearsalOperationsService.delete_rehearsal(rehearsal))
+        self.assertEqual(kwargs["notification_type"], NotificationType.REHEARSAL_CANCELLED)
+        meta = kwargs["metadata"]
+        # The soft-deleted row still carries a resolvable identity (guards against
+        # reading the id after a hard delete would have nulled it).
+        self.assertEqual(meta["rehearsal_id"], rehearsal_id)
+        self.assertEqual(meta["project_id"], str(self.project.id))
+        self.assertEqual(meta["starts_at"], "2026-06-19T17:00:00+00:00")
+        self.assertEqual(meta["starts_at_display"], "19.06.2026, 19:00")
