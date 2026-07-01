@@ -35,6 +35,7 @@ import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typograp
 import { projectKeys } from "../api/project.query-keys";
 import { ProjectService } from "../api/project.service";
 import type {
+  CardElement,
   ScorePackageConfig,
   ScorePackageItem,
 } from "../api/project.service";
@@ -44,6 +45,7 @@ import {
   useUpdateScorePackageConfig,
   useUpdateScorePackageItem,
 } from "../api/project.score-package";
+import { CardElementPills } from "./CardElementPills";
 import { ScorePackageItemRow } from "./ScorePackageItemRow";
 import { TogglePill } from "./TogglePill";
 
@@ -63,6 +65,7 @@ const READINESS_LEGEND = [
   { dot: "bg-ethereal-sage", key: "projects.score_package.element_status.ready", fallback: "Dane gotowe" },
   { dot: "bg-ethereal-gold", key: "projects.score_package.element_status.low", fallback: "Niska pewność" },
   { dot: "bg-ethereal-ink/20", key: "projects.score_package.element_status.missing", fallback: "Brak danych" },
+  { dot: "border border-ethereal-ink/30 bg-transparent", key: "projects.score_package.element_status.na", fallback: "Nie dotyczy" },
 ] as const;
 
 type StatusTone = "sage" | "gold" | "graphite" | "crimson";
@@ -122,6 +125,18 @@ export function ScorePackagePanel({
     key: K,
     value: ScorePackageConfig[K],
   ): void => updateConfig.mutate({ [key]: value } as Partial<ScorePackageConfig>);
+
+  // Book-wide default card elements, edited with the very same pill control the
+  // per-item designer uses (global default, per-item override). Toggling rebuilds
+  // the list in canonical print order off the server's element vocabulary.
+  const cardElements = state?.card_elements ?? [];
+  const cardDefaultSet = new Set(config?.card_default_elements ?? []);
+  const toggleDefaultElement = (element: CardElement): void => {
+    const next = new Set(cardDefaultSet);
+    if (next.has(element)) next.delete(element);
+    else next.add(element);
+    setField("card_default_elements", cardElements.filter((e) => next.has(e)));
+  };
 
   // When the async build flips to READY, refresh the project so the freshly
   // stored score_pdf surfaces across the hub (e.g. the Materials card).
@@ -412,33 +427,26 @@ export function ScorePackagePanel({
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                       <TogglePill
-                        label={t("projects.score_package.cards.master", "Karty utworów (tekst)")}
+                        label={t("projects.score_package.cards.master", "Karty utworów")}
                         active={config.include_cards}
                         onChange={(v) => setField("include_cards", v)}
                       />
-                      <span className="mx-1 h-4 w-px bg-ethereal-ink/10" aria-hidden="true" />
-                      <TogglePill
-                        label={t("projects.score_package.cards.text", "Tekst oryginalny")}
-                        active={config.card_include_text}
-                        disabled={!config.include_cards}
-                        onChange={(v) => setField("card_include_text", v)}
-                      />
-                      <TogglePill
-                        label={t("projects.score_package.cards.translation", "Tłumaczenie")}
-                        active={config.card_include_translation}
-                        disabled={!config.include_cards}
-                        onChange={(v) => setField("card_include_translation", v)}
-                      />
-                      <TogglePill
-                        label={t("projects.score_package.cards.note", "Nota")}
-                        active={config.card_include_program_note}
-                        disabled={!config.include_cards}
-                        onChange={(v) => setField("card_include_program_note", v)}
-                      />
+                      <Caption color="muted">
+                        {t(
+                          "projects.score_package.cards.default_hint",
+                          "Zaznacz, co pojawia się na każdej karcie — w utworze dostosujesz wyjątki.",
+                        )}
+                      </Caption>
                     </div>
+                    <CardElementPills
+                      elements={cardElements}
+                      selected={cardDefaultSet}
+                      disabled={!config.include_cards}
+                      onToggle={toggleDefaultElement}
+                    />
                   </div>
 
                   {/* Tier 2 — set-once structure, de-emphasised */}

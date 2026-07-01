@@ -2839,7 +2839,8 @@
         "fr": "Francuski"
       },
       "cards": {
-        "master": "Karty utworów (tekst)",
+        "master": "Karty utworów",
+        "default_hint": "Zaznacz, co pojawia się na każdej karcie — w utworze dostosujesz wyjątki.",
         "text": "Tekst oryginalny",
         "translation": "Tłumaczenie",
         "note": "Nota"
@@ -2863,6 +2864,8 @@
       "elements": {
         "eyebrow": "Sekcja",
         "meta": "Metryka",
+        "cast": "Obsada",
+        "movements": "Części",
         "text": "Tekst",
         "translation": "Tłumaczenie",
         "note": "Nota",
@@ -2871,7 +2874,8 @@
       "element_status": {
         "ready": "Dane gotowe",
         "low": "Niska pewność",
-        "missing": "Brak danych"
+        "missing": "Brak danych",
+        "na": "Nie dotyczy"
       },
       "item": {
         "fix_in_archive": "Część danych ma niską pewność — popraw w archiwum",
@@ -2898,7 +2902,16 @@
         "thumb_suggested": "AI: tu zaczynają się nuty",
         "show_edition": "Pokaż wydanie",
         "card": "Karta przed utworem",
+        "card_hint": "Strona wprowadzająca drukowana przed nutami — wybierz, co się na niej znajdzie.",
+        "card_elements_label": "Elementy karty",
+        "card_content_label": "Treść i etykiety",
         "inherit": "Dziedzicz",
+        "translation_pick": "Tłumaczenie na karcie",
+        "translation_auto": "Automatycznie (język książki)",
+        "translation_singable": "śpiewne",
+        "translation_literal": "dosłowne",
+        "performers": "Wykonawcy / obsada",
+        "performers_ph": "np. Sopran solo: J. Kowalska · organy: A. Nowak",
         "section_label": "Sekcja",
         "section_ph": "np. Liturgia eucharystyczna",
         "role_prefix": "Rola / funkcja",

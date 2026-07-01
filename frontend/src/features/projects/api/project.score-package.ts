@@ -116,10 +116,13 @@ const applyOptimisticPatch = (
   item: ScorePackageItem,
   patch: Partial<ScorePackageItemPatch>,
 ): ScorePackageItem => {
-  const { score_edition_id, ...rest } = patch;
+  const { score_edition_id, translation_id, ...rest } = patch;
   const next: ScorePackageItem = { ...item, ...rest };
   if ("score_edition_id" in patch) {
     next.explicit_edition_id = score_edition_id ?? null;
+  }
+  if ("translation_id" in patch) {
+    next.explicit_translation_id = translation_id ?? null;
   }
   return next;
 };

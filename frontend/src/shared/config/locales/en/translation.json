@@ -2853,7 +2853,8 @@
         "fr": "French"
       },
       "cards": {
-        "master": "Piece cards (text)",
+        "master": "Piece cards",
+        "default_hint": "Pick what appears on every card — you can tune exceptions per piece.",
         "text": "Original text",
         "translation": "Translation",
         "note": "Note"
@@ -2877,6 +2878,8 @@
       "elements": {
         "eyebrow": "Section",
         "meta": "Metadata",
+        "cast": "Cast",
+        "movements": "Movements",
         "text": "Text",
         "translation": "Translation",
         "note": "Note",
@@ -2885,7 +2888,8 @@
       "element_status": {
         "ready": "Data ready",
         "low": "Low confidence",
-        "missing": "No data"
+        "missing": "No data",
+        "na": "Not applicable"
       },
       "item": {
         "fix_in_archive": "Some data is low-confidence — fix it in the archive",
@@ -2912,7 +2916,16 @@
         "thumb_suggested": "AI: the music begins here",
         "show_edition": "Show edition",
         "card": "Card before the piece",
+        "card_hint": "An introductory page printed before the score — choose what it carries.",
+        "card_elements_label": "Card elements",
+        "card_content_label": "Content & labels",
         "inherit": "Inherit",
+        "translation_pick": "Translation on the card",
+        "translation_auto": "Automatic (book language)",
+        "translation_singable": "singable",
+        "translation_literal": "literal",
+        "performers": "Performers / cast",
+        "performers_ph": "e.g. Soprano solo: J. Smith · organ: A. Brown",
         "section_label": "Section",
         "section_ph": "e.g. Liturgy of the Eucharist",
         "role_prefix": "Role / function",

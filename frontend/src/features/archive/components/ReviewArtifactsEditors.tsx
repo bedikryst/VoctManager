@@ -256,7 +256,8 @@ const TranslationRow = ({
   const pieceId = String(piece.id);
 
   const [text, setText] = useState(translation.text);
-  const dirty = text !== translation.text;
+  const [translator, setTranslator] = useState(translation.translator);
+  const dirty = text !== translation.text || translator !== translation.translator;
 
   return (
     <li className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
@@ -296,6 +297,14 @@ const TranslationRow = ({
         rows={4}
         aria-label={t("archive.review.translation_text", "Treść tłumaczenia")}
       />
+      <div className="mt-2">
+        <Input
+          value={translator}
+          onChange={(e) => setTranslator(e.target.value)}
+          placeholder={t("archive.review.translator_ph", "Tłumacz (drukowany pod tekstem)")}
+          aria-label={t("archive.review.translator", "Tłumacz")}
+        />
+      </div>
       {dirty && (
         <div className="mt-2 flex justify-end">
           <Button
@@ -304,7 +313,7 @@ const TranslationRow = ({
             isLoading={update.isPending}
             onClick={() =>
               update.mutate(
-                { id: translation.id, pieceId, data: { text } },
+                { id: translation.id, pieceId, data: { text, translator } },
                 {
                   onSuccess: () =>
                     toast.success(

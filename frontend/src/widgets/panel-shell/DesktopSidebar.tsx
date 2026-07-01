@@ -150,7 +150,7 @@ export const DesktopSidebar = ({
           {/* ---- Brand + pin ---- */}
           <div className="relative mb-3 flex h-14 w-full shrink-0 items-center overflow-hidden">
             <motion.img
-              src="/logo.png"
+              src="/logo_gold.png"
               initial={false}
               animate={{
                 opacity: isExpanded ? 0 : 1,

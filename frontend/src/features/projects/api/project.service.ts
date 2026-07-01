@@ -90,9 +90,10 @@ export interface ScorePackageConfig {
   normalize_to_a4: boolean;
   duplex_mode: boolean;
   include_cards: boolean;
-  card_include_text: boolean;
-  card_include_translation: boolean;
-  card_include_program_note: boolean;
+  /** Book-wide default set of card elements. Per-item cards inherit this list
+   *  unless they pin their own — global default, per-item override, same
+   *  element vocabulary on both surfaces. */
+  card_default_elements: CardElement[];
   translation_language: string;
 }
 
@@ -100,13 +101,17 @@ export interface ScorePackageConfig {
 export type CardElement =
   | "eyebrow"
   | "meta"
+  | "cast"
+  | "movements"
   | "text"
   | "translation"
   | "note"
   | "ipa";
 
-/** Traffic light for a single card element's data. */
-export type ElementStatus = "ready" | "low" | "missing";
+/** Traffic light for a single card element's data. `na` = the element cannot
+ * meaningfully exist for this piece (e.g. a translation when the piece is
+ * already sung in the book's language) — informational, never a gap. */
+export type ElementStatus = "ready" | "low" | "missing" | "na";
 
 /** Roll-up readiness for one program item. */
 export type ItemReadinessOverall = "ready" | "low" | "incomplete" | "no_edition";
@@ -117,6 +122,15 @@ export interface ScorePackageEditionOption {
   page_count: number | null;
   is_default: boolean;
   ingestion_status: string;
+}
+
+/** One piece-level translation the conductor can pin to an item's card; the
+ * cockpit composes the display label (language + singable/literal) via i18n. */
+export interface ScorePackageTranslationOption {
+  id: string;
+  language: string;
+  is_singable: boolean;
+  translator: string;
 }
 
 export interface ScorePackageItemReadiness {
@@ -140,6 +154,10 @@ export interface ScorePackageItem {
   suggested_start: number | null;
   pdf_page_start: number | null;
   pdf_page_end: number | null;
+  translations: ScorePackageTranslationOption[];
+  explicit_translation_id: string | null;
+  selected_translation_id: string | null;
+  performers: string;
   section_label: string;
   role_prefix: string;
   card_enabled: boolean | null;
@@ -156,6 +174,8 @@ export interface ScorePackageItemPatch {
   score_edition_id: string | null;
   pdf_page_start: number | null;
   pdf_page_end: number | null;
+  translation_id: string | null;
+  performers: string;
   section_label: string;
   role_prefix: string;
   card_enabled: boolean | null;

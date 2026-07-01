@@ -325,6 +325,7 @@ export interface Translation {
   target_language: string;
   text: string;
   is_singable: boolean;
+  translator: string;
 }
 
 export type RecordingSource = "SPF" | "YTB" | "APL" | "OTH";

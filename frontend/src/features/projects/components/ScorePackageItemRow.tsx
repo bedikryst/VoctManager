@@ -2,9 +2,11 @@
  * @file ScorePackageItemRow.tsx
  * @description One expandable program-item row in the score-book build cockpit.
  * Surfaces readiness, lets the conductor pick the edition, trim the source page
- * range (with the AI-suggested music start), tune which card elements print,
- * label the section/role, and hand-write text/note overrides — all persisted
- * optimistically. Collapsed by default to keep a long programme scannable.
+ * range (with the AI-suggested music start), then hands off to a self-contained
+ * "card designer" panel — always visible once the row is open — that tunes which
+ * card elements print, pins the translation, labels the section/role and holds
+ * the free-text overrides, all persisted optimistically. The row itself is the
+ * only disclosure; a long programme stays scannable because rows collapse.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ScorePackageItemRow
  */
@@ -17,12 +19,15 @@ import {
   ChevronDown,
   Eye,
   FileWarning,
+  LayoutTemplate,
   PencilLine,
   RotateCcw,
   Sparkles,
 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
+import type { SegmentedTabItem } from "@/shared/ui/composites/SegmentedTabs";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
@@ -32,11 +37,11 @@ import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type {
   CardElement,
-  ElementStatus,
   ItemReadinessOverall,
   ScorePackageItem,
   ScorePackageItemPatch,
 } from "../api/project.service";
+import { CardElementPills } from "./CardElementPills";
 import { EditionThumbnailStrip } from "./EditionThumbnailStrip";
 
 interface ScorePackageItemRowProps {
@@ -47,6 +52,11 @@ interface ScorePackageItemRowProps {
   onPreviewCard: (item: ScorePackageItem) => void;
   onPreviewEdition: (item: ScorePackageItem) => void;
 }
+
+// Three-state per-item card switch mapped to card_enabled (null = inherit the
+// package default). Rendered as SegmentedTabs so it shares the package-level
+// control language instead of reading as a stray form <select>.
+type CardEnableId = "inherit" | "on" | "off";
 
 // Item roll-up as a calm dot + label rather than a loud bordered badge — the
 // readiness signal is meant to inform ("warn, never block"), not alarm.
@@ -60,20 +70,6 @@ const OVERALL_META: Record<
   no_edition: { dot: "bg-ethereal-crimson", key: "projects.score_package.readiness_state.no_edition", fallback: "Brak nut" },
 };
 
-const STATUS_DOT: Record<ElementStatus, string> = {
-  ready: "bg-ethereal-sage",
-  low: "bg-ethereal-gold",
-  missing: "bg-ethereal-ink/20",
-};
-
-// Screen-reader equivalent of the coloured status dot (which is aria-hidden),
-// so non-sighted users learn each element's data state, not just the row badge.
-const STATUS_SR: Record<ElementStatus, { key: string; fallback: string }> = {
-  ready: { key: "projects.score_package.element_status.ready", fallback: "dane gotowe" },
-  low: { key: "projects.score_package.element_status.low", fallback: "niska pewność danych" },
-  missing: { key: "projects.score_package.element_status.missing", fallback: "brak danych" },
-};
-
 export function ScorePackageItemRow({
   projectId,
   item,
@@ -85,23 +81,24 @@ export function ScorePackageItemRow({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
-  // The card config + free-text overrides are the advanced 20% — nest them so a
-  // long programme stays scannable. Open by default only when this item already
-  // carries an override, so existing customisation is never hidden.
+  // Whether the conductor has departed from the inherited defaults for this
+  // item — drives the "dostosowane" badge on the card-designer panel.
   const hasOverrides =
     item.card_enabled !== null ||
     item.card_elements !== null ||
+    item.explicit_translation_id !== null ||
+    item.performers !== "" ||
     item.section_label !== "" ||
     item.role_prefix !== "" ||
     item.text_override !== "" ||
     item.note_override !== "";
-  const [advancedOpen, setAdvancedOpen] = useState(() => hasOverrides);
 
   // Local drafts for free-text/number fields — committed on blur so we don't
   // PATCH on every keystroke. Re-synced whenever the server value changes.
   const [draft, setDraft] = useState({
     start: item.pdf_page_start?.toString() ?? "",
     end: item.pdf_page_end?.toString() ?? "",
+    performers: item.performers,
     section: item.section_label,
     role: item.role_prefix,
     text: item.text_override,
@@ -111,6 +108,7 @@ export function ScorePackageItemRow({
     setDraft({
       start: item.pdf_page_start?.toString() ?? "",
       end: item.pdf_page_end?.toString() ?? "",
+      performers: item.performers,
       section: item.section_label,
       role: item.role_prefix,
       text: item.text_override,
@@ -119,6 +117,7 @@ export function ScorePackageItemRow({
   }, [
     item.pdf_page_start,
     item.pdf_page_end,
+    item.performers,
     item.section_label,
     item.role_prefix,
     item.text_override,
@@ -140,7 +139,7 @@ export function ScorePackageItemRow({
   };
 
   const commitText = (
-    field: "section_label" | "role_prefix" | "text_override" | "note_override",
+    field: "performers" | "section_label" | "role_prefix" | "text_override" | "note_override",
     value: string,
   ): void => {
     const current = item[field];
@@ -170,7 +169,13 @@ export function ScorePackageItemRow({
     return t("projects.score_package.item.range", "s. {{from}}–{{to}}", { from, to });
   })();
 
-  const cardEnabledValue = item.card_enabled === null ? "" : item.card_enabled ? "on" : "off";
+  const cardEnableValue: CardEnableId =
+    item.card_enabled === null ? "inherit" : item.card_enabled ? "on" : "off";
+  const cardEnableItems: ReadonlyArray<SegmentedTabItem<CardEnableId>> = [
+    { id: "inherit", label: t("projects.score_package.item.inherit", "Dziedzicz") },
+    { id: "on", label: t("common.yes", "Tak") },
+    { id: "off", label: t("common.no", "Nie") },
+  ];
 
   return (
     <div className="rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/40">
@@ -360,168 +365,188 @@ export function ScorePackageItemRow({
             </Button>
           )}
 
-          {/* Advanced: per-item card config + free-text overrides. Collapsed by
-              default — the common case inherits the package-level settings. */}
-          <div className="border-t border-ethereal-ink/5 pt-3">
-            <button
-              type="button"
-              onClick={() => setAdvancedOpen((v) => !v)}
-              aria-expanded={advancedOpen}
-              className="flex w-full items-center gap-2 text-left"
-            >
-              <Eyebrow color="muted">
-                {t("projects.score_package.item.advanced", "Karta i nadpisania")}
-              </Eyebrow>
-              {hasOverrides && (
-                <Badge variant="neutral">
-                  {t("projects.score_package.item.customized", "dostosowane")}
-                </Badge>
-              )}
-              <span className="flex-1" />
-              <ChevronDown
-                size={15}
-                aria-hidden="true"
-                className={cn(
-                  "text-ethereal-graphite/60 transition-transform duration-300",
-                  advancedOpen && "rotate-180",
-                )}
-              />
-            </button>
-
-            {advancedOpen && (
-              <div className="mt-3 flex flex-col gap-4">
-                {/* Card content */}
-                <div className="flex flex-col gap-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Eyebrow color="muted">
-                {t("projects.score_package.item.card", "Karta przed utworem")}
-              </Eyebrow>
-              <Select
-                variant="ghost"
-                className="w-auto py-1.5"
-                value={cardEnabledValue}
-                onChange={(e) =>
-                  onPatch({
-                    card_enabled:
-                      e.target.value === "" ? null : e.target.value === "on",
-                  })
-                }
-                aria-label={t("projects.score_package.item.card", "Karta przed utworem")}
-              >
-                <option value="">{t("projects.score_package.item.inherit", "Dziedzicz")}</option>
-                <option value="on">{t("common.yes", "Tak")}</option>
-                <option value="off">{t("common.no", "Nie")}</option>
-              </Select>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {cardElements.map((element) => {
-                const on = elementsSet.has(element);
-                return (
-                  <button
-                    key={element}
-                    type="button"
-                    role="switch"
-                    aria-checked={on}
-                    disabled={!cardsActive}
-                    onClick={() => toggleElement(element)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-                      !cardsActive && "cursor-not-allowed opacity-40",
-                      on
-                        ? "border-ethereal-gold/45 bg-ethereal-gold/12 text-ethereal-ink"
-                        : "border-ethereal-ink/12 bg-transparent text-ethereal-graphite/70 hover:border-ethereal-gold/35 hover:text-ethereal-ink",
-                    )}
-                  >
-                    <span
-                      className={cn("h-1.5 w-1.5 rounded-full", STATUS_DOT[item.readiness.elements[element]])}
-                      aria-hidden="true"
-                    />
-                    {t(`projects.score_package.elements.${element}`, element)}
-                    <span className="sr-only">
-                      {t(
-                        STATUS_SR[item.readiness.elements[element]].key,
-                        STATUS_SR[item.readiness.elements[element]].fallback,
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-              {item.card_elements !== null && (
-                <button
-                  type="button"
-                  onClick={() => onPatch({ card_elements: null })}
-                  className="flex items-center gap-1 text-[11px] font-medium text-ethereal-graphite/70 hover:text-ethereal-ink"
-                >
-                  <RotateCcw size={11} aria-hidden="true" />
-                  {t("projects.score_package.item.reset_elements", "Domyślne")}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Labels */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              label={t("projects.score_package.item.section_label", "Sekcja")}
-              variant="glass"
-              placeholder={t("projects.score_package.item.section_ph", "np. Liturgia eucharystyczna")}
-              value={draft.section}
-              onChange={(e) => setDraft((d) => ({ ...d, section: e.target.value }))}
-              onBlur={(e) => commitText("section_label", e.target.value)}
-            />
-            <Input
-              label={t("projects.score_package.item.role_prefix", "Rola / funkcja")}
-              variant="glass"
-              placeholder={t("projects.score_package.item.role_ph", "np. Ofiarowanie:")}
-              value={draft.role}
-              onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
-              onBlur={(e) => commitText("role_prefix", e.target.value)}
-            />
-          </div>
-
-          {/* Overrides */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Textarea
-              label={t("projects.score_package.item.text_override", "Tekst (nadpisanie)")}
-              variant="glass"
-              rows={3}
-              placeholder={t(
-                "projects.score_package.item.text_override_ph",
-                "Zostaw puste, aby użyć tekstu z bazy.",
-              )}
-              value={draft.text}
-              onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
-              onBlur={(e) => commitText("text_override", e.target.value)}
-            />
-            <Textarea
-              label={t("projects.score_package.item.note_override", "Nota (nadpisanie)")}
-              variant="glass"
-              rows={3}
-              placeholder={t(
-                "projects.score_package.item.note_override_ph",
-                "Zostaw puste, aby użyć noty z bazy.",
-              )}
-              value={draft.note}
-              onChange={(e) => setDraft((d) => ({ ...d, note: e.target.value }))}
-              onBlur={(e) => commitText("note_override", e.target.value)}
-            />
-          </div>
-              </div>
-            )}
-          </div>
-
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="self-start"
-            leftIcon={<Eye size={14} aria-hidden="true" />}
-            onClick={() => onPreviewCard(item)}
+          {/* ── Card designer ─────────────────────────────────────────────────
+              Promoted out of a second nested disclosure (its quiet Eyebrow
+              trigger was routinely missed) into a self-contained, always-visible
+              panel: what prints on the introductory card before this piece, plus
+              the per-item content overrides. Configure → preview lives here. */}
+          <section
+            aria-label={t("projects.score_package.item.card", "Karta przed utworem")}
+            className="flex flex-col gap-4 rounded-xl border border-ethereal-ink/8 bg-ethereal-parchment/40 p-3.5 shadow-glass-solid sm:p-4"
           >
-            {t("projects.score_package.item.preview_card", "Podgląd karty")}
-          </Button>
+            {/* Identity + the enable decision */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 shrink-0 text-ethereal-gold" aria-hidden="true">
+                  <LayoutTemplate size={16} />
+                </span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Text size="sm" weight="semibold" color="graphite">
+                      {t("projects.score_package.item.card", "Karta przed utworem")}
+                    </Text>
+                    {hasOverrides && (
+                      <Badge variant="neutral">
+                        {t("projects.score_package.item.customized", "dostosowane")}
+                      </Badge>
+                    )}
+                  </div>
+                  <Caption color="muted" className="max-w-md">
+                    {t(
+                      "projects.score_package.item.card_hint",
+                      "Strona wprowadzająca drukowana przed nutami — wybierz, co się na niej znajdzie.",
+                    )}
+                  </Caption>
+                </div>
+              </div>
+              <div className="shrink-0">
+                <SegmentedTabs<CardEnableId>
+                  items={cardEnableItems}
+                  value={cardEnableValue}
+                  onChange={(id) =>
+                    onPatch({ card_enabled: id === "inherit" ? null : id === "on" })
+                  }
+                  ariaLabel={t("projects.score_package.item.card", "Karta przed utworem")}
+                />
+              </div>
+            </div>
+
+            {/* Elements — what prints on the card */}
+            <div className="flex flex-col gap-2.5 border-t border-ethereal-ink/6 pt-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <Eyebrow color="muted">
+                  {t("projects.score_package.item.card_elements_label", "Elementy karty")}
+                </Eyebrow>
+                {item.card_elements !== null && (
+                  <button
+                    type="button"
+                    onClick={() => onPatch({ card_elements: null })}
+                    className="flex items-center gap-1 text-[11px] font-medium text-ethereal-graphite/70 transition-colors hover:text-ethereal-ink"
+                  >
+                    <RotateCcw size={11} aria-hidden="true" />
+                    {t("projects.score_package.item.reset_elements", "Domyślne")}
+                  </button>
+                )}
+              </div>
+              <CardElementPills
+                elements={cardElements}
+                selected={elementsSet}
+                disabled={!cardsActive}
+                onToggle={toggleElement}
+                statusFor={(element) => item.readiness.elements[element]}
+              />
+            </div>
+
+            {/* Content & labels — sources the card draws from + free-text overrides */}
+            <div className="flex flex-col gap-3 border-t border-ethereal-ink/6 pt-3.5">
+              <Eyebrow color="muted">
+                {t("projects.score_package.item.card_content_label", "Treść i etykiety")}
+              </Eyebrow>
+
+              {/* Pinned translation + concert-specific cast line */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {item.translations.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <Caption color="muted">
+                      {t("projects.score_package.item.translation_pick", "Tłumaczenie na karcie")}
+                    </Caption>
+                    <Select
+                      variant="solid"
+                      value={item.explicit_translation_id ?? ""}
+                      onChange={(e) => onPatch({ translation_id: e.target.value || null })}
+                      aria-label={t("projects.score_package.item.translation_pick", "Tłumaczenie na karcie")}
+                    >
+                      <option value="">
+                        {t("projects.score_package.item.translation_auto", "Automatycznie (język książki)")}
+                      </option>
+                      {item.translations.map((tr) => (
+                        <option key={tr.id} value={tr.id}>
+                          {tr.language.toUpperCase()}
+                          {" · "}
+                          {tr.is_singable
+                            ? t("projects.score_package.item.translation_singable", "śpiewne")
+                            : t("projects.score_package.item.translation_literal", "dosłowne")}
+                          {tr.translator ? ` — ${tr.translator}` : ""}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+                <Input
+                  label={t("projects.score_package.item.performers", "Wykonawcy / obsada")}
+                  variant="glass"
+                  placeholder={t(
+                    "projects.score_package.item.performers_ph",
+                    "np. Sopran solo: J. Kowalska · organy: A. Nowak",
+                  )}
+                  value={draft.performers}
+                  onChange={(e) => setDraft((d) => ({ ...d, performers: e.target.value }))}
+                  onBlur={(e) => commitText("performers", e.target.value)}
+                />
+              </div>
+
+              {/* Section + role prefix */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  label={t("projects.score_package.item.section_label", "Sekcja")}
+                  variant="glass"
+                  placeholder={t("projects.score_package.item.section_ph", "np. Liturgia eucharystyczna")}
+                  value={draft.section}
+                  onChange={(e) => setDraft((d) => ({ ...d, section: e.target.value }))}
+                  onBlur={(e) => commitText("section_label", e.target.value)}
+                />
+                <Input
+                  label={t("projects.score_package.item.role_prefix", "Rola / funkcja")}
+                  variant="glass"
+                  placeholder={t("projects.score_package.item.role_ph", "np. Ofiarowanie:")}
+                  value={draft.role}
+                  onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
+                  onBlur={(e) => commitText("role_prefix", e.target.value)}
+                />
+              </div>
+
+              {/* Free-text overrides */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Textarea
+                  label={t("projects.score_package.item.text_override", "Tekst (nadpisanie)")}
+                  variant="glass"
+                  rows={3}
+                  placeholder={t(
+                    "projects.score_package.item.text_override_ph",
+                    "Zostaw puste, aby użyć tekstu z bazy.",
+                  )}
+                  value={draft.text}
+                  onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
+                  onBlur={(e) => commitText("text_override", e.target.value)}
+                />
+                <Textarea
+                  label={t("projects.score_package.item.note_override", "Nota (nadpisanie)")}
+                  variant="glass"
+                  rows={3}
+                  placeholder={t(
+                    "projects.score_package.item.note_override_ph",
+                    "Zostaw puste, aby użyć noty z bazy.",
+                  )}
+                  value={draft.note}
+                  onChange={(e) => setDraft((d) => ({ ...d, note: e.target.value }))}
+                  onBlur={(e) => commitText("note_override", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Panel footer — the designer's own configure→preview CTA */}
+            <div className="flex justify-end border-t border-ethereal-ink/6 pt-3.5">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                leftIcon={<Eye size={14} aria-hidden="true" />}
+                onClick={() => onPreviewCard(item)}
+              >
+                {t("projects.score_package.item.preview_card", "Podgląd karty")}
+              </Button>
+            </div>
+          </section>
         </div>
       )}
     </div>

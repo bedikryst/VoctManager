@@ -2853,7 +2853,8 @@
         "fr": "Français"
       },
       "cards": {
-        "master": "Fiches d'œuvre (texte)",
+        "master": "Fiches d'œuvre",
+        "default_hint": "Choisissez ce qui figure sur chaque fiche — les exceptions se règlent par œuvre.",
         "text": "Texte original",
         "translation": "Traduction",
         "note": "Note"
@@ -2877,6 +2878,8 @@
       "elements": {
         "eyebrow": "Section",
         "meta": "Métadonnées",
+        "cast": "Distribution",
+        "movements": "Mouvements",
         "text": "Texte",
         "translation": "Traduction",
         "note": "Note",
@@ -2885,7 +2888,8 @@
       "element_status": {
         "ready": "Données prêtes",
         "low": "Confiance faible",
-        "missing": "Données absentes"
+        "missing": "Données absentes",
+        "na": "Sans objet"
       },
       "item": {
         "fix_in_archive": "Certaines données sont peu fiables — corrigez-les dans l'archive",
@@ -2912,7 +2916,16 @@
         "thumb_suggested": "IA : la musique commence ici",
         "show_edition": "Voir l'édition",
         "card": "Fiche avant l'œuvre",
+        "card_hint": "Une page d'introduction imprimée avant la partition — choisissez son contenu.",
+        "card_elements_label": "Éléments de la fiche",
+        "card_content_label": "Contenu et libellés",
         "inherit": "Hériter",
+        "translation_pick": "Traduction sur la fiche",
+        "translation_auto": "Automatique (langue du livret)",
+        "translation_singable": "chantable",
+        "translation_literal": "littérale",
+        "performers": "Interprètes / distribution",
+        "performers_ph": "p. ex. Soprano solo : J. Dupont · orgue : A. Martin",
         "section_label": "Section",
         "section_ph": "p. ex. Liturgie eucharistique",
         "role_prefix": "Rôle / fonction",
