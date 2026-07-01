@@ -1568,6 +1568,7 @@
       "pipeline": {
         "complete": "complete",
         "empty": "No active productions. Time to plan the next concert.",
+        "no_score": "No score",
         "pending_short": "waiting",
         "pieces": "{{count}} pcs",
         "pieces_one": "{{count}} pc",
@@ -2601,6 +2602,7 @@
       "ATTENDANCE_SUBMITTED": "Attendance",
       "CUSTOM_ADMIN_MESSAGE": "Message",
       "MESSAGE_RECEIVED": "Message",
+      "CHANNEL_MESSAGE": "Project channel",
       "NOTIFICATION_READ_RECEIPT": "Read receipt"
     },
     "status": {
@@ -2724,6 +2726,130 @@
     "sequence": "séquence"
   },
   "projects": {
+    "score_package": {
+      "title": "Concert score book",
+      "intro": "Auto-assemble a singers' score book from the whole programme: title page, table of contents, per-piece text cards, continuous numbering and bookmarks.",
+      "readiness": "{{bindable}} of {{total}} pieces have scores attached",
+      "missing_count": "{{n}} without scores",
+      "settings": "Settings",
+      "items_heading": "Pieces in the programme",
+      "ready": "Ready",
+      "stale": "Programme changed",
+      "distributed": "Distributed",
+      "meta": "{{pages}} pages · {{ts}}",
+      "meta_versioned": "Version {{v}} · {{pages}} pages · {{ts}}",
+      "distributed_hint": "Singers have already downloaded this version. Rebuilding replaces it — the page numbers in their copies may change.",
+      "bridge": {
+        "none": "Not assembled",
+        "open": "Open generator",
+        "version": "Version {{v}}"
+      },
+      "manual": {
+        "badge": "Uploaded manually",
+        "current": "The current score was uploaded manually.",
+        "intro": "Already have a score typeset outside the app? Upload it instead of generating — it replaces the current book.",
+        "preview": "Preview",
+        "remove": "Remove",
+        "replace": "Upload another PDF",
+        "title": "Your own PDF",
+        "upload": "Upload PDF"
+      },
+      "failed": "Assembly error",
+      "building": "Assembling…",
+      "queued": "Queued…",
+      "building_elapsed": "{{label}} ({{s}}s)",
+      "build_hint": "For a large programme, assembly can take a few dozen seconds.",
+      "empty": "Add pieces to the programme above to assemble a score.",
+      "regenerate": "Rebuild",
+      "generate": "Assemble score",
+      "download": "Download",
+      "download_stale": "Download anyway",
+      "stale_hint": "This score does not include your latest changes. Rebuild it to apply them.",
+      "preview_book": "Preview",
+      "preview_book_full": "Score preview",
+      "density": {
+        "label": "Layout",
+        "concert": "Concert",
+        "mass": "Mass"
+      },
+      "language": {
+        "label": "Translation language",
+        "pl": "Polish",
+        "en": "English",
+        "fr": "French"
+      },
+      "cards": {
+        "master": "Piece cards (text)",
+        "text": "Original text",
+        "translation": "Translation",
+        "note": "Note"
+      },
+      "structure": {
+        "label": "Book structure",
+        "title": "Title page",
+        "toc": "Table of contents",
+        "numbers": "Page numbers",
+        "bookmarks": "PDF bookmarks",
+        "a4": "Normalise to A4"
+      },
+      "pages": "{{n}} pages",
+      "readiness_state": {
+        "ready": "Ready",
+        "low": "Low confidence",
+        "incomplete": "Incomplete",
+        "no_edition": "No score"
+      },
+      "elements": {
+        "eyebrow": "Section",
+        "meta": "Metadata",
+        "text": "Text",
+        "translation": "Translation",
+        "note": "Note",
+        "ipa": "IPA"
+      },
+      "element_status": {
+        "ready": "Data ready",
+        "low": "Low confidence",
+        "missing": "No data"
+      },
+      "item": {
+        "fix_in_archive": "Some data is low-confidence — fix it in the archive",
+        "advanced": "Card & overrides",
+        "customized": "customised",
+        "no_pdf": "No score attached — a placeholder page will appear in the book.",
+        "no_pdf_short": "no score",
+        "full_range": "all",
+        "range": "p. {{from}}–{{to}}",
+        "edition": "Edition",
+        "edition_auto": "Default (automatic)",
+        "no_editions": "This piece has no score yet.",
+        "page_range": "Page range",
+        "page_start": "First page",
+        "page_end": "Last page",
+        "last": "last",
+        "suggested_start": "Music from p. {{n}} — trim the publisher's front matter",
+        "thumbnails_hint": "Tap the page where the music begins — you'll trim the publisher's front matter.",
+        "thumb_set_start": "Start the music on page {{n}}",
+        "thumb_set_end": "Set page {{n}} as the last page",
+        "thumb_start": "start",
+        "thumb_end": "end",
+        "thumb_alt": "Page {{n}}",
+        "thumb_suggested": "AI: the music begins here",
+        "show_edition": "Show edition",
+        "card": "Card before the piece",
+        "inherit": "Inherit",
+        "section_label": "Section",
+        "section_ph": "e.g. Liturgy of the Eucharist",
+        "role_prefix": "Role / function",
+        "role_ph": "e.g. Offertory:",
+        "text_override": "Text (override)",
+        "text_override_ph": "Leave empty to use the stored text.",
+        "note_override": "Note (override)",
+        "note_override_ph": "Leave empty to use the stored note.",
+        "preview_card": "Preview card",
+        "reset_elements": "Default"
+      }
+    },
     "actions": {
       "delete_project": "Delete project",
       "manage": "Manage",
@@ -2961,7 +3087,8 @@
         "matrix": "Attendance Matrix",
         "micro_cast": "Micro Cast",
         "program": "Program",
-        "rehearsals": "Rehearsals"
+        "rehearsals": "Rehearsals",
+        "score": "Score"
       },
       "tabs_aria": "Project editor tabs",
       "unsaved_changes_desc": "You have unsaved changes in this tab. Leaving the view will discard local data.",
@@ -3109,6 +3236,7 @@
         "no_runsheet": "No day schedule",
         "no_score": "No score (PDF)",
         "program_gaps": "Gaps in the programme casting",
+        "stale_score": "Score out of date",
         "title": "Needs attention"
       },
       "facts": {
@@ -3138,6 +3266,10 @@
       },
       "materials": {
         "no_score": "No score uploaded",
+        "score_distributed": "distributed",
+        "score_manual": "Uploaded manually",
+        "score_stale": "Out of date — rebuild",
+        "score_version": "Version {{v}} · ready",
         "spotify": "Spotify references",
         "title": "Materials"
       },
@@ -3583,6 +3715,7 @@
       "next_concert": "Next concert",
       "next_rehearsal": "Next rehearsal",
       "prepare_cta": "Songbook",
+      "score_cta": "Score",
       "program_loading": "Loading repertoire...",
       "rehearsal_mode": "Rehearsal mode",
       "tonight_program": "Project repertoire",
@@ -3829,6 +3962,7 @@
         "CUSTOM_ADMIN_MESSAGE": "Direct Message from Management",
         "MATERIAL_UPLOADED": "New Sheet Music or Audio Track",
         "MESSAGE_RECEIVED": "New Message",
+        "CHANNEL_MESSAGE": "New Project Channel Message",
         "NOTIFICATION_READ_RECEIPT": "Message Read by Artist",
         "PARTICIPATION_RESPONSE": "Artist Project Response",
         "PIECE_CASTING_ASSIGNED": "Assigned to Piece",
@@ -3851,9 +3985,41 @@
         "title": "Daily digest",
         "description": "Routine updates (attendance, RSVPs, absence requests) are gathered into one email a day. Urgent items always arrive immediately.",
         "toggle_label": "Daily email digest",
-        "hour_label": "Delivery time"
+        "hour_label": "Delivery time",
+        "timezone_note": "In your timezone ({{timezone}})"
       },
-      "in_app_note": "Every event always appears in your in-app bell. Below, choose what you also want by email and as a push notification."
+      "in_app_note": "Every event always appears in your in-app bell. Below, choose what you also want by email and as a push notification.",
+      "groups": {
+        "schedule": "Schedule & rehearsals",
+        "repertoire": "Repertoire & materials",
+        "messages": "Communications",
+        "decisions": "Your requests",
+        "team": "Team operations"
+      },
+      "type_desc": {
+        "PROJECT_INVITATION": "You're invited to sing in a project",
+        "PROJECT_UPDATED": "A project's details change",
+        "PROJECT_REMINDER": "Shortly before a concert",
+        "REHEARSAL_UPDATED": "A rehearsal's time, place or focus changes",
+        "REHEARSAL_REMINDER": "About a day before a rehearsal",
+        "PIECE_CASTING_ASSIGNED": "You're cast in a piece",
+        "PIECE_CASTING_UPDATED": "Your casting in a piece changes",
+        "MATERIAL_UPLOADED": "New sheet music or audio is added",
+        "CUSTOM_ADMIN_MESSAGE": "A direct message from the management team",
+        "ABSENCE_APPROVED": "Your absence request is approved",
+        "ABSENCE_REJECTED": "Your absence request is declined",
+        "PARTICIPATION_RESPONSE": "A singer responds to an invitation",
+        "ATTENDANCE_SUBMITTED": "A singer updates their attendance",
+        "ABSENCE_REQUESTED": "A singer requests an absence",
+        "SYSTEM_ALERT": "Maintenance and important system notices"
+      },
+      "restore_recommended": "Restore recommended",
+      "customized_hint": "Customized — differs from the recommended default",
+      "a11y": {
+        "email": "Email for {{event}}",
+        "push": "Push for {{event}}"
+      },
+      "customized_badge": "Edited"
     },
     "page": {
       "highlight": "account",

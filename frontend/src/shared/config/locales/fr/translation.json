@@ -1568,6 +1568,7 @@
       "pipeline": {
         "complete": "complet",
         "empty": "Aucune production active. Il est temps de planifier le prochain concert.",
+        "no_score": "Sans partition",
         "pending_short": "en attente",
         "pieces": "{{count}} œuv.",
         "pieces_one": "{{count}} pièce",
@@ -2601,6 +2602,7 @@
       "ATTENDANCE_SUBMITTED": "Présence",
       "CUSTOM_ADMIN_MESSAGE": "Message",
       "MESSAGE_RECEIVED": "Message",
+      "CHANNEL_MESSAGE": "Canal du projet",
       "NOTIFICATION_READ_RECEIPT": "Accusé de lecture"
     },
     "status": {
@@ -2724,6 +2726,130 @@
     "sequence": "Séquence"
   },
   "projects": {
+    "score_package": {
+      "title": "Partition de concert",
+      "intro": "Assemblez automatiquement une partition pour les chanteurs à partir de tout le programme : page de titre, table des matières, fiches de texte par œuvre, numérotation continue et signets.",
+      "readiness": "{{bindable}} œuvres sur {{total}} ont une partition jointe",
+      "missing_count": "{{n}} sans partition",
+      "settings": "Réglages",
+      "items_heading": "Œuvres du programme",
+      "ready": "Prête",
+      "stale": "Programme modifié",
+      "distributed": "Distribuée",
+      "meta": "{{pages}} pages · {{ts}}",
+      "meta_versioned": "Version {{v}} · {{pages}} pages · {{ts}}",
+      "distributed_hint": "Les choristes ont déjà téléchargé cette version. La régénérer la remplacera — la pagination de leurs exemplaires peut changer.",
+      "bridge": {
+        "none": "Non assemblée",
+        "open": "Ouvrir le générateur",
+        "version": "Version {{v}}"
+      },
+      "manual": {
+        "badge": "Importée manuellement",
+        "current": "La partition actuelle a été importée manuellement.",
+        "intro": "Vous avez une partition composée hors de l'application ? Importez-la au lieu de la générer — elle remplacera le livret actuel.",
+        "preview": "Aperçu",
+        "remove": "Supprimer",
+        "replace": "Importer un autre PDF",
+        "title": "Votre propre PDF",
+        "upload": "Importer un PDF"
+      },
+      "failed": "Erreur d'assemblage",
+      "building": "Assemblage…",
+      "queued": "En file d'attente…",
+      "building_elapsed": "{{label}} ({{s}}s)",
+      "build_hint": "Pour un programme volumineux, l'assemblage peut prendre quelques dizaines de secondes.",
+      "empty": "Ajoutez des œuvres au programme ci-dessus pour assembler une partition.",
+      "regenerate": "Régénérer",
+      "generate": "Assembler la partition",
+      "download": "Télécharger",
+      "download_stale": "Télécharger quand même",
+      "stale_hint": "Cette partition n'inclut pas vos dernières modifications. Régénérez-la pour les appliquer.",
+      "preview_book": "Aperçu",
+      "preview_book_full": "Aperçu de la partition",
+      "density": {
+        "label": "Disposition",
+        "concert": "Concert",
+        "mass": "Messe"
+      },
+      "language": {
+        "label": "Langue des traductions",
+        "pl": "Polonais",
+        "en": "Anglais",
+        "fr": "Français"
+      },
+      "cards": {
+        "master": "Fiches d'œuvre (texte)",
+        "text": "Texte original",
+        "translation": "Traduction",
+        "note": "Note"
+      },
+      "structure": {
+        "label": "Structure du livret",
+        "title": "Page de titre",
+        "toc": "Table des matières",
+        "numbers": "Numéros de page",
+        "bookmarks": "Signets PDF",
+        "a4": "Normaliser en A4"
+      },
+      "pages": "{{n}} pages",
+      "readiness_state": {
+        "ready": "Prête",
+        "low": "Confiance faible",
+        "incomplete": "Incomplète",
+        "no_edition": "Sans partition"
+      },
+      "elements": {
+        "eyebrow": "Section",
+        "meta": "Métadonnées",
+        "text": "Texte",
+        "translation": "Traduction",
+        "note": "Note",
+        "ipa": "API"
+      },
+      "element_status": {
+        "ready": "Données prêtes",
+        "low": "Confiance faible",
+        "missing": "Données absentes"
+      },
+      "item": {
+        "fix_in_archive": "Certaines données sont peu fiables — corrigez-les dans l'archive",
+        "advanced": "Fiche et remplacements",
+        "customized": "personnalisé",
+        "no_pdf": "Aucune partition jointe — une page de substitution apparaîtra dans le recueil.",
+        "no_pdf_short": "sans partition",
+        "full_range": "tout",
+        "range": "p. {{from}}–{{to}}",
+        "edition": "Édition",
+        "edition_auto": "Par défaut (automatique)",
+        "no_editions": "Cette œuvre n'a pas encore de partition.",
+        "page_range": "Plage de pages",
+        "page_start": "Première page",
+        "page_end": "Dernière page",
+        "last": "dern.",
+        "suggested_start": "Musique dès la p. {{n}} — coupez le préambule de l'éditeur",
+        "thumbnails_hint": "Cliquez sur la page où commence la musique — vous couperez le préambule de l'éditeur.",
+        "thumb_set_start": "Commencer la musique à la page {{n}}",
+        "thumb_set_end": "Définir la page {{n}} comme dernière page",
+        "thumb_start": "début",
+        "thumb_end": "fin",
+        "thumb_alt": "Page {{n}}",
+        "thumb_suggested": "IA : la musique commence ici",
+        "show_edition": "Voir l'édition",
+        "card": "Fiche avant l'œuvre",
+        "inherit": "Hériter",
+        "section_label": "Section",
+        "section_ph": "p. ex. Liturgie eucharistique",
+        "role_prefix": "Rôle / fonction",
+        "role_ph": "p. ex. Offertoire :",
+        "text_override": "Texte (remplacer)",
+        "text_override_ph": "Laissez vide pour utiliser le texte enregistré.",
+        "note_override": "Note (remplacer)",
+        "note_override_ph": "Laissez vide pour utiliser la note enregistrée.",
+        "preview_card": "Aperçu de la fiche",
+        "reset_elements": "Par défaut"
+      }
+    },
     "actions": {
       "delete_project": "Supprimer le projet",
       "manage": "Gérer",
@@ -2961,7 +3087,8 @@
         "matrix": "Matrice de présence",
         "micro_cast": "Micro-distribution",
         "program": "Programme",
-        "rehearsals": "Répétitions"
+        "rehearsals": "Répétitions",
+        "score": "Partition"
       },
       "tabs_aria": "Onglets de l’éditeur de projet",
       "unsaved_changes_desc": "Vous avez des modifications non enregistrées dans cet onglet. Quitter la vue supprimera les données locales.",
@@ -3109,6 +3236,7 @@
         "no_runsheet": "Aucun déroulé de journée",
         "no_score": "Aucune partition (PDF)",
         "program_gaps": "Lacunes dans la distribution du programme",
+        "stale_score": "Partition périmée",
         "title": "Requiert attention"
       },
       "facts": {
@@ -3138,6 +3266,10 @@
       },
       "materials": {
         "no_score": "Aucune partition importée",
+        "score_distributed": "distribuée",
+        "score_manual": "Importée manuellement",
+        "score_stale": "Périmée — régénérez",
+        "score_version": "Version {{v}} · prête",
         "spotify": "Références Spotify",
         "title": "Supports"
       },
@@ -3583,6 +3715,7 @@
       "next_concert": "Prochain concert",
       "next_rehearsal": "Prochaine répétition",
       "prepare_cta": "Recueil",
+      "score_cta": "Partition",
       "program_loading": "Chargement du répertoire...",
       "rehearsal_mode": "Mode répétition",
       "tonight_program": "Répertoire du projet",
@@ -3829,6 +3962,7 @@
         "CUSTOM_ADMIN_MESSAGE": "Message direct de la direction",
         "MATERIAL_UPLOADED": "Nouvelle partition ou piste audio",
         "MESSAGE_RECEIVED": "Nouveau message",
+        "CHANNEL_MESSAGE": "Nouveau message dans le canal du projet",
         "NOTIFICATION_READ_RECEIPT": "Message lu par l'artiste",
         "PARTICIPATION_RESPONSE": "Réponse de l'artiste au projet",
         "PIECE_CASTING_ASSIGNED": "Affecté à une pièce",
@@ -3851,9 +3985,41 @@
         "title": "Récapitulatif quotidien",
         "description": "Les mises à jour de routine (présences, réponses, demandes d’absence) sont regroupées en un e-mail par jour. Les éléments urgents arrivent toujours immédiatement.",
         "toggle_label": "Récapitulatif quotidien par e-mail",
-        "hour_label": "Heure d’envoi"
+        "hour_label": "Heure d’envoi",
+        "timezone_note": "Dans votre fuseau horaire ({{timezone}})"
       },
-      "in_app_note": "Chaque événement apparaît toujours dans la cloche de l’application. Ci-dessous, choisissez ce que vous souhaitez aussi recevoir par e-mail et en notification push."
+      "in_app_note": "Chaque événement apparaît toujours dans la cloche de l’application. Ci-dessous, choisissez ce que vous souhaitez aussi recevoir par e-mail et en notification push.",
+      "groups": {
+        "schedule": "Calendrier et répétitions",
+        "repertoire": "Répertoire et partitions",
+        "messages": "Communications",
+        "decisions": "Vos demandes",
+        "team": "Opérations d'équipe"
+      },
+      "type_desc": {
+        "PROJECT_INVITATION": "Vous êtes invité à chanter dans un projet",
+        "PROJECT_UPDATED": "Les détails d'un projet changent",
+        "PROJECT_REMINDER": "Peu avant un concert",
+        "REHEARSAL_UPDATED": "L'heure, le lieu ou le programme d'une répétition change",
+        "REHEARSAL_REMINDER": "Environ un jour avant une répétition",
+        "PIECE_CASTING_ASSIGNED": "Vous êtes distribué dans une œuvre",
+        "PIECE_CASTING_UPDATED": "Votre distribution dans une œuvre change",
+        "MATERIAL_UPLOADED": "De nouvelles partitions ou audios sont ajoutées",
+        "CUSTOM_ADMIN_MESSAGE": "Un message direct de la direction",
+        "ABSENCE_APPROVED": "Votre demande d'absence est acceptée",
+        "ABSENCE_REJECTED": "Votre demande d'absence est refusée",
+        "PARTICIPATION_RESPONSE": "Un choriste répond à une invitation",
+        "ATTENDANCE_SUBMITTED": "Un choriste met à jour sa présence",
+        "ABSENCE_REQUESTED": "Un choriste demande une absence",
+        "SYSTEM_ALERT": "Maintenance et avis système importants"
+      },
+      "restore_recommended": "Rétablir les valeurs recommandées",
+      "customized_hint": "Personnalisé — diffère des réglages recommandés",
+      "a11y": {
+        "email": "E-mail pour {{event}}",
+        "push": "Push pour {{event}}"
+      },
+      "customized_badge": "Modifié"
     },
     "page": {
       "highlight": "du compte",

@@ -1571,6 +1571,7 @@
       "pipeline": {
         "complete": "komplet",
         "empty": "Brak aktywnych produkcji. Czas zaplanować kolejny koncert.",
+        "no_score": "Bez partytury",
         "pending_short": "czeka",
         "pieces": "{{count}} utw.",
         "pieces_one": "{{count}} utw.",
@@ -2604,6 +2605,7 @@
       "ATTENDANCE_SUBMITTED": "Obecność",
       "CUSTOM_ADMIN_MESSAGE": "Wiadomość",
       "MESSAGE_RECEIVED": "Wiadomość",
+      "CHANNEL_MESSAGE": "Kanał projektu",
       "NOTIFICATION_READ_RECEIPT": "Potwierdzenie odczytu"
     },
     "status": {
@@ -2727,6 +2729,130 @@
     "sequence": "Sekwencja"
   },
   "projects": {
+    "score_package": {
+      "title": "Partytura koncertowa",
+      "intro": "Złóż automatycznie partyturę dla śpiewaków z całego programu: strona tytułowa, spis treści, karty utworów z tekstem, ciągła numeracja i zakładki.",
+      "readiness": "{{bindable}} z {{total}} utworów ma dołączone nuty",
+      "missing_count": "{{n}} bez nut",
+      "settings": "Ustawienia",
+      "items_heading": "Utwory w programie",
+      "ready": "Gotowa",
+      "stale": "Program zmieniony",
+      "distributed": "Udostępniona",
+      "meta": "{{pages}} stron · {{ts}}",
+      "meta_versioned": "Wersja {{v}} · {{pages}} stron · {{ts}}",
+      "distributed_hint": "Tę wersję pobrali już śpiewacy. Ponowne złożenie ją zastąpi — w ich egzemplarzach mogą zmienić się numery stron.",
+      "bridge": {
+        "none": "Nie złożona",
+        "open": "Otwórz generator",
+        "version": "Wersja {{v}}"
+      },
+      "manual": {
+        "badge": "Wgrana ręcznie",
+        "current": "Obecna partytura została wgrana ręcznie.",
+        "intro": "Masz gotową partyturę złożoną poza aplikacją? Wgraj ją zamiast generować — zastąpi obecną książkę.",
+        "preview": "Podgląd",
+        "remove": "Usuń",
+        "replace": "Wgraj inny PDF",
+        "title": "Własny plik PDF",
+        "upload": "Wgraj PDF"
+      },
+      "failed": "Błąd składania",
+      "building": "Składanie…",
+      "queued": "W kolejce…",
+      "building_elapsed": "{{label}} ({{s}}s)",
+      "build_hint": "Przy dużym programie składanie może potrwać kilkadziesiąt sekund.",
+      "empty": "Dodaj utwory do programu powyżej, aby złożyć partyturę.",
+      "regenerate": "Wygeneruj ponownie",
+      "generate": "Złóż partyturę",
+      "download": "Pobierz",
+      "download_stale": "Pobierz mimo to",
+      "stale_hint": "Ta partytura nie zawiera ostatnich zmian. Złóż ją ponownie, aby je uwzględnić.",
+      "preview_book": "Podgląd",
+      "preview_book_full": "Podgląd partytury",
+      "density": {
+        "label": "Układ",
+        "concert": "Koncert",
+        "mass": "Msza"
+      },
+      "language": {
+        "label": "Język tłumaczeń",
+        "pl": "Polski",
+        "en": "Angielski",
+        "fr": "Francuski"
+      },
+      "cards": {
+        "master": "Karty utworów (tekst)",
+        "text": "Tekst oryginalny",
+        "translation": "Tłumaczenie",
+        "note": "Nota"
+      },
+      "structure": {
+        "label": "Struktura książki",
+        "title": "Strona tytułowa",
+        "toc": "Spis treści",
+        "numbers": "Numeracja stron",
+        "bookmarks": "Zakładki PDF",
+        "a4": "Normalizuj do A4"
+      },
+      "pages": "{{n}} stron",
+      "readiness_state": {
+        "ready": "Gotowe",
+        "low": "Niska pewność",
+        "incomplete": "Niekompletna",
+        "no_edition": "Brak nut"
+      },
+      "elements": {
+        "eyebrow": "Sekcja",
+        "meta": "Metryka",
+        "text": "Tekst",
+        "translation": "Tłumaczenie",
+        "note": "Nota",
+        "ipa": "IPA"
+      },
+      "element_status": {
+        "ready": "Dane gotowe",
+        "low": "Niska pewność",
+        "missing": "Brak danych"
+      },
+      "item": {
+        "fix_in_archive": "Część danych ma niską pewność — popraw w archiwum",
+        "advanced": "Karta i nadpisania",
+        "customized": "dostosowane",
+        "no_pdf": "Brak dołączonych nut — w partyturze pojawi się strona-zastępka.",
+        "no_pdf_short": "brak nut",
+        "full_range": "całość",
+        "range": "s. {{from}}–{{to}}",
+        "edition": "Wydanie",
+        "edition_auto": "Domyślne (automatycznie)",
+        "no_editions": "Ten utwór nie ma jeszcze nut.",
+        "page_range": "Zakres stron",
+        "page_start": "Strona początkowa",
+        "page_end": "Strona końcowa",
+        "last": "ost.",
+        "suggested_start": "Nuty od s. {{n}} — przytnij opis wydawcy",
+        "thumbnails_hint": "Kliknij stronę, od której zaczynają się nuty — przytniesz opis wydawcy.",
+        "thumb_set_start": "Zacznij nuty od strony {{n}}",
+        "thumb_set_end": "Ustaw stronę {{n}} jako koniec utworu",
+        "thumb_start": "start",
+        "thumb_end": "koniec",
+        "thumb_alt": "Strona {{n}}",
+        "thumb_suggested": "AI: tu zaczynają się nuty",
+        "show_edition": "Pokaż wydanie",
+        "card": "Karta przed utworem",
+        "inherit": "Dziedzicz",
+        "section_label": "Sekcja",
+        "section_ph": "np. Liturgia eucharystyczna",
+        "role_prefix": "Rola / funkcja",
+        "role_ph": "np. Ofiarowanie:",
+        "text_override": "Tekst (nadpisanie)",
+        "text_override_ph": "Zostaw puste, aby użyć tekstu z bazy.",
+        "note_override": "Nota (nadpisanie)",
+        "note_override_ph": "Zostaw puste, aby użyć noty z bazy.",
+        "preview_card": "Podgląd karty",
+        "reset_elements": "Domyślne"
+      }
+    },
     "actions": {
       "delete_project": "Usuń projekt",
       "manage": "Zarządzaj",
@@ -2964,7 +3090,8 @@
         "matrix": "Macierz frekwencji",
         "micro_cast": "Mikro-obsada",
         "program": "Program",
-        "rehearsals": "Próby"
+        "rehearsals": "Próby",
+        "score": "Partytura"
       },
       "tabs_aria": "Zakładki panelu projektu",
       "unsaved_changes_desc": "Masz niezapisane zmiany w tej zakładce. Opuszczenie widoku spowoduje utratę lokalnych danych.",
@@ -3112,6 +3239,7 @@
         "no_runsheet": "Brak harmonogramu dnia",
         "no_score": "Brak partytury (PDF)",
         "program_gaps": "Luki w obsadzie programu",
+        "stale_score": "Partytura nieaktualna",
         "title": "Wymaga uwagi"
       },
       "facts": {
@@ -3141,6 +3269,10 @@
       },
       "materials": {
         "no_score": "Nie wgrano partytury",
+        "score_distributed": "udostępniona",
+        "score_manual": "Wgrana ręcznie",
+        "score_stale": "Nieaktualna — złóż ponownie",
+        "score_version": "Wersja {{v}} · gotowa",
         "spotify": "Referencje Spotify",
         "title": "Materiały"
       },
@@ -3586,6 +3718,7 @@
       "next_concert": "Najbliższy koncert",
       "next_rehearsal": "Najbliższa próba",
       "prepare_cta": "Śpiewnik",
+      "score_cta": "Partytura",
       "program_loading": "Wczytywanie repertuaru...",
       "rehearsal_mode": "Tryb próby",
       "tonight_program": "Repertuar projektu",
@@ -3832,6 +3965,7 @@
         "CUSTOM_ADMIN_MESSAGE": "Bezpośrednia wiadomość",
         "MATERIAL_UPLOADED": "Nowe materiały do ćwiczeń",
         "MESSAGE_RECEIVED": "Nowa wiadomość",
+        "CHANNEL_MESSAGE": "Nowa wiadomość w kanale projektu",
         "NOTIFICATION_READ_RECEIPT": "Wiadomość odczytana",
         "PARTICIPATION_RESPONSE": "Odpowiedź artysty",
         "PIECE_CASTING_ASSIGNED": "Przypisanie do utworu",
@@ -3854,9 +3988,41 @@
         "title": "Dzienne podsumowanie",
         "description": "Rutynowe aktualizacje (obecności, odpowiedzi na zaproszenia, prośby o nieobecność) zbieramy w jedną wiadomość dziennie. Pilne sprawy zawsze docierają od razu.",
         "toggle_label": "Codzienne podsumowanie e-mail",
-        "hour_label": "Godzina wysyłki"
+        "hour_label": "Godzina wysyłki",
+        "timezone_note": "W Twojej strefie czasowej ({{timezone}})"
       },
-      "in_app_note": "Każde zdarzenie zawsze pojawia się w dzwonku w aplikacji. Poniżej wybierz, co dodatkowo chcesz dostawać e-mailem i jako powiadomienie push."
+      "in_app_note": "Każde zdarzenie zawsze pojawia się w dzwonku w aplikacji. Poniżej wybierz, co dodatkowo chcesz dostawać e-mailem i jako powiadomienie push.",
+      "groups": {
+        "schedule": "Harmonogram i próby",
+        "repertoire": "Repertuar i materiały",
+        "messages": "Komunikaty",
+        "decisions": "Twoje prośby",
+        "team": "Operacje zespołu"
+      },
+      "type_desc": {
+        "PROJECT_INVITATION": "Zaproszenie do udziału w projekcie",
+        "PROJECT_UPDATED": "Zmiana szczegółów projektu",
+        "PROJECT_REMINDER": "Tuż przed koncertem",
+        "REHEARSAL_UPDATED": "Zmiana terminu, miejsca lub planu próby",
+        "REHEARSAL_REMINDER": "Około doby przed próbą",
+        "PIECE_CASTING_ASSIGNED": "Obsadzenie Cię w utworze",
+        "PIECE_CASTING_UPDATED": "Zmiana Twojej obsady w utworze",
+        "MATERIAL_UPLOADED": "Nowe nuty lub nagrania",
+        "CUSTOM_ADMIN_MESSAGE": "Wiadomość od zarządu",
+        "ABSENCE_APPROVED": "Twoja prośba o nieobecność została zatwierdzona",
+        "ABSENCE_REJECTED": "Twoja prośba o nieobecność została odrzucona",
+        "PARTICIPATION_RESPONSE": "Śpiewak odpowiada na zaproszenie",
+        "ATTENDANCE_SUBMITTED": "Śpiewak aktualizuje swoją obecność",
+        "ABSENCE_REQUESTED": "Śpiewak prosi o nieobecność",
+        "SYSTEM_ALERT": "Konserwacja i ważne komunikaty systemowe"
+      },
+      "restore_recommended": "Przywróć zalecane",
+      "customized_hint": "Zmienione — różni się od zalecanych ustawień",
+      "a11y": {
+        "email": "E-mail dla: {{event}}",
+        "push": "Push dla: {{event}}"
+      },
+      "customized_badge": "Zmienione"
     },
     "page": {
       "highlight": "konta",

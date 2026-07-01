@@ -11,7 +11,7 @@
  * Rehearsal Mode: tonight's programme with one-tap jumps into the Songbook
  * piece pages plus a Web Audio pitch pipe.
  */
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,7 @@ import {
   AlertCircle,
   AlignLeft,
   ArrowRight,
+  BookOpen,
   Check,
   CheckCircle2,
   ChevronRight,
@@ -32,10 +33,12 @@ import {
 
 import type { AttendanceStatus, ProgramItem, Project, Rehearsal } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { ProjectService } from "@/features/projects/api/project.service";
 import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { cn } from "@/shared/lib/utils";
 import { useNow } from "@/shared/lib/dom/useNow";
@@ -108,8 +111,14 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
   const proj = event.rawObj as Project;
   const countdown = useCountdownLabel(event.date_time);
   const readiness = useProjectReadiness(event.project_id, true);
+  const [scoreOpen, setScoreOpen] = useState(false);
+  const fetchScoreBlob = useCallback(
+    () => ProjectService.fetchScorePdfBlob(String(proj.id)),
+    [proj.id],
+  );
 
   return (
+    <>
     <GlassCard variant="dark" glow withNoise isHoverable={false} padding="none">
       <div className="p-4 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
@@ -210,6 +219,16 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
           </Text>
         )}
         <div className="flex shrink-0 items-center gap-2">
+          {proj.score_pdf && (
+            <Button
+              variant="secondary"
+              size="touch"
+              leftIcon={<BookOpen size={14} aria-hidden="true" />}
+              onClick={() => setScoreOpen(true)}
+            >
+              {t("schedule.hero.score_cta", "Partytura")}
+            </Button>
+          )}
           <AddToCalendar event={event} tone="dark" />
           {!readiness.hasData && (
             <Button variant="secondary" size="touch" asChild>
@@ -222,6 +241,28 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
         </div>
       </div>
     </GlassCard>
+
+    {proj.score_pdf && (
+      <PdfViewerModal
+        isOpen={scoreOpen}
+        title={t("schedule.card.score_pdf_modal_title", "Partytura Koncertu")}
+        subtitle={proj.title}
+        fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
+        fetchBlob={fetchScoreBlob}
+        docKey={`score-hero-${proj.id}`}
+        fullView={{
+          type: "project-score",
+          id: proj.id,
+          hint: {
+            title: t("schedule.card.score_pdf_modal_title", "Partytura Koncertu"),
+            subtitle: proj.title,
+            fileName: `Score_${proj.title.replace(/\s+/g, "_")}.pdf`,
+          },
+        }}
+        onClose={() => setScoreOpen(false)}
+      />
+    )}
+    </>
   );
 };
 

@@ -120,6 +120,9 @@ const ProjectNewPage = lazyWithPreload(
 const ProjectProgramPage = lazyWithPreload(
   () => import("@features/projects/ProjectProgramPage"),
 );
+const ProjectScorePage = lazyWithPreload(
+  () => import("@features/projects/ProjectScorePage"),
+);
 const ProjectCastPage = lazyWithPreload(
   () => import("@features/projects/ProjectCastPage"),
 );
@@ -182,6 +185,7 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: ProjectOverviewPage.preload },
   { scope: "manager", preload: ProjectNewPage.preload },
   { scope: "manager", preload: ProjectProgramPage.preload },
+  { scope: "manager", preload: ProjectScorePage.preload },
   { scope: "manager", preload: ProjectCastPage.preload },
   { scope: "manager", preload: ProjectDivisiPage.preload },
   { scope: "manager", preload: ProjectRehearsalsPage.preload },
@@ -306,6 +310,7 @@ export const router = createBrowserRouter(
             <Route path="projects/:id" element={<ProjectHubLayout />}>
               <Route index element={<ProjectOverviewPage />} />
               <Route path="program" element={<ProjectProgramPage />} />
+              <Route path="partytura" element={<ProjectScorePage />} />
               <Route path="cast" element={<ProjectCastPage />} />
               <Route path="divisi" element={<ProjectDivisiPage />} />
               <Route

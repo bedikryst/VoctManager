@@ -174,6 +174,10 @@ export const useAdminDashboardData = () => {
   // sorted by date. Powers the per-project triage that replaced the aggregate
   // invitations tile. Uses the same non-archived set the totals are summed over.
   const pipelineProjects: PipelineProjectDto[] = useMemo(() => {
+    const now = Date.now();
+    // Only flag a missing score book once the concert is on the horizon — an
+    // assembled book weeks early would be noise; a missing one days out is action.
+    const IMMINENT_MS = 14 * 24 * 60 * 60 * 1000;
     return projects
       .filter(
         (p) =>
@@ -186,19 +190,24 @@ export const useAdminDashboardData = () => {
         return ta - tb;
       })
       .slice(0, PIPELINE_LIMIT)
-      .map((p) => ({
-        id: String(p.id),
-        title: p.title,
-        dateTime: p.date_time,
-        timezone: p.timezone,
-        status: p.status,
-        castConfirmed: p.cast_confirmed ?? 0,
-        castPending: p.cast_pending ?? 0,
-        castDeclined: p.cast_declined ?? 0,
-        castTotal: p.cast_total ?? 0,
-        rehearsalsUpcoming: p.rehearsals_upcoming ?? 0,
-        piecesTotal: p.pieces_total ?? 0,
-      }));
+      .map((p) => {
+        const dt = p.date_time ? new Date(p.date_time).getTime() : Infinity;
+        const isImminent = dt >= now && dt - now <= IMMINENT_MS;
+        return {
+          id: String(p.id),
+          title: p.title,
+          dateTime: p.date_time,
+          timezone: p.timezone,
+          status: p.status,
+          castConfirmed: p.cast_confirmed ?? 0,
+          castPending: p.cast_pending ?? 0,
+          castDeclined: p.cast_declined ?? 0,
+          castTotal: p.cast_total ?? 0,
+          rehearsalsUpcoming: p.rehearsals_upcoming ?? 0,
+          piecesTotal: p.pieces_total ?? 0,
+          scoreMissing: isImminent && !p.score_pdf,
+        };
+      });
   }, [projects]);
 
   // 3. SPOTLIGHT NEXT PROJECT

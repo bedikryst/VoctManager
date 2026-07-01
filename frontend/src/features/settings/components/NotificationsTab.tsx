@@ -1,7 +1,9 @@
 /**
  * @file NotificationsTab.tsx
- * @description Notification preferences with a stateful Web Push hero,
- * permission primer, test-push action and granular per-type channel toggles.
+ * @description Notification preferences: a stateful Web Push hero plus a grouped
+ * "preference ledger" — domain sections of per-event email/push toggles, each row
+ * annotated with an icon, a one-line description and a "customized vs recommended"
+ * marker, with per-section Restore-recommended and a manager-only daily digest.
  * @architecture Enterprise SaaS 2026
  * @module settings/NotificationsTab
  */
@@ -12,8 +14,11 @@ import {
   BellOff,
   BellRing,
   CheckCircle2,
+  ChevronDown,
+  Inbox,
   Info,
   Loader2,
+  RotateCcw,
   Send,
   ShieldAlert,
   Smartphone,
@@ -24,6 +29,7 @@ import { motion } from "framer-motion";
 
 import {
   useNotificationPreferences,
+  useRestoreRecommendedPreferences,
   useUpdatePreference,
 } from "@/features/notifications/api/preferences";
 import {
@@ -32,22 +38,36 @@ import {
 } from "@/features/settings/api/settings.queries";
 import { usePushNotifications } from "@/features/notifications/hooks/usePushNotifications";
 import { PushPermissionPrimer } from "@/features/notifications/components/PushPermissionPrimer";
+import type { NotificationPreferenceDTO } from "@/features/notifications/types/notifications.dto";
+import { isPreferenceCustomized } from "@/features/notifications/lib/preferences";
+import {
+  groupNotificationPreferences,
+  notificationTypeMeta,
+  type NotificationGroupId,
+  type NotificationPreferenceGroup,
+} from "@/features/settings/constants/notificationPreferenceGroups";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { cn } from "@/shared/lib/utils";
+
+type TFunc = ReturnType<typeof useTranslation>["t"];
 
 interface NotificationSwitchProps {
   checked: boolean;
   onCheckedChange: (v: boolean) => void;
+  ariaLabel: string;
 }
 
-const NotificationSwitch = ({ checked, onCheckedChange }: NotificationSwitchProps) => (
+const NotificationSwitch = ({ checked, onCheckedChange, ariaLabel }: NotificationSwitchProps) => (
   <Switch.Root
     checked={checked}
     onCheckedChange={onCheckedChange}
+    aria-label={ariaLabel}
     className="w-11 h-6 bg-ethereal-parchment rounded-full relative data-[state=checked]:bg-ethereal-gold transition-colors cursor-pointer outline-none focus:ring-2 ring-ethereal-gold/50 ring-offset-2 ring-offset-ethereal-alabaster shrink-0"
   >
     <Switch.Thumb className="block w-5 h-5 bg-ethereal-marble rounded-full transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-5.5" />
@@ -118,6 +138,7 @@ export const NotificationsTab: React.FC = () => {
   const { t } = useTranslation();
   const { data: preferences, isLoading } = useNotificationPreferences();
   const updateMutation = useUpdatePreference();
+  const restoreMutation = useRestoreRecommendedPreferences();
   const {
     availability,
     permission,
@@ -131,6 +152,8 @@ export const NotificationsTab: React.FC = () => {
 
   const [primerOpen, setPrimerOpen] = useState(false);
   const [unsubConfirmOpen, setUnsubConfirmOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<ReadonlySet<NotificationGroupId>>(new Set());
+  const [restoringGroup, setRestoringGroup] = useState<NotificationGroupId | null>(null);
 
   const pushGranted = availability.kind === "ready" && permission === "granted" && isSubscribed;
   const canManagePushColumn = pushGranted;
@@ -155,6 +178,15 @@ export const NotificationsTab: React.FC = () => {
     return "ready";
   })();
 
+  // Push has two very different "off" states. When it is merely not-yet-activated
+  // ("ready") we keep the column as a locked teaser. When it is fundamentally
+  // unavailable here (denied / unsupported / misconfigured) push will never fire,
+  // so the whole column + header collapses away and the hero carries the single
+  // explanation — no wall of inert grey dots.
+  const showPushColumn = heroVariant === "subscribed" || heroVariant === "ready";
+
+  const groups = groupNotificationPreferences(preferences ?? []);
+
   const handlePrimerAccept = async () => {
     const ok = await subscribe();
     setPrimerOpen(false);
@@ -167,6 +199,27 @@ export const NotificationsTab: React.FC = () => {
   const handleUnsubscribeConfirm = async () => {
     await unsubscribe();
     setUnsubConfirmOpen(false);
+  };
+
+  const toggleCollapse = (id: NotificationGroupId) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const handleToggle = (
+    pref: NotificationPreferenceDTO,
+    patch: { email_enabled?: boolean; push_enabled?: boolean },
+  ) => updateMutation.mutate({ notification_type: pref.notification_type, ...patch });
+
+  const handleRestore = (group: NotificationPreferenceGroup) => {
+    setRestoringGroup(group.id);
+    restoreMutation.mutate(
+      { rows: group.preferences, includePush: showPushColumn },
+      { onSettled: () => setRestoringGroup(null) },
+    );
   };
 
   return (
@@ -187,90 +240,48 @@ export const NotificationsTab: React.FC = () => {
           onSendTest={sendTest}
         />
 
-        <Text size="xs" color="muted" className="mb-2 leading-relaxed">
+        <Text size="xs" color="muted" className="mb-4 leading-relaxed">
           {t("settings.notifications.in_app_note")}
         </Text>
 
-        <div className="flex flex-col divide-y divide-ethereal-parchment/40 sm:border-t sm:border-ethereal-parchment/40">
-          <div className="hidden sm:grid grid-cols-[1fr_100px_100px] gap-4 py-4 px-2">
-            <div>
-              <Eyebrow>{t("settings.notifications.table.event_type")}</Eyebrow>
-            </div>
-            <div className="text-center">
-              <Eyebrow>{t("settings.notifications.table.email")}</Eyebrow>
-            </div>
+        <div
+          className={cn(
+            "hidden sm:grid gap-4 pb-2 px-2 border-b border-ethereal-parchment/40",
+            showPushColumn ? "grid-cols-[1fr_100px_100px]" : "grid-cols-[1fr_100px]",
+          )}
+        >
+          <div>
+            <Eyebrow>{t("settings.notifications.table.event_type")}</Eyebrow>
+          </div>
+          <div className="text-center">
+            <Eyebrow>{t("settings.notifications.table.email")}</Eyebrow>
+          </div>
+          {showPushColumn && (
             <div className="text-center">
               <Eyebrow>{t("settings.notifications.table.push")}</Eyebrow>
             </div>
-          </div>
-
-          {preferences?.map((pref) => (
-            <div
-              key={pref.notification_type}
-              className="flex flex-col sm:grid sm:grid-cols-[1fr_100px_100px] sm:items-center gap-y-4 sm:gap-4 py-5 sm:py-4 hover:bg-ethereal-parchment/10 transition-colors sm:px-2 rounded-xl sm:rounded-none"
-            >
-              <div className="flex items-center px-1 sm:px-0">
-                <Text size="sm" weight="medium">
-                  {t(`settings.notifications.types.${pref.notification_type}`, pref.label || pref.notification_type.replace(/_/g, " "))}
-                </Text>
-              </div>
-
-              <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-lg p-4 sm:p-0">
-                <div className="flex items-center justify-between sm:justify-center w-full">
-                  <Eyebrow className="sm:hidden">{t("settings.notifications.table.email")}</Eyebrow>
-                  <NotificationSwitch
-                    checked={pref.email_enabled}
-                    onCheckedChange={(val) =>
-                      updateMutation.mutate({
-                        notification_type: pref.notification_type,
-                        email_enabled: val,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between sm:justify-center w-full">
-                  <Eyebrow className="sm:hidden">{t("settings.notifications.table.push")}</Eyebrow>
-                  {canManagePushColumn ? (
-                    <NotificationSwitch
-                      checked={pref.push_enabled}
-                      onCheckedChange={(val) =>
-                        updateMutation.mutate({
-                          notification_type: pref.notification_type,
-                          push_enabled: val,
-                        })
-                      }
-                    />
-                  ) : (
-                    <Tooltip.Root>
-                      <Tooltip.Trigger asChild>
-                        <span className="flex">
-                          <LockedOffSwitch />
-                        </span>
-                      </Tooltip.Trigger>
-                      <Tooltip.Portal>
-                        <Tooltip.Content
-                          side="left"
-                          sideOffset={6}
-                          className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-lg shadow-glass-solid max-w-55 text-center leading-snug z-toast"
-                        >
-                          {heroVariant === "denied"
-                            ? t("settings.notifications.tooltips.denied")
-                            : heroVariant === "unsupported"
-                              ? t("settings.notifications.tooltips.unsupported")
-                              : t("settings.notifications.tooltips.activate_first")}
-                          <Tooltip.Arrow className="fill-ethereal-ink" />
-                        </Tooltip.Content>
-                      </Tooltip.Portal>
-                    </Tooltip.Root>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+          )}
         </div>
 
-        <DigestSection />
+        <div className="flex flex-col">
+          {groups.map((group) => (
+            <PreferenceGroup
+              key={group.id}
+              group={group}
+              t={t}
+              collapsed={collapsed.has(group.id)}
+              onToggleCollapse={() => toggleCollapse(group.id)}
+              showPushColumn={showPushColumn}
+              canManagePush={canManagePushColumn}
+              onToggle={handleToggle}
+              onRestore={() => handleRestore(group)}
+              isRestoring={restoreMutation.isPending && restoringGroup === group.id}
+            />
+          ))}
+          {/* Team-ops is the last group, so the digest lands as the ledger's
+              true footer — batching exactly those routine team alerts above it. */}
+          <DigestPanel />
+        </div>
       </GlassCard>
 
       <PushPermissionPrimer
@@ -292,6 +303,196 @@ export const NotificationsTab: React.FC = () => {
         isDestructive
       />
     </Tooltip.Provider>
+  );
+};
+
+interface PreferenceGroupProps {
+  group: NotificationPreferenceGroup;
+  t: TFunc;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  showPushColumn: boolean;
+  canManagePush: boolean;
+  onToggle: (
+    pref: NotificationPreferenceDTO,
+    patch: { email_enabled?: boolean; push_enabled?: boolean },
+  ) => void;
+  onRestore: () => void;
+  isRestoring: boolean;
+}
+
+const PreferenceGroup: React.FC<PreferenceGroupProps> = ({
+  group,
+  t,
+  collapsed,
+  onToggleCollapse,
+  showPushColumn,
+  canManagePush,
+  onToggle,
+  onRestore,
+  isRestoring,
+}) => {
+  const GroupIcon = group.icon;
+  const hasCustomized = group.preferences.some((pref) =>
+    isPreferenceCustomized(pref, showPushColumn),
+  );
+
+  return (
+    <section className="border-b border-ethereal-parchment/30 last:border-b-0">
+      <header className="flex items-center justify-between gap-3 pt-5 pb-1">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          aria-expanded={!collapsed}
+          className="flex items-center gap-2 rounded-lg px-1 -mx-1 py-1 outline-none focus-visible:ring-2 ring-ethereal-gold/50"
+        >
+          <ChevronDown
+            className={cn(
+              "w-4 h-4 text-ethereal-graphite/60 transition-transform duration-200",
+              collapsed && "-rotate-90",
+            )}
+          />
+          <GroupIcon className="w-4 h-4 text-ethereal-gold" />
+          <Eyebrow>{t(`settings.notifications.groups.${group.id}`)}</Eyebrow>
+        </button>
+
+        {hasCustomized && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRestore}
+            isLoading={isRestoring}
+            leftIcon={!isRestoring ? <RotateCcw className="w-3.5 h-3.5" /> : undefined}
+          >
+            {t("settings.notifications.restore_recommended")}
+          </Button>
+        )}
+      </header>
+
+      {!collapsed && (
+        <div className="flex flex-col divide-y divide-ethereal-parchment/30 pb-2">
+          {group.preferences.map((pref) => (
+            <PreferenceRow
+              key={pref.notification_type}
+              pref={pref}
+              t={t}
+              showPushColumn={showPushColumn}
+              canManagePush={canManagePush}
+              onToggle={onToggle}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
+interface PreferenceRowProps {
+  pref: NotificationPreferenceDTO;
+  t: TFunc;
+  showPushColumn: boolean;
+  canManagePush: boolean;
+  onToggle: (
+    pref: NotificationPreferenceDTO,
+    patch: { email_enabled?: boolean; push_enabled?: boolean },
+  ) => void;
+}
+
+const PreferenceRow: React.FC<PreferenceRowProps> = ({
+  pref,
+  t,
+  showPushColumn,
+  canManagePush,
+  onToggle,
+}) => {
+  const { icon: RowIcon } = notificationTypeMeta(pref.notification_type);
+  const label = t(
+    `settings.notifications.types.${pref.notification_type}`,
+    pref.label || pref.notification_type.replace(/_/g, " "),
+  );
+  const description = t(`settings.notifications.type_desc.${pref.notification_type}`, "");
+  const customized = isPreferenceCustomized(pref, showPushColumn);
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col sm:grid sm:items-center gap-y-4 sm:gap-4 py-4 sm:px-2 hover:bg-ethereal-parchment/10 transition-colors rounded-xl sm:rounded-none",
+        showPushColumn ? "sm:grid-cols-[1fr_100px_100px]" : "sm:grid-cols-[1fr_100px]",
+      )}
+    >
+      <div className="flex items-start gap-3 px-1 sm:px-0">
+        <div className="mt-0.5 p-1.5 rounded-lg bg-ethereal-parchment/40 shrink-0">
+          <RowIcon className="w-4 h-4 text-ethereal-graphite" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Text size="sm" weight="medium">
+              {label}
+            </Text>
+            {customized && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-ethereal-gold/15 px-2 py-0.5 shrink-0"
+                title={t("settings.notifications.customized_hint")}
+              >
+                <span className="w-1 h-1 rounded-full bg-ethereal-gold" aria-hidden />
+                <Eyebrow className="text-ethereal-gold">
+                  {t("settings.notifications.customized_badge")}
+                </Eyebrow>
+              </span>
+            )}
+          </div>
+          {description && (
+            <Text size="xs" color="muted" className="leading-snug mt-0.5">
+              {description}
+            </Text>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-lg p-4 sm:p-0">
+        <div className="flex items-center justify-between sm:justify-center w-full">
+          <Eyebrow className="sm:hidden">{t("settings.notifications.table.email")}</Eyebrow>
+          <NotificationSwitch
+            checked={pref.email_enabled}
+            ariaLabel={t("settings.notifications.a11y.email", { event: label })}
+            onCheckedChange={(val) => onToggle(pref, { email_enabled: val })}
+          />
+        </div>
+
+        {showPushColumn && (
+          <div className="flex items-center justify-between sm:justify-center w-full">
+            <Eyebrow className="sm:hidden">{t("settings.notifications.table.push")}</Eyebrow>
+            {canManagePush ? (
+              <NotificationSwitch
+                checked={pref.push_enabled}
+                ariaLabel={t("settings.notifications.a11y.push", { event: label })}
+                onCheckedChange={(val) => onToggle(pref, { push_enabled: val })}
+              />
+            ) : (
+              // Push is available but not yet activated — a locked teaser that
+              // invites the user to turn it on via the hero above.
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <span className="flex">
+                    <LockedOffSwitch />
+                  </span>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content
+                    side="left"
+                    sideOffset={6}
+                    className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-lg shadow-glass-solid max-w-55 text-center leading-snug z-toast"
+                  >
+                    {t("settings.notifications.tooltips.activate_first")}
+                    <Tooltip.Arrow className="fill-ethereal-ink" />
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -381,7 +582,7 @@ const PushHero: React.FC<PushHeroProps> = ({
         )}
 
         {variant === "denied" && (
-          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.1em] font-bold text-ethereal-crimson/80">
+          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-ethereal-crimson/80">
             <Loader2 className="w-3 h-3 opacity-0" aria-hidden />
             {t("settings.notifications.actions.manual_change_required")}
           </span>
@@ -392,11 +593,12 @@ const PushHero: React.FC<PushHeroProps> = ({
 };
 
 /**
- * Daily-digest control. Routine INFO manager alerts (attendance, RSVPs, absence
- * requests) are batched into one email a day instead of a real-time flood. Only
- * shown to managers — they're the recipients of digestible events.
+ * Daily-digest control, bound directly beneath the team-ops group: those routine
+ * INFO alerts (attendance, RSVPs, absence requests) are the very events it batches
+ * into one email a day instead of a real-time flood. Manager-only — and the team
+ * group is itself manager-only, so the two always appear together.
  */
-const DigestSection: React.FC = () => {
+const DigestPanel: React.FC = () => {
   const { t } = useTranslation();
   const { data: user } = useSettingsData();
   const updateDigest = useUpdateDigestSettings();
@@ -405,45 +607,60 @@ const DigestSection: React.FC = () => {
 
   const enabled = user.profile.digest_enabled ?? true;
   const hour = user.profile.digest_hour ?? 8;
+  const timezone = user.profile.timezone;
 
   return (
-    <div className="mt-6 pt-6 border-t border-ethereal-parchment/40">
+    <div className="mt-5 rounded-xl border border-ethereal-gold/20 bg-ethereal-gold/5 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <Text size="sm" weight="medium">
-            {t("settings.notifications.digest.title")}
-          </Text>
+          <div className="flex items-center gap-2">
+            <Inbox className="w-4 h-4 text-ethereal-gold shrink-0" />
+            <Text size="sm" weight="medium">
+              {t("settings.notifications.digest.title")}
+            </Text>
+          </div>
           <Text size="xs" color="muted" className="mt-1 leading-relaxed">
             {t("settings.notifications.digest.description")}
           </Text>
         </div>
         <NotificationSwitch
           checked={enabled}
+          ariaLabel={t("settings.notifications.digest.title")}
           onCheckedChange={(val) => updateDigest.mutate({ digest_enabled: val })}
         />
       </div>
 
       {enabled && (
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <Eyebrow>{t("settings.notifications.digest.hour_label")}</Eyebrow>
-          <select
-            value={hour}
-            onChange={(e) => updateDigest.mutate({ digest_hour: Number(e.target.value) })}
-            className="rounded-lg border border-ethereal-parchment/60 bg-ethereal-marble px-3 py-1.5 text-sm text-ethereal-ink outline-none focus:ring-2 ring-ethereal-gold/50 cursor-pointer"
-          >
-            {Array.from({ length: 24 }, (_, h) => (
-              <option key={h} value={h}>
-                {String(h).padStart(2, "0")}:00
-              </option>
-            ))}
-          </select>
+        <div className="mt-4 flex items-end justify-between gap-4 border-t border-ethereal-gold/15 pt-4">
+          <div className="min-w-0">
+            <Eyebrow>{t("settings.notifications.digest.hour_label")}</Eyebrow>
+            {timezone && (
+              <Text size="xs" color="muted" className="mt-1">
+                {t("settings.notifications.digest.timezone_note", { timezone })}
+              </Text>
+            )}
+          </div>
+          <div className="w-32 shrink-0">
+            <Select
+              variant="solid"
+              value={String(hour)}
+              aria-label={t("settings.notifications.digest.hour_label")}
+              onChange={(e) => updateDigest.mutate({ digest_hour: Number(e.target.value) })}
+            >
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>
+                  {String(h).padStart(2, "0")}:00
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-function describe(variant: HeroVariant, availability: ReturnType<typeof usePushNotifications>["availability"], t: ReturnType<typeof useTranslation>["t"]): { title: string; description: string } {
+function describe(variant: HeroVariant, availability: ReturnType<typeof usePushNotifications>["availability"], t: TFunc): { title: string; description: string } {
   switch (variant) {
     case "subscribed":
       return {

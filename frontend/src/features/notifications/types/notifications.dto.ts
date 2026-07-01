@@ -23,6 +23,7 @@ export type NotificationType =
   | "ATTENDANCE_SUBMITTED"
   | "CUSTOM_ADMIN_MESSAGE"
   | "MESSAGE_RECEIVED"
+  | "CHANNEL_MESSAGE"
   | "NOTIFICATION_READ_RECEIPT";
 
 // ==========================================
@@ -30,7 +31,7 @@ export type NotificationType =
 // ==========================================
 //
 // Metadata carries STRUCTURED, language-neutral data only (stable status/field
-// codes, names, formatted dates). The in-app row composes its own copy from
+// codes, names, ISO datetimes, display fallbacks). The in-app row composes its own copy from
 // these codes in the viewer's current UI language — see NotificationItem.tsx.
 
 /** One audited field change; `field` is a stable key localized at render time. */
@@ -38,6 +39,12 @@ export interface FieldChange {
   field: string;
   old?: string | null;
   new?: string | null;
+}
+
+export interface EventMomentMetadata {
+  starts_at?: string | null;
+  starts_at_display?: string | null;
+  timezone?: string | null;
 }
 
 export type ProjectChangeEvent = "updated" | "removed";
@@ -63,20 +70,45 @@ export interface ProjectUpdatedMetadata {
   changes?: FieldChange[];
 }
 
-export interface RehearsalScheduledMetadata {
+export interface ProjectReminderMetadata extends EventMomentMetadata {
+  project_id?: string;
+  project_name: string;
+  date_range?: string | null;
+  location?: string | null;
+}
+
+export interface RehearsalScheduledMetadata extends EventMomentMetadata {
   rehearsal_id: string;
   project_id: string;
   project_name: string;
+  location?: string;
+  focus?: string;
 }
 
-export interface RehearsalUpdatedMetadata {
+export interface RehearsalUpdatedMetadata extends EventMomentMetadata {
   rehearsal_id: string;
+  project_id?: string;
   project_name: string;
+  location?: string;
+  focus?: string;
   changes: FieldChange[];
 }
 
-export interface RehearsalCancelledMetadata {
+export interface RehearsalCancelledMetadata extends EventMomentMetadata {
+  rehearsal_id?: string;
+  project_id?: string;
   project_name: string;
+  location?: string;
+  focus?: string;
+}
+
+export interface RehearsalReminderMetadata extends EventMomentMetadata {
+  rehearsal_id?: string;
+  project_id?: string;
+  project_name: string;
+  rehearsal_date?: string | null;
+  location?: string | null;
+  focus?: string | null;
 }
 
 export interface PieceCastingMetadata {
@@ -129,12 +161,19 @@ export interface NotificationReadReceiptMetadata {
 }
 
 export interface MessageReceivedMetadata {
-  thread_id: string;
+  thread_id?: string | null;
   title: string;
   sender_name: string;
   message: string;
   snippet: string;
   cta_url?: string;
+}
+
+export interface ChannelMessageMetadata {
+  channel_id?: string | null;
+  project_name: string;
+  sender_name: string;
+  snippet?: string | null;
 }
 
 export type DefaultMetadata = Record<string, unknown>;
@@ -171,6 +210,10 @@ export type NotificationDTO = BaseNotification &
         metadata: RehearsalCancelledMetadata;
       }
     | {
+        notification_type: "REHEARSAL_REMINDER";
+        metadata: RehearsalReminderMetadata;
+      }
+    | {
         notification_type: "PIECE_CASTING_ASSIGNED" | "PIECE_CASTING_UPDATED";
         metadata: PieceCastingMetadata;
       }
@@ -189,12 +232,11 @@ export type NotificationDTO = BaseNotification &
     | {
         notification_type:
           | "PROJECT_CANCELLED"
-          | "PROJECT_REMINDER"
-          | "REHEARSAL_REMINDER"
           | "CONTRACT_ISSUED"
           | "SYSTEM_ALERT";
         metadata: DefaultMetadata;
       }
+    | { notification_type: "PROJECT_REMINDER"; metadata: ProjectReminderMetadata }
     | {
         notification_type: "CUSTOM_ADMIN_MESSAGE";
         metadata: CustomAdminMessageMetadata;
@@ -208,8 +250,8 @@ export type NotificationDTO = BaseNotification &
         metadata: MessageReceivedMetadata;
       }
     | {
-        notification_type: "NOTIFICATION_READ_RECEIPT";
-        metadata: NotificationReadReceiptMetadata;
+        notification_type: "CHANNEL_MESSAGE";
+        metadata: ChannelMessageMetadata;
       }
   );
 
@@ -226,6 +268,10 @@ export interface NotificationPreferenceDTO {
   email_enabled: boolean;
   push_enabled: boolean;
   label?: string;
+  /** The shared default contract for this type — drives the "recommended" badge
+   *  and Restore-recommended without re-deriving the backend policy. */
+  recommended_email?: boolean;
+  recommended_push?: boolean;
 }
 
 export type NotificationPreferenceUpdateDTO =

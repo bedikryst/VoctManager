@@ -17,6 +17,7 @@ import {
   CalendarClock,
   ChevronRight,
   Clock,
+  FileWarning,
   ListMusic,
   UserCheck,
   UserX,
@@ -51,6 +52,8 @@ export interface PipelineProjectDto {
   castTotal: number;
   rehearsalsUpcoming: number;
   piecesTotal: number;
+  /** The concert is imminent but no score book has been assembled/uploaded yet. */
+  scoreMissing: boolean;
 }
 
 interface ProductionPipelineProps {
@@ -159,6 +162,17 @@ const PipelineRow = ({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        {project.scoreMissing && (
+          <span
+            title={t("dashboard.admin.pipeline.no_score", "Bez partytury")}
+            className="flex items-center gap-1 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1"
+          >
+            <FileWarning size={11} className="text-ethereal-gold" aria-hidden="true" />
+            <Eyebrow color="gold" className="hidden md:inline">
+              {t("dashboard.admin.pipeline.no_score", "Bez partytury")}
+            </Eyebrow>
+          </span>
+        )}
         {hasPending ? (
           <span className="flex items-center gap-1 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1">
             <Clock size={11} className="text-ethereal-gold" aria-hidden="true" />

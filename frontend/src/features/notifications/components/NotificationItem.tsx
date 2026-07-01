@@ -26,7 +26,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { NotificationDTO } from "../types/notifications.dto";
+import type { EventMomentMetadata, NotificationDTO } from "../types/notifications.dto";
 import { useMarkNotificationRead } from "../api/notifications.queries";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
@@ -82,6 +82,50 @@ const statusPhrase = (
   code?: string,
 ): string => (code ? t(`notifications.status.${kind}.${code}`, code) : "");
 
+const compactMetaLine = (...values: readonly unknown[]): string | undefined => {
+  const parts = values
+    .map((value) => (value == null ? "" : String(value).trim()))
+    .filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : undefined;
+};
+
+const firstText = (...values: readonly unknown[]): string | undefined =>
+  values
+    .map((value) => (value == null ? "" : String(value).trim()))
+    .find(Boolean);
+
+const formatEventMoment = (
+  metadata: EventMomentMetadata,
+  lang: string,
+  ...legacyValues: readonly unknown[]
+): string | undefined => {
+  const display = firstText(metadata.starts_at_display);
+  if (display) return display;
+
+  const startsAt = firstText(metadata.starts_at);
+  if (startsAt && startsAt.includes("T")) {
+    const parsed = new Date(startsAt);
+    if (!Number.isNaN(parsed.getTime())) {
+      const timezone = firstText(metadata.timezone);
+      const options: Intl.DateTimeFormatOptions = {
+        dateStyle: "medium",
+        timeStyle: "short",
+      };
+      if (timezone) options.timeZone = timezone;
+      try {
+        return new Intl.DateTimeFormat(lang || "pl", options).format(parsed);
+      } catch {
+        return new Intl.DateTimeFormat(lang || "pl", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(parsed);
+      }
+    }
+  }
+
+  return firstText(startsAt, ...legacyValues);
+};
+
 /**
  * Composes the in-app row's display parts from STRUCTURED metadata, localized to
  * the viewer's current UI language. Mirrors the backend message_content composer
@@ -91,6 +135,7 @@ const statusPhrase = (
 const describe = (
   notification: NotificationDTO,
   t: TFunc,
+  lang: string,
 ): {
   headline?: string;
   subLabel?: string;
@@ -99,7 +144,13 @@ const describe = (
 } => {
   switch (notification.notification_type) {
     case "PROJECT_INVITATION":
-      return { headline: notification.metadata.project_name };
+      return {
+        headline: notification.metadata.project_name,
+        subLabel: compactMetaLine(
+          notification.metadata.date_range,
+          notification.metadata.location,
+        ),
+      };
     case "PROJECT_UPDATED":
       if (notification.metadata.event === "removed") {
         return {
@@ -116,17 +167,51 @@ const describe = (
       // body. The project name under that eyebrow is unambiguous on its own.
       return { headline: notification.metadata.project_name as string | undefined };
     case "REHEARSAL_SCHEDULED":
-      return { headline: notification.metadata.project_name };
+      return {
+        headline: notification.metadata.project_name,
+        subLabel: compactMetaLine(
+          formatEventMoment(notification.metadata, lang),
+          notification.metadata.location,
+        ),
+        detail: notification.metadata.focus || undefined,
+      };
     case "REHEARSAL_UPDATED":
       return {
         headline: notification.metadata.project_name,
+        subLabel: compactMetaLine(
+          formatEventMoment(notification.metadata, lang),
+          notification.metadata.location,
+        ),
+        detail: notification.metadata.focus || undefined,
         changeChips: renderChanges(t, notification.metadata.changes),
       };
     case "REHEARSAL_CANCELLED":
       // "Rehearsal cancelled" is already the eyebrow — show only the project.
-      return { headline: notification.metadata.project_name };
+      return {
+        headline: notification.metadata.project_name,
+        subLabel: compactMetaLine(
+          formatEventMoment(notification.metadata, lang),
+          notification.metadata.location,
+        ),
+        detail: notification.metadata.focus || undefined,
+      };
     case "REHEARSAL_REMINDER":
-      return { headline: notification.metadata.project_name as string | undefined };
+      return {
+        headline: notification.metadata.project_name as string | undefined,
+        subLabel: compactMetaLine(
+          formatEventMoment(notification.metadata, lang, notification.metadata.rehearsal_date),
+          notification.metadata.location,
+        ),
+        detail: notification.metadata.focus || undefined,
+      };
+    case "PROJECT_REMINDER":
+      return {
+        headline: notification.metadata.project_name as string | undefined,
+        subLabel: compactMetaLine(
+          formatEventMoment(notification.metadata, lang, notification.metadata.date_range),
+          notification.metadata.location,
+        ),
+      };
     case "PIECE_CASTING_ASSIGNED":
       return {
         headline: notification.metadata.piece_title,
@@ -182,6 +267,12 @@ const describe = (
         headline: notification.metadata.title,
         subLabel: notification.metadata.sender_name,
         detail: notification.metadata.snippet,
+      };
+    case "CHANNEL_MESSAGE":
+      return {
+        headline: notification.metadata.project_name,
+        subLabel: notification.metadata.sender_name,
+        detail: notification.metadata.snippet || undefined,
       };
     case "CUSTOM_ADMIN_MESSAGE":
       return {
@@ -296,6 +387,7 @@ const resolveVisual = (
     case "ATTENDANCE_SUBMITTED":
       return { icon: ClipboardCheck, accent: "sage" };
     case "MESSAGE_RECEIVED":
+    case "CHANNEL_MESSAGE":
       return { icon: MessageCircle, accent: "incense" };
     case "NOTIFICATION_READ_RECEIPT":
       return { icon: CheckCircle, accent: "sage" };
@@ -332,7 +424,12 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     const type = notification.notification_type;
 
     if (notification.notification_type === "MESSAGE_RECEIVED") {
-      return navigate(`/panel/messages/${notification.metadata.thread_id}`);
+      const threadId = notification.metadata.thread_id;
+      return navigate(threadId ? `/panel/messages/${threadId}` : "/panel/messages");
+    }
+    if (notification.notification_type === "CHANNEL_MESSAGE") {
+      const channelId = notification.metadata.channel_id;
+      return navigate(channelId ? `/panel/messages/channel/${channelId}` : "/panel/messages");
     }
     if (type === "MATERIAL_UPLOADED") {
       return navigate(isAdmin ? "/panel/archive-management" : "/panel/materials");
@@ -360,7 +457,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     onClosePanel();
   };
 
-  const { headline, subLabel, detail, changeChips } = describe(notification, t);
+  const { headline, subLabel, detail, changeChips } = describe(notification, t, i18n.language);
 
   return (
     <div

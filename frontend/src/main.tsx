@@ -67,6 +67,13 @@ const renderApp = (): void => {
           // resolution failed"). Never persist them; the viewer refetches the
           // blob on demand anyway (and they'd blow the localStorage quota).
           shouldDehydrateQuery: (query) => {
+            // Explicit opt-out for heavy, immutable-per-fetch payloads that have
+            // no offline value and would blow the localStorage quota — e.g. the
+            // build-cockpit page thumbnails (base64 WebP strips, refetched on
+            // demand and server-cached by content hash anyway).
+            if (query.meta?.persist === false) {
+              return false;
+            }
             const data = query.state.data;
             if (data instanceof Blob || data instanceof ArrayBuffer) {
               return false;
