@@ -378,7 +378,20 @@
       "units": {
         "minutes_short": "min",
         "seconds_short": "sek"
-      }
+      },
+      "epochs": {
+        "med": "Średniowiecze",
+        "ren": "Renesans",
+        "bar": "Barok",
+        "cla": "Klasycyzm",
+        "rom": "Romantyzm",
+        "m20": "XX wiek",
+        "con": "Muzyka współczesna",
+        "pop": "Rozrywka",
+        "folk": "Folk / Ludowa",
+        "oth": "Inne"
+      },
+      "language_pick": "— wybierz —"
     },
     "hero": {
       "badge": "Operacje Archiwum",
@@ -469,7 +482,12 @@
       "save_btn": "Zapisz zmiany AI",
       "toast_no_changes": "Nic do zapisania.",
       "toast_save_error": "Nie udało się zapisać zmian.",
-      "toast_save_success": "Zapisano zmiany."
+      "toast_save_success": "Zapisano zmiany.",
+      "language_pick": "— wybierz —",
+      "page_count_one": "{{count}} strona",
+      "page_count_few": "{{count}} strony",
+      "page_count_many": "{{count}} stron",
+      "page_count_other": "{{count}} stron"
     },
     "row": {
       "audio_count_tooltip_one": "{{count}} ścieżek audio",
@@ -621,6 +639,21 @@
       "manual_hint": "Użyj dla utworów ludowych, hand-outów albo gdy PDF-a dostaniesz później.",
       "or": "Albo",
       "title": "Witaj w bibliotece nut"
+    },
+    "languages": {
+      "la": "łacina",
+      "pl": "polski",
+      "en": "angielski",
+      "de": "niemiecki",
+      "fr": "francuski",
+      "it": "włoski",
+      "es": "hiszpański",
+      "cu": "cerkiewnosłowiański",
+      "el": "grecki",
+      "he": "hebrajski",
+      "cs": "czeski",
+      "uk": "ukraiński",
+      "ru": "rosyjski"
     }
   },
   "artists": {

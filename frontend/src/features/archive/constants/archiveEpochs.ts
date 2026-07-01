@@ -57,6 +57,11 @@ const ARCHIVE_EPOCH_DEFINITIONS: ArchiveEpochDefinition[] = [
     labelKey: "archive.form.epochs.folk",
     defaultLabel: "Folk / Ludowa",
   },
+  {
+    value: "OTH",
+    labelKey: "archive.form.epochs.oth",
+    defaultLabel: "Inne",
+  },
 ];
 
 export const getArchiveEpochOptions = (t: TFunction): ArchiveEpochOption[] => {
@@ -64,4 +69,19 @@ export const getArchiveEpochOptions = (t: TFunction): ArchiveEpochOption[] => {
     value,
     label: t(labelKey, defaultLabel),
   }));
+};
+
+const EPOCH_DEFINITION_BY_VALUE = new Map(
+  ARCHIVE_EPOCH_DEFINITIONS.map((definition) => [definition.value, definition]),
+);
+
+/** Localised label for a single epoch code (e.g. "FOLK" → "Folk / Ludowa").
+ *  Falls back to the raw code for an unknown value so nothing renders blank. */
+export const getArchiveEpochLabel = (
+  code: string | null | undefined,
+  t: TFunction,
+): string => {
+  if (!code) return "";
+  const definition = EPOCH_DEFINITION_BY_VALUE.get(code);
+  return definition ? t(definition.labelKey, definition.defaultLabel) : code;
 };

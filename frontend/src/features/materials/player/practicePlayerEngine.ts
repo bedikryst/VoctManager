@@ -2,14 +2,25 @@
  * @file practicePlayerEngine.ts
  * @description Framework-agnostic multitrack practice engine for the Songbook.
  *
- * Plays every voice track of a piece simultaneously through a pool of
- * HTMLAudioElements (NOT Web Audio buffers) so that:
+ * Plays every voice track of a piece simultaneously through a pool of streaming
+ * HTMLAudioElements (NOT decoded Web Audio buffers) so that:
  *  - audio streams instead of waiting for full downloads (mobile data),
- *  - playbackRate keeps pitch (preservesPitch) — slow practice stays in tune,
- *  - per-voice volume/mute/solo is a simple element.volume write.
+ *  - playbackRate keeps pitch (preservesPitch) — slow practice stays in tune.
  *
- * The first track acts as the transport master clock; a 250 ms tick corrects
- * drift on the remaining elements and enforces the A–B practice loop.
+ * Mixing runs through a single shared AudioContext: each element feeds a
+ * MediaElementAudioSourceNode → per-voice GainNode → master → destination.
+ * This is deliberate, not decoration:
+ *  - iOS Safari refuses to play several independent <audio> elements from one
+ *    gesture; unifying them into ONE AudioContext output (resumed on the tap)
+ *    is what makes the choir sound on iPhone at all;
+ *  - mute/solo/volume set gain, never element.volume, so a "silenced" voice
+ *    keeps decoding at full level and never drifts — killing the force-seek
+ *    stutter mobile Chrome hit when muted elements were throttled then yanked
+ *    back into sync.
+ * Where Web Audio is unavailable the engine degrades to element.volume mixing.
+ *
+ * The first track acts as the transport master clock; a 250 ms tick is a rare
+ * safety net for residual drift and enforces the A–B practice loop.
  * Consumed by React via useSyncExternalStore (subscribe/getSnapshot).
  */
 
@@ -74,9 +85,27 @@ const EMPTY_SNAPSHOT: PracticePlayerSnapshot = {
   activePreset: null,
 };
 
-const DRIFT_TOLERANCE_S = 0.08;
+// With gain-based mixing every voice keeps decoding in sync, so drift is tiny
+// and this safety net rarely fires; a slightly looser bound avoids an audible
+// micro-seek when a phone does briefly slip.
+const DRIFT_TOLERANCE_S = 0.12;
 const TICK_INTERVAL_MS = 250;
+// Short gain ramp on mute/volume changes — a hard jump clicks ("zipper noise").
+const GAIN_RAMP_S = 0.015;
 const PREF_KEY_PREFIX = "voct.practice.pref.";
+
+type AudioContextCtor = typeof AudioContext;
+
+/** Resolves the (possibly webkit-prefixed) AudioContext constructor, or null. */
+const resolveAudioContextCtor = (): AudioContextCtor | null => {
+  if (typeof window === "undefined") return null;
+  return (
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: AudioContextCtor })
+      .webkitAudioContext ??
+    null
+  );
+};
 
 interface PersistedPref {
   rate?: number;
@@ -109,6 +138,13 @@ export class PracticePlayerEngine {
   private listeners = new Set<Listener>();
   private snapshot: PracticePlayerSnapshot = EMPTY_SNAPSHOT;
 
+  // Web Audio mixing graph — one shared context reused across every load()
+  // (browsers cap live AudioContexts, and iOS counts each as an audio channel).
+  private audioCtx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
+  private sources = new Map<string, MediaElementAudioSourceNode>();
+  private gains = new Map<string, GainNode>();
+
   subscribe = (listener: Listener): (() => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -127,6 +163,8 @@ export class PracticePlayerEngine {
     options?: { soloTrackId?: string | null; autoplay?: boolean },
   ): void {
     this.disposeElements();
+    // Created inside the tap that triggered load() → allowed to start on iOS.
+    this.ensureContext();
 
     const pref = this.readPref(piece.pieceId);
     const rate = pref?.rate ?? this.snapshot.rate;
@@ -143,12 +181,19 @@ export class PracticePlayerEngine {
 
     tracks.forEach((track) => {
       const el = new Audio();
+      // MediaElementSource silences cross-origin media without CORS; anonymous
+      // is harmless same-origin (prod nginx /media) and correct when it isn't.
+      el.crossOrigin = "anonymous";
       el.src = track.url;
       el.preload = "auto";
       // Pitch-preserving tempo change is the whole point of slow practice.
       el.preservesPitch = true;
       el.playbackRate = rate;
+      // Element level stays at full so muted voices keep decoding in sync;
+      // silence is applied downstream on the GainNode (see applyMix).
+      el.volume = 1;
       this.elements.set(track.id, el);
+      this.connectToGraph(track.id, el);
       volumes[track.id] = 1;
       muted[track.id] ??= false;
     });
@@ -183,6 +228,12 @@ export class PracticePlayerEngine {
   async play(): Promise<void> {
     const master = this.master();
     if (!master || !this.snapshot.piece) return;
+
+    // A context created while suspended emits no sound; resume it on the same
+    // gesture that reached play() so the graph is live before the elements are.
+    if (this.audioCtx?.state === "suspended") {
+      void this.audioCtx.resume();
+    }
 
     const startAt = master.currentTime;
     const plays: Promise<void>[] = [];
@@ -306,6 +357,11 @@ export class PracticePlayerEngine {
 
   destroy(): void {
     this.disposeElements();
+    if (this.audioCtx) {
+      void this.audioCtx.close();
+      this.audioCtx = null;
+      this.masterGain = null;
+    }
     this.listeners.clear();
     this.snapshot = EMPTY_SNAPSHOT;
   }
@@ -314,6 +370,41 @@ export class PracticePlayerEngine {
 
   private master(): HTMLAudioElement | null {
     return this.masterId ? (this.elements.get(this.masterId) ?? null) : null;
+  }
+
+  /** Lazily builds the shared context + master gain (once per engine life). */
+  private ensureContext(): void {
+    if (this.audioCtx) return;
+    const Ctor = resolveAudioContextCtor();
+    if (!Ctor) return; // No Web Audio → applyMix falls back to element.volume.
+    try {
+      this.audioCtx = new Ctor();
+      this.masterGain = this.audioCtx.createGain();
+      this.masterGain.gain.value = 1;
+      this.masterGain.connect(this.audioCtx.destination);
+    } catch {
+      this.audioCtx = null;
+      this.masterGain = null;
+    }
+  }
+
+  /**
+   * Routes one element into the mixing graph. createMediaElementSource can only
+   * be called once per element (fine — elements are freshly built each load).
+   * Failure leaves the track out of the graph; applyMix then mixes it by volume.
+   */
+  private connectToGraph(id: string, el: HTMLAudioElement): void {
+    if (!this.audioCtx || !this.masterGain) return;
+    try {
+      const source = this.audioCtx.createMediaElementSource(el);
+      const gain = this.audioCtx.createGain();
+      gain.gain.value = 1;
+      source.connect(gain).connect(this.masterGain);
+      this.sources.set(id, source);
+      this.gains.set(id, gain);
+    } catch {
+      // Leave ungraphed — element.volume fallback keeps this voice audible.
+    }
   }
 
   /** Remembers tempo + preset per piece so practice picks up where it left off. */
@@ -408,9 +499,17 @@ export class PracticePlayerEngine {
 
   private applyMix(): void {
     const { volumes, muted, soloTrackId } = this.snapshot;
+    const now = this.audioCtx?.currentTime ?? 0;
     this.elements.forEach((el, id) => {
       const soloSilenced = soloTrackId !== null && soloTrackId !== id;
-      el.volume = soloSilenced || muted[id] ? 0 : (volumes[id] ?? 1);
+      const level = soloSilenced || muted[id] ? 0 : (volumes[id] ?? 1);
+      const gain = this.gains.get(id);
+      if (gain && this.audioCtx) {
+        // Ramp on the graph; element stays at full volume so it never throttles.
+        gain.gain.setTargetAtTime(level, now, GAIN_RAMP_S);
+      } else {
+        el.volume = level; // Fallback: no Web Audio graph for this track.
+      }
     });
   }
 
@@ -423,6 +522,23 @@ export class PracticePlayerEngine {
       master.removeEventListener("waiting", this.handleWaiting);
       master.removeEventListener("playing", this.handlePlaying);
     }
+    // Tear the graph down before the elements so no source dangles on destination.
+    this.gains.forEach((gain) => {
+      try {
+        gain.disconnect();
+      } catch {
+        // Already detached — nothing to release.
+      }
+    });
+    this.sources.forEach((source) => {
+      try {
+        source.disconnect();
+      } catch {
+        // Already detached — nothing to release.
+      }
+    });
+    this.gains.clear();
+    this.sources.clear();
     this.elements.forEach((el) => {
       el.pause();
       el.removeAttribute("src");

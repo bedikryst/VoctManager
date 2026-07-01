@@ -56,7 +56,9 @@
     "ai_warning": {
       "before_birth": "L'année de composition ({{year}}) précède la naissance du compositeur ({{birth}}).",
       "long_after_death": "L'année de composition ({{year}}) est bien postérieure à la mort du compositeur ({{death}}).",
-      "title": "L'IA a pu se tromper — vérifiez les données avant de valider"
+      "title": "L'IA a pu se tromper — vérifiez les données avant de valider",
+      "arrangement_epoch": "Cette œuvre a un arrangeur mais son époque est marquée comme contemporaine — vérifiez qu'il ne s'agit pas d'un arrangement d'une œuvre traditionnelle (auquel cas l'époque = l'origine de l'original).",
+      "ipa_misaligned": "La transcription API a {{ipa}} lignes et le texte {{lyrics}} — l'alignement ligne à ligne peut être erroné."
     },
     "awaiting_banner": {
       "aria": "Éditions en attente de vérification",
@@ -378,7 +380,20 @@
       "units": {
         "minutes_short": "min",
         "seconds_short": "s"
-      }
+      },
+      "epochs": {
+        "med": "Médiévale",
+        "ren": "Renaissance",
+        "bar": "Baroque",
+        "cla": "Classique",
+        "rom": "Romantique",
+        "m20": "XXe siècle",
+        "con": "Contemporaine",
+        "pop": "Musique populaire",
+        "folk": "Folk / Traditionnelle",
+        "oth": "Autre"
+      },
+      "language_pick": "— choisir —"
     },
     "hero": {
       "badge": "Opérations d'archive",
@@ -445,7 +460,9 @@
         "opus": "Opus / Catalogue",
         "text_source": "Source du texte",
         "title": "Titre",
-        "voicing": "Distribution"
+        "voicing": "Distribution",
+        "arranger": "Arrangement",
+        "epoch": "Époque"
       },
       "fields_hint": "Vérifiez chaque champ avec l'aperçu PDF à gauche. Modifiez si l'IA a mal lu.",
       "fields_title": "Champs extraits par l'IA",
@@ -469,7 +486,17 @@
       "save_btn": "Enregistrer les modifications IA",
       "toast_no_changes": "Rien à enregistrer.",
       "toast_save_error": "Impossible d'enregistrer les modifications.",
-      "toast_save_success": "Modifications enregistrées."
+      "toast_save_success": "Modifications enregistrées.",
+      "language_pick": "— choisir —",
+      "no_note_hint": "Pas encore de note de programme. Elle sera générée automatiquement après validation de l'œuvre — ou générez-la maintenant (IA, ~30 s).",
+      "regenerate_note": "Régénérer la note",
+      "generate_note": "Générer la note de programme",
+      "note_generating": "Génération…",
+      "note_ready": "Note de programme prête.",
+      "note_slow": "Cela prend plus de temps que d'habitude — actualisez la page dans un instant.",
+      "note_failed": "Impossible de lancer la génération.",
+      "page_count_one": "{{count}} page",
+      "page_count_other": "{{count}} pages"
     },
     "row": {
       "audio_count_tooltip_one": "{{count}} piste audio",
@@ -618,6 +645,29 @@
       "manual_hint": "À utiliser pour les pièces traditionnelles, les feuillets, ou quand le PDF arrivera plus tard.",
       "or": "Ou",
       "title": "Bienvenue dans la bibliothèque de partitions"
+    },
+    "languages": {
+      "la": "Latin",
+      "pl": "Polonais",
+      "en": "Anglais",
+      "de": "Allemand",
+      "fr": "Français",
+      "it": "Italien",
+      "es": "Espagnol",
+      "cu": "Slavon liturgique",
+      "el": "Grec",
+      "he": "Hébreu",
+      "cs": "Tchèque",
+      "uk": "Ukrainien",
+      "ru": "Russe"
+    },
+    "provenance": {
+      "verified": "Vérifié",
+      "verified_title": "Vérifié et corrigé manuellement.",
+      "ai": "IA · à vérifier",
+      "ai_title": "Extrait par l'IA ({{model}}), non vérifié — comparez au PDF et corrigez si besoin.",
+      "canonical": "{{source}} · confirmé",
+      "canonical_title": "Confirmé par une source canonique : {{source}}."
     }
   },
   "artists": {

@@ -522,7 +522,7 @@ export const ProgramNoteSection = ({
         <Text size="sm" color="muted">
           {t(
             "archive.review.no_note_hint",
-            "Brak notki programowej. Wygeneruj ją na żądanie (AI, ~30 s) — nie powstaje już automatycznie przy imporcie.",
+            "Brak notki programowej. Powstanie automatycznie po zatwierdzeniu utworu — albo wygeneruj ją teraz (AI, ~30 s).",
           )}
         </Text>
       )}

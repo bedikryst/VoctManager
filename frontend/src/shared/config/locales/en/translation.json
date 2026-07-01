@@ -56,7 +56,9 @@
     "ai_warning": {
       "before_birth": "Composition year ({{year}}) predates the composer's birth ({{birth}}).",
       "long_after_death": "Composition year ({{year}}) is long after the composer's death ({{death}}).",
-      "title": "AI may have got it wrong — verify the data before approving"
+      "title": "AI may have got it wrong — verify the data before approving",
+      "arrangement_epoch": "This work has an arranger but its epoch is marked as contemporary — make sure it isn't an arrangement of a traditional work (in which case the epoch = the original's origin).",
+      "ipa_misaligned": "The IPA transcription has {{ipa}} lines and the text {{lyrics}} — the line-by-line alignment may be wrong."
     },
     "awaiting_banner": {
       "aria": "Editions awaiting review",
@@ -378,7 +380,20 @@
       "units": {
         "minutes_short": "min",
         "seconds_short": "sec"
-      }
+      },
+      "epochs": {
+        "med": "Medieval",
+        "ren": "Renaissance",
+        "bar": "Baroque",
+        "cla": "Classical",
+        "rom": "Romantic",
+        "m20": "20th Century",
+        "con": "Contemporary",
+        "pop": "Popular",
+        "folk": "Folk / Traditional",
+        "oth": "Other"
+      },
+      "language_pick": "— select —"
     },
     "hero": {
       "badge": "Archive Operations",
@@ -445,7 +460,9 @@
         "opus": "Opus / Catalogue",
         "text_source": "Text source",
         "title": "Title",
-        "voicing": "Voicing"
+        "voicing": "Voicing",
+        "arranger": "Arrangement",
+        "epoch": "Epoch"
       },
       "fields_hint": "Check each field against the PDF preview on the left. Edit if the AI misread it.",
       "fields_title": "Fields extracted by AI",
@@ -469,7 +486,17 @@
       "save_btn": "Save AI changes",
       "toast_no_changes": "Nothing to save.",
       "toast_save_error": "Couldn't save the changes.",
-      "toast_save_success": "Changes saved."
+      "toast_save_success": "Changes saved.",
+      "language_pick": "— select —",
+      "no_note_hint": "No programme note yet. It will be generated automatically once the piece is approved — or generate it now (AI, ~30 s).",
+      "regenerate_note": "Regenerate note",
+      "generate_note": "Generate programme note",
+      "note_generating": "Generating…",
+      "note_ready": "Programme note ready.",
+      "note_slow": "This is taking longer than usual — refresh the page in a moment.",
+      "note_failed": "Couldn't start generation.",
+      "page_count_one": "{{count}} page",
+      "page_count_other": "{{count}} pages"
     },
     "row": {
       "audio_count_tooltip_one": "{{count}} audio track",
@@ -618,6 +645,29 @@
       "manual_hint": "Use this for folk pieces, hand-outs, or when the PDF comes later.",
       "or": "Or",
       "title": "Welcome to the sheet music library"
+    },
+    "languages": {
+      "la": "Latin",
+      "pl": "Polish",
+      "en": "English",
+      "de": "German",
+      "fr": "French",
+      "it": "Italian",
+      "es": "Spanish",
+      "cu": "Church Slavonic",
+      "el": "Greek",
+      "he": "Hebrew",
+      "cs": "Czech",
+      "uk": "Ukrainian",
+      "ru": "Russian"
+    },
+    "provenance": {
+      "verified": "Verified",
+      "verified_title": "Checked and corrected by hand.",
+      "ai": "AI · to review",
+      "ai_title": "Extracted by AI ({{model}}), unverified — check against the PDF and correct if needed.",
+      "canonical": "{{source}} · confirmed",
+      "canonical_title": "Confirmed by a canonical source: {{source}}."
     }
   },
   "artists": {

@@ -5,8 +5,10 @@
  * AI Review tab so the conductor catches obvious mistakes (e.g. Rachmaninoff
  * 1741 — composer wasn't born until 1873) before approving the edition.
  *
- * Intentionally narrow scope: just years for now. The same pattern can
- * extend to language vs text source, voicing vs movement count, etc.
+ * Scope: cross-checkable signals only — composition year vs composer lifespan,
+ * IPA vs lyric line alignment, and a modern epoch on an arranged (likely
+ * traditional) work. Deliberately NOT the model's self-rated confidence, which
+ * was a near-constant ~95% and carried no information.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/AIHallucinationWarning
  */
@@ -80,22 +82,17 @@ export const AIHallucinationWarning = ({
     );
   }
 
-  // The AI self-rated one or more of this piece's own fields below 60% — a hint
-  // to scrutinise the highlighted (crimson) chips rather than trust them.
-  const provenance = piece.provenance ?? {};
-  const pieceHasLowConfidence = Object.entries(provenance).some(
-    ([key, entry]) =>
-      key.startsWith(`${piece.id}:`) &&
-      (entry.source === "AIS" ||
-        entry.source === "AIH" ||
-        entry.source === "AIO") &&
-      (entry.confidence ?? 1) < 0.6,
-  );
-  if (pieceHasLowConfidence) {
+  // A named arranger's setting tagged with a modern/contemporary epoch is the
+  // classic misfire: a traditional carol/hymn arranged today is FOLK (or the
+  // origin period), not CON. Epoch should reflect the work's ORIGIN, so nudge
+  // the conductor to confirm. This is a real, checkable signal — unlike the
+  // model's self-rated confidence, which was a near-constant ~95% and told the
+  // conductor nothing.
+  if (piece.arranger && (piece.epoch === "CON" || piece.epoch === "M20")) {
     reasons.push(
       t(
-        "archive.ai_warning.low_confidence",
-        "AI oznaczył część pól niską pewnością — zweryfikuj je szczególnie uważnie.",
+        "archive.ai_warning.arrangement_epoch",
+        "Utwór ma aranżera, a epokę oznaczono jako współczesną — upewnij się, że to nie opracowanie utworu tradycyjnego (wtedy epoka = pochodzenie oryginału).",
       ),
     );
   }

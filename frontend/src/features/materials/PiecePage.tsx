@@ -44,6 +44,7 @@ import {
 } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { getReferenceRecordingLinks } from "@/features/archive/constants/referenceRecordings";
+import { getArchiveEpochLabel } from "@/features/archive/constants/archiveEpochs";
 import {
   getPiecePdfLinks,
   type PiecePdfLink,
@@ -265,7 +266,7 @@ export default function PiecePage(): React.JSX.Element {
                 color="muted"
                 className="rounded border border-ethereal-marble bg-ethereal-alabaster px-2 py-0.5 shadow-glass-solid"
               >
-                {piece.epoch}
+                {getArchiveEpochLabel(piece.epoch, t)}
               </Eyebrow>
             )}
             {piece.estimated_duration != null && piece.estimated_duration > 0 && (

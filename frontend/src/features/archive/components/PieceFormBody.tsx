@@ -23,6 +23,10 @@ import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
+import {
+  getArchiveLanguageOptions,
+  getLanguageLabel,
+} from "../constants/archiveLanguages";
 import type { PieceFormState } from "../hooks/usePieceFormState";
 
 /**
@@ -72,6 +76,20 @@ export const PieceFormBody = ({
     register,
     formState: { errors },
   } = form;
+
+  // Language is stored as a canonical ISO code (or "pl+la" for a bilingual
+  // score). Offer a localised dropdown, but keep any current value that is not a
+  // plain single-language option (e.g. the bilingual form) selectable so editing
+  // never silently drops it.
+  const languageOptions = getArchiveLanguageOptions(t);
+  const languageValue = form.watch("language");
+  const languageChoices =
+    languageValue && !languageOptions.some((o) => o.value === languageValue)
+      ? [
+          { value: languageValue, label: getLanguageLabel(languageValue, t) },
+          ...languageOptions,
+        ]
+      : languageOptions;
 
   const availableLines = voiceLines.filter(
     (vl) =>
@@ -214,12 +232,21 @@ export const PieceFormBody = ({
             error={errors.composition_year?.message}
             {...register("composition_year")}
           />
-          <Input
-            label={t("archive.form.fields.language", "Język śpiewu")}
-            placeholder="np. Łacina"
-            error={errors.language?.message}
-            {...register("language")}
-          />
+          <div>
+            <Eyebrow color="muted" size="caption" className="mb-1 block">
+              {t("archive.form.fields.language", "Język śpiewu")}
+            </Eyebrow>
+            <Select disabled={isBusy} {...register("language")}>
+              <option value="">
+                {t("archive.form.language_pick", "— wybierz —")}
+              </option>
+              {languageChoices.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
       </GlassCard>
 

@@ -74,6 +74,10 @@ import {
   TranslationsEditor,
 } from "./components/ReviewArtifactsEditors";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
+import {
+  getArchiveLanguageOptions,
+  getLanguageLabel,
+} from "./constants/archiveLanguages";
 import { getPrimaryPdf } from "./constants/piecePdfs";
 import { INGESTION_STATUS, type Piece } from "@/shared/types";
 
@@ -317,6 +321,18 @@ export default function ArchiveReviewPage(): React.JSX.Element {
     <ProvenanceChip entry={pieceFieldProvenance(piece, field)} />
   );
   const epochOptions = getArchiveEpochOptions(t);
+  // Localised language dropdown over the canonical ISO value; any non-plain
+  // current value (e.g. the bilingual "pl+la") is kept selectable so it is never
+  // silently dropped on edit.
+  const languageOptions = getArchiveLanguageOptions(t);
+  const languageValue = form.watch("language");
+  const languageChoices =
+    languageValue && !languageOptions.some((o) => o.value === languageValue)
+      ? [
+          { value: languageValue, label: getLanguageLabel(languageValue, t) },
+          ...languageOptions,
+        ]
+      : languageOptions;
 
   return (
     <PageTransition>
@@ -386,7 +402,9 @@ export default function ArchiveReviewPage(): React.JSX.Element {
                 <div className="flex shrink-0 items-center justify-between gap-2 border-b border-ethereal-incense/10 bg-ethereal-alabaster/40 px-3 py-2">
                   <Caption color="muted" className="truncate">
                     {primaryPdf.label}
-                    {primaryPdf.page_count && ` · ${primaryPdf.page_count} stron`}
+                    {primaryPdf.page_count
+                      ? ` · ${t("archive.review.page_count", { count: primaryPdf.page_count })}`
+                      : ""}
                   </Caption>
                   <Button asChild variant="ghost" size="sm">
                     <a
@@ -521,12 +539,19 @@ export default function ArchiveReviewPage(): React.JSX.Element {
                         label={t("archive.review.fields.language", "Język śpiewu")}
                         chip={fieldChip("language")}
                       >
-                        <Input
+                        <Select
                           aria-label={t("archive.review.fields.language", "Język śpiewu")}
-                          placeholder="np. la, en, pl"
-                          error={errors.language?.message}
                           {...register("language")}
-                        />
+                        >
+                          <option value="">
+                            {t("archive.review.language_pick", "— wybierz —")}
+                          </option>
+                          {languageChoices.map((lang) => (
+                            <option key={lang.value} value={lang.value}>
+                              {lang.label}
+                            </option>
+                          ))}
+                        </Select>
                       </LabeledField>
                       <LabeledField
                         label={t("archive.review.fields.voicing", "Obsada")}

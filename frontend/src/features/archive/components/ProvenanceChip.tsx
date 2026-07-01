@@ -2,9 +2,12 @@
  * @file ProvenanceChip.tsx
  * @description Per-field source attribution for the AI Review cockpit. Given a
  * field's {@link ProvenanceEntry}, renders a small pill that tells the conductor
- * at a glance whether a value is canonical (MusicBrainz / Wikidata), an AI guess
- * (with the run's self-rated confidence), or already human-verified — the
- * "AI-suggested vs verified" signal the provenance log was built for. A field
+ * at a glance the field's TRUST TIER: verified by hand, verified against a
+ * canonical source (MusicBrainz / Wikidata), or an unverified AI extraction that
+ * needs a look. We deliberately do NOT show a percentage: the model's self-rated
+ * confidence was a near-constant ~95% regardless of correctness, so a number
+ * read as precision it never had. Trust comes from the SOURCE (and corroboration
+ * by a canonical catalogue), not from the model grading its own homework. A field
  * with no provenance row renders nothing (graceful for manually-entered pieces).
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ProvenanceChip
@@ -18,18 +21,14 @@ import { Database, ShieldCheck, Sparkles } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { Piece, ProvenanceEntry } from "@/shared/types";
 
-type Tone = "verified" | "canonical" | "ai" | "aiLow" | "external";
+type Tone = "verified" | "canonical" | "ai" | "external";
 
 const TONE_CLASS: Record<Tone, string> = {
   verified: "border-ethereal-sage/45 bg-ethereal-sage/12 text-ethereal-sage",
   canonical: "border-ethereal-incense/40 bg-ethereal-parchment text-ethereal-graphite",
   ai: "border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst",
-  aiLow: "border-ethereal-crimson/40 bg-ethereal-crimson/8 text-ethereal-crimson",
   external: "border-ethereal-incense/30 bg-ethereal-parchment/60 text-ethereal-graphite",
 };
-
-/** AI confidence at/above this reads as "trust but verify"; below is flagged. */
-const LOW_CONFIDENCE = 0.7;
 
 const AI_SOURCES = new Set(["AIS", "AIH", "AIO"]);
 const CANONICAL_SOURCES = new Set(["MBZ", "WKD", "IMS"]);
@@ -42,8 +41,6 @@ interface ChipMeta {
 }
 
 const provenanceMeta = (entry: ProvenanceEntry, t: TFunction): ChipMeta => {
-  const pct = Math.round((entry.confidence ?? 0) * 100);
-
   if (entry.source === "MAN") {
     return {
       tone: "verified",
@@ -56,32 +53,27 @@ const provenanceMeta = (entry: ProvenanceEntry, t: TFunction): ChipMeta => {
     };
   }
   if (AI_SOURCES.has(entry.source)) {
-    const low = (entry.confidence ?? 0) < LOW_CONFIDENCE;
     return {
-      tone: low ? "aiLow" : "ai",
-      label: t("archive.provenance.ai", "AI · {{pct}}%", { pct }),
+      tone: "ai",
+      label: t("archive.provenance.ai", "AI · do sprawdzenia"),
       Icon: Sparkles,
-      title: low
-        ? t(
-            "archive.provenance.ai_low_title",
-            "AI niskiej pewności ({{pct}}%) — sprawdź dokładnie z PDF.",
-            { pct },
-          )
-        : t(
-            "archive.provenance.ai_title",
-            "Wyciągnięte przez AI ({{model}}), pewność {{pct}}%.",
-            { model: entry.model_version || "AI", pct },
-          ),
+      title: t(
+        "archive.provenance.ai_title",
+        "Wyciągnięte przez AI ({{model}}), niezweryfikowane — sprawdź z PDF i popraw w razie potrzeby.",
+        { model: entry.model_version || "AI" },
+      ),
     };
   }
   if (CANONICAL_SOURCES.has(entry.source)) {
     return {
       tone: "canonical",
-      label: entry.source_display,
+      label: t("archive.provenance.canonical", "{{source}} · potwierdzone", {
+        source: entry.source_display,
+      }),
       Icon: Database,
       title: t(
         "archive.provenance.canonical_title",
-        "Z kanonicznego źródła: {{source}}.",
+        "Potwierdzone przez kanoniczne źródło: {{source}}.",
         { source: entry.source_display },
       ),
     };
