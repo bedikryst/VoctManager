@@ -113,11 +113,12 @@ def dispatch_program_note(
     piece: Piece, *, force: bool = False, language: str | None = None,
 ) -> str:
     """
-    Dispatch programme-note generation for a piece on demand — to regenerate the
-    canonical note or produce one in another language (the ingestion chain
-    already generates the default-language note eagerly). The AI cost is billed
-    against the piece's default / most-recent score edition. `force=True`
-    regenerates over an existing note in that language.
+    Dispatch programme-note generation for a piece on demand — the primary path,
+    now that the note is no longer generated eagerly in the ingestion chain. Used
+    to create the canonical note after identity review, regenerate it, or produce
+    another language. The AI cost is billed against the piece's default /
+    most-recent score edition. `force=True` regenerates over an existing note in
+    that language.
 
     Raises `IngestionPreconditionError` for caller-fixable issues (missing API
     key, no edition to bill against, daily budget exhausted). Returns the Celery

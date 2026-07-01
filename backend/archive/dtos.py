@@ -179,9 +179,12 @@ class ExtractedWorkIdentity(BaseModel):
     )
     epoch: str | None = Field(
         default=None,
-        description="Stylistic period as one code: MED, REN, BAR, CLA, ROM, M20, CON, POP, "
-                    "FOLK, OTH. For an arrangement use the arrangement's period (a 2020 setting "
-                    "of a medieval hymn is CON). Null if unsure."
+        description="Stylistic period the WORK ORIGINATES from (NOT the arrangement date): "
+                    "MED, REN, BAR, CLA, ROM, M20, CON, POP, FOLK, OTH. A traditional carol / "
+                    "hymn / folk song stays FOLK (or the origin period) even when a living "
+                    "arranger set it — a modern harmonisation does not make it CON. Reserve "
+                    "CON/M20 for works whose ORIGINAL music was composed in the 20th/21st c. "
+                    "Null if the origin is genuinely unclear."
     )
     confidence: float = Field(
         ge=0.0, le=1.0,
@@ -286,8 +289,10 @@ class ScoreAnalysisResult(BaseModel):
     )
     epoch: str | None = Field(
         default=None,
-        description="Stylistic period as one code: MED, REN, BAR, CLA, ROM, M20, CON, POP, "
-                    "FOLK, OTH. For an arrangement, the arrangement's period. Null if unsure."
+        description="Stylistic period the WORK ORIGINATES from (NOT the arrangement date): "
+                    "MED, REN, BAR, CLA, ROM, M20, CON, POP, FOLK, OTH. A traditional carol / "
+                    "hymn / folk song stays FOLK even when a living arranger set it. Reserve "
+                    "CON/M20 for originally-composed 20th/21st-c. works. Null if origin unclear."
     )
     confidence: float = Field(
         ge=0.0, le=1.0,

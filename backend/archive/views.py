@@ -37,6 +37,7 @@ from .models import (
     Movement,
     Piece,
     PieceVoiceRequirement,
+    ProgramNote,
     Recording,
     ScoreEdition,
     Track,
@@ -557,6 +558,23 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
             )
         edition.ingestion_status = IngestionStatus.READY
         edition.save(update_fields=['ingestion_status', 'updated_at'])
+        # Approval is the "identity is now confirmed" moment — so it is the
+        # right trigger to generate the audience programme note (which is
+        # deliberately kept OUT of the ingestion chain, to avoid writing prose
+        # from un-reviewed AI identity). Only when none exists yet, so re-approve
+        # never regenerates over a conductor's note. Best-effort: a note-dispatch
+        # hiccup (missing key, budget) must never block the approval itself — the
+        # cockpit's manual "Generuj notkę" button remains as the fallback.
+        if edition.piece_id and not ProgramNote.objects.filter(
+            piece_id=edition.piece_id, project__isnull=True,
+        ).exists():
+            try:
+                dispatch_program_note(edition.piece)
+            except IngestionPreconditionError as exc:
+                logger.info(
+                    "archive.approve note_skipped edition=%s reason=%s",
+                    edition.id, exc,
+                )
         # Notify project participants — approval is when materials become safe
         # to circulate (vs AWAITING which is mid-review and may still hallucinate).
         if edition.piece_id:

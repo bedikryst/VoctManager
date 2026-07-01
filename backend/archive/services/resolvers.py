@@ -356,10 +356,13 @@ def _merge_piece(
 
     fill_pairs: list[tuple[str, str, str, str]] = []
     if mbz_work:
+        # NB: `language` is deliberately NOT filled here. It is a sung-text
+        # property owned solely by `persist_analysis`, which normalises it to a
+        # canonical ISO 639-1 code. A raw MusicBrainz work-language tag would
+        # re-introduce the free-text divergence this centralisation removed.
         fill_pairs += [
             ('opus_catalog', mbz_work.opus_catalog, ProvenanceSource.MUSICBRAINZ, str(mbz_work.mbid)),
             ('musical_key',  mbz_work.musical_key,  ProvenanceSource.MUSICBRAINZ, str(mbz_work.mbid)),
-            ('language',     mbz_work.language,     ProvenanceSource.MUSICBRAINZ, str(mbz_work.mbid)),
         ]
     # AI-extracted values fall back when no canonical source exists.
     # Identity now comes from the consolidated `analyze_score` call on Sonnet —
@@ -404,18 +407,29 @@ def _create_piece(
     title = (mbz_work.canonical_title if mbz_work else extracted.title).strip()
     opus = (mbz_work.opus_catalog if mbz_work else extracted.opus_catalog) or ''
     key = (mbz_work.musical_key if mbz_work else extracted.musical_key) or ''
-    language = (mbz_work.language if mbz_work else (extracted.language or ''))
     voicing = extracted.voicing or ''
     text_source = extracted.text_source or ''
     arranger = (extracted.arranger or '').strip()
     epoch = _safe_epoch(extracted.epoch)
+    # When the AI is unsure of the origin period, fall back to the resolved
+    # composer's canonical period (from Wikidata) — a harder signal than a vision
+    # guess for a real, catalogued composer. Traditional/folk works have no such
+    # composer, so they keep the AI's FOLK verdict.
+    if not epoch:
+        composer_period = (
+            Composer.objects.filter(pk=composer_id)
+            .values_list('period', flat=True)
+            .first()
+        )
+        epoch = _safe_epoch(composer_period)
 
+    # `language` is intentionally left blank at create time: `persist_analysis`
+    # is its sole writer and normalises it to a canonical ISO 639-1 code.
     piece = Piece.objects.create(
         composer_id=composer_id,
         title=title or 'Untitled Work',
         opus_catalog=opus,
         musical_key=key,
-        language=language,
         voicing=voicing,
         text_source=text_source,
         arranger=arranger,
@@ -449,7 +463,6 @@ def _create_piece(
     _stamp('title', piece.title, bool(mbz_work and mbz_work.canonical_title))
     _stamp('opus_catalog', opus, bool(mbz_work and mbz_work.opus_catalog))
     _stamp('musical_key', key, bool(mbz_work and mbz_work.musical_key))
-    _stamp('language', language, bool(mbz_work and mbz_work.language))
     _stamp('voicing', voicing, from_mbz=False)
     _stamp('text_source', text_source, from_mbz=False)
     _stamp('arranger', arranger, from_mbz=False)

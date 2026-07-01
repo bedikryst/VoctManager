@@ -98,6 +98,7 @@ from archive.models import (
     Translation,
 )
 from archive.services import provenance
+from archive.services.language import normalize_language
 from archive.services.resolvers import (
     resolve_or_create_composer,
     resolve_or_create_piece,
@@ -145,17 +146,18 @@ def build_ingestion_chain(edition_id: UUID) -> Any:
     Caller (`services.ingestion.start_ingestion`) applies it.
     """
     eid = str(edition_id)
-    # The programme note runs at `effort="low"` (~1¢ per note), so it is cheap
-    # enough to generate eagerly in the ensemble's language (`DEFAULT_PROGRAM_NOTE_LANGUAGE`)
-    # — far more useful than an empty section the conductor must remember to fill.
-    # The review cockpit can still regenerate it or produce another language on
-    # demand via `services.ingestion.dispatch_program_note`.
+    # The programme note is deliberately NOT in this chain. It used to run
+    # eagerly, but that generated prose from the AI's *un-reviewed* identity —
+    # baking a wrong composer/epoch/title straight into the audience note. It is
+    # now generated on demand from the review cockpit (or on Approve), AFTER the
+    # conductor has verified the identity, with the corrected metadata AND the
+    # sung text as context — see `generate_program_note` /
+    # `services.ingestion.dispatch_program_note`.
     return chain(
         prepare_document.s({'edition_id': eid}),
         analyze_score.s(),
         resolve_composer_and_piece.s(),
         persist_analysis.s(),
-        generate_program_note.s(),
         lookup_spotify.s(),
         lookup_youtube.s(),
         finalize_edition.s(),
@@ -552,9 +554,23 @@ def persist_analysis(self, payload: dict) -> dict:
                 model_id=AIModel.SONNET, prompt_version=version,
                 confidence=analysis.confidence,
             )
-        if not piece.language and analysis.sung_text_language:
-            piece.language = analysis.sung_text_language
+        # Language is a SUNG-TEXT property, so `persist_analysis` is its sole
+        # writer — the resolver no longer touches `piece.language`. Both AI
+        # fields (ISO `sung_text_language` and the word-form `language`) funnel
+        # through `normalize_language`, so the stored value is always a canonical
+        # ISO 639-1 code ('pl', 'la', or 'pl+la' for a bilingual score) instead
+        # of the "Polish / polski / pol / Polish+Latin" free-text mess.
+        normalized_language = normalize_language(
+            analysis.sung_text_language or analysis.language
+        )
+        if not piece.language and normalized_language:
+            piece.language = normalized_language
             update_fields.append('language')
+            provenance.record_ai(
+                target=piece, field_name='language',
+                model_id=AIModel.SONNET, prompt_version=version,
+                confidence=analysis.confidence,
+            )
         piece.save(update_fields=update_fields)
 
         # Translations (skip languages already present).
@@ -590,11 +606,16 @@ def persist_analysis(self, payload: dict) -> dict:
 def generate_program_note(self, payload: dict) -> dict:
     """Claude writes a ~250-word audience programme note (text-only).
 
-    Runs eagerly in the ingestion chain in the ensemble's language
-    (`DEFAULT_PROGRAM_NOTE_LANGUAGE`) — at `effort="low"` it's ~1¢. The review
-    cockpit re-dispatches it via `services.ingestion.dispatch_program_note` to
-    regenerate or produce another language; pass `program_note_language` and
-    `force_program_note=True` in the payload for that.
+    Generated on demand from the review cockpit AFTER the conductor has verified
+    the identity (via `services.ingestion.dispatch_program_note`), in the
+    ensemble's language (`DEFAULT_PROGRAM_NOTE_LANGUAGE`) by default. Pass
+    `program_note_language` and `force_program_note=True` in the payload to
+    produce another language or regenerate.
+
+    The call is fed the piece's actual musical context (text source, key,
+    voicing, epoch) AND an excerpt of the printed sung text, so the note can be
+    anchored in the real work instead of the model's (often absent) training
+    knowledge of an obscure arrangement — the cause of the thin, stub notes.
     """
     edition = _load_edition(payload['edition_id'])
     _ensure_budget(edition)
@@ -617,29 +638,41 @@ def generate_program_note(self, payload: dict) -> dict:
     if composer:
         composer_name = f"{composer.first_name} {composer.last_name}".strip()
 
+    epoch_label = piece.get_epoch_display() if piece.epoch else 'unknown'
+    # A bounded excerpt of the printed text: enough to ground the note, small
+    # enough not to blow the token budget on a long anthem.
+    sung_text_excerpt = (piece.lyrics_original or '').strip()[:1200]
+
     user_content = (
         f"Composer: {composer_name or 'Unknown'}\n"
         f"Arranger: {piece.arranger or '—'}\n"
         f"Work title: {piece.title}\n"
         f"Year of composition: {piece.composition_year or 'unknown'}\n"
+        f"Stylistic origin / epoch: {epoch_label}\n"
+        f"Voicing: {piece.voicing or 'unknown'}\n"
+        f"Musical key: {piece.musical_key or 'unknown'}\n"
+        f"Sung language: {piece.language or 'unknown'}\n"
         f"Text source: {piece.text_source or 'unknown'}\n"
+        f"Printed sung text (excerpt, may be truncated):\n"
+        f"{sung_text_excerpt or '(not available)'}\n\n"
         f"Target tone: {tone}\n"
         f"Target word count: 250\n"
         f"Target language: {language}"
     )
 
     client = AIClient()
-    # `effort="high"` (the original setting) is what produced the long, detailed,
-    # complete notes the conductor liked. `effort="low"` made the model under-
-    # deliver — short notes that stopped mid-sentence — so for a prose artifact
-    # that's read by the audience, quality wins over the few cents saved.
+    # A programme note is prose, not a reasoning task: extended thinking just ate
+    # the shared `max_tokens` budget and left too little for the output (the
+    # stub-note bug). Disable thinking so the whole budget is the note, and keep
+    # a moderate effort for quality.
     result, cost = client.parse(
         model=AIModel.SONNET,
         prompt=GENERATE_PROGRAM_NOTE,
         user_content=user_content,
         output_schema=GeneratedProgramNote,
         max_tokens=PROGRAM_NOTE_MAX_TOKENS,
-        effort="high",
+        effort="medium",
+        enable_thinking=False,
     )
     _bill_edition(edition, cost.total_cents)
 
