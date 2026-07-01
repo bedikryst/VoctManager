@@ -110,6 +110,7 @@ Frontend engineering pillars:
 - **Calendar Synchronization (iCal):** Seamless external calendar integration, providing auto-generated iCal feeds for Google Calendar and Apple Calendar synchronization.
 - **Optimistic UI:** Aggressive server-state caching using **@tanstack/react-query v5.91+**, delivering a zero-latency feel for critical mutations (e.g., attendance confirmation, casting updates).
 - **Asynchronous Document Engine:** Production workflows, such as dynamic Contract generation and Run Sheet compilation, are offloaded to **Celery workers** and **WeasyPrint**, guaranteeing the main thread remains unblocked.
+- **Concert Score-Book Generator:** One-click, print-ready singers' book assembled from a project's repertoire — engraved editions bound behind an auto-generated title page, dotted-leader TOC, per-piece frontispiece cards (sung text · IPA · translation · programme note, drawn from the AI-resolved archive), continuous folios, and PDF bookmarks. A conductor build cockpit adds per-piece edition selection, thumbnail page-trimming, provenance-confidence readiness, and a live preview; the token-gated output is version-tracked (distribution-aware overwrite warnings) with an optional double-sided print mode. Deterministic WeasyPrint + pypdf — **zero AI at assembly time**.
 - **Smart Archive & Asset Protection:** Secure, token-gated distribution of sensitive repertoire assets (Sheet Music PDFs, Reference Audio) tied strictly to active project casting.
 - **Micro-Casting System:** Touch-ready Drag & Drop interfaces (`@dnd-kit/core`) for building complex concert programs and managing individual artist assignments.
 - **Internationalization (i18n):** Full localization support (English, French, Polish) tailored for international touring and diverse artist rosters.
@@ -139,7 +140,7 @@ Frontend engineering pillars:
 * **Database:** PostgreSQL (via `psycopg` v3 driver)
 * **Authentication:** JWT via `djangorestframework-simplejwt`
 * **Message Broker & Workers:** Redis 5+, Celery 5.3+
-* **Document Generation:** WeasyPrint v68+, pypdf v5+
+* **Document Generation:** WeasyPrint v68+, pypdf v5+, pypdfium2 v4.30+ (score-thumbnail rasterisation)
 * **AI / Repertoire Intelligence:** Anthropic Python SDK — ingestion runs on **Claude Sonnet 4.6** (Opus 4.8 / Haiku 4.5 wired as higher/cheaper tiers), adaptive thinking, prompt caching, Pydantic-validated structured/JSON output
 
 ### Infrastructure & DevOps
@@ -180,7 +181,8 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [x] **Automated Testing:** Django/PyTest suite (~160 tests) across the critical paths — roster, payments, messaging, notifications, documents, archive, logistics, core — including contract generation and the AI provenance pipeline.
 - [x] **CI (Backend):** GitHub Actions runs Ruff, mypy (strict), and the full test suite on PostgreSQL for every push and PR.
 - [x] **AI Score Compiler — Schema, Ingestion Pipeline & Review Cockpit:** Canonical domain schema (`Composer.mbid`, `Piece.mbid_work`, `ScoreEdition`, `Movement`, `Translation`, `Recording`, `Annotation`, `ProgramNote`, `ProvenanceRecord`) plus the live Celery ingestion chain — a native-PDF Claude wrapper (vision, adaptive thinking, dual per-run/lifetime cost tracking, prompt caching, patient 529-overload retries, lenient JSON parsing, SHA-256 re-upload dedup) that reads the whole score in one consolidated call, resolves composers/works against MusicBrainz & Wikidata, extracts IPA + singing translations plus a programme note in the ensemble language, and streams live progress over SSE. A conductor **review cockpit** surfaces per-field provenance + confidence, inline correction/deletion of the AI's movements/translations/recordings, a cancel-in-flight control, and a single approve-to-publish. External clients (MusicBrainz, Wikidata, Spotify, YouTube) are Redis-cached.
-- [ ] **AI Score Compiler — Concert Assembly & Annotation:** WeasyPrint + pypdf concert-binder generation (cover, TOC, per-piece front matter, original scores) plus a PDF.js + Konva in-browser annotation overlay (highlight, comment, freehand, page reorder) with versioned, layer-aware persistence and export-time flattening.
+- [x] **AI Score Compiler — Concert Score-Book Assembly:** WeasyPrint + pypdf binder (title page, TOC, per-piece frontispiece cards, original scores, continuous numbering, PDF bookmarks) with a conductor build cockpit — per-piece edition selection, thumbnail-driven page-range trimming, provenance-confidence readiness, live preview, distribution-aware version tracking, and a double-sided print mode (recto-start openings + outer-corner folios).
+- [ ] **AI Score Compiler — In-Browser Annotation:** PDF.js + Konva annotation overlay (highlight, comment, freehand, page reorder) with versioned, layer-aware persistence and export-time flattening.
 - [ ] **Field-Level Encryption & Audit Trail:** Fernet at-rest encryption for contract/financial fields and an immutable mutation log over HR/financial records for forensic review.
 - [ ] **Frontend CI & End-to-End Tests:** Lint / typecheck / build pipelines for both frontends, plus Playwright E2E coverage building on the existing screenshot harness.
 - [ ] **Metrics & Distributed Tracing:** Prometheus + Grafana dashboards and OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
@@ -222,7 +224,7 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 
 | Score Ingestion (Upload & Tiered Analysis) | Conductor Review (AI-Extracted Repertoire) |
 |:---:|:---:|
-| <img src="docs/assets/.old/score-compiler-upload.png" width="400" alt="Score Compiler upload zone — placeholder: replace with screenshot of the PDF drag-and-drop ingestion screen showing live tiered-Claude status"/> | <img src="docs/assets/.old/score-compiler-review.png" width="400" alt="Conductor review modal — placeholder: replace with screenshot of AI-extracted composer/work/program-note fields with confidence scores"/> |
+| <img src="docs/assets/score-compiler-upload.png" width="400" alt="Score Compiler upload zone — placeholder: replace with screenshot of the PDF drag-and-drop ingestion screen showing live tiered-Claude status"/> | <img src="docs/assets/score-compiler-review.png" width="400" alt="Conductor review modal — placeholder: replace with screenshot of AI-extracted composer/work/program-note fields with confidence scores"/> |
 
 ---
 
