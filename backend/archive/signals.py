@@ -10,5 +10,5 @@ without creating tight coupling.
 import django.dispatch
 
 # Emitted when a piece's core materials (e.g., sheet music, tracks) are updated.
-# Expected kwargs: `piece` (Piece instance)
+# Expected kwargs: `piece` (Piece instance), `kind` (str: "score" | "recording")
 piece_material_updated_event = django.dispatch.Signal()

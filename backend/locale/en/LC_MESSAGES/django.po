@@ -16,6 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #: archive/models.py:35 roster/models.py:30
 #, python-format
 msgid "File size must be under %(size)s MB. Current: %(current)s MB"
@@ -353,7 +354,8 @@ msgstr ""
 
 #: core/models.py:90
 msgid ""
-"The core authentication user linked to this profile. Cascades on hard delete."
+"The core authentication user linked to this profile. Cascades on hard "
+"delete."
 msgstr ""
 
 #: core/models.py:97
@@ -828,8 +830,8 @@ msgstr ""
 
 #: notifications/models.py:159
 msgid ""
-"Indicates whether the token is currently valid. Invalidated automatically by "
-"delivery failures."
+"Indicates whether the token is currently valid. Invalidated automatically by"
+" delivery failures."
 msgstr ""
 
 #: notifications/models.py:164
@@ -1020,7 +1022,8 @@ msgid "You have been cast as %(voice)s. Tap to open the score and recordings."
 msgstr ""
 
 #: notifications/push_payloads.py:289
-msgid "You have been cast in this piece. Tap to open the score and recordings."
+msgid ""
+"You have been cast in this piece. Tap to open the score and recordings."
 msgstr ""
 
 #: notifications/push_payloads.py:292
@@ -1284,8 +1287,8 @@ msgstr ""
 
 #: roster/models.py:77
 msgid ""
-"Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in personalized "
-"greetings and emails."
+"Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in personalized"
+" greetings and emails."
 msgstr ""
 
 #: roster/models.py:81 roster/models.py:181
@@ -1651,10 +1654,10 @@ msgstr ""
 
 #: templates/emails/account_activation.txt:8
 msgid ""
-"We are honored to invite you to our digital workspace. Your profile has been "
-"meticulously prepared. Please complete the final activation step to "
-"establish your secure credentials and step into the operational heart of our "
-"ensemble."
+"We are honored to invite you to our digital workspace. Your profile has been"
+" meticulously prepared. Please complete the final activation step to "
+"establish your secure credentials and step into the operational heart of our"
+" ensemble."
 msgstr ""
 
 #: templates/emails/account_activation.txt:16
@@ -1888,8 +1891,7 @@ msgstr ""
 
 #: templates/emails/system_notification.txt:13
 #, python-format
-msgid ""
-"You have been invited to participate in the concert \"%(project_name)s\"."
+msgid "You have been invited to participate in the concert \"%(project_name)s\"."
 msgstr ""
 
 #: templates/emails/system_notification.txt:32
@@ -1935,7 +1937,8 @@ msgstr ""
 msgid "Projects &amp; Repertoire"
 msgstr ""
 
-#: templates/emails/welcome_email.html:93 templates/emails/welcome_email.txt:20
+#: templates/emails/welcome_email.html:93
+#: templates/emails/welcome_email.txt:20
 msgid ""
 "View your upcoming projects, concert programmes, and casting assignments."
 msgstr ""
@@ -1948,8 +1951,8 @@ msgstr ""
 #: templates/emails/welcome_email.html:110
 #: templates/emails/welcome_email.txt:23
 msgid ""
-"Access your digital score library — scores and audio materials, organised by "
-"project."
+"Access your digital score library — scores and audio materials, organised by"
+" project."
 msgstr ""
 
 #: templates/emails/welcome_email.html:123
@@ -1960,7 +1963,8 @@ msgstr ""
 #: templates/emails/welcome_email.html:127
 #: templates/emails/welcome_email.txt:26
 msgid ""
-"Stay up to date with rehearsal times, locations, and any last-minute changes."
+"Stay up to date with rehearsal times, locations, and any last-minute "
+"changes."
 msgstr ""
 
 #: templates/emails/welcome_email.html:146
@@ -1998,3 +2002,29 @@ msgid ""
 "If you experience any issues logging in, please reach out to the "
 "administration team."
 msgstr ""
+
+msgid ""
+"Your part in %(piece)s for %(project)s is %(voice)s. Open the score and "
+"recordings to start learning it."
+msgstr ""
+"Your part in %(piece)s for %(project)s is %(voice)s. Open the score and "
+"recordings to start learning it."
+
+msgid ""
+"You've been cast in %(piece)s for %(project)s. Open the score and recordings"
+" to start learning it."
+msgstr ""
+"You've been cast in %(piece)s for %(project)s. Open the score and recordings"
+" to start learning it."
+
+msgid "New sheet music — %(piece)s"
+msgstr "New sheet music — %(piece)s"
+
+msgid "New recording — %(piece)s"
+msgstr "New recording — %(piece)s"
+
+msgid "Fresh sheet music for %(piece)s. Tap to open it."
+msgstr "Fresh sheet music for %(piece)s. Tap to open it."
+
+msgid "A new recording for %(piece)s. Tap to open it."
+msgstr "A new recording for %(piece)s. Tap to open it."

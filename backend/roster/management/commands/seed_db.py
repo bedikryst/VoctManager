@@ -997,20 +997,49 @@ class Command(BaseCommand):
         if Notification.objects.exists():
             return
         self._log("12. Notifications (inbox, push devices, preferences)...")
+        from notifications.time_metadata import build_event_time_metadata
+        from roster.models import DEFAULT_EVENT_TIMEZONE
+
         active_projects = [p for p in self.projects if p.status == Project.Status.ACTIVE]
         showcase = active_projects[0] if active_projects else self.projects[0]
-        meta = {"project_id": str(showcase.id), "project_title": showcase.title}
+        event_moment = build_event_time_metadata(
+            showcase.date_time, showcase.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+        )
+        showcase_location = showcase.location.name if showcase.location_id else ""
+        # Structured, language-neutral metadata — every surface localizes at render.
+        meta = {
+            "project_id": str(showcase.id),
+            "project_name": showcase.title,
+            "location": showcase_location,
+            **event_moment,
+        }
+        invitation_meta = {**meta, "date_range": event_moment["starts_at_display"],
+                           "inviter_name": "Zespół VoctManager"}
+        rehearsal_meta = {**meta, "rehearsal_id": str(uuid.uuid4()), "focus": "Sekcja I — intonacja"}
 
         # Per-singer inbox: an invitation, a rehearsal heads-up, a casting note, a DM.
         for artist in self.artists:
             if not artist.user_id:
                 continue
+            piece = random.choice(self.pieces)
+            # Language-neutral VoiceLine CODE (e.g. "B1") — never a rendered label.
+            voice_code = random.choice(
+                VOICE_LINES_FOR.get(artist.voice_type, [VoiceLine.SOPRANO_1])
+            ).value
+            casting_meta = {**meta, "piece_id": str(piece.id), "piece_title": piece.title,
+                            "voice_line": voice_code}
+            dm_meta = {"title": "Zmiana godziny próby", "sender_name": "Krystian (dyrygent)",
+                       "snippet": "Cześć! Przesuwamy czwartkową próbę na 19:30.",
+                       "thread_id": str(uuid.uuid4())}
+            material_meta = {"piece_id": str(piece.id), "piece_title": piece.title,
+                             "material_kind": random.choice(["score", "recording"]),
+                             "composer_name": str(piece.composer) if piece.composer_id else None}
             templates = [
-                (NotificationType.PROJECT_INVITATION, NotificationLevel.INFO, meta, False),
-                (NotificationType.REHEARSAL_SCHEDULED, NotificationLevel.INFO, meta, random.random() < 0.5),
-                (NotificationType.PIECE_CASTING_ASSIGNED, NotificationLevel.INFO,
-                 {**meta, "voice_line": "Soprano 1"}, True),
-                (NotificationType.MESSAGE_RECEIVED, NotificationLevel.INFO, {}, False),
+                (NotificationType.PROJECT_INVITATION, NotificationLevel.INFO, invitation_meta, False),
+                (NotificationType.REHEARSAL_SCHEDULED, NotificationLevel.INFO, rehearsal_meta, random.random() < 0.5),
+                (NotificationType.PIECE_CASTING_ASSIGNED, NotificationLevel.INFO, casting_meta, False),
+                (NotificationType.MATERIAL_UPLOADED, NotificationLevel.INFO, material_meta, random.random() < 0.5),
+                (NotificationType.MESSAGE_RECEIVED, NotificationLevel.INFO, dm_meta, False),
             ]
             for ntype, level, metadata, is_read in random.sample(templates, k=3):
                 Notification.objects.create(
@@ -1019,12 +1048,24 @@ class Command(BaseCommand):
                     read_at=self.now if is_read else None,
                 )
 
-        # Manager alerts.
-        for ntype in [NotificationType.PARTICIPATION_RESPONSE, NotificationType.ATTENDANCE_SUBMITTED,
-                      NotificationType.MESSAGE_RECEIVED]:
+        # Manager alerts — structured roster signals (artist name + status codes).
+        sample_name = (
+            f"{self.artists[0].first_name} {self.artists[0].last_name}"
+            if self.artists else "Anna Kowalska"
+        )
+        manager_alerts = [
+            (NotificationType.PARTICIPATION_RESPONSE,
+             {**meta, "artist_name": sample_name, "status": "CON"}),
+            (NotificationType.ATTENDANCE_SUBMITTED,
+             {**meta, "artist_name": sample_name, "status": "LATE", "minutes_late": 10}),
+            (NotificationType.MESSAGE_RECEIVED,
+             {"title": "Pytanie o nuty", "sender_name": sample_name,
+              "snippet": "Czy mogę prosić o wersję na alt?", "thread_id": str(uuid.uuid4())}),
+        ]
+        for ntype, metadata in manager_alerts:
             Notification.objects.create(
                 recipient=self.managers[0], notification_type=ntype,
-                level=NotificationLevel.INFO, metadata=meta, is_read=False,
+                level=NotificationLevel.INFO, metadata=metadata, is_read=False,
             )
 
         # A couple of registered web push devices.

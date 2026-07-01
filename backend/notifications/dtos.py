@@ -100,10 +100,18 @@ class RehearsalCancelledMetadata(EventMomentMetadata):
     message: str | None = None
 
 # --- Casting & Repertoire ---
-class PieceCastingMetadata(EnterpriseBaseDTO):
+class PieceCastingMetadata(EventMomentMetadata):
     piece_id: UUID | None = None
     piece_title: str
+    # Language-neutral VoiceLine CODE (e.g. "B1"), NOT the rendered label — the
+    # voice part is localized per surface at render time (message_content /
+    # NotificationItem). A legacy row may still carry a pre-rendered label; the
+    # renderers fall back to it unchanged.
     voice_line: str | None = None
+    # The concert this casting belongs to — so the singer sees WHICH programme the
+    # part is for. `starts_at` (inherited, ISO-8601) carries the concert moment.
+    project_id: UUID | None = None
+    project_name: str | None = None
     # PIECE_CASTING_UPDATED carries both edits and removals; the event keeps them
     # apart so each renders its own localized copy.
     event: str = "updated"  # "updated" | "removed"
@@ -188,6 +196,9 @@ class MaterialUploadedMetadata(EnterpriseBaseDTO):
     material_id: UUID | None = None
     piece_title: str | None = None
     project_name: str | None = None
+    # What landed, so every surface can say it: "score" | "recording".
+    material_kind: str | None = None
+    composer_name: str | None = None
     message: str | None = None
 
 

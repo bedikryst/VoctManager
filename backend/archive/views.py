@@ -579,7 +579,7 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         # to circulate (vs AWAITING which is mid-review and may still hallucinate).
         if edition.piece_id:
             piece_material_updated_event.send(
-                sender=self.__class__, piece=edition.piece,
+                sender=self.__class__, piece=edition.piece, kind="score",
             )
         return Response(
             ScoreEditionDetailSerializer(edition, context={'request': request}).data,

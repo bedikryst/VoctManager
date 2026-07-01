@@ -30,6 +30,8 @@ from typing import Any
 
 from django.utils.translation import gettext as _
 
+from core.constants import VoiceLine
+
 from .models import NotificationLevel, NotificationType
 from .time_metadata import display_event_time
 
@@ -227,6 +229,18 @@ def _participation_status_phrase(status: str | None) -> str:
     }.get(status or "", _("responded to the invitation"))
 
 
+def _voice_line_label(code: str | None) -> str:
+    """Localized label for a VoiceLine CODE (e.g. 'B1' → 'Bas 1'). Tolerant of a
+    legacy pre-rendered value or an unknown code — returns it unchanged so an old
+    row never renders blank."""
+    if not code:
+        return ""
+    try:
+        return str(VoiceLine(code).label)
+    except ValueError:
+        return str(code)
+
+
 def _change_field_label(field_key: str) -> str:
     """Localized human label for a structured change key."""
     return {
@@ -245,10 +259,20 @@ def _change_field_label(field_key: str) -> str:
     }.get(field_key, field_key.replace("_", " ").capitalize())
 
 
+def _change_value(field_key: str, value: Any) -> Any:
+    """Localizes a change value where the field carries a language-neutral code
+    (voice line); passes pre-formatted display values through unchanged."""
+    if value and field_key == "voice_line":
+        return _voice_line_label(str(value))
+    return value
+
+
 def _render_change(change: dict[str, Any]) -> str:
     """One change as a compact localized phrase: 'Venue: A → B' / 'Conductor'."""
-    label = _change_field_label(str(change.get("field", "")))
-    old, new = change.get("old"), change.get("new")
+    field_key = str(change.get("field", ""))
+    label = _change_field_label(field_key)
+    old = _change_value(field_key, change.get("old"))
+    new = _change_value(field_key, change.get("new"))
     if old and new:
         return _("%(label)s: %(old)s → %(new)s") % {"label": label, "old": old, "new": new}
     if new:
@@ -275,8 +299,10 @@ def _change_rows(changes: Any) -> tuple[DetailRow, ...]:
     for c in changes:
         if not isinstance(c, dict):
             continue
-        label = _change_field_label(str(c.get("field", "")))
-        old, new = c.get("old"), c.get("new")
+        field_key = str(c.get("field", ""))
+        label = _change_field_label(field_key)
+        old = _change_value(field_key, c.get("old"))
+        new = _change_value(field_key, c.get("new"))
         value = f"{old} → {new}" if old and new else (new or old or "—")
         rows.append(DetailRow(label=label, value=str(value)))
     return tuple(rows)
@@ -581,7 +607,9 @@ def _compose_rehearsal_reminder(ctx: MessageContext) -> MessageContent:
 def _compose_piece_casting_assigned(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     piece = m.get("piece_title") or _("a new piece")
-    voice = m.get("voice_line")
+    voice = _voice_line_label(m.get("voice_line"))
+    project = m.get("project_name")
+    when = display_event_time(m, "starts_at")
     score_url = _materials_url(ctx)
     actions = (
         _open_action(score_url),
@@ -589,17 +617,29 @@ def _compose_piece_casting_assigned(ctx: MessageContext) -> MessageContent:
     )
     if voice:
         title = _("You're singing %(voice)s — %(piece)s") % {"voice": voice, "piece": piece}
-        body = _("Your part in %(piece)s is %(voice)s. Open the score and recordings to start learning it.") % {
-            "piece": piece, "voice": voice,
-        }
+        body = (
+            _("Your part in %(piece)s for %(project)s is %(voice)s. Open the score and recordings to start learning it.")
+            % {"piece": piece, "project": project, "voice": voice}
+            if project
+            else _("Your part in %(piece)s is %(voice)s. Open the score and recordings to start learning it.")
+            % {"piece": piece, "voice": voice}
+        )
     else:
         title = _("New part for you — %(piece)s") % {"piece": piece}
-        body = _("You've been cast in %(piece)s. Open the score and recordings to start learning it.") % {
-            "piece": piece,
-        }
+        body = (
+            _("You've been cast in %(piece)s for %(project)s. Open the score and recordings to start learning it.")
+            % {"piece": piece, "project": project}
+            if project
+            else _("You've been cast in %(piece)s. Open the score and recordings to start learning it.")
+            % {"piece": piece}
+        )
     details: list[DetailRow] = [_row(_("Piece"), piece)]
+    if project:
+        details.append(_row(_("Project"), project))
     if voice:
         details.append(_row(_("Voice part"), voice))
+    if when:
+        details.append(_row(_("When"), when))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
@@ -640,12 +680,16 @@ def _compose_piece_casting_updated(ctx: MessageContext) -> MessageContent:
             cta_label=_("Open dashboard"),
         )
 
+    project = m.get("project_name")
     summary = _summarize_changes(m.get("changes"))
     body = (
         _("Your part changed — %(summary)s. Tap to review the score.") % {"summary": summary}
         if summary
         else _("Your casting in %(piece)s has changed. Tap to review the score.") % {"piece": piece}
     )
+    details = list(_change_rows(m.get("changes")))
+    if project:
+        details.append(_row(_("Project"), project))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
@@ -657,7 +701,7 @@ def _compose_piece_casting_updated(ctx: MessageContext) -> MessageContent:
         subject=_("Casting update — %(piece)s") % {"piece": piece},
         eyebrow=_("Casting"),
         email_lead=_("Your casting in %(piece)s has been updated.") % {"piece": piece},
-        details=_change_rows(m.get("changes")),
+        details=tuple(details),
         cta_label=_("Open the score"),
     )
 
@@ -665,20 +709,38 @@ def _compose_piece_casting_updated(ctx: MessageContext) -> MessageContent:
 def _compose_material_uploaded(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     piece = m.get("piece_title") or m.get("project_name") or _("your repertoire")
+    composer = m.get("composer_name")
+    kind = m.get("material_kind")
     score_url = _materials_url(ctx)
+
+    if kind == "recording":
+        title = _("New recording — %(piece)s") % {"piece": piece}
+        body = _("A new recording for %(piece)s. Tap to open it.") % {"piece": piece}
+    elif kind == "score":
+        title = _("New sheet music — %(piece)s") % {"piece": piece}
+        body = _("Fresh sheet music for %(piece)s. Tap to open it.") % {"piece": piece}
+    else:
+        title = _("Fresh material — %(piece)s") % {"piece": piece}
+        body = _("New sheet music or a recording has landed for %(piece)s. Tap to open it.") % {
+            "piece": piece,
+        }
+
+    details: list[DetailRow] = [_row(_("Piece"), piece)]
+    if composer:
+        details.append(_row(_("Composer"), composer))
+
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("Fresh material — %(piece)s") % {"piece": piece},
-        body=_("New sheet music or a recording has landed for %(piece)s. Tap to open it.")
-        % {"piece": piece},
+        title=title,
+        body=body,
         url_path=score_url,
         tag=f"material-uploaded:{m.get('piece_id') or m.get('material_id') or piece}",
         actions=(_open_action(score_url),),
         subject=_("New material — %(piece)s") % {"piece": piece},
         eyebrow=_("Library"),
-        email_lead=_("New sheet music or a recording has been added to %(piece)s.") % {"piece": piece},
-        details=(_row(_("Piece"), piece),),
+        email_lead=body,
+        details=tuple(details),
         cta_label=_("Open the library"),
     )
 

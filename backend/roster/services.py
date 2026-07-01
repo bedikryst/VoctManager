@@ -778,10 +778,19 @@ class CastingAndCrewService:
             user_id = casting.participation.artist.user_id
             
             if user_id:
+                project = casting.participation.project
                 metadata = PieceCastingMetadata(
                     piece_id=casting.piece_id,
                     piece_title=casting.piece.title,
-                    voice_line=casting.get_voice_line_display() or casting.voice_line,
+                    # Language-neutral CODE — localized per surface at render time.
+                    voice_line=casting.voice_line,
+                    project_id=project.id,
+                    project_name=project.title,
+                    **build_event_time_metadata(
+                        project.date_time,
+                        project.timezone,
+                        fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+                    ),
                 ).model_dump(mode="json")
 
                 transaction.on_commit(lambda: send_notification_task.delay(
@@ -799,23 +808,26 @@ class CastingAndCrewService:
             for attr, value in validated_data.items():
                 old_value = getattr(casting, attr)
                 if old_value != value:
-                    if attr == 'voice_line':
-                        from roster.models import VoiceLine
-                        voice_map = dict(VoiceLine.choices)
-                        old_display = voice_map.get(old_value, old_value) if old_value else None
-                        new_display = voice_map.get(value, value) if value else None
-                        changes.append(_change("voice_line", old_display, new_display))
-                    else:
-                        changes.append(_change(attr, old_value, value))
+                    # Store language-neutral CODES for voice_line — the old/new are
+                    # localized to each surface's language at render time.
+                    changes.append(_change(attr, old_value, value))
                 setattr(casting, attr, value)
             casting.save()
 
             user_id = casting.participation.artist.user_id
             if user_id and changes:
+                project = casting.participation.project
                 metadata = PieceCastingMetadata(
                     piece_id=casting.piece_id,
                     piece_title=casting.piece.title,
-                    voice_line=casting.get_voice_line_display() or casting.voice_line,
+                    voice_line=casting.voice_line,
+                    project_id=project.id,
+                    project_name=project.title,
+                    **build_event_time_metadata(
+                        project.date_time,
+                        project.timezone,
+                        fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+                    ),
                     changes=changes,
                 ).model_dump(mode="json")
                 
@@ -831,13 +843,16 @@ class CastingAndCrewService:
     def delete_piece_casting(casting: ProjectPieceCasting) -> None:
         user_id = casting.participation.artist.user_id
         piece_title = casting.piece.title
-        
+        project = casting.participation.project
+
         with transaction.atomic():
             casting.delete()
-            
+
             if user_id:
                 metadata = PieceCastingMetadata(
                     piece_title=piece_title,
+                    project_id=project.id,
+                    project_name=project.title,
                     event="removed",
                 ).model_dump(mode="json")
                 

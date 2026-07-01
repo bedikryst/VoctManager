@@ -26,11 +26,16 @@ logger = logging.getLogger(__name__)
 
 
 @receiver(piece_material_updated_event)
-def handle_piece_material_updated(sender, piece, **kwargs):
+def handle_piece_material_updated(sender, piece, kind="", **kwargs):
     """
     Listens to the Archive domain for material updates.
-    Resolves the active project participants linked to this piece and 
+    Resolves the active project participants linked to this piece and
     delegates asynchronous notification dispatches.
+
+    `kind` ("score" | "recording") lets every surface say WHAT landed — the
+    material is piece-scoped and fans out across every concert programming it,
+    so there is no single project to name; the piece + its composer + the kind
+    are the meaningful context.
     """
     logger.debug(f"[RosterListener] Received material update event for piece ID:{piece.id}")
 
@@ -41,9 +46,9 @@ def handle_piece_material_updated(sender, piece, **kwargs):
             is_deleted=False,
             project__is_deleted=False
         ).values_list('artist__user_id', flat=True).distinct()
-        
+
         recipient_ids = [str(uid) for uid in user_ids if uid]
-        
+
         # 2. Delegate to the Notifications asynchronous worker
         if recipient_ids:
             send_bulk_notifications_task.delay(
@@ -53,6 +58,8 @@ def handle_piece_material_updated(sender, piece, **kwargs):
                 metadata={
                     "piece_id": str(piece.id),
                     "piece_title": piece.title,
+                    "material_kind": kind or None,
+                    "composer_name": str(piece.composer) if piece.composer_id else None,
                 }
             )
             logger.info(

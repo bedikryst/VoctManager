@@ -119,7 +119,7 @@ class ArchiveManagementService:
             track = Track.objects.create(**validated_data)
             transaction.on_commit(
                 lambda: piece_material_updated_event.send(
-                    sender=cls.__class__, piece=track.piece,
+                    sender=cls.__class__, piece=track.piece, kind="recording",
                 ),
             )
             logger.info(
