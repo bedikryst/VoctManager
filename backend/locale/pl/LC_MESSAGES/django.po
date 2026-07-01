@@ -2535,6 +2535,24 @@ msgstr "Nowa próba %(project)s — %(when)s. Do zobaczenia na pulpitach."
 msgid "A new rehearsal has been added to %(project)s. See you at the stands."
 msgstr "Do %(project)s dodano nową próbę. Do zobaczenia na pulpitach."
 
+msgid "New rehearsal for %(project)s: %(when)s at %(venue)s."
+msgstr "Nowa próba do %(project)s: %(when)s, %(venue)s."
+
+msgid "New rehearsal for %(project)s: %(when)s."
+msgstr "Nowa próba do %(project)s: %(when)s."
+
+msgid ""
+"A new rehearsal has been added to %(project)s. Check the schedule before you "
+"travel."
+msgstr ""
+"Do %(project)s dodano nową próbę. Sprawdź harmonogram przed wyjściem."
+
+msgid "%(body)s Focus: %(focus)s."
+msgstr "%(body)s Plan: %(focus)s."
+
+msgid "New rehearsal — %(project)s, %(when)s"
+msgstr "Nowa próba — %(project)s, %(when)s"
+
 msgid "Rehearsal details changed — %(summary)s."
 msgstr "Zmiany w próbie — %(summary)s."
 
@@ -2544,8 +2562,30 @@ msgstr "Zmienił się termin lub miejsce próby. Sprawdź harmonogram."
 msgid "A %(project)s rehearsal is off. Check the schedule for what's next."
 msgstr "Próba %(project)s odwołana. Sprawdź harmonogram, co dalej."
 
+msgid ""
+"The %(project)s rehearsal on %(when)s has been cancelled. Check the schedule "
+"before you travel."
+msgstr ""
+"Próba %(project)s dnia %(when)s została odwołana. Sprawdź harmonogram przed "
+"wyjściem."
+
+msgid ""
+"A %(project)s rehearsal has been cancelled. Check the schedule before you "
+"travel."
+msgstr ""
+"Próba %(project)s została odwołana. Sprawdź harmonogram przed wyjściem."
+
+msgid "Rehearsal cancelled — %(project)s, %(when)s"
+msgstr "Próba odwołana — %(project)s, %(when)s"
+
 msgid "%(project)s rehearsal %(when)s. See you at the stands."
 msgstr "Próba %(project)s — %(when)s. Do zobaczenia na pulpitach."
+
+msgid "%(project)s rehearsal %(when)s at %(venue)s."
+msgstr "Próba %(project)s — %(when)s, %(venue)s."
+
+msgid "%(project)s rehearsal %(when)s."
+msgstr "Próba %(project)s — %(when)s."
 
 msgid "Your %(project)s rehearsal is coming up. See you at the stands."
 msgstr "Twoja próba %(project)s już niedługo. Do zobaczenia na pulpitach."
@@ -2676,6 +2716,12 @@ msgstr "prosi o nieobecność"
 
 msgid "A message for you"
 msgstr "Wiadomość dla Ciebie"
+
+msgid "Open VoctManager to read the message."
+msgstr "Otwórz VoctManager, aby przeczytać wiadomość."
+
+msgid "New message about: %(subject)s"
+msgstr "Nowa wiadomość: %(subject)s"
 
 msgid "%(sender)s posted in the channel."
 msgstr "Nowy wpis na kanale od %(sender)s."

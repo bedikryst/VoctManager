@@ -482,3 +482,13 @@ VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 NOTIFICATIONS_PUSH_ENABLED = True
 NOTIFICATIONS_EMAIL_ENABLED = True
 NOTIFICATIONS_SMS_ENABLED = False
+
+# ---------------------------------------------------------------------------
+# SCORE BOOK (concert score-package generator)
+# ---------------------------------------------------------------------------
+# Resident-ensemble name printed on the assembled score book's title page, TOC
+# footer and piece cards, plus the document language used for print hyphenation
+# and the template chrome. Kept in settings (not hard-coded in the builder) so a
+# non-Polish org can rebrand without a code change.
+SCORE_BOOK_ENSEMBLE_NAME = env('SCORE_BOOK_ENSEMBLE_NAME', default='VoctEnsemble')
+SCORE_BOOK_LANG = env('SCORE_BOOK_LANG', default='pl')

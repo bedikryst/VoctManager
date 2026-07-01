@@ -30,7 +30,7 @@ class EnterpriseBaseDTO(BaseModel):
 # ==========================================
 #
 # Design rule: metadata carries STRUCTURED, language-neutral DATA only — stable
-# field/status codes, entity names, formatted dates, counts. It must NEVER carry
+# field/status codes, entity names, ISO datetimes, display fallbacks, counts. It must NEVER carry
 # rendered prose, because the same row is rendered into the push body (in the
 # recipient's language) AND into the in-app bell (in the *viewer's* current UI
 # language). Human-readable copy is composed at render time, per surface, per
@@ -43,6 +43,13 @@ class FieldChangeMetadata(EnterpriseBaseDTO):
     field: str
     old: str | None = None
     new: str | None = None
+
+
+class EventMomentMetadata(EnterpriseBaseDTO):
+    """Canonical event moment. `starts_at` is ISO-8601; display text is fallback-only."""
+    starts_at: str | None = None
+    starts_at_display: str | None = None
+    timezone: str | None = None
 
 
 # --- Project Management ---
@@ -67,20 +74,29 @@ class ProjectUpdatedMetadata(EnterpriseBaseDTO):
     message: str | None = None
 
 # --- Rehearsals ---
-class RehearsalScheduledMetadata(EnterpriseBaseDTO):
+class RehearsalScheduledMetadata(EventMomentMetadata):
     rehearsal_id: UUID
     project_id: UUID
     project_name: str
+    location: str = ""
+    focus: str = ""
     message: str | None = None
 
-class RehearsalUpdatedMetadata(EnterpriseBaseDTO):
+class RehearsalUpdatedMetadata(EventMomentMetadata):
     rehearsal_id: UUID
+    project_id: UUID | None = None
     project_name: str
+    location: str = ""
+    focus: str = ""
     changes: tuple[FieldChangeMetadata, ...]
     message: str | None = None
 
-class RehearsalCancelledMetadata(EnterpriseBaseDTO):
+class RehearsalCancelledMetadata(EventMomentMetadata):
+    rehearsal_id: UUID | None = None
+    project_id: UUID | None = None
     project_name: str
+    location: str = ""
+    focus: str = ""
     message: str | None = None
 
 # --- Casting & Repertoire ---
@@ -149,19 +165,21 @@ class NotificationReadReceiptMetadata(EnterpriseBaseDTO):
     read_at: str
 
 
-class ProjectReminderMetadata(EnterpriseBaseDTO):
+class ProjectReminderMetadata(EventMomentMetadata):
     project_id: UUID | None = None
     project_name: str
     date_range: str | None = None
-    starts_at: str | None = None
+    location: str | None = None
     message: str | None = None
 
 
-class RehearsalReminderMetadata(EnterpriseBaseDTO):
+class RehearsalReminderMetadata(EventMomentMetadata):
     rehearsal_id: UUID | None = None
+    project_id: UUID | None = None
     project_name: str
-    starts_at: str | None = None
     rehearsal_date: str | None = None
+    location: str | None = None
+    focus: str | None = None
     message: str | None = None
 
 

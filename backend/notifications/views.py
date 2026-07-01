@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from core.constants import AppRole
 from core.request_utils import request_user
 
+from .delivery import default_channel_preferences
 from .dtos import (
     CustomAdminMessageMetadata,
     NotificationCreateDTO,
@@ -23,6 +24,7 @@ from .dtos import (
 from .models import Notification, NotificationLevel, NotificationPreference, NotificationType
 from .push_service import PushDispatcherService
 from .serializers import (
+    NotificationPreferenceBulkUpdateSerializer,
     NotificationPreferenceUpdateSerializer,
     NotificationSerializer,
     PushDeviceRegisterSerializer,
@@ -261,23 +263,16 @@ class NotificationPreferenceAPIView(views.APIView):
             NotificationType.ABSENCE_REQUESTED.value,
         }
 
-        # Project-channel push is an opt-in per channel (ChannelMembership.push_enabled),
-        # not a global preference — keep it out of the preferences matrix.
+        # Types with no per-channel preference to express, kept out of the matrix:
+        #  • CHANNEL_MESSAGE — project-channel push is an opt-in per channel
+        #    (ChannelMembership.push_enabled), not a global preference.
+        #  • NOTIFICATION_READ_RECEIPT — in-app only; the router never sends it to
+        #    email or push, so channel toggles would be inert.
+        #  • CONTRACT_ISSUED — contracts are currently issued and signed off-platform
+        #    by management; re-expose if/when an in-app contract flow ships.
         HIDDEN_FROM_PREFS = {
             NotificationType.CHANNEL_MESSAGE.value,
-        }
-
-        DEFAULT_EMAIL_TRUE = {
-            NotificationType.PROJECT_INVITATION.value,
-            NotificationType.PROJECT_CANCELLED.value,
-            NotificationType.REHEARSAL_SCHEDULED.value,
-            NotificationType.REHEARSAL_UPDATED.value,
-            NotificationType.REHEARSAL_CANCELLED.value,
-            NotificationType.MESSAGE_RECEIVED.value,
-        }
-
-        DEFAULT_PUSH_FALSE = {
-            NotificationType.PIECE_CASTING_ASSIGNED.value,
+            NotificationType.NOTIFICATION_READ_RECEIPT.value,
             NotificationType.CONTRACT_ISSUED.value,
         }
 
@@ -290,15 +285,18 @@ class NotificationPreferenceAPIView(views.APIView):
                 continue
 
             pref = prefs.get(choice.value)
-            
-            default_email = choice.value in DEFAULT_EMAIL_TRUE
-            default_push = choice.value not in DEFAULT_PUSH_FALSE
+            defaults = default_channel_preferences(choice.value)
 
+            # `recommended_*` carries the shared default contract to the client so the
+            # settings UI can flag "at recommended" rows and offer Restore-recommended
+            # without re-deriving (and drifting from) the backend policy.
             data.append({
                 "notification_type": choice.value,
                 "label": str(choice.label),
-                "email_enabled": pref.email_enabled if pref else default_email,
-                "push_enabled": pref.push_enabled if pref else default_push,
+                "email_enabled": pref.email_enabled if pref else defaults["email_enabled"],
+                "push_enabled": pref.push_enabled if pref else defaults["push_enabled"],
+                "recommended_email": defaults["email_enabled"],
+                "recommended_push": defaults["push_enabled"],
             })
         return Response(data)
     
@@ -317,4 +315,15 @@ class NotificationPreferenceAPIView(views.APIView):
         )
         
         NotificationPreferenceService.update_preferences(dto)
+        return Response(status=status.HTTP_200_OK)
+
+    def put(self, request: Request) -> Response:
+        """Applies a set of preference updates atomically (Restore-recommended)."""
+        serializer = NotificationPreferenceBulkUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        NotificationPreferenceService.bulk_update_preferences(
+            user_id=request_user(request).id,
+            items=serializer.validated_data["preferences"],
+        )
         return Response(status=status.HTTP_200_OK)

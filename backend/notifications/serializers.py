@@ -41,6 +41,12 @@ class NotificationPreferenceUpdateSerializer(serializers.Serializer):
     push_enabled = serializers.BooleanField(required=False, allow_null=True)
 
 
+class NotificationPreferenceBulkUpdateSerializer(serializers.Serializer):
+    """Validates a set of preference updates applied atomically in one request —
+    used by Restore-recommended so a section reset is a single round-trip."""
+    preferences = NotificationPreferenceUpdateSerializer(many=True, allow_empty=False)
+
+
 class SendToArtistSerializer(serializers.Serializer):
     """Validates manager → artist direct message payload."""
     artist_id = serializers.UUIDField()

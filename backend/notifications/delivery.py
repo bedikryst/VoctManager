@@ -13,6 +13,37 @@ from __future__ import annotations
 
 from .models import NotificationLevel, NotificationType
 
+# Single source of truth for default channel preferences. The settings API and
+# the router both use these values, so a first delivered event cannot silently
+# create a preference that differs from what the UI showed the user.
+#
+# Default policy follows a three-tier urgency model:
+#   • Tier 1 — Actionable / transactional (email ON + push ON): the recipient must
+#     not miss these even if they never open the app — invitations, cancellations,
+#     a contract to sign, a rehearsal moved, a direct message.
+#   • Tier 2 — Informational / timely (push ON, email OFF): worth a glance, not an
+#     inbox entry — reminders, casting, new materials, status decisions.
+#   • Tier 3 — Manager operations, high-volume (push ON, real-time email OFF): the
+#     per-event email is replaced by the once-daily digest; WARNING escalations
+#     (e.g. a singer declining) still break through to push in real time.
+#
+# Push therefore defaults ON for every routed type — it only reaches users who have
+# explicitly subscribed a device — while email is reserved for the Tier 1 set.
+DEFAULT_EMAIL_ENABLED_TYPES: frozenset[str] = frozenset({
+    NotificationType.PROJECT_INVITATION,
+    NotificationType.PROJECT_CANCELLED,
+    NotificationType.REHEARSAL_SCHEDULED,
+    NotificationType.REHEARSAL_UPDATED,
+    NotificationType.REHEARSAL_CANCELLED,
+    NotificationType.CONTRACT_ISSUED,
+    NotificationType.MESSAGE_RECEIVED,
+})
+
+# Nothing is push-off by default: push is opt-in at the device level, so a
+# subscribed user has signalled they want it. Kept as an explicit SSOT seam so a
+# future noisy type can be demoted in one place.
+DEFAULT_PUSH_DISABLED_TYPES: frozenset[str] = frozenset()
+
 # Routine, high-volume manager fan-out alerts. At INFO level these are collected
 # into the daily digest instead of firing an immediate email + push per event.
 DIGESTIBLE_TYPES: frozenset[str] = frozenset({
@@ -32,3 +63,11 @@ def is_digestible(notification_type: str, level: str) -> bool:
         notification_type in DIGESTIBLE_TYPES
         and (level or NotificationLevel.INFO) == NotificationLevel.INFO
     )
+
+
+def default_channel_preferences(notification_type: str) -> dict[str, bool]:
+    """Default email/push state for a notification type before user overrides."""
+    return {
+        "email_enabled": notification_type in DEFAULT_EMAIL_ENABLED_TYPES,
+        "push_enabled": notification_type not in DEFAULT_PUSH_DISABLED_TYPES,
+    }

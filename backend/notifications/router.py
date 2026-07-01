@@ -8,7 +8,7 @@
 """
 from typing import Any
 
-from .delivery import is_digestible
+from .delivery import default_channel_preferences, is_digestible
 from .email_tasks import send_notification_email_task
 from .models import NotificationLevel, NotificationPreference, NotificationType
 from .tasks import send_push_notification_task
@@ -37,7 +37,7 @@ class NotificationRouter:
         Routine INFO manager alerts are held back from real-time channels when the
         recipient has the daily digest enabled; the in-app row is already persisted
         and the digest sweep collects it. Disabling the digest restores immediate
-        email + push for these events.
+        delivery through the recipient's enabled real-time channels.
         """
         if notification_type == NotificationType.NOTIFICATION_READ_RECEIPT:
             return
@@ -48,6 +48,7 @@ class NotificationRouter:
         pref, _ = NotificationPreference.objects.get_or_create(
             user_id=recipient_id,
             notification_type=notification_type,
+            defaults=default_channel_preferences(notification_type),
         )
 
         template_name = _EMAIL_TEMPLATE_MAP.get(notification_type, "transactional")

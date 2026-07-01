@@ -60,3 +60,7 @@ pywebpush>=2.0.0
 # AI / Score Package Compiler
 anthropic>=0.88.0
 pypdf>=5.0.0
+# Page rasterisation for the build-cockpit page-trim thumbnails. PDFium binding
+# with a permissive (Apache-2.0/BSD-3) licence; ships self-contained wheels with
+# the native engine bundled, so it needs NO system package (unlike WeasyPrint).
+pypdfium2>=4.30.0

@@ -8,6 +8,7 @@
              are deterministic regardless of compiled .mo catalogs.
 @module notifications/tests
 """
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import cast
 from unittest.mock import patch
@@ -24,6 +25,7 @@ from rest_framework.test import APITestCase
 from core.constants import AppRole
 from core.models import UserProfile
 
+from .delivery import default_channel_preferences
 from .email_service import EmailDispatcherService, EmailType
 from .message_content import (
     _COMPOSERS,
@@ -31,7 +33,7 @@ from .message_content import (
     MessageContentBuilder,
     PushPayload,
 )
-from .models import Notification, NotificationLevel, NotificationType
+from .models import Notification, NotificationLevel, NotificationPreference, NotificationType
 
 User = get_user_model()
 
@@ -147,6 +149,77 @@ class StructuredMetadataTests(SimpleTestCase):
             self.assertIn("A → B", c.body)
             # Detail rows mirror the structured changes.
             self.assertTrue(any(r.label == "Date & time" for r in c.details))
+
+    def test_rehearsal_scheduled_uses_glance_facts(self) -> None:
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_SCHEDULED, "INFO",
+                {
+                    "project_name": "Requiem",
+                    "starts_at": "2026-06-19T17:00:00+00:00",
+                    "starts_at_display": "19.06.2026, 19:00",
+                    "timezone": "Europe/Warsaw",
+                    "location": "St Anne's",
+                    "focus": "Lacrimosa",
+                },
+                is_manager=False,
+            )
+            self.assertIn("19.06.2026, 19:00", c.body)
+            self.assertIn("St Anne's", c.body)
+            self.assertIn("Lacrimosa", c.body)
+            self.assertTrue(any(r.label == "Focus" for r in c.details))
+
+    def test_event_time_metadata_is_structured_and_display_safe(self) -> None:
+        from .time_metadata import build_event_time_metadata, display_event_time
+
+        metadata = build_event_time_metadata(
+            datetime(2026, 6, 19, 17, 0, tzinfo=UTC),
+            "Europe/Warsaw",
+            fallback_timezone="Europe/Warsaw",
+        )
+
+        self.assertEqual(metadata["starts_at"], "2026-06-19T17:00:00+00:00")
+        self.assertEqual(metadata["starts_at_display"], "19.06.2026, 19:00")
+        self.assertEqual(metadata["timezone"], "Europe/Warsaw")
+        self.assertEqual(display_event_time(metadata), "19.06.2026, 19:00")
+
+        fallback_metadata = build_event_time_metadata(
+            datetime(2026, 6, 19, 17, 0, tzinfo=UTC),
+            "Invalid/Timezone",
+            fallback_timezone="Invalid/Fallback",
+        )
+        self.assertEqual(fallback_metadata["timezone"], "UTC")
+
+    def test_rehearsal_copy_formats_iso_without_exposing_raw_value(self) -> None:
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_SCHEDULED, "INFO",
+                {
+                    "project_name": "Requiem",
+                    "starts_at": "2026-06-19T17:00:00+00:00",
+                    "timezone": "Europe/Warsaw",
+                    "location": "St Anne's",
+                },
+                is_manager=False,
+            )
+            self.assertIn("19.06.2026, 19:00", c.body)
+            self.assertNotIn("2026-06-19T17:00:00", c.body)
+
+    def test_message_push_body_does_not_expose_full_message(self) -> None:
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.MESSAGE_RECEIVED, "INFO",
+                {
+                    "thread_id": "t1",
+                    "title": "Rehearsal logistics",
+                    "sender_name": "Ada",
+                    "message": "Private travel details",
+                    "snippet": "Private travel details",
+                },
+                is_manager=False,
+            )
+            self.assertNotIn("Private travel details", c.body)
+            self.assertIn("Rehearsal logistics", c.body)
 
     def test_project_removed_event_distinct_from_update(self) -> None:
         with translation.override("en"):
@@ -332,12 +405,16 @@ class RouterDigestGatingTests(TestCase):
         push.assert_not_called()
 
     def test_digestible_warning_breaks_through(self) -> None:
+        # A WARNING escalation bypasses the digest hold and delivers in real time,
+        # but still through the type's default channels only. Manager alerts default
+        # to push-on / email-off (email is reserved for the daily digest), so the
+        # break-through reaches push while email stays silent.
         email, push = self._route(NotificationType.PARTICIPATION_RESPONSE, NotificationLevel.WARNING)
-        email.assert_called_once()
         push.assert_called_once()
+        email.assert_not_called()
 
     def test_non_digestible_is_delivered_immediately(self) -> None:
-        email, push = self._route(NotificationType.REHEARSAL_REMINDER, NotificationLevel.INFO)
+        email, push = self._route(NotificationType.REHEARSAL_SCHEDULED, NotificationLevel.INFO)
         email.assert_called_once()
         push.assert_called_once()
 
@@ -345,8 +422,24 @@ class RouterDigestGatingTests(TestCase):
         self.profile.digest_enabled = False
         self.profile.save(update_fields=["digest_enabled"])
         email, push = self._route(NotificationType.ATTENDANCE_SUBMITTED, NotificationLevel.INFO)
-        email.assert_called_once()
+        email.assert_not_called()
         push.assert_called_once()
+
+    def test_router_uses_shared_defaults_when_creating_preference(self) -> None:
+        # Casting is Tier 2: push-on (subscribers only), email-off. The lazily
+        # created row must reflect that contract, not the model's blanket True.
+        self.profile.digest_enabled = False
+        self.profile.save(update_fields=["digest_enabled"])
+        email, push = self._route(NotificationType.PIECE_CASTING_ASSIGNED, NotificationLevel.INFO)
+        email.assert_not_called()
+        push.assert_called_once()
+
+        pref = NotificationPreference.objects.get(
+            user=self.user,
+            notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
+        )
+        self.assertFalse(pref.email_enabled)
+        self.assertTrue(pref.push_enabled)
 
 
 @override_settings(
@@ -523,3 +616,236 @@ class NotificationBadgeSeenTests(APITestCase):
         self._notify()
         resp = self.client.get(self.UNREAD_COUNT_URL)
         self.assertEqual(resp.data["new_count"], 1)
+
+
+class EventTimeMetadataTests(SimpleTestCase):
+    """The canonical event-moment contract: structured ISO in, localized display
+    out, with legacy and malformed inputs degrading gracefully and never leaking
+    a raw ISO timestamp into channel copy."""
+
+    def test_normalize_timezone_name_walks_the_fallback_chain(self) -> None:
+        from .time_metadata import normalize_timezone_name
+
+        self.assertEqual(normalize_timezone_name("Europe/Warsaw", "UTC"), "Europe/Warsaw")
+        self.assertEqual(normalize_timezone_name(None, "Europe/Warsaw"), "Europe/Warsaw")
+        self.assertEqual(normalize_timezone_name("", "Europe/Warsaw"), "Europe/Warsaw")
+        # Both the requested and the domain fallback are invalid → safe UTC.
+        self.assertEqual(normalize_timezone_name("Invalid/Zone", "Also/Invalid"), "UTC")
+
+    def test_format_event_time_renders_in_venue_timezone(self) -> None:
+        from .time_metadata import format_event_time
+
+        value = datetime(2026, 6, 19, 17, 0, tzinfo=UTC)
+        self.assertEqual(format_event_time(value, "Europe/Warsaw", "UTC"), "19.06.2026, 19:00")
+
+    def test_format_event_time_tolerates_naive_datetime(self) -> None:
+        from .time_metadata import format_event_time
+
+        # A naive value must not raise; it is rendered as-is in the canonical format.
+        rendered = format_event_time(datetime(2026, 6, 19, 17, 0), "Europe/Warsaw", "UTC")
+        self.assertEqual(rendered, "19.06.2026, 17:00")
+
+    def test_display_event_time_prefers_explicit_display_copy(self) -> None:
+        from .time_metadata import display_event_time
+
+        meta = {
+            "starts_at": "2026-06-19T17:00:00+00:00",
+            "starts_at_display": "19.06.2026, 19:00",
+            "timezone": "Europe/Warsaw",
+        }
+        self.assertEqual(display_event_time(meta, "starts_at"), "19.06.2026, 19:00")
+        self.assertEqual(display_event_time({"date_range_display": "19-21 June"}), "19-21 June")
+
+    def test_display_event_time_formats_iso_in_timezone_without_leaking_raw(self) -> None:
+        from .time_metadata import display_event_time
+
+        meta = {"starts_at": "2026-06-19T17:00:00+00:00", "timezone": "Europe/Warsaw"}
+        rendered = display_event_time(meta)
+        self.assertEqual(rendered, "19.06.2026, 19:00")
+        self.assertNotIn("T", rendered)
+        # A trailing-Z ISO value is normalized the same way.
+        self.assertEqual(
+            display_event_time({"starts_at": "2026-06-19T17:00:00Z", "timezone": "Europe/Warsaw"}),
+            "19.06.2026, 19:00",
+        )
+
+    def test_display_event_time_survives_bad_timezone(self) -> None:
+        from .time_metadata import display_event_time
+
+        meta = {"starts_at": "2026-06-19T17:00:00+00:00", "timezone": "Invalid/Zone"}
+        # Falls back to the value's own offset (UTC) rather than raising.
+        self.assertEqual(display_event_time(meta), "19.06.2026, 17:00")
+
+    def test_display_event_time_falls_back_to_legacy_keys(self) -> None:
+        from .time_metadata import display_event_time
+
+        # A legacy display string lives under starts_at (no "T") — treated as copy.
+        self.assertEqual(
+            display_event_time({"starts_at": "Thu 19 Jun, 19:00"}, "starts_at", "rehearsal_date"),
+            "Thu 19 Jun, 19:00",
+        )
+        self.assertEqual(
+            display_event_time({"rehearsal_date": "Thu 19 Jun"}, "starts_at", "rehearsal_date"),
+            "Thu 19 Jun",
+        )
+
+    def test_display_event_time_returns_empty_when_nothing_is_known(self) -> None:
+        from .time_metadata import display_event_time
+
+        self.assertEqual(display_event_time({}, "starts_at", "rehearsal_date"), "")
+
+
+class NotificationPreferenceSettingsAPITests(APITestCase):
+    """The settings matrix (`/api/notifications/preferences/`) advertises the shared
+    default contract, hides channel-scoped and role-scoped rows, never leaks one
+    user's saved choice, and persists a single-channel toggle without disturbing the
+    other channel's default."""
+
+    URL = "/api/notifications/preferences/"
+
+    def _detail_url(self, ntype: str) -> str:
+        return f"{self.URL}{ntype}/"
+
+    def setUp(self) -> None:
+        self.manager = User.objects.create_user(
+            username="pref-mgr", email="pref-mgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        self.artist = User.objects.create_user(
+            username="pref-artist", email="pref-artist@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.artist, role=AppRole.ARTIST)
+
+    def _rows(self, user) -> dict[str, dict]:
+        self.client.force_authenticate(user)
+        resp = self.client.get(self.URL)
+        self.assertEqual(resp.status_code, 200)
+        return {row["notification_type"]: row for row in resp.data}
+
+    def test_unpersisted_rows_mirror_the_shared_default_contract(self) -> None:
+        rows = self._rows(self.manager)
+        for ntype, row in rows.items():
+            expected = default_channel_preferences(ntype)
+            self.assertEqual(
+                (row["email_enabled"], row["push_enabled"]),
+                (expected["email_enabled"], expected["push_enabled"]),
+                f"{ntype}: settings default diverged from the shared contract",
+            )
+
+    def test_inert_and_offplatform_types_are_hidden_from_the_matrix(self) -> None:
+        # No per-channel preference to express, so they never appear:
+        #  CHANNEL_MESSAGE (per-channel push), NOTIFICATION_READ_RECEIPT (in-app
+        #  only — never routed), CONTRACT_ISSUED (issued off-platform for now).
+        rows = self._rows(self.manager)
+        for hidden in (
+            NotificationType.CHANNEL_MESSAGE.value,
+            NotificationType.NOTIFICATION_READ_RECEIPT.value,
+            NotificationType.CONTRACT_ISSUED.value,
+        ):
+            self.assertNotIn(hidden, rows)
+
+    def test_rows_carry_recommended_baseline_matching_the_contract(self) -> None:
+        # The client needs the recommended baseline to flag "at default" rows and
+        # offer Restore-recommended without re-deriving the backend policy.
+        for ntype, row in self._rows(self.manager).items():
+            expected = default_channel_preferences(ntype)
+            self.assertEqual(
+                (row["recommended_email"], row["recommended_push"]),
+                (expected["email_enabled"], expected["push_enabled"]),
+                f"{ntype}: recommended baseline diverged from the shared contract",
+            )
+
+    def test_manager_only_rows_are_hidden_from_artists(self) -> None:
+        manager_only = {
+            NotificationType.PARTICIPATION_RESPONSE.value,
+            NotificationType.ATTENDANCE_SUBMITTED.value,
+            NotificationType.ABSENCE_REQUESTED.value,
+        }
+        artist_rows = self._rows(self.artist)
+        self.assertTrue(manager_only.isdisjoint(artist_rows))
+        self.assertTrue(manager_only.issubset(self._rows(self.manager)))
+
+    def test_persisted_choice_overrides_the_default(self) -> None:
+        # Casting email defaults OFF; a saved opt-in must win over the default.
+        NotificationPreference.objects.create(
+            user=self.manager,
+            notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
+            email_enabled=True,
+            push_enabled=True,
+        )
+        row = self._rows(self.manager)[NotificationType.PIECE_CASTING_ASSIGNED.value]
+        self.assertTrue(row["email_enabled"])
+        self.assertTrue(row["push_enabled"])
+
+    def test_single_channel_toggle_seeds_untouched_channel_from_contract(self) -> None:
+        # Casting email defaults OFF (≠ model default True). Toggling only push must
+        # create the row with email seeded from the SSOT (False), not the model's
+        # blanket True — proving the untouched channel follows the contract.
+        self.client.force_authenticate(self.manager)
+        resp = self.client.patch(
+            self._detail_url(NotificationType.PIECE_CASTING_ASSIGNED.value),
+            {"push_enabled": False},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        pref = NotificationPreference.objects.get(
+            user=self.manager, notification_type=NotificationType.PIECE_CASTING_ASSIGNED
+        )
+        self.assertFalse(pref.email_enabled)  # untouched channel keeps the SSOT default
+        self.assertFalse(pref.push_enabled)
+
+        row = self._rows(self.manager)[NotificationType.PIECE_CASTING_ASSIGNED.value]
+        self.assertEqual((row["email_enabled"], row["push_enabled"]), (False, False))
+
+    def test_single_channel_toggle_preserves_existing_other_channel(self) -> None:
+        # An existing conscious choice on the other channel is never reset by a
+        # later single-channel toggle.
+        NotificationPreference.objects.create(
+            user=self.manager,
+            notification_type=NotificationType.REHEARSAL_SCHEDULED,
+            email_enabled=True,
+            push_enabled=False,  # user deliberately silenced push
+        )
+        self.client.force_authenticate(self.manager)
+        resp = self.client.patch(
+            self._detail_url(NotificationType.REHEARSAL_SCHEDULED.value),
+            {"email_enabled": False},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        pref = NotificationPreference.objects.get(
+            user=self.manager, notification_type=NotificationType.REHEARSAL_SCHEDULED
+        )
+        self.assertFalse(pref.email_enabled)
+        self.assertFalse(pref.push_enabled)  # preserved, not reset to the True default
+
+    def test_bulk_put_applies_a_whole_section_in_one_request(self) -> None:
+        # Restore-recommended sends the section's target state as one atomic PUT.
+        self.client.force_authenticate(self.manager)
+        resp = self.client.put(
+            self.URL,
+            {"preferences": [
+                {"notification_type": NotificationType.REHEARSAL_SCHEDULED.value,
+                 "email_enabled": False, "push_enabled": False},
+                {"notification_type": NotificationType.PIECE_CASTING_ASSIGNED.value,
+                 "email_enabled": True, "push_enabled": True},
+            ]},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        scheduled = NotificationPreference.objects.get(
+            user=self.manager, notification_type=NotificationType.REHEARSAL_SCHEDULED
+        )
+        casting = NotificationPreference.objects.get(
+            user=self.manager, notification_type=NotificationType.PIECE_CASTING_ASSIGNED
+        )
+        self.assertEqual((scheduled.email_enabled, scheduled.push_enabled), (False, False))
+        self.assertEqual((casting.email_enabled, casting.push_enabled), (True, True))
+
+    def test_bulk_put_rejects_an_empty_payload(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.put(self.URL, {"preferences": []}, format="json")
+        self.assertEqual(resp.status_code, 400)

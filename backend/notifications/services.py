@@ -18,6 +18,7 @@ import logging
 
 from django.db import transaction
 
+from .delivery import default_channel_preferences
 from .dtos import NotificationCreateDTO, NotificationPreferenceUpdateDTO
 from .models import Notification, NotificationPreference
 
@@ -97,20 +98,50 @@ class NotificationPreferenceService:
     def update_preferences(cls, dto: NotificationPreferenceUpdateDTO) -> NotificationPreference:
         """
         Updates or creates granular notification channel preferences for a user.
+
+        Only the channels named in the payload are written, so a single-channel
+        toggle never clobbers the user's existing choice on the other channel. When
+        the row does not exist yet, the untouched channel is seeded from the shared
+        default contract (``default_channel_preferences``) rather than the model's
+        blanket ``True`` — otherwise enabling one channel could silently diverge from
+        the defaults the settings UI displayed (e.g. flipping push on for a casting
+        notification the user never touched).
         """
+        provided = {
+            k: v for k, v in [
+                ('email_enabled', dto.email_enabled),
+                ('push_enabled', dto.push_enabled),
+            ] if v is not None
+        }
         preference, _created = NotificationPreference.objects.update_or_create(
             user_id=dto.user_id,
             notification_type=dto.notification_type,
-            defaults={
-                k: v for k, v in [
-                    ('email_enabled', dto.email_enabled),
-                    ('push_enabled', dto.push_enabled),
-                ] if v is not None
-            }
+            defaults=provided,
+            create_defaults={
+                **default_channel_preferences(dto.notification_type),
+                **provided,
+            },
         )
-        
+
         logger.info(
             f"[NotificationPreferenceService] Updated preferences for UID:{dto.user_id}, "
             f"Type:{dto.notification_type}"
         )
         return preference
+
+    @classmethod
+    def bulk_update_preferences(
+        cls, user_id: int, items: list[dict],
+    ) -> list[NotificationPreference]:
+        """
+        Applies several preference updates atomically (all-or-nothing), reusing the
+        per-row SSOT-seeding contract. Backs Restore-recommended, so resetting a
+        whole section is one request and one consistent transaction.
+        """
+        with transaction.atomic():
+            return [
+                cls.update_preferences(
+                    NotificationPreferenceUpdateDTO(user_id=user_id, **item)
+                )
+                for item in items
+            ]
