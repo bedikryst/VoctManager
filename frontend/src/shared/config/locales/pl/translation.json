@@ -2793,7 +2793,8 @@
         "toc": "Spis treści",
         "numbers": "Numeracja stron",
         "bookmarks": "Zakładki PDF",
-        "a4": "Normalizuj do A4"
+        "a4": "Normalizuj do A4",
+        "duplex": "Druk dwustronny"
       },
       "pages": "{{n}} stron",
       "readiness_state": {

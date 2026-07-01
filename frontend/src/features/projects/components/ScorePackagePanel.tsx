@@ -477,6 +477,12 @@ export function ScorePackagePanel({
                         active={config.normalize_to_a4}
                         onChange={(v) => setField("normalize_to_a4", v)}
                       />
+                      <TogglePill
+                        subtle
+                        label={t("projects.score_package.structure.duplex", "Druk dwustronny")}
+                        active={config.duplex_mode}
+                        onChange={(v) => setField("duplex_mode", v)}
+                      />
                     </div>
                   </div>
                 </div>

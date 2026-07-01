@@ -26,8 +26,6 @@ import {
   useCreateProject,
   useProjects,
   useUpdateProject,
-  useUploadProjectScorePdf,
-  useRemoveProjectScorePdf,
 } from "../../api/project.queries";
 import type {
   ProjectCreateDTO,
@@ -49,11 +47,6 @@ export interface UseDetailsFormResult {
   ) => void;
   handleRemoveRunSheetItem: (id: string) => void;
   handleSubmit: (event: FormEvent) => Promise<void>;
-  pendingPdfFile: File | null;
-  pendingPdfRemoval: boolean;
-  handleSelectPdfFile: (file: File) => void;
-  handleRemovePdf: () => void;
-  handleCancelPdfChange: () => void;
 }
 
 const normalizeRunSheetItem = (
@@ -131,12 +124,8 @@ export const useDetailsForm = (
 
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
-  const uploadScorePdfMutation = useUploadProjectScorePdf();
-  const removeScorePdfMutation = useRemoveProjectScorePdf();
 
   const [baseline, setBaseline] = useState<Project | null>(project);
-  const [pendingPdfFile, setPendingPdfFile] = useState<File | null>(null);
-  const [pendingPdfRemoval, setPendingPdfRemoval] = useState(false);
 
   const [formData, setFormData] = useState<ProjectFormData>({
     title: project?.title || "",
@@ -176,8 +165,6 @@ export const useDetailsForm = (
         normalizeRunSheetItem(item, `runsheet-init-${index}-${Date.now()}`),
       ),
     );
-    setPendingPdfFile(null);
-    setPendingPdfRemoval(false);
   }, []);
 
   useEffect(() => {
@@ -227,8 +214,8 @@ export const useDetailsForm = (
       JSON.stringify(cleanLocalRunSheet) !==
       JSON.stringify(cleanBaselineRunSheet);
 
-    return basicFieldsChanged || runSheetChanged || pendingPdfFile !== null || pendingPdfRemoval;
-  }, [baseline, formData, runSheet, pendingPdfFile, pendingPdfRemoval]);
+    return basicFieldsChanged || runSheetChanged;
+  }, [baseline, formData, runSheet]);
 
   useEffect(() => {
     onDirtyStateChange?.(isDirty);
@@ -268,21 +255,6 @@ export const useDetailsForm = (
     setRunSheet((previous) =>
       previous.filter((item) => String(item.id) !== id),
     );
-  }, []);
-
-  const handleSelectPdfFile = useCallback((file: File): void => {
-    setPendingPdfFile(file);
-    setPendingPdfRemoval(false);
-  }, []);
-
-  const handleRemovePdf = useCallback((): void => {
-    setPendingPdfRemoval(true);
-    setPendingPdfFile(null);
-  }, []);
-
-  const handleCancelPdfChange = useCallback((): void => {
-    setPendingPdfFile(null);
-    setPendingPdfRemoval(false);
   }, []);
 
   const handleSubmit = async (event: FormEvent): Promise<void> => {
@@ -365,35 +337,6 @@ export const useDetailsForm = (
         );
       }
 
-      // Handle deferred PDF changes after the project entity is persisted
-      if (pendingPdfRemoval && savedProject.score_pdf) {
-        try {
-          await removeScorePdfMutation.mutateAsync(String(savedProject.id));
-          savedProject = { ...savedProject, score_pdf: null };
-        } catch {
-          toast.warning(
-            t(
-              "projects.details.toast.pdf_remove_failed",
-              "Projekt zapisany — nie udało się usunąć PDF.",
-            ),
-          );
-        }
-      } else if (pendingPdfFile) {
-        try {
-          savedProject = await uploadScorePdfMutation.mutateAsync({
-            id: String(savedProject.id),
-            file: pendingPdfFile,
-          });
-        } catch {
-          toast.warning(
-            t(
-              "projects.details.toast.pdf_upload_failed",
-              "Projekt zapisany — nie udało się załadować PDF. Spróbuj ponownie.",
-            ),
-          );
-        }
-      }
-
       resetFormToProject(savedProject);
       onSuccess(savedProject);
     } catch (error: unknown) {
@@ -407,18 +350,10 @@ export const useDetailsForm = (
     sortedRunSheet,
     isDirty,
     isSubmitting:
-      createProjectMutation.isPending ||
-      updateProjectMutation.isPending ||
-      uploadScorePdfMutation.isPending ||
-      removeScorePdfMutation.isPending,
+      createProjectMutation.isPending || updateProjectMutation.isPending,
     handleAddRunSheetItem,
     handleUpdateRunSheetItem,
     handleRemoveRunSheetItem,
     handleSubmit,
-    pendingPdfFile,
-    pendingPdfRemoval,
-    handleSelectPdfFile,
-    handleRemovePdf,
-    handleCancelPdfChange,
   };
 };

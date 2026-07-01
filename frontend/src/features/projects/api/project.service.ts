@@ -88,6 +88,7 @@ export interface ScorePackageConfig {
   include_page_numbers: boolean;
   include_bookmarks: boolean;
   normalize_to_a4: boolean;
+  duplex_mode: boolean;
   include_cards: boolean;
   card_include_text: boolean;
   card_include_translation: boolean;

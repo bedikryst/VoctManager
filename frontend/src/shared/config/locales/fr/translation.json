@@ -2790,7 +2790,8 @@
         "toc": "Table des matières",
         "numbers": "Numéros de page",
         "bookmarks": "Signets PDF",
-        "a4": "Normaliser en A4"
+        "a4": "Normaliser en A4",
+        "duplex": "Impression recto-verso"
       },
       "pages": "{{n}} pages",
       "readiness_state": {

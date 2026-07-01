@@ -274,6 +274,14 @@ class ScorePackage(EnterpriseBaseModel):
                     "assembled book does not 'wobble' between differently-sized editions."),
         verbose_name=_("Normalize to A4"),
     )
+    duplex_mode = models.BooleanField(
+        default=False,
+        help_text=_("Lay the book out for double-sided printing: the page number moves to "
+                    "the outer bottom corner (recto-right / verso-left) behind a white "
+                    "knockout for legibility, and — in Concert density — every piece opens "
+                    "on a right-hand page (a blank verso is inserted where needed)."),
+        verbose_name=_("Double-sided print"),
+    )
 
     # --- Per-piece text content (Phase 2). `include_cards` is the master switch;
     #     `density_mode` then decides CONCERT (a frontispiece before each piece) vs

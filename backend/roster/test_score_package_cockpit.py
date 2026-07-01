@@ -21,7 +21,7 @@ from unittest import mock, skipUnless
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.files.base import ContentFile
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from pypdf import PdfWriter
 
 from archive.models import (
@@ -46,6 +46,7 @@ from roster.score_package_config import (
     sanitize_card_elements,
     suggested_page_start,
 )
+from roster.score_package_layout import plan_body_layout
 from roster.score_package_readiness import (
     LOW,
     MISSING,
@@ -286,6 +287,14 @@ class StateAndHashTests(_Base):
         after = ScorePackageService.compute_source_hash(self.project, self.package)
         self.assertNotEqual(before, after)
 
+    def test_hash_changes_on_duplex_toggle(self) -> None:
+        self._add_edition()
+        before = ScorePackageService.compute_source_hash(self.project, self.package)
+        self.package.duplex_mode = True
+        self.package.save()
+        after = ScorePackageService.compute_source_hash(self.project, self.package)
+        self.assertNotEqual(before, after)
+
 
 class UpdateConfigTests(_Base):
     def test_update_config_persists_without_build(self) -> None:
@@ -391,6 +400,121 @@ class AssemblyTests(_Base):
 
         with self.assertRaises(ScorePackageBuildError):
             self._build()
+
+
+class LayoutPlannerTests(SimpleTestCase):
+    """Pure pagination planner: folios, recto/verso parity, recto-start spacers."""
+
+    def test_simplex_has_no_spacers(self) -> None:
+        layout = plan_body_layout([3, 2], recto_start=False)
+        self.assertEqual(layout.physical_count, 5)
+        self.assertEqual(layout.content_count, 5)
+        self.assertTrue(all(p.kind == "content" for p in layout.pages))
+        self.assertEqual([p.folio for p in layout.pages], [1, 2, 3, 4, 5])
+        self.assertFalse(any(pl.leading_blank for pl in layout.placements))
+        # phys_start mirrors folio_start-1 when nothing is inserted.
+        self.assertEqual([pl.phys_start for pl in layout.placements], [0, 3])
+        self.assertEqual([pl.folio_start for pl in layout.placements], [1, 4])
+
+    def test_body_side_follows_position(self) -> None:
+        # Body opens on a recto; the side then alternates by 0-based position.
+        layout = plan_body_layout([4], recto_start=True)
+        self.assertEqual([p.is_recto for p in layout.pages], [True, False, True, False])
+
+    def test_recto_start_inserts_blank_verso(self) -> None:
+        # First item is 3 pages long (ends on a verso), so the second must be pushed
+        # onto the next recto with a blank verso in between.
+        layout = plan_body_layout([3, 3], recto_start=True)
+        kinds = [(p.kind, p.folio, p.is_recto) for p in layout.pages]
+        self.assertEqual(
+            kinds,
+            [
+                ("content", 1, True),
+                ("content", 2, False),
+                ("content", 3, True),
+                ("spacer", None, False),   # inserted blank verso
+                ("content", 4, True),
+                ("content", 5, False),
+                ("content", 6, True),
+            ],
+        )
+        self.assertEqual(layout.content_count, 6)
+        self.assertEqual(layout.physical_count, 7)
+        second = layout.placements[1]
+        self.assertTrue(second.leading_blank)
+        self.assertEqual(second.folio_start, 4)   # numbering skips the blank
+        self.assertEqual(second.phys_start, 4)     # physical offset counts it
+
+    def test_recto_start_skips_blank_when_already_recto(self) -> None:
+        # An even-length first item leaves the next one already on a recto.
+        layout = plan_body_layout([2, 2], recto_start=True)
+        self.assertFalse(any(pl.leading_blank for pl in layout.placements))
+        self.assertEqual(layout.physical_count, 4)
+
+    def test_first_item_never_gets_a_spacer(self) -> None:
+        layout = plan_body_layout([1, 1, 1], recto_start=True)
+        self.assertFalse(layout.placements[0].leading_blank)
+
+    def test_every_item_opens_on_a_recto_under_recto_start(self) -> None:
+        layout = plan_body_layout([1, 4, 3, 2, 5], recto_start=True)
+        for placement in layout.placements:
+            self.assertEqual(placement.phys_start % 2, 0)  # 0-based even == recto
+
+    def test_folios_are_spacer_independent(self) -> None:
+        # The printed numbering is identical with or without recto-start, since
+        # spacers never consume a folio.
+        counts = [3, 1, 4, 2]
+        simplex = plan_body_layout(counts, recto_start=False)
+        duplex = plan_body_layout(counts, recto_start=True)
+        self.assertEqual(
+            [pl.folio_start for pl in simplex.placements],
+            [pl.folio_start for pl in duplex.placements],
+        )
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class DuplexAssemblyTests(_Base):
+    """Assembly with duplex on: front pad + recto-start spacers land as real pages.
+    Page numbering is left off (its overlay needs the real WeasyPrint paginator);
+    the numbering *placement* is proven by LayoutPlannerTests instead."""
+
+    def _second_piece(self, *, pages: int) -> None:
+        piece = Piece.objects.create(title="Ave verum")
+        ProgramItem.objects.create(project=self.project, piece=piece, order=2)
+        edition = ScoreEdition.objects.create(
+            piece=piece, original_filename="ave.pdf", page_count=pages,
+            is_default=True, sha256="9" * 64,
+        )
+        edition.pdf_file.save("ave.pdf", ContentFile(_pdf_bytes(pages)), save=True)
+
+    def _build(self, *, duplex: bool):
+        from roster.infrastructure import score_package_builder as builder
+
+        self.package.include_page_numbers = False
+        self.package.include_cards = True
+        self.package.density_mode = ScorePackage.Density.CONCERT
+        self.package.duplex_mode = duplex
+        self.package.save()
+        with mock.patch.object(builder, "_render_pdf", side_effect=lambda html: _pdf_bytes(1)):
+            return builder.build_score_package(self.project, self.package)
+
+    def test_duplex_adds_front_pad_and_recto_start_blank(self) -> None:
+        # Two 2-page pieces, each with a 1-page frontispiece → item bodies of 3
+        # pages. front matter stub = 1 page (odd → +1 pad); piece 2 ends on a verso
+        # after piece 1's odd length → +1 recto-start blank.
+        self._add_edition(pages=2)
+        self._second_piece(pages=2)
+
+        simplex = self._build(duplex=False)
+        # front(1) + [card(1)+music(2)] + [card(1)+music(2)] = 7
+        self.assertEqual(simplex.page_count, 7)
+        self.assertEqual(simplex.bound_pieces, 2)
+
+        duplex = self._build(duplex=True)
+        # front(1) + pad(1) + piece1(3) + blank(1) + piece2(3) = 9
+        self.assertEqual(duplex.page_count, 9)
+        self.assertEqual(duplex.bound_pieces, 2)
+        self.assertEqual(duplex.skipped_titles, [])
 
 
 @override_settings(MEDIA_ROOT=_MEDIA)

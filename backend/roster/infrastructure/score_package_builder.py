@@ -36,6 +36,7 @@ from roster.score_package_config import (
     select_program_note,
     select_translation,
 )
+from roster.score_package_layout import BodyPage, plan_body_layout
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +84,9 @@ class PlannedItem:
     # Resolved during planning:
     card_bytes: bytes | None = None
     card_count: int = 0
-    start_page: int = 1       # 1-based page within the music body (drives TOC + bookmark)
+    start_page: int = 1       # 1-based printed folio the item opens on (drives the TOC)
+    phys_start: int = 0       # 0-based physical offset in the body (drives the outline)
+    leading_blank: bool = False  # a recto-start blank verso precedes this item (duplex)
 
 
 @dataclass
@@ -348,6 +351,37 @@ def _build_number_overlay(body_page_count: int) -> list:
     return list(overlay.pages)
 
 
+def _build_duplex_number_overlay(pages: list[BodyPage]) -> list:
+    """
+    Duplex numbering overlay: one A4 page per body page, carrying its folio in the
+    *outer* bottom corner — right on a recto, left on a verso — so the number always
+    falls on the open edge of a bound, double-sided book. The number sits behind a
+    small white knockout so it stays legible over dense engraving. Blank recto-start
+    spacers get an empty page, keeping the overlay aligned one-to-one with the body.
+    """
+    rows: list[str] = []
+    for page in pages:
+        if page.kind == "content" and page.folio is not None:
+            side = "recto" if page.is_recto else "verso"
+            rows.append(f'<div class="pg {side}"><span class="num">{page.folio}</span></div>')
+        else:
+            rows.append('<div class="pg"></div>')
+    html = (
+        "<!DOCTYPE html><html><head><meta charset='utf-8'><style>"
+        "@page { size: A4; margin: 0; }"
+        ".pg { position: relative; width: 210mm; height: 297mm; }"
+        ".pg:not(:first-child) { break-before: page; }"
+        ".num { position: absolute; bottom: 12mm;"
+        " font: 10pt Georgia, 'Times New Roman', serif; color: #3a3a3a;"
+        " background: #ffffff; padding: 1.5pt 5pt; border-radius: 2pt; }"
+        ".recto .num { right: 14mm; }"
+        ".verso .num { left: 14mm; }"
+        "</style></head><body>" + "".join(rows) + "</body></html>"
+    )
+    overlay = PdfReader(BytesIO(_render_pdf(html)))
+    return list(overlay.pages)
+
+
 # ---------------------------------------------------------------------------
 # pypdf assembly
 # ---------------------------------------------------------------------------
@@ -399,14 +433,18 @@ def _append_pages(writer: PdfWriter, blob: bytes) -> int:
     return len(reader.pages)
 
 
-def _add_outline(writer: PdfWriter, package: ScorePackage, front_count: int, plan: list[PlannedItem]) -> None:
-    """Add a navigable PDF outline: front-matter anchors + one item per piece."""
+def _add_outline(writer: PdfWriter, package: ScorePackage, body_start: int, plan: list[PlannedItem]) -> None:
+    """Add a navigable PDF outline: front-matter anchors + one item per piece.
+
+    ``body_start`` is the 0-based index of the first music-body page in the writer
+    (front matter + any duplex front pad). Each item anchors at its physical offset,
+    not its printed folio, since recto-start spacers make the two diverge."""
     if package.include_title_page:
         writer.add_outline_item("Strona tytułowa", 0)
     if package.include_toc:
         writer.add_outline_item("Repertuar", 1 if package.include_title_page else 0)
     for planned in plan:
-        absolute_index = front_count + (planned.start_page - 1)
+        absolute_index = body_start + planned.phys_start
         label = f"{planned.order}. {planned.title}"
         if planned.composer_label:
             label = f"{label} — {planned.composer_label}"
@@ -435,21 +473,35 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
     cards_on = package.include_cards
     concert_cards = cards_on and package.density_mode == ScorePackage.Density.CONCERT
     mass_texts = cards_on and package.density_mode == ScorePackage.Density.MASS
+    duplex = package.duplex_mode
+    # Recto-start (every piece opens on a right-hand page) is a Concert-density
+    # flourish; Mass density stays compact, so the body flows without blank versos.
+    recto_start = duplex and package.density_mode == ScorePackage.Density.CONCERT
 
-    # 1) Plan the body. `start_page` is the 1-based page within the music body and
-    #    drives both the TOC and the bookmark. A placeholder occupies one body page;
-    #    a CONCERT frontispiece precedes its music when the item keeps its card.
+    # 1) Render the per-piece cards and count their pages. `cursor` is the printed
+    #    folio a card shows ("s. N") — it counts content pages only, so it is the
+    #    same whether or not duplex later inserts (unnumbered) recto-start spacers.
+    #    A placeholder always gets a divider page; a bound piece gets a frontispiece
+    #    only in CONCERT density while its card is kept.
     cursor = 1
     for planned in plan:
         config = resolve_card_config(planned.item, package)
-        # A placeholder always gets a divider page; a bound piece gets a
-        # frontispiece only in CONCERT density while its card is kept.
         if planned.is_placeholder or (concert_cards and config.enabled):
             context = _card_context(planned, config, package, project, page_label=f"s. {cursor}")
             planned.card_bytes = _render_cards([context], section_header=None)
             planned.card_count = len(PdfReader(BytesIO(planned.card_bytes)).pages)
-        planned.start_page = cursor
         cursor += planned.card_count + planned.bound_page_count
+
+    # Plan the physical body: recto-start spacers, each item's printed folio (TOC),
+    # its physical offset (outline) and the recto/verso side of every page.
+    layout = plan_body_layout(
+        [p.card_count + p.bound_page_count for p in plan],
+        recto_start=recto_start,
+    )
+    for planned, placement in zip(plan, layout.placements, strict=True):
+        planned.start_page = placement.folio_start
+        planned.phys_start = placement.phys_start
+        planned.leading_blank = placement.leading_blank
 
     toc_entries = [
         {
@@ -483,9 +535,21 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
         if blob is not None:
             front_count += _append_pages(writer, blob)
 
-    # 3) Music body — card/placeholder (verbatim A4) then music (normalized A4).
+    # In duplex mode the music body must open on a recto; pad the front matter to an
+    # even physical page count so body page 1 is a right-hand page.
+    front_pad = (front_count % 2) if duplex else 0
+    for _ in range(front_pad):
+        writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
+    body_start = front_count + front_pad
+
+    # 3) Music body — optional recto-start blank, then card/placeholder (verbatim
+    #    A4) and music (normalized A4). `body_count` tracks physical pages (spacers
+    #    included), so it stays aligned with the planned layout and the overlay.
     body_count = 0
     for planned in plan:
+        if planned.leading_blank:
+            writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
+            body_count += 1
         if planned.card_bytes is not None:
             body_count += _append_pages(writer, planned.card_bytes)
         if planned.reader is not None:
@@ -494,22 +558,28 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
                 _place_on_a4(writer, source_page, fit=package.normalize_to_a4)
                 body_count += 1
 
-    # 4) Continuous page numbers on the body only (front matter stays unnumbered).
+    # 4) Page numbers on the body only (front matter stays unnumbered). Duplex puts
+    #    the folio in the outer corner (recto-right / verso-left) behind a white
+    #    knockout; simplex keeps the single bottom-right column.
     if package.include_page_numbers and body_count > 0:
-        overlay_pages = _build_number_overlay(body_count)
+        overlay_pages = (
+            _build_duplex_number_overlay(layout.pages)
+            if duplex
+            else _build_number_overlay(body_count)
+        )
         for offset, overlay_page in enumerate(overlay_pages[:body_count]):
-            writer.pages[front_count + offset].merge_page(overlay_page)
+            writer.pages[body_start + offset].merge_page(overlay_page)
 
-    # 5) Navigable outline.
+    # 5) Navigable outline (anchors at physical offsets, past any front pad).
     if package.include_bookmarks:
-        _add_outline(writer, package, front_count, plan)
+        _add_outline(writer, package, body_start, plan)
 
     buffer = BytesIO()
     writer.write(buffer)
 
     return BuildResult(
         pdf_bytes=buffer.getvalue(),
-        page_count=front_count + body_count,
+        page_count=body_start + body_count,
         bound_pieces=sum(1 for p in plan if not p.is_placeholder),
         skipped_titles=[p.title for p in plan if p.is_placeholder],
     )

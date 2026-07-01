@@ -2790,7 +2790,8 @@
         "toc": "Table of contents",
         "numbers": "Page numbers",
         "bookmarks": "PDF bookmarks",
-        "a4": "Normalise to A4"
+        "a4": "Normalise to A4",
+        "duplex": "Double-sided print"
       },
       "pages": "{{n}} pages",
       "readiness_state": {
