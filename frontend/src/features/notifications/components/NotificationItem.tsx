@@ -20,7 +20,6 @@ import {
   CheckCircle,
   XCircle,
   Headphones,
-  ChevronRight,
   ClipboardCheck,
   MessageCircle,
   type LucideIcon,
@@ -44,6 +43,22 @@ const changeLabel = (t: TFunc, fieldKey: string): string =>
   t(`notifications.changes.${fieldKey}`, fieldKey.replace(/_/g, " "));
 
 /**
+ * Localized label for a VoiceLine CODE (e.g. "B1" → "Bas 1"), rendered in the
+ * viewer's current UI language. Falls back to the raw value so a legacy row that
+ * still carries a pre-rendered label ("Bass 1") — or an unknown code — never
+ * renders blank.
+ */
+const voiceLineLabel = (t: TFunc, code?: string): string =>
+  code ? t(`notifications.voiceLines.${code}`, code) : "";
+
+/** Localized label for a material kind ("score" | "recording"). Unknown/blank
+ *  kinds yield no pill. */
+const materialKindLabel = (t: TFunc, kind?: string): string =>
+  kind === "score" || kind === "recording"
+    ? t(`notifications.materialKinds.${kind}`)
+    : "";
+
+/**
  * Renders one change entry as a compact localized chip label. Tolerant of loose
  * or legacy metadata shapes — a change persisted before the structured-codes
  * refactor may arrive as a plain string, or as an object without a stable
@@ -59,9 +74,14 @@ const renderChange = (t: TFunc, change: unknown): string => {
     old?: unknown;
     new?: unknown;
   };
-  const label = typeof field === "string" && field ? changeLabel(t, field) : "";
-  const from = old == null ? "" : String(old);
-  const to = next == null ? "" : String(next);
+  const fieldKey = typeof field === "string" ? field : "";
+  const label = fieldKey ? changeLabel(t, fieldKey) : "";
+  // The voice line arrives as a language-neutral code — localize its values too,
+  // not just the field label.
+  const value = (raw: unknown): string =>
+    raw == null ? "" : fieldKey === "voice_line" ? voiceLineLabel(t, String(raw)) : String(raw);
+  const from = value(old);
+  const to = value(next);
 
   if (from && to) return label ? `${label}: ${from} → ${to}` : `${from} → ${to}`;
   if (to) return label ? `${label}: ${to}` : to;
@@ -126,6 +146,19 @@ const formatEventMoment = (
   return firstText(startsAt, ...legacyValues);
 };
 
+interface RowContent {
+  /** Line 1 — the subject (bold, ink). */
+  title?: string;
+  /** An accent pill rendered beside the title (e.g. the voice part). */
+  pill?: string;
+  /** Line 2 — muted secondary context (concert · date · venue, sender…). */
+  context?: string;
+  /** Line 3 — tertiary detail (focus, snippet, status phrase, removed copy). */
+  detail?: string;
+  /** Structured field-change chips. */
+  changeChips?: string[];
+}
+
 /**
  * Composes the in-app row's display parts from STRUCTURED metadata, localized to
  * the viewer's current UI language. Mirrors the backend message_content composer
@@ -136,17 +169,12 @@ const describe = (
   notification: NotificationDTO,
   t: TFunc,
   lang: string,
-): {
-  headline?: string;
-  subLabel?: string;
-  detail?: string;
-  changeChips?: string[];
-} => {
+): RowContent => {
   switch (notification.notification_type) {
     case "PROJECT_INVITATION":
       return {
-        headline: notification.metadata.project_name,
-        subLabel: compactMetaLine(
+        title: notification.metadata.project_name,
+        context: compactMetaLine(
           notification.metadata.date_range,
           notification.metadata.location,
         ),
@@ -154,22 +182,22 @@ const describe = (
     case "PROJECT_UPDATED":
       if (notification.metadata.event === "removed") {
         return {
-          headline: notification.metadata.project_name,
+          title: notification.metadata.project_name,
           detail: t("notifications.inapp.project_removed"),
         };
       }
       return {
-        headline: notification.metadata.project_name,
+        title: notification.metadata.project_name,
         changeChips: renderChanges(t, notification.metadata.changes),
       };
     case "PROJECT_CANCELLED":
       // The type eyebrow already reads "Project cancelled" — don't echo it in the
       // body. The project name under that eyebrow is unambiguous on its own.
-      return { headline: notification.metadata.project_name as string | undefined };
+      return { title: notification.metadata.project_name as string | undefined };
     case "REHEARSAL_SCHEDULED":
       return {
-        headline: notification.metadata.project_name,
-        subLabel: compactMetaLine(
+        title: notification.metadata.project_name,
+        context: compactMetaLine(
           formatEventMoment(notification.metadata, lang),
           notification.metadata.location,
         ),
@@ -177,8 +205,8 @@ const describe = (
       };
     case "REHEARSAL_UPDATED":
       return {
-        headline: notification.metadata.project_name,
-        subLabel: compactMetaLine(
+        title: notification.metadata.project_name,
+        context: compactMetaLine(
           formatEventMoment(notification.metadata, lang),
           notification.metadata.location,
         ),
@@ -188,8 +216,8 @@ const describe = (
     case "REHEARSAL_CANCELLED":
       // "Rehearsal cancelled" is already the eyebrow — show only the project.
       return {
-        headline: notification.metadata.project_name,
-        subLabel: compactMetaLine(
+        title: notification.metadata.project_name,
+        context: compactMetaLine(
           formatEventMoment(notification.metadata, lang),
           notification.metadata.location,
         ),
@@ -197,8 +225,8 @@ const describe = (
       };
     case "REHEARSAL_REMINDER":
       return {
-        headline: notification.metadata.project_name as string | undefined,
-        subLabel: compactMetaLine(
+        title: notification.metadata.project_name as string | undefined,
+        context: compactMetaLine(
           formatEventMoment(notification.metadata, lang, notification.metadata.rehearsal_date),
           notification.metadata.location,
         ),
@@ -206,90 +234,107 @@ const describe = (
       };
     case "PROJECT_REMINDER":
       return {
-        headline: notification.metadata.project_name as string | undefined,
-        subLabel: compactMetaLine(
+        title: notification.metadata.project_name as string | undefined,
+        context: compactMetaLine(
           formatEventMoment(notification.metadata, lang, notification.metadata.date_range),
           notification.metadata.location,
         ),
       };
     case "PIECE_CASTING_ASSIGNED":
+      // The premium casting row: the piece as the title, the voice part as an
+      // accent pill, and the concert (name · date) as the muted context line so
+      // the singer sees exactly which programme this part is for.
       return {
-        headline: notification.metadata.piece_title,
-        subLabel: notification.metadata.voice_line,
+        title: notification.metadata.piece_title,
+        pill: voiceLineLabel(t, notification.metadata.voice_line),
+        context: compactMetaLine(
+          notification.metadata.project_name,
+          formatEventMoment(notification.metadata, lang),
+        ),
       };
     case "PIECE_CASTING_UPDATED":
       if (notification.metadata.event === "removed") {
         return {
-          headline: notification.metadata.piece_title,
+          title: notification.metadata.piece_title,
+          context: notification.metadata.project_name,
           detail: t("notifications.inapp.casting_removed"),
         };
       }
       return {
-        headline: notification.metadata.piece_title,
+        title: notification.metadata.piece_title,
+        pill: voiceLineLabel(t, notification.metadata.voice_line),
+        context: notification.metadata.project_name,
         changeChips: renderChanges(t, notification.metadata.changes),
       };
     case "MATERIAL_UPLOADED":
-      return { headline: notification.metadata.piece_title };
+      // Piece-scoped (fans out across every concert programming it), so there's no
+      // single project — the kind (score/recording) is the pill, the composer the
+      // context.
+      return {
+        title: notification.metadata.piece_title,
+        pill: materialKindLabel(t, notification.metadata.material_kind),
+        context: notification.metadata.composer_name || undefined,
+      };
     case "ABSENCE_APPROVED":
       return {
-        headline: notification.metadata.project_name,
-        subLabel: notification.metadata.rehearsal_date,
+        title: notification.metadata.project_name,
+        context: notification.metadata.rehearsal_date,
         detail: t("notifications.inapp.absence_approved"),
       };
     case "ABSENCE_REJECTED":
       // Eyebrow carries "Absence not approved"; the project + rehearsal date say
       // which one. Echoing "not approved" in the body added nothing.
       return {
-        headline: notification.metadata.project_name,
-        subLabel: notification.metadata.rehearsal_date,
+        title: notification.metadata.project_name,
+        context: notification.metadata.rehearsal_date,
       };
     case "ABSENCE_REQUESTED":
       return {
-        headline: notification.metadata.artist_name,
-        subLabel: notification.metadata.project_name,
+        title: notification.metadata.artist_name,
+        context: notification.metadata.project_name,
         detail: t("notifications.inapp.absence_requested"),
       };
     case "PARTICIPATION_RESPONSE":
       return {
-        headline: notification.metadata.artist_name,
-        subLabel: notification.metadata.project_name,
+        title: notification.metadata.artist_name,
+        context: notification.metadata.project_name,
         detail: statusPhrase(t, "participation", notification.metadata.status),
       };
     case "ATTENDANCE_SUBMITTED":
       return {
-        headline: notification.metadata.artist_name,
-        subLabel: notification.metadata.project_name,
+        title: notification.metadata.artist_name,
+        context: notification.metadata.project_name,
         detail: statusPhrase(t, "attendance", notification.metadata.status),
       };
     case "MESSAGE_RECEIVED":
       // Subject + snippet are user-authored content — passed through verbatim.
       return {
-        headline: notification.metadata.title,
-        subLabel: notification.metadata.sender_name,
+        title: notification.metadata.title,
+        context: notification.metadata.sender_name,
         detail: notification.metadata.snippet,
       };
     case "CHANNEL_MESSAGE":
       return {
-        headline: notification.metadata.project_name,
-        subLabel: notification.metadata.sender_name,
+        title: notification.metadata.project_name,
+        context: notification.metadata.sender_name,
         detail: notification.metadata.snippet || undefined,
       };
     case "CUSTOM_ADMIN_MESSAGE":
       return {
-        headline: notification.metadata.title,
+        title: notification.metadata.title,
         detail: notification.metadata.message,
       };
     case "NOTIFICATION_READ_RECEIPT":
       return {
-        headline: notification.metadata.artist_name,
-        subLabel: notification.metadata.original_title,
+        title: notification.metadata.artist_name,
+        context: notification.metadata.original_title,
         detail: t("notifications.inapp.read_receipt"),
       };
     case "CONTRACT_ISSUED":
-      return { headline: notification.metadata.project_name as string | undefined };
+      return { title: notification.metadata.project_name as string | undefined };
     case "SYSTEM_ALERT":
       return {
-        headline: notification.metadata.title as string | undefined,
+        title: notification.metadata.title as string | undefined,
         detail: notification.metadata.message as string | undefined,
       };
     default:
@@ -457,7 +502,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     onClosePanel();
   };
 
-  const { headline, subLabel, detail, changeChips } = describe(notification, t, i18n.language);
+  const { title, pill, context, detail, changeChips } = describe(notification, t, i18n.language);
+  const typeLabel = t(
+    `notifications.types.${notification.notification_type}`,
+    "Powiadomienie systemowe",
+  );
 
   return (
     <div
@@ -471,7 +520,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         }
       }}
       className={cn(
-        "group relative flex cursor-pointer gap-3 rounded-2xl p-3 pr-8 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+        "group relative flex cursor-pointer gap-3 rounded-2xl p-3 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
         isRead
           ? "hover:bg-ethereal-ink/[0.035]"
           : "bg-ethereal-ink/[0.03] hover:bg-ethereal-ink/[0.055]",
@@ -494,25 +543,63 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "font-sans text-[10px] font-semibold uppercase tracking-[0.14em]",
-            isRead ? "text-ethereal-graphite/55" : "text-ethereal-graphite/80",
-          )}
-        >
-          {t(
-            `notifications.types.${notification.notification_type}`,
-            "Powiadomienie systemowe",
-          )}
-        </p>
-
-        <div className="mt-1 text-sm leading-snug text-ethereal-graphite/80">
-          {headline && (
-            <span className="font-semibold text-ethereal-ink">{headline}</span>
-          )}
-          {subLabel && <span className="text-ethereal-graphite/55"> · {subLabel}</span>}
-          {detail && (headline ? ` — ${detail}` : detail)}
+        {/* Kicker + timestamp on one baseline — the unread state reads as an inline
+            accent dot rather than a floating corner dot. */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-1.5">
+            {!isRead && (
+              <span
+                className={cn("h-1.5 w-1.5 shrink-0 rounded-full", accentStyle.dot)}
+                aria-hidden="true"
+              />
+            )}
+            <p
+              className={cn(
+                "truncate font-sans text-[10px] font-semibold uppercase tracking-[0.14em]",
+                isRead ? "text-ethereal-graphite/55" : "text-ethereal-graphite/85",
+              )}
+            >
+              {typeLabel}
+            </p>
+          </div>
+          <time
+            dateTime={notification.created_at}
+            title={absoluteTime}
+            className="shrink-0 text-[10.5px] font-medium text-ethereal-graphite/45"
+          >
+            {timeAgo}
+          </time>
         </div>
+
+        {title && (
+          <div className="mt-1.5 flex items-start justify-between gap-2">
+            <span className="min-w-0 text-[13.5px] font-semibold leading-snug text-ethereal-ink">
+              {title}
+            </span>
+            {pill && (
+              <span
+                className={cn(
+                  "mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                  accentStyle.tile,
+                )}
+              >
+                {pill}
+              </span>
+            )}
+          </div>
+        )}
+
+        {context && (
+          <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-ethereal-graphite/60">
+            {context}
+          </p>
+        )}
+
+        {detail && (
+          <p className="mt-1 line-clamp-3 text-[12px] leading-snug text-ethereal-graphite/75">
+            {detail}
+          </p>
+        )}
 
         {changeChips && changeChips.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -526,32 +613,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             ))}
           </div>
         )}
-
-        <time
-          dateTime={notification.created_at}
-          title={absoluteTime}
-          className="mt-2 block text-[11px] font-medium text-ethereal-graphite/45"
-        >
-          {timeAgo}
-        </time>
       </div>
-
-      {!isRead && (
-        <span
-          className={cn(
-            "absolute right-3 top-3.5 h-2 w-2 rounded-full",
-            accentStyle.dot,
-          )}
-          aria-hidden="true"
-        />
-      )}
-
-      <ChevronRight
-        size={16}
-        strokeWidth={2}
-        aria-hidden="true"
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ethereal-graphite/25 opacity-0 transition-[transform,opacity] duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-      />
     </div>
   );
 };

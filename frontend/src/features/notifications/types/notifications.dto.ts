@@ -111,10 +111,15 @@ export interface RehearsalReminderMetadata extends EventMomentMetadata {
   focus?: string | null;
 }
 
-export interface PieceCastingMetadata {
+export interface PieceCastingMetadata extends EventMomentMetadata {
   piece_id?: string;
   piece_title: string;
+  /** Language-neutral VoiceLine CODE (e.g. "B1"), localized at render time.
+   *  Legacy rows may carry a pre-rendered label; the renderer falls back to it. */
   voice_line?: string;
+  /** The concert this part belongs to (name + `starts_at` moment). */
+  project_id?: string;
+  project_name?: string;
   event?: CastingChangeEvent;
   changes?: FieldChange[];
 }
@@ -122,6 +127,9 @@ export interface PieceCastingMetadata {
 export interface MaterialUploadedMetadata {
   piece_id?: string;
   piece_title?: string;
+  /** What landed: "score" | "recording" — rendered as an accent pill. */
+  material_kind?: string;
+  composer_name?: string;
 }
 
 export interface AbsenceStatusMetadata {

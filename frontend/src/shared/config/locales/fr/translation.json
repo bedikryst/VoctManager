@@ -2682,6 +2682,30 @@
       "now_mandatory": "Désormais obligatoire",
       "now_optional": "Désormais facultative"
     },
+    "voiceLines": {
+      "S1": "Soprano 1",
+      "S2": "Soprano 2",
+      "S3": "Soprano 3",
+      "A1": "Alto 1",
+      "A2": "Alto 2",
+      "A3": "Alto 3",
+      "T1": "Ténor 1",
+      "T2": "Ténor 2",
+      "T3": "Ténor 3",
+      "B1": "Basse 1",
+      "B2": "Basse 2",
+      "B3": "Basse 3",
+      "SOLO": "Solo",
+      "VP": "Percussion vocale / Beatbox",
+      "TUTTI": "Tutti (tous)",
+      "BACK": "Chœurs",
+      "ACC": "Accompagnement",
+      "PRON": "Prononciation / Diction"
+    },
+    "materialKinds": {
+      "score": "Partition",
+      "recording": "Enregistrement"
+    },
     "inapp": {
       "project_removed": "retrait de l’effectif",
       "project_cancelled": "projet annulé",

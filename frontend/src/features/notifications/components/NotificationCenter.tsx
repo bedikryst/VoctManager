@@ -431,7 +431,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   exit={{ opacity: 0, x: -16, scale: 0.98 }}
                   transition={DRAWER_SPRING}
                   style={{ originX: 0, originY: 0.5 }}
-                  className="fixed bottom-4 left-4 top-4 z-[100] flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[26px] border border-ethereal-gold/20 bg-ethereal-alabaster shadow-[0_28px_70px_-20px_rgba(22,20,18,0.4)] outline-none"
+                  className="fixed bottom-4 left-4 top-4 z-[100] flex w-[384px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[26px] border border-ethereal-gold/20 bg-ethereal-alabaster shadow-[0_28px_70px_-20px_rgba(22,20,18,0.4)] outline-none"
                 >
                   {header}
                   <div className="mx-3 h-px shrink-0 bg-ethereal-graphite/10" />
