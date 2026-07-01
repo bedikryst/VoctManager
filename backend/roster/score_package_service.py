@@ -41,8 +41,10 @@ from roster.score_package_config import (
     active_editions,
     composer_label,
     edition_label,
+    pinnable_translations,
     resolve_card_config,
     resolve_item_edition,
+    resolve_item_translation,
     sanitize_card_elements,
     suggested_page_start,
 )
@@ -60,9 +62,7 @@ CONFIGURABLE_FIELDS: frozenset[str] = frozenset({
     "normalize_to_a4",
     "duplex_mode",
     "include_cards",
-    "card_include_text",
-    "card_include_translation",
-    "card_include_program_note",
+    "card_default_elements",
     "translation_language",
 })
 
@@ -120,11 +120,12 @@ class ScorePackageService:
         """Everything about one program item that affects the assembled output."""
         piece = item.piece
         edition = resolve_item_edition(item)
-        # Content signature: any edit to the piece, its translations or its
-        # programme notes bumps the hash, so the output is flagged stale.
+        # Content signature: any edit to the piece, its translations, movements
+        # or programme notes bumps the hash, so the output is flagged stale.
         timestamps = [piece.updated_at]
         timestamps += [t.updated_at for t in piece.translations.all()]
         timestamps += [n.updated_at for n in piece.program_notes.all()]
+        timestamps += [m.updated_at for m in piece.movements.all()]
         return {
             "order": item.order,
             "piece": str(item.piece_id),
@@ -139,6 +140,8 @@ class ScorePackageService:
             "card_elements": item.card_elements,
             "text_override": item.text_override,
             "note_override": item.note_override,
+            "translation_pin": str(item.translation_id) if item.translation_id else None,
+            "performers": item.performers,
             "content_ts": max(timestamps).isoformat(),
         }
 
@@ -174,9 +177,7 @@ class ScorePackageService:
                 "a4": package.normalize_to_a4,
                 "duplex": package.duplex_mode,
                 "cards": package.include_cards,
-                "card_text": package.card_include_text,
-                "card_tr": package.card_include_translation,
-                "card_note": package.card_include_program_note,
+                "card_els": sorted(package.card_default_elements or []),
                 "lang": package.translation_language,
             },
             "project_title": project.title,
@@ -194,6 +195,7 @@ class ScorePackageService:
         piece = item.piece
         editions = active_editions(piece)
         resolved = resolve_item_edition(item)
+        resolved_translation = resolve_item_translation(item, package.translation_language)
         config = resolve_card_config(item, package)
         return {
             "id": str(item.pk),
@@ -219,6 +221,20 @@ class ScorePackageService:
             "suggested_start": suggested_page_start(piece),
             "pdf_page_start": item.pdf_page_start,
             "pdf_page_end": item.pdf_page_end,
+            # Piece-level translations the conductor can pin for the card; the
+            # cockpit composes the labels (language + singable/literal) via i18n.
+            "translations": [
+                {
+                    "id": str(t.pk),
+                    "language": t.target_language,
+                    "is_singable": t.is_singable,
+                    "translator": t.translator,
+                }
+                for t in pinnable_translations(piece)
+            ],
+            "explicit_translation_id": str(item.translation_id) if item.translation_id else None,
+            "selected_translation_id": str(resolved_translation.pk) if resolved_translation else None,
+            "performers": item.performers,
             "section_label": item.section_label,
             "role_prefix": item.role_prefix,
             "card_enabled": item.card_enabled,
@@ -278,9 +294,7 @@ class ScorePackageService:
                 "normalize_to_a4": package.normalize_to_a4,
                 "duplex_mode": package.duplex_mode,
                 "include_cards": package.include_cards,
-                "card_include_text": package.card_include_text,
-                "card_include_translation": package.card_include_translation,
-                "card_include_program_note": package.card_include_program_note,
+                "card_default_elements": list(package.card_default_elements or []),
                 "translation_language": package.translation_language,
             },
             "items": serialized_items,
@@ -297,6 +311,10 @@ class ScorePackageService:
                     continue
             elif key == "translation_language":
                 value = str(value)[:8]
+            elif key == "card_default_elements":
+                # Coerce to the canonical, ordered element subset (empty list is
+                # valid — a card carrying only its title/composer divider).
+                value = sanitize_card_elements(value) or []
             else:
                 value = bool(value)
             if getattr(package, key) != value:
@@ -369,7 +387,7 @@ class ScorePackageService:
             item = (
                 ProgramItem.objects
                 .select_related("piece")
-                .prefetch_related("piece__editions")
+                .prefetch_related("piece__editions", "piece__translations")
                 .get(pk=item_id, project=project)
             )
         except ProgramItem.DoesNotExist as exc:
@@ -402,6 +420,19 @@ class ScorePackageService:
             and item.pdf_page_start > item.pdf_page_end
         ):
             raise ScorePackageItemError("Strona początkowa nie może być za końcową.")
+
+        if "translation_id" in patch:
+            raw = patch["translation_id"]
+            if raw in (None, "", "null"):
+                _set("translation_id", None)
+            else:
+                valid = {str(t.pk) for t in pinnable_translations(item.piece)}
+                if str(raw) not in valid:
+                    raise ScorePackageItemError("Wybrane tłumaczenie nie należy do tego utworu.")
+                _set("translation_id", raw)
+
+        if "performers" in patch:
+            _set("performers", str(patch["performers"] or "")[:200])
 
         if "section_label" in patch:
             _set("section_label", str(patch["section_label"] or "")[:80])

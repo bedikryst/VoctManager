@@ -3,9 +3,12 @@
 @description Per-item card readiness for the build cockpit. Translates the
     existing AI signals — ``ProvenanceRecord.confidence`` and ``is_approved`` —
     into a traffic-light per card element (🟢 ready / 🟡 low-confidence / ⚪
-    missing) plus a roll-up per program item. Philosophy: warn, never block —
-    a missing element is simply omitted from the card, a low-confidence one is
-    flagged so it is never printed as fact without the conductor's eye.
+    missing / ◌ not-applicable) plus a roll-up per program item. Philosophy:
+    warn, never block — a missing element is simply omitted from the card, a
+    low-confidence one is flagged so it is never printed as fact without the
+    conductor's eye, and an element that cannot meaningfully exist (a
+    translation for a piece already sung in the book's language) is "not
+    applicable" — it never taints the roll-up as incomplete.
 
     Provenance is loaded in two batched queries for the whole programme, so the
     cockpit read stays O(1) in round-trips regardless of repertoire size.
@@ -24,16 +27,19 @@ from archive.models import Piece, ProvenanceRecord, Translation
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
     CARD_ELEMENTS,
+    movement_titles,
     resolve_card_config,
     resolve_item_edition,
+    resolve_item_translation,
     select_program_note,
-    select_translation,
+    translation_applicable,
 )
 
 # Element-level status.
 READY = "ready"
 LOW = "low"
 MISSING = "missing"
+NOT_APPLICABLE = "na"
 
 # Item-level roll-up.
 OVERALL_READY = "ready"
@@ -111,14 +117,25 @@ def _element_statuses(
             bool(piece.lyrics_original), piece_prov.get((piece.pk, "lyrics_original"))
         )
 
-    # translation — selected piece-level translation in the package language.
-    translation_obj = select_translation(piece, language)
+    # translation — the resolved (pinned-or-auto) piece-level translation. A
+    # manual pin is respected even for a book-language piece; without one, a
+    # piece already sung in the book's language has nothing to translate:
+    # "not applicable", never a gap to nag the conductor about.
+    translation_obj = resolve_item_translation(item, language)
     if translation_obj is not None and (translation_obj.text or "").strip():
         translation = _field_status(
             True, tr_prov.get((translation_obj.pk, "text"))
         )
+    elif not translation_applicable(piece, language):
+        translation = NOT_APPLICABLE
     else:
         translation = MISSING
+
+    # cast — the concert-specific performers line; manual entry = trusted.
+    cast = READY if (item.performers or "").strip() else MISSING
+
+    # movements — the movement list of a cyclic work (<2 movements = nothing to list).
+    movements = READY if movement_titles(piece) else MISSING
 
     # note — programme note (override always trusted; otherwise approval gates it).
     if item.note_override:
@@ -136,6 +153,8 @@ def _element_statuses(
     return {
         "eyebrow": eyebrow,
         "meta": meta,
+        "cast": cast,
+        "movements": movements,
         "text": text,
         "translation": translation,
         "note": note,
@@ -144,7 +163,8 @@ def _element_statuses(
 
 
 def _rollup(statuses: dict[str, str], enabled: frozenset[str], has_edition: bool) -> str:
-    """Item-level badge: edition gaps dominate, then low-confidence, then missing."""
+    """Item-level badge: edition gaps dominate, then low-confidence, then missing.
+    NOT_APPLICABLE matches neither, so it can never degrade the roll-up."""
     if not has_edition:
         return OVERALL_NO_EDITION
     relevant = [statuses[key] for key in CARD_ELEMENTS if key in enabled]
@@ -165,10 +185,11 @@ def compute_program_readiness(
     language = package.translation_language
 
     piece_ids = {item.piece_id for item in items}
-    # Selected translations drive the translation light; collect their ids up front.
+    # Resolved (pinned-or-auto) translations drive the translation light; collect
+    # their ids up front so pinned records get provenance too.
     translation_ids = set()
     for item in items:
-        chosen = select_translation(item.piece, language)
+        chosen = resolve_item_translation(item, language)
         if chosen is not None:
             translation_ids.add(chosen.pk)
 
@@ -192,6 +213,7 @@ def compute_program_readiness(
 __all__ = [
     "LOW",
     "MISSING",
+    "NOT_APPLICABLE",
     "OVERALL_INCOMPLETE",
     "OVERALL_LOW",
     "OVERALL_NO_EDITION",

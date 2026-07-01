@@ -398,6 +398,11 @@ class Translation(EnterpriseBaseModel):
         help_text=_("True if the translation preserves meter for singing; False if literal."),
         verbose_name=_("Singable"),
     )
+    translator = models.CharField(
+        max_length=120, blank=True,
+        help_text=_("Credited translator, printed under the translation in concert materials."),
+        verbose_name=_("Translator"),
+    )
 
     class Meta:
         verbose_name = _("Translation")

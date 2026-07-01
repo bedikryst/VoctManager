@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from io import BytesIO
+from itertools import zip_longest
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -27,14 +28,16 @@ from roster.infrastructure.document_generator import (
     DocumentRenderDependencyError,
     _render_pdf,
 )
+from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
     ResolvedCardConfig,
     composer_label,
+    movement_titles,
     resolve_card_config,
     resolve_item_edition,
+    resolve_item_translation,
     select_program_note,
-    select_translation,
 )
 from roster.score_package_layout import BodyPage, plan_body_layout
 
@@ -128,6 +131,70 @@ def _format_duration(seconds: int | None) -> str:
     return f"~{minutes} min" if minutes >= 1 else "<1 min"
 
 
+def _stanza_blocks(raw: str) -> list[list[str]]:
+    """Split sung text into stanzas: blank-line-separated groups of trimmed,
+    non-empty lines. This is the shape the print layer needs — each line becomes
+    its own hanging-indent block, so a verse that overflows the column wraps
+    with a visually subordinate continuation instead of a fake new verse."""
+    blocks: list[list[str]] = []
+    current: list[str] = []
+    for line in (raw or "").splitlines():
+        stripped = line.strip()
+        if stripped:
+            current.append(stripped)
+        elif current:
+            blocks.append(current)
+            current = []
+    if current:
+        blocks.append(current)
+    return blocks
+
+
+def _stanza_rows(text: str, translation: str) -> list[dict[str, list[str]]]:
+    """Pair original and translation stanza-by-stanza. Row N holds stanza N of
+    each side, so the columns stay aligned even when their line counts differ —
+    the reader always finds the translation of the stanza they are singing
+    directly across from it. A side that runs out of stanzas yields empty rows
+    (its column simply stays blank), and each row is an unbreakable print unit,
+    which also sidesteps WeasyPrint's fragile flex fragmentation on multi-page
+    texts."""
+    empty: list[str] = []
+    return [
+        {"original": original, "translation": translated}
+        for original, translated in zip_longest(
+            _stanza_blocks(text), _stanza_blocks(translation), fillvalue=empty
+        )
+    ]
+
+
+# Auto text-scale for the verse body. A conservative character heuristic
+# (Gentium averages ~0.45em advance; a two-column verse column is ~78mm ≈ 44
+# chars at 11pt). The hanging indent stays the correctness net — the scale only
+# reduces how often a long verse line wraps at all.
+_TWO_COL_CHARS_AT_11PT: int = 44
+_TWO_COL_CHARS_AT_10PT: int = 49
+_ONE_COL_CHARS_AT_11PT: int = 95
+
+
+def _text_scale(rows: list[dict[str, list[str]]], two_cols: bool) -> str:
+    """CSS scale class for the verse body — '' (base) / 'compact' / 'dense' —
+    from the longest line's character count in the card's column geometry."""
+    longest = max(
+        (
+            len(line)
+            for row in rows
+            for side in ("original", "translation")
+            for line in row[side]
+        ),
+        default=0,
+    )
+    if two_cols:
+        if longest <= _TWO_COL_CHARS_AT_11PT:
+            return ""
+        return "compact" if longest <= _TWO_COL_CHARS_AT_10PT else "dense"
+    return "" if longest <= _ONE_COL_CHARS_AT_11PT else "compact"
+
+
 def _read_edition_pdf(edition: ScoreEdition) -> PdfReader:
     """Load an edition's PDF fully into memory (storage-agnostic) as a reader."""
     with edition.pdf_file.open("rb") as handle:
@@ -155,6 +222,7 @@ def _resolve_program(project: Project) -> list[PlannedItem]:
         .select_related("piece", "piece__composer", "score_edition")
         .prefetch_related(
             "piece__editions", "piece__translations", "piece__program_notes",
+            "piece__movements",
         )
         .order_by("order")
     )
@@ -238,7 +306,9 @@ def _card_context(
             "arranger": piece.arranger or "",
             "meta": [],
             "page_label": page_label,
-            "text": "", "translation": "", "note": "", "ipa": "",
+            "rows": [], "two_cols": False, "text_scale": "",
+            "cast": "", "movements": [], "translator": "",
+            "note": "", "ipa": "",
             "has_text": False,
         }
 
@@ -247,9 +317,15 @@ def _card_context(
         if config.shows("text") else ""
     )
     translation = ""
+    translator = ""
+    # Resolver handles the whole policy: an explicit pin wins (any language),
+    # otherwise auto in the package language — suppressed entirely for a piece
+    # already sung in the book's language (nothing to translate).
     if config.shows("translation"):
-        tr = select_translation(piece, language)
-        translation = (tr.text or "").strip() if tr else ""
+        tr = resolve_item_translation(item, language)
+        if tr is not None and (tr.text or "").strip():
+            translation = tr.text.strip()
+            translator = (tr.translator or "").strip()
     note = ""
     if config.shows("note"):
         if item.note_override:
@@ -273,6 +349,11 @@ def _card_context(
         if duration:
             meta.append(duration)
 
+    cast = (item.performers or "").strip() if config.shows("cast") else ""
+    movements = movement_titles(piece) if config.shows("movements") else []
+
+    rows = _stanza_rows(text, translation)
+    two_cols = bool(translation)
     return {
         "placeholder": False,
         "order": planned.order,
@@ -284,11 +365,15 @@ def _card_context(
         "arranger": piece.arranger or "",
         "meta": meta,
         "page_label": page_label,
-        "text": text,
-        "translation": translation,
+        "rows": rows,
+        "two_cols": two_cols,
+        "text_scale": _text_scale(rows, two_cols),
+        "cast": cast,
+        "movements": movements,
+        "translator": translator,
         "note": note,
         "ipa": ipa,
-        "has_text": bool(text or translation),
+        "has_text": bool(rows),
     }
 
 
@@ -302,6 +387,8 @@ def _render_cards(cards: list[dict], section_header: str | None) -> bytes:
             "section_header": section_header,
             "ensemble_name": _ensemble_name(),
             "doc_lang": _doc_lang(),
+            "font_css": font_face_css(),
+            "font_stack": BOOK_FONT_STACK,
         },
     )
     return _render_pdf(html)
@@ -318,6 +405,8 @@ def _render_front_matter(project: Project, package: ScorePackage, toc_entries: l
         "show_toc": package.include_toc,
         "ensemble_name": _ensemble_name(),
         "doc_lang": _doc_lang(),
+        "font_css": font_face_css(),
+        "font_stack": BOOK_FONT_STACK,
         "title": project.title,
         "venue": project.location.name if project.location else "",
         "date_label": event_dt.strftime("%d.%m.%Y") if event_dt else "",
@@ -340,9 +429,10 @@ def _build_number_overlay(body_page_count: int) -> list:
     rows = "".join('<div class="pg"></div>' for _ in range(body_page_count))
     html = (
         "<!DOCTYPE html><html><head><meta charset='utf-8'><style>"
-        "@page { size: A4; margin: 0 14mm 12mm 0;"
+        + font_face_css()
+        + "@page { size: A4; margin: 0 14mm 12mm 0;"
         " @bottom-right { content: counter(page);"
-        " font: 10pt Georgia, 'Times New Roman', serif; color: #3a3a3a; } }"
+        f" font: 10pt {BOOK_FONT_STACK}; color: #3a3a3a; }} }}"
         ".pg { height: 1px; }"
         ".pg:not(:first-child) { break-before: page; }"
         "</style></head><body>" + rows + "</body></html>"
@@ -368,11 +458,12 @@ def _build_duplex_number_overlay(pages: list[BodyPage]) -> list:
             rows.append('<div class="pg"></div>')
     html = (
         "<!DOCTYPE html><html><head><meta charset='utf-8'><style>"
-        "@page { size: A4; margin: 0; }"
+        + font_face_css()
+        + "@page { size: A4; margin: 0; }"
         ".pg { position: relative; width: 210mm; height: 297mm; }"
         ".pg:not(:first-child) { break-before: page; }"
         ".num { position: absolute; bottom: 12mm;"
-        " font: 10pt Georgia, 'Times New Roman', serif; color: #3a3a3a;"
+        f" font: 10pt {BOOK_FONT_STACK}; color: #3a3a3a;"
         " background: #ffffff; padding: 1.5pt 5pt; border-radius: 2pt; }"
         ".recto .num { right: 14mm; }"
         ".verso .num { left: 14mm; }"

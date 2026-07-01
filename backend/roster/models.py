@@ -213,6 +213,19 @@ class ProgramItem(models.Model):
         help_text=_("Replaces the programme note on this item's card for this concert."),
         verbose_name=_("Note Override"),
     )
+    translation = models.ForeignKey(
+        'archive.Translation', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+        help_text=_("Explicit translation to print on this item's card. Blank = auto-select "
+                    "in the package language (literal preferred)."),
+        verbose_name=_("Pinned Translation"),
+    )
+    performers = models.CharField(
+        max_length=200, blank=True,
+        help_text=_("Concert-specific performers line for the card, "
+                    "e.g. 'Sopran solo: J. Kowalska · organy: A. Nowak'."),
+        verbose_name=_("Performers"),
+    )
 
     class Meta:
         ordering = ['order']
@@ -224,6 +237,14 @@ class ProgramItem(models.Model):
 
     def __str__(self):
         return f"{self.order}. {self.piece.title}"
+
+
+def default_card_elements() -> list[str]:
+    """Book-wide default set of card elements for a new package — mirrors the
+    historical always-on eyebrow+meta+text+translation+note behaviour. Per-item
+    cards inherit this list unless they pin their own; the canonical element
+    vocabulary (and ordering) lives in ``score_package_config.CARD_ELEMENTS``."""
+    return ["eyebrow", "meta", "text", "translation", "note"]
 
 
 class ScorePackage(EnterpriseBaseModel):
@@ -292,9 +313,13 @@ class ScorePackage(EnterpriseBaseModel):
                     "consolidated texts section in MASS mode)."),
         verbose_name=_("Include Text Content"),
     )
-    card_include_text = models.BooleanField(default=True, verbose_name=_("Card: Original Text"))
-    card_include_translation = models.BooleanField(default=True, verbose_name=_("Card: Translation"))
-    card_include_program_note = models.BooleanField(default=True, verbose_name=_("Card: Programme Note"))
+    card_default_elements = models.JSONField(
+        default=default_card_elements,
+        help_text=_("Book-wide default list of card element keys (metryka, tekst, "
+                    "tłumaczenie, nota, obsada, części, IPA…). Every item's card "
+                    "inherits this set unless it pins its own via ProgramItem.card_elements."),
+        verbose_name=_("Card: Default Elements"),
+    )
     translation_language = models.CharField(
         max_length=8, default='pl',
         help_text=_("ISO 639-1 code of the translation/programme-note language shown on the cards."),

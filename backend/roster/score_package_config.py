@@ -15,15 +15,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from archive.models import Piece, ProgramNote, ScoreEdition, Translation
+from archive.services.language import normalize_language
 from roster.models import ProgramItem, Project, ScorePackage
 
 # Canonical, ordered set of toggleable card elements. Title + composer + arranger
 # are structural (a frontispiece is the divider — it always carries them) and are
 # deliberately NOT in this list. Order here is the order the cockpit renders the
-# checkboxes in.
+# checkboxes in — which mirrors top-to-bottom order on the printed card.
 CARD_ELEMENTS: tuple[str, ...] = (
     "eyebrow",      # section / text-source line above the title
     "meta",         # voicing · language · duration strip
+    "cast",         # concert-specific performers line (per-item, opt-in like ipa)
+    "movements",    # movement list for cyclic works (opt-in like ipa)
     "text",         # original sung text
     "translation",  # translation in the package language
     "note",         # short programme note
@@ -44,16 +47,11 @@ class ResolvedCardConfig:
 
 
 def package_default_elements(package: ScorePackage) -> frozenset[str]:
-    """The element set implied by the package-level card toggles (the default for
-    every item that has not pinned its own ``card_elements``)."""
-    elements = {"eyebrow", "meta"}
-    if package.card_include_text:
-        elements.add("text")
-    if package.card_include_translation:
-        elements.add("translation")
-    if package.card_include_program_note:
-        elements.add("note")
-    return frozenset(elements)
+    """The book-wide default element set (the default for every item that has not
+    pinned its own ``card_elements``). Read straight off ``card_default_elements``,
+    coerced to the canonical vocabulary — so the global settings and the per-item
+    override speak the exact same element language."""
+    return frozenset(sanitize_card_elements(package.card_default_elements) or ())
 
 
 def resolve_card_config(item: ProgramItem, package: ScorePackage) -> ResolvedCardConfig:
@@ -120,6 +118,20 @@ def resolve_item_edition(item: ProgramItem) -> ScoreEdition | None:
 # Translation / programme-note selection
 # ---------------------------------------------------------------------------
 
+def translation_applicable(piece: Piece, language: str) -> bool:
+    """Whether a translation column makes sense at all: only when the sung text
+    is (at least partly) in a language other than the book's. A Polish piece in
+    a Polish book has nothing to translate — that is "not applicable", never
+    "missing". ``Piece.language`` may be a normalized ISO 639-1 code, a legacy
+    free-text value ("Latin"), or a '+'-joined bilingual set ('pl+la'); an
+    unknown/blank language keeps the translation applicable (warn, never hide)."""
+    normalized = normalize_language(piece.language)
+    if not normalized:
+        return True
+    target = (language or "").strip().lower()
+    return any(code != target for code in normalized.split("+"))
+
+
 def select_translation(piece: Piece, language: str) -> Translation | None:
     """Piece-level translation in ``language``, preferring a literal (non-singable)
     one — the literal text serves comprehension better than a singable paraphrase."""
@@ -132,6 +144,37 @@ def select_translation(piece: Piece, language: str) -> Translation | None:
         return None
     candidates.sort(key=lambda t: 0 if not t.is_singable else 1)
     return candidates[0]
+
+
+def resolve_item_translation(item: ProgramItem, language: str) -> Translation | None:
+    """Resolve the translation printed on an item's card. The conductor's explicit
+    pick wins when it is still a live piece-level translation of this piece — a
+    manual pin also overrides the not-applicable heuristic, because deliberate
+    intent is trusted (mirrors how overrides are trusted elsewhere). Otherwise
+    the auto-selected translation in the package language, suppressed entirely
+    when a translation is not applicable."""
+    if item.translation_id:
+        for candidate in item.piece.translations.all():
+            if candidate.pk == item.translation_id and candidate.movement_id is None:
+                return candidate
+    if not translation_applicable(item.piece, language):
+        return None
+    return select_translation(item.piece, language)
+
+
+def pinnable_translations(piece: Piece) -> list[Translation]:
+    """Piece-level translations the cockpit's picker can pin, any language —
+    movement-scoped fragments are excluded (the card prints whole-piece text)."""
+    return [t for t in piece.translations.all() if t.movement_id is None]
+
+
+def movement_titles(piece: Piece) -> list[str]:
+    """Movement list for a cyclic work's card ('1. Kyrie' …). Empty for works with
+    fewer than two movements — a lone movement IS the piece, listing it is noise."""
+    movements = sorted(piece.movements.all(), key=lambda m: m.order_index)
+    if len(movements) < 2:
+        return []
+    return [f"{m.order_index + 1}. {m.title}".strip(" .") for m in movements]
 
 
 def select_program_note(piece: Piece, project: Project, language: str) -> ProgramNote | None:
@@ -184,12 +227,16 @@ __all__ = [
     "active_editions",
     "composer_label",
     "edition_label",
+    "movement_titles",
     "package_default_elements",
+    "pinnable_translations",
     "resolve_card_config",
     "resolve_item_edition",
+    "resolve_item_translation",
     "sanitize_card_elements",
     "select_edition",
     "select_program_note",
     "select_translation",
     "suggested_page_start",
+    "translation_applicable",
 ]

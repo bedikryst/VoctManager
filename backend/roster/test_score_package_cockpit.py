@@ -38,18 +38,30 @@ from roster.infrastructure.pdf_raster import (
     PdfRasterDependencyError,
     render_pdf_thumbnails,
 )
+from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
+from roster.infrastructure.score_package_builder import (
+    PlannedItem,
+    _card_context,
+    _stanza_blocks,
+    _stanza_rows,
+    _text_scale,
+)
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
+    movement_titles,
     package_default_elements,
     resolve_card_config,
     resolve_item_edition,
+    resolve_item_translation,
     sanitize_card_elements,
     suggested_page_start,
+    translation_applicable,
 )
 from roster.score_package_layout import plan_body_layout
 from roster.score_package_readiness import (
     LOW,
     MISSING,
+    NOT_APPLICABLE,
     OVERALL_INCOMPLETE,
     OVERALL_LOW,
     OVERALL_NO_EDITION,
@@ -104,7 +116,7 @@ class _Base(TestCase):
 
 class CardConfigTests(_Base):
     def test_default_elements_follow_package_toggles(self) -> None:
-        self.package.card_include_translation = False
+        self.package.card_default_elements = ["eyebrow", "meta", "text"]
         elements = package_default_elements(self.package)
         self.assertIn("text", elements)
         self.assertIn("eyebrow", elements)
@@ -133,6 +145,244 @@ class CardConfigTests(_Base):
         self.assertIsNone(sanitize_card_elements("nope"))
         # Canonical order is enforced regardless of input order.
         self.assertEqual(sanitize_card_elements(["ipa", "text", "x"]), ["text", "ipa"])
+
+
+class TranslationApplicabilityTests(SimpleTestCase):
+    """A translation column only makes sense for a piece sung in another language
+    than the book's. Pure function — unsaved Piece instances suffice."""
+
+    def test_foreign_language_is_applicable(self) -> None:
+        self.assertTrue(translation_applicable(Piece(language="la"), "pl"))
+        self.assertTrue(translation_applicable(Piece(language="Latin"), "pl"))
+
+    def test_book_language_is_not_applicable(self) -> None:
+        self.assertFalse(translation_applicable(Piece(language="pl"), "pl"))
+        # Legacy free-text values normalize before comparing.
+        self.assertFalse(translation_applicable(Piece(language="polski"), "pl"))
+        self.assertFalse(translation_applicable(Piece(language="Polish"), "PL"))
+
+    def test_bilingual_piece_stays_applicable(self) -> None:
+        # 'pl+la' still carries Latin content worth translating.
+        self.assertTrue(translation_applicable(Piece(language="pl+la"), "pl"))
+
+    def test_unknown_language_stays_applicable(self) -> None:
+        # Warn, never hide: an unset/junk language keeps the column in play.
+        self.assertTrue(translation_applicable(Piece(language=""), "pl"))
+        self.assertTrue(translation_applicable(Piece(language="???"), "pl"))
+
+
+class TranslationResolutionTests(_Base):
+    """The pinned-or-auto translation policy behind the cockpit's picker."""
+
+    def _add_translation(self, *, language: str = "pl", singable: bool = False,
+                         text: str = "Przekład") -> Translation:
+        return Translation.objects.create(
+            piece=self.piece, target_language=language, is_singable=singable, text=text,
+        )
+
+    def test_auto_prefers_literal_in_package_language(self) -> None:
+        singable = self._add_translation(singable=True)
+        literal = self._add_translation(singable=False)
+        self.assertNotEqual(singable.pk, literal.pk)
+        resolved = resolve_item_translation(self.item, "pl")
+        assert resolved is not None
+        self.assertEqual(resolved.pk, literal.pk)
+
+    def test_explicit_pin_wins_over_auto(self) -> None:
+        self._add_translation(singable=False)
+        pinned = self._add_translation(singable=True)
+        self.item.translation = pinned
+        self.item.save()
+        resolved = resolve_item_translation(self.item, "pl")
+        assert resolved is not None
+        self.assertEqual(resolved.pk, pinned.pk)
+
+    def test_pin_overrides_not_applicable_gate(self) -> None:
+        # Book-language piece would normally suppress the column; a deliberate
+        # manual pin is trusted and still prints.
+        self.piece.language = "pl"
+        self.piece.save()
+        pinned = self._add_translation()
+        self.item.translation = pinned
+        self.item.save()
+        resolved = resolve_item_translation(self.item, "pl")
+        assert resolved is not None
+        self.assertEqual(resolved.pk, pinned.pk)
+
+    def test_no_pin_and_book_language_resolves_to_none(self) -> None:
+        self.piece.language = "pl"
+        self.piece.save()
+        self._add_translation()
+        self.assertIsNone(resolve_item_translation(self.item, "pl"))
+
+    def test_stale_movement_scoped_pin_falls_back_to_auto(self) -> None:
+        movement = Movement.objects.create(piece=self.piece, order_index=0, title="I")
+        fragment = Translation.objects.create(
+            piece=self.piece, movement=movement, target_language="pl", text="Fragment",
+        )
+        auto = self._add_translation()
+        self.item.translation = fragment
+        self.item.save()
+        resolved = resolve_item_translation(self.item, "pl")
+        assert resolved is not None
+        self.assertEqual(resolved.pk, auto.pk)
+
+
+class MovementTitlesTests(_Base):
+    def test_single_movement_lists_nothing(self) -> None:
+        Movement.objects.create(piece=self.piece, order_index=0, title="Jedyna")
+        self.assertEqual(movement_titles(self.piece), [])
+
+    def test_cyclic_work_lists_ordered_titles(self) -> None:
+        Movement.objects.create(piece=self.piece, order_index=1, title="Gloria")
+        Movement.objects.create(piece=self.piece, order_index=0, title="Kyrie")
+        self.assertEqual(movement_titles(self.piece), ["1. Kyrie", "2. Gloria"])
+
+
+class TextScaleTests(SimpleTestCase):
+    """The auto-shrink heuristic: long verse lines step the body down before the
+    hanging indent has to wrap them."""
+
+    @staticmethod
+    def _rows(longest: int, *, two_cols: bool) -> list[dict[str, list[str]]]:
+        return [{"original": ["x" * longest], "translation": ["krótka"] if two_cols else []}]
+
+    def test_short_lines_keep_base_size(self) -> None:
+        self.assertEqual(_text_scale(self._rows(40, two_cols=True), True), "")
+        self.assertEqual(_text_scale([], False), "")
+
+    def test_two_col_steps_down_then_dense(self) -> None:
+        self.assertEqual(_text_scale(self._rows(47, two_cols=True), True), "compact")
+        self.assertEqual(_text_scale(self._rows(60, two_cols=True), True), "dense")
+
+    def test_single_col_rarely_shrinks(self) -> None:
+        self.assertEqual(_text_scale(self._rows(80, two_cols=False), False), "")
+        self.assertEqual(_text_scale(self._rows(100, two_cols=False), False), "compact")
+
+
+class StanzaShapingTests(SimpleTestCase):
+    """Verse shaping for the print layer: blank-line stanza split + stanza pairing."""
+
+    def test_blocks_split_on_blank_lines_and_trim(self) -> None:
+        raw = "1. Pierwsza linia\n  druga linia  \n\n\n2. Nowa strofa\nkoniec\n\n"
+        self.assertEqual(
+            _stanza_blocks(raw),
+            [["1. Pierwsza linia", "druga linia"], ["2. Nowa strofa", "koniec"]],
+        )
+
+    def test_blocks_empty_for_blank_input(self) -> None:
+        self.assertEqual(_stanza_blocks(""), [])
+        self.assertEqual(_stanza_blocks("  \n \n"), [])
+
+    def test_rows_pair_stanza_by_stanza(self) -> None:
+        rows = _stanza_rows("A1\nA2\n\nB1", "T-A1\nT-A2\n\nT-B1")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0], {"original": ["A1", "A2"], "translation": ["T-A1", "T-A2"]})
+        self.assertEqual(rows[1], {"original": ["B1"], "translation": ["T-B1"]})
+
+    def test_rows_fill_the_shorter_side_with_empty_stanzas(self) -> None:
+        rows = _stanza_rows("A\n\nB\n\nC", "T-A")
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(rows[0]["translation"], ["T-A"])
+        self.assertEqual(rows[1]["translation"], [])
+        self.assertEqual(rows[2], {"original": ["C"], "translation": []})
+
+
+class PrintFontTests(SimpleTestCase):
+    """The bundled book face must resolve to real repo files — this is what makes
+    dev and prod render (and wrap verse) identically."""
+
+    def test_all_four_faces_resolve(self) -> None:
+        css = font_face_css()
+        self.assertEqual(css.count("@font-face"), 4)
+        self.assertIn('font-family: "Gentium Plus"', css)
+        self.assertIn("file://", css)
+        for style, weight in (("normal", "normal"), ("italic", "normal"),
+                              ("normal", "bold"), ("italic", "bold")):
+            self.assertIn(f"font-style: {style}; font-weight: {weight};", css)
+
+    def test_stack_leads_with_bundled_face(self) -> None:
+        self.assertTrue(BOOK_FONT_STACK.startswith('"Gentium Plus"'))
+
+
+class CardContextTests(_Base):
+    """Stanza rows + the translation-applicability gate as the card actually
+    renders them."""
+
+    def _context(self) -> dict:
+        planned = PlannedItem(
+            item=self.item, order=self.item.order, title=self.piece.title,
+            composer_label="", piece=self.piece, edition=None, reader=None,
+            start_index=0, bound_page_count=0, is_placeholder=False,
+        )
+        config = resolve_card_config(self.item, self.package)
+        return _card_context(planned, config, self.package, self.project, page_label="s. 1")
+
+    def test_rows_pair_text_with_translation(self) -> None:
+        self.piece.lyrics_original = "Locus iste\na Deo factus est\n\ninaestimabile sacramentum"
+        self.piece.save()
+        Translation.objects.create(
+            piece=self.piece, target_language="pl",
+            text="To miejsce\nuczynił Bóg\n\nniepojęty sakrament",
+        )
+        ctx = self._context()
+        self.assertTrue(ctx["two_cols"])
+        self.assertTrue(ctx["has_text"])
+        self.assertEqual(len(ctx["rows"]), 2)
+        self.assertEqual(ctx["rows"][0]["original"], ["Locus iste", "a Deo factus est"])
+        self.assertEqual(ctx["rows"][0]["translation"], ["To miejsce", "uczynił Bóg"])
+
+    def test_book_language_piece_never_gets_a_translation_column(self) -> None:
+        self.piece.language = "pl"
+        self.piece.lyrics_original = "Polski tekst\nw polskiej książce"
+        self.piece.save()
+        # Even a stray same-language translation record must not print.
+        Translation.objects.create(piece=self.piece, target_language="pl", text="Duplikat")
+        ctx = self._context()
+        self.assertFalse(ctx["two_cols"])
+        self.assertEqual(len(ctx["rows"]), 1)
+        self.assertEqual(ctx["rows"][0]["translation"], [])
+
+    def test_translator_credit_flows_with_the_translation(self) -> None:
+        Translation.objects.create(
+            piece=self.piece, target_language="pl",
+            text="To miejsce uczynił Bóg", translator="ks. Jan Kowalski",
+        )
+        ctx = self._context()
+        self.assertTrue(ctx["two_cols"])
+        self.assertEqual(ctx["translator"], "ks. Jan Kowalski")
+
+    def test_cast_and_movements_render_when_enabled(self) -> None:
+        self.item.performers = "Sopran solo: J. Kowalska · organy: A. Nowak"
+        self.item.card_elements = ["cast", "movements", "text"]
+        self.item.save()
+        Movement.objects.create(piece=self.piece, order_index=0, title="Kyrie")
+        Movement.objects.create(piece=self.piece, order_index=1, title="Gloria")
+        ctx = self._context()
+        self.assertEqual(ctx["cast"], "Sopran solo: J. Kowalska · organy: A. Nowak")
+        self.assertEqual(ctx["movements"], ["1. Kyrie", "2. Gloria"])
+
+    def test_cast_and_movements_respect_element_toggles(self) -> None:
+        # Defaults do NOT include cast/movements (opt-in like ipa) — data alone
+        # must not print them.
+        self.item.performers = "Sopran solo: X"
+        self.item.save()
+        Movement.objects.create(piece=self.piece, order_index=0, title="Kyrie")
+        Movement.objects.create(piece=self.piece, order_index=1, title="Gloria")
+        ctx = self._context()
+        self.assertEqual(ctx["cast"], "")
+        self.assertEqual(ctx["movements"], [])
+
+    def test_long_lines_step_the_text_scale_down(self) -> None:
+        self.piece.lyrics_original = (
+            "Zbliżam się w pokorze i niskości swej, wielbię Twój majestat skryty w Hostii tej"
+        )
+        self.piece.save()
+        Translation.objects.create(
+            piece=self.piece, target_language="pl", text="Krótki przekład",
+        )
+        ctx = self._context()
+        self.assertEqual(ctx["text_scale"], "dense")
 
 
 class EditionResolutionTests(_Base):
@@ -198,6 +448,51 @@ class ReadinessTests(_Base):
         readiness = compute_program_readiness(self.project, self._items(), self.package)
         self.assertEqual(readiness[self.item.pk]["elements"]["translation"], MISSING)
 
+    def test_book_language_piece_translation_is_not_applicable(self) -> None:
+        self._add_edition()
+        self.piece.language = "pl"
+        self.piece.save()
+        readiness = compute_program_readiness(self.project, self._items(), self.package)
+        self.assertEqual(readiness[self.item.pk]["elements"]["translation"], NOT_APPLICABLE)
+
+    def test_pinned_translation_on_book_language_piece_is_ready(self) -> None:
+        self._add_edition()
+        self.piece.language = "pl"
+        self.piece.save()
+        pinned = Translation.objects.create(
+            piece=self.piece, target_language="pl", text="Parafraza poetycka",
+        )
+        self.item.translation = pinned
+        self.item.save()
+        readiness = compute_program_readiness(self.project, self._items(), self.package)
+        self.assertEqual(readiness[self.item.pk]["elements"]["translation"], READY)
+
+    def test_cast_and_movements_statuses(self) -> None:
+        self._add_edition()
+        readiness = compute_program_readiness(self.project, self._items(), self.package)
+        self.assertEqual(readiness[self.item.pk]["elements"]["cast"], MISSING)
+        self.assertEqual(readiness[self.item.pk]["elements"]["movements"], MISSING)
+
+        self.item.performers = "Sopran solo: J. Kowalska"
+        self.item.save()
+        Movement.objects.create(piece=self.piece, order_index=0, title="Kyrie")
+        Movement.objects.create(piece=self.piece, order_index=1, title="Gloria")
+        readiness = compute_program_readiness(self.project, self._items(), self.package)
+        self.assertEqual(readiness[self.item.pk]["elements"]["cast"], READY)
+        self.assertEqual(readiness[self.item.pk]["elements"]["movements"], READY)
+
+    def test_not_applicable_never_degrades_rollup(self) -> None:
+        # Polish piece in a Polish book: with the note toggle off, every enabled
+        # element is present — the (inapplicable) translation must not drag the
+        # item down to "incomplete" forever.
+        self._add_edition()
+        self.piece.language = "pl"
+        self.piece.save()
+        self.package.card_default_elements = ["eyebrow", "meta", "text", "translation"]
+        self.package.save()
+        readiness = compute_program_readiness(self.project, self._items(), self.package)
+        self.assertEqual(readiness[self.item.pk]["overall"], OVERALL_READY)
+
     def test_override_text_is_trusted(self) -> None:
         self._add_edition()
         self._provenance(self.piece, "lyrics_original", 0.1)  # would be LOW...
@@ -231,8 +526,7 @@ class ReadinessTests(_Base):
         self._provenance(self.piece, "text_source", 0.9)
         self._provenance(self.piece, "voicing", 0.9)
         # Disable translation+note so only present/ready elements remain enabled.
-        self.package.card_include_translation = False
-        self.package.card_include_program_note = False
+        self.package.card_default_elements = ["eyebrow", "meta", "text"]
         self.package.save()
         readiness = compute_program_readiness(self.project, self._items(), self.package)
         self.assertEqual(readiness[self.item.pk]["overall"], OVERALL_READY)
@@ -284,6 +578,34 @@ class StateAndHashTests(_Base):
         before = ScorePackageService.compute_source_hash(self.project, self.package)
         self.item.card_elements = ["text"]
         self.item.save()
+        after = ScorePackageService.compute_source_hash(self.project, self.package)
+        self.assertNotEqual(before, after)
+
+    def test_hash_changes_on_translation_pin(self) -> None:
+        self._add_edition()
+        pinned = Translation.objects.create(
+            piece=self.piece, target_language="pl", text="Przekład",
+        )
+        before = ScorePackageService.compute_source_hash(self.project, self.package)
+        self.item.translation = pinned
+        self.item.save()
+        after = ScorePackageService.compute_source_hash(self.project, self.package)
+        self.assertNotEqual(before, after)
+
+    def test_hash_changes_on_performers(self) -> None:
+        self._add_edition()
+        before = ScorePackageService.compute_source_hash(self.project, self.package)
+        self.item.performers = "Sopran solo: J. Kowalska"
+        self.item.save()
+        after = ScorePackageService.compute_source_hash(self.project, self.package)
+        self.assertNotEqual(before, after)
+
+    def test_hash_changes_on_movement_edit(self) -> None:
+        self._add_edition()
+        movement = Movement.objects.create(piece=self.piece, order_index=0, title="Kyrie")
+        before = ScorePackageService.compute_source_hash(self.project, self.package)
+        movement.title = "Kyrie eleison"
+        movement.save()
         after = ScorePackageService.compute_source_hash(self.project, self.package)
         self.assertNotEqual(before, after)
 
@@ -355,6 +677,69 @@ class UpdateItemTests(_Base):
         self.assertEqual(self.item.section_label, "Liturgia")
         self.assertEqual(self.item.card_elements, ["text", "note"])
         self.assertFalse(self.item.card_enabled)
+
+    def test_pin_and_clear_translation(self) -> None:
+        pinned = Translation.objects.create(
+            piece=self.piece, target_language="pl", text="Przekład",
+        )
+        state = ScorePackageService.update_item(
+            self.project, str(self.item.pk), {"translation_id": str(pinned.pk)}
+        )
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.translation_id, pinned.pk)
+        self.assertEqual(state["items"][0]["explicit_translation_id"], str(pinned.pk))
+        self.assertEqual(state["items"][0]["selected_translation_id"], str(pinned.pk))
+
+        ScorePackageService.update_item(
+            self.project, str(self.item.pk), {"translation_id": None}
+        )
+        self.item.refresh_from_db()
+        self.assertIsNone(self.item.translation_id)
+
+    def test_pin_foreign_translation_rejected(self) -> None:
+        other_piece = Piece.objects.create(title="Inny utwór")
+        foreign = Translation.objects.create(
+            piece=other_piece, target_language="pl", text="Obcy przekład",
+        )
+        with self.assertRaises(ScorePackageItemError):
+            ScorePackageService.update_item(
+                self.project, str(self.item.pk), {"translation_id": str(foreign.pk)}
+            )
+
+    def test_pin_movement_scoped_translation_rejected(self) -> None:
+        movement = Movement.objects.create(piece=self.piece, order_index=0, title="I")
+        fragment = Translation.objects.create(
+            piece=self.piece, movement=movement, target_language="pl", text="Fragment",
+        )
+        with self.assertRaises(ScorePackageItemError):
+            ScorePackageService.update_item(
+                self.project, str(self.item.pk), {"translation_id": str(fragment.pk)}
+            )
+
+    def test_performers_persist_and_truncate(self) -> None:
+        state = ScorePackageService.update_item(
+            self.project, str(self.item.pk), {"performers": "x" * 300}
+        )
+        self.item.refresh_from_db()
+        self.assertEqual(len(self.item.performers), 200)
+        self.assertEqual(len(state["items"][0]["performers"]), 200)
+
+    def test_state_exposes_pinnable_translations(self) -> None:
+        Translation.objects.create(
+            piece=self.piece, target_language="pl", text="Dosłowne",
+            translator="ks. Jan Kowalski",
+        )
+        movement = Movement.objects.create(piece=self.piece, order_index=0, title="I")
+        Translation.objects.create(
+            piece=self.piece, movement=movement, target_language="pl", text="Fragment",
+        )
+        state = ScorePackageService.compute_state(self.project)
+        options = state["items"][0]["translations"]
+        # Movement-scoped fragments are not pinnable.
+        self.assertEqual(len(options), 1)
+        self.assertEqual(options[0]["language"], "pl")
+        self.assertEqual(options[0]["translator"], "ks. Jan Kowalski")
+        self.assertFalse(options[0]["is_singable"])
 
 
 @override_settings(MEDIA_ROOT=_MEDIA)

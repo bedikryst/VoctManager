@@ -214,7 +214,7 @@ class TranslationSerializer(serializers.ModelSerializer):
     """One language translation of a Piece's sung text."""
     class Meta:
         model = Translation
-        fields = ['id', 'movement', 'target_language', 'text', 'is_singable']
+        fields = ['id', 'movement', 'target_language', 'text', 'is_singable', 'translator']
         read_only_fields = fields
 
 
@@ -259,7 +259,7 @@ class TranslationWriteSerializer(serializers.ModelSerializer):
     """Read+write Translation payload for `TranslationViewSet`."""
     class Meta:
         model = Translation
-        fields = ['id', 'piece', 'movement', 'target_language', 'text', 'is_singable']
+        fields = ['id', 'piece', 'movement', 'target_language', 'text', 'is_singable', 'translator']
         read_only_fields = ['id']
 
 

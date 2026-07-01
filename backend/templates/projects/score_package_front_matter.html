@@ -11,9 +11,10 @@
     <meta charset="UTF-8">
     <title>{{ title }}</title>
     <style>
+        {{ font_css|safe }}
         @page { size: A4; margin: 25mm 24mm; }
         * { box-sizing: border-box; }
-        body { margin: 0; color: #1d1b16; font: 11pt/1.6 Georgia, "Times New Roman", serif; }
+        body { margin: 0; color: #1d1b16; font: 11pt/1.6 {{ font_stack|safe }}; }
         h1, h2, p { margin: 0; }
 
         /* --- Title page --- */
