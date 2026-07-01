@@ -89,6 +89,7 @@ module = [
     "firebase_admin.*",
     "magic.*",
     "pypdf.*",
+    "pypdfium2.*",
     "pywebpush.*",
     "weasyprint.*",
 ]

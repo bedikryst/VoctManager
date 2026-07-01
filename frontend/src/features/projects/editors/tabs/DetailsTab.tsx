@@ -8,20 +8,17 @@
  * @module features/projects/editors/tabs/DetailsTab
  */
 
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlignLeft,
   Clock,
-  Eye,
-  FileText,
   Info,
   ListOrdered,
   PlayCircle,
   Plus,
   Trash2,
-  Upload,
 } from "lucide-react";
 
 import { useLocations } from "@/features/logistics/api/logistics.queries";
@@ -29,8 +26,6 @@ import { getAvailableTimezones } from "@/shared/lib/time/timezone";
 import type { Project } from "@/shared/types";
 import { useDetailsForm } from "../hooks/useDetailsForm";
 import { useProjectArtistsDictionary } from "../../api/project.queries";
-import { ProjectService } from "../../api/project.service";
-import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -91,22 +86,8 @@ export const DetailsTab = ({
     handleUpdateRunSheetItem,
     handleRemoveRunSheetItem,
     handleSubmit,
-    pendingPdfFile,
-    pendingPdfRemoval,
-    handleSelectPdfFile,
-    handleRemovePdf,
-    handleCancelPdfChange,
   } = useDetailsForm(project?.id, onSuccess, onDirtyStateChange);
 
-  const [isScorePdfPreviewOpen, setScorePdfPreviewOpen] = useState(false);
-
-  const fetchScorePdfBlob = useCallback(
-    () =>
-      project?.id
-        ? ProjectService.fetchScorePdfBlob(String(project.id))
-        : Promise.reject(new Error("No project ID")),
-    [project?.id],
-  );
   const timezones = getAvailableTimezones();
 
   const { data: locationsData } = useLocations();
@@ -418,148 +399,8 @@ export const DetailsTab = ({
             />
           </FormSection>
 
-          <FormSection
-            icon={<FileText size={15} aria-hidden="true" />}
-            title={t("projects.details_tab.sections.score_pdf", "Partytura Koncertu (PDF)")}
-          >
-            {/* Existing PDF — preview + delete unless overridden */}
-            {project?.score_pdf && !pendingPdfRemoval && !pendingPdfFile && (
-              <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster px-4 py-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <FileText
-                    size={13}
-                    className="shrink-0 text-ethereal-gold"
-                    aria-hidden="true"
-                  />
-                  <Text size="sm" color="muted" className="truncate">
-                    {t("projects.details_tab.score_pdf.current", "Bieżący plik PDF")}
-                  </Text>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setScorePdfPreviewOpen(true)}
-                    leftIcon={<Eye size={12} aria-hidden="true" />}
-                  >
-                    {t("projects.details_tab.score_pdf.preview", "Podgląd")}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleRemovePdf}
-                    aria-label={t("projects.details_tab.score_pdf.delete_aria", "Usuń PDF")}
-                    className="text-ethereal-graphite/50 hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
-                  >
-                    <Trash2 size={13} aria-hidden="true" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Pending removal notice */}
-            {pendingPdfRemoval && (
-              <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-ethereal-crimson/30 bg-ethereal-crimson/10 px-4 py-3">
-                <Text size="sm" color="muted">
-                  {t(
-                    "projects.details_tab.score_pdf.pending_removal",
-                    "PDF zostanie usunięty po zapisaniu zmian.",
-                  )}
-                </Text>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancelPdfChange}
-                >
-                  {t("common.actions.undo", "Cofnij")}
-                </Button>
-              </div>
-            )}
-
-            {/* Pending new file notice */}
-            {pendingPdfFile && (
-              <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-ethereal-sage/30 bg-ethereal-sage/10 px-4 py-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <FileText
-                    size={13}
-                    className="shrink-0 text-ethereal-sage"
-                    aria-hidden="true"
-                  />
-                  <Text size="sm" color="muted" className="truncate">
-                    {pendingPdfFile.name}
-                  </Text>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCancelPdfChange}
-                  aria-label={t("common.actions.cancel", "Anuluj")}
-                  className="text-ethereal-graphite/50 hover:text-ethereal-ink"
-                >
-                  <Trash2 size={13} aria-hidden="true" />
-                </Button>
-              </div>
-            )}
-
-            {/* File-picker drop zone */}
-            {!pendingPdfFile && (
-              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ethereal-ink/12 px-6 py-5 text-center transition-colors hover:border-ethereal-gold/50 hover:bg-ethereal-gold/5">
-                <Upload size={18} className="text-ethereal-gold/50" aria-hidden="true" />
-                <Text size="sm" color="muted">
-                  {project?.score_pdf && !pendingPdfRemoval
-                    ? t(
-                        "projects.details_tab.score_pdf.replace",
-                        "Kliknij, aby zastąpić plik PDF",
-                      )
-                    : t(
-                        "projects.details_tab.score_pdf.upload",
-                        "Kliknij, aby dodać partytury / program (PDF)",
-                      )}
-                </Text>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleSelectPdfFile(file);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
-            )}
-          </FormSection>
         </div>
       </form>
-
-      {/* Score PDF preview modal */}
-      {project?.score_pdf && (
-        <PdfViewerModal
-          isOpen={isScorePdfPreviewOpen}
-          title={t("projects.details_tab.score_pdf.modal_title", "Partytura Koncertu")}
-          subtitle={project.title}
-          fileName={`Score_${project.title.replace(/\s+/g, "_")}.pdf`}
-          fetchBlob={fetchScorePdfBlob}
-          docKey={project.id}
-          fullView={{
-            type: "project-score",
-            id: project.id,
-            hint: {
-              title: t(
-                "projects.details_tab.score_pdf.modal_title",
-                "Partytura Koncertu",
-              ),
-              subtitle: project.title,
-              fileName: `Score_${project.title.replace(/\s+/g, "_")}.pdf`,
-            },
-          }}
-          onClose={() => setScorePdfPreviewOpen(false)}
-        />
-      )}
     </div>
   );
 };

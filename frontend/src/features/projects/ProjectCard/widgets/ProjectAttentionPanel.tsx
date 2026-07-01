@@ -36,6 +36,7 @@ import {
   useProjectRehearsals,
   useProjectParticipations,
 } from "../../api/project.read.queries";
+import { useScorePackageState } from "../../api/project.score-package";
 import { isFutureProjectDate } from "../../lib/projectPresentation";
 import { useProgramFulfillment } from "../hooks/useProgramFulfillment";
 
@@ -73,6 +74,7 @@ export const ProjectAttentionPanel = ({
 
   const { data: rehearsals } = useProjectRehearsals(String(project.id));
   const { data: participations } = useProjectParticipations(String(project.id));
+  const { data: scorePackage } = useScorePackageState(String(project.id));
   const { enrichedProgram } = useProgramFulfillment(project);
 
   const items = useMemo<AttentionItem[]>(() => {
@@ -157,7 +159,15 @@ export const ProjectAttentionPanel = ({
         tone: "amber",
         icon: FileText,
         label: t("projects.overview.attention.no_score", "Brak partytury (PDF)"),
-        segment: "details",
+        segment: "partytura",
+      });
+    } else if (scorePackage?.is_stale) {
+      next.push({
+        id: "stale-score",
+        tone: "amber",
+        icon: FileText,
+        label: t("projects.overview.attention.stale_score", "Partytura nieaktualna"),
+        segment: "partytura",
       });
     }
 
@@ -172,7 +182,7 @@ export const ProjectAttentionPanel = ({
     }
 
     return next;
-  }, [enrichedProgram, rehearsals, participations.length, project, t]);
+  }, [enrichedProgram, rehearsals, participations.length, project, scorePackage?.is_stale, t]);
 
   const hasAlarm = items.some((item) => item.tone === "crimson");
   const isClear = items.length === 0;

@@ -13,6 +13,7 @@ import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Banknote,
+  BookOpen,
   Briefcase,
   Calendar1,
   Grid,
@@ -62,6 +63,11 @@ export const ProjectTabs = ({
       segment: "program",
       label: t("projects.editor.tabs.program", "Program"),
       icon: <ListOrdered size={14} aria-hidden="true" />,
+    },
+    {
+      segment: "partytura",
+      label: t("projects.editor.tabs.score", "Partytura"),
+      icon: <BookOpen size={14} aria-hidden="true" />,
     },
     {
       segment: "cast",

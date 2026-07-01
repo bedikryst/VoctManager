@@ -79,6 +79,132 @@ export interface ProjectReadinessSummaryEntry {
   not_started: number;
 }
 
+export type ScorePackageStatus = "IDLE" | "QUED" | "BLDG" | "RDY" | "FAIL";
+
+export interface ScorePackageConfig {
+  density_mode: "CONCERT" | "MASS";
+  include_title_page: boolean;
+  include_toc: boolean;
+  include_page_numbers: boolean;
+  include_bookmarks: boolean;
+  normalize_to_a4: boolean;
+  include_cards: boolean;
+  card_include_text: boolean;
+  card_include_translation: boolean;
+  card_include_program_note: boolean;
+  translation_language: string;
+}
+
+/** Toggleable element of a per-piece frontispiece card. */
+export type CardElement =
+  | "eyebrow"
+  | "meta"
+  | "text"
+  | "translation"
+  | "note"
+  | "ipa";
+
+/** Traffic light for a single card element's data. */
+export type ElementStatus = "ready" | "low" | "missing";
+
+/** Roll-up readiness for one program item. */
+export type ItemReadinessOverall = "ready" | "low" | "incomplete" | "no_edition";
+
+export interface ScorePackageEditionOption {
+  id: string;
+  label: string;
+  page_count: number | null;
+  is_default: boolean;
+  ingestion_status: string;
+}
+
+export interface ScorePackageItemReadiness {
+  overall: ItemReadinessOverall;
+  elements: Record<CardElement, ElementStatus>;
+}
+
+/** One program item as rendered in the build cockpit, with its overrides. */
+export interface ScorePackageItem {
+  id: string;
+  order: number;
+  piece_id: string;
+  title: string;
+  composer: string;
+  is_encore: boolean;
+  editions: ScorePackageEditionOption[];
+  explicit_edition_id: string | null;
+  selected_edition_id: string | null;
+  edition_page_count: number | null;
+  has_pdf: boolean;
+  suggested_start: number | null;
+  pdf_page_start: number | null;
+  pdf_page_end: number | null;
+  section_label: string;
+  role_prefix: string;
+  card_enabled: boolean | null;
+  card_enabled_effective: boolean;
+  card_elements: CardElement[] | null;
+  card_elements_effective: CardElement[];
+  text_override: string;
+  note_override: string;
+  readiness: ScorePackageItemReadiness;
+}
+
+/** Mutable per-item overrides accepted by the cockpit PATCH endpoint. */
+export interface ScorePackageItemPatch {
+  score_edition_id: string | null;
+  pdf_page_start: number | null;
+  pdf_page_end: number | null;
+  section_label: string;
+  role_prefix: string;
+  card_enabled: boolean | null;
+  card_elements: CardElement[] | null;
+  text_override: string;
+  note_override: string;
+}
+
+/** Build state + readiness of a project's auto-assembled concert score book. */
+export interface ScorePackageState {
+  status: ScorePackageStatus;
+  status_display: string;
+  is_stale: boolean;
+  has_pdf: boolean;
+  page_count: number | null;
+  generated_at: string | null;
+  /** Increments on every successful build — stamps printed/distributed copies. */
+  build_version: number;
+  /** When a singer first downloaded the current build (null = not yet out). */
+  distributed_at: string | null;
+  /** The current book has reached the singers — a rebuild silently replaces it. */
+  is_distributed: boolean;
+  /** The current score_pdf was hand-uploaded, not generated — hide version/staleness. */
+  is_manual_upload: boolean;
+  error: string;
+  total_pieces: number;
+  bindable_pieces: number;
+  pieces_without_pdf: string[];
+  card_elements: CardElement[];
+  config: ScorePackageConfig;
+  items: ScorePackageItem[];
+}
+
+/** One rasterised edition page in the build-cockpit page-trim strip. */
+export interface ScorePackageThumbnail {
+  page: number;
+  /** Inline WebP data URI, so the whole strip renders from one gated response. */
+  src: string;
+}
+
+/** Page thumbnails for a program item's resolved edition (visual page-range trim). */
+export interface ScorePackageThumbnailManifest {
+  /** False when the host has no rasteriser — the cockpit keeps manual page entry. */
+  available: boolean;
+  edition_id: string | null;
+  width: number;
+  page_count: number | null;
+  thumbnails: ScorePackageThumbnail[];
+}
+
 export const ProjectService = {
   getAll: async (): Promise<Project[]> => {
     const response = await api.get(PROJECTS_BASE_URL);
@@ -146,6 +272,83 @@ export const ProjectService = {
     const response = await api.get(
       `${PROJECTS_BASE_URL}${projectId}/score_pdf/`,
       { responseType: "blob" },
+    );
+    return response.data;
+  },
+
+  getScorePackageState: async (
+    projectId: string | number,
+  ): Promise<ScorePackageState> => {
+    const response = await api.get<ScorePackageState>(
+      `${PROJECTS_BASE_URL}${projectId}/score_package/`,
+    );
+    return response.data;
+  },
+
+  generateScorePackage: async (
+    projectId: string | number,
+    config?: Partial<ScorePackageConfig>,
+  ): Promise<ScorePackageState> => {
+    const response = await api.post<ScorePackageState>(
+      `${PROJECTS_BASE_URL}${projectId}/score_package/`,
+      config ?? {},
+    );
+    return response.data;
+  },
+
+  /** Persist global score-package layout settings (no build); returns fresh state. */
+  updateScorePackageConfig: async (
+    projectId: string | number,
+    patch: Partial<ScorePackageConfig>,
+  ): Promise<ScorePackageState> => {
+    const response = await api.patch<ScorePackageState>(
+      `${PROJECTS_BASE_URL}${projectId}/score_package/config/`,
+      patch,
+    );
+    return response.data;
+  },
+
+  /** Persist one program item's build-cockpit overrides; returns the fresh state. */
+  updateScorePackageItem: async (
+    projectId: string | number,
+    itemId: string,
+    patch: Partial<ScorePackageItemPatch>,
+  ): Promise<ScorePackageState> => {
+    const response = await api.patch<ScorePackageState>(
+      `${PROJECTS_BASE_URL}${projectId}/score_package/item/`,
+      { item_id: itemId, ...patch },
+    );
+    return response.data;
+  },
+
+  /** Render one program item's card to a PDF for the live cockpit preview. */
+  fetchScorePackageCardPreviewBlob: async (
+    projectId: string | number,
+    itemId: string,
+  ): Promise<Blob> => {
+    const response = await api.get(
+      `${PROJECTS_BASE_URL}${projectId}/score_package/preview/`,
+      { params: { item: itemId }, responseType: "blob" },
+    );
+    return response.data as Blob;
+  },
+
+  /** Fetch a score-edition PDF through the gated download, for the page picker. */
+  fetchScoreEditionBlob: async (editionId: string): Promise<Blob> => {
+    const response = await api.get(`/api/materials/scores/${editionId}/download/`, {
+      responseType: "blob",
+    });
+    return response.data as Blob;
+  },
+
+  /** Page thumbnails of an item's resolved edition, for visual page-range trimming. */
+  fetchScorePackageThumbnails: async (
+    projectId: string | number,
+    itemId: string,
+  ): Promise<ScorePackageThumbnailManifest> => {
+    const response = await api.get<ScorePackageThumbnailManifest>(
+      `${PROJECTS_BASE_URL}${projectId}/score_package/thumbnails/`,
+      { params: { item: itemId } },
     );
     return response.data;
   },

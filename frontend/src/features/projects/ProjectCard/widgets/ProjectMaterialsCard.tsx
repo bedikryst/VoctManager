@@ -25,6 +25,8 @@ import { cn } from "@/shared/lib/utils";
 import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 
+import { useScorePackageState } from "../../api/project.score-package";
+
 interface ProjectMaterialsCardProps {
   project: Project;
   onOpenScore?: () => void;
@@ -35,6 +37,8 @@ interface MaterialRowProps {
   label: string;
   available: boolean;
   emptyLabel: string;
+  /** Status shown under the label when the material IS available (e.g. score version). */
+  subLabel?: string;
   onClick?: () => void;
   href?: string;
   external?: boolean;
@@ -45,6 +49,7 @@ const MaterialRow = ({
   label,
   available,
   emptyLabel,
+  subLabel,
   onClick,
   href,
   external,
@@ -66,6 +71,11 @@ const MaterialRow = ({
         {!available && (
           <Caption color="muted" className="italic">
             {emptyLabel}
+          </Caption>
+        )}
+        {available && subLabel && (
+          <Caption color="muted" className="truncate">
+            {subLabel}
           </Caption>
         )}
       </div>
@@ -125,8 +135,27 @@ export function ProjectMaterialsCard({
   onOpenScore,
 }: ProjectMaterialsCardProps): React.JSX.Element {
   const { t } = useTranslation();
+  const { data: scorePackage } = useScorePackageState(String(project.id));
 
   const hasDress = Boolean(project.dress_code_female || project.dress_code_male);
+
+  // Glanceable score status under the row — surfaces the build state (version,
+  // staleness, manual upload, distribution) that used to be invisible here.
+  const scoreStatus = ((): string | undefined => {
+    if (!project.score_pdf || !scorePackage) return undefined;
+    if (scorePackage.is_manual_upload) {
+      return t("projects.overview.materials.score_manual", "Wgrana ręcznie");
+    }
+    if (scorePackage.is_stale) {
+      return t("projects.overview.materials.score_stale", "Nieaktualna — złóż ponownie");
+    }
+    const version = t("projects.overview.materials.score_version", "Wersja {{v}} · gotowa", {
+      v: scorePackage.build_version,
+    });
+    return scorePackage.is_distributed
+      ? `${version} · ${t("projects.overview.materials.score_distributed", "udostępniona")}`
+      : version;
+  })();
 
   return (
     <WidgetCard
@@ -140,6 +169,7 @@ export function ProjectMaterialsCard({
           label={t("projects.exports.score_pdf", "Partytura (PDF)")}
           available={Boolean(project.score_pdf)}
           emptyLabel={t("projects.overview.materials.no_score", "Nie wgrano partytury")}
+          subLabel={scoreStatus}
           onClick={onOpenScore}
         />
 

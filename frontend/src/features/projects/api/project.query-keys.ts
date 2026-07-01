@@ -59,4 +59,18 @@ export const projectKeys = {
     byProject: (projectId: string | number) =>
       ["attendances", { project: String(projectId) }] as const,
   },
+  scorePackage: {
+    byProject: (projectId: string | number) =>
+      ["scorePackage", { project: String(projectId) }] as const,
+    thumbnails: (
+      projectId: string | number,
+      itemId: string,
+      editionId: string | null,
+    ) =>
+      [
+        "scorePackage",
+        "thumbnails",
+        { project: String(projectId), item: itemId, edition: editionId ?? "auto" },
+      ] as const,
+  },
 };
